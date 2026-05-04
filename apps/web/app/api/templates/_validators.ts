@@ -2,9 +2,16 @@ import { z } from "zod"
 import { TemplateExecutionError, TemplateMaterialItemExecutionError } from "@builders/application"
 import type {
   CreateTemplateUseCaseInput,
+  ListInput,
+  TemplatesListFilters,
   UpdateTemplateUseCaseInput,
 } from "@builders/application"
-import type { TemplateMaterialItemForm, TemplateMaterialItemsDiff } from "@builders/domain"
+import {
+  LIST_TEMPLATES_MAX_PAGE_SIZE,
+  LIST_TEMPLATES_PAGE_SIZE,
+  type TemplateMaterialItemForm,
+  type TemplateMaterialItemsDiff,
+} from "@builders/domain"
 
 function failTemplate(message: string, field?: string): never {
   throw new TemplateExecutionError({
@@ -122,6 +129,74 @@ export function validateTemplateMaterialItemsDiffInput(
   })
 
   return { added, modified, deleted }
+}
+
+// --- List view query validator (search + filters + pagination) ---
+
+const TEMPLATES_FILTER_KEYS = ["managementCompanyId", "propertyId"] as const
+type TemplatesFilterKey = (typeof TEMPLATES_FILTER_KEYS)[number]
+
+const listTemplatesQuerySchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(LIST_TEMPLATES_MAX_PAGE_SIZE)
+    .default(LIST_TEMPLATES_PAGE_SIZE),
+})
+
+function readMultiValue(searchParams: URLSearchParams, key: string): string[] {
+  return Array.from(
+    new Set(
+      searchParams
+        .getAll(key)
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+}
+
+export function validateListTemplatesQuery(
+  searchParams: URLSearchParams,
+): ListInput<TemplatesListFilters> {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    if ((TEMPLATES_FILTER_KEYS as readonly string[]).includes(key)) return
+    raw[key] = value
+  })
+
+  const parseResult = listTemplatesQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    throw new TemplateExecutionError({
+      code: "TEMPLATE_VALIDATION_FAILED",
+      message: issue?.message ?? "Invalid templates list query",
+      status: 400,
+      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
+    })
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+
+  const filterEntries: Array<[TemplatesFilterKey, string[]]> = TEMPLATES_FILTER_KEYS.map(
+    (key) => [key, readMultiValue(searchParams, key)],
+  )
+  const filterRecord: Partial<TemplatesListFilters> = {}
+  for (const [key, values] of filterEntries) {
+    if (values.length > 0) filterRecord[key] = values
+  }
+  const hasAnyFilter = Object.keys(filterRecord).length > 0
+
+  return {
+    search,
+    filters: hasAnyFilter ? (filterRecord as TemplatesListFilters) : undefined,
+    page: parsed.page,
+    pageSize: parsed.pageSize,
+  }
 }
 
 // --- Options query validator ---

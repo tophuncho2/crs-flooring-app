@@ -1,16 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { useRecordNotices } from "@/modules/shared/engines/record-view/client/hooks/use-record-notices"
-import type { TemplateListRow } from "@builders/domain"
+import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
 
-export function useTemplatesListController(initialRows: TemplateListRow[]) {
-  const [rows, setRows] = useState(initialRows)
-  const notices = useRecordNotices()
+export function useTemplatesListController() {
+  const templateNavigation = useRecordEntryNavigation("/dashboard/templates")
+  const [message, setMessage] = useState("")
+  const [pageError, setPageError] = useState("")
 
   return {
-    rows,
-    setRows,
-    notices,
+    message,
+    setMessage,
+    pageError,
+    setPageError,
+    openCreate: templateNavigation.openCreate,
+    openTemplate: templateNavigation.openRecord,
   }
 }

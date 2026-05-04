@@ -1,5 +1,4 @@
-import { createTemplateUseCase } from "@builders/application"
-import { listTemplates } from "@builders/db"
+import { createTemplateUseCase, listTemplatesUseCase } from "@builders/application"
 import { TEMPLATES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -10,7 +9,7 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateCreateTemplateInput } from "./_validators"
+import { validateCreateTemplateInput, validateListTemplatesQuery } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -22,8 +21,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    const templates = await listTemplates({})
-    return routeJson(access, { templates })
+    const url = new URL(request.url)
+    const input = validateListTemplatesQuery(url.searchParams)
+    const result = await listTemplatesUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

@@ -1,24 +1,24 @@
 "use client"
 
-import { Grid, GridEmpty, type GridColumn, type GridLayout } from "@/components/grid"
+import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { PaginateControls } from "@/components/features/paginate"
 import type { TemplateListRow } from "@builders/domain"
 
-const TEMPLATES_LIST_COLUMNS_BY_KEY: Record<string, GridColumn<TemplateListRow>> = {
-  templateNumber: { key: "templateNumber", label: "Template #", minWidth: 130, grow: 0 },
-  unitType: { key: "unitType", label: "Unit Type", minWidth: 130, grow: 0 },
-  property: { key: "property", label: "Property", minWidth: 200, grow: 1 },
-  managementCompany: { key: "managementCompany", label: "Management Company", minWidth: 200, grow: 1 },
-  jobType: { key: "jobType", label: "Job Type", minWidth: 160, grow: 0 },
-  warehouse: { key: "warehouse", label: "Warehouse", minWidth: 140, grow: 0 },
-  description: { key: "description", label: "Description", minWidth: 280, grow: 1.5 },
-  items: { key: "items", label: "Items", kind: "number", minWidth: 80, grow: 0, align: "end" },
+const TEMPLATES_LIST_LAYOUT: GridLayout<TemplateListRow> = {
+  dataColumns: [
+    { key: "templateNumber", label: "Template #", minWidth: 130, grow: 0 },
+    { key: "unitType", label: "Unit Type", minWidth: 130, grow: 0 },
+    { key: "property", label: "Property", minWidth: 200, grow: 1 },
+    { key: "managementCompany", label: "Management Company", minWidth: 200, grow: 1 },
+    { key: "jobType", label: "Job Type", minWidth: 160, grow: 0 },
+    { key: "warehouse", label: "Warehouse", minWidth: 140, grow: 0 },
+    { key: "description", label: "Description", minWidth: 280, grow: 1.5 },
+    { key: "items", label: "Items", kind: "number", minWidth: 80, grow: 0, align: "end" },
+  ],
 }
 
 export function TemplatesTable({
   rows,
-  visibleColumns,
-  pagination,
   page,
   totalPages,
   pageSize,
@@ -30,15 +30,6 @@ export function TemplatesTable({
   onOpen,
 }: {
   rows: TemplateListRow[]
-  visibleColumns: Array<{ key: string; label: string }>
-  pagination?: {
-    page: number
-    pageSize: number
-    totalItems: number
-    totalPages: number
-    previousPageHref: string
-    nextPageHref: string
-  }
   page: number
   totalPages: number
   pageSize: number
@@ -49,17 +40,11 @@ export function TemplatesTable({
   onNextPage: () => void
   onOpen: (row: TemplateListRow) => void
 }) {
-  const dataColumns = visibleColumns
-    .map((column) => TEMPLATES_LIST_COLUMNS_BY_KEY[column.key])
-    .filter((column): column is GridColumn<TemplateListRow> => Boolean(column))
-
-  const layout: GridLayout<TemplateListRow> = { dataColumns }
-
   return (
     <Grid<TemplateListRow>
       rows={rows}
-      layout={layout}
-      empty={<GridEmpty>No templates found.</GridEmpty>}
+      layout={TEMPLATES_LIST_LAYOUT}
+      empty={<GridEmpty>No templates match these filters.</GridEmpty>}
       onRowClick={(row) => onOpen(row)}
       getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
       renderCell={(column, row) => {
@@ -86,16 +71,14 @@ export function TemplatesTable({
       }}
       footerSlot={
         <PaginateControls
-          page={pagination?.page ?? page}
-          pageSize={pagination?.pageSize ?? pageSize}
-          totalItems={pagination?.totalItems ?? totalItems}
-          totalPages={pagination?.totalPages ?? totalPages}
-          hasPreviousPage={pagination ? pagination.page > 1 : hasPreviousPage}
-          hasNextPage={pagination ? pagination.page < pagination.totalPages : hasNextPage}
-          onPreviousPage={pagination ? undefined : onPreviousPage}
-          onNextPage={pagination ? undefined : onNextPage}
-          previousPageHref={pagination?.previousPageHref}
-          nextPageHref={pagination?.nextPageHref}
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+          hasPreviousPage={hasPreviousPage}
+          hasNextPage={hasNextPage}
+          onPreviousPage={onPreviousPage}
+          onNextPage={onNextPage}
         />
       }
     />

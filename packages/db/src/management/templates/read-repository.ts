@@ -11,24 +11,19 @@ import {
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
-export type TemplatesListSort = {
-  direction: "asc" | "desc"
-  groupByKeys: string[]
-  isGroupingEnabled: boolean
-}
-
 /**
- * Multi-value filter map keyed by domain field. Empty values arrays
- * are ignored. Concrete dimensions will be wired into
- * `buildTemplatesWhere` alongside the canonical filter UI wiring in
- * the templates sweep — for now, this is a foundation pass-through
- * that the application/use-case layer already pipes.
+ * Concrete filter map for the templates list view. Both fields are
+ * multi-value arrays so the engine's URL wire format (multiple values per
+ * filter key) maps cleanly onto Prisma `IN (...)` clauses; the chip UI
+ * single-selects but the data layer is array-shaped throughout.
  */
-export type TemplatesListFilterMap = Record<string, string[]>
+export type TemplatesListFilterMap = {
+  managementCompanyId?: ReadonlyArray<string>
+  propertyId?: ReadonlyArray<string>
+}
 
 export type TemplatesListArgs = {
   searchQuery?: string
-  sort?: TemplatesListSort
   filters?: TemplatesListFilterMap
   pagination?: { skip: number; take: number }
 }
@@ -80,56 +75,50 @@ const templateDetailSelect = {
   },
 } as const
 
+/**
+ * Search semantics mirror `searchTemplateOptions` (the picker's read): OR-ILIKE
+ * across templateNumber, unitType, and description. Filters AND together via
+ * exact `IN (...)` matches on the direct columns of `FlooringTemplate`.
+ */
 function buildTemplatesWhere(
   searchQuery: string | undefined,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- pass-through; concrete filter dimensions wired in templates sweep
-  _filters: TemplatesListFilterMap | undefined,
+  filters: TemplatesListFilterMap | undefined,
 ): Prisma.FlooringTemplateWhereInput | undefined {
-  if (!searchQuery) return undefined
+  const clauses: Prisma.FlooringTemplateWhereInput[] = []
 
-  return {
-    OR: [
-      { templateNumber: { contains: searchQuery, mode: "insensitive" } },
-      { unitType: { contains: searchQuery, mode: "insensitive" } },
-      { description: { contains: searchQuery, mode: "insensitive" } },
-      { property: { name: { contains: searchQuery, mode: "insensitive" } } },
-      { managementCompany: { name: { contains: searchQuery, mode: "insensitive" } } },
-      { jobType: { name: { contains: searchQuery, mode: "insensitive" } } },
-      { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
-    ],
+  const trimmed = searchQuery?.trim() ?? ""
+  if (trimmed.length > 0) {
+    clauses.push({
+      OR: [
+        { templateNumber: { contains: trimmed, mode: "insensitive" } },
+        { unitType: { contains: trimmed, mode: "insensitive" } },
+        { description: { contains: trimmed, mode: "insensitive" } },
+      ],
+    })
   }
+
+  const managementCompanyIds = filters?.managementCompanyId
+  if (managementCompanyIds && managementCompanyIds.length > 0) {
+    clauses.push({ managementCompanyId: { in: [...managementCompanyIds] } })
+  }
+
+  const propertyIds = filters?.propertyId
+  if (propertyIds && propertyIds.length > 0) {
+    clauses.push({ propertyId: { in: [...propertyIds] } })
+  }
+
+  if (clauses.length === 0) return undefined
+  if (clauses.length === 1) return clauses[0]
+  return { AND: clauses }
 }
 
-function appendUniqueOrderBy<T>(values: T[], nextValue: T | null | undefined) {
-  if (!nextValue) return
-  const serialized = JSON.stringify(nextValue)
-  if (values.some((value) => JSON.stringify(value) === serialized)) return
-  values.push(nextValue)
-}
-
-function buildTemplatesOrderBy(
-  sort: TemplatesListSort | undefined,
-): Prisma.FlooringTemplateOrderByWithRelationInput[] {
-  const direction: Prisma.SortOrder = sort?.direction ?? "asc"
-  const orderBy: Prisma.FlooringTemplateOrderByWithRelationInput[] = []
-  const fieldMap: Record<string, Prisma.FlooringTemplateOrderByWithRelationInput> = {
-    templateNumber: { templateNumber: direction },
-    unitType: { unitType: direction },
-    property: { property: { name: direction } },
-    managementCompany: { managementCompany: { name: direction } },
-    jobType: { jobType: { name: direction } },
-    warehouse: { warehouse: { name: direction } },
-  }
-
-  if (sort?.isGroupingEnabled) {
-    for (const groupKey of sort.groupByKeys) {
-      appendUniqueOrderBy(orderBy, fieldMap[groupKey])
-    }
-  }
-
-  appendUniqueOrderBy(orderBy, { templateNumber: direction })
-
-  return orderBy
+/**
+ * Default sort is fixed: `templateNumber DESC` (newest TP-NNNNN first), with
+ * `id DESC` as a stable tiebreak. The list-view toolbar no longer exposes a
+ * sort toggle — this matches the imports / inventory list views.
+ */
+function buildTemplatesOrderBy(): Prisma.FlooringTemplateOrderByWithRelationInput[] {
+  return [{ templateNumber: "desc" }, { id: "desc" }]
 }
 
 export async function listTemplates(
@@ -138,7 +127,7 @@ export async function listTemplates(
 ): Promise<TemplateListRow[]> {
   const templates = await client.flooringTemplate.findMany({
     where: buildTemplatesWhere(args.searchQuery, args.filters),
-    orderBy: buildTemplatesOrderBy(args.sort),
+    orderBy: buildTemplatesOrderBy(),
     select: templateListSelect,
     ...(args.pagination ?? {}),
   })

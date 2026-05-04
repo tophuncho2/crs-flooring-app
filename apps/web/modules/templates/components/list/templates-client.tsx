@@ -1,50 +1,53 @@
 "use client"
 
+import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
-import { SortToggle } from "@/components/features/sort"
-import { useConfiguredTableState } from "@/modules/shared/engines/list-view/controllers/use-configured-table-state"
-import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
-import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { TemplateListRow } from "@builders/domain"
+import { useServerListController } from "@/controllers/list-view"
+import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
+import type { TemplatesListFilters } from "@builders/application"
+import {
+  LIST_TEMPLATES_PAGE_SIZE,
+  type ManagementCompanyOption,
+  type PropertyOption,
+  type TablePreferencePayload,
+  type TemplateListRow,
+} from "@builders/domain"
+import {
+  listTemplatesRequest,
+  TEMPLATES_LIST_QUERY_KEY,
+} from "@/modules/templates/data/list-templates-request"
 import { useTemplatesListController } from "@/modules/templates/controllers/use-templates-list-controller"
 import { TemplatesTable } from "./templates-table"
+import { ManagementCompanyFilterChip } from "./management-company-filter-chip"
+import { PropertyFilterChip } from "./property-filter-chip"
 
-type ServerPaginationState = {
-  page: number
-  pageSize: number
-  totalItems: number
-  totalPages: number
-  previousPageHref: string
-  nextPageHref: string
-}
-
-type ServerTableState = {
-  searchQuery: string
-  isAscendingSort: boolean
-  isGroupingEnabled: boolean
-  groupByKeys: string[]
-}
+const TEMPLATES_FILTERABLE_FIELDS = ["managementCompanyId", "propertyId"] as const
 
 export default function TemplatesClient({
-  initialTemplates,
-  tableState,
-  pagination,
   initialTablePreferences,
+  initialSearchQuery,
+  initialPage,
+  initialFilters,
+  initialManagementCompanyOptions,
+  initialSelectedManagementCompany = null,
+  initialSelectedProperty = null,
 }: {
-  initialTemplates: TemplateListRow[]
-  tableState: ServerTableState
-  pagination?: ServerPaginationState
   initialTablePreferences?: TablePreferencePayload | null
+  initialSearchQuery: string
+  initialPage: number
+  initialFilters: TemplatesListFilters
+  initialManagementCompanyOptions: ManagementCompanyOption[]
+  initialSelectedManagementCompany?: ManagementCompanyOption | null
+  initialSelectedProperty?: PropertyOption | null
 }) {
-  const controller = useTemplatesListController(initialTemplates)
-  const templateNavigation = useRecordEntryNavigation("/dashboard/templates")
+  const { message, pageError, openCreate, openTemplate } = useTemplatesListController()
 
   const {
+    rows,
+    total,
     searchQuery,
-    isAscendingSort,
-    filteredRows,
-    sortedRows,
+    filters,
     page,
     pageSize,
     totalPages,
@@ -52,36 +55,63 @@ export default function TemplatesClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    visibleColumns,
     onSearchQueryChange,
-    onToggleSort,
-  } = useConfiguredTableState({
-    rows: controller.rows,
+    onFilterChange,
+  } = useServerListController<TemplateListRow, TemplatesListFilters>({
+    mode: "fetch",
+    queryKey: [...TEMPLATES_LIST_QUERY_KEY],
+    listFn: listTemplatesRequest,
+    initialSearchQuery,
+    initialPage,
+    initialFilters,
+    pageSize: LIST_TEMPLATES_PAGE_SIZE,
     tableKey: "templates-main",
-    fields: [
-      { key: "templateNumber", label: "Template #", getValue: (row) => row.templateNumber },
-      { key: "unitType", label: "Unit Type", getValue: (row) => row.unitType },
-      { key: "property", label: "Property", getValue: (row) => row.propertyName },
-      { key: "managementCompany", label: "Management Company", getValue: (row) => row.managementCompanyName ?? "" },
-      { key: "jobType", label: "Job Type", getValue: (row) => row.jobTypeName ?? "" },
-      { key: "warehouse", label: "Warehouse", getValue: (row) => row.warehouseName },
-      { key: "description", label: "Description", getValue: (row) => row.description },
-      { key: "items", label: "Items", getValue: (row) => String(row.itemsCount) },
-    ],
-    sortField: (row) => row.templateNumber,
-    sortFieldKey: "templateNumber",
-    initialSearchQuery: tableState.searchQuery,
-    defaultGrouped: tableState.isGroupingEnabled,
-    defaultGroupKeys: tableState.groupByKeys,
-    defaultAscending: tableState.isAscendingSort,
-    initialPreferences: initialTablePreferences,
-    urlSyncMode: "router",
-    disableClientFiltering: true,
-    disableClientSorting: true,
-    disableClientPagination: true,
+    initialTablePreferences,
+    filterableFields: TEMPLATES_FILTERABLE_FIELDS,
+    freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  const totalItems = pagination?.totalItems ?? filteredRows.length
+  const filtersTyped = filters as TemplatesListFilters
+  const selectedManagementCompanyId = filtersTyped.managementCompanyId?.[0] ?? null
+  const selectedPropertyId = filtersTyped.propertyId?.[0] ?? null
+
+  const managementCompanyLabel = useMemo(() => {
+    if (!selectedManagementCompanyId) return null
+    if (initialSelectedManagementCompany?.id === selectedManagementCompanyId) {
+      return initialSelectedManagementCompany.name
+    }
+    return (
+      initialManagementCompanyOptions.find((o) => o.id === selectedManagementCompanyId)
+        ?.name ?? null
+    )
+  }, [
+    selectedManagementCompanyId,
+    initialSelectedManagementCompany,
+    initialManagementCompanyOptions,
+  ])
+
+  const propertyLabel = useMemo(() => {
+    if (!selectedPropertyId) return null
+    return initialSelectedProperty?.id === selectedPropertyId
+      ? initialSelectedProperty.name
+      : null
+  }, [selectedPropertyId, initialSelectedProperty])
+
+  // Cascade-clear: changing MC clears Property (its picker scope is gone).
+  const handleManagementCompanyChange = useCallback(
+    (id: string | null) => {
+      onFilterChange("managementCompanyId", id ? [id] : [])
+      onFilterChange("propertyId", [])
+    },
+    [onFilterChange],
+  )
+
+  const handlePropertyChange = useCallback(
+    (id: string | null) => {
+      onFilterChange("propertyId", id ? [id] : [])
+    },
+    [onFilterChange],
+  )
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -92,22 +122,22 @@ export default function TemplatesClient({
             {
               key: "new",
               label: "+ Template",
-              onClick: () => templateNavigation.openCreate(),
+              onClick: () => openCreate(),
               kind: "primary",
             },
           ]}
         />
 
-        {controller.notices.message || controller.notices.error ? (
+        {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
-            {controller.notices.message ? (
+            {message ? (
               <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-                {controller.notices.message}
+                {message}
               </div>
             ) : null}
-            {controller.notices.error ? (
+            {pageError ? (
               <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {controller.notices.error}
+                {pageError}
               </div>
             ) : null}
           </div>
@@ -118,34 +148,39 @@ export default function TemplatesClient({
             <SearchControl
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search templates..."
+              placeholder="Search template #, unit type, or description"
             />
           </div>
-          <SortToggle
-            sortKey="templateNumber"
-            direction={isAscendingSort ? "asc" : "desc"}
-            onChange={() => onToggleSort()}
-            ascendingLabel="A-Z"
-            descendingLabel="Z-A"
+
+          <ManagementCompanyFilterChip
+            value={selectedManagementCompanyId}
+            selectedLabel={managementCompanyLabel}
+            onChange={handleManagementCompanyChange}
+            initialOptions={initialManagementCompanyOptions}
           />
+          <PropertyFilterChip
+            value={selectedPropertyId}
+            selectedLabel={propertyLabel}
+            managementCompanyId={selectedManagementCompanyId}
+            onChange={handlePropertyChange}
+          />
+
           <span className="text-xs text-[var(--foreground)]/55">
-            {filteredRows.length} of {totalItems} templates
+            {rows.length} of {total} templates
           </span>
         </div>
 
         <TemplatesTable
-          rows={sortedRows}
-          visibleColumns={visibleColumns.map((column) => ({ key: column.key, label: column.label }))}
-          pagination={pagination}
+          rows={rows}
           page={page}
           totalPages={totalPages}
           pageSize={pageSize}
-          totalItems={filteredRows.length}
+          totalItems={total}
           hasPreviousPage={hasPreviousPage}
           hasNextPage={hasNextPage}
           onPreviousPage={goToPreviousPage}
           onNextPage={goToNextPage}
-          onOpen={(row) => templateNavigation.openRecord(row.id)}
+          onOpen={(row) => openTemplate(row.id)}
         />
       </div>
     </div>

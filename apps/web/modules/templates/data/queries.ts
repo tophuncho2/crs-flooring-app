@@ -1,23 +1,11 @@
 import {
-  countTemplates,
   createPrismaPageLoadIssue,
   getTemplateById,
   isPrismaNotFoundError,
   listTemplates,
   listTemplateOptions,
-  withPrismaConnectivityHandling,
   type PrismaDetailPageResult,
 } from "@builders/db"
-import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
-import { createServerPagination, type ServerTableQueryState } from "@/server/pagination"
-
-function toListSort(tableState: ServerTableQueryState) {
-  return {
-    direction: tableState.isAscendingSort ? ("asc" as const) : ("desc" as const),
-    groupByKeys: tableState.groupByKeys,
-    isGroupingEnabled: tableState.isGroupingEnabled,
-  }
-}
 
 export { listTemplates, listTemplateOptions, getTemplateById }
 
@@ -53,41 +41,4 @@ export async function getTemplateDetailPageData(id: string): Promise<PrismaDetai
       }),
     }
   }
-}
-
-async function loadTemplatesPageData(page: number, tableState: ServerTableQueryState) {
-  const totalItems = await countTemplates({ searchQuery: tableState.searchQuery })
-  const pagination = createServerPagination({ page, totalItems })
-  const initialTemplates = await listTemplates({
-    searchQuery: tableState.searchQuery,
-    sort: toListSort(tableState),
-    pagination: { skip: pagination.skip, take: pagination.take },
-  })
-
-  return {
-    pagination: {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      totalItems: pagination.totalItems,
-      totalPages: pagination.totalPages,
-    },
-    tableState,
-    initialTemplates,
-  }
-}
-
-export async function getTemplatesPageData(page: number, tableState: ServerTableQueryState) {
-  return withPrismaConnectivityHandling(() =>
-    withLoaderTiming(
-      {
-        loader: "flooring.templates.list",
-        details: {
-          page,
-          searchQuery: tableState.searchQuery,
-          groupCount: tableState.groupByKeys.length,
-        },
-      },
-      () => loadTemplatesPageData(page, tableState),
-    ),
-  )
 }
