@@ -75,3 +75,40 @@ export function validateListManufacturersQuery(
     pageSize: parsed.pageSize,
   }
 }
+
+// --- Options query validator (picker) ---
+
+const manufacturerOptionsQuerySchema = z.object({
+  search: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(50).default(20),
+})
+
+export type ValidatedManufacturerOptionsQuery = {
+  search?: string
+  take: number
+}
+
+export function validateManufacturerOptionsQuery(
+  searchParams: URLSearchParams,
+): ValidatedManufacturerOptionsQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = manufacturerOptionsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid manufacturer options query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmed = parsed.search?.trim()
+  return {
+    search: trimmed ? trimmed : undefined,
+    take: parsed.take,
+  }
+}

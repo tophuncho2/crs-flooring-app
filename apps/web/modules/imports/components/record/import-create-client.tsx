@@ -13,17 +13,14 @@ import {
   EMPTY_IMPORT_PRIMARY_FORM,
   type ImportPrimaryForm,
 } from "@builders/domain"
-import type { ManufacturerOption } from "@/modules/imports/controllers/drafts"
 import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
 
 function ImportCreatePanel({
   page,
   backHref,
-  manufacturerOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
-  manufacturerOptions: ManufacturerOption[]
 }) {
   const controller = useSingleSectionCreateController<ImportPrimaryForm>({
     page,
@@ -48,7 +45,7 @@ function ImportCreatePanel({
         <ImportPrimaryFieldsSection
           draft={controller.primarySection.localValue}
           warehouseName={null}
-          manufacturerOptions={manufacturerOptions}
+          manufacturerName={null}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({
@@ -63,26 +60,14 @@ function ImportCreatePanel({
   )
 }
 
-export function ImportCreateClient({
-  backHref,
-  manufacturerOptions,
-}: {
-  backHref: string
-  manufacturerOptions: ManufacturerOption[]
-}) {
+export function ImportCreateClient({ backHref }: { backHref: string }) {
   return (
     <RecordCreateClientScaffold
       title="New Import"
       backHref={backHref}
       dirtyMessage="You have unsaved import changes. Leave this form without saving?"
     >
-      {(page) => (
-        <ImportCreatePanel
-          page={page}
-          backHref={backHref}
-          manufacturerOptions={manufacturerOptions}
-        />
-      )}
+      {(page) => <ImportCreatePanel page={page} backHref={backHref} />}
     </RecordCreateClientScaffold>
   )
 }

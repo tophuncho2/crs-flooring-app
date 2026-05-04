@@ -13,18 +13,15 @@ import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-sec
 import { useImportStagedInventoryRowsSection } from "@/modules/imports/controllers/use-import-staged-inventory-rows-section"
 import { useImportPrimarySection } from "@/modules/imports/controllers/use-import-primary-section"
 import type { ImportDetail, StagedInventoryRow } from "@builders/domain"
-import type { ManufacturerOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportRecordPanel({
   page,
   entry,
   initialStagedRows,
-  manufacturerOptions,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: ImportDetail
   initialStagedRows: StagedInventoryRow[]
-  manufacturerOptions: ManufacturerOption[]
 }) {
   const controller = useImportPrimarySection({
     page,
@@ -90,7 +87,7 @@ export function ImportRecordPanel({
               <ImportPrimaryFieldsSection
                 draft={controller.primarySection.localValue}
                 warehouseName={controller.record.warehouseName}
-                manufacturerOptions={manufacturerOptions}
+                manufacturerName={controller.record.manufacturerName}
                 disabled={controller.primarySection.isSaving}
                 onFieldChange={(field, value) => {
                   controller.primarySection.setLocalValue((previous) => ({

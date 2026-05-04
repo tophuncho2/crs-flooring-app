@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "@prisma/client"
+import type { ManufacturerOption } from "@builders/domain"
 
 type ManufacturerDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -110,6 +111,31 @@ export async function getManufacturerDeleteState(
       },
     },
   })
+}
+
+// --- Picker / options search ---
+
+export type ManufacturerOptionsSearchArgs = {
+  search?: string
+  take: number
+}
+
+export async function searchManufacturerOptions(
+  args: ManufacturerOptionsSearchArgs,
+  client: ManufacturerDbClient = db,
+): Promise<ManufacturerOption[]> {
+  const where = args.search
+    ? { companyName: { contains: args.search, mode: "insensitive" as const } }
+    : undefined
+
+  const rows = await client.flooringManufacturer.findMany({
+    where,
+    orderBy: { companyName: "asc" },
+    take: args.take,
+    select: { id: true, companyName: true },
+  })
+
+  return rows.map((row) => ({ id: row.id, name: row.companyName }))
 }
 
 // --- List-view read ---

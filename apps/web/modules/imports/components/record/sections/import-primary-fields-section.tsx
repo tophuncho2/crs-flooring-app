@@ -2,21 +2,21 @@
 
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { TextCell, TextareaCell, DropdownCell } from "@/components/cells"
+import { TextCell, TextareaCell } from "@/components/cells"
+import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import type { ImportPrimaryForm } from "@builders/domain"
-import type { ManufacturerOption } from "@/modules/imports/controllers/drafts"
 
 export function ImportPrimaryFieldsSection({
   draft,
   warehouseName,
-  manufacturerOptions,
+  manufacturerName,
   disabled,
   onFieldChange,
 }: {
   draft: ImportPrimaryForm
   warehouseName: string | null
-  manufacturerOptions: ManufacturerOption[]
+  manufacturerName: string | null
   disabled: boolean
   onFieldChange: (field: keyof ImportPrimaryForm, value: string) => void
 }) {
@@ -59,14 +59,17 @@ export function ImportPrimaryFieldsSection({
       </CellAt>
       <CellAt col={7} colSpan={2}>
         <FormField label="Manufacturer">
-          <DropdownCell
-            editable={editable}
-            value={draft.manufacturerId || null}
-            onChange={(value) => onFieldChange("manufacturerId", value ?? "")}
-            options={manufacturerOptions}
-            allowClear
-            placeholder="Select Manufacturer"
-          />
+          {editable ? (
+            <ManufacturerPicker
+              value={draft.manufacturerId || null}
+              onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
+              selectedLabel={manufacturerName || null}
+              placeholder="Select Manufacturer"
+              ariaLabel="Manufacturer"
+            />
+          ) : (
+            <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={8}>

@@ -8,11 +8,6 @@ import {
 // Record-view files pass `entry` with id pointers — use ImportDetail shape.
 export type ImportRecordEntry = ImportDetail
 
-export type ManufacturerOption = {
-  id: string
-  label: string
-}
-
 export type ImportStagedRowDraft = {
   clientId: string
   productId: string

@@ -1,7 +1,5 @@
-import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
-import { getImportCreatePageData } from "@/modules/imports/data/queries"
 import { ImportCreateClient } from "@/modules/imports/components/record/import-create-client"
 
 export default async function ImportCreatePage({
@@ -13,25 +11,9 @@ export default async function ImportCreatePage({
 
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
-  try {
-    const options = await getImportCreatePageData()
-
-    return (
-      <ImportCreateClient
-        backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/imports")}
-        manufacturerOptions={options.manufacturerOptions}
-      />
-    )
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "The import create form could not be loaded."
-
-    return (
-      <DashboardErrorState
-        title="Import Form Unavailable"
-        message="The app could not load the import create form."
-        detail={message}
-        errorCode="IMPORT_CREATE_LOAD_FAILED"
-      />
-    )
-  }
+  return (
+    <ImportCreateClient
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/imports")}
+    />
+  )
 }

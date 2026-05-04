@@ -1,3 +1,12 @@
+// Slim option shape consumed by the canonical ManufacturerPicker (server-side
+// search). Mirrors `ManagementCompanyOption` / `WarehouseOption`. The DB
+// projection maps `companyName` → `name` so picker UI stays canonical
+// (title=name) across modules.
+export type ManufacturerOption = {
+  id: string
+  name: string
+}
+
 export type ManufacturerRow = {
   id: string
   companyName: string
