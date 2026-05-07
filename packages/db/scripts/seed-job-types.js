@@ -15,6 +15,9 @@ const SEEDED_JOB_TYPES = [
   { name: "Carpet" },
   { name: "Trim" },
   { name: "Wall Base" },
+  { name: "Waste" },
+  { name: "Repair" },
+  { name: "Construction" },
 ]
 
 function verifySyncWithTypeScriptSource() {
