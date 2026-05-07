@@ -84,10 +84,10 @@ const rateLimitEnvironmentSchema = z
   })
   .superRefine((env, context) => {
     const runtimeLabel = env.RAILWAY_ENVIRONMENT_NAME?.toLowerCase()
-    if ((runtimeLabel === "staging" || runtimeLabel === "production") && !env.RATE_LIMIT_REDIS_URL && !env.REDIS_URL) {
+    if ((runtimeLabel === "staging" || runtimeLabel === "main") && !env.RATE_LIMIT_REDIS_URL && !env.REDIS_URL) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "RATE_LIMIT_REDIS_URL is required in staging and production",
+        message: "RATE_LIMIT_REDIS_URL is required in staging and main",
         path: ["RATE_LIMIT_REDIS_URL"],
       })
     }

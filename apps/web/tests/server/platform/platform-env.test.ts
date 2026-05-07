@@ -83,18 +83,18 @@ describe("platform environment", () => {
     })
   })
 
-  it("requires RATE_LIMIT_REDIS_URL for rate limiting in staging and production", () => {
+  it("requires RATE_LIMIT_REDIS_URL for rate limiting in staging and main", () => {
     expect(() =>
       validateRateLimitEnvironment({
         RAILWAY_ENVIRONMENT_NAME: "staging",
       }),
-    ).toThrow("RATE_LIMIT_REDIS_URL is required in staging and production")
+    ).toThrow("RATE_LIMIT_REDIS_URL is required in staging and main")
 
     expect(() =>
       validateRateLimitEnvironment({
-        RAILWAY_ENVIRONMENT_NAME: "production",
+        RAILWAY_ENVIRONMENT_NAME: "main",
       }),
-    ).toThrow("RATE_LIMIT_REDIS_URL is required in staging and production")
+    ).toThrow("RATE_LIMIT_REDIS_URL is required in staging and main")
   })
 
   it("rejects invalid RATE_LIMIT_REDIS_URL values when provided", () => {
