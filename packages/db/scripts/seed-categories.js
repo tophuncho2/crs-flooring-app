@@ -6,6 +6,7 @@ const { resolve } = require("node:path")
  * Keep in sync with packages/db/src/seed/categories.ts (the TypeScript source of truth).
  */
 const SEEDED_CATEGORIES = [
+  // Slug retained for snapshot stability; display name changed from "Vinyl Plank" → "Plank" 2026-05-07.
   {
     slug: "vinyl-plank",
     name: "Plank",

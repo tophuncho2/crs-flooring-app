@@ -1,4 +1,5 @@
 export const SEEDED_CATEGORIES = [
+  // Slug retained for snapshot stability; display name changed from "Vinyl Plank" → "Plank" 2026-05-07.
   {
     slug: "vinyl-plank",
     name: "Plank",
