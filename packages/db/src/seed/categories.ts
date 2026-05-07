@@ -1,7 +1,7 @@
 export const SEEDED_CATEGORIES = [
   {
     slug: "vinyl-plank",
-    name: "Vinyl Plank",
+    name: "Plank",
     sendUnitSlug: "square-feet",
     stockUnitSlug: "boxes",
     itemCoverageUnitSlug: "square-feet",
