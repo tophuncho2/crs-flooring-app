@@ -1,3 +1,5 @@
+const OWNER_SLOT_COUNT = 10
+
 const SYSTEM_USER_DEFINITIONS = [
   {
     label: "admin",
@@ -11,6 +13,15 @@ const SYSTEM_USER_DEFINITIONS = [
     emailEnvKey: "SEEDED_BUILDER_EMAIL",
     passwordEnvKey: "SEEDED_BUILDER_PASSWORD",
   },
+  ...Array.from({ length: OWNER_SLOT_COUNT }, (_, i) => {
+    const n = i + 1
+    return {
+      label: `owner-${n}`,
+      role: "OWNER",
+      emailEnvKey: `SEEDED_OWNER_${n}_EMAIL`,
+      passwordEnvKey: `SEEDED_OWNER_${n}_PASSWORD`,
+    }
+  }),
 ]
 
 function normalizeEmail(value) {
