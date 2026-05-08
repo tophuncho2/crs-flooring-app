@@ -1,10 +1,11 @@
 ## Routing — under `apps/web/app/api/`
 
-Routes live outside the module folder, under `apps/web/app/api/{module}/`. 
-[ ] Each route handler calls exactly one use case from `packages/application/` (or one repository read) —
- no business logic in route handlers.
- Every mutation goes through the canonical gauntlet (`applyRoutePolicy`, `parseMutationEnvelope`, `enforceMutationReceipt`, `finalizeMutationReceipt`, `withMutationTelemetry`). 
- Validators colocate in `_validators.ts`.
+Routes live outside the module folder, under `apps/web/app/api/{module}/`.
+
+- [ ] **One use case per handler** — each route calls exactly one use case from `packages/application/` (or one repository read for simple GETs).
+- [ ] **No business logic in route handlers** — orchestration, validation, and rule enforcement belong in the use case, not the route.
+- [ ] **Mutation gauntlet (mandatory)** — every mutation goes through `applyRoutePolicy` → `parseMutationEnvelope` → `enforceMutationReceipt` → use case → `finalizeMutationReceipt`, wrapped by `withMutationTelemetry`.
+- [ ] **Validators colocate in `_validators.ts`** — per-module input validators live at `apps/web/app/api/{module}/_validators.ts`; route handlers import them from `../_validators` (or `../../_validators` for nested routes).
 
 ### Module-level routes
 
