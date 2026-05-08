@@ -2,6 +2,14 @@
 
 Every feature module under `apps/web/modules/` follows the same three-folder shape. Modules hold UI + client-side orchestration only — no business logic, no direct database access.
 
+## Forbidden inside a module folder
+
+- No `domain/` — business rules live in `packages/domain/`.
+- No `application/` — use cases live in `packages/application/`.
+- No `record/` as a sibling of `components/` — record UI is colocated under `components/record/{section}/`.
+- No `data/api.ts` — split into `queries.ts` + `mutations.ts`.
+- No direct Prisma imports anywhere under `apps/web/modules/{module}/`.
+
 ## Folder shape (canonical)
 
 ```
@@ -42,7 +50,7 @@ apps/web/modules/{module}/
     └── {feature}-request.ts                      — rare: one-off feature/action request (see note below)
 ```
 
-> **Note on `{feature}-request.ts`:** this is a rare pattern — only one example in the codebase today (`apps/web/modules/template-sync/data/sync-template-request.ts`). The `template-sync/` module is a tiny single-purpose "wrapper module" whose entire job is to expose one button that POSTs to a feature-specific route. Its single `*-request.ts` file stands in for a full `mutations.ts`. Don't reach for this pattern unless you're building a similar one-off wrapper module — for everything else, mutations belong in `data/mutations.ts`.
+> **Note on `{feature}-request.ts`:** this pattern is only used for template sync right now (`apps/web/modules/template-sync/data/sync-template-request.ts`). The `template-sync/` module is a tiny single-purpose "wrapper module" whose entire job is to expose one button that POSTs to a feature-specific route. Its single `*-request.ts` file stands in for a full `mutations.ts`. Don't reach for this pattern unless unless i explicitely mention to — for everything else, mutations belong in `data/mutations.ts`.
 
 ## `components/`
 
@@ -68,14 +76,6 @@ apps/web/modules/{module}/
 - `data/list-{module}-request.ts` — URL/search-params contract for the **list view (table)**. Defines `*ListInput`, the react-query key, page size, filter keys, and the parser that turns `searchParams` into a `ListInput`. Calls `/api/{module}` (GET). This is the list-view contract — pickers do **not** use this file.
 - `data/{module}-options-request.ts` *(optional)* — picker options request. Defines a query key + an async search function that calls `/api/{module}/options` and returns option rows. Paired with a picker in `components/picker/`.
 - `data/{feature}-request.ts` *(optional)* — one-off feature/action request when a module exposes a feature that doesn't fit `mutations.ts` (e.g. sync, export).
-
-## Forbidden inside a module folder
-
-- No `domain/` — business rules live in `packages/domain/`.
-- No `application/` — use cases live in `packages/application/`.
-- No `record/` as a sibling of `components/` — record UI is colocated under `components/record/{section}/`.
-- No `data/api.ts` — split into `queries.ts` + `mutations.ts`.
-- No direct Prisma imports anywhere under `apps/web/modules/{module}/`.
 
 ## Routing — under `apps/web/app/api/`
 
