@@ -27,3 +27,13 @@ All migrations are applied with `npx prisma migrate deploy`.
 - [ ] **12. `diff -q .env .env.staging >/dev/null`** — verify env restored to `.env.staging`
 
 > Use `bin/promote.sh` (the quick bin command) **only** when there are no actual migrations to apply to main. If migrations are pending, run the steps above manually.
+
+## Backups
+
+- [ ] **DB is backed up weekly in both Railway environments** (staging and main)
+
+## Tables that require periodic clearing
+
+- [ ] **`AppMutationReceipt`** — idempotency receipts; clear out periodically
+- [ ] **`UserLoginActivity`** — login activity log; clear out periodically
+- [ ] **`QueueOutboxEvent`** — outbox events; clear out periodically
