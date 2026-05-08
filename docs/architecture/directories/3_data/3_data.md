@@ -9,16 +9,6 @@ The data layer is the canonical boundary to persistence. It owns read and write 
 
 > Note: `apps/web/modules/<module>/data/` exists but is **not** the data layer. `queries.ts` is a thin server-side wrapper around `@builders/db` reads (with `PrismaPageDataResult<T>` translation for dashboard loaders); `mutations.ts` is `"use client"` HTTP code that calls API routes. Neither performs Prisma I/O directly.
 
-## What is built in data
-
-- [ ] **Read repository** — `read-repository.ts` with `list<Module>s`, `get<Module>ById`, `get<Module>DeleteState`, `get<Module>Options`
-- [ ] **Write repository** — `write-repository.ts` with `create<Module>Record`, `update<Module>Record`, `delete<Module>ById`
-- [ ] **Normalizers** — Prisma row → domain record mappers (Date → ISO string, null coalescing, relation counts, enum label mapping). May be colocated in `read-repository.ts` or split into a sibling file
-- [ ] **Include / select shape constants** — `<module>CountInclude`, detail-include shapes (often in a `shared.ts`)
-- [ ] **Transaction-aware functions** — every repository function accepts an optional `client: <Module>DbClient = db` (union of `PrismaClient | Prisma.TransactionClient`) so callers can thread a transaction
-- [ ] **Outbox repository** — implements the state machine `PENDING → PROCESSING → DISPATCHED | EXHAUSTED` (under `queues/`)
-- [ ] **`index.ts` barrel** — consumers import from `@builders/db`, not deep paths
-
 ## What data imports
 
 - [ ] **`@prisma/client`** — `PrismaClient`, `Prisma` types/namespace
@@ -51,3 +41,13 @@ Data is consumed only on the server. Always imported via the `@builders/db` barr
 - [ ] **Repository functions without the optional `client` parameter** — every function must be transaction-threadable
 - [ ] **Returning raw Prisma rows to callers** — every read must return a normalized record
 - [ ] **Normalizers placed in domain or application** — they belong in data
+
+## What is built in data
+
+- [ ] **Read repository** — `read-repository.ts` with `list<Module>s`, `get<Module>ById`, `get<Module>DeleteState`, `get<Module>Options`
+- [ ] **Write repository** — `write-repository.ts` with `create<Module>Record`, `update<Module>Record`, `delete<Module>ById`
+- [ ] **Normalizers** — Prisma row → domain record mappers (Date → ISO string, null coalescing, relation counts, enum label mapping). May be colocated in `read-repository.ts` or split into a sibling file
+- [ ] **Include / select shape constants** — `<module>CountInclude`, detail-include shapes (often in a `shared.ts`)
+- [ ] **Transaction-aware functions** — every repository function accepts an optional `client: <Module>DbClient = db` (union of `PrismaClient | Prisma.TransactionClient`) so callers can thread a transaction
+- [ ] **Outbox repository** — implements the state machine `PENDING → PROCESSING → DISPATCHED | EXHAUSTED` (under `queues/`)
+- [ ] **`index.ts` barrel** — consumers import from `@builders/db`, not deep paths
