@@ -37,3 +37,13 @@ All migrations are applied with `npx prisma migrate deploy`.
 - [ ] **`AppMutationReceipt`** — idempotency receipts; clear out periodically
 - [ ] **`UserLoginActivity`** — login activity log; clear out periodically
 - [ ] **`QueueOutboxEvent`** — outbox events; clear out periodically
+
+## Seeds
+
+TS sources live under `packages/db/src/seed/`; JS runners live under `packages/db/scripts/`.
+
+- [ ] **`npm run db:seed`** — runs the full seed (system users + uoms + categories + job-types) — JS runner: `seed.js`
+- [ ] **`db:seed:job-types`** — TS: `job-types.ts` — JS runner: `seed-job-types.js`
+- [ ] **`db:seed:categories`** — TS: `categories.ts` — JS runner: `seed-categories.js`
+- [ ] **`db:seed:uoms`** — TS: `unit-of-measures.ts` — JS runner: `seed-unit-of-measures.js`
+- [ ] **System Users** — no standalone command; only runs as part of `npm run db:seed` — TS: — (data from `.env`) — JS runner: `system-user-seed.js`
