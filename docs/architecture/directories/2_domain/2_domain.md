@@ -1,60 +1,57 @@
 # Domain
 
-## Purpose
+The domain layer is the source of truth for types, rules, and invariants. Pure logic — no I/O, no framework ties, no side effects. It is the innermost dependency of the system: routes, loaders, and use cases all consume domain, but nothing in domain consumes them.
 
-The domain layer is the source of truth for types, rules, and invariants. It contains pure logic — no I/O, no framework ties, no side effects. It is the innermost dependency of the system: routes, loaders, and use cases all consume domain, but nothing in domain consumes them.
+- **Canonical path:** `packages/domain/src/<area>/<module>/` (areas: `flooring/`, `management/`, `queue/`, `shared/`)
+- **Exported via:** `@builders/domain`
+- **Domain never lives inside** `apps/web/modules/<module>/`
+- **Only allowed external dependency:** `zod`
 
-## Location
+## What is built in domain
 
-- Canonical path: `packages/domain/src/flooring/<module>/` or `packages/domain/src/management/<module>/`
-- Exported via `@builders/domain`.
-- Domain never lives inside `apps/web/modules/<module>/`.
+- [ ] **Value types and DTOs** — `<Module>Row`, `<Module>Form`, enums, value objects (`types.ts`)
+- [ ] **Zod schemas / payload schemas** — input shape contracts validated at boundaries; payload schemas for queue messages and form submissions
+- [ ] **Validation functions** — `validate<Module>Form`, shape + invariant checks that return typed results or throw typed domain errors
+- [ ] **Predicates / rule helpers** — pure boolean checks (`is<Module>DeleteBlocked`, `can<Module>Edit`) and rule helpers (`<rule>-rules.ts`, e.g. `delete-rules.ts`, `form-rules.ts`, `lock-rules.ts`)
+- [ ] **Mappers / normalizers** — pure transforms between shapes (`to<Module>Form`, `normalizers.ts`)
+- [ ] **Diff identity helpers** — pure helpers for diff-based updates (e.g. assigning draft IDs to added entries)
+- [ ] **Domain error classes** — named error types describing domain-level failure modes (`errors.ts`, `error-messages.ts`)
+- [ ] **Message builders** — pure functions that build queue payloads / outbox messages from domain inputs
+- [ ] **Constants and enums** with semantic meaning (status enums, role enums, etc.)
+- [ ] **`index.ts` barrel** — consumers import from the barrel, not individual files
 
-## Structure per module
+## What is NOT allowed to be imported into domain
 
-Typical contents:
+- [ ] **`@builders/db`** — no Prisma client, no Prisma types, no repositories
+- [ ] **`@builders/application`** — domain is consumed by application, never the reverse
+- [ ] **`apps/*`** — no imports from `apps/web`, `apps/worker`, `apps/relay`, or any module directory (`@/modules/...`)
+- [ ] **Framework SDKs** — no Next.js, React, Express, BullMQ, Redis client, etc.
+- [ ] **I/O libs** — no `fetch`, `fs`, `node:*` filesystem/network modules, no HTTP clients
+- [ ] **Anything beyond the allowed deps** — only `zod` and other domain subpackages may be imported
 
-- `types.ts` — value types (`<Module>Row`, `<Module>Form`), enums, mappers (`to<Module>Form`), validation functions (`validate<Module>Form`).
-- `<rule>-rules.ts` — invariant checks and rule helpers (e.g. `delete-rules.ts`, `assignment-rules.ts`).
-- `index.ts` — barrel file. Consumers import from the barrel, not individual files.
+## Where domain is imported
 
-## What belongs here
+Domain is the innermost layer — it is consumed everywhere outward of it, never the reverse. Always imported via the `@builders/domain` barrel, never via deep paths into `packages/domain/src/...`.
 
-- Value types and DTOs that describe a domain entity.
-- Validation functions (shape + invariants) that operate on plain inputs and return typed results or throw domain errors.
-- Business rules expressed as pure functions.
-- Error classes that describe domain-level failure modes.
-- Constants and enums with semantic meaning.
+- [ ] **Application layer** — `packages/application/` (use cases consume types, schemas, predicates, message builders)
+- [ ] **Data layer (carve-out only)** — `packages/db/` may import *pure* domain helpers (formatters, pure computations) to keep a single source of truth. **Forbidden:** importing rules that throw (`validate*`, `assert*`, `is*Blocked`)
+- [ ] **API routes** — `apps/web/app/api/<module>/` (zod payload schemas, types, validation at the request boundary)
+- [ ] **Dashboard pages / loaders** — `apps/web/app/dashboard/<module>/` (types for server-side loaders)
+- [ ] **Controllers** — `apps/web/controllers/` (list-view contracts, etc., share domain types)
+- [ ] **Module directories** — `apps/web/modules/<module>/{components,controllers,data,...}` (UI consumes domain types and predicates only — never re-declares them)
+- [ ] **Shared components** — `apps/web/components/` (badges, cells, dialogs, sections, etc., import domain types)
+- [ ] **Worker** — `apps/worker/src/processors/` (job processors consume payload schemas + types)
+- [ ] **Relay** — `apps/relay/src/dispatch/` (dispatchers consume payload schemas to validate outbox rows before BullMQ publish)
 
-## What does NOT belong
+## What is NOT allowed to be built in domain
 
-- Prisma, `fetch`, `fs`, or any network/disk I/O.
-- React, JSX, or any `"use client"` / `"use server"` code.
-- References to use cases, routes, or repositories.
-- Framework-specific helpers (Next.js, Express, etc.).
-
-## Import rules
-
-- Domain **does not** import from application or data.
-- Domain **does not** import from any module directory (`apps/web/modules/…`).
-- Domain may depend on other domain subpackages or pure utilities only.
-
-## Example
-
-```typescript
-// packages/domain/src/flooring/<module>/delete-rules.ts
-export function is<Module>DeleteBlocked(state: <Module>DeleteLinkState) {
-  return state.templateAssignments > 0 || state.workOrderAssignments > 0
-}
-```
-
-## Violations checklist
-
-- [ ] Domain code imports from `@builders/application` or `@builders/db`.
-- [ ] Domain file imports from `@/modules/...` (module directory).
-- [ ] Domain references the Prisma client, `fetch`, `fs`, or any async I/O.
-- [ ] Domain file exports JSX or uses React hooks.
-- [ ] Module directory defines a local `domain/` folder shadowing the canonical package.
-- [ ] Domain types duplicated in a module's local `types` file instead of re-exported from `@builders/domain`.
-- [ ] Domain rule expressed as a class method with internal mutable state instead of a pure function.
-- [ ] Error thrown from domain is a generic `Error` instead of a named domain error class.
+- [ ] **Use cases / orchestration** — multi-step flows, transaction boundaries, lock decisions belong in application
+- [ ] **I/O of any kind** — no DB calls, no HTTP, no filesystem, no queue dispatch, no `await` against external systems
+- [ ] **Repository code / persistence** — no read or write repositories, no Prisma queries, no normalizers that touch a DB client
+- [ ] **UI code** — no JSX, no React components, no hooks, no `"use client"` / `"use server"` directives
+- [ ] **Controllers / loaders / route handlers** — no request/response shaping, no Next.js route handlers, no server-action wrappers
+- [ ] **Outbox dispatch / worker logic** — building the payload is domain; sending it is application/relay
+- [ ] **Generic `Error` throws** — failures must be a named domain error class
+- [ ] **Stateful classes with mutable internals** — rules are pure functions over plain inputs, not class methods with hidden state
+- [ ] **Local `domain/` folder inside a module directory** — would shadow the canonical package; domain only lives under `packages/domain/`
+- [ ] **Duplicated domain types** — modules re-export from `@builders/domain`, they do not redeclare
