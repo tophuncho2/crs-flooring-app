@@ -1,81 +1,53 @@
 # Data
 
-## Purpose
+The data layer is the canonical boundary to persistence. It owns read and write access to Prisma, normalizes rows into domain-shaped records, and exposes a typed repository API per module. Use cases (and only use cases) consume it for mutation flows; read-only paths may consume it directly from routes and loaders.
 
-The data layer is the canonical boundary to persistence. It owns read and write access to Prisma, normalizes rows into domain-shaped records, and exposes a typed repository API per module. Use cases (and only use cases) consume it; routes and dashboard loaders never reach past it into Prisma directly.
+- **Canonical path:** `packages/db/src/<area>/<module>/` (areas: `flooring/`, `management/`, `account/`, `auth/`, `queues/`, `shared/`)
+- **Exported via:** `@builders/db`
+- **Persistence does not live inside** `apps/web/modules/<module>/`
+- **Prisma client is centralized** at `packages/db/src/client.ts` and exported as `db` — no other file instantiates `PrismaClient`
 
-## Location
+> Note: `apps/web/modules/<module>/data/` exists but is **not** the data layer. `queries.ts` is a thin server-side wrapper around `@builders/db` reads (with `PrismaPageDataResult<T>` translation for dashboard loaders); `mutations.ts` is `"use client"` HTTP code that calls API routes. Neither performs Prisma I/O directly.
 
-- Canonical path: `packages/db/src/flooring/<module>/` or `packages/db/src//management/<module>/`
-- Exported via `@builders/db`.
-- Persistence code does not live inside `apps/web/modules/<module>/`.
+## What is built in data
 
-### Note on module-level `data/` folders
+- [ ] **Read repository** — `read-repository.ts` with `list<Module>s`, `get<Module>ById`, `get<Module>DeleteState`, `get<Module>Options`
+- [ ] **Write repository** — `write-repository.ts` with `create<Module>Record`, `update<Module>Record`, `delete<Module>ById`
+- [ ] **Normalizers** — Prisma row → domain record mappers (Date → ISO string, null coalescing, relation counts, enum label mapping). May be colocated in `read-repository.ts` or split into a sibling file
+- [ ] **Include / select shape constants** — `<module>CountInclude`, detail-include shapes (often in a `shared.ts`)
+- [ ] **Transaction-aware functions** — every repository function accepts an optional `client: <Module>DbClient = db` (union of `PrismaClient | Prisma.TransactionClient`) so callers can thread a transaction
+- [ ] **Outbox repository** — implements the state machine `PENDING → PROCESSING → DISPATCHED | EXHAUSTED` (under `queues/`)
+- [ ] **`index.ts` barrel** — consumers import from `@builders/db`, not deep paths
 
-`apps/web/modules/<module>/data/` exists but is **not** the data layer:
+## What data imports
 
-- `queries.ts` — thin server-side wrappers around `@builders/db` reads, used by dashboard loaders. Handles Prisma error → page-error translation (`PrismaPageDataResult<T>`).
-- `mutations.ts` — `"use client"` HTTP functions that call API routes. These are HTTP clients, not persistence.
+- [ ] **`@prisma/client`** — `PrismaClient`, `Prisma` types/namespace
+- [ ] **`@builders/domain`** — types and **pure** helpers only (formatters + pure computations) for normalizer reuse. **Forbidden:** importing rules that throw (`validate*`, `assert*`, `is*Blocked`)
+- [ ] **Other files inside `packages/db/src/`** — via relative paths
+- [ ] **Nothing else** — no `@builders/application`, no `apps/*`, no Next.js, no React, no HTTP libs
 
-## Structure per module
+## Where data is imported
 
-Typical contents:
+Data is consumed only on the server. Always imported via the `@builders/db` barrel.
 
-- `read-repository.ts` — read functions (`list<Module>s`, `get<Module>ById`, `get<Module>DeleteState`, `get<Module>Options`).
-- `write-repository.ts` — write functions (`create<Module>Record`, `update<Module>Record`, `delete<Module>ById`).
-- Normalizers — Prisma row → domain record mappers handling Date → ISO string, null coalescing, relation counts, and enum label mapping. May be colocated in `read-repository.ts` or split out.
-- Include/select shape constants.
-- `index.ts` — barrel file.
+- [ ] **Application layer** — `packages/application/` (use cases — the primary consumer; only use cases compose reads + writes inside transactions)
+- [ ] **API routes** — `apps/web/app/api/<module>/` (call repositories after the gauntlet for simple read paths; mutations go through use cases)
+- [ ] **Dashboard loaders** — `apps/web/app/dashboard/` and `apps/web/modules/<module>/data/queries.ts` (server-side only; wraps reads with `PrismaPageDataResult<T>`)
+- [ ] **Module controllers / record components (server)** — `apps/web/modules/<module>/{controllers,components/record,...}` for server-rendered reads
+- [ ] **Server platform** — `apps/web/server/{auth,account,http,platform,telemetry}`
+- [ ] **Worker** — `apps/worker/src/` (job processors that need persistence)
+- [ ] **Relay** — `apps/relay/src/` (outbox state-machine reads/writes)
 
-## Function conventions
+## What is NOT allowed to be built in data
 
-- All repository functions accept an optional `client: <Module>DbClient = db` (union of `PrismaClient | Prisma.TransactionClient`) so callers can thread a transaction.
-- Reads: `list*`, `get*ById`, `get*State`, `get*Options`.
-- Writes: `create*Record`, `update*Record`, `delete*ById` — accept typed input, return a normalized record or void.
-- The Prisma client is centrally exported from `packages/db/src/client.ts` as `db`. No other module instantiates `PrismaClient`.
-
-## What belongs here
-
-- Prisma queries and mutations.
-- Normalizers between Prisma rows and domain records.
-- Include/select shape definitions.
-- Transaction-aware repository functions.
-
-## What does NOT belong
-
-- Business rules or invariants (belong in domain).
-- Use-case orchestration or multi-step workflows (belong in application).
-- HTTP status codes, route policies, or response shaping.
-- React / JSX.
-
-## Error translation
-
-- The data layer returns raw Prisma errors. It does not translate them into domain errors.
-- Application use cases catch `Prisma.PrismaClientKnownRequestError` and throw module-scoped execution errors.
-- Module-level `queries.ts` wraps Prisma errors into `PrismaPageDataResult<T>` for the dashboard loader consumer.
-
-## Example
-
-```typescript
-// packages/db/src/flooring/<module>/read-repository.ts
-export async function get<Module>ById(id: string, client = db): Promise<<Module>Record> {
-  const row = await client.flooring<Module>.findUniqueOrThrow({
-    where: { id },
-    include: <module>CountInclude,
-  })
-  return normalize<Module>Detail(row)
-}
-```
-
-## Violations checklist
-
-- [ ] Data function imports from `@builders/application` or any module directory (`apps/web/modules/…`).
-- [ ] Repository function performs business-rule validation (belongs in domain or use case).
-- [ ] Repository function shapes an HTTP response or throws `Response` / `NextResponse`.
-- [ ] Persistence code placed under `apps/web/modules/<module>/data/` instead of `packages/db/src/flooring/<module>/`.
-- [ ] `apps/web/modules/<module>/data/mutations.ts` performs Prisma writes directly instead of HTTP-calling an API route.
-- [ ] Normalizer placed in the application or domain layer instead of the data layer.
-- [ ] Prisma client imported from anywhere other than `packages/db/src/client.ts`.
-- [ ] Repository function omits the optional `client` transaction parameter.
-- [ ] Raw Prisma row returned to callers without normalization.
-- [ ] Raw Prisma error propagated to an API route unconverted (should be caught in the use case).
+- [ ] **Business rules / invariants** — belong in domain (predicates, `validate*`, `is*Blocked`)
+- [ ] **Use-case orchestration** — multi-step flows, transaction openers, lock decisions belong in application; data exposes the pieces, application composes them
+- [ ] **HTTP shaping** — no status codes, no `Response`/`NextResponse`, no route policies, no auth checks
+- [ ] **Domain-error translation** — data returns raw Prisma errors; the application use case catches `Prisma.PrismaClientKnownRequestError` and throws module-scoped errors
+- [ ] **UI code** — no JSX, no React, no `"use client"` / `"use server"` directives
+- [ ] **Direct Prisma writes inside `apps/web/modules/<module>/data/mutations.ts`** — `mutations.ts` is an HTTP client, not a repository
+- [ ] **Persistence under `apps/web/modules/<module>/`** — Prisma queries belong in `packages/db/src/`, not in any module directory
+- [ ] **Local `PrismaClient` instances** — only `packages/db/src/client.ts` instantiates Prisma; everything else imports `db`
+- [ ] **Repository functions without the optional `client` parameter** — every function must be transaction-threadable
+- [ ] **Returning raw Prisma rows to callers** — every read must return a normalized record
+- [ ] **Normalizers placed in domain or application** — they belong in data
