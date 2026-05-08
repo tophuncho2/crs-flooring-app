@@ -38,15 +38,17 @@ apps/web/modules/{module}/
     ├── queries.ts                                — server-side wrappers over @builders/db canonical reads
     ├── mutations.ts                              — client POST/PATCH/DELETE helpers (withMutationMeta)
     ├── list-{module}-request.ts                  — list-view URL/search-params contract (powers the main TABLE list view, not pickers)
-    ├── {feature}-options-request.ts              — optional: picker options request (powers a picker in components/picker/)
-    └── {feature}-request.ts                      — optional: one-off feature/action request (e.g. sync, export)
+    ├── {module}-options-request.ts              — optional: picker options request (powers a picker in components/picker/)
+    └── {feature}-request.ts                      — rare: one-off feature/action request (see note below)
 ```
+
+> **Note on `{feature}-request.ts`:** this is a rare pattern — only one example in the codebase today (`apps/web/modules/template-sync/data/sync-template-request.ts`). The `template-sync/` module is a tiny single-purpose "wrapper module" whose entire job is to expose one button that POSTs to a feature-specific route. Its single `*-request.ts` file stands in for a full `mutations.ts`. Don't reach for this pattern unless you're building a similar one-off wrapper module — for everything else, mutations belong in `data/mutations.ts`.
 
 ## `components/`
 
 - `components/list/` — `{module}-client.tsx` (list-view client wrapper) + `{module}-table.tsx` (the table). Filter chips, column defs, and toolbar pieces colocate here.
 - `components/record/` — three top-level wrappers at the root: `{module}-detail-client.tsx`, `{module}-create-client.tsx`, `{module}-record-panel.tsx` (shared panel chrome). **Each section on the record view gets its own folder** under `components/record/{section}/` — `primary/` plus one folder per child section. Section-scoped subcomponents (headers, row layouts, sub-feature panels) colocate inside the section folder; deeper sub-features get their own subfolder under the section (e.g. an edit panel).
-- `components/picker/` *(optional)* — when this module exposes an async dropdown picker for *other* modules' forms, the picker component lives here and is paired with `data/{feature}-options-request.ts`.
+- `components/picker/` *(optional)* — when this module exposes an async dropdown picker for *other* modules' forms, the picker component lives here and is paired with `data/{module}-options-request.ts`.
 
 ## `controllers/` (plural, split by view)
 
@@ -64,7 +66,7 @@ apps/web/modules/{module}/
 - `data/queries.ts` — server-side wrappers over `@builders/db` canonical reads. Returns `PrismaDetailPageResult<T>` (or similar) for dashboard loaders. Imports from `@builders/db` only. **No Prisma imports. No direct DB access.**
 - `data/mutations.ts` — `"use client"` HTTP helpers (`createXRequest`, `updateXRequest`, `deleteXRequest`, plus per-section/per-row save helpers). All wrap `withMutationMeta` and call `requestJson`.
 - `data/list-{module}-request.ts` — URL/search-params contract for the **list view (table)**. Defines `*ListInput`, the react-query key, page size, filter keys, and the parser that turns `searchParams` into a `ListInput`. Calls `/api/{module}` (GET). This is the list-view contract — pickers do **not** use this file.
-- `data/{feature}-options-request.ts` *(optional)* — picker options request. Defines a query key + an async search function that calls `/api/{module}/options` and returns option rows. Paired with a picker in `components/picker/`.
+- `data/{module}-options-request.ts` *(optional)* — picker options request. Defines a query key + an async search function that calls `/api/{module}/options` and returns option rows. Paired with a picker in `components/picker/`.
 - `data/{feature}-request.ts` *(optional)* — one-off feature/action request when a module exposes a feature that doesn't fit `mutations.ts` (e.g. sync, export).
 
 ## Forbidden inside a module folder
