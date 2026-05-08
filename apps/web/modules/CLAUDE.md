@@ -10,22 +10,24 @@ apps/web/modules/{module}/
 │   ├── list/                                     — list-view components (table, filters, columns, toolbar)
 │   │   ├── {module}-client.tsx
 │   │   └── {module}-table.tsx
-│   └── record/
-│       ├── {module}-detail-client.tsx            — record-view client wrapper
-│       ├── {module}-create-client.tsx            — create-flow client wrapper
-│       ├── {module}-record-panel.tsx             — shared record panel chrome
-│       ├── primary/                              — primary-section components
-│       │   └── {module}-primary-fields-section.tsx
-│       ├── {child-section-a}/                    — one folder per child section on the record view
-│       │   ├── {module}-{child-section-a}-section.tsx
-│       │   └── {sub-feature}/                    — optional: sub-feature folder for the section (e.g. an edit panel)
-│       └── {child-section-b}/
+│   ├── record/
+│   │   ├── {module}-detail-client.tsx            — record-view client wrapper
+│   │   ├── {module}-create-client.tsx            — create-flow client wrapper
+│   │   ├── {module}-record-panel.tsx             — shared record panel chrome
+│   │   ├── primary/                              — primary-section components
+│   │   │   └── {module}-primary-fields-section.tsx
+│   │   ├── {child-section-a}/                    — one folder per child section on the record view
+│   │   │   ├── {module}-{child-section-a}-section.tsx
+│   │   │   └── {sub-feature}/                    — optional: sub-feature folder for the section (e.g. an edit panel)
+│   │   └── {child-section-b}/
+│   └── picker/                                   — optional: this module's async dropdown picker (consumed by other modules' forms)
+│       └── {module}-picker.tsx
 ├── controllers/                                  — controllers split by view (list / record), then by section
 │   ├── list/
 │   │   ├── use-{module}-list-controller.ts
 │   │   └── use-{module}-list-mutations.ts
 │   └── record/
-│       ├── drafts.ts                             — shared draft / diff helpers across sections (optional)
+│       ├── drafts.ts                             — shared draft / diff helpers + option types across sections (optional)
 │       ├── primary/
 │       │   └── use-{module}-primary-section.ts
 │       ├── {child-section-a}/
@@ -33,26 +35,37 @@ apps/web/modules/{module}/
 │       │   └── use-{sub-feature}.ts              — optional: sub-feature controller alongside its section
 │       └── {child-section-b}/
 └── data/
-    ├── queries.ts                                — thin wrappers over @builders/db canonical reads
+    ├── queries.ts                                — server-side wrappers over @builders/db canonical reads
     ├── mutations.ts                              — client POST/PATCH/DELETE helpers (withMutationMeta)
-    └── list-{module}-request.ts                  — list-request shape (URL-binding contract for the list view)
+    ├── list-{module}-request.ts                  — list-view URL/search-params contract (powers the main TABLE list view, not pickers)
+    ├── {feature}-options-request.ts              — optional: picker options request (powers a picker in components/picker/)
+    └── {feature}-request.ts                      — optional: one-off feature/action request (e.g. sync, export)
 ```
 
 ## `components/`
 
-- `components/list/` holds everything rendered by the list view: the table wrapper, filter defs, column configs, toolbar, any list-scoped subcomponents.
-- `components/record/` holds everything rendered by the record view. **Each section on the record view gets its own folder** under `components/record/{section}/` — primary section, and every child section. Keeping section components colocated makes section-scoped changes local.
+- `components/list/` — `{module}-client.tsx` (list-view client wrapper) + `{module}-table.tsx` (the table). Filter chips, column defs, and toolbar pieces colocate here.
+- `components/record/` — three top-level wrappers at the root: `{module}-detail-client.tsx`, `{module}-create-client.tsx`, `{module}-record-panel.tsx` (shared panel chrome). **Each section on the record view gets its own folder** under `components/record/{section}/` — `primary/` plus one folder per child section. Section-scoped subcomponents (headers, row layouts, sub-feature panels) colocate inside the section folder; deeper sub-features get their own subfolder under the section (e.g. an edit panel).
+- `components/picker/` *(optional)* — when this module exposes an async dropdown picker for *other* modules' forms, the picker component lives here and is paired with `data/{feature}-options-request.ts`.
 
-## `controllers/` (plural)
+## `controllers/` (plural, split by view)
 
-- One controller hook per section on the record view, plus the list controller.
-- Controllers build diffs client-side, call their section's mutation helper in `data/mutations.ts`, and reconcile the response in place.
-- **Use the plural `controllers/`.** Some existing modules use `controller/` (singular). **Going forward the plural is canonical.** Those singular-folder modules will flip when they're next touched.
+- `controllers/list/`
+  - `use-{module}-list-controller.ts` — orchestrates the list view (selection, navigation, list-scoped state).
+  - `use-{module}-list-mutations.ts` — list-scoped mutations (e.g. create-from-list) wired to react-query.
+- `controllers/record/`
+  - `drafts.ts` *(optional)* — shared diff/draft helpers + form-option types reused across multiple section controllers.
+  - One folder per section, mirroring `components/record/{section}/`. Each contains `use-{module}-{section}-section.ts` plus optional sub-feature controllers (e.g. `use-{sub-feature}.ts`) used only by that section.
+- Section controllers build diffs client-side, call their section's mutation helper in `data/mutations.ts`, and reconcile the server response in place.
+- **Use the plural `controllers/`.** Some legacy modules still use `controller/` (singular) or a flat `controllers/` (no `list/` + `record/` split); both will flip to this shape next time they're touched.
 
 ## `data/`
 
-- `data/queries.ts` — thin wrappers over `@builders/db` canonical reads. Every function imports from `@builders/db` only. **No Prisma imports. No direct DB access.** Contacts (`apps/web/modules/contacts/data/queries.ts`) is the reference implementation: every function is a small wrap around a canonical read exported by `@builders/db`.
-- `data/mutations.ts` — client-side HTTP helpers (`createXRequest`, `updateXRequest`, `deleteXRequest`, one per section-save route). All wrap `withMutationMeta`. Same thin-wrapper discipline as `queries.ts`.
+- `data/queries.ts` — server-side wrappers over `@builders/db` canonical reads. Returns `PrismaDetailPageResult<T>` (or similar) for dashboard loaders. Imports from `@builders/db` only. **No Prisma imports. No direct DB access.**
+- `data/mutations.ts` — `"use client"` HTTP helpers (`createXRequest`, `updateXRequest`, `deleteXRequest`, plus per-section/per-row save helpers). All wrap `withMutationMeta` and call `requestJson`.
+- `data/list-{module}-request.ts` — URL/search-params contract for the **list view (table)**. Defines `*ListInput`, the react-query key, page size, filter keys, and the parser that turns `searchParams` into a `ListInput`. Calls `/api/{module}` (GET). This is the list-view contract — pickers do **not** use this file.
+- `data/{feature}-options-request.ts` *(optional)* — picker options request. Defines a query key + an async search function that calls `/api/{module}/options` and returns option rows. Paired with a picker in `components/picker/`.
+- `data/{feature}-request.ts` *(optional)* — one-off feature/action request when a module exposes a feature that doesn't fit `mutations.ts` (e.g. sync, export).
 
 ## Forbidden inside a module folder
 
@@ -62,19 +75,55 @@ apps/web/modules/{module}/
 - No `data/api.ts` — split into `queries.ts` + `mutations.ts`.
 - No direct Prisma imports anywhere under `apps/web/modules/{module}/`.
 
-## Routing — sectional, under `apps/web/app/api/`
+## Routing — under `apps/web/app/api/`
 
-Routes live outside the module folder, under `apps/web/app/api/{module}/`. **Routing is sectional: each section on the record view gets its own route file.**
+Routes live outside the module folder, under `apps/web/app/api/{module}/`. Each route handler calls exactly one use case from `packages/application/` (or one repository read) — no business logic in route handlers. Every mutation goes through the canonical gauntlet (`applyRoutePolicy`, `parseMutationEnvelope`, `enforceMutationReceipt`, `finalizeMutationReceipt`, `withMutationTelemetry`). Validators colocate in `_validators.ts`.
+
+### Module-level routes
 
 ```
 apps/web/app/api/{module}/
-├── _validators.ts                            — per-module input validators
-├── route.ts                                  — GET list + POST create
-├── options/route.ts                          — GET form options
-└── [id]/
-    ├── route.ts                              — DELETE
-    ├── primary/section/route.ts              — PATCH primary section
-    └── {child-section}/section/route.ts      — PATCH atomic diff per child section
+├── _validators.ts                       — per-module input validators
+├── route.ts                             — GET list + POST create
+├── options/route.ts                     — GET form options (powers components/picker/)
+└── {action}/route.ts                    — optional: module-scoped action route (e.g. POST /from-template)
 ```
 
-Each mutation route calls exactly one use case from `packages/application/`. No business logic in route handlers. Dashboard pages under `apps/web/app/dashboard/{module}/` are SSR loaders that import only from `modules/{module}/data/queries.ts`.
+### Section-diff routes (atomic per record section)
+
+```
+apps/web/app/api/{module}/[id]/
+├── route.ts                             — GET detail + DELETE record
+├── primary/section/route.ts             — PATCH primary section
+└── {child-section}/section/route.ts     — PATCH atomic diff for the section
+```
+
+Each `section/route.ts` accepts the section's diff (added/updated/removed) and applies it in one transaction. This is the canonical pattern for sections whose state is reconciled as a single atomic diff (e.g. primary fields, material items).
+
+### Per-row sync routes (canonical for new per-row mutations)
+
+For sections that mutate **one row at a time** synchronously (no worker, no outbox), the canonical shape is one folder per child collection with per-row + sub-action route files:
+
+```
+apps/web/app/api/{module}/[id]/{collection}/
+├── route.ts                                   — POST create one row
+├── {action}/route.ts                          — POST collection-scoped action (e.g. /finalize)
+└── [{rowId}]/
+    ├── route.ts                               — PATCH update / DELETE one row
+    └── {action}/route.ts                      — POST per-row action (e.g. /void)
+```
+
+Each handler calls one use case, takes the necessary `FOR UPDATE` lock, and returns 200 with the post-mutation row + recomputed parent totals. The section controller patches local state from the response without a refetch.
+
+### Sub-resource routes (per-row reads / scoped helpers)
+
+```
+apps/web/app/api/{module}/[id]/{collection}/[{rowId}]/{action}/route.ts   — e.g. GET /download (signed URL)
+apps/web/app/api/{module}/[id]/{collection}/[{rowId}]/{scope}/route.ts    — e.g. GET /eligible-inventory
+```
+
+Used for read-only helpers scoped to a specific row (signed download URLs, eligibility lookups, etc.).
+
+### Loaders
+
+Dashboard pages under `apps/web/app/dashboard/{module}/` are SSR loaders that import only from `modules/{module}/data/queries.ts`.
