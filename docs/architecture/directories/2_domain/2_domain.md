@@ -20,14 +20,15 @@ The domain layer is the source of truth for types, rules, and invariants. Pure l
 - [ ] **Constants and enums** with semantic meaning (status enums, role enums, etc.)
 - [ ] **`index.ts` barrel** — consumers import from the barrel, not individual files
 
-## What is NOT allowed to be imported into domain
 
-- [ ] **`@builders/db`** — no Prisma client, no Prisma types, no repositories
-- [ ] **`@builders/application`** — domain is consumed by application, never the reverse
-- [ ] **`apps/*`** — no imports from `apps/web`, `apps/worker`, `apps/relay`, or any module directory (`@/modules/...`)
-- [ ] **Framework SDKs** — no Next.js, React, Express, BullMQ, Redis client, etc.
-- [ ] **I/O libs** — no `fetch`, `fs`, `node:*` filesystem/network modules, no HTTP clients
-- [ ] **Anything beyond the allowed deps** — only `zod` and other domain subpackages may be imported
+
+## What domain imports
+
+Domain consumes nothing from outside its own package other than `zod`. It is a leaf — there is no inbound dependency on application, data, apps, or any framework.
+
+- [ ] **`zod`** — the only allowed external dependency
+- [ ] **Other files inside `packages/domain/src/`** — via relative paths (e.g. `flooring/<module>/` may import from `shared/`)
+- [ ] **Nothing else** — no `@builders/db`, no `@builders/application`, no `apps/*`, no Prisma, no React, no I/O libs
 
 ## Where domain is imported
 
