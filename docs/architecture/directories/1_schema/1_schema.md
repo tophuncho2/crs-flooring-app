@@ -47,3 +47,12 @@ TS sources live under `packages/db/src/seed/`; JS runners live under `packages/d
 - [ ] **`db:seed:categories`** — TS: `categories.ts` — JS runner: `seed-categories.js`
 - [ ] **`db:seed:uoms`** — TS: `unit-of-measures.ts` — JS runner: `seed-unit-of-measures.js`
 - [ ] **System Users** — no standalone command; only runs as part of `npm run db:seed` — TS: — (data from `.env`) — JS runner: `system-user-seed.js`
+
+## Manual owner upsert
+
+- [ ] **`npm run db:upsert-owner -- @crsfloorcovering.com ""`** — manually add an owner (JS runner: `owner-recovery.js`)
+
+## Product backfill
+
+- [ ] **`npm run db:backfill:product-names -- --dry-run`** — preview which products need backfilling (no writes)
+- [ ] **`npm run db:backfill:product-names`** — run the backfill (JS runner: `backfill-product-names.js`)
