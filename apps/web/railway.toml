@@ -1,12 +1,5 @@
 # Railway service config for the Next.js app.
 #
-# Stub for sweep 5 to refine. Currently the web build fails on stale
-# `@builders/application` imports left over from sweep 4a (notably
-# `createInventoryUseCase` in `app/api/inventory/route.ts`, plus dropped
-# fields like `transportType`/`status`/`isImported` in import routes and
-# UI modules). This per-service config isolates the failure so the relay
-# and worker deploys succeed independently while the web rewires land.
-#
 # In the Railway dashboard, set this service's "Config-as-code path" to
 # `apps/web/railway.toml` so this file is picked up.
 
