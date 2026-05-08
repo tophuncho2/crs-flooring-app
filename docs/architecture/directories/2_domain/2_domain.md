@@ -7,6 +7,7 @@ The domain layer is the source of truth for types, rules, and invariants. Pure l
 - **Domain never lives inside** `apps/web/modules/<module>/`
 - **Only allowed external dependency:** `zod`
 
+
 ## What is built in domain
 
 - [ ] **Value types and DTOs** — `<Module>Row`, `<Module>Form`, enums, value objects (`types.ts`)
@@ -19,7 +20,6 @@ The domain layer is the source of truth for types, rules, and invariants. Pure l
 - [ ] **Message builders** — pure functions that build queue payloads / outbox messages from domain inputs
 - [ ] **Constants and enums** with semantic meaning (status enums, role enums, etc.)
 - [ ] **`index.ts` barrel** — consumers import from the barrel, not individual files
-
 
 
 ## What domain imports
