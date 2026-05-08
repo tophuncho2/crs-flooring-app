@@ -4,6 +4,7 @@ Next.js app. UI, client-side orchestration, API routes, dashboard pages.
 
 ## Subdirectories with their own CLAUDE.md
 
+- [ ] `app/` — see `apps/web/app/CLAUDE.md`
 - [ ] `components/` — see `apps/web/components/CLAUDE.md`
 - [ ] `modules/` — see `apps/web/modules/CLAUDE.md`
 - [ ] `server/` — see `apps/web/server/CLAUDE.md`
