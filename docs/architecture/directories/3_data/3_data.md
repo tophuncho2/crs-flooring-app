@@ -23,7 +23,7 @@ Data is consumed only on the server. Always imported via the `@builders/db` barr
 - [ ] **Application layer** — `packages/application/` (use cases — the primary consumer; only use cases compose reads + writes inside transactions)
 - [ ] **API routes** — `apps/web/app/api/<module>/` (call repositories after the gauntlet for simple read paths; mutations go through use cases)
 - [ ] **Dashboard loaders** — `apps/web/app/dashboard/` and `apps/web/modules/<module>/data/queries.ts` (server-side only; wraps reads with `PrismaPageDataResult<T>`)
-- [ ] **Module controllers / record components (server)** — `apps/web/modules/<module>/{controllers,components/record,...}` for server-rendered reads
+- [ ] **Module `data/queries.ts` (canonical)** — `apps/web/modules/<module>/data/queries.ts` is the only place inside a module that should reach `@builders/db` at runtime; everything else under `modules/<module>/` should go through it. Type-only imports of record types (e.g. `import type { WarehouseDetailRecord } from "@builders/db"`) appear in some module controllers / record components for prop typing — these are erased at compile time and don't carry a runtime dependency, but the canonical rule (per `apps/web/modules/CLAUDE.md`) is "db imports stay inside `data/`"
 - [ ] **Server platform** — `apps/web/server/{auth,account,http,platform,telemetry}`
 - [ ] **Worker** — `apps/worker/src/` (job processors that need persistence)
 - [ ] **Relay** — `apps/relay/src/` (outbox state-machine reads/writes)
@@ -46,7 +46,7 @@ Data is consumed only on the server. Always imported via the `@builders/db` barr
 
 - [ ] **Read repository** — `read-repository.ts` with `list<Module>s`, `get<Module>ById`, `get<Module>DeleteState`, `get<Module>Options`
 - [ ] **Write repository** — `write-repository.ts` with `create<Module>Record`, `update<Module>Record`, `delete<Module>ById`
-- [ ] **Normalizers** — Prisma row → domain record mappers (Date → ISO string, null coalescing, relation counts, enum label mapping). May be colocated in `read-repository.ts` or split into a sibling file
+- [ ] **Normalizers** — Prisma row → domain record mappers (Date → ISO string, null coalescing, relation counts, enum label mapping). May be colocated in `read-repository.ts` or split into a sibling file. **Note:** normalizers also live in the domain layer (`packages/domain/src/<area>/<module>/normalizers.ts`); data hosts the Prisma-row-to-record mappers, domain hosts the pure shape-to-shape transforms
 - [ ] **Include / select shape constants** — `<module>CountInclude`, detail-include shapes (often in a `shared.ts`)
 - [ ] **Transaction-aware functions** — every repository function accepts an optional `client: <Module>DbClient = db` (union of `PrismaClient | Prisma.TransactionClient`) so callers can thread a transaction
 - [ ] **Outbox repository** — implements the state machine `PENDING → PROCESSING → DISPATCHED | EXHAUSTED` (under `queues/`)
