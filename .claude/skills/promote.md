@@ -38,7 +38,8 @@ Tag each finding as **BLOCKER**, **WARNING**, or **OK**. Run all checks even if 
 
 - BLOCKER: `git status --porcelain` non-empty (uncommitted or untracked changes).
 - BLOCKER: current branch is not `staging`.
-- BLOCKER: local `staging` is behind `origin/staging` (`git rev-list --count staging..origin/staging` > 0).
+- BLOCKER: local `staging` is behind `origin/staging` (`git rev-list --count staging..origin/staging` > 0). Fix: `git pull --ff-only origin staging`.
+- BLOCKER: local `staging` is **ahead** of `origin/staging` (`git rev-list --count origin/staging..staging` > 0). The script merges local staging, but the audit compares origin/main vs origin/staging — unpushed commits would silently land on main. Fix: `git push origin staging` first, then re-run `/promote`.
 - BLOCKER: main is **not** strictly behind staging — `git rev-list --count origin/staging..origin/main` > 0 means main has commits staging doesn't, and `git merge --ff-only staging` from main will fail.
 - WARNING: nothing to merge — `git rev-list --count origin/main..origin/staging` is 0. Running the script is a no-op, not strictly unsafe.
 
