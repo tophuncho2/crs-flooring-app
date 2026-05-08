@@ -7,19 +7,35 @@ Every feature module under `apps/web/modules/` follows the same three-folder sha
 ```
 apps/web/modules/{module}/
 ├── components/
-│   ├── list/                       — list-view components (table, filters, columns, toolbar)
+│   ├── list/                                     — list-view components (table, filters, columns, toolbar)
+│   │   ├── {module}-client.tsx
+│   │   └── {module}-table.tsx
 │   └── record/
-│       ├── primary/                — primary-section components
-│       ├── {child-section-a}/      — one folder per child section on the record view
+│       ├── {module}-detail-client.tsx            — record-view client wrapper
+│       ├── {module}-create-client.tsx            — create-flow client wrapper
+│       ├── {module}-record-panel.tsx             — shared record panel chrome
+│       ├── primary/                              — primary-section components
+│       │   └── {module}-primary-fields-section.tsx
+│       ├── {child-section-a}/                    — one folder per child section on the record view
+│       │   ├── {module}-{child-section-a}-section.tsx
+│       │   └── {sub-feature}/                    — optional: sub-feature folder for the section (e.g. an edit panel)
 │       └── {child-section-b}/
-├── controllers/                    — record-view controllers (one per section)
-│   ├── use-{module}-list-controller.ts
-│   ├── use-{module}-primary-section.ts
-│   ├── use-{module}-{child-section-a}-section.ts
-│   └── use-{module}-{child-section-b}-section.ts
+├── controllers/                                  — controllers split by view (list / record), then by section
+│   ├── list/
+│   │   ├── use-{module}-list-controller.ts
+│   │   └── use-{module}-list-mutations.ts
+│   └── record/
+│       ├── drafts.ts                             — shared draft / diff helpers across sections (optional)
+│       ├── primary/
+│       │   └── use-{module}-primary-section.ts
+│       ├── {child-section-a}/
+│       │   ├── use-{module}-{child-section-a}-section.ts
+│       │   └── use-{sub-feature}.ts              — optional: sub-feature controller alongside its section
+│       └── {child-section-b}/
 └── data/
-    ├── queries.ts                  — thin wrappers over @builders/db canonical reads
-    └── mutations.ts                — client POST/PATCH/DELETE helpers (withMutationMeta)
+    ├── queries.ts                                — thin wrappers over @builders/db canonical reads
+    ├── mutations.ts                              — client POST/PATCH/DELETE helpers (withMutationMeta)
+    └── list-{module}-request.ts                  — list-request shape (URL-binding contract for the list view)
 ```
 
 ## `components/`
