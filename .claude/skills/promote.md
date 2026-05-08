@@ -13,6 +13,7 @@ Audit a planned staging → main promotion. Output a structured report telling t
 - **You do not run any command that mutates state.** No `git fetch`, no `git pull`, no `git checkout`, no `cp`, no `npm run db:*` commands that alter the DB, no writes. Only read-only inspection.
   - Allowed read-only: `git status`, `git log`, `git rev-parse`, `git rev-list`, `git diff` (without `--apply`), `git ls-remote`, `git check-ignore`, `git branch`, `cat`/`Read` on tracked or env files, `diff -q`, `ls`, `grep`. Note: `git fetch` is **not** allowed even though it's "just" updating refs — the user runs it as part of the script.
 - **You do not auto-fix anything.** If a check fails, the report tells the user the fix; they run it.
+- **`bin/promote.sh` is for code-only promotes.** If one or more migrations are pending (any folder under `packages/db/prisma/migrations/` is on origin/staging but not origin/main), the verdict is `MANUAL — MIGRATIONS PRESENT` and no `Run: bin/promote.sh` line is printed. The full audit still runs — the user needs the context to plan the manual one-at-a-time flow. The bin's `db:deploy` step stays in place as a no-op safety boundary; the bin will only ever execute when there's nothing to deploy.
 - **Explicit-only.** Run only when the user types `/promote`. Never on phrases like "ship", "deploy", "promote it".
 - **No deviations from the script.** If `bin/promote.sh` does something the audit doesn't recognize, surface it in the report — do not silently approve.
 
