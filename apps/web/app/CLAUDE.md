@@ -45,10 +45,10 @@ Each handler calls one use case, takes the necessary `FOR UPDATE` lock, and retu
 
 ### Sub-resource routes (per-row reads / scoped helpers)
 
-```
-apps/web/app/api/{module}/[id]/{collection}/[{rowId}]/{action}/route.ts   — e.g. GET /download (signed URL)
-apps/web/app/api/{module}/[id]/{collection}/[{rowId}]/{scope}/route.ts    — e.g. GET /eligible-inventory
-```
+
+`apps/web/app/api/{module}/[id]/{collection}/[{rowId}]/{action}/route.ts`   — e.g. GET /download (signed URL)
+`apps/web/app/api/{module}/[id]/{collection}/[{rowId}]/{scope}/route.ts`    — e.g. GET /eligible-inventory
+
 
 Used for read-only helpers scoped to a specific row (signed download URLs, eligibility lookups, etc.).
 
