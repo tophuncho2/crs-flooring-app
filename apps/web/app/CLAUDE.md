@@ -1,6 +1,10 @@
 ## Routing — under `apps/web/app/api/`
 
-Routes live outside the module folder, under `apps/web/app/api/{module}/`. Each route handler calls exactly one use case from `packages/application/` (or one repository read) — no business logic in route handlers. Every mutation goes through the canonical gauntlet (`applyRoutePolicy`, `parseMutationEnvelope`, `enforceMutationReceipt`, `finalizeMutationReceipt`, `withMutationTelemetry`). Validators colocate in `_validators.ts`.
+Routes live outside the module folder, under `apps/web/app/api/{module}/`. 
+[ ] Each route handler calls exactly one use case from `packages/application/` (or one repository read) —
+ no business logic in route handlers.
+ Every mutation goes through the canonical gauntlet (`applyRoutePolicy`, `parseMutationEnvelope`, `enforceMutationReceipt`, `finalizeMutationReceipt`, `withMutationTelemetry`). 
+ Validators colocate in `_validators.ts`.
 
 ### Module-level routes
 
@@ -47,6 +51,16 @@ apps/web/app/api/{module}/[id]/{collection}/[{rowId}]/{scope}/route.ts    — e.
 
 Used for read-only helpers scoped to a specific row (signed download URLs, eligibility lookups, etc.).
 
-### Loaders
+## Loaders — `apps/web/app/dashboard/{module}/`
 
-Dashboard pages under `apps/web/app/dashboard/{module}/` are SSR loaders that import only from `modules/{module}/data/queries.ts`.
+Dashboard pages are SSR-only React Server Components that load data on the server and hand it to a module client component. They contain no business logic.
+
+- [ ] **Location** — three canonical page shapes: `dashboard/{module}/page.tsx` (list), `dashboard/{module}/[id]/page.tsx` (record detail), `dashboard/{module}/new/page.tsx` (create flow).
+- [ ] **Auth check is the first await** — every loader starts with `await requireToolAccess("{tool}")` from `@/server/auth/session`. Pages that bypass this are a bug.
+- [ ] **Imports from `data/` only, never from `@builders/db` directly** — list pages import `parse{X}ListInputFromSearchParams` + the query key from `modules/{module}/data/list-{module}-request.ts`; detail pages import `get{X}DetailPageData` from `modules/{module}/data/queries.ts`. Use cases (`@builders/application`) may also be called for prefetch.
+- [ ] **List page: prefetch + hydrate** — build a `QueryClient`, `prefetchQuery({ queryKey: [...QUERY_KEY, input], queryFn: () => list{X}UseCase(input) })`, then render the module client wrapped in `<HydrationBoundary state={dehydrate(queryClient)}>` so react-query starts hot on the client.
+- [ ] **Detail page: `PrismaDetailPageResult` branch handling** — call `get{X}DetailPageData(id)` and switch on the result: `notFound` → `notFound()` from `next/navigation`; `error` → `<DashboardErrorState>`; `ok` → render `<{X}DetailClient initial...={result.data...} />`.
+- [ ] **Errors render via `<DashboardErrorState>`** — passes `title`, `message`, `detail`, and a stable `errorCode` (e.g. `WORK_ORDERS_LIST_LOAD_FAILED`). Loaders never throw to the framework error boundary directly.
+- [ ] **Search params + route params are Promises** — Next 15 makes them async. Always `await searchParams` / `await params` before reading; type them as `Promise<...>` in the page props.
+- [ ] **Back-navigation via `resolveRecordEntryReturnTo`** — detail and create pages thread `searchParams?.returnTo` through `resolveRecordEntryReturnTo(...)` (from `@/hooks/navigation`) to derive `backHref` for the record entry chrome.
+- [ ] **No client state, no HTTP, no Prisma** — loaders are pure SSR composition: auth → param parsing → data load → render. Anything stateful belongs in the module client component.
