@@ -234,10 +234,7 @@ model FlooringProduct {
   thickness                        String?
   unitWeight                       String?
   coveragePerUnit                  Decimal?                           @db.Decimal(12, 4)
-  cost                             Decimal?                           @db.Decimal(10, 2)
-  isPublic                         Boolean                            @default(false)
   notes                            String?
-  subOrder                         String?
   sendUnitName                     String?
   sendUnitAbbrev                   String?
   stockUnitName                    String?
