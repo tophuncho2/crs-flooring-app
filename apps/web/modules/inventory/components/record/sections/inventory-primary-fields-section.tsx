@@ -18,7 +18,6 @@ export function InventoryPrimaryFieldsSection({
   inventory,
   draft,
   warehouseName,
-  locationCode,
   locationShortCode,
   disabled,
   onFieldChange,
@@ -26,29 +25,26 @@ export function InventoryPrimaryFieldsSection({
   inventory: InventoryRow
   draft: InventoryForm
   warehouseName: string | null
-  locationCode: string | null
   locationShortCode: string | null
   disabled: boolean
   onFieldChange: (field: keyof InventoryForm, value: string) => void
 }) {
   const editable = !disabled
 
-  // Live preview override for the "Full Location" cell + picker label.
-  // Initializes from the saved record's joined codes; updates when
-  // LocationPicker emits a new option so the cell tracks the dropdown
-  // selection rather than waiting for save. Cleared whenever the saved
-  // locationId changes (after save / record swap).
+  // Live preview override for the LocationPicker's selected label.
+  // Updates when the picker emits a new option so the label tracks the
+  // dropdown selection rather than waiting for save. Cleared whenever
+  // the saved locationId changes (after save / record swap).
   const [pickedLocation, setPickedLocation] = useState<LocationOption | null>(null)
   useEffect(() => {
     setPickedLocation(null)
   }, [inventory.locationId])
 
-  const displayLocationCode = pickedLocation?.locationCode ?? locationCode
   const displayLocationShortCode = pickedLocation?.shortCode ?? locationShortCode
 
   return (
     <FieldSection>
-      {/* Row 1: Product · Import # · Full Location */}
+      {/* Row 1: Product · Import # */}
       <CellAt col={1} row={1} colSpan={4}>
         <FormField label="Product">
           <TextCell editable={false} value={inventory.productName} />
@@ -57,11 +53,6 @@ export function InventoryPrimaryFieldsSection({
       <CellAt col={5} row={1} colSpan={2}>
         <FormField label="Import #">
           <TextCell editable={false} value={formatInventoryImportNumber(inventory.importNumber)} />
-        </FormField>
-      </CellAt>
-      <CellAt col={7} row={1} colSpan={2}>
-        <FormField label="Full Location">
-          <StaticFieldValue>{displayLocationCode || "-"}</StaticFieldValue>
         </FormField>
       </CellAt>
 
