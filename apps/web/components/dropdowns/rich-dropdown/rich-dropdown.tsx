@@ -154,11 +154,13 @@ export function RichDropdown({
     node?.scrollIntoView({ block: "nearest" })
   }, [open, activeIndex])
 
-  // Focus the search input as soon as the popover opens.
+  // Focus the search input as soon as the popover opens. Depends on
+  // `triggerRect` so the effect re-runs once the popover (gated on
+  // `open && triggerRect`) actually mounts on first open.
   useEffect(() => {
-    if (!open) return
+    if (!open || !triggerRect) return
     searchInputRef.current?.focus()
-  }, [open])
+  }, [open, triggerRect])
 
   const handleTriggerKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>) => {

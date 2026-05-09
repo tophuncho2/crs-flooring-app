@@ -159,9 +159,9 @@ export function AsyncRichDropdown({
   }, [open, activeIndex])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !triggerRect) return
     searchInputRef.current?.focus()
-  }, [open])
+  }, [open, triggerRect])
 
   const handleTriggerKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>) => {
