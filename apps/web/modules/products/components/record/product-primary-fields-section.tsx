@@ -104,36 +104,6 @@ export function ProductPrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Send Unit">
-              <div
-                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
-                aria-readonly="true"
-              >
-                {sendUnitDisplay}
-              </div>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Stock Unit">
-              <div
-                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
-                aria-readonly="true"
-              >
-                {stockUnitDisplay}
-              </div>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Item Coverage Unit">
-              <div
-                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
-                aria-readonly="true"
-              >
-                {itemCoverageUnitDisplay}
-              </div>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
             <RecordFormField label="Manufacturer">
               <ManufacturerPicker
                 value={draft.manufacturerId || null}
@@ -166,6 +136,17 @@ export function ProductPrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
+            <RecordFormField label="Note">
+              <input
+                value={draft.note}
+                onChange={(event) => onFieldChange("note", event.target.value)}
+                maxLength={80}
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
+                disabled={disabled}
+              />
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell>
             <RecordFormField label={coverageRequired ? "Coverage Per Unit *" : "Coverage Per Unit"}>
               <div
                 className={`flex w-full overflow-hidden rounded-lg border border-sky-500/35 bg-transparent transition focus-within:border-sky-400/70 focus-within:ring-2 focus-within:ring-sky-500/20 ${coverageRequired ? "" : "opacity-60"}`}
@@ -190,6 +171,36 @@ export function ProductPrimaryFieldsSection({
 
       <RecordPrimaryPane variant="main" placement="right">
         <RecordPrimaryFieldsGrid>
+          <RecordPrimaryFieldCell size="sm">
+            <RecordFormField label="Send Unit">
+              <div
+                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
+                aria-readonly="true"
+              >
+                {sendUnitDisplay}
+              </div>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell size="sm">
+            <RecordFormField label="Stock Unit">
+              <div
+                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
+                aria-readonly="true"
+              >
+                {stockUnitDisplay}
+              </div>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell size="sm">
+            <RecordFormField label="Item Coverage Unit">
+              <div
+                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
+                aria-readonly="true"
+              >
+                {itemCoverageUnitDisplay}
+              </div>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell size="sm">
             <RecordFormField label="Thickness">
               <input
@@ -225,17 +236,6 @@ export function ProductPrimaryFieldsSection({
               <input
                 value={draft.sheetSize}
                 onChange={(event) => onFieldChange("sheetSize", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="lg">
-            <RecordFormField label="Note">
-              <input
-                value={draft.note}
-                onChange={(event) => onFieldChange("note", event.target.value)}
-                maxLength={80}
                 className={RECORD_FIELD_CONTROL_CLASS_NAME}
                 disabled={disabled}
               />
