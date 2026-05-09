@@ -10,9 +10,7 @@ import {
   LIST_INVENTORY_PAGE_SIZE,
   type CategoryOption,
   type InventoryRow,
-  type LocationOption,
   type ProductOption,
-  type SectionOption,
   type TablePreferencePayload,
   type WarehouseOption,
 } from "@builders/domain"
@@ -23,15 +21,11 @@ import {
 import { useInventoryListController } from "@/modules/inventory/controllers/use-inventory-list-controller"
 import { InventoryTable } from "./inventory-table"
 import { CategoryFilterChip } from "./category-filter-chip"
-import { LocationFilterChip } from "./location-filter-chip"
 import { ProductFilterChip } from "./product-filter-chip"
-import { SectionFilterChip } from "./section-filter-chip"
 import { WarehouseFilterChip } from "./warehouse-filter-chip"
 
 const INVENTORY_FILTERABLE_FIELDS = [
   "warehouseId",
-  "sectionId",
-  "locationId",
   "categoryId",
   "productId",
 ] as const
@@ -43,8 +37,6 @@ export default function InventoryClient({
   initialFilters,
   initialWarehouseOptions,
   initialSelectedWarehouse = null,
-  initialSelectedSection = null,
-  initialSelectedLocation = null,
   initialCategoryOptions,
   initialSelectedCategory = null,
   initialSelectedProduct = null,
@@ -55,8 +47,6 @@ export default function InventoryClient({
   initialFilters: InventoryListFilters
   initialWarehouseOptions: WarehouseOption[]
   initialSelectedWarehouse?: WarehouseOption | null
-  initialSelectedSection?: SectionOption | null
-  initialSelectedLocation?: LocationOption | null
   initialCategoryOptions: CategoryOption[]
   initialSelectedCategory?: CategoryOption | null
   initialSelectedProduct?: ProductOption | null
@@ -94,8 +84,6 @@ export default function InventoryClient({
   // --- Resolve currently-selected ids from the engine's filter map ---
   const filtersTyped = filters as InventoryListFilters
   const selectedWarehouseId = filtersTyped.warehouseId?.[0] ?? null
-  const selectedSectionId = filtersTyped.sectionId?.[0] ?? null
-  const selectedLocationId = filtersTyped.locationId?.[0] ?? null
   const selectedCategoryId = filtersTyped.categoryId?.[0] ?? null
   const selectedProductId = filtersTyped.productId?.[0] ?? null
 
@@ -115,20 +103,6 @@ export default function InventoryClient({
     return initialWarehouseOptions.find((o) => o.id === selectedWarehouseId)?.name ?? null
   }, [selectedWarehouseId, initialSelectedWarehouse, initialWarehouseOptions])
 
-  const sectionLabel = useMemo(() => {
-    if (!selectedSectionId) return null
-    return initialSelectedSection?.id === selectedSectionId
-      ? initialSelectedSection.label
-      : null
-  }, [selectedSectionId, initialSelectedSection])
-
-  const locationLabel = useMemo(() => {
-    if (!selectedLocationId) return null
-    return initialSelectedLocation?.id === selectedLocationId
-      ? initialSelectedLocation.shortCode
-      : null
-  }, [selectedLocationId, initialSelectedLocation])
-
   const categoryLabel = useMemo(() => {
     if (!selectedCategoryId) return null
     if (initialSelectedCategory?.id === selectedCategoryId) {
@@ -145,29 +119,11 @@ export default function InventoryClient({
   }, [selectedProductId, initialSelectedProduct])
 
   // --- Cascade-clear filter handlers ---
-  // Warehouse change → also clear Section + Location (their picker scope is
-  // gone). Section change → clear Location. Category change → clear Product.
+  // Category change → clear Product.
 
   const handleWarehouseChange = useCallback(
     (id: string | null) => {
       onFilterChange("warehouseId", id ? [id] : [])
-      onFilterChange("sectionId", [])
-      onFilterChange("locationId", [])
-    },
-    [onFilterChange],
-  )
-
-  const handleSectionChange = useCallback(
-    (id: string | null) => {
-      onFilterChange("sectionId", id ? [id] : [])
-      onFilterChange("locationId", [])
-    },
-    [onFilterChange],
-  )
-
-  const handleLocationChange = useCallback(
-    (id: string | null) => {
-      onFilterChange("locationId", id ? [id] : [])
     },
     [onFilterChange],
   )
@@ -216,28 +172,15 @@ export default function InventoryClient({
             />
           </div>
 
-          {/* Location chain: Warehouse → Section → Location */}
+          {/* Warehouse */}
           <WarehouseFilterChip
             value={selectedWarehouseId}
             selectedLabel={warehouseLabel}
             onChange={handleWarehouseChange}
             initialOptions={initialWarehouseOptions}
           />
-          <SectionFilterChip
-            value={selectedSectionId}
-            selectedLabel={sectionLabel}
-            warehouseId={selectedWarehouseId}
-            onChange={handleSectionChange}
-          />
-          <LocationFilterChip
-            value={selectedLocationId}
-            selectedLabel={locationLabel}
-            warehouseId={selectedWarehouseId}
-            sectionId={selectedSectionId}
-            onChange={handleLocationChange}
-          />
 
-          {/* Visual gap separating the location chain from the product chain */}
+          {/* Visual gap separating warehouse from the product chain */}
           <span aria-hidden="true" className="mx-1 h-6 w-px bg-[var(--panel-border)]" />
 
           {/* Product chain: Category → Product */}

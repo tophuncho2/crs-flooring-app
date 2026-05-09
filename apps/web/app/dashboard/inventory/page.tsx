@@ -3,16 +3,12 @@ import {
   getResolvedUserTablePreference,
   listInventoryUseCase,
   searchCategoryOptionsUseCase,
-  searchLocationOptionsUseCase,
   searchProductOptionsUseCase,
-  searchSectionOptionsUseCase,
   searchWarehouseOptionsUseCase,
 } from "@builders/application"
 import type {
   CategoryOption,
-  LocationOption,
   ProductOption,
-  SectionOption,
   TablePreferencePayload,
   WarehouseOption,
 } from "@builders/domain"
@@ -63,16 +59,12 @@ export default async function FlooringInventoryPage({
 
   let initialWarehouseOptions: WarehouseOption[] = []
   let initialSelectedWarehouse: WarehouseOption | null = null
-  let initialSelectedSection: SectionOption | null = null
-  let initialSelectedLocation: LocationOption | null = null
   let initialCategoryOptions: CategoryOption[] = []
   let initialSelectedCategory: CategoryOption | null = null
   let initialSelectedProduct: ProductOption | null = null
 
   try {
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
-    const selectedSectionId = initialInput.filters?.sectionId?.[0] ?? null
-    const selectedLocationId = initialInput.filters?.locationId?.[0] ?? null
     const selectedCategoryId = initialInput.filters?.categoryId?.[0] ?? null
     const selectedProductId = initialInput.filters?.productId?.[0] ?? null
 
@@ -110,25 +102,6 @@ export default async function FlooringInventoryPage({
       )
     }
 
-    // Section + Location pickers require warehouseId scope; only resolve their
-    // labels when a warehouse is set in the URL (matches picker contract).
-    if (selectedWarehouseId && selectedSectionId) {
-      const sections = await searchSectionOptionsUseCase({
-        warehouseId: selectedWarehouseId,
-        take: INITIAL_OPTIONS_TAKE,
-      })
-      initialSelectedSection = sections.find((s) => s.id === selectedSectionId) ?? null
-    }
-
-    if (selectedWarehouseId && selectedLocationId) {
-      const locations = await searchLocationOptionsUseCase({
-        warehouseId: selectedWarehouseId,
-        ...(selectedSectionId ? { sectionId: selectedSectionId } : {}),
-        take: INITIAL_OPTIONS_TAKE,
-      })
-      initialSelectedLocation = locations.find((l) => l.id === selectedLocationId) ?? null
-    }
-
     if (selectedProductId) {
       const products = await searchProductOptionsUseCase({
         ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
@@ -156,8 +129,6 @@ export default async function FlooringInventoryPage({
         initialFilters={initialInput.filters ?? {}}
         initialWarehouseOptions={initialWarehouseOptions}
         initialSelectedWarehouse={initialSelectedWarehouse}
-        initialSelectedSection={initialSelectedSection}
-        initialSelectedLocation={initialSelectedLocation}
         initialCategoryOptions={initialCategoryOptions}
         initialSelectedCategory={initialSelectedCategory}
         initialSelectedProduct={initialSelectedProduct}

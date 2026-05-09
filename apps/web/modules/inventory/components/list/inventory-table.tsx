@@ -18,8 +18,6 @@ const INVENTORY_LIST_LAYOUT: GridLayout<InventoryRow> = {
     { key: "startingStock", label: "Starting Balance", kind: "quantity", minWidth: 140, grow: 0, align: "end" },
     { key: "totalCutSum", label: "Cut Balance", kind: "quantity", minWidth: 130, grow: 0, align: "end" },
     { key: "stockBalance", label: "Available", kind: "quantity", minWidth: 130, grow: 0, align: "end" },
-    { key: "section", label: "Section", minWidth: 110, grow: 0 },
-    { key: "location", label: "Location", minWidth: 130, grow: 0 },
     { key: "warehouse", label: "Warehouse", minWidth: 160, grow: 1 },
     { key: "dyeLot", label: "Dye Lot", minWidth: 120, grow: 0 },
     { key: "updated", label: "Updated", minWidth: 120, grow: 0 },
@@ -88,10 +86,6 @@ export function InventoryTable({
                 {formatInventoryQuantity(row.stockBalance, row.stockUnitAbbrev)}
               </span>
             )
-          case "section":
-            return row.sectionNumber || "-"
-          case "location":
-            return row.locationShortCode || "-"
           case "warehouse":
             return row.importWarehouseName || row.warehouseName || "-"
           case "dyeLot":
