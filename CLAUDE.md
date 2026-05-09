@@ -1,3 +1,15 @@
+## Current Sweep: Remove Locations & Sections (UI only)
+Active sweep removes warehouse Location and Section from the UI ONLY. No API, application, domain, data, or Prisma/schema changes in this layer. Subsequent layers (api → application → domain → data → schema) will be scoped in follow-up sweeps. Schema changes always ship in their own commit.
+
+UI surfaces in scope:
+- Inventory list view: Location filter + Location column
+- Inventory record view: Location dropdown(s) and full-location display
+- Cut log columns showing Location (in inventory record view AND work order record view)
+- Staged inventory rows: pending and final Location/Section fields
+- Cut logs record view (from work orders): Section and Location dropdowns
+- Warehouse record view: the "Sections" section
+Out of scope right now: API routes, use cases, domain, data layer, Prisma models.
+
 ## Important
 [ ] Paste headlines, error counts, and TL:DR in the chat, use charts / tables for visual display.
 [ ] Any open questions must be in your response
