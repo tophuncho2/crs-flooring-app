@@ -8,7 +8,6 @@ import { requestJson } from "@/transport/http"
 export const INVENTORY_LIST_QUERY_KEY = ["inventory", "list"] as const
 
 const FILTER_KEYS = ["warehouseId", "categoryId", "productId"] as const
-type FilterKey = (typeof FILTER_KEYS)[number]
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
