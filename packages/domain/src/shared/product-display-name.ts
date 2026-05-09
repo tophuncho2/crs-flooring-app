@@ -3,10 +3,11 @@ type ProductNameParts = {
   categoryName?: string | null
   style?: string | null
   color?: string | null
+  note?: string | null
 }
 
 function normalizeSegment(value: string | null | undefined) {
-  const trimmed = value?.trim()
+  const trimmed = value?.trim().replace(/\s+/g, " ")
   return trimmed ? trimmed : null
 }
 
@@ -19,6 +20,7 @@ export function buildStoredFlooringProductName(product: Omit<ProductNameParts, "
     normalizeSegment(product.categoryName),
     normalizeSegment(product.style),
     normalizeSegment(product.color),
+    normalizeSegment(product.note),
   ]) || "Flooring Product"
 }
 

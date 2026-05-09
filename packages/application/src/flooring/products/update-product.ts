@@ -46,7 +46,8 @@ export async function updateProductUseCase(
 
     const nextStyle = "style" in input ? input.style : current.style || null
     const nextColor = "color" in input ? input.color : current.color || null
-    const nameAffected = "style" in input || "color" in input
+    const nextNote = "note" in input ? input.note : current.note || null
+    const nameAffected = "style" in input || "color" in input || "note" in input
 
     const nextCoverageIsEmpty =
       "coveragePerUnit" in input
@@ -125,13 +126,14 @@ export async function updateProductUseCase(
     if ("thickness" in input) patch.thickness = input.thickness
     if ("unitWeight" in input) patch.unitWeight = input.unitWeight
     if ("coveragePerUnit" in input) patch.coveragePerUnit = input.coveragePerUnit
-    if ("notes" in input) patch.notes = input.notes
+    if ("note" in input) patch.note = input.note
 
     if (nameAffected) {
       const name = buildStoredFlooringProductName({
         categoryName,
         style: nextStyle,
         color: nextColor,
+        note: nextNote,
       })
       if (name !== current.name) {
         if (await productNameExists(name, { excludeId: id, client: c })) {

@@ -16,7 +16,7 @@ describe("normalizeProductRow", () => {
       thickness: null,
       unitWeight: null,
       coveragePerUnit: new Prisma.Decimal("12.5"),
-      notes: null,
+      note: null,
       createdAt: new Date("2026-03-18T00:00:00Z"),
       updatedAt: new Date("2026-03-18T00:00:00Z"),
       category: {
@@ -50,7 +50,7 @@ describe("normalizeProductRow", () => {
       thickness: null,
       unitWeight: null,
       coveragePerUnit: null,
-      notes: null,
+      note: null,
       createdAt: new Date("2026-03-18T00:00:00Z"),
       updatedAt: new Date("2026-03-18T00:00:00Z"),
       category: {

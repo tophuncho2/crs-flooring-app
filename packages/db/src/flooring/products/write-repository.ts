@@ -29,7 +29,7 @@ export type CreateProductInput = {
   thickness: string | null
   unitWeight: string | null
   coveragePerUnit: Prisma.Decimal | null
-  notes: string | null
+  note: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
   stockUnitName: string | null
@@ -72,7 +72,7 @@ export async function createProduct(
       thickness: input.thickness,
       unitWeight: input.unitWeight,
       coveragePerUnit: input.coveragePerUnit,
-      notes: input.notes,
+      note: input.note,
       sendUnitName: input.sendUnitName,
       sendUnitAbbrev: input.sendUnitAbbrev,
       stockUnitName: input.stockUnitName,
@@ -101,7 +101,7 @@ export async function updateProduct(
   if (input.thickness !== undefined) data.thickness = input.thickness
   if (input.unitWeight !== undefined) data.unitWeight = input.unitWeight
   if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
-  if (input.notes !== undefined) data.notes = input.notes
+  if (input.note !== undefined) data.note = input.note
 
   const row = await client.flooringProduct.update({
     where: { id },

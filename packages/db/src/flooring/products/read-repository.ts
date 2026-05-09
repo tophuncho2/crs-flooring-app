@@ -45,7 +45,7 @@ export type ProductRecord = {
   itemCoverageUnitAbbrev: string
   // Backward-compat alias — same value as `itemCoverageUnitName`.
   coverageUnit: string
-  notes: string
+  note: string
   createdAt: string
   updatedAt: string
   category: ProductRecordCategory
@@ -104,7 +104,7 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     itemCoverageUnitName,
     itemCoverageUnitAbbrev: product.itemCoverageUnitAbbrev ?? "",
     coverageUnit: itemCoverageUnitName,
-    notes: product.notes ?? "",
+    note: product.note ?? "",
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
     category: {

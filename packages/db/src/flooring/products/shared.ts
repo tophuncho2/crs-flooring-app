@@ -27,7 +27,7 @@ export const productRowSelect = {
   stockUnitAbbrev: true,
   itemCoverageUnitName: true,
   itemCoverageUnitAbbrev: true,
-  notes: true,
+  note: true,
   createdAt: true,
   updatedAt: true,
   category: {

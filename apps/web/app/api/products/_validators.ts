@@ -35,7 +35,7 @@ function parseSharedFields(body: Record<string, unknown>) {
     thickness: parseOptionalString(body.thickness),
     unitWeight: parseOptionalString(body.unitWeight),
     coveragePerUnit: parseCoveragePerUnit(body.coveragePerUnit),
-    notes: parseOptionalString(body.notes),
+    note: parseOptionalString(body.notes),
   }
 }
 

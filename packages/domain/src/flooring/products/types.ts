@@ -38,7 +38,7 @@ export type ProductRow = {
   itemCoverageUnitAbbrev: string
   // Backward-compat alias for `itemCoverageUnitName`. Future cleanup target.
   coverageUnit: string
-  notes: string
+  note: string
   createdAt: string
   updatedAt: string
   category: ProductRowCategory
@@ -55,7 +55,7 @@ export type ProductCreateForm = {
   thickness: string
   unitWeight: string
   coveragePerUnit: string
-  notes: string
+  note: string
 }
 
 // Update form — categoryId is omitted. Category is immutable post-create
@@ -90,7 +90,7 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   thickness: "",
   unitWeight: "",
   coveragePerUnit: "",
-  notes: "",
+  note: "",
 }
 
 export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
@@ -103,6 +103,6 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     thickness: row.thickness,
     unitWeight: row.unitWeight,
     coveragePerUnit: row.coveragePerUnit,
-    notes: row.notes,
+    note: row.note,
   }
 }

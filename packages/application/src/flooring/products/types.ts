@@ -14,7 +14,7 @@ export type CreateProductInput = {
   thickness: string | null
   unitWeight: string | null
   coveragePerUnit: Prisma.Decimal | null
-  notes: string | null
+  note: string | null
 }
 
 // Update form omits `categoryId` — category is immutable post-create. Mirrors
