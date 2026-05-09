@@ -1,46 +1,30 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
 import { TextCell, TextareaCell } from "@/components/cells"
-import { LocationPicker } from "@/modules/locations/components/picker/location-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatInventoryImportNumber,
   formatInventoryQuantity,
   type InventoryForm,
   type InventoryRow,
-  type LocationOption,
 } from "@builders/domain"
 
 export function InventoryPrimaryFieldsSection({
   inventory,
   draft,
   warehouseName,
-  locationShortCode,
   disabled,
   onFieldChange,
 }: {
   inventory: InventoryRow
   draft: InventoryForm
   warehouseName: string | null
-  locationShortCode: string | null
   disabled: boolean
   onFieldChange: (field: keyof InventoryForm, value: string) => void
 }) {
   const editable = !disabled
-
-  // Live preview override for the LocationPicker's selected label.
-  // Updates when the picker emits a new option so the label tracks the
-  // dropdown selection rather than waiting for save. Cleared whenever
-  // the saved locationId changes (after save / record swap).
-  const [pickedLocation, setPickedLocation] = useState<LocationOption | null>(null)
-  useEffect(() => {
-    setPickedLocation(null)
-  }, [inventory.locationId])
-
-  const displayLocationShortCode = pickedLocation?.shortCode ?? locationShortCode
 
   return (
     <FieldSection>
@@ -56,7 +40,7 @@ export function InventoryPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      {/* Row 2: Warehouse · Location · Starting Balance · Cut Balance */}
+      {/* Row 2: Warehouse · Starting Balance · Cut Balance */}
       <CellAt col={1} row={2} colSpan={2}>
         <FormField label="Warehouse" required>
           {editable ? (
@@ -73,30 +57,13 @@ export function InventoryPrimaryFieldsSection({
         </FormField>
       </CellAt>
       <CellAt col={3} row={2} colSpan={2}>
-        <FormField label="Location">
-          {editable ? (
-            <LocationPicker
-              value={draft.locationId || null}
-              onChange={(id) => onFieldChange("locationId", id ?? "")}
-              onOptionSelected={setPickedLocation}
-              warehouseId={draft.warehouseId || null}
-              selectedLabel={displayLocationShortCode || null}
-              placeholder="Select Location"
-              ariaLabel="Location"
-            />
-          ) : (
-            <StaticFieldValue>{displayLocationShortCode || "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={2} colSpan={2}>
         <FormField label="Starting Balance">
           <StaticFieldValue>
             {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={7} row={2} colSpan={2}>
+      <CellAt col={5} row={2} colSpan={2}>
         <FormField label="Cut Balance">
           <StaticFieldValue>
             {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}

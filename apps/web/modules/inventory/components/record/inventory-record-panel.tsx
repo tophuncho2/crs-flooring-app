@@ -89,7 +89,6 @@ export function InventoryRecordPanel({
                   inventory={controller.record}
                   draft={controller.primarySection.localValue}
                   warehouseName={controller.record.warehouseName}
-                  locationShortCode={controller.record.locationShortCode || null}
                   disabled={controller.primarySection.isSaving}
                   onFieldChange={(field, value) => {
                     controller.primarySection.setLocalValue((previous: InventoryForm) => ({
