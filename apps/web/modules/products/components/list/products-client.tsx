@@ -120,7 +120,7 @@ export default function ProductsClient({
             <SearchControl
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search style"
+              placeholder="Search products"
             />
           </div>
           <CategoryFilterChip
