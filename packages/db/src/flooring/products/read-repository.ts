@@ -240,7 +240,7 @@ function buildListViewWhere(
   const clauses: Prisma.FlooringProductWhereInput[] = []
 
   if (options.search) {
-    clauses.push({ style: { contains: options.search, mode: "insensitive" } })
+    clauses.push({ name: { contains: options.search, mode: "insensitive" } })
   }
 
   const categoryIds = options.filters?.categoryId
@@ -288,13 +288,7 @@ export async function searchProductOptions(
 ): Promise<ProductOption[]> {
   const clauses: Prisma.FlooringProductWhereInput[] = []
   if (args.search) {
-    clauses.push({
-      OR: [
-        { name: { contains: args.search, mode: "insensitive" } },
-        { style: { contains: args.search, mode: "insensitive" } },
-        { color: { contains: args.search, mode: "insensitive" } },
-      ],
-    })
+    clauses.push({ name: { contains: args.search, mode: "insensitive" } })
   }
   if (args.categoryId) {
     clauses.push({ categoryId: args.categoryId })
