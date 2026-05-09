@@ -3,7 +3,6 @@
 import { useMemo } from "react"
 import {
   RECORD_FIELD_CONTROL_CLASS_NAME,
-  RECORD_TEXTAREA_CONTROL_CLASS_NAME,
   RecordFormField,
   RecordPrimaryFieldCell,
   RecordPrimaryFieldsGrid,
@@ -232,12 +231,12 @@ export function ProductPrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell size="lg">
-            <RecordFormField label="Notes">
-              <textarea
-                value={draft.notes}
-                onChange={(event) => onFieldChange("notes", event.target.value)}
-                rows={4}
-                className={RECORD_TEXTAREA_CONTROL_CLASS_NAME}
+            <RecordFormField label="Note">
+              <input
+                value={draft.note}
+                onChange={(event) => onFieldChange("note", event.target.value)}
+                maxLength={80}
+                className={RECORD_FIELD_CONTROL_CLASS_NAME}
                 disabled={disabled}
               />
             </RecordFormField>

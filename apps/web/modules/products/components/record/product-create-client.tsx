@@ -38,7 +38,7 @@ const EMPTY_PRODUCT: ProductRecord = {
   itemCoverageUnitName: "",
   itemCoverageUnitAbbrev: "",
   coverageUnit: "",
-  notes: "",
+  note: "",
   createdAt: "",
   updatedAt: "",
   category: {

@@ -17,7 +17,7 @@ export type ProductRequestInput = {
   thickness: string
   unitWeight: string
   coveragePerUnit: string
-  notes: string
+  note: string
 }
 
 function toCreateRequestBody(input: ProductRequestInput): Record<string, unknown> {
