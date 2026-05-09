@@ -94,12 +94,6 @@ enum FlooringChangeOrderStatus {
   SUFFICIENT
 }
 
-enum FlooringContactType {
-  SALES_REP
-  CONTRACTOR
-  OTHER
-}
-
 enum FlooringStagedRowStatus {
   DRAFT
   QUEUED
@@ -197,7 +191,6 @@ model FlooringUnitOfMeasure {
   sendUnitCategories         FlooringCategory[] @relation("FlooringCategorySendUnit")
   stockUnitCategories        FlooringCategory[] @relation("FlooringCategoryStockUnit")
   itemCoverageUnitCategories FlooringCategory[] @relation("FlooringCategoryItemCoverageUnit")
-  services                   FlooringService[]
 
   @@map("flooring_unit_of_measure")
 }
@@ -251,34 +244,6 @@ model FlooringProduct {
   @@index([manufacturerId])
   @@index([name])
   @@map("flooring_product")
-}
-
-model FlooringService {
-  id        String                @id @default(uuid())
-  name      String
-  baseCost  Decimal               @db.Decimal(10, 2)
-  unitId    String
-  unit      FlooringUnitOfMeasure @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  isCustom  Boolean               @default(false)
-  notes     String?
-  createdAt DateTime              @default(now())
-  updatedAt DateTime              @updatedAt
-
-  @@index([name])
-  @@index([unitId])
-  @@map("flooring_service")
-}
-
-model FlooringContact {
-  id        String              @id @default(uuid())
-  name      String
-  type      FlooringContactType
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-
-  @@index([name])
-  @@index([type])
-  @@map("flooring_contact")
 }
 
 model FlooringInventory {
