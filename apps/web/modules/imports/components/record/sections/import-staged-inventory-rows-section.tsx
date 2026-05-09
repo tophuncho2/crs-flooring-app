@@ -13,11 +13,9 @@ import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { SelectAllButton } from "@/components/features/select-batch"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
-import { LocationPicker } from "@/modules/locations/components/picker/location-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import type {
   FlooringStagedRowStatus,
-  LocationOption,
   ProductOption,
   StagedInventoryRow,
 } from "@builders/domain"
@@ -32,7 +30,6 @@ const STAGED_ROWS_LAYOUT: GridLayout<GridDraftRow> = {
     { key: "product", label: "Product", minWidth: 220, preferredWidth: 320, grow: 1.5 },
     { key: "itemNumber", label: "Item #", minWidth: 116, grow: 0 },
     { key: "startingStock", label: "Starting Stock", minWidth: 156, grow: 0, align: "center" },
-    { key: "location", label: "Location", minWidth: 196, grow: 0 },
     { key: "dyeLot", label: "Dye Lot", minWidth: 124, grow: 0 },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.2 },
   ],
@@ -53,7 +50,6 @@ function statusLabel(status: FlooringStagedRowStatus | null): string {
 export function ImportStagedInventoryRowsSection({
   drafts,
   serverRows,
-  warehouseId,
   isDirty,
   isSaving,
   hasConflict,
@@ -74,7 +70,6 @@ export function ImportStagedInventoryRowsSection({
   onRowFieldChange,
   onRowCategoryFilterChange,
   onSetRowProductSnapshot,
-  onSetRowLocationSnapshot,
   onRemoveRow,
   onToggleSelection,
   onToggleAllEligible,
@@ -82,7 +77,6 @@ export function ImportStagedInventoryRowsSection({
 }: {
   drafts: ImportStagedRowDraft[]
   serverRows: StagedInventoryRow[]
-  warehouseId: string
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -110,7 +104,6 @@ export function ImportStagedInventoryRowsSection({
   ) => void
   onRowCategoryFilterChange: (index: number, categoryId: string | null) => void
   onSetRowProductSnapshot: (index: number, option: ProductOption | null) => void
-  onSetRowLocationSnapshot: (index: number, option: LocationOption | null) => void
   onRemoveRow: (index: number) => void
   onToggleSelection: (id: string) => void
   onToggleAllEligible: () => void
@@ -244,19 +237,6 @@ export function ImportStagedInventoryRowsSection({
                   onChange={(value) => onRowFieldChange(index, "startingStock", value)}
                   unit={row.stockUnit || "unit"}
                   ariaLabel={`Row ${index + 1} starting stock`}
-                />
-              )
-            case "location":
-              return (
-                <LocationPicker
-                  value={row.locationId || null}
-                  onChange={(next) => onRowFieldChange(index, "locationId", next ?? "")}
-                  onOptionSelected={(option) => onSetRowLocationSnapshot(index, option)}
-                  warehouseId={warehouseId || null}
-                  selectedLabel={row.locationShortCode || null}
-                  disabled={!editable}
-                  placeholder="Select location"
-                  ariaLabel={`Row ${index + 1} location`}
                 />
               )
             case "dyeLot":

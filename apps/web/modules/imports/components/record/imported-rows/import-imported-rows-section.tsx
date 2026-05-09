@@ -2,7 +2,7 @@
 
 import { ActionHeader } from "@/components/headers"
 import { StatusBadge } from "@/components/badges"
-import { CurrencyCell, TextCell, UnitCell } from "@/components/cells"
+import { TextCell, UnitCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import type { StagedInventoryRow } from "@builders/domain"
 
@@ -11,7 +11,6 @@ const IMPORTED_ROWS_LAYOUT: GridLayout<StagedInventoryRow> = {
     { key: "product", label: "Product", minWidth: 220, preferredWidth: 320, grow: 1.5 },
     { key: "itemNumber", label: "Item #", minWidth: 116, grow: 0 },
     { key: "startingStock", label: "Starting Stock", minWidth: 156, grow: 0, align: "center" },
-    { key: "location", label: "Location", minWidth: 196, grow: 0 },
     { key: "dyeLot", label: "Dye Lot", minWidth: 124, grow: 0 },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.2 },
   ],
@@ -52,10 +51,6 @@ export function ImportImportedRowsSection({ rows }: { rows: StagedInventoryRow[]
                   unit={row.stockUnit || "unit"}
                   ariaLabel={`${row.itemNumber} starting stock`}
                 />
-              )
-            case "location":
-              return (
-                <TextCell editable={false} value={row.locationCode || "—"} ariaLabel={`${row.itemNumber} location`} />
               )
             case "dyeLot":
               return (

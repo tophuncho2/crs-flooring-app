@@ -112,7 +112,6 @@ export function ImportRecordPanel({
             <ImportStagedInventoryRowsSection
               drafts={stagedRowsSection.localValue}
               serverRows={pendingRows}
-              warehouseId={controller.record.warehouseId}
               isDirty={stagedRowsSection.isDirty}
               isSaving={stagedRowsSection.isSaving}
               hasConflict={stagedRowsSection.hasConflict}
@@ -133,7 +132,6 @@ export function ImportRecordPanel({
               onRowFieldChange={stagedRowsSection.setRowField}
               onRowCategoryFilterChange={stagedRowsSection.setRowCategoryFilter}
               onSetRowProductSnapshot={stagedRowsSection.setRowProductSnapshot}
-              onSetRowLocationSnapshot={stagedRowsSection.setRowLocationSnapshot}
               onRemoveRow={stagedRowsSection.removeRow}
               onToggleSelection={stagedRowsSection.toggleSelection}
               onToggleAllEligible={stagedRowsSection.toggleAllEligible}
