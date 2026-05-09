@@ -1,10 +1,15 @@
 function normalizeSegment(value) {
-  const trimmed = typeof value === "string" ? value.trim() : ""
+  const trimmed = typeof value === "string" ? value.trim().replace(/\s+/g, " ") : ""
   return trimmed || null
 }
 
-function buildCanonicalProductName({ categoryName, style, color }) {
-  return [normalizeSegment(categoryName), normalizeSegment(style), normalizeSegment(color)].filter(Boolean).join(" - ") || "Flooring Product"
+function buildCanonicalProductName({ categoryName, style, color, note }) {
+  return [
+    normalizeSegment(categoryName),
+    normalizeSegment(style),
+    normalizeSegment(color),
+    normalizeSegment(note),
+  ].filter(Boolean).join(" - ") || "Flooring Product"
 }
 
 function resolveBackfillOptions(argv = process.argv.slice(2)) {
@@ -29,6 +34,7 @@ async function backfillProductNames({
       name: true,
       style: true,
       color: true,
+      note: true,
       category: {
         select: { name: true },
       },
@@ -43,6 +49,7 @@ async function backfillProductNames({
       categoryName: product.category.name,
       style: product.style,
       color: product.color,
+      note: product.note,
     })
 
     if (product.name === nextName) {
