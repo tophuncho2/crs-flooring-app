@@ -326,7 +326,6 @@ model FlooringImportEntry {
   importNumber        Int                                @unique @default(autoincrement())
   orderNumber         String?
   tag                 String?
-  percent             Decimal                            @default(0) @db.Decimal(5, 2)
   warehouseId         String
   warehouse           FlooringWarehouse                  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   manufacturerId      String?
