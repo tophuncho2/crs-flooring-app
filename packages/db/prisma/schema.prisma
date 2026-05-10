@@ -325,7 +325,6 @@ model FlooringImportEntry {
   id                  String                             @id @default(uuid())
   importNumber        Int                                @unique @default(autoincrement())
   orderNumber         String?
-  tag                 String?
   warehouseId         String
   warehouse           FlooringWarehouse                  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   manufacturerId      String?
