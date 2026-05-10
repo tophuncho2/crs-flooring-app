@@ -10,8 +10,12 @@ export type InventoryOptionsResponse = {
 export type InventoryOptionsRequestArgs = {
   warehouseId: string
   productId?: string
-  sectionId?: string
-  locationId?: string
+  /**
+   * Free-text location filter chip — server-side ILIKE on `inventory.location`.
+   * Used by the cut-log side panel inventory picker; independent from the
+   * search bar (which targets the denormalized `inventoryItem` column).
+   */
+  location?: string
   take?: number
 }
 
@@ -23,8 +27,7 @@ export async function searchInventoryOptionsRequest(
   const params = new URLSearchParams()
   params.set("warehouseId", args.warehouseId)
   if (args.productId) params.set("productId", args.productId)
-  if (args.sectionId) params.set("sectionId", args.sectionId)
-  if (args.locationId) params.set("locationId", args.locationId)
+  if (args.location) params.set("location", args.location)
   if (search) params.set("search", search)
   params.set("take", String(args.take ?? 20))
   const url = `/api/inventory/options/search?${params.toString()}`

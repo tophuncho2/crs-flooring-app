@@ -32,18 +32,9 @@ export function useInventoryPrimarySection({
     createLocalValue: toInventoryForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      // Picker enforces the location-warehouse match by construction
-      // (LocationPicker only shows locations for the picked warehouseId).
-      // Server-side `validateInventoryForm` re-checks on save for the
-      // edge case where the user changed warehouse without re-picking
-      // the location.
-      const issues = validateInventoryForm(
-        {
-          warehouseId: localValue.warehouseId,
-          locationId: localValue.locationId || null,
-        },
-        null,
-      )
+      // Location is plain text post-sweep — no FK/warehouse mismatch to check.
+      // Form validator only requires warehouseId.
+      const issues = validateInventoryForm({ warehouseId: localValue.warehouseId })
       if (issues.length > 0) {
         throw createRecordSectionError({
           kind: "validation",

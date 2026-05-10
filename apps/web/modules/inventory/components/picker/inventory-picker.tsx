@@ -30,10 +30,12 @@ export type InventoryPickerProps = {
    * only reference inventory of the parent material item's product).
    */
   productId?: string | null
-  /** Optional section narrowing — picker re-fetches when this changes. */
-  sectionId?: string | null
-  /** Optional location narrowing — picker re-fetches when this changes. */
-  locationId?: string | null
+  /**
+   * Optional free-text location filter — server-side ILIKE on
+   * `inventory.location`. Picker re-fetches when this changes. Use case: the
+   * cut-log create form's location filter chip narrows the picker scope.
+   */
+  location?: string | null
   /**
    * Pre-resolved label for the current `value`. Lets the trigger render
    * the selected inventory's label even when it isn't in the latest server
@@ -53,13 +55,6 @@ export type InventoryPickerProps = {
   initialOptions?: InventoryOption[]
 }
 
-function buildTitle(option: InventoryOption): string {
-  return [option.inventoryNumber, option.itemNumber, option.dyeLot]
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)
-    .join(" · ")
-}
-
 function toDropdownOption(option: InventoryOption): AsyncRichDropdownOption {
   const subtitles: string[] = []
   subtitles.push(formatInventoryQuantity(option.stockBalance, option.stockUnitAbbrev))
@@ -70,7 +65,9 @@ function toDropdownOption(option: InventoryOption): AsyncRichDropdownOption {
   }
   return {
     id: option.id,
-    title: buildTitle(option),
+    // The `inventoryItem` snapshot already encodes
+    // `inv# · roll# · location · dyeLot · note` — render it verbatim.
+    title: option.inventoryItem,
     subtitles,
   }
 }
@@ -81,12 +78,11 @@ export function InventoryPicker({
   onOptionSelected,
   warehouseId,
   productId = null,
-  sectionId = null,
-  locationId = null,
+  location = null,
   selectedLabel = null,
   placeholder = "Select Inventory",
   disabledPlaceholder = "Select warehouse first",
-  searchPlaceholder = "Search inv #, item #, dye lot",
+  searchPlaceholder = "Search inventory item",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
   clearLabel = "Clear selection",
@@ -104,10 +100,9 @@ export function InventoryPicker({
         ...INVENTORY_OPTIONS_SEARCH_QUERY_KEY,
         warehouseId ?? null,
         productId ?? null,
-        sectionId ?? null,
-        locationId ?? null,
+        location ?? null,
       ] as const,
-    [warehouseId, productId, sectionId, locationId],
+    [warehouseId, productId, location],
   )
 
   const searchFn = useCallback(
@@ -115,10 +110,9 @@ export function InventoryPicker({
       searchInventoryOptionsRequest(search, signal, {
         warehouseId: warehouseId ?? "",
         ...(productId ? { productId } : {}),
-        ...(sectionId ? { sectionId } : {}),
-        ...(locationId ? { locationId } : {}),
+        ...(location ? { location } : {}),
       }),
-    [warehouseId, productId, sectionId, locationId],
+    [warehouseId, productId, location],
   )
 
   const controller = useAsyncRichDropdownController<InventoryOption>({

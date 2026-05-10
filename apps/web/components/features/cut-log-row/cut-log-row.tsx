@@ -64,6 +64,14 @@ export function renderCutLogReadOnlyCell(
     switch (column.key) {
       case "status":
         return <CutLogStatusBadge status={row.status as FlooringCutLogStatus} />
+      case "inventoryItem":
+        return (
+          <TextCell
+            editable={false}
+            value={row.inventoryItem || "—"}
+            ariaLabel={`${row.cutLogNumber} inventory item`}
+          />
+        )
       case "cutLogNumber":
         return (
           <TextCell

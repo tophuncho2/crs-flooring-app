@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
-import {
-  formatInventoryRefPackage,
-  type CutLogRow,
-  type FlooringCutLogStatus,
-  type InventoryOption,
+import type {
+  CutLogRow,
+  FlooringCutLogStatus,
+  InventoryOption,
 } from "@builders/domain"
 import {
   createPendingCutLogRequest,
@@ -35,25 +34,19 @@ const EMPTY_FORM: CutLogEditForm = {
 }
 
 /**
- * UI-only narrowing filters (Section → Location) plus snapshot labels for the
- * picker triggers. None of these ship to the cut-log API — the persisted row
- * still carries only `inventoryId`. Local state lives outside `CutLogEditForm`
- * so the dirty check + mutation payload stay clean.
+ * UI-only narrowing filter (free-text location) plus snapshot label + unit
+ * for the picker trigger. None of these ship to the cut-log API — the
+ * persisted row carries only `inventoryId`. Local state lives outside
+ * `CutLogEditForm` so the dirty check + mutation payload stay clean.
  */
 type CutLogPanelLocal = {
-  sectionId: string
-  locationId: string
-  pickedSectionLabel: string
-  pickedLocationLabel: string
+  locationFilter: string
   pickedInventoryLabel: string
   pickedInventoryStockUnitAbbrev: string
 }
 
 const EMPTY_LOCAL: CutLogPanelLocal = {
-  sectionId: "",
-  locationId: "",
-  pickedSectionLabel: "",
-  pickedLocationLabel: "",
+  locationFilter: "",
   pickedInventoryLabel: "",
   pickedInventoryStockUnitAbbrev: "",
 }
@@ -101,9 +94,9 @@ function isEditValid(form: CutLogEditForm): boolean {
 
 /**
  * Owns the side-panel lifecycle for cut-log editing: open/close, current
- * row, editable form, dirty tracking, picker filter chain (section → location
- * → inventory) for create mode, and all four mutations (create / update /
- * delete / void) plus single-row finalize.
+ * row, editable form, dirty tracking, free-text location filter for create
+ * mode, and all four mutations (create / update / delete / void) plus
+ * single-row finalize.
  *
  * Mutation success → `publish(patch)` so the parent updates its snapshot.
  * Behavior contract (locked in the plan):
@@ -165,46 +158,9 @@ export function useCutLogEditPanel({
   )
 
   // --- picker handlers (create mode only) ----------------------------------
-  //
-  // Pickers call `onChange(id)` first then `onOptionSelected(option)`. The id
-  // setter handles cascade-clearing (downstream filters + the cut log's
-  // inventoryId); the snapshot setter captures the picked option's display
-  // label so the trigger renders the right text without a refetch.
 
-  const setSectionId = useCallback((id: string | null) => {
-    setLocal((prev) => ({
-      ...prev,
-      sectionId: id ?? "",
-      ...(id === null ? { pickedSectionLabel: "" } : {}),
-      // Cascade: section change invalidates location + inventory selections.
-      locationId: "",
-      pickedLocationLabel: "",
-      pickedInventoryLabel: "",
-      pickedInventoryStockUnitAbbrev: "",
-    }))
-    setForm((prev) => ({ ...prev, inventoryId: "" }))
-    setError(null)
-  }, [])
-
-  const snapshotSectionLabel = useCallback((label: string | null) => {
-    setLocal((prev) => ({ ...prev, pickedSectionLabel: label ?? "" }))
-  }, [])
-
-  const setLocationId = useCallback((id: string | null) => {
-    setLocal((prev) => ({
-      ...prev,
-      locationId: id ?? "",
-      ...(id === null ? { pickedLocationLabel: "" } : {}),
-      // Cascade: location change invalidates the inventory selection.
-      pickedInventoryLabel: "",
-      pickedInventoryStockUnitAbbrev: "",
-    }))
-    setForm((prev) => ({ ...prev, inventoryId: "" }))
-    setError(null)
-  }, [])
-
-  const snapshotLocationLabel = useCallback((label: string | null) => {
-    setLocal((prev) => ({ ...prev, pickedLocationLabel: label ?? "" }))
+  const setLocationFilter = useCallback((next: string) => {
+    setLocal((prev) => ({ ...prev, locationFilter: next }))
   }, [])
 
   const setInventoryId = useCallback((id: string | null) => {
@@ -226,13 +182,7 @@ export function useCutLogEditPanel({
   const snapshotInventoryOption = useCallback((option: InventoryOption | null) => {
     setLocal((prev) => ({
       ...prev,
-      pickedInventoryLabel: option
-        ? formatInventoryRefPackage({
-            inventoryNumber: option.inventoryNumber,
-            itemNumber: option.itemNumber,
-            dyeLot: option.dyeLot,
-          })
-        : "",
+      pickedInventoryLabel: option?.inventoryItem ?? "",
       pickedInventoryStockUnitAbbrev: option?.stockUnitAbbrev ?? "",
     }))
   }, [])
@@ -308,14 +258,12 @@ export function useCutLogEditPanel({
         cutLogId: input.cutLog.id,
       }),
     onSuccess: (_response, variables) => {
-      // Optimistic patch matches `buildVoidedCutLogPatch` from the prior controller:
-      // cut → "0", coverage/cost/freight → null, void → true, status → VOID.
+      // Optimistic patch: cut → "0", coverage → null, void → true,
+      // status → VOID. Mirrors the post-void server shape.
       const voided: CutLogRow = {
         ...variables.cutLog,
         cut: "0",
         coverageCut: null,
-        cost: null,
-        freight: null,
         void: true,
         status: "VOID" as FlooringCutLogStatus,
       }
@@ -393,10 +341,7 @@ export function useCutLogEditPanel({
     openPanel,
     close,
     setField,
-    setSectionId,
-    snapshotSectionLabel,
-    setLocationId,
-    snapshotLocationLabel,
+    setLocationFilter,
     setInventoryId,
     snapshotInventoryOption,
     save,

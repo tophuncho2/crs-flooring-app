@@ -223,12 +223,22 @@ export function ImportStagedInventoryRowsSection({
               )
             case "rollNumber":
               return (
-                <TextCell
-                  editable={editable}
-                  value={row.rollNumber}
-                  onChange={(value) => onRowFieldChange(index, "rollNumber", value)}
-                  ariaLabel={`Row ${index + 1} roll number`}
-                />
+                <div className="flex items-stretch gap-1">
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex items-center rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 text-xs font-semibold tracking-wide text-[var(--text-muted)]"
+                  >
+                    ROLL
+                  </span>
+                  <div className="flex-1">
+                    <TextCell
+                      editable={editable}
+                      value={row.rollNumber}
+                      onChange={(value) => onRowFieldChange(index, "rollNumber", value)}
+                      ariaLabel={`Row ${index + 1} roll number`}
+                    />
+                  </div>
+                </div>
               )
             case "startingStock":
               return (

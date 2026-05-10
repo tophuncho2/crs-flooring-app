@@ -12,18 +12,19 @@ export type CutLogGridRow = {
  * holds no editable cells, no commit button, no destructive button, and no
  * selection checkbox. Status renders as a data column for consistent
  * column alignment with the rest of the grid.
+ *
+ * Canonical 7-column shape shared with the inventory record view's cut-log
+ * section. Order: status → inventoryItem → before → cut → after →
+ * coverageCut → cutLogNumber.
  */
 export const WO_CUT_LOG_LAYOUT: GridLayout<CutLogGridRow> = {
   dataColumns: [
     { key: "status", label: "Status", minWidth: 120, grow: 0, align: "center" },
-    { key: "cutLogNumber", label: "Cut #", minWidth: 132, grow: 0 },
-    { key: "inventoryRef", label: "Inventory", minWidth: 240, grow: 1 },
-    { key: "cut", label: "Cut", minWidth: 110, grow: 0, align: "center" },
-    { key: "coverageCut", label: "Coverage", minWidth: 120, grow: 0, align: "center" },
-    { key: "before", label: "Before", minWidth: 90, grow: 0, align: "center" },
-    { key: "after", label: "After", minWidth: 90, grow: 0, align: "center" },
-    { key: "finalSeq", label: "Seq", minWidth: 64, grow: 0, align: "center" },
-    { key: "notes", label: "Notes", minWidth: 200, grow: 1.5 },
-    { key: "isWaste", label: "Waste", minWidth: 70, grow: 0, align: "center" },
+    { key: "inventoryItem", label: "Inventory Item", minWidth: 220, grow: 1.2 },
+    { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
+    { key: "cut", label: "Cut", minWidth: 144, grow: 0, align: "center" },
+    { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },
+    { key: "coverageCut", label: "Coverage Cut", minWidth: 144, grow: 0, align: "center" },
+    { key: "cutLogNumber", label: "Cut Log #", minWidth: 132, grow: 0 },
   ],
 }

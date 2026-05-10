@@ -6,10 +6,7 @@ import {
   withDatabaseTransaction,
   type CreateInventoryRecordInput,
 } from "@builders/db"
-import {
-  applyRollNumberPrefix,
-  type ImportMaterializeBatchPayload,
-} from "@builders/domain"
+import { type ImportMaterializeBatchPayload } from "@builders/domain"
 import { StagedInventoryExecutionError } from "./errors.js"
 import type { MaterializeImportedStagedRowsResult } from "./types.js"
 
@@ -40,10 +37,10 @@ function decimalToString(
  *   - `purchaseOrderNumber`: from `importEntry.purchaseOrderNumber`.
  *   - `internalNotes`: always `null` — user-only column, never seeded by
  *     the worker.
- *   - `rollNumber`: passed through `applyRollNumberPrefix` so a staged
- *     value of `"1234"` lands as `"ROLL1234"` on inventory (matches the
- *     update-inventory use case's prefix rule — single source of truth via
- *     the domain helper).
+ *   - `rollNumber`: copied verbatim from the staged row. The staged save
+ *     use case already applied `applyRollNumberPrefix` at create/edit
+ *     time, so the value carries `ROLL` + suffix on arrival here. The
+ *     worker does NOT re-apply the prefix.
  *   - `inventoryItem`: written as `""` here; the data-layer primitive
  *     composes the canonical value after `inventoryNumber` is
  *     sequence-assigned (see `materializeStagedRowsToInventory` step 2.5).
@@ -108,7 +105,7 @@ export async function materializeImportedStagedRowsUseCase(
       sendUnitName: row.product.sendUnitName,
       sendUnitAbbrev: row.product.sendUnitAbbrev,
       coveragePerUnit: decimalToString(row.product.coveragePerUnit),
-      rollNumber: applyRollNumberPrefix(row.rollNumber ?? ""),
+      rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,
       note: row.note,
       internalNotes: null,

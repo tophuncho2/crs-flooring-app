@@ -5,7 +5,7 @@ import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
-import type { InventoryListFilters } from "@builders/application"
+import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
   type CategoryOption,
@@ -20,7 +20,9 @@ import {
 } from "@/modules/inventory/data/list-inventory-request"
 import { useInventoryListController } from "@/modules/inventory/controllers/use-inventory-list-controller"
 import { InventoryTable } from "./inventory-table"
+import { ArchiveFilterChip } from "./archive-filter-chip"
 import { CategoryFilterChip } from "./category-filter-chip"
+import { LocationFilterChip } from "./location-filter-chip"
 import { ProductFilterChip } from "./product-filter-chip"
 import { WarehouseFilterChip } from "./warehouse-filter-chip"
 
@@ -28,7 +30,47 @@ const INVENTORY_FILTERABLE_FIELDS = [
   "warehouseId",
   "categoryId",
   "productId",
+  "location",
+  "isArchived",
 ] as const
+
+/**
+ * Engine-side filter shape: the list-view engine's filter map only carries
+ * `string[]` values (one per filterable field). For the inventory list's
+ * non-array filters — `location` (free text) and `isArchived` (boolean) — we
+ * encode them as 1-element string arrays here, then translate to the typed
+ * `InventoryListFilters` at the listFn boundary below.
+ */
+type EngineInventoryFilters = {
+  warehouseId?: ReadonlyArray<string>
+  categoryId?: ReadonlyArray<string>
+  productId?: ReadonlyArray<string>
+  location?: ReadonlyArray<string>
+  isArchived?: ReadonlyArray<string>
+}
+
+function toEngineFilters(app: InventoryListFilters): EngineInventoryFilters {
+  const out: EngineInventoryFilters = {}
+  if (app.warehouseId?.length) out.warehouseId = app.warehouseId
+  if (app.categoryId?.length) out.categoryId = app.categoryId
+  if (app.productId?.length) out.productId = app.productId
+  if (app.location && app.location.length > 0) out.location = [app.location]
+  if (app.isArchived !== undefined) out.isArchived = [app.isArchived ? "true" : "false"]
+  return out
+}
+
+function toAppFilters(engine: EngineInventoryFilters): InventoryListFilters {
+  const out: InventoryListFilters = {}
+  if (engine.warehouseId?.length) out.warehouseId = engine.warehouseId
+  if (engine.categoryId?.length) out.categoryId = engine.categoryId
+  if (engine.productId?.length) out.productId = engine.productId
+  const loc = engine.location?.[0]?.trim()
+  if (loc) out.location = loc
+  const arch = engine.isArchived?.[0]
+  if (arch === "true") out.isArchived = true
+  else if (arch === "false") out.isArchived = false
+  return out
+}
 
 export default function InventoryClient({
   initialTablePreferences,
@@ -53,6 +95,18 @@ export default function InventoryClient({
 }) {
   const { message, pageError, openInventory } = useInventoryListController()
 
+  // The engine's filter map carries `string[]` only — translate to typed
+  // InventoryListFilters at the listFn boundary so the application layer
+  // sees `location: string` and `isArchived: boolean`.
+  const adaptedListFn = useCallback(
+    (input: ListInput<EngineInventoryFilters>) =>
+      listInventoryRequest({
+        ...input,
+        filters: input.filters ? toAppFilters(input.filters) : undefined,
+      }),
+    [],
+  )
+
   const {
     rows,
     total,
@@ -67,13 +121,13 @@ export default function InventoryClient({
     goToNextPage,
     onSearchQueryChange,
     onFilterChange,
-  } = useServerListController<InventoryRow, InventoryListFilters>({
+  } = useServerListController<InventoryRow, EngineInventoryFilters>({
     mode: "fetch",
     queryKey: [...INVENTORY_LIST_QUERY_KEY],
-    listFn: listInventoryRequest,
+    listFn: adaptedListFn,
     initialSearchQuery,
     initialPage,
-    initialFilters,
+    initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_INVENTORY_PAGE_SIZE,
     tableKey: "inventory-main",
     initialTablePreferences,
@@ -81,11 +135,14 @@ export default function InventoryClient({
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  // --- Resolve currently-selected ids from the engine's filter map ---
-  const filtersTyped = filters as InventoryListFilters
-  const selectedWarehouseId = filtersTyped.warehouseId?.[0] ?? null
-  const selectedCategoryId = filtersTyped.categoryId?.[0] ?? null
-  const selectedProductId = filtersTyped.productId?.[0] ?? null
+  // --- Resolve currently-selected values from the engine's filter map ---
+  const selectedWarehouseId = filters.warehouseId?.[0] ?? null
+  const selectedCategoryId = filters.categoryId?.[0] ?? null
+  const selectedProductId = filters.productId?.[0] ?? null
+  const locationValue = filters.location?.[0] ?? ""
+  const archivedRaw = filters.isArchived?.[0]
+  const isArchivedValue =
+    archivedRaw === "true" ? true : archivedRaw === "false" ? false : undefined
 
   // --- Selected-label snapshots ---
   // Each chip needs a label so its trigger renders the picked entity name on
@@ -143,6 +200,24 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
+  const handleLocationChange = useCallback(
+    (next: string) => {
+      const trimmed = next.trim()
+      onFilterChange("location", trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
+  const handleArchivedChange = useCallback(
+    (next: boolean | undefined) => {
+      onFilterChange(
+        "isArchived",
+        next === undefined ? [] : [next ? "true" : "false"],
+      )
+    },
+    [onFilterChange],
+  )
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -168,9 +243,18 @@ export default function InventoryClient({
             <SearchControl
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search inv #, item #, dye lot"
+              placeholder="Search inventory item"
             />
           </div>
+
+          {/* Free-text location filter (server-side ILIKE on inventory.location) */}
+          <LocationFilterChip value={locationValue} onChange={handleLocationChange} />
+
+          {/* Archive toggle (default hides archived) */}
+          <ArchiveFilterChip value={isArchivedValue} onChange={handleArchivedChange} />
+
+          {/* Visual gap separating text/toggle filters from picker filters */}
+          <span aria-hidden="true" className="mx-1 h-6 w-px bg-[var(--panel-border)]" />
 
           {/* Warehouse */}
           <WarehouseFilterChip

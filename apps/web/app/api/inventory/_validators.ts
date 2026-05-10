@@ -40,8 +40,7 @@ const OPTIONS_MAX_TAKE = 50
 const inventorySearchQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
   productId: z.string().optional(),
-  sectionId: z.string().optional(),
-  locationId: z.string().optional(),
+  location: z.string().optional(),
   search: z.string().optional(),
   take: z.coerce
     .number()
@@ -54,8 +53,7 @@ const inventorySearchQuerySchema = z.object({
 export type ValidatedInventorySearchQuery = {
   warehouseId: string
   productId?: string
-  sectionId?: string
-  locationId?: string
+  location?: string
   search?: string
   take: number
 }
@@ -82,13 +80,11 @@ export function validateInventorySearchQuery(
   const parsed = parseResult.data
   const trimSearch = parsed.search?.trim()
   const trimProduct = parsed.productId?.trim()
-  const trimSection = parsed.sectionId?.trim()
-  const trimLocation = parsed.locationId?.trim()
+  const trimLocation = parsed.location?.trim()
   return {
     warehouseId: parsed.warehouseId.trim(),
     ...(trimProduct ? { productId: trimProduct } : {}),
-    ...(trimSection ? { sectionId: trimSection } : {}),
-    ...(trimLocation ? { locationId: trimLocation } : {}),
+    ...(trimLocation ? { location: trimLocation } : {}),
     ...(trimSearch ? { search: trimSearch } : {}),
     take: parsed.take,
   }
@@ -96,11 +92,13 @@ export function validateInventorySearchQuery(
 
 // --- List view query validator (search + filters + pagination) ---
 
-const FILTER_KEYS = ["warehouseId", "sectionId", "locationId", "categoryId", "productId"] as const
-type FilterKey = (typeof FILTER_KEYS)[number]
+const ID_FILTER_KEYS = ["warehouseId", "categoryId", "productId"] as const
+type IdFilterKey = (typeof ID_FILTER_KEYS)[number]
 
 const listInventoryQuerySchema = z.object({
   q: z.string().optional(),
+  location: z.string().optional(),
+  archived: z.enum(["true", "false"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -124,10 +122,10 @@ function readMultiValue(searchParams: URLSearchParams, key: string): string[] {
 export function validateListInventoryQuery(
   searchParams: URLSearchParams,
 ): ListInput<InventoryListFilters> {
-  // Strip filter keys before zod validation — zod sees only scalar params.
+  // Strip multi-value ID filter keys before zod validation — zod sees only scalar params.
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
-    if ((FILTER_KEYS as readonly string[]).includes(key)) return
+    if ((ID_FILTER_KEYS as readonly string[]).includes(key)) return
     raw[key] = value
   })
 
@@ -145,15 +143,22 @@ export function validateListInventoryQuery(
   const parsed = parseResult.data
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
+  const trimmedLocation = parsed.location?.trim()
+  const location = trimmedLocation && trimmedLocation.length > 0 ? trimmedLocation : undefined
+  const archived =
+    parsed.archived === "true" ? true : parsed.archived === "false" ? false : undefined
 
-  const filterEntries: Array<[FilterKey, string[]]> = FILTER_KEYS.map((key) => [
+  const idFilterEntries: Array<[IdFilterKey, string[]]> = ID_FILTER_KEYS.map((key) => [
     key,
     readMultiValue(searchParams, key),
   ])
   const filterRecord: Partial<InventoryListFilters> = {}
-  for (const [key, values] of filterEntries) {
+  for (const [key, values] of idFilterEntries) {
     if (values.length > 0) filterRecord[key] = values
   }
+  if (location) filterRecord.location = location
+  if (archived !== undefined) filterRecord.isArchived = archived
+
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
   return {
@@ -165,16 +170,15 @@ export function validateListInventoryQuery(
 }
 
 export function validateUpdateInventoryInput(body: Record<string, unknown>): UpdateInventoryInput {
-  // Cost and freight are intentionally NOT accepted here. They are editable only
-  // from the imports record view's staged-inventory-rows section while
-  // `isImported = false`. Once a row is imported, cost/freight are locked to
-  // preserve the accounting snapshot that cut logs reference.
+  // `inventoryItem` is server-recomputed (composeInventoryItem) inside the
+  // update use case; never accepted from the client.
   const input: UpdateInventoryInput = {}
-  if (body.itemNumber !== undefined) input.itemNumber = optionalString(body.itemNumber, "itemNumber")
+  if (body.rollNumber !== undefined) input.rollNumber = optionalString(body.rollNumber, "rollNumber")
   if (body.dyeLot !== undefined) input.dyeLot = optionalString(body.dyeLot, "dyeLot")
   if (body.warehouseId !== undefined) input.warehouseId = optionalString(body.warehouseId, "warehouseId")
-  if (body.locationId !== undefined) input.locationId = optionalString(body.locationId, "locationId")
-  if (body.notes !== undefined) input.notes = optionalString(body.notes, "notes")
+  if (body.location !== undefined) input.location = optionalString(body.location, "location")
+  if (body.note !== undefined) input.note = optionalString(body.note, "note")
+  if (body.internalNotes !== undefined) input.internalNotes = optionalString(body.internalNotes, "internalNotes")
   if (body.isArchived !== undefined) input.isArchived = requireBoolean(body.isArchived, "isArchived")
   return input
 }

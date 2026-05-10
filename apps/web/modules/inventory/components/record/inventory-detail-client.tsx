@@ -16,7 +16,7 @@ export function InventoryDetailClient({
 }) {
   return (
     <RecordDetailClientScaffold
-      title={`Inventory ${initialRecord.itemNumber}`}
+      title={`Inventory ${initialRecord.inventoryNumber}`}
       backHref={backHref}
       dirtyMessage="You have unsaved inventory changes. Leave this inventory record without saving?"
       headerVariant="section"

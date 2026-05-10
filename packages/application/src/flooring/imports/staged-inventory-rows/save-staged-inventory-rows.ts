@@ -10,6 +10,7 @@ import {
   type UpdateStagedInventoryRecordInput,
 } from "@builders/db"
 import {
+  applyRollNumberPrefix,
   assignStagedInventoryDiffIds,
   describeStagedInventoryDiffIssues,
   validateStagedInventoryRowsDiff,
@@ -37,7 +38,7 @@ function patchToDbUpdate(
 ): UpdateStagedInventoryRecordInput {
   const data: UpdateStagedInventoryRecordInput = {}
   if (patch.productId !== undefined) data.productId = patch.productId
-  if (patch.rollNumber !== undefined) data.rollNumber = patch.rollNumber
+  if (patch.rollNumber !== undefined) data.rollNumber = applyRollNumberPrefix(patch.rollNumber)
   if (patch.dyeLot !== undefined) data.dyeLot = patch.dyeLot
   if (patch.warehouseId !== undefined) data.warehouseId = patch.warehouseId
   if (patch.location !== undefined) data.location = patch.location
@@ -137,7 +138,11 @@ export async function saveStagedInventoryRowsUseCase(
         id: draft.id,
         tempId: draft.tempId,
         productId: draft.productId,
-        rollNumber: draft.rollNumber,
+        // ROLL prefix is server-applied here so the staged row carries the
+        // canonical "ROLL" + suffix from the moment of save. The materialize
+        // worker copies the value verbatim — single source of truth lives in
+        // this use case + applyRollNumberPrefix.
+        rollNumber: applyRollNumberPrefix(draft.rollNumber) ?? "",
         dyeLot: draft.dyeLot,
         warehouseId: draft.warehouseId,
         location: draft.location,

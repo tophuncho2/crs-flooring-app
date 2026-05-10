@@ -1,12 +1,9 @@
 "use client"
 
 import {
-  formatInventoryRefPackage,
   isCutLogPendingEditable,
   type CutLogRow,
   type InventoryOption,
-  type LocationOption,
-  type SectionOption,
 } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
@@ -14,8 +11,6 @@ import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import { formatCutLogTimestamp } from "@/components/features/cut-log-row/format-cut-log-timestamp"
 import { InventoryPicker } from "@/modules/inventory/components/picker/inventory-picker"
-import { LocationPicker } from "@/modules/locations/components/picker/location-picker"
-import { SectionPicker } from "@/modules/warehouse-sections/components/picker/section-picker"
 import type { CutLogEditPanelController } from "@/modules/work-orders/controllers/record/material-items/use-cut-log-edit-panel"
 
 export type CutLogEditFormFieldsProps = {
@@ -28,8 +23,9 @@ export type CutLogEditFormFieldsProps = {
  * The form body of the cut-log edit panel. Uses `FieldSection` (8-col
  * invisible grid) for layout. In edit mode the inventory selector becomes a
  * static display (saved cuts have immutable inventory). In create mode the
- * filter chain (Section → Location → Inventory) lets the user narrow down
- * to the right inventory row before stamping it on the cut log.
+ * inventory picker (scoped by parent WO's warehouse + parent WOMI's product)
+ * is the only filter — a free-text Location chip narrows the picker's
+ * results when needed.
  */
 export function CutLogEditFormFields({
   mode,
@@ -38,14 +34,7 @@ export function CutLogEditFormFields({
 }: CutLogEditFormFieldsProps) {
   const { form, local, warehouseId, isSaving } = controller
 
-  const inventoryDisplay = (() => {
-    if (!cutLog) return "—"
-    return formatInventoryRefPackage({
-      inventoryNumber: cutLog.inventoryNumber,
-      itemNumber: cutLog.itemNumber,
-      dyeLot: cutLog.dyeLot,
-    })
-  })()
+  const inventoryDisplay = cutLog?.inventoryItem ?? "—"
 
   // Stock unit source:
   //   - edit mode: the cut log's frozen `stockUnitAbbrev` snapshot (stamped
@@ -176,37 +165,17 @@ export function CutLogEditFormFields({
         </>
       ) : null}
 
-      {/* Row 6 — picker filter chain (create) or read-only inventory (edit) */}
+      {/* Row 6 — inventory picker (create) or read-only inventory (edit) */}
       {mode === "create" ? (
         <>
           <CellAt col={1} colSpan={8}>
-            <FormField label="Section">
-              <SectionPicker
-                value={local.sectionId || null}
-                onChange={controller.setSectionId}
-                onOptionSelected={(option: SectionOption | null) =>
-                  controller.snapshotSectionLabel(option?.label ?? null)
-                }
-                warehouseId={warehouseId}
-                selectedLabel={local.pickedSectionLabel || null}
-                disabled={isSaving}
-                ariaLabel="Cut log section filter"
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={8}>
-            <FormField label="Location">
-              <LocationPicker
-                value={local.locationId || null}
-                onChange={controller.setLocationId}
-                onOptionSelected={(option: LocationOption | null) =>
-                  controller.snapshotLocationLabel(option?.shortCode ?? null)
-                }
-                warehouseId={warehouseId}
-                sectionId={local.sectionId || null}
-                selectedLabel={local.pickedLocationLabel || null}
-                disabled={isSaving}
-                ariaLabel="Cut log location filter"
+            <FormField label="Location filter">
+              <TextCell
+                editable={!isSaving}
+                value={local.locationFilter}
+                onChange={controller.setLocationFilter}
+                placeholder="Filter inventory by location"
+                ariaLabel="Cut log inventory location filter"
               />
             </FormField>
           </CellAt>
@@ -224,8 +193,7 @@ export function CutLogEditFormFields({
                     ? controller.open.productId || null
                     : null
                 }
-                sectionId={local.sectionId || null}
-                locationId={local.locationId || null}
+                location={local.locationFilter || null}
                 selectedLabel={local.pickedInventoryLabel || null}
                 disabled={isSaving}
                 ariaLabel="Cut log inventory"

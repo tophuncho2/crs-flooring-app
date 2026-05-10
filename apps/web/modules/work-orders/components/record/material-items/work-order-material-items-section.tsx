@@ -250,7 +250,6 @@ export function WorkOrderMaterialItemsSection({
                 {isExpanded ? (
                   <div className="px-4 py-3">
                     <WorkOrderCutLogRow
-                      workOrderId={workOrder.id}
                       workOrderItemId={row.id}
                       serverRows={cutLogs}
                       onOpenEdit={handleOpenEdit}

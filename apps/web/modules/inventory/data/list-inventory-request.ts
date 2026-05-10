@@ -7,7 +7,7 @@ import { requestJson } from "@/transport/http"
 
 export const INVENTORY_LIST_QUERY_KEY = ["inventory", "list"] as const
 
-const FILTER_KEYS = ["warehouseId", "categoryId", "productId"] as const
+const ID_FILTER_KEYS = ["warehouseId", "categoryId", "productId"] as const
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -37,11 +37,19 @@ export function parseInventoryListInputFromSearchParams(
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
+  const locationRaw = (readSearchParam(searchParams, "location") ?? "").trim()
+  const archivedRaw = readSearchParam(searchParams, "archived")
+  const archived =
+    archivedRaw === "true" ? true : archivedRaw === "false" ? false : undefined
+
   const filterRecord: Partial<InventoryListFilters> = {}
-  for (const key of FILTER_KEYS) {
+  for (const key of ID_FILTER_KEYS) {
     const values = Array.from(new Set(readSearchParamArray(searchParams, key)))
     if (values.length > 0) filterRecord[key] = values
   }
+  if (locationRaw.length > 0) filterRecord.location = locationRaw
+  if (archived !== undefined) filterRecord.isArchived = archived
+
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
   return {
@@ -57,10 +65,16 @@ export function buildInventoryListSearchString(
 ): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
-  for (const key of FILTER_KEYS) {
+  for (const key of ID_FILTER_KEYS) {
     const values = (input.filters?.[key] ?? []) as ReadonlyArray<string>
     for (const id of values) params.append(key, id)
   }
+  const location = input.filters?.location?.trim()
+  if (location && location.length > 0) params.set("location", location)
+  // Default-hide archived: only emit `archived` when explicitly set. Server
+  // treats absent as "hide archived".
+  if (input.filters?.isArchived === true) params.set("archived", "true")
+  else if (input.filters?.isArchived === false) params.set("archived", "false")
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   return params.toString()

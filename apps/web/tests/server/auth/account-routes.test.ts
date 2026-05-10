@@ -173,7 +173,7 @@ describe("account routes", () => {
             },
             columnOrder: ["name", "cost"],
             sort: {
-              key: "itemNumber",
+              key: "rollNumber",
               direction: "desc",
             },
             grouping: {
@@ -186,7 +186,7 @@ describe("account routes", () => {
             },
           },
           allowedColumnKeys: ["name", "cost"],
-          allowedSortKeys: ["itemNumber"],
+          allowedSortKeys: ["rollNumber"],
           allowedGroupKeys: ["warehouse", "status"],
           allowedFilterValues: {
             status: ["pending", "final"],
@@ -214,7 +214,7 @@ describe("account routes", () => {
     )
     expect(payload).toEqual({
       sort: {
-        key: "itemNumber",
+        key: "rollNumber",
         direction: "desc",
       },
       filters: {
