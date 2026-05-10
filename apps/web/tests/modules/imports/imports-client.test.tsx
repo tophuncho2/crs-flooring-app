@@ -33,7 +33,6 @@ function importRow(overrides: Partial<ImportRow> = {}): ImportRow {
     id: "imp-1",
     importNumber: 1,
     orderNumber: "PO-1",
-    tag: "Spring Load",
     notes: "",
     warehouseId: "wh-1",
     warehouseName: "Main Warehouse",

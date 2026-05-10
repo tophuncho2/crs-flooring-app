@@ -8,7 +8,6 @@ import type { ImportRow } from "@/modules/imports/controllers/use-imports-list-c
 const IMPORTS_LIST_LAYOUT: GridLayout<ImportRow> = {
   dataColumns: [
     { key: "importNumber", label: "Import #", minWidth: 120, grow: 0 },
-    { key: "tag", label: "Tag", minWidth: 140, grow: 1 },
     { key: "warehouseName", label: "Warehouse", minWidth: 160, grow: 1 },
     { key: "manufacturerName", label: "Manufacturer", minWidth: 160, grow: 1 },
     { key: "stagedInventoryRowsCount", label: "Staged", kind: "number", minWidth: 90, grow: 0, align: "end" },
@@ -68,8 +67,6 @@ export function ImportsTable({
                 {formatImportNumber(row.importNumber)}
               </span>
             )
-          case "tag":
-            return row.tag || "-"
           case "warehouseName":
             return row.warehouseName || "-"
           case "manufacturerName":

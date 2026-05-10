@@ -34,15 +34,6 @@ export function ImportPrimaryFieldsSection({
         </FormField>
       </CellAt>
       <CellAt col={3} colSpan={2}>
-        <FormField label="Tag">
-          <TextCell
-            editable={editable}
-            value={draft.tag}
-            onChange={(value) => onFieldChange("tag", value)}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={2}>
         <FormField label="Warehouse" required>
           {editable ? (
             <WarehousePicker
@@ -57,7 +48,7 @@ export function ImportPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={7} colSpan={2}>
+      <CellAt col={5} colSpan={2}>
         <FormField label="Manufacturer">
           {editable ? (
             <ManufacturerPicker

@@ -21,7 +21,6 @@ function emptyToNull(value: string): string | null {
 function toPrimaryForm(input: UpdateImportInput, current: ImportPrimaryForm): ImportPrimaryForm {
   return {
     orderNumber: input.orderNumber ?? current.orderNumber,
-    tag: input.tag ?? current.tag,
     notes: input.notes ?? current.notes,
     warehouseId: input.warehouseId ?? current.warehouseId,
     manufacturerId: input.manufacturerId ?? current.manufacturerId,
@@ -47,7 +46,6 @@ export async function updateImportUseCase(
 
     const merged = toPrimaryForm(input, {
       orderNumber: current.orderNumber,
-      tag: current.tag,
       notes: current.notes,
       warehouseId: current.warehouseId,
       manufacturerId: current.manufacturerId,
@@ -79,7 +77,6 @@ export async function updateImportUseCase(
 
     const dbInput: DbUpdateImportInput = {}
     if (input.orderNumber !== undefined) dbInput.orderNumber = emptyToNull(input.orderNumber)
-    if (input.tag !== undefined) dbInput.tag = emptyToNull(input.tag)
     if (input.notes !== undefined) dbInput.notes = emptyToNull(input.notes)
     if (input.warehouseId !== undefined) {
       dbInput.warehouseId = input.warehouseId
