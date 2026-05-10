@@ -1,7 +1,27 @@
-import type { Prisma } from "@prisma/client"
+import { Prisma } from "@prisma/client"
 import { db } from "../../client.js"
 import { type InventoryDbClient } from "./shared.js"
 import { getInventoryById, type InventoryRecord } from "./read-repository.js"
+
+/**
+ * Acquire a row-level lock on a single inventory row for the duration of the
+ * caller's transaction. Mirrors `lockInventoryForCutLog` in
+ * `packages/db/src/flooring/work-orders/cut-logs/write-repository.ts` — same
+ * SQL pattern, exposed under a non-cut-log-specific name so the inventory
+ * update + delete use cases can share the lock primitive without the cut-log
+ * naming smell.
+ *
+ * Concurrent updates against the same inventory id serialize on this lock;
+ * concurrent updates against different inventory ids run in parallel.
+ */
+export async function lockInventoryRow(
+  tx: Prisma.TransactionClient,
+  inventoryId: string,
+): Promise<void> {
+  await tx.$queryRaw(
+    Prisma.sql`SELECT "id" FROM "flooring_inventory" WHERE "id" = ${inventoryId} FOR UPDATE`,
+  )
+}
 
 /**
  * Create input for a real inventory row. Every field is worker-owned — the

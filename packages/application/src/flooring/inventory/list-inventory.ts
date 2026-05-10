@@ -8,10 +8,19 @@ import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type InventoryListFilters = {
   warehouseId?: ReadonlyArray<string>
-  sectionId?: ReadonlyArray<string>
-  locationId?: ReadonlyArray<string>
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
+  /**
+   * Free-text location filter chip. Server-side ILIKE on `inventory.location`.
+   * Independent from the search bar (which targets `inventoryItem`).
+   */
+  location?: string
+  /**
+   * `true` = show only archived, `false` = hide archived (default behavior in
+   * the data layer when undefined). Modules-sweep filter chip wires this
+   * straight through.
+   */
+  isArchived?: boolean
 }
 
 function normalizeIds(
@@ -34,19 +43,19 @@ export async function listInventoryUseCase(
   const search = input.search?.trim() || undefined
 
   const warehouseId = normalizeIds(input.filters?.warehouseId)
-  const sectionId = normalizeIds(input.filters?.sectionId)
-  const locationId = normalizeIds(input.filters?.locationId)
   const categoryId = normalizeIds(input.filters?.categoryId)
   const productId = normalizeIds(input.filters?.productId)
+  const location = input.filters?.location?.trim() || undefined
+  const isArchived = input.filters?.isArchived
 
   const filters =
-    warehouseId || sectionId || locationId || categoryId || productId
+    warehouseId || categoryId || productId || location || isArchived !== undefined
       ? {
           ...(warehouseId ? { warehouseId } : {}),
-          ...(sectionId ? { sectionId } : {}),
-          ...(locationId ? { locationId } : {}),
           ...(categoryId ? { categoryId } : {}),
           ...(productId ? { productId } : {}),
+          ...(location ? { location } : {}),
+          ...(isArchived !== undefined ? { isArchived } : {}),
         }
       : undefined
 

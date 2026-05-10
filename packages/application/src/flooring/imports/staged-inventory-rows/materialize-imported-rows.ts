@@ -6,11 +6,7 @@ import {
   withDatabaseTransaction,
   type CreateInventoryRecordInput,
 } from "@builders/db"
-import {
-  computeCostPerUnit,
-  computeFreightPerUnit,
-  type ImportMaterializeBatchPayload,
-} from "@builders/domain"
+import { type ImportMaterializeBatchPayload } from "@builders/domain"
 import { StagedInventoryExecutionError } from "./errors.js"
 import type { MaterializeImportedStagedRowsResult } from "./types.js"
 
@@ -55,23 +51,27 @@ export async function materializeImportedStagedRowsUseCase(
 
     const fifoReceivedAt = new Date()
 
-    // Hardscoped pending the inventory-rebuild sweep: staged rows no longer
-    // carry cost / freight / locationId, so we pass null here. The renamed
-    // fields (rollNumber, note) map to inventory's existing itemNumber / notes
-    // until the inventory schema is reshaped to match.
+    // Hardscoped — placeholder until the worker stabilization sweep rewrites
+    // this use case to: pull UoM snapshots from the product (not category),
+    // compose `inventoryItem` via `composeInventoryItem`, apply
+    // `applyRollNumberPrefix` to `rollNumber`, and populate every snapshot
+    // column from the staged row + import entry context. For now this stub
+    // only exists to keep the build green; the worker is not run.
     const inventoryRowsToCreate: Array<
       CreateInventoryRecordInput & { id: string; sourceStagedRowId: string }
     > = loadedRows.map((row) => {
       const startingStock = row.startingStock.toString()
-      const cost: string | null = null
-      const freight: string | null = null
       const category = row.product.category
       return {
         id: randomUUID(),
         sourceStagedRowId: row.id,
         importEntryId: payload.importEntryId,
+        importNumber: null,
+        purchaseOrderNumber: null,
         productId: row.productId,
+        productName: "",
         categorySlug: category.slug,
+        categoryName: "",
         stockUnitName: category.stockUnit?.name ?? null,
         stockUnitAbbrev: category.stockUnit?.abbreviation ?? null,
         itemCoverageUnitName: category.itemCoverageUnit?.name ?? null,
@@ -79,16 +79,14 @@ export async function materializeImportedStagedRowsUseCase(
         sendUnitName: category.sendUnit?.name ?? null,
         sendUnitAbbrev: category.sendUnit?.abbreviation ?? null,
         coveragePerUnit: decimalToString(row.product.coveragePerUnit),
-        itemNumber: row.rollNumber,
+        rollNumber: row.rollNumber,
         dyeLot: row.dyeLot,
+        note: row.note,
+        internalNotes: null,
+        inventoryItem: "",
         warehouseId: row.warehouseId,
-        locationId: null,
+        location: row.location,
         startingStock,
-        cost,
-        freight,
-        costPerUnit: computeCostPerUnit({ cost, startingStock }),
-        freightPerUnit: computeFreightPerUnit({ freight, startingStock }),
-        notes: row.note,
         fifoReceivedAt,
       }
     })

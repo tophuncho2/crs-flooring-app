@@ -52,8 +52,6 @@ export async function createPendingCutLogUseCase(
     // 1. Per-row form validation.
     const formIssues = validateCutLogPendingForm({
       cut: input.cut,
-      cost: null,
-      freight: null,
       isWaste: input.isWaste,
       notes: input.notes,
     })
@@ -135,9 +133,7 @@ export async function createPendingCutLogUseCase(
         itemCoverageUnitAbbrev: inventory.itemCoverageUnitAbbrev,
       },
       inventorySnapshot: buildPendingCutLogInventorySnapshot({
-        inventoryNumber: inventory.inventoryNumber,
-        itemNumber: inventory.itemNumber,
-        dyeLot: inventory.dyeLot,
+        inventoryItem: inventory.inventoryItem,
         categorySlug: inventory.categorySlug,
       }),
     })

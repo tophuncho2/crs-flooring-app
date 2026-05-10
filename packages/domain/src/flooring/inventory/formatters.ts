@@ -69,6 +69,20 @@ export function composeInventoryItem(input: ComposeInventoryItemInput): string {
   return parts.filter((part) => part.length > 0).join(INVENTORY_ITEM_SEPARATOR)
 }
 
+/**
+ * Server-side `rollNumber` normalizer. Trims the input; empty becomes `null`.
+ * Non-empty values get a strict `"ROLL"` prefix prepended (no separator, no
+ * inspection of existing content — `"ROLL1234"` in produces `"ROLLROLL1234"`
+ * out). The validator/UI layer is responsible for keeping the prefix out of
+ * user-typed input. Single source of truth for both the inventory update use
+ * case and the materialize use case (worker stabilization sweep).
+ */
+export function applyRollNumberPrefix(raw: string): string | null {
+  const trimmed = raw.trim()
+  if (trimmed.length === 0) return null
+  return `ROLL${trimmed}`
+}
+
 const FIFO_EASTERN_FORMATTER = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
   year: "numeric",

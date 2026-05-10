@@ -2,6 +2,7 @@ import {
   Prisma,
   deleteInventoryRecordById,
   getInventoryDeleteState,
+  lockInventoryRow,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
@@ -16,6 +17,11 @@ export async function deleteInventoryUseCase(
 ): Promise<{ ok: true }> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
+
+    // Row lock first — serialize against any concurrent update / cut-log
+    // mutation that might add a blocking dependency between the delete-state
+    // check and the delete itself.
+    await lockInventoryRow(c, id)
 
     const state = await getInventoryDeleteState(id, c)
     if (!state) {

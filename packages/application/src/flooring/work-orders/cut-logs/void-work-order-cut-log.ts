@@ -21,8 +21,8 @@ import type { VoidWorkOrderCutLogInput } from "./types.js"
  *      no need for the multi-inventory locker).
  *   2. Read the cut log under the lock; assert it links to the input
  *      work order and passes `canVoidCutLog`.
- *   3. Apply `buildVoidedCutLogPatch` (sets cut → "0", coverageCut /
- *      cost / freight → null, void → true, status → VOID).
+ *   3. Apply `buildVoidedCutLogPatch` (sets cut → "0", coverageCut →
+ *      null, void → true, status → VOID).
  *   4. Recompute that inventory's `totalCutSum` and assert the invariant.
  *
  * Returns the voided row identifier; UI patches local state.

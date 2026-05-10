@@ -4,8 +4,12 @@ import { searchInventoryOptions } from "@builders/db"
 export type SearchInventoryOptionsInput = {
   warehouseId: string
   productId?: string
-  sectionId?: string
-  locationId?: string
+  /**
+   * Free-text location filter chip. Server-side ILIKE on `inventory.location`.
+   * Used by the cut-log side panel inventory picker (work-orders module);
+   * independent from the search bar (which targets `inventoryItem`).
+   */
+  location?: string
   search?: string
   take?: number
 }
@@ -18,15 +22,13 @@ export async function searchInventoryOptionsUseCase(
 ): Promise<InventoryOption[]> {
   const search = input.search?.trim() || undefined
   const productId = input.productId?.trim() || undefined
-  const sectionId = input.sectionId?.trim() || undefined
-  const locationId = input.locationId?.trim() || undefined
+  const location = input.location?.trim() || undefined
   const requested = Math.floor(input.take ?? DEFAULT_TAKE)
   const take = Math.max(1, Math.min(MAX_TAKE, requested))
   return searchInventoryOptions({
     warehouseId: input.warehouseId,
     productId,
-    sectionId,
-    locationId,
+    location,
     search,
     take,
   })

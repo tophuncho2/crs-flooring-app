@@ -1,11 +1,12 @@
 import type { InventoryRecord } from "@builders/db"
 
 export type UpdateInventoryInput = {
-  itemNumber?: string
+  rollNumber?: string
   dyeLot?: string
   warehouseId?: string
-  locationId?: string
-  notes?: string
+  location?: string
+  note?: string
+  internalNotes?: string
   isArchived?: boolean
 }
 

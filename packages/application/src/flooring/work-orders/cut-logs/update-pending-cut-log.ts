@@ -155,8 +155,6 @@ export async function updatePendingCutLogUseCase(
     const mergedNotes = input.patch.notes !== undefined ? input.patch.notes : existing.notes
     const formIssues = validateCutLogPendingForm({
       cut: mergedCut,
-      cost: null,
-      freight: null,
       isWaste: mergedIsWaste,
       notes: mergedNotes,
     })

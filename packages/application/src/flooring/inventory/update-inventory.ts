@@ -1,13 +1,15 @@
 import {
   Prisma,
   getInventoryById,
-  getLocationById,
   getWarehouseById,
+  lockInventoryRow,
   updateInventoryRecord,
   withDatabaseTransaction,
   type UpdateInventoryRecordInput as DbUpdateInventoryInput,
 } from "@builders/db"
 import {
+  applyRollNumberPrefix,
+  composeInventoryItem,
   describeInventoryFormValidationIssues,
   validateInventoryForm,
 } from "@builders/domain"
@@ -19,6 +21,21 @@ function emptyToNull(value: string): string | null {
   return trimmed.length === 0 ? null : trimmed
 }
 
+/**
+ * Update a real-inventory row. Single TX:
+ *   1. Lock the row via SELECT FOR UPDATE so concurrent updates serialize.
+ *   2. Read current state.
+ *   3. If `warehouseId` is changing, assert the new warehouse exists.
+ *   4. Validate the merged form (warehouse required).
+ *   5. Apply the server-side `ROLL` prefix to `rollNumber` (when patched).
+ *   6. Recompose the denormalized `inventoryItem` column from the
+ *      post-patch effective values (always — cheap and avoids drift).
+ *   7. Write all editable fields + the recomposed `inventoryItem` in a
+ *      single update.
+ *
+ * Location is plain text post-sweep — no FK lookup, no cross-warehouse
+ * mismatch check (those rules retired with the FK).
+ */
 export async function updateInventoryUseCase(
   id: string,
   input: UpdateInventoryInput,
@@ -27,6 +44,10 @@ export async function updateInventoryUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
+    // 1. Row lock first — every read below sees a stable snapshot.
+    await lockInventoryRow(c, id)
+
+    // 2. Read current state.
     const current = await getInventoryById(id, c)
     if (!current) {
       throw new InventoryExecutionError({
@@ -36,10 +57,8 @@ export async function updateInventoryUseCase(
       })
     }
 
+    // 3. Warehouse existence check when changing.
     const mergedWarehouseId = (input.warehouseId ?? current.warehouseId).trim()
-    const rawMergedLocationId = input.locationId ?? current.locationId
-    const mergedLocationId = rawMergedLocationId.trim() || null
-
     const warehouseChanged =
       input.warehouseId !== undefined && input.warehouseId !== current.warehouseId
     if (warehouseChanged && mergedWarehouseId) {
@@ -54,26 +73,8 @@ export async function updateInventoryUseCase(
       }
     }
 
-    let resolvedLocation: { id: string; warehouseId: string } | null = null
-    const locationChanged =
-      input.locationId !== undefined && (input.locationId ?? "") !== current.locationId
-    if (mergedLocationId && (locationChanged || warehouseChanged)) {
-      const location = await getLocationById(mergedLocationId, c)
-      if (!location) {
-        throw new InventoryExecutionError({
-          code: "INVENTORY_LOCATION_NOT_FOUND",
-          message: "Selected location does not exist.",
-          status: 404,
-          field: "locationId",
-        })
-      }
-      resolvedLocation = { id: location.id, warehouseId: location.warehouseId }
-    }
-
-    const issues = validateInventoryForm(
-      { warehouseId: mergedWarehouseId, locationId: mergedLocationId },
-      resolvedLocation,
-    )
+    // 4. Form validation (warehouse required).
+    const issues = validateInventoryForm({ warehouseId: mergedWarehouseId })
     if (issues.length > 0) {
       throw new InventoryExecutionError({
         code: "INVENTORY_VALIDATION_FAILED",
@@ -83,22 +84,61 @@ export async function updateInventoryUseCase(
       })
     }
 
-    const dbInput: DbUpdateInventoryInput = {}
-    if (input.itemNumber !== undefined) dbInput.itemNumber = emptyToNull(input.itemNumber)
-    if (input.dyeLot !== undefined) dbInput.dyeLot = emptyToNull(input.dyeLot)
-    if (input.notes !== undefined) dbInput.notes = emptyToNull(input.notes)
+    // 5. Resolve patched fields (effective post-patch values for the composer
+    // + the data-layer write input). `null` represents "stored null"; we
+    // convert empty strings to null on write per the column's nullable schema.
+    const effectiveRollNumber =
+      input.rollNumber !== undefined
+        ? applyRollNumberPrefix(input.rollNumber)
+        : current.rollNumber === ""
+          ? null
+          : current.rollNumber
+    const effectiveDyeLot =
+      input.dyeLot !== undefined
+        ? emptyToNull(input.dyeLot)
+        : current.dyeLot === ""
+          ? null
+          : current.dyeLot
+    const effectiveLocation =
+      input.location !== undefined
+        ? emptyToNull(input.location)
+        : current.location === ""
+          ? null
+          : current.location
+    const effectiveNote =
+      input.note !== undefined
+        ? emptyToNull(input.note)
+        : current.note === ""
+          ? null
+          : current.note
+    const effectiveInternalNotes =
+      input.internalNotes !== undefined
+        ? emptyToNull(input.internalNotes)
+        : current.internalNotes === ""
+          ? null
+          : current.internalNotes
+
+    // 6. Recompose `inventoryItem` from the post-patch effective values.
+    // Always recompute — the composer is pure and fast, and an unconditional
+    // write avoids drift if a future caller bypasses the patch detection.
+    const inventoryItem = composeInventoryItem({
+      inventoryNumber: current.inventoryNumber,
+      rollNumber: effectiveRollNumber ?? "",
+      location: effectiveLocation ?? "",
+      dyeLot: effectiveDyeLot ?? "",
+      note: effectiveNote ?? "",
+    })
+
+    // 7. Build the write input — only fields the patch touched (plus the
+    // server-recomposed inventoryItem).
+    const dbInput: DbUpdateInventoryInput = { inventoryItem }
+    if (input.rollNumber !== undefined) dbInput.rollNumber = effectiveRollNumber
+    if (input.dyeLot !== undefined) dbInput.dyeLot = effectiveDyeLot
+    if (input.location !== undefined) dbInput.location = effectiveLocation
+    if (input.note !== undefined) dbInput.note = effectiveNote
+    if (input.internalNotes !== undefined) dbInput.internalNotes = effectiveInternalNotes
     if (input.isArchived !== undefined) dbInput.isArchived = input.isArchived
-    if (input.warehouseId !== undefined) {
-      dbInput.warehouseId = mergedWarehouseId
-    }
-    if (input.locationId !== undefined) {
-      dbInput.locationId = mergedLocationId
-      // Source-of-truth rule: if location changed and caller didn't also send a
-      // warehouseId, re-stamp warehouseId from the resolved location.
-      if (locationChanged && resolvedLocation && !warehouseChanged) {
-        dbInput.warehouseId = resolvedLocation.warehouseId
-      }
-    }
+    if (input.warehouseId !== undefined) dbInput.warehouseId = mergedWarehouseId
 
     return updateInventoryRecord(id, dbInput, c)
   })
