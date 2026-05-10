@@ -6,7 +6,6 @@ export type ImportRow = {
   id: string
   importNumber: number
   orderNumber: string
-  tag: string
   notes: string
   warehouseId: string
   warehouseName: string
@@ -32,7 +31,6 @@ export type ImportDetail = ImportRow & {
 
 export type ImportPrimaryForm = {
   orderNumber: string
-  tag: string
   notes: string
   warehouseId: string
   manufacturerId: string
@@ -40,7 +38,6 @@ export type ImportPrimaryForm = {
 
 export const EMPTY_IMPORT_PRIMARY_FORM: ImportPrimaryForm = {
   orderNumber: "",
-  tag: "",
   notes: "",
   warehouseId: "",
   manufacturerId: "",
@@ -49,7 +46,6 @@ export const EMPTY_IMPORT_PRIMARY_FORM: ImportPrimaryForm = {
 export function toImportPrimaryForm(record: ImportRow): ImportPrimaryForm {
   return {
     orderNumber: record.orderNumber,
-    tag: record.tag,
     notes: record.notes,
     warehouseId: record.warehouseId,
     manufacturerId: record.manufacturerId,

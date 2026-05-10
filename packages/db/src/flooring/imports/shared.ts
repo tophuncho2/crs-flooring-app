@@ -6,7 +6,6 @@ export const importRowSelect = {
   id: true,
   importNumber: true,
   orderNumber: true,
-  tag: true,
   notes: true,
   warehouseId: true,
   warehouse: { select: { id: true, name: true, number: true } },

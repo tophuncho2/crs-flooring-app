@@ -11,7 +11,6 @@
 // User-editable on the record-view primary section.
 export const IMPORT_USER_EDITABLE_FIELDS = [
   "orderNumber",
-  "tag",
   "notes",
   "warehouseId",
   "manufacturerId",

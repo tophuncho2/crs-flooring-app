@@ -10,7 +10,6 @@ import { getImportById, type ImportRecord } from "./read-repository.js"
  */
 export type CreateImportRecordInput = {
   orderNumber: string | null
-  tag: string | null
   notes: string | null
   warehouseId: string
   manufacturerId: string | null
@@ -29,7 +28,6 @@ export async function createImportRecord(
   const row = await client.flooringImportEntry.create({
     data: {
       orderNumber: input.orderNumber,
-      tag: input.tag,
       notes: input.notes,
       warehouse: { connect: { id: input.warehouseId } },
       manufacturer: input.manufacturerId
@@ -50,7 +48,6 @@ export async function updateImportRecord(
 ): Promise<ImportRecord> {
   const data: Prisma.FlooringImportEntryUpdateInput = {}
   if (input.orderNumber !== undefined) data.orderNumber = input.orderNumber
-  if (input.tag !== undefined) data.tag = input.tag
   if (input.notes !== undefined) data.notes = input.notes
   if (input.warehouseId !== undefined) {
     data.warehouse = { connect: { id: input.warehouseId } }
