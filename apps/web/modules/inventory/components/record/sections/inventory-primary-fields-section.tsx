@@ -11,37 +11,6 @@ import {
   type InventoryRow,
 } from "@builders/domain"
 
-/**
- * Inline static `ROLL` prefix decoration: a fixed badge to the left of a
- * plain TextCell. Form value binds raw to `draft.rollNumber` — no
- * client-side stripping or transformation. The cell is purely a visual hint
- * that "ROLL" is the convention; the inventory update use case prepends
- * `ROLL` to non-empty values on save.
- */
-function RollNumberInputCell({
-  value,
-  editable,
-  onChange,
-}: {
-  value: string
-  editable: boolean
-  onChange: (value: string) => void
-}) {
-  return (
-    <div className="flex items-stretch gap-1">
-      <span
-        aria-hidden="true"
-        className="inline-flex items-center rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 text-xs font-semibold tracking-wide text-[var(--text-muted)]"
-      >
-        ROLL
-      </span>
-      <div className="flex-1">
-        <TextCell editable={editable} value={value} onChange={onChange} ariaLabel="Roll number" />
-      </div>
-    </div>
-  )
-}
-
 export function InventoryPrimaryFieldsSection({
   inventory,
   draft,
@@ -113,7 +82,7 @@ export function InventoryPrimaryFieldsSection({
       </CellAt>
       <CellAt col={3} row={3} colSpan={2}>
         <FormField label="Roll #">
-          <RollNumberInputCell
+          <TextCell
             editable={editable}
             value={draft.rollNumber}
             onChange={(value) => onFieldChange("rollNumber", value)}
