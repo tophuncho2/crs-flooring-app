@@ -32,8 +32,8 @@ function importRow(overrides: Partial<ImportRow> = {}): ImportRow {
   return {
     id: "imp-1",
     importNumber: 1,
-    orderNumber: "PO-1",
-    notes: "",
+    purchaseOrderNumber: "PO-1",
+    internalNotes: "",
     warehouseId: "wh-1",
     warehouseName: "Main Warehouse",
     manufacturerId: "mfr-1",

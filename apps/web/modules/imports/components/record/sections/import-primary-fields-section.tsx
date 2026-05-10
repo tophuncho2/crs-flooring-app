@@ -25,11 +25,11 @@ export function ImportPrimaryFieldsSection({
   return (
     <FieldSection>
       <CellAt col={1} colSpan={2}>
-        <FormField label="Order Number">
+        <FormField label="Purchase Order Number">
           <TextCell
             editable={editable}
-            value={draft.orderNumber}
-            onChange={(value) => onFieldChange("orderNumber", value)}
+            value={draft.purchaseOrderNumber}
+            onChange={(value) => onFieldChange("purchaseOrderNumber", value)}
           />
         </FormField>
       </CellAt>
@@ -64,11 +64,11 @@ export function ImportPrimaryFieldsSection({
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={8}>
-        <FormField label="Notes">
+        <FormField label="Internal Notes">
           <TextareaCell
             editable={editable}
-            value={draft.notes}
-            onChange={(value) => onFieldChange("notes", value)}
+            value={draft.internalNotes}
+            onChange={(value) => onFieldChange("internalNotes", value)}
             rows={3}
           />
         </FormField>

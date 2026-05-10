@@ -47,8 +47,8 @@ function optionalString(value: unknown, field: string): string {
 
 export function validateCreateImportInput(body: Record<string, unknown>): CreateImportInput {
   return {
-    orderNumber: optionalString(body.orderNumber, "orderNumber"),
-    notes: optionalString(body.notes, "notes"),
+    purchaseOrderNumber: optionalString(body.purchaseOrderNumber, "purchaseOrderNumber"),
+    internalNotes: optionalString(body.internalNotes, "internalNotes"),
     warehouseId: requireString(body.warehouseId, "warehouseId"),
     manufacturerId: optionalString(body.manufacturerId, "manufacturerId"),
   }
@@ -56,8 +56,8 @@ export function validateCreateImportInput(body: Record<string, unknown>): Create
 
 export function validateUpdateImportInput(body: Record<string, unknown>): UpdateImportInput {
   const input: UpdateImportInput = {}
-  if (body.orderNumber !== undefined) input.orderNumber = optionalString(body.orderNumber, "orderNumber")
-  if (body.notes !== undefined) input.notes = optionalString(body.notes, "notes")
+  if (body.purchaseOrderNumber !== undefined) input.purchaseOrderNumber = optionalString(body.purchaseOrderNumber, "purchaseOrderNumber")
+  if (body.internalNotes !== undefined) input.internalNotes = optionalString(body.internalNotes, "internalNotes")
   if (body.warehouseId !== undefined) input.warehouseId = requireString(body.warehouseId, "warehouseId")
   if (body.manufacturerId !== undefined) input.manufacturerId = optionalString(body.manufacturerId, "manufacturerId")
   return input

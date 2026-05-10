@@ -44,8 +44,8 @@ export async function createImportUseCase(
 
     return createImportRecord(
       {
-        orderNumber: emptyToNull(input.orderNumber),
-        notes: emptyToNull(input.notes),
+        purchaseOrderNumber: emptyToNull(input.purchaseOrderNumber),
+        internalNotes: emptyToNull(input.internalNotes),
         warehouseId: input.warehouseId,
         manufacturerId: emptyToNull(input.manufacturerId),
       },
