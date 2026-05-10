@@ -10,13 +10,38 @@ const TRIGGER_INVALID_CLASS_NAME =
   "border-rose-500/60 focus:border-rose-500/70 focus:ring-rose-500/40"
 
 const POPOVER_CLASS_NAME =
-  "flex max-h-80 flex-col rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl focus:outline-none"
+  "flex flex-col rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl focus:outline-none"
 
 const SEARCH_INPUT_CLASS_NAME =
   "w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2.5 py-1.5 text-sm text-[var(--foreground)] outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40"
 
+const VIEWPORT_MARGIN_PX = 8
+const POPOVER_GAP_PX = 6
+const POPOVER_MAX_HEIGHT_PX = 320
+
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
+}
+
+// Decide whether the popover renders below or above the trigger. Flips up when
+// there isn't room below for the full max-height AND there's more room above.
+// Caps `maxHeight` to whatever space is available so the popover never extends
+// past the viewport on either side.
+function computePopoverPlacement(triggerRect: DOMRect): React.CSSProperties {
+  const spaceBelow = window.innerHeight - triggerRect.bottom - VIEWPORT_MARGIN_PX
+  const spaceAbove = triggerRect.top - VIEWPORT_MARGIN_PX
+  const openUp =
+    spaceBelow < POPOVER_MAX_HEIGHT_PX + POPOVER_GAP_PX && spaceAbove > spaceBelow
+  if (openUp) {
+    return {
+      bottom: window.innerHeight - triggerRect.top + POPOVER_GAP_PX,
+      maxHeight: Math.max(0, Math.min(POPOVER_MAX_HEIGHT_PX, spaceAbove - POPOVER_GAP_PX)),
+    }
+  }
+  return {
+    top: triggerRect.bottom + POPOVER_GAP_PX,
+    maxHeight: Math.max(0, Math.min(POPOVER_MAX_HEIGHT_PX, spaceBelow - POPOVER_GAP_PX)),
+  }
 }
 
 export type RichDropdownProps = {
@@ -250,7 +275,7 @@ export function RichDropdown({
               ref={popoverRef}
               style={{
                 position: "fixed",
-                top: triggerRect.bottom + 6,
+                ...computePopoverPlacement(triggerRect),
                 left: triggerRect.left,
                 minWidth: triggerRect.width,
                 maxWidth: `min(32rem, calc(100vw - ${Math.max(triggerRect.left, 0) + 8}px))`,
