@@ -10,6 +10,7 @@ const IMPORTS_LIST_LAYOUT: GridLayout<ImportRow> = {
     { key: "importNumber", label: "Import #", minWidth: 120, grow: 0 },
     { key: "warehouseName", label: "Warehouse", minWidth: 160, grow: 1 },
     { key: "manufacturerName", label: "Manufacturer", minWidth: 160, grow: 1 },
+    { key: "purchaseOrderNumber", label: "Purchase Order #", minWidth: 160, grow: 1 },
     { key: "stagedInventoryRowsCount", label: "Staged", kind: "number", minWidth: 90, grow: 0, align: "end" },
     { key: "liveInventoryRowsCount", label: "Live", kind: "number", minWidth: 80, grow: 0, align: "end" },
     { key: "createdAt", label: "Created", minWidth: 120, grow: 0 },
@@ -71,6 +72,8 @@ export function ImportsTable({
             return row.warehouseName || "-"
           case "manufacturerName":
             return row.manufacturerName || "-"
+          case "purchaseOrderNumber":
+            return row.purchaseOrderNumber || "-"
           case "stagedInventoryRowsCount":
             return <span className="tabular-nums">{row.stagedInventoryRowsCount}</span>
           case "liveInventoryRowsCount":
