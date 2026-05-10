@@ -12,18 +12,16 @@ export type ImportStagedRowDraft = {
   clientId: string
   productId: string
   // Display-only snapshots seeded from the saved row's joined fields and
-  // refreshed when the user picks via the matching picker
-  // (ProductPicker → product fields; LocationPicker → locationShortCode).
-  // Never sent in the mutation payload — server re-normalizes from the
-  // live product / location tables on save.
+  // refreshed when the user picks via the matching picker (ProductPicker →
+  // product fields). Never sent in the mutation payload — server re-normalizes
+  // from the live product table on save.
   productName: string
   stockUnit: string
-  itemNumber: string
+  rollNumber: string
   startingStock: string
-  locationId: string
-  locationShortCode: string
+  location: string
   dyeLot: string
-  notes: string
+  note: string
   /**
    * Client-only helper: scopes the product dropdown to products matching this
    * category. `null` = show all products. Not persisted — never appears in the
@@ -39,12 +37,11 @@ export function createImportStagedRowDraft(item?: StagedInventoryRow): ImportSta
     productId: item?.productId ?? "",
     productName: item?.productName ?? "",
     stockUnit: item?.stockUnit ?? "",
-    itemNumber: item?.itemNumber ?? "",
+    rollNumber: item?.rollNumber ?? "",
     startingStock: item?.startingStock ?? "",
-    locationId: item?.locationId ?? "",
-    locationShortCode: item?.locationShortCode ?? "",
+    location: item?.location ?? "",
     dyeLot: item?.dyeLot ?? "",
-    notes: item?.notes ?? "",
+    note: item?.note ?? "",
     categoryFilterId: null,
   }
 }

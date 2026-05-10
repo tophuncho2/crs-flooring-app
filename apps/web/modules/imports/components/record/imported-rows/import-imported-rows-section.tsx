@@ -9,10 +9,11 @@ import type { StagedInventoryRow } from "@builders/domain"
 const IMPORTED_ROWS_LAYOUT: GridLayout<StagedInventoryRow> = {
   dataColumns: [
     { key: "product", label: "Product", minWidth: 220, preferredWidth: 320, grow: 1.5 },
-    { key: "itemNumber", label: "Item #", minWidth: 116, grow: 0 },
+    { key: "rollNumber", label: "Roll #", minWidth: 116, grow: 0 },
     { key: "startingStock", label: "Starting Stock", minWidth: 156, grow: 0, align: "center" },
     { key: "dyeLot", label: "Dye Lot", minWidth: 124, grow: 0 },
-    { key: "notes", label: "Notes", minWidth: 240, grow: 1.2 },
+    { key: "location", label: "Location", minWidth: 140, grow: 0 },
+    { key: "note", label: "Note", minWidth: 240, grow: 1.2 },
   ],
   trailingControls: [{ key: "status", kind: "status-indicator", width: 132 }],
 }
@@ -39,9 +40,9 @@ export function ImportImportedRowsSection({ rows }: { rows: StagedInventoryRow[]
               return (
                 <TextCell editable={false} value={row.productName} ariaLabel={`${row.productName} product`} />
               )
-            case "itemNumber":
+            case "rollNumber":
               return (
-                <TextCell editable={false} value={row.itemNumber} ariaLabel={`${row.itemNumber} item number`} />
+                <TextCell editable={false} value={row.rollNumber} ariaLabel={`${row.rollNumber} roll number`} />
               )
             case "startingStock":
               return (
@@ -49,16 +50,20 @@ export function ImportImportedRowsSection({ rows }: { rows: StagedInventoryRow[]
                   editable={false}
                   value={row.startingStock}
                   unit={row.stockUnit || "unit"}
-                  ariaLabel={`${row.itemNumber} starting stock`}
+                  ariaLabel={`${row.rollNumber} starting stock`}
                 />
               )
             case "dyeLot":
               return (
-                <TextCell editable={false} value={row.dyeLot || "—"} ariaLabel={`${row.itemNumber} dye lot`} />
+                <TextCell editable={false} value={row.dyeLot || "—"} ariaLabel={`${row.rollNumber} dye lot`} />
               )
-            case "notes":
+            case "location":
               return (
-                <TextCell editable={false} value={row.notes || "—"} ariaLabel={`${row.itemNumber} notes`} />
+                <TextCell editable={false} value={row.location || "—"} ariaLabel={`${row.rollNumber} location`} />
+              )
+            case "note":
+              return (
+                <TextCell editable={false} value={row.note || "—"} ariaLabel={`${row.rollNumber} note`} />
               )
             default:
               return null

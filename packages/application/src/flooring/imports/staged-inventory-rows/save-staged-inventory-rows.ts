@@ -3,7 +3,6 @@ import {
   Prisma,
   applyStagedInventoryRowsDiff,
   getImportById,
-  getLocationById,
   listProducts,
   listStagedInventoryByImport,
   withDatabaseTransaction,
@@ -15,7 +14,6 @@ import {
   describeStagedInventoryDiffIssues,
   validateStagedInventoryRowsDiff,
   type DiffExistingStagedInventoryRow,
-  type DiffStagedLocationLookup,
   type StagedInventoryParentContext,
   type StagedInventoryRowUpdate,
   type StagedInventoryRowUpdatePatch,
@@ -28,37 +26,10 @@ function toExistingDiffRow(row: StagedInventoryRecord): DiffExistingStagedInvent
   return {
     id: row.id,
     productId: row.productId,
-    itemNumber: row.itemNumber,
-    locationId: row.locationId === "" ? null : row.locationId,
+    rollNumber: row.rollNumber,
     warehouseId: row.warehouseId,
     isImported: row.isImported,
   }
-}
-
-function collectReferencedLocationIds(
-  diff: StagedInventoryRowsDiff,
-  existingRows: StagedInventoryRecord[],
-): string[] {
-  const ids = new Set<string>()
-  const deletedIds = new Set(diff.deleted.map((d) => d.id))
-  // The domain validator projects every post-diff row (existing untouched
-  // + modified + added) and checks each one's locationId against the
-  // resolved-locations index. Existing rows that survive the diff
-  // contribute their locationId, so the use case must fetch those
-  // locations even when the user didn't touch the row in this save.
-  // Without this, untouched existing rows with valid locations surface
-  // as STAGED_UNKNOWN_LOCATION false positives.
-  for (const row of existingRows) {
-    if (deletedIds.has(row.id)) continue
-    if (row.locationId) ids.add(row.locationId)
-  }
-  for (const draft of diff.added) {
-    if (draft.locationId) ids.add(draft.locationId)
-  }
-  for (const update of diff.modified) {
-    if (update.patch.locationId) ids.add(update.patch.locationId)
-  }
-  return Array.from(ids)
 }
 
 function patchToDbUpdate(
@@ -66,12 +37,12 @@ function patchToDbUpdate(
 ): UpdateStagedInventoryRecordInput {
   const data: UpdateStagedInventoryRecordInput = {}
   if (patch.productId !== undefined) data.productId = patch.productId
-  if (patch.itemNumber !== undefined) data.itemNumber = patch.itemNumber
+  if (patch.rollNumber !== undefined) data.rollNumber = patch.rollNumber
   if (patch.dyeLot !== undefined) data.dyeLot = patch.dyeLot
   if (patch.warehouseId !== undefined) data.warehouseId = patch.warehouseId
-  if (patch.locationId !== undefined) data.locationId = patch.locationId
+  if (patch.location !== undefined) data.location = patch.location
   if (patch.startingStock !== undefined) data.startingStock = patch.startingStock
-  if (patch.notes !== undefined) data.notes = patch.notes
+  if (patch.note !== undefined) data.note = patch.note
   return data
 }
 
@@ -132,15 +103,6 @@ export async function saveStagedInventoryRowsUseCase(
 
     const existing = existingRows.map(toExistingDiffRow)
 
-    const referencedLocationIds = collectReferencedLocationIds(diff, existingRows)
-    const locations: DiffStagedLocationLookup[] = []
-    for (const id of referencedLocationIds) {
-      const location = await getLocationById(id, c)
-      if (location) {
-        locations.push({ id: location.id, warehouseId: location.warehouseId })
-      }
-    }
-
     const products = await listProducts(c)
     const knownProductIds = products.map((p) => p.id)
 
@@ -151,7 +113,7 @@ export async function saveStagedInventoryRowsUseCase(
 
     const issues = validateStagedInventoryRowsDiff(
       diff,
-      { existing, locations, knownProductIds },
+      { existing, knownProductIds },
       parentContext,
     )
     if (issues.length > 0) {
@@ -175,17 +137,12 @@ export async function saveStagedInventoryRowsUseCase(
         id: draft.id,
         tempId: draft.tempId,
         productId: draft.productId,
-        itemNumber: draft.itemNumber,
+        rollNumber: draft.rollNumber,
         dyeLot: draft.dyeLot,
         warehouseId: draft.warehouseId,
-        locationId: draft.locationId,
+        location: draft.location,
         startingStock: draft.startingStock,
-        // cost / freight aren't user-editable in V1 — write null here.
-        // ETL paths that set cost/freight write via the data-layer repo
-        // directly, not through this use case.
-        cost: null,
-        freight: null,
-        notes: draft.notes,
+        note: draft.note,
       })),
       modified: diff.modified.map((m) => ({
         id: m.id,

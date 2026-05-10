@@ -144,13 +144,11 @@ export function canImportStagedRow(
 // User-editable on the staged-rows section's diff-save path.
 export const STAGED_USER_EDITABLE_FIELDS = [
   "productId",
-  "itemNumber",
+  "rollNumber",
   "dyeLot",
-  "locationId",
+  "location",
   "startingStock",
-  "cost",
-  "freight",
-  "notes",
+  "note",
 ] as const
 
 // Owned by the parent import row — `warehouseId` is copied from the import's

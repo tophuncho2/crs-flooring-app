@@ -15,14 +15,12 @@ import {
 export type CreateStagedInventoryRecordInput = {
   importEntryId: string
   productId: string
-  itemNumber: string | null
+  rollNumber: string | null
   dyeLot: string | null
   warehouseId: string
-  locationId: string | null
+  location: string | null
   startingStock: Prisma.Decimal | string | number
-  cost: Prisma.Decimal | string | number | null
-  freight: Prisma.Decimal | string | number | null
-  notes: string | null
+  note: string | null
 }
 
 export type UpdateStagedInventoryRecordInput = Partial<
@@ -39,14 +37,12 @@ export async function createStagedInventoryRecord(
     data: {
       importEntry: { connect: { id: input.importEntryId } },
       product: { connect: { id: input.productId } },
-      itemNumber: input.itemNumber,
+      rollNumber: input.rollNumber,
       dyeLot: input.dyeLot,
       warehouse: { connect: { id: input.warehouseId } },
-      location: input.locationId ? { connect: { id: input.locationId } } : undefined,
+      location: input.location,
       startingStock: input.startingStock,
-      cost: input.cost,
-      freight: input.freight,
-      notes: input.notes,
+      note: input.note,
     },
     select: { id: true },
   })
@@ -64,20 +60,14 @@ function buildUpdateData(
   if (input.productId !== undefined) {
     data.product = { connect: { id: input.productId } }
   }
-  if (input.itemNumber !== undefined) data.itemNumber = input.itemNumber
+  if (input.rollNumber !== undefined) data.rollNumber = input.rollNumber
   if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
   if (input.warehouseId !== undefined) {
     data.warehouse = { connect: { id: input.warehouseId } }
   }
-  if (input.locationId !== undefined) {
-    data.location = input.locationId
-      ? { connect: { id: input.locationId } }
-      : { disconnect: true }
-  }
+  if (input.location !== undefined) data.location = input.location
   if (input.startingStock !== undefined) data.startingStock = input.startingStock
-  if (input.cost !== undefined) data.cost = input.cost
-  if (input.freight !== undefined) data.freight = input.freight
-  if (input.notes !== undefined) data.notes = input.notes
+  if (input.note !== undefined) data.note = input.note
   if (input.isImported !== undefined) data.isImported = input.isImported
   return data
 }
@@ -136,14 +126,12 @@ export type ApplyStagedInventoryRowsDiffInput = {
     id: string
     tempId: string
     productId: string
-    itemNumber: string
+    rollNumber: string
     dyeLot: string | null
     warehouseId: string
-    locationId: string | null
+    location: string | null
     startingStock: string
-    cost: string | null
-    freight: string | null
-    notes: string | null
+    note: string | null
   }>
   modified: Array<{
     id: string
@@ -181,14 +169,12 @@ export async function applyStagedInventoryRowsDiff(
         id: draft.id,
         importEntryId: input.importEntryId,
         productId: draft.productId,
-        itemNumber: draft.itemNumber,
+        rollNumber: draft.rollNumber,
         dyeLot: draft.dyeLot,
         warehouseId: draft.warehouseId,
-        locationId: draft.locationId,
+        location: draft.location,
         startingStock: draft.startingStock,
-        cost: draft.cost,
-        freight: draft.freight,
-        notes: draft.notes,
+        note: draft.note,
       })),
     })
   }

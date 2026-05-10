@@ -55,12 +55,16 @@ export async function materializeImportedStagedRowsUseCase(
 
     const fifoReceivedAt = new Date()
 
+    // Hardscoped pending the inventory-rebuild sweep: staged rows no longer
+    // carry cost / freight / locationId, so we pass null here. The renamed
+    // fields (rollNumber, note) map to inventory's existing itemNumber / notes
+    // until the inventory schema is reshaped to match.
     const inventoryRowsToCreate: Array<
       CreateInventoryRecordInput & { id: string; sourceStagedRowId: string }
     > = loadedRows.map((row) => {
       const startingStock = row.startingStock.toString()
-      const cost = decimalToString(row.cost)
-      const freight = decimalToString(row.freight)
+      const cost: string | null = null
+      const freight: string | null = null
       const category = row.product.category
       return {
         id: randomUUID(),
@@ -75,16 +79,16 @@ export async function materializeImportedStagedRowsUseCase(
         sendUnitName: category.sendUnit?.name ?? null,
         sendUnitAbbrev: category.sendUnit?.abbreviation ?? null,
         coveragePerUnit: decimalToString(row.product.coveragePerUnit),
-        itemNumber: row.itemNumber,
+        itemNumber: row.rollNumber,
         dyeLot: row.dyeLot,
         warehouseId: row.warehouseId,
-        locationId: row.locationId,
+        locationId: null,
         startingStock,
         cost,
         freight,
         costPerUnit: computeCostPerUnit({ cost, startingStock }),
         freightPerUnit: computeFreightPerUnit({ freight, startingStock }),
-        notes: row.notes,
+        notes: row.note,
         fifoReceivedAt,
       }
     })

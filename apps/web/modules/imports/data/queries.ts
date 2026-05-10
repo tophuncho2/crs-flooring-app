@@ -13,11 +13,11 @@ import {
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
 
 // All form-options for the imports record view are powered by async pickers
-// (WarehousePicker / LocationPicker / ProductPicker / CategoryPicker /
-// ManufacturerPicker) which call /api/{warehouses,locations,products,
-// categories,manufacturers}/options on demand. Read-only labels come from
-// joined snapshots on ImportDetail (warehouseName, manufacturerName) and
-// StagedInventoryRow (productName + stockUnit + locationShortCode).
+// (WarehousePicker / ProductPicker / CategoryPicker / ManufacturerPicker)
+// which call /api/{warehouses,products,categories,manufacturers}/options on
+// demand. Read-only labels come from joined snapshots on ImportDetail
+// (warehouseName, manufacturerName) and StagedInventoryRow (productName +
+// stockUnit).
 export type ImportDetailPageData = {
   entry: ImportDetailRecord
   stagedRows: StagedInventoryRecord[]

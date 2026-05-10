@@ -11,7 +11,6 @@ import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select
 import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
   ImportDetail,
-  LocationOption,
   ProductOption,
   StagedInventoryRow,
   StagedInventoryRowDraft,
@@ -46,15 +45,14 @@ function toDraftPayload(
   return {
     tempId: row.clientId,
     productId: row.productId,
-    itemNumber: row.itemNumber,
+    rollNumber: row.rollNumber,
     dyeLot: row.dyeLot || null,
-    // Validator requires warehouseId on each draft. The use case re-resolves
-    // from the location's warehouseId at write time; the parent import's
+    // Validator requires warehouseId on each draft. The parent import's
     // warehouseId is the canonical scope.
     warehouseId: importWarehouseId,
-    locationId: row.locationId || null,
+    location: row.location || null,
     startingStock: row.startingStock,
-    notes: row.notes || null,
+    note: row.note || null,
   }
 }
 
@@ -64,13 +62,13 @@ function toUpdatePatch(
 ): StagedInventoryRowUpdatePatch {
   const patch: StagedInventoryRowUpdatePatch = {}
   if (row.productId !== existing.productId) patch.productId = row.productId
-  if (row.itemNumber !== existing.itemNumber) patch.itemNumber = row.itemNumber
+  if (row.rollNumber !== existing.rollNumber) patch.rollNumber = row.rollNumber
   if ((row.dyeLot || null) !== (existing.dyeLot || null)) patch.dyeLot = row.dyeLot || null
-  if ((row.locationId || null) !== (existing.locationId || null)) {
-    patch.locationId = row.locationId || null
+  if ((row.location || null) !== (existing.location || null)) {
+    patch.location = row.location || null
   }
   if (row.startingStock !== existing.startingStock) patch.startingStock = row.startingStock
-  if ((row.notes || null) !== (existing.notes || null)) patch.notes = row.notes || null
+  if ((row.note || null) !== (existing.note || null)) patch.note = row.note || null
   return patch
 }
 
@@ -212,8 +210,8 @@ export function useImportStagedInventoryRowsSection({
       if (!source) return previous
       // Copy productId + productName + stockUnit + categoryFilterId so the
       // new row's picker shows the same product (with label) and the
-      // starting-stock unit suffix is preserved. itemNumber, startingStock,
-      // location, dyeLot, and notes start blank — the user has to confirm
+      // starting-stock unit suffix is preserved. rollNumber, startingStock,
+      // location, dyeLot, and note start blank — the user has to confirm
       // those per-row inventory specifics on the new line.
       const duplicated: ImportStagedRowDraft = {
         clientId: createLocalRecordRowId("import-staged-row"),
@@ -222,12 +220,11 @@ export function useImportStagedInventoryRowsSection({
             productId: source.productId,
             productName: source.productName,
             stockUnit: source.stockUnit,
-            itemNumber: source.itemNumber,
+            rollNumber: source.rollNumber,
             startingStock: source.startingStock,
-            locationId: source.locationId,
-            locationShortCode: source.locationShortCode,
+            location: source.location,
             dyeLot: source.dyeLot,
-            notes: source.notes,
+            note: source.note,
             categoryFilterId: source.categoryFilterId,
           },
           {
@@ -236,12 +233,11 @@ export function useImportStagedInventoryRowsSection({
               productId: "",
               productName: "",
               stockUnit: "",
-              itemNumber: "",
+              rollNumber: "",
               startingStock: "",
-              locationId: "",
-              locationShortCode: "",
+              location: "",
               dyeLot: "",
-              notes: "",
+              note: "",
               categoryFilterId: null,
             },
           },
@@ -258,7 +254,7 @@ export function useImportStagedInventoryRowsSection({
     index: number,
     field: Exclude<
       keyof Omit<ImportStagedRowDraft, "clientId">,
-      "categoryFilterId" | "productName" | "stockUnit" | "locationShortCode"
+      "categoryFilterId" | "productName" | "stockUnit"
     >,
     value: string,
   ) {
@@ -307,31 +303,6 @@ export function useImportStagedInventoryRowsSection({
     }
   }
 
-  // Atomic snapshot update for the row's locationShortCode when the
-  // LocationPicker emits onOptionSelected. Display-only field — never
-  // enters the diff sent on save. Picker's onChange separately commits
-  // locationId via setRowField.
-  function setRowLocationSnapshot(index: number, option: LocationOption | null) {
-    section.setLocalValue((previous) =>
-      previous.map((row, rowIndex) => {
-        if (rowIndex !== index) return row
-        if (option === null) return { ...row, locationShortCode: "" }
-        return { ...row, locationShortCode: option.shortCode }
-      }),
-    )
-  }
-
-  // Parent warehouse change: picker is scoped per-row by warehouseId, so
-  // every row's stale locationId / locationShortCode become invalid in
-  // one shot. Clear them — user re-picks per row. Replaces the prior
-  // mismatch-detection logic that depended on an in-memory
-  // locationOptions array.
-  function handleWarehouseChange(_nextWarehouseId: string) {
-    section.setLocalValue((previous) =>
-      previous.map((row) => ({ ...row, locationId: "", locationShortCode: "" })),
-    )
-  }
-
   // Mark-for-import batch action. Eligibility = persisted server row that's
   // still DRAFT with a product + starting stock. `useGatedBatchSelect` wraps
   // the underlying `useBatchSelectAction` primitive with section-aware
@@ -371,8 +342,6 @@ export function useImportStagedInventoryRowsSection({
     setRowField,
     setRowCategoryFilter,
     setRowProductSnapshot,
-    setRowLocationSnapshot,
-    handleWarehouseChange,
     selectedIds: markForImport.selectedIds,
     toggleSelection: markForImport.toggleSelected,
     clearSelection: markForImport.clearSelection,

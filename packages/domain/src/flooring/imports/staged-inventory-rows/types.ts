@@ -24,23 +24,16 @@ export type StagedInventoryRow = {
   categoryName: string
   categorySlug: string
   stockUnit: string
-  itemNumber: string
+  rollNumber: string
   dyeLot: string
   warehouseId: string
   warehouseName: string
   warehouseNumber: string
-  locationId: string
-  locationCode: string
-  locationShortCode: string
-  sectionNumber: string
-  rafter: string
-  level: string
+  location: string
   startingStock: string
   status: FlooringStagedRowStatus
   isImported: boolean
-  cost: string
-  freight: string
-  notes: string
+  note: string
   createdAt: string
   updatedAt: string
 }
@@ -48,37 +41,31 @@ export type StagedInventoryRow = {
 export type StagedInventoryForm = {
   productId: string
   warehouseId: string
-  locationId: string
-  itemNumber: string
+  rollNumber: string
   dyeLot: string
+  location: string
   startingStock: string
-  cost: string
-  freight: string
-  notes: string
+  note: string
 }
 
 export const EMPTY_STAGED_INVENTORY_FORM: StagedInventoryForm = {
   productId: "",
   warehouseId: "",
-  locationId: "",
-  itemNumber: "",
+  rollNumber: "",
   dyeLot: "",
+  location: "",
   startingStock: "",
-  cost: "",
-  freight: "",
-  notes: "",
+  note: "",
 }
 
 export function toStagedInventoryForm(row: StagedInventoryRow): StagedInventoryForm {
   return {
     productId: row.productId,
     warehouseId: row.warehouseId,
-    locationId: row.locationId,
-    itemNumber: row.itemNumber,
+    rollNumber: row.rollNumber,
     dyeLot: row.dyeLot,
+    location: row.location,
     startingStock: row.startingStock,
-    cost: row.cost,
-    freight: row.freight,
-    notes: row.notes,
+    note: row.note,
   }
 }

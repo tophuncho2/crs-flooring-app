@@ -5,9 +5,6 @@ export type StagedInventoryValidationIssue =
   | { code: "STAGED_WAREHOUSE_REQUIRED" }
   | { code: "STAGED_STARTING_STOCK_INVALID"; value: string }
   | { code: "STAGED_STARTING_STOCK_NEGATIVE"; value: string }
-  | { code: "STAGED_LOCATION_WAREHOUSE_MISMATCH"; locationWarehouseId: string; warehouseId: string }
-
-export type StagedLocationLookup = { id: string; warehouseId: string }
 
 /**
  * Per-row form validator for a staged inventory draft. The diff-level
@@ -15,7 +12,6 @@ export type StagedLocationLookup = { id: string; warehouseId: string }
  */
 export function validateStagedInventoryForm(
   input: StagedInventoryForm,
-  location: StagedLocationLookup | null,
 ): StagedInventoryValidationIssue[] {
   const issues: StagedInventoryValidationIssue[] = []
 
@@ -34,16 +30,6 @@ export function validateStagedInventoryForm(
     issues.push({ code: "STAGED_STARTING_STOCK_NEGATIVE", value: input.startingStock })
   }
 
-  if (input.locationId && input.warehouseId && location) {
-    if (location.warehouseId !== input.warehouseId) {
-      issues.push({
-        code: "STAGED_LOCATION_WAREHOUSE_MISMATCH",
-        locationWarehouseId: location.warehouseId,
-        warehouseId: input.warehouseId,
-      })
-    }
-  }
-
   return issues
 }
 
@@ -59,8 +45,6 @@ export function describeStagedInventoryValidationIssue(
       return "Starting stock must be a number."
     case "STAGED_STARTING_STOCK_NEGATIVE":
       return "Starting stock cannot be negative."
-    case "STAGED_LOCATION_WAREHOUSE_MISMATCH":
-      return "The selected location does not belong to the row's warehouse."
   }
 }
 

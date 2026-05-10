@@ -102,12 +102,12 @@ function shapeStagedDraft(raw: unknown, idx: number): StagedInventoryRowDraft {
   return {
     tempId: requireStagedString(row.tempId, `added[${idx}].tempId`),
     productId: requireStagedString(row.productId, `added[${idx}].productId`),
-    itemNumber: requireStagedString(row.itemNumber, `added[${idx}].itemNumber`),
+    rollNumber: requireStagedString(row.rollNumber, `added[${idx}].rollNumber`),
     dyeLot: nullableStagedString(row.dyeLot, `added[${idx}].dyeLot`),
     warehouseId: requireStagedString(row.warehouseId, `added[${idx}].warehouseId`),
-    locationId: nullableStagedString(row.locationId, `added[${idx}].locationId`),
+    location: nullableStagedString(row.location, `added[${idx}].location`),
     startingStock: requireStagedString(row.startingStock, `added[${idx}].startingStock`),
-    notes: nullableStagedString(row.notes, `added[${idx}].notes`),
+    note: nullableStagedString(row.note, `added[${idx}].note`),
   }
 }
 
@@ -115,12 +115,12 @@ function shapeStagedPatch(raw: unknown, idx: number): StagedInventoryRowUpdatePa
   const patch = requireStagedObject(raw, `modified[${idx}].patch`)
   const result: StagedInventoryRowUpdatePatch = {}
   if (patch.productId !== undefined) result.productId = requireStagedString(patch.productId, `modified[${idx}].patch.productId`)
-  if (patch.itemNumber !== undefined) result.itemNumber = requireStagedString(patch.itemNumber, `modified[${idx}].patch.itemNumber`)
+  if (patch.rollNumber !== undefined) result.rollNumber = requireStagedString(patch.rollNumber, `modified[${idx}].patch.rollNumber`)
   if (patch.dyeLot !== undefined) result.dyeLot = nullableStagedString(patch.dyeLot, `modified[${idx}].patch.dyeLot`)
   if (patch.warehouseId !== undefined) result.warehouseId = requireStagedString(patch.warehouseId, `modified[${idx}].patch.warehouseId`)
-  if (patch.locationId !== undefined) result.locationId = nullableStagedString(patch.locationId, `modified[${idx}].patch.locationId`)
+  if (patch.location !== undefined) result.location = nullableStagedString(patch.location, `modified[${idx}].patch.location`)
   if (patch.startingStock !== undefined) result.startingStock = requireStagedString(patch.startingStock, `modified[${idx}].patch.startingStock`)
-  if (patch.notes !== undefined) result.notes = nullableStagedString(patch.notes, `modified[${idx}].patch.notes`)
+  if (patch.note !== undefined) result.note = nullableStagedString(patch.note, `modified[${idx}].patch.note`)
   return result
 }
 

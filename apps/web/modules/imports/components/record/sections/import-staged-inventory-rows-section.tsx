@@ -28,10 +28,11 @@ const STAGED_ROWS_LAYOUT: GridLayout<GridDraftRow> = {
   dataColumns: [
     { key: "categoryFilter", label: "Filter", minWidth: 132, grow: 0 },
     { key: "product", label: "Product", minWidth: 220, preferredWidth: 320, grow: 1.5 },
-    { key: "itemNumber", label: "Item #", minWidth: 116, grow: 0 },
+    { key: "rollNumber", label: "Roll #", minWidth: 116, grow: 0 },
     { key: "startingStock", label: "Starting Stock", minWidth: 156, grow: 0, align: "center" },
     { key: "dyeLot", label: "Dye Lot", minWidth: 124, grow: 0 },
-    { key: "notes", label: "Notes", minWidth: 240, grow: 1.2 },
+    { key: "location", label: "Location", minWidth: 140, grow: 0 },
+    { key: "note", label: "Note", minWidth: 240, grow: 1.2 },
   ],
   trailingControls: [
     { key: "status", kind: "status-indicator", width: 132 },
@@ -98,7 +99,7 @@ export function ImportStagedInventoryRowsSection({
     index: number,
     field: Exclude<
       keyof Omit<ImportStagedRowDraft, "clientId">,
-      "categoryFilterId" | "productName" | "stockUnit" | "locationShortCode"
+      "categoryFilterId" | "productName" | "stockUnit"
     >,
     value: string,
   ) => void
@@ -220,13 +221,13 @@ export function ImportStagedInventoryRowsSection({
                   ariaLabel={`Row ${index + 1} product`}
                 />
               )
-            case "itemNumber":
+            case "rollNumber":
               return (
                 <TextCell
                   editable={editable}
-                  value={row.itemNumber}
-                  onChange={(value) => onRowFieldChange(index, "itemNumber", value)}
-                  ariaLabel={`Row ${index + 1} item number`}
+                  value={row.rollNumber}
+                  onChange={(value) => onRowFieldChange(index, "rollNumber", value)}
+                  ariaLabel={`Row ${index + 1} roll number`}
                 />
               )
             case "startingStock":
@@ -248,13 +249,22 @@ export function ImportStagedInventoryRowsSection({
                   ariaLabel={`Row ${index + 1} dye lot`}
                 />
               )
-            case "notes":
+            case "location":
               return (
                 <TextCell
                   editable={editable}
-                  value={row.notes}
-                  onChange={(value) => onRowFieldChange(index, "notes", value)}
-                  ariaLabel={`Row ${index + 1} notes`}
+                  value={row.location}
+                  onChange={(value) => onRowFieldChange(index, "location", value)}
+                  ariaLabel={`Row ${index + 1} location`}
+                />
+              )
+            case "note":
+              return (
+                <TextCell
+                  editable={editable}
+                  value={row.note}
+                  onChange={(value) => onRowFieldChange(index, "note", value)}
+                  ariaLabel={`Row ${index + 1} note`}
                 />
               )
             default:

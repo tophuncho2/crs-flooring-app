@@ -94,9 +94,6 @@ export function ImportRecordPanel({
                     ...previous,
                     [field]: value,
                   }))
-                  if (field === "warehouseId") {
-                    stagedRowsSection.handleWarehouseChange(value)
-                  }
                 }}
               />
             </RecordPrimarySectionInstance>

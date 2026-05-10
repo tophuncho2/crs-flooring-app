@@ -1,6 +1,5 @@
 import type {
   DiffExistingStagedInventoryRow,
-  DiffStagedLocationLookup,
   StagedInventoryDiffValidationIssue,
   StagedInventoryParentContext,
   StagedInventoryRowsDiff,
@@ -11,8 +10,7 @@ type ProjectedRow = {
   id: string | null
   tempId: string | null
   productId: string
-  itemNumber: string
-  locationId: string | null
+  rollNumber: string
   warehouseId: string
 }
 
@@ -34,8 +32,7 @@ function projectPostDiffRows(
         id: row.id,
         tempId: null,
         productId: mod.patch.productId ?? row.productId,
-        itemNumber: mod.patch.itemNumber ?? row.itemNumber,
-        locationId: mod.patch.locationId !== undefined ? mod.patch.locationId : row.locationId,
+        rollNumber: mod.patch.rollNumber ?? row.rollNumber,
         warehouseId: mod.patch.warehouseId ?? row.warehouseId,
       })
     } else {
@@ -44,8 +41,7 @@ function projectPostDiffRows(
         id: row.id,
         tempId: null,
         productId: row.productId,
-        itemNumber: row.itemNumber,
-        locationId: row.locationId,
+        rollNumber: row.rollNumber,
         warehouseId: row.warehouseId,
       })
     }
@@ -57,43 +53,12 @@ function projectPostDiffRows(
       id: null,
       tempId: draft.tempId,
       productId: draft.productId,
-      itemNumber: draft.itemNumber,
-      locationId: draft.locationId,
+      rollNumber: draft.rollNumber,
       warehouseId: draft.warehouseId,
     })
   }
 
   return projected
-}
-
-function findLocationWarehouseMismatches(
-  rows: ProjectedRow[],
-  locationIndex: Map<string, DiffStagedLocationLookup>,
-): StagedInventoryDiffValidationIssue[] {
-  const issues: StagedInventoryDiffValidationIssue[] = []
-  for (const row of rows) {
-    if (!row.locationId) continue
-    const location = locationIndex.get(row.locationId)
-    if (!location) {
-      issues.push({
-        code: "STAGED_UNKNOWN_LOCATION",
-        locationId: row.locationId,
-        rowId: row.id,
-        rowTempId: row.tempId,
-      })
-      continue
-    }
-    if (location.warehouseId !== row.warehouseId) {
-      issues.push({
-        code: "STAGED_LOCATION_WAREHOUSE_MISMATCH",
-        locationId: row.locationId,
-        expectedWarehouseId: row.warehouseId,
-        rowId: row.id,
-        rowTempId: row.tempId,
-      })
-    }
-  }
-  return issues
 }
 
 function findImportWarehouseMismatches(
@@ -166,7 +131,6 @@ function findLockedRowEdits(
 
 export type StagedInventoryDiffResolution = {
   existing: DiffExistingStagedInventoryRow[]
-  locations: DiffStagedLocationLookup[]
   knownProductIds: string[]
 }
 
@@ -175,11 +139,9 @@ export function validateStagedInventoryRowsDiff(
   resolution: StagedInventoryDiffResolution,
   parent: StagedInventoryParentContext,
 ): StagedInventoryDiffValidationIssue[] {
-  const locationIndex = new Map(resolution.locations.map((l) => [l.id, l]))
   const knownProductIds = new Set(resolution.knownProductIds)
   const projected = projectPostDiffRows(diff, resolution.existing)
   return [
-    ...findLocationWarehouseMismatches(projected, locationIndex),
     ...findImportWarehouseMismatches(projected, parent),
     ...findUnknownProducts(projected, knownProductIds),
     ...findLockedRowEdits(diff, resolution.existing),
