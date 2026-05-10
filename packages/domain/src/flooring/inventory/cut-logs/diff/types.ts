@@ -16,16 +16,12 @@ import type { CutLogPendingFormIssue } from "../form-rules.js"
 export type CutLogDraft = {
   tempId: string
   cut: string
-  cost: string | null
-  freight: string | null
   isWaste: boolean
   notes: string
 }
 
 export type CutLogPatch = {
   cut?: string
-  cost?: string | null
-  freight?: string | null
   isWaste?: boolean
   notes?: string
 }
@@ -67,9 +63,7 @@ export type CutLogsDiff = {
  */
 export type CutLogParentContext = {
   inventoryId: string
-  inventoryNumber: string
-  itemNumber: string | null
-  dyeLot: string | null
+  inventoryItem: string
   startingStock: string
   currentTotalCutSum: string
   coveragePerUnit: string | null

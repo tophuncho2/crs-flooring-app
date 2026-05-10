@@ -14,17 +14,26 @@ import type { InventoryCutLogRow } from "./cut-logs/types.js"
  * stamped by the data-layer normalizer via the pure functions in
  * `computed.ts`; list/record UIs never recompute on render.
  *
- * Unit fields (`stockUnit*`, `itemCoverageUnit*`, `sendUnit*`) are snapshots
- * stamped at worker-create time — they survive any future change to the
- * product's category and are immutable post-create.
+ * Unit fields (`stockUnitName`, `stockUnitAbbrev`, `itemCoverageUnit*`,
+ * `sendUnit*`) are snapshots stamped at worker-create time — they survive any
+ * future change to the product's category and are immutable post-create.
+ *
+ * Snapshot fields (`productName`, `categoryName`, `importNumber`,
+ * `purchaseOrderNumber`) are written once by the worker on materialize and
+ * never updated by the inventory record view.
+ *
+ * `inventoryItem` is the canonical search/display string composed from
+ * `inventoryNumber + rollNumber + location + dyeLot + note`. The application's
+ * inventory-update use case recomputes it inside the same transaction as any
+ * patch that touches its source fields. List view + picker server-side search
+ * targets this column.
  */
 export type InventoryRow = {
   id: string
   inventoryNumber: string
   importEntryId: string
   importNumber: string
-  importWarehouseId: string
-  importWarehouseName: string
+  purchaseOrderNumber: string
   productId: string
   productName: string
   categoryId: string
@@ -36,24 +45,21 @@ export type InventoryRow = {
   itemCoverageUnitAbbrev: string
   sendUnitName: string
   sendUnitAbbrev: string
-  itemNumber: string
+  rollNumber: string
   dyeLot: string
   warehouseId: string
   warehouseName: string
   warehouseNumber: string
-  locationId: string
-  locationCode: string
-  locationShortCode: string
-  sectionNumber: string
-  rafter: string
-  level: string
+  location: string
   startingStock: string
   totalCutSum: string
   coveragePerUnit: string
   stockBalance: string
   coverageBalance: string
   isArchived: boolean
-  notes: string
+  note: string
+  internalNotes: string
+  inventoryItem: string
   fifoReceivedAt: string
   createdAt: string
   updatedAt: string
@@ -66,34 +72,37 @@ export type InventoryDetail = InventoryRow & {
 /**
  * Edit form for the inventory primary section. Only the columns the user is
  * allowed to change post-create — see `editability.ts` for the canonical
- * immutable/editable split. The worker seeds startingStock + cost + freight
- * + cost/freight/coverage-per-unit; those never appear on a user form.
+ * immutable/editable split. The worker seeds startingStock + per-unit
+ * coverage + unit snapshots; those never appear on a user form.
  */
 export type InventoryForm = {
-  itemNumber: string
+  rollNumber: string
   dyeLot: string
   warehouseId: string
-  locationId: string
-  notes: string
+  location: string
+  note: string
+  internalNotes: string
   isArchived: boolean
 }
 
 export const EMPTY_INVENTORY_FORM: InventoryForm = {
-  itemNumber: "",
+  rollNumber: "",
   dyeLot: "",
   warehouseId: "",
-  locationId: "",
-  notes: "",
+  location: "",
+  note: "",
+  internalNotes: "",
   isArchived: false,
 }
 
 export function toInventoryForm(row: InventoryRow): InventoryForm {
   return {
-    itemNumber: row.itemNumber,
+    rollNumber: row.rollNumber,
     dyeLot: row.dyeLot,
     warehouseId: row.warehouseId,
-    locationId: row.locationId,
-    notes: row.notes,
+    location: row.location,
+    note: row.note,
+    internalNotes: row.internalNotes,
     isArchived: row.isArchived,
   }
 }
@@ -117,15 +126,6 @@ export type InventoryWarehouseOption = {
   number: number
 }
 
-export type InventoryLocationOption = {
-  id: string
-  warehouseId: string
-  locationCode: string
-  shortCode: string
-  sectionNumber: number | null
-  warehouseName: string
-}
-
 export type InventoryCategoryOption = {
   id: string
   name: string
@@ -134,26 +134,22 @@ export type InventoryCategoryOption = {
 export type InventoryFormOptions = {
   products: InventoryProductOption[]
   warehouses: InventoryWarehouseOption[]
-  locations: InventoryLocationOption[]
   categories: InventoryCategoryOption[]
 }
 
 /**
  * Slim option shape consumed by the canonical InventoryPicker (server-side
  * search). Inventory rows always belong to a warehouse — picker requires
- * `warehouseId` scope. `sectionId` and `locationId` are optional narrowing
- * filters. `stockBalance` and `coverageBalance` are stamped by the data-layer
- * normalizer (same source-of-truth math as `InventoryRow.stockBalance` /
- * `coverageBalance`); coverage is null for non-coverage categories.
+ * `warehouseId` scope. `inventoryItem` is the canonical label source (already
+ * encodes inv#/roll#/location/dyeLot/note); `stockBalance` and
+ * `coverageBalance` are stamped by the data-layer normalizer (same
+ * source-of-truth math as `InventoryRow.stockBalance`); coverage is null for
+ * non-coverage categories.
  */
 export type InventoryOption = {
   id: string
-  inventoryNumber: string
-  itemNumber: string
-  dyeLot: string
+  inventoryItem: string
   warehouseId: string
-  locationId: string
-  sectionId: string
   stockBalance: string
   stockUnitAbbrev: string
   coverageBalance: string | null

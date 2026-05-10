@@ -23,6 +23,12 @@ export type CutLogStatus = FlooringCutLogStatus
 // as strings (Prisma's `Decimal` is serialized to string at the data-layer
 // boundary to keep precision predictable in the UI / API).
 //
+// `inventoryItem` is an immutable snapshot copied from
+// `inventory.inventoryItem` at cut creation time — it preserves the parent
+// inventory's identity string (`inv# · roll# · location · dyeLot · note`)
+// even if the inventory row is later edited. The cut log row never
+// recomputes this column.
+//
 // Unit-snapshot fields (`stockUnitName` / `stockUnitAbbrev` /
 // `itemCoverageUnitName` / `itemCoverageUnitAbbrev`) are stamped from the
 // parent inventory at create time and never mutated afterward — they are
@@ -33,9 +39,7 @@ export type CutLogRow = {
   id: string
   cutLogNumber: string
   inventoryId: string
-  inventoryNumber: string
-  itemNumber: string | null
-  dyeLot: string | null
+  inventoryItem: string
   categorySlug: string
   workOrderId: string | null
   workOrderItemId: string | null
@@ -52,8 +56,6 @@ export type CutLogRow = {
   finalCutSequence: number | null
   isWaste: boolean
   void: boolean
-  cost: string | null
-  freight: string | null
   notes: string
   createdAt: string
   updatedAt: string
@@ -63,22 +65,14 @@ export type CutLogRow = {
 // (`before` / `after` / `status` / `isFinal` / `finalCutSequence` / `void`)
 // AND link fields (`workOrderId` / `workOrderItemId`) — links flow through
 // their own sync use case per intent doc, not the pending-save worker.
-//
-// `cost` / `freight` are nullable: the cells are not editable inline in the
-// section UI today, and the underlying Prisma columns are `Decimal?`. An
-// absent value is null (not the empty string).
 export type CutLogPendingForm = {
   cut: string
-  cost: string | null
-  freight: string | null
   isWaste: boolean
   notes: string
 }
 
 export const EMPTY_CUT_LOG_PENDING_FORM: CutLogPendingForm = {
   cut: "",
-  cost: null,
-  freight: null,
   isWaste: false,
   notes: "",
 }
@@ -86,8 +80,6 @@ export const EMPTY_CUT_LOG_PENDING_FORM: CutLogPendingForm = {
 export function toCutLogPendingForm(row: CutLogRow): CutLogPendingForm {
   return {
     cut: row.cut,
-    cost: row.cost,
-    freight: row.freight,
     isWaste: row.isWaste,
     notes: row.notes,
   }

@@ -24,11 +24,10 @@ export type WorkOrderFileCutLogProjection = {
   coverageCut: string
   isWaste: boolean
   notes: string
-  // Inventory identity columns sourced from the cut log row's snapshot
-  // (NOT the joined inventory row). Empty strings for nullable schema columns.
-  inventoryNumber: string
-  inventoryItemNumber: string
-  inventoryDyeLot: string
+  // Inventory identity sourced from the cut log row's snapshot
+  // (NOT the joined inventory row). The denormalized `inventoryItem` column
+  // already encodes `inv# · roll# · location · dyeLot · note` — render directly.
+  inventoryItem: string
   // Unit snapshots from the cut log row — used as the per-cell suffix in
   // the cut log sub-table. Empty string when the snapshot is null.
   stockUnitAbbrev: string

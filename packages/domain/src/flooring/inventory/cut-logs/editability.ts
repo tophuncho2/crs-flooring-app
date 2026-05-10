@@ -25,8 +25,6 @@ import type { CutLogRow, FlooringCutLogStatus } from "./types.js"
 // inside the per-inventory FOR UPDATE lock.
 export const CUT_LOG_PENDING_USER_EDITABLE_FIELDS = [
   "cut",
-  "cost",
-  "freight",
   "isWaste",
   "notes",
 ] as const

@@ -368,18 +368,17 @@ export async function getLocationDeleteState(
   id: string,
   client: WarehousesDbClient = db,
 ): Promise<{ inventoriesCount: number } | null> {
+  // Inventory no longer has an FK to FlooringLocation (location is a plain
+  // text column on inventory post-sweep). The "delete blocked by attached
+  // inventories" gate is therefore conceptually obsolete — return 0 so the
+  // domain rule unblocks. Warehouse-module sweep can clean up the dangling
+  // delete-state plumbing.
   const row = await client.flooringLocation.findUnique({
     where: { id },
-    select: {
-      _count: {
-        select: {
-          inventories: true,
-        },
-      },
-    },
+    select: { id: true },
   })
   if (!row) return null
-  return { inventoriesCount: row._count.inventories }
+  return { inventoriesCount: 0 }
 }
 
 // --- Picker / options search ---

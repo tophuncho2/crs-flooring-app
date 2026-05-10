@@ -5,6 +5,7 @@
 export type InventoryFilterState = {
   warehouseId: string[]
   isArchived: boolean | null
+  location: string
 }
 
 export type InventoryPageFilterState = InventoryFilterState & {
@@ -17,6 +18,7 @@ type InventoryFilterableRow = {
   importWarehouseId?: string | null
   warehouseId?: string | null
   isArchived?: boolean
+  location?: string | null
 }
 
 function coerceFilterArray<T extends string>(value: T[] | T | string[] | string | undefined) {
@@ -50,6 +52,18 @@ export function parseInventoryArchivedFilter(value: unknown): boolean | null {
   return null
 }
 
+/**
+ * Free-text location filter. Trims and falls back to empty string (= no filter).
+ * Server-side `ILIKE %value%` semantics — applied in the data layer's where
+ * clause, never against the search bar (the search bar targets `inventoryItem`
+ * which already encodes location). Use case: filter chip in the inventory list
+ * view + the cut-log side panel inventory picker.
+ */
+export function parseInventoryLocationFilter(value: unknown): string {
+  if (typeof value !== "string") return ""
+  return value.trim()
+}
+
 export function getEffectiveInventoryWarehouseId(row: InventoryFilterableRow) {
   return row.importWarehouseId?.trim() || row.warehouseId?.trim() || ""
 }
@@ -71,6 +85,15 @@ export function matchesInventoryArchivedFilter(
   return Boolean(row.isArchived) === filter
 }
 
+export function matchesInventoryLocationFilter(
+  row: InventoryFilterableRow,
+  filter: string,
+) {
+  if (filter.length === 0) return true
+  const value = (row.location ?? "").toLowerCase()
+  return value.includes(filter.toLowerCase())
+}
+
 export function filterInventoryRows<T extends InventoryFilterableRow>(
   rows: T[],
   filters: InventoryFilterState,
@@ -78,6 +101,7 @@ export function filterInventoryRows<T extends InventoryFilterableRow>(
   return rows.filter(
     (row) =>
       matchesInventoryWarehouseFilter(row, filters.warehouseId) &&
-      matchesInventoryArchivedFilter(row, filters.isArchived),
+      matchesInventoryArchivedFilter(row, filters.isArchived) &&
+      matchesInventoryLocationFilter(row, filters.location),
   )
 }

@@ -14,7 +14,11 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "coveragePerUnit",
   "importEntryId",
   "productId",
+  "productName",
   "categorySlug",
+  "categoryName",
+  "importNumber",
+  "purchaseOrderNumber",
   "stockUnitName",
   "stockUnitAbbrev",
   "itemCoverageUnitName",
@@ -24,12 +28,17 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "fifoReceivedAt",
 ] as const
 
+// `inventoryItem` is recomputed by the inventory update use case in the same
+// transaction as any patch that touches its source fields (rollNumber, dyeLot,
+// location, note). It is NOT in this list — it's server-managed, not
+// user-editable.
 export const INVENTORY_EDITABLE_FIELDS = [
-  "itemNumber",
+  "rollNumber",
   "dyeLot",
-  "locationId",
+  "location",
   "warehouseId",
-  "notes",
+  "note",
+  "internalNotes",
   "isArchived",
 ] as const
 

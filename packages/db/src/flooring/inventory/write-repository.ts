@@ -6,52 +6,58 @@ import { getInventoryById, type InventoryRecord } from "./read-repository.js"
 /**
  * Create input for a real inventory row. Every field is worker-owned — the
  * worker materializes staged rows into real inventory at import time, stamping
- * the snapshot columns (`categorySlug` + the 6 unit fields) and the per-unit
- * cost / freight / coverage values, then picking up the FIFO timestamp. User
- * flows never call this directly.
+ * the snapshot columns (`productName`, `categoryName`, `categorySlug`, the 6
+ * unit fields, `importNumber`, `purchaseOrderNumber`, `inventoryItem`) and
+ * picking up the FIFO timestamp. User flows never call this directly.
  *
- * The snapshot fields come from the linked product's category at materialize
- * time and are immutable post-create; product-level locks
+ * The snapshot fields come from the linked product + import entry at
+ * materialize time and are immutable post-create; product-level locks
  * (`isProductCategoryChangeBlocked`, `isProductCoveragePerUnitChangeBlocked`)
- * keep the joined source consistent with the snapshot for the lifetime of
+ * keep the joined source consistent with the snapshots for the lifetime of
  * the inventory row.
  */
 export type CreateInventoryRecordInput = {
   importEntryId: string | null
+  importNumber: string | null
+  purchaseOrderNumber: string | null
   productId: string
+  productName: string
   categorySlug: string
+  categoryName: string
   stockUnitName: string | null
   stockUnitAbbrev: string | null
   itemCoverageUnitName: string | null
   itemCoverageUnitAbbrev: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
-  itemNumber: string | null
+  rollNumber: string | null
   dyeLot: string | null
+  note: string | null
+  internalNotes: string | null
+  inventoryItem: string
   warehouseId: string
-  locationId: string | null
+  location: string | null
   startingStock: Prisma.Decimal | string | number
-  cost: Prisma.Decimal | string | number | null
-  freight: Prisma.Decimal | string | number | null
-  costPerUnit: Prisma.Decimal | string | number | null
-  freightPerUnit: Prisma.Decimal | string | number | null
   coveragePerUnit: Prisma.Decimal | string | number | null
-  notes: string | null
   fifoReceivedAt: Date
 }
 
 /**
  * Update input — editable subset only. Mirrors domain.editability
- * INVENTORY_EDITABLE_FIELDS. Immutable fields (startingStock, cost, freight,
- * cost/freight/coverage-per-unit, importEntryId, productId, categorySlug,
- * fifoReceivedAt) are deliberately absent from this shape.
+ * INVENTORY_EDITABLE_FIELDS plus `inventoryItem` (server-recomputed by the
+ * application's update use case via `composeInventoryItem` in the same
+ * transaction whenever a source field — rollNumber, dyeLot, location,
+ * note — changes). Snapshot columns (productName, categoryName,
+ * importNumber, purchaseOrderNumber) are not in this shape.
  */
 export type UpdateInventoryRecordInput = {
-  itemNumber?: string | null
+  rollNumber?: string | null
   dyeLot?: string | null
   warehouseId?: string
-  locationId?: string | null
-  notes?: string | null
+  location?: string | null
+  note?: string | null
+  internalNotes?: string | null
+  inventoryItem?: string
   isArchived?: boolean
 }
 
@@ -69,26 +75,28 @@ function buildCreateData(
 ): Prisma.FlooringInventoryCreateInput {
   const data: Prisma.FlooringInventoryCreateInput = {
     product: { connect: { id: input.productId } },
+    productName: input.productName,
     warehouse: { connect: { id: input.warehouseId } },
     categorySlug: input.categorySlug,
+    categoryName: input.categoryName,
+    importNumber: input.importNumber,
+    purchaseOrderNumber: input.purchaseOrderNumber,
     stockUnitName: input.stockUnitName,
     stockUnitAbbrev: input.stockUnitAbbrev,
     itemCoverageUnitName: input.itemCoverageUnitName,
     itemCoverageUnitAbbrev: input.itemCoverageUnitAbbrev,
     sendUnitName: input.sendUnitName,
     sendUnitAbbrev: input.sendUnitAbbrev,
-    itemNumber: input.itemNumber,
+    rollNumber: input.rollNumber,
     dyeLot: input.dyeLot,
+    location: input.location,
+    note: input.note,
+    internalNotes: input.internalNotes,
+    inventoryItem: input.inventoryItem,
     startingStock: input.startingStock,
-    cost: input.cost,
-    freight: input.freight,
-    costPerUnit: input.costPerUnit,
-    freightPerUnit: input.freightPerUnit,
     coveragePerUnit: input.coveragePerUnit,
-    notes: input.notes,
     fifoReceivedAt: input.fifoReceivedAt,
   }
-  if (input.locationId) data.location = { connect: { id: input.locationId } }
   if (input.importEntryId) data.importEntry = { connect: { id: input.importEntryId } }
   return data
 }
@@ -97,17 +105,15 @@ function buildUpdateData(
   input: UpdateInventoryRecordInput,
 ): Prisma.FlooringInventoryUpdateInput {
   const data: Prisma.FlooringInventoryUpdateInput = {}
-  if (input.itemNumber !== undefined) data.itemNumber = input.itemNumber
+  if (input.rollNumber !== undefined) data.rollNumber = input.rollNumber
   if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
   if (input.warehouseId !== undefined) {
     data.warehouse = { connect: { id: input.warehouseId } }
   }
-  if (input.locationId !== undefined) {
-    data.location = input.locationId
-      ? { connect: { id: input.locationId } }
-      : { disconnect: true }
-  }
-  if (input.notes !== undefined) data.notes = input.notes
+  if (input.location !== undefined) data.location = input.location
+  if (input.note !== undefined) data.note = input.note
+  if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes
+  if (input.inventoryItem !== undefined) data.inventoryItem = input.inventoryItem
   if (input.isArchived !== undefined) data.isArchived = input.isArchived
   return data
 }
@@ -185,10 +191,11 @@ export async function deleteInventoryRecordById(
  *    necessary because Prisma's `createMany` does not return inserted IDs on
  *    Postgres). Pre-assignment also lets the caller correlate inserts with
  *    their source staged rows for the secondary `updateMany`.
- *  - Caller computed every per-row field (categorySlug, unit snapshots,
- *    cost/freight per-unit, fifoReceivedAt, etc.) — this primitive does no
- *    field math. Coverage-rule branching belongs in the application layer
- *    via `categorySupportsCoverageComputation`.
+ *  - Caller computed every per-row field (productName, categoryName, unit
+ *    snapshots, importNumber, purchaseOrderNumber, inventoryItem,
+ *    fifoReceivedAt, etc.) — this primitive does no field math. Coverage-rule
+ *    branching belongs in the application layer via
+ *    `categorySupportsCoverageComputation`.
  *  - Caller has already transitioned the source staged rows from DRAFT to
  *    QUEUED via `markStagedRowsForImport`. The status-flip below targets
  *    QUEUED → IMPORTED defensively (rows in any other state are skipped by
@@ -227,25 +234,27 @@ export async function materializeStagedRowsToInventory(
     (row) => ({
       id: row.id,
       importEntryId: row.importEntryId,
+      importNumber: row.importNumber,
+      purchaseOrderNumber: row.purchaseOrderNumber,
       productId: row.productId,
+      productName: row.productName,
       categorySlug: row.categorySlug,
+      categoryName: row.categoryName,
       stockUnitName: row.stockUnitName,
       stockUnitAbbrev: row.stockUnitAbbrev,
       itemCoverageUnitName: row.itemCoverageUnitName,
       itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev,
       sendUnitName: row.sendUnitName,
       sendUnitAbbrev: row.sendUnitAbbrev,
-      itemNumber: row.itemNumber,
+      rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,
+      note: row.note,
+      internalNotes: row.internalNotes,
+      inventoryItem: row.inventoryItem,
       warehouseId: row.warehouseId,
-      locationId: row.locationId,
+      location: row.location,
       startingStock: row.startingStock,
-      cost: row.cost,
-      freight: row.freight,
-      costPerUnit: row.costPerUnit,
-      freightPerUnit: row.freightPerUnit,
       coveragePerUnit: row.coveragePerUnit,
-      notes: row.notes,
       fifoReceivedAt: row.fifoReceivedAt,
     }),
   )

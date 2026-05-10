@@ -144,8 +144,6 @@ export function validateCutLogsDiff(
 function draftToForm(draft: CutLogDraft): CutLogPendingForm {
   return {
     cut: draft.cut,
-    cost: draft.cost,
-    freight: draft.freight,
     isWaste: draft.isWaste,
     notes: draft.notes,
   }
@@ -157,8 +155,6 @@ function projectFormFromPatch(
 ): CutLogPendingForm {
   return {
     cut: patch.cut ?? existing.cut,
-    cost: patch.cost ?? null,
-    freight: patch.freight ?? null,
     isWaste: patch.isWaste ?? false,
     notes: patch.notes ?? "",
   }

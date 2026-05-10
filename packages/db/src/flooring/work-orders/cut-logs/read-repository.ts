@@ -98,9 +98,7 @@ export async function getPendingCutLogWithInventoryForMutation(
       inventory: {
         select: {
           id: true,
-          inventoryNumber: true,
-          itemNumber: true,
-          dyeLot: true,
+          inventoryItem: true,
           startingStock: true,
           totalCutSum: true,
           coveragePerUnit: true,
@@ -119,9 +117,7 @@ export async function getPendingCutLogWithInventoryForMutation(
     cutLog: normalizeCutLogRow(cutLogPayload),
     inventory: {
       inventoryId: inv.id,
-      inventoryNumber: inv.inventoryNumber,
-      itemNumber: inv.itemNumber ?? null,
-      dyeLot: inv.dyeLot ?? null,
+      inventoryItem: inv.inventoryItem,
       startingStock: inv.startingStock.toString(),
       currentTotalCutSum: inv.totalCutSum.toString(),
       coveragePerUnit:

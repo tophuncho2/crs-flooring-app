@@ -224,13 +224,10 @@ function renderCutLogRow(
 }
 
 function renderInventoryCell(cl: WorkOrderFileCutLogProjection): string {
-  // Single-line identity string sourced from the cut log row's snapshot
-  // columns. Parts are joined with " - " and missing parts are skipped so
-  // empty Item / DyeLot do not produce stray hyphens.
-  const parts = [cl.inventoryNumber, cl.inventoryItemNumber, cl.inventoryDyeLot].filter(
-    (part) => part !== "",
-  )
-  return parts.join(" - ")
+  // Single-line identity string sourced from the cut log's `inventoryItem`
+  // snapshot column (already composed via `composeInventoryItem` at cut
+  // creation time). Render verbatim.
+  return cl.inventoryItem
 }
 
 function renderUnitValue(value: string, unitAbbrev: string): string {

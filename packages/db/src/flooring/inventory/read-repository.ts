@@ -2,8 +2,6 @@ import {
   buildFlooringProductDisplayName,
   computeInventoryBalance,
   computeInventoryCoverage,
-  formatFullLocationCode,
-  formatLocationRafterLevel,
   toInventoryFixedString,
 } from "@builders/domain"
 import type {
@@ -39,41 +37,23 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
   return value.toString()
 }
 
-function toNumber(value: { toString(): string } | number | null | undefined): number {
-  if (value === null || value === undefined) return 0
-  const parsed = typeof value === "number" ? value : Number(value.toString())
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
-function buildLocationCode(location: InventoryRowPayload["location"]): string {
-  if (!location) return ""
-  return formatFullLocationCode({
-    warehouseNumber: location.warehouse.number,
-    sectionNumber: location.section.number,
-    rafter: location.rafter,
-    level: location.level,
-  })
-}
-
-function buildLocationShortCode(location: InventoryRowPayload["location"]): string {
-  if (!location) return ""
-  return formatLocationRafterLevel({ rafter: location.rafter, level: location.level })
-}
-
 /**
  * Normalize an inventory row into the domain read shape. Stamps the two
  * computed fields (`stockBalance`, `coverageBalance`) by calling the pure
  * domain helpers — single source of truth for the math. Per the data-package
  * carve-out, this is a data-layer normalizer reusing pure domain
  * formatters/computations; it MUST NOT call domain rules that throw.
+ *
+ * Snapshot columns (`productName`, `categoryName`, `importNumber`,
+ * `purchaseOrderNumber`, `inventoryItem`) are surfaced as-is; the worker
+ * writes them at materialize time and the inventory update use case
+ * recomputes `inventoryItem` whenever a source field changes.
  */
 export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRecord {
-  // Read the snapshot column, not the joined product.category.slug. The
-  // snapshot is stamped at worker-create time and is immutable thereafter;
+  // Read the categorySlug snapshot column, not the joined product.category.slug.
+  // The snapshot is stamped at worker-create time and is immutable thereafter;
   // the product's category can no longer change while inventory exists (see
-  // isProductCategoryChangeBlocked), so the joined display fields
-  // categoryId/categoryName on product.category stay consistent with this
-  // slug by construction.
+  // isProductCategoryChangeBlocked).
   const categorySlug = payload.categorySlug
   const balanceNum = computeInventoryBalance({
     startingStock: payload.startingStock.toString(),
@@ -86,24 +66,16 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     categorySlug,
   })
 
-  const location = payload.location
-  const importEntry = payload.importEntry
-
   return {
     id: payload.id,
     inventoryNumber: payload.inventoryNumber,
     importEntryId: payload.importEntryId ?? "",
-    importNumber: importEntry ? String(importEntry.importNumber) : "",
-    importWarehouseId: importEntry?.warehouseId ?? "",
-    importWarehouseName: importEntry?.warehouse?.name ?? "",
+    importNumber: payload.importNumber ?? "",
+    purchaseOrderNumber: payload.purchaseOrderNumber ?? "",
     productId: payload.productId,
-    productName: buildFlooringProductDisplayName({
-      name: payload.product.name,
-      style: payload.product.style,
-      color: payload.product.color,
-    }),
+    productName: payload.productName,
     categoryId: payload.product.category.id,
-    categoryName: payload.product.category.name,
+    categoryName: payload.categoryName,
     categorySlug,
     stockUnitName: payload.stockUnitName ?? "",
     stockUnitAbbrev: payload.stockUnitAbbrev ?? "",
@@ -111,24 +83,21 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     itemCoverageUnitAbbrev: payload.itemCoverageUnitAbbrev ?? "",
     sendUnitName: payload.sendUnitName ?? "",
     sendUnitAbbrev: payload.sendUnitAbbrev ?? "",
-    itemNumber: payload.itemNumber ?? "",
+    rollNumber: payload.rollNumber ?? "",
     dyeLot: payload.dyeLot ?? "",
     warehouseId: payload.warehouseId,
     warehouseName: payload.warehouse.name,
     warehouseNumber: String(payload.warehouse.number),
-    locationId: payload.locationId ?? "",
-    locationCode: buildLocationCode(location),
-    locationShortCode: buildLocationShortCode(location),
-    sectionNumber: location?.section ? String(location.section.number) : "",
-    rafter: location ? String(location.rafter) : "",
-    level: location ? String(location.level) : "",
+    location: payload.location ?? "",
     startingStock: toDecimalString(payload.startingStock),
     totalCutSum: toDecimalString(payload.totalCutSum),
     coveragePerUnit: toDecimalString(payload.coveragePerUnit),
     stockBalance: toInventoryFixedString(balanceNum),
     coverageBalance: coverageNum === null ? "" : toInventoryFixedString(coverageNum),
     isArchived: payload.isArchived,
-    notes: payload.notes ?? "",
+    note: payload.note ?? "",
+    internalNotes: payload.internalNotes ?? "",
+    inventoryItem: payload.inventoryItem,
     fifoReceivedAt: payload.fifoReceivedAt.toISOString(),
     createdAt: payload.createdAt.toISOString(),
     updatedAt: payload.updatedAt.toISOString(),
@@ -162,7 +131,7 @@ export async function listInventory(
   const rows = await client.flooringInventory.findMany({
     where: buildListWhere(filter),
     select: inventoryRowSelect,
-    orderBy: [{ fifoReceivedAt: "asc" }, { itemNumber: "asc" }, { id: "asc" }],
+    orderBy: [{ fifoReceivedAt: "asc" }, { rollNumber: "asc" }, { id: "asc" }],
   })
   return rows.map(normalizeInventoryRow)
 }
@@ -222,10 +191,15 @@ export type InventoryListViewOptions = {
   search?: string
   filters?: {
     warehouseId?: ReadonlyArray<string>
-    sectionId?: ReadonlyArray<string>
-    locationId?: ReadonlyArray<string>
+    location?: string
     categoryId?: ReadonlyArray<string>
     productId?: ReadonlyArray<string>
+    /**
+     * `true` = show archived, `false` = hide archived. When undefined the
+     * default is "hide archived" — the list view defaults to not showing
+     * archived rows; users opt in via a filter chip.
+     */
+    isArchived?: boolean
   }
   skip: number
   take: number
@@ -239,19 +213,25 @@ export type InventoryListViewResult = {
 function buildListViewWhere(
   options: Pick<InventoryListViewOptions, "search" | "filters">,
 ): Prisma.FlooringInventoryWhereInput | undefined {
-  const clauses: Prisma.FlooringInventoryWhereInput[] = [{ isArchived: false }]
+  const archivedFilter = options.filters?.isArchived
+  const clauses: Prisma.FlooringInventoryWhereInput[] = []
+  // Default to hiding archived rows. Users can opt in by passing
+  // `isArchived: true` (show only archived) or by passing `undefined` is
+  // treated as "hide" — to show ALL rows the controller can pass an explicit
+  // override but the canonical UI flow is two-state (hide / show).
+  if (archivedFilter === true) {
+    clauses.push({ isArchived: true })
+  } else {
+    clauses.push({ isArchived: false })
+  }
 
-  // Search semantics mirror searchInventoryOptions: OR-ILIKE across the three
-  // human-meaningful identifier columns (inventoryNumber, itemNumber, dyeLot).
+  // Server-side search targets the denormalized `inventoryItem` column —
+  // composed by the inventory update use case from `inventoryNumber +
+  // rollNumber + location + dyeLot + note`. One ILIKE replaces the
+  // pre-sweep three-column OR.
   const trimmed = options.search?.trim() ?? ""
   if (trimmed.length > 0) {
-    clauses.push({
-      OR: [
-        { inventoryNumber: { contains: trimmed, mode: "insensitive" } },
-        { itemNumber: { contains: trimmed, mode: "insensitive" } },
-        { dyeLot: { contains: trimmed, mode: "insensitive" } },
-      ],
-    })
+    clauses.push({ inventoryItem: { contains: trimmed, mode: "insensitive" } })
   }
 
   const warehouseIds = options.filters?.warehouseId
@@ -259,20 +239,15 @@ function buildListViewWhere(
     clauses.push({ warehouseId: { in: [...warehouseIds] } })
   }
 
-  // sectionId narrows via the joined location row — inventory has no direct
-  // sectionId FK; the section is reachable via location.sectionId.
-  const sectionIds = options.filters?.sectionId
-  if (sectionIds && sectionIds.length > 0) {
-    clauses.push({ location: { is: { sectionId: { in: [...sectionIds] } } } })
+  // Free-text location filter chip — independent from the search bar above
+  // (the search bar already covers location via inventoryItem; this filter
+  // narrows when a user wants location-only matches).
+  const locationFilter = options.filters?.location?.trim() ?? ""
+  if (locationFilter.length > 0) {
+    clauses.push({ location: { contains: locationFilter, mode: "insensitive" } })
   }
 
-  const locationIds = options.filters?.locationId
-  if (locationIds && locationIds.length > 0) {
-    clauses.push({ locationId: { in: [...locationIds] } })
-  }
-
-  // categoryId narrows via product.categoryId — same path as the existing
-  // single-value category filter on `listInventory`.
+  // categoryId narrows via product.categoryId.
   const categoryIds = options.filters?.categoryId
   if (categoryIds && categoryIds.length > 0) {
     clauses.push({ product: { is: { categoryId: { in: [...categoryIds] } } } })
@@ -291,8 +266,8 @@ function buildListViewWhere(
 /**
  * Server-side paginated read for the inventory list view. Default sort is
  * `inventoryNumber DESC` (newest INV-NNNNN first), with `id DESC` as a stable
- * tiebreak. Filters AND together; search OR-ILIKEs across inventoryNumber,
- * itemNumber, and dyeLot. Archived rows excluded.
+ * tiebreak. Filters AND together; search ILIKEs against the denormalized
+ * `inventoryItem` column. Archived rows hidden by default.
  *
  * Lives alongside `listInventory(filter?)` which is still used by the imports
  * record view's "live rows" section to fetch all rows for a given import.
@@ -329,19 +304,17 @@ export type InventoryOptionsSearchArgs = {
    * inventory row of a different product than the material item's.
    */
   productId?: string
-  /** Optional section narrowing — joined via `location.sectionId`. */
-  sectionId?: string
-  /** Optional location narrowing — exact match on the inventory row. */
-  locationId?: string
-  /** OR-ILIKE across `inventoryNumber`, `itemNumber`, `dyeLot`. */
+  /** Free-text location filter chip — `ILIKE %value%` on the location column. */
+  location?: string
+  /** ILIKE against the denormalized `inventoryItem` column. */
   search?: string
   take: number
 }
 
 /**
  * Picker / options search for inventory rows. Filters are AND'd: warehouse +
- * (optional) section + (optional) location, then OR'd ILIKE across the three
- * search columns. Archived rows excluded. Balance + coverage are stamped via
+ * (optional) product + (optional) location text contains, then ILIKE on
+ * `inventoryItem`. Archived rows excluded. Balance + coverage are stamped via
  * the same pure helpers used by the row normalizer (single source of truth
  * for the math) — coverage is null for non-coverage categories.
  */
@@ -354,36 +327,29 @@ export async function searchInventoryOptions(
     isArchived: false,
   }
   if (args.productId !== undefined) where.productId = args.productId
-  if (args.locationId !== undefined) where.locationId = args.locationId
-  if (args.sectionId !== undefined) {
-    where.location = { is: { sectionId: args.sectionId } }
+
+  const locationFilter = args.location?.trim() ?? ""
+  if (locationFilter.length > 0) {
+    where.location = { contains: locationFilter, mode: "insensitive" }
   }
 
   const trimmed = args.search?.trim() ?? ""
   if (trimmed.length > 0) {
-    where.OR = [
-      { inventoryNumber: { contains: trimmed, mode: "insensitive" } },
-      { itemNumber: { contains: trimmed, mode: "insensitive" } },
-      { dyeLot: { contains: trimmed, mode: "insensitive" } },
-    ]
+    where.inventoryItem = { contains: trimmed, mode: "insensitive" }
   }
 
   const rows = await client.flooringInventory.findMany({
     where,
     select: {
       id: true,
-      inventoryNumber: true,
-      itemNumber: true,
-      dyeLot: true,
+      inventoryItem: true,
       warehouseId: true,
-      locationId: true,
       categorySlug: true,
       stockUnitAbbrev: true,
       itemCoverageUnitAbbrev: true,
       startingStock: true,
       totalCutSum: true,
       coveragePerUnit: true,
-      location: { select: { sectionId: true } },
     },
     orderBy: [{ inventoryNumber: "asc" }],
     take: args.take,
@@ -401,12 +367,8 @@ export async function searchInventoryOptions(
     })
     return {
       id: row.id,
-      inventoryNumber: row.inventoryNumber,
-      itemNumber: row.itemNumber ?? "",
-      dyeLot: row.dyeLot ?? "",
+      inventoryItem: row.inventoryItem,
       warehouseId: row.warehouseId,
-      locationId: row.locationId ?? "",
-      sectionId: row.location?.sectionId ?? "",
       stockBalance: toInventoryFixedString(balanceNum),
       stockUnitAbbrev: row.stockUnitAbbrev ?? "",
       coverageBalance: coverageNum === null ? null : toInventoryFixedString(coverageNum),
@@ -418,7 +380,7 @@ export async function searchInventoryOptions(
 export async function listInventoryOptions(
   client: InventoryDbClient = db,
 ): Promise<InventoryFormOptions> {
-  const [products, warehouses, locations, categories] = await Promise.all([
+  const [products, warehouses, categories] = await Promise.all([
     client.flooringProduct.findMany({
       select: {
         id: true,
@@ -440,17 +402,6 @@ export async function listInventoryOptions(
     client.flooringWarehouse.findMany({
       select: { id: true, name: true, number: true },
       orderBy: { number: "asc" },
-    }),
-    client.flooringLocation.findMany({
-      select: {
-        id: true,
-        warehouseId: true,
-        rafter: true,
-        level: true,
-        section: { select: { number: true } },
-        warehouse: { select: { name: true, number: true } },
-      },
-      orderBy: [{ warehouse: { name: "asc" } }, { rafter: "asc" }, { level: "asc" }],
     }),
     client.flooringCategory.findMany({
       select: { id: true, name: true },
@@ -476,19 +427,6 @@ export async function listInventoryOptions(
       coveragePerUnit: toDecimalString(row.coveragePerUnit),
     })),
     warehouses,
-    locations: locations.map((row) => ({
-      id: row.id,
-      warehouseId: row.warehouseId,
-      locationCode: formatFullLocationCode({
-        warehouseNumber: row.warehouse.number,
-        sectionNumber: row.section.number,
-        rafter: row.rafter,
-        level: row.level,
-      }),
-      shortCode: formatLocationRafterLevel({ rafter: row.rafter, level: row.level }),
-      sectionNumber: row.section.number,
-      warehouseName: row.warehouse.name,
-    })),
     categories,
   }
 }

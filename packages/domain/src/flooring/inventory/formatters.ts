@@ -23,9 +23,8 @@ export type FullLocationCodeInput = {
 }
 
 /**
- * Replaces the stale `locationCode` column (dropped in the warehouse sweep) with a
- * derivation from warehouse + section + rafter + level. Source of truth for the
- * `"W{n}-S{n}-R{n}-L{n}"` format used across list + record views.
+ * Source of truth for the `"W{n}-S{n}-R{n}-L{n}"` warehouse location code
+ * format. Used by the warehouses module's read-repo to label location records.
  */
 export function formatFullLocationCode(input: FullLocationCodeInput): string {
   return `W${input.warehouseNumber}-S${input.sectionNumber}-R${input.rafter}-L${input.level}`
@@ -35,42 +34,57 @@ export function formatLocationRafterLevel(input: { rafter: number; level: number
   return `R${input.rafter}-L${input.level}`
 }
 
-export type SectionCodeInput = {
-  warehouseNumber: number
-  sectionNumber: number
-}
-
-/**
- * Section-only prefix of `formatFullLocationCode`. Used by UIs that filter
- * inventory by section rather than full location.
- */
-export function formatSectionCode(input: SectionCodeInput): string {
-  return `W${input.warehouseNumber}-S${input.sectionNumber}`
-}
-
-/**
- * Builds the canonical inventory-row label used in cut-log inventory dropdowns
- * and similar pickers.
- *
- * Format: `{stockBalance} {stockUnitAbbrev} - {itemNumber|—} - {locationCode|—} - {dyeLot|—} - {inventoryNumber}`
- *
- * Empty `stockUnitAbbrev` collapses to no trailing space; nullable string
- * fields fall back to an em-dash placeholder. Pure string formatting; no
- * caller wires this in yet — sweep 2 will adopt it for the cut-log section.
- */
-export function buildInventoryDropdownLabel(input: {
-  stockBalance: string
-  stockUnitAbbrev: string | null
-  itemNumber: string | null
-  locationCode: string | null
-  dyeLot: string | null
+export type ComposeInventoryItemInput = {
   inventoryNumber: string
-}): string {
-  const PLACEHOLDER = "—"
-  const unit = input.stockUnitAbbrev ?? ""
-  const balanceWithUnit = unit.length > 0 ? `${input.stockBalance} ${unit}` : input.stockBalance
-  const itemNumber = input.itemNumber && input.itemNumber.length > 0 ? input.itemNumber : PLACEHOLDER
-  const locationCode = input.locationCode && input.locationCode.length > 0 ? input.locationCode : PLACEHOLDER
-  const dyeLot = input.dyeLot && input.dyeLot.length > 0 ? input.dyeLot : PLACEHOLDER
-  return `${balanceWithUnit} - ${itemNumber} - ${locationCode} - ${dyeLot} - ${input.inventoryNumber}`
+  rollNumber: string
+  location: string
+  dyeLot: string
+  note: string
+}
+
+const INVENTORY_ITEM_SEPARATOR = " · "
+
+/**
+ * Canonical composer for the `inventoryItem` denorm column on
+ * `FlooringInventory`. Joins non-empty parts in order:
+ * `inventoryNumber · rollNumber · location · dyeLot · note`.
+ *
+ * `inventoryNumber` is always present (DB sequence assigns at create), so
+ * the output is never empty. Empty parts are skipped — no placeholders.
+ *
+ * Single source of truth: the inventory update use case calls this inside
+ * the same transaction as any patch that touches a source field, so the
+ * column never drifts. The materialize use case calls it on create. The
+ * cut-log creator does NOT call this — it copies inventory.inventoryItem
+ * verbatim as an immutable snapshot at cut time.
+ */
+export function composeInventoryItem(input: ComposeInventoryItemInput): string {
+  const parts = [
+    input.inventoryNumber,
+    input.rollNumber,
+    input.location,
+    input.dyeLot,
+    input.note,
+  ]
+  return parts.filter((part) => part.length > 0).join(INVENTORY_ITEM_SEPARATOR)
+}
+
+const FIFO_EASTERN_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+})
+
+/**
+ * Formats a `fifoReceivedAt` timestamp (UTC-stored TIMESTAMPTZ) as Eastern
+ * Time wall-clock for list/record displays. Format: `MM/DD/YYYY, HH:MM`.
+ */
+export function formatFifoReceivedAtEastern(value: Date | string): string {
+  const date = typeof value === "string" ? new Date(value) : value
+  if (Number.isNaN(date.getTime())) return ""
+  return FIFO_EASTERN_FORMATTER.format(date)
 }

@@ -99,8 +99,8 @@ export function assertCutLogLinkageSymmetry(input: {
  * void marker. The void worker applies this patch atomically alongside the
  * `totalCutSum` adjustment on the parent inventory row.
  *
- * Erased: `cut` (→ "0" because the column is NOT NULL),
- * `coverageCut`, `cost`, `freight`. Sets `void = true` and `status = VOID`.
+ * Erased: `cut` (→ "0" because the column is NOT NULL), `coverageCut`.
+ * Sets `void = true` and `status = VOID`.
  *
  * Preserved (audit / historical record):
  *   - `before` / `after` — the inventory state at the moment of finalize
@@ -109,14 +109,13 @@ export function assertCutLogLinkageSymmetry(input: {
  *   - `isFinal` / `finalCutSequence` — if the row was finalized before void,
  *     those facts stand (gaps in the per-inventory ordinal are fine)
  *   - `isWaste`, `notes` — user-supplied tag and free text
+ *   - `inventoryItem` — frozen snapshot, never mutated post-create
  *   - `workOrderId` / `workOrderItemId` — links remain editable for the
  *     life of the row via the separate sync use case
  */
 export type VoidedCutLogPatch = {
   cut: "0"
   coverageCut: null
-  cost: null
-  freight: null
   void: true
   status: "VOID"
 }
@@ -125,8 +124,6 @@ export function buildVoidedCutLogPatch(): VoidedCutLogPatch {
   return {
     cut: "0",
     coverageCut: null,
-    cost: null,
-    freight: null,
     void: true,
     status: "VOID",
   }

@@ -30,10 +30,10 @@ function toDecimalStringOrNull(
 
 /**
  * Normalize a cut-log payload into the domain read shape. The domain
- * `CutLogRow` (sweep 2) keeps `coverageCut` / `cost` / `freight` as
- * `string | null`, so the normalizer preserves null instead of coercing
- * to `""`. The three sweep-1 fields (`cutLogNumber`, `finalCutSequence`,
- * `isFinal`) are surfaced verbatim.
+ * `CutLogRow` keeps `coverageCut` as `string | null`, so the normalizer
+ * preserves null instead of coercing to `""`. `inventoryItem` is the
+ * denormalized snapshot of the parent inventory's `inventoryItem` column
+ * at cut creation time — immutable post-create.
  */
 export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
   const status: CutLogStatus = row.status
@@ -41,9 +41,7 @@ export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
     id: row.id,
     cutLogNumber: row.cutLogNumber,
     inventoryId: row.inventoryId,
-    inventoryNumber: row.inventoryNumber,
-    itemNumber: row.itemNumber ?? null,
-    dyeLot: row.dyeLot ?? null,
+    inventoryItem: row.inventoryItem,
     categorySlug: row.categorySlug,
     workOrderId: row.workOrderId ?? null,
     workOrderItemId: row.workOrderItemId ?? null,
@@ -60,8 +58,6 @@ export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
     finalCutSequence: row.finalCutSequence,
     isWaste: row.isWaste,
     void: row.void,
-    cost: toDecimalStringOrNull(row.cost),
-    freight: toDecimalStringOrNull(row.freight),
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -281,9 +277,7 @@ export async function getInventoryParentContextForCutLogs(
     where: { id: inventoryId },
     select: {
       id: true,
-      inventoryNumber: true,
-      itemNumber: true,
-      dyeLot: true,
+      inventoryItem: true,
       startingStock: true,
       totalCutSum: true,
       coveragePerUnit: true,
@@ -297,9 +291,7 @@ export async function getInventoryParentContextForCutLogs(
   if (!row) return null
   return {
     inventoryId: row.id,
-    inventoryNumber: row.inventoryNumber,
-    itemNumber: row.itemNumber ?? null,
-    dyeLot: row.dyeLot ?? null,
+    inventoryItem: row.inventoryItem,
     startingStock: row.startingStock.toString(),
     currentTotalCutSum: row.totalCutSum.toString(),
     coveragePerUnit:

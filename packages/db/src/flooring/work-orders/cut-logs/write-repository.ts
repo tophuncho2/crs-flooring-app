@@ -162,12 +162,12 @@ export type InsertPendingCutLogRowInput = {
   notes: string
   unitSnapshot: PendingCutLogUnitSnapshot
   /**
-   * Identity snapshot from the parent inventory (`inventoryNumber`,
-   * optional `itemNumber`, optional `dyeLot`, `categorySlug`). Stamped
-   * at insert and frozen — finalize and void do not re-stamp. Lets the
-   * cut-log subgrid render its Inventory column (`inventoryNumber -
-   * itemNumber - dyeLot` package) directly off the cut log row instead
-   * of resolving via a per-WOMI eligible-inventory fetch.
+   * Identity snapshot from the parent inventory: a copy of
+   * `inventory.inventoryItem` (the denormalized `inv# · roll# · location ·
+   * dyeLot · note` string) plus `categorySlug`. Stamped at insert and
+   * frozen — finalize and void do not re-stamp. Lets the cut-log subgrid
+   * render its Inventory column directly off the cut log row instead of
+   * resolving via a per-WOMI eligible-inventory fetch.
    */
   inventorySnapshot: PendingCutLogInventorySnapshot
 }
@@ -187,7 +187,6 @@ export type InsertPendingCutLogRowInput = {
  * Worker-only fields stay at their schema defaults / null:
  *   - `before` / `after` / `finalCutSequence`: null (finalize worker
  *     stamps them).
- *   - `cost` / `freight`: null (never written on the WO side).
  *   - `status`: defaults to `PENDING`.
  *   - `isFinal` / `void`: default false.
  *   - `cutLogNumber`: DB-generated via the sequence default.
@@ -209,9 +208,7 @@ export async function insertPendingCutLogRow(
       stockUnitAbbrev: input.unitSnapshot.stockUnitAbbrev,
       itemCoverageUnitName: input.unitSnapshot.itemCoverageUnitName,
       itemCoverageUnitAbbrev: input.unitSnapshot.itemCoverageUnitAbbrev,
-      inventoryNumber: input.inventorySnapshot.inventoryNumber,
-      itemNumber: input.inventorySnapshot.itemNumber,
-      dyeLot: input.inventorySnapshot.dyeLot,
+      inventoryItem: input.inventorySnapshot.inventoryItem,
       categorySlug: input.inventorySnapshot.categorySlug,
     },
     select: cutLogRowSelect,
@@ -245,9 +242,9 @@ export type UpdatePendingCutLogRowInput = {
  * The patch is intentionally narrow: only the user-editable fields plus
  * the use-case-recomputed `coverageCut`. Linkage columns (`workOrderId`
  * / `workOrderItemId` / `inventoryId`), `status`, `isFinal`, `void`,
- * `before`, `after`, `finalCutSequence`, `cost`, `freight`,
- * `cutLogNumber`, `createdAt`, and the four unit-snapshot fields are
- * never written here. Empty-patch calls return the row as-is.
+ * `before`, `after`, `finalCutSequence`, `cutLogNumber`, `createdAt`,
+ * `inventoryItem`, and the four unit-snapshot fields are never written
+ * here. Empty-patch calls return the row as-is.
  */
 export async function updatePendingCutLogRow(
   tx: Prisma.TransactionClient,

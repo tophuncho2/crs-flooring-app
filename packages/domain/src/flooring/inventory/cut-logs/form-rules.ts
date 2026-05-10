@@ -17,16 +17,10 @@ export type CutLogPendingFormIssue =
   | { code: "CUT_LOG_CUT_REQUIRED" }
   | { code: "CUT_LOG_CUT_INVALID"; value: string }
   | { code: "CUT_LOG_CUT_NOT_POSITIVE"; value: string }
-  | { code: "CUT_LOG_COST_INVALID"; value: string }
-  | { code: "CUT_LOG_COST_NEGATIVE"; value: string }
-  | { code: "CUT_LOG_FREIGHT_INVALID"; value: string }
-  | { code: "CUT_LOG_FREIGHT_NEGATIVE"; value: string }
 
 /**
- * `cut` is required and must parse to a strictly positive number. `cost`
- * and `freight` are nullable (null = absent) and, when supplied as a
- * non-empty string, must parse to a non-negative number. `isWaste` and
- * `notes` have no validation here.
+ * `cut` is required and must parse to a strictly positive number. `isWaste`
+ * and `notes` have no validation here.
  */
 export function validateCutLogPendingForm(
   input: CutLogPendingForm,
@@ -45,26 +39,6 @@ export function validateCutLogPendingForm(
     }
   }
 
-  const costRaw = (input.cost ?? "").trim()
-  if (costRaw.length > 0) {
-    const cost = Number(costRaw)
-    if (!Number.isFinite(cost)) {
-      issues.push({ code: "CUT_LOG_COST_INVALID", value: costRaw })
-    } else if (cost < 0) {
-      issues.push({ code: "CUT_LOG_COST_NEGATIVE", value: costRaw })
-    }
-  }
-
-  const freightRaw = (input.freight ?? "").trim()
-  if (freightRaw.length > 0) {
-    const freight = Number(freightRaw)
-    if (!Number.isFinite(freight)) {
-      issues.push({ code: "CUT_LOG_FREIGHT_INVALID", value: freightRaw })
-    } else if (freight < 0) {
-      issues.push({ code: "CUT_LOG_FREIGHT_NEGATIVE", value: freightRaw })
-    }
-  }
-
   return issues
 }
 
@@ -76,14 +50,6 @@ export function describeCutLogPendingFormIssue(issue: CutLogPendingFormIssue): s
       return "Cut value must be a number."
     case "CUT_LOG_CUT_NOT_POSITIVE":
       return "Cut value must be greater than zero."
-    case "CUT_LOG_COST_INVALID":
-      return "Cost must be a number when provided."
-    case "CUT_LOG_COST_NEGATIVE":
-      return "Cost cannot be negative."
-    case "CUT_LOG_FREIGHT_INVALID":
-      return "Freight must be a number when provided."
-    case "CUT_LOG_FREIGHT_NEGATIVE":
-      return "Freight cannot be negative."
   }
 }
 

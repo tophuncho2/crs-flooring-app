@@ -65,10 +65,7 @@ export async function countCutLogsByWorkOrderItemIds(
 
 export type EligibleInventoryRow = {
   id: string
-  inventoryNumber: string
-  itemNumber: string
-  dyeLot: string
-  notes: string
+  inventoryItem: string
   startingStock: string
   totalCutSum: string
   remainingStock: string
@@ -103,10 +100,7 @@ export async function listEligibleInventoryForWorkOrderItem(
     },
     select: {
       id: true,
-      inventoryNumber: true,
-      itemNumber: true,
-      dyeLot: true,
-      notes: true,
+      inventoryItem: true,
       startingStock: true,
       totalCutSum: true,
       stockUnitAbbrev: true,
@@ -121,10 +115,7 @@ export async function listEligibleInventoryForWorkOrderItem(
       const remaining = startingStock - totalCutSum
       return {
         id: inv.id,
-        inventoryNumber: inv.inventoryNumber,
-        itemNumber: inv.itemNumber ?? "",
-        dyeLot: inv.dyeLot ?? "",
-        notes: inv.notes ?? "",
+        inventoryItem: inv.inventoryItem,
         startingStock: inv.startingStock.toString(),
         totalCutSum: inv.totalCutSum.toString(),
         remainingStock: remaining.toFixed(2),

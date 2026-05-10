@@ -5,20 +5,22 @@
 export type InventoryRowDraft = {
   tempId: string
   productId: string
-  itemNumber: string
+  rollNumber: string
   dyeLot: string | null
   warehouseId: string
-  locationId: string | null
-  notes: string | null
+  location: string | null
+  note: string | null
+  internalNotes: string | null
   isArchived?: boolean
 }
 
 export type InventoryRowUpdatePatch = {
-  itemNumber?: string
+  rollNumber?: string
   dyeLot?: string | null
   warehouseId?: string
-  locationId?: string | null
-  notes?: string | null
+  location?: string | null
+  note?: string | null
+  internalNotes?: string | null
   isArchived?: boolean
 }
 
@@ -46,25 +48,12 @@ export type InventoryParentContext =
 export type DiffExistingInventoryRow = {
   id: string
   productId: string
-  itemNumber: string
-  locationId: string | null
+  rollNumber: string
   warehouseId: string
   cutLogsCount: number
 }
 
-export type DiffLocationLookup = {
-  id: string
-  warehouseId: string
-}
-
 export type InventoryDiffValidationIssue =
-  | {
-      code: "LOCATION_WAREHOUSE_MISMATCH"
-      locationId: string
-      expectedWarehouseId: string
-      rowId: string | null
-      rowTempId: string | null
-    }
   | {
       code: "IMPORT_WAREHOUSE_MISMATCH"
       expectedWarehouseId: string | null
@@ -79,12 +68,6 @@ export type InventoryDiffValidationIssue =
       rowTempId: string | null
     }
   | {
-      code: "UNKNOWN_LOCATION"
-      locationId: string
-      rowId: string | null
-      rowTempId: string | null
-    }
-  | {
       code: "DELETE_BLOCKED_BY_CUT_LOGS"
       rowId: string
       cutLogsCount: number
@@ -92,14 +75,10 @@ export type InventoryDiffValidationIssue =
 
 export function describeInventoryDiffIssue(issue: InventoryDiffValidationIssue): string {
   switch (issue.code) {
-    case "LOCATION_WAREHOUSE_MISMATCH":
-      return `The selected location does not belong to the chosen warehouse.`
     case "IMPORT_WAREHOUSE_MISMATCH":
       return `Inventory rows must stay within the import's warehouse.`
     case "UNKNOWN_PRODUCT":
       return `Referenced product ${issue.productId} does not exist.`
-    case "UNKNOWN_LOCATION":
-      return `Referenced location ${issue.locationId} does not exist.`
     case "DELETE_BLOCKED_BY_CUT_LOGS":
       return `Cannot delete inventory row with ${issue.cutLogsCount} cut log${issue.cutLogsCount === 1 ? "" : "s"} attached.`
   }

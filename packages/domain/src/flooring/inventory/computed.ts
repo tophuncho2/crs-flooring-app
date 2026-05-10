@@ -53,38 +53,3 @@ export function buildInventoryOversoldMessage(input: {
   return `Cannot cut ${input.requestedCut}${unit}: only ${input.availableBalance}${unit} available.`
 }
 
-/**
- * Per-unit cost for an inventory row materialized from a staged row. Returns
- * null when total cost is null or starting stock is non-positive (no division
- * by zero, no false-zero artifacts). Per-unit values are derived once at
- * materialize time and immutable thereafter.
- */
-export function computeCostPerUnit(input: {
-  cost: string | null
-  startingStock: string
-}): string | null {
-  if (input.cost === null) return null
-  const cost = Number(input.cost)
-  const stock = Number(input.startingStock)
-  if (!Number.isFinite(cost) || !Number.isFinite(stock) || stock <= 0) {
-    return null
-  }
-  return (cost / stock).toFixed(2)
-}
-
-/**
- * Per-unit freight for an inventory row materialized from a staged row. Same
- * contract as `computeCostPerUnit`.
- */
-export function computeFreightPerUnit(input: {
-  freight: string | null
-  startingStock: string
-}): string | null {
-  if (input.freight === null) return null
-  const freight = Number(input.freight)
-  const stock = Number(input.startingStock)
-  if (!Number.isFinite(freight) || !Number.isFinite(stock) || stock <= 0) {
-    return null
-  }
-  return (freight / stock).toFixed(2)
-}

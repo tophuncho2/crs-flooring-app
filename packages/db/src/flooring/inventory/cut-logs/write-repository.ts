@@ -13,14 +13,12 @@ import {
 
 /**
  * Pending-save patch — only the user-editable PENDING fields (per
- * sweep-2 `CUT_LOG_PENDING_USER_EDITABLE_FIELDS`). `coverageCut` is
- * recomputed by the caller and passed in alongside `cut`.
+ * `CUT_LOG_PENDING_USER_EDITABLE_FIELDS`). `coverageCut` is recomputed by
+ * the caller and passed in alongside `cut`.
  */
 export type UpdateCutLogPendingInput = {
   cut?: Prisma.Decimal | string | number
   coverageCut?: Prisma.Decimal | string | number | null
-  cost?: Prisma.Decimal | string | number | null
-  freight?: Prisma.Decimal | string | number | null
   isWaste?: boolean
   notes?: string | null
 }
@@ -35,8 +33,6 @@ export type FinalizeCutLogRecordInput = {
   before: Prisma.Decimal | string | number
   after: Prisma.Decimal | string | number
   finalCutSequence: number
-  cost?: Prisma.Decimal | string | number | null
-  freight?: Prisma.Decimal | string | number | null
 }
 
 // Every mutating primitive in this file requires a caller-managed
@@ -54,8 +50,6 @@ function buildPendingUpdateData(
   const data: Prisma.FlooringCutLogUpdateInput = {}
   if (input.cut !== undefined) data.cut = input.cut
   if (input.coverageCut !== undefined) data.coverageCut = input.coverageCut
-  if (input.cost !== undefined) data.cost = input.cost
-  if (input.freight !== undefined) data.freight = input.freight
   if (input.isWaste !== undefined) data.isWaste = input.isWaste
   if (input.notes !== undefined) data.notes = input.notes
   return data
@@ -99,8 +93,6 @@ export async function voidCutLogRecord(
     data: {
       cut: patch.cut,
       coverageCut: patch.coverageCut,
-      cost: patch.cost,
-      freight: patch.freight,
       void: patch.void,
       status: patch.status,
     },
@@ -132,8 +124,6 @@ export async function finalizeCutLogRecord(
       finalCutSequence: input.finalCutSequence,
       isFinal: true,
       status: "FINAL",
-      ...(input.cost !== undefined ? { cost: input.cost } : {}),
-      ...(input.freight !== undefined ? { freight: input.freight } : {}),
     },
     select: { id: true },
   })
