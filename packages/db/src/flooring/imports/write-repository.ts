@@ -9,8 +9,8 @@ import { getImportById, type ImportRecord } from "./read-repository.js"
  * is nullable.
  */
 export type CreateImportRecordInput = {
-  orderNumber: string | null
-  notes: string | null
+  purchaseOrderNumber: string | null
+  internalNotes: string | null
   warehouseId: string
   manufacturerId: string | null
 }
@@ -27,8 +27,8 @@ export async function createImportRecord(
 ): Promise<ImportRecord> {
   const row = await client.flooringImportEntry.create({
     data: {
-      orderNumber: input.orderNumber,
-      notes: input.notes,
+      purchaseOrderNumber: input.purchaseOrderNumber,
+      internalNotes: input.internalNotes,
       warehouse: { connect: { id: input.warehouseId } },
       manufacturer: input.manufacturerId
         ? { connect: { id: input.manufacturerId } }
@@ -47,8 +47,8 @@ export async function updateImportRecord(
   client: ImportsDbClient = db,
 ): Promise<ImportRecord> {
   const data: Prisma.FlooringImportEntryUpdateInput = {}
-  if (input.orderNumber !== undefined) data.orderNumber = input.orderNumber
-  if (input.notes !== undefined) data.notes = input.notes
+  if (input.purchaseOrderNumber !== undefined) data.purchaseOrderNumber = input.purchaseOrderNumber
+  if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes
   if (input.warehouseId !== undefined) {
     data.warehouse = { connect: { id: input.warehouseId } }
   }

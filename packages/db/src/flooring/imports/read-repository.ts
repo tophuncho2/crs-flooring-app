@@ -22,8 +22,8 @@ export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
   return {
     id: row.id,
     importNumber: row.importNumber,
-    orderNumber: row.orderNumber ?? "",
-    notes: row.notes ?? "",
+    purchaseOrderNumber: row.purchaseOrderNumber ?? "",
+    internalNotes: row.internalNotes ?? "",
     warehouseId: row.warehouseId,
     warehouseName: row.warehouse?.name ?? "",
     manufacturerId: row.manufacturerId ?? "",
@@ -51,7 +51,7 @@ function buildListWhere(filter?: ImportsListFilter) {
   if (filter.searchQuery) {
     const searchQuery = filter.searchQuery
     where.OR = [
-      { orderNumber: { contains: searchQuery, mode: "insensitive" } },
+      { purchaseOrderNumber: { contains: searchQuery, mode: "insensitive" } },
       { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
       { manufacturer: { companyName: { contains: searchQuery, mode: "insensitive" } } },
     ]

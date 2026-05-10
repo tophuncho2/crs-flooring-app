@@ -10,8 +10,8 @@
 
 // User-editable on the record-view primary section.
 export const IMPORT_USER_EDITABLE_FIELDS = [
-  "orderNumber",
-  "notes",
+  "purchaseOrderNumber",
+  "internalNotes",
   "warehouseId",
   "manufacturerId",
 ] as const

@@ -5,8 +5,8 @@ export type ImportsDbClient = PrismaClient | Prisma.TransactionClient
 export const importRowSelect = {
   id: true,
   importNumber: true,
-  orderNumber: true,
-  notes: true,
+  purchaseOrderNumber: true,
+  internalNotes: true,
   warehouseId: true,
   warehouse: { select: { id: true, name: true, number: true } },
   manufacturerId: true,
