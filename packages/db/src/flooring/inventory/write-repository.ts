@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client"
+import { composeInventoryItem } from "@builders/domain"
 import { db } from "../../client.js"
 import { type InventoryDbClient } from "./shared.js"
 import { getInventoryById, type InventoryRecord } from "./read-repository.js"
@@ -286,6 +287,29 @@ export async function materializeStagedRowsToInventory(
     where: { id: { in: createdIds } },
     select: { id: true, inventoryNumber: true },
   })
+
+  // Step 2.5 — compose `inventoryItem` per row now that inventoryNumber is
+  // sequence-assigned. The composer is a pure domain helper (carve-out per
+  // packages/db/CLAUDE.md). Caller wrote `""` as a placeholder during the
+  // bulk insert; we update each row in-place. Single materialization path =
+  // single composition path; no other inventory-create surface exists.
+  const inputById = new Map(input.inventoryRowsToCreate.map((row) => [row.id, row]))
+  for (const created of createdRows) {
+    const source = inputById.get(created.id)
+    if (!source) continue
+    const inventoryItem = composeInventoryItem({
+      inventoryNumber: created.inventoryNumber,
+      rollNumber: source.rollNumber ?? "",
+      location: source.location ?? "",
+      dyeLot: source.dyeLot ?? "",
+      note: source.note ?? "",
+    })
+    await tx.flooringInventory.update({
+      where: { id: created.id },
+      data: { inventoryItem },
+      select: { id: true },
+    })
+  }
 
   // Step 3 — flip the source staged rows to IMPORTED. WHERE narrows to QUEUED
   // so any row that drifted state is left alone (caller error, surfaces as a

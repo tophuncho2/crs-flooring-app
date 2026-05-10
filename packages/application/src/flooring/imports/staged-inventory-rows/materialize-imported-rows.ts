@@ -6,7 +6,10 @@ import {
   withDatabaseTransaction,
   type CreateInventoryRecordInput,
 } from "@builders/db"
-import { type ImportMaterializeBatchPayload } from "@builders/domain"
+import {
+  applyRollNumberPrefix,
+  type ImportMaterializeBatchPayload,
+} from "@builders/domain"
 import { StagedInventoryExecutionError } from "./errors.js"
 import type { MaterializeImportedStagedRowsResult } from "./types.js"
 
@@ -17,6 +20,41 @@ function decimalToString(
   return value.toString()
 }
 
+/**
+ * Worker-side materialize: drains a batch of QUEUED staged rows into real
+ * inventory rows. Snapshot-heavy by design — every denormalized column on
+ * `flooring_inventory` (productName, categoryName, importNumber,
+ * purchaseOrderNumber, UoM × 6, coveragePerUnit) is stamped here from the
+ * joined product + import entry context.
+ *
+ * Field sourcing rules:
+ *   - `productName`: `product.name` directly (the stored display name —
+ *     "category style color note" composed at product create time).
+ *   - `categorySlug`, `categoryName`: from `product.category`.
+ *   - 6 UoM columns: from `product.{stockUnit*, itemCoverageUnit*, sendUnit*}`
+ *     (the product table carries denormalized UoM snapshots — no need to
+ *     hop to category).
+ *   - `coveragePerUnit`: from `product.coveragePerUnit`.
+ *   - `importNumber`: raw stringified `Int` from `importEntry.importNumber`
+ *     (UI re-formats via `formatInventoryImportNumber`).
+ *   - `purchaseOrderNumber`: from `importEntry.purchaseOrderNumber`.
+ *   - `internalNotes`: always `null` — user-only column, never seeded by
+ *     the worker.
+ *   - `rollNumber`: passed through `applyRollNumberPrefix` so a staged
+ *     value of `"1234"` lands as `"ROLL1234"` on inventory (matches the
+ *     update-inventory use case's prefix rule — single source of truth via
+ *     the domain helper).
+ *   - `inventoryItem`: written as `""` here; the data-layer primitive
+ *     composes the canonical value after `inventoryNumber` is
+ *     sequence-assigned (see `materializeStagedRowsToInventory` step 2.5).
+ *   - `fifoReceivedAt`: `new Date()` — UTC; the column is TIMESTAMPTZ and
+ *     the UI formats in Eastern Time on read.
+ *
+ * Locking: the import-entry row is locked FOR UPDATE for the duration of
+ * the transaction. Inventory rows being created don't need a lock — they
+ * don't exist yet, and concurrent cut-log mutations against them can only
+ * start after this transaction commits.
+ */
 export async function materializeImportedStagedRowsUseCase(
   payload: ImportMaterializeBatchPayload,
   client?: Prisma.TransactionClient,
@@ -51,45 +89,35 @@ export async function materializeImportedStagedRowsUseCase(
 
     const fifoReceivedAt = new Date()
 
-    // Hardscoped — placeholder until the worker stabilization sweep rewrites
-    // this use case to: pull UoM snapshots from the product (not category),
-    // compose `inventoryItem` via `composeInventoryItem`, apply
-    // `applyRollNumberPrefix` to `rollNumber`, and populate every snapshot
-    // column from the staged row + import entry context. For now this stub
-    // only exists to keep the build green; the worker is not run.
     const inventoryRowsToCreate: Array<
       CreateInventoryRecordInput & { id: string; sourceStagedRowId: string }
-    > = loadedRows.map((row) => {
-      const startingStock = row.startingStock.toString()
-      const category = row.product.category
-      return {
-        id: randomUUID(),
-        sourceStagedRowId: row.id,
-        importEntryId: payload.importEntryId,
-        importNumber: null,
-        purchaseOrderNumber: null,
-        productId: row.productId,
-        productName: "",
-        categorySlug: category.slug,
-        categoryName: "",
-        stockUnitName: category.stockUnit?.name ?? null,
-        stockUnitAbbrev: category.stockUnit?.abbreviation ?? null,
-        itemCoverageUnitName: category.itemCoverageUnit?.name ?? null,
-        itemCoverageUnitAbbrev: category.itemCoverageUnit?.abbreviation ?? null,
-        sendUnitName: category.sendUnit?.name ?? null,
-        sendUnitAbbrev: category.sendUnit?.abbreviation ?? null,
-        coveragePerUnit: decimalToString(row.product.coveragePerUnit),
-        rollNumber: row.rollNumber,
-        dyeLot: row.dyeLot,
-        note: row.note,
-        internalNotes: null,
-        inventoryItem: "",
-        warehouseId: row.warehouseId,
-        location: row.location,
-        startingStock,
-        fifoReceivedAt,
-      }
-    })
+    > = loadedRows.map((row) => ({
+      id: randomUUID(),
+      sourceStagedRowId: row.id,
+      importEntryId: payload.importEntryId,
+      importNumber: String(row.importEntry.importNumber),
+      purchaseOrderNumber: row.importEntry.purchaseOrderNumber ?? null,
+      productId: row.productId,
+      productName: row.product.name,
+      categorySlug: row.product.category.slug,
+      categoryName: row.product.category.name,
+      stockUnitName: row.product.stockUnitName,
+      stockUnitAbbrev: row.product.stockUnitAbbrev,
+      itemCoverageUnitName: row.product.itemCoverageUnitName,
+      itemCoverageUnitAbbrev: row.product.itemCoverageUnitAbbrev,
+      sendUnitName: row.product.sendUnitName,
+      sendUnitAbbrev: row.product.sendUnitAbbrev,
+      coveragePerUnit: decimalToString(row.product.coveragePerUnit),
+      rollNumber: applyRollNumberPrefix(row.rollNumber ?? ""),
+      dyeLot: row.dyeLot,
+      note: row.note,
+      internalNotes: null,
+      inventoryItem: "",
+      warehouseId: row.warehouseId,
+      location: row.location,
+      startingStock: row.startingStock.toString(),
+      fifoReceivedAt,
+    }))
 
     const result = await materializeStagedRowsToInventory(c, {
       importEntryId: payload.importEntryId,

@@ -9,6 +9,7 @@ export const stagedInventoryRowSelect = {
     select: {
       id: true,
       importNumber: true,
+      purchaseOrderNumber: true,
     },
   },
   productId: true,
@@ -19,14 +20,17 @@ export const stagedInventoryRowSelect = {
       style: true,
       color: true,
       coveragePerUnit: true,
+      stockUnitName: true,
+      stockUnitAbbrev: true,
+      itemCoverageUnitName: true,
+      itemCoverageUnitAbbrev: true,
+      sendUnitName: true,
+      sendUnitAbbrev: true,
       category: {
         select: {
           id: true,
           slug: true,
           name: true,
-          stockUnit: { select: { name: true, abbreviation: true } },
-          itemCoverageUnit: { select: { name: true, abbreviation: true } },
-          sendUnit: { select: { name: true, abbreviation: true } },
         },
       },
     },
