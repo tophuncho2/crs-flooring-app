@@ -2,7 +2,7 @@
 
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { CheckboxCell, TextCell, TextareaCell } from "@/components/cells"
+import { CheckboxCell, TextCell } from "@/components/cells"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatFifoReceivedAtEastern,
@@ -45,27 +45,8 @@ export function InventoryPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      {/* Row 2: Import # · PO # · FIFO Received */}
+      {/* Row 2: Warehouse · Location · Stock Balance · Coverage Balance */}
       <CellAt col={1} row={2} colSpan={2}>
-        <FormField label="Import #">
-          <StaticFieldValue>{inventory.importNumber || "—"}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={3} row={2} colSpan={2}>
-        <FormField label="PO #">
-          <StaticFieldValue>{inventory.purchaseOrderNumber || "—"}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={2} colSpan={2}>
-        <FormField label="FIFO Received">
-          <StaticFieldValue>
-            {inventory.fifoReceivedAt ? formatFifoReceivedAtEastern(inventory.fifoReceivedAt) : "—"}
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
-
-      {/* Row 3: Warehouse · Roll # · Dye Lot */}
-      <CellAt col={1} row={3} colSpan={2}>
         <FormField label="Warehouse" required>
           {editable ? (
             <WarehousePicker
@@ -80,25 +61,7 @@ export function InventoryPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={3} row={3} colSpan={2}>
-        <FormField label="Roll #">
-          <TextCell
-            editable={editable}
-            value={draft.rollNumber}
-            onChange={(value) => onFieldChange("rollNumber", value)}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={3} colSpan={2}>
-        <FormField label="Dye Lot">
-          <TextCell
-            editable={editable}
-            value={draft.dyeLot}
-            onChange={(value) => onFieldChange("dyeLot", value)}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={7} row={3} colSpan={2}>
+      <CellAt col={3} row={2} colSpan={2}>
         <FormField label="Location">
           <TextCell
             editable={editable}
@@ -107,53 +70,82 @@ export function InventoryPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-
-      {/* Row 4: Starting Stock · Total Cut · Stock Balance · Coverage Balance */}
-      <CellAt col={1} row={4} colSpan={2}>
-        <FormField label="Starting Stock">
-          <StaticFieldValue>
-            {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={3} row={4} colSpan={2}>
-        <FormField label="Total Cut">
-          <StaticFieldValue>
-            {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={4} colSpan={2}>
+      <CellAt col={5} row={2} colSpan={2}>
         <FormField label="Stock Balance">
           <StaticFieldValue>
             {formatInventoryQuantity(inventory.stockBalance, inventory.stockUnitAbbrev)}
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      {inventory.coverageBalance ? (
-        <CellAt col={7} row={4} colSpan={2}>
-          <FormField label="Coverage Balance">
-            <StaticFieldValue>
-              {formatInventoryQuantity(inventory.coverageBalance, inventory.itemCoverageUnitAbbrev)}
-            </StaticFieldValue>
-          </FormField>
-        </CellAt>
-      ) : null}
-
-      {/* Row 5: Note (full width) */}
-      <CellAt col={1} row={5} colSpan={8}>
-        <FormField label="Note">
-          <TextareaCell
-            editable={editable}
-            value={draft.note}
-            onChange={(value) => onFieldChange("note", value)}
-            rows={2}
-          />
+      <CellAt col={7} row={2} colSpan={2}>
+        <FormField label="Coverage Balance">
+          <StaticFieldValue>
+            {inventory.coverageBalance
+              ? formatInventoryQuantity(inventory.coverageBalance, inventory.itemCoverageUnitAbbrev)
+              : "—"}
+          </StaticFieldValue>
         </FormField>
       </CellAt>
 
-      {/* Row 6: Internal Notes (full width) · Archived toggle */}
-      <CellAt col={1} row={6} colSpan={6}>
+      {/* Row 3: Roll # · Dye Lot · Total Cut · FIFO Received */}
+      <CellAt col={1} row={3} colSpan={2}>
+        <FormField label="Roll #">
+          <TextCell
+            editable={editable}
+            value={draft.rollNumber}
+            onChange={(value) => onFieldChange("rollNumber", value)}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={3} row={3} colSpan={2}>
+        <FormField label="Dye Lot">
+          <TextCell
+            editable={editable}
+            value={draft.dyeLot}
+            onChange={(value) => onFieldChange("dyeLot", value)}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} row={3} colSpan={2}>
+        <FormField label="Total Cut">
+          <StaticFieldValue>
+            {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}
+          </StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={7} row={3} colSpan={2}>
+        <FormField label="FIFO Received">
+          <StaticFieldValue>
+            {inventory.fifoReceivedAt ? formatFifoReceivedAtEastern(inventory.fifoReceivedAt) : "—"}
+          </StaticFieldValue>
+        </FormField>
+      </CellAt>
+
+      {/* Row 4: Note · Starting Stock · Import # */}
+      <CellAt col={1} row={4} colSpan={4}>
+        <FormField label="Note">
+          <TextCell
+            editable={editable}
+            value={draft.note}
+            onChange={(value) => onFieldChange("note", value)}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} row={4} colSpan={2}>
+        <FormField label="Starting Stock">
+          <StaticFieldValue>
+            {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
+          </StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={7} row={4} colSpan={2}>
+        <FormField label="Import #">
+          <StaticFieldValue>{inventory.importNumber || "—"}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+
+      {/* Row 5: Internal Notes · Archived · PO # */}
+      <CellAt col={1} row={5} colSpan={4}>
         <FormField label="Internal Notes">
           <TextCell
             editable={editable}
@@ -162,7 +154,7 @@ export function InventoryPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={7} row={6} colSpan={2}>
+      <CellAt col={5} row={5} colSpan={2}>
         <FormField label="Archived">
           <CheckboxCell
             editable={editable}
@@ -170,6 +162,11 @@ export function InventoryPrimaryFieldsSection({
             onChange={(value) => onFieldChange("isArchived", value)}
             ariaLabel="Archived"
           />
+        </FormField>
+      </CellAt>
+      <CellAt col={7} row={5} colSpan={2}>
+        <FormField label="PO #">
+          <StaticFieldValue>{inventory.purchaseOrderNumber || "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
     </FieldSection>
