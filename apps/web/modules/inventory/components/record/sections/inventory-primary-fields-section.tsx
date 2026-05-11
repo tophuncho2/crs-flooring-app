@@ -2,7 +2,7 @@
 
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { CheckboxCell, PrefixedTextCell, TextCell } from "@/components/cells"
+import { CheckboxCell, TextCell } from "@/components/cells"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatFifoReceivedAtEastern,
@@ -90,11 +90,10 @@ export function InventoryPrimaryFieldsSection({
       {/* Row 3: Roll # · Dye Lot · Total Cut · FIFO Received */}
       <CellAt col={1} row={3} colSpan={2}>
         <FormField label="Roll #">
-          <PrefixedTextCell
+          <TextCell
             editable={editable}
             value={draft.rollNumber}
             onChange={(value) => onFieldChange("rollNumber", value)}
-            prefix={inventory.rollPrefix}
           />
         </FormField>
       </CellAt>
