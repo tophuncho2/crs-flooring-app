@@ -1,6 +1,3 @@
 export { type RecordRowBuilderOption } from "./builders/record-row-builder-shared"
 export { RecordMaterialRowBuilder } from "./builders/record-material-row-builder"
 export { RecordServiceRowBuilder } from "./builders/record-service-row-builder"
-export { RecordSalesRepRowBuilder } from "./builders/record-sales-rep-row-builder"
-export { RecordAllocationRowBuilder } from "./builders/record-allocation-row-builder"
-export { RecordCalculationRowBuilder } from "./builders/record-calculation-row-builder"
