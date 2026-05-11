@@ -22,11 +22,16 @@ import type { InventoryCutLogRow } from "./cut-logs/types.js"
  * `purchaseOrderNumber`) are written once by the worker on materialize and
  * never updated by the inventory record view.
  *
+ * `rollPrefix` is the display prefix for the roll number (default `"ROLL#"`,
+ * persisted column with a DB default). It is non-editable — never appears on
+ * a form, never in a mutation payload. UI surfaces compose the display form
+ * via `composeRollNumberDisplay(prefix, rollNumber)`.
+ *
  * `inventoryItem` is the canonical search/display string composed from
- * `inventoryNumber + rollNumber + location + dyeLot + note`. The application's
- * inventory-update use case recomputes it inside the same transaction as any
- * patch that touches its source fields. List view + picker server-side search
- * targets this column.
+ * `inventoryNumber + {rollPrefix+rollNumber} + location + dyeLot + note`. The
+ * application's inventory-update use case recomputes it inside the same
+ * transaction as any patch that touches its source fields. List view + picker
+ * server-side search targets this column.
  */
 export type InventoryRow = {
   id: string
@@ -45,6 +50,7 @@ export type InventoryRow = {
   itemCoverageUnitAbbrev: string
   sendUnitName: string
   sendUnitAbbrev: string
+  rollPrefix: string
   rollNumber: string
   dyeLot: string
   warehouseId: string

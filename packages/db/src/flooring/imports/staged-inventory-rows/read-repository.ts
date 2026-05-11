@@ -32,6 +32,7 @@ export function normalizeStagedInventoryRow(
     categoryName: row.product.category.name,
     categorySlug: row.product.category.slug,
     stockUnit: row.product.stockUnitName ?? "",
+    rollPrefix: row.rollPrefix,
     rollNumber: row.rollNumber ?? "",
     dyeLot: row.dyeLot ?? "",
     warehouseId: row.warehouseId,

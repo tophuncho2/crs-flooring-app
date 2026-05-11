@@ -35,6 +35,7 @@ export const stagedInventoryRowSelect = {
       },
     },
   },
+  rollPrefix: true,
   rollNumber: true,
   dyeLot: true,
   warehouseId: true,

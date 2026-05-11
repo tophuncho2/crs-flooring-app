@@ -83,6 +83,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     itemCoverageUnitAbbrev: payload.itemCoverageUnitAbbrev ?? "",
     sendUnitName: payload.sendUnitName ?? "",
     sendUnitAbbrev: payload.sendUnitAbbrev ?? "",
+    rollPrefix: payload.rollPrefix,
     rollNumber: payload.rollNumber ?? "",
     dyeLot: payload.dyeLot ?? "",
     warehouseId: payload.warehouseId,

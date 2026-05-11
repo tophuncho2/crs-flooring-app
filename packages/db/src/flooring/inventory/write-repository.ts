@@ -51,6 +51,14 @@ export type CreateInventoryRecordInput = {
   itemCoverageUnitAbbrev: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
+  /**
+   * Optional — column has a DB default (`'ROLL#'`). Callers in the worker
+   * materialize path should pass the source staged row's prefix so the
+   * inventory row inherits it; one-off callers can omit and accept the
+   * default. The materialize composer reads this when building the
+   * `inventoryItem` denorm column.
+   */
+  rollPrefix?: string
   rollNumber: string | null
   dyeLot: string | null
   note: string | null
@@ -119,6 +127,7 @@ function buildCreateData(
     fifoReceivedAt: input.fifoReceivedAt,
   }
   if (input.importEntryId) data.importEntry = { connect: { id: input.importEntryId } }
+  if (input.rollPrefix !== undefined) data.rollPrefix = input.rollPrefix
   return data
 }
 
@@ -267,6 +276,11 @@ export async function materializeStagedRowsToInventory(
       itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev,
       sendUnitName: row.sendUnitName,
       sendUnitAbbrev: row.sendUnitAbbrev,
+      // `rollPrefix` omitted when undefined — column has a DB default
+      // (`'ROLL#'`), so Prisma's createMany will use it. Worker materialize
+      // path will start passing the staged row's prefix once the
+      // application layer is updated.
+      ...(row.rollPrefix !== undefined ? { rollPrefix: row.rollPrefix } : {}),
       rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,
       note: row.note,
@@ -299,6 +313,7 @@ export async function materializeStagedRowsToInventory(
     if (!source) continue
     const inventoryItem = composeInventoryItem({
       inventoryNumber: created.inventoryNumber,
+      rollPrefix: source.rollPrefix,
       rollNumber: source.rollNumber ?? "",
       location: source.location ?? "",
       dyeLot: source.dyeLot ?? "",

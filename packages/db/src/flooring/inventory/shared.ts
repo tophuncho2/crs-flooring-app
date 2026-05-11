@@ -35,6 +35,7 @@ export const inventoryRowSelect = {
   itemCoverageUnitAbbrev: true,
   sendUnitName: true,
   sendUnitAbbrev: true,
+  rollPrefix: true,
   rollNumber: true,
   dyeLot: true,
   warehouseId: true,
