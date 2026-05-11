@@ -2,8 +2,8 @@
 
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
-import type { SectionsWithLocationsDiff, WarehouseForm } from "@builders/domain"
-import type { WarehouseDetailRecord, WarehouseRecord } from "@builders/db"
+import type { WarehouseForm } from "@builders/domain"
+import type { WarehouseRecord } from "@builders/db"
 
 export async function createWarehouseRequest(input: WarehouseForm) {
   return requestJson<{ warehouse: WarehouseRecord }>("/api/warehouses", {
@@ -27,19 +27,4 @@ export async function deleteWarehouseRequest(id: string, updatedAt: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta({}, updatedAt)),
   })
-}
-
-export async function updateSectionsWithLocationsRequest(
-  id: string,
-  diff: SectionsWithLocationsDiff,
-  revisionKey: string,
-) {
-  return requestJson<{ warehouse: WarehouseDetailRecord; tempIdMap: Record<string, string> }>(
-    `/api/warehouses/${id}/sections-locations/section`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(withMutationMeta(diff as unknown as Record<string, unknown>, revisionKey)),
-    },
-  )
 }

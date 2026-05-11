@@ -9,9 +9,7 @@ import {
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import type { WarehouseDetailRecord } from "@builders/db"
 import { useWarehousePrimarySection } from "@/modules/warehouse/controllers/use-warehouse-primary-section"
-import { useWarehouseSectionsSection } from "@/modules/warehouse/controllers/use-warehouse-sections-section"
 import { WarehousePrimaryFieldsSection } from "./warehouse-primary-fields-section"
-import { WarehouseSectionsSection } from "./warehouse-sections-section"
 
 export function WarehouseRecordPanel({
   page,
@@ -24,10 +22,6 @@ export function WarehouseRecordPanel({
   const controller = useWarehousePrimarySection({
     page,
     warehouse,
-  })
-  const sectionsSection = useWarehouseSectionsSection({
-    record: controller.record,
-    publishRecord: controller.publishRecord,
   })
 
   return (
@@ -69,45 +63,6 @@ export function WarehouseRecordPanel({
                 }}
               />
             </RecordPrimarySectionInstance>
-          ),
-        },
-        {
-          key: "sections",
-          type: "item",
-          order: 10,
-          dirtyLabel: "sections",
-          controller: sectionsSection,
-          render: () => (
-            <WarehouseSectionsSection
-              sections={sectionsSection.sections}
-              locations={sectionsSection.locations}
-              noticeMessage={sectionsSection.noticeMessage}
-              noticeError={sectionsSection.noticeError}
-              onRemoveSection={sectionsSection.removeSection}
-              onAddLocation={sectionsSection.addLocation}
-              onRemoveLocation={sectionsSection.removeLocation}
-              onRafterChange={sectionsSection.setLocationRafter}
-              onLevelChange={sectionsSection.setLocationLevel}
-              subHeader={{
-                isDirty: sectionsSection.isDirty,
-                isSaving: sectionsSection.isSaving,
-                hasConflict: sectionsSection.hasConflict,
-                error: sectionsSection.error,
-                onSave: () => void sectionsSection.save(),
-                onDiscard: () => sectionsSection.discard(),
-                saveLabel: "Save Sections",
-                savingLabel: "Saving Sections...",
-                actions: [
-                  {
-                    key: "add-section",
-                    kind: "add-row",
-                    label: "Add Section",
-                    onClick: sectionsSection.addSection,
-                    disabled: sectionsSection.isSaving,
-                  },
-                ],
-              }}
-            />
           ),
         },
       ]}

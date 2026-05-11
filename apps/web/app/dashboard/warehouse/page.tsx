@@ -18,7 +18,7 @@ export default async function FlooringWarehousePage({
     defaultAscending: initialTablePreferences.hasSavedPreference ? initialTablePreferences.sort.direction === "asc" : true,
     defaultGrouped: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.enabled : false,
     defaultGroupKeys: initialTablePreferences.hasSavedPreference ? initialTablePreferences.grouping.keys : [],
-    allowedGroupKeys: ["address", "phone", "sections", "locations", "workOrders"],
+    allowedGroupKeys: ["address", "phone", "workOrders"],
   })
   const pageData = await getWarehousePageData()
 

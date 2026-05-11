@@ -19,8 +19,6 @@ const WAREHOUSE_FIELDS = [
   { key: "name", label: "Warehouse", getValue: (row: WarehouseRecord) => row.name, groupable: false },
   { key: "address", label: "Address", getValue: (row: WarehouseRecord) => row.address ?? "", groupable: true },
   { key: "phone", label: "Store Phone", getValue: (row: WarehouseRecord) => row.phone ?? "", groupable: true },
-  { key: "sections", label: "Sections", getValue: (row: WarehouseRecord) => String(row.sectionsCount), groupable: true },
-  { key: "locations", label: "Locations", getValue: (row: WarehouseRecord) => String(row.locationsCount), groupable: true },
   { key: "workOrders", label: "Work Orders", getValue: (row: WarehouseRecord) => String(row.workOrdersCount), groupable: true },
 ]
 

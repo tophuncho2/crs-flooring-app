@@ -47,16 +47,6 @@ export function WarehousePrimaryFieldsSection({
             </RecordFormField>
           </RecordPrimaryFieldCell>
           <RecordPrimaryFieldCell>
-            <RecordFormField label="Sections">
-              <RecordStaticFieldValue>{warehouse.sectionsCount}</RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
-            <RecordFormField label="Locations">
-              <RecordStaticFieldValue>{warehouse.locationsCount}</RecordStaticFieldValue>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell>
             <RecordFormField label="Work Orders">
               <RecordStaticFieldValue>{warehouse.workOrdersCount}</RecordStaticFieldValue>
             </RecordFormField>

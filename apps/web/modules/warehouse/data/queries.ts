@@ -37,7 +37,7 @@ export async function getWarehouseDetailPageData(
         code: "WAREHOUSE_DETAIL_LOAD_FAILED",
         title: "Warehouse Unavailable",
         message: "The app could not load this warehouse.",
-        detail: "The warehouse record or its linked sections and locations could not be loaded.",
+        detail: "The warehouse record could not be loaded.",
       }),
     }
   }

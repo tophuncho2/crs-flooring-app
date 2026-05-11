@@ -20,13 +20,9 @@ const EMPTY_WAREHOUSE_DETAIL: WarehouseDetailRecord = {
   name: "",
   address: "",
   phone: "",
-  sectionsCount: 0,
-  locationsCount: 0,
   workOrdersCount: 0,
   createdAt: "",
   updatedAt: "",
-  sections: [],
-  locations: [],
 }
 
 function WarehouseCreatePanel({

@@ -34,8 +34,6 @@ export function WarehouseTable({
       ),
       address: (columnIndex) => <DashboardListRowCell key="address" columnIndex={columnIndex}>{row.address || "-"}</DashboardListRowCell>,
       phone: (columnIndex) => <DashboardListRowCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardListRowCell>,
-      sections: (columnIndex) => <DashboardListRowCell key="sections" columnIndex={columnIndex}>{row.sectionsCount}</DashboardListRowCell>,
-      locations: (columnIndex) => <DashboardListRowCell key="locations" columnIndex={columnIndex}>{row.locationsCount}</DashboardListRowCell>,
       workOrders: (columnIndex) => <DashboardListRowCell key="workOrders" columnIndex={columnIndex}>{row.workOrdersCount}</DashboardListRowCell>,
     }
 
