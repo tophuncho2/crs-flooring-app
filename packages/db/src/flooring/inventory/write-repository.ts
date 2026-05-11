@@ -310,7 +310,6 @@ export async function materializeStagedRowsToInventory(
       inventoryNumber: created.inventoryNumber,
       rollPrefix: source.rollPrefix,
       rollNumber: source.rollNumber ?? "",
-      location: source.location ?? "",
       dyeLot: source.dyeLot ?? "",
       note: source.note ?? "",
     })

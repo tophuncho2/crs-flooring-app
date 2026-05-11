@@ -19,7 +19,6 @@ export type ComposeInventoryItemInput = {
   inventoryNumber: string
   rollPrefix: string
   rollNumber: string
-  location: string
   dyeLot: string
   note: string
 }
@@ -43,7 +42,7 @@ export function composeRollNumberDisplay(prefix: string, number: string): string
 /**
  * Canonical composer for the `inventoryItem` denorm column on
  * `FlooringInventory`. Joins non-empty parts in order:
- * `inventoryNumber · {rollPrefix+rollNumber} · location · dyeLot · note`.
+ * `inventoryNumber · {rollPrefix+rollNumber} · dyeLot · note`.
  *
  * `inventoryNumber` is always present (DB sequence assigns at create), so
  * the output is never empty. Empty parts are skipped — no placeholders.
@@ -62,7 +61,6 @@ export function composeInventoryItem(input: ComposeInventoryItemInput): string {
   const parts = [
     input.inventoryNumber,
     rollDisplay,
-    input.location,
     input.dyeLot,
     input.note,
   ]

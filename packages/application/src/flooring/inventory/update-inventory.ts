@@ -128,7 +128,6 @@ export async function updateInventoryUseCase(
       inventoryNumber: current.inventoryNumber,
       rollPrefix: current.rollPrefix,
       rollNumber: effectiveRollNumber ?? "",
-      location: effectiveLocation ?? "",
       dyeLot: effectiveDyeLot ?? "",
       note: effectiveNote ?? "",
     })
