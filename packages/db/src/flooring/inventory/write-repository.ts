@@ -52,13 +52,12 @@ export type CreateInventoryRecordInput = {
   sendUnitName: string | null
   sendUnitAbbrev: string | null
   /**
-   * Optional — column has a DB default (`'ROLL#'`). Callers in the worker
-   * materialize path should pass the source staged row's prefix so the
-   * inventory row inherits it; one-off callers can omit and accept the
-   * default. The materialize composer reads this when building the
-   * `inventoryItem` denorm column.
+   * Display prefix for the roll number (column default `'ROLL#'`). Worker
+   * materialize copies it verbatim from the source staged row so the
+   * inventory row inherits the same prefix. Read by `composeInventoryItem`
+   * when building the `inventoryItem` denorm column.
    */
-  rollPrefix?: string
+  rollPrefix: string
   rollNumber: string | null
   dyeLot: string | null
   note: string | null
@@ -116,6 +115,7 @@ function buildCreateData(
     itemCoverageUnitAbbrev: input.itemCoverageUnitAbbrev,
     sendUnitName: input.sendUnitName,
     sendUnitAbbrev: input.sendUnitAbbrev,
+    rollPrefix: input.rollPrefix,
     rollNumber: input.rollNumber,
     dyeLot: input.dyeLot,
     location: input.location,
@@ -127,7 +127,6 @@ function buildCreateData(
     fifoReceivedAt: input.fifoReceivedAt,
   }
   if (input.importEntryId) data.importEntry = { connect: { id: input.importEntryId } }
-  if (input.rollPrefix !== undefined) data.rollPrefix = input.rollPrefix
   return data
 }
 
@@ -276,11 +275,7 @@ export async function materializeStagedRowsToInventory(
       itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev,
       sendUnitName: row.sendUnitName,
       sendUnitAbbrev: row.sendUnitAbbrev,
-      // `rollPrefix` omitted when undefined — column has a DB default
-      // (`'ROLL#'`), so Prisma's createMany will use it. Worker materialize
-      // path will start passing the staged row's prefix once the
-      // application layer is updated.
-      ...(row.rollPrefix !== undefined ? { rollPrefix: row.rollPrefix } : {}),
+      rollPrefix: row.rollPrefix,
       rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,
       note: row.note,

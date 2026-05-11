@@ -17,7 +17,7 @@ export function formatInventoryQuantity(value: string, unitLabel: string): strin
 
 export type ComposeInventoryItemInput = {
   inventoryNumber: string
-  rollPrefix?: string
+  rollPrefix: string
   rollNumber: string
   location: string
   dyeLot: string
@@ -25,7 +25,6 @@ export type ComposeInventoryItemInput = {
 }
 
 const INVENTORY_ITEM_SEPARATOR = " · "
-const DEFAULT_ROLL_PREFIX = "ROLL#"
 
 /**
  * Composes the display form of a roll number: `${prefix}${number}` when the
@@ -44,25 +43,22 @@ export function composeRollNumberDisplay(prefix: string, number: string): string
 /**
  * Canonical composer for the `inventoryItem` denorm column on
  * `FlooringInventory`. Joins non-empty parts in order:
- * `inventoryNumber · {prefix+rollNumber} · location · dyeLot · note`.
+ * `inventoryNumber · {rollPrefix+rollNumber} · location · dyeLot · note`.
  *
  * `inventoryNumber` is always present (DB sequence assigns at create), so
  * the output is never empty. Empty parts are skipped — no placeholders.
- * `rollPrefix` defaults to `"ROLL#"` (matching the column default) when the
- * caller omits it — temporary backward-compat during the rollPrefix sweep;
- * data-layer callers always pass the row's stored prefix.
+ * `rollPrefix` is required — callers pass the row's stored prefix
+ * (read-repository normalizers stamp it on every `InventoryRow` /
+ * `StagedInventoryRow`).
  *
  * Single source of truth: the inventory update use case calls this inside
  * the same transaction as any patch that touches a source field, so the
- * column never drifts. The materialize use case calls it on create. The
+ * column never drifts. The materialize primitive calls it on create. The
  * cut-log creator does NOT call this — it copies inventory.inventoryItem
  * verbatim as an immutable snapshot at cut time.
  */
 export function composeInventoryItem(input: ComposeInventoryItemInput): string {
-  const rollDisplay = composeRollNumberDisplay(
-    input.rollPrefix ?? DEFAULT_ROLL_PREFIX,
-    input.rollNumber,
-  )
+  const rollDisplay = composeRollNumberDisplay(input.rollPrefix, input.rollNumber)
   const parts = [
     input.inventoryNumber,
     rollDisplay,
@@ -71,23 +67,6 @@ export function composeInventoryItem(input: ComposeInventoryItemInput): string {
     input.note,
   ]
   return parts.filter((part) => part.length > 0).join(INVENTORY_ITEM_SEPARATOR)
-}
-
-/**
- * @deprecated Scheduled for removal in the application-layer commit of the
- * rollPrefix sweep. `rollPrefix` now lives in its own column; user input is
- * the bare suffix. Application use cases will stop calling this and rely on
- * the API validator to strip any leading `ROLL#?`/`ROLL-?` defensively.
- *
- * Server-side `rollNumber` normalizer. Trims the input; empty becomes `null`.
- * Non-empty values get a strict `"ROLL"` prefix prepended (no separator, no
- * inspection of existing content — `"ROLL1234"` in produces `"ROLLROLL1234"`
- * out). This was the duplication site that motivated the prefix column split.
- */
-export function applyRollNumberPrefix(raw: string): string | null {
-  const trimmed = raw.trim()
-  if (trimmed.length === 0) return null
-  return `ROLL${trimmed}`
 }
 
 const FIFO_EASTERN_FORMATTER = new Intl.DateTimeFormat("en-US", {

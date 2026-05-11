@@ -8,7 +8,6 @@ import {
   type UpdateInventoryRecordInput as DbUpdateInventoryInput,
 } from "@builders/db"
 import {
-  applyRollNumberPrefix,
   composeInventoryItem,
   describeInventoryFormValidationIssues,
   validateInventoryForm,
@@ -27,7 +26,9 @@ function emptyToNull(value: string): string | null {
  *   2. Read current state.
  *   3. If `warehouseId` is changing, assert the new warehouse exists.
  *   4. Validate the merged form (warehouse required).
- *   5. Apply the server-side `ROLL` prefix to `rollNumber` (when patched).
+ *   5. Resolve effective post-patch values. `rollNumber` is stored as the
+ *      bare suffix; the display prefix lives in the separate `rollPrefix`
+ *      column and is never touched here.
  *   6. Recompose the denormalized `inventoryItem` column from the
  *      post-patch effective values (always — cheap and avoids drift).
  *   7. Write all editable fields + the recomposed `inventoryItem` in a
@@ -87,9 +88,11 @@ export async function updateInventoryUseCase(
     // 5. Resolve patched fields (effective post-patch values for the composer
     // + the data-layer write input). `null` represents "stored null"; we
     // convert empty strings to null on write per the column's nullable schema.
+    // `rollNumber` is the bare suffix — the prefix lives in `rollPrefix`
+    // (default `"ROLL#"`) and is never patched by this use case.
     const effectiveRollNumber =
       input.rollNumber !== undefined
-        ? applyRollNumberPrefix(input.rollNumber)
+        ? emptyToNull(input.rollNumber)
         : current.rollNumber === ""
           ? null
           : current.rollNumber
@@ -123,6 +126,7 @@ export async function updateInventoryUseCase(
     // write avoids drift if a future caller bypasses the patch detection.
     const inventoryItem = composeInventoryItem({
       inventoryNumber: current.inventoryNumber,
+      rollPrefix: current.rollPrefix,
       rollNumber: effectiveRollNumber ?? "",
       location: effectiveLocation ?? "",
       dyeLot: effectiveDyeLot ?? "",

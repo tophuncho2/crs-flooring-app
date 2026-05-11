@@ -37,10 +37,11 @@ function decimalToString(
  *   - `purchaseOrderNumber`: from `importEntry.purchaseOrderNumber`.
  *   - `internalNotes`: always `null` — user-only column, never seeded by
  *     the worker.
- *   - `rollNumber`: copied verbatim from the staged row. The staged save
- *     use case already applied `applyRollNumberPrefix` at create/edit
- *     time, so the value carries `ROLL` + suffix on arrival here. The
- *     worker does NOT re-apply the prefix.
+ *   - `rollPrefix` + `rollNumber`: both copied verbatim from the staged
+ *     row. The staged row stores the prefix in its own column (default
+ *     `"ROLL#"`) and the user-typed bare suffix in `rollNumber`; the
+ *     resulting inventory row inherits both directly. No server-side
+ *     prefix composition happens here or in the staged save use case.
  *   - `inventoryItem`: written as `""` here; the data-layer primitive
  *     composes the canonical value after `inventoryNumber` is
  *     sequence-assigned (see `materializeStagedRowsToInventory` step 2.5).
@@ -105,6 +106,7 @@ export async function materializeImportedStagedRowsUseCase(
       sendUnitName: row.product.sendUnitName,
       sendUnitAbbrev: row.product.sendUnitAbbrev,
       coveragePerUnit: decimalToString(row.product.coveragePerUnit),
+      rollPrefix: row.rollPrefix,
       rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,
       note: row.note,
