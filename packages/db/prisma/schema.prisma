@@ -345,6 +345,7 @@ model FlooringCutLog {
   inventoryId      String
   inventory        FlooringInventory      @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   inventoryItem    String                 @default("")
+  location         String?
   categorySlug     String
   workOrderId      String?
   workOrder        FlooringWorkOrder?     @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
