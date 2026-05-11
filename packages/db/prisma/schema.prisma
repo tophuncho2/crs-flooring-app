@@ -264,6 +264,7 @@ model FlooringInventory {
   itemCoverageUnitAbbrev String?
   sendUnitName           String?
   sendUnitAbbrev         String?
+  rollPrefix             String               @default("ROLL#")
   rollNumber             String?
   dyeLot                 String?
   note                   String?
@@ -296,6 +297,7 @@ model FlooringImportStagedInventoryRow {
   importEntry   FlooringImportEntry     @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
   productId     String
   product       FlooringProduct         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  rollPrefix    String                  @default("ROLL#")
   rollNumber    String?
   dyeLot        String?
   warehouseId   String
