@@ -29,7 +29,7 @@ const STAGED_ROWS_LAYOUT: GridLayout<GridDraftRow> = {
   dataColumns: [
     { key: "categoryFilter", label: "Filter", minWidth: 132, grow: 0 },
     { key: "product", label: "Product", minWidth: 220, preferredWidth: 320, grow: 1.5 },
-    { key: "rollNumber", label: "Roll #", minWidth: 116, grow: 0 },
+    { key: "rollNumber", label: "Roll #", minWidth: 160, grow: 0 },
     { key: "startingStock", label: "Starting Stock", minWidth: 156, grow: 0, align: "center" },
     { key: "dyeLot", label: "Dye Lot", minWidth: 124, grow: 0 },
     { key: "location", label: "Location", minWidth: 140, grow: 0 },
