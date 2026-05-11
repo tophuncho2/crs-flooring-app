@@ -247,15 +247,6 @@ export default function InventoryClient({
             />
           </div>
 
-          {/* Free-text location filter (server-side ILIKE on inventory.location) */}
-          <LocationFilterChip value={locationValue} onChange={handleLocationChange} />
-
-          {/* Archive toggle (default hides archived) */}
-          <ArchiveFilterChip value={isArchivedValue} onChange={handleArchivedChange} />
-
-          {/* Visual gap separating text/toggle filters from picker filters */}
-          <span aria-hidden="true" className="mx-1 h-6 w-px bg-[var(--panel-border)]" />
-
           {/* Warehouse */}
           <WarehouseFilterChip
             value={selectedWarehouseId}
@@ -264,7 +255,10 @@ export default function InventoryClient({
             initialOptions={initialWarehouseOptions}
           />
 
-          {/* Visual gap separating warehouse from the product chain */}
+          {/* Free-text location filter (server-side ILIKE on inventory.location) */}
+          <LocationFilterChip value={locationValue} onChange={handleLocationChange} />
+
+          {/* Visual gap separating warehouse/location from the product chain */}
           <span aria-hidden="true" className="mx-1 h-6 w-px bg-[var(--panel-border)]" />
 
           {/* Product chain: Category → Product */}
@@ -280,6 +274,12 @@ export default function InventoryClient({
             categoryId={selectedCategoryId}
             onChange={handleProductChange}
           />
+
+          {/* Visual gap separating filters from the archive toggle */}
+          <span aria-hidden="true" className="mx-1 h-6 w-px bg-[var(--panel-border)]" />
+
+          {/* Archive toggle (default hides archived) */}
+          <ArchiveFilterChip value={isArchivedValue} onChange={handleArchivedChange} />
 
           <span className="text-xs text-[var(--foreground)]/55">
             {rows.length} of {total} inventory rows
