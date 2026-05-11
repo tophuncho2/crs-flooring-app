@@ -15,25 +15,6 @@ export function formatInventoryQuantity(value: string, unitLabel: string): strin
   return `${value} ${unitLabel}`.trim()
 }
 
-export type FullLocationCodeInput = {
-  warehouseNumber: number
-  sectionNumber: number
-  rafter: number
-  level: number
-}
-
-/**
- * Source of truth for the `"W{n}-S{n}-R{n}-L{n}"` warehouse location code
- * format. Used by the warehouses module's read-repo to label location records.
- */
-export function formatFullLocationCode(input: FullLocationCodeInput): string {
-  return `W${input.warehouseNumber}-S${input.sectionNumber}-R${input.rafter}-L${input.level}`
-}
-
-export function formatLocationRafterLevel(input: { rafter: number; level: number }): string {
-  return `R${input.rafter}-L${input.level}`
-}
-
 export type ComposeInventoryItemInput = {
   inventoryNumber: string
   rollNumber: string

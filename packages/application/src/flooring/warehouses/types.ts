@@ -1,4 +1,4 @@
-import type { SectionRecord, WarehouseRecord } from "@builders/db"
+import type { WarehouseRecord } from "@builders/db"
 
 export type CreateWarehouseInput = {
   name: string
@@ -12,17 +12,4 @@ export type UpdateWarehouseInput = {
   phone?: string | null
 }
 
-export type CreateLocationInput = {
-  sectionId: string
-  rafter: number
-  level: number
-}
-
-export type UpdateLocationInput = {
-  sectionId?: string
-  rafter?: number
-  level?: number
-}
-
 export type WarehouseResult = WarehouseRecord
-export type SectionResult = SectionRecord

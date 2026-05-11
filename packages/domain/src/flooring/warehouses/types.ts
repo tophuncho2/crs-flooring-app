@@ -4,8 +4,6 @@ export type WarehouseRow = {
   name: string
   address: string | null
   phone: string | null
-  sectionsCount: number
-  locationsCount: number
   workOrdersCount: number
   createdAt: string
   updatedAt: string
@@ -19,65 +17,10 @@ export type WarehouseOption = {
   name: string
 }
 
-// Slim option shape consumed by the canonical LocationPicker (server-side
-// search). Locations always belong to a warehouse — picker requires
-// `warehouseId` scope. `shortCode` is the "R{rafter}-L{level}" trigger
-// label / search target; `locationCode` is the full
-// "W{n}-S{n}-R{rafter}-L{level}" displayed in adjacent UI (e.g., the
-// inventory section's "Full Location" cell).
-export type LocationOption = {
-  id: string
-  warehouseId: string
-  shortCode: string
-  locationCode: string
-}
-
-// Slim option shape consumed by the canonical SectionPicker (server-side
-// search). Sections always belong to a warehouse — picker requires
-// `warehouseId` scope. `label` is the trigger display ("Section {n}").
-export type SectionOption = {
-  id: string
-  warehouseId: string
-  number: number
-  label: string
-}
-
-export type SectionRow = {
-  id: string
-  warehouseId: string
-  number: number
-  locationsCount: number
-  createdAt: string
-  updatedAt: string
-}
-
-export type LocationRow = {
-  id: string
-  warehouseId: string
-  sectionId: string
-  rafter: number
-  level: number
-  label: string
-  inventoriesCount: number
-  createdAt: string
-  updatedAt: string
-}
-
-export type WarehouseDetail = WarehouseRow & {
-  sections: SectionRow[]
-  locations: LocationRow[]
-}
-
 export type WarehouseForm = {
   name: string
   address: string
   phone: string
-}
-
-export type LocationForm = {
-  sectionId: string
-  rafter: number
-  level: number
 }
 
 export const EMPTY_WAREHOUSE_FORM: WarehouseForm = {
@@ -86,24 +29,10 @@ export const EMPTY_WAREHOUSE_FORM: WarehouseForm = {
   phone: "",
 }
 
-export const EMPTY_LOCATION_FORM: LocationForm = {
-  sectionId: "",
-  rafter: 0,
-  level: 0,
-}
-
 export function toWarehouseForm(row: WarehouseRow): WarehouseForm {
   return {
     name: row.name,
     address: row.address ?? "",
     phone: row.phone ?? "",
-  }
-}
-
-export function toLocationForm(row: LocationRow): LocationForm {
-  return {
-    sectionId: row.sectionId,
-    rafter: row.rafter,
-    level: row.level,
   }
 }
