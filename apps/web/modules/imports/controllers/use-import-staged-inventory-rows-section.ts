@@ -220,6 +220,7 @@ export function useImportStagedInventoryRowsSection({
             productId: source.productId,
             productName: source.productName,
             stockUnit: source.stockUnit,
+            rollPrefix: source.rollPrefix,
             rollNumber: source.rollNumber,
             startingStock: source.startingStock,
             location: source.location,
@@ -228,11 +229,12 @@ export function useImportStagedInventoryRowsSection({
             categoryFilterId: source.categoryFilterId,
           },
           {
-            copy: ["productId", "productName", "stockUnit", "categoryFilterId"],
+            copy: ["productId", "productName", "stockUnit", "rollPrefix", "categoryFilterId"],
             defaults: {
               productId: "",
               productName: "",
               stockUnit: "",
+              rollPrefix: "ROLL#",
               rollNumber: "",
               startingStock: "",
               location: "",

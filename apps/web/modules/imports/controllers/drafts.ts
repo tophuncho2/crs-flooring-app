@@ -17,6 +17,14 @@ export type ImportStagedRowDraft = {
   // from the live product table on save.
   productName: string
   stockUnit: string
+  /**
+   * Display-only snapshot of the staged row's `rollPrefix` (default
+   * `"ROLL#"`). Rendered as a static label beside the editable rollNumber
+   * input — same pattern as `stockUnit` next to `startingStock`. Never
+   * sent in the mutation payload; the DB default + server-side propagation
+   * own the value.
+   */
+  rollPrefix: string
   rollNumber: string
   startingStock: string
   location: string
@@ -37,6 +45,7 @@ export function createImportStagedRowDraft(item?: StagedInventoryRow): ImportSta
     productId: item?.productId ?? "",
     productName: item?.productName ?? "",
     stockUnit: item?.stockUnit ?? "",
+    rollPrefix: item?.rollPrefix ?? "ROLL#",
     rollNumber: item?.rollNumber ?? "",
     startingStock: item?.startingStock ?? "",
     location: item?.location ?? "",

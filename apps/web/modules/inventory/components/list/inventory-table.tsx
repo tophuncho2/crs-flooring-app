@@ -3,6 +3,7 @@
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { PaginateControls } from "@/components/features/paginate"
 import {
+  composeRollNumberDisplay,
   formatFifoReceivedAtEastern,
   formatInventoryQuantity,
   formatStableDate,
@@ -63,7 +64,7 @@ export function InventoryTable({
           case "productName":
             return row.productName || "-"
           case "rollNumber":
-            return row.rollNumber || "-"
+            return composeRollNumberDisplay(row.rollPrefix, row.rollNumber) || "-"
           case "location":
             return row.location || "-"
           case "dyeLot":

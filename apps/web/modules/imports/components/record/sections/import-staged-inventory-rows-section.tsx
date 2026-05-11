@@ -5,6 +5,7 @@ import { ActionHeader } from "@/components/headers"
 import { StatusBadge } from "@/components/badges"
 import {
   CheckboxCell,
+  PrefixedTextCell,
   RowActionButton,
   TextCell,
   UnitCell,
@@ -223,10 +224,11 @@ export function ImportStagedInventoryRowsSection({
               )
             case "rollNumber":
               return (
-                <TextCell
+                <PrefixedTextCell
                   editable={editable}
                   value={row.rollNumber}
                   onChange={(value) => onRowFieldChange(index, "rollNumber", value)}
+                  prefix={row.rollPrefix}
                   ariaLabel={`Row ${index + 1} roll number`}
                 />
               )
