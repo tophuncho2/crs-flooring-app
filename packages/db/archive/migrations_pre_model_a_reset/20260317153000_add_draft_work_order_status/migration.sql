@@ -1,1 +1,0 @@
-ALTER TYPE "FlooringWorkOrderStatus" ADD VALUE IF NOT EXISTS 'DRAFT';
