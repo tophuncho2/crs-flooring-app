@@ -448,43 +448,11 @@ model FlooringWarehouse {
   updatedAt           DateTime                           @updatedAt
   imports             FlooringImportEntry[]
   stagedInventoryRows FlooringImportStagedInventoryRow[]
-  sections            FlooringSection[]
-  locations           FlooringLocation[]
   inventories         FlooringInventory[]
   workOrders          FlooringWorkOrder[]
   templates           FlooringTemplate[]
 
   @@map("flooring_warehouse")
-}
-
-model FlooringSection {
-  id          String             @id @default(uuid())
-  warehouseId String
-  warehouse   FlooringWarehouse  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  number      Int
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  locations   FlooringLocation[]
-
-  @@unique([warehouseId, number])
-  @@map("flooring_section")
-}
-
-model FlooringLocation {
-  id                  String                             @id @default(uuid())
-  warehouseId         String
-  warehouse           FlooringWarehouse                  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  sectionId           String
-  section             FlooringSection                    @relation(fields: [sectionId], references: [id], onDelete: Restrict)
-  rafter              Int
-  level               Int
-  createdAt           DateTime                           @default(now())
-  updatedAt           DateTime                           @updatedAt
-
-  @@unique([warehouseId, rafter, level])
-  @@index([sectionId])
-  @@index([warehouseId])
-  @@map("flooring_location")
 }
 
 model FlooringWorkOrder {
