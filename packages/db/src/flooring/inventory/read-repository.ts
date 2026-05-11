@@ -226,13 +226,22 @@ function buildListViewWhere(
     clauses.push({ isArchived: false })
   }
 
-  // Server-side search targets the denormalized `inventoryItem` column —
-  // composed by the inventory update use case from `inventoryNumber +
-  // rollNumber + location + dyeLot + note`. One ILIKE replaces the
-  // pre-sweep three-column OR.
+  // Server-side search targets identity columns only — `inventoryNumber`,
+  // `rollNumber`, `dyeLot`, `note`. Location is intentionally excluded; it
+  // has its own dedicated filter chip on the list view. Searching against
+  // the raw columns (instead of the denormalized `inventoryItem` blob)
+  // keeps the "where is it" concern out of the "what is it" search.
   const trimmed = options.search?.trim() ?? ""
   if (trimmed.length > 0) {
-    clauses.push({ inventoryItem: { contains: trimmed, mode: "insensitive" } })
+    const ilike = { contains: trimmed, mode: "insensitive" as const }
+    clauses.push({
+      OR: [
+        { inventoryNumber: ilike },
+        { rollNumber: ilike },
+        { dyeLot: ilike },
+        { note: ilike },
+      ],
+    })
   }
 
   const warehouseIds = options.filters?.warehouseId
@@ -240,9 +249,9 @@ function buildListViewWhere(
     clauses.push({ warehouseId: { in: [...warehouseIds] } })
   }
 
-  // Free-text location filter chip — independent from the search bar above
-  // (the search bar already covers location via inventoryItem; this filter
-  // narrows when a user wants location-only matches).
+  // Free-text location filter chip — independent from the identity search
+  // above. Location is owned by this filter; the search bar deliberately
+  // does NOT match it.
   const locationFilter = options.filters?.location?.trim() ?? ""
   if (locationFilter.length > 0) {
     clauses.push({ location: { contains: locationFilter, mode: "insensitive" } })
@@ -267,8 +276,9 @@ function buildListViewWhere(
 /**
  * Server-side paginated read for the inventory list view. Default sort is
  * `inventoryNumber DESC` (newest INV-NNNNN first), with `id DESC` as a stable
- * tiebreak. Filters AND together; search ILIKEs against the denormalized
- * `inventoryItem` column. Archived rows hidden by default.
+ * tiebreak. Filters AND together; search ILIKEs across the identity columns
+ * (`inventoryNumber`, `rollNumber`, `dyeLot`, `note`) only — location lives
+ * on its own filter chip. Archived rows hidden by default.
  *
  * Lives alongside `listInventory(filter?)` which is still used by the imports
  * record view's "live rows" section to fetch all rows for a given import.
@@ -307,17 +317,22 @@ export type InventoryOptionsSearchArgs = {
   productId?: string
   /** Free-text location filter chip — `ILIKE %value%` on the location column. */
   location?: string
-  /** ILIKE against the denormalized `inventoryItem` column. */
+  /**
+   * Free-text identity search — ILIKEs across `inventoryNumber`,
+   * `rollNumber`, `dyeLot`, `note`. Location is intentionally excluded; the
+   * separate `location` arg above owns that concern.
+   */
   search?: string
   take: number
 }
 
 /**
  * Picker / options search for inventory rows. Filters are AND'd: warehouse +
- * (optional) product + (optional) location text contains, then ILIKE on
- * `inventoryItem`. Archived rows excluded. Balance + coverage are stamped via
- * the same pure helpers used by the row normalizer (single source of truth
- * for the math) — coverage is null for non-coverage categories.
+ * (optional) product + (optional) location text contains, then identity-OR
+ * across `inventoryNumber`, `rollNumber`, `dyeLot`, `note`. Archived rows
+ * excluded. Balance + coverage are stamped via the same pure helpers used by
+ * the row normalizer (single source of truth for the math) — coverage is
+ * null for non-coverage categories.
  */
 export async function searchInventoryOptions(
   args: InventoryOptionsSearchArgs,
@@ -336,7 +351,13 @@ export async function searchInventoryOptions(
 
   const trimmed = args.search?.trim() ?? ""
   if (trimmed.length > 0) {
-    where.inventoryItem = { contains: trimmed, mode: "insensitive" }
+    const ilike = { contains: trimmed, mode: "insensitive" as const }
+    where.OR = [
+      { inventoryNumber: ilike },
+      { rollNumber: ilike },
+      { dyeLot: ilike },
+      { note: ilike },
+    ]
   }
 
   const rows = await client.flooringInventory.findMany({
