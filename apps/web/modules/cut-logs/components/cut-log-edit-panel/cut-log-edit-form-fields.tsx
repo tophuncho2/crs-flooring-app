@@ -53,7 +53,10 @@ export function CutLogEditFormFields({
 
   return (
     <FieldSection gap="0.75rem">
-      {/* Row 1 — status + cut number (edit mode only) */}
+      {/* Row 1 — status + final sequence (edit mode only). Cut # already
+          surfaces as the panel title, so the field there would be a
+          duplicate. Final sequence (worker-stamped at finalize) gets the
+          slot instead. */}
       {cutLog ? (
         <>
           <CellAt col={1} colSpan={3}>
@@ -64,8 +67,12 @@ export function CutLogEditFormFields({
             </FormField>
           </CellAt>
           <CellAt col={4} colSpan={5}>
-            <FormField label="Cut number">
-              <TextCell editable={false} value={cutLog.cutLogNumber} ariaLabel="Cut number" />
+            <FormField label="Final sequence">
+              <TextCell
+                editable={false}
+                value={cutLog.finalCutSequence != null ? String(cutLog.finalCutSequence) : "—"}
+                ariaLabel="Final sequence"
+              />
             </FormField>
           </CellAt>
         </>
@@ -107,7 +114,8 @@ export function CutLogEditFormFields({
         </FormField>
       </CellAt>
 
-      {/* Row 4 — waste + final sequence (below before/after) */}
+      {/* Row 4 — waste (final sequence moved to Row 1, taking the slot
+          previously used by Cut #). */}
       <CellAt col={1} colSpan={4}>
         <FormField label="Waste">
           <CheckboxCell
@@ -115,15 +123,6 @@ export function CutLogEditFormFields({
             value={form.isWaste}
             onChange={(next) => controller.setField("isWaste", next)}
             ariaLabel="Waste flag"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={4}>
-        <FormField label="Final sequence">
-          <TextCell
-            editable={false}
-            value={cutLog?.finalCutSequence != null ? String(cutLog.finalCutSequence) : "—"}
-            ariaLabel="Final sequence"
           />
         </FormField>
       </CellAt>
