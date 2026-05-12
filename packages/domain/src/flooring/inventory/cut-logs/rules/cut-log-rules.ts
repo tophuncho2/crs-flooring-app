@@ -1,6 +1,6 @@
-import { canDeleteCutLog } from "./editability.js"
-import { CutLogDomainError } from "./errors.js"
-import type { CutLogRow, FlooringCutLogStatus } from "./types.js"
+import { canDeleteCutLog } from "../editability.js"
+import { CutLogDomainError } from "../errors.js"
+import type { CutLogRow, FlooringCutLogStatus } from "../types.js"
 
 const ARITHMETIC_TOLERANCE = 0.005
 

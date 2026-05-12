@@ -221,3 +221,140 @@ export async function getMaxFinalCutSequenceForInventory(
   })
   return result._max.finalCutSequence ?? null
 }
+
+// ---------------------------------------------------------------------------
+// WOMI-keyed reads (consumed by the WO record view loader; cut logs are
+// the entity, WOMI is the filter dimension — hence colocated with the
+// rest of the cut-log read primitives).
+// ---------------------------------------------------------------------------
+
+export async function listCutLogsForWorkOrderItem(
+  workOrderItemId: string,
+  client: CutLogDbClient = db,
+): Promise<CutLogRecord[]> {
+  const rows = await client.flooringCutLog.findMany({
+    where: { workOrderItemId },
+    select: cutLogRowSelect,
+    orderBy: [
+      { isFinal: "asc" },
+      { finalCutSequence: "asc" },
+      { createdAt: "asc" },
+    ],
+  })
+  return rows.map(normalizeCutLogRow)
+}
+
+/**
+ * Bulk variant of `listCutLogsForWorkOrderItem` — returns the flat row
+ * set across many WOMI ids in one query, ordered identically. The SSR
+ * loader for the WO record page calls this once and groups client-side
+ * so every expandable cut-log row hydrates from initial data.
+ */
+export async function listCutLogsForWorkOrderItemIds(
+  workOrderItemIds: string[],
+  client: CutLogDbClient = db,
+): Promise<CutLogRecord[]> {
+  if (workOrderItemIds.length === 0) return []
+  const rows = await client.flooringCutLog.findMany({
+    where: { workOrderItemId: { in: workOrderItemIds } },
+    select: cutLogRowSelect,
+    orderBy: [
+      { isFinal: "asc" },
+      { finalCutSequence: "asc" },
+      { createdAt: "asc" },
+    ],
+  })
+  return rows.map(normalizeCutLogRow)
+}
+
+/**
+ * Minimal-shape read of every cut log on each inventory id, used by
+ * `recomputeAndPersistTotalCutSums` to project the post-mutation
+ * `totalCutSum`. Returns just the fields `computeTotalCutSum` operates on.
+ */
+export async function listCutLogsForInventoryIds(
+  inventoryIds: string[],
+  client: CutLogDbClient = db,
+): Promise<Array<{ inventoryId: string; cut: string; void: boolean }>> {
+  if (inventoryIds.length === 0) return []
+  const rows = await client.flooringCutLog.findMany({
+    where: { inventoryId: { in: inventoryIds } },
+    select: { inventoryId: true, cut: true, void: true },
+  })
+  return rows.map((r) => ({
+    inventoryId: r.inventoryId,
+    cut: r.cut.toString(),
+    void: r.void,
+  }))
+}
+
+export type PendingCutLogWithInventoryForMutation = {
+  cutLog: CutLogRecord
+  inventory: CutLogParentContext
+}
+
+/**
+ * Single-query read powering the per-row update + delete sync use cases.
+ * Returns the cut log (full normalized record) plus the parent inventory's
+ * `CutLogParentContext` shape — the use case asserts WOMI linkage /
+ * pending-status / OCC against the cut log, then locks the inventory row
+ * FOR UPDATE and applies the patch.
+ *
+ * Transaction client is required (no `db` default) so the read participates
+ * in the same TX that takes the lock.
+ */
+export async function getPendingCutLogWithInventoryForMutation(
+  tx: Prisma.TransactionClient,
+  cutLogId: string,
+): Promise<PendingCutLogWithInventoryForMutation | null> {
+  const row = await tx.flooringCutLog.findUnique({
+    where: { id: cutLogId },
+    select: {
+      ...cutLogRowSelect,
+      inventory: {
+        select: {
+          id: true,
+          inventoryItem: true,
+          inventoryNumber: true,
+          rollPrefix: true,
+          rollNumber: true,
+          dyeLot: true,
+          note: true,
+          location: true,
+          startingStock: true,
+          totalCutSum: true,
+          coveragePerUnit: true,
+          categorySlug: true,
+          stockUnitName: true,
+          stockUnitAbbrev: true,
+          itemCoverageUnitName: true,
+          itemCoverageUnitAbbrev: true,
+        },
+      },
+    },
+  })
+  if (!row) return null
+  const { inventory: inv, ...cutLogPayload } = row
+  return {
+    cutLog: normalizeCutLogRow(cutLogPayload),
+    inventory: {
+      inventoryId: inv.id,
+      inventoryItem: inv.inventoryItem,
+      startingStock: inv.startingStock.toString(),
+      currentTotalCutSum: inv.totalCutSum.toString(),
+      coveragePerUnit:
+        inv.coveragePerUnit === null ? null : inv.coveragePerUnit.toString(),
+      categorySlug: inv.categorySlug,
+      stockUnitName: inv.stockUnitName ?? null,
+      stockUnitAbbrev: inv.stockUnitAbbrev ?? null,
+      itemCoverageUnitName: inv.itemCoverageUnitName ?? null,
+      itemCoverageUnitAbbrev: inv.itemCoverageUnitAbbrev ?? null,
+      inventoryNumber: inv.inventoryNumber,
+      rollPrefix: inv.rollPrefix,
+      rollNumber: inv.rollNumber ?? null,
+      dyeLot: inv.dyeLot ?? null,
+      inventoryNote: inv.note ?? null,
+      location: inv.location ?? null,
+    },
+  }
+}

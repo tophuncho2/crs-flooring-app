@@ -1,4 +1,4 @@
-import type { CutLogPendingForm } from "./types.js"
+import type { CutLogPendingForm } from "../types.js"
 
 /**
  * Per-row form validator for the pending-save (diff-mode) flow. Pure: takes

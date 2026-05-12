@@ -1,8 +1,8 @@
 import {
   type CutLogFinalizabilityReason,
   getCutLogFinalizabilityBlocker,
-} from "./editability.js"
-import type { CutLogRow } from "./types.js"
+} from "../editability.js"
+import type { CutLogRow } from "../types.js"
 
 /**
  * Per-row issue returned by `validateCutLogFinalizeBatch`. The application

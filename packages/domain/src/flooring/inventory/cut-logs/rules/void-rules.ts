@@ -1,5 +1,5 @@
-import { canVoidCutLog } from "./editability.js"
-import type { CutLogRow } from "./types.js"
+import { canVoidCutLog } from "../editability.js"
+import type { CutLogRow } from "../types.js"
 
 /**
  * Single-row void readiness — voids are always one-at-a-time per the intent

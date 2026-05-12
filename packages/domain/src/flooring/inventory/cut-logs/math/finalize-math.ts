@@ -1,4 +1,4 @@
-import { CutLogDomainError } from "./errors.js"
+import { CutLogDomainError } from "../errors.js"
 
 /**
  * Pure helper for the finalize worker's per-row `before` / `after` math.

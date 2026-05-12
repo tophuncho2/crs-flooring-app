@@ -1,4 +1,4 @@
-import { CutLogDomainError } from "./errors.js"
+import { CutLogDomainError } from "../errors.js"
 
 /**
  * Allocator for `FlooringCutLog.finalCutSequence` — the per-inventory 1-based

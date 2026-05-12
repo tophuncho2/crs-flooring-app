@@ -1,6 +1,6 @@
 import { assertCutLogDeleteAllowed } from "./cut-log-rules.js"
-import { CutLogDomainError } from "./errors.js"
-import type { CutLogRow } from "./types.js"
+import { CutLogDomainError } from "../errors.js"
+import type { CutLogRow } from "../types.js"
 
 /**
  * Predicates for the synchronous per-row pending-cut-log mutations

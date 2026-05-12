@@ -1,4 +1,4 @@
-import { CutLogDomainError } from "./errors.js"
+import { CutLogDomainError } from "../errors.js"
 
 /**
  * Pure helpers for the `inventory.totalCutSum` invariant. Single source of

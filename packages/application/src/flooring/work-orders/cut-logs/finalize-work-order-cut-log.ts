@@ -1,6 +1,6 @@
 import {
   Prisma,
-  applyFinalizeWorkOrderCutLog,
+  applyFinalizeCutLog,
   getCutLogById,
   lockInventoryForCutLog,
   withDatabaseTransaction,
@@ -22,7 +22,7 @@ import type {
  *   2. Lock the parent inventory FOR UPDATE.
  *   3. Re-read the row under the lock and run the finalizability predicate.
  *   4. Stamp `before` / `after` / `finalCutSequence` and flip status to FINAL
- *      via the data-layer `applyFinalizeWorkOrderCutLog`.
+ *      via the data-layer `applyFinalizeCutLog`.
  *   5. Defensively re-assert the `before − cut === after` invariant.
  *   6. Re-read the normalized row so the response carries the canonical
  *      `CutLogRow` shape (matching create/update return).
@@ -109,7 +109,7 @@ export async function finalizeWorkOrderCutLogUseCase(
       })
     }
 
-    const { stampedRow } = await applyFinalizeWorkOrderCutLog(c, {
+    const { stampedRow } = await applyFinalizeCutLog(c, {
       cutLogId: input.cutLogId,
     })
     if (stampedRow === null) {
