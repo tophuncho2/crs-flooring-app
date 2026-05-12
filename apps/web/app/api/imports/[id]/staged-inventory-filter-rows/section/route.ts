@@ -1,5 +1,8 @@
-import { getImportById, getImportDetailById, listStagedInventoryByImport } from "@builders/db"
-import { ImportExecutionError, saveStagedInventoryRowsUseCase } from "@builders/application"
+import {
+  ImportExecutionError,
+  saveStagedInventoryFiltersSectionUseCase,
+} from "@builders/application"
+import { getImportById, getImportDetailById } from "@builders/db"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
   applyRoutePolicy,
@@ -9,7 +12,7 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { validateStagedInventoryRowsDiffBody } from "../../../_validators"
+import { validateStagedInventoryFiltersDiffBody } from "../../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -19,10 +22,10 @@ export async function PATCH(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
-      scope: "imports.staged-inventory-rows.section.replace",
+      scope: "imports.staged-inventory-filter-rows.section.replace",
       limit: 50,
       windowMs: 10 * 60 * 1000,
-      route: "/api/imports/[id]/staged-inventory-rows/section",
+      route: "/api/imports/[id]/staged-inventory-filter-rows/section",
     },
   })
   if (access instanceof Response) return access
@@ -30,9 +33,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = (await request.json()) as Record<string, unknown>
-    const { input: diff, mutation } = parseMutationEnvelope(body, validateStagedInventoryRowsDiffBody, {
-      requireExpectedUpdatedAt: true,
-    })
+    const { input: diff, mutation } = parseMutationEnvelope(
+      body,
+      validateStagedInventoryFiltersDiffBody,
+      { requireExpectedUpdatedAt: true },
+    )
 
     const currentSnapshot = await getImportById(id)
     if (!currentSnapshot) {
@@ -50,7 +55,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     })
 
     const receipt = await enforceMutationReceipt({
-      scope: "imports.staged-inventory-rows.section.replace",
+      scope: "imports.staged-inventory-filter-rows.section.replace",
       request,
       access,
       mutation,
@@ -61,26 +66,27 @@ export async function PATCH(request: Request, context: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Import staged inventory rows saved",
-        action: "imports.staged-inventory-rows.section.replace",
-        route: "/api/imports/[id]/staged-inventory-rows/section",
+        message: "Import filter rows section replaced",
+        action: "imports.staged-inventory-filter-rows.section.replace",
+        route: "/api/imports/[id]/staged-inventory-filter-rows/section",
         entityType: "flooringImportEntry",
         entityId: id,
       },
-      () => saveStagedInventoryRowsUseCase(id, diff),
+      () => saveStagedInventoryFiltersSectionUseCase({ importEntryId: id, diff }),
     )
 
-    // Compose the parent detail + fresh staged-row contents so the controller
-    // can reconcile in one round-trip. ImportDetail only carries {id} pointers
-    // for staged rows now — the section route is the natural place to re-read
-    // the full row payloads after the diff applies.
-    const [detail, stagedRows] = await Promise.all([
-      getImportDetailById(id),
-      listStagedInventoryByImport(id),
-    ])
-    const responseBody = { import: detail, stagedRows, tempIdMap: result.tempIdMap }
+    // Refresh parent detail post-save so the controller can reconcile the
+    // import's `updatedAt` (and any other denormalized fields) alongside
+    // the section's own results. The save use case already returns the
+    // post-state filter rows + tempIdMap, so we don't re-list here.
+    const detail = await getImportDetailById(id)
+    const responseBody = {
+      import: detail,
+      filterRows: result.rows,
+      tempIdMap: result.tempIdMap,
+    }
     await finalizeMutationReceipt({
-      scope: "imports.staged-inventory-rows.section.replace",
+      scope: "imports.staged-inventory-filter-rows.section.replace",
       access,
       mutation,
       responseStatus: 200,

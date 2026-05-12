@@ -2,6 +2,7 @@ import { z } from "zod"
 import {
   ImportExecutionError,
   StagedInventoryExecutionError,
+  StagedInventoryFilterExecutionError,
   type ImportsListFilters,
   type ListInput,
 } from "@builders/application"
@@ -13,11 +14,12 @@ import {
 } from "@builders/domain"
 // no sort param — imports default to importNumber desc, hardcoded server-side
 import type {
-  StagedInventoryRowDelete,
-  StagedInventoryRowDraft,
-  StagedInventoryRowUpdate,
-  StagedInventoryRowUpdatePatch,
-  StagedInventoryRowsDiff,
+  StagedInventoryFilterForm,
+  StagedInventoryFilterRowDelete,
+  StagedInventoryFilterRowDraft,
+  StagedInventoryFilterRowUpdate,
+  StagedInventoryFiltersDiff,
+  StagedInventoryForm,
 } from "@builders/domain"
 
 function requireString(value: unknown, field: string): string {
@@ -63,11 +65,11 @@ export function validateUpdateImportInput(body: Record<string, unknown>): Update
   return input
 }
 
-// --- Staged inventory rows diff body shaper ---
+// --- Staged inventory rows body shapers ---
 
-function failStagedDiff(message: string, field?: string): never {
+function failStaged(message: string, field?: string): never {
   throw new StagedInventoryExecutionError({
-    code: "STAGED_DIFF_VALIDATION_FAILED",
+    code: "STAGED_VALIDATION_FAILED",
     message,
     status: 400,
     ...(field ? { field } : {}),
@@ -75,89 +77,70 @@ function failStagedDiff(message: string, field?: string): never {
 }
 
 function requireStagedString(value: unknown, path: string): string {
-  if (typeof value !== "string") failStagedDiff(`${path} must be a string`, path)
+  if (typeof value !== "string") failStaged(`${path} must be a string`, path)
   return value as string
 }
 
-function nullableStagedString(value: unknown, path: string): string | null {
-  if (value === null || value === undefined) return null
-  if (typeof value !== "string") failStagedDiff(`${path} must be a string or null`, path)
+function optionalStagedString(value: unknown, path: string): string {
+  if (value === undefined || value === null) return ""
+  if (typeof value !== "string") failStaged(`${path} must be a string`, path)
   return value as string
 }
 
 function requireStagedObject(value: unknown, path: string): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    failStagedDiff(`${path} must be an object`, path)
+    failStaged(`${path} must be an object`, path)
   }
   return value as Record<string, unknown>
 }
 
 function requireStagedArray(value: unknown, path: string): unknown[] {
-  if (!Array.isArray(value)) failStagedDiff(`${path} must be an array`, path)
+  if (!Array.isArray(value)) failStaged(`${path} must be an array`, path)
   return value as unknown[]
 }
 
-function shapeStagedDraft(raw: unknown, idx: number): StagedInventoryRowDraft {
-  const row = requireStagedObject(raw, `added[${idx}]`)
+function shapeStagedForm(raw: unknown, path: string): StagedInventoryForm {
+  const form = requireStagedObject(raw, path)
   return {
-    tempId: requireStagedString(row.tempId, `added[${idx}].tempId`),
-    productId: requireStagedString(row.productId, `added[${idx}].productId`),
-    rollNumber: requireStagedString(row.rollNumber, `added[${idx}].rollNumber`),
-    dyeLot: nullableStagedString(row.dyeLot, `added[${idx}].dyeLot`),
-    warehouseId: requireStagedString(row.warehouseId, `added[${idx}].warehouseId`),
-    location: nullableStagedString(row.location, `added[${idx}].location`),
-    startingStock: requireStagedString(row.startingStock, `added[${idx}].startingStock`),
-    note: nullableStagedString(row.note, `added[${idx}].note`),
+    rollNumber: optionalStagedString(form.rollNumber, `${path}.rollNumber`),
+    dyeLot: optionalStagedString(form.dyeLot, `${path}.dyeLot`),
+    location: optionalStagedString(form.location, `${path}.location`),
+    startingStock: requireStagedString(form.startingStock, `${path}.startingStock`),
+    note: optionalStagedString(form.note, `${path}.note`),
   }
 }
 
-function shapeStagedPatch(raw: unknown, idx: number): StagedInventoryRowUpdatePatch {
-  const patch = requireStagedObject(raw, `modified[${idx}].patch`)
-  const result: StagedInventoryRowUpdatePatch = {}
-  if (patch.productId !== undefined) result.productId = requireStagedString(patch.productId, `modified[${idx}].patch.productId`)
-  if (patch.rollNumber !== undefined) result.rollNumber = requireStagedString(patch.rollNumber, `modified[${idx}].patch.rollNumber`)
-  if (patch.dyeLot !== undefined) result.dyeLot = nullableStagedString(patch.dyeLot, `modified[${idx}].patch.dyeLot`)
-  if (patch.warehouseId !== undefined) result.warehouseId = requireStagedString(patch.warehouseId, `modified[${idx}].patch.warehouseId`)
-  if (patch.location !== undefined) result.location = nullableStagedString(patch.location, `modified[${idx}].patch.location`)
-  if (patch.startingStock !== undefined) result.startingStock = requireStagedString(patch.startingStock, `modified[${idx}].patch.startingStock`)
-  if (patch.note !== undefined) result.note = nullableStagedString(patch.note, `modified[${idx}].patch.note`)
-  return result
+export type ValidatedCreateStagedInventoryRowBody = {
+  filterRowId: string
+  form: StagedInventoryForm
 }
 
-function shapeStagedUpdate(raw: unknown, idx: number): StagedInventoryRowUpdate {
-  const row = requireStagedObject(raw, `modified[${idx}]`)
+export function validateCreateStagedInventoryRowBody(
+  body: Record<string, unknown>,
+): ValidatedCreateStagedInventoryRowBody {
   return {
-    id: requireStagedString(row.id, `modified[${idx}].id`),
-    expectedUpdatedAt: requireStagedString(row.expectedUpdatedAt, `modified[${idx}].expectedUpdatedAt`),
-    patch: shapeStagedPatch(row.patch, idx),
+    filterRowId: requireStagedString(body.filterRowId, "filterRowId"),
+    form: shapeStagedForm(body.form, "form"),
   }
 }
 
-function shapeStagedDelete(raw: unknown, idx: number): StagedInventoryRowDelete {
-  const row = requireStagedObject(raw, `deleted[${idx}]`)
+export type ValidatedUpdateStagedInventoryRowBody = {
+  form: StagedInventoryForm
+}
+
+export function validateUpdateStagedInventoryRowBody(
+  body: Record<string, unknown>,
+): ValidatedUpdateStagedInventoryRowBody {
   return {
-    id: requireStagedString(row.id, `deleted[${idx}].id`),
-    expectedUpdatedAt: requireStagedString(row.expectedUpdatedAt, `deleted[${idx}].expectedUpdatedAt`),
+    form: shapeStagedForm(body.form, "form"),
   }
 }
 
-/**
- * Shapes the raw JSON body into a `StagedInventoryRowsDiff` (domain type).
- *
- * Body-shape validation only — no business rules. The domain's
- * `validateStagedInventoryRowsDiff` (called by `saveStagedInventoryRowsUseCase`)
- * handles warehouse mismatch, unknown product/location, and locked-row guards.
- */
-export function validateStagedInventoryRowsDiffBody(body: Record<string, unknown>): StagedInventoryRowsDiff {
-  const diffBody = requireStagedObject(body.diff, "diff")
-  const added = requireStagedArray(diffBody.added, "diff.added")
-  const modified = requireStagedArray(diffBody.modified, "diff.modified")
-  const deleted = requireStagedArray(diffBody.deleted, "diff.deleted")
-  return {
-    added: added.map((entry, idx) => shapeStagedDraft(entry, idx)),
-    modified: modified.map((entry, idx) => shapeStagedUpdate(entry, idx)),
-    deleted: deleted.map((entry, idx) => shapeStagedDelete(entry, idx)),
-  }
+export function validateDeleteStagedInventoryRowBody(
+  _body: Record<string, unknown>,
+): Record<string, never> {
+  // Body-shape only — expectedUpdatedAt travels via the mutation envelope.
+  return {}
 }
 
 // --- Mark-for-import body shaper ---
@@ -169,6 +152,104 @@ function failMarkForImport(message: string, field?: string): never {
     status: 400,
     ...(field ? { field } : {}),
   })
+}
+
+export function validateMarkForImportBody(body: Record<string, unknown>): { stagedRowIds: string[] } {
+  const raw = body.stagedRowIds
+  if (!Array.isArray(raw)) failMarkForImport("stagedRowIds must be an array", "stagedRowIds")
+  if (raw.length === 0) failMarkForImport("stagedRowIds must not be empty", "stagedRowIds")
+  const stagedRowIds = raw.map((value, idx) => {
+    if (typeof value !== "string" || value.trim() === "") {
+      failMarkForImport(`stagedRowIds[${idx}] must be a non-empty string`, `stagedRowIds[${idx}]`)
+    }
+    return value as string
+  })
+  return { stagedRowIds }
+}
+
+// --- Filter-rows diff body shaper ---
+
+function failFilter(message: string, field?: string): never {
+  throw new StagedInventoryFilterExecutionError({
+    code: "FILTER_VALIDATION_FAILED",
+    message,
+    status: 400,
+    ...(field ? { field } : {}),
+  })
+}
+
+function requireFilterString(value: unknown, path: string): string {
+  if (typeof value !== "string") failFilter(`${path} must be a string`, path)
+  return value as string
+}
+
+function nullableFilterString(value: unknown, path: string): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== "string") failFilter(`${path} must be a string or null`, path)
+  return value as string
+}
+
+function requireFilterObject(value: unknown, path: string): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    failFilter(`${path} must be an object`, path)
+  }
+  return value as Record<string, unknown>
+}
+
+function requireFilterArray(value: unknown, path: string): unknown[] {
+  if (!Array.isArray(value)) failFilter(`${path} must be an array`, path)
+  return value as unknown[]
+}
+
+function shapeFilterForm(raw: unknown, path: string): StagedInventoryFilterForm {
+  const form = requireFilterObject(raw, path)
+  return {
+    categoryFilterId: nullableFilterString(form.categoryFilterId, `${path}.categoryFilterId`),
+    productId: requireFilterString(form.productId, `${path}.productId`),
+    stockOrdered: requireFilterString(form.stockOrdered, `${path}.stockOrdered`),
+  }
+}
+
+function shapeFilterDraft(raw: unknown, idx: number): StagedInventoryFilterRowDraft {
+  const row = requireFilterObject(raw, `added[${idx}]`)
+  return {
+    tempId: requireFilterString(row.tempId, `added[${idx}].tempId`),
+    form: shapeFilterForm(row.form, `added[${idx}].form`),
+  }
+}
+
+function shapeFilterUpdate(raw: unknown, idx: number): StagedInventoryFilterRowUpdate {
+  const row = requireFilterObject(raw, `modified[${idx}]`)
+  return {
+    id: requireFilterString(row.id, `modified[${idx}].id`),
+    form: shapeFilterForm(row.form, `modified[${idx}].form`),
+  }
+}
+
+function shapeFilterDelete(raw: unknown, idx: number): StagedInventoryFilterRowDelete {
+  const row = requireFilterObject(raw, `deleted[${idx}]`)
+  return {
+    id: requireFilterString(row.id, `deleted[${idx}].id`),
+  }
+}
+
+/**
+ * Shapes the raw JSON body into a `StagedInventoryFiltersDiff` (domain
+ * type). Body-shape validation only — domain rules (duplicate product,
+ * locked-with-children, delete-blocked, unknown product) are evaluated
+ * by `validateStagedInventoryFiltersDiff` inside
+ * `saveStagedInventoryFiltersSectionUseCase`.
+ *
+ * Mirrors the WOMI material-items diff body shape: top-level
+ * added/modified/deleted, no `diff` wrapper.
+ */
+export function validateStagedInventoryFiltersDiffBody(
+  body: Record<string, unknown>,
+): StagedInventoryFiltersDiff {
+  const added = requireFilterArray(body.added, "added").map((entry, idx) => shapeFilterDraft(entry, idx))
+  const modified = requireFilterArray(body.modified, "modified").map((entry, idx) => shapeFilterUpdate(entry, idx))
+  const deleted = requireFilterArray(body.deleted, "deleted").map((entry, idx) => shapeFilterDelete(entry, idx))
+  return { added, modified, deleted }
 }
 
 // --- List query validator (Zod) ---
@@ -235,17 +316,4 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
     page: parsed.page,
     pageSize: parsed.pageSize,
   }
-}
-
-export function validateMarkForImportBody(body: Record<string, unknown>): { stagedRowIds: string[] } {
-  const raw = body.stagedRowIds
-  if (!Array.isArray(raw)) failMarkForImport("stagedRowIds must be an array", "stagedRowIds")
-  if (raw.length === 0) failMarkForImport("stagedRowIds must not be empty", "stagedRowIds")
-  const stagedRowIds = raw.map((value, idx) => {
-    if (typeof value !== "string" || value.trim() === "") {
-      failMarkForImport(`stagedRowIds[${idx}] must be a non-empty string`, `stagedRowIds[${idx}]`)
-    }
-    return value as string
-  })
-  return { stagedRowIds }
 }
