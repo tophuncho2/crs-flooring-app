@@ -51,13 +51,6 @@ export function WorkOrderCutLogRow({
 
   return (
     <div className="space-y-3 rounded-md border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-medium">Cut Logs</span>
-        <span className="text-[var(--foreground)]/55">
-          {gridRows.length} row{gridRows.length === 1 ? "" : "s"}
-        </span>
-      </div>
-
       <Grid<CutLogGridRow>
         rows={gridRows}
         layout={WO_CUT_LOG_LAYOUT}
