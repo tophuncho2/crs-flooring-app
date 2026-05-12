@@ -12,6 +12,16 @@ export const stagedInventoryRowSelect = {
       purchaseOrderNumber: true,
     },
   },
+  filterRowId: true,
+  filterRow: {
+    select: {
+      id: true,
+      productId: true,
+      stockOrdered: true,
+      stockUnitName: true,
+      stockUnitAbbrev: true,
+    },
+  },
   productId: true,
   product: {
     select: {
@@ -42,6 +52,8 @@ export const stagedInventoryRowSelect = {
   warehouse: { select: { id: true, name: true, number: true } },
   location: true,
   startingStock: true,
+  stockUnitName: true,
+  stockUnitAbbrev: true,
   isImported: true,
   status: true,
   note: true,

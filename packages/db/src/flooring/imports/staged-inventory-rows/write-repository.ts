@@ -3,29 +3,48 @@ import { db } from "../../../client.js"
 import { type StagedInventoryDbClient } from "./shared.js"
 import {
   getStagedInventoryById,
-  listStagedInventoryByImport,
   type StagedInventoryRecord,
 } from "./read-repository.js"
 
 /**
- * Create input for a staged inventory row. The use case pre-resolves FKs;
- * `warehouseId` is required (schema-side) and should match the parent import's
- * warehouse (domain validator enforces).
+ * Create input for a staged inventory row. Application layer resolves all
+ * snapshots before invoking:
+ *  - `productId`, `stockUnitName`, `stockUnitAbbrev` from the parent
+ *    filter row (which itself snapshots from FlooringProduct on create).
+ *  - `warehouseId` from the parent import.
+ *  - `rollPrefix` defaults server-side to "ROLL#".
+ *
+ * None of these snapshot fields are user-editable on the per-row update
+ * path — see `UpdateStagedInventoryRecordInput`.
  */
 export type CreateStagedInventoryRecordInput = {
   importEntryId: string
+  filterRowId: string
   productId: string
+  warehouseId: string
+  stockUnitName: string | null
+  stockUnitAbbrev: string | null
   rollNumber: string | null
   dyeLot: string | null
-  warehouseId: string
   location: string | null
   startingStock: Prisma.Decimal | string | number
   note: string | null
 }
 
-export type UpdateStagedInventoryRecordInput = Partial<
-  Omit<CreateStagedInventoryRecordInput, "importEntryId">
-> & {
+/**
+ * Update input for a staged inventory row. Only user-editable fields
+ * appear here; productId / warehouseId / filterRowId / stockUnit* are
+ * immutable snapshots stamped at create time. `isImported` flips
+ * exclusively via the mark-for-import path (see `markStagedRowsForImport`)
+ * — accepted here only for the legacy materialize backfill path until
+ * that retires.
+ */
+export type UpdateStagedInventoryRecordInput = {
+  rollNumber?: string | null
+  dyeLot?: string | null
+  location?: string | null
+  startingStock?: Prisma.Decimal | string | number
+  note?: string | null
   isImported?: boolean
 }
 
@@ -36,10 +55,13 @@ export async function createStagedInventoryRecord(
   const row = await client.flooringImportStagedInventoryRow.create({
     data: {
       importEntry: { connect: { id: input.importEntryId } },
+      filterRow: { connect: { id: input.filterRowId } },
       product: { connect: { id: input.productId } },
+      warehouse: { connect: { id: input.warehouseId } },
+      stockUnitName: input.stockUnitName,
+      stockUnitAbbrev: input.stockUnitAbbrev,
       rollNumber: input.rollNumber,
       dyeLot: input.dyeLot,
-      warehouse: { connect: { id: input.warehouseId } },
       location: input.location,
       startingStock: input.startingStock,
       note: input.note,
@@ -57,14 +79,8 @@ function buildUpdateData(
   input: UpdateStagedInventoryRecordInput,
 ): Prisma.FlooringImportStagedInventoryRowUpdateInput {
   const data: Prisma.FlooringImportStagedInventoryRowUpdateInput = {}
-  if (input.productId !== undefined) {
-    data.product = { connect: { id: input.productId } }
-  }
   if (input.rollNumber !== undefined) data.rollNumber = input.rollNumber
   if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
-  if (input.warehouseId !== undefined) {
-    data.warehouse = { connect: { id: input.warehouseId } }
-  }
   if (input.location !== undefined) data.location = input.location
   if (input.startingStock !== undefined) data.startingStock = input.startingStock
   if (input.note !== undefined) data.note = input.note
@@ -97,102 +113,6 @@ export async function deleteStagedInventoryRecordById(
   client: StagedInventoryDbClient = db,
 ): Promise<void> {
   await client.flooringImportStagedInventoryRow.delete({ where: { id } })
-}
-
-// --- Diff-save primitive ---
-
-/**
- * Diff-save primitive for the imports record-view's staged-rows section.
- *
- * Caller contract (application layer):
- *  - Opens the transaction via `withDatabaseTransaction` and locks the parent
- *    import row FOR UPDATE before invoking.
- *  - Validated the diff via `validateStagedInventoryRowsDiff` (domain) — shape,
- *    warehouse matches, locked rows aren't edited, etc.
- *  - Pre-assigned UUIDs to added drafts via the domain helper
- *    `assignStagedInventoryDiffIds` and passes them as `id` on each added entry.
- *
- * Execution order:
- *  1. deleteMany(deleted.ids)
- *  2. Build tempIdMap from added (pure, no round-trips)
- *  3. createMany(added) using pre-assigned ids
- *  4. Per-row update for each modified entry (heterogeneous patches)
- *  5. Reload post-state via listStagedInventoryByImport(importEntryId, tx)
- *  6. Return { rows, tempIdMap }
- */
-export type ApplyStagedInventoryRowsDiffInput = {
-  importEntryId: string
-  added: Array<{
-    id: string
-    tempId: string
-    productId: string
-    rollNumber: string
-    dyeLot: string | null
-    warehouseId: string
-    location: string | null
-    startingStock: string
-    note: string | null
-  }>
-  modified: Array<{
-    id: string
-    patch: UpdateStagedInventoryRecordInput
-  }>
-  deleted: Array<{ id: string }>
-}
-
-export type ApplyStagedInventoryRowsDiffResult = {
-  rows: StagedInventoryRecord[]
-  tempIdMap: Record<string, string>
-}
-
-export async function applyStagedInventoryRowsDiff(
-  tx: Prisma.TransactionClient,
-  input: ApplyStagedInventoryRowsDiffInput,
-): Promise<ApplyStagedInventoryRowsDiffResult> {
-  // Step 1 — batch delete
-  if (input.deleted.length > 0) {
-    await tx.flooringImportStagedInventoryRow.deleteMany({
-      where: { id: { in: input.deleted.map((d) => d.id) } },
-    })
-  }
-
-  // Step 2 — tempIdMap from added (pure)
-  const tempIdMap: Record<string, string> = {}
-  for (const draft of input.added) {
-    tempIdMap[draft.tempId] = draft.id
-  }
-
-  // Step 3 — batch create with pre-assigned ids
-  if (input.added.length > 0) {
-    await tx.flooringImportStagedInventoryRow.createMany({
-      data: input.added.map((draft) => ({
-        id: draft.id,
-        importEntryId: input.importEntryId,
-        productId: draft.productId,
-        rollNumber: draft.rollNumber,
-        dyeLot: draft.dyeLot,
-        warehouseId: draft.warehouseId,
-        location: draft.location,
-        startingStock: draft.startingStock,
-        note: draft.note,
-      })),
-    })
-  }
-
-  // Step 4 — per-row updates (patches are heterogeneous)
-  for (const modification of input.modified) {
-    const data = buildUpdateData(modification.patch)
-    if (Object.keys(data).length === 0) continue
-    await tx.flooringImportStagedInventoryRow.update({
-      where: { id: modification.id },
-      data,
-    })
-  }
-
-  // Step 5 — reload post-state
-  const rows = await listStagedInventoryByImport(input.importEntryId, tx)
-
-  return { rows, tempIdMap }
 }
 
 // --- Mark-for-import primitive ---
