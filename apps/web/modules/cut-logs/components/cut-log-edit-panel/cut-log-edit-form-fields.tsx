@@ -77,7 +77,19 @@ export function CutLogEditFormFields({
         </>
       ) : null}
 
-      {/* Row 2 — cut + coverage (unit-aware to match row display) */}
+      {/* Row 2 — before / after (read-only, worker-stamped, unit-aware) */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Before">
+          <UnitCell editable={false} value={cutLog?.before ?? ""} unit={stockUnit} ariaLabel="Before" />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={4}>
+        <FormField label="After">
+          <UnitCell editable={false} value={cutLog?.after ?? ""} unit={stockUnit} ariaLabel="After" />
+        </FormField>
+      </CellAt>
+
+      {/* Row 3 — cut + coverage (unit-aware to match row display) */}
       <CellAt col={1} colSpan={4}>
         <FormField label="Cut" required>
           <UnitCell
@@ -98,18 +110,6 @@ export function CutLogEditFormFields({
             unit={coverageUnit}
             ariaLabel="Coverage"
           />
-        </FormField>
-      </CellAt>
-
-      {/* Row 3 — before / after (read-only, worker-stamped, unit-aware) */}
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Before">
-          <UnitCell editable={false} value={cutLog?.before ?? ""} unit={stockUnit} ariaLabel="Before" />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={4}>
-        <FormField label="After">
-          <UnitCell editable={false} value={cutLog?.after ?? ""} unit={stockUnit} ariaLabel="After" />
         </FormField>
       </CellAt>
 
