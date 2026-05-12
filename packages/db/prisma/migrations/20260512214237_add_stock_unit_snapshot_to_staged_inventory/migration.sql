@@ -1,0 +1,8 @@
+-- RenameForeignKey
+ALTER TABLE "flooring_import_staged_inventory_filter_row" RENAME CONSTRAINT "flooring_import_staged_inventory_filter_row_categoryFilterId_fk" TO "flooring_import_staged_inventory_filter_row_categoryFilter_fkey";
+
+-- RenameIndex
+ALTER INDEX "flooring_import_staged_inventory_filter_row_categoryFilterId_id" RENAME TO "flooring_import_staged_inventory_filter_row_categoryFilterI_idx";
+
+-- RenameIndex
+ALTER INDEX "flooring_import_staged_inventory_filter_row_importEntryId_produ" RENAME TO "flooring_import_staged_inventory_filter_row_importEntryId_p_key";
