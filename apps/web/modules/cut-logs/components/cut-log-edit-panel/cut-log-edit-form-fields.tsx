@@ -52,68 +52,41 @@ export function CutLogEditFormFields({
 
   return (
     <FieldSection gap="0.75rem">
-      {/* Row 1 — status + final sequence (edit mode only). Cut # already
-          surfaces as the panel title, so the field there would be a
-          duplicate. Final sequence (worker-stamped at finalize) gets the
-          slot instead. */}
+      {/* Row 1 — work order # + status (edit only). Cut # already surfaces
+          as the panel title; status sits next to the WO it's cutting for. */}
       {cutLog ? (
         <>
-          <CellAt col={1} colSpan={3}>
+          <CellAt col={1} colSpan={5}>
+            <FormField label="Work order">
+              <TextCell
+                editable={false}
+                value={cutLog.workOrderNumber ?? "—"}
+                ariaLabel="Work order"
+              />
+            </FormField>
+          </CellAt>
+          <CellAt col={6} colSpan={3}>
             <FormField label="Status">
               <div className="flex items-center">
                 <CutLogStatusBadge status={cutLog.status} />
               </div>
             </FormField>
           </CellAt>
-          <CellAt col={4} colSpan={5}>
-            <FormField label="Final sequence">
+
+          {/* Row 2 — material item (the WOMI this cut is for) */}
+          <CellAt col={1} colSpan={8}>
+            <FormField label="Material item">
               <TextCell
                 editable={false}
-                value={cutLog.finalCutSequence != null ? String(cutLog.finalCutSequence) : "—"}
-                ariaLabel="Final sequence"
+                value={cutLog.workOrderItemProductLabel ?? "—"}
+                ariaLabel="Material item"
               />
             </FormField>
           </CellAt>
         </>
       ) : null}
 
-      {/* Row 2 — before / after (read-only, worker-stamped, unit-aware) */}
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Before">
-          <UnitCell editable={false} value={cutLog?.before ?? ""} unit={stockUnit} ariaLabel="Before" />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={4}>
-        <FormField label="After">
-          <UnitCell editable={false} value={cutLog?.after ?? ""} unit={stockUnit} ariaLabel="After" />
-        </FormField>
-      </CellAt>
-
-      {/* Row 3 — cut + coverage (unit-aware to match row display) */}
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Cut" required>
-          <UnitCell
-            editable={fieldsEditable}
-            value={form.cut}
-            onChange={(next) => controller.setField("cut", next)}
-            unit={stockUnit}
-            placeholder="0"
-            ariaLabel="Cut amount"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={4}>
-        <FormField label="Coverage">
-          <UnitCell
-            editable={false}
-            value={cutLog?.coverageCut ?? ""}
-            unit={coverageUnit}
-            ariaLabel="Coverage"
-          />
-        </FormField>
-      </CellAt>
-
-      {/* Row 4 — inventory picker (create) or read-only inventory + location
+      {/* Row 3 — inventory picker (create) or read-only inventory + location
           (edit). Location is a denormalized mirror: stamped from the parent
           inventory on create / update / finalize and cleared on void. It's
           read-only in this panel — operators edit location on the inventory
@@ -169,32 +142,48 @@ export function CutLogEditFormFields({
               />
             </FormField>
           </CellAt>
-          {/* WO + material-item context — server-resolved on the inventory
-              side via `InventoryCutLogRow`, hydrated from in-scope WO/WOMI
-              state on the work-orders side. Void clears the underlying
-              link cols, so both read "—" once a row is voided. */}
-          <CellAt col={1} colSpan={8}>
-            <FormField label="Work order">
-              <TextCell
-                editable={false}
-                value={cutLog?.workOrderNumber ?? "—"}
-                ariaLabel="Work order"
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={8}>
-            <FormField label="Material item">
-              <TextCell
-                editable={false}
-                value={cutLog?.workOrderItemProductLabel ?? "—"}
-                ariaLabel="Material item"
-              />
-            </FormField>
-          </CellAt>
         </>
       )}
 
-      {/* Row 5 — notes (full width) */}
+      {/* Row 4 — before (read-only, worker-stamped, unit-aware) */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Before">
+          <UnitCell editable={false} value={cutLog?.before ?? ""} unit={stockUnit} ariaLabel="Before" />
+        </FormField>
+      </CellAt>
+
+      {/* Row 5 — cut (editable) + coverage (read-only, to the right of cut) */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Cut" required>
+          <UnitCell
+            editable={fieldsEditable}
+            value={form.cut}
+            onChange={(next) => controller.setField("cut", next)}
+            unit={stockUnit}
+            placeholder="0"
+            ariaLabel="Cut amount"
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={4}>
+        <FormField label="Coverage">
+          <UnitCell
+            editable={false}
+            value={cutLog?.coverageCut ?? ""}
+            unit={coverageUnit}
+            ariaLabel="Coverage"
+          />
+        </FormField>
+      </CellAt>
+
+      {/* Row 6 — after (read-only, worker-stamped, unit-aware) */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="After">
+          <UnitCell editable={false} value={cutLog?.after ?? ""} unit={stockUnit} ariaLabel="After" />
+        </FormField>
+      </CellAt>
+
+      {/* Row 7 — notes (full width) */}
       <CellAt col={1} colSpan={8}>
         <FormField label="Notes">
           <TextCell
@@ -207,7 +196,7 @@ export function CutLogEditFormFields({
         </FormField>
       </CellAt>
 
-      {/* Row 6 — waste flag */}
+      {/* Row 8 — waste flag + final sequence (edit only, paired). */}
       <CellAt col={1} colSpan={4}>
         <FormField label="Waste">
           <CheckboxCell
@@ -218,8 +207,19 @@ export function CutLogEditFormFields({
           />
         </FormField>
       </CellAt>
+      {cutLog ? (
+        <CellAt col={5} colSpan={4}>
+          <FormField label="Final sequence">
+            <TextCell
+              editable={false}
+              value={cutLog.finalCutSequence != null ? String(cutLog.finalCutSequence) : "—"}
+              ariaLabel="Final sequence"
+            />
+          </FormField>
+        </CellAt>
+      ) : null}
 
-      {/* Row 7 — created / updated timestamps (edit only) */}
+      {/* Row 9 — created / updated timestamps (edit only) */}
       {mode === "edit" && cutLog ? (
         <>
           <CellAt col={1} colSpan={4}>
