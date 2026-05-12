@@ -1,4 +1,4 @@
-import { voidWorkOrderCutLogUseCase } from "@builders/application"
+import { voidCutLogUseCase } from "@builders/application"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -18,7 +18,7 @@ type RouteContext = {
  * POST /api/work-orders/[id]/cut-logs/[cutLogId]/void
  *
  * Synchronous void use case (no worker, no outbox). Calls
- * `voidWorkOrderCutLogUseCase`, which locks the parent inventory FOR
+ * `voidCutLogUseCase`, which locks the parent inventory FOR
  * UPDATE, asserts `canVoidCutLog`, applies `buildVoidedCutLogPatch`,
  * and recomputes the inventory's totalCutSum. Returns 200 OK with the
  * voided row identifier.
@@ -67,16 +67,20 @@ export async function POST(request: Request, { params }: RouteContext) {
         entityType: "flooringCutLog",
         entityId: cutLogId,
       },
-      () => voidWorkOrderCutLogUseCase({ workOrderId, cutLogId }),
+      () =>
+        voidCutLogUseCase({
+          scope: { kind: "work-order", workOrderId },
+          cutLogId,
+        }),
     )
 
-    const responseBody = { cutLog: result }
+    const responseBody = result
     await finalizeMutationReceipt({
       scope: "work-orders.cut-logs.void",
       access,
       mutation,
       responseStatus: 200,
-      responseBody,
+      responseBody: responseBody as unknown as Record<string, unknown>,
     })
     return routeJson(access, responseBody)
   } catch (error) {

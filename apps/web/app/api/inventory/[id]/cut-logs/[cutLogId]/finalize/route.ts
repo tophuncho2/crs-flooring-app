@@ -9,47 +9,53 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateFinalizeCutLogInput } from "../../../_validators"
+import { validateInvFinalizeCutLogInput } from "../../../../_validators"
 
 type RouteContext = {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string; cutLogId: string }>
 }
 
 /**
- * POST /api/work-orders/[id]/cut-logs/finalize
+ * POST /api/inventory/[id]/cut-logs/[cutLogId]/finalize
  *
- * Synchronous single-row finalize. Calls `finalizeCutLogUseCase`,
- * which locks the parent inventory FOR UPDATE, validates finalizability,
- * stamps `before` / `after` / `finalCutSequence` and flips status to FINAL
- * in one TX. Returns 200 with the stamped cut log row. Idempotency is
- * provided by the `canFinalizeCutLog` predicate (already-FINAL rows return
- * 409) plus the standard mutation-receipt window.
+ * Synchronous single-row finalize under the inventory scope. Calls
+ * `finalizeCutLogUseCase` with
+ * `{ scope: { kind: "inventory", inventoryId } }`. The use case
+ * scope-asserts row → inventory membership, locks the parent inventory
+ * FOR UPDATE, runs the finalizability gate, stamps `before` / `after` /
+ * `finalCutSequence`, flips status to FINAL, and re-snaps `location`
+ * via `applyFinalizeCutLog`. Returns 200 with the stamped cut log.
+ *
+ * Resource-level URL (per [cutLogId]) — inv-side normalizes against the
+ * WO-side's legacy collection-level `/finalize` URL. Cross-side
+ * asymmetry is accepted (see docs/cut-logs-application-sweep.md).
  */
 export async function POST(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
     toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
-      scope: "work-orders.cut-logs.finalize",
+      scope: "inventory.cut-logs.finalize",
       limit: 600,
       windowMs: 10 * 60 * 1000,
-      route: "/api/work-orders/[id]/cut-logs/finalize",
+      route: "/api/inventory/[id]/cut-logs/[cutLogId]/finalize",
     },
   })
   if (access instanceof Response) return access
 
   try {
-    const { id: rawId } = await params
-    const workOrderId = parseUuidParam(rawId, "id")
+    const { id: rawId, cutLogId: rawCutLogId } = await params
+    const inventoryId = parseUuidParam(rawId, "id")
+    const cutLogId = parseUuidParam(rawCutLogId, "cutLogId")
 
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(
+    const { input: _input, mutation } = parseMutationEnvelope(
       body,
-      validateFinalizeCutLogInput,
+      validateInvFinalizeCutLogInput,
     )
 
     const receipt = await enforceMutationReceipt({
-      scope: "work-orders.cut-logs.finalize",
+      scope: "inventory.cut-logs.finalize",
       request,
       access,
       mutation,
@@ -60,22 +66,22 @@ export async function POST(request: Request, { params }: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Work-order cut-log finalized",
-        action: "work-orders.cut-logs.finalize",
-        route: "/api/work-orders/[id]/cut-logs/finalize",
+        message: "Cut log finalized (inv-side)",
+        action: "inventory.cut-logs.finalize",
+        route: "/api/inventory/[id]/cut-logs/[cutLogId]/finalize",
         entityType: "flooringCutLog",
-        entityId: input.cutLogId,
+        entityId: cutLogId,
       },
       () =>
         finalizeCutLogUseCase({
-          scope: { kind: "work-order", workOrderId },
-          cutLogId: input.cutLogId,
+          scope: { kind: "inventory", inventoryId },
+          cutLogId,
         }),
     )
 
     const responseBody = result
     await finalizeMutationReceipt({
-      scope: "work-orders.cut-logs.finalize",
+      scope: "inventory.cut-logs.finalize",
       access,
       mutation,
       responseStatus: 200,

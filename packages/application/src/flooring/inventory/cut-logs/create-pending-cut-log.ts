@@ -5,7 +5,6 @@ import {
   lockInventoryForCutLog,
   recomputeAndPersistTotalCutSums,
   withDatabaseTransaction,
-  type CutLogRecord,
 } from "@builders/db"
 import {
   assertCutLogLinkageSymmetry,
@@ -15,37 +14,34 @@ import {
   deriveCutLogCoverageCutString,
   describeCutLogPendingFormIssues,
   validateCutLogPendingForm,
-  type CreatePendingCutLogInput,
 } from "@builders/domain"
-import { WorkOrderCutLogExecutionError } from "./errors.js"
+import { CutLogExecutionError } from "./errors.js"
+import type { CreatePendingCutLogInput, CutLogMutationResult } from "./types.js"
 
 /**
- * Synchronous create for a pending cut log scoped to one WOMI. Single
- * TX:
- *   1. Per-row form validation (`validateCutLogPendingForm`) — `cut`
- *      must be a positive number.
+ * Synchronous create for a pending cut log scoped to one WOMI. Cut logs
+ * are only ever created on the WO side (grouped under WOMI rows in the
+ * UI), so this use case has no scope discriminator. Single TX:
+ *   1. Per-row form validation (`validateCutLogPendingForm`).
  *   2. WOMI ownership check (cut log links to the right WO).
  *   3. Linkage symmetry assertion.
  *   4. Lock the parent inventory FOR UPDATE.
- *   5. Read the inventory parent context (startingStock,
- *      categorySlug, coveragePerUnit, four unit-snapshot fields).
+ *   5. Read the inventory parent context (startingStock, categorySlug,
+ *      coveragePerUnit, the four unit-snapshot fields, the 5 inventory-
+ *      identity snapshot primitives, and `location`).
  *   6. Derive `coverageCut` via the domain helper.
- *   7. Insert the row, stamping the four unit-snapshot fields from
- *      the inventory read.
+ *   7. Insert the row, stamping the unit snapshot, the identity snapshot,
+ *      and the `location` mirror from the inventory.
  *   8. Recompute the inventory's `totalCutSum`.
  *   9. Assert `totalCutSum ≤ startingStock` (domain error bubbles).
  *
  * WOMI status is not consulted — the parent inventory's row lock is the
- * sole concurrency mechanism. Two CRUD operations against the same
- * inventory serialize on the lock; against different inventories they
- * run in parallel.
- *
- * Returns the inserted cut log (full normalized record).
+ * sole concurrency mechanism.
  */
 export async function createPendingCutLogUseCase(
   input: CreatePendingCutLogInput,
   client?: Prisma.TransactionClient,
-): Promise<{ cutLog: CutLogRecord; inventoryId: string; totalCutSum: string }> {
+): Promise<CutLogMutationResult> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -56,8 +52,8 @@ export async function createPendingCutLogUseCase(
       notes: input.notes,
     })
     if (formIssues.length > 0) {
-      throw new WorkOrderCutLogExecutionError({
-        code: "WORK_ORDER_CUT_LOG_VALIDATION_FAILED",
+      throw new CutLogExecutionError({
+        code: "CUT_LOG_VALIDATION_FAILED",
         message: describeCutLogPendingFormIssues(formIssues),
         status: 400,
         payload: { issues: formIssues },
@@ -70,15 +66,15 @@ export async function createPendingCutLogUseCase(
       select: { id: true, workOrderId: true },
     })
     if (!womi) {
-      throw new WorkOrderCutLogExecutionError({
-        code: "WORK_ORDER_CUT_LOG_NOT_FOUND",
+      throw new CutLogExecutionError({
+        code: "CUT_LOG_NOT_FOUND",
         message: "Work order material item not found",
         status: 404,
       })
     }
     if (womi.workOrderId !== input.workOrderId) {
-      throw new WorkOrderCutLogExecutionError({
-        code: "WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH",
+      throw new CutLogExecutionError({
+        code: "CUT_LOG_SCOPE_MISMATCH",
         message: "Material item does not belong to this work order",
         status: 400,
         payload: {
@@ -100,8 +96,8 @@ export async function createPendingCutLogUseCase(
     // 5. Read inventory context (post-lock).
     const inventory = await getInventoryParentContextForCutLogs(c, input.inventoryId)
     if (!inventory) {
-      throw new WorkOrderCutLogExecutionError({
-        code: "WORK_ORDER_CUT_LOG_NOT_FOUND",
+      throw new CutLogExecutionError({
+        code: "CUT_LOG_NOT_FOUND",
         message: "Parent inventory not found",
         status: 404,
         payload: { inventoryId: input.inventoryId },
@@ -115,9 +111,11 @@ export async function createPendingCutLogUseCase(
       categorySlug: inventory.categorySlug,
     })
 
-    // 7. Insert the row, stamping the unit + identity snapshots from the
-    // inventory. Both snapshots are frozen at create — finalize and void
-    // do not re-stamp them.
+    // 7. Insert the row, stamping the unit + identity snapshots and the
+    // `location` mirror from the inventory. Snapshots are frozen at
+    // create (finalize/void do NOT re-stamp the identity primitives);
+    // `location` is a denormalized mirror that re-snaps on update +
+    // finalize and clears on void.
     const cutLog = await insertPendingCutLogRow(c, {
       workOrderId: input.workOrderId,
       workOrderItemId: input.workOrderItemId,
@@ -135,14 +133,19 @@ export async function createPendingCutLogUseCase(
       inventorySnapshot: buildPendingCutLogInventorySnapshot({
         inventoryItem: inventory.inventoryItem,
         categorySlug: inventory.categorySlug,
+        inventoryNumber: inventory.inventoryNumber,
+        rollPrefix: inventory.rollPrefix,
+        rollNumber: inventory.rollNumber,
+        dyeLot: inventory.dyeLot,
+        inventoryNote: inventory.inventoryNote,
       }),
+      location: inventory.location,
     })
 
     // 8. Recompute totalCutSum.
     const recomputed = await recomputeAndPersistTotalCutSums(c, [input.inventoryId])
     const result = recomputed[0]
     if (!result) {
-      // Defensive — recompute always returns a row when we passed an id.
       throw new CutLogDomainError("CUT_LOG_TOTALCUTSUM_EXCEEDS_STARTING_STOCK", {
         reason: "recompute returned no rows",
         inventoryId: input.inventoryId,

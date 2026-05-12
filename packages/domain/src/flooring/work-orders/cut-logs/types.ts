@@ -40,6 +40,15 @@ export type UpdatePendingCutLogPatch = {
   cut?: string
   isWaste?: boolean
   notes?: string
+  /**
+   * Grouped WO/WOMI link patch — both-or-neither per
+   * `assertCutLogLinkageSymmetry`. Absent leaves both link columns
+   * untouched; `{ workOrderId: null, workOrderItemId: null }` unlinks
+   * (cut log keeps belonging to its inventory but no longer to a WOMI);
+   * symmetric non-null pair re-links to the new WOMI. The use case
+   * verifies WOMI ownership before applying.
+   */
+  link?: { workOrderId: string | null; workOrderItemId: string | null }
 }
 
 export type UpdatePendingCutLogInput = PendingCutLogScope & {

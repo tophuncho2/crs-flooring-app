@@ -1,5 +1,5 @@
 import {
-  WorkOrderCutLogExecutionError,
+  CutLogExecutionError,
   WorkOrderExecutionError,
   WorkOrderMaterialItemExecutionError,
 } from "@builders/application"
@@ -32,8 +32,8 @@ function failMaterialItem(message: string, field?: string): never {
 }
 
 function failCutLog(message: string, field?: string): never {
-  throw new WorkOrderCutLogExecutionError({
-    code: "WORK_ORDER_CUT_LOG_VALIDATION_FAILED",
+  throw new CutLogExecutionError({
+    code: "CUT_LOG_VALIDATION_FAILED",
     message,
     status: 400,
     field,
@@ -220,15 +220,50 @@ export function validateCreatePendingCutLogInput(
   }
 }
 
+export type ValidatedUpdatePendingCutLogLink = {
+  workOrderId: string | null
+  workOrderItemId: string | null
+}
+
 export type ValidatedUpdatePendingCutLogPatch = {
   cut?: string
   isWaste?: boolean
   notes?: string
+  link?: ValidatedUpdatePendingCutLogLink
 }
 
 export type ValidatedUpdatePendingCutLogInput = {
-  workOrderItemId: string
   patch: ValidatedUpdatePendingCutLogPatch
+}
+
+function validateUpdatePendingCutLogLink(
+  value: unknown,
+): ValidatedUpdatePendingCutLogLink {
+  const obj = requireObject(value, "patch.link", failCutLog)
+  const rawWO = obj.workOrderId
+  const rawWOMI = obj.workOrderItemId
+  if (rawWO !== null && typeof rawWO !== "string") {
+    failCutLog("patch.link.workOrderId must be a string or null", "patch.link.workOrderId")
+  }
+  if (rawWOMI !== null && typeof rawWOMI !== "string") {
+    failCutLog(
+      "patch.link.workOrderItemId must be a string or null",
+      "patch.link.workOrderItemId",
+    )
+  }
+  const workOrderId =
+    rawWO === null ? null : (rawWO as string).trim() || (failCutLog("patch.link.workOrderId is required when present", "patch.link.workOrderId") as never)
+  const workOrderItemId =
+    rawWOMI === null ? null : (rawWOMI as string).trim() || (failCutLog("patch.link.workOrderItemId is required when present", "patch.link.workOrderItemId") as never)
+  // Both-or-neither: surface the asymmetry here so the use case never
+  // has to handle a half-set link patch.
+  if ((workOrderId === null) !== (workOrderItemId === null)) {
+    failCutLog(
+      "patch.link must set both workOrderId and workOrderItemId or both to null",
+      "patch.link",
+    )
+  }
+  return { workOrderId, workOrderItemId }
 }
 
 export function validateUpdatePendingCutLogInput(
@@ -245,38 +280,37 @@ export function validateUpdatePendingCutLogInput(
   if ("notes" in patchBody && typeof patchBody.notes === "string") {
     patch.notes = patchBody.notes
   }
+  if ("link" in patchBody) {
+    patch.link = validateUpdatePendingCutLogLink(patchBody.link)
+  }
   if (Object.keys(patch).length === 0) {
-    failCutLog("Patch must contain at least one of cut, isWaste, or notes", "patch")
+    failCutLog(
+      "Patch must contain at least one of cut, isWaste, notes, or link",
+      "patch",
+    )
   }
-  return {
-    workOrderItemId: requireString(body.workOrderItemId, "workOrderItemId", failCutLog),
-    patch,
-  }
+  return { patch }
 }
 
-export type ValidatedDeletePendingCutLogInput = {
-  workOrderItemId: string
-}
+export type ValidatedDeletePendingCutLogInput = Record<string, never>
 
 export function validateDeletePendingCutLogInput(
-  body: Record<string, unknown>,
+  _body: Record<string, unknown>,
 ): ValidatedDeletePendingCutLogInput {
-  return {
-    workOrderItemId: requireString(body.workOrderItemId, "workOrderItemId", failCutLog),
-  }
+  return {}
 }
 
 // ---------------------------------------------------------------------------
-// Finalize cut-log (WO-scoped, single row per request)
+// Finalize cut-log (single row per request)
 // ---------------------------------------------------------------------------
 
-export type ValidatedFinalizeWorkOrderCutLogInput = {
+export type ValidatedFinalizeCutLogInput = {
   cutLogId: string
 }
 
-export function validateFinalizeWorkOrderCutLogInput(
+export function validateFinalizeCutLogInput(
   body: Record<string, unknown>,
-): ValidatedFinalizeWorkOrderCutLogInput {
+): ValidatedFinalizeCutLogInput {
   return {
     cutLogId: requireString(body.cutLogId, "cutLogId", failCutLog),
   }

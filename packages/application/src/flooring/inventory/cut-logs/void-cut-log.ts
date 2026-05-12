@@ -1,39 +1,43 @@
 import {
   Prisma,
+  applyVoidToCutLog,
+  lockInventoryForCutLog,
   recomputeAndPersistTotalCutSums,
   withDatabaseTransaction,
 } from "@builders/db"
-import {
-  assertCutSumWithinStartingStock,
-  buildVoidedCutLogPatch,
-  canVoidCutLog,
-} from "@builders/domain"
-import { WorkOrderCutLogExecutionError } from "./errors.js"
-import type { VoidWorkOrderCutLogInput } from "./types.js"
+import { assertCutSumWithinStartingStock, canVoidCutLog } from "@builders/domain"
+import { CutLogExecutionError } from "./errors.js"
+import { assertCutLogScope } from "./scope.js"
+import type { CutLogMutationResult, VoidCutLogInput } from "./types.js"
 
 /**
- * Synchronous void use case (no worker, no outbox). Voids a single cut
- * log under the work order's scope.
+ * Synchronous void use case. Voids a single cut log under the scope
+ * passed by the route (WO or inventory). Single TX:
+ *   1. Read the cut log's identity + lifecycle fields.
+ *   2. Scope assertion.
+ *   3. Lock the parent inventory FOR UPDATE (canonical
+ *      `lockInventoryForCutLog`).
+ *   4. `canVoidCutLog` lifecycle gate — allowed on PENDING or FINAL,
+ *      rejected on QUEUED or already-VOID.
+ *   5. `applyVoidToCutLog` data primitive applies the canonical void
+ *      patch (zeros `cut`, nulls `coverageCut`, sets `status: VOID` +
+ *      `void: true`, clears both link columns, clears `location`).
+ *   6. Recompute `totalCutSum` + invariant.
  *
- * Per locked decision (#1), void is sync + single-row + does NOT flip
- * WOMI status. The whole flow runs inline:
- *   1. Lock the cut log's parent inventory FOR UPDATE (single row —
- *      no need for the multi-inventory locker).
- *   2. Read the cut log under the lock; assert it links to the input
- *      work order and passes `canVoidCutLog`.
- *   3. Apply `buildVoidedCutLogPatch` (sets cut → "0", coverageCut →
- *      null, void → true, status → VOID).
- *   4. Recompute that inventory's `totalCutSum` and assert the invariant.
- *
- * Returns the voided row identifier; UI patches local state.
+ * No outbox, no worker, no replay tolerance. WOMI status is not
+ * consulted — the inventory row lock is the sole correctness mechanism.
+ * Voiding is the only mutation allowed against a finalized cut log;
+ * pending cut logs are deleted via the delete use case instead.
  */
-export async function voidWorkOrderCutLogUseCase(
-  input: VoidWorkOrderCutLogInput,
+export async function voidCutLogUseCase(
+  input: VoidCutLogInput,
   client?: Prisma.TransactionClient,
-): Promise<{ id: string; inventoryId: string }> {
+): Promise<CutLogMutationResult> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
+    // 1. Read identity + lifecycle (pre-lock; safe — the read is repeated
+    // under the lock by `canVoidCutLog`'s inputs via the void primitive).
     const existing = await c.flooringCutLog.findUnique({
       where: { id: input.cutLogId },
       select: {
@@ -46,56 +50,64 @@ export async function voidWorkOrderCutLogUseCase(
       },
     })
     if (!existing) {
-      throw new WorkOrderCutLogExecutionError({
-        code: "WORK_ORDER_CUT_LOG_NOT_FOUND",
+      throw new CutLogExecutionError({
+        code: "CUT_LOG_NOT_FOUND",
         message: "Cut log not found",
         status: 404,
       })
     }
-    if (existing.workOrderId !== input.workOrderId) {
-      throw new WorkOrderCutLogExecutionError({
-        code: "WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH",
-        message: "Cut log does not belong to this work order",
-        status: 400,
+
+    // 2. Scope assertion.
+    assertCutLogScope(input.scope, {
+      workOrderId: existing.workOrderId,
+      inventoryId: existing.inventoryId,
+    })
+
+    // 3. Lock parent inventory.
+    await lockInventoryForCutLog(c, existing.inventoryId)
+
+    // 4. Lifecycle gate.
+    if (!canVoidCutLog(existing)) {
+      throw new CutLogExecutionError({
+        code: "CUT_LOG_VOID_NOT_ALLOWED",
+        message: "This cut log cannot be voided in its current state",
+        status: 409,
         payload: {
-          providedWorkOrderId: input.workOrderId,
-          actualWorkOrderId: existing.workOrderId,
+          status: existing.status,
+          isFinal: existing.isFinal,
+          void: existing.void,
         },
       })
     }
 
-    await c.$queryRaw(
-      Prisma.sql`SELECT "id" FROM "flooring_inventory" WHERE "id" = ${existing.inventoryId} FOR UPDATE`,
-    )
+    // 5. Apply the void patch via the data primitive.
+    const cutLog = await applyVoidToCutLog(c, input.cutLogId)
 
-    if (!canVoidCutLog(existing)) {
-      throw new WorkOrderCutLogExecutionError({
-        code: "WORK_ORDER_CUT_LOG_VOID_NOT_ALLOWED",
-        message: "This cut log cannot be voided in its current state",
-        status: 409,
-        payload: { status: existing.status, isFinal: existing.isFinal, void: existing.void },
+    // 6. Recompute + invariant.
+    const recomputed = await recomputeAndPersistTotalCutSums(c, [existing.inventoryId])
+    const result = recomputed[0]
+    if (!result) {
+      // Defensive — recompute always returns a row for an inventory id we passed.
+      throw new CutLogExecutionError({
+        code: "CUT_LOG_NOT_FOUND",
+        message: "Parent inventory disappeared mid-void",
+        status: 500,
+        payload: { inventoryId: existing.inventoryId },
       })
     }
-
-    const patch = buildVoidedCutLogPatch()
-    await c.flooringCutLog.update({
-      where: { id: input.cutLogId },
-      data: patch,
-      select: { id: true },
-    })
-
-    const recomputed = await recomputeAndPersistTotalCutSums(c, [existing.inventoryId])
     const inventory = await c.flooringInventory.findUniqueOrThrow({
       where: { id: existing.inventoryId },
       select: { startingStock: true },
     })
-    for (const row of recomputed) {
-      assertCutSumWithinStartingStock({
-        totalCutSum: row.totalCutSum,
-        startingStock: inventory.startingStock.toString(),
-      })
-    }
+    assertCutSumWithinStartingStock({
+      totalCutSum: result.totalCutSum,
+      startingStock: inventory.startingStock.toString(),
+    })
 
-    return { id: input.cutLogId, inventoryId: existing.inventoryId }
+    return {
+      cutLog,
+      inventoryId: result.inventoryId,
+      totalCutSum: result.totalCutSum,
+    }
   })
 }

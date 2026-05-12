@@ -1,9 +1,11 @@
 import type { Prisma } from "@prisma/client"
 import {
+  buildVoidedCutLogPatch,
   computeTotalCutSum,
   type PendingCutLogInventorySnapshot,
 } from "@builders/domain"
 import {
+  getCutLogById,
   listCutLogsForInventoryIds,
   normalizeCutLogRow,
   type CutLogRecord,
@@ -120,6 +122,44 @@ export async function applyFinalizeCutLog(
       after: afterStr,
     },
   }
+}
+
+/**
+ * Apply the canonical void patch to a single cut log. Uses the domain's
+ * pure `buildVoidedCutLogPatch` (allowed under the data-layer carve-out
+ * for pure domain helpers, see `packages/db/CLAUDE.md` rule 1). The patch
+ * zeros `cut`, nulls `coverageCut`, sets `status: VOID` + `void: true`,
+ * clears both link columns (`workOrderId` / `workOrderItemId`), and
+ * clears the denormalized `location` mirror.
+ *
+ * Lifecycle / linkage rules (`canVoidCutLog`, etc.) run in the application
+ * use case BEFORE this primitive is invoked; this is pure persistence.
+ * Caller has locked the parent inventory FOR UPDATE via
+ * `lockInventoryForCutLog`.
+ */
+export async function applyVoidToCutLog(
+  tx: Prisma.TransactionClient,
+  cutLogId: string,
+): Promise<CutLogRecord> {
+  const patch = buildVoidedCutLogPatch()
+  await tx.flooringCutLog.update({
+    where: { id: cutLogId },
+    data: {
+      cut: patch.cut,
+      coverageCut: patch.coverageCut,
+      void: patch.void,
+      status: patch.status,
+      workOrderId: patch.workOrderId,
+      workOrderItemId: patch.workOrderItemId,
+      location: patch.location,
+    },
+    select: { id: true },
+  })
+  const record = await getCutLogById(cutLogId, tx)
+  if (!record) {
+    throw new Error(`applyVoidToCutLog: cut log ${cutLogId} not found after void`)
+  }
+  return record
 }
 
 /**

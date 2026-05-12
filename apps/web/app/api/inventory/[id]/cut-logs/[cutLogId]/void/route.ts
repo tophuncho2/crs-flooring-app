@@ -1,4 +1,4 @@
-import { finalizeCutLogUseCase } from "@builders/application"
+import { voidCutLogUseCase } from "@builders/application"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -9,47 +9,49 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateFinalizeCutLogInput } from "../../../_validators"
+import { validateInvVoidCutLogInput } from "../../../../_validators"
 
 type RouteContext = {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string; cutLogId: string }>
 }
 
 /**
- * POST /api/work-orders/[id]/cut-logs/finalize
+ * POST /api/inventory/[id]/cut-logs/[cutLogId]/void
  *
- * Synchronous single-row finalize. Calls `finalizeCutLogUseCase`,
- * which locks the parent inventory FOR UPDATE, validates finalizability,
- * stamps `before` / `after` / `finalCutSequence` and flips status to FINAL
- * in one TX. Returns 200 with the stamped cut log row. Idempotency is
- * provided by the `canFinalizeCutLog` predicate (already-FINAL rows return
- * 409) plus the standard mutation-receipt window.
+ * Synchronous void under the inventory scope. Calls `voidCutLogUseCase`
+ * with `{ scope: { kind: "inventory", inventoryId } }`. The use case
+ * scope-asserts the row belongs to this inventory, locks the parent
+ * inventory FOR UPDATE, runs `canVoidCutLog` (allowed on PENDING or
+ * FINAL; QUEUED/already-VOID rejected), applies the canonical void
+ * patch (zeros `cut`, clears link cols, clears `location`), and
+ * recomputes `totalCutSum`. Returns 200 with the voided row.
  */
 export async function POST(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
     toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
-      scope: "work-orders.cut-logs.finalize",
-      limit: 600,
+      scope: "inventory.cut-logs.void",
+      limit: 300,
       windowMs: 10 * 60 * 1000,
-      route: "/api/work-orders/[id]/cut-logs/finalize",
+      route: "/api/inventory/[id]/cut-logs/[cutLogId]/void",
     },
   })
   if (access instanceof Response) return access
 
   try {
-    const { id: rawId } = await params
-    const workOrderId = parseUuidParam(rawId, "id")
+    const { id: rawId, cutLogId: rawCutLogId } = await params
+    const inventoryId = parseUuidParam(rawId, "id")
+    const cutLogId = parseUuidParam(rawCutLogId, "cutLogId")
 
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(
+    const { input: _input, mutation } = parseMutationEnvelope(
       body,
-      validateFinalizeCutLogInput,
+      validateInvVoidCutLogInput,
     )
 
     const receipt = await enforceMutationReceipt({
-      scope: "work-orders.cut-logs.finalize",
+      scope: "inventory.cut-logs.void",
       request,
       access,
       mutation,
@@ -60,22 +62,22 @@ export async function POST(request: Request, { params }: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Work-order cut-log finalized",
-        action: "work-orders.cut-logs.finalize",
-        route: "/api/work-orders/[id]/cut-logs/finalize",
+        message: "Cut log voided (inv-side)",
+        action: "inventory.cut-logs.void",
+        route: "/api/inventory/[id]/cut-logs/[cutLogId]/void",
         entityType: "flooringCutLog",
-        entityId: input.cutLogId,
+        entityId: cutLogId,
       },
       () =>
-        finalizeCutLogUseCase({
-          scope: { kind: "work-order", workOrderId },
-          cutLogId: input.cutLogId,
+        voidCutLogUseCase({
+          scope: { kind: "inventory", inventoryId },
+          cutLogId,
         }),
     )
 
     const responseBody = result
     await finalizeMutationReceipt({
-      scope: "work-orders.cut-logs.finalize",
+      scope: "inventory.cut-logs.void",
       access,
       mutation,
       responseStatus: 200,

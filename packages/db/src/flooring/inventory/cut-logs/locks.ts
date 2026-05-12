@@ -6,13 +6,13 @@ import { Prisma } from "@prisma/client"
  * given parent inventory. Acquires a row lock on the parent for the
  * duration of the caller's transaction.
  *
- * Consumers (sync per-row use cases):
- *   - createPendingCutLogUseCase
- *   - updatePendingCutLogUseCase
- *   - deletePendingCutLogUseCase
- *   - finalizeWorkOrderCutLogUseCase
- *   - voidWorkOrderCutLogUseCase  (currently inlines the same SQL — being
- *     migrated to this helper in the upcoming application sweep)
+ * Consumers (sync per-row use cases — all under
+ * `@builders/application/flooring/inventory/cut-logs`):
+ *   - createPendingCutLogUseCase (WO-only)
+ *   - updatePendingCutLogUseCase (scope-aware)
+ *   - deletePendingCutLogUseCase (scope-aware)
+ *   - finalizeCutLogUseCase      (scope-aware)
+ *   - voidCutLogUseCase          (scope-aware)
  *
  * Cut-log mutations always touch exactly one inventory; concurrent
  * mutations against the same inventory serialize on this lock, and
