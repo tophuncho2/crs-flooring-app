@@ -179,7 +179,10 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={2} colSpan={3}>
+      {/* Rows 2–4 — two stacked columns:
+            left  (col 1, span 4): Management Company → Property → Template
+            right (col 5, span 4): Vacancy → Unit Number → Unit Type */}
+      <CellAt col={1} row={2} colSpan={4}>
         <FormField label="Management Company">
           {editable ? (
             <ManagementCompanyPicker
@@ -194,7 +197,19 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={4} row={2} colSpan={2}>
+      <CellAt col={5} row={2} colSpan={4}>
+        <FormField label="Vacancy">
+          <SelectCell
+            editable={editable}
+            value={draft.vacancy}
+            options={VACANCY_OPTIONS}
+            placeholder="—"
+            onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
+          />
+        </FormField>
+      </CellAt>
+
+      <CellAt col={1} row={3} colSpan={4}>
         <FormField label="Property">
           {editable ? (
             <PropertyPicker
@@ -211,7 +226,17 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={6} row={2} colSpan={3}>
+      <CellAt col={5} row={3} colSpan={4}>
+        <FormField label="Unit Number">
+          <TextCell
+            editable={editable}
+            value={draft.unitNumber}
+            onChange={(value) => onFieldChange("unitNumber", value)}
+          />
+        </FormField>
+      </CellAt>
+
+      <CellAt col={1} row={4} colSpan={4}>
         <FormField label="Template">
           {editable ? (
             <TemplatePicker
@@ -227,28 +252,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-
-      <CellAt col={1} row={3} colSpan={3}>
-        <FormField label="Vacancy">
-          <SelectCell
-            editable={editable}
-            value={draft.vacancy}
-            options={VACANCY_OPTIONS}
-            placeholder="—"
-            onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={4} row={3} colSpan={2}>
-        <FormField label="Unit Number">
-          <TextCell
-            editable={editable}
-            value={draft.unitNumber}
-            onChange={(value) => onFieldChange("unitNumber", value)}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={6} row={3} colSpan={3}>
+      <CellAt col={5} row={4} colSpan={4}>
         <FormField label="Unit Type">
           <TextCell
             editable={editable}
@@ -258,7 +262,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={4} colSpan={8}>
+      <CellAt col={1} row={5} colSpan={8}>
         <FormField label="Custom Address (overrides property address on PDF)">
           <TextareaCell
             editable={editable}
@@ -269,9 +273,9 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={5} />
+      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={6} />
 
-      <CellAt col={1} row={7} colSpan={8}>
+      <CellAt col={1} row={8} colSpan={8}>
         <FormField label="Description">
           <TextareaCell
             editable={editable}
@@ -282,7 +286,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={8} colSpan={8}>
+      <CellAt col={1} row={9} colSpan={8}>
         <FormField label="Instructions">
           <TextareaCell
             editable={editable}
@@ -293,7 +297,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={9} colSpan={8}>
+      <CellAt col={1} row={10} colSpan={8}>
         <FormField label="Notes">
           <TextareaCell
             editable={editable}
