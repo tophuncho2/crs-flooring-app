@@ -18,11 +18,11 @@ import {
   type WorkOrderMaterialItemLocal,
 } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import {
+  CutLogEditPanel,
   useCutLogEditPanel,
   type CutLogPanelPatch,
-} from "@/modules/work-orders/controllers/record/material-items/use-cut-log-edit-panel"
+} from "@/modules/cut-logs"
 import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
-import { CutLogEditPanel } from "./cut-log-edit-panel"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 
@@ -72,8 +72,9 @@ export function WorkOrderMaterialItemsSection({
   })
 
   const cutLogPanel = useCutLogEditPanel({
-    workOrderId: workOrder.id,
+    scope: { kind: "work-order", workOrderId: workOrder.id },
     warehouseId: workOrder.warehouseId,
+    canCreate: true,
     publish: publishCutLogPatch,
   })
 

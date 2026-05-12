@@ -7,7 +7,6 @@ import type {
   UpdateWorkOrderUseCaseInput,
 } from "@builders/application"
 import type {
-  CutLogRow,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
   WorkOrderMaterialItemsDiff,
@@ -64,138 +63,10 @@ export async function saveWorkOrderMaterialItemsSectionRequest(
   )
 }
 
-// ---------------------------------------------------------------------------
-// Per-row pending-cut-log mutations (sync; one row per request)
-// ---------------------------------------------------------------------------
-//
-// These replace the diff-driven `saveWorkOrderItemPendingCutLogDiffRequest`
-// from the prior worker-driven flow. Each helper hits one of the new sync
-// API routes:
-//   POST   /api/work-orders/[id]/cut-logs                — create
-//   PATCH  /api/work-orders/[id]/cut-logs/[cutLogId]     — update (OCC required)
-//   DELETE /api/work-orders/[id]/cut-logs/[cutLogId]     — delete (OCC required)
-//
-// Routes return 200 OK with the post-mutation row + parent inventory's
-// recomputed totalCutSum. The section controller patches local state
-// from these responses without a refetch.
-
-export type PendingCutLogMutationResponse = {
-  cutLog: CutLogRow
-  inventoryId: string
-  totalCutSum: string
-}
-
-export type DeletePendingCutLogResponse = {
-  deletedId: string
-  inventoryId: string
-  totalCutSum: string
-}
-
-export async function createPendingCutLogRequest(args: {
-  workOrderId: string
-  workOrderItemId: string
-  inventoryId: string
-  cut: string
-  isWaste: boolean
-  notes: string
-}) {
-  const body = withMutationMeta({
-    workOrderItemId: args.workOrderItemId,
-    inventoryId: args.inventoryId,
-    cut: args.cut,
-    isWaste: args.isWaste,
-    notes: args.notes,
-  } as Record<string, unknown>)
-  return requestJson<PendingCutLogMutationResponse>(
-    `/api/work-orders/${args.workOrderId}/cut-logs`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  )
-}
-
-export async function updatePendingCutLogRequest(args: {
-  workOrderId: string
-  cutLogId: string
-  workOrderItemId: string
-  expectedUpdatedAt: string
-  patch: { cut?: string; isWaste?: boolean; notes?: string }
-}) {
-  const body = withMutationMeta(
-    {
-      workOrderItemId: args.workOrderItemId,
-      patch: args.patch,
-    } as Record<string, unknown>,
-    args.expectedUpdatedAt,
-  )
-  return requestJson<PendingCutLogMutationResponse>(
-    `/api/work-orders/${args.workOrderId}/cut-logs/${args.cutLogId}`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  )
-}
-
-export async function deletePendingCutLogRequest(args: {
-  workOrderId: string
-  cutLogId: string
-  workOrderItemId: string
-  expectedUpdatedAt: string
-}) {
-  const body = withMutationMeta(
-    {
-      workOrderItemId: args.workOrderItemId,
-    } as Record<string, unknown>,
-    args.expectedUpdatedAt,
-  )
-  return requestJson<DeletePendingCutLogResponse>(
-    `/api/work-orders/${args.workOrderId}/cut-logs/${args.cutLogId}`,
-    {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  )
-}
-
-export type FinalizeCutLogResponse = {
-  cutLog: CutLogRow
-}
-
-export async function finalizeWorkOrderCutLogRequest(args: {
-  workOrderId: string
-  cutLogId: string
-}) {
-  const body = withMutationMeta({
-    cutLogId: args.cutLogId,
-  } as Record<string, unknown>)
-  return requestJson<FinalizeCutLogResponse>(
-    `/api/work-orders/${args.workOrderId}/cut-logs/finalize`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  )
-}
-
-export async function voidWorkOrderCutLogRequest(args: {
-  workOrderId: string
-  cutLogId: string
-}) {
-  return requestJson<{ cutLog: { id: string; inventoryId: string } }>(
-    `/api/work-orders/${args.workOrderId}/cut-logs/${args.cutLogId}/void`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(withMutationMeta({})),
-    },
-  )
-}
+// Cut-log mutations live at `@/modules/cut-logs/data/mutations` (the
+// shared peer module consumed by both work-orders and inventory record
+// views). They were extracted in the cut-logs FE sweep; this file no
+// longer carries them.
 
 export async function requestWorkOrderFileRequest(workOrderId: string) {
   return requestJson<{

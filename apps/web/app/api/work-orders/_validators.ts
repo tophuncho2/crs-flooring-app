@@ -300,21 +300,9 @@ export function validateDeletePendingCutLogInput(
   return {}
 }
 
-// ---------------------------------------------------------------------------
-// Finalize cut-log (single row per request)
-// ---------------------------------------------------------------------------
-
-export type ValidatedFinalizeCutLogInput = {
-  cutLogId: string
-}
-
-export function validateFinalizeCutLogInput(
-  body: Record<string, unknown>,
-): ValidatedFinalizeCutLogInput {
-  return {
-    cutLogId: requireString(body.cutLogId, "cutLogId", failCutLog),
-  }
-}
+// (Cut-log finalize is now resource-level: `/api/work-orders/[id]/cut-logs/[cutLogId]/finalize`.
+// The route reads cutLogId from the URL and takes an empty body, so no
+// validator is required.)
 
 // ---------------------------------------------------------------------------
 // Sync template → new work order

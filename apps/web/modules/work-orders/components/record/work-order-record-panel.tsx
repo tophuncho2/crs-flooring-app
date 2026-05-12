@@ -12,7 +12,7 @@ import type {
 } from "@builders/domain"
 import type { WorkOrderFileRow } from "@/modules/work-orders/data/queries"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
-import type { CutLogPanelPatch } from "@/modules/work-orders/controllers/record/material-items/use-cut-log-edit-panel"
+import type { CutLogPanelPatch } from "@/modules/cut-logs"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
 import { WorkOrderFilesSection } from "./files/work-order-files-section"
@@ -37,17 +37,24 @@ export function WorkOrderRecordPanel({
   )
 
   const publishCutLogPatch = useCallback((patch: CutLogPanelPatch) => {
+    // WO-side patches always carry the WOMI id (callers open the panel
+    // from within a WOMI row, and the controller threads it through to
+    // every mutation). If somehow null arrives (e.g. an inv-side patch
+    // routed here in error), skip — the cut log is no longer linked to
+    // a WOMI on this WO so there's nothing to bucket.
+    if (patch.workOrderItemId === null) return
+    const womiId = patch.workOrderItemId
     setCutLogsByWorkOrderItemId((current) => {
-      const existing = current[patch.workOrderItemId] ?? []
+      const existing = current[womiId] ?? []
       if (patch.kind === "delete") {
         const next = existing.filter((row) => row.id !== patch.cutLogId)
-        return { ...current, [patch.workOrderItemId]: next }
+        return { ...current, [womiId]: next }
       }
       const idx = existing.findIndex((row) => row.id === patch.cutLog.id)
       const next = idx >= 0
         ? existing.map((row, i) => (i === idx ? patch.cutLog : row))
         : [...existing, patch.cutLog]
-      return { ...current, [patch.workOrderItemId]: next }
+      return { ...current, [womiId]: next }
     })
   }, [])
 

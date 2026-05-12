@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -8,14 +8,18 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import type {
+  InventoryCutLogRow,
   InventoryDetail,
   InventoryForm,
 } from "@builders/domain"
+import {
+  CutLogEditPanel,
+  useCutLogEditPanel,
+  type CutLogPanelPatch,
+} from "@/modules/cut-logs"
 import { useInventoryPrimarySection } from "../../controllers/use-inventory-primary-section"
-import { useInventoryCutLogViewPanel } from "../../controllers/use-inventory-cut-log-view-panel"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
 import { InventoryCutLogsSection } from "./cut-logs/inventory-cut-logs-section"
-import { InventoryCutLogViewPanel } from "./cut-logs/inventory-cut-log-view-panel"
 
 export function InventoryRecordPanel({
   page,
@@ -28,19 +32,62 @@ export function InventoryRecordPanel({
     page,
     inventory,
   })
-  const cutLogViewPanel = useInventoryCutLogViewPanel()
 
-  // Cut-log mutations live exclusively under the WO record view (per
-  // sweep 4a/4b). Inventory record view shows the cut logs read-only as a
-  // single grid: pending rows first (insertion-order, matches SSR
-  // createdAt-asc), then FINAL/VOID rows ordered by `finalCutSequence`.
-  // Row click opens the view-only side panel.
+  // Local cut-log state — the SSR loader hands us the full snapshot;
+  // every panel mutation patches this array in place so the section
+  // stays in sync without a refetch. Mirrors the WO record panel's
+  // `cutLogsByWorkOrderItemId` snapshot, just keyed flat.
+  const [cutLogs, setCutLogs] = useState<InventoryCutLogRow[]>(inventory.cutLogs)
+
+  // `InventoryCutLogRow` extends `CutLogRow` with server-resolved
+  // `workOrderNumber` + `workOrderItemProductLabel`. The shared panel
+  // returns the base `CutLogRow` shape on mutation success. We preserve
+  // the existing labels when patching an existing row (decorative
+  // columns; only a re-link or void can stale them) and default to null
+  // for newly inserted rows.
+  const publishCutLogPatch = useCallback((patch: CutLogPanelPatch) => {
+    setCutLogs((current) => {
+      if (patch.kind === "delete") {
+        return current.filter((row) => row.id !== patch.cutLogId)
+      }
+      const idx = current.findIndex((row) => row.id === patch.cutLog.id)
+      const labels =
+        idx >= 0
+          ? {
+              workOrderNumber: current[idx]!.workOrderNumber,
+              workOrderItemProductLabel: current[idx]!.workOrderItemProductLabel,
+            }
+          : { workOrderNumber: null, workOrderItemProductLabel: null }
+      const merged: InventoryCutLogRow = {
+        ...patch.cutLog,
+        // Void clears the link cols server-side; surface the resulting
+        // label gap immediately so the row reads honestly post-void.
+        workOrderNumber:
+          patch.cutLog.workOrderId === null ? null : labels.workOrderNumber,
+        workOrderItemProductLabel:
+          patch.cutLog.workOrderItemId === null
+            ? null
+            : labels.workOrderItemProductLabel,
+      }
+      return idx >= 0
+        ? current.map((row, i) => (i === idx ? merged : row))
+        : [...current, merged]
+    })
+  }, [])
+
+  const cutLogPanel = useCutLogEditPanel({
+    scope: { kind: "inventory", inventoryId: inventory.id },
+    canCreate: false,
+    publish: publishCutLogPatch,
+  })
+
+  // Sort cut logs for display: PENDING first (insertion-order, matches
+  // SSR createdAt-asc), then FINAL / VOID ordered by `finalCutSequence`.
   const sortedCutLogs = useMemo(() => {
-    const rows = controller.record.cutLogs
-    const pending = rows.filter(
+    const pending = cutLogs.filter(
       (row) => row.status === "PENDING" || (row.status === "QUEUED" && !row.isFinal),
     )
-    const sequenced = rows
+    const sequenced = cutLogs
       .filter(
         (row) =>
           row.status === "FINAL" ||
@@ -53,7 +100,7 @@ export function InventoryRecordPanel({
           (b.finalCutSequence ?? Number.MAX_SAFE_INTEGER),
       )
     return [...pending, ...sequenced]
-  }, [controller.record.cutLogs])
+  }, [cutLogs])
 
   const stockUnitAbbrev = controller.record.stockUnitAbbrev ?? ""
   const coverageUnitAbbrev = controller.record.itemCoverageUnitAbbrev ?? ""
@@ -110,7 +157,13 @@ export function InventoryRecordPanel({
                 stockUnitAbbrev={stockUnitAbbrev}
                 coverageUnitAbbrev={coverageUnitAbbrev}
                 totalCutSum={controller.record.totalCutSum}
-                onRowClick={cutLogViewPanel.openPanel}
+                onRowClick={(cutLog) =>
+                  cutLogPanel.openPanel({
+                    mode: "edit",
+                    workOrderItemId: cutLog.workOrderItemId,
+                    cutLog,
+                  })
+                }
               />
             ),
           },
@@ -121,7 +174,7 @@ export function InventoryRecordPanel({
           onDelete: () => void controller.deleteRecord(),
         }}
       />
-      <InventoryCutLogViewPanel controller={cutLogViewPanel} />
+      <CutLogEditPanel controller={cutLogPanel} />
     </>
   )
 }
