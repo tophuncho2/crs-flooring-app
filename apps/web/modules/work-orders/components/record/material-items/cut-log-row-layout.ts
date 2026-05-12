@@ -13,14 +13,15 @@ export type CutLogGridRow = {
  * selection checkbox. Status renders as a data column for consistent
  * column alignment with the rest of the grid.
  *
- * Canonical 7-column shape shared with the inventory record view's cut-log
- * section. Order: status → inventoryItem → before → cut → after →
- * coverageCut → cutLogNumber.
+ * Canonical 8-column shape shared with the inventory record view's cut-log
+ * section. Order: status → inventoryItem → location → before → cut → after
+ * → coverageCut → cutLogNumber.
  */
 export const WO_CUT_LOG_LAYOUT: GridLayout<CutLogGridRow> = {
   dataColumns: [
     { key: "status", label: "Status", minWidth: 120, grow: 0, align: "center" },
     { key: "inventoryItem", label: "Inventory Item", minWidth: 220, grow: 1.2 },
+    { key: "location", label: "Location", minWidth: 140, grow: 0.5 },
     { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
     { key: "cut", label: "Cut", minWidth: 144, grow: 0, align: "center" },
     { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },

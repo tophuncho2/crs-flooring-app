@@ -165,7 +165,11 @@ export function CutLogEditFormFields({
         </>
       ) : null}
 
-      {/* Row 6 — inventory picker (create) or read-only inventory (edit) */}
+      {/* Row 6 — inventory picker (create) or read-only inventory + location
+          (edit). Location is a denormalized mirror: stamped from the parent
+          inventory on create / update / finalize and cleared on void. It's
+          read-only in this panel — operators edit location on the inventory
+          record itself; the mirror re-snaps next time the cut log is touched. */}
       {mode === "create" ? (
         <>
           <CellAt col={1} colSpan={8}>
@@ -202,11 +206,22 @@ export function CutLogEditFormFields({
           </CellAt>
         </>
       ) : (
-        <CellAt col={1} colSpan={8}>
-          <FormField label="Inventory">
-            <TextCell editable={false} value={inventoryDisplay} ariaLabel="Inventory" />
-          </FormField>
-        </CellAt>
+        <>
+          <CellAt col={1} colSpan={5}>
+            <FormField label="Inventory">
+              <TextCell editable={false} value={inventoryDisplay} ariaLabel="Inventory" />
+            </FormField>
+          </CellAt>
+          <CellAt col={6} colSpan={3}>
+            <FormField label="Location">
+              <TextCell
+                editable={false}
+                value={cutLog?.location ?? "—"}
+                ariaLabel="Location"
+              />
+            </FormField>
+          </CellAt>
+        </>
       )}
     </FieldSection>
   )

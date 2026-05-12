@@ -72,6 +72,14 @@ export function renderCutLogReadOnlyCell(
             ariaLabel={`${row.cutLogNumber} inventory item`}
           />
         )
+      case "location":
+        return (
+          <TextCell
+            editable={false}
+            value={row.location || "—"}
+            ariaLabel={`${row.cutLogNumber} location`}
+          />
+        )
       case "cutLogNumber":
         return (
           <TextCell

@@ -15,6 +15,7 @@ import type { CutLogRow } from "@builders/domain"
 export const CUT_LOG_COLUMN_DEFINITIONS = {
   status: { key: "status", label: "Status", minWidth: 120, grow: 0, align: "center" },
   inventoryItem: { key: "inventoryItem", label: "Inventory Item", minWidth: 220, grow: 1.2 },
+  location: { key: "location", label: "Location", minWidth: 140, grow: 0.5 },
   before: { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
   cut: { key: "cut", label: "Cut", minWidth: 144, grow: 0, align: "center" },
   after: { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },
@@ -23,18 +24,22 @@ export const CUT_LOG_COLUMN_DEFINITIONS = {
 } as const satisfies Record<string, GridColumn<CutLogRow>>
 
 /**
- * Canonical 7-column shape used by BOTH the inventory record view's cut-log
+ * Canonical 8-column shape used by BOTH the inventory record view's cut-log
  * section AND the work-orders material items section's cut-log grid. Order:
- * status → inventoryItem → before → cut → after → coverageCut → cutLogNumber.
+ * status → inventoryItem → location → before → cut → after → coverageCut →
+ * cutLogNumber.
  *
- * The inventoryItem cell renders the cut log's denormalized snapshot
- * (`cutLog.inventoryItem`) — composed from the parent inventory's
- * `inv# · roll# · location · dyeLot · note` at cut creation time.
+ * `inventoryItem` cell renders the cut log's frozen-at-create snapshot of
+ * the parent inventory's identity (inv# / roll# / dyeLot / note). `location`
+ * is a denormalized mirror that re-snaps on create / update / finalize and
+ * clears on void — surfaced as its own column so operators can scan where
+ * the cut originated without opening the panel.
  */
 export const INVENTORY_CUT_LOG_LAYOUT: GridLayout<CutLogRow> = {
   dataColumns: [
     CUT_LOG_COLUMN_DEFINITIONS.status,
     CUT_LOG_COLUMN_DEFINITIONS.inventoryItem,
+    CUT_LOG_COLUMN_DEFINITIONS.location,
     CUT_LOG_COLUMN_DEFINITIONS.before,
     CUT_LOG_COLUMN_DEFINITIONS.cut,
     CUT_LOG_COLUMN_DEFINITIONS.after,
