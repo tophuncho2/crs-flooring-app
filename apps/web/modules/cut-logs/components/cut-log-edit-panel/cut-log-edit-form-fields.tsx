@@ -1,21 +1,20 @@
 "use client"
 
-import {
-  isCutLogPendingEditable,
-  type CutLogRow,
-  type InventoryOption,
-} from "@builders/domain"
+import { isCutLogPendingEditable, type InventoryOption } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import { formatCutLogTimestamp } from "@/modules/cut-logs/components/row/format-cut-log-timestamp"
 import { InventoryPicker } from "@/modules/inventory/components/picker/inventory-picker"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
+import type {
+  CutLogEditPanelController,
+  CutLogPanelRow,
+} from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
 
 export type CutLogEditFormFieldsProps = {
   mode: "create" | "edit"
-  cutLog: CutLogRow | null
+  cutLog: CutLogPanelRow | null
   controller: CutLogEditPanelController
 }
 
@@ -193,6 +192,28 @@ export function CutLogEditFormFields({
                 editable={false}
                 value={cutLog?.location ?? "—"}
                 ariaLabel="Location"
+              />
+            </FormField>
+          </CellAt>
+          {/* WO + material-item context — server-resolved on the inventory
+              side via `InventoryCutLogRow`, hydrated from in-scope WO/WOMI
+              state on the work-orders side. Void clears the underlying
+              link cols, so both read "—" once a row is voided. */}
+          <CellAt col={1} colSpan={8}>
+            <FormField label="Work order">
+              <TextCell
+                editable={false}
+                value={cutLog?.workOrderNumber ?? "—"}
+                ariaLabel="Work order"
+              />
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={8}>
+            <FormField label="Material item">
+              <TextCell
+                editable={false}
+                value={cutLog?.workOrderItemProductLabel ?? "—"}
+                ariaLabel="Material item"
               />
             </FormField>
           </CellAt>

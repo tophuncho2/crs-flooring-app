@@ -21,6 +21,7 @@ export {
   type CutLogEditPanelOpenSpec,
   type CutLogEditPanelMode,
   type CutLogPanelPatch,
+  type CutLogPanelRow,
 } from "./controllers/use-cut-log-edit-panel"
 export {
   createPendingCutLogRequest,

@@ -103,9 +103,22 @@ export function WorkOrderMaterialItemsSection({
 
   const handleOpenEdit = useCallback(
     (workOrderItemId: string, cutLog: CutLogRow) => {
-      cutLogPanel.openPanel({ mode: "edit", workOrderItemId, cutLog })
+      // The WO-side data layer returns plain `CutLogRow` (the WO + WOMI
+      // labels aren't joined in — the WO record view already has them in
+      // scope). Hydrate the labels from in-scope state so the panel's
+      // read-only cells stay populated symmetrically with the inv side.
+      const item = section.items.find((i) => i.id === workOrderItemId)
+      cutLogPanel.openPanel({
+        mode: "edit",
+        workOrderItemId,
+        cutLog: {
+          ...cutLog,
+          workOrderNumber: workOrder.workOrderNumber,
+          workOrderItemProductLabel: item?.productName || null,
+        },
+      })
     },
-    [cutLogPanel],
+    [cutLogPanel, section.items, workOrder.workOrderNumber],
   )
 
   const handleCreateNew = useCallback(

@@ -68,9 +68,22 @@ export type CutLogPanelPatch =
 
 export type CutLogEditPanelMode = "create" | "edit"
 
+/**
+ * Row shape the panel renders in edit mode. Widens `CutLogRow` with the two
+ * server-resolved labels the inventory record view already surfaces on
+ * `InventoryCutLogRow` (`workOrderNumber`, `workOrderItemProductLabel`).
+ * Optional because mutation responses come back as plain `CutLogRow` —
+ * callers (and the update-mutation handler) carry labels forward from the
+ * prior snapshot.
+ */
+export type CutLogPanelRow = CutLogRow & {
+  workOrderNumber?: string | null
+  workOrderItemProductLabel?: string | null
+}
+
 export type CutLogEditPanelOpenSpec =
   | { mode: "create"; workOrderItemId: string; productId: string }
-  | { mode: "edit"; workOrderItemId: string | null; cutLog: CutLogRow }
+  | { mode: "edit"; workOrderItemId: string | null; cutLog: CutLogPanelRow }
 
 function buildEditForm(cutLog: CutLogRow): CutLogEditForm {
   return {
@@ -263,11 +276,23 @@ export function useCutLogEditPanel({
       const next = buildEditForm(response.cutLog)
       setForm(next)
       setBaseline(next)
-      setOpen({
+      // Mutation responses are plain `CutLogRow` — carry the WO/WOMI labels
+      // forward from the prior snapshot so the panel's read-only cells stay
+      // populated. A pending-edit can't change the WO link, so labels are
+      // still accurate.
+      setOpen((prev) => ({
         mode: "edit",
         workOrderItemId: variables.workOrderItemId,
-        cutLog: response.cutLog,
-      })
+        cutLog: {
+          ...response.cutLog,
+          workOrderNumber:
+            prev?.mode === "edit" ? (prev.cutLog.workOrderNumber ?? null) : null,
+          workOrderItemProductLabel:
+            prev?.mode === "edit"
+              ? (prev.cutLog.workOrderItemProductLabel ?? null)
+              : null,
+        },
+      }))
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
