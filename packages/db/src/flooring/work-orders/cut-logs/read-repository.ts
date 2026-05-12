@@ -99,6 +99,12 @@ export async function getPendingCutLogWithInventoryForMutation(
         select: {
           id: true,
           inventoryItem: true,
+          inventoryNumber: true,
+          rollPrefix: true,
+          rollNumber: true,
+          dyeLot: true,
+          note: true,
+          location: true,
           startingStock: true,
           totalCutSum: true,
           coveragePerUnit: true,
@@ -127,6 +133,12 @@ export async function getPendingCutLogWithInventoryForMutation(
       stockUnitAbbrev: inv.stockUnitAbbrev ?? null,
       itemCoverageUnitName: inv.itemCoverageUnitName ?? null,
       itemCoverageUnitAbbrev: inv.itemCoverageUnitAbbrev ?? null,
+      inventoryNumber: inv.inventoryNumber,
+      rollPrefix: inv.rollPrefix,
+      rollNumber: inv.rollNumber ?? null,
+      dyeLot: inv.dyeLot ?? null,
+      inventoryNote: inv.note ?? null,
+      location: inv.location ?? null,
     },
   }
 }

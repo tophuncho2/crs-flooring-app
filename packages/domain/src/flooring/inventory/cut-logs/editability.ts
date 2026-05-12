@@ -1,92 +1,17 @@
 import type { CutLogRow, FlooringCutLogStatus } from "./types.js"
 
 /**
- * Canonical split of cut-log columns by who's allowed to change them, plus
- * lifecycle predicates and the finalizability blocker. Mirrors the staged-inv
- * `editability.ts` shape (`isStagedRowEditable` / `isStagedRowQueued` /
- * `isStagedRowMaterialized` / `getStagedRowImportabilityBlocker`).
+ * Lifecycle predicates and the finalizability blocker for cut logs.
  *
- * Cut-log lifecycle (post sweep-1):
+ * Cut-log lifecycle:
  *   PENDING → QUEUED → FINAL   (finalize worker path)
  *   PENDING → QUEUED → VOID    (void worker on a pending row)
  *   FINAL   → QUEUED → VOID    (void worker on a finalized row)
  *
- * `QUEUED` is a generic in-flight marker — a worker job (pending-save,
- * finalize, or void) is currently mutating the row; UI must treat it as
- * read-only. The kind of job is encoded in the outbox topic, not in `status`.
+ * `QUEUED` is a generic in-flight marker — a worker job is currently
+ * mutating the row; UI must treat it as read-only. The kind of job is
+ * encoded in the outbox topic, not in `status`.
  */
-
-// ---------------------------------------------------------------------------
-// Field partition
-// ---------------------------------------------------------------------------
-
-// User-editable on the pending-save (diff-mode) path. Writing these triggers
-// a worker job that recomputes coverageCut and updates inventory.totalCutSum
-// inside the per-inventory FOR UPDATE lock.
-export const CUT_LOG_PENDING_USER_EDITABLE_FIELDS = [
-  "cut",
-  "isWaste",
-  "notes",
-] as const
-
-// Recomputed inside the same transaction as a PENDING save (cut × inventory's
-// coveragePerUnit, gated on inventory.categorySlug). Recomputed by the worker
-// on every cut change. Never accepted from user input.
-export const CUT_LOG_TRANSACTIONAL_FIELDS = ["coverageCut"] as const
-
-// Worker-only — written by the finalize / void / pending-save workers. Never
-// accepted from user input. `before` / `after` and `finalCutSequence` are
-// stamped at finalize time; `status` and `isFinal` move at every worker
-// transition; `void` is set by the void worker.
-export const CUT_LOG_WORKER_FIELDS = [
-  "before",
-  "after",
-  "status",
-  "isFinal",
-  "finalCutSequence",
-  "void",
-] as const
-
-// Link fields — editable for the LIFE of the cut log (PENDING, FINAL, VOID),
-// blocked only while a worker job is in flight (`status === "QUEUED"`).
-// Updates flow through their own sync use case (no worker), per the intent
-// doc. Both fields move together (assertCutLogLinkageSymmetry).
-export const CUT_LOG_LINK_FIELDS = ["workOrderId", "workOrderItemId"] as const
-
-// Auto-managed by Prisma / database. `cutLogNumber` is sequence-backed
-// (`flooring_cut_log_number_seq`, format CUT-0000001).
-export const CUT_LOG_AUTO_FIELDS = [
-  "id",
-  "cutLogNumber",
-  "inventoryId",
-  "createdAt",
-  "updatedAt",
-] as const
-
-export type CutLogPendingUserEditableField =
-  (typeof CUT_LOG_PENDING_USER_EDITABLE_FIELDS)[number]
-export type CutLogTransactionalField = (typeof CUT_LOG_TRANSACTIONAL_FIELDS)[number]
-export type CutLogWorkerField = (typeof CUT_LOG_WORKER_FIELDS)[number]
-export type CutLogLinkField = (typeof CUT_LOG_LINK_FIELDS)[number]
-export type CutLogAutoField = (typeof CUT_LOG_AUTO_FIELDS)[number]
-
-export function isCutLogPendingUserEditableField(
-  field: string,
-): field is CutLogPendingUserEditableField {
-  return (CUT_LOG_PENDING_USER_EDITABLE_FIELDS as readonly string[]).includes(field)
-}
-
-export function isCutLogWorkerField(field: string): field is CutLogWorkerField {
-  return (CUT_LOG_WORKER_FIELDS as readonly string[]).includes(field)
-}
-
-export function isCutLogLinkField(field: string): field is CutLogLinkField {
-  return (CUT_LOG_LINK_FIELDS as readonly string[]).includes(field)
-}
-
-export function isCutLogAutoField(field: string): field is CutLogAutoField {
-  return (CUT_LOG_AUTO_FIELDS as readonly string[]).includes(field)
-}
 
 // ---------------------------------------------------------------------------
 // Lifecycle predicates
@@ -150,15 +75,6 @@ export function canVoidCutLog(
   if (row.void) return false
   if (row.status === "QUEUED") return false
   return row.isFinal || row.status === "PENDING"
-}
-
-/**
- * Link fields (`workOrderId` / `workOrderItemId`) are editable for the life
- * of the cut log — PENDING, FINAL, VOID. The only block is an in-flight
- * worker job (the row's status is QUEUED).
- */
-export function canEditCutLogLinks(row: Pick<CutLogRow, "status">): boolean {
-  return row.status !== "QUEUED"
 }
 
 // ---------------------------------------------------------------------------

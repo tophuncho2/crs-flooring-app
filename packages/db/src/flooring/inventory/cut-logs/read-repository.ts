@@ -4,7 +4,6 @@ import {
   type CutLogParentContext,
   type CutLogRow,
   type CutLogStatus,
-  type DiffExistingCutLogRow,
   type InventoryCutLogRow,
 } from "@builders/domain"
 import { db } from "../../../client.js"
@@ -29,11 +28,18 @@ function toDecimalStringOrNull(
 }
 
 /**
- * Normalize a cut-log payload into the domain read shape. The domain
- * `CutLogRow` keeps `coverageCut` as `string | null`, so the normalizer
- * preserves null instead of coercing to `""`. `inventoryItem` is the
- * denormalized snapshot of the parent inventory's `inventoryItem` column
- * at cut creation time — immutable post-create.
+ * Normalize a cut-log payload into the domain read shape. Decimal columns
+ * surface as strings; nullable columns preserve null instead of coercing
+ * to "".
+ *
+ * Two snapshot families on the cut-log row:
+ *  - Frozen-at-create: `inventoryItem`, `categorySlug`, `inventoryNumber`,
+ *    `rollPrefix`, `rollNumber`, `dyeLot`, `inventoryNote`, and the four
+ *    unit-of-measure labels. Stamped once at insert, never mutated.
+ *  - Denormalized mirror: `location` — re-stamped on create / update /
+ *    finalize, cleared on void.
+ *
+ * Pre-migration rows surface nulls on the new snapshot columns.
  */
 export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
   const status: CutLogStatus = row.status
@@ -42,6 +48,12 @@ export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
     cutLogNumber: row.cutLogNumber,
     inventoryId: row.inventoryId,
     inventoryItem: row.inventoryItem,
+    inventoryNumber: row.inventoryNumber ?? null,
+    rollPrefix: row.rollPrefix ?? null,
+    rollNumber: row.rollNumber ?? null,
+    dyeLot: row.dyeLot ?? null,
+    inventoryNote: row.inventoryNote ?? null,
+    location: row.location ?? null,
     categorySlug: row.categorySlug,
     workOrderId: row.workOrderId ?? null,
     workOrderItemId: row.workOrderItemId ?? null,
@@ -100,140 +112,20 @@ export async function getCutLogById(
   return row ? normalizeCutLogRow(row) : null
 }
 
-export async function listCutLogsByInventoryId(
-  inventoryId: string,
-  client: CutLogDbClient = db,
-): Promise<CutLogRecord[]> {
-  const rows = await client.flooringCutLog.findMany({
-    where: { inventoryId },
-    select: cutLogRowSelect,
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-  })
-  return rows.map(normalizeCutLogRow)
-}
-
 // ---------------------------------------------------------------------------
 // Worker-only read primitives (transaction-only — no `client = db` default)
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the minimal-shape rows that the domain validator
- * `validateCutLogsDiff` needs (id, cut, status, isFinal, void, updatedAt).
- * Caller is the pending-save worker, which feeds this snapshot to
- * `validateCutLogsDiff` under the per-inventory FOR UPDATE lock.
- *
- * Returns ALL cut logs for the inventory (the diff validator decides which
- * rows are touched by the diff).
- */
-export async function listCutLogsForPendingSaveDiff(
-  tx: Prisma.TransactionClient,
-  inventoryId: string,
-): Promise<DiffExistingCutLogRow[]> {
-  const rows = await tx.flooringCutLog.findMany({
-    where: { inventoryId },
-    select: {
-      id: true,
-      cut: true,
-      status: true,
-      isFinal: true,
-      void: true,
-      updatedAt: true,
-    },
-  })
-  return rows.map((row) => ({
-    id: row.id,
-    cut: row.cut.toString(),
-    status: row.status,
-    isFinal: row.isFinal,
-    void: row.void,
-    updatedAt: row.updatedAt.toISOString(),
-  }))
-}
-
-/**
- * Returns the minimal-shape rows needed by `validateCutLogFinalizeBatch`
- * (id, status, isFinal, void, cut). Caller is the finalize worker, which
- * feeds this snapshot to the validator under the per-inventory FOR UPDATE
- * lock.
- */
-export async function listCutLogsForFinalizeBatch(
-  tx: Prisma.TransactionClient,
-  input: { inventoryId: string; cutLogIds: string[] },
-): Promise<
-  Array<{
-    id: string
-    status: CutLogStatus
-    isFinal: boolean
-    void: boolean
-    cut: string
-  }>
-> {
-  if (input.cutLogIds.length === 0) return []
-  const rows = await tx.flooringCutLog.findMany({
-    where: {
-      id: { in: input.cutLogIds },
-      inventoryId: input.inventoryId,
-    },
-    select: {
-      id: true,
-      status: true,
-      isFinal: true,
-      void: true,
-      cut: true,
-    },
-  })
-  return rows.map((row) => ({
-    id: row.id,
-    status: row.status,
-    isFinal: row.isFinal,
-    void: row.void,
-    cut: row.cut.toString(),
-  }))
-}
-
-/**
- * Single-row read for the void worker. Returns the minimal shape
- * `validateCutLogVoidRequest` needs.
- */
-export async function getCutLogForVoid(
-  tx: Prisma.TransactionClient,
-  cutLogId: string,
-): Promise<{
-  id: string
-  status: CutLogStatus
-  isFinal: boolean
-  void: boolean
-} | null> {
-  const row = await tx.flooringCutLog.findUnique({
-    where: { id: cutLogId },
-    select: {
-      id: true,
-      status: true,
-      isFinal: true,
-      void: true,
-    },
-  })
-  return row
-    ? {
-        id: row.id,
-        status: row.status,
-        isFinal: row.isFinal,
-        void: row.void,
-      }
-    : null
-}
-
-/**
  * Returns full normalized records for the cut logs being finalized — the
- * worker needs the full shape (`cut` value especially) to compute
- * `before` / `after` per row.
+ * batch finalize primitive (`finalizeCutLogBatch`) needs the full shape
+ * (`cut` value especially) to compute `before` / `after` per row.
  *
  * Ordered by `cutLogNumber ASC`, the visible identifier the user sees in
- * the UI. `cutLogNumber` is a global sequence with a unique constraint
- * (per sweep 1), so this single-key sort is fully deterministic — no
- * tiebreaker needed. The finalize worker's per-row sequence allocation
- * follows the same order so that user-facing IDs and `finalCutSequence`
- * land in lockstep.
+ * the UI. `cutLogNumber` is a global sequence with a unique constraint, so
+ * this single-key sort is fully deterministic. The finalize worker's
+ * per-row sequence allocation follows the same order so that user-facing
+ * IDs and `finalCutSequence` land in lockstep.
  */
 export async function getCutLogsForFinalize(
   tx: Prisma.TransactionClient,
@@ -255,19 +147,16 @@ export async function getCutLogsForFinalize(
  * Returns the parent inventory context every cut-log mutation path needs
  * under the FOR UPDATE lock:
  *   - `startingStock` + `currentTotalCutSum` for the
- *     `totalCutSum ≤ startingStock` invariant (asserted by
- *     `assertCutSumWithinStartingStock`).
- *   - `coveragePerUnit` + `categorySlug` for `computeCutCoverage` —
- *     re-derived on every create and on every `cut`-changing update.
- *   - The four unit-snapshot fields (`stockUnitName` / `stockUnitAbbrev`
- *     / `itemCoverageUnitName` / `itemCoverageUnitAbbrev`) — the WO-side
- *     sync create use case stamps these onto the new cut log row at
- *     insert time. After insert they are immutable on the cut log.
+ *     `totalCutSum ≤ startingStock` invariant.
+ *   - `coveragePerUnit` + `categorySlug` for `computeCutCoverage`.
+ *   - Unit-of-measure labels — stamped on the cut log at create
+ *     (frozen thereafter).
+ *   - The 5 inventory-identity primitives + the composed `inventoryItem`
+ *     — stamped on the cut log at create (frozen thereafter).
+ *   - `location` — re-snapped on every state-changing write; cleared on
+ *     void. Carries the parent's current value at call time.
  *
  * Caller has already locked the inventory FOR UPDATE.
- *
- * `coveragePerUnit` is `Decimal?` on the schema, surfaced as
- * `string | null` here. `categorySlug` is non-nullable on the schema.
  */
 export async function getInventoryParentContextForCutLogs(
   tx: Prisma.TransactionClient,
@@ -278,6 +167,12 @@ export async function getInventoryParentContextForCutLogs(
     select: {
       id: true,
       inventoryItem: true,
+      inventoryNumber: true,
+      rollPrefix: true,
+      rollNumber: true,
+      dyeLot: true,
+      note: true,
+      location: true,
       startingStock: true,
       totalCutSum: true,
       coveragePerUnit: true,
@@ -301,6 +196,12 @@ export async function getInventoryParentContextForCutLogs(
     stockUnitAbbrev: row.stockUnitAbbrev ?? null,
     itemCoverageUnitName: row.itemCoverageUnitName ?? null,
     itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? null,
+    inventoryNumber: row.inventoryNumber,
+    rollPrefix: row.rollPrefix,
+    rollNumber: row.rollNumber ?? null,
+    dyeLot: row.dyeLot ?? null,
+    inventoryNote: row.note ?? null,
+    location: row.location ?? null,
   }
 }
 

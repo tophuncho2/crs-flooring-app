@@ -23,23 +23,32 @@ export type CutLogStatus = FlooringCutLogStatus
 // as strings (Prisma's `Decimal` is serialized to string at the data-layer
 // boundary to keep precision predictable in the UI / API).
 //
-// `inventoryItem` is an immutable snapshot copied from
-// `inventory.inventoryItem` at cut creation time — it preserves the parent
-// inventory's identity string (`inv# · roll# · location · dyeLot · note`)
-// even if the inventory row is later edited. The cut log row never
-// recomputes this column.
+// Two snapshot families live on this shape:
 //
-// Unit-snapshot fields (`stockUnitName` / `stockUnitAbbrev` /
-// `itemCoverageUnitName` / `itemCoverageUnitAbbrev`) are stamped from the
-// parent inventory at create time and never mutated afterward — they are
-// the cut log's frozen unit-of-measure label, immune to later edits on
-// the parent inventory's UoM. Pre-snapshot rows surface the columns as
-// null.
+// 1. Frozen-at-create snapshots — stamped once at insert and never mutated:
+//    - `inventoryItem` (composed string)
+//    - `categorySlug`
+//    - `inventoryNumber` / `rollPrefix` / `rollNumber` / `dyeLot` /
+//      `inventoryNote` (the 5 parent-identity primitives)
+//    - `stockUnitName` / `stockUnitAbbrev` / `itemCoverageUnitName` /
+//      `itemCoverageUnitAbbrev` (unit-of-measure labels)
+//    Pre-snapshot rows (created before each column landed) surface as null.
+//
+// 2. Denormalized mirror — re-stamped on every state-changing write:
+//    - `location` is re-snapped from the parent inventory on create,
+//      update-pending, and finalize, and cleared on void (sits alongside
+//      the link-clear in `buildVoidedCutLogPatch`).
 export type CutLogRow = {
   id: string
   cutLogNumber: string
   inventoryId: string
   inventoryItem: string
+  inventoryNumber: string | null
+  rollPrefix: string | null
+  rollNumber: string | null
+  dyeLot: string | null
+  inventoryNote: string | null
+  location: string | null
   categorySlug: string
   workOrderId: string | null
   workOrderItemId: string | null
@@ -63,31 +72,19 @@ export type CutLogRow = {
 
 // User-editable form for the pending-save flow. Excludes worker-only fields
 // (`before` / `after` / `status` / `isFinal` / `finalCutSequence` / `void`)
-// AND link fields (`workOrderId` / `workOrderItemId`) — links flow through
-// their own sync use case per intent doc, not the pending-save worker.
+// AND link fields (`workOrderId` / `workOrderItemId`) — links are carried on
+// the separate `CutLogLinkUpdate` shape and the update-pending use case
+// accepts both alongside.
 export type CutLogPendingForm = {
   cut: string
   isWaste: boolean
   notes: string
 }
 
-export const EMPTY_CUT_LOG_PENDING_FORM: CutLogPendingForm = {
-  cut: "",
-  isWaste: false,
-  notes: "",
-}
-
-export function toCutLogPendingForm(row: CutLogRow): CutLogPendingForm {
-  return {
-    cut: row.cut,
-    isWaste: row.isWaste,
-    notes: row.notes,
-  }
-}
-
-// Shape passed to the separate sync link-edit use case (not the pending-save
-// worker). Both fields move together per `assertCutLogLinkageSymmetry`:
-// either both null (unlinked) or both set (linked to a work-order item).
+// Shape passed alongside `CutLogPendingForm` on the update-pending use case
+// to edit a cut log's WO/WOMI link. Both fields move together per
+// `assertCutLogLinkageSymmetry`: either both null (unlinked) or both set
+// (linked to a work-order item).
 export type CutLogLinkUpdate = {
   workOrderId: string | null
   workOrderItemId: string | null
@@ -101,4 +98,41 @@ export type CutLogLinkUpdate = {
 export type InventoryCutLogRow = CutLogRow & {
   workOrderNumber: string | null
   workOrderItemProductLabel: string | null
+}
+
+/**
+ * Parent-inventory context every cut-log mutation use case needs under the
+ * per-inventory FOR UPDATE lock:
+ *
+ *   - `startingStock` + `currentTotalCutSum` for the
+ *     `totalCutSum ≤ startingStock` invariant.
+ *   - `coveragePerUnit` + `categorySlug` for `computeCutCoverage` — re-derived
+ *     on every create and on every `cut`-changing update.
+ *   - Unit-of-measure labels — stamped on the cut log row at create time
+ *     (frozen thereafter).
+ *   - Parent-identity primitives (`inventoryNumber` / `rollPrefix` /
+ *     `rollNumber` / `dyeLot` / `inventoryNote`) — stamped on the cut log at
+ *     create time (frozen thereafter).
+ *   - `location` — the denormalized mirror, re-stamped on create / update /
+ *     finalize and cleared on void.
+ *
+ * Pure domain shape — populated by the data layer's parent-context readers.
+ */
+export type CutLogParentContext = {
+  inventoryId: string
+  inventoryItem: string
+  startingStock: string
+  currentTotalCutSum: string
+  coveragePerUnit: string | null
+  categorySlug: string
+  stockUnitName: string | null
+  stockUnitAbbrev: string | null
+  itemCoverageUnitName: string | null
+  itemCoverageUnitAbbrev: string | null
+  inventoryNumber: string | null
+  rollPrefix: string | null
+  rollNumber: string | null
+  dyeLot: string | null
+  inventoryNote: string | null
+  location: string | null
 }

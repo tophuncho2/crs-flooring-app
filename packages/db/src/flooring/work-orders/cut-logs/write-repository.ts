@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import type { Prisma } from "@prisma/client"
 import {
   computeTotalCutSum,
   type PendingCutLogInventorySnapshot,
@@ -10,28 +10,10 @@ import {
 import { cutLogRowSelect } from "../../inventory/cut-logs/shared.js"
 import { listCutLogsForInventoryIds } from "./read-repository.js"
 
-/**
- * Single-inventory FOR UPDATE locker. Acquires a row lock on the parent
- * inventory for the duration of the caller's transaction.
- *
- * Cut-log finalize is one-row-at-a-time, so there is no deterministic
- * multi-inventory ordering concern — each finalize touches exactly one
- * inventory. Concurrent finalizes against the same inventory serialize
- * on this lock; concurrent finalizes against different inventories run
- * in parallel.
- *
- * Uses the same single-id `Prisma.sql` pattern as every other locker in
- * the codebase (inventory-side `pending-save`, `finalize`, `void`,
- * `flooring_import_entry`, `flooring_work_order_file`).
- */
-export async function lockInventoryForCutLog(
-  tx: Prisma.TransactionClient,
-  inventoryId: string,
-): Promise<void> {
-  await tx.$queryRaw(
-    Prisma.sql`SELECT "id" FROM "flooring_inventory" WHERE "id" = ${inventoryId} FOR UPDATE`,
-  )
-}
+// `lockInventoryForCutLog` lives at `../../inventory/cut-logs/locks.ts` —
+// the canonical single home for the parent-inventory FOR UPDATE lock used
+// by every cut-log mutation use case. Consumers import directly from that
+// module (or via the `@builders/db` barrel).
 
 export type ApplyFinalizeWorkOrderCutLogInput = {
   cutLogId: string
@@ -46,7 +28,8 @@ export type FinalizeStampedRow = {
 
 /**
  * Flips one PENDING cut log to FINAL, stamping `before`/`after` +
- * `finalCutSequence` against the current state of the parent inventory.
+ * `finalCutSequence` against the current state of the parent inventory,
+ * and re-snapping the denormalized `location` mirror from the parent.
  *
  *   - `existingFinalCutSum` = sum of `cut` over the inventory's rows
  *     where `isFinal: true` AND `void: false` (voided-after-finalized
@@ -58,16 +41,18 @@ export type FinalizeStampedRow = {
  *   - `before = startingStock − existingFinalCutSum`,
  *     `after = before − cut`,
  *     `finalCutSequence = maxExistingSequence + 1`.
+ *   - `location` is re-stamped from the parent inventory's current value
+ *     (the denormalized mirror tracks the latest parent location through
+ *     create / update / finalize, and clears on void).
  *
  * Returns the stamped values so the caller can defensively assert
- * `before − cut === after` via the domain invariant. The data layer
- * itself doesn't throw — keeps it free of business-rule assertions per
- * `packages/db/CLAUDE.md`.
+ * `before − cut === after` via the domain invariant.
  *
  * Caller takes the parent inventory's FOR UPDATE lock (via
- * `lockInventoryForCutLog`) before this runs. If the cut log id does
- * not resolve to a row, returns `{ stampedRow: null }` — the caller
- * (apply use case) treats that as a no-op success.
+ * `lockInventoryForCutLog` from `../../inventory/cut-logs/locks.ts`)
+ * before this runs. If the cut log id does not resolve to a row, returns
+ * `{ stampedRow: null }` — the caller (apply use case) treats that as a
+ * no-op success.
  */
 export async function applyFinalizeWorkOrderCutLog(
   tx: Prisma.TransactionClient,
@@ -82,7 +67,7 @@ export async function applyFinalizeWorkOrderCutLog(
   const [inventory, existingFinalRows] = await Promise.all([
     tx.flooringInventory.findUnique({
       where: { id: target.inventoryId },
-      select: { startingStock: true },
+      select: { startingStock: true, location: true },
     }),
     tx.flooringCutLog.findMany({
       where: { inventoryId: target.inventoryId, isFinal: true },
@@ -115,6 +100,7 @@ export async function applyFinalizeWorkOrderCutLog(
       finalCutSequence: nextSequence,
       before: beforeStr,
       after: afterStr,
+      location: inventory.location ?? null,
     },
   })
 
@@ -162,14 +148,21 @@ export type InsertPendingCutLogRowInput = {
   notes: string
   unitSnapshot: PendingCutLogUnitSnapshot
   /**
-   * Identity snapshot from the parent inventory: a copy of
-   * `inventory.inventoryItem` (the denormalized `inv# · roll# · location ·
-   * dyeLot · note` string) plus `categorySlug`. Stamped at insert and
-   * frozen — finalize and void do not re-stamp. Lets the cut-log subgrid
-   * render its Inventory column directly off the cut log row instead of
-   * resolving via a per-WOMI eligible-inventory fetch.
+   * Identity snapshot from the parent inventory: the composed
+   * `inventoryItem` string + `categorySlug` + the 5 underlying primitives
+   * (`inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`,
+   * `inventoryNote`). Stamped at insert and frozen — neither finalize nor
+   * void re-stamps these.
    */
   inventorySnapshot: PendingCutLogInventorySnapshot
+  /**
+   * Parent inventory's `location` at insert time. Stored as a denormalized
+   * mirror — re-stamped by update-pending and finalize, cleared by void.
+   * Carried as a top-level parameter (not part of `inventorySnapshot`)
+   * because its semantics differ: snapshot fields are frozen, this field
+   * tracks the parent.
+   */
+  location: string | null
 }
 
 /**
@@ -179,14 +172,14 @@ export type InsertPendingCutLogRowInput = {
  * pure persistence call — no business rules, no invariant checks (those
  * run in the use case before/after via the domain).
  *
- * Stamps the four unit-snapshot fields and the four identity-snapshot
- * fields from the input (which the use case sourced from the parent
- * inventory). After this insert returns, the snapshot fields are
- * immutable on the cut log — no primitive in this file writes them again.
+ * Stamps the four unit-snapshot fields, the seven identity-snapshot
+ * fields, and the `location` mirror from the input (which the use case
+ * sourced from the parent inventory). After this insert returns, the
+ * snapshot fields are immutable on the cut log; `location` is mutable
+ * (re-stamped on update / finalize, cleared on void).
  *
  * Worker-only fields stay at their schema defaults / null:
- *   - `before` / `after` / `finalCutSequence`: null (finalize worker
- *     stamps them).
+ *   - `before` / `after` / `finalCutSequence`: null (finalize stamps them).
  *   - `status`: defaults to `PENDING`.
  *   - `isFinal` / `void`: default false.
  *   - `cutLogNumber`: DB-generated via the sequence default.
@@ -210,6 +203,12 @@ export async function insertPendingCutLogRow(
       itemCoverageUnitAbbrev: input.unitSnapshot.itemCoverageUnitAbbrev,
       inventoryItem: input.inventorySnapshot.inventoryItem,
       categorySlug: input.inventorySnapshot.categorySlug,
+      inventoryNumber: input.inventorySnapshot.inventoryNumber,
+      rollPrefix: input.inventorySnapshot.rollPrefix,
+      rollNumber: input.inventorySnapshot.rollNumber,
+      dyeLot: input.inventorySnapshot.dyeLot,
+      inventoryNote: input.inventorySnapshot.inventoryNote,
+      location: input.location,
     },
     select: cutLogRowSelect,
   })
@@ -227,6 +226,20 @@ export type UpdatePendingCutLogRowPatch = {
   isWaste?: boolean
   /** Empty string accepted; persisted as null when blank. */
   notes?: string
+  /**
+   * Re-snapped from the parent inventory by the use case on every
+   * update-pending call (denormalized mirror semantics). Use case passes
+   * the parent's current value; data primitive trusts it.
+   */
+  location?: string | null
+  /**
+   * WO/WOMI link edits. Both move together per
+   * `assertCutLogLinkageSymmetry` (enforced by the use case before
+   * calling here). `null` disconnects the relation; a string id
+   * connects. Absent fields leave the relation untouched.
+   */
+  workOrderId?: string | null
+  workOrderItemId?: string | null
 }
 
 export type UpdatePendingCutLogRowInput = {
@@ -237,14 +250,19 @@ export type UpdatePendingCutLogRowInput = {
 /**
  * Single-row update for the synchronous WO-side update flow. Caller
  * has read the row + parent inventory, asserted PENDING status + OCC
- * + linkage, and locked the parent inventory FOR UPDATE.
+ * + linkage symmetry, and locked the parent inventory FOR UPDATE.
  *
- * The patch is intentionally narrow: only the user-editable fields plus
- * the use-case-recomputed `coverageCut`. Linkage columns (`workOrderId`
- * / `workOrderItemId` / `inventoryId`), `status`, `isFinal`, `void`,
+ * Writable in this primitive:
+ *   - user-editable form fields: `cut`, `isWaste`, `notes`
+ *   - use-case-recomputed `coverageCut`
+ *   - denormalized mirror `location` (re-snapped from parent)
+ *   - link relations `workOrderId` / `workOrderItemId` (both-or-neither,
+ *     enforced upstream)
+ *
+ * Never written here: `inventoryId`, `status`, `isFinal`, `void`,
  * `before`, `after`, `finalCutSequence`, `cutLogNumber`, `createdAt`,
- * `inventoryItem`, and the four unit-snapshot fields are never written
- * here. Empty-patch calls return the row as-is.
+ * `inventoryItem`, the 5 inventory-identity snapshot primitives, and
+ * the four unit-snapshot fields. Empty-patch calls return the row as-is.
  */
 export async function updatePendingCutLogRow(
   tx: Prisma.TransactionClient,
@@ -256,6 +274,19 @@ export async function updatePendingCutLogRow(
   if (input.patch.isWaste !== undefined) data.isWaste = input.patch.isWaste
   if (input.patch.notes !== undefined) {
     data.notes = input.patch.notes ? input.patch.notes : null
+  }
+  if (input.patch.location !== undefined) data.location = input.patch.location
+  if (input.patch.workOrderId !== undefined) {
+    data.workOrder =
+      input.patch.workOrderId === null
+        ? { disconnect: true }
+        : { connect: { id: input.patch.workOrderId } }
+  }
+  if (input.patch.workOrderItemId !== undefined) {
+    data.workOrderItem =
+      input.patch.workOrderItemId === null
+        ? { disconnect: true }
+        : { connect: { id: input.patch.workOrderItemId } }
   }
   const updated =
     Object.keys(data).length > 0
