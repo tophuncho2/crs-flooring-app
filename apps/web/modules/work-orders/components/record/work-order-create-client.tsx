@@ -64,7 +64,6 @@ function WorkOrderCreatePanel({
       >
         <WorkOrderPrimaryFieldsSection
           draft={controller.primarySection.localValue}
-          workOrderNumber=""
           status="IDLE"
           detail={null}
           disabled={controller.primarySection.isSaving}

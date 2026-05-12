@@ -66,14 +66,12 @@ function detailToPropertyJoined(
 
 export function WorkOrderPrimaryFieldsSection({
   draft,
-  workOrderNumber,
   status,
   detail,
   disabled,
   onFieldChange,
 }: {
   draft: WorkOrderForm
-  workOrderNumber: string
   status: string
   detail: WorkOrderPrimaryDetail | null
   disabled: boolean
@@ -121,11 +119,6 @@ export function WorkOrderPrimaryFieldsSection({
   return (
     <FieldSection>
       <CellAt col={1} row={1} colSpan={2}>
-        <FormField label="Work Order #">
-          <TextCell editable={false} value={workOrderNumber} onChange={() => undefined} />
-        </FormField>
-      </CellAt>
-      <CellAt col={3} row={1} colSpan={2}>
         <FormField label="Warehouse">
           {editable ? (
             <WarehousePicker
@@ -140,7 +133,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} row={1} colSpan={1}>
+      <CellAt col={3} row={1} colSpan={2}>
         <FormField label="Job Type">
           {editable ? (
             <JobTypePicker
@@ -155,7 +148,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={6} row={1} colSpan={1}>
+      <CellAt col={5} row={1} colSpan={1}>
         <FormField label="Scheduled For">
           <DateCell
             editable={editable}
@@ -263,6 +256,17 @@ export function WorkOrderPrimaryFieldsSection({
       </CellAt>
 
       <CellAt col={1} row={5} colSpan={8}>
+        <FormField label="Description">
+          <TextareaCell
+            editable={editable}
+            value={draft.description}
+            onChange={(value) => onFieldChange("description", value)}
+            rows={2}
+          />
+        </FormField>
+      </CellAt>
+
+      <CellAt col={1} row={6} colSpan={8}>
         <FormField label="Custom Address (overrides property address on PDF)">
           <TextareaCell
             editable={editable}
@@ -273,18 +277,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={6} />
-
-      <CellAt col={1} row={8} colSpan={8}>
-        <FormField label="Description">
-          <TextareaCell
-            editable={editable}
-            value={draft.description}
-            onChange={(value) => onFieldChange("description", value)}
-            rows={2}
-          />
-        </FormField>
-      </CellAt>
+      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={7} />
 
       <CellAt col={1} row={9} colSpan={8}>
         <FormField label="Instructions">
