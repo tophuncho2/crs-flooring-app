@@ -141,30 +141,6 @@ export function CutLogEditFormFields({
         </FormField>
       </CellAt>
 
-      {/* Row 5 — created / updated (read-only, edit mode only) */}
-      {cutLog ? (
-        <>
-          <CellAt col={1} colSpan={4}>
-            <FormField label="Created">
-              <TextCell
-                editable={false}
-                value={formatCutLogTimestamp(cutLog.createdAt)}
-                ariaLabel="Created at"
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={5} colSpan={4}>
-            <FormField label="Updated">
-              <TextCell
-                editable={false}
-                value={formatCutLogTimestamp(cutLog.updatedAt)}
-                ariaLabel="Updated at"
-              />
-            </FormField>
-          </CellAt>
-        </>
-      ) : null}
-
       {/* Row 6 — inventory picker (create) or read-only inventory + location
           (edit). Location is a denormalized mirror: stamped from the parent
           inventory on create / update / finalize and cleared on void. It's
@@ -207,12 +183,12 @@ export function CutLogEditFormFields({
         </>
       ) : (
         <>
-          <CellAt col={1} colSpan={5}>
+          <CellAt col={1} colSpan={8}>
             <FormField label="Inventory">
               <TextCell editable={false} value={inventoryDisplay} ariaLabel="Inventory" />
             </FormField>
           </CellAt>
-          <CellAt col={6} colSpan={3}>
+          <CellAt col={1} colSpan={8}>
             <FormField label="Location">
               <TextCell
                 editable={false}
@@ -221,6 +197,28 @@ export function CutLogEditFormFields({
               />
             </FormField>
           </CellAt>
+          {cutLog ? (
+            <>
+              <CellAt col={1} colSpan={4}>
+                <FormField label="Created">
+                  <TextCell
+                    editable={false}
+                    value={formatCutLogTimestamp(cutLog.createdAt)}
+                    ariaLabel="Created at"
+                  />
+                </FormField>
+              </CellAt>
+              <CellAt col={5} colSpan={4}>
+                <FormField label="Updated">
+                  <TextCell
+                    editable={false}
+                    value={formatCutLogTimestamp(cutLog.updatedAt)}
+                    ariaLabel="Updated at"
+                  />
+                </FormField>
+              </CellAt>
+            </>
+          ) : null}
         </>
       )}
     </FieldSection>
