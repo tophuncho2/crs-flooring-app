@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { DASHBOARD_PAGE_SHELL_WIDE_EDGE_TO_EDGE_CLASS_NAME } from "@/modules/shared/engines/common/display/dashboard-card-title"
-import { RecordBackButton } from "@/components/panels/record-action-buttons"
+import { RecordBackButtonPortal } from "./record-back-button-portal"
 import { RecordPrimaryHeader } from "./record-primary-header"
 
 const RECORD_DETAIL_PANEL_WIDTH_CLASS = "max-w-none"
@@ -34,22 +34,14 @@ export function RecordDetailPageShell({
   children: ReactNode
   sizeClass?: string
 }) {
-  const backButton = onBack ? (
-    <RecordBackButton onClick={onBack} label={backLabel} className={joinClasses(onHeaderToggle && "relative z-[2]")} />
-  ) : (
-    <RecordBackButton href={backHref} label={backLabel} className={joinClasses(onHeaderToggle && "relative z-[2]")} />
-  )
-
   return (
     <div className={DASHBOARD_PAGE_SHELL_WIDE_EDGE_TO_EDGE_CLASS_NAME}>
+      <RecordBackButtonPortal backHref={backHref} onBack={onBack} backLabel={backLabel} />
       <div className={joinClasses("mx-auto w-full", sizeClass)}>
         <div className="overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl">
           {headerVariant === "section" ? (
             <RecordPrimaryHeader
               title={title}
-              backHref={backHref}
-              backLabel={backLabel}
-              onBack={onBack}
               isOpen={Boolean(isHeaderExpanded)}
               onToggle={onHeaderToggle}
               headerMeta={headerMeta}
@@ -79,7 +71,6 @@ export function RecordDetailPageShell({
                       </div>
                     </div>
                   </div>
-                  {backButton}
                 </div>
               </div>
             </div>

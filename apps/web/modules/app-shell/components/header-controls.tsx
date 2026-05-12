@@ -34,6 +34,7 @@ export default function HeaderControls({
           orderedItems={navigation.orderedItems}
           canOpenItem={navigation.canOpenItem}
         />
+        <div id="record-back-button-slot" className="contents" />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
         <TemplateSyncButton />
