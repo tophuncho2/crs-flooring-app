@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import type { ReactNode } from "react"
 import type { CutLogRow } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
-import { renderCutLogReadOnlyCell } from "@/components/features/cut-log-row"
+import { renderCutLogReadOnlyCell } from "@/modules/cut-logs"
 import { Grid, GridEmpty } from "@/components/grid"
 import { WO_CUT_LOG_LAYOUT, type CutLogGridRow } from "./cut-log-row-layout"
 

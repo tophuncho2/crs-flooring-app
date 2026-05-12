@@ -9,7 +9,7 @@ import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
-import { formatCutLogTimestamp } from "@/components/features/cut-log-row/format-cut-log-timestamp"
+import { formatCutLogTimestamp } from "@/modules/cut-logs/components/row/format-cut-log-timestamp"
 import { InventoryPicker } from "@/modules/inventory/components/picker/inventory-picker"
 import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
 

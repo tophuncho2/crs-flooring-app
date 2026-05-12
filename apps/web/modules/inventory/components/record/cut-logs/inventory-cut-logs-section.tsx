@@ -5,7 +5,7 @@ import { ActionHeader } from "@/components/headers"
 import {
   INVENTORY_CUT_LOG_LAYOUT,
   renderCutLogReadOnlyCell,
-} from "@/components/features/cut-log-row"
+} from "@/modules/cut-logs"
 import { Grid, GridEmpty } from "@/components/grid"
 import { formatInventoryQuantity, type InventoryCutLogRow } from "@builders/domain"
 

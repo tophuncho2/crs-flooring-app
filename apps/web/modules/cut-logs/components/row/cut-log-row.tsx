@@ -2,11 +2,11 @@
 
 import type { ReactNode } from "react"
 import type { CutLogRow, FlooringCutLogStatus } from "@builders/domain"
-import { CutLogStatusBadge } from "../../badges/cut-log-status-badge"
-import { CheckboxCell } from "../../cells/checkbox-cell"
-import { TextCell } from "../../cells/text-cell"
-import { UnitCell } from "../../cells/unit-cell"
-import type { GridControlColumn } from "../../grid/contracts/grid-control-column"
+import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
+import { CheckboxCell } from "@/components/cells/checkbox-cell"
+import { TextCell } from "@/components/cells/text-cell"
+import { UnitCell } from "@/components/cells/unit-cell"
+import type { GridControlColumn } from "@/components/grid/contracts/grid-control-column"
 import { formatCutLogTimestamp } from "./format-cut-log-timestamp"
 
 /**

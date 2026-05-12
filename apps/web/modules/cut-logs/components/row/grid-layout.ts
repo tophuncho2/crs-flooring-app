@@ -4,8 +4,8 @@
 // `GridLayout`. Status is a regular data column on every layout; rows that
 // flip PENDING → FINAL keep the same column count.
 
-import type { GridColumn } from "../../grid/contracts/grid-column"
-import type { GridLayout } from "../../grid/contracts/grid-layout"
+import type { GridColumn } from "@/components/grid/contracts/grid-column"
+import type { GridLayout } from "@/components/grid/contracts/grid-layout"
 import type { CutLogRow } from "@builders/domain"
 
 /**
