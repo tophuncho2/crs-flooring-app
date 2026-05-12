@@ -1,14 +1,46 @@
-import type { StagedInventoryRecord } from "@builders/db"
-import type { StagedInventoryRowsDiff } from "@builders/domain"
+import type {
+  StagedInventoryFilterRecord,
+  StagedInventoryRecord,
+} from "@builders/db"
+import type { StagedInventoryForm } from "@builders/domain"
 
-export type SaveStagedInventoryRowsInput = {
+export type CreateStagedInventoryRowInput = {
   importEntryId: string
-  diff: StagedInventoryRowsDiff
+  filterRowId: string
+  form: StagedInventoryForm
 }
 
-export type SaveStagedInventoryRowsResult = {
-  rows: StagedInventoryRecord[]
-  tempIdMap: Record<string, string>
+export type UpdateStagedInventoryRowInput = {
+  importEntryId: string
+  rowId: string
+  expectedUpdatedAt: string
+  form: StagedInventoryForm
+}
+
+export type DeleteStagedInventoryRowInput = {
+  importEntryId: string
+  rowId: string
+  expectedUpdatedAt: string
+}
+
+// Per-row mutations return the affected row + the recomputed parent
+// filter row so the UI updates the parent's remainingStock /
+// startingStockSum / childRowCount badges without a refetch. Mirrors
+// the cut-log pattern of returning `totalCutSum` alongside the
+// mutated row.
+export type CreateStagedInventoryRowResult = {
+  row: StagedInventoryRecord
+  filterRow: StagedInventoryFilterRecord
+}
+
+export type UpdateStagedInventoryRowResult = {
+  row: StagedInventoryRecord
+  filterRow: StagedInventoryFilterRecord
+}
+
+export type DeleteStagedInventoryRowResult = {
+  deletedId: string
+  filterRow: StagedInventoryFilterRecord
 }
 
 export type MarkStagedRowsForImportInput = {
