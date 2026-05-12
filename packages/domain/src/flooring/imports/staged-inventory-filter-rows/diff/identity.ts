@@ -1,16 +1,17 @@
 /**
- * Stamps a generated id onto every entry in a staged-row diff's added array.
- * Mirrors `assignInventoryDiffIds` — the application layer injects
+ * Stamps a generated id onto every entry in a filter-row diff's added
+ * array. Mirrors `assignStagedInventoryDiffIds` (which was deleted
+ * with staged-inventory-rows' diff rewrite). Application layer injects
  * `crypto.randomUUID` so this stays pure + testable.
  */
-export function assignStagedInventoryDiffIds<T extends { tempId: string }>(
+export function assignStagedInventoryFilterDiffIds<T extends { tempId: string }>(
   entries: T[],
   generateId: () => string,
 ): Array<T & { id: string }> {
   return entries.map((entry) => ({ ...entry, id: generateId() }))
 }
 
-export function buildStagedInventoryTempIdMap(
+export function buildStagedInventoryFilterTempIdMap(
   entries: Array<{ tempId: string; id: string }>,
 ): Record<string, string> {
   const map: Record<string, string> = {}

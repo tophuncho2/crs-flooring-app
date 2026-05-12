@@ -7,23 +7,25 @@
 // values pass through without a runtime conversion.
 export type FlooringStagedRowStatus = "DRAFT" | "QUEUED" | "IMPORTED"
 
-// Staged inventory row — read + form shapes. Each staged row belongs to exactly
-// one import (FK is RESTRICT post sweep-1 migration; the domain predicate
-// `isImportDeleteBlocked` is the user-facing gate). Warehouse is required on
-// the row (matches the import's warehouse). `status` is the canonical lifecycle
-// (DRAFT → QUEUED → IMPORTED) introduced in sweep 1; the legacy `isImported`
-// latch survives alongside it until the use-case sweep finishes the cutover.
+// Staged inventory row — read + form shapes. Each staged row belongs to
+// exactly one filter row (and transitively one import). productId,
+// stockUnitName, and stockUnitAbbrev are create-time snapshots from the
+// parent filter row so the materialize worker can read everything off
+// the staged row without joining through the filter. Warehouse is still
+// snapshotted from the parent import.
 
 export type StagedInventoryRow = {
   id: string
   importEntryId: string
   importNumber: number
+  filterRowId: string
   productId: string
   productName: string
   categoryId: string
   categoryName: string
   categorySlug: string
-  stockUnit: string
+  stockUnitName: string
+  stockUnitAbbrev: string
   rollPrefix: string
   rollNumber: string
   dyeLot: string
@@ -39,9 +41,11 @@ export type StagedInventoryRow = {
   updatedAt: string
 }
 
+// User-editable surface on a staged inventory row. productId,
+// stockUnitName, stockUnitAbbrev, warehouseId, and rollPrefix are all
+// parent-owned snapshots (filter row / import) — they don't appear
+// here.
 export type StagedInventoryForm = {
-  productId: string
-  warehouseId: string
   rollNumber: string
   dyeLot: string
   location: string
@@ -50,8 +54,6 @@ export type StagedInventoryForm = {
 }
 
 export const EMPTY_STAGED_INVENTORY_FORM: StagedInventoryForm = {
-  productId: "",
-  warehouseId: "",
   rollNumber: "",
   dyeLot: "",
   location: "",
@@ -61,8 +63,6 @@ export const EMPTY_STAGED_INVENTORY_FORM: StagedInventoryForm = {
 
 export function toStagedInventoryForm(row: StagedInventoryRow): StagedInventoryForm {
   return {
-    productId: row.productId,
-    warehouseId: row.warehouseId,
     rollNumber: row.rollNumber,
     dyeLot: row.dyeLot,
     location: row.location,
