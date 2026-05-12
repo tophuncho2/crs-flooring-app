@@ -113,33 +113,7 @@ export function CutLogEditFormFields({
         </FormField>
       </CellAt>
 
-      {/* Row 4 — waste (final sequence moved to Row 1, taking the slot
-          previously used by Cut #). */}
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Waste">
-          <CheckboxCell
-            editable={fieldsEditable}
-            value={form.isWaste}
-            onChange={(next) => controller.setField("isWaste", next)}
-            ariaLabel="Waste flag"
-          />
-        </FormField>
-      </CellAt>
-
-      {/* Row 5 — notes */}
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Notes">
-          <TextCell
-            editable={fieldsEditable}
-            value={form.notes}
-            onChange={(next) => controller.setField("notes", next)}
-            placeholder="Notes"
-            ariaLabel="Cut log notes"
-          />
-        </FormField>
-      </CellAt>
-
-      {/* Row 6 — inventory picker (create) or read-only inventory + location
+      {/* Row 4 — inventory picker (create) or read-only inventory + location
           (edit). Location is a denormalized mirror: stamped from the parent
           inventory on create / update / finalize and cleared on void. It's
           read-only in this panel — operators edit location on the inventory
@@ -217,30 +191,57 @@ export function CutLogEditFormFields({
               />
             </FormField>
           </CellAt>
-          {cutLog ? (
-            <>
-              <CellAt col={1} colSpan={4}>
-                <FormField label="Created">
-                  <TextCell
-                    editable={false}
-                    value={formatCutLogTimestamp(cutLog.createdAt)}
-                    ariaLabel="Created at"
-                  />
-                </FormField>
-              </CellAt>
-              <CellAt col={5} colSpan={4}>
-                <FormField label="Updated">
-                  <TextCell
-                    editable={false}
-                    value={formatCutLogTimestamp(cutLog.updatedAt)}
-                    ariaLabel="Updated at"
-                  />
-                </FormField>
-              </CellAt>
-            </>
-          ) : null}
         </>
       )}
+
+      {/* Row 5 — notes (full width) */}
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Notes">
+          <TextCell
+            editable={fieldsEditable}
+            value={form.notes}
+            onChange={(next) => controller.setField("notes", next)}
+            placeholder="Notes"
+            ariaLabel="Cut log notes"
+          />
+        </FormField>
+      </CellAt>
+
+      {/* Row 6 — waste flag */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Waste">
+          <CheckboxCell
+            editable={fieldsEditable}
+            value={form.isWaste}
+            onChange={(next) => controller.setField("isWaste", next)}
+            ariaLabel="Waste flag"
+          />
+        </FormField>
+      </CellAt>
+
+      {/* Row 7 — created / updated timestamps (edit only) */}
+      {mode === "edit" && cutLog ? (
+        <>
+          <CellAt col={1} colSpan={4}>
+            <FormField label="Created">
+              <TextCell
+                editable={false}
+                value={formatCutLogTimestamp(cutLog.createdAt)}
+                ariaLabel="Created at"
+              />
+            </FormField>
+          </CellAt>
+          <CellAt col={5} colSpan={4}>
+            <FormField label="Updated">
+              <TextCell
+                editable={false}
+                value={formatCutLogTimestamp(cutLog.updatedAt)}
+                ariaLabel="Updated at"
+              />
+            </FormField>
+          </CellAt>
+        </>
+      ) : null}
     </FieldSection>
   )
 }
