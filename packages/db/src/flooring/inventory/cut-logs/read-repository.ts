@@ -112,37 +112,6 @@ export async function getCutLogById(
   return row ? normalizeCutLogRow(row) : null
 }
 
-// ---------------------------------------------------------------------------
-// Worker-only read primitives (transaction-only — no `client = db` default)
-// ---------------------------------------------------------------------------
-
-/**
- * Returns full normalized records for the cut logs being finalized — the
- * batch finalize primitive (`finalizeCutLogBatch`) needs the full shape
- * (`cut` value especially) to compute `before` / `after` per row.
- *
- * Ordered by `cutLogNumber ASC`, the visible identifier the user sees in
- * the UI. `cutLogNumber` is a global sequence with a unique constraint, so
- * this single-key sort is fully deterministic. The finalize worker's
- * per-row sequence allocation follows the same order so that user-facing
- * IDs and `finalCutSequence` land in lockstep.
- */
-export async function getCutLogsForFinalize(
-  tx: Prisma.TransactionClient,
-  input: { inventoryId: string; cutLogIds: string[] },
-): Promise<CutLogRecord[]> {
-  if (input.cutLogIds.length === 0) return []
-  const rows = await tx.flooringCutLog.findMany({
-    where: {
-      id: { in: input.cutLogIds },
-      inventoryId: input.inventoryId,
-    },
-    select: cutLogRowSelect,
-    orderBy: { cutLogNumber: "asc" },
-  })
-  return rows.map(normalizeCutLogRow)
-}
-
 /**
  * Returns the parent inventory context every cut-log mutation path needs
  * under the FOR UPDATE lock:
@@ -203,23 +172,6 @@ export async function getInventoryParentContextForCutLogs(
     inventoryNote: row.note ?? null,
     location: row.location ?? null,
   }
-}
-
-/**
- * Returns the current `MAX(finalCutSequence)` for an inventory, or null if
- * no rows have been finalized yet on this inventory. The finalize worker
- * feeds the result to `nextFinalCutSequence` (domain pure helper) to
- * allocate per-row ordinals inside the FOR UPDATE lock.
- */
-export async function getMaxFinalCutSequenceForInventory(
-  tx: Prisma.TransactionClient,
-  inventoryId: string,
-): Promise<number | null> {
-  const result = await tx.flooringCutLog.aggregate({
-    where: { inventoryId, isFinal: true },
-    _max: { finalCutSequence: true },
-  })
-  return result._max.finalCutSequence ?? null
 }
 
 // ---------------------------------------------------------------------------
