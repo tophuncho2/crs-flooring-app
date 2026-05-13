@@ -47,7 +47,11 @@ export type TemplatePreview = {
   unitType: string
   warehouseName: string
   description: string
+  // Page slice of material items (bounded by itemsPageSize), not the full set.
   items: TemplateMaterialItemRow[]
+  itemsTotal: number
+  itemsPage: number
+  itemsPageSize: number
 }
 
 export type TemplateForm = {

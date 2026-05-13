@@ -6,6 +6,7 @@ import {
   applyRoutePolicy,
   enforceQueryRateLimit,
 } from "@/server/http/route-policy"
+import { validateTemplatePreviewQuery } from "../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -23,7 +24,13 @@ export async function GET(request: Request, { params }: RouteContext) {
   try {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
-    const preview = await getTemplatePreviewUseCase({ templateId: id })
+    const url = new URL(request.url)
+    const { itemsPage, itemsPageSize } = validateTemplatePreviewQuery(url.searchParams)
+    const preview = await getTemplatePreviewUseCase({
+      templateId: id,
+      itemsPage,
+      itemsPageSize,
+    })
     return routeJson(access, { preview })
   } catch (error) {
     return routeError(access, error)

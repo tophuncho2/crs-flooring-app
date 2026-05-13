@@ -11,10 +11,16 @@ export type TemplatePreviewResponse = {
 
 export async function templatePreviewRequest(
   templateId: string,
+  itemsPage: number,
+  itemsPageSize: number,
   signal: AbortSignal | undefined,
 ): Promise<TemplatePreview> {
+  const params = new URLSearchParams({
+    itemsPage: String(itemsPage),
+    itemsPageSize: String(itemsPageSize),
+  })
   const result = await requestJson<TemplatePreviewResponse>(
-    `/api/templates/${templateId}/preview`,
+    `/api/templates/${templateId}/preview?${params.toString()}`,
     {
       method: "GET",
       headers: { Accept: "application/json" },

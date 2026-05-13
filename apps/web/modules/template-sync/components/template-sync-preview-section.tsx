@@ -1,7 +1,12 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import type { TemplateMaterialItemRow, TemplatePreview } from "@builders/domain"
+import {
+  TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE,
+  type TemplateMaterialItemRow,
+  type TemplatePreview,
+} from "@builders/domain"
 import {
   TEMPLATE_SYNC_PREVIEW_QUERY_KEY,
   templatePreviewRequest,
@@ -62,10 +67,20 @@ type Props = {
 }
 
 export function TemplateSyncPreviewSection({ templateId }: Props) {
+  const [itemsPage, setItemsPage] = useState(1)
+
+  useEffect(() => {
+    setItemsPage(1)
+  }, [templateId])
+
   const query = useQuery({
-    queryKey: [...TEMPLATE_SYNC_PREVIEW_QUERY_KEY, templateId],
-    queryFn: ({ signal }) => templatePreviewRequest(templateId, signal),
-    placeholderData: (previous) => previous,
+    queryKey: [...TEMPLATE_SYNC_PREVIEW_QUERY_KEY, templateId, itemsPage],
+    queryFn: ({ signal }) =>
+      templatePreviewRequest(templateId, itemsPage, TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE, signal),
+    // Drop cache on unmount so re-opening the side panel always refetches —
+    // fix for stale preview after editing the template while the panel is closed.
+    staleTime: 0,
+    gcTime: 0,
   })
 
   const preview = query.data
@@ -77,6 +92,11 @@ export function TemplateSyncPreviewSection({ templateId }: Props) {
       </div>
     )
   }
+
+  const totalPages = Math.max(1, Math.ceil(preview.itemsTotal / preview.itemsPageSize))
+  const showPagination = preview.itemsTotal > preview.itemsPageSize
+  const prevDisabled = itemsPage <= 1 || query.isFetching
+  const nextDisabled = itemsPage >= totalPages || query.isFetching
 
   return (
     <div className="flex flex-col gap-4 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)]/40 p-3">
@@ -106,7 +126,7 @@ export function TemplateSyncPreviewSection({ templateId }: Props) {
         <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/65">
           Material items
           <span className="ml-2 font-normal text-[var(--foreground)]/45">
-            ({preview.items.length})
+            ({preview.itemsTotal})
           </span>
         </h3>
         {preview.items.length === 0 ? (
@@ -130,6 +150,29 @@ export function TemplateSyncPreviewSection({ templateId }: Props) {
             ))}
           </ul>
         )}
+        {showPagination ? (
+          <div className="flex items-center justify-between gap-2 pt-1 text-xs text-[var(--foreground)]/65">
+            <button
+              type="button"
+              onClick={() => setItemsPage((page) => Math.max(1, page - 1))}
+              disabled={prevDisabled}
+              className="rounded border border-[var(--panel-border)] px-2 py-1 transition hover:bg-[var(--panel-hover)] disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <span className="tabular-nums text-[var(--foreground)]/55">
+              Page {itemsPage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setItemsPage((page) => Math.min(totalPages, page + 1))}
+              disabled={nextDisabled}
+              className="rounded border border-[var(--panel-border)] px-2 py-1 transition hover:bg-[var(--panel-hover)] disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        ) : null}
       </section>
     </div>
   )

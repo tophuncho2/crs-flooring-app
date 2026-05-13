@@ -181,47 +181,61 @@ export async function searchTemplateOptions(
   return templates.map(normalizeTemplateOption)
 }
 
-const templatePreviewSelect = {
-  id: true,
-  templateNumber: true,
-  unitType: true,
-  description: true,
-  jobType: { select: { name: true } },
-  warehouse: { select: { name: true } },
-  property: {
-    select: {
-      streetAddress: true,
-      city: true,
-      state: true,
-      postalCode: true,
-      instructions: true,
+type TemplatePreviewPaginationArgs = {
+  itemsPage: number
+  itemsPageSize: number
+}
+
+function buildTemplatePreviewSelect(pagination: TemplatePreviewPaginationArgs) {
+  return {
+    id: true,
+    templateNumber: true,
+    unitType: true,
+    description: true,
+    jobType: { select: { name: true } },
+    warehouse: { select: { name: true } },
+    property: {
+      select: {
+        streetAddress: true,
+        city: true,
+        state: true,
+        postalCode: true,
+        instructions: true,
+      },
     },
-  },
-  items: {
-    select: {
-      id: true,
-      productId: true,
-      product: { select: { name: true } },
-      quantity: true,
-      sendUnitName: true,
-      sendUnitAbbrev: true,
-      notes: true,
-      createdAt: true,
+    _count: { select: { items: true } },
+    items: {
+      select: {
+        id: true,
+        productId: true,
+        product: { select: { name: true } },
+        quantity: true,
+        sendUnitName: true,
+        sendUnitAbbrev: true,
+        notes: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "asc" as const },
+      skip: (pagination.itemsPage - 1) * pagination.itemsPageSize,
+      take: pagination.itemsPageSize,
     },
-    orderBy: { createdAt: "asc" as const },
-  },
-} as const
+  } as const
+}
 
 export async function getTemplatePreviewById(
   id: string,
+  pagination: TemplatePreviewPaginationArgs,
   client: TemplatesDbClient = db,
 ): Promise<TemplatePreview> {
   const template = await client.flooringTemplate.findUniqueOrThrow({
     where: { id },
-    select: templatePreviewSelect,
+    select: buildTemplatePreviewSelect(pagination),
   })
 
-  return normalizeTemplatePreview(template)
+  return normalizeTemplatePreview(template, {
+    itemsPage: pagination.itemsPage,
+    itemsPageSize: pagination.itemsPageSize,
+  })
 }
 
 export async function getTemplateById(

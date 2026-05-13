@@ -90,9 +90,18 @@ type TemplatePreviewInput = {
     instructions: string | null
   }
   items: Array<Parameters<typeof normalizeTemplateMaterialItem>[0]>
+  _count: { items: number }
 }
 
-export function normalizeTemplatePreview(template: TemplatePreviewInput): TemplatePreview {
+export type TemplatePreviewPageInfo = {
+  itemsPage: number
+  itemsPageSize: number
+}
+
+export function normalizeTemplatePreview(
+  template: TemplatePreviewInput,
+  page: TemplatePreviewPageInfo,
+): TemplatePreview {
   return {
     id: template.id,
     templateNumber: template.templateNumber,
@@ -106,6 +115,9 @@ export function normalizeTemplatePreview(template: TemplatePreviewInput): Templa
     warehouseName: template.warehouse?.name ?? "",
     description: template.description ?? "",
     items: template.items.map(normalizeTemplateMaterialItem),
+    itemsTotal: template._count.items,
+    itemsPage: page.itemsPage,
+    itemsPageSize: page.itemsPageSize,
   }
 }
 

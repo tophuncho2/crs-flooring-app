@@ -9,6 +9,8 @@ import type {
 import {
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
+  TEMPLATE_PREVIEW_ITEMS_MAX_PAGE_SIZE,
+  TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE,
   type TemplateMaterialItemForm,
   type TemplateMaterialItemsDiff,
 } from "@builders/domain"
@@ -197,6 +199,43 @@ export function validateListTemplatesQuery(
     page: parsed.page,
     pageSize: parsed.pageSize,
   }
+}
+
+// --- Template preview query validator (paginated material items) ---
+
+const templatePreviewQuerySchema = z.object({
+  itemsPage: z.coerce.number().int().min(1).default(1),
+  itemsPageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(TEMPLATE_PREVIEW_ITEMS_MAX_PAGE_SIZE)
+    .default(TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE),
+})
+
+export type ValidatedTemplatePreviewQuery = {
+  itemsPage: number
+  itemsPageSize: number
+}
+
+export function validateTemplatePreviewQuery(
+  searchParams: URLSearchParams,
+): ValidatedTemplatePreviewQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = templatePreviewQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    failTemplate(
+      issue?.message ?? "Invalid template preview query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  return parseResult.data
 }
 
 // --- Options query validator ---
