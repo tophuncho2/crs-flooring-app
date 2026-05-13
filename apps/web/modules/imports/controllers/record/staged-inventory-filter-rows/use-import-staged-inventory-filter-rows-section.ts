@@ -80,6 +80,11 @@ function buildFiltersDiff(
     }
   }
 
+  // Drafts iterate newest-first (prepend on add). Reverse so the server
+  // creates oldest → newest, giving the newest draft the latest
+  // createdAt — keeps post-save DESC sort consistent with local view.
+  added.reverse()
+
   for (const serverRow of serverRows) {
     if (!liveDraftIds.has(serverRow.id)) {
       deleted.push({ id: serverRow.id })
@@ -87,6 +92,13 @@ function buildFiltersDiff(
   }
 
   return { added, modified, deleted }
+}
+
+function byCreatedAtDesc(
+  a: StagedInventoryFilterRow,
+  b: StagedInventoryFilterRow,
+): number {
+  return b.createdAt.localeCompare(a.createdAt)
 }
 
 /**
@@ -122,18 +134,26 @@ export function useImportStagedInventoryFilterRowsSection({
       updateImportStagedInventoryFilterRowsRequest(record.id, input.diff, input.revisionKey),
   })
 
+  // Display order: newest filter row first. Sort at the controller boundary
+  // so both the engine's serverValue and any downstream consumers see the
+  // same DESC-by-createdAt ordering regardless of what the API returns.
+  const orderedFilterRows = useMemo(
+    () => [...filterRows].sort(byCreatedAtDesc),
+    [filterRows],
+  )
+
   const section = useRecordScopedSectionController<
     StagedInventoryFilterRow[],
     ImportFilterRowDraft[]
   >({
     recordId: record.id,
     sectionKey: "staged-inventory-filter-rows",
-    serverValue: filterRows,
-    serverRevisionKey: createRevisionKey(record, filterRows),
+    serverValue: orderedFilterRows,
+    serverRevisionKey: createRevisionKey(record, orderedFilterRows),
     createLocalValue: toImportFilterRowDrafts,
     persistDraft: false,
     policy: {
-      addRowPlacement: "bottom",
+      addRowPlacement: "top",
       childRows: "none",
     },
     onSave: async (localValue, currentServer) => {
@@ -159,11 +179,12 @@ export function useImportStagedInventoryFilterRowsSection({
         diff,
         revisionKey: record.updatedAt,
       })
-      publishFilterRows(response.filterRows)
+      const sortedResponse = [...response.filterRows].sort(byCreatedAtDesc)
+      publishFilterRows(sortedResponse)
 
       return {
-        serverValue: response.filterRows,
-        serverRevisionKey: createRevisionKey(response.import ?? record, response.filterRows),
+        serverValue: sortedResponse,
+        serverRevisionKey: createRevisionKey(response.import ?? record, sortedResponse),
         noticeMessage: "Filter rows saved",
       }
     },
@@ -173,8 +194,8 @@ export function useImportStagedInventoryFilterRowsSection({
 
   const addFilterRow = useCallback(() => {
     section.setLocalValue((prev) => [
-      ...prev,
       createImportFilterRowDraft(createLocalRecordRowId("import-filter-row")),
+      ...prev,
     ])
     if (section.error) section.setError(null)
   }, [section])
@@ -242,7 +263,9 @@ export function useImportStagedInventoryFilterRowsSection({
       // + filterRows.length), so the user's in-progress draft isn't
       // rebased.
       publishFilterRows(
-        filterRows.map((row) => (row.id === patch.filterRow.id ? patch.filterRow : row)),
+        orderedFilterRows.map((row) =>
+          row.id === patch.filterRow.id ? patch.filterRow : row,
+        ),
       )
 
       if (patch.kind === "upsert") {
@@ -256,7 +279,7 @@ export function useImportStagedInventoryFilterRowsSection({
         publishStagedRows(stagedRows.filter((row) => row.id !== patch.rowId))
       }
     },
-    [filterRows, stagedRows, publishFilterRows, publishStagedRows],
+    [orderedFilterRows, stagedRows, publishFilterRows, publishStagedRows],
   )
 
   // --- Inline duplicate (synchronous POST, no panel) ---
