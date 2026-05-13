@@ -91,7 +91,7 @@ export function TemplateSyncButton() {
         side="right"
         onClose={handleClose}
         title="Template sync"
-        widthClassName="w-80"
+        widthClassName="w-[34rem]"
       >
         <div className="flex h-full flex-col gap-4 px-4 py-4">
           <label className="flex flex-col gap-1.5">
