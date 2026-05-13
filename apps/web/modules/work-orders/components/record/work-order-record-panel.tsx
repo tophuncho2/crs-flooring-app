@@ -86,7 +86,6 @@ export function WorkOrderRecordPanel({
             >
               <WorkOrderPrimaryFieldsSection
                 draft={controller.primarySection.localValue}
-                status={controller.record.status}
                 detail={{
                   propertyId: controller.record.propertyId,
                   propertyName: controller.record.propertyName,

@@ -2,7 +2,6 @@
 
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { PaginateControls } from "@/components/features/paginate"
-import { StatusBadge } from "@/components/badges"
 import { formatStableDate } from "@builders/domain"
 import type { WorkOrderListRow } from "@builders/domain"
 
@@ -19,23 +18,7 @@ const WORK_ORDERS_LIST_LAYOUT: GridLayout<WorkOrderListRow> = {
     { key: "vacancy", label: "Vacancy", minWidth: 100, grow: 0 },
     { key: "unitNumber", label: "Unit #", minWidth: 90, grow: 0 },
     { key: "unitType", label: "Unit Type", minWidth: 110, grow: 0 },
-    { key: "status", label: "Status", minWidth: 110, grow: 0 },
   ],
-}
-
-function statusTone(status: WorkOrderListRow["status"]) {
-  switch (status) {
-    case "COMPLETED":
-      return "success"
-    case "WORKING":
-      return "processing"
-    case "QUEUED":
-      return "warning"
-    case "FAILED":
-      return "error"
-    default:
-      return "muted"
-  }
 }
 
 export function WorkOrdersTable({
@@ -92,8 +75,6 @@ export function WorkOrdersTable({
             return row.unitNumber || "-"
           case "unitType":
             return row.unitType || "-"
-          case "status":
-            return <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge>
           default:
             return "-"
         }

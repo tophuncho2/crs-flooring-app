@@ -7,7 +7,6 @@ import {
   CheckboxCell,
   DateCell,
   SelectCell,
-  StatusCell,
   TextCell,
   TextareaCell,
 } from "@/components/cells"
@@ -66,13 +65,11 @@ function detailToPropertyJoined(
 
 export function WorkOrderPrimaryFieldsSection({
   draft,
-  status,
   detail,
   disabled,
   onFieldChange,
 }: {
   draft: WorkOrderForm
-  status: string
   detail: WorkOrderPrimaryDetail | null
   disabled: boolean
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
@@ -164,11 +161,6 @@ export function WorkOrderPrimaryFieldsSection({
             value={draft.isComplete}
             onChange={(value) => onFieldChange("isComplete", value)}
           />
-        </FormField>
-      </CellAt>
-      <CellAt col={8} row={1} colSpan={1}>
-        <FormField label="Status">
-          <StatusCell editable={false} value={status} onChange={() => undefined} />
         </FormField>
       </CellAt>
 
