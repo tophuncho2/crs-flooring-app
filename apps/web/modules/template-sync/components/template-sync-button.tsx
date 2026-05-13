@@ -8,6 +8,7 @@ import { ManagementCompanyPicker } from "@/modules/management-companies/componen
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
 import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
+import { TemplateSyncPreviewSection } from "@/modules/template-sync/components/template-sync-preview-section"
 import { FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
 
 // Cascade: Management Company (optional) → Property → Template.
@@ -136,6 +137,8 @@ export function TemplateSyncButton() {
               ariaLabel="Template"
             />
           </label>
+
+          {templateId ? <TemplateSyncPreviewSection templateId={templateId} /> : null}
 
           {errorMessage ? (
             <p className="text-xs text-rose-400" role="alert">

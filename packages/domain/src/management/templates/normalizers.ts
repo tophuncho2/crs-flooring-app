@@ -1,6 +1,11 @@
 import { normalizeTemplateMaterialItem } from "./material-items/normalizers.js"
 import type { TemplateMaterialItemRow } from "./material-items/types.js"
-import type { TemplateDetail, TemplateListRow, TemplateOption } from "./types.js"
+import type {
+  TemplateDetail,
+  TemplateListRow,
+  TemplateOption,
+  TemplatePreview,
+} from "./types.js"
 
 type TemplateListInput = {
   id: string
@@ -67,6 +72,38 @@ export function normalizeTemplate(template: TemplateDetailInput): TemplateDetail
     instructions: template.instructions ?? "",
     templateNotes: template.templateNotes ?? "",
     items,
+  }
+}
+
+type TemplatePreviewInput = {
+  id: string
+  templateNumber: string
+  unitType: string
+  description: string | null
+  jobType: { name: string } | null
+  warehouse: { name: string } | null
+  property: {
+    streetAddress: string | null
+    city: string | null
+    state: string | null
+    postalCode: string | null
+    instructions: string | null
+  }
+}
+
+export function normalizeTemplatePreview(template: TemplatePreviewInput): TemplatePreview {
+  return {
+    id: template.id,
+    templateNumber: template.templateNumber,
+    propertyStreetAddress: template.property.streetAddress ?? "",
+    propertyCity: template.property.city ?? "",
+    propertyState: template.property.state ?? "",
+    propertyPostalCode: template.property.postalCode ?? "",
+    propertyInstructions: template.property.instructions ?? "",
+    jobTypeName: template.jobType?.name ?? null,
+    unitType: template.unitType,
+    warehouseName: template.warehouse?.name ?? "",
+    description: template.description ?? "",
   }
 }
 

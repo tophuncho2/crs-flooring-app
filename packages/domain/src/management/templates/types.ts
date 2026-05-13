@@ -35,6 +35,20 @@ export type TemplateOption = {
   unitType: string
 }
 
+export type TemplatePreview = {
+  id: string
+  templateNumber: string
+  propertyStreetAddress: string
+  propertyCity: string
+  propertyState: string
+  propertyPostalCode: string
+  propertyInstructions: string
+  jobTypeName: string | null
+  unitType: string
+  warehouseName: string
+  description: string
+}
+
 export type TemplateForm = {
   propertyId: string
   managementCompanyId: string

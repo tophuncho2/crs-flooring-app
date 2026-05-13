@@ -4,9 +4,11 @@ import {
   normalizeTemplate,
   normalizeTemplateListRow,
   normalizeTemplateOption,
+  normalizeTemplatePreview,
   type TemplateDetail,
   type TemplateListRow,
   type TemplateOption,
+  type TemplatePreview,
 } from "@builders/domain"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
@@ -177,6 +179,36 @@ export async function searchTemplateOptions(
   })
 
   return templates.map(normalizeTemplateOption)
+}
+
+const templatePreviewSelect = {
+  id: true,
+  templateNumber: true,
+  unitType: true,
+  description: true,
+  jobType: { select: { name: true } },
+  warehouse: { select: { name: true } },
+  property: {
+    select: {
+      streetAddress: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      instructions: true,
+    },
+  },
+} as const
+
+export async function getTemplatePreviewById(
+  id: string,
+  client: TemplatesDbClient = db,
+): Promise<TemplatePreview> {
+  const template = await client.flooringTemplate.findUniqueOrThrow({
+    where: { id },
+    select: templatePreviewSelect,
+  })
+
+  return normalizeTemplatePreview(template)
 }
 
 export async function getTemplateById(
