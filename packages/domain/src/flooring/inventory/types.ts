@@ -156,6 +156,7 @@ export type InventoryOption = {
   id: string
   inventoryItem: string
   warehouseId: string
+  location: string | null
   stockBalance: string
   stockUnitAbbrev: string
   coverageBalance: string | null

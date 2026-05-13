@@ -57,6 +57,13 @@ export type InventoryPickerProps = {
 
 function toDropdownOption(option: InventoryOption): AsyncRichDropdownOption {
   const subtitles: string[] = []
+  // Location sits first so operators can scan "is this one where I think it
+  // is" before comparing balances. `composeInventoryItem` does NOT include
+  // location in the title (it joins inv# · roll# · dyeLot · note), so this
+  // is the only place location surfaces in the option row.
+  if (option.location && option.location.length > 0) {
+    subtitles.push(option.location)
+  }
   subtitles.push(formatInventoryQuantity(option.stockBalance, option.stockUnitAbbrev))
   if (option.coverageBalance !== null) {
     subtitles.push(
@@ -65,8 +72,6 @@ function toDropdownOption(option: InventoryOption): AsyncRichDropdownOption {
   }
   return {
     id: option.id,
-    // The `inventoryItem` snapshot already encodes
-    // `inv# · roll# · location · dyeLot · note` — render it verbatim.
     title: option.inventoryItem,
     subtitles,
   }
