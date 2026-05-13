@@ -10,14 +10,15 @@ import type {
  * `@builders/pdf`. No I/O, no async.
  *
  * Layout, top to bottom:
- *  - Header: WO number
- *  - Details table: warehouse, job type, scheduled date, management co,
- *    property, template, vacancy, unit #, unit type, description
- *  - Address block (custom override falls back to property address;
- *    property.instructions render below the address)
- *  - Material items: one bordered single-row table per WOMI followed
- *    by a borderless aligned-text cut-log block. No grouping table —
- *    each WOMI's cut logs sit flush-left with their WOMI's product cell.
+ *  - H1: Work Order number
+ *  - H2: scheduled date (or "—" when unscheduled)
+ *  - Top table: warehouse | mgmt co, job type | property
+ *  - Description block (full-width bordered single-cell table)
+ *  - H2: "Property Info"
+ *  - Property Info table: address + property instructions on the left,
+ *    vacancy / unit type / unit number on the right
+ *  - H2: Material Items — one bordered single-row table per WOMI
+ *    followed by a borderless aligned-text cut-log block
  *
  * Markup is intentionally minimal and styled inline so the rendered PDF
  * does not depend on external CSS. Every dynamic value passes through
@@ -32,6 +33,9 @@ const STYLE_BLOCK = `
   table { width: 100%; border-collapse: collapse; margin: 6px 0; }
   .grid-table th, .grid-table td { border: 1px solid #ddd; padding: 5px 8px; text-align: left; vertical-align: top; }
   .grid-table th { font-weight: 600; }
+  .property-info-table th { width: 14%; }
+  .property-info-table td { width: 26%; }
+  .property-info-address { width: 60%; }
   .womi-group { margin: 12px 0 14px 0; page-break-inside: avoid; }
   .cut-log-rows { width: 100%; border-collapse: collapse; margin: 2px 0 0 0; }
   .cut-log-rows th, .cut-log-rows td { border: 0; padding: 3px 8px; font-size: 11px; text-align: left; vertical-align: top; }
@@ -44,8 +48,9 @@ const STYLE_BLOCK = `
 export function buildWorkOrderPdfHtml(input: WorkOrderFileGenerationInput): string {
   const sections = [
     renderHeader(input),
-    renderDetailsTable(input),
-    renderAddressBlock(input),
+    renderTopTable(input),
+    renderDescriptionBlock(input),
+    renderPropertyInfo(input),
     renderMaterialItems(input.materialItems),
   ].join("\n")
 
@@ -66,34 +71,36 @@ function renderHeader(input: WorkOrderFileGenerationInput): string {
   return `<h1>Work Order ${escapeHtml(input.workOrderNumber)}</h1>`
 }
 
-function renderDetailsTable(input: WorkOrderFileGenerationInput): string {
-  // 4-column key/value grid: 11 cells across the 5-row layout.
-  // Row 5 col 3-4 reserved for description (spans 2 cols since it can be long).
-  const vacancyLabel = formatVacancy(input.vacancy)
+function renderTopTable(input: WorkOrderFileGenerationInput): string {
+  const dateHeading = input.scheduledFor
+    ? escapeHtml(input.scheduledFor)
+    : `<span class="empty-cell">—</span>`
   return `
-<h2>Details</h2>
+<h2>${dateHeading}</h2>
 <table class="grid-table">
   <tbody>
     <tr>
       <th>Warehouse</th><td>${escapeOrEmpty(input.warehouseName)}</td>
-      <th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td>
-    </tr>
-    <tr>
-      <th>Date</th><td>${escapeOrEmpty(input.scheduledFor)}</td>
       <th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td>
     </tr>
     <tr>
+      <th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td>
       <th>Property</th><td>${escapeOrEmpty(input.property.name)}</td>
-      <th>Template</th><td>${escapeOrEmpty(input.templateNumber)}</td>
     </tr>
-    <tr>
-      <th>Vacancy</th><td>${escapeOrEmpty(vacancyLabel)}</td>
-      <th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td>
-    </tr>
-    <tr>
-      <th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td>
-      <th>Description</th><td colspan="1" class="multiline">${escapeOrEmpty(input.description)}</td>
-    </tr>
+  </tbody>
+</table>
+`.trim()
+}
+
+function renderDescriptionBlock(input: WorkOrderFileGenerationInput): string {
+  if (!input.description) return ""
+  return `
+<table class="grid-table">
+  <thead>
+    <tr><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="multiline">${escapeHtml(input.description)}</td></tr>
   </tbody>
 </table>
 `.trim()
@@ -105,18 +112,34 @@ function formatVacancy(vacancy: "VACANT" | "OCCUPIED" | null): string {
   return ""
 }
 
-function renderAddressBlock(input: WorkOrderFileGenerationInput): string {
+function renderPropertyInfo(input: WorkOrderFileGenerationInput): string {
   const address = input.customAddress || formatPropertyAddress(input.property)
-  if (!address && !input.property.instructions) return ""
-  const label = input.customAddress ? "Custom Address" : "Property Address"
-  const addressMarkup = address ? `<div class="multiline">${escapeHtml(address)}</div>` : ""
+  const addressMarkup = address
+    ? `<div class="multiline">${escapeHtml(address)}</div>`
+    : `<span class="empty-cell">—</span>`
   const instructionsMarkup = input.property.instructions
     ? `<h3>Property Instructions</h3><div class="multiline">${escapeHtml(input.property.instructions)}</div>`
     : ""
+  const vacancyLabel = formatVacancy(input.vacancy)
   return `
-<h2>${label}</h2>
-${addressMarkup}
-${instructionsMarkup}
+<h2>Property Info</h2>
+<table class="grid-table property-info-table">
+  <tbody>
+    <tr>
+      <td class="property-info-address" rowspan="3">
+        ${addressMarkup}
+        ${instructionsMarkup}
+      </td>
+      <th>Vacancy</th><td>${escapeOrEmpty(vacancyLabel)}</td>
+    </tr>
+    <tr>
+      <th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td>
+    </tr>
+    <tr>
+      <th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td>
+    </tr>
+  </tbody>
+</table>
 `.trim()
 }
 
