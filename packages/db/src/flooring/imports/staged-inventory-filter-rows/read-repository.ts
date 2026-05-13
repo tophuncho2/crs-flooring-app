@@ -88,13 +88,15 @@ export async function getFilterRowById(
 
 /**
  * Slim read used by the application save use case to evaluate diff
- * rules (product-locked-with-children, delete-blocked-by-children).
+ * rules (product-locked-with-children,
+ * category-filter-locked-after-create, delete-blocked-by-children).
  * Skips the heavy product / category / unit joins; child rows are
  * included only to count them.
  */
 export type FilterRowDiffSummary = {
   id: string
   productId: string
+  categoryFilterId: string | null
   hasChildren: boolean
 }
 
@@ -107,12 +109,14 @@ export async function listFilterRowDiffSummariesByImport(
     select: {
       id: true,
       productId: true,
+      categoryFilterId: true,
       _count: { select: { stagedInventoryRows: true } },
     },
   })
   return rows.map((row) => ({
     id: row.id,
     productId: row.productId,
+    categoryFilterId: row.categoryFilterId,
     hasChildren: row._count.stagedInventoryRows > 0,
   }))
 }

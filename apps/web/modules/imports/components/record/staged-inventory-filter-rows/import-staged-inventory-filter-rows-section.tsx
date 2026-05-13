@@ -80,15 +80,19 @@ export function ImportStagedInventoryFilterRowsSection({
   function renderParentCell(column: { key: string }, draft: FilterDraftRow): ReactNode {
     const server = serverFilterRowsById.get(draft.clientId)
     const hasChildren = (server?.childRowCount ?? 0) > 0
+    const isNew = isLocalOnlyRecordRow(draft.clientId)
     const productEditable = editable && !hasChildren
+    // Category filter is immutable after the row is saved — symmetric to
+    // `FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE` in the domain validator.
+    const categoryEditable = editable && isNew
     switch (column.key) {
       case "categoryFilter":
         return (
           <CategoryPicker
             value={draft.categoryFilterId}
             onChange={(next) => section.setFilterCategoryFilter(draft.clientId, next)}
-            selectedLabel={null}
-            disabled={!editable}
+            selectedLabel={server?.categoryFilterName ?? null}
+            disabled={!categoryEditable}
             placeholder="All categories"
             ariaLabel="Filter row category"
           />

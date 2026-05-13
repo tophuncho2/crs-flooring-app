@@ -112,6 +112,32 @@ function findLockedProductChanges(
   return issues
 }
 
+/**
+ * The category filter is immutable once the row is saved. Unlike
+ * `FILTER_PRODUCT_LOCKED_WITH_CHILDREN`, there's no `hasChildren`
+ * carve-out — any change on a `modified` row is a rule violation.
+ * Local-only `added` rows are unaffected (they have no existing
+ * server snapshot to compare against).
+ */
+function findLockedCategoryFilterChanges(
+  diff: StagedInventoryFiltersDiff,
+  existing: DiffExistingStagedInventoryFilterRow[],
+): StagedInventoryFilterDiffValidationIssue[] {
+  const issues: StagedInventoryFilterDiffValidationIssue[] = []
+  const existingById = new Map(existing.map((row) => [row.id, row]))
+  for (const update of diff.modified) {
+    const row = existingById.get(update.id)
+    if (!row) continue
+    if (update.form.categoryFilterId !== row.categoryFilterId) {
+      issues.push({
+        code: "FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE",
+        rowId: update.id,
+      })
+    }
+  }
+  return issues
+}
+
 function findDeletesBlockedByChildren(
   diff: StagedInventoryFiltersDiff,
   existing: DiffExistingStagedInventoryFilterRow[],
@@ -145,6 +171,7 @@ export function validateStagedInventoryFiltersDiff(
     ...findDuplicateProducts(projected),
     ...findUnknownProducts(projected, knownProductIds),
     ...findLockedProductChanges(diff, resolution.existing),
+    ...findLockedCategoryFilterChanges(diff, resolution.existing),
     ...findDeletesBlockedByChildren(diff, resolution.existing),
   ]
 }

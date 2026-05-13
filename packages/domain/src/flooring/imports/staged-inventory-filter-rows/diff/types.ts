@@ -26,15 +26,11 @@ export type StagedInventoryFiltersDiff = {
   deleted: StagedInventoryFilterRowDelete[]
 }
 
-/**
- * Slim shape of an existing filter row that the diff validator needs
- * to evaluate the product-locked-with-children and
- * delete-blocked-by-children rules. Application layer pre-reads these
- * from the data layer inside the save use case's transaction.
- */
+
 export type DiffExistingStagedInventoryFilterRow = {
   id: string
   productId: string
+  categoryFilterId: string | null
   hasChildren: boolean
 }
 
@@ -47,6 +43,10 @@ export type StagedInventoryFilterDiffValidationIssue =
     }
   | {
       code: "FILTER_PRODUCT_LOCKED_WITH_CHILDREN"
+      rowId: string
+    }
+  | {
+      code: "FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE"
       rowId: string
     }
   | {
@@ -68,6 +68,8 @@ export function describeStagedInventoryFilterDiffIssue(
       return `Product ${issue.productId} already has a filter row in this import.`
     case "FILTER_PRODUCT_LOCKED_WITH_CHILDREN":
       return `Filter row ${issue.rowId} has staged inventory rows; its product can't change.`
+    case "FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE":
+      return `Filter row ${issue.rowId} category filter is immutable after the row is saved.`
     case "FILTER_DELETE_BLOCKED_BY_CHILDREN":
       return `Filter row ${issue.rowId} has staged inventory rows; delete those first.`
     case "FILTER_UNKNOWN_PRODUCT":
