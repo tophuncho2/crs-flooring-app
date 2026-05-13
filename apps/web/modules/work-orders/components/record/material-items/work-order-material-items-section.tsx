@@ -1,7 +1,6 @@
 "use client"
 
-import { Fragment, useCallback, useMemo, useState } from "react"
-import { StatusBadge } from "@/components/badges"
+import { Fragment, useCallback, useState } from "react"
 import { NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
@@ -24,7 +23,6 @@ import {
 } from "@/modules/cut-logs"
 import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
-import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
   dataColumns: [
@@ -32,20 +30,8 @@ const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> =
     { key: "product", label: "Product", minWidth: 220, grow: 2 },
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 110, grow: 0, align: "end" },
     { key: "notes", label: "Notes", minWidth: 200, grow: 1.5 },
-    { key: "status", label: "Status", kind: "status", minWidth: 110, grow: 0, align: "center" },
   ],
   trailingControls: [{ key: "remove", kind: "actions", width: 116 }],
-}
-
-function statusTone(status: WorkOrderMaterialItemRow["status"]): BadgeTone {
-  switch (status) {
-    case "FINALIZING":
-      return "processing"
-    case "FAILED":
-      return "error"
-    default:
-      return "muted"
-  }
 }
 
 export function WorkOrderMaterialItemsSection({
@@ -90,16 +76,6 @@ export function WorkOrderMaterialItemsSection({
   }, [allExpanded, section.items])
 
   const editable = !sectionBusy
-
-  const serverStatusById = useMemo(() => {
-    const map = new Map<string, WorkOrderMaterialItemRow["status"]>()
-    for (const row of materialItems) map.set(row.id, row.status)
-    return map
-  }, [materialItems])
-
-  function findRowStatus(itemId: string): WorkOrderMaterialItemRow["status"] {
-    return serverStatusById.get(itemId) ?? "IDLE"
-  }
 
   const handleOpenEdit = useCallback(
     (workOrderItemId: string, cutLog: CutLogRow) => {
@@ -190,10 +166,6 @@ export function WorkOrderMaterialItemsSection({
             ariaLabel="Material item notes"
           />
         )
-      case "status": {
-        const status = findRowStatus(item.id)
-        return <StatusBadge tone={statusTone(status)}>{status}</StatusBadge>
-      }
       default:
         return null
     }
