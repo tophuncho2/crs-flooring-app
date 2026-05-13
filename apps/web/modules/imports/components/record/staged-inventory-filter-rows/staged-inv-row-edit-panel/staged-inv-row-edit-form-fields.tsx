@@ -125,6 +125,16 @@ export function StagedInvRowEditFormFields({
               />
             </FormField>
           </CellAt>
+          <CellAt col={1} colSpan={8}>
+            <FormField label="Note">
+              <TextCell
+                editable={editable}
+                value={form.note}
+                onChange={(value) => setField("note", value)}
+                ariaLabel="Note"
+              />
+            </FormField>
+          </CellAt>
         </FieldSection>
       </section>
 
@@ -151,16 +161,6 @@ export function StagedInvRowEditFormFields({
                 value={form.location}
                 onChange={(value) => setField("location", value)}
                 ariaLabel="Location"
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={8}>
-            <FormField label="Note">
-              <TextCell
-                editable={editable}
-                value={form.note}
-                onChange={(value) => setField("note", value)}
-                ariaLabel="Note"
               />
             </FormField>
           </CellAt>

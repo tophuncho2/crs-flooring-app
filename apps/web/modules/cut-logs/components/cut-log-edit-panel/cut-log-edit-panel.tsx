@@ -42,19 +42,21 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
       widthClassName="w-[34rem]"
     >
       <div className="flex h-full flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-4 pb-24">
-          {open ? (
-            <CutLogEditFormFields
-              mode={mode}
-              cutLog={cutLog}
-              controller={controller}
-            />
-          ) : null}
-          {controller.error ? (
-            <div className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-              {controller.error}
-            </div>
-          ) : null}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-4 pb-4">
+          <div className="mt-auto">
+            {open ? (
+              <CutLogEditFormFields
+                mode={mode}
+                cutLog={cutLog}
+                controller={controller}
+              />
+            ) : null}
+            {controller.error ? (
+              <div className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+                {controller.error}
+              </div>
+            ) : null}
+          </div>
         </div>
         <CutLogEditActionButtons
           mode={mode}
