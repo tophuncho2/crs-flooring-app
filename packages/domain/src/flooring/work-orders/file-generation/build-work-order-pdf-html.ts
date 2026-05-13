@@ -37,10 +37,11 @@ const STYLE_BLOCK = `
   .property-info-table td { width: 26%; }
   .property-info-address { width: 60%; }
   .womi-group { margin: 12px 0 14px 0; page-break-inside: avoid; }
-  .cut-log-rows { width: 100%; border-collapse: collapse; margin: 2px 0 0 0; }
-  .cut-log-rows th, .cut-log-rows td { border: 0; padding: 3px 8px; font-size: 11px; text-align: left; vertical-align: top; }
-  .cut-log-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
-  .cut-log-rows td.waste { text-align: center; font-size: 13px; }
+  .flat-rows { width: 100%; border-collapse: collapse; margin: 2px 0 0 0; }
+  .flat-rows th, .flat-rows td { border: 0; padding: 3px 8px; font-size: 11px; text-align: left; vertical-align: top; }
+  .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
+  .flat-rows td.waste { text-align: center; font-size: 13px; }
+  .womi-rows { margin-bottom: 2px; }
   .multiline { white-space: pre-wrap; }
   .empty-cell { color: #666; }
 `
@@ -78,10 +79,16 @@ function renderTopTable(input: WorkOrderFileGenerationInput): string {
   return `
 <h2>${dateHeading}</h2>
 <table class="grid-table">
+  <colgroup>
+    <col style="width: 15%;" />
+    <col style="width: 25%;" />
+    <col style="width: 12%;" />
+    <col style="width: 48%;" />
+  </colgroup>
   <tbody>
     <tr>
       <th>Warehouse</th><td>${escapeOrEmpty(input.warehouseName)}</td>
-      <th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td>
+      <th>Mgmt Co</th><td>${escapeOrEmpty(input.managementCompanyName)}</td>
     </tr>
     <tr>
       <th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td>
@@ -127,6 +134,7 @@ function renderPropertyInfo(input: WorkOrderFileGenerationInput): string {
   <tbody>
     <tr>
       <td class="property-info-address" rowspan="3">
+        <h3>Address</h3>
         ${addressMarkup}
         ${instructionsMarkup}
       </td>
@@ -171,7 +179,7 @@ function renderMaterialItemGroup(item: WorkOrderFileMaterialItemProjection): str
 
   return `
 <div class="womi-group">
-  <table class="grid-table">
+  <table class="flat-rows womi-rows">
     <thead>
       <tr>
         <th style="width: 45%;">Product</th>
@@ -196,7 +204,7 @@ function renderCutLogRows(cutLogs: WorkOrderFileCutLogProjection[]): string {
   if (cutLogs.length === 0) return ""
   const rows = cutLogs.map(renderCutLogRow).join("\n")
   return `
-<table class="cut-log-rows">
+<table class="flat-rows">
   <thead>
     <tr>
       <th>Inventory Item</th>
@@ -207,7 +215,6 @@ function renderCutLogRows(cutLogs: WorkOrderFileCutLogProjection[]): string {
       <th>Coverage Cut</th>
       <th>Notes</th>
       <th>Waste</th>
-      <th>Cut Log #</th>
     </tr>
   </thead>
   <tbody>
@@ -231,7 +238,6 @@ function renderCutLogRow(cl: WorkOrderFileCutLogProjection): string {
   <td>${renderUnitValue(cl.coverageCut, cl.itemCoverageUnitAbbrev)}</td>
   <td class="multiline">${escapeOrEmpty(cl.notes)}</td>
   <td class="waste">${wasteCell}</td>
-  <td>${escapeOrEmpty(cl.cutLogNumber)}</td>
 </tr>
 `.trim()
 }
