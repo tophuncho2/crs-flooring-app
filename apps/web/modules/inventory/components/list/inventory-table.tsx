@@ -13,15 +13,15 @@ import {
 const INVENTORY_LIST_LAYOUT: GridLayout<InventoryRow> = {
   dataColumns: [
     { key: "stockBalance", label: "Stock Balance", kind: "quantity", minWidth: 140, grow: 0, align: "end" },
-    { key: "inventoryNumber", label: "Inv #", minWidth: 110, grow: 0 },
     { key: "productName", label: "Product", minWidth: 200, grow: 1 },
+    { key: "inventoryNumber", label: "Inv #", minWidth: 110, grow: 0 },
     { key: "rollNumber", label: "Roll #", minWidth: 120, grow: 0 },
     { key: "location", label: "Location", minWidth: 130, grow: 0 },
     { key: "dyeLot", label: "Dye Lot", minWidth: 120, grow: 0 },
     { key: "note", label: "Note", minWidth: 180, grow: 1 },
-    { key: "warehouse", label: "Warehouse", minWidth: 160, grow: 1 },
     { key: "coverageBalance", label: "Coverage Balance", kind: "quantity", minWidth: 150, grow: 0, align: "end" },
     { key: "totalCutSum", label: "Total Cut", kind: "quantity", minWidth: 130, grow: 0, align: "end" },
+    { key: "warehouse", label: "Warehouse", minWidth: 110, grow: 0 },
     { key: "fifoReceivedAt", label: "FIFO Received", minWidth: 150, grow: 0 },
     { key: "updatedAt", label: "Updated", minWidth: 120, grow: 0 },
   ],
