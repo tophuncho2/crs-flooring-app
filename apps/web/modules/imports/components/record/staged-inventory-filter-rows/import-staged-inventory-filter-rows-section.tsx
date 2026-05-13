@@ -1,10 +1,10 @@
 "use client"
 
-import { Fragment, useCallback, useMemo } from "react"
+import { Fragment, useCallback, useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
 import { RowActionButton, UnitCell } from "@/components/cells"
-import { ExpandableRow } from "@/components/grid/expandable-rows"
+import { ExpandableRow, ExpandToggle } from "@/components/grid/expandable-rows"
 import { SelectAllButton } from "@/components/features/select-batch"
 import { Grid, GridEmpty } from "@/components/grid"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
@@ -76,6 +76,14 @@ export function ImportStagedInventoryFilterRowsSection({
   const totalStagedRowCount = stagedRows.length
   const editable = !section.isSaving && !section.isMarking && !section.isSelectionActive
   const sectionError = section.error?.message ?? null
+
+  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
+  const allExpanded = drafts.length > 0 && expandedRowIds.size === drafts.length
+  const toggleAll = useCallback(() => {
+    setExpandedRowIds(
+      allExpanded ? new Set() : new Set(drafts.map((draft) => draft.clientId)),
+    )
+  }, [allExpanded, drafts])
 
   function renderParentCell(column: { key: string }, draft: FilterDraftRow): ReactNode {
     const server = serverFilterRowsById.get(draft.clientId)
@@ -167,6 +175,17 @@ export function ImportStagedInventoryFilterRowsSection({
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
       <ActionHeader
         title="Staged Inventory"
+        leadingControl={
+          drafts.length > 0 ? (
+            <ExpandToggle
+              expanded={allExpanded}
+              onToggle={toggleAll}
+              ariaLabel={
+                allExpanded ? "Collapse all filter rows" : "Expand all filter rows"
+              }
+            />
+          ) : null
+        }
         summary={
           <span>
             {drafts.length} filter row{drafts.length === 1 ? "" : "s"} · {totalStagedRowCount}{" "}
@@ -248,49 +267,52 @@ export function ImportStagedInventoryFilterRowsSection({
         renderRow={(draft) => {
           const server = serverFilterRowsById.get(draft.clientId)
           const childRows = server ? (section.stagedRowsByFilterId.get(server.id) ?? []) : []
+          const isExpanded = expandedRowIds.has(draft.clientId)
           return (
             <Fragment>
               <ExpandableRow<FilterDraftRow>
                 parentRow={draft}
                 parentLayout={FILTER_ROW_LAYOUT}
-                expanded={true}
+                expanded={isExpanded}
                 renderParentCell={renderParentCell}
                 renderParentControl={renderParentControl}
                 accentTone="sky"
               >
-                {server ? (
-                  <div className="px-4 py-3">
-                    <StagedInvRowSubGrid
-                      filterRow={server}
-                      rows={childRows}
-                      selectedIds={section.selectedIds}
-                      canToggleSelection={section.canToggleSelection}
-                      isSectionBusy={
-                        section.isSaving ||
-                        section.isMarking ||
-                        section.isSelectionActive ||
-                        section.isDuplicating
-                      }
-                      onOpenEdit={(row, filterRow) =>
-                        panel.openPanel({ mode: "edit", row, filterRow })
-                      }
-                      onCreateNew={(filterRow) =>
-                        panel.openPanel({
-                          mode: "create",
-                          filterRowId: filterRow.id,
-                          filterRowProductName: filterRow.productName,
-                          filterRowStockUnitAbbrev: filterRow.stockUnitAbbrev,
-                        })
-                      }
-                      onDuplicate={(row) => section.duplicateStagedRow(row)}
-                      onToggleSelection={section.toggleSelection}
-                    />
-                  </div>
-                ) : (
-                  <div className="px-4 py-3 text-xs text-[var(--foreground)]/55">
-                    Save this filter row to add staged inventory rows.
-                  </div>
-                )}
+                {isExpanded ? (
+                  server ? (
+                    <div className="px-4 py-3">
+                      <StagedInvRowSubGrid
+                        filterRow={server}
+                        rows={childRows}
+                        selectedIds={section.selectedIds}
+                        canToggleSelection={section.canToggleSelection}
+                        isSectionBusy={
+                          section.isSaving ||
+                          section.isMarking ||
+                          section.isSelectionActive ||
+                          section.isDuplicating
+                        }
+                        onOpenEdit={(row, filterRow) =>
+                          panel.openPanel({ mode: "edit", row, filterRow })
+                        }
+                        onCreateNew={(filterRow) =>
+                          panel.openPanel({
+                            mode: "create",
+                            filterRowId: filterRow.id,
+                            filterRowProductName: filterRow.productName,
+                            filterRowStockUnitAbbrev: filterRow.stockUnitAbbrev,
+                          })
+                        }
+                        onDuplicate={(row) => section.duplicateStagedRow(row)}
+                        onToggleSelection={section.toggleSelection}
+                      />
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 text-xs text-[var(--foreground)]/55">
+                      Save this filter row to add staged inventory rows.
+                    </div>
+                  )
+                ) : null}
               </ExpandableRow>
             </Fragment>
           )
