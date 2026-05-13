@@ -8,6 +8,7 @@ import {
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/use-template-primary-section"
 import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/use-template-material-items-section"
+import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/use-template-sync-to-work-order"
 import type { TemplateDetail, TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
 import { TemplateMaterialItemsSection } from "./template-material-items-section"
@@ -24,6 +25,9 @@ export function TemplateRecordPanel({
     template: primary.record,
     publishTemplate: primary.publishRecord,
   })
+  const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
+  const isDirty = primary.primarySection.isDirty || materialItems.isDirty
+  const canSync = !isDirty && !primary.primarySection.isSaving && !materialItems.isSaving
 
   return (
     <RecordMultiSectionPanel
@@ -39,7 +43,7 @@ export function TemplateRecordPanel({
           render: () => (
             <RecordPrimarySectionInstance
               title="Template Details"
-              error={primary.primarySection.error}
+              error={primary.primarySection.error ?? syncToWorkOrder.errorMessage}
               noticeMessage={primary.primarySection.noticeMessage}
               noticeError={primary.primarySection.noticeError}
               isDirty={primary.primarySection.isDirty}
@@ -50,6 +54,15 @@ export function TemplateRecordPanel({
               saveLabel="Save Template"
               savingLabel="Saving Template..."
               showHeader={false}
+              actions={[
+                {
+                  key: "sync-to-work-order",
+                  label: syncToWorkOrder.isSyncing ? "Syncing…" : "Sync to Work Order",
+                  tone: "primary",
+                  onClick: () => void syncToWorkOrder.sync(),
+                  disabled: !canSync || syncToWorkOrder.isSyncing,
+                },
+              ]}
             >
               <TemplatePrimaryFieldsSection
                 draft={primary.primarySection.localValue}

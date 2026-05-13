@@ -2,7 +2,13 @@
 
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
-import type { TemplateDetail, TemplateForm, TemplateMaterialItemsDiff } from "@builders/domain"
+import type {
+  TemplateDetail,
+  TemplateForm,
+  TemplateMaterialItemsDiff,
+  WorkOrderDetail,
+  WorkOrderMaterialItemRow,
+} from "@builders/domain"
 
 export async function createTemplateRequest(input: TemplateForm) {
   return requestJson<{ template: TemplateDetail }>("/api/templates", {
@@ -29,6 +35,22 @@ export async function deleteTemplateRequest(id: string, updatedAt: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta({}, updatedAt)),
   })
+}
+
+export type SyncTemplateToWorkOrderResponse = {
+  workOrder: WorkOrderDetail
+  items: WorkOrderMaterialItemRow[]
+}
+
+export async function syncTemplateToWorkOrderRequest(templateId: string) {
+  return requestJson<SyncTemplateToWorkOrderResponse>(
+    `/api/templates/${templateId}/sync-to-work-order`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta({})),
+    },
+  )
 }
 
 export async function saveTemplateMaterialItemsSectionRequest(
