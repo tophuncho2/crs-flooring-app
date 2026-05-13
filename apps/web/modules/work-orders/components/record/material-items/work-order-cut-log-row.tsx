@@ -1,12 +1,9 @@
 "use client"
 
 import { useMemo } from "react"
-import type { ReactNode } from "react"
 import type { CutLogRow } from "@builders/domain"
-import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
-import { renderCutLogReadOnlyCell } from "@/modules/cut-logs"
+import { INVENTORY_CUT_LOG_LAYOUT, renderCutLogReadOnlyCell } from "@/modules/cut-logs"
 import { Grid, GridEmpty } from "@/components/grid"
-import { WO_CUT_LOG_LAYOUT, type CutLogGridRow } from "./cut-log-row-layout"
 
 export type WorkOrderCutLogRowProps = {
   workOrderItemId: string
@@ -36,28 +33,19 @@ export function WorkOrderCutLogRow({
   onCreateNew,
   isSectionBusy,
 }: WorkOrderCutLogRowProps) {
-  const gridRows: CutLogGridRow[] = useMemo(
-    () => serverRows.map((cutLog) => ({ id: cutLog.id, cutLog })),
-    [serverRows],
-  )
+  const rows = useMemo<CutLogRow[]>(() => [...serverRows], [serverRows])
 
-  const renderReadOnlyCell = useMemo(() => renderCutLogReadOnlyCell({}), [])
-
-  function renderCell(column: { key: string }, gridRow: CutLogGridRow): ReactNode {
-    const { cutLog } = gridRow
-    if (column.key === "status") return <CutLogStatusBadge status={cutLog.status} />
-    return renderReadOnlyCell(column, cutLog)
-  }
+  const renderCell = useMemo(() => renderCutLogReadOnlyCell({}), [])
 
   return (
     <div className="space-y-3 rounded-md border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
-      <Grid<CutLogGridRow>
-        rows={gridRows}
-        layout={WO_CUT_LOG_LAYOUT}
+      <Grid<CutLogRow>
+        rows={rows}
+        layout={INVENTORY_CUT_LOG_LAYOUT}
         empty={<GridEmpty>No cut logs yet.</GridEmpty>}
         renderCell={renderCell}
-        onRowClick={(row) => onOpenEdit(workOrderItemId, row.cutLog)}
-        getRowAriaLabel={(row) => `Edit cut log ${row.cutLog.cutLogNumber}`}
+        onRowClick={(row) => onOpenEdit(workOrderItemId, row)}
+        getRowAriaLabel={(row) => `Edit cut log ${row.cutLogNumber}`}
       />
 
       <div className="flex items-center justify-end text-xs">

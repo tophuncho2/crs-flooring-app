@@ -20,20 +20,24 @@ export const CUT_LOG_COLUMN_DEFINITIONS = {
   cut: { key: "cut", label: "Cut", minWidth: 144, grow: 0, align: "center" },
   after: { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },
   coverageCut: { key: "coverageCut", label: "Coverage Cut", minWidth: 144, grow: 0, align: "center" },
+  isWaste: { key: "isWaste", label: "Waste", minWidth: 88, grow: 0, align: "center" },
+  notes: { key: "notes", label: "Notes", minWidth: 200, grow: 1 },
   cutLogNumber: { key: "cutLogNumber", label: "Cut Log #", minWidth: 132, grow: 0 },
 } as const satisfies Record<string, GridColumn<CutLogRow>>
 
 /**
- * Canonical 8-column shape used by BOTH the inventory record view's cut-log
+ * Canonical 10-column shape used by BOTH the inventory record view's cut-log
  * section AND the work-orders material items section's cut-log grid. Order:
  * status → inventoryItem → location → before → cut → after → coverageCut →
- * cutLogNumber.
+ * isWaste → notes → cutLogNumber.
  *
  * `inventoryItem` cell renders the cut log's frozen-at-create snapshot of
  * the parent inventory's identity (inv# / roll# / dyeLot / note). `location`
  * is a denormalized mirror that re-snaps on create / update / finalize and
  * clears on void — surfaced as its own column so operators can scan where
- * the cut originated without opening the panel.
+ * the cut originated without opening the panel. `isWaste` and `notes` are
+ * the operator-editable fields from the cut-log side panel, surfaced as
+ * read-only columns here so operators can scan without opening the panel.
  */
 export const INVENTORY_CUT_LOG_LAYOUT: GridLayout<CutLogRow> = {
   dataColumns: [
@@ -44,6 +48,8 @@ export const INVENTORY_CUT_LOG_LAYOUT: GridLayout<CutLogRow> = {
     CUT_LOG_COLUMN_DEFINITIONS.cut,
     CUT_LOG_COLUMN_DEFINITIONS.after,
     CUT_LOG_COLUMN_DEFINITIONS.coverageCut,
+    CUT_LOG_COLUMN_DEFINITIONS.isWaste,
+    CUT_LOG_COLUMN_DEFINITIONS.notes,
     CUT_LOG_COLUMN_DEFINITIONS.cutLogNumber,
   ],
 }
