@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import {
   createLocalRecordRowId,
   isLocalOnlyRecordRow,
@@ -90,6 +91,11 @@ function buildDiff(
     .filter((item) => isLocalOnlyRecordRow(item.id))
     .map((item) => ({ tempId: item.id, form: toDiffForm(item) }))
 
+  // Local iterates newest-first (prepend on add/duplicate). Reverse so the
+  // server stamps createdAt oldest → newest in submission order — keeps
+  // the post-save DESC sort consistent with the user's local view.
+  added.reverse()
+
   const modified: WorkOrderMaterialItemsDiff["modified"] = []
   for (const item of local.items) {
     if (isLocalOnlyRecordRow(item.id)) continue
@@ -107,6 +113,13 @@ function buildDiff(
   return { added, modified, deleted }
 }
 
+function byCreatedAtDesc(
+  a: WorkOrderMaterialItemRow,
+  b: WorkOrderMaterialItemRow,
+): number {
+  return b.createdAt.localeCompare(a.createdAt)
+}
+
 export function useWorkOrderMaterialItemsSection({
   workOrder,
   materialItems,
@@ -118,15 +131,23 @@ export function useWorkOrderMaterialItemsSection({
   publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
   publishWorkOrder: (record: WorkOrderDetail) => void
 }) {
+  // Display order: newest material item first. Sort at the controller
+  // boundary so the engine + UI both see DESC-by-createdAt regardless of
+  // what the API returned.
+  const orderedMaterialItems = useMemo(
+    () => [...materialItems].sort(byCreatedAtDesc),
+    [materialItems],
+  )
+
   const section = useRecordScopedSectionController<WorkOrderMaterialItemRow[], LocalState>({
     recordId: workOrder.id,
     sectionKey: "material-items",
-    serverValue: materialItems,
-    serverRevisionKey: createItemsRevisionKey(materialItems),
+    serverValue: orderedMaterialItems,
+    serverRevisionKey: createItemsRevisionKey(orderedMaterialItems),
     createLocalValue: createLocalState,
     persistDraft: false,
     policy: {
-      addRowPlacement: "bottom",
+      addRowPlacement: "top",
       childRows: "inline",
     },
     onSave: async (localValue, currentRows) => {
@@ -149,12 +170,13 @@ export function useWorkOrderMaterialItemsSection({
           workOrder.updatedAt,
         )
 
+      const sortedNextItems = [...nextItems].sort(byCreatedAtDesc)
       publishWorkOrder(nextWorkOrder)
-      publishMaterialItems(nextItems)
+      publishMaterialItems(sortedNextItems)
 
       return {
-        serverValue: nextItems,
-        serverRevisionKey: createItemsRevisionKey(nextItems),
+        serverValue: sortedNextItems,
+        serverRevisionKey: createItemsRevisionKey(sortedNextItems),
         noticeMessage: "Material items saved",
       }
     },
@@ -163,7 +185,6 @@ export function useWorkOrderMaterialItemsSection({
   function addItem() {
     section.setLocalValue((previous) => ({
       items: [
-        ...previous.items,
         {
           id: createLocalRecordRowId("work-order-material-item"),
           productId: "",
@@ -173,6 +194,7 @@ export function useWorkOrderMaterialItemsSection({
           notes: "",
           categoryFilterId: null,
         },
+        ...previous.items,
       ],
     }))
     section.setError(null)
@@ -217,7 +239,7 @@ export function useWorkOrderMaterialItemsSection({
           },
         ),
       }
-      return { items: [...previous.items, duplicated] }
+      return { items: [duplicated, ...previous.items] }
     })
     section.setError(null)
   }
