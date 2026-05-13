@@ -3,7 +3,7 @@
 import type { FlooringStagedRowStatus } from "@builders/domain"
 import { StatusBadge } from "@/components/badges"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
-import { PrefixedTextCell, TextCell, TextareaCell, UnitCell } from "@/components/cells"
+import { TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import type { StagedInvRowEditPanelController } from "@/modules/imports/controllers/record/staged-inventory-filter-rows/use-staged-inv-row-edit-panel"
@@ -41,7 +41,6 @@ function resolveContext(
 ): {
   productLabel: string
   stockUnitAbbrev: string
-  rollPrefix: string
   status: FlooringStagedRowStatus
   isEditable: boolean
 } {
@@ -50,7 +49,6 @@ function resolveContext(
     return {
       productLabel: "—",
       stockUnitAbbrev: "",
-      rollPrefix: "ROLL#",
       status: "DRAFT",
       isEditable: false,
     }
@@ -59,7 +57,6 @@ function resolveContext(
     return {
       productLabel: open.filterRowProductName,
       stockUnitAbbrev: open.filterRowStockUnitAbbrev,
-      rollPrefix: "ROLL#",
       status: "DRAFT",
       isEditable: true,
     }
@@ -67,7 +64,6 @@ function resolveContext(
   return {
     productLabel: open.row.productName,
     stockUnitAbbrev: open.row.stockUnitAbbrev || open.filterRow.stockUnitAbbrev,
-    rollPrefix: open.row.rollPrefix || "ROLL#",
     status: open.row.status,
     isEditable: open.row.status === "DRAFT",
   }
@@ -84,12 +80,7 @@ export function StagedInvRowEditFormFields({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={5}>
-        <FormField label="Filter row product">
-          <TextCell editable={false} value={ctx.productLabel || "—"} ariaLabel="Filter row product" />
-        </FormField>
-      </CellAt>
-      <CellAt col={6} colSpan={3}>
+      <CellAt col={1} colSpan={4}>
         <FormField label="Status">
           <div className="flex items-center">
             <StatusBadge tone={statusTone(ctx.status)}>{statusLabel(ctx.status)}</StatusBadge>
@@ -97,13 +88,18 @@ export function StagedInvRowEditFormFields({
         </FormField>
       </CellAt>
 
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Filter row product">
+          <TextCell editable={false} value={ctx.productLabel || "—"} ariaLabel="Filter row product" />
+        </FormField>
+      </CellAt>
+
       <CellAt col={1} colSpan={4}>
         <FormField label="Roll #">
-          <PrefixedTextCell
+          <TextCell
             editable={editable}
             value={form.rollNumber}
             onChange={(value) => setField("rollNumber", value)}
-            prefix={ctx.rollPrefix}
             ariaLabel="Roll number"
           />
         </FormField>
@@ -130,7 +126,8 @@ export function StagedInvRowEditFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={4}>
+
+      <CellAt col={1} colSpan={4}>
         <FormField label="Location">
           <TextCell
             editable={editable}
@@ -143,11 +140,11 @@ export function StagedInvRowEditFormFields({
 
       <CellAt col={1} colSpan={8}>
         <FormField label="Note">
-          <TextareaCell
+          <TextCell
             editable={editable}
             value={form.note}
             onChange={(value) => setField("note", value)}
-            rows={3}
+            ariaLabel="Note"
           />
         </FormField>
       </CellAt>
