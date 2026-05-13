@@ -71,8 +71,6 @@ export function WorkOrderFilesSection({
             <tr className="border-b border-[var(--panel-border)]">
               <th className="px-2 py-1 text-left">File #</th>
               <th className="px-2 py-1 text-center">Status</th>
-              <th className="px-2 py-1 text-left">Created</th>
-              <th className="px-2 py-1 text-left">Completed</th>
               <th className="px-2 py-1 text-left">Error</th>
               <th className="w-32 px-2 py-1 text-right"></th>
             </tr>
@@ -85,12 +83,6 @@ export function WorkOrderFilesSection({
                 </td>
                 <td className="px-2 py-1 text-center">
                   <StatusBadge tone={statusTone(file.status)}>{file.status}</StatusBadge>
-                </td>
-                <td className="px-2 py-1">{file.createdAt.toString().slice(0, 19).replace("T", " ")}</td>
-                <td className="px-2 py-1">
-                  {file.completedAt
-                    ? file.completedAt.toString().slice(0, 19).replace("T", " ")
-                    : "—"}
                 </td>
                 <td className="px-2 py-1 text-rose-700">{file.errorMessage || ""}</td>
                 <td className="px-2 py-1 text-right">
