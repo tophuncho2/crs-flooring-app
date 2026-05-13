@@ -104,7 +104,8 @@ export function StagedInvRowEditFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={4}>
+
+      <CellAt col={1} colSpan={4}>
         <FormField label="Dye lot">
           <TextCell
             editable={editable}
