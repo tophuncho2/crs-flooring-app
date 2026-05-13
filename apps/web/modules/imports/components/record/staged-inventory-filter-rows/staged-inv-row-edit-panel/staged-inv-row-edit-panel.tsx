@@ -36,7 +36,7 @@ export function StagedInvRowEditPanel({ controller }: StagedInvRowEditPanelProps
       side="right"
       onClose={controller.close}
       title={title}
-      widthClassName="w-[28rem]"
+      widthClassName="w-[34rem]"
     >
       <div className="flex h-full flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-4 pb-4">
