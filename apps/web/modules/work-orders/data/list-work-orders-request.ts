@@ -10,12 +10,19 @@ export const WORK_ORDERS_LIST_QUERY_KEY = ["work-orders", "list"] as const
 export const WORK_ORDERS_LIST_PAGE_SIZE = 50
 
 /**
- * Filterable field keys recognised by the work-orders list. Concrete
- * dimensions land alongside the canonical filter UI wiring in the
- * work-orders sweep — until then the array is empty and the foundation
- * URL serialization below has nothing to read/write.
+ * Filterable field keys recognised by the work-orders list. Each ID
+ * filter is a multi-value URL param (`?managementCompanyId=a&managementCompanyId=b`);
+ * the UI currently exposes single-select chips but the contract is multi-value.
+ * `isComplete` is a single-element enum: `hide` (default; omitted from URL),
+ * `only`, or `all`.
  */
-export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [] as const satisfies readonly string[]
+export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [
+  "managementCompanyId",
+  "propertyId",
+  "templateId",
+  "warehouseId",
+  "isComplete",
+] as const satisfies readonly string[]
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -50,13 +57,11 @@ export function parseWorkOrdersListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): WorkOrdersListInput {
   const search = (readSearchParam(searchParams, "q") ?? "").trim()
-  const sortRaw = (readSearchParam(searchParams, "sort") ?? "").trim().toLowerCase()
-  const direction: "asc" | "desc" = sortRaw === "desc" ? "desc" : "asc"
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
   return {
     search: search || undefined,
-    sort: { field: "workOrderNumber", direction },
+    sort: { field: "workOrderNumber", direction: "desc" },
     filters: readFiltersFromSearchParams(searchParams),
     page,
     pageSize: WORK_ORDERS_LIST_PAGE_SIZE,
@@ -66,7 +71,6 @@ export function parseWorkOrdersListInputFromSearchParams(
 function buildSearchString(input: WorkOrdersListInput): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
-  if (input.sort) params.set("sort", input.sort.direction)
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   if (input.filters) {
@@ -86,9 +90,9 @@ export async function listWorkOrdersRequest(
 ): Promise<WorkOrdersListOutput> {
   const queryString = buildSearchString(input)
   const url = queryString ? `/api/work-orders?${queryString}` : "/api/work-orders"
-  const result = await requestJson<{ workOrders: WorkOrderListRow[] }>(url, {
+  const result = await requestJson<{ rows: WorkOrderListRow[]; total: number }>(url, {
     method: "GET",
     headers: { Accept: "application/json" },
   })
-  return { rows: result.workOrders, total: result.workOrders.length }
+  return { rows: result.rows, total: result.total }
 }

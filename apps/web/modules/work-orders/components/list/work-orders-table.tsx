@@ -18,6 +18,7 @@ const WORK_ORDERS_LIST_LAYOUT: GridLayout<WorkOrderListRow> = {
     { key: "vacancy", label: "Vacancy", minWidth: 100, grow: 0 },
     { key: "unitNumber", label: "Unit #", minWidth: 90, grow: 0 },
     { key: "unitType", label: "Unit Type", minWidth: 110, grow: 0 },
+    { key: "isComplete", label: "Complete", minWidth: 100, grow: 0 },
   ],
 }
 
@@ -75,6 +76,8 @@ export function WorkOrdersTable({
             return row.unitNumber || "-"
           case "unitType":
             return row.unitType || "-"
+          case "isComplete":
+            return row.isComplete ? "Complete" : "—"
           default:
             return "-"
         }

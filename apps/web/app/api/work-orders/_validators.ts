@@ -1,3 +1,4 @@
+import { z } from "zod"
 import {
   CutLogExecutionError,
   WorkOrderExecutionError,
@@ -5,8 +6,10 @@ import {
 } from "@builders/application"
 import type {
   CreateWorkOrderUseCaseInput,
+  ListInput,
   SyncTemplateToWorkOrderInput,
   UpdateWorkOrderUseCaseInput,
+  WorkOrdersListFilters,
 } from "@builders/application"
 import type {
   WorkOrderMaterialItemForm,
@@ -313,5 +316,92 @@ export function validateSyncTemplateToWorkOrderInput(
 ): SyncTemplateToWorkOrderInput {
   return {
     templateId: requireString(body.templateId, "templateId", failWorkOrder),
+  }
+}
+
+// ---------------------------------------------------------------------------
+// List view query validator (search + filters + pagination)
+// ---------------------------------------------------------------------------
+
+const WORK_ORDERS_LIST_DEFAULT_PAGE_SIZE = 50
+const WORK_ORDERS_LIST_MAX_PAGE_SIZE = 200
+
+const ID_FILTER_KEYS = [
+  "managementCompanyId",
+  "propertyId",
+  "templateId",
+  "warehouseId",
+] as const
+
+type IdFilterKey = (typeof ID_FILTER_KEYS)[number]
+
+const IS_COMPLETE_VALUES = ["hide", "only", "all"] as const
+
+const listWorkOrdersQuerySchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(WORK_ORDERS_LIST_MAX_PAGE_SIZE)
+    .default(WORK_ORDERS_LIST_DEFAULT_PAGE_SIZE),
+})
+
+function readMultiValue(searchParams: URLSearchParams, key: string): string[] {
+  return Array.from(
+    new Set(
+      searchParams
+        .getAll(key)
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+}
+
+export function validateListWorkOrdersQuery(
+  searchParams: URLSearchParams,
+): ListInput<WorkOrdersListFilters> {
+  // Strip multi-value keys before zod sees them.
+  const raw: Record<string, string> = {}
+  const reservedMultiValueKeys = new Set<string>([...ID_FILTER_KEYS, "isComplete"])
+  searchParams.forEach((value, key) => {
+    if (reservedMultiValueKeys.has(key)) return
+    raw[key] = value
+  })
+
+  const parseResult = listWorkOrdersQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    failWorkOrder(
+      issue?.message ?? "Invalid work-orders list query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+
+  const filterRecord: WorkOrdersListFilters = {}
+  for (const key of ID_FILTER_KEYS) {
+    const values = readMultiValue(searchParams, key)
+    if (values.length > 0) filterRecord[key as IdFilterKey] = values
+  }
+  const completeValues = readMultiValue(searchParams, "isComplete").filter((value) =>
+    (IS_COMPLETE_VALUES as readonly string[]).includes(value),
+  )
+  if (completeValues.length > 0) {
+    filterRecord.isComplete = [completeValues[0]]
+  }
+
+  const hasAnyFilter = Object.keys(filterRecord).length > 0
+
+  return {
+    search,
+    sort: { field: "workOrderNumber", direction: "desc" },
+    ...(hasAnyFilter ? { filters: filterRecord } : {}),
+    page: parsed.page,
+    pageSize: parsed.pageSize,
   }
 }

@@ -6,13 +6,19 @@ const DEFAULT_PAGE_SIZE = 50
 const MAX_PAGE_SIZE = 200
 
 /**
- * Filter shape for the work-orders list. Starts as an empty record;
- * concrete filter dimensions (e.g. status, warehouse, jobType) will be
- * added alongside the canonical filter UI wiring in the work-orders
- * sweep. Until then, the controller / use case / repo accept the empty
- * shape as a foundation pass-through.
+ * Filter shape for the work-orders list. Each ID filter is a multi-value
+ * array (single-element today, but the URL/repo contract is multi-value
+ * so the upgrade path stays simple). `isComplete` is a single-element
+ * enum: absent | `["hide"]` → hide completed (default), `["only"]` →
+ * completed only, `["all"]` → no filter. The repo applies the default.
  */
-export type WorkOrdersListFilters = Record<string, never>
+export type WorkOrdersListFilters = {
+  managementCompanyId?: string[]
+  propertyId?: string[]
+  templateId?: string[]
+  warehouseId?: string[]
+  isComplete?: string[]
+}
 
 export async function listWorkOrdersUseCase(
   input: ListInput<WorkOrdersListFilters>,

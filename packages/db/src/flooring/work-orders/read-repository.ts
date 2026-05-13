@@ -23,14 +23,19 @@ export type WorkOrdersListSort = {
 }
 
 /**
- * Multi-value filter map keyed by domain field. Empty values arrays
- * are ignored. Concrete dimensions (status, warehouse, jobType, etc.)
- * will be wired into `buildWorkOrdersWhere` alongside the canonical
- * filter UI wiring in the work-orders sweep — for now, this is a
- * foundation pass-through that the application/use-case layer
- * already pipes.
+ * Multi-value filter map keyed by domain field. Each ID filter is a
+ * multi-value array (currently single-element in the UI; multi-value
+ * preserves the upgrade path). `isComplete` is a single-element enum:
+ * absent | `["hide"]` → `isComplete: false`, `["only"]` →
+ * `isComplete: true`, `["all"]` → omit the clause.
  */
-export type WorkOrdersListFilterMap = Record<string, string[]>
+export type WorkOrdersListFilterMap = {
+  managementCompanyId?: string[]
+  propertyId?: string[]
+  templateId?: string[]
+  warehouseId?: string[]
+  isComplete?: string[]
+}
 
 export type WorkOrdersListArgs = {
   searchQuery?: string
@@ -41,25 +46,44 @@ export type WorkOrdersListArgs = {
 
 function buildWorkOrdersWhere(
   searchQuery: string | undefined,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- pass-through; concrete filter dimensions wired in WO sweep
-  _filters: WorkOrdersListFilterMap | undefined,
+  filters: WorkOrdersListFilterMap | undefined,
 ): Prisma.FlooringWorkOrderWhereInput | undefined {
-  if (!searchQuery) return undefined
+  const andClauses: Prisma.FlooringWorkOrderWhereInput[] = []
 
-  return {
-    OR: [
-      { workOrderNumber: { contains: searchQuery, mode: "insensitive" } },
-      { unitNumber: { contains: searchQuery, mode: "insensitive" } },
-      { unitType: { contains: searchQuery, mode: "insensitive" } },
-      { customAddress: { contains: searchQuery, mode: "insensitive" } },
-      { description: { contains: searchQuery, mode: "insensitive" } },
-      { property: { name: { contains: searchQuery, mode: "insensitive" } } },
-      { managementCompany: { name: { contains: searchQuery, mode: "insensitive" } } },
-      { jobType: { name: { contains: searchQuery, mode: "insensitive" } } },
-      { template: { templateNumber: { contains: searchQuery, mode: "insensitive" } } },
-      { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
-    ],
+  if (searchQuery) {
+    andClauses.push({
+      OR: [
+        { workOrderNumber: { contains: searchQuery, mode: "insensitive" } },
+        { description: { contains: searchQuery, mode: "insensitive" } },
+        { property: { name: { contains: searchQuery, mode: "insensitive" } } },
+        { jobType: { name: { contains: searchQuery, mode: "insensitive" } } },
+      ],
+    })
   }
+
+  if (filters?.managementCompanyId?.length) {
+    andClauses.push({ managementCompanyId: { in: filters.managementCompanyId } })
+  }
+  if (filters?.propertyId?.length) {
+    andClauses.push({ propertyId: { in: filters.propertyId } })
+  }
+  if (filters?.templateId?.length) {
+    andClauses.push({ templateId: { in: filters.templateId } })
+  }
+  if (filters?.warehouseId?.length) {
+    andClauses.push({ warehouseId: { in: filters.warehouseId } })
+  }
+
+  const completeMode = filters?.isComplete?.[0]
+  if (completeMode === "only") {
+    andClauses.push({ isComplete: true })
+  } else if (completeMode !== "all") {
+    andClauses.push({ isComplete: false })
+  }
+
+  if (andClauses.length === 0) return undefined
+  if (andClauses.length === 1) return andClauses[0]
+  return { AND: andClauses }
 }
 
 function appendUniqueOrderBy<T>(values: T[], nextValue: T | null | undefined) {

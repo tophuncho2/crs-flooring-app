@@ -1,5 +1,4 @@
-import { createWorkOrderUseCase } from "@builders/application"
-import { listWorkOrders } from "@builders/db"
+import { createWorkOrderUseCase, listWorkOrdersUseCase } from "@builders/application"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -10,7 +9,7 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateCreateWorkOrderInput } from "./_validators"
+import { validateCreateWorkOrderInput, validateListWorkOrdersQuery } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -22,8 +21,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    const workOrders = await listWorkOrders({})
-    return routeJson(access, { workOrders })
+    const url = new URL(request.url)
+    const input = validateListWorkOrdersQuery(url.searchParams)
+    const { rows, total } = await listWorkOrdersUseCase(input)
+    return routeJson(access, { rows, total })
   } catch (error) {
     return routeError(access, error)
   }

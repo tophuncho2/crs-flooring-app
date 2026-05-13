@@ -1,3 +1,7 @@
 export * from "./contracts/filter-contract"
 export * from "./filter-control"
 export * from "./filter-chip-strip"
+export * from "./picker-filter-chip"
+export * from "./enum-filter-chip"
+export * from "./clear-all-filters-button"
+export * from "./filter-toolbar"
