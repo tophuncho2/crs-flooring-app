@@ -100,6 +100,16 @@ export type InventoryCutLogRow = CutLogRow & {
   workOrderItemProductLabel: string | null
 }
 
+// Page envelope returned by the inventory cut-logs list endpoint. `rows`
+// is the bounded slice for the current page; `total` is the full count of
+// cut logs on the parent inventory record.
+export type InventoryCutLogPage = {
+  rows: InventoryCutLogRow[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 /**
  * Parent-inventory context every cut-log mutation use case needs under the
  * per-inventory FOR UPDATE lock:

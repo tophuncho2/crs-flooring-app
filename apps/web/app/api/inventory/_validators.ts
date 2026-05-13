@@ -3,6 +3,8 @@ import { CutLogExecutionError, InventoryExecutionError } from "@builders/applica
 import type { InventoryListFilters, UpdateInventoryInput } from "@builders/application"
 import type { ListInput } from "@builders/application"
 import {
+  INVENTORY_CUT_LOG_MAX_PAGE_SIZE,
+  INVENTORY_CUT_LOG_PAGE_SIZE,
   LIST_INVENTORY_MAX_PAGE_SIZE,
   LIST_INVENTORY_PAGE_SIZE,
 } from "@builders/domain"
@@ -325,4 +327,41 @@ export function validateInvFinalizeCutLogInput(
   _body: Record<string, unknown>,
 ): ValidatedInvFinalizeCutLogInput {
   return {}
+}
+
+// --- Inventory cut-logs list (paginated section query) ---
+
+const inventoryCutLogsPageQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(INVENTORY_CUT_LOG_MAX_PAGE_SIZE)
+    .default(INVENTORY_CUT_LOG_PAGE_SIZE),
+})
+
+export type ValidatedInventoryCutLogsPageQuery = {
+  page: number
+  pageSize: number
+}
+
+export function validateInventoryCutLogsPageQuery(
+  searchParams: URLSearchParams,
+): ValidatedInventoryCutLogsPageQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = inventoryCutLogsPageQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    failCutLog(
+      issue?.message ?? "Invalid cut-logs list query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  return parseResult.data
 }

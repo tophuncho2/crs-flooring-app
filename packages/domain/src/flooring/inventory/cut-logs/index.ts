@@ -4,6 +4,7 @@
 export * from "./types.js"
 export * from "./errors.js"
 export * from "./editability.js"
+export * from "./list-config.js"
 export * from "./rules/cut-log-rules.js"
 export * from "./rules/form-rules.js"
 export * from "./rules/void-rules.js"

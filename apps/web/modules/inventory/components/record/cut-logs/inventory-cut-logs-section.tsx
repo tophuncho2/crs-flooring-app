@@ -1,16 +1,25 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { ActionHeader } from "@/components/headers"
 import {
   INVENTORY_CUT_LOG_LAYOUT,
   renderCutLogReadOnlyCell,
 } from "@/modules/cut-logs"
 import { Grid, GridEmpty } from "@/components/grid"
-import { formatInventoryQuantity, type InventoryCutLogRow } from "@builders/domain"
+import {
+  INVENTORY_CUT_LOG_PAGE_SIZE,
+  formatInventoryQuantity,
+  type InventoryCutLogRow,
+} from "@builders/domain"
+import {
+  INVENTORY_CUT_LOGS_QUERY_KEY,
+  inventoryCutLogsPageRequest,
+} from "@/modules/inventory/data/inventory-cut-logs-request"
 
 export type InventoryCutLogsSectionProps = {
-  rows: InventoryCutLogRow[]
+  inventoryId: string
   stockUnitAbbrev: string
   coverageUnitAbbrev: string
   totalCutSum: string
@@ -18,19 +27,37 @@ export type InventoryCutLogsSectionProps = {
 }
 
 /**
- * Unified cut-log section for the inventory record view. PENDING rows
- * (caller-sorted to the top) and FINAL/VOID rows (caller-sorted by
- * `finalCutSequence`) render in a single grid; clicking a row opens the
- * view-only side panel that carries the panel-only fields (work order,
- * material item, created, updated).
+ * Cut-log section for the inventory record view. Fetches its own page of
+ * cut logs from the paginated `/api/inventory/[id]/cut-logs` endpoint —
+ * the parent panel no longer threads cut-log rows in. Mutations on the
+ * shared edit panel invalidate this section's query so the visible page
+ * refetches after a save / void / delete.
+ *
+ * Server sort: `[isFinal asc, finalCutSequence asc, createdAt asc]` —
+ * active rows first, then finalized rows in sequence. Matches the
+ * WO-side `listCutLogsForWorkOrderItem` ordering.
  */
 export function InventoryCutLogsSection({
-  rows,
+  inventoryId,
   stockUnitAbbrev,
   coverageUnitAbbrev,
   totalCutSum,
   onRowClick,
 }: InventoryCutLogsSectionProps) {
+  const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    setPage(1)
+  }, [inventoryId])
+
+  const query = useQuery({
+    queryKey: [...INVENTORY_CUT_LOGS_QUERY_KEY, inventoryId, page],
+    queryFn: ({ signal }) =>
+      inventoryCutLogsPageRequest(inventoryId, page, INVENTORY_CUT_LOG_PAGE_SIZE, signal),
+    staleTime: 0,
+    gcTime: 0,
+  })
+
   const renderCell = useMemo(
     () =>
       renderCutLogReadOnlyCell({
@@ -40,25 +67,19 @@ export function InventoryCutLogsSection({
     [stockUnitAbbrev, coverageUnitAbbrev],
   )
 
-  const counts = useMemo(() => {
-    let pending = 0
-    let final = 0
-    let voided = 0
-    for (const row of rows) {
-      if (row.status === "VOID" || row.void) voided += 1
-      else if (row.status === "FINAL") final += 1
-      else pending += 1
-    }
-    return { pending, final, voided }
-  }, [rows])
+  const data = query.data
+  const rows = data?.rows ?? []
+  const total = data?.total ?? 0
+  const pageSize = data?.pageSize ?? INVENTORY_CUT_LOG_PAGE_SIZE
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const showPagination = total > pageSize
+  const prevDisabled = page <= 1 || query.isFetching
+  const nextDisabled = page >= totalPages || query.isFetching
 
   const summaryParts = [
-    `${rows.length} log${rows.length === 1 ? "" : "s"}`,
+    `${total} log${total === 1 ? "" : "s"}`,
     `${formatInventoryQuantity(totalCutSum, stockUnitAbbrev)} cut total`,
-    counts.pending > 0 ? `${counts.pending} pending` : null,
-    counts.final > 0 ? `${counts.final} final` : null,
-    counts.voided > 0 ? `${counts.voided} voided` : null,
-  ].filter(Boolean) as string[]
+  ]
 
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -67,11 +88,43 @@ export function InventoryCutLogsSection({
       <Grid<InventoryCutLogRow>
         rows={rows}
         layout={INVENTORY_CUT_LOG_LAYOUT}
-        empty={<GridEmpty>No cut logs on this inventory.</GridEmpty>}
+        empty={
+          <GridEmpty>
+            {query.isError
+              ? "Could not load cut logs."
+              : query.isLoading
+                ? "Loading cut logs…"
+                : "No cut logs on this inventory."}
+          </GridEmpty>
+        }
         renderCell={renderCell}
         onRowClick={onRowClick}
         getRowAriaLabel={(row) => `View cut log ${row.cutLogNumber}`}
       />
+
+      {showPagination ? (
+        <div className="flex items-center justify-between gap-2 border-t border-[var(--panel-border)] px-4 py-2 text-xs text-[var(--foreground)]/65">
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={prevDisabled}
+            className="rounded border border-[var(--panel-border)] px-2 py-1 transition hover:bg-[var(--panel-hover)] disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span className="tabular-nums text-[var(--foreground)]/55">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            disabled={nextDisabled}
+            className="rounded border border-[var(--panel-border)] px-2 py-1 transition hover:bg-[var(--panel-hover)] disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }

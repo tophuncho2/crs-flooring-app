@@ -5,4 +5,5 @@ export * from "./update-pending-cut-log.js"
 export * from "./delete-pending-cut-log.js"
 export * from "./finalize-cut-log.js"
 export * from "./void-cut-log.js"
+export * from "./list-inventory-cut-logs.js"
 // scope.ts is intentionally NOT re-exported — internal helper only.

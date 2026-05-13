@@ -9,6 +9,7 @@ import {
 import { db } from "../../../client.js"
 import {
   cutLogRowSelect,
+  inventoryCutLogRowSelect,
   type CutLogDbClient,
   type CutLogRowPayload,
   type InventoryCutLogRowPayload,
@@ -217,6 +218,40 @@ export async function listCutLogsForWorkOrderItemIds(
     ],
   })
   return rows.map(normalizeCutLogRow)
+}
+
+/**
+ * Paginated read of inventory-side cut logs for a single parent record.
+ * Powers the cut-log section on the inventory record view. Sort order
+ * matches the WO-side `listCutLogsForWorkOrderItem` — `isFinal asc`
+ * fronts the active rows, then `finalCutSequence asc` orders the finalized
+ * tail (with `createdAt asc` as a stable tiebreak for rows missing a
+ * sequence). Returns `{ rows, total }` so the consumer can render Prev/Next
+ * controls without a second query.
+ */
+export async function listInventoryCutLogsPage(
+  args: { inventoryId: string; page: number; pageSize: number },
+  client: CutLogDbClient = db,
+): Promise<{ rows: InventoryCutLogRow[]; total: number }> {
+  const where: Prisma.FlooringCutLogWhereInput = { inventoryId: args.inventoryId }
+  const skip = (args.page - 1) * args.pageSize
+
+  const [rows, total] = await Promise.all([
+    client.flooringCutLog.findMany({
+      where,
+      select: inventoryCutLogRowSelect,
+      orderBy: [
+        { isFinal: "asc" },
+        { finalCutSequence: "asc" },
+        { createdAt: "asc" },
+      ],
+      skip,
+      take: args.pageSize,
+    }),
+    client.flooringCutLog.count({ where }),
+  ])
+
+  return { rows: rows.map(normalizeInventoryCutLogRow), total }
 }
 
 /**
