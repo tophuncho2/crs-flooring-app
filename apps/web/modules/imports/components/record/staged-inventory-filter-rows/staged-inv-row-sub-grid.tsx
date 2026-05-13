@@ -105,12 +105,17 @@ export function StagedInvRowSubGrid({
     const isDraft = row.status === "DRAFT"
     if (control.kind === "selection") {
       return (
-        <CheckboxCell
-          editable={canToggleSelection && isDraft}
-          value={selectedIds.has(row.id)}
-          onChange={() => onToggleSelection(row.id)}
-          ariaLabel={`Select row ${row.rollNumber || row.id}`}
-        />
+        <div
+          onClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <CheckboxCell
+            editable={canToggleSelection && isDraft}
+            value={selectedIds.has(row.id)}
+            onChange={() => onToggleSelection(row.id)}
+            ariaLabel={`Select row ${row.rollNumber || row.id}`}
+          />
+        </div>
       )
     }
     if (control.kind === "actions") {
