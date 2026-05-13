@@ -28,7 +28,7 @@ const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> =
   dataColumns: [
     { key: "categoryFilter", label: "Category", minWidth: 140, grow: 0 },
     { key: "product", label: "Product", minWidth: 220, grow: 2 },
-    { key: "quantity", label: "Quantity", kind: "number", minWidth: 110, grow: 0, align: "end" },
+    { key: "quantity", label: "Quantity", kind: "number", minWidth: 180, grow: 0.5, align: "end" },
     { key: "notes", label: "Notes", minWidth: 200, grow: 1.5 },
   ],
   trailingControls: [{ key: "remove", kind: "actions", width: 116 }],
