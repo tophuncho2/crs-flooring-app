@@ -25,9 +25,9 @@
   },
   "scripts": {
     "db:generate": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma generate",
-    "db:migrate:dev": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate dev --skip-seed",
+    "db:migrate:dev": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate dev",
     "db:deploy": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate deploy",
-    "db:reset": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate reset --force --skip-seed",
+    "db:reset": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate reset --force",
     "db:seed": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma db seed",
     "db:studio": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma studio",
     "guard:prisma": "node scripts/guard-prisma.js",
