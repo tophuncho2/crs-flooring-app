@@ -98,7 +98,6 @@ export function InventoryRecordPanel({
                 inventoryId={inventory.id}
                 stockUnitAbbrev={stockUnitAbbrev}
                 coverageUnitAbbrev={coverageUnitAbbrev}
-                totalCutSum={controller.record.totalCutSum}
                 onRowClick={(cutLog) =>
                   cutLogPanel.openPanel({
                     mode: "edit",

@@ -10,7 +10,6 @@ import {
 import { Grid, GridEmpty } from "@/components/grid"
 import {
   INVENTORY_CUT_LOG_PAGE_SIZE,
-  formatInventoryQuantity,
   type InventoryCutLogRow,
 } from "@builders/domain"
 import {
@@ -22,7 +21,6 @@ export type InventoryCutLogsSectionProps = {
   inventoryId: string
   stockUnitAbbrev: string
   coverageUnitAbbrev: string
-  totalCutSum: string
   onRowClick: (cutLog: InventoryCutLogRow) => void
 }
 
@@ -42,7 +40,6 @@ export function InventoryCutLogsSection({
   inventoryId,
   stockUnitAbbrev,
   coverageUnitAbbrev,
-  totalCutSum,
   onRowClick,
 }: InventoryCutLogsSectionProps) {
   const [page, setPage] = useState(1)
@@ -77,14 +74,11 @@ export function InventoryCutLogsSection({
   const prevDisabled = page <= 1 || query.isFetching
   const nextDisabled = page >= totalPages || query.isFetching
 
-  const summaryParts = [
-    `${total} log${total === 1 ? "" : "s"}`,
-    `${formatInventoryQuantity(totalCutSum, stockUnitAbbrev)} cut total`,
-  ]
+  const summary = `${total} log${total === 1 ? "" : "s"}`
 
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-      <ActionHeader title="Cut Logs" summary={<span>{summaryParts.join(" · ")}</span>} />
+      <ActionHeader title="Cut Logs" summary={<span>{summary}</span>} />
 
       <Grid<InventoryCutLogRow>
         rows={rows}
