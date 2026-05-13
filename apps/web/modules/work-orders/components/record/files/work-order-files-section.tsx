@@ -1,6 +1,9 @@
 "use client"
 
+import { useState } from "react"
+
 import { StatusBadge } from "@/components/badges"
+import { ConfirmDialog } from "@/components/dialogs"
 import { useWorkOrderFilesSection } from "@/modules/work-orders/controllers/record/files/use-work-order-files-section"
 import type { WorkOrderFileRow } from "@/modules/work-orders/data/queries"
 
@@ -27,6 +30,7 @@ export function WorkOrderFilesSection({
   initialFiles: WorkOrderFileRow[]
 }) {
   const files = useWorkOrderFilesSection({ workOrderId, initialFiles })
+  const [pendingDelete, setPendingDelete] = useState<WorkOrderFileRow | null>(null)
 
   return (
     <section className="space-y-3 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] p-4">
@@ -104,11 +108,7 @@ export function WorkOrderFilesSection({
                       type="button"
                       className="text-rose-600 hover:underline disabled:opacity-50"
                       disabled={files.isDeleting && files.deletingId === file.id}
-                      onClick={() => {
-                        if (window.confirm("Delete this file?")) {
-                          void files.deleteFile(file.id)
-                        }
-                      }}
+                      onClick={() => setPendingDelete(file)}
                     >
                       Delete
                     </button>
@@ -119,6 +119,25 @@ export function WorkOrderFilesSection({
           </tbody>
         </table>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete file?"
+        message={
+          pendingDelete
+            ? `Delete WO-FILE-${String(pendingDelete.fileNumber).padStart(3, "0")}? This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        tone="destructive"
+        onConfirm={() => {
+          if (pendingDelete) {
+            void files.deleteFile(pendingDelete.id)
+          }
+          setPendingDelete(null)
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </section>
   )
 }
