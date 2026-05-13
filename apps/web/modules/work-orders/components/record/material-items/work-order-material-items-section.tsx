@@ -5,7 +5,8 @@ import { NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
-import { ExpandableRow } from "@/components/grid/expandable-rows"
+import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandable-rows"
+import { isLocalOnlyRecordRow } from "@/controllers/record/utils/record-row-ids"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import type {
@@ -228,15 +229,21 @@ export function WorkOrderMaterialItemsSection({
                 accentTone="sky"
               >
                 {isExpanded ? (
-                  <div className="px-4 py-3">
-                    <WorkOrderCutLogRow
-                      workOrderItemId={row.id}
-                      serverRows={cutLogs}
-                      onOpenEdit={handleOpenEdit}
-                      onCreateNew={handleCreateNew}
-                      isSectionBusy={sectionBusy}
-                    />
-                  </div>
+                  isLocalOnlyRecordRow(row.id) ? (
+                    <UnsavedParentMessage>
+                      Save this material item to add cut logs.
+                    </UnsavedParentMessage>
+                  ) : (
+                    <div className="px-4 py-3">
+                      <WorkOrderCutLogRow
+                        workOrderItemId={row.id}
+                        serverRows={cutLogs}
+                        onOpenEdit={handleOpenEdit}
+                        onCreateNew={handleCreateNew}
+                        isSectionBusy={sectionBusy}
+                      />
+                    </div>
+                  )
                 ) : null}
               </ExpandableRow>
             </Fragment>

@@ -5,7 +5,11 @@ import type { ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
 import { RowActionButton, UnitCell } from "@/components/cells"
 import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
-import { ExpandableRow, ExpandToggle } from "@/components/grid/expandable-rows"
+import {
+  ExpandableRow,
+  ExpandToggle,
+  UnsavedParentMessage,
+} from "@/components/grid/expandable-rows"
 import { SelectAllButton } from "@/components/features/select-batch"
 import { Grid, GridEmpty } from "@/components/grid"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
@@ -303,9 +307,9 @@ export function ImportStagedInventoryFilterRowsSection({
                       />
                     </div>
                   ) : (
-                    <div className="px-4 py-3 text-xs text-[var(--foreground)]/55">
+                    <UnsavedParentMessage>
                       Save this filter row to add staged inventory rows.
-                    </div>
+                    </UnsavedParentMessage>
                   )
                 ) : null}
               </ExpandableRow>
