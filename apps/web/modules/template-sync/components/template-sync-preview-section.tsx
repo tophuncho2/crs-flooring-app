@@ -59,7 +59,6 @@ export function TemplateSyncPreviewSection({ templateId }: Props) {
     queryKey: [...TEMPLATE_SYNC_PREVIEW_QUERY_KEY, templateId],
     queryFn: ({ signal }) => templatePreviewRequest(templateId, signal),
     placeholderData: (previous) => previous,
-    staleTime: 60_000,
   })
 
   const preview = query.data
