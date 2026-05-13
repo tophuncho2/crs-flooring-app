@@ -56,7 +56,7 @@ function formIsDirty(current: StagedInventoryForm, baseline: StagedInventoryForm
  *
  * Behavior contract:
  *   - Save (create) → close panel
- *   - Save (edit)   → stay open, refresh form to server values
+ *   - Save (edit)   → close panel
  *   - Delete        → close panel
  *   - Backdrop / ESC / X → discard unsaved, close (blocked while saving)
  */
@@ -130,18 +130,9 @@ export function useStagedInvRowEditPanel({
         form: input.form,
         expectedUpdatedAt: input.row.updatedAt,
       }),
-    onSuccess: (response, variables) => {
+    onSuccess: (response) => {
       publish({ kind: "upsert", row: response.row, filterRow: response.filterRow })
-      // Stay open; refresh form + baseline + open spec from server-fresh row.
-      const next = toStagedInventoryForm(response.row)
-      setForm(next)
-      setBaseline(next)
-      setOpen((prev) =>
-        prev && prev.mode === "edit"
-          ? { mode: "edit", row: response.row, filterRow: response.filterRow }
-          : prev,
-      )
-      void variables
+      setOpen(null)
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
