@@ -194,20 +194,8 @@ export function TemplatePrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      {/* Row 4: Template Notes (full width) */}
-      <CellAt col={1} row={4} colSpan={8}>
-        <FormField label="Template Notes">
-          <TextareaCell
-            editable={editable}
-            value={draft.templateNotes}
-            onChange={(value) => onFieldChange("templateNotes", value)}
-            rows={3}
-          />
-        </FormField>
-      </CellAt>
-
-      {/* Rows 5-6: Property address + instructions (read-only, live from selection) */}
-      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={5} />
+      {/* Rows 4-5: Property address + instructions (read-only, live from selection) */}
+      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={4} />
     </FieldSection>
   )
 }
