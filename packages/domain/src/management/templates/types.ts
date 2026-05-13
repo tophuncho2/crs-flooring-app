@@ -47,6 +47,7 @@ export type TemplatePreview = {
   unitType: string
   warehouseName: string
   description: string
+  items: TemplateMaterialItemRow[]
 }
 
 export type TemplateForm = {

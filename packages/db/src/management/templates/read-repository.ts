@@ -197,6 +197,19 @@ const templatePreviewSelect = {
       instructions: true,
     },
   },
+  items: {
+    select: {
+      id: true,
+      productId: true,
+      product: { select: { name: true } },
+      quantity: true,
+      sendUnitName: true,
+      sendUnitAbbrev: true,
+      notes: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "asc" as const },
+  },
 } as const
 
 export async function getTemplatePreviewById(

@@ -89,6 +89,7 @@ type TemplatePreviewInput = {
     postalCode: string | null
     instructions: string | null
   }
+  items: Array<Parameters<typeof normalizeTemplateMaterialItem>[0]>
 }
 
 export function normalizeTemplatePreview(template: TemplatePreviewInput): TemplatePreview {
@@ -104,6 +105,7 @@ export function normalizeTemplatePreview(template: TemplatePreviewInput): Templa
     unitType: template.unitType,
     warehouseName: template.warehouse?.name ?? "",
     description: template.description ?? "",
+    items: template.items.map(normalizeTemplateMaterialItem),
   }
 }
 
