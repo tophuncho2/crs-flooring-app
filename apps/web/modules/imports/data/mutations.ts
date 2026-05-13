@@ -2,9 +2,17 @@
 
 import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
-import type { ImportRecord, ImportDetailRecord, StagedInventoryRecord } from "@builders/db"
+import type {
+  ImportRecord,
+  ImportDetailRecord,
+  StagedInventoryFilterRecord,
+  StagedInventoryRecord,
+} from "@builders/db"
 import type { CreateImportInput, UpdateImportInput } from "@builders/application"
-import type { StagedInventoryRowsDiff } from "@builders/domain"
+import type {
+  StagedInventoryFiltersDiff,
+  StagedInventoryForm,
+} from "@builders/domain"
 
 export async function createImportRequest(input: CreateImportInput) {
   return requestJson<{ import: ImportRecord }>("/api/imports", {
@@ -30,31 +38,89 @@ export async function deleteImportRequest(id: string, updatedAt: string) {
   })
 }
 
-export async function updateImportStagedInventoryRowsRequest(
+// --- Filter-rows section diff (atomic save, mirrors WOMI material items) ---
+
+export async function updateImportStagedInventoryFilterRowsRequest(
   importId: string,
-  diff: StagedInventoryRowsDiff,
+  diff: StagedInventoryFiltersDiff,
   revisionKey: string,
 ) {
   return requestJson<{
     import: ImportDetailRecord
-    stagedRows: StagedInventoryRecord[]
+    filterRows: StagedInventoryFilterRecord[]
     tempIdMap: Record<string, string>
-  }>(
-    `/api/imports/${importId}/staged-inventory-rows/section`,
+  }>(`/api/imports/${importId}/staged-inventory-filter-rows/section`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta({ ...diff }, revisionKey)),
+  })
+}
+
+// --- Per-row staged-inv-row CRUD (no section diff — each row is its own
+// synchronous mutation, mirrors the cut-log per-row pattern) ---
+
+export type StagedInventoryRowMutationResponse = {
+  row: StagedInventoryRecord
+  filterRow: StagedInventoryFilterRecord
+}
+
+export type DeleteStagedInventoryRowResponse = {
+  deletedId: string
+  filterRow: StagedInventoryFilterRecord
+}
+
+export async function createStagedInventoryRowRequest(args: {
+  importId: string
+  filterRowId: string
+  form: StagedInventoryForm
+}) {
+  return requestJson<StagedInventoryRowMutationResponse>(
+    `/api/imports/${args.importId}/staged-inventory-rows`,
     {
-      method: "PATCH",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(withMutationMeta({ diff }, revisionKey)),
+      body: JSON.stringify(
+        withMutationMeta({ filterRowId: args.filterRowId, form: args.form }),
+      ),
     },
   )
 }
 
-/**
- * Posts a batch of staged-row ids to the worker-trigger endpoint. The route
- * is a 202-async producer: a duplicate idempotency key resolves to the same
- * outbox event id and `wasDuplicate: true`. The next sweep wires this into a
- * controller + button on the staged-rows section.
- */
+export async function updateStagedInventoryRowRequest(args: {
+  importId: string
+  rowId: string
+  form: StagedInventoryForm
+  expectedUpdatedAt: string
+}) {
+  return requestJson<StagedInventoryRowMutationResponse>(
+    `/api/imports/${args.importId}/staged-inventory-rows/${args.rowId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        withMutationMeta({ form: args.form }, args.expectedUpdatedAt),
+      ),
+    },
+  )
+}
+
+export async function deleteStagedInventoryRowRequest(args: {
+  importId: string
+  rowId: string
+  expectedUpdatedAt: string
+}) {
+  return requestJson<DeleteStagedInventoryRowResponse>(
+    `/api/imports/${args.importId}/staged-inventory-rows/${args.rowId}`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta({}, args.expectedUpdatedAt)),
+    },
+  )
+}
+
+// --- Mark-for-import (worker trigger, 202-async producer) ---
+
 export async function markStagedRowsForImportRequest(
   importId: string,
   stagedRowIds: string[],

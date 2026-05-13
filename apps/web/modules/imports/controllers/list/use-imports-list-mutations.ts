@@ -2,20 +2,15 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { CreateImportInput, UpdateImportInput } from "@builders/application"
-import type { StagedInventoryRowsDiff } from "@builders/domain"
 import {
   createImportRequest,
   deleteImportRequest,
-  markStagedRowsForImportRequest,
   updateImportRequest,
-  updateImportStagedInventoryRowsRequest,
 } from "@/modules/imports/data/mutations"
 import { IMPORTS_LIST_QUERY_KEY } from "@/modules/imports/data/list-imports-request"
 
 type UpdateImportArgs = { id: string; input: UpdateImportInput; revisionKey: string }
 type DeleteImportArgs = { id: string; updatedAt: string }
-type UpdateStagedRowsArgs = { importId: string; diff: StagedInventoryRowsDiff; revisionKey: string }
-type MarkStagedRowsArgs = { importId: string; stagedRowIds: string[] }
 
 export function useImportsListMutations() {
   const queryClient = useQueryClient()
@@ -38,23 +33,9 @@ export function useImportsListMutations() {
     onSuccess: invalidateList,
   })
 
-  const updateStagedInventoryRows = useMutation({
-    mutationFn: ({ importId, diff, revisionKey }: UpdateStagedRowsArgs) =>
-      updateImportStagedInventoryRowsRequest(importId, diff, revisionKey),
-    onSuccess: invalidateList,
-  })
-
-  const markStagedRowsForImport = useMutation({
-    mutationFn: ({ importId, stagedRowIds }: MarkStagedRowsArgs) =>
-      markStagedRowsForImportRequest(importId, stagedRowIds),
-    onSuccess: invalidateList,
-  })
-
   return {
     createImport,
     updateImport,
     deleteImport,
-    updateStagedInventoryRows,
-    markStagedRowsForImport,
   }
 }

@@ -3,7 +3,12 @@
 import { useState } from "react"
 import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
 import { ImportRecordPanel } from "./import-record-panel"
-import type { ImportDetail, InventoryRow, StagedInventoryRow } from "@builders/domain"
+import type {
+  ImportDetail,
+  InventoryRow,
+  StagedInventoryFilterRow,
+  StagedInventoryRow,
+} from "@builders/domain"
 
 function formatImportNumber(value: number) {
   return `IMP-${String(value).padStart(4, "0")}`
@@ -11,18 +16,20 @@ function formatImportNumber(value: number) {
 
 export function ImportDetailClient({
   initialImport,
+  initialFilterRows,
   initialStagedRows,
   initialLiveRows,
   backHref,
 }: {
   initialImport: ImportDetail
+  initialFilterRows: StagedInventoryFilterRow[]
   initialStagedRows: StagedInventoryRow[]
   initialLiveRows: InventoryRow[]
   backHref: string
 }) {
   // Live rows fetched server-side; the read-only "Live inventory" section UI
-  // lands in the next sweep alongside the mark-for-import controller. Keeping
-  // the data wired now so that work is purely additive.
+  // lands in the next sweep. Keeping the data wired now so that work is
+  // purely additive.
   const [liveRows] = useState(initialLiveRows)
   void liveRows
 
@@ -37,6 +44,7 @@ export function ImportDetailClient({
         <ImportRecordPanel
           page={page}
           entry={initialImport}
+          initialFilterRows={initialFilterRows}
           initialStagedRows={initialStagedRows}
         />
       )}

@@ -39,6 +39,7 @@ export default async function ImportDetailPage({
   return (
     <ImportDetailClient
       initialImport={result.data.entry}
+      initialFilterRows={result.data.filterRows}
       initialStagedRows={result.data.stagedRows}
       initialLiveRows={result.data.liveRows}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/imports")}

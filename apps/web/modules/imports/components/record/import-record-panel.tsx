@@ -1,62 +1,47 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
-import { ImportStagedInventoryRowsSection } from "./sections/import-staged-inventory-rows-section"
-import { ImportImportedRowsSection } from "./imported-rows/import-imported-rows-section"
-import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
-import { useImportStagedInventoryRowsSection } from "@/modules/imports/controllers/use-import-staged-inventory-rows-section"
-import { useImportPrimarySection } from "@/modules/imports/controllers/use-import-primary-section"
-import type { ImportDetail, StagedInventoryRow } from "@builders/domain"
+import { ImportPrimaryFieldsSection } from "./primary/import-primary-fields-section"
+import { ImportStagedInventoryFilterRowsSection } from "./staged-inventory-filter-rows/import-staged-inventory-filter-rows-section"
+import { useImportPrimarySection } from "@/modules/imports/controllers/record/primary/use-import-primary-section"
+import type {
+  ImportDetail,
+  StagedInventoryFilterRow,
+  StagedInventoryRow,
+} from "@builders/domain"
 
 export function ImportRecordPanel({
   page,
   entry,
+  initialFilterRows,
   initialStagedRows,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: ImportDetail
+  initialFilterRows: StagedInventoryFilterRow[]
   initialStagedRows: StagedInventoryRow[]
 }) {
-  const controller = useImportPrimarySection({
-    page,
-    entry,
-  })
-  // The parent ImportDetail no longer carries inline staged rows — only id
-  // pointers. Track the current full row list locally; the staged-rows
-  // controller refreshes it via publishStagedRows after each save.
+  const controller = useImportPrimarySection({ page, entry })
+
+  // Filter rows + staged rows live here so per-row mutations from the side
+  // panel can refresh both arrays in place without a list refetch.
+  const [filterRows, setFilterRows] = useState(initialFilterRows)
   const [stagedRows, setStagedRows] = useState(initialStagedRows)
-  // Pending section sees DRAFT + QUEUED only; IMPORTED rows live in the
-  // dedicated read-only "Imported Rows" section below.
-  const pendingRows = useMemo(
-    () => stagedRows.filter((row) => row.status !== "IMPORTED"),
-    [stagedRows],
-  )
-  const importedRows = useMemo(
-    () => stagedRows.filter((row) => row.status === "IMPORTED"),
-    [stagedRows],
-  )
-  // Mark-for-import optimistic flip: the pending controller doesn't know
-  // about IMPORTED rows. The parent owns the merge by flipping status on
-  // the marked ids in-place against the full list.
+
+  // Optimistic flip from mark-for-import: the worker accepted these ids,
+  // so flip them DRAFT → QUEUED in-place.
   const handleMarkedForImport = useCallback((markedIds: string[]) => {
     const set = new Set(markedIds)
     setStagedRows((previous) =>
       previous.map((row) => (set.has(row.id) ? { ...row, status: "QUEUED" as const } : row)),
     )
   }, [])
-  const stagedRowsSection = useImportStagedInventoryRowsSection({
-    record: controller.record,
-    stagedRows: pendingRows,
-    publishRecord: controller.publishRecord,
-    publishStagedRows: setStagedRows,
-    publishMarkedForImport: handleMarkedForImport,
-  })
 
   return (
     <RecordMultiSectionPanel
@@ -100,47 +85,20 @@ export function ImportRecordPanel({
           ),
         },
         {
-          key: "staged-inventory-rows",
+          key: "staged-inventory-filter-rows",
           type: "item",
           order: 10,
-          dirtyLabel: "staged inventory rows",
-          controller: stagedRowsSection,
+          dirtyLabel: "staged inventory filter rows",
           render: () => (
-            <ImportStagedInventoryRowsSection
-              drafts={stagedRowsSection.localValue}
-              serverRows={pendingRows}
-              isDirty={stagedRowsSection.isDirty}
-              isSaving={stagedRowsSection.isSaving}
-              hasConflict={stagedRowsSection.hasConflict}
-              sectionError={stagedRowsSection.error?.message ?? null}
-              noticeMessage={stagedRowsSection.noticeMessage}
-              noticeError={stagedRowsSection.noticeError}
-              selectedIds={stagedRowsSection.selectedIds}
-              eligibleSelectedIds={stagedRowsSection.eligibleSelectedIds}
-              isMarking={stagedRowsSection.isMarking}
-              markError={stagedRowsSection.markError}
-              isSelectionActive={stagedRowsSection.isSelectionActive}
-              canToggleSelection={stagedRowsSection.canToggleSelection}
-              eligibleCount={stagedRowsSection.eligibleCount}
-              onSave={() => void stagedRowsSection.save()}
-              onDiscard={() => stagedRowsSection.discard()}
-              onAddRow={stagedRowsSection.addRow}
-              onDuplicateRow={stagedRowsSection.duplicateRow}
-              onRowFieldChange={stagedRowsSection.setRowField}
-              onRowCategoryFilterChange={stagedRowsSection.setRowCategoryFilter}
-              onSetRowProductSnapshot={stagedRowsSection.setRowProductSnapshot}
-              onRemoveRow={stagedRowsSection.removeRow}
-              onToggleSelection={stagedRowsSection.toggleSelection}
-              onToggleAllEligible={stagedRowsSection.toggleAllEligible}
-              onMarkForImport={() => void stagedRowsSection.markForImport()}
+            <ImportStagedInventoryFilterRowsSection
+              record={controller.record}
+              filterRows={filterRows}
+              stagedRows={stagedRows}
+              publishFilterRows={setFilterRows}
+              publishStagedRows={setStagedRows}
+              publishMarkedForImport={handleMarkedForImport}
             />
           ),
-        },
-        {
-          key: "imported-rows",
-          type: "item",
-          order: 20,
-          render: () => <ImportImportedRowsSection rows={importedRows} />,
         },
       ]}
       footer={{

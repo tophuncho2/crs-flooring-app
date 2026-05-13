@@ -16,7 +16,7 @@ import {
   IMPORTS_LIST_QUERY_KEY,
   listImportsRequest,
 } from "@/modules/imports/data/list-imports-request"
-import { useImportsListController } from "@/modules/imports/controllers/use-imports-list-controller"
+import { useImportsListController } from "@/modules/imports/controllers/list/use-imports-list-controller"
 import { ImportsTable } from "./imports-table"
 import { WarehouseFilterChip } from "./warehouse-filter-chip"
 

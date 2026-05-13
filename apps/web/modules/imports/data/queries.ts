@@ -1,6 +1,7 @@
 import {
   createPrismaPageLoadIssue,
   isPrismaNotFoundError,
+  listFilterRowsByImport,
   listInventory,
   listStagedInventoryByImport,
   getImportDetailById,
@@ -8,6 +9,7 @@ import {
   type ImportRecord,
   type InventoryRecord,
   type PrismaDetailPageResult,
+  type StagedInventoryFilterRecord,
   type StagedInventoryRecord,
 } from "@builders/db"
 import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
@@ -16,10 +18,11 @@ import { withLoaderTiming } from "@/modules/shared/engines/common/application/lo
 // (WarehousePicker / ProductPicker / CategoryPicker / ManufacturerPicker)
 // which call /api/{warehouses,products,categories,manufacturers}/options on
 // demand. Read-only labels come from joined snapshots on ImportDetail
-// (warehouseName, manufacturerName) and StagedInventoryRow (productName +
-// stockUnit).
+// (warehouseName, manufacturerName), filter rows (productName + stockUnit +
+// category), and staged inventory rows.
 export type ImportDetailPageData = {
   entry: ImportDetailRecord
+  filterRows: StagedInventoryFilterRecord[]
   stagedRows: StagedInventoryRecord[]
   liveRows: InventoryRecord[]
 }
@@ -29,8 +32,9 @@ export async function getImportDetailPageData(
 ): Promise<PrismaDetailPageResult<ImportDetailPageData>> {
   return withLoaderTiming({ loader: "flooring.imports.detail" }, async () => {
     try {
-      const [entry, stagedRows, liveRows] = await Promise.all([
+      const [entry, filterRows, stagedRows, liveRows] = await Promise.all([
         getImportDetailById(id),
+        listFilterRowsByImport(id),
         listStagedInventoryByImport(id),
         listInventory({ importEntryId: id }),
       ])
@@ -43,6 +47,7 @@ export async function getImportDetailPageData(
         ok: true,
         data: {
           entry,
+          filterRows,
           stagedRows,
           liveRows,
         },

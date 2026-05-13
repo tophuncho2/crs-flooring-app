@@ -3,7 +3,7 @@
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { PaginateControls } from "@/components/features/paginate"
 import { formatStableDate } from "@builders/domain"
-import type { ImportRow } from "@/modules/imports/controllers/use-imports-list-controller"
+import type { ImportRow } from "@/modules/imports/controllers/list/use-imports-list-controller"
 
 const IMPORTS_LIST_LAYOUT: GridLayout<ImportRow> = {
   dataColumns: [

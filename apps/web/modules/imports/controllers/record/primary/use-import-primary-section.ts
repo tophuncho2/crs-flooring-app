@@ -10,8 +10,8 @@ import {
   type ImportDetail as ImportRow,
   type ImportPrimaryForm,
 } from "@builders/domain"
-import { validateImportPrimaryForm } from "./drafts"
-import { useImportsListMutations } from "./use-imports-list-mutations"
+import { validateImportPrimaryForm } from "../drafts"
+import { useImportsListMutations } from "@/modules/imports/controllers/list/use-imports-list-mutations"
 
 export function useImportPrimarySection({
   page,

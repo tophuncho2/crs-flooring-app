@@ -13,7 +13,7 @@ import {
   EMPTY_IMPORT_PRIMARY_FORM,
   type ImportPrimaryForm,
 } from "@builders/domain"
-import { ImportPrimaryFieldsSection } from "./sections/import-primary-fields-section"
+import { ImportPrimaryFieldsSection } from "./primary/import-primary-fields-section"
 
 function ImportCreatePanel({
   page,
