@@ -6,9 +6,21 @@ declare global {
   var prismaClientSingleton: PrismaClient | undefined
 }
 
+function getPoolMax(): number {
+  const raw = process.env.DATABASE_POOL_MAX
+  if (!raw) return 10
+  const parsed = Number.parseInt(raw, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 10
+}
+
 export function createPrismaClient() {
   const { DATABASE_URL } = getDatabaseEnvironment()
-  const adapter = new PrismaPg({ connectionString: DATABASE_URL })
+  const adapter = new PrismaPg({
+    connectionString: DATABASE_URL,
+    application_name: process.env.RAILWAY_SERVICE_NAME ?? "tsx-flooring-local",
+    max: getPoolMax(),
+    idleTimeoutMillis: 10_000,
+  })
 
   return new PrismaClient({
     adapter,
