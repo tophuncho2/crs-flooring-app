@@ -42,7 +42,7 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
       widthClassName="w-[34rem]"
     >
       <div className="flex h-full flex-col">
-        <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-4 pt-4 pb-24">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-4 pb-24">
           {open ? (
             <CutLogEditFormFields
               mode={mode}
