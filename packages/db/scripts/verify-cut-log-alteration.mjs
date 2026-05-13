@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client"
+import { createPrismaClient } from "@builders/db"
 
-const prisma = new PrismaClient()
+const prisma = createPrismaClient()
 
 try {
   const columns = await prisma.$queryRawUnsafe(`

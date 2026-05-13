@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client"
+import type { Prisma } from "../../../generated/prisma/client.js"
 import { buildFlooringProductDisplayName } from "@builders/domain"
 import type { StagedInventoryRow } from "@builders/domain"
 import { db } from "../../../client.js"

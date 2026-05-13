@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from "../../generated/prisma/client.js"
 import { composeInventoryItem } from "@builders/domain"
 import { db } from "../../client.js"
 import { type InventoryDbClient } from "./shared.js"

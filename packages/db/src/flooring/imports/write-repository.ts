@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client"
+import type { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
 import { type ImportsDbClient } from "./shared.js"
 import { getImportById, type ImportRecord } from "./read-repository.js"

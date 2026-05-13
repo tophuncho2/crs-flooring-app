@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from "./generated/prisma/client.js"
 
 export type PrismaConnectivityIssue = {
   code: "P1001" | "P1017" | "INIT"

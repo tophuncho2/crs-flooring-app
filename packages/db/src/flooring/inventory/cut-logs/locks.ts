@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from "../../../generated/prisma/client.js"
 
 /**
  * Single-inventory FOR UPDATE locker — the canonical mechanism every

@@ -1,5 +1,5 @@
 import { db } from "../client.js"
-import type { Prisma } from "@prisma/client"
+import type { Prisma } from "../generated/prisma/client.js"
 import type { DataAccessContext } from "../types.js"
 
 export type FullTablePreferenceRecord = {

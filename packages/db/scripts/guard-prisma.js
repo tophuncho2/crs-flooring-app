@@ -136,10 +136,10 @@ function main() {
       return false
     }
 
-    return /@prisma\/client/.test(readText(filePath))
+    return /@prisma\/client|generated\/prisma/.test(readText(filePath))
   })
   if (invalidPrismaClientImports.length > 0) {
-    failures.push(`Direct @prisma/client imports found outside packages/db: ${invalidPrismaClientImports.map(toRepoPath).join(", ")}`)
+    failures.push(`Direct Prisma client imports found outside packages/db (use @builders/db instead): ${invalidPrismaClientImports.map(toRepoPath).join(", ")}`)
   }
 
   const appWrapperImports = files.filter((filePath) => {

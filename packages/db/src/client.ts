@@ -1,14 +1,17 @@
-import { type Prisma, PrismaClient } from "@prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { type Prisma, PrismaClient } from "./generated/prisma/client.js"
 import { getDatabaseEnvironment } from "./env.js"
 
 declare global {
   var prismaClientSingleton: PrismaClient | undefined
 }
 
-function createPrismaClient() {
-  getDatabaseEnvironment()
+export function createPrismaClient() {
+  const { DATABASE_URL } = getDatabaseEnvironment()
+  const adapter = new PrismaPg({ connectionString: DATABASE_URL })
 
   return new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   })
 }

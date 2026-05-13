@@ -67,12 +67,12 @@ async function upsertOwnerUser({
 
 async function main() {
   const { email, password } = resolveOwnerRecoveryInput()
-  const [{ PrismaClient }, bcrypt] = await Promise.all([
-    import("@prisma/client"),
+  const [{ createPrismaClient }, bcrypt] = await Promise.all([
+    import("@builders/db"),
     import("bcrypt"),
   ])
 
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     await upsertOwnerUser({

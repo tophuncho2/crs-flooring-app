@@ -81,8 +81,8 @@ async function backfillProductNames({
 
 async function main() {
   const { dryRun } = resolveBackfillOptions()
-  const { PrismaClient } = await import("@prisma/client")
-  const prisma = new PrismaClient()
+  const { createPrismaClient } = await import("@builders/db")
+  const prisma = createPrismaClient()
 
   try {
     await backfillProductNames({

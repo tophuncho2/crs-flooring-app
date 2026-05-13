@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client"
+import { createPrismaClient } from "@builders/db"
 
-const p = new PrismaClient()
+const p = createPrismaClient()
 const events = await p.queueOutboxEvent.findMany({
   orderBy: { createdAt: "desc" },
   take: 8,

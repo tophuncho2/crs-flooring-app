@@ -1,5 +1,5 @@
 import type { ImportDetail, ImportRow } from "@builders/domain"
-import type { Prisma } from "@prisma/client"
+import type { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
 import {
   importDetailSelect,

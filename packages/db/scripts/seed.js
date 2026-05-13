@@ -1,13 +1,13 @@
 async function main() {
   const [
-    { PrismaClient },
+    { createPrismaClient },
     bcrypt,
     { seedSystemUsers },
     { seedUnitOfMeasures },
     { seedCategories },
     { seedJobTypes },
   ] = await Promise.all([
-    import("@prisma/client"),
+    import("@builders/db"),
     import("bcrypt"),
     import("./system-user-seed.js"),
     import("./seed-unit-of-measures.js"),
@@ -15,7 +15,7 @@ async function main() {
     import("./seed-job-types.js"),
   ])
 
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     await seedSystemUsers({

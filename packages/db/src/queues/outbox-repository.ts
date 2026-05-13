@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from "../generated/prisma/client.js"
 import { db } from "../client.js"
 import { isP2002 } from "../shared/prisma-errors.js"
 

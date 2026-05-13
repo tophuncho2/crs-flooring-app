@@ -1,5 +1,5 @@
-import { Prisma } from "@builders/db"
-import { createAppError } from "@/server/http/api-helpers"
+import type { Prisma } from "@builders/db"
+import { createAppError } from "@/server/http/app-errors"
 
 function getEditableDecimalPattern(scale: number) {
   return new RegExp(`^\\d*(?:\\.\\d{0,${scale}})?$`)

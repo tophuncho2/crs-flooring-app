@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from "../generated/prisma/client.js"
 
 export function isP2002(error: unknown, targetColumn?: string): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false

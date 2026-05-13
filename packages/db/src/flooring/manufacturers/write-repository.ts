@@ -1,5 +1,5 @@
 import { db } from "../../client.js"
-import type { Prisma, PrismaClient } from "@prisma/client"
+import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import { normalizeManufacturer, type ManufacturerRecord } from "./read-repository.js"
 
 type ManufacturerDbClient = PrismaClient | Prisma.TransactionClient

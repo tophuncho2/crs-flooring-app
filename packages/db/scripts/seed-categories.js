@@ -254,8 +254,8 @@ async function seedCategories({ prisma, logger = console }) {
 }
 
 async function main() {
-  const { PrismaClient } = await import("@prisma/client")
-  const prisma = new PrismaClient()
+  const { createPrismaClient } = await import("@builders/db")
+  const prisma = createPrismaClient()
 
   try {
     await seedCategories({ prisma })

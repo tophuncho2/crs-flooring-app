@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client"
+import { createPrismaClient } from "@builders/db"
 
-const p = new PrismaClient()
+const p = createPrismaClient()
 
 const cutLogs = await p.flooringCutLog.findMany({ select: { id: true } })
 console.log(`Deleting ${cutLogs.length} cut log rows`)

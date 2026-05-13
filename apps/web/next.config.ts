@@ -35,6 +35,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@builders/db", "@builders/domain", "@builders/lib"],
+  serverExternalPackages: ["@prisma/adapter-pg", "pg"],
   async headers() {
     return [
       {
