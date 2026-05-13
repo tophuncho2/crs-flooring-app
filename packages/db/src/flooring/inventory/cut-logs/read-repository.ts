@@ -222,11 +222,19 @@ export async function listCutLogsForWorkOrderItemIds(
 
 /**
  * Paginated read of inventory-side cut logs for a single parent record.
- * Powers the cut-log section on the inventory record view. Sort order
- * matches the WO-side `listCutLogsForWorkOrderItem` — `isFinal asc`
- * fronts the active rows, then `finalCutSequence asc` orders the finalized
- * tail (with `createdAt asc` as a stable tiebreak for rows missing a
- * sequence). Returns `{ rows, total }` so the consumer can render Prev/Next
+ * Powers the cut-log section on the inventory record view.
+ *
+ * Sort: `finalCutSequence DESC NULLS FIRST`, then `createdAt ASC`. This
+ * yields two natural buckets without a CASE expression:
+ *
+ *   1. Rows with `finalCutSequence = null` (pending — and the rare
+ *      VOID-from-PENDING row that was voided before finalize ever ran)
+ *      come first, ordered by createdAt ASC.
+ *   2. Rows with `finalCutSequence` set (FINAL, plus VOID-after-FINAL —
+ *      the sequence is preserved on void) come next, ordered DESC so
+ *      the most recently finalized row leads.
+ *
+ * Returns `{ rows, total }` so the consumer can render Prev/Next
  * controls without a second query.
  */
 export async function listInventoryCutLogsPage(
@@ -241,8 +249,7 @@ export async function listInventoryCutLogsPage(
       where,
       select: inventoryCutLogRowSelect,
       orderBy: [
-        { isFinal: "asc" },
-        { finalCutSequence: "asc" },
+        { finalCutSequence: { sort: "desc", nulls: "first" } },
         { createdAt: "asc" },
       ],
       skip,

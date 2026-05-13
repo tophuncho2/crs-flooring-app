@@ -33,9 +33,10 @@ export type InventoryCutLogsSectionProps = {
  * shared edit panel invalidate this section's query so the visible page
  * refetches after a save / void / delete.
  *
- * Server sort: `[isFinal asc, finalCutSequence asc, createdAt asc]` —
- * active rows first, then finalized rows in sequence. Matches the
- * WO-side `listCutLogsForWorkOrderItem` ordering.
+ * Server sort: pending-like rows first (`finalCutSequence = null`,
+ * ordered by createdAt asc), then finalized rows by `finalCutSequence`
+ * desc so the most-recently-finalized cut leads. VOID-after-FINAL keeps
+ * its sequence and stays interleaved with FINAL rows.
  */
 export function InventoryCutLogsSection({
   inventoryId,
@@ -103,7 +104,7 @@ export function InventoryCutLogsSection({
       />
 
       {showPagination ? (
-        <div className="flex items-center justify-between gap-2 border-t border-[var(--panel-border)] px-4 py-2 text-xs text-[var(--foreground)]/65">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--panel-border)] px-4 py-2 text-xs text-[var(--foreground)]/65">
           <button
             type="button"
             onClick={() => setPage((current) => Math.max(1, current - 1))}
