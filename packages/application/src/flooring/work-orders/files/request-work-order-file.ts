@@ -3,7 +3,6 @@ import {
   createQueueOutboxEvent,
   createWorkOrderFile,
   getWorkOrderById,
-  markWorkOrderStatus,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
@@ -21,11 +20,14 @@ import type { RequestWorkOrderFileInput, RequestWorkOrderFileResult } from "./ty
  *      layer's `createWorkOrderFile` computes the next fileNumber as
  *      `max + 1` for this WO under the producer TX (BullMQ + the
  *      unique constraint `(workOrderId, fileNumber)` cover the race).
- *   3. Mark the WO row's `status` `IDLE → QUEUED` so the list view
- *      surfaces "file-gen queued" immediately.
- *   4. Write the outbox event with idempotency key
+ *   3. Write the outbox event with idempotency key
  *      `wo-file-gen:${workOrderId}:${fileId}` — re-firing this event is a
  *      no-op against the unique constraint.
+ *
+ * The WO row's `status` column is intentionally NOT written here —
+ * `FlooringWorkOrderFile.status` is the single source of truth for the
+ * file-generation lifecycle; the WO row stays at whatever status it
+ * already carries.
  *
  * The PDF artifact in the bucket IS the file-gen snapshot per locked
  * decision #4 — no JSONB column, no snapshot tables.
@@ -51,8 +53,6 @@ export async function requestWorkOrderFileUseCase(
     }
 
     const file = await createWorkOrderFile(input.workOrderId, c)
-
-    await markWorkOrderStatus(input.workOrderId, "QUEUED", c)
 
     const requestedAt = new Date().toISOString()
     const idempotencyKey = ["wo-file-gen", input.workOrderId, file.id].join(":")

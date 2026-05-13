@@ -221,8 +221,6 @@ export async function getWorkOrderForFileGeneration(
       unitType: true,
       customAddress: true,
       description: true,
-      instructions: true,
-      notes: true,
       property: {
         select: {
           name: true,
@@ -242,7 +240,6 @@ export async function getWorkOrderForFileGeneration(
         select: {
           id: true,
           quantity: true,
-          sendUnitName: true,
           sendUnitAbbrev: true,
           notes: true,
           product: {
@@ -251,6 +248,8 @@ export async function getWorkOrderForFileGeneration(
             },
           },
           cutLogs: {
+            // isFinal + finalCutSequence drive the order but are not in the
+            // projection; Prisma supports orderBy on non-selected columns.
             orderBy: [
               { isFinal: "asc" as const },
               { finalCutSequence: "asc" as const },
@@ -259,16 +258,14 @@ export async function getWorkOrderForFileGeneration(
             select: {
               id: true,
               cutLogNumber: true,
-              status: true,
-              isFinal: true,
               before: true,
               cut: true,
               after: true,
               coverageCut: true,
               isWaste: true,
               notes: true,
-              finalCutSequence: true,
               inventoryItem: true,
+              location: true,
               stockUnitAbbrev: true,
               itemCoverageUnitAbbrev: true,
             },
@@ -282,14 +279,11 @@ export async function getWorkOrderForFileGeneration(
     id: item.id,
     productName: item.product.name,
     quantity: item.quantity.toString(),
-    sendUnitName: item.sendUnitName ?? "",
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",
     notes: item.notes ?? "",
     cutLogs: item.cutLogs.map((cl) => ({
       id: cl.id,
       cutLogNumber: cl.cutLogNumber,
-      status: cl.status,
-      isFinal: cl.isFinal,
       before: cl.before === null ? "" : cl.before.toString(),
       cut: cl.cut.toString(),
       after: cl.after === null ? "" : cl.after.toString(),
@@ -297,9 +291,9 @@ export async function getWorkOrderForFileGeneration(
       isWaste: cl.isWaste,
       notes: cl.notes ?? "",
       inventoryItem: cl.inventoryItem,
+      location: cl.location ?? "",
       stockUnitAbbrev: cl.stockUnitAbbrev ?? "",
       itemCoverageUnitAbbrev: cl.itemCoverageUnitAbbrev ?? "",
-      finalCutSequence: cl.finalCutSequence,
     })),
   }))
 
@@ -311,8 +305,6 @@ export async function getWorkOrderForFileGeneration(
     unitType: workOrder.unitType ?? "",
     customAddress: workOrder.customAddress ?? "",
     description: workOrder.description ?? "",
-    instructions: workOrder.instructions ?? "",
-    notes: workOrder.notes ?? "",
     property: {
       name: workOrder.property.name,
       streetAddress: workOrder.property.streetAddress ?? "",

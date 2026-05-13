@@ -5,7 +5,6 @@ import {
   markWorkOrderFileCompleted,
   markWorkOrderFileFailed,
   markWorkOrderFileWorking,
-  markWorkOrderStatus,
   withDatabaseTransaction,
 } from "@builders/db"
 import { buildWorkOrderPdfHtml } from "@builders/domain"
@@ -22,8 +21,7 @@ import type {
  * processor for the `flooring.work-order.file-generation.requested`
  * topic.
  *
- * Three phases — each with its own TX so the long-running PDF render +
- * bucket upload do not hold a database transaction open:
+ * Three phases:
  *
  *   TX1 — Lock the file row, ensure it is in QUEUED, mark WORKING.
  *         Other workers picking up the same job (BullMQ duplicates,
@@ -36,13 +34,17 @@ import type {
  *         the domain's pure projector. Render to PDF via puppeteer.
  *         Upload to the bucket.
  *
- *   TX2 — Mark the file COMPLETED + persist `fileKey`. Mark the WO
- *         row's status COMPLETED.
+ *   Mark COMPLETED — single write that persists `fileKey` and flips the
+ *         file row to COMPLETED.
  *
- * On any error during IO or TX2, run a separate TX to mark the file
- * FAILED + persist the error message + mark the WO FAILED. Then throw
+ * On any error during IO or the COMPLETED write, mark the file row
+ * FAILED + persist the error message. Then throw
  * `WorkOrderFileExecutionError` with status 500 so the worker
  * processor can classify it as `UnrecoverableError` for BullMQ.
+ *
+ * The WO row is intentionally NOT touched — only the file row and the
+ * file row's lock participate in this flow. `FlooringWorkOrderFile.status`
+ * is the single source of truth for the lifecycle.
  *
  * `storageEnv` is injected by the worker entrypoint (loaded from
  * `process.env`). Application package does not read env directly per
@@ -77,7 +79,6 @@ export async function generateWorkOrderFileUseCase(
       })
     }
     await markWorkOrderFileWorking(input.fileId, tx)
-    await markWorkOrderStatus(input.workOrderId, "WORKING", tx)
   })
 
   // -------- IO: render + upload --------
@@ -102,17 +103,10 @@ export async function generateWorkOrderFileUseCase(
     })
   }
 
-  // -------- TX2: mark COMPLETED --------
+  // -------- Mark COMPLETED --------
   const completedAt = new Date()
   try {
-    await withDatabaseTransaction(async (tx) => {
-      await markWorkOrderFileCompleted(
-        input.fileId,
-        { fileKey, completedAt },
-        tx,
-      )
-      await markWorkOrderStatus(input.workOrderId, "COMPLETED", tx)
-    })
+    await markWorkOrderFileCompleted(input.fileId, { fileKey, completedAt })
   } catch (error) {
     await markFailedAfterRender(input, error)
     throw new WorkOrderFileExecutionError({
@@ -140,14 +134,11 @@ async function markFailedAfterRender(
 ): Promise<void> {
   const errorMessage = error instanceof Error ? error.message : String(error)
   try {
-    await withDatabaseTransaction(async (tx) => {
-      await markWorkOrderFileFailed(input.fileId, { errorMessage }, tx)
-      await markWorkOrderStatus(input.workOrderId, "FAILED", tx)
-    })
+    await markWorkOrderFileFailed(input.fileId, { errorMessage })
   } catch {
     // Swallow. The original error is already surfaced via the throw
-    // that this function precedes; failing to record FAILED is
-    // non-fatal here — the next request from the producer path
-    // will overwrite the status.
+    // that this function precedes; failing to record FAILED on the
+    // file row is non-fatal — a re-request from the producer will
+    // create a fresh file row.
   }
 }

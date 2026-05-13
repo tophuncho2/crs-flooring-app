@@ -13,26 +13,26 @@
 export type WorkOrderFileCutLogProjection = {
   id: string
   cutLogNumber: string
-  status: "PENDING" | "QUEUED" | "FINAL" | "VOID"
-  isFinal: boolean
   before: string
   cut: string
   after: string
-  // Empty string when the product/category has no coverage unit configured.
-  // The PDF builder hides the coverage column entirely when no cut log under
-  // a WOMI has either a coverage unit snapshot or a coverage value.
+  // Empty string when the cut log carries no coverage value. The PDF
+  // always renders a "Coverage Cut" column — empty rows just render
+  // the standard "—" placeholder.
   coverageCut: string
   isWaste: boolean
   notes: string
   // Inventory identity sourced from the cut log row's snapshot
   // (NOT the joined inventory row). The denormalized `inventoryItem` column
-  // already encodes `inv# · roll# · location · dyeLot · note` — render directly.
+  // already encodes `inv# · roll# · dyeLot · note` — render directly.
   inventoryItem: string
+  // Inventory location snapshot from the cut log row. Empty string when the
+  // parent inventory has no location set at the moment of the cut.
+  location: string
   // Unit snapshots from the cut log row — used as the per-cell suffix in
   // the cut log sub-table. Empty string when the snapshot is null.
   stockUnitAbbrev: string
   itemCoverageUnitAbbrev: string
-  finalCutSequence: number | null
 }
 
 export type WorkOrderFileMaterialItemProjection = {
@@ -41,7 +41,6 @@ export type WorkOrderFileMaterialItemProjection = {
   quantity: string
   // Send-unit snapshot from the WOMI row (suffix on the material item's
   // quantity cell).
-  sendUnitName: string
   sendUnitAbbrev: string
   notes: string
   cutLogs: WorkOrderFileCutLogProjection[]
@@ -55,8 +54,6 @@ export type WorkOrderFileGenerationInput = {
   unitType: string
   customAddress: string
   description: string
-  instructions: string
-  notes: string
   property: {
     name: string
     streetAddress: string

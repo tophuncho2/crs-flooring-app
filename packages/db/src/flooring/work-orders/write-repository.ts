@@ -4,7 +4,6 @@ import {
   normalizeWorkOrder,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
-  type WorkOrderStatus,
 } from "@builders/domain"
 import { workOrderDetailSelect, type WorkOrdersDbClient } from "./shared.js"
 import { listWorkOrderMaterialItems } from "./material-items/read-repository.js"
@@ -57,27 +56,6 @@ export async function deleteWorkOrderRecordById(
   client: WorkOrdersDbClient = db,
 ): Promise<void> {
   await client.flooringWorkOrder.delete({ where: { id } })
-}
-
-/**
- * Sets the work order's worker-controlled status. Called by:
- *  - The file-gen producer use case (IDLE → QUEUED).
- *  - The file-gen worker (QUEUED → WORKING → COMPLETED, or → FAILED).
- *
- * The application layer is responsible for any transition validation;
- * this function is a thin write per the data-package no-business-logic
- * rule.
- */
-export async function markWorkOrderStatus(
-  id: string,
-  status: WorkOrderStatus,
-  client: WorkOrdersDbClient = db,
-): Promise<void> {
-  await client.flooringWorkOrder.update({
-    where: { id },
-    data: { status },
-    select: { id: true },
-  })
 }
 
 /**
