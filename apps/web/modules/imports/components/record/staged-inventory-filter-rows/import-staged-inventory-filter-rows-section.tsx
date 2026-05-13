@@ -1,10 +1,10 @@
 "use client"
 
-import { Fragment, useCallback, useMemo, useState } from "react"
+import { Fragment, useCallback, useMemo } from "react"
 import type { ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
 import { RowActionButton, UnitCell } from "@/components/cells"
-import { ExpandToggle, ExpandableRow } from "@/components/grid/expandable-rows"
+import { ExpandableRow } from "@/components/grid/expandable-rows"
 import { SelectAllButton } from "@/components/features/select-batch"
 import { Grid, GridEmpty } from "@/components/grid"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
@@ -60,26 +60,6 @@ export function ImportStagedInventoryFilterRowsSection({
     importId: record.id,
     publish: handlePanelPatch,
   })
-
-  // --- Expand state ---
-  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(
-    () => new Set(filterRows.map((row) => row.id)),
-  )
-  const toggleExpand = useCallback((clientId: string) => {
-    setExpandedRowIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(clientId)) next.delete(clientId)
-      else next.add(clientId)
-      return next
-    })
-  }, [])
-  const allExpanded =
-    section.localValue.length > 0 && expandedRowIds.size === section.localValue.length
-  const toggleAll = useCallback(() => {
-    setExpandedRowIds(
-      allExpanded ? new Set() : new Set(section.localValue.map((row) => row.clientId)),
-    )
-  }, [allExpanded, section.localValue])
 
   // --- Server-snapshot lookups (for read-only computed fields + locks) ---
   const serverFilterRowsById = useMemo(() => {
@@ -154,19 +134,6 @@ export function ImportStagedInventoryFilterRowsSection({
     control: { key: string; kind: string },
     draft: FilterDraftRow,
   ): ReactNode {
-    if (control.kind === "expand") {
-      return (
-        <ExpandToggle
-          expanded={expandedRowIds.has(draft.clientId)}
-          onToggle={() => toggleExpand(draft.clientId)}
-          ariaLabel={
-            expandedRowIds.has(draft.clientId)
-              ? "Collapse filter row"
-              : "Expand filter row"
-          }
-        />
-      )
-    }
     if (control.kind === "actions") {
       const server = serverFilterRowsById.get(draft.clientId)
       const hasChildren = (server?.childRowCount ?? 0) > 0
@@ -213,15 +180,6 @@ export function ImportStagedInventoryFilterRowsSection({
                 detail: "Worker will materialize on Run",
               }
             : undefined
-        }
-        leadingControl={
-          drafts.length > 0 ? (
-            <ExpandToggle
-              expanded={allExpanded}
-              onToggle={toggleAll}
-              ariaLabel={allExpanded ? "Collapse all" : "Expand all"}
-            />
-          ) : undefined
         }
         extraActions={
           <SelectAllButton
@@ -284,7 +242,6 @@ export function ImportStagedInventoryFilterRowsSection({
         layout={FILTER_ROW_LAYOUT}
         empty={<GridEmpty>No filter rows yet. Add one to start staging inventory.</GridEmpty>}
         renderRow={(draft) => {
-          const isExpanded = expandedRowIds.has(draft.clientId)
           const server = serverFilterRowsById.get(draft.clientId)
           const childRows = server ? (section.stagedRowsByFilterId.get(server.id) ?? []) : []
           return (
@@ -292,12 +249,12 @@ export function ImportStagedInventoryFilterRowsSection({
               <ExpandableRow<FilterDraftRow>
                 parentRow={draft}
                 parentLayout={FILTER_ROW_LAYOUT}
-                expanded={isExpanded}
+                expanded={true}
                 renderParentCell={renderParentCell}
                 renderParentControl={renderParentControl}
                 accentTone="sky"
               >
-                {isExpanded && server ? (
+                {server ? (
                   <div className="px-4 py-3">
                     <StagedInvRowSubGrid
                       filterRow={server}
@@ -325,11 +282,11 @@ export function ImportStagedInventoryFilterRowsSection({
                       onToggleSelection={section.toggleSelection}
                     />
                   </div>
-                ) : isExpanded && !server ? (
+                ) : (
                   <div className="px-4 py-3 text-xs text-[var(--foreground)]/55">
                     Save this filter row to add staged inventory rows.
                   </div>
-                ) : null}
+                )}
               </ExpandableRow>
             </Fragment>
           )
