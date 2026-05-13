@@ -104,26 +104,28 @@ export function InventoryCutLogsSection({
       />
 
       {showPagination ? (
-        <div className="flex items-center justify-end gap-2 border-t border-[var(--panel-border)] px-4 py-2 text-xs text-[var(--foreground)]/65">
-          <button
-            type="button"
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
-            disabled={prevDisabled}
-            className="rounded border border-[var(--panel-border)] px-2 py-1 transition hover:bg-[var(--panel-hover)] disabled:opacity-50"
-          >
-            Prev
-          </button>
+        <div className="flex items-center justify-between gap-2 border-t border-[var(--panel-border)] px-4 py-2 text-xs text-[var(--foreground)]/65">
           <span className="tabular-nums text-[var(--foreground)]/55">
             Page {page} of {totalPages}
           </span>
-          <button
-            type="button"
-            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-            disabled={nextDisabled}
-            className="rounded border border-[var(--panel-border)] px-2 py-1 transition hover:bg-[var(--panel-hover)] disabled:opacity-50"
-          >
-            Next
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={prevDisabled}
+              className="rounded border border-[var(--panel-border)] px-2 py-1 transition hover:bg-[var(--panel-hover)] disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={nextDisabled}
+              className="rounded border border-[var(--panel-border)] px-2 py-1 transition hover:bg-[var(--panel-hover)] disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
