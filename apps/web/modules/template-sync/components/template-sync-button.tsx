@@ -49,6 +49,7 @@ export function TemplateSyncButton() {
   }, [isSyncing])
 
   const canActOnTemplate = templateId !== null
+  const hasSelections = managementCompanyId !== null || propertyId !== null || templateId !== null
 
   const handleOpen = useCallback(() => {
     if (!templateId) return
@@ -147,6 +148,14 @@ export function TemplateSyncButton() {
           ) : null}
 
           <div className="mt-auto flex flex-col gap-2 pt-4">
+            <button
+              type="button"
+              onClick={resetSelections}
+              disabled={!hasSelections || isSyncing}
+              className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--panel-hover)] disabled:opacity-60"
+            >
+              Clear
+            </button>
             <button
               type="button"
               onClick={handleOpen}
