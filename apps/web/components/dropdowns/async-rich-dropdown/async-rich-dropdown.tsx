@@ -62,6 +62,13 @@ export type AsyncRichDropdownProps = {
   invalid?: boolean
   ariaLabel?: string
   className?: string
+  /**
+   * Fires whenever the popover's open state transitions. Used by pickers
+   * whose option subtitles surface mutable state (e.g. inventory stock
+   * balance) to force a refetch on every open — wire via
+   * `onOpenChange={(open) => { if (open) controller.refetch() }}`.
+   */
+  onOpenChange?: (open: boolean) => void
 }
 
 /**
@@ -94,9 +101,24 @@ export function AsyncRichDropdown({
   invalid = false,
   ariaLabel,
   className,
+  onOpenChange,
 }: AsyncRichDropdownProps) {
   const listboxId = useId()
   const [open, setOpen] = useState(false)
+
+  // Fire `onOpenChange` on every open-state transition. The ref dance keeps
+  // the effect from re-firing when the callback identity flips between
+  // renders — consumers are free to pass inline lambdas.
+  const onOpenChangeRef = useRef(onOpenChange)
+  useEffect(() => {
+    onOpenChangeRef.current = onOpenChange
+  }, [onOpenChange])
+  const previousOpenRef = useRef(open)
+  useEffect(() => {
+    if (previousOpenRef.current === open) return
+    previousOpenRef.current = open
+    onOpenChangeRef.current?.(open)
+  }, [open])
   const [activeIndex, setActiveIndex] = useState<number>(-1)
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)

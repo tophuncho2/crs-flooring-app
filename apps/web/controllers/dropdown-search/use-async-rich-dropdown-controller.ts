@@ -1,7 +1,7 @@
 "use client"
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 const DEFAULT_DEBOUNCE_MS = 250
 
@@ -25,6 +25,13 @@ export type AsyncRichDropdownControllerOutput<TOption> = {
   isLoading: boolean
   isFetching: boolean
   errorMessage: string | null
+  /**
+   * Force a refetch of the current bucket (ignores `staleTime`). Use for
+   * "refresh on open" wiring on pickers whose option subtitles surface
+   * mutable state (e.g. inventory stock balance) that the user expects to
+   * see freshened every time the popover opens.
+   */
+  refetch: () => void
 }
 
 /**
@@ -79,6 +86,12 @@ export function useAsyncRichDropdownController<TOption>(
       : "Failed to load options"
     : null
 
+  const { refetch: queryRefetch } = queryResult
+  const refetch = useCallback(() => {
+    if (!queryEnabled) return
+    void queryRefetch()
+  }, [queryEnabled, queryRefetch])
+
   return {
     query,
     onQueryChange: setQuery,
@@ -86,5 +99,6 @@ export function useAsyncRichDropdownController<TOption>(
     isLoading: queryResult.isLoading,
     isFetching: queryResult.isFetching,
     errorMessage,
+    refetch,
   }
 }

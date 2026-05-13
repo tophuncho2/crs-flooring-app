@@ -163,6 +163,12 @@ export function InventoryPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      // Stock balance + coverage balance render in the option subtitles and
+      // mutate as other operators cut against the same inventory rows.
+      // Refetch on every open so the user sees the freshest balances.
+      onOpenChange={(isOpen) => {
+        if (isOpen) controller.refetch()
+      }}
     />
   )
 }
