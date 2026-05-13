@@ -49,6 +49,13 @@ export function TemplateSyncButton() {
 
   const canActOnTemplate = templateId !== null
 
+  const handleOpen = useCallback(() => {
+    if (!templateId) return
+    setOpen(false)
+    resetSelections()
+    router.push(`/dashboard/templates/${templateId}`)
+  }, [templateId, resetSelections, router])
+
   const handleSync = useCallback(async () => {
     if (!templateId || isSyncing) return
     setIsSyncing(true)
@@ -139,7 +146,8 @@ export function TemplateSyncButton() {
           <div className="mt-auto flex flex-col gap-2 pt-4">
             <button
               type="button"
-              disabled={!canActOnTemplate}
+              onClick={handleOpen}
+              disabled={!canActOnTemplate || isSyncing}
               className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
             >
               Open
