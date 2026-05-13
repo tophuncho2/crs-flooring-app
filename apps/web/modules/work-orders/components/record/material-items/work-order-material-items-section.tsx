@@ -1,8 +1,9 @@
 "use client"
 
-import { Fragment, useCallback, useState } from "react"
+import { Fragment, useCallback } from "react"
 import { NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { DuplicateRowButton } from "@/components/features/duplicate-row"
+import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { ExpandableRow } from "@/components/grid/expandable-rows"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
@@ -66,14 +67,7 @@ export function WorkOrderMaterialItemsSection({
 
   const sectionBusy = section.isSaving
 
-  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
-  const allExpanded =
-    section.items.length > 0 && expandedRowIds.size === section.items.length
-  const toggleAll = useCallback(() => {
-    setExpandedRowIds(
-      allExpanded ? new Set() : new Set(section.items.map((item) => item.id)),
-    )
-  }, [allExpanded, section.items])
+  const { allExpanded, toggleAll } = useExpandableRowsToggle()
 
   const editable = !sectionBusy
 
@@ -221,7 +215,7 @@ export function WorkOrderMaterialItemsSection({
         layout={WORK_ORDER_MATERIAL_ITEMS_LAYOUT}
         empty={<GridEmpty>No material items yet.</GridEmpty>}
         renderRow={(row) => {
-          const isExpanded = expandedRowIds.has(row.id)
+          const isExpanded = allExpanded
           const cutLogs = cutLogsByWorkOrderItemId[row.id] ?? []
           return (
             <Fragment>

@@ -1,9 +1,10 @@
 "use client"
 
-import { Fragment, useCallback, useMemo, useState } from "react"
+import { Fragment, useCallback, useMemo } from "react"
 import type { ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
 import { RowActionButton, UnitCell } from "@/components/cells"
+import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
 import { ExpandableRow, ExpandToggle } from "@/components/grid/expandable-rows"
 import { SelectAllButton } from "@/components/features/select-batch"
 import { Grid, GridEmpty } from "@/components/grid"
@@ -77,13 +78,7 @@ export function ImportStagedInventoryFilterRowsSection({
   const editable = !section.isSaving && !section.isMarking && !section.isSelectionActive
   const sectionError = section.error?.message ?? null
 
-  const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set())
-  const allExpanded = drafts.length > 0 && expandedRowIds.size === drafts.length
-  const toggleAll = useCallback(() => {
-    setExpandedRowIds(
-      allExpanded ? new Set() : new Set(drafts.map((draft) => draft.clientId)),
-    )
-  }, [allExpanded, drafts])
+  const { allExpanded, toggleAll } = useExpandableRowsToggle()
 
   function renderParentCell(column: { key: string }, draft: FilterDraftRow): ReactNode {
     const server = serverFilterRowsById.get(draft.clientId)
@@ -267,7 +262,7 @@ export function ImportStagedInventoryFilterRowsSection({
         renderRow={(draft) => {
           const server = serverFilterRowsById.get(draft.clientId)
           const childRows = server ? (section.stagedRowsByFilterId.get(server.id) ?? []) : []
-          const isExpanded = expandedRowIds.has(draft.clientId)
+          const isExpanded = allExpanded
           return (
             <Fragment>
               <ExpandableRow<FilterDraftRow>
