@@ -39,7 +39,7 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
       side="right"
       onClose={controller.close}
       title={title}
-      widthClassName="w-[28rem]"
+      widthClassName="w-[32rem]"
     >
       <div className="flex h-full flex-col">
         <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-4 pt-4 pb-24">
