@@ -9,16 +9,25 @@ import type {
  * HTML string. Worker passes the result to `renderHtmlToPdf` from
  * `@builders/pdf`. No I/O, no async.
  *
- * Layout, top to bottom:
- *  - H1: Work Order number
- *  - H2: scheduled date (or "—" when unscheduled)
- *  - Top table: warehouse | mgmt co, job type | property
- *  - Description block (full-width bordered single-cell table)
- *  - H2: "Property Info"
- *  - Property Info table: address + property instructions on the left,
- *    vacancy / unit type / unit number on the right
- *  - H2: Material Items — one bordered single-row table per WOMI
- *    followed by a borderless aligned-text cut-log block
+ * Two-page layout (forced page break between):
+ *
+ *   Page 1 — Work Order:
+ *     - H1: Work Order number
+ *     - H2: scheduled date (or "—" when unscheduled)
+ *     - Top table: warehouse | mgmt co, job type | property
+ *     - Description block (omitted if empty)
+ *     - H2: "Property Info"
+ *     - Property Info table: address + property instructions on the left,
+ *       vacancy / unit type / unit number on the right
+ *     - H2: Material Items — one borderless WOMI row per item
+ *       followed by a borderless cut-log block
+ *
+ *   Page 2 — Picking Ticket:
+ *     - H1 + "Picking Ticket" tag in the top-right
+ *     - H2: scheduled date
+ *     - Same top table as page 1
+ *     - Same Material Items + cut logs as page 1 (no Property Info,
+ *       no description)
  *
  * Markup is intentionally minimal and styled inline so the rendered PDF
  * does not depend on external CSS. Every dynamic value passes through
@@ -41,18 +50,23 @@ const STYLE_BLOCK = `
   .flat-rows th, .flat-rows td { border: 0; padding: 3px 8px; font-size: 11px; text-align: left; vertical-align: top; }
   .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
   .womi-rows { margin-bottom: 2px; }
+  .page-break { page-break-before: always; break-before: page; }
+  .page-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .page-tag { font-size: 16px; font-weight: 600; }
   .multiline { white-space: pre-wrap; }
   .empty-cell { color: #666; }
 `
 
 export function buildWorkOrderPdfHtml(input: WorkOrderFileGenerationInput): string {
-  const sections = [
+  const page1 = [
     renderHeader(input),
     renderTopTable(input),
     renderDescriptionBlock(input),
     renderPropertyInfo(input),
     renderMaterialItems(input.materialItems),
   ].join("\n")
+
+  const page2 = renderPickingTicketPage(input)
 
   return `<!DOCTYPE html>
 <html>
@@ -62,13 +76,27 @@ export function buildWorkOrderPdfHtml(input: WorkOrderFileGenerationInput): stri
   <style>${STYLE_BLOCK}</style>
 </head>
 <body>
-${sections}
+${page1}
+${page2}
 </body>
 </html>`
 }
 
 function renderHeader(input: WorkOrderFileGenerationInput): string {
   return `<h1>Work Order ${escapeHtml(input.workOrderNumber)}</h1>`
+}
+
+function renderPickingTicketPage(input: WorkOrderFileGenerationInput): string {
+  return `
+<div class="page-break">
+  <div class="page-header">
+    <h1>Work Order ${escapeHtml(input.workOrderNumber)}</h1>
+    <span class="page-tag">Picking Ticket</span>
+  </div>
+  ${renderTopTable(input)}
+  ${renderMaterialItems(input.materialItems)}
+</div>
+`.trim()
 }
 
 function renderTopTable(input: WorkOrderFileGenerationInput): string {
@@ -204,6 +232,15 @@ function renderCutLogRows(cutLogs: WorkOrderFileCutLogProjection[]): string {
   const rows = cutLogs.map(renderCutLogRow).join("\n")
   return `
 <table class="flat-rows">
+  <colgroup>
+    <col style="width: 20%;" />
+    <col style="width: 9%;" />
+    <col style="width: 7%;" />
+    <col style="width: 7%;" />
+    <col style="width: 7%;" />
+    <col style="width: 10%;" />
+    <col style="width: 40%;" />
+  </colgroup>
   <thead>
     <tr>
       <th>Inventory Item</th>
