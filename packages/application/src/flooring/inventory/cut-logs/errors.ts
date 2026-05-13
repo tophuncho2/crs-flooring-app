@@ -7,6 +7,7 @@ export type CutLogExecutionErrorCode =
   | "CUT_LOG_NOT_PENDING"
   | "CUT_LOG_STALE"
   | "CUT_LOG_FINALIZE_BLOCKED"
+  | "CUT_LOG_EXCEEDS_INVENTORY"
 
 /**
  * HTTP-shaped execution error thrown by every cut-log use case. Scope-

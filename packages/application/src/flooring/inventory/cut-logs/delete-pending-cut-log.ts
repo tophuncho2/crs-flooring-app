@@ -120,10 +120,34 @@ export async function deletePendingCutLogUseCase(
         inventoryId: existing.inventoryId,
       })
     }
-    assertCutSumWithinStartingStock({
-      totalCutSum: result.totalCutSum,
-      startingStock: inventory.startingStock,
-    })
+    // Defense-in-depth: a delete can only decrease totalCutSum, so this
+    // should be unreachable. Still, translate to a 400 execution error
+    // if it ever fires so the route returns a friendly message instead
+    // of falling through to the catch-all "Unexpected server error".
+    try {
+      assertCutSumWithinStartingStock({
+        totalCutSum: result.totalCutSum,
+        startingStock: inventory.startingStock,
+      })
+    } catch (error) {
+      if (
+        error instanceof CutLogDomainError &&
+        error.code === "CUT_LOG_TOTALCUTSUM_EXCEEDS_STARTING_STOCK"
+      ) {
+        const unit = inventory.stockUnitAbbrev ? ` ${inventory.stockUnitAbbrev}` : ""
+        throw new CutLogExecutionError({
+          code: "CUT_LOG_EXCEEDS_INVENTORY",
+          message: `Cut exceeds available inventory: total cuts would be ${result.totalCutSum}${unit} but only ${inventory.startingStock}${unit} is available.`,
+          status: 400,
+          payload: {
+            inventoryId: result.inventoryId,
+            totalCutSum: result.totalCutSum,
+            startingStock: inventory.startingStock,
+          },
+        })
+      }
+      throw error
+    }
 
     return {
       deletedId: existing.id,

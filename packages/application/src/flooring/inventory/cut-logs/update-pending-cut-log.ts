@@ -203,10 +203,33 @@ export async function updatePendingCutLogUseCase(
         inventoryId: existing.inventoryId,
       })
     }
-    assertCutSumWithinStartingStock({
-      totalCutSum: result.totalCutSum,
-      startingStock: inventory.startingStock,
-    })
+    // Translate the domain "exceeds starting stock" error into a 400
+    // execution error so the route handler surfaces it as a user-
+    // friendly message instead of "Unexpected server error".
+    try {
+      assertCutSumWithinStartingStock({
+        totalCutSum: result.totalCutSum,
+        startingStock: inventory.startingStock,
+      })
+    } catch (error) {
+      if (
+        error instanceof CutLogDomainError &&
+        error.code === "CUT_LOG_TOTALCUTSUM_EXCEEDS_STARTING_STOCK"
+      ) {
+        const unit = inventory.stockUnitAbbrev ? ` ${inventory.stockUnitAbbrev}` : ""
+        throw new CutLogExecutionError({
+          code: "CUT_LOG_EXCEEDS_INVENTORY",
+          message: `Cut exceeds available inventory: total cuts would be ${result.totalCutSum}${unit} but only ${inventory.startingStock}${unit} is available.`,
+          status: 400,
+          payload: {
+            inventoryId: result.inventoryId,
+            totalCutSum: result.totalCutSum,
+            startingStock: inventory.startingStock,
+          },
+        })
+      }
+      throw error
+    }
 
     return {
       cutLog,
