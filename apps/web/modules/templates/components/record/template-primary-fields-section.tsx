@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { TextCell } from "@/components/cells"
+import { TextCell, TextareaCell } from "@/components/cells"
 import {
   PropertyJoinedReadOnlyCells,
   type PropertyJoinedFields,
@@ -12,7 +12,14 @@ import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-pi
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
-import type { PropertyOption, TemplateForm } from "@builders/domain"
+import {
+  TEMPLATE_DESCRIPTION_MAX,
+  TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
+  TEMPLATE_INTERNAL_NOTES_MAX,
+  TEMPLATE_UNIT_TYPE_MAX,
+  type PropertyOption,
+  type TemplateForm,
+} from "@builders/domain"
 
 /**
  * Slim joined-name + joined-property snapshot the section needs from
@@ -147,11 +154,12 @@ export function TemplatePrimaryFieldsSection({
         </FormField>
       </CellAt>
       <CellAt col={7} row={1} colSpan={2}>
-        <FormField label="Unit Type">
+        <FormField label="Unit Type" required>
           <TextCell
             editable={editable}
             value={draft.unitType}
             onChange={(value) => onFieldChange("unitType", value)}
+            maxLength={TEMPLATE_UNIT_TYPE_MAX}
           />
         </FormField>
       </CellAt>
@@ -178,12 +186,39 @@ export function TemplatePrimaryFieldsSection({
             editable={editable}
             value={draft.description}
             onChange={(value) => onFieldChange("description", value)}
+            maxLength={TEMPLATE_DESCRIPTION_MAX}
           />
         </FormField>
       </CellAt>
 
       {/* Rows 3-4: Property address + instructions (read-only, live from selection) */}
       <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={3} />
+
+      {/* Installer instructions copy to the synced work order (and onto the
+          PDF via that path); internal notes stay on the template only. */}
+      <CellAt col={1} row={5} colSpan={8}>
+        <FormField label="Installer Instructions (copied to synced work order)">
+          <TextareaCell
+            editable={editable}
+            value={draft.installerInstructions}
+            onChange={(value) => onFieldChange("installerInstructions", value)}
+            maxLength={TEMPLATE_INSTALLER_INSTRUCTIONS_MAX}
+            rows={3}
+          />
+        </FormField>
+      </CellAt>
+
+      <CellAt col={1} row={6} colSpan={8}>
+        <FormField label="Internal Notes (template-only, not synced)">
+          <TextareaCell
+            editable={editable}
+            value={draft.internalNotes}
+            onChange={(value) => onFieldChange("internalNotes", value)}
+            maxLength={TEMPLATE_INTERNAL_NOTES_MAX}
+            rows={3}
+          />
+        </FormField>
+      </CellAt>
     </FieldSection>
   )
 }
