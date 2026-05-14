@@ -16,6 +16,7 @@ import type {
  *     - H2: scheduled date (or "—" when unscheduled)
  *     - Top table: warehouse | mgmt co, job type | property
  *     - Description block (omitted if empty)
+ *     - Installer Instructions block (omitted if empty)
  *     - H2: "Property Info"
  *     - Property Info table: address + property instructions on the left,
  *       vacancy / unit type / unit number on the right
@@ -62,6 +63,7 @@ export function buildWorkOrderPdfHtml(input: WorkOrderFileGenerationInput): stri
     renderHeader(input),
     renderTopTable(input),
     renderDescriptionBlock(input),
+    renderInstallerInstructionsBlock(input),
     renderPropertyInfo(input),
     renderMaterialItems(input.materialItems),
   ].join("\n")
@@ -135,6 +137,20 @@ function renderDescriptionBlock(input: WorkOrderFileGenerationInput): string {
   </thead>
   <tbody>
     <tr><td class="multiline">${escapeHtml(input.description)}</td></tr>
+  </tbody>
+</table>
+`.trim()
+}
+
+function renderInstallerInstructionsBlock(input: WorkOrderFileGenerationInput): string {
+  if (!input.installerInstructions) return ""
+  return `
+<table class="grid-table">
+  <thead>
+    <tr><th>Installer Instructions</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="multiline">${escapeHtml(input.installerInstructions)}</td></tr>
   </tbody>
 </table>
 `.trim()

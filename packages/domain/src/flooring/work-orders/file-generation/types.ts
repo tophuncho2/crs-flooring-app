@@ -54,6 +54,7 @@ export type WorkOrderFileGenerationInput = {
   unitType: string
   customAddress: string
   description: string
+  installerInstructions: string
   property: {
     name: string
     streetAddress: string

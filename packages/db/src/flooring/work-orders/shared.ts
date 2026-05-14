@@ -67,6 +67,8 @@ export const workOrderDetailSelect = {
   scheduledFor: true,
   description: true,
   customAddress: true,
+  internalNotes: true,
+  installerInstructions: true,
   createdAt: true,
   updatedAt: true,
 } as const

@@ -26,6 +26,8 @@ export type WorkOrderListRow = {
 
 export type WorkOrderDetail = WorkOrderListRow & {
   customAddress: string
+  internalNotes: string
+  installerInstructions: string
   propertyStreetAddress: string
   propertyCity: string
   propertyState: string
@@ -48,6 +50,8 @@ export type WorkOrderForm = {
   unitType: string
   customAddress: string
   description: string
+  internalNotes: string
+  installerInstructions: string
   scheduledFor: string
   isComplete: boolean
   vacancy: "VACANT" | "OCCUPIED" | ""
@@ -63,6 +67,8 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   unitType: "",
   customAddress: "",
   description: "",
+  internalNotes: "",
+  installerInstructions: "",
   scheduledFor: "",
   isComplete: false,
   vacancy: "",

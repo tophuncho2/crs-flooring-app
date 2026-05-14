@@ -7,3 +7,6 @@
 export const WO_DESCRIPTION_MAX = 60
 export const WO_UNIT_NUMBER_MAX = 30
 export const WO_UNIT_TYPE_MAX = 30
+export const WO_CUSTOM_ADDRESS_MAX = 200
+export const WO_INTERNAL_NOTES_MAX = 250
+export const WO_INSTALLER_INSTRUCTIONS_MAX = 250

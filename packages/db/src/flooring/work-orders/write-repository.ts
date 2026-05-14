@@ -18,6 +18,8 @@ export type CreateWorkOrderRecordInput = {
   unitType?: string | null
   customAddress?: string | null
   description?: string | null
+  internalNotes?: string | null
+  installerInstructions?: string | null
   scheduledFor?: Date | null
   isComplete?: boolean
   vacancy?: "VACANT" | "OCCUPIED" | null

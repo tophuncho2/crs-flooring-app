@@ -221,6 +221,7 @@ export async function getWorkOrderForFileGeneration(
       unitType: true,
       customAddress: true,
       description: true,
+      installerInstructions: true,
       property: {
         select: {
           name: true,
@@ -305,6 +306,7 @@ export async function getWorkOrderForFileGeneration(
     unitType: workOrder.unitType ?? "",
     customAddress: workOrder.customAddress ?? "",
     description: workOrder.description ?? "",
+    installerInstructions: workOrder.installerInstructions ?? "",
     property: {
       name: workOrder.property.name,
       streetAddress: workOrder.property.streetAddress ?? "",

@@ -31,6 +31,8 @@ type WorkOrderListInput = {
 
 type WorkOrderDetailInput = WorkOrderListInput & {
   customAddress: string | null
+  internalNotes: string | null
+  installerInstructions: string | null
   property: {
     name: string
     streetAddress: string | null
@@ -78,6 +80,8 @@ export function normalizeWorkOrder(workOrder: WorkOrderDetailInput): WorkOrderDe
   return {
     ...base,
     customAddress: workOrder.customAddress ?? "",
+    internalNotes: workOrder.internalNotes ?? "",
+    installerInstructions: workOrder.installerInstructions ?? "",
     propertyStreetAddress: workOrder.property.streetAddress ?? "",
     propertyCity: workOrder.property.city ?? "",
     propertyState: workOrder.property.state ?? "",
