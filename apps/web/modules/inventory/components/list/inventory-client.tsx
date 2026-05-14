@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
-import { SearchControl } from "@/components/features/search"
 import { ClearAllFiltersButton } from "@/components/features/filter"
 import {
   ListRowCount,
@@ -32,6 +31,7 @@ import { LocationPicker } from "@/modules/inventory/components/picker/location-p
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
 import { ImportNumberFilterChip } from "./toolbar-controls/import-number-filter-chip"
+import { InventoryListSearch } from "./toolbar-controls/inventory-list-search"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
 import { PurchaseOrderFilterChip } from "./toolbar-controls/purchase-order-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
@@ -283,10 +283,9 @@ export default function InventoryClient({
         <ListToolbar>
           {/* Search + (Clear all | row count) */}
           <ListToolbarCell>
-            <SearchControl
+            <InventoryListSearch
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search inventory item"
             />
             <ListToolbarBottomRow
               left={
