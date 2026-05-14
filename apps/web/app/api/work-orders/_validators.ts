@@ -63,6 +63,18 @@ function optionalText(value: unknown): string | null {
   return value
 }
 
+function optionalBoundedText(
+  value: unknown,
+  max: number,
+  field: string,
+  fail: (m: string, f?: string) => never,
+): string | null {
+  if (value === undefined || value === null) return null
+  if (typeof value !== "string") return null
+  if (value.length > max) fail(`${field} must be ${max} characters or fewer`, field)
+  return value
+}
+
 function optionalBoolean(value: unknown): boolean | undefined {
   if (typeof value !== "boolean") return undefined
   return value
@@ -96,10 +108,10 @@ export function validateCreateWorkOrderInput(
     templateId: optionalString(body.templateId),
     managementCompanyId: optionalString(body.managementCompanyId),
     jobTypeId: optionalString(body.jobTypeId),
-    unitNumber: optionalText(body.unitNumber),
-    unitType: optionalText(body.unitType),
+    unitNumber: optionalBoundedText(body.unitNumber, 30, "unitNumber", failWorkOrder),
+    unitType: optionalBoundedText(body.unitType, 30, "unitType", failWorkOrder),
     customAddress: optionalText(body.customAddress),
-    description: optionalText(body.description),
+    description: optionalBoundedText(body.description, 60, "description", failWorkOrder),
     scheduledFor: optionalDate(body.scheduledFor, "scheduledFor"),
     isComplete: optionalBoolean(body.isComplete),
     vacancy: optionalVacancy(body.vacancy),
@@ -120,10 +132,10 @@ export function validateUpdateWorkOrderInput(
   if ("templateId" in body) input.templateId = optionalString(body.templateId)
   if ("managementCompanyId" in body) input.managementCompanyId = optionalString(body.managementCompanyId)
   if ("jobTypeId" in body) input.jobTypeId = optionalString(body.jobTypeId)
-  if ("unitNumber" in body) input.unitNumber = optionalText(body.unitNumber)
-  if ("unitType" in body) input.unitType = optionalText(body.unitType)
+  if ("unitNumber" in body) input.unitNumber = optionalBoundedText(body.unitNumber, 30, "unitNumber", failWorkOrder)
+  if ("unitType" in body) input.unitType = optionalBoundedText(body.unitType, 30, "unitType", failWorkOrder)
   if ("customAddress" in body) input.customAddress = optionalText(body.customAddress)
-  if ("description" in body) input.description = optionalText(body.description)
+  if ("description" in body) input.description = optionalBoundedText(body.description, 60, "description", failWorkOrder)
   if ("scheduledFor" in body) input.scheduledFor = optionalDate(body.scheduledFor, "scheduledFor")
   if ("isComplete" in body) {
     const isComplete = optionalBoolean(body.isComplete)
