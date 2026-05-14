@@ -20,9 +20,9 @@ import {
 } from "@/modules/inventory/data/list-inventory-request"
 import { useInventoryListController } from "@/modules/inventory/controllers/use-inventory-list-controller"
 import { InventoryTable } from "./inventory-table"
+import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { ArchiveFilterChip } from "./archive-filter-chip"
 import { CategoryFilterChip } from "./category-filter-chip"
-import { LocationFilterChip } from "./location-filter-chip"
 import { ProductFilterChip } from "./product-filter-chip"
 import { WarehouseFilterChip } from "./warehouse-filter-chip"
 
@@ -181,6 +181,11 @@ export default function InventoryClient({
   const handleWarehouseChange = useCallback(
     (id: string | null) => {
       onFilterChange("warehouseId", id ? [id] : [])
+      // Locations are warehouse-scoped; clear any picked location whenever
+      // the warehouse changes (or is cleared) so the chip never carries a
+      // value that's invalid for the new scope. Mirrors the Category → Product
+      // cascade below.
+      onFilterChange("location", [])
     },
     [onFilterChange],
   )
@@ -201,8 +206,8 @@ export default function InventoryClient({
   )
 
   const handleLocationChange = useCallback(
-    (next: string) => {
-      const trimmed = next.trim()
+    (next: string | null) => {
+      const trimmed = next?.trim() ?? ""
       onFilterChange("location", trimmed.length > 0 ? [trimmed] : [])
     },
     [onFilterChange],
@@ -255,8 +260,19 @@ export default function InventoryClient({
             initialOptions={initialWarehouseOptions}
           />
 
-          {/* Free-text location filter (server-side ILIKE on inventory.location) */}
-          <LocationFilterChip value={locationValue} onChange={handleLocationChange} />
+          {/* Warehouse-scoped location picker — disabled until a warehouse is
+              picked, options are SELECT DISTINCT location for that warehouse.
+              Cascades clear when the warehouse changes (see handleWarehouseChange). */}
+          <div className="min-w-[14rem] max-w-[20rem]">
+            <LocationPicker
+              value={locationValue || null}
+              onChange={handleLocationChange}
+              warehouseId={selectedWarehouseId}
+              placeholder="Filter by location"
+              disabledPlaceholder="Select warehouse first"
+              ariaLabel="Filter inventory by location"
+            />
+          </div>
 
           {/* Visual gap separating warehouse/location from the product chain */}
           <span aria-hidden="true" className="mx-1 h-6 w-px bg-[var(--panel-border)]" />
