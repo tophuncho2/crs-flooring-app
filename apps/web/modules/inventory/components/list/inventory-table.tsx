@@ -1,7 +1,7 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
-import { PaginateControls } from "@/components/features/paginate"
 import {
   composeRollNumberDisplay,
   formatFifoReceivedAtEastern,
@@ -29,26 +29,12 @@ const INVENTORY_LIST_LAYOUT: GridLayout<InventoryRow> = {
 
 export function InventoryTable({
   rows,
-  page,
-  totalPages,
-  pageSize,
-  totalItems,
-  hasPreviousPage,
-  hasNextPage,
-  onPreviousPage,
-  onNextPage,
   onOpenInventory,
+  pagination,
 }: {
   rows: InventoryRow[]
-  page: number
-  totalPages: number
-  pageSize: number
-  totalItems: number
-  hasPreviousPage: boolean
-  hasNextPage: boolean
-  onPreviousPage: () => void
-  onNextPage: () => void
   onOpenInventory: (id: string) => void
+  pagination?: ReactNode
 }) {
   return (
     <Grid<InventoryRow>
@@ -102,18 +88,7 @@ export function InventoryTable({
             return "-"
         }
       }}
-      footerSlot={
-        <PaginateControls
-          page={page}
-          pageSize={pageSize}
-          totalItems={totalItems}
-          totalPages={totalPages}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={onPreviousPage}
-          onNextPage={onNextPage}
-        />
-      }
+      footerSlot={pagination}
     />
   )
 }

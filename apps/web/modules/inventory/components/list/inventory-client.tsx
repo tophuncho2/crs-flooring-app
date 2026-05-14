@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
+import { PaginateControls } from "@/components/features/paginate"
 import {
   ListToolbar,
   ListToolbarBottomRow,
@@ -351,15 +352,19 @@ export default function InventoryClient({
 
         <InventoryTable
           rows={rows}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={total}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
           onOpenInventory={openInventory}
+          pagination={
+            <PaginateControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={total}
+              totalPages={totalPages}
+              hasPreviousPage={hasPreviousPage}
+              hasNextPage={hasNextPage}
+              onPreviousPage={goToPreviousPage}
+              onNextPage={goToNextPage}
+            />
+          }
         />
       </div>
     </div>
