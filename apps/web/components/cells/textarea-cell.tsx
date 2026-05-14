@@ -28,6 +28,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
 
 export type TextareaCellProps = CellProps<string> & {
   placeholder?: string
+  maxLength?: number
   /** Visible row count when editable; default `3`. */
   rows?: number
 }
@@ -47,6 +48,7 @@ export function TextareaCell(props: TextareaCellProps) {
         value={props.value}
         onChange={(event) => props.onChange?.(event.target.value)}
         placeholder={props.placeholder}
+        maxLength={props.maxLength}
         rows={rows}
         aria-label={props.ariaLabel}
         aria-invalid={props.invalid || undefined}

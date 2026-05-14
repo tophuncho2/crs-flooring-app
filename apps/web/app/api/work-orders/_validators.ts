@@ -11,9 +11,12 @@ import type {
   UpdateWorkOrderUseCaseInput,
   WorkOrdersListFilters,
 } from "@builders/application"
-import type {
-  WorkOrderMaterialItemForm,
-  WorkOrderMaterialItemsDiff,
+import {
+  WO_DESCRIPTION_MAX,
+  WO_UNIT_NUMBER_MAX,
+  WO_UNIT_TYPE_MAX,
+  type WorkOrderMaterialItemForm,
+  type WorkOrderMaterialItemsDiff,
 } from "@builders/domain"
 
 function failWorkOrder(message: string, field?: string): never {
@@ -108,10 +111,10 @@ export function validateCreateWorkOrderInput(
     templateId: optionalString(body.templateId),
     managementCompanyId: optionalString(body.managementCompanyId),
     jobTypeId: optionalString(body.jobTypeId),
-    unitNumber: optionalBoundedText(body.unitNumber, 30, "unitNumber", failWorkOrder),
-    unitType: optionalBoundedText(body.unitType, 30, "unitType", failWorkOrder),
+    unitNumber: optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder),
+    unitType: optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder),
     customAddress: optionalText(body.customAddress),
-    description: optionalBoundedText(body.description, 60, "description", failWorkOrder),
+    description: optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder),
     scheduledFor: optionalDate(body.scheduledFor, "scheduledFor"),
     isComplete: optionalBoolean(body.isComplete),
     vacancy: optionalVacancy(body.vacancy),
@@ -132,10 +135,10 @@ export function validateUpdateWorkOrderInput(
   if ("templateId" in body) input.templateId = optionalString(body.templateId)
   if ("managementCompanyId" in body) input.managementCompanyId = optionalString(body.managementCompanyId)
   if ("jobTypeId" in body) input.jobTypeId = optionalString(body.jobTypeId)
-  if ("unitNumber" in body) input.unitNumber = optionalBoundedText(body.unitNumber, 30, "unitNumber", failWorkOrder)
-  if ("unitType" in body) input.unitType = optionalBoundedText(body.unitType, 30, "unitType", failWorkOrder)
+  if ("unitNumber" in body) input.unitNumber = optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder)
+  if ("unitType" in body) input.unitType = optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder)
   if ("customAddress" in body) input.customAddress = optionalText(body.customAddress)
-  if ("description" in body) input.description = optionalBoundedText(body.description, 60, "description", failWorkOrder)
+  if ("description" in body) input.description = optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder)
   if ("scheduledFor" in body) input.scheduledFor = optionalDate(body.scheduledFor, "scheduledFor")
   if ("isComplete" in body) {
     const isComplete = optionalBoolean(body.isComplete)

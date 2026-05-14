@@ -19,7 +19,13 @@ import { ManagementCompanyPicker } from "@/modules/management-companies/componen
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
-import type { PropertyOption, WorkOrderForm } from "@builders/domain"
+import {
+  WO_DESCRIPTION_MAX,
+  WO_UNIT_NUMBER_MAX,
+  WO_UNIT_TYPE_MAX,
+  type PropertyOption,
+  type WorkOrderForm,
+} from "@builders/domain"
 
 const VACANCY_OPTIONS = [
   { value: "VACANT", label: "Vacant" },
@@ -217,6 +223,7 @@ export function WorkOrderPrimaryFieldsSection({
             editable={editable}
             value={draft.unitNumber}
             onChange={(value) => onFieldChange("unitNumber", value)}
+            maxLength={WO_UNIT_NUMBER_MAX}
           />
         </FormField>
       </CellAt>
@@ -243,6 +250,7 @@ export function WorkOrderPrimaryFieldsSection({
             editable={editable}
             value={draft.unitType}
             onChange={(value) => onFieldChange("unitType", value)}
+            maxLength={WO_UNIT_TYPE_MAX}
           />
         </FormField>
       </CellAt>
@@ -253,6 +261,7 @@ export function WorkOrderPrimaryFieldsSection({
             editable={editable}
             value={draft.description}
             onChange={(value) => onFieldChange("description", value)}
+            maxLength={WO_DESCRIPTION_MAX}
             rows={2}
           />
         </FormField>

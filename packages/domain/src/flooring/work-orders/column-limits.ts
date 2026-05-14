@@ -1,0 +1,9 @@
+/**
+ * Length limits for short free-text columns on FlooringWorkOrder.
+ * Mirrors the `@db.VarChar(N)` constraints in `schema.prisma`. Imported
+ * by the API validators and UI cells so the cap lives in one TS source.
+ */
+
+export const WO_DESCRIPTION_MAX = 60
+export const WO_UNIT_NUMBER_MAX = 30
+export const WO_UNIT_TYPE_MAX = 30
