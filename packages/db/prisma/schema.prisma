@@ -302,17 +302,17 @@ model FlooringImportStagedInventoryRow {
   productId     String
   product       FlooringProduct                        @relation(fields: [productId], references: [id], onDelete: Restrict)
   rollPrefix    String                                 @default("ROLL#")
-  rollNumber    String?
-  dyeLot        String?
+  rollNumber    String?                                @db.VarChar(30)
+  dyeLot        String?                                @db.VarChar(30)
   warehouseId   String
   warehouse     FlooringWarehouse                      @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  location        String?
+  location        String?                                @db.VarChar(30)
   startingStock   Decimal                                @db.Decimal(12, 2)
   stockUnitName   String?
   stockUnitAbbrev String?
   isImported      Boolean                                @default(false)
   status          FlooringStagedRowStatus                @default(DRAFT)
-  note            String?
+  note            String?                                @db.VarChar(30)
   createdAt       DateTime                               @default(now())
   updatedAt       DateTime                               @updatedAt
 
@@ -352,12 +352,12 @@ model FlooringImportStagedInventoryFilterRow {
 model FlooringImportEntry {
   id                  String                             @id @default(uuid())
   importNumber        Int                                @unique @default(autoincrement())
-  purchaseOrderNumber String?
+  purchaseOrderNumber String?                            @db.VarChar(50)
   warehouseId         String
   warehouse           FlooringWarehouse                  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   manufacturerId      String?
   manufacturer        FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
-  internalNotes       String?                            @db.VarChar(80)
+  internalNotes       String?                            @db.VarChar(250)
   createdAt           DateTime                           @default(now())
   updatedAt           DateTime                           @updatedAt
   stagedInventoryRows       FlooringImportStagedInventoryRow[]
