@@ -7,6 +7,11 @@ import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse
 import {
   formatFifoReceivedAtEastern,
   formatInventoryQuantity,
+  INVENTORY_DYE_LOT_MAX,
+  INVENTORY_INTERNAL_NOTES_MAX,
+  INVENTORY_LOCATION_MAX,
+  INVENTORY_NOTE_MAX,
+  INVENTORY_ROLL_NUMBER_MAX,
   type InventoryForm,
   type InventoryRow,
 } from "@builders/domain"
@@ -67,6 +72,7 @@ export function InventoryPrimaryFieldsSection({
             editable={editable}
             value={draft.location}
             onChange={(value) => onFieldChange("location", value)}
+            maxLength={INVENTORY_LOCATION_MAX}
           />
         </FormField>
       </CellAt>
@@ -94,6 +100,7 @@ export function InventoryPrimaryFieldsSection({
             editable={editable}
             value={draft.rollNumber}
             onChange={(value) => onFieldChange("rollNumber", value)}
+            maxLength={INVENTORY_ROLL_NUMBER_MAX}
           />
         </FormField>
       </CellAt>
@@ -103,6 +110,7 @@ export function InventoryPrimaryFieldsSection({
             editable={editable}
             value={draft.dyeLot}
             onChange={(value) => onFieldChange("dyeLot", value)}
+            maxLength={INVENTORY_DYE_LOT_MAX}
           />
         </FormField>
       </CellAt>
@@ -128,6 +136,7 @@ export function InventoryPrimaryFieldsSection({
             editable={editable}
             value={draft.note}
             onChange={(value) => onFieldChange("note", value)}
+            maxLength={INVENTORY_NOTE_MAX}
           />
         </FormField>
       </CellAt>
@@ -151,6 +160,7 @@ export function InventoryPrimaryFieldsSection({
             editable={editable}
             value={draft.internalNotes}
             onChange={(value) => onFieldChange("internalNotes", value)}
+            maxLength={INVENTORY_INTERNAL_NOTES_MAX}
           />
         </FormField>
       </CellAt>

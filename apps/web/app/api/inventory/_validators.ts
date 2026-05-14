@@ -5,6 +5,11 @@ import type { ListInput } from "@builders/application"
 import {
   INVENTORY_CUT_LOG_MAX_PAGE_SIZE,
   INVENTORY_CUT_LOG_PAGE_SIZE,
+  INVENTORY_DYE_LOT_MAX,
+  INVENTORY_INTERNAL_NOTES_MAX,
+  INVENTORY_LOCATION_MAX,
+  INVENTORY_NOTE_MAX,
+  INVENTORY_ROLL_NUMBER_MAX,
   LIST_INVENTORY_MAX_PAGE_SIZE,
   LIST_INVENTORY_PAGE_SIZE,
 } from "@builders/domain"
@@ -20,6 +25,19 @@ function optionalString(value: unknown, field: string): string {
     })
   }
   return value
+}
+
+function optionalBoundedString(value: unknown, max: number, field: string): string {
+  const str = optionalString(value, field)
+  if (str.length > max) {
+    throw new InventoryExecutionError({
+      code: "INVENTORY_VALIDATION_FAILED",
+      message: `${field} must be ${max} characters or fewer`,
+      status: 400,
+      field,
+    })
+  }
+  return str
 }
 
 function requireBoolean(value: unknown, field: string): boolean {
@@ -222,12 +240,16 @@ export function validateUpdateInventoryInput(body: Record<string, unknown>): Upd
   // `inventoryItem` is server-recomputed (composeInventoryItem) inside the
   // update use case; never accepted from the client.
   const input: UpdateInventoryInput = {}
-  if (body.rollNumber !== undefined) input.rollNumber = optionalString(body.rollNumber, "rollNumber")
-  if (body.dyeLot !== undefined) input.dyeLot = optionalString(body.dyeLot, "dyeLot")
+  if (body.rollNumber !== undefined)
+    input.rollNumber = optionalBoundedString(body.rollNumber, INVENTORY_ROLL_NUMBER_MAX, "rollNumber")
+  if (body.dyeLot !== undefined)
+    input.dyeLot = optionalBoundedString(body.dyeLot, INVENTORY_DYE_LOT_MAX, "dyeLot")
   if (body.warehouseId !== undefined) input.warehouseId = optionalString(body.warehouseId, "warehouseId")
-  if (body.location !== undefined) input.location = optionalString(body.location, "location")
-  if (body.note !== undefined) input.note = optionalString(body.note, "note")
-  if (body.internalNotes !== undefined) input.internalNotes = optionalString(body.internalNotes, "internalNotes")
+  if (body.location !== undefined)
+    input.location = optionalBoundedString(body.location, INVENTORY_LOCATION_MAX, "location")
+  if (body.note !== undefined) input.note = optionalBoundedString(body.note, INVENTORY_NOTE_MAX, "note")
+  if (body.internalNotes !== undefined)
+    input.internalNotes = optionalBoundedString(body.internalNotes, INVENTORY_INTERNAL_NOTES_MAX, "internalNotes")
   if (body.isArchived !== undefined) input.isArchived = requireBoolean(body.isArchived, "isArchived")
   return input
 }
