@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
+import { FilterColumn, FilterToolbar } from "@/components/features/filter"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { InventoryListFilters, ListInput } from "@builders/application"
@@ -243,7 +244,7 @@ export default function InventoryClient({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
+        <FilterToolbar>
           <div className="min-w-[16rem] flex-1">
             <SearchControl
               query={searchQuery}
@@ -252,47 +253,44 @@ export default function InventoryClient({
             />
           </div>
 
-          {/* Warehouse */}
-          <WarehouseFilterChip
-            value={selectedWarehouseId}
-            selectedLabel={warehouseLabel}
-            onChange={handleWarehouseChange}
-            initialOptions={initialWarehouseOptions}
-          />
-
-          {/* Warehouse-scoped location picker — disabled until a warehouse is
-              picked, options are SELECT DISTINCT location for that warehouse.
-              Cascades clear when the warehouse changes (see handleWarehouseChange). */}
-          <div className="min-w-[14rem] max-w-[20rem]">
-            <LocationPicker
-              value={locationValue || null}
-              onChange={handleLocationChange}
-              warehouseId={selectedWarehouseId}
-              placeholder="Filter by location"
-              disabledPlaceholder="Select warehouse first"
-              ariaLabel="Filter inventory by location"
+          {/* Warehouse → Location: location is warehouse-scoped (picker is
+              disabled until a warehouse is picked; warehouse change cascades
+              the location chip clear via handleWarehouseChange). */}
+          <FilterColumn>
+            <WarehouseFilterChip
+              value={selectedWarehouseId}
+              selectedLabel={warehouseLabel}
+              onChange={handleWarehouseChange}
+              initialOptions={initialWarehouseOptions}
             />
-          </div>
+            <div className="min-w-[14rem] max-w-[20rem]">
+              <LocationPicker
+                value={locationValue || null}
+                onChange={handleLocationChange}
+                warehouseId={selectedWarehouseId}
+                placeholder="Filter by location"
+                disabledPlaceholder="Select warehouse first"
+                ariaLabel="Filter inventory by location"
+              />
+            </div>
+          </FilterColumn>
 
-          {/* Visual gap separating warehouse/location from the product chain */}
-          <span aria-hidden="true" className="mx-1 h-6 w-px bg-[var(--panel-border)]" />
-
-          {/* Product chain: Category → Product */}
-          <CategoryFilterChip
-            value={selectedCategoryId}
-            selectedLabel={categoryLabel}
-            onChange={handleCategoryChange}
-            initialOptions={initialCategoryOptions}
-          />
-          <ProductFilterChip
-            value={selectedProductId}
-            selectedLabel={productLabel}
-            categoryId={selectedCategoryId}
-            onChange={handleProductChange}
-          />
-
-          {/* Visual gap separating filters from the archive toggle */}
-          <span aria-hidden="true" className="mx-1 h-6 w-px bg-[var(--panel-border)]" />
+          {/* Category → Product: product is category-scoped (category change
+              cascades the product chip clear via handleCategoryChange). */}
+          <FilterColumn>
+            <CategoryFilterChip
+              value={selectedCategoryId}
+              selectedLabel={categoryLabel}
+              onChange={handleCategoryChange}
+              initialOptions={initialCategoryOptions}
+            />
+            <ProductFilterChip
+              value={selectedProductId}
+              selectedLabel={productLabel}
+              categoryId={selectedCategoryId}
+              onChange={handleProductChange}
+            />
+          </FilterColumn>
 
           {/* Archive toggle (default hides archived) */}
           <ArchiveFilterChip value={isArchivedValue} onChange={handleArchivedChange} />
@@ -300,7 +298,7 @@ export default function InventoryClient({
           <span className="text-xs text-[var(--foreground)]/55">
             {rows.length} of {total} inventory rows
           </span>
-        </div>
+        </FilterToolbar>
 
         <InventoryTable
           rows={rows}
