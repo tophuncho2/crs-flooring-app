@@ -511,8 +511,10 @@ model FlooringWorkOrder {
   scheduledFor         DateTime?                  @db.Date
   unitNumber           String?                    @db.VarChar(30)
   unitType             String?                    @db.VarChar(30)
-  customAddress        String?
+  customAddress        String?                    @db.VarChar(200)
   description          String?                    @db.VarChar(60)
+  internalNotes        String?                    @db.VarChar(250)
+  installerInstructions String?                   @db.VarChar(250)
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
   items                FlooringWorkOrderItem[]
