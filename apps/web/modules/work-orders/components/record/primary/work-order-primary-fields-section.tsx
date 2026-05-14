@@ -270,28 +270,6 @@ export function WorkOrderPrimaryFieldsSection({
       </CellAt>
 
       <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={7} />
-
-      <CellAt col={1} row={9} colSpan={8}>
-        <FormField label="Instructions">
-          <TextareaCell
-            editable={editable}
-            value={draft.instructions}
-            onChange={(value) => onFieldChange("instructions", value)}
-            rows={3}
-          />
-        </FormField>
-      </CellAt>
-
-      <CellAt col={1} row={10} colSpan={8}>
-        <FormField label="Notes">
-          <TextareaCell
-            editable={editable}
-            value={draft.notes}
-            onChange={(value) => onFieldChange("notes", value)}
-            rows={3}
-          />
-        </FormField>
-      </CellAt>
     </FieldSection>
   )
 }

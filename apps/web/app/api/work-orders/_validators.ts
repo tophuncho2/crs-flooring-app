@@ -100,8 +100,6 @@ export function validateCreateWorkOrderInput(
     unitType: optionalText(body.unitType),
     customAddress: optionalText(body.customAddress),
     description: optionalText(body.description),
-    instructions: optionalText(body.instructions),
-    notes: optionalText(body.notes),
     scheduledFor: optionalDate(body.scheduledFor, "scheduledFor"),
     isComplete: optionalBoolean(body.isComplete),
     vacancy: optionalVacancy(body.vacancy),
@@ -126,8 +124,6 @@ export function validateUpdateWorkOrderInput(
   if ("unitType" in body) input.unitType = optionalText(body.unitType)
   if ("customAddress" in body) input.customAddress = optionalText(body.customAddress)
   if ("description" in body) input.description = optionalText(body.description)
-  if ("instructions" in body) input.instructions = optionalText(body.instructions)
-  if ("notes" in body) input.notes = optionalText(body.notes)
   if ("scheduledFor" in body) input.scheduledFor = optionalDate(body.scheduledFor, "scheduledFor")
   if ("isComplete" in body) {
     const isComplete = optionalBoolean(body.isComplete)
