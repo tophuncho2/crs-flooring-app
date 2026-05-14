@@ -31,7 +31,9 @@ import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { ArchiveSegmentedControl } from "./archive-segmented-control"
 import { CategoryFilterChip } from "./category-filter-chip"
+import { ImportNumberFilterChip } from "./import-number-filter-chip"
 import { ProductFilterChip } from "./product-filter-chip"
+import { PurchaseOrderFilterChip } from "./purchase-order-filter-chip"
 import { WarehouseFilterChip } from "./warehouse-filter-chip"
 
 const INVENTORY_FILTERABLE_FIELDS = [
@@ -339,6 +341,14 @@ export default function InventoryClient({
                 onChange={handleArchivedChange}
               />
             </ListToolbarTallCard>
+          </ListToolbarCell>
+
+          {/* Import # → Purchase order: UI placeholders. The chip visuals
+              match the closed-state of `AsyncRichDropdown`; queries get
+              wired in a follow-up. */}
+          <ListToolbarCell>
+            <ImportNumberFilterChip />
+            <PurchaseOrderFilterChip />
           </ListToolbarCell>
         </ListToolbar>
 
