@@ -36,7 +36,7 @@ import type {
  */
 
 const STYLE_BLOCK = `
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; margin: 16px 18px; font-size: 12px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; margin: 32px 18px 24px 18px; font-size: 12px; }
   h1 { font-size: 22px; margin: 0 0 6px 0; }
   h2 { font-size: 14px; margin: 18px 0 6px 0; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
   h3 { font-size: 12px; margin: 10px 0 4px 0; }
@@ -145,14 +145,8 @@ function renderDescriptionBlock(input: WorkOrderFileGenerationInput): string {
 function renderInstallerInstructionsBlock(input: WorkOrderFileGenerationInput): string {
   if (!input.installerInstructions) return ""
   return `
-<table class="grid-table">
-  <thead>
-    <tr><th>Installer Instructions</th></tr>
-  </thead>
-  <tbody>
-    <tr><td class="multiline">${escapeHtml(input.installerInstructions)}</td></tr>
-  </tbody>
-</table>
+<h2>Installer Instructions</h2>
+<div class="multiline">${escapeHtml(input.installerInstructions)}</div>
 `.trim()
 }
 
@@ -264,7 +258,7 @@ function renderCutLogRows(cutLogs: WorkOrderFileCutLogProjection[]): string {
       <th>Before</th>
       <th>Cut</th>
       <th>After</th>
-      <th>Coverage Cut</th>
+      <th>Coverage</th>
       <th>Notes</th>
     </tr>
   </thead>
