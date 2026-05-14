@@ -3,11 +3,10 @@ import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 export type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 
 /**
- * List-view select. Excludes detail-only columns (instructions, notes,
- * customAddress, sync snapshots, items, files) and uses the lightweight
- * `property: { name }` join because list rows do not display the full
- * address. Surfaces `status`, `description`, `scheduledFor` so the list
- * grid can render badges + sortable columns.
+ * List-view select. Excludes detail-only columns (customAddress, items,
+ * files) and uses the lightweight `property: { name }` join because list
+ * rows do not display the full address. Surfaces `status`, `description`,
+ * `scheduledFor` so the list grid can render badges + sortable columns.
  */
 export const workOrderListSelect = {
   id: true,
@@ -68,8 +67,6 @@ export const workOrderDetailSelect = {
   scheduledFor: true,
   description: true,
   customAddress: true,
-  instructions: true,
-  notes: true,
   createdAt: true,
   updatedAt: true,
 } as const

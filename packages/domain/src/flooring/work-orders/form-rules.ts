@@ -21,8 +21,6 @@ export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
     unitType: workOrder.unitType,
     customAddress: workOrder.customAddress,
     description: workOrder.description,
-    instructions: workOrder.instructions,
-    notes: workOrder.notes,
     scheduledFor: toDateInputValue(workOrder.scheduledFor),
     isComplete: workOrder.isComplete,
     vacancy: workOrder.vacancy ?? "",

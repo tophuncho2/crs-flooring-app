@@ -39,8 +39,6 @@ type WorkOrderDetailInput = WorkOrderListInput & {
     postalCode: string | null
     instructions: string | null
   }
-  instructions: string | null
-  notes: string | null
 }
 
 function toIsoDate(value: Date | string | null): string {
@@ -85,8 +83,6 @@ export function normalizeWorkOrder(workOrder: WorkOrderDetailInput): WorkOrderDe
     propertyState: workOrder.property.state ?? "",
     propertyPostalCode: workOrder.property.postalCode ?? "",
     propertyInstructions: workOrder.property.instructions ?? "",
-    instructions: workOrder.instructions ?? "",
-    notes: workOrder.notes ?? "",
   }
 }
 
