@@ -7,10 +7,11 @@ import {
 import type {
   InventoryDetail,
   InventoryFormOptions,
+  InventoryLocationOption,
   InventoryOption,
   InventoryRow,
 } from "@builders/domain"
-import type { Prisma } from "../../generated/prisma/client.js"
+import { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
 import { normalizeInventoryCutLogRow } from "./cut-logs/read-repository.js"
 import {
@@ -326,57 +327,73 @@ export type InventoryOptionsSearchArgs = {
   take: number
 }
 
+type InventoryOptionRawRow = {
+  id: string
+  inventoryItem: string
+  warehouseId: string
+  location: string | null
+  categorySlug: string
+  stockUnitAbbrev: string | null
+  itemCoverageUnitAbbrev: string | null
+  startingStock: Prisma.Decimal
+  totalCutSum: Prisma.Decimal
+  coveragePerUnit: Prisma.Decimal | null
+}
+
 /**
  * Picker / options search for inventory rows. Filters are AND'd: warehouse +
+ * archived=false + computed-balance>0 (`startingStock > totalCutSum`) +
  * (optional) product + (optional) location text contains, then identity-OR
- * across `inventoryNumber`, `rollNumber`, `dyeLot`, `note`. Archived rows
- * excluded. Balance + coverage are stamped via the same pure helpers used by
- * the row normalizer (single source of truth for the math) — coverage is
- * null for non-coverage categories.
+ * across `inventoryNumber`, `rollNumber`, `dyeLot`, `note`. Balance + coverage
+ * are stamped via the same pure helpers used by the row normalizer (single
+ * source of truth for the math) — coverage is null for non-coverage categories.
+ *
+ * Built on `$queryRaw` so the column-to-column compare for the
+ * positive-balance constraint can live in SQL — Prisma's typed `where` cannot
+ * compare two columns of the same row.
  */
 export async function searchInventoryOptions(
   args: InventoryOptionsSearchArgs,
   client: InventoryDbClient = db,
 ): Promise<InventoryOption[]> {
-  const where: Prisma.FlooringInventoryWhereInput = {
-    warehouseId: args.warehouseId,
-    isArchived: false,
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"warehouseId" = ${args.warehouseId}`,
+    Prisma.sql`"isArchived" = false`,
+    Prisma.sql`"startingStock" > "totalCutSum"`,
+  ]
+  if (args.productId !== undefined) {
+    conditions.push(Prisma.sql`"productId" = ${args.productId}`)
   }
-  if (args.productId !== undefined) where.productId = args.productId
-
   const locationFilter = args.location?.trim() ?? ""
   if (locationFilter.length > 0) {
-    where.location = { contains: locationFilter, mode: "insensitive" }
+    conditions.push(Prisma.sql`"location" ILIKE ${`%${locationFilter}%`}`)
   }
-
   const trimmed = args.search?.trim() ?? ""
   if (trimmed.length > 0) {
-    const ilike = { contains: trimmed, mode: "insensitive" as const }
-    where.OR = [
-      { inventoryNumber: ilike },
-      { rollNumber: ilike },
-      { dyeLot: ilike },
-      { note: ilike },
-    ]
+    const pattern = `%${trimmed}%`
+    conditions.push(
+      Prisma.sql`("inventory_number" ILIKE ${pattern} OR "rollNumber" ILIKE ${pattern} OR "dyeLot" ILIKE ${pattern} OR "note" ILIKE ${pattern})`,
+    )
   }
+  const whereClause = Prisma.join(conditions, " AND ")
 
-  const rows = await client.flooringInventory.findMany({
-    where,
-    select: {
-      id: true,
-      inventoryItem: true,
-      warehouseId: true,
-      location: true,
-      categorySlug: true,
-      stockUnitAbbrev: true,
-      itemCoverageUnitAbbrev: true,
-      startingStock: true,
-      totalCutSum: true,
-      coveragePerUnit: true,
-    },
-    orderBy: [{ inventoryNumber: "asc" }],
-    take: args.take,
-  })
+  const rows = await client.$queryRaw<InventoryOptionRawRow[]>(Prisma.sql`
+    SELECT
+      "id",
+      "inventoryItem",
+      "warehouseId",
+      "location",
+      "categorySlug",
+      "stockUnitAbbrev",
+      "itemCoverageUnitAbbrev",
+      "startingStock",
+      "totalCutSum",
+      "coveragePerUnit"
+    FROM "flooring_inventory"
+    WHERE ${whereClause}
+    ORDER BY "inventory_number" ASC
+    LIMIT ${args.take}
+  `)
 
   return rows.map((row) => {
     const balanceNum = computeInventoryBalance({
@@ -399,6 +416,45 @@ export async function searchInventoryOptions(
       itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? "",
     }
   })
+}
+
+export type InventoryLocationsSearchArgs = {
+  warehouseId: string
+  /** Free-text identity search — `ILIKE %value%` on the location column. */
+  search?: string
+  take: number
+}
+
+/**
+ * Distinct, warehouse-scoped location values for the cut-log create form's
+ * LocationPicker. Excludes archived rows + NULL/whitespace-only locations.
+ * Optional ILIKE on the search term. Sorted ASC, deduped at the SQL layer.
+ */
+export async function searchInventoryLocationsForWarehouse(
+  args: InventoryLocationsSearchArgs,
+  client: InventoryDbClient = db,
+): Promise<InventoryLocationOption[]> {
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"warehouseId" = ${args.warehouseId}`,
+    Prisma.sql`"isArchived" = false`,
+    Prisma.sql`"location" IS NOT NULL`,
+    Prisma.sql`length(trim("location")) > 0`,
+  ]
+  const trimmed = args.search?.trim() ?? ""
+  if (trimmed.length > 0) {
+    conditions.push(Prisma.sql`"location" ILIKE ${`%${trimmed}%`}`)
+  }
+  const whereClause = Prisma.join(conditions, " AND ")
+
+  const rows = await client.$queryRaw<{ location: string }[]>(Prisma.sql`
+    SELECT DISTINCT "location"
+    FROM "flooring_inventory"
+    WHERE ${whereClause}
+    ORDER BY "location" ASC
+    LIMIT ${args.take}
+  `)
+
+  return rows.map((row) => ({ value: row.location }))
 }
 
 export async function listInventoryOptions(

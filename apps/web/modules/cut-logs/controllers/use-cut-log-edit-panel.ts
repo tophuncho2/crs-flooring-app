@@ -194,8 +194,8 @@ export function useCutLogEditPanel({
 
   // --- picker handlers (create mode only) ----------------------------------
 
-  const setLocationFilter = useCallback((next: string) => {
-    setLocal((prev) => ({ ...prev, locationFilter: next }))
+  const setLocationFilter = useCallback((next: string | null) => {
+    setLocal((prev) => ({ ...prev, locationFilter: next ?? "" }))
   }, [])
 
   const setInventoryId = useCallback((id: string | null) => {

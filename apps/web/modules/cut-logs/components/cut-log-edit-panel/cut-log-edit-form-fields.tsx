@@ -7,6 +7,7 @@ import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import { formatCutLogTimestamp } from "@/modules/cut-logs/components/row/format-cut-log-timestamp"
 import { InventoryPicker } from "@/modules/inventory/components/picker/inventory-picker"
+import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import type {
   CutLogEditPanelController,
   CutLogPanelRow,
@@ -103,11 +104,11 @@ export function CutLogEditFormFields({
             <>
               <CellAt col={1} colSpan={8}>
                 <FormField label="Location filter">
-                  <TextCell
-                    editable={!isSaving}
-                    value={local.locationFilter}
+                  <LocationPicker
+                    value={local.locationFilter || null}
                     onChange={controller.setLocationFilter}
-                    placeholder="Filter inventory by location"
+                    warehouseId={warehouseId}
+                    disabled={isSaving}
                     ariaLabel="Cut log inventory location filter"
                   />
                 </FormField>

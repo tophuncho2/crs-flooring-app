@@ -162,3 +162,13 @@ export type InventoryOption = {
   coverageBalance: string | null
   itemCoverageUnitAbbrev: string
 }
+
+/**
+ * Option shape for the warehouse-scoped LocationPicker. Locations have no
+ * separate entity — values are derived via `SELECT DISTINCT location` over
+ * the inventory table for a given warehouse, so the option carries only the
+ * raw string. The picker renders `value` as both id and title.
+ */
+export type InventoryLocationOption = {
+  value: string
+}

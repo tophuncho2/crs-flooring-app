@@ -92,6 +92,53 @@ export function validateInventorySearchQuery(
   }
 }
 
+// --- Locations picker (warehouse-scoped, distinct) validator ---
+
+const inventoryLocationsSearchQuerySchema = z.object({
+  warehouseId: z.string().min(1, "warehouseId is required"),
+  search: z.string().optional(),
+  take: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(OPTIONS_MAX_TAKE)
+    .default(OPTIONS_DEFAULT_TAKE),
+})
+
+export type ValidatedInventoryLocationsSearchQuery = {
+  warehouseId: string
+  search?: string
+  take: number
+}
+
+export function validateInventoryLocationsSearchQuery(
+  searchParams: URLSearchParams,
+): ValidatedInventoryLocationsSearchQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = inventoryLocationsSearchQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    throw new InventoryExecutionError({
+      code: "INVENTORY_VALIDATION_FAILED",
+      message: issue?.message ?? "Invalid inventory locations query",
+      status: 400,
+      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
+    })
+  }
+
+  const parsed = parseResult.data
+  const trimSearch = parsed.search?.trim()
+  return {
+    warehouseId: parsed.warehouseId.trim(),
+    ...(trimSearch ? { search: trimSearch } : {}),
+    take: parsed.take,
+  }
+}
+
 // --- List view query validator (search + filters + pagination) ---
 
 const ID_FILTER_KEYS = ["warehouseId", "categoryId", "productId"] as const
