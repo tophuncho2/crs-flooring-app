@@ -1,6 +1,6 @@
 "use client"
 
-import { isCutLogPendingEditable, type InventoryOption } from "@builders/domain"
+import { CUT_LOG_NOTES_MAX, isCutLogPendingEditable, type InventoryOption } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
@@ -211,6 +211,7 @@ export function CutLogEditFormFields({
                 onChange={(next) => controller.setField("notes", next)}
                 placeholder="Notes"
                 ariaLabel="Cut log notes"
+                maxLength={CUT_LOG_NOTES_MAX}
               />
             </FormField>
           </CellAt>

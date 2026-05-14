@@ -3,6 +3,7 @@ import { CutLogExecutionError, InventoryExecutionError } from "@builders/applica
 import type { InventoryListFilters, UpdateInventoryInput } from "@builders/application"
 import type { ListInput } from "@builders/application"
 import {
+  CUT_LOG_NOTES_MAX,
   INVENTORY_CUT_LOG_MAX_PAGE_SIZE,
   INVENTORY_CUT_LOG_PAGE_SIZE,
   INVENTORY_DYE_LOT_MAX,
@@ -360,6 +361,9 @@ export function validateInvUpdatePendingCutLogInput(
     patch.isWaste = patchBody.isWaste
   }
   if ("notes" in patchBody && typeof patchBody.notes === "string") {
+    if (patchBody.notes.length > CUT_LOG_NOTES_MAX) {
+      failCutLog(`patch.notes must be ${CUT_LOG_NOTES_MAX} characters or fewer`, "patch.notes")
+    }
     patch.notes = patchBody.notes
   }
   if ("link" in patchBody) {

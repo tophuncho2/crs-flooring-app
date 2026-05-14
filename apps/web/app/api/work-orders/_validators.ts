@@ -12,6 +12,7 @@ import type {
   WorkOrdersListFilters,
 } from "@builders/application"
 import {
+  CUT_LOG_NOTES_MAX,
   WO_CUSTOM_ADDRESS_MAX,
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
@@ -245,7 +246,7 @@ export function validateCreatePendingCutLogInput(
     inventoryId: requireString(body.inventoryId, "inventoryId", failCutLog),
     cut: requireString(body.cut, "cut", failCutLog),
     isWaste,
-    notes: typeof body.notes === "string" ? body.notes : "",
+    notes: optionalBoundedText(body.notes, CUT_LOG_NOTES_MAX, "notes", failCutLog) ?? "",
   }
 }
 
@@ -306,8 +307,9 @@ export function validateUpdatePendingCutLogInput(
   if ("isWaste" in patchBody && typeof patchBody.isWaste === "boolean") {
     patch.isWaste = patchBody.isWaste
   }
-  if ("notes" in patchBody && typeof patchBody.notes === "string") {
-    patch.notes = patchBody.notes
+  if ("notes" in patchBody) {
+    const next = optionalBoundedText(patchBody.notes, CUT_LOG_NOTES_MAX, "patch.notes", failCutLog)
+    if (next !== null) patch.notes = next
   }
   if ("link" in patchBody) {
     patch.link = validateUpdatePendingCutLogLink(patchBody.link)

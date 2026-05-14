@@ -2,6 +2,7 @@
 // types live here. No I/O.
 
 export * from "./types.js"
+export * from "./column-limits.js"
 export * from "./errors.js"
 export * from "./editability.js"
 export * from "./list-config.js"
