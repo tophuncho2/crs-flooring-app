@@ -29,12 +29,12 @@ import {
 import { useInventoryListController } from "@/modules/inventory/controllers/use-inventory-list-controller"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
-import { ArchiveSegmentedControl } from "./archive-segmented-control"
-import { CategoryFilterChip } from "./category-filter-chip"
-import { ImportNumberFilterChip } from "./import-number-filter-chip"
-import { ProductFilterChip } from "./product-filter-chip"
-import { PurchaseOrderFilterChip } from "./purchase-order-filter-chip"
-import { WarehouseFilterChip } from "./warehouse-filter-chip"
+import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
+import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
+import { ImportNumberFilterChip } from "./toolbar-controls/import-number-filter-chip"
+import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
+import { PurchaseOrderFilterChip } from "./toolbar-controls/purchase-order-filter-chip"
+import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 
 const INVENTORY_FILTERABLE_FIELDS = [
   "warehouseId",
