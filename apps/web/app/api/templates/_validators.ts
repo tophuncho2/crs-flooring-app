@@ -63,8 +63,6 @@ export function validateCreateTemplateInput(
     warehouseId: optionalString(body.warehouseId),
     unitType: requireString(body.unitType, "unitType", failTemplate),
     description: optionalText(body.description),
-    instructions: optionalText(body.instructions),
-    templateNotes: optionalText(body.templateNotes),
   }
 }
 
@@ -79,8 +77,6 @@ export function validateUpdateTemplateInput(
   if ("warehouseId" in body) input.warehouseId = optionalString(body.warehouseId)
   if ("unitType" in body) input.unitType = requireString(body.unitType, "unitType", failTemplate)
   if ("description" in body) input.description = optionalText(body.description)
-  if ("instructions" in body) input.instructions = optionalText(body.instructions)
-  if ("templateNotes" in body) input.templateNotes = optionalText(body.templateNotes)
 
   return input
 }

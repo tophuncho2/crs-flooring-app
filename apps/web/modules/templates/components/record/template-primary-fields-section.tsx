@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { TextCell, TextareaCell } from "@/components/cells"
+import { TextCell } from "@/components/cells"
 import {
   PropertyJoinedReadOnlyCells,
   type PropertyJoinedFields,
@@ -182,20 +182,8 @@ export function TemplatePrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      {/* Row 3: Instructions (full width) */}
-      <CellAt col={1} row={3} colSpan={8}>
-        <FormField label="Instructions">
-          <TextareaCell
-            editable={editable}
-            value={draft.instructions}
-            onChange={(value) => onFieldChange("instructions", value)}
-            rows={3}
-          />
-        </FormField>
-      </CellAt>
-
-      {/* Rows 4-5: Property address + instructions (read-only, live from selection) */}
-      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={4} />
+      {/* Rows 3-4: Property address + instructions (read-only, live from selection) */}
+      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={3} />
     </FieldSection>
   )
 }
