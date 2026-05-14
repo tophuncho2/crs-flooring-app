@@ -28,7 +28,7 @@ export function ProductFilterChip({
         selectedLabel={selectedLabel}
         onChange={onChange}
         categoryId={categoryId}
-        placeholder="Filter by product"
+        placeholder="Product"
         searchPlaceholder="Search products"
         emptyMessage="No products match"
         clearLabel="Clear filter"

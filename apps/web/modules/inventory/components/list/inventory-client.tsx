@@ -3,12 +3,13 @@
 import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
-import { ClearAllFiltersButton, FilterColumn } from "@/components/features/filter"
+import { ClearAllFiltersButton } from "@/components/features/filter"
 import {
   ListRowCount,
   ListToolbar,
-  ListToolbarLead,
-  ListToolbarTrailing,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+  ListToolbarTallCard,
 } from "@/components/features/list-toolbar"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
@@ -28,7 +29,7 @@ import {
 import { useInventoryListController } from "@/modules/inventory/controllers/use-inventory-list-controller"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
-import { ArchiveFilterChip } from "./archive-filter-chip"
+import { ArchiveSegmentedControl } from "./archive-segmented-control"
 import { CategoryFilterChip } from "./category-filter-chip"
 import { ProductFilterChip } from "./product-filter-chip"
 import { WarehouseFilterChip } from "./warehouse-filter-chip"
@@ -278,39 +279,42 @@ export default function InventoryClient({
         ) : null}
 
         <ListToolbar>
-          <ListToolbarLead>
+          {/* Search + (Clear all | row count) */}
+          <ListToolbarCell>
             <SearchControl
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
               placeholder="Search inventory item"
             />
-          </ListToolbarLead>
+            <ListToolbarBottomRow>
+              <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
+              <ListRowCount count={rows.length} total={total} label="inventory rows" />
+            </ListToolbarBottomRow>
+          </ListToolbarCell>
 
           {/* Warehouse → Location: location is warehouse-scoped (picker is
               disabled until a warehouse is picked; warehouse change cascades
               the location chip clear via handleWarehouseChange). */}
-          <FilterColumn>
+          <ListToolbarCell>
             <WarehouseFilterChip
               value={selectedWarehouseId}
               selectedLabel={warehouseLabel}
               onChange={handleWarehouseChange}
               initialOptions={initialWarehouseOptions}
             />
-            <div className="min-w-[14rem] max-w-[20rem]">
-              <LocationPicker
-                value={locationValue || null}
-                onChange={handleLocationChange}
-                warehouseId={selectedWarehouseId}
-                placeholder="Filter by location"
-                disabledPlaceholder="Select warehouse first"
-                ariaLabel="Filter inventory by location"
-              />
-            </div>
-          </FilterColumn>
+            <LocationPicker
+              value={locationValue || null}
+              onChange={handleLocationChange}
+              warehouseId={selectedWarehouseId}
+              placeholder="Location"
+              disabledPlaceholder="Select warehouse first"
+              ariaLabel="Filter inventory by location"
+            />
+          </ListToolbarCell>
 
           {/* Category → Product: product is category-scoped (category change
               cascades the product chip clear via handleCategoryChange). */}
-          <FilterColumn>
+          <ListToolbarCell>
             <CategoryFilterChip
               value={selectedCategoryId}
               selectedLabel={categoryLabel}
@@ -323,15 +327,17 @@ export default function InventoryClient({
               categoryId={selectedCategoryId}
               onChange={handleProductChange}
             />
-          </FilterColumn>
+          </ListToolbarCell>
 
-          {/* Archive toggle (default hides archived) */}
-          <ArchiveFilterChip value={isArchivedValue} onChange={handleArchivedChange} />
-
-          <ListToolbarTrailing>
-            <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
-            <ListRowCount count={rows.length} total={total} label="inventory rows" />
-          </ListToolbarTrailing>
+          {/* Status: 2-row-tall card holding the archive segmented control. */}
+          <ListToolbarCell>
+            <ListToolbarTallCard label="Status">
+              <ArchiveSegmentedControl
+                value={isArchivedValue}
+                onChange={handleArchivedChange}
+              />
+            </ListToolbarTallCard>
+          </ListToolbarCell>
         </ListToolbar>
 
         <InventoryTable

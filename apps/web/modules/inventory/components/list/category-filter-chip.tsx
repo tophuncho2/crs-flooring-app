@@ -28,7 +28,7 @@ export function CategoryFilterChip({
         selectedLabel={selectedLabel}
         onChange={onChange}
         initialOptions={initialOptions}
-        placeholder="Filter by category"
+        placeholder="Category"
         searchPlaceholder="Search categories"
         emptyMessage="No categories match"
         clearLabel="Clear filter"
