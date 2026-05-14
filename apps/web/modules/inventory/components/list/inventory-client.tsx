@@ -3,7 +3,13 @@
 import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
-import { ClearAllFiltersButton, FilterColumn, FilterToolbar } from "@/components/features/filter"
+import { ClearAllFiltersButton, FilterColumn } from "@/components/features/filter"
+import {
+  ListRowCount,
+  ListToolbar,
+  ListToolbarLead,
+  ListToolbarTrailing,
+} from "@/components/features/list-toolbar"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { InventoryListFilters, ListInput } from "@builders/application"
@@ -271,14 +277,14 @@ export default function InventoryClient({
           </div>
         ) : null}
 
-        <FilterToolbar>
-          <div className="w-[18rem]">
+        <ListToolbar>
+          <ListToolbarLead>
             <SearchControl
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
               placeholder="Search inventory item"
             />
-          </div>
+          </ListToolbarLead>
 
           {/* Warehouse → Location: location is warehouse-scoped (picker is
               disabled until a warehouse is picked; warehouse change cascades
@@ -322,15 +328,11 @@ export default function InventoryClient({
           {/* Archive toggle (default hides archived) */}
           <ArchiveFilterChip value={isArchivedValue} onChange={handleArchivedChange} />
 
-          {/* Right-aligned cluster: clear-all + stats. `ml-auto` pushes it to
-              the far edge regardless of the search/filter total width. */}
-          <div className="ml-auto flex items-center gap-3">
+          <ListToolbarTrailing>
             <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
-            <span className="text-xs text-[var(--foreground)]/55">
-              {rows.length} of {total} inventory rows
-            </span>
-          </div>
-        </FilterToolbar>
+            <ListRowCount count={rows.length} total={total} label="inventory rows" />
+          </ListToolbarTrailing>
+        </ListToolbar>
 
         <InventoryTable
           rows={rows}
