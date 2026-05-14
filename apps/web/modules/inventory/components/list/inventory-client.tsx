@@ -2,9 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
-import { ClearAllFiltersButton } from "@/components/features/filter"
 import {
-  ListRowCount,
   ListToolbar,
   ListToolbarBottomRow,
   ListToolbarCell,
@@ -34,6 +32,8 @@ import { ImportNumberFilterChip } from "./toolbar-controls/import-number-filter-
 import { InventoryListSearch } from "./toolbar-controls/inventory-list-search"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
 import { PurchaseOrderFilterChip } from "./toolbar-controls/purchase-order-filter-chip"
+import { InventoryClearAll } from "./toolbar-controls/sub-controls/inventory-clear-all"
+import { InventoryRowCount } from "./toolbar-controls/sub-controls/inventory-row-count"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 
 const INVENTORY_FILTERABLE_FIELDS = [
@@ -288,10 +288,8 @@ export default function InventoryClient({
               onQueryChange={onSearchQueryChange}
             />
             <ListToolbarBottomRow
-              left={
-                <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
-              }
-              right={<ListRowCount count={rows.length} total={total} label="rows" />}
+              left={<InventoryClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+              right={<InventoryRowCount count={rows.length} total={total} />}
             />
           </ListToolbarCell>
 
