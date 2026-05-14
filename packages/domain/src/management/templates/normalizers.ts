@@ -80,6 +80,7 @@ type TemplatePreviewInput = {
   templateNumber: string
   unitType: string
   description: string | null
+  installerInstructions: string | null
   jobType: { name: string } | null
   warehouse: { name: string } | null
   property: {
@@ -114,6 +115,7 @@ export function normalizeTemplatePreview(
     unitType: template.unitType,
     warehouseName: template.warehouse?.name ?? "",
     description: template.description ?? "",
+    installerInstructions: template.installerInstructions ?? "",
     items: template.items.map(normalizeTemplateMaterialItem),
     itemsTotal: template._count.items,
     itemsPage: page.itemsPage,

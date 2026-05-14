@@ -47,6 +47,10 @@ export type TemplatePreview = {
   unitType: string
   warehouseName: string
   description: string
+  // installer-facing copy that gets carried into the synced work order;
+  // internalNotes are intentionally NOT exposed here — they are
+  // template-only back-office notes that never travel to a work order.
+  installerInstructions: string
   // Page slice of material items (bounded by itemsPageSize), not the full set.
   items: TemplateMaterialItemRow[]
   itemsTotal: number

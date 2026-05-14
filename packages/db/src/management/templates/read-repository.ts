@@ -192,6 +192,7 @@ function buildTemplatePreviewSelect(pagination: TemplatePreviewPaginationArgs) {
     templateNumber: true,
     unitType: true,
     description: true,
+    installerInstructions: true,
     jobType: { select: { name: true } },
     warehouse: { select: { name: true } },
     property: {

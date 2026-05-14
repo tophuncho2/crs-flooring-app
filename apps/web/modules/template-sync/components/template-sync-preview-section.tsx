@@ -120,6 +120,11 @@ export function TemplateSyncPreviewSection({ templateId }: Props) {
         <PreviewRow label="Unit type" value={valueOrDash(preview.unitType)} />
         <PreviewRow label="Warehouse" value={valueOrDash(preview.warehouseName)} />
         <PreviewRow label="Description" value={valueOrDash(preview.description)} multiline />
+        <PreviewRow
+          label="Installer Instructions"
+          value={valueOrDash(preview.installerInstructions)}
+          multiline
+        />
       </section>
 
       <section className="flex flex-col gap-2">
