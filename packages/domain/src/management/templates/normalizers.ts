@@ -26,6 +26,8 @@ type TemplateListInput = {
 }
 
 type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
+  internalNotes: string | null
+  installerInstructions: string | null
   property: {
     name: string
     streetAddress: string | null
@@ -62,6 +64,8 @@ export function normalizeTemplate(template: TemplateDetailInput): TemplateDetail
   const items: TemplateMaterialItemRow[] = template.items.map(normalizeTemplateMaterialItem)
   return {
     ...base,
+    internalNotes: template.internalNotes ?? "",
+    installerInstructions: template.installerInstructions ?? "",
     propertyStreetAddress: template.property.streetAddress ?? "",
     propertyCity: template.property.city ?? "",
     propertyState: template.property.state ?? "",

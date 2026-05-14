@@ -50,6 +50,8 @@ const templateListSelect = {
 
 const templateDetailSelect = {
   ...templateListSelect,
+  internalNotes: true,
+  installerInstructions: true,
   property: {
     select: {
       name: true,
