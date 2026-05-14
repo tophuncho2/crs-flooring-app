@@ -378,10 +378,10 @@ model FlooringCutLog {
   inventoryItem    String                 @default("")
   inventoryNumber  String?
   rollPrefix       String?
-  rollNumber       String?
-  dyeLot           String?
-  inventoryNote    String?
-  location         String?
+  rollNumber       String?                @db.VarChar(30)
+  dyeLot           String?                @db.VarChar(30)
+  inventoryNote    String?                @db.VarChar(30)
+  location         String?                @db.VarChar(30)
   categorySlug     String
   workOrderId      String?
   workOrder        FlooringWorkOrder?     @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
@@ -400,7 +400,7 @@ model FlooringCutLog {
   finalCutSequence       Int?
   isWaste                Boolean              @default(false)
   void                   Boolean              @default(false)
-  notes                  String?
+  notes                  String?              @db.VarChar(30)
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
 
