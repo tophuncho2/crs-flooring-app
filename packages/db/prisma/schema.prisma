@@ -441,8 +441,6 @@ model FlooringTemplate {
   warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   unitType             String
   description          String?
-  instructions         String?
-  templateNotes        String?
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
   items                FlooringTemplateItem[]
@@ -517,9 +515,6 @@ model FlooringWorkOrder {
   description          String?
   instructions         String?
   notes                String?
-  templateSyncedAt     DateTime?
-  templateSyncMode     String?
-  templateSnapshotHash String?
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
   items                FlooringWorkOrderItem[]
