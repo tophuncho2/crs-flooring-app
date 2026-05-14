@@ -286,10 +286,12 @@ export default function InventoryClient({
               onQueryChange={onSearchQueryChange}
               placeholder="Search inventory item"
             />
-            <ListToolbarBottomRow>
-              <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
-              <ListRowCount count={rows.length} total={total} label="inventory rows" />
-            </ListToolbarBottomRow>
+            <ListToolbarBottomRow
+              left={
+                <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
+              }
+              right={<ListRowCount count={rows.length} total={total} label="rows" />}
+            />
           </ListToolbarCell>
 
           {/* Warehouse → Location: location is warehouse-scoped (picker is

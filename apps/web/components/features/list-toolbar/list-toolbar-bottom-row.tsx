@@ -3,20 +3,23 @@
 import type { ReactNode } from "react"
 
 export type ListToolbarBottomRowProps = {
-  children: ReactNode
+  left?: ReactNode
+  right?: ReactNode
   className?: string
 }
 
 /**
- * The bottom slot of a `ListToolbarCell` when two side-by-side controls
- * sit beneath the top slot. Canonical use: the search cell's row 2 with
- * `[Clear all]` on the left and `[count of total label]` on the right.
+ * The bottom slot of a `ListToolbarCell` with two anchored sub-slots —
+ * `left` pinned to the start of the row, `right` pinned to the end.
+ * Either side may render `null` (e.g. a hidden clear-all button); the
+ * opposite side keeps its anchor regardless.
  *
- * Height is locked to `h-9` so the bottom row of every cell aligns with
- * the chip-button row height across the toolbar.
+ * Height is locked to `h-9` so the bottom row aligns with the
+ * chip-button row height across every toolbar cell.
  */
 export function ListToolbarBottomRow({
-  children,
+  left,
+  right,
   className,
 }: ListToolbarBottomRowProps) {
   return (
@@ -28,7 +31,8 @@ export function ListToolbarBottomRow({
         .filter(Boolean)
         .join(" ")}
     >
-      {children}
+      <div className="flex items-center gap-2">{left}</div>
+      <div className="flex items-center gap-2">{right}</div>
     </div>
   )
 }
