@@ -1,5 +1,6 @@
 "use client"
 
+import type { CellAlign } from "./contracts/grid-cell-kind"
 import type { GridLayout } from "./contracts/grid-layout"
 import type { GridRow } from "./contracts/grid-row"
 import type { ResolvedScrollContract } from "./contracts/grid-scroll"
@@ -9,6 +10,9 @@ const ALIGN_CLASS_NAME = {
   center: "justify-center text-center",
   end: "justify-end text-right",
 } as const
+
+const HEADER_CELL_BASE_CLASS_NAME =
+  "flex items-center px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70"
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
@@ -27,6 +31,13 @@ export type GridHeaderProps<TRow extends GridRow> = {
  * `grid-template-columns` template the body rows use so column edges align.
  * Renders leading control headers, data column labels, and trailing control
  * headers in template order.
+ *
+ * When `scroll.clipColumnsToTrack` is on, each label is rendered inside an
+ * inner `<span>` that owns the truncation (`min-w-0 truncate`). This is what
+ * makes `text-overflow: ellipsis` actually fire — applied to a flex parent
+ * with an anonymous text node it is unreliable; applied to a block-level
+ * inner span it is well-defined. The full label is mirrored to `title` so a
+ * truncated header is still discoverable on hover.
  */
 export function GridHeader<TRow extends GridRow>({
   layout,
@@ -43,51 +54,70 @@ export function GridHeader<TRow extends GridRow>({
         className,
       )}
     >
-      {layout.leadingControls?.map((control) => {
-        const align = control.align ?? "center"
-        return (
-          <div
-            key={control.key}
-            className={joinClassNames(
-              "flex items-center px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
-              ALIGN_CLASS_NAME[align],
-              scroll.noWrapHeaders ? "whitespace-nowrap" : undefined,
-            )}
-          >
-            {control.label ?? ""}
-          </div>
-        )
-      })}
-      {layout.dataColumns.map((column) => {
-        const align = column.align ?? "start"
-        return (
-          <div
-            key={column.key}
-            className={joinClassNames(
-              "flex items-center px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
-              ALIGN_CLASS_NAME[align],
-              scroll.noWrapHeaders ? "whitespace-nowrap" : undefined,
-            )}
-          >
-            {column.label}
-          </div>
-        )
-      })}
-      {layout.trailingControls?.map((control) => {
-        const align = control.align ?? "center"
-        return (
-          <div
-            key={control.key}
-            className={joinClassNames(
-              "flex items-center px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
-              ALIGN_CLASS_NAME[align],
-              scroll.noWrapHeaders ? "whitespace-nowrap" : undefined,
-            )}
-          >
-            {control.label ?? ""}
-          </div>
-        )
-      })}
+      {layout.leadingControls?.map((control) => (
+        <HeaderCell
+          key={control.key}
+          label={control.label ?? ""}
+          align={control.align ?? "center"}
+          scroll={scroll}
+        />
+      ))}
+      {layout.dataColumns.map((column) => (
+        <HeaderCell
+          key={column.key}
+          label={column.label}
+          align={column.align ?? "start"}
+          scroll={scroll}
+        />
+      ))}
+      {layout.trailingControls?.map((control) => (
+        <HeaderCell
+          key={control.key}
+          label={control.label ?? ""}
+          align={control.align ?? "center"}
+          scroll={scroll}
+        />
+      ))}
+    </div>
+  )
+}
+
+function HeaderCell({
+  label,
+  align,
+  scroll,
+}: {
+  label: string
+  align: CellAlign
+  scroll: ResolvedScrollContract
+}) {
+  if (scroll.clipColumnsToTrack) {
+    return (
+      <div
+        className={joinClassNames(
+          HEADER_CELL_BASE_CLASS_NAME,
+          ALIGN_CLASS_NAME[align],
+          "min-w-0 overflow-hidden",
+        )}
+      >
+        {label ? (
+          <span className="min-w-0 truncate" title={label}>
+            {label}
+          </span>
+        ) : null}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={joinClassNames(
+        HEADER_CELL_BASE_CLASS_NAME,
+        ALIGN_CLASS_NAME[align],
+        scroll.noWrapHeaders ? "whitespace-nowrap" : undefined,
+      )}
+    >
+      {label}
     </div>
   )
 }

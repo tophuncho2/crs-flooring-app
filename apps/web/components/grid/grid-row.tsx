@@ -116,6 +116,7 @@ export function GridBodyRow<TRow extends GridRow>({
               "flex items-center px-3 py-2 text-sm text-[var(--foreground)]",
               ALIGN_CLASS_NAME[align],
               scroll.growToFitText ? undefined : "truncate",
+              scroll.clipColumnsToTrack ? "min-w-0 overflow-hidden" : undefined,
             )}
           >
             {renderCell

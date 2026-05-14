@@ -54,6 +54,7 @@ export function InventoryTable({
     <Grid<InventoryRow>
       rows={rows}
       layout={INVENTORY_LIST_LAYOUT}
+      scroll={{ clipColumnsToTrack: true }}
       empty={<GridEmpty>No inventory rows match these filters.</GridEmpty>}
       onRowClick={(row) => onOpenInventory(row.id)}
       getRowAriaLabel={(row) => `Open inventory item ${row.inventoryNumber}`}
