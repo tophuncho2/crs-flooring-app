@@ -59,20 +59,12 @@ export async function deleteWorkOrderRecordById(
 }
 
 /**
- * Wire-input shape for creating a work order from a template snapshot.
- * Carries the same fields as `CreateWorkOrderRecordInput` plus the three
- * worker-controlled sync columns the application layer fills in for
- * sync flows (templateSyncedAt / templateSyncMode / templateSnapshotHash)
- * and the per-item snapshot rows. Items use Prisma `createMany` and each
- * carries `sourceTemplateItemId` so the new work order's items remember
- * their template origin.
+ * Wire-input shape for creating a work order from a template. Items use
+ * Prisma `createMany` and each carries `sourceTemplateItemId` so the
+ * new work order's items remember their template origin.
  */
 export type CreateWorkOrderFromTemplateRecordInput = {
-  workOrder: CreateWorkOrderRecordInput & {
-    templateSyncedAt: Date
-    templateSyncMode: string
-    templateSnapshotHash: string
-  }
+  workOrder: CreateWorkOrderRecordInput
   items: Array<{
     productId: string
     quantity: string

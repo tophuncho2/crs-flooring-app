@@ -8,14 +8,10 @@ import {
   TEMPLATE_SYNC_TEMPLATE_NOT_FOUND_MESSAGE,
   TEMPLATE_SYNC_TEMPLATE_PROPERTY_REQUIRED_MESSAGE,
   TEMPLATE_SYNC_TEMPLATE_WAREHOUSE_REQUIRED_MESSAGE,
-  buildTemplateSnapshotPayload,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
-import { sha256Hex } from "@builders/lib/hashing"
 import { WorkOrderExecutionError } from "./errors.js"
-
-export const TEMPLATE_SYNC_MODE_COPY = "copy"
 
 export type SyncTemplateToWorkOrderInput = {
   templateId: string
@@ -70,9 +66,6 @@ export async function syncTemplateToWorkOrderUseCase(
       })
     }
 
-    const snapshotHash = sha256Hex(buildTemplateSnapshotPayload(template))
-    const syncedAt = new Date()
-
     return createWorkOrderFromTemplateRecord(
       {
         workOrder: {
@@ -83,11 +76,6 @@ export async function syncTemplateToWorkOrderUseCase(
           warehouseId: template.warehouseId,
           unitType: template.unitType ? template.unitType : null,
           description: template.description ? template.description : null,
-          instructions: template.instructions ? template.instructions : null,
-          notes: notesOrNull(template.templateNotes),
-          templateSyncedAt: syncedAt,
-          templateSyncMode: TEMPLATE_SYNC_MODE_COPY,
-          templateSnapshotHash: snapshotHash,
         },
         items: template.items.map((item) => ({
           productId: item.productId,
