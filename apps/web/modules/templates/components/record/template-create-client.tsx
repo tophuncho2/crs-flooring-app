@@ -15,13 +15,21 @@ import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
 function TemplateCreatePanel({
   page,
   backHref,
+  initialPropertyId,
+  initialManagementCompanyId,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
+  initialPropertyId?: string
+  initialManagementCompanyId?: string
 }) {
   const controller = useSingleSectionCreateController<TemplateForm>({
     page,
-    createInitialValue: () => ({ ...EMPTY_TEMPLATE_FORM }),
+    createInitialValue: () => ({
+      ...EMPTY_TEMPLATE_FORM,
+      propertyId: initialPropertyId ?? EMPTY_TEMPLATE_FORM.propertyId,
+      managementCompanyId: initialManagementCompanyId ?? EMPTY_TEMPLATE_FORM.managementCompanyId,
+    }),
     createRecord: async (localValue) => {
       const payload = await createTemplateRequest(localValue)
 
@@ -57,14 +65,29 @@ function TemplateCreatePanel({
   )
 }
 
-export function TemplateCreateClient({ backHref }: { backHref: string }) {
+export function TemplateCreateClient({
+  backHref,
+  initialPropertyId,
+  initialManagementCompanyId,
+}: {
+  backHref: string
+  initialPropertyId?: string
+  initialManagementCompanyId?: string
+}) {
   return (
     <RecordCreateClientScaffold
       title="New Template"
       backHref={backHref}
       dirtyMessage="You have unsaved template changes. Leave this form without saving?"
     >
-      {(page) => <TemplateCreatePanel page={page} backHref={backHref} />}
+      {(page) => (
+        <TemplateCreatePanel
+          page={page}
+          backHref={backHref}
+          initialPropertyId={initialPropertyId}
+          initialManagementCompanyId={initialManagementCompanyId}
+        />
+      )}
     </RecordCreateClientScaffold>
   )
 }

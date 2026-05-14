@@ -49,6 +49,7 @@ export function TemplateSyncButton() {
   }, [isSyncing])
 
   const canActOnTemplate = templateId !== null
+  const canCreateForProperty = propertyId !== null
   const hasSelections = managementCompanyId !== null || propertyId !== null || templateId !== null
 
   const handleOpen = useCallback(() => {
@@ -57,6 +58,15 @@ export function TemplateSyncButton() {
     resetSelections()
     router.push(`/dashboard/templates/${templateId}`)
   }, [templateId, resetSelections, router])
+
+  const handleCreate = useCallback(() => {
+    if (!propertyId) return
+    const params = new URLSearchParams({ propertyId })
+    if (managementCompanyId) params.set("managementCompanyId", managementCompanyId)
+    setOpen(false)
+    resetSelections()
+    router.push(`/dashboard/templates/new?${params.toString()}`)
+  }, [propertyId, managementCompanyId, resetSelections, router])
 
   const handleSync = useCallback(async () => {
     if (!templateId || isSyncing) return
@@ -155,6 +165,14 @@ export function TemplateSyncButton() {
               className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--panel-hover)] disabled:opacity-60"
             >
               Clear
+            </button>
+            <button
+              type="button"
+              onClick={handleCreate}
+              disabled={!canCreateForProperty || isSyncing}
+              className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
+            >
+              New
             </button>
             <button
               type="button"
