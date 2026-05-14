@@ -16,10 +16,10 @@ import type {
  *     - H2: scheduled date (or "—" when unscheduled)
  *     - Top table: warehouse | mgmt co, job type | property
  *     - Description block (omitted if empty)
- *     - Installer Instructions block (omitted if empty)
  *     - H2: "Property Info"
  *     - Property Info table: address + property instructions on the left,
  *       vacancy / unit type / unit number on the right
+ *     - Installer Instructions block (omitted if empty)
  *     - H2: Material Items — one borderless WOMI row per item
  *       followed by a borderless cut-log block
  *
@@ -63,8 +63,8 @@ export function buildWorkOrderPdfHtml(input: WorkOrderFileGenerationInput): stri
     renderHeader(input),
     renderTopTable(input),
     renderDescriptionBlock(input),
-    renderInstallerInstructionsBlock(input),
     renderPropertyInfo(input),
+    renderInstallerInstructionsBlock(input),
     renderMaterialItems(input.materialItems),
   ].join("\n")
 
