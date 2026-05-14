@@ -37,6 +37,8 @@ function WorkOrderCreatePanel({
         unitType: updateInput.unitType,
         customAddress: updateInput.customAddress,
         description: updateInput.description,
+        internalNotes: updateInput.internalNotes,
+        installerInstructions: updateInput.installerInstructions,
         scheduledFor: updateInput.scheduledFor,
         isComplete: updateInput.isComplete,
         vacancy: updateInput.vacancy ?? null,

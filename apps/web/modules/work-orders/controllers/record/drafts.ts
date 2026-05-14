@@ -118,6 +118,8 @@ export function toUpdateWorkOrderInput(form: WorkOrderForm): UpdateWorkOrderUseC
     unitType: form.unitType,
     customAddress: form.customAddress,
     description: form.description,
+    internalNotes: form.internalNotes,
+    installerInstructions: form.installerInstructions,
     scheduledFor,
     isComplete: form.isComplete,
     vacancy: form.vacancy === "" ? null : form.vacancy,

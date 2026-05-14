@@ -20,7 +20,10 @@ import { PropertyPicker } from "@/modules/properties/components/picker/property-
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
+  WO_CUSTOM_ADDRESS_MAX,
   WO_DESCRIPTION_MAX,
+  WO_INSTALLER_INSTRUCTIONS_MAX,
+  WO_INTERNAL_NOTES_MAX,
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
   type PropertyOption,
@@ -273,12 +276,37 @@ export function WorkOrderPrimaryFieldsSection({
             editable={editable}
             value={draft.customAddress}
             onChange={(value) => onFieldChange("customAddress", value)}
+            maxLength={WO_CUSTOM_ADDRESS_MAX}
             rows={2}
           />
         </FormField>
       </CellAt>
 
-      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={7} />
+      <CellAt col={1} row={7} colSpan={8}>
+        <FormField label="Installer Instructions (appears on PDF)">
+          <TextareaCell
+            editable={editable}
+            value={draft.installerInstructions}
+            onChange={(value) => onFieldChange("installerInstructions", value)}
+            maxLength={WO_INSTALLER_INSTRUCTIONS_MAX}
+            rows={3}
+          />
+        </FormField>
+      </CellAt>
+
+      <CellAt col={1} row={8} colSpan={8}>
+        <FormField label="Internal Notes (not shown on PDF)">
+          <TextareaCell
+            editable={editable}
+            value={draft.internalNotes}
+            onChange={(value) => onFieldChange("internalNotes", value)}
+            maxLength={WO_INTERNAL_NOTES_MAX}
+            rows={3}
+          />
+        </FormField>
+      </CellAt>
+
+      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={9} />
     </FieldSection>
   )
 }
