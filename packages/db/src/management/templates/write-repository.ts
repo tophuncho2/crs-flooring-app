@@ -11,8 +11,6 @@ export type CreateTemplateRecordInput = {
   warehouseId: string | null
   unitType: string
   description?: string | null
-  instructions?: string | null
-  templateNotes?: string | null
 }
 
 export type UpdateTemplateRecordInput = Partial<CreateTemplateRecordInput>
@@ -39,8 +37,6 @@ const templateDetailSelect = {
   jobType: { select: { id: true, name: true } },
   warehouseId: true,
   warehouse: { select: { name: true } },
-  instructions: true,
-  templateNotes: true,
   _count: { select: { items: true } },
   createdAt: true,
   updatedAt: true,

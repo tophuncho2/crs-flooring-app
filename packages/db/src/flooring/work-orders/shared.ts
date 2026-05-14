@@ -36,8 +36,7 @@ export const workOrderListSelect = {
 /**
  * Detail select used by the record view. Pulls the joined property
  * shape the rewritten WorkOrderDetail normalizer expects (full address
- * + live `instructions` for the read-only lookup cell). Includes the
- * read-only sync snapshot columns (worker-controlled).
+ * + live `instructions` for the read-only lookup cell).
  */
 export const workOrderDetailSelect = {
   id: true,
@@ -71,9 +70,6 @@ export const workOrderDetailSelect = {
   customAddress: true,
   instructions: true,
   notes: true,
-  templateSyncedAt: true,
-  templateSyncMode: true,
-  templateSnapshotHash: true,
   createdAt: true,
   updatedAt: true,
 } as const

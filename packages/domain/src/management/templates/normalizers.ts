@@ -34,8 +34,6 @@ type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
     postalCode: string | null
     instructions: string | null
   }
-  instructions: string | null
-  templateNotes: string | null
   items: Array<Parameters<typeof normalizeTemplateMaterialItem>[0]>
 }
 
@@ -69,8 +67,6 @@ export function normalizeTemplate(template: TemplateDetailInput): TemplateDetail
     propertyState: template.property.state ?? "",
     propertyPostalCode: template.property.postalCode ?? "",
     propertyInstructions: template.property.instructions ?? "",
-    instructions: template.instructions ?? "",
-    templateNotes: template.templateNotes ?? "",
     items,
   }
 }

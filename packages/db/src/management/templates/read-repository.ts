@@ -60,8 +60,6 @@ const templateDetailSelect = {
       instructions: true,
     },
   },
-  instructions: true,
-  templateNotes: true,
   items: {
     select: {
       id: true,

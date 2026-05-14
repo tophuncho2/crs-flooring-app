@@ -24,8 +24,6 @@ export type TemplateDetail = TemplateListRow & {
   propertyState: string
   propertyPostalCode: string
   propertyInstructions: string
-  instructions: string
-  templateNotes: string
   items: TemplateMaterialItemRow[]
 }
 
@@ -61,8 +59,6 @@ export type TemplateForm = {
   warehouseId: string
   unitType: string
   description: string
-  instructions: string
-  templateNotes: string
 }
 
 export const EMPTY_TEMPLATE_FORM: TemplateForm = {
@@ -72,6 +68,4 @@ export const EMPTY_TEMPLATE_FORM: TemplateForm = {
   warehouseId: "",
   unitType: "",
   description: "",
-  instructions: "",
-  templateNotes: "",
 }

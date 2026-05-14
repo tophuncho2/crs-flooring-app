@@ -41,9 +41,6 @@ type WorkOrderDetailInput = WorkOrderListInput & {
   }
   instructions: string | null
   notes: string | null
-  templateSyncedAt: Date | string | null
-  templateSyncMode: string | null
-  templateSnapshotHash: string | null
 }
 
 function toIsoDate(value: Date | string | null): string {
@@ -90,9 +87,6 @@ export function normalizeWorkOrder(workOrder: WorkOrderDetailInput): WorkOrderDe
     propertyInstructions: workOrder.property.instructions ?? "",
     instructions: workOrder.instructions ?? "",
     notes: workOrder.notes ?? "",
-    templateSyncedAt: toIsoDate(workOrder.templateSyncedAt),
-    templateSyncMode: workOrder.templateSyncMode ?? "",
-    templateSnapshotHash: workOrder.templateSnapshotHash ?? "",
   }
 }
 

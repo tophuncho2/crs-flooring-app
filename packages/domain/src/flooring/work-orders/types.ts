@@ -33,9 +33,6 @@ export type WorkOrderDetail = WorkOrderListRow & {
   propertyInstructions: string
   instructions: string
   notes: string
-  templateSyncedAt: string
-  templateSyncMode: string
-  templateSnapshotHash: string
 }
 
 export type WorkOrderOption = {
