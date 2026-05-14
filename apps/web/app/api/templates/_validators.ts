@@ -9,8 +9,12 @@ import type {
 import {
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
+  TEMPLATE_DESCRIPTION_MAX,
+  TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
+  TEMPLATE_INTERNAL_NOTES_MAX,
   TEMPLATE_PREVIEW_ITEMS_MAX_PAGE_SIZE,
   TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE,
+  TEMPLATE_UNIT_TYPE_MAX,
   type TemplateMaterialItemForm,
   type TemplateMaterialItemsDiff,
 } from "@builders/domain"
@@ -47,9 +51,26 @@ function optionalString(value: unknown): string | null {
   return trimmed ? trimmed : null
 }
 
-function optionalText(value: unknown): string | null {
+function requireBoundedString(
+  value: unknown,
+  max: number,
+  field: string,
+  fail: (m: string, f?: string) => never,
+): string {
+  const trimmed = requireString(value, field, fail)
+  if (trimmed.length > max) fail(`${field} must be ${max} characters or fewer`, field)
+  return trimmed
+}
+
+function optionalBoundedText(
+  value: unknown,
+  max: number,
+  field: string,
+  fail: (m: string, f?: string) => never,
+): string | null {
   if (value === undefined || value === null) return null
   if (typeof value !== "string") return null
+  if (value.length > max) fail(`${field} must be ${max} characters or fewer`, field)
   return value
 }
 
@@ -61,8 +82,20 @@ export function validateCreateTemplateInput(
     managementCompanyId: optionalString(body.managementCompanyId),
     jobTypeId: optionalString(body.jobTypeId),
     warehouseId: optionalString(body.warehouseId),
-    unitType: requireString(body.unitType, "unitType", failTemplate),
-    description: optionalText(body.description),
+    unitType: requireBoundedString(body.unitType, TEMPLATE_UNIT_TYPE_MAX, "unitType", failTemplate),
+    description: optionalBoundedText(body.description, TEMPLATE_DESCRIPTION_MAX, "description", failTemplate),
+    internalNotes: optionalBoundedText(
+      body.internalNotes,
+      TEMPLATE_INTERNAL_NOTES_MAX,
+      "internalNotes",
+      failTemplate,
+    ),
+    installerInstructions: optionalBoundedText(
+      body.installerInstructions,
+      TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
+      "installerInstructions",
+      failTemplate,
+    ),
   }
 }
 
@@ -75,8 +108,28 @@ export function validateUpdateTemplateInput(
   if ("managementCompanyId" in body) input.managementCompanyId = optionalString(body.managementCompanyId)
   if ("jobTypeId" in body) input.jobTypeId = optionalString(body.jobTypeId)
   if ("warehouseId" in body) input.warehouseId = optionalString(body.warehouseId)
-  if ("unitType" in body) input.unitType = requireString(body.unitType, "unitType", failTemplate)
-  if ("description" in body) input.description = optionalText(body.description)
+  if ("unitType" in body) {
+    input.unitType = requireBoundedString(body.unitType, TEMPLATE_UNIT_TYPE_MAX, "unitType", failTemplate)
+  }
+  if ("description" in body) {
+    input.description = optionalBoundedText(body.description, TEMPLATE_DESCRIPTION_MAX, "description", failTemplate)
+  }
+  if ("internalNotes" in body) {
+    input.internalNotes = optionalBoundedText(
+      body.internalNotes,
+      TEMPLATE_INTERNAL_NOTES_MAX,
+      "internalNotes",
+      failTemplate,
+    )
+  }
+  if ("installerInstructions" in body) {
+    input.installerInstructions = optionalBoundedText(
+      body.installerInstructions,
+      TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
+      "installerInstructions",
+      failTemplate,
+    )
+  }
 
   return input
 }

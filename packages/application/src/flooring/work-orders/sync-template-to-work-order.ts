@@ -76,6 +76,13 @@ export async function syncTemplateToWorkOrderUseCase(
           warehouseId: template.warehouseId,
           unitType: template.unitType ? template.unitType : null,
           description: template.description ? template.description : null,
+          // installerInstructions are installer-facing copy that survives
+          // the template -> work order materialization. internalNotes are
+          // template back-office annotations and are intentionally NOT
+          // copied — each work order gets its own internal notes scratch.
+          installerInstructions: template.installerInstructions
+            ? template.installerInstructions
+            : null,
         },
         items: template.items.map((item) => ({
           productId: item.productId,
