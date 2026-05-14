@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
 import { SearchControl } from "@/components/features/search"
-import { FilterColumn, FilterToolbar } from "@/components/features/filter"
+import { ClearAllFiltersButton, FilterColumn, FilterToolbar } from "@/components/features/filter"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { InventoryListFilters, ListInput } from "@builders/application"
@@ -122,6 +122,7 @@ export default function InventoryClient({
     goToNextPage,
     onSearchQueryChange,
     onFilterChange,
+    onClearAllFilters,
   } = useServerListController<InventoryRow, EngineInventoryFilters>({
     mode: "fetch",
     queryKey: [...INVENTORY_LIST_QUERY_KEY],
@@ -224,6 +225,32 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
+  const hasActiveFilters = useMemo(() => {
+    if (searchQuery.trim().length > 0) return true
+    if (
+      selectedWarehouseId ||
+      selectedCategoryId ||
+      selectedProductId ||
+      locationValue
+    ) {
+      return true
+    }
+    if (isArchivedValue !== undefined) return true
+    return false
+  }, [
+    searchQuery,
+    selectedWarehouseId,
+    selectedCategoryId,
+    selectedProductId,
+    locationValue,
+    isArchivedValue,
+  ])
+
+  const handleClearAll = useCallback(() => {
+    onClearAllFilters()
+    onSearchQueryChange("")
+  }, [onClearAllFilters, onSearchQueryChange])
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -245,7 +272,7 @@ export default function InventoryClient({
         ) : null}
 
         <FilterToolbar>
-          <div className="min-w-[16rem] flex-1">
+          <div className="w-[18rem]">
             <SearchControl
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
@@ -295,9 +322,14 @@ export default function InventoryClient({
           {/* Archive toggle (default hides archived) */}
           <ArchiveFilterChip value={isArchivedValue} onChange={handleArchivedChange} />
 
-          <span className="text-xs text-[var(--foreground)]/55">
-            {rows.length} of {total} inventory rows
-          </span>
+          {/* Right-aligned cluster: clear-all + stats. `ml-auto` pushes it to
+              the far edge regardless of the search/filter total width. */}
+          <div className="ml-auto flex items-center gap-3">
+            <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
+            <span className="text-xs text-[var(--foreground)]/55">
+              {rows.length} of {total} inventory rows
+            </span>
+          </div>
         </FilterToolbar>
 
         <InventoryTable
