@@ -12,7 +12,10 @@ import type {
   WorkOrdersListFilters,
 } from "@builders/application"
 import {
+  WO_CUSTOM_ADDRESS_MAX,
   WO_DESCRIPTION_MAX,
+  WO_INSTALLER_INSTRUCTIONS_MAX,
+  WO_INTERNAL_NOTES_MAX,
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
   type WorkOrderMaterialItemForm,
@@ -58,12 +61,6 @@ function optionalString(value: unknown): string | null {
   if (typeof value !== "string") return null
   const trimmed = value.trim()
   return trimmed ? trimmed : null
-}
-
-function optionalText(value: unknown): string | null {
-  if (value === undefined || value === null) return null
-  if (typeof value !== "string") return null
-  return value
 }
 
 function optionalBoundedText(
@@ -113,8 +110,15 @@ export function validateCreateWorkOrderInput(
     jobTypeId: optionalString(body.jobTypeId),
     unitNumber: optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder),
     unitType: optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder),
-    customAddress: optionalText(body.customAddress),
+    customAddress: optionalBoundedText(body.customAddress, WO_CUSTOM_ADDRESS_MAX, "customAddress", failWorkOrder),
     description: optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder),
+    internalNotes: optionalBoundedText(body.internalNotes, WO_INTERNAL_NOTES_MAX, "internalNotes", failWorkOrder),
+    installerInstructions: optionalBoundedText(
+      body.installerInstructions,
+      WO_INSTALLER_INSTRUCTIONS_MAX,
+      "installerInstructions",
+      failWorkOrder,
+    ),
     scheduledFor: optionalDate(body.scheduledFor, "scheduledFor"),
     isComplete: optionalBoolean(body.isComplete),
     vacancy: optionalVacancy(body.vacancy),
@@ -137,8 +141,19 @@ export function validateUpdateWorkOrderInput(
   if ("jobTypeId" in body) input.jobTypeId = optionalString(body.jobTypeId)
   if ("unitNumber" in body) input.unitNumber = optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder)
   if ("unitType" in body) input.unitType = optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder)
-  if ("customAddress" in body) input.customAddress = optionalText(body.customAddress)
+  if ("customAddress" in body) input.customAddress = optionalBoundedText(body.customAddress, WO_CUSTOM_ADDRESS_MAX, "customAddress", failWorkOrder)
   if ("description" in body) input.description = optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder)
+  if ("internalNotes" in body) {
+    input.internalNotes = optionalBoundedText(body.internalNotes, WO_INTERNAL_NOTES_MAX, "internalNotes", failWorkOrder)
+  }
+  if ("installerInstructions" in body) {
+    input.installerInstructions = optionalBoundedText(
+      body.installerInstructions,
+      WO_INSTALLER_INSTRUCTIONS_MAX,
+      "installerInstructions",
+      failWorkOrder,
+    )
+  }
   if ("scheduledFor" in body) input.scheduledFor = optionalDate(body.scheduledFor, "scheduledFor")
   if ("isComplete" in body) {
     const isComplete = optionalBoolean(body.isComplete)
