@@ -282,7 +282,9 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={7} colSpan={8}>
+      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={7} />
+
+      <CellAt col={1} row={9} colSpan={8}>
         <FormField label="Installer Instructions (appears on PDF)">
           <TextareaCell
             editable={editable}
@@ -294,7 +296,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      <CellAt col={1} row={8} colSpan={8}>
+      <CellAt col={1} row={10} colSpan={8}>
         <FormField label="Internal Notes (not shown on PDF)">
           <TextareaCell
             editable={editable}
@@ -305,8 +307,6 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-
-      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={9} />
     </FieldSection>
   )
 }
