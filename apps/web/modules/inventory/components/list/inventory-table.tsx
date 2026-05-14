@@ -12,7 +12,7 @@ import {
 
 const INVENTORY_LIST_LAYOUT: GridLayout<InventoryRow> = {
   dataColumns: [
-    { key: "stockBalance", label: "Stock", kind: "quantity", minWidth: 140, grow: 0, align: "end" },
+    { key: "stockBalance", label: "Stock", kind: "quantity", minWidth: 140, grow: 0, align: "start" },
     { key: "productName", label: "Product", minWidth: 200, grow: 1 },
     { key: "inventoryNumber", label: "Inv #", minWidth: 110, grow: 0 },
     { key: "rollNumber", label: "Roll #", minWidth: 160, grow: 0 },
