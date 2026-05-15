@@ -85,7 +85,7 @@ export function TemplateSyncItemsSection({ templateId }: Props) {
         </ul>
       )}
       {showPagination ? (
-        <div className="flex items-center justify-between gap-2 pt-1 text-xs text-[var(--foreground)]/65">
+        <div className="sticky bottom-0 -mx-4 flex items-center justify-between gap-2 border-t border-[var(--panel-border)] bg-[var(--panel-background)] px-4 py-2 text-xs text-[var(--foreground)]/65">
           <button
             type="button"
             onClick={() => setPage((value) => Math.max(1, value - 1))}
