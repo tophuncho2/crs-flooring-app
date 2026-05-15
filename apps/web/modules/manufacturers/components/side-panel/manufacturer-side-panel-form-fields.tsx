@@ -17,7 +17,7 @@ export function ManufacturerSidePanelFormFields({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <FormField label="Company Name">
           <TextCell
             editable={editable}
@@ -28,7 +28,7 @@ export function ManufacturerSidePanelFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <FormField label="Agent Name">
           <TextCell
             editable={editable}
@@ -39,18 +39,18 @@ export function ManufacturerSidePanelFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Website">
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Email">
           <TextCell
             editable={editable}
-            value={form.website}
-            onChange={(next) => controller.setField("website", next)}
-            placeholder="https://"
-            ariaLabel="Manufacturer website"
+            value={form.email}
+            onChange={(next) => controller.setField("email", next)}
+            placeholder="Email"
+            ariaLabel="Manufacturer email"
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={2}>
+      <CellAt col={1} colSpan={8}>
         <FormField label="Phone">
           <TextCell
             editable={editable}
@@ -61,14 +61,14 @@ export function ManufacturerSidePanelFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={7} colSpan={2}>
-        <FormField label="Email">
+      <CellAt col={1} colSpan={8}>
+        <FormField label="Website">
           <TextCell
             editable={editable}
-            value={form.email}
-            onChange={(next) => controller.setField("email", next)}
-            placeholder="Email"
-            ariaLabel="Manufacturer email"
+            value={form.website}
+            onChange={(next) => controller.setField("website", next)}
+            placeholder="https://"
+            ariaLabel="Manufacturer website"
           />
         </FormField>
       </CellAt>
