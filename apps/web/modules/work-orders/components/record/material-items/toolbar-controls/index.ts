@@ -1,4 +1,4 @@
-export { buildMaterialItemsSectionActions } from "./material-items-section-actions"
+export { materialItemsSectionActions } from "./material-items-section-actions"
 export type { MaterialItemsSectionActionsInput } from "./material-items-section-actions"
 export {
   AttachCutLogPicker,

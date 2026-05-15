@@ -9,7 +9,7 @@ export type MaterialItemsSectionActionsInput = {
   onAddItem: () => void
 }
 
-export function buildMaterialItemsSectionActions({
+export function materialItemsSectionActions({
   isSaving,
   isDirty,
   hasConflict,
