@@ -83,8 +83,11 @@ export function useWarehouseSidePanel() {
 
   const createMutation = useMutation({
     mutationFn: (input: WarehouseForm) => createWarehouseRequest(input),
-    onSuccess: () => {
-      setOpen(null)
+    onSuccess: ({ warehouse }) => {
+      const next = toWarehouseForm(warehouse)
+      setForm(next)
+      setBaseline(next)
+      setOpen({ mode: "edit", warehouse })
       router.refresh()
     },
     onError: (err: unknown) => {
