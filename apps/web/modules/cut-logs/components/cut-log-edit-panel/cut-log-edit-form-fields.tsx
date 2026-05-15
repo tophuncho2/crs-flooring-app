@@ -1,7 +1,6 @@
 "use client"
 
 import { CUT_LOG_NOTES_MAX, isCutLogPendingEditable, type InventoryOption } from "@builders/domain"
-import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
@@ -53,43 +52,6 @@ export function CutLogEditFormFields({
 
   return (
     <div className="flex flex-col gap-4 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)]/40 p-3">
-      {/* Context — work order #, status, material item (edit only). Cut #
-          already surfaces as the panel title; status sits next to the WO. */}
-      {cutLog ? (
-        <section className="flex flex-col gap-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/65">
-            Context
-          </h3>
-          <FieldSection gap="0.75rem">
-            <CellAt col={1} colSpan={5}>
-              <FormField label="Work order">
-                <TextCell
-                  editable={false}
-                  value={cutLog.workOrderNumber ?? "—"}
-                  ariaLabel="Work order"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={6} colSpan={3}>
-              <FormField label="Status">
-                <div className="flex items-center">
-                  <CutLogStatusBadge status={cutLog.status} />
-                </div>
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Material item">
-                <TextCell
-                  editable={false}
-                  value={cutLog.workOrderItemProductLabel ?? "—"}
-                  ariaLabel="Material item"
-                />
-              </FormField>
-            </CellAt>
-          </FieldSection>
-        </section>
-      ) : null}
-
       {/* Inventory — picker (create) or read-only inventory + location
           (edit). Location is a denormalized mirror: stamped from the parent
           inventory on create / update / finalize and cleared on void. It's
