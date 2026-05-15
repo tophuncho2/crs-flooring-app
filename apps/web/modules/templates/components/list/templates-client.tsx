@@ -2,7 +2,11 @@
 
 import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
-import { SearchControl } from "@/components/features/search"
+import {
+  ListToolbar,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+} from "@/components/features/list-toolbar"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { TemplatesListFilters } from "@builders/application"
@@ -19,8 +23,11 @@ import {
 } from "@/modules/templates/data/list-templates-request"
 import { useTemplatesListController } from "@/modules/templates/controllers/use-templates-list-controller"
 import { TemplatesTable } from "./templates-table"
-import { ManagementCompanyFilterChip } from "./management-company-filter-chip"
-import { PropertyFilterChip } from "./property-filter-chip"
+import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
+import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
+import { TemplatesListSearch } from "./toolbar-controls/templates-list-search"
+import { TemplatesClearAll } from "./toolbar-controls/sub-controls/templates-clear-all"
+import { TemplatesRowCount } from "./toolbar-controls/sub-controls/templates-row-count"
 
 const TEMPLATES_FILTERABLE_FIELDS = ["managementCompanyId", "propertyId"] as const
 
@@ -57,6 +64,7 @@ export default function TemplatesClient({
     goToNextPage,
     onSearchQueryChange,
     onFilterChange,
+    onClearAllFilters,
   } = useServerListController<TemplateListRow, TemplatesListFilters>({
     mode: "fetch",
     queryKey: [...TEMPLATES_LIST_QUERY_KEY],
@@ -113,6 +121,17 @@ export default function TemplatesClient({
     [onFilterChange],
   )
 
+  const hasActiveFilters = useMemo(() => {
+    if (searchQuery.trim().length > 0) return true
+    if (selectedManagementCompanyId || selectedPropertyId) return true
+    return false
+  }, [searchQuery, selectedManagementCompanyId, selectedPropertyId])
+
+  const handleClearAll = useCallback(() => {
+    onClearAllFilters()
+    onSearchQueryChange("")
+  }, [onClearAllFilters, onSearchQueryChange])
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -143,32 +162,36 @@ export default function TemplatesClient({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
-          <div className="min-w-[16rem] flex-1">
-            <SearchControl
+        <ListToolbar>
+          {/* Search + (Clear all | row count) */}
+          <ListToolbarCell>
+            <TemplatesListSearch
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search template #, unit type, or description"
             />
-          </div>
+            <ListToolbarBottomRow
+              left={<TemplatesClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+              right={<TemplatesRowCount count={rows.length} total={total} />}
+            />
+          </ListToolbarCell>
 
-          <ManagementCompanyFilterChip
-            value={selectedManagementCompanyId}
-            selectedLabel={managementCompanyLabel}
-            onChange={handleManagementCompanyChange}
-            initialOptions={initialManagementCompanyOptions}
-          />
-          <PropertyFilterChip
-            value={selectedPropertyId}
-            selectedLabel={propertyLabel}
-            managementCompanyId={selectedManagementCompanyId}
-            onChange={handlePropertyChange}
-          />
-
-          <span className="text-xs text-[var(--foreground)]/55">
-            {rows.length} of {total} templates
-          </span>
-        </div>
+          {/* Management Company → Property: property is MC-scoped (MC change
+              cascades the property chip clear via handleManagementCompanyChange). */}
+          <ListToolbarCell>
+            <ManagementCompanyFilterChip
+              value={selectedManagementCompanyId}
+              selectedLabel={managementCompanyLabel}
+              onChange={handleManagementCompanyChange}
+              initialOptions={initialManagementCompanyOptions}
+            />
+            <PropertyFilterChip
+              value={selectedPropertyId}
+              selectedLabel={propertyLabel}
+              managementCompanyId={selectedManagementCompanyId}
+              onChange={handlePropertyChange}
+            />
+          </ListToolbarCell>
+        </ListToolbar>
 
         <TemplatesTable
           rows={rows}

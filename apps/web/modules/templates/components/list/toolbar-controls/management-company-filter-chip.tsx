@@ -28,7 +28,7 @@ export function ManagementCompanyFilterChip({
         selectedLabel={selectedLabel}
         onChange={onChange}
         initialOptions={initialOptions}
-        placeholder="Filter by company"
+        placeholder="management company"
         searchPlaceholder="Search companies"
         emptyMessage="No companies match"
         clearLabel="Clear filter"
