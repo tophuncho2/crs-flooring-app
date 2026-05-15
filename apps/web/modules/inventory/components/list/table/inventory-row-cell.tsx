@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import type { GridColumn } from "@/components/grid"
+import type { DataTableColumn } from "@/components/data-table"
 import {
   composeRollNumberDisplay,
   formatFifoReceivedAtEastern,
@@ -9,12 +9,12 @@ import {
 } from "@builders/domain"
 
 /**
- * Per-cell renderer for the inventory list grid. Switches on
+ * Per-cell renderer for the inventory list `DataTable`. Switches on
  * `column.key` and returns the cell body for that field on the given
- * row. Wired into `<Grid renderCell={renderInventoryRowCell} />`.
+ * row. Wired into `<DataTable renderCell={renderInventoryRowCell} />`.
  */
 export function renderInventoryRowCell(
-  column: GridColumn<InventoryRow>,
+  column: DataTableColumn<InventoryRow>,
   row: InventoryRow,
 ): ReactNode {
   switch (column.key) {

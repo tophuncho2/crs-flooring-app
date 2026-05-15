@@ -1,9 +1,9 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Grid, GridEmpty } from "@/components/grid"
+import { DataTable } from "@/components/data-table"
 import type { InventoryRow } from "@builders/domain"
-import { INVENTORY_LIST_LAYOUT } from "./grid/inventory-list-layout"
+import { INVENTORY_LIST_COLUMNS } from "./grid/inventory-list-columns"
 import { renderInventoryRowCell } from "./grid/inventory-row-cell"
 
 export function InventoryTable({
@@ -16,11 +16,10 @@ export function InventoryTable({
   pagination?: ReactNode
 }) {
   return (
-    <Grid<InventoryRow>
+    <DataTable<InventoryRow>
       rows={rows}
-      layout={INVENTORY_LIST_LAYOUT}
-      scroll={{ clipColumnsToTrack: true }}
-      empty={<GridEmpty>No inventory rows match these filters.</GridEmpty>}
+      columns={INVENTORY_LIST_COLUMNS}
+      empty="No inventory rows match these filters."
       onRowClick={(row) => onOpenInventory(row.id)}
       getRowAriaLabel={(row) => `Open inventory item ${row.inventoryNumber}`}
       renderCell={renderInventoryRowCell}
