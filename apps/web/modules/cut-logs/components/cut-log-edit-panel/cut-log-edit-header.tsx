@@ -38,12 +38,22 @@ export function CutLogEditHeader({ cutLog, isSaving }: CutLogEditHeaderProps) {
         disabled={pickersDisabled}
         ariaLabel="Material item"
       />
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
-          Status
-        </span>
-        <div className="flex h-9 items-center">
-          <CutLogStatusBadge status={cutLog.status} />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
+            Status
+          </span>
+          <div className="flex h-9 items-center">
+            <CutLogStatusBadge status={cutLog.status} />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
+            Final sequence
+          </span>
+          <div className="flex h-9 items-center text-sm text-[var(--foreground)]/85">
+            {cutLog.finalCutSequence != null ? String(cutLog.finalCutSequence) : "—"}
+          </div>
         </div>
       </div>
     </div>
