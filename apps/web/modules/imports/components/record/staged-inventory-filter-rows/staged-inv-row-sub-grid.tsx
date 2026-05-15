@@ -8,10 +8,13 @@ import type {
 } from "@builders/domain"
 import { StatusBadge } from "@/components/badges"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
-import { CheckboxCell } from "@/components/cells"
 import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty } from "@/components/grid"
 import { STAGED_INV_ROW_LAYOUT, type StagedInvGridRow } from "./staged-inv-row-layout"
+import {
+  StagedInvRowToolbar,
+  StagedRowSelectCell,
+} from "./toolbar-controls"
 
 function statusTone(status: FlooringStagedRowStatus): BadgeTone {
   switch (status) {
@@ -105,17 +108,12 @@ export function StagedInvRowSubGrid({
     const isDraft = row.status === "DRAFT"
     if (control.kind === "selection") {
       return (
-        <div
-          onClick={(event) => event.stopPropagation()}
-          onMouseDown={(event) => event.stopPropagation()}
-        >
-          <CheckboxCell
-            editable={canToggleSelection && isDraft}
-            value={selectedIds.has(row.id)}
-            onChange={() => onToggleSelection(row.id)}
-            ariaLabel={`Select row ${row.rollNumber || row.id}`}
-          />
-        </div>
+        <StagedRowSelectCell
+          editable={canToggleSelection && isDraft}
+          isSelected={selectedIds.has(row.id)}
+          onToggle={() => onToggleSelection(row.id)}
+          ariaLabel={`Select row ${row.rollNumber || row.id}`}
+        />
       )
     }
     if (control.kind === "actions") {
@@ -148,16 +146,11 @@ export function StagedInvRowSubGrid({
         }
       />
 
-      <div className="flex items-center justify-end text-xs">
-        <button
-          type="button"
-          className="rounded border border-[var(--panel-border)] px-2 py-1 hover:bg-[var(--panel-border)]/10 disabled:cursor-not-allowed disabled:opacity-50"
-          onClick={() => onCreateNew(filterRow)}
-          disabled={isSectionBusy}
-        >
-          + Add Row
-        </button>
-      </div>
+      <StagedInvRowToolbar
+        filterRow={filterRow}
+        isSectionBusy={isSectionBusy}
+        onCreateNew={onCreateNew}
+      />
     </div>
   )
 }

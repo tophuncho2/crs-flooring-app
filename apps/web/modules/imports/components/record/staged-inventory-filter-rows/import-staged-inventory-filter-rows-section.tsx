@@ -2,15 +2,9 @@
 
 import { Fragment, useCallback, useMemo } from "react"
 import type { ReactNode } from "react"
-import { ActionHeader } from "@/components/headers"
-import { RowActionButton, UnitCell } from "@/components/cells"
+import { UnitCell } from "@/components/cells"
 import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
-import {
-  ExpandableRow,
-  ExpandToggle,
-  UnsavedParentMessage,
-} from "@/components/grid/expandable-rows"
-import { SelectAllButton } from "@/components/features/select-batch"
+import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandable-rows"
 import { Grid, GridEmpty } from "@/components/grid"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
@@ -29,6 +23,8 @@ import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/
 import { FILTER_ROW_LAYOUT } from "./filter-row-layout"
 import { StagedInvRowSubGrid } from "./staged-inv-row-sub-grid"
 import { StagedInvRowEditPanel } from "./staged-inv-row-edit-panel/staged-inv-row-edit-panel"
+import { StagedInventoryFilterRowsSectionHeader } from "./staged-inventory-filter-rows-section-header"
+import { FilterRowRemoveButton } from "./row-controls"
 
 type FilterDraftRow = ImportFilterRowDraft & { id: string }
 
@@ -150,19 +146,15 @@ export function ImportStagedInventoryFilterRowsSection({
       const hasChildren = (server?.childRowCount ?? 0) > 0
       const isNew = isLocalOnlyRecordRow(draft.clientId)
       const removable = editable && (isNew || !hasChildren)
+      const title = removable
+        ? "Remove this filter row"
+        : hasChildren
+          ? "Has staged rows — remove those first"
+          : "Locked while section is busy"
       return (
-        <RowActionButton
-          label="✕"
-          ariaLabel="Remove filter row"
-          tone="destructive"
-          title={
-            removable
-              ? "Remove this filter row"
-              : hasChildren
-                ? "Has staged rows — remove those first"
-                : "Locked while section is busy"
-          }
+        <FilterRowRemoveButton
           editable={removable}
+          title={title}
           onClick={() => section.removeFilterRow(draft.clientId)}
         />
       )
@@ -172,90 +164,26 @@ export function ImportStagedInventoryFilterRowsSection({
 
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-      <ActionHeader
-        title="Staged Inventory"
-        leadingControl={
-          drafts.length > 0 ? (
-            <ExpandToggle
-              expanded={allExpanded}
-              onToggle={toggleAll}
-              ariaLabel={
-                allExpanded ? "Collapse all filter rows" : "Expand all filter rows"
-              }
-            />
-          ) : null
-        }
-        summary={
-          <span>
-            {drafts.length} filter row{drafts.length === 1 ? "" : "s"} · {totalStagedRowCount}{" "}
-            staged row{totalStagedRowCount === 1 ? "" : "s"}
-            {section.selectedIds.size > 0
-              ? ` · ${section.selectedIds.size} selected (${section.eligibleSelectedIds.length} eligible)`
-              : ""}
-          </span>
-        }
-        status={
-          section.eligibleSelectedIds.length > 0
-            ? {
-                tone: "processing",
-                label: "Ready to queue",
-                detail: "Worker will materialize on Run",
-              }
-            : undefined
-        }
-        extraActions={
-          <SelectAllButton
-            isSelectionActive={section.isSelectionActive}
-            selectedCount={section.selectedIds.size}
-            eligibleCount={section.eligibleCount}
-            canSelect={section.canToggleSelection}
-            onToggle={section.toggleAllEligible}
-          />
-        }
-        actions={[
-          {
-            key: "add",
-            label: "Add Filter Row",
-            onClick: section.addFilterRow,
-            kind: "secondary",
-            disabled: section.isSaving || section.isMarking || section.isSelectionActive,
-          },
-          {
-            key: "discard",
-            label: "Discard",
-            onClick: () => section.discard(),
-            kind: "secondary",
-            disabled:
-              !section.isDirty ||
-              section.isSaving ||
-              section.isMarking ||
-              section.isSelectionActive,
-          },
-          {
-            key: "save",
-            label: section.isSaving ? "Saving Rows..." : "Save Rows",
-            onClick: () => void section.save(),
-            kind: "primary",
-            disabled:
-              !section.isDirty ||
-              section.isSaving ||
-              section.hasConflict ||
-              section.isMarking ||
-              section.isSelectionActive,
-          },
-          {
-            key: "run",
-            label: section.isMarking ? "Running..." : "Run Import",
-            onClick: () => void section.markForImport(),
-            kind: "primary",
-            disabled:
-              section.eligibleSelectedIds.length === 0 ||
-              section.isMarking ||
-              section.isSaving ||
-              section.isDirty,
-          },
-        ]}
-        message={section.noticeMessage}
+      <StagedInventoryFilterRowsSectionHeader
+        filterRowsCount={drafts.length}
+        stagedRowsCount={totalStagedRowCount}
+        selectedCount={section.selectedIds.size}
+        eligibleSelectedCount={section.eligibleSelectedIds.length}
+        eligibleCount={section.eligibleCount}
+        canToggleSelection={section.canToggleSelection}
+        isSelectionActive={section.isSelectionActive}
+        isSaving={section.isSaving}
+        isDirty={section.isDirty}
+        isMarking={section.isMarking}
+        hasConflict={section.hasConflict}
+        allExpanded={allExpanded}
+        onToggleAll={toggleAll}
+        onToggleSelection={section.toggleAllEligible}
+        onAddFilterRow={section.addFilterRow}
+        onDiscard={() => section.discard()}
+        onSave={() => void section.save()}
+        onRunImport={() => void section.markForImport()}
+        noticeMessage={section.noticeMessage}
         error={sectionError ?? section.markError ?? section.noticeError}
       />
 
