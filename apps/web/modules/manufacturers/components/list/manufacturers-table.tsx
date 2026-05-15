@@ -8,11 +8,11 @@ import { renderManufacturerRowCell } from "./table/manufacturers-row-cell"
 
 export function ManufacturersTable({
   rows,
-  onOpenManufacturer,
+  onOpen,
   pagination,
 }: {
   rows: ManufacturerListRow[]
-  onOpenManufacturer: (id: string) => void
+  onOpen: (row: ManufacturerListRow) => void
   pagination?: ReactNode
 }) {
   return (
@@ -20,7 +20,7 @@ export function ManufacturersTable({
       rows={rows}
       columns={MANUFACTURERS_LIST_COLUMNS}
       empty="No manufacturers found."
-      onRowClick={(row) => onOpenManufacturer(row.id)}
+      onRowClick={onOpen}
       getRowAriaLabel={(row) => `Open manufacturer ${row.companyName}`}
       renderCell={renderManufacturerRowCell}
       footerSlot={pagination}

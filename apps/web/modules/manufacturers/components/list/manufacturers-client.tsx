@@ -20,7 +20,8 @@ import {
   MANUFACTURERS_LIST_QUERY_KEY,
   listManufacturersRequest,
 } from "@/modules/manufacturers/data/list-manufacturers-request"
-import { useManufacturersListController } from "@/modules/manufacturers/controllers/use-manufacturers-list-controller"
+import { useManufacturerSidePanel } from "@/modules/manufacturers/controllers/use-manufacturer-side-panel"
+import { ManufacturerSidePanel } from "@/modules/manufacturers/components/side-panel"
 import { ManufacturersTable } from "./manufacturers-table"
 import { ManufacturersListSearch } from "./toolbar-controls/manufacturers-list-search"
 import { ManufacturersClearAll } from "./toolbar-controls/sub-controls/manufacturers-clear-all"
@@ -37,8 +38,7 @@ export default function ManufacturersClient({
   initialSearchQuery,
   initialPage,
 }: ManufacturersClientProps) {
-  const { message, pageError, openCreate, openManufacturer } =
-    useManufacturersListController()
+  const sidePanel = useManufacturerSidePanel()
 
   const {
     rows,
@@ -79,23 +79,15 @@ export default function ManufacturersClient({
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         <SectionHeader
           title="Manufacturers"
-          actions={[{ key: "new", label: "+ Manufacturer", onClick: () => openCreate(), kind: "primary" }]}
+          actions={[
+            {
+              key: "new",
+              label: "+ Manufacturer",
+              onClick: () => sidePanel.openCreate(),
+              kind: "primary",
+            },
+          ]}
         />
-
-        {message || pageError ? (
-          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
-            {message ? (
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-                {message}
-              </div>
-            ) : null}
-            {pageError ? (
-              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {pageError}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
 
         <ListToolbar>
           <ListToolbarCell>
@@ -112,7 +104,7 @@ export default function ManufacturersClient({
 
         <ManufacturersTable
           rows={rows}
-          onOpenManufacturer={openManufacturer}
+          onOpen={sidePanel.openEdit}
           pagination={
             <PaginateControls
               page={page}
@@ -127,6 +119,8 @@ export default function ManufacturersClient({
           }
         />
       </div>
+
+      <ManufacturerSidePanel controller={sidePanel} />
     </div>
   )
 }
