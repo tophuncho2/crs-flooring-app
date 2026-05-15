@@ -11,6 +11,7 @@ import type { InventoryRow } from "@builders/domain"
 export const INVENTORY_LIST_LAYOUT: GridLayout<InventoryRow> = {
   dataColumns: [
     { key: "stockBalance", label: "Stock", kind: "quantity", minWidth: 140, grow: 0, align: "start" },
+    { key: "totalCutSum", label: "Cut", kind: "quantity", minWidth: 130, grow: 0, align: "end" },
     { key: "productName", label: "Product", minWidth: 200, grow: 1 },
     { key: "inventoryNumber", label: "Inv #", minWidth: 110, grow: 0 },
     { key: "rollNumber", label: "Roll #", minWidth: 160, grow: 0 },
@@ -18,7 +19,6 @@ export const INVENTORY_LIST_LAYOUT: GridLayout<InventoryRow> = {
     { key: "dyeLot", label: "Dye Lot", minWidth: 160, grow: 0 },
     { key: "note", label: "Note", minWidth: 180, grow: 1 },
     { key: "coverageBalance", label: "Coverage", kind: "quantity", minWidth: 150, grow: 0, align: "end" },
-    { key: "totalCutSum", label: "Total Cut", kind: "quantity", minWidth: 130, grow: 0, align: "end" },
     { key: "warehouse", label: "Warehouse", minWidth: 110, grow: 0 },
     { key: "fifoReceivedAt", label: "FIFO Received", minWidth: 150, grow: 0 },
     { key: "updatedAt", label: "Updated", minWidth: 120, grow: 0 },
