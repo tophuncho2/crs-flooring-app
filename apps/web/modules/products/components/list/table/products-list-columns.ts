@@ -8,8 +8,4 @@ export const PRODUCTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ProductListRow
   { key: "style", label: "Style" },
   { key: "color", label: "Color" },
   { key: "coverage", label: "Coverage", align: "end" },
-  { key: "width", label: "Width" },
-  { key: "sheetSize", label: "Sheet Size" },
-  { key: "thickness", label: "Thickness" },
-  { key: "unitWeight", label: "Unit Weight" },
 ]

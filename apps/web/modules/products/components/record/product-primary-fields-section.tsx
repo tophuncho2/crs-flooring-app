@@ -201,46 +201,6 @@ export function ProductPrimaryFieldsSection({
               </div>
             </RecordFormField>
           </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Thickness">
-              <input
-                value={draft.thickness}
-                onChange={(event) => onFieldChange("thickness", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Width">
-              <input
-                value={draft.width}
-                onChange={(event) => onFieldChange("width", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Unit Weight">
-              <input
-                value={draft.unitWeight}
-                onChange={(event) => onFieldChange("unitWeight", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Sheet Size">
-              <input
-                value={draft.sheetSize}
-                onChange={(event) => onFieldChange("sheetSize", event.target.value)}
-                className={RECORD_FIELD_CONTROL_CLASS_NAME}
-                disabled={disabled}
-              />
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>
     </RecordPrimarySection>

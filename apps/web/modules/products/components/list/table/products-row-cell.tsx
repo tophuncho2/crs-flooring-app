@@ -25,14 +25,6 @@ export function renderProductRowCell(
       ) : (
         "-"
       )
-    case "width":
-      return row.width || "-"
-    case "sheetSize":
-      return row.sheetSize || "-"
-    case "thickness":
-      return row.thickness || "-"
-    case "unitWeight":
-      return row.unitWeight || "-"
     default:
       return "-"
   }
