@@ -5,10 +5,10 @@ import { ActionHeader } from "@/components/headers"
 import {
   SelectAllEligibleButton,
   StagedInventoryExpandToggle,
-  stagedInventoryFilterRowsSectionActions,
+  stagedInventorySectionActions,
 } from "./toolbar-controls"
 
-export type StagedInventoryFilterRowsSectionHeaderProps = {
+export type StagedInventorySectionHeaderProps = {
   filterRowsCount: number
   stagedRowsCount: number
   selectedCount: number
@@ -33,7 +33,7 @@ export type StagedInventoryFilterRowsSectionHeaderProps = {
   error?: ReactNode
 }
 
-export function StagedInventoryFilterRowsSectionHeader({
+export function StagedInventorySectionHeader({
   filterRowsCount,
   stagedRowsCount,
   selectedCount,
@@ -54,7 +54,7 @@ export function StagedInventoryFilterRowsSectionHeader({
   onRunImport,
   noticeMessage,
   error,
-}: StagedInventoryFilterRowsSectionHeaderProps) {
+}: StagedInventorySectionHeaderProps) {
   return (
     <ActionHeader
       title="Staged Inventory"
@@ -92,7 +92,7 @@ export function StagedInventoryFilterRowsSectionHeader({
           onToggle={onToggleSelection}
         />
       }
-      actions={stagedInventoryFilterRowsSectionActions({
+      actions={stagedInventorySectionActions({
         isSaving,
         isDirty,
         isMarking,

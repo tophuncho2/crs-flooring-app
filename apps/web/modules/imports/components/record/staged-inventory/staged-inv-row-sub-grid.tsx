@@ -10,11 +10,11 @@ import { StatusBadge } from "@/components/badges"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 import { Grid, GridEmpty } from "@/components/grid"
 import { STAGED_INV_ROW_LAYOUT, type StagedInvGridRow } from "./staged-inv-row-layout"
-import { StagedRowDuplicateButton } from "./row-controls"
 import {
-  StagedInvRowToolbar,
+  StagedRowDuplicateButton,
   StagedRowSelectCell,
-} from "./toolbar-controls"
+} from "./row-controls"
+import { StagedInvRowToolbar } from "./toolbar-controls"
 
 function statusTone(status: FlooringStagedRowStatus): BadgeTone {
   switch (status) {

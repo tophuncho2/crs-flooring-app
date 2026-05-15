@@ -28,7 +28,7 @@ import {
 import {
   createStagedInventoryRowRequest,
   markStagedRowsForImportRequest,
-  updateImportStagedInventoryFilterRowsRequest,
+  updateImportStagedInventoryRequest,
 } from "@/modules/imports/data/mutations"
 
 function createRevisionKey(record: ImportDetail, filterRows: StagedInventoryFilterRow[]) {
@@ -110,7 +110,7 @@ export type StagedInvRowPanelPatch =
   | { kind: "upsert"; row: StagedInventoryRow; filterRow: StagedInventoryFilterRow }
   | { kind: "delete"; rowId: string; filterRow: StagedInventoryFilterRow }
 
-export function useImportStagedInventoryFilterRowsSection({
+export function useImportStagedInventorySection({
   record,
   filterRows,
   stagedRows,
@@ -131,7 +131,7 @@ export function useImportStagedInventoryFilterRowsSection({
 }) {
   const filterDiffMutation = useMutation({
     mutationFn: (input: { diff: StagedInventoryFiltersDiff; revisionKey: string }) =>
-      updateImportStagedInventoryFilterRowsRequest(record.id, input.diff, input.revisionKey),
+      updateImportStagedInventoryRequest(record.id, input.diff, input.revisionKey),
   })
 
   // Display order: newest filter row first. Sort at the controller boundary
@@ -147,7 +147,7 @@ export function useImportStagedInventoryFilterRowsSection({
     ImportFilterRowDraft[]
   >({
     recordId: record.id,
-    sectionKey: "staged-inventory-filter-rows",
+    sectionKey: "staged-inventory",
     serverValue: orderedFilterRows,
     serverRevisionKey: createRevisionKey(record, orderedFilterRows),
     createLocalValue: toImportFilterRowDrafts,

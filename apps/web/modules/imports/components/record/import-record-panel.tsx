@@ -8,7 +8,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import { ImportPrimaryFieldsSection } from "./primary/import-primary-fields-section"
-import { ImportStagedInventoryFilterRowsSection } from "./staged-inventory-filter-rows/import-staged-inventory-filter-rows-section"
+import { ImportStagedInventorySection } from "./staged-inventory/import-staged-inventory-section"
 import { useImportPrimarySection } from "@/modules/imports/controllers/record/primary/use-import-primary-section"
 import type {
   ImportDetail,
@@ -85,12 +85,12 @@ export function ImportRecordPanel({
           ),
         },
         {
-          key: "staged-inventory-filter-rows",
+          key: "staged-inventory",
           type: "item",
           order: 10,
-          dirtyLabel: "staged inventory filter rows",
+          dirtyLabel: "staged inventory",
           render: () => (
-            <ImportStagedInventoryFilterRowsSection
+            <ImportStagedInventorySection
               record={controller.record}
               filterRows={filterRows}
               stagedRows={stagedRows}

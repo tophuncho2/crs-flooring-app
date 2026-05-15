@@ -15,20 +15,20 @@ import type {
   StagedInventoryRow,
 } from "@builders/domain"
 import {
-  useImportStagedInventoryFilterRowsSection,
+  useImportStagedInventorySection,
   type StagedInvRowPanelPatch,
-} from "@/modules/imports/controllers/record/staged-inventory-filter-rows/use-import-staged-inventory-filter-rows-section"
-import { useStagedInvRowEditPanel } from "@/modules/imports/controllers/record/staged-inventory-filter-rows/use-staged-inv-row-edit-panel"
+} from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
+import { useStagedInvRowEditPanel } from "@/modules/imports/controllers/record/staged-inventory/use-staged-inv-row-edit-panel"
 import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
 import { FILTER_ROW_LAYOUT } from "./filter-row-layout"
 import { StagedInvRowSubGrid } from "./staged-inv-row-sub-grid"
 import { StagedInvRowEditPanel } from "./staged-inv-row-edit-panel/staged-inv-row-edit-panel"
-import { StagedInventoryFilterRowsSectionHeader } from "./staged-inventory-filter-rows-section-header"
+import { StagedInventorySectionHeader } from "./staged-inventory-section-header"
 import { FilterRowRemoveButton } from "./row-controls"
 
 type FilterDraftRow = ImportFilterRowDraft & { id: string }
 
-export function ImportStagedInventoryFilterRowsSection({
+export function ImportStagedInventorySection({
   record,
   filterRows,
   stagedRows,
@@ -43,7 +43,7 @@ export function ImportStagedInventoryFilterRowsSection({
   publishStagedRows: (rows: StagedInventoryRow[]) => void
   publishMarkedForImport: (markedIds: string[]) => void
 }) {
-  const section = useImportStagedInventoryFilterRowsSection({
+  const section = useImportStagedInventorySection({
     record,
     filterRows,
     stagedRows,
@@ -164,7 +164,7 @@ export function ImportStagedInventoryFilterRowsSection({
 
   return (
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-      <StagedInventoryFilterRowsSectionHeader
+      <StagedInventorySectionHeader
         filterRowsCount={drafts.length}
         stagedRowsCount={totalStagedRowCount}
         selectedCount={section.selectedIds.size}

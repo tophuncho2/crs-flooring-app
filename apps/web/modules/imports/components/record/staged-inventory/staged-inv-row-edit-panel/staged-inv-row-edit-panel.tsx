@@ -1,7 +1,7 @@
 "use client"
 
 import { SidePanel } from "@/components/nav/side-panel"
-import type { StagedInvRowEditPanelController } from "@/modules/imports/controllers/record/staged-inventory-filter-rows/use-staged-inv-row-edit-panel"
+import type { StagedInvRowEditPanelController } from "@/modules/imports/controllers/record/staged-inventory/use-staged-inv-row-edit-panel"
 import { StagedInvRowEditActionButtons } from "./staged-inv-row-edit-action-buttons"
 import { StagedInvRowEditFormFields } from "./staged-inv-row-edit-form-fields"
 

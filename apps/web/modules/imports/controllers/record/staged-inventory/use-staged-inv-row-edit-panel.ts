@@ -16,7 +16,7 @@ import {
   deleteStagedInventoryRowRequest,
   updateStagedInventoryRowRequest,
 } from "@/modules/imports/data/mutations"
-import type { StagedInvRowPanelPatch } from "./use-import-staged-inventory-filter-rows-section"
+import type { StagedInvRowPanelPatch } from "./use-import-staged-inventory-section"
 
 export type StagedInvRowEditPanelMode = "create" | "edit"
 

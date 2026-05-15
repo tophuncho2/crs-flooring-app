@@ -6,7 +6,7 @@ import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 import { TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
-import type { StagedInvRowEditPanelController } from "@/modules/imports/controllers/record/staged-inventory-filter-rows/use-staged-inv-row-edit-panel"
+import type { StagedInvRowEditPanelController } from "@/modules/imports/controllers/record/staged-inventory/use-staged-inv-row-edit-panel"
 
 function statusTone(status: FlooringStagedRowStatus): BadgeTone {
   switch (status) {

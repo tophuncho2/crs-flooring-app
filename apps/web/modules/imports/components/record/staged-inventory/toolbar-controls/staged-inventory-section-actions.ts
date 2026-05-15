@@ -1,6 +1,6 @@
 import type { HeaderAction } from "@/components/headers/contracts/header-action"
 
-export type StagedInventoryFilterRowsSectionActionsInput = {
+export type StagedInventorySectionActionsInput = {
   isSaving: boolean
   isDirty: boolean
   isMarking: boolean
@@ -13,7 +13,7 @@ export type StagedInventoryFilterRowsSectionActionsInput = {
   onRunImport: () => void
 }
 
-export function stagedInventoryFilterRowsSectionActions({
+export function stagedInventorySectionActions({
   isSaving,
   isDirty,
   isMarking,
@@ -24,7 +24,7 @@ export function stagedInventoryFilterRowsSectionActions({
   onDiscard,
   onSave,
   onRunImport,
-}: StagedInventoryFilterRowsSectionActionsInput): ReadonlyArray<HeaderAction> {
+}: StagedInventorySectionActionsInput): ReadonlyArray<HeaderAction> {
   return [
     {
       key: "add",

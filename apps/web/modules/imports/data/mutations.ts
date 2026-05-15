@@ -40,7 +40,7 @@ export async function deleteImportRequest(id: string, updatedAt: string) {
 
 // --- Filter-rows section diff (atomic save, mirrors WOMI material items) ---
 
-export async function updateImportStagedInventoryFilterRowsRequest(
+export async function updateImportStagedInventoryRequest(
   importId: string,
   diff: StagedInventoryFiltersDiff,
   revisionKey: string,
@@ -49,7 +49,7 @@ export async function updateImportStagedInventoryFilterRowsRequest(
     import: ImportDetailRecord
     filterRows: StagedInventoryFilterRecord[]
     tempIdMap: Record<string, string>
-  }>(`/api/imports/${importId}/staged-inventory-filter-rows/section`, {
+  }>(`/api/imports/${importId}/staged-inventory/section`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta({ ...diff }, revisionKey)),

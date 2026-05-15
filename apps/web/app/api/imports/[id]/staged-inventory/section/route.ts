@@ -22,10 +22,10 @@ export async function PATCH(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
-      scope: "imports.staged-inventory-filter-rows.section.replace",
+      scope: "imports.staged-inventory.section.replace",
       limit: 50,
       windowMs: 10 * 60 * 1000,
-      route: "/api/imports/[id]/staged-inventory-filter-rows/section",
+      route: "/api/imports/[id]/staged-inventory/section",
     },
   })
   if (access instanceof Response) return access
@@ -55,7 +55,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     })
 
     const receipt = await enforceMutationReceipt({
-      scope: "imports.staged-inventory-filter-rows.section.replace",
+      scope: "imports.staged-inventory.section.replace",
       request,
       access,
       mutation,
@@ -67,8 +67,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       access,
       {
         message: "Import filter rows section replaced",
-        action: "imports.staged-inventory-filter-rows.section.replace",
-        route: "/api/imports/[id]/staged-inventory-filter-rows/section",
+        action: "imports.staged-inventory.section.replace",
+        route: "/api/imports/[id]/staged-inventory/section",
         entityType: "flooringImportEntry",
         entityId: id,
       },
@@ -86,7 +86,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       tempIdMap: result.tempIdMap,
     }
     await finalizeMutationReceipt({
-      scope: "imports.staged-inventory-filter-rows.section.replace",
+      scope: "imports.staged-inventory.section.replace",
       access,
       mutation,
       responseStatus: 200,
