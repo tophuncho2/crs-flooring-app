@@ -262,22 +262,22 @@ export default function WorkOrdersClient({
             />
           </ListToolbarCell>
 
-          {/* Template (property-scoped) + Warehouse (independent). Template
+          {/* Warehouse (independent) + Template (property-scoped). Template
               picker is disabled until a property is picked; property change
               cascades the template chip clear via handlePropertyChange. */}
           <ListToolbarCell>
+            <WarehouseFilterChip
+              value={selectedWarehouseId}
+              selectedLabel={warehouseLabel}
+              onChange={handleWarehouseChange}
+              initialOptions={initialWarehouseOptions}
+            />
             <TemplateFilterChip
               value={selectedTemplateId}
               selectedLabel={templateLabel}
               propertyId={selectedPropertyId}
               onChange={handleTemplateChange}
               initialOptions={initialTemplateOptions}
-            />
-            <WarehouseFilterChip
-              value={selectedWarehouseId}
-              selectedLabel={warehouseLabel}
-              onChange={handleWarehouseChange}
-              initialOptions={initialWarehouseOptions}
             />
           </ListToolbarCell>
 
