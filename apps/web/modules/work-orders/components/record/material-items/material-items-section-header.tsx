@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
 import { ExpandToggle } from "@/components/grid/expandable-rows"
+import { buildMaterialItemsSectionActions } from "./toolbar-controls"
 
 export type MaterialItemsSectionHeaderProps = {
   itemsCount: number
@@ -50,29 +51,14 @@ export function MaterialItemsSectionHeader({
           {itemsCount} item{itemsCount === 1 ? "" : "s"}
         </span>
       }
-      actions={[
-        {
-          key: "discard-mi",
-          label: "Discard",
-          onClick: onDiscard,
-          kind: "secondary",
-          disabled: !isDirty || isSaving,
-        },
-        {
-          key: "save-mi",
-          label: isSaving ? "Saving…" : "Save Material Items",
-          onClick: onSave,
-          kind: "primary",
-          disabled: !isDirty || isSaving || hasConflict,
-        },
-        {
-          key: "add-mi",
-          label: "+ Add Material Item",
-          onClick: onAddItem,
-          kind: "secondary",
-          disabled: isSaving,
-        },
-      ]}
+      actions={buildMaterialItemsSectionActions({
+        isSaving,
+        isDirty,
+        hasConflict,
+        onDiscard,
+        onSave,
+        onAddItem,
+      })}
       message={noticeMessage}
       error={error}
     />
