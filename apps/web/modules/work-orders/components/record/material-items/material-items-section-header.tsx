@@ -2,8 +2,10 @@
 
 import type { ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
-import { ExpandToggle } from "@/components/grid/expandable-rows"
-import { materialItemsSectionActions } from "./toolbar-controls"
+import {
+  MaterialItemsExpandToggle,
+  materialItemsSectionActions,
+} from "./toolbar-controls"
 
 export type MaterialItemsSectionHeaderProps = {
   itemsCount: number
@@ -38,13 +40,11 @@ export function MaterialItemsSectionHeader({
     <ActionHeader
       title="Material Items"
       leadingControl={
-        itemsCount > 0 ? (
-          <ExpandToggle
-            expanded={allExpanded}
-            onToggle={onToggleAll}
-            ariaLabel={allExpanded ? "Collapse all material items" : "Expand all material items"}
-          />
-        ) : null
+        <MaterialItemsExpandToggle
+          itemsCount={itemsCount}
+          allExpanded={allExpanded}
+          onToggle={onToggleAll}
+        />
       }
       summary={
         <span>
