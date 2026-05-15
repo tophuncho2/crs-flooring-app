@@ -152,9 +152,7 @@ export default function PropertiesClient({
             />
           </ListToolbarCell>
 
-          {/* Management Company → Job Type: Job Type is a placeholder chip
-              for now; will be wired once the properties list filter contract
-              accepts a job-type id. */}
+          {/* Management Company */}
           <ListToolbarCell>
             <ManagementCompanyFilterChip
               value={selectedManagementCompanyId}
@@ -162,6 +160,11 @@ export default function PropertiesClient({
               onChange={handleManagementCompanyChange}
               initialOptions={initialManagementCompanyOptions}
             />
+          </ListToolbarCell>
+
+          {/* Job Type: placeholder chip for now; will be wired once the
+              properties list filter contract accepts a job-type id. */}
+          <ListToolbarCell>
             <JobTypeFilterChip />
           </ListToolbarCell>
         </ListToolbar>
