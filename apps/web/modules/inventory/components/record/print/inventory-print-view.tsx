@@ -13,12 +13,12 @@ function formatReceivedAt(value: string): string {
 export function InventoryPrintView({ record }: { record: InventoryDetail }) {
   useEffect(() => {
     const previousTitle = document.title
-    document.title = `Inventory ${record.inventoryNumber}`
+    document.title = "CRS Floor Covering"
     window.print()
     return () => {
       document.title = previousTitle
     }
-  }, [record.inventoryNumber])
+  }, [])
 
   const rows: Array<{ label: string; value: string }> = [
     { label: "Inventory Item", value: record.inventoryItem },

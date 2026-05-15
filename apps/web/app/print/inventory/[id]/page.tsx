@@ -6,7 +6,7 @@ import { InventoryPrintView } from "@/modules/inventory/components/record/print/
 import { getInventoryDetailPageData } from "@/modules/inventory/data/queries"
 
 export const metadata: Metadata = {
-  title: { absolute: "Print" },
+  title: { absolute: "CRS Floor Covering" },
 }
 
 export default async function InventoryPrintPage({
