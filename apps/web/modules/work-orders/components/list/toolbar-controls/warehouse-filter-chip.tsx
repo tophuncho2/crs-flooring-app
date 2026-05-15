@@ -1,35 +1,37 @@
 "use client"
 
 import type { WarehouseOption } from "@builders/domain"
-import { PickerFilterChip } from "@/components/features/filter"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 
-export type WorkOrderWarehouseFilterChipProps = {
+export type WarehouseFilterChipProps = {
   value: string | null
   selectedLabel: string | null
   onChange: (id: string | null) => void
   initialOptions?: WarehouseOption[]
 }
 
-export function WorkOrderWarehouseFilterChip({
+/**
+ * Work-order list-view chip — narrows the table to a single warehouse.
+ */
+export function WarehouseFilterChip({
   value,
   selectedLabel,
   onChange,
   initialOptions,
-}: WorkOrderWarehouseFilterChipProps) {
+}: WarehouseFilterChipProps) {
   return (
-    <PickerFilterChip>
+    <div className="min-w-[14rem] max-w-[20rem]">
       <WarehousePicker
         value={value}
         selectedLabel={selectedLabel}
         onChange={onChange}
         initialOptions={initialOptions}
-        placeholder="Filter by warehouse"
+        placeholder="Warehouse"
         searchPlaceholder="Search warehouses"
         emptyMessage="No warehouses match"
         clearLabel="Clear filter"
         ariaLabel="Filter work orders by warehouse"
       />
-    </PickerFilterChip>
+    </div>
   )
 }

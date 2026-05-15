@@ -2,11 +2,12 @@
 
 import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
-import { SearchControl } from "@/components/features/search"
 import {
-  ClearAllFiltersButton,
-  FilterToolbar,
-} from "@/components/features/filter"
+  ListToolbar,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+  ListToolbarTallCard,
+} from "@/components/features/list-toolbar"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { WorkOrdersListFilters } from "@builders/application"
@@ -25,22 +26,24 @@ import {
 } from "@/modules/work-orders/data/list-work-orders-request"
 import { useWorkOrdersListController } from "@/modules/work-orders/controllers/list/use-work-orders-list-controller"
 import { WorkOrdersTable } from "./work-orders-table"
-import { WorkOrderMgmtCoFilterChip } from "./work-order-mgmt-co-filter-chip"
-import { WorkOrderPropertyFilterChip } from "./work-order-property-filter-chip"
-import { WorkOrderTemplateFilterChip } from "./work-order-template-filter-chip"
-import { WorkOrderWarehouseFilterChip } from "./work-order-warehouse-filter-chip"
+import { MgmtCoFilterChip } from "./toolbar-controls/mgmt-co-filter-chip"
+import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
+import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
+import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 import {
-  WorkOrderCompleteFilterChip,
-  type WorkOrderCompleteFilterValue,
-} from "./work-order-complete-filter-chip"
+  COMPLETE_SEGMENTED_DEFAULT,
+  CompleteSegmentedControl,
+  type CompleteSegmentedControlValue,
+} from "./toolbar-controls/complete-segmented-control"
+import { WorkOrdersListSearch } from "./toolbar-controls/work-orders-list-search"
+import { WorkOrdersClearAll } from "./toolbar-controls/sub-controls/work-orders-clear-all"
+import { WorkOrdersRowCount } from "./toolbar-controls/sub-controls/work-orders-row-count"
 
 const WORK_ORDERS_ALLOWED_SORT_FIELDS = ["workOrderNumber"] as const
 
-const COMPLETE_DEFAULT: WorkOrderCompleteFilterValue = "hide"
-
-function asCompleteValue(raw: string | undefined): WorkOrderCompleteFilterValue {
+function asCompleteValue(raw: string | undefined): CompleteSegmentedControlValue {
   if (raw === "only" || raw === "all" || raw === "hide") return raw
-  return COMPLETE_DEFAULT
+  return COMPLETE_SEGMENTED_DEFAULT
 }
 
 export default function WorkOrdersClient({
@@ -174,9 +177,9 @@ export default function WorkOrdersClient({
   )
 
   const handleCompleteChange = useCallback(
-    (next: WorkOrderCompleteFilterValue) => {
+    (next: CompleteSegmentedControlValue) => {
       // Default "hide" is encoded as URL-absent; explicit non-default values are written.
-      onFilterChange("isComplete", next === COMPLETE_DEFAULT ? [] : [next])
+      onFilterChange("isComplete", next === COMPLETE_SEGMENTED_DEFAULT ? [] : [next])
     },
     [onFilterChange],
   )
@@ -186,7 +189,7 @@ export default function WorkOrdersClient({
     if (selectedMgmtCoId || selectedPropertyId || selectedTemplateId || selectedWarehouseId) {
       return true
     }
-    if (completeValue !== COMPLETE_DEFAULT) return true
+    if (completeValue !== COMPLETE_SEGMENTED_DEFAULT) return true
     return false
   }, [
     searchQuery,
@@ -227,58 +230,67 @@ export default function WorkOrdersClient({
           </div>
         ) : null}
 
-        <FilterToolbar>
-          <div className="min-w-[16rem] flex-1">
-            <SearchControl
+        <ListToolbar>
+          {/* Search + (Clear all | row count) */}
+          <ListToolbarCell>
+            <WorkOrdersListSearch
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search WO #, description, property, job type"
             />
-          </div>
+            <ListToolbarBottomRow
+              left={<WorkOrdersClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+              right={<WorkOrdersRowCount count={rows.length} total={total} />}
+            />
+          </ListToolbarCell>
 
-          <WorkOrderMgmtCoFilterChip
-            value={selectedMgmtCoId}
-            selectedLabel={mgmtCoLabel}
-            onChange={handleMgmtCoChange}
-            initialOptions={initialMgmtCoOptions}
-          />
+          {/* Mgmt Co → Property: property is mgmt-co-scoped (mgmt-co change
+              cascades the property + template chip clears via
+              handleMgmtCoChange). */}
+          <ListToolbarCell>
+            <MgmtCoFilterChip
+              value={selectedMgmtCoId}
+              selectedLabel={mgmtCoLabel}
+              onChange={handleMgmtCoChange}
+              initialOptions={initialMgmtCoOptions}
+            />
+            <PropertyFilterChip
+              value={selectedPropertyId}
+              selectedLabel={propertyLabel}
+              managementCompanyId={selectedMgmtCoId}
+              onChange={handlePropertyChange}
+              initialOptions={initialPropertyOptions}
+            />
+          </ListToolbarCell>
 
-          <WorkOrderPropertyFilterChip
-            value={selectedPropertyId}
-            selectedLabel={propertyLabel}
-            onChange={handlePropertyChange}
-            managementCompanyId={selectedMgmtCoId}
-            initialOptions={initialPropertyOptions}
-          />
+          {/* Template (property-scoped) + Warehouse (independent). Template
+              picker is disabled until a property is picked; property change
+              cascades the template chip clear via handlePropertyChange. */}
+          <ListToolbarCell>
+            <TemplateFilterChip
+              value={selectedTemplateId}
+              selectedLabel={templateLabel}
+              propertyId={selectedPropertyId}
+              onChange={handleTemplateChange}
+              initialOptions={initialTemplateOptions}
+            />
+            <WarehouseFilterChip
+              value={selectedWarehouseId}
+              selectedLabel={warehouseLabel}
+              onChange={handleWarehouseChange}
+              initialOptions={initialWarehouseOptions}
+            />
+          </ListToolbarCell>
 
-          <WorkOrderTemplateFilterChip
-            value={selectedTemplateId}
-            selectedLabel={templateLabel}
-            onChange={handleTemplateChange}
-            propertyId={selectedPropertyId}
-            initialOptions={initialTemplateOptions}
-          />
-
-          <WorkOrderWarehouseFilterChip
-            value={selectedWarehouseId}
-            selectedLabel={warehouseLabel}
-            onChange={handleWarehouseChange}
-            initialOptions={initialWarehouseOptions}
-          />
-
-          <span aria-hidden="true" className="mx-1 h-6 w-px bg-[var(--panel-border)]" />
-
-          <WorkOrderCompleteFilterChip
-            value={completeValue}
-            onChange={handleCompleteChange}
-          />
-
-          <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
-
-          <span className="text-xs text-[var(--foreground)]/55">
-            {rows.length} of {total} work orders
-          </span>
-        </FilterToolbar>
+          {/* Status: 2-row-tall card holding the complete segmented control. */}
+          <ListToolbarCell>
+            <ListToolbarTallCard label="Status">
+              <CompleteSegmentedControl
+                value={completeValue}
+                onChange={handleCompleteChange}
+              />
+            </ListToolbarTallCard>
+          </ListToolbarCell>
+        </ListToolbar>
 
         <WorkOrdersTable
           rows={rows}

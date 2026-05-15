@@ -1,38 +1,44 @@
 "use client"
 
 import type { PropertyOption } from "@builders/domain"
-import { PickerFilterChip } from "@/components/features/filter"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 
-export type WorkOrderPropertyFilterChipProps = {
+export type PropertyFilterChipProps = {
   value: string | null
   selectedLabel: string | null
-  onChange: (id: string | null) => void
+  /** Optional mgmt-co scope — when set, the picker narrows to that company. */
   managementCompanyId?: string | null
+  onChange: (id: string | null) => void
   initialOptions?: PropertyOption[]
 }
 
-export function WorkOrderPropertyFilterChip({
+/**
+ * Work-order list-view chip — narrows the table to a single property AND
+ * scopes the Template chip's picker (templates are property-scoped).
+ * Cascade clearing of Template on property change is handled by the
+ * parent client.
+ */
+export function PropertyFilterChip({
   value,
   selectedLabel,
-  onChange,
   managementCompanyId = null,
+  onChange,
   initialOptions,
-}: WorkOrderPropertyFilterChipProps) {
+}: PropertyFilterChipProps) {
   return (
-    <PickerFilterChip>
+    <div className="min-w-[14rem] max-w-[20rem]">
       <PropertyPicker
         value={value}
         selectedLabel={selectedLabel}
         onChange={onChange}
         managementCompanyId={managementCompanyId}
         initialOptions={initialOptions}
-        placeholder="Filter by property"
+        placeholder="Property"
         searchPlaceholder="Search properties"
         emptyMessage="No properties match"
         clearLabel="Clear filter"
         ariaLabel="Filter work orders by property"
       />
-    </PickerFilterChip>
+    </div>
   )
 }
