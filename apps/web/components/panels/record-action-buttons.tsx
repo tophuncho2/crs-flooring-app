@@ -115,6 +115,14 @@ export function RecordHeaderActionButton({ className, children, ...props }: Reco
   )
 }
 
+export function RecordHeaderActionLink({ className, children, href, ...props }: RecordLinkProps) {
+  return (
+    <RecordActionLink href={href} className={joinClasses(RECORD_NEUTRAL_ACTION_CLASS_NAME, className)} {...props}>
+      {children}
+    </RecordActionLink>
+  )
+}
+
 export function RecordFooterNeutralButton({ className, children, ...props }: RecordButtonProps) {
   return (
     <RecordActionButton className={joinClasses(RECORD_NEUTRAL_ACTION_CLASS_NAME, className)} {...props}>

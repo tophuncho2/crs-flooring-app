@@ -1,5 +1,7 @@
 "use client"
 
+import { Printer } from "lucide-react"
+import { RecordHeaderActionLink } from "@/components/panels/record-action-buttons"
 import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
@@ -20,6 +22,16 @@ export function InventoryDetailClient({
       backHref={backHref}
       dirtyMessage="You have unsaved inventory changes. Leave this inventory record without saving?"
       headerVariant="section"
+      headerActions={
+        <RecordHeaderActionLink
+          href={`/dashboard/inventory/${initialRecord.id}/print`}
+          target="_blank"
+          rel="noopener"
+        >
+          <Printer size={16} />
+          <span>Print</span>
+        </RecordHeaderActionLink>
+      }
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <InventoryRecordPanel page={page} inventory={initialRecord} />
