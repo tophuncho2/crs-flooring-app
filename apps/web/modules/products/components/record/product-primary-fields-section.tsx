@@ -72,7 +72,7 @@ export function ProductPrimaryFieldsSection({
 
   return (
     <RecordPrimarySection>
-      <RecordPrimaryPane variant="side" placement="left">
+      <RecordPrimaryPane variant="side" placement="right">
         <RecordPrimaryFieldsGrid variant="side">
           <RecordPrimaryFieldCell>
             <RecordFormField label="Category">
@@ -169,7 +169,7 @@ export function ProductPrimaryFieldsSection({
         </RecordPrimaryFieldsGrid>
       </RecordPrimaryPane>
 
-      <RecordPrimaryPane variant="main" placement="right">
+      <RecordPrimaryPane variant="main" placement="left">
         <RecordPrimaryFieldsGrid>
           <RecordPrimaryFieldCell size="sm">
             <RecordFormField label="Send Unit">
