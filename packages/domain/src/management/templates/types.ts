@@ -35,7 +35,11 @@ export type TemplateOption = {
   unitType: string
 }
 
-export type TemplatePreview = {
+// Side-panel preview header: the stable per-template snapshot rendered above
+// the paginated material-items list. installerInstructions is the only
+// installer-facing copy carried into a synced work order; internalNotes are
+// template-only back-office notes and are intentionally excluded.
+export type TemplatePreviewHeader = {
   id: string
   templateNumber: string
   propertyStreetAddress: string
@@ -47,15 +51,16 @@ export type TemplatePreview = {
   unitType: string
   warehouseName: string
   description: string
-  // installer-facing copy that gets carried into the synced work order;
-  // internalNotes are intentionally NOT exposed here — they are
-  // template-only back-office notes that never travel to a work order.
   installerInstructions: string
-  // Page slice of material items (bounded by itemsPageSize), not the full set.
-  items: TemplateMaterialItemRow[]
-  itemsTotal: number
-  itemsPage: number
-  itemsPageSize: number
+}
+
+// Paginated material-items slice for the side-panel preview. Pagination math
+// (total pages) reads from this response, not the header.
+export type TemplatePreviewMaterialItemPage = {
+  rows: TemplateMaterialItemRow[]
+  total: number
+  page: number
+  pageSize: number
 }
 
 export type TemplateForm = {

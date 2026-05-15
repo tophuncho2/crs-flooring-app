@@ -250,11 +250,11 @@ export function validateListTemplatesQuery(
   }
 }
 
-// --- Template preview query validator (paginated material items) ---
+// --- Template preview material-items query validator (paginated) ---
 
-const templatePreviewQuerySchema = z.object({
-  itemsPage: z.coerce.number().int().min(1).default(1),
-  itemsPageSize: z.coerce
+const templatePreviewMaterialItemsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
     .number()
     .int()
     .min(1)
@@ -262,24 +262,24 @@ const templatePreviewQuerySchema = z.object({
     .default(TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE),
 })
 
-export type ValidatedTemplatePreviewQuery = {
-  itemsPage: number
-  itemsPageSize: number
+export type ValidatedTemplatePreviewMaterialItemsQuery = {
+  page: number
+  pageSize: number
 }
 
-export function validateTemplatePreviewQuery(
+export function validateTemplatePreviewMaterialItemsQuery(
   searchParams: URLSearchParams,
-): ValidatedTemplatePreviewQuery {
+): ValidatedTemplatePreviewMaterialItemsQuery {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
     raw[key] = value
   })
 
-  const parseResult = templatePreviewQuerySchema.safeParse(raw)
+  const parseResult = templatePreviewMaterialItemsQuerySchema.safeParse(raw)
   if (!parseResult.success) {
     const issue = parseResult.error.issues[0]
     failTemplate(
-      issue?.message ?? "Invalid template preview query",
+      issue?.message ?? "Invalid template preview material items query",
       issue?.path[0] ? String(issue.path[0]) : undefined,
     )
   }

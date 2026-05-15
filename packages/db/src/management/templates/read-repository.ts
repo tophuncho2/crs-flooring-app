@@ -3,12 +3,15 @@ import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeTemplate,
   normalizeTemplateListRow,
+  normalizeTemplateMaterialItem,
   normalizeTemplateOption,
-  normalizeTemplatePreview,
+  normalizeTemplatePreviewHeader,
   type TemplateDetail,
   type TemplateListRow,
+  type TemplateMaterialItemRow,
   type TemplateOption,
-  type TemplatePreview,
+  type TemplatePreviewHeader,
+  type TemplatePreviewMaterialItemPage,
 } from "@builders/domain"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
@@ -181,62 +184,76 @@ export async function searchTemplateOptions(
   return templates.map(normalizeTemplateOption)
 }
 
-type TemplatePreviewPaginationArgs = {
-  itemsPage: number
-  itemsPageSize: number
-}
-
-function buildTemplatePreviewSelect(pagination: TemplatePreviewPaginationArgs) {
-  return {
-    id: true,
-    templateNumber: true,
-    unitType: true,
-    description: true,
-    installerInstructions: true,
-    jobType: { select: { name: true } },
-    warehouse: { select: { name: true } },
-    property: {
-      select: {
-        streetAddress: true,
-        city: true,
-        state: true,
-        postalCode: true,
-        instructions: true,
-      },
+const templatePreviewHeaderSelect = {
+  id: true,
+  templateNumber: true,
+  unitType: true,
+  description: true,
+  installerInstructions: true,
+  jobType: { select: { name: true } },
+  warehouse: { select: { name: true } },
+  property: {
+    select: {
+      streetAddress: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      instructions: true,
     },
-    _count: { select: { items: true } },
-    items: {
-      select: {
-        id: true,
-        productId: true,
-        product: { select: { name: true } },
-        quantity: true,
-        sendUnitName: true,
-        sendUnitAbbrev: true,
-        notes: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "asc" as const },
-      skip: (pagination.itemsPage - 1) * pagination.itemsPageSize,
-      take: pagination.itemsPageSize,
-    },
-  } as const
-}
+  },
+} as const
 
-export async function getTemplatePreviewById(
+export async function getTemplatePreviewHeaderById(
   id: string,
-  pagination: TemplatePreviewPaginationArgs,
   client: TemplatesDbClient = db,
-): Promise<TemplatePreview> {
+): Promise<TemplatePreviewHeader> {
   const template = await client.flooringTemplate.findUniqueOrThrow({
     where: { id },
-    select: buildTemplatePreviewSelect(pagination),
+    select: templatePreviewHeaderSelect,
   })
 
-  return normalizeTemplatePreview(template, {
-    itemsPage: pagination.itemsPage,
-    itemsPageSize: pagination.itemsPageSize,
-  })
+  return normalizeTemplatePreviewHeader(template)
+}
+
+const templatePreviewMaterialItemSelect = {
+  id: true,
+  productId: true,
+  product: { select: { name: true } },
+  quantity: true,
+  sendUnitName: true,
+  sendUnitAbbrev: true,
+  notes: true,
+  createdAt: true,
+} as const
+
+export type TemplatePreviewMaterialItemsPaginationArgs = {
+  page: number
+  pageSize: number
+}
+
+export async function listTemplatePreviewMaterialItemsById(
+  templateId: string,
+  pagination: TemplatePreviewMaterialItemsPaginationArgs,
+  client: TemplatesDbClient = db,
+): Promise<TemplatePreviewMaterialItemPage> {
+  const [rawRows, total] = await Promise.all([
+    client.flooringTemplateItem.findMany({
+      where: { templateId },
+      orderBy: { createdAt: "asc" },
+      skip: (pagination.page - 1) * pagination.pageSize,
+      take: pagination.pageSize,
+      select: templatePreviewMaterialItemSelect,
+    }),
+    client.flooringTemplateItem.count({ where: { templateId } }),
+  ])
+
+  const rows: TemplateMaterialItemRow[] = rawRows.map(normalizeTemplateMaterialItem)
+  return {
+    rows,
+    total,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  }
 }
 
 export async function getTemplateById(

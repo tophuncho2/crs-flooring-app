@@ -3,13 +3,16 @@
 import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { RefreshCw } from "lucide-react"
-import { SidePanel } from "@/components/nav"
+import { SidePanelPreview } from "@/components/side-panel-preview"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
 import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
-import { TemplateSyncPreviewSection } from "@/modules/template-sync/components/template-sync-preview-section"
-import { FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
+import { TemplateSyncPreviewBody } from "@/modules/template-sync/components/template-sync-preview-body"
+import { TemplateSyncClearButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-clear-button"
+import { TemplateSyncNewButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-new-button"
+import { TemplateSyncOpenButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-open-button"
+import { TemplateSyncSyncButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-sync-button"
 
 // Cascade: Management Company (optional) → Property → Template.
 // Property has a direct managementCompanyId FK; Template has a propertyId FK.
@@ -86,6 +89,73 @@ export function TemplateSyncButton() {
     }
   }, [templateId, isSyncing, resetSelections, router])
 
+  const stickyHeader = (
+    <div className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1.5">
+        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
+          Management company
+        </span>
+        <ManagementCompanyPicker
+          value={managementCompanyId}
+          onChange={handleManagementCompanyChange}
+          placeholder="Any management company (optional)"
+          ariaLabel="Management company"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
+          Property
+        </span>
+        <PropertyPicker
+          value={propertyId}
+          onChange={handlePropertyChange}
+          managementCompanyId={managementCompanyId}
+          ariaLabel="Property"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
+          Template
+        </span>
+        <TemplatePicker
+          value={templateId}
+          onChange={setTemplateId}
+          propertyId={propertyId}
+          ariaLabel="Template"
+        />
+      </label>
+    </div>
+  )
+
+  const footer = (
+    <div className="flex flex-col gap-2">
+      {errorMessage ? (
+        <p className="text-xs text-rose-400" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
+      <TemplateSyncClearButton
+        disabled={!hasSelections || isSyncing}
+        onClick={resetSelections}
+      />
+      <TemplateSyncNewButton
+        disabled={!canCreateForProperty || isSyncing}
+        onClick={handleCreate}
+      />
+      <TemplateSyncOpenButton
+        disabled={!canActOnTemplate || isSyncing}
+        onClick={handleOpen}
+      />
+      <TemplateSyncSyncButton
+        disabled={!canActOnTemplate || isSyncing}
+        isSyncing={isSyncing}
+        onClick={handleSync}
+      />
+    </div>
+  )
+
   return (
     <>
       <button
@@ -105,94 +175,17 @@ export function TemplateSyncButton() {
         <RefreshCw size={18} className="text-blue-500" />
       </button>
 
-      <SidePanel
+      <SidePanelPreview
         open={open}
         side="right"
         onClose={handleClose}
         title="Template sync"
         widthClassName="w-[34rem]"
+        stickyHeader={stickyHeader}
+        footer={footer}
       >
-        <div className="flex h-full flex-col gap-4 px-4 py-4">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
-              Management company
-            </span>
-            <ManagementCompanyPicker
-              value={managementCompanyId}
-              onChange={handleManagementCompanyChange}
-              placeholder="Any management company (optional)"
-              ariaLabel="Management company"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
-              Property
-            </span>
-            <PropertyPicker
-              value={propertyId}
-              onChange={handlePropertyChange}
-              managementCompanyId={managementCompanyId}
-              ariaLabel="Property"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
-              Template
-            </span>
-            <TemplatePicker
-              value={templateId}
-              onChange={setTemplateId}
-              propertyId={propertyId}
-              ariaLabel="Template"
-            />
-          </label>
-
-          {templateId ? <TemplateSyncPreviewSection templateId={templateId} /> : null}
-
-          {errorMessage ? (
-            <p className="text-xs text-rose-400" role="alert">
-              {errorMessage}
-            </p>
-          ) : null}
-
-          <div className="mt-auto flex flex-col gap-2 pt-4">
-            <button
-              type="button"
-              onClick={resetSelections}
-              disabled={!hasSelections || isSyncing}
-              className="rounded-lg border border-[var(--panel-border)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--panel-hover)] disabled:opacity-60"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={handleCreate}
-              disabled={!canCreateForProperty || isSyncing}
-              className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
-            >
-              New
-            </button>
-            <button
-              type="button"
-              onClick={handleOpen}
-              disabled={!canActOnTemplate || isSyncing}
-              className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
-            >
-              Open
-            </button>
-            <button
-              type="button"
-              onClick={handleSync}
-              disabled={!canActOnTemplate || isSyncing}
-              className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
-            >
-              {isSyncing ? "Syncing…" : "Sync"}
-            </button>
-          </div>
-        </div>
-      </SidePanel>
+        {templateId ? <TemplateSyncPreviewBody templateId={templateId} /> : null}
+      </SidePanelPreview>
     </>
   )
 }
