@@ -1,7 +1,13 @@
 "use client"
 
+import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
-import { SearchControl } from "@/components/features/search"
+import { PaginateControls } from "@/components/features/paginate"
+import {
+  ListToolbar,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+} from "@/components/features/list-toolbar"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ManufacturersListFilters } from "@builders/application"
@@ -16,6 +22,9 @@ import {
 } from "@/modules/manufacturers/data/list-manufacturers-request"
 import { useManufacturersListController } from "@/modules/manufacturers/controllers/use-manufacturers-list-controller"
 import { ManufacturersTable } from "./manufacturers-table"
+import { ManufacturersListSearch } from "./toolbar-controls/manufacturers-list-search"
+import { ManufacturersClearAll } from "./toolbar-controls/sub-controls/manufacturers-clear-all"
+import { ManufacturersRowCount } from "./toolbar-controls/sub-controls/manufacturers-row-count"
 
 export type ManufacturersClientProps = {
   initialTablePreferences?: TablePreferencePayload | null
@@ -55,6 +64,16 @@ export default function ManufacturersClient({
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
+  const hasActiveFilters = useMemo(
+    () => searchQuery.trim().length > 0,
+    [searchQuery],
+  )
+
+  const handleClearAll = useCallback(
+    () => onSearchQueryChange(""),
+    [onSearchQueryChange],
+  )
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -78,30 +97,34 @@ export default function ManufacturersClient({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
-          <div className="min-w-[16rem] flex-1">
-            <SearchControl
+        <ListToolbar>
+          <ListToolbarCell>
+            <ManufacturersListSearch
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search manufacturer"
             />
-          </div>
-          <span className="text-xs text-[var(--foreground)]/55">
-            {rows.length} of {total} manufacturers
-          </span>
-        </div>
+            <ListToolbarBottomRow
+              left={<ManufacturersClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+              right={<ManufacturersRowCount count={rows.length} total={total} />}
+            />
+          </ListToolbarCell>
+        </ListToolbar>
 
         <ManufacturersTable
           rows={rows}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={total}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
           onOpenManufacturer={openManufacturer}
+          pagination={
+            <PaginateControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={total}
+              totalPages={totalPages}
+              hasPreviousPage={hasPreviousPage}
+              hasNextPage={hasNextPage}
+              onPreviousPage={goToPreviousPage}
+              onNextPage={goToNextPage}
+            />
+          }
         />
       </div>
     </div>
