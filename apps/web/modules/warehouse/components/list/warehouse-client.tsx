@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { SectionHeader } from "@/components/headers"
 import {
   ListToolbar,
@@ -10,40 +11,50 @@ import {
 import type { WarehouseRecord } from "@builders/db"
 import { useWarehouseSidePanel } from "@/modules/warehouse/controllers/use-warehouse-side-panel"
 import { WarehouseSidePanel } from "@/modules/warehouse/components/side-panel"
+import {
+  WAREHOUSE_OPTIONS_QUERY_KEY,
+  searchWarehouseOptionsRequest,
+} from "@/modules/warehouse/data/warehouse-options-request"
 import { WarehouseTable } from "./warehouse-table"
 import { WarehouseListSearch } from "./toolbar-controls/warehouse-list-search"
 import { WarehouseClearAll } from "./toolbar-controls/sub-controls/warehouse-clear-all"
 import { WarehouseRowCount } from "./toolbar-controls/sub-controls/warehouse-row-count"
 
+// Mirrors the server-side cap on the options endpoint (MAX_TAKE = 50).
+const SEARCH_TAKE = 50
+
 export type WarehouseClientProps = {
   initialRows: WarehouseRecord[]
-}
-
-function matchesQuery(row: WarehouseRecord, query: string): boolean {
-  if (query.length === 0) return true
-  const haystack = [
-    row.name,
-    row.address ?? "",
-    row.phone ?? "",
-    String(row.number),
-  ]
-    .join(" ")
-    .toLowerCase()
-  return haystack.includes(query)
 }
 
 export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const sidePanel = useWarehouseSidePanel()
 
+  const trimmed = searchQuery.trim()
+
+  // Drive the list-view search through the same backend query that powers the
+  // WarehousePicker (name `contains`, case-insensitive). Pull the matched
+  // option ids and intersect with the SSR row set so the table cells (address,
+  // phone, work-orders) still come from the full record.
+  const optionsQuery = useQuery({
+    queryKey: [...WAREHOUSE_OPTIONS_QUERY_KEY, "list-filter", trimmed],
+    queryFn: ({ signal }) => searchWarehouseOptionsRequest(trimmed, signal, SEARCH_TAKE),
+    enabled: trimmed.length > 0,
+    staleTime: 30_000,
+    placeholderData: (previous) => previous,
+  })
+
   const filteredRows = useMemo(() => {
-    const trimmed = searchQuery.trim().toLowerCase()
     if (trimmed.length === 0) return initialRows
-    return initialRows.filter((row) => matchesQuery(row, trimmed))
-  }, [initialRows, searchQuery])
+    const matches = optionsQuery.data
+    if (!matches) return []
+    const ids = new Set(matches.map((option) => option.id))
+    return initialRows.filter((row) => ids.has(row.id))
+  }, [initialRows, trimmed, optionsQuery.data])
 
   const total = initialRows.length
-  const hasActiveFilters = searchQuery.trim().length > 0
+  const hasActiveFilters = trimmed.length > 0
 
   const handleClearAll = useCallback(() => {
     setSearchQuery("")
