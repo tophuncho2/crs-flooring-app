@@ -4,6 +4,7 @@ import type { UserToolRow } from "@/server/platform/tool-access"
 import NavDrawerButton from "./nav-drawer-button"
 import UserMenu from "./user-menu"
 import { TemplateSyncButton } from "@/modules/template-sync/components/template-sync-button"
+import { WorkOrdersSidePanelButton } from "@/modules/work-orders/components/side-panel-preview/work-orders-side-panel-button"
 import { useFlooringNavigationState } from "../hooks/use-navigation-state"
 
 type HeaderControlsProps = {
@@ -37,6 +38,7 @@ export default function HeaderControls({
         <div id="record-back-button-slot" className="contents" />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
+        <WorkOrdersSidePanelButton />
         <TemplateSyncButton />
         <UserMenu
           email={email}
