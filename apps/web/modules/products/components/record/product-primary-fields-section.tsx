@@ -170,18 +170,8 @@ export function ProductPrimaryFieldsSection({
       </RecordPrimaryPane>
 
       <RecordPrimaryPane variant="main" placement="left">
-        <RecordPrimaryFieldsGrid>
-          <RecordPrimaryFieldCell size="sm">
-            <RecordFormField label="Send Unit">
-              <div
-                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
-                aria-readonly="true"
-              >
-                {sendUnitDisplay}
-              </div>
-            </RecordFormField>
-          </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
+        <RecordPrimaryFieldsGrid variant="side">
+          <RecordPrimaryFieldCell>
             <RecordFormField label="Stock Unit">
               <div
                 className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
@@ -191,7 +181,17 @@ export function ProductPrimaryFieldsSection({
               </div>
             </RecordFormField>
           </RecordPrimaryFieldCell>
-          <RecordPrimaryFieldCell size="sm">
+          <RecordPrimaryFieldCell>
+            <RecordFormField label="Send Unit">
+              <div
+                className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
+                aria-readonly="true"
+              >
+                {sendUnitDisplay}
+              </div>
+            </RecordFormField>
+          </RecordPrimaryFieldCell>
+          <RecordPrimaryFieldCell>
             <RecordFormField label="Item Coverage Unit">
               <div
                 className={`${RECORD_FIELD_CONTROL_CLASS_NAME} flex items-center text-[var(--foreground)]/80`}
