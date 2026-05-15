@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import type { CutLogRow } from "@builders/domain"
 import { INVENTORY_CUT_LOG_LAYOUT, renderCutLogReadOnlyCell } from "@/modules/cut-logs"
 import { Grid, GridEmpty } from "@/components/grid"
+import { AttachCutLogPicker } from "./toolbar-controls"
 
 export type WorkOrderCutLogRowProps = {
   workOrderItemId: string
@@ -48,7 +49,8 @@ export function WorkOrderCutLogRow({
         getRowAriaLabel={(row) => `Edit cut log ${row.cutLogNumber}`}
       />
 
-      <div className="flex items-center justify-end text-xs">
+      <div className="flex items-center justify-end gap-2 text-xs">
+        <AttachCutLogPicker workOrderItemId={workOrderItemId} disabled={isSectionBusy} />
         <button
           type="button"
           className="rounded border border-[var(--panel-border)] px-2 py-1 hover:bg-[var(--panel-border)]/10 disabled:cursor-not-allowed disabled:opacity-50"
