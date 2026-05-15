@@ -1,8 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
-import { SearchControl } from "@/components/features/search"
+import { PaginateControls } from "@/components/features/paginate"
+import {
+  ListToolbar,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+} from "@/components/features/list-toolbar"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { PropertiesListFilters } from "@builders/application"
@@ -17,8 +22,12 @@ import {
   listPropertiesRequest,
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
-import { ManagementCompanyFilterChip } from "./management-company-filter-chip"
 import { PropertiesTable } from "./properties-table"
+import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
+import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
+import { PropertiesListSearch } from "./toolbar-controls/properties-list-search"
+import { PropertiesClearAll } from "./toolbar-controls/sub-controls/properties-clear-all"
+import { PropertiesRowCount } from "./toolbar-controls/sub-controls/properties-row-count"
 
 const PROPERTIES_FILTERABLE_FIELDS = ["managementCompanyId"] as const
 
@@ -55,6 +64,7 @@ export default function PropertiesClient({
     goToNextPage,
     onSearchQueryChange,
     onFilterChange,
+    onClearAllFilters,
   } = useServerListController<PropertyListRow, PropertiesListFilters>({
     mode: "fetch",
     queryKey: [...PROPERTIES_LIST_QUERY_KEY],
@@ -69,28 +79,42 @@ export default function PropertiesClient({
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  const selectedManagementCompanyId = useMemo(() => {
-    const ids = (filters as PropertiesListFilters).managementCompanyId
-    return ids && ids.length > 0 ? ids[0] : null
-  }, [filters])
+  const selectedManagementCompanyId =
+    (filters as PropertiesListFilters).managementCompanyId?.[0] ?? null
 
   const selectedManagementCompanyLabel = useMemo(() => {
     if (!selectedManagementCompanyId) return null
-    if (
-      initialSelectedManagementCompany &&
-      initialSelectedManagementCompany.id === selectedManagementCompanyId
-    ) {
+    if (initialSelectedManagementCompany?.id === selectedManagementCompanyId) {
       return initialSelectedManagementCompany.name
     }
-    const seeded = initialManagementCompanyOptions.find(
-      (option) => option.id === selectedManagementCompanyId,
+    return (
+      initialManagementCompanyOptions.find(
+        (option) => option.id === selectedManagementCompanyId,
+      )?.name ?? null
     )
-    return seeded ? seeded.name : null
   }, [
     selectedManagementCompanyId,
     initialSelectedManagementCompany,
     initialManagementCompanyOptions,
   ])
+
+  const handleManagementCompanyChange = useCallback(
+    (id: string | null) => {
+      onFilterChange("managementCompanyId", id ? [id] : [])
+    },
+    [onFilterChange],
+  )
+
+  const hasActiveFilters = useMemo(() => {
+    if (searchQuery.trim().length > 0) return true
+    if (selectedManagementCompanyId) return true
+    return false
+  }, [searchQuery, selectedManagementCompanyId])
+
+  const handleClearAll = useCallback(() => {
+    onClearAllFilters()
+    onSearchQueryChange("")
+  }, [onClearAllFilters, onSearchQueryChange])
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -115,37 +139,48 @@ export default function PropertiesClient({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
-          <div className="min-w-[16rem] flex-1">
-            <SearchControl
+        <ListToolbar>
+          {/* Search + (Clear all | row count) */}
+          <ListToolbarCell>
+            <PropertiesListSearch
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search property"
             />
-          </div>
-          <ManagementCompanyFilterChip
-            value={selectedManagementCompanyId}
-            selectedLabel={selectedManagementCompanyLabel}
-            onChange={(id) =>
-              onFilterChange("managementCompanyId", id ? [id] : [])
-            }
-          />
-          <span className="text-xs text-[var(--foreground)]/55">
-            {rows.length} of {total} properties
-          </span>
-        </div>
+            <ListToolbarBottomRow
+              left={<PropertiesClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+              right={<PropertiesRowCount count={rows.length} total={total} />}
+            />
+          </ListToolbarCell>
+
+          {/* Management Company → Job Type: Job Type is a placeholder chip
+              for now; will be wired once the properties list filter contract
+              accepts a job-type id. */}
+          <ListToolbarCell>
+            <ManagementCompanyFilterChip
+              value={selectedManagementCompanyId}
+              selectedLabel={selectedManagementCompanyLabel}
+              onChange={handleManagementCompanyChange}
+              initialOptions={initialManagementCompanyOptions}
+            />
+            <JobTypeFilterChip />
+          </ListToolbarCell>
+        </ListToolbar>
 
         <PropertiesTable
           rows={rows}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={total}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
           onOpenProperty={openProperty}
+          pagination={
+            <PaginateControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={total}
+              totalPages={totalPages}
+              hasPreviousPage={hasPreviousPage}
+              hasNextPage={hasNextPage}
+              onPreviousPage={goToPreviousPage}
+              onNextPage={goToNextPage}
+            />
+          }
         />
       </div>
     </div>
