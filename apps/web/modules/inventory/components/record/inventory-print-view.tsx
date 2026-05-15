@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect } from "react"
 import type { InventoryDetail } from "@builders/domain"
 
 function formatReceivedAt(value: string): string {
@@ -8,6 +11,10 @@ function formatReceivedAt(value: string): string {
 }
 
 export function InventoryPrintView({ record }: { record: InventoryDetail }) {
+  useEffect(() => {
+    window.print()
+  }, [])
+
   const rows: Array<{ label: string; value: string }> = [
     { label: "Inventory Item", value: record.inventoryItem },
     { label: "Import Number", value: record.importNumber },

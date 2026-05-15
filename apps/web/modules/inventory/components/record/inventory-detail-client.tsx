@@ -24,7 +24,7 @@ export function InventoryDetailClient({
       headerVariant="section"
       headerActions={
         <RecordHeaderActionLink
-          href={`/dashboard/inventory/${initialRecord.id}/print`}
+          href={`/print/inventory/${initialRecord.id}`}
           target="_blank"
           rel="noopener"
         >
