@@ -1,8 +1,7 @@
 "use client"
 
 import { Fragment, useCallback } from "react"
-import { NumberCell, RowActionButton, TextCell } from "@/components/cells"
-import { DuplicateRowButton } from "@/components/features/duplicate-row"
+import { NumberCell, TextCell } from "@/components/cells"
 import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandable-rows"
@@ -25,6 +24,10 @@ import {
 } from "@/modules/cut-logs"
 import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
+import {
+  MaterialItemDuplicateButton,
+  MaterialItemRemoveButton,
+} from "./row-controls"
 
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
   dataColumns: [
@@ -184,17 +187,11 @@ export function WorkOrderMaterialItemsSection({
     if (control.kind === "actions") {
       return (
         <div className="flex items-center gap-1">
-          <DuplicateRowButton
-            ariaLabel="Duplicate material item"
-            title={editable ? "Duplicate this material item" : "Locked while section is busy"}
+          <MaterialItemDuplicateButton
             editable={editable}
             onClick={() => section.duplicateItem(item.id)}
           />
-          <RowActionButton
-            label="✕"
-            ariaLabel="Remove material item"
-            tone="destructive"
-            title={editable ? "Remove this material item" : "Locked while section is busy"}
+          <MaterialItemRemoveButton
             editable={editable}
             onClick={() => section.removeItem(item.id)}
           />
