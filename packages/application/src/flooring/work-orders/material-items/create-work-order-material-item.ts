@@ -6,7 +6,7 @@ import {
 } from "@builders/db"
 import {
   buildItemSendUnitSnapshotFromProduct,
-  validateWorkOrderMaterialItemForm,
+  validateWorkOrderMaterialItemCreateForm,
 } from "@builders/domain"
 import { WorkOrderMaterialItemExecutionError } from "./errors.js"
 import type {
@@ -21,7 +21,7 @@ export async function createWorkOrderMaterialItemUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const validationError = validateWorkOrderMaterialItemForm(input.form)
+    const validationError = validateWorkOrderMaterialItemCreateForm(input.form)
     if (validationError) {
       throw new WorkOrderMaterialItemExecutionError({
         code: "WORK_ORDER_MATERIAL_ITEM_VALIDATION_FAILED",

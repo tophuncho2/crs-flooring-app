@@ -1,19 +1,19 @@
 import {
   Prisma,
-  getProductById,
   updateWorkOrderMaterialItemRecord,
   withDatabaseTransaction,
 } from "@builders/db"
-import {
-  buildItemSendUnitSnapshotFromProduct,
-  validateWorkOrderMaterialItemForm,
-} from "@builders/domain"
+import { validateWorkOrderMaterialItemUpdateForm } from "@builders/domain"
 import { WorkOrderMaterialItemExecutionError } from "./errors.js"
 import type {
   UpdateWorkOrderMaterialItemUseCaseInput,
   WorkOrderMaterialItemUseCaseResult,
 } from "./types.js"
 
+// productId is locked post-create — the update form omits it, and the
+// API validator rejects it on the wire. Snapshots stamped at create
+// (productName, sendUnitName, sendUnitAbbrev) stay valid because the
+// product can't change, so this use case writes only quantity + notes.
 export async function updateWorkOrderMaterialItemUseCase(
   input: UpdateWorkOrderMaterialItemUseCaseInput,
   client?: Prisma.TransactionClient,
@@ -21,7 +21,7 @@ export async function updateWorkOrderMaterialItemUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const validationError = validateWorkOrderMaterialItemForm(input.form)
+    const validationError = validateWorkOrderMaterialItemUpdateForm(input.form)
     if (validationError) {
       throw new WorkOrderMaterialItemExecutionError({
         code: "WORK_ORDER_MATERIAL_ITEM_VALIDATION_FAILED",
@@ -30,24 +30,8 @@ export async function updateWorkOrderMaterialItemUseCase(
       })
     }
 
-    const product = await getProductById(input.form.productId, c)
-    if (!product) {
-      throw new WorkOrderMaterialItemExecutionError({
-        code: "WORK_ORDER_MATERIAL_ITEM_VALIDATION_FAILED",
-        message: "Selected product was not found",
-        status: 400,
-        field: "productId",
-      })
-    }
-
-    const snapshot = buildItemSendUnitSnapshotFromProduct(product)
-
     try {
-      return await updateWorkOrderMaterialItemRecord(
-        input.id,
-        { ...input.form, ...snapshot },
-        c,
-      )
+      return await updateWorkOrderMaterialItemRecord(input.id, input.form, c)
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         throw new WorkOrderMaterialItemExecutionError({

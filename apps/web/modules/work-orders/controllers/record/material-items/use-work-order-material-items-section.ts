@@ -11,11 +11,15 @@ import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
   ProductOption,
   WorkOrderDetail,
-  WorkOrderMaterialItemForm,
+  WorkOrderMaterialItemCreateForm,
   WorkOrderMaterialItemRow,
+  WorkOrderMaterialItemUpdateForm,
   WorkOrderMaterialItemsDiff,
 } from "@builders/domain"
-import { validateWorkOrderMaterialItemForm } from "@builders/domain"
+import {
+  validateWorkOrderMaterialItemCreateForm,
+  validateWorkOrderMaterialItemUpdateForm,
+} from "@builders/domain"
 import { saveWorkOrderMaterialItemsSectionRequest } from "@/modules/work-orders/data/mutations"
 
 export type WorkOrderMaterialItemLocal = {
@@ -64,17 +68,24 @@ function serverItemById(rows: WorkOrderMaterialItemRow[]) {
   return map
 }
 
+// productId is locked post-create — diff identity for modified rows is
+// (quantity, notes). A productId mismatch on a saved row would mean a
+// UI bug; the API would reject it anyway via
+// WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED.
 function itemsDiffer(local: WorkOrderMaterialItemLocal, server: WorkOrderMaterialItemRow) {
-  return (
-    local.productId !== server.productId ||
-    local.quantity !== server.quantity ||
-    local.notes !== server.notes
-  )
+  return local.quantity !== server.quantity || local.notes !== server.notes
 }
 
-function toDiffForm(local: WorkOrderMaterialItemLocal): WorkOrderMaterialItemForm {
+function toCreateForm(local: WorkOrderMaterialItemLocal): WorkOrderMaterialItemCreateForm {
   return {
     productId: local.productId,
+    quantity: local.quantity,
+    notes: local.notes,
+  }
+}
+
+function toUpdateForm(local: WorkOrderMaterialItemLocal): WorkOrderMaterialItemUpdateForm {
+  return {
     quantity: local.quantity,
     notes: local.notes,
   }
@@ -89,7 +100,7 @@ function buildDiff(
 
   const added = local.items
     .filter((item) => isLocalOnlyRecordRow(item.id))
-    .map((item) => ({ tempId: item.id, form: toDiffForm(item) }))
+    .map((item) => ({ tempId: item.id, form: toCreateForm(item) }))
 
   // Local iterates newest-first (prepend on add/duplicate). Reverse so the
   // server stamps createdAt oldest → newest in submission order — keeps
@@ -102,7 +113,7 @@ function buildDiff(
     const serverRow = serverById.get(item.id)
     if (!serverRow) continue
     if (itemsDiffer(item, serverRow)) {
-      modified.push({ id: item.id, form: toDiffForm(item) })
+      modified.push({ id: item.id, form: toUpdateForm(item) })
     }
   }
 
@@ -152,7 +163,9 @@ export function useWorkOrderMaterialItemsSection({
     },
     onSave: async (localValue, currentRows) => {
       for (const item of localValue.items) {
-        const validationError = validateWorkOrderMaterialItemForm(toDiffForm(item))
+        const validationError = isLocalOnlyRecordRow(item.id)
+          ? validateWorkOrderMaterialItemCreateForm(toCreateForm(item))
+          : validateWorkOrderMaterialItemUpdateForm(toUpdateForm(item))
         if (validationError) {
           throw createRecordSectionError({
             kind: "validation",

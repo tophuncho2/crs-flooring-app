@@ -11,7 +11,7 @@ import {
  * Wire-input shape for filter-row writes. Combines the user-supplied
  * form fields with the stock-unit snapshot the application layer
  * computes from FlooringProduct before invoking. Mirrors WOMI's
- * `WriteWorkOrderMaterialItemInput` — same orchestration shape.
+ * `WriteWorkOrderMaterialItemCreateInput` — same orchestration shape.
  */
 export type WriteStagedInventoryFilterRecordInput = {
   categoryFilterId: string | null

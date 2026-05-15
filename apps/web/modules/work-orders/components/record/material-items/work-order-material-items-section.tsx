@@ -120,7 +120,11 @@ export function WorkOrderMaterialItemsSection({
           />
         )
       case "product":
-        return (
+        // Product is locked once the WOMI is saved (server enforces it
+        // too — see WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED). Render the
+        // picker only while the row is still a local-only draft;
+        // saved rows show the snapshotted product name as static text.
+        return isLocalOnlyRecordRow(item.id) ? (
           <ProductPicker
             value={item.productId || null}
             onChange={(next) => section.changeField(item.id, "productId", next ?? "")}
@@ -131,6 +135,13 @@ export function WorkOrderMaterialItemsSection({
             placeholder="Select product"
             ariaLabel="Material item product"
           />
+        ) : (
+          <div
+            className="flex w-full items-center text-[var(--foreground)]/80"
+            aria-readonly="true"
+          >
+            {item.productName || "—"}
+          </div>
         )
       case "quantity": {
         const unitAbbrev = item.sendUnitAbbrev

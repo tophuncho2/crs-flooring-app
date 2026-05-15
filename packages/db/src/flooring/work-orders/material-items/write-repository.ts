@@ -3,22 +3,29 @@ import type { Prisma, PrismaClient } from "../../../generated/prisma/client.js"
 import {
   normalizeWorkOrderMaterialItem,
   type ItemSendUnitSnapshot,
-  type WorkOrderMaterialItemForm,
+  type WorkOrderMaterialItemCreateForm,
   type WorkOrderMaterialItemRow,
+  type WorkOrderMaterialItemUpdateForm,
 } from "@builders/domain"
 import { listWorkOrderMaterialItems } from "./read-repository.js"
 
 type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 
 /**
- * Wire-input shape for material-item writes. Combines the user-supplied
- * form with the send-unit snapshot the application layer computes via
- * `buildItemSendUnitSnapshotFromProduct(product)` before calling here.
- *
- * Mirrors `WriteTemplateMaterialItemInput` — the application orchestration
- * is identical across both modules.
+ * Wire-input shape for material-item creates. Combines the user-supplied
+ * create form with the send-unit snapshot the application layer computes
+ * via `buildItemSendUnitSnapshotFromProduct(product)` before calling here.
  */
-export type WriteWorkOrderMaterialItemInput = WorkOrderMaterialItemForm & ItemSendUnitSnapshot
+export type WriteWorkOrderMaterialItemCreateInput =
+  WorkOrderMaterialItemCreateForm & ItemSendUnitSnapshot
+
+/**
+ * Wire-input shape for material-item updates. Carries only the mutable
+ * fields — productId is locked post-create (see
+ * `isWorkOrderMaterialItemProductChangeBlocked`), and the send-unit
+ * snapshot stays stable because the product can't change.
+ */
+export type WriteWorkOrderMaterialItemUpdateInput = WorkOrderMaterialItemUpdateForm
 
 const workOrderMaterialItemSelect = {
   id: true,
@@ -39,7 +46,7 @@ function toDecimal(value: string): Prisma.Decimal | string {
 
 export async function createWorkOrderMaterialItemRecord(
   workOrderId: string,
-  input: WriteWorkOrderMaterialItemInput,
+  input: WriteWorkOrderMaterialItemCreateInput,
   client: WorkOrdersDbClient = db,
 ): Promise<WorkOrderMaterialItemRow> {
   const item = await client.flooringWorkOrderItem.create({
@@ -59,16 +66,13 @@ export async function createWorkOrderMaterialItemRecord(
 
 export async function updateWorkOrderMaterialItemRecord(
   id: string,
-  input: WriteWorkOrderMaterialItemInput,
+  input: WriteWorkOrderMaterialItemUpdateInput,
   client: WorkOrdersDbClient = db,
 ): Promise<WorkOrderMaterialItemRow> {
   const item = await client.flooringWorkOrderItem.update({
     where: { id },
     data: {
-      productId: input.productId,
       quantity: toDecimal(input.quantity),
-      sendUnitName: input.sendUnitName,
-      sendUnitAbbrev: input.sendUnitAbbrev,
       notes: input.notes ? input.notes : null,
     },
     select: workOrderMaterialItemSelect,
@@ -98,8 +102,8 @@ export async function deleteWorkOrderMaterialItemRecordById(
 
 export type ApplyWorkOrderMaterialItemsDiffInput = {
   workOrderId: string
-  added: Array<{ id: string; tempId: string; input: WriteWorkOrderMaterialItemInput }>
-  modified: Array<{ id: string; input: WriteWorkOrderMaterialItemInput }>
+  added: Array<{ id: string; tempId: string; input: WriteWorkOrderMaterialItemCreateInput }>
+  modified: Array<{ id: string; input: WriteWorkOrderMaterialItemUpdateInput }>
   deleted: Array<{ id: string }>
 }
 
@@ -154,10 +158,7 @@ export async function applyWorkOrderMaterialItemsDiff(
     await tx.flooringWorkOrderItem.update({
       where: { id: update.id },
       data: {
-        productId: update.input.productId,
         quantity: toDecimal(update.input.quantity),
-        sendUnitName: update.input.sendUnitName,
-        sendUnitAbbrev: update.input.sendUnitAbbrev,
         notes: update.input.notes ? update.input.notes : null,
       },
     })

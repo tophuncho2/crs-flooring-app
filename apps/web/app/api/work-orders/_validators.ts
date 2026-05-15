@@ -19,7 +19,9 @@ import {
   WO_INTERNAL_NOTES_MAX,
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
-  type WorkOrderMaterialItemForm,
+  buildWorkOrderMaterialItemProductLockedMessage,
+  type WorkOrderMaterialItemCreateForm,
+  type WorkOrderMaterialItemUpdateForm,
   type WorkOrderMaterialItemsDiff,
 } from "@builders/domain"
 
@@ -181,10 +183,38 @@ function requireObject(value: unknown, path: string, fail: (m: string, f?: strin
 // Material items diff
 // ---------------------------------------------------------------------------
 
-function validateMaterialItemForm(value: unknown, path: string): WorkOrderMaterialItemForm {
+function validateMaterialItemCreateForm(
+  value: unknown,
+  path: string,
+): WorkOrderMaterialItemCreateForm {
   const obj = requireObject(value, path, failMaterialItem)
   return {
     productId: requireString(obj.productId, `${path}.productId`, failMaterialItem),
+    quantity: requireString(obj.quantity, `${path}.quantity`, failMaterialItem),
+    notes: typeof obj.notes === "string" ? obj.notes : "",
+  }
+}
+
+// Update form is locked to quantity + notes — `productId` is immutable
+// post-create. Any caller that passes it gets a 400 with
+// WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED. Mirrors the products module's
+// categoryId carve-out in `apps/web/app/api/products/_validators.ts`.
+function validateMaterialItemUpdateForm(
+  value: unknown,
+  path: string,
+  ref: string,
+): WorkOrderMaterialItemUpdateForm {
+  const obj = requireObject(value, path, failMaterialItem)
+  if (obj.productId !== undefined) {
+    throw new WorkOrderMaterialItemExecutionError({
+      code: "WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED",
+      message: buildWorkOrderMaterialItemProductLockedMessage(),
+      status: 400,
+      field: `${path}.productId`,
+      payload: { refKind: "id", ref },
+    })
+  }
+  return {
     quantity: requireString(obj.quantity, `${path}.quantity`, failMaterialItem),
     notes: typeof obj.notes === "string" ? obj.notes : "",
   }
@@ -197,15 +227,16 @@ export function validateWorkOrderMaterialItemsDiffInput(
     const obj = requireObject(entry, `added[${idx}]`, failMaterialItem)
     return {
       tempId: requireString(obj.tempId, `added[${idx}].tempId`, failMaterialItem),
-      form: validateMaterialItemForm(obj.form, `added[${idx}].form`),
+      form: validateMaterialItemCreateForm(obj.form, `added[${idx}].form`),
     }
   })
 
   const modified = requireArray(body.modified, "modified", failMaterialItem).map((entry, idx) => {
     const obj = requireObject(entry, `modified[${idx}]`, failMaterialItem)
+    const id = requireString(obj.id, `modified[${idx}].id`, failMaterialItem)
     return {
-      id: requireString(obj.id, `modified[${idx}].id`, failMaterialItem),
-      form: validateMaterialItemForm(obj.form, `modified[${idx}].form`),
+      id,
+      form: validateMaterialItemUpdateForm(obj.form, `modified[${idx}].form`, id),
     }
   })
 

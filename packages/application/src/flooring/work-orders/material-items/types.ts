@@ -1,17 +1,18 @@
 import type {
-  WorkOrderMaterialItemForm,
+  WorkOrderMaterialItemCreateForm,
   WorkOrderMaterialItemRow,
+  WorkOrderMaterialItemUpdateForm,
   WorkOrderMaterialItemsDiff,
 } from "@builders/domain"
 
 export type CreateWorkOrderMaterialItemUseCaseInput = {
   workOrderId: string
-  form: WorkOrderMaterialItemForm
+  form: WorkOrderMaterialItemCreateForm
 }
 
 export type UpdateWorkOrderMaterialItemUseCaseInput = {
   id: string
-  form: WorkOrderMaterialItemForm
+  form: WorkOrderMaterialItemUpdateForm
 }
 
 export type DeleteWorkOrderMaterialItemUseCaseInput = {

@@ -1,13 +1,16 @@
-import type { WorkOrderMaterialItemForm } from "./types.js"
+import type {
+  WorkOrderMaterialItemCreateForm,
+  WorkOrderMaterialItemUpdateForm,
+} from "./types.js"
 
 export type WorkOrderMaterialItemDraft = {
   tempId: string
-  form: WorkOrderMaterialItemForm
+  form: WorkOrderMaterialItemCreateForm
 }
 
 export type WorkOrderMaterialItemUpdate = {
   id: string
-  form: WorkOrderMaterialItemForm
+  form: WorkOrderMaterialItemUpdateForm
 }
 
 export type WorkOrderMaterialItemDelete = {
