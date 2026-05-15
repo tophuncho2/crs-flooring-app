@@ -1,59 +1,25 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DashboardListPageTable } from "@/modules/shared/engines/list-view/table/dashboard-list-page-table"
-import { DashboardListRowCell } from "@/modules/shared/engines/list-view/table/dashboard-list-row-cell"
-import { renderDashboardRowCells } from "@/modules/shared/engines/list-view/table/render-dashboard-row-cells"
-import { renderGroupedTableRows } from "@/modules/shared/engines/list-view/table/render-grouped-table-rows"
-import {
-  ClickableTableRow,
-  TableEmptyRow,
-} from "@/modules/shared/engines/list-view/table/table-shell"
-import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
+import { DataTable } from "@/components/data-table"
 import type { WarehouseRecord } from "@builders/db"
+import { WAREHOUSE_LIST_COLUMNS } from "./table/warehouse-list-columns"
+import { renderWarehouseRowCell } from "./table/warehouse-row-cell"
 
 export function WarehouseTable({
   rows,
-  visibleColumns,
-  groupedRows,
-  isGroupingEnabled,
   onOpen,
 }: {
   rows: WarehouseRecord[]
-  visibleColumns: Array<{ key: string; label: string }>
-  groupedRows: GroupedRowTree<WarehouseRecord>[]
-  isGroupingEnabled: boolean
   onOpen: (row: WarehouseRecord) => void
 }) {
-  function renderRow(row: WarehouseRecord) {
-    const cells: Record<string, (columnIndex: number) => ReactNode> = {
-      name: (columnIndex) => (
-        <DashboardListRowCell key="name" columnIndex={columnIndex} className="font-medium text-blue-500">
-          {row.name}
-        </DashboardListRowCell>
-      ),
-      address: (columnIndex) => <DashboardListRowCell key="address" columnIndex={columnIndex}>{row.address || "-"}</DashboardListRowCell>,
-      phone: (columnIndex) => <DashboardListRowCell key="phone" columnIndex={columnIndex}>{row.phone || "-"}</DashboardListRowCell>,
-      workOrders: (columnIndex) => <DashboardListRowCell key="workOrders" columnIndex={columnIndex}>{row.workOrdersCount}</DashboardListRowCell>,
-    }
-
-    return (
-      <ClickableTableRow key={row.id} ariaLabel={`Open warehouse ${row.name}`} onClick={() => onOpen(row)}>
-        {renderDashboardRowCells(visibleColumns, cells)}
-      </ClickableTableRow>
-    )
-  }
-
   return (
-    <DashboardListPageTable minWidthClass="min-w-[980px]" columns={visibleColumns}>
-      {isGroupingEnabled
-        ? renderGroupedTableRows({
-            groups: groupedRows,
-            colSpan: visibleColumns.length,
-            renderRow,
-          })
-        : rows.map((row) => renderRow(row))}
-      {rows.length === 0 ? <TableEmptyRow message="No warehouses found." colSpan={visibleColumns.length} /> : null}
-    </DashboardListPageTable>
+    <DataTable<WarehouseRecord>
+      rows={rows}
+      columns={WAREHOUSE_LIST_COLUMNS}
+      empty="No warehouses match these filters."
+      onRowClick={onOpen}
+      getRowAriaLabel={(row) => `Open warehouse ${row.name}`}
+      renderCell={renderWarehouseRowCell}
+    />
   )
 }

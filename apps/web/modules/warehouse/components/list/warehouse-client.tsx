@@ -1,99 +1,83 @@
 "use client"
 
-import { Plus } from "lucide-react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
-import { DashboardCardTitle } from "@/modules/shared/engines/common/display/dashboard-card-title"
-import { DashboardListPageScaffold } from "@/modules/shared/engines/list-view/scaffold/dashboard-list-page-scaffold"
-import { TablePaginationControls } from "@/modules/shared/engines/list-view/table/table-shell"
-import { DashboardListPageControls } from "@/modules/shared/engines/list-view/controls/dashboard-list-page-controls"
-import { useListViewEngine } from "@/modules/shared/engines/list-view/controllers/use-list-view-engine"
-import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
-import type { GroupedRowTree } from "@/modules/shared/engines/list-view/controllers/use-table-controls"
-import type { TablePreferencePayload } from "@/modules/shared/engines/list-view/controllers/table-preferences"
+import { useCallback, useMemo, useState } from "react"
+import { SectionHeader } from "@/components/headers"
+import {
+  ListToolbar,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+} from "@/components/features/list-toolbar"
 import type { WarehouseRecord } from "@builders/db"
+import { useWarehouseSidePanel } from "@/modules/warehouse/controllers/use-warehouse-side-panel"
+import { WarehouseSidePanel } from "@/modules/warehouse/components/side-panel"
 import { WarehouseTable } from "./warehouse-table"
+import { WarehouseListSearch } from "./toolbar-controls/warehouse-list-search"
+import { WarehouseClearAll } from "./toolbar-controls/sub-controls/warehouse-clear-all"
+import { WarehouseRowCount } from "./toolbar-controls/sub-controls/warehouse-row-count"
 
-export type { WarehouseRecord } from "@builders/db"
-
-const WAREHOUSE_FIELDS = [
-  { key: "name", label: "Warehouse", getValue: (row: WarehouseRecord) => row.name, groupable: false },
-  { key: "address", label: "Address", getValue: (row: WarehouseRecord) => row.address ?? "", groupable: true },
-  { key: "phone", label: "Store Phone", getValue: (row: WarehouseRecord) => row.phone ?? "", groupable: true },
-  { key: "workOrders", label: "Work Orders", getValue: (row: WarehouseRecord) => String(row.workOrdersCount), groupable: true },
-]
-
-export default function WarehouseClient({
-  initialRows,
-  initialTablePreferences,
-  tableState = { searchQuery: "", isAscendingSort: true, isGroupingEnabled: false, groupByKeys: [] },
-}: {
+export type WarehouseClientProps = {
   initialRows: WarehouseRecord[]
-  initialTablePreferences?: TablePreferencePayload | null
-  tableState?: {
-    searchQuery: string
-    isAscendingSort: boolean
-    isGroupingEnabled: boolean
-    groupByKeys: string[]
-  }
-}) {
-  const warehouseNavigation = useRecordEntryNavigation("/dashboard/warehouse")
-  const engine = useListViewEngine({
-    rows: initialRows,
-    tableKey: "warehouse-main",
-    fields: WAREHOUSE_FIELDS,
-    sortField: (row) => row.name,
-    sortFieldKey: "name",
-    initialSearchQuery: tableState.searchQuery,
-    defaultAscending: tableState.isAscendingSort,
-    defaultGroupKeys: tableState.groupByKeys,
-    initialPreferences: initialTablePreferences,
-  })
+}
+
+function matchesQuery(row: WarehouseRecord, query: string): boolean {
+  if (query.length === 0) return true
+  const haystack = [
+    row.name,
+    row.address ?? "",
+    row.phone ?? "",
+    String(row.number),
+  ]
+    .join(" ")
+    .toLowerCase()
+  return haystack.includes(query)
+}
+
+export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
+  const [searchQuery, setSearchQuery] = useState("")
+  const sidePanel = useWarehouseSidePanel()
+
+  const filteredRows = useMemo(() => {
+    const trimmed = searchQuery.trim().toLowerCase()
+    if (trimmed.length === 0) return initialRows
+    return initialRows.filter((row) => matchesQuery(row, trimmed))
+  }, [initialRows, searchQuery])
+
+  const total = initialRows.length
+  const hasActiveFilters = searchQuery.trim().length > 0
+
+  const handleClearAll = useCallback(() => {
+    setSearchQuery("")
+  }, [])
 
   return (
-    <>
-      <DashboardListPageScaffold
-        title={<DashboardCardTitle>Warehouse</DashboardCardTitle>}
-        controls={
-          <DashboardListPageControls
-            engine={engine}
-            searchPlaceholder="Search warehouses..."
-            formSlot={
-              <button
-                onClick={() => warehouseNavigation.openCreate()}
-                type="button"
-                className={FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME}
-              >
-                <Plus size={16} />
-                Add Warehouse
-              </button>
-            }
-          />
-        }
-        table={
-          <WarehouseTable
-            rows={engine.processedRows}
-            visibleColumns={engine.visibleColumns.map((key) => ({
-              key,
-              label: WAREHOUSE_FIELDS.find((f) => f.key === key)?.label ?? key,
-            }))}
-            groupedRows={engine.groupedRowTree as GroupedRowTree<WarehouseRecord>[]}
-            isGroupingEnabled={engine.isGroupingEnabled}
-            onOpen={(row) => warehouseNavigation.openRecord(row.id)}
-          />
-        }
-        pagination={
-          <TablePaginationControls
-            page={engine.page}
-            totalPages={engine.totalPages}
-            pageSize={engine.pageSize}
-            totalItems={engine.processedRows.length}
-            hasPreviousPage={engine.hasPreviousPage}
-            hasNextPage={engine.hasNextPage}
-            onPreviousPage={engine.goToPreviousPage}
-            onNextPage={engine.goToNextPage}
-          />
-        }
-      />
-    </>
+    <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+        <SectionHeader
+          title="Warehouse"
+          actions={[
+            {
+              key: "new",
+              label: "+ Warehouse",
+              onClick: () => sidePanel.openCreate(),
+              kind: "primary",
+            },
+          ]}
+        />
+
+        <ListToolbar>
+          <ListToolbarCell>
+            <WarehouseListSearch query={searchQuery} onQueryChange={setSearchQuery} />
+            <ListToolbarBottomRow
+              left={<WarehouseClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+              right={<WarehouseRowCount count={filteredRows.length} total={total} />}
+            />
+          </ListToolbarCell>
+        </ListToolbar>
+
+        <WarehouseTable rows={filteredRows} onOpen={sidePanel.openEdit} />
+      </div>
+
+      <WarehouseSidePanel controller={sidePanel} />
+    </div>
   )
 }
