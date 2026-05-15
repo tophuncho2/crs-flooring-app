@@ -1,8 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
-import { SearchControl } from "@/components/features/search"
+import { PaginateControls } from "@/components/features/paginate"
+import {
+  ListToolbar,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+} from "@/components/features/list-toolbar"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ProductsListFilters } from "@builders/application"
@@ -17,8 +22,11 @@ import {
   listProductsRequest,
 } from "@/modules/products/data/list-products-request"
 import { useProductsListController } from "@/modules/products/controllers/use-products-list-controller"
-import { CategoryFilterChip } from "./category-filter-chip"
 import { ProductsTable } from "./products-table"
+import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
+import { ProductsListSearch } from "./toolbar-controls/products-list-search"
+import { ProductsClearAll } from "./toolbar-controls/sub-controls/products-clear-all"
+import { ProductsRowCount } from "./toolbar-controls/sub-controls/products-row-count"
 
 const PRODUCTS_FILTERABLE_FIELDS = ["categoryId"] as const
 
@@ -55,6 +63,7 @@ export default function ProductsClient({
     goToNextPage,
     onSearchQueryChange,
     onFilterChange,
+    onClearAllFilters,
   } = useServerListController<ProductListRow, ProductsListFilters>({
     mode: "fetch",
     queryKey: [...PRODUCTS_LIST_QUERY_KEY],
@@ -92,6 +101,24 @@ export default function ProductsClient({
     initialCategoryOptions,
   ])
 
+  const handleCategoryChange = useCallback(
+    (id: string | null) => {
+      onFilterChange("categoryId", id ? [id] : [])
+    },
+    [onFilterChange],
+  )
+
+  const hasActiveFilters = useMemo(() => {
+    if (searchQuery.trim().length > 0) return true
+    if (selectedCategoryId) return true
+    return false
+  }, [searchQuery, selectedCategoryId])
+
+  const handleClearAll = useCallback(() => {
+    onClearAllFilters()
+    onSearchQueryChange("")
+  }, [onClearAllFilters, onSearchQueryChange])
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -115,38 +142,45 @@ export default function ProductsClient({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
-          <div className="min-w-[16rem] flex-1">
-            <SearchControl
+        <ListToolbar>
+          {/* Search + (Clear all | row count) */}
+          <ListToolbarCell>
+            <ProductsListSearch
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search products"
             />
-          </div>
-          <CategoryFilterChip
-            value={selectedCategoryId}
-            selectedLabel={selectedCategoryLabel}
-            onChange={(id) =>
-              onFilterChange("categoryId", id ? [id] : [])
-            }
-            initialOptions={initialCategoryOptions}
-          />
-          <span className="text-xs text-[var(--foreground)]/55">
-            {rows.length} of {total} products
-          </span>
-        </div>
+            <ListToolbarBottomRow
+              left={<ProductsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+              right={<ProductsRowCount count={rows.length} total={total} />}
+            />
+          </ListToolbarCell>
+
+          {/* Category */}
+          <ListToolbarCell>
+            <CategoryFilterChip
+              value={selectedCategoryId}
+              selectedLabel={selectedCategoryLabel}
+              onChange={handleCategoryChange}
+              initialOptions={initialCategoryOptions}
+            />
+          </ListToolbarCell>
+        </ListToolbar>
 
         <ProductsTable
           rows={rows}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={total}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
           onOpenProduct={openProduct}
+          pagination={
+            <PaginateControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={total}
+              totalPages={totalPages}
+              hasPreviousPage={hasPreviousPage}
+              hasNextPage={hasNextPage}
+              onPreviousPage={goToPreviousPage}
+              onNextPage={goToNextPage}
+            />
+          }
         />
       </div>
     </div>

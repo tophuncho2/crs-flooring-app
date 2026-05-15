@@ -10,11 +10,6 @@ export type CategoryFilterChipProps = {
   initialOptions?: CategoryOption[]
 }
 
-/**
- * Toolbar trigger that lets the user filter the products list by a single
- * category. Renders the canonical `CategoryPicker` so the dropdown chrome +
- * server-side search is shared with every other consumer.
- */
 export function CategoryFilterChip({
   value,
   selectedLabel,
@@ -22,13 +17,13 @@ export function CategoryFilterChip({
   initialOptions,
 }: CategoryFilterChipProps) {
   return (
-    <div className="min-w-[14rem] max-w-[20rem]">
+    <div className="min-w-[12rem] max-w-[18rem]">
       <CategoryPicker
         value={value}
         selectedLabel={selectedLabel}
         onChange={onChange}
         initialOptions={initialOptions}
-        placeholder="Filter by category"
+        placeholder="Category"
         searchPlaceholder="Search categories"
         emptyMessage="No categories match"
         clearLabel="Clear filter"
