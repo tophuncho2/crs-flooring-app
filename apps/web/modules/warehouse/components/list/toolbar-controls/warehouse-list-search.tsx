@@ -12,7 +12,7 @@ export function WarehouseListSearch({ query, onQueryChange }: WarehouseListSearc
     <SearchControl
       query={query}
       onQueryChange={onQueryChange}
-      placeholder="name, address, phone"
+      placeholder="Search Warehouse Name"
     />
   )
 }
