@@ -80,18 +80,6 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
               {email}
             </div>
 
-            {canOpenTool("warehouse") && (
-              <button
-                onClick={() => {
-                  router.push("/dashboard/warehouse")
-                  setOpen(false)
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
-              >
-                Warehouse
-              </button>
-            )}
-
             <button
               onClick={() => void handleLogout()}
               className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"

@@ -38,6 +38,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-manufacturers", name: "Manufacturers", href: "/dashboard/manufacturers", requiredTool: "products", group: "catalog" },
   { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/unit-of-measures", requiredTool: "products", group: "catalog" },
   { slug: "flooring-categories", name: "Categories", href: "/dashboard/categories", requiredTool: "products", group: "catalog" },
+  { slug: "flooring-warehouse", name: "Warehouse", href: "/dashboard/warehouse", requiredTool: "warehouse", group: "catalog" },
 ]
 
 export function isFlooringRoute(pathname: string) {
