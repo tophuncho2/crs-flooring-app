@@ -1,88 +1,29 @@
 "use client"
 
-import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
-import { PaginateControls } from "@/components/features/paginate"
+import type { ReactNode } from "react"
+import { DataTable } from "@/components/data-table"
 import type { ManagementCompanyListRow } from "@builders/domain"
-
-const MANAGEMENT_COMPANIES_LIST_LAYOUT: GridLayout<ManagementCompanyListRow> = {
-  dataColumns: [
-    { key: "name", label: "Company", minWidth: 200, grow: 1 },
-    { key: "streetAddress", label: "Street", minWidth: 180, grow: 1 },
-    { key: "city", label: "City", minWidth: 120, grow: 0 },
-    { key: "state", label: "State", minWidth: 70, grow: 0 },
-    { key: "zip", label: "Zip", minWidth: 80, grow: 0 },
-    { key: "phone", label: "Phone", minWidth: 130, grow: 0 },
-    { key: "email", label: "Email", minWidth: 200, grow: 1 },
-    { key: "propertyCount", label: "Properties", kind: "number", minWidth: 100, grow: 0, align: "end" },
-  ],
-}
-
-export type ManagementCompaniesTableProps = {
-  rows: ManagementCompanyListRow[]
-  page: number
-  totalPages: number
-  pageSize: number
-  totalItems: number
-  hasPreviousPage: boolean
-  hasNextPage: boolean
-  onPreviousPage: () => void
-  onNextPage: () => void
-  onOpenCompany: (row: ManagementCompanyListRow) => void
-}
+import { MANAGEMENT_COMPANIES_LIST_COLUMNS } from "./table/management-companies-list-columns"
+import { renderManagementCompanyRowCell } from "./table/management-companies-row-cell"
 
 export function ManagementCompaniesTable({
   rows,
-  page,
-  totalPages,
-  pageSize,
-  totalItems,
-  hasPreviousPage,
-  hasNextPage,
-  onPreviousPage,
-  onNextPage,
   onOpenCompany,
-}: ManagementCompaniesTableProps) {
+  pagination,
+}: {
+  rows: ManagementCompanyListRow[]
+  onOpenCompany: (row: ManagementCompanyListRow) => void
+  pagination?: ReactNode
+}) {
   return (
-    <Grid<ManagementCompanyListRow>
+    <DataTable<ManagementCompanyListRow>
       rows={rows}
-      layout={MANAGEMENT_COMPANIES_LIST_LAYOUT}
-      empty={<GridEmpty>No management companies found.</GridEmpty>}
+      columns={MANAGEMENT_COMPANIES_LIST_COLUMNS}
+      empty="No management companies match these filters."
       onRowClick={(row) => onOpenCompany(row)}
-      getRowAriaLabel={(row) => `Edit management company ${row.name}`}
-      renderCell={(column, row) => {
-        switch (column.key) {
-          case "name":
-            return <span className="font-medium text-blue-500">{row.name}</span>
-          case "streetAddress":
-            return row.streetAddress || "-"
-          case "city":
-            return row.city || "-"
-          case "state":
-            return row.state || "-"
-          case "zip":
-            return row.zip || "-"
-          case "phone":
-            return row.phone || "-"
-          case "email":
-            return row.email || "-"
-          case "propertyCount":
-            return <span className="tabular-nums">{row.propertyCount}</span>
-          default:
-            return "-"
-        }
-      }}
-      footerSlot={
-        <PaginateControls
-          page={page}
-          pageSize={pageSize}
-          totalItems={totalItems}
-          totalPages={totalPages}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={onPreviousPage}
-          onNextPage={onNextPage}
-        />
-      }
+      getRowAriaLabel={(row) => `Open management company ${row.name}`}
+      renderCell={renderManagementCompanyRowCell}
+      footerSlot={pagination}
     />
   )
 }

@@ -1,7 +1,13 @@
 "use client"
 
+import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
-import { SearchControl } from "@/components/features/search"
+import { PaginateControls } from "@/components/features/paginate"
+import {
+  ListToolbar,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+} from "@/components/features/list-toolbar"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ManagementCompaniesListFilters } from "@builders/application"
@@ -18,6 +24,11 @@ import { useManagementCompaniesListController } from "@/modules/management-compa
 import { useManagementCompanySidePanel } from "@/modules/management-companies/controllers/use-management-company-side-panel"
 import { ManagementCompanySidePanel } from "@/modules/management-companies/components/side-panel"
 import { ManagementCompaniesTable } from "./management-companies-table"
+import { AddCompanyButton } from "./toolbar-controls/add-company-button"
+import { AddHubButton } from "./toolbar-controls/add-hub-button"
+import { ManagementCompaniesListSearch } from "./toolbar-controls/management-companies-list-search"
+import { ManagementCompaniesClearAll } from "./toolbar-controls/sub-controls/management-companies-clear-all"
+import { ManagementCompaniesRowCount } from "./toolbar-controls/sub-controls/management-companies-row-count"
 
 export type ManagementCompaniesClientProps = {
   initialTablePreferences?: TablePreferencePayload | null
@@ -57,20 +68,19 @@ export default function ManagementCompaniesClient({
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
+  const hasActiveFilters = useMemo(
+    () => searchQuery.trim().length > 0,
+    [searchQuery],
+  )
+
+  const handleClearAll = useCallback(() => {
+    onSearchQueryChange("")
+  }, [onSearchQueryChange])
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader
-          title="Management Companies"
-          actions={[
-            {
-              key: "new",
-              label: "+ Company",
-              onClick: () => sidePanel.openPanel({ mode: "create" }),
-              kind: "primary",
-            },
-          ]}
-        />
+        <SectionHeader title="Management Companies" />
 
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
@@ -87,30 +97,46 @@ export default function ManagementCompaniesClient({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
-          <div className="min-w-[16rem] flex-1">
-            <SearchControl
+        <ListToolbar>
+          {/* Search + (Clear all | row count) */}
+          <ListToolbarCell>
+            <ManagementCompaniesListSearch
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search company"
             />
+            <ListToolbarBottomRow
+              left={
+                <ManagementCompaniesClearAll
+                  hasActive={hasActiveFilters}
+                  onClick={handleClearAll}
+                />
+              }
+              right={<ManagementCompaniesRowCount count={rows.length} total={total} />}
+            />
+          </ListToolbarCell>
+
+          {/* Right-anchored actions: + Company, + Hub. */}
+          <div className="ml-auto flex items-start gap-2">
+            <AddCompanyButton onClick={() => sidePanel.openPanel({ mode: "create" })} />
+            <AddHubButton />
           </div>
-          <span className="text-xs text-[var(--foreground)]/55">
-            {rows.length} of {total} companies
-          </span>
-        </div>
+        </ListToolbar>
 
         <ManagementCompaniesTable
           rows={rows}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={total}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
           onOpenCompany={(row) => sidePanel.openPanel({ mode: "edit", row })}
+          pagination={
+            <PaginateControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={total}
+              totalPages={totalPages}
+              hasPreviousPage={hasPreviousPage}
+              hasNextPage={hasNextPage}
+              onPreviousPage={goToPreviousPage}
+              onNextPage={goToNextPage}
+            />
+          }
         />
       </div>
       <ManagementCompanySidePanel controller={sidePanel} />
