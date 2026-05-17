@@ -27,7 +27,7 @@ export type ManagementCompaniesTableProps = {
   hasNextPage: boolean
   onPreviousPage: () => void
   onNextPage: () => void
-  onOpenCompany: (id: string) => void
+  onOpenCompany: (row: ManagementCompanyListRow) => void
 }
 
 export function ManagementCompaniesTable({
@@ -47,7 +47,7 @@ export function ManagementCompaniesTable({
       rows={rows}
       layout={MANAGEMENT_COMPANIES_LIST_LAYOUT}
       empty={<GridEmpty>No management companies found.</GridEmpty>}
-      onRowClick={(row) => onOpenCompany(row.id)}
+      onRowClick={(row) => onOpenCompany(row)}
       getRowAriaLabel={(row) => `Edit management company ${row.name}`}
       renderCell={(column, row) => {
         switch (column.key) {

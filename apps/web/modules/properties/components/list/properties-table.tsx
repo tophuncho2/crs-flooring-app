@@ -12,7 +12,7 @@ export function PropertiesTable({
   pagination,
 }: {
   rows: PropertyListRow[]
-  onOpenProperty: (id: string) => void
+  onOpenProperty: (row: PropertyListRow) => void
   pagination?: ReactNode
 }) {
   return (
@@ -20,7 +20,7 @@ export function PropertiesTable({
       rows={rows}
       columns={PROPERTIES_LIST_COLUMNS}
       empty="No properties match these filters."
-      onRowClick={(row) => onOpenProperty(row.id)}
+      onRowClick={(row) => onOpenProperty(row)}
       getRowAriaLabel={(row) => `Open property ${row.name}`}
       renderCell={renderPropertyRowCell}
       footerSlot={pagination}

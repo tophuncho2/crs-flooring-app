@@ -15,6 +15,8 @@ import {
   listManagementCompaniesRequest,
 } from "@/modules/management-companies/data/list-management-companies-request"
 import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/use-management-companies-list-controller"
+import { useManagementCompanySidePanel } from "@/modules/management-companies/controllers/use-management-company-side-panel"
+import { ManagementCompanySidePanel } from "@/modules/management-companies/components/side-panel"
 import { ManagementCompaniesTable } from "./management-companies-table"
 
 export type ManagementCompaniesClientProps = {
@@ -28,8 +30,8 @@ export default function ManagementCompaniesClient({
   initialSearchQuery,
   initialPage,
 }: ManagementCompaniesClientProps) {
-  const { message, pageError, openCreate, openCompany } =
-    useManagementCompaniesListController()
+  const { message, pageError } = useManagementCompaniesListController()
+  const sidePanel = useManagementCompanySidePanel()
 
   const {
     rows,
@@ -60,7 +62,14 @@ export default function ManagementCompaniesClient({
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         <SectionHeader
           title="Management Companies"
-          actions={[{ key: "new", label: "+ Company", onClick: () => openCreate(), kind: "primary" }]}
+          actions={[
+            {
+              key: "new",
+              label: "+ Company",
+              onClick: () => sidePanel.openPanel({ mode: "create" }),
+              kind: "primary",
+            },
+          ]}
         />
 
         {message || pageError ? (
@@ -101,9 +110,10 @@ export default function ManagementCompaniesClient({
           hasNextPage={hasNextPage}
           onPreviousPage={goToPreviousPage}
           onNextPage={goToNextPage}
-          onOpenCompany={openCompany}
+          onOpenCompany={(row) => sidePanel.openPanel({ mode: "edit", row })}
         />
       </div>
+      <ManagementCompanySidePanel controller={sidePanel} />
     </div>
   )
 }

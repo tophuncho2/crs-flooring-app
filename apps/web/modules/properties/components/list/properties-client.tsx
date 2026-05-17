@@ -22,6 +22,8 @@ import {
   listPropertiesRequest,
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
+import { usePropertySidePanel } from "@/modules/properties/controllers/use-property-side-panel"
+import { PropertySidePanel } from "@/modules/properties/components/side-panel"
 import { PropertiesTable } from "./properties-table"
 import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
 import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
@@ -48,7 +50,8 @@ export default function PropertiesClient({
   initialManagementCompanyOptions,
   initialSelectedManagementCompany = null,
 }: PropertiesClientProps) {
-  const { message, pageError, openCreate, openProperty } = usePropertiesListController()
+  const { message, pageError } = usePropertiesListController()
+  const sidePanel = usePropertySidePanel()
 
   const {
     rows,
@@ -121,7 +124,14 @@ export default function PropertiesClient({
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         <SectionHeader
           title="Properties"
-          actions={[{ key: "new", label: "+ Property", onClick: () => openCreate(), kind: "primary" }]}
+          actions={[
+            {
+              key: "new",
+              label: "+ Property",
+              onClick: () => sidePanel.openPanel({ mode: "create" }),
+              kind: "primary",
+            },
+          ]}
         />
 
         {message || pageError ? (
@@ -171,7 +181,7 @@ export default function PropertiesClient({
 
         <PropertiesTable
           rows={rows}
-          onOpenProperty={openProperty}
+          onOpenProperty={(row) => sidePanel.openPanel({ mode: "edit", row })}
           pagination={
             <PaginateControls
               page={page}
@@ -186,6 +196,7 @@ export default function PropertiesClient({
           }
         />
       </div>
+      <PropertySidePanel controller={sidePanel} />
     </div>
   )
 }
