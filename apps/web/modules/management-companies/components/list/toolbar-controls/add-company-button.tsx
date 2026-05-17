@@ -1,7 +1,7 @@
 "use client"
 
 const BUTTON_CLASS_NAME =
-  "inline-flex h-9 items-center justify-center rounded-md bg-sky-600 px-3 text-sm font-medium text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+  "flex h-full w-full items-center justify-center rounded-lg border border-sky-600 bg-sky-600 px-4 text-base font-semibold tracking-tight text-white shadow-sm transition hover:bg-sky-700 hover:border-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
 
 export type AddCompanyButtonProps = {
   onClick: () => void
@@ -10,6 +10,9 @@ export type AddCompanyButtonProps = {
 
 /**
  * Toolbar action: opens the management-company side panel in create mode.
+ * Rendered as a 2-row-tall card-style button — visually weighted to match
+ * the inventory list's `Status` card. Designed to live as the sole child
+ * of a `ListToolbarCell` so `h-full` stretches it to fill both rows.
  */
 export function AddCompanyButton({ onClick, disabled }: AddCompanyButtonProps) {
   return (
