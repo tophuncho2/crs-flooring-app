@@ -7,6 +7,7 @@ import { Menu } from "lucide-react"
 import { SidePanel } from "@/components/nav"
 import { FLOORING_ACTIVE_NAV_TAB_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
 import {
+  FLOORING_NAV_GROUPS,
   isActiveFlooringItem,
   isFlooringRoute,
   type FlooringNavItem,
@@ -73,45 +74,63 @@ export default function NavDrawerButton({
 
       <SidePanel open={open} side="left" onClose={() => setOpen(false)} title="Navigation">
         <nav className="flex flex-col py-2">
-          {orderedItems.map((item) => {
-            const canOpen = canOpenItem(item)
-            const isActive = isActiveFlooringItem(pathname, item.href)
-
-            if (isActive) {
-              return (
-                <span
-                  key={item.slug}
-                  aria-current="page"
-                  className={`mx-2 my-1 inline-flex w-fit ${FLOORING_ACTIVE_NAV_TAB_CLASS_NAME}`}
-                >
-                  {item.name}
-                </span>
-              )
-            }
-
-            if (!canOpen) {
-              return (
-                <span
-                  key={item.slug}
-                  className="mx-2 my-1 cursor-not-allowed rounded-full px-3 py-2 text-sm font-medium text-[var(--foreground)]/35"
-                >
-                  {item.name}
-                </span>
-              )
-            }
+          {FLOORING_NAV_GROUPS.map((group, groupIndex) => {
+            const groupItems = orderedItems.filter((item) => item.group === group.id)
+            if (groupItems.length === 0) return null
 
             return (
-              <Link
-                key={item.slug}
-                href={item.href}
-                onClick={(event) => {
-                  event.preventDefault()
-                  handleNavigate(item.href)
-                }}
-                className="mx-2 my-1 rounded-full px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)]"
-              >
-                {item.name}
-              </Link>
+              <div key={group.id} className="flex flex-col">
+                {groupIndex > 0 ? (
+                  <div
+                    aria-hidden="true"
+                    className="mx-4 my-2 border-t border-[var(--panel-border)]/70"
+                  />
+                ) : null}
+                <div className="mx-2 px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--foreground)]/40">
+                  {group.label}
+                </div>
+                {groupItems.map((item) => {
+                  const canOpen = canOpenItem(item)
+                  const isActive = isActiveFlooringItem(pathname, item.href)
+
+                  if (isActive) {
+                    return (
+                      <span
+                        key={item.slug}
+                        aria-current="page"
+                        className={`mx-2 my-1 inline-flex w-fit ${FLOORING_ACTIVE_NAV_TAB_CLASS_NAME}`}
+                      >
+                        {item.name}
+                      </span>
+                    )
+                  }
+
+                  if (!canOpen) {
+                    return (
+                      <span
+                        key={item.slug}
+                        className="mx-2 my-1 cursor-not-allowed rounded-full px-3 py-2 text-sm font-medium text-[var(--foreground)]/35"
+                      >
+                        {item.name}
+                      </span>
+                    )
+                  }
+
+                  return (
+                    <Link
+                      key={item.slug}
+                      href={item.href}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        handleNavigate(item.href)
+                      }}
+                      className="mx-2 my-1 rounded-full px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--panel-hover)]"
+                    >
+                      {item.name}
+                    </Link>
+                  )
+                })}
+              </div>
             )
           })}
         </nav>
