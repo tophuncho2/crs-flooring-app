@@ -115,17 +115,13 @@ export default function ManagementCompaniesClient({
             />
           </ListToolbarCell>
 
-          {/* Right-anchored actions: + Company, + Hub. Each is a 2-row-tall
-              card-style button matching the visual weight of the Status filter
-              chip on the inventory list. */}
-          <div className="ml-auto flex items-stretch gap-3">
-            <ListToolbarCell>
-              <AddCompanyButton onClick={() => sidePanel.openPanel({ mode: "create" })} />
-            </ListToolbarCell>
-            <ListToolbarCell>
-              <AddHubButton />
-            </ListToolbarCell>
-          </div>
+          {/* Right-anchored actions stacked vertically: + Company on top,
+              + Hub below. Each occupies one toolbar row inside a single
+              right-anchored cell. */}
+          <ListToolbarCell className="ml-auto">
+            <AddCompanyButton onClick={() => sidePanel.openPanel({ mode: "create" })} />
+            <AddHubButton />
+          </ListToolbarCell>
         </ListToolbar>
 
         <ManagementCompaniesTable
