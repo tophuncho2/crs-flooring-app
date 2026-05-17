@@ -25,6 +25,8 @@ import { usePropertiesListController } from "@/modules/properties/controllers/us
 import { usePropertySidePanel } from "@/modules/properties/controllers/use-property-side-panel"
 import { PropertySidePanel } from "@/modules/properties/components/side-panel"
 import { PropertiesTable } from "./properties-table"
+import { AddHubButton } from "./toolbar-controls/add-hub-button"
+import { AddPropertyButton } from "./toolbar-controls/add-property-button"
 import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
 import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
 import { PropertiesListSearch } from "./toolbar-controls/properties-list-search"
@@ -122,17 +124,7 @@ export default function PropertiesClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader
-          title="Properties"
-          actions={[
-            {
-              key: "new",
-              label: "+ Property",
-              onClick: () => sidePanel.openPanel({ mode: "create" }),
-              kind: "primary",
-            },
-          ]}
-        />
+        <SectionHeader title="Properties" />
 
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
@@ -176,6 +168,14 @@ export default function PropertiesClient({
               properties list filter contract accepts a job-type id. */}
           <ListToolbarCell>
             <JobTypeFilterChip />
+          </ListToolbarCell>
+
+          {/* Right-anchored actions stacked vertically: + Property on top,
+              + Hub below. Each occupies one toolbar row inside a single
+              right-anchored cell. */}
+          <ListToolbarCell className="ml-auto">
+            <AddPropertyButton onClick={() => sidePanel.openPanel({ mode: "create" })} />
+            <AddHubButton />
           </ListToolbarCell>
         </ListToolbar>
 
