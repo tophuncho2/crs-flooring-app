@@ -13,18 +13,29 @@ import type { WorkOrderPrimaryDetail } from "../types"
  * Owns the chained picker scoping: Property is filtered by the picked
  * Management Company, Template by the picked Property. Renders inside
  * a parent `FieldSection`.
+ *
+ * Cascade rules (UI / local state only):
+ *  - MC change/clear → clear propertyId AND templateId
+ *  - Property change/clear → clear templateId
+ *  - Template change → no cascade
+ *
+ * Cascade clears are emitted as a single multi-field patch via
+ * `onFieldsChange`; non-cascade single-field writes (Template) use the
+ * existing typed `onFieldChange`.
  */
 export function WorkOrderPropertyFieldsBand({
   editable,
   draft,
   detail,
   onFieldChange,
+  onFieldsChange,
   onPropertyOption,
 }: {
   editable: boolean
   draft: WorkOrderForm
   detail: WorkOrderPrimaryDetail | null
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
+  onFieldsChange: (patch: Partial<WorkOrderForm>) => void
   onPropertyOption: (option: PropertyOption | null) => void
 }) {
   const managementCompanyValue = draft.managementCompanyId || null
@@ -42,7 +53,13 @@ export function WorkOrderPropertyFieldsBand({
           {editable ? (
             <ManagementCompanyPicker
               value={managementCompanyValue}
-              onChange={(id) => onFieldChange("managementCompanyId", id ?? "")}
+              onChange={(id) =>
+                onFieldsChange({
+                  managementCompanyId: id ?? "",
+                  propertyId: "",
+                  templateId: "",
+                })
+              }
               selectedLabel={managementCompanyLabel}
               placeholder="—"
               ariaLabel="Management company"
@@ -57,7 +74,9 @@ export function WorkOrderPropertyFieldsBand({
           {editable ? (
             <PropertyPicker
               value={propertyValue}
-              onChange={(id) => onFieldChange("propertyId", id ?? "")}
+              onChange={(id) =>
+                onFieldsChange({ propertyId: id ?? "", templateId: "" })
+              }
               onOptionSelected={onPropertyOption}
               managementCompanyId={managementCompanyValue}
               selectedLabel={propertyLabel}

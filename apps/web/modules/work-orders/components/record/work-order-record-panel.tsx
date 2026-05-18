@@ -116,6 +116,12 @@ export function WorkOrderRecordPanel({
                     [field]: value,
                   }))
                 }}
+                onFieldsChange={(patch) => {
+                  controller.primarySection.setLocalValue((previous) => ({
+                    ...previous,
+                    ...patch,
+                  }))
+                }}
               />
             </RecordPrimarySectionInstance>
           ),

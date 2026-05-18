@@ -29,11 +29,14 @@ export function WorkOrderPrimaryFieldsSection({
   detail,
   disabled,
   onFieldChange,
+  onFieldsChange,
 }: {
   draft: WorkOrderForm
   detail: WorkOrderPrimaryDetail | null
   disabled: boolean
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
+  /** Multi-field setter — used by the property-fields band for the MC→Property→Template cascade. */
+  onFieldsChange: (patch: Partial<WorkOrderForm>) => void
 }) {
   const editable = !disabled
   const { propertyJoined, handlePropertyOption } = usePropertyJoinedOverride(detail)
@@ -51,6 +54,7 @@ export function WorkOrderPrimaryFieldsSection({
         draft={draft}
         detail={detail}
         onFieldChange={onFieldChange}
+        onFieldsChange={onFieldsChange}
         onPropertyOption={handlePropertyOption}
       />
       <WorkOrderUnitFieldsBand
