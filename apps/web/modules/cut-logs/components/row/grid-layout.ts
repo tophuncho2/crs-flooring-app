@@ -13,7 +13,7 @@ import type { CutLogRow } from "@builders/domain"
  * they need into a `GridLayout.dataColumns` array.
  */
 export const CUT_LOG_COLUMN_DEFINITIONS = {
-  status: { key: "status", label: "Status", minWidth: 120, grow: 0, align: "center" },
+  status: { key: "status", label: "Status", minWidth: 140, grow: 0, align: "center" },
   inventoryItem: { key: "inventoryItem", label: "Inventory Item", minWidth: 220, grow: 1.2 },
   location: { key: "location", label: "Location", minWidth: 140, grow: 0.5 },
   before: { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
