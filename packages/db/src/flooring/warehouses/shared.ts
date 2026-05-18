@@ -22,5 +22,24 @@ export const warehouseRowSelect = {
 
 export const warehouseDetailSelect = warehouseRowSelect
 
+export const warehouseListRowSelect = {
+  id: true,
+  number: true,
+  name: true,
+  streetAddress: true,
+  city: true,
+  state: true,
+  postalCode: true,
+  phone: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      workOrders: true,
+    },
+  },
+} as const
+
 export type WarehouseRowPayload = Prisma.FlooringWarehouseGetPayload<{ select: typeof warehouseRowSelect }>
 export type WarehouseDetailPayload = WarehouseRowPayload
+export type WarehouseListRowPayload = Prisma.FlooringWarehouseGetPayload<{ select: typeof warehouseListRowSelect }>

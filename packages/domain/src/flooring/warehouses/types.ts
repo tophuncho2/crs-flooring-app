@@ -39,7 +39,11 @@ export const EMPTY_WAREHOUSE_FORM: WarehouseForm = {
   phone: "",
 }
 
-export function toWarehouseForm(row: WarehouseRow): WarehouseForm {
+// Accepts any structural superset of `WarehouseListRow` (i.e. the list row and
+// the full `WarehouseRow` from a mutation response both work).
+export function toWarehouseForm(
+  row: Pick<WarehouseRow, "name" | "streetAddress" | "city" | "state" | "postalCode" | "phone">,
+): WarehouseForm {
   return {
     name: row.name,
     streetAddress: row.streetAddress,

@@ -1,23 +1,23 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   EMPTY_WAREHOUSE_FORM,
   toWarehouseForm,
   type WarehouseForm,
+  type WarehouseListRow,
 } from "@builders/domain"
-import type { WarehouseRecord } from "@builders/db"
 import {
   createWarehouseRequest,
   deleteWarehouseRequest,
   updateWarehouseRequest,
 } from "@/modules/warehouse/data/mutations"
+import { WAREHOUSE_LIST_QUERY_KEY } from "@/modules/warehouse/data/list-warehouse-request"
 
 export type WarehouseSidePanelOpenSpec =
   | { mode: "create" }
-  | { mode: "edit"; warehouse: WarehouseRecord }
+  | { mode: "edit"; warehouse: WarehouseListRow }
 
 function formIsDirty(current: WarehouseForm, baseline: WarehouseForm): boolean {
   return (
@@ -36,12 +36,12 @@ function formIsDirty(current: WarehouseForm, baseline: WarehouseForm): boolean {
  * is a flat label / textarea form so the controller stays compact — no
  * pickers, no child collections, no per-section split.
  *
- * Mutation success refreshes the SSR list via `router.refresh()` so the
- * parent table sees the new row order (post-create) or removal (post-delete)
- * without a full page navigation.
+ * Mutation success invalidates `WAREHOUSE_LIST_QUERY_KEY` so the parent table
+ * refetches and reflects the new row order (post-create) or removal
+ * (post-delete) immediately.
  */
 export function useWarehouseSidePanel() {
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
   const [open, setOpen] = useState<WarehouseSidePanelOpenSpec | null>(null)
   const [form, setForm] = useState<WarehouseForm>(EMPTY_WAREHOUSE_FORM)
@@ -72,7 +72,7 @@ export function useWarehouseSidePanel() {
     setOpen({ mode: "create" })
   }, [])
 
-  const openEdit = useCallback((warehouse: WarehouseRecord) => {
+  const openEdit = useCallback((warehouse: WarehouseListRow) => {
     setOpen({ mode: "edit", warehouse })
   }, [])
 
@@ -91,7 +91,7 @@ export function useWarehouseSidePanel() {
       setForm(next)
       setBaseline(next)
       setOpen({ mode: "edit", warehouse })
-      router.refresh()
+      void queryClient.invalidateQueries({ queryKey: [...WAREHOUSE_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
@@ -99,14 +99,14 @@ export function useWarehouseSidePanel() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: (input: { warehouse: WarehouseRecord; form: WarehouseForm }) =>
+    mutationFn: (input: { warehouse: WarehouseListRow; form: WarehouseForm }) =>
       updateWarehouseRequest(input.warehouse.id, input.form, input.warehouse.updatedAt),
     onSuccess: ({ warehouse }, _variables) => {
       const next = toWarehouseForm(warehouse)
       setForm(next)
       setBaseline(next)
       setOpen({ mode: "edit", warehouse })
-      router.refresh()
+      void queryClient.invalidateQueries({ queryKey: [...WAREHOUSE_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
@@ -114,11 +114,11 @@ export function useWarehouseSidePanel() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (warehouse: WarehouseRecord) =>
+    mutationFn: (warehouse: WarehouseListRow) =>
       deleteWarehouseRequest(warehouse.id, warehouse.updatedAt),
     onSuccess: () => {
       setOpen(null)
-      router.refresh()
+      void queryClient.invalidateQueries({ queryKey: [...WAREHOUSE_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))

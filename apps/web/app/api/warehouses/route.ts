@@ -1,5 +1,4 @@
-import { createWarehouseUseCase } from "@builders/application"
-import { listWarehouses } from "@builders/db"
+import { createWarehouseUseCase, listWarehousesUseCase } from "@builders/application"
 import { WAREHOUSE_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import {
@@ -10,7 +9,7 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { validateWarehouseInput } from "./_validators"
+import { validateListWarehousesQuery, validateWarehouseInput } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request, {
@@ -22,8 +21,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    const warehouses = await listWarehouses()
-    return routeJson(access, { warehouses })
+    const url = new URL(request.url)
+    const input = validateListWarehousesQuery(url.searchParams)
+    const result = await listWarehousesUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

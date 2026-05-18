@@ -1,64 +1,73 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useCallback, useMemo } from "react"
 import {
   ListToolbar,
   ListToolbarBottomRow,
   ListToolbarCell,
 } from "@/components/features/list-toolbar"
-import type { WarehouseRecord } from "@builders/db"
+import { PaginateControls } from "@/components/features/paginate"
+import { useServerListController } from "@/controllers/list-view"
+import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
+import type { WarehousesListFilters } from "@builders/application"
+import {
+  LIST_WAREHOUSES_PAGE_SIZE,
+  type WarehouseListRow,
+} from "@builders/domain"
+import {
+  WAREHOUSE_LIST_QUERY_KEY,
+  listWarehousesRequest,
+} from "@/modules/warehouse/data/list-warehouse-request"
 import { useWarehouseSidePanel } from "@/modules/warehouse/controllers/use-warehouse-side-panel"
 import { WarehouseSidePanel } from "@/modules/warehouse/components/side-panel"
-import {
-  WAREHOUSE_OPTIONS_QUERY_KEY,
-  searchWarehouseOptionsRequest,
-} from "@/modules/warehouse/data/warehouse-options-request"
 import { WarehouseTable } from "./warehouse-table"
 import { AddWarehouseButton } from "./toolbar-controls/add-warehouse-button"
 import { WarehouseListSearch } from "./toolbar-controls/warehouse-list-search"
 import { WarehouseClearAll } from "./toolbar-controls/sub-controls/warehouse-clear-all"
 import { WarehouseRowCount } from "./toolbar-controls/sub-controls/warehouse-row-count"
 
-// Mirrors the server-side cap on the options endpoint (MAX_TAKE = 50).
-const SEARCH_TAKE = 50
-
 export type WarehouseClientProps = {
-  initialRows: WarehouseRecord[]
+  initialSearchQuery: string
+  initialPage: number
 }
 
-export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
-  const [searchQuery, setSearchQuery] = useState("")
+export default function WarehouseClient({
+  initialSearchQuery,
+  initialPage,
+}: WarehouseClientProps) {
   const sidePanel = useWarehouseSidePanel()
 
-  const trimmed = searchQuery.trim()
-
-  // Drive the list-view search through the same backend query that powers the
-  // WarehousePicker (name `contains`, case-insensitive). Pull the matched
-  // option ids and intersect with the SSR row set so the table cells (address,
-  // phone, work-orders) still come from the full record.
-  const optionsQuery = useQuery({
-    queryKey: [...WAREHOUSE_OPTIONS_QUERY_KEY, "list-filter", trimmed],
-    queryFn: ({ signal }) => searchWarehouseOptionsRequest(trimmed, signal, SEARCH_TAKE),
-    enabled: trimmed.length > 0,
-    staleTime: 30_000,
-    placeholderData: (previous) => previous,
+  const {
+    rows,
+    total,
+    searchQuery,
+    page,
+    pageSize,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
+    onSearchQueryChange,
+  } = useServerListController<WarehouseListRow, WarehousesListFilters>({
+    mode: "fetch",
+    queryKey: [...WAREHOUSE_LIST_QUERY_KEY],
+    listFn: listWarehousesRequest,
+    initialSearchQuery,
+    initialPage,
+    pageSize: LIST_WAREHOUSES_PAGE_SIZE,
+    freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  const filteredRows = useMemo(() => {
-    if (trimmed.length === 0) return initialRows
-    const matches = optionsQuery.data
-    if (!matches) return []
-    const ids = new Set(matches.map((option) => option.id))
-    return initialRows.filter((row) => ids.has(row.id))
-  }, [initialRows, trimmed, optionsQuery.data])
+  const hasActiveFilters = useMemo(
+    () => searchQuery.trim().length > 0,
+    [searchQuery],
+  )
 
-  const total = initialRows.length
-  const hasActiveFilters = trimmed.length > 0
-
-  const handleClearAll = useCallback(() => {
-    setSearchQuery("")
-  }, [])
+  const handleClearAll = useCallback(
+    () => onSearchQueryChange(""),
+    [onSearchQueryChange],
+  )
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -70,10 +79,10 @@ export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
                 Warehouse
               </span>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <WarehouseListSearch query={searchQuery} onQueryChange={setSearchQuery} />
+                <WarehouseListSearch query={searchQuery} onQueryChange={onSearchQueryChange} />
                 <ListToolbarBottomRow
                   left={<WarehouseClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                  right={<WarehouseRowCount count={filteredRows.length} total={total} />}
+                  right={<WarehouseRowCount count={rows.length} total={total} />}
                 />
               </div>
             </div>
@@ -87,7 +96,22 @@ export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
           </ListToolbarCell>
         </ListToolbar>
 
-        <WarehouseTable rows={filteredRows} onOpen={sidePanel.openEdit} />
+        <WarehouseTable
+          rows={rows}
+          onOpen={sidePanel.openEdit}
+          pagination={
+            <PaginateControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={total}
+              totalPages={totalPages}
+              hasPreviousPage={hasPreviousPage}
+              hasNextPage={hasNextPage}
+              onPreviousPage={goToPreviousPage}
+              onNextPage={goToNextPage}
+            />
+          }
+        />
       </div>
 
       <WarehouseSidePanel controller={sidePanel} />

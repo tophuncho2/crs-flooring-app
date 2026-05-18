@@ -1,10 +1,10 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/components/data-table"
-import type { WarehouseRecord } from "@builders/db"
+import type { WarehouseListRow } from "@builders/domain"
 
 export function renderWarehouseRowCell(
-  column: DataTableColumn<WarehouseRecord>,
-  row: WarehouseRecord,
+  column: DataTableColumn<WarehouseListRow>,
+  row: WarehouseListRow,
 ): ReactNode {
   switch (column.key) {
     case "number":

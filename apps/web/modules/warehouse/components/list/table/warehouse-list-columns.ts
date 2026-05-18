@@ -1,7 +1,7 @@
 import type { DataTableColumn } from "@/components/data-table"
-import type { WarehouseRecord } from "@builders/db"
+import type { WarehouseListRow } from "@builders/domain"
 
-export const WAREHOUSE_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WarehouseRecord>> = [
+export const WAREHOUSE_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WarehouseListRow>> = [
   { key: "name", label: "Warehouse" },
   { key: "streetAddress", label: "Street Address" },
   { key: "city", label: "City" },

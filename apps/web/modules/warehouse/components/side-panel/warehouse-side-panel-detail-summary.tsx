@@ -4,7 +4,7 @@ import {
   SidePanelPreviewReadonlyRow,
   SidePanelPreviewReadonlySection,
 } from "@/components/side-panel-preview"
-import type { WarehouseRecord } from "@builders/db"
+import type { WarehouseListRow } from "@builders/domain"
 
 function formatDate(value: string) {
   if (!value) return "—"
@@ -13,7 +13,7 @@ function formatDate(value: string) {
   return parsed.toISOString().slice(0, 10)
 }
 
-export function WarehouseSidePanelDetailSummary({ warehouse }: { warehouse: WarehouseRecord }) {
+export function WarehouseSidePanelDetailSummary({ warehouse }: { warehouse: WarehouseListRow }) {
   return (
     <SidePanelPreviewReadonlySection>
       <SidePanelPreviewReadonlyRow label="Warehouse #" value={warehouse.number} />

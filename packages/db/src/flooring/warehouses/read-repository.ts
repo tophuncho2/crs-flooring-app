@@ -1,9 +1,11 @@
-import { buildAddressLine } from "@builders/domain"
+import { buildAddressLine, type WarehouseListRow } from "@builders/domain"
 import { db } from "../../client.js"
 import {
+  type WarehouseListRowPayload,
   type WarehouseRowPayload,
   type WarehousesDbClient,
   warehouseDetailSelect,
+  warehouseListRowSelect,
   warehouseRowSelect,
 } from "./shared.js"
 
@@ -46,14 +48,6 @@ export function normalizeWarehouseRow(row: WarehouseRowPayload): WarehouseRecord
 }
 
 // --- Read functions: warehouse ---
-
-export async function listWarehouses(client: WarehousesDbClient = db): Promise<WarehouseRecord[]> {
-  const rows = await client.flooringWarehouse.findMany({
-    select: warehouseRowSelect,
-    orderBy: { number: "asc" },
-  })
-  return rows.map(normalizeWarehouseRow)
-}
 
 export type { WarehouseOption } from "@builders/domain"
 
@@ -133,6 +127,60 @@ export async function getExistingWarehouseNumbers(
     select: { number: true },
   })
   return rows.map((r) => r.number)
+}
+
+// --- List-view read ---
+
+export type WarehouseListViewOptions = {
+  search?: string
+  skip: number
+  take: number
+}
+
+export type WarehouseListViewResult = {
+  rows: WarehouseListRow[]
+  total: number
+}
+
+function normalizeWarehouseListRow(row: WarehouseListRowPayload): WarehouseListRow {
+  return {
+    id: row.id,
+    number: row.number,
+    name: row.name,
+    streetAddress: row.streetAddress ?? "",
+    city: row.city ?? "",
+    state: row.state ?? "",
+    postalCode: row.postalCode ?? "",
+    phone: row.phone,
+    workOrdersCount: row._count.workOrders,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  }
+}
+
+export async function listWarehousesForListView(
+  options: WarehouseListViewOptions,
+  client: WarehousesDbClient = db,
+): Promise<WarehouseListViewResult> {
+  const where = options.search
+    ? { name: { contains: options.search, mode: "insensitive" as const } }
+    : undefined
+
+  const [total, rows] = await Promise.all([
+    client.flooringWarehouse.count({ where }),
+    client.flooringWarehouse.findMany({
+      where,
+      orderBy: { name: "asc" },
+      skip: options.skip,
+      take: options.take,
+      select: warehouseListRowSelect,
+    }),
+  ])
+
+  return {
+    total,
+    rows: rows.map(normalizeWarehouseListRow),
+  }
 }
 
 export async function getWarehouseDeleteState(
