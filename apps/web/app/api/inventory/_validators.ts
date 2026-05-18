@@ -239,13 +239,14 @@ export function validateListInventoryQuery(
 
 export function validateUpdateInventoryInput(body: Record<string, unknown>): UpdateInventoryInput {
   // `inventoryItem` is server-recomputed (composeInventoryItem) inside the
-  // update use case; never accepted from the client.
+  // update use case; never accepted from the client. `warehouseId` is
+  // set-on-insert by the materialize worker and silently stripped here if
+  // a stale client posts it.
   const input: UpdateInventoryInput = {}
   if (body.rollNumber !== undefined)
     input.rollNumber = optionalBoundedString(body.rollNumber, INVENTORY_ROLL_NUMBER_MAX, "rollNumber")
   if (body.dyeLot !== undefined)
     input.dyeLot = optionalBoundedString(body.dyeLot, INVENTORY_DYE_LOT_MAX, "dyeLot")
-  if (body.warehouseId !== undefined) input.warehouseId = optionalString(body.warehouseId, "warehouseId")
   if (body.location !== undefined)
     input.location = optionalBoundedString(body.location, INVENTORY_LOCATION_MAX, "location")
   if (body.note !== undefined) input.note = optionalBoundedString(body.note, INVENTORY_NOTE_MAX, "note")

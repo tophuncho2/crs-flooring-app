@@ -26,6 +26,7 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "sendUnitName",
   "sendUnitAbbrev",
   "fifoReceivedAt",
+  "warehouseId",
 ] as const
 
 // `inventoryItem` is recomputed by the inventory update use case in the same
@@ -36,7 +37,6 @@ export const INVENTORY_EDITABLE_FIELDS = [
   "rollNumber",
   "dyeLot",
   "location",
-  "warehouseId",
   "note",
   "internalNotes",
   "isArchived",

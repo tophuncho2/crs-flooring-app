@@ -76,12 +76,13 @@ export type CreateInventoryRecordInput = {
  * application's update use case via `composeInventoryItem` in the same
  * transaction whenever a source field — rollNumber, dyeLot, location,
  * note — changes). Snapshot columns (productName, categoryName,
- * importNumber, purchaseOrderNumber) are not in this shape.
+ * importNumber, purchaseOrderNumber) and the warehouse FK are not in this
+ * shape — `warehouseId` is set-on-insert by the materialize worker and
+ * never patched afterward.
  */
 export type UpdateInventoryRecordInput = {
   rollNumber?: string | null
   dyeLot?: string | null
-  warehouseId?: string
   location?: string | null
   note?: string | null
   internalNotes?: string | null
@@ -136,9 +137,6 @@ function buildUpdateData(
   const data: Prisma.FlooringInventoryUpdateInput = {}
   if (input.rollNumber !== undefined) data.rollNumber = input.rollNumber
   if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
-  if (input.warehouseId !== undefined) {
-    data.warehouse = { connect: { id: input.warehouseId } }
-  }
   if (input.location !== undefined) data.location = input.location
   if (input.note !== undefined) data.note = input.note
   if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes

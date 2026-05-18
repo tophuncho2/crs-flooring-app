@@ -3,14 +3,11 @@
 import { requestJson } from "@/modules/shared/engines/common/transport/http"
 import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import {
-  createRecordSectionError,
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import {
-  describeInventoryFormValidationIssues,
   toInventoryForm,
-  validateInventoryForm,
   type InventoryDetail,
   type InventoryForm,
 } from "@builders/domain"
@@ -32,23 +29,16 @@ export function useInventoryPrimarySection({
     createLocalValue: toInventoryForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      // Location is plain text post-sweep — no FK/warehouse mismatch to check.
-      // Form validator only requires warehouseId.
-      const issues = validateInventoryForm({ warehouseId: localValue.warehouseId })
-      if (issues.length > 0) {
-        throw createRecordSectionError({
-          kind: "validation",
-          message: describeInventoryFormValidationIssues(issues),
-          retryable: true,
-        })
-      }
+      // `warehouseId` is set-on-insert by the materialize worker — stripped
+      // here so it never crosses the wire on a user-driven update.
+      const { warehouseId: _warehouseId, ...editable } = localValue
 
       const payload = await requestJson<{ inventory: InventoryDetail }>(
         `/api/inventory/${record.id}/primary/section`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(withMutationMeta(localValue, record.updatedAt)),
+          body: JSON.stringify(withMutationMeta(editable, record.updatedAt)),
         },
       )
 

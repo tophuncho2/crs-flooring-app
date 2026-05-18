@@ -3,7 +3,6 @@
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
 import { CheckboxCell, TextCell } from "@/components/cells"
-import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatFifoReceivedAtEastern,
   formatInventoryQuantity,
@@ -52,18 +51,8 @@ export function InventoryPrimaryFieldsSection({
 
       {/* Row 2: Warehouse · Location · Stock Balance · Coverage Balance */}
       <CellAt col={1} row={2} colSpan={2}>
-        <FormField label="Warehouse" required>
-          {editable ? (
-            <WarehousePicker
-              value={draft.warehouseId || null}
-              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
-              selectedLabel={warehouseName || null}
-              placeholder="Select Warehouse"
-              ariaLabel="Warehouse"
-            />
-          ) : (
-            <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
-          )}
+        <FormField label="Warehouse">
+          <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
       <CellAt col={3} row={2} colSpan={2}>
