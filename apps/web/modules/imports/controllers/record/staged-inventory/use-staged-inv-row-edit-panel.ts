@@ -191,6 +191,11 @@ export function useStagedInvRowEditPanel({
     setOpen(null)
   }, [isSaving])
 
+  const discard = useCallback(() => {
+    setForm(baseline)
+    setError(null)
+  }, [baseline])
+
   const canSave =
     open?.mode === "create" ? isCreateValid(form) : isDirty && isCreateValid(form)
 
@@ -203,6 +208,7 @@ export function useStagedInvRowEditPanel({
     canSave,
     openPanel,
     close,
+    discard,
     setField,
     save,
     deleteRow,

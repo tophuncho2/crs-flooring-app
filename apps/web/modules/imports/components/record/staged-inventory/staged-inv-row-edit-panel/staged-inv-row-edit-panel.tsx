@@ -2,8 +2,13 @@
 
 import { SidePanel } from "@/components/nav/side-panel"
 import type { StagedInvRowEditPanelController } from "@/modules/imports/controllers/record/staged-inventory/use-staged-inv-row-edit-panel"
-import { StagedInvRowEditActionButtons } from "./staged-inv-row-edit-action-buttons"
 import { StagedInvRowEditFormFields } from "./staged-inv-row-edit-form-fields"
+import {
+  StagedInvRowEditDeleteButton,
+  StagedInvRowEditDiscardButton,
+  StagedInvRowEditSaveButton,
+  StagedInvRowEditStatusPill,
+} from "./toolbar-controls"
 
 export type StagedInvRowEditPanelProps = {
   controller: StagedInvRowEditPanelController
@@ -13,7 +18,9 @@ export type StagedInvRowEditPanelProps = {
  * Right-anchored side panel that owns the staged-inv-row control stack
  * — edit, save, delete — for a single staged inventory row at a time.
  * Built on the shared `SidePanel` chrome; form layout uses
- * `FieldSection` (8-col invisible grid). Mirrors `CutLogEditPanel`.
+ * `FieldSection` (8-col invisible grid). Footer composes the canonical
+ * side-panel-edit primitives via per-control adapters in
+ * `./toolbar-controls/` — order: save, discard, …, pill, delete.
  */
 export function StagedInvRowEditPanel({ controller }: StagedInvRowEditPanelProps) {
   const { open } = controller
@@ -27,8 +34,6 @@ export function StagedInvRowEditPanel({ controller }: StagedInvRowEditPanelProps
           ? `${open.row.rollPrefix || "ROLL#"}${open.row.rollNumber}`
           : "Staged inventory row"
         : "Staged inventory row"
-
-  const canDelete = open?.mode === "edit" && open.row.status === "DRAFT"
 
   return (
     <SidePanel
@@ -49,16 +54,16 @@ export function StagedInvRowEditPanel({ controller }: StagedInvRowEditPanelProps
             ) : null}
           </div>
         </div>
-        <StagedInvRowEditActionButtons
-          mode={mode}
-          isDirty={controller.isDirty}
-          isSaving={controller.isSaving}
-          canSave={controller.canSave}
-          canDelete={canDelete}
-          onSave={controller.save}
-          onClose={controller.close}
-          onDelete={controller.deleteRow}
-        />
+        <div className="flex flex-col gap-3 border-t border-[var(--panel-border)] bg-[var(--panel-background)] px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <StagedInvRowEditSaveButton controller={controller} mode={mode} />
+            <StagedInvRowEditDiscardButton controller={controller} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <StagedInvRowEditStatusPill controller={controller} />
+            <StagedInvRowEditDeleteButton controller={controller} mode={mode} />
+          </div>
+        </div>
       </div>
     </SidePanel>
   )
