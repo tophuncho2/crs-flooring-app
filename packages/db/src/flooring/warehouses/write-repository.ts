@@ -1,7 +1,13 @@
+import { normalizeAddressState } from "@builders/domain"
 import type { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
 import { warehouseRowSelect, type WarehousesDbClient } from "./shared.js"
 import { normalizeWarehouseRow, type WarehouseRecord } from "./read-repository.js"
+
+function prepareState(value: string | null): string | null {
+  if (value == null) return null
+  return normalizeAddressState(value)
+}
 
 // --- Input types ---
 
@@ -36,7 +42,7 @@ export async function createWarehouse(
       name: input.name,
       streetAddress: input.streetAddress,
       city: input.city,
-      state: input.state,
+      state: prepareState(input.state),
       postalCode: input.postalCode,
       phone: input.phone,
     },
@@ -54,7 +60,7 @@ export async function updateWarehouse(
   if (input.name !== undefined) data.name = input.name
   if (input.streetAddress !== undefined) data.streetAddress = input.streetAddress
   if (input.city !== undefined) data.city = input.city
-  if (input.state !== undefined) data.state = input.state
+  if (input.state !== undefined) data.state = prepareState(input.state)
   if (input.postalCode !== undefined) data.postalCode = input.postalCode
   if (input.phone !== undefined) data.phone = input.phone
 
