@@ -1,6 +1,7 @@
 export { useMarkForImportMutation } from "./use-mark-for-import-mutation"
 export { useSaveFilterRowsMutation } from "./use-save-filter-rows-mutation"
 export { useDuplicateStagedRowMutation } from "./use-duplicate-staged-row-mutation"
+export { useInlineDeleteStagedRowMutation } from "./use-inline-delete-staged-row-mutation"
 export { useCreateStagedInvRowMutation } from "./use-create-staged-inv-row-mutation"
 export { useUpdateStagedInvRowMutation } from "./use-update-staged-inv-row-mutation"
 export { useDeleteStagedInvRowMutation } from "./use-delete-staged-inv-row-mutation"

@@ -13,8 +13,8 @@ export type StagedInvGridRow = {
  * non-interactive display.
  *
  * Column order — status leftmost (user-mandated): status → rollNumber
- * → startingStock → dyeLot → location → note. Trailing control is the
- * inline duplicate-row button.
+ * → startingStock → dyeLot → location → note. Trailing control holds
+ * the inline duplicate + delete row-action buttons.
  */
 export const STAGED_INV_ROW_LAYOUT: GridLayout<StagedInvGridRow> = {
   leadingControls: [{ key: "select", kind: "selection", width: 40 }],
@@ -33,5 +33,5 @@ export const STAGED_INV_ROW_LAYOUT: GridLayout<StagedInvGridRow> = {
     { key: "location", label: "Location", minWidth: 140, grow: 0 },
     { key: "note", label: "Note", minWidth: 240, grow: 1.2 },
   ],
-  trailingControls: [{ key: "duplicate", kind: "actions", width: 56 }],
+  trailingControls: [{ key: "actions", kind: "actions", width: 96 }],
 }

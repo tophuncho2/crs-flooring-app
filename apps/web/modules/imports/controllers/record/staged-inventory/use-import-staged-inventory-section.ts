@@ -64,6 +64,8 @@ export function useImportStagedInventorySection({
     applyStagedRowPatch: filters.applyStagedRowPatch,
     duplicateStagedRow: filters.duplicateStagedRow,
     isDuplicating: filters.isDuplicating,
+    deleteStagedRow: filters.deleteStagedRow,
+    isDeleting: filters.isDeleting,
     stagedRowsByFilterId: filters.stagedRowsByFilterId,
     ...selection,
   }

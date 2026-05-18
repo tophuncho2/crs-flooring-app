@@ -216,7 +216,8 @@ export function ImportStagedInventorySection({
                         section.isSaving ||
                         section.isMarking ||
                         section.isSelectionActive ||
-                        section.isDuplicating
+                        section.isDuplicating ||
+                        section.isDeleting
                       }
                       onOpenEdit={(row, filterRow) =>
                         panel.openPanel({ mode: "edit", row, filterRow })
@@ -230,6 +231,7 @@ export function ImportStagedInventorySection({
                         })
                       }
                       onDuplicate={(row) => section.duplicateStagedRow(row)}
+                      onDelete={(row) => section.deleteStagedRow(row)}
                       onToggleSelection={section.toggleSelection}
                     />
                   ) : (

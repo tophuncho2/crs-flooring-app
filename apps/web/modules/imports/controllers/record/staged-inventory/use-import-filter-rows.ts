@@ -25,6 +25,7 @@ import {
 } from "@/modules/imports/controllers/record/drafts"
 import { useSaveFilterRowsMutation } from "./mutations/use-save-filter-rows-mutation"
 import { useDuplicateStagedRowMutation } from "./mutations/use-duplicate-staged-row-mutation"
+import { useInlineDeleteStagedRowMutation } from "./mutations/use-inline-delete-staged-row-mutation"
 import type { StagedInvRowPanelPatch } from "./types"
 
 function createRevisionKey(record: ImportDetail, filterRows: StagedInventoryFilterRow[]) {
@@ -269,6 +270,19 @@ export function useImportFilterRows({
     [duplicateMutation],
   )
 
+  const deleteMutation = useInlineDeleteStagedRowMutation({
+    importId: record.id,
+    applyStagedRowPatch,
+  })
+
+  const deleteStagedRow = useCallback(
+    async (row: StagedInventoryRow) => {
+      if (row.status !== "DRAFT") return
+      await deleteMutation.mutateAsync({ row })
+    },
+    [deleteMutation],
+  )
+
   const stagedRowsByFilterId = useMemo(() => {
     const map = new Map<string, StagedInventoryRow[]>()
     for (const row of stagedRows) {
@@ -289,6 +303,8 @@ export function useImportFilterRows({
     applyStagedRowPatch,
     duplicateStagedRow,
     isDuplicating: duplicateMutation.isPending,
+    deleteStagedRow,
+    isDeleting: deleteMutation.isPending,
     stagedRowsByFilterId,
   }
 }

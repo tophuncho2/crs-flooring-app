@@ -11,6 +11,7 @@ import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 import { Grid, GridEmpty } from "@/components/grid"
 import { STAGED_INV_ROW_LAYOUT, type StagedInvGridRow } from "./staged-inv-row-layout"
 import {
+  StagedRowDeleteButton,
   StagedRowDuplicateButton,
   StagedRowSelectCell,
 } from "./row-controls"
@@ -47,6 +48,7 @@ export type StagedInvRowSubGridProps = {
   onOpenEdit: (row: StagedInventoryRow, filterRow: StagedInventoryFilterRow) => void
   onCreateNew: (filterRow: StagedInventoryFilterRow) => void
   onDuplicate: (row: StagedInventoryRow) => void
+  onDelete: (row: StagedInventoryRow) => void | Promise<void>
   onToggleSelection: (rowId: string) => void
 }
 
@@ -71,6 +73,7 @@ export function StagedInvRowSubGrid({
   onOpenEdit,
   onCreateNew,
   onDuplicate,
+  onDelete,
   onToggleSelection,
 }: StagedInvRowSubGridProps) {
   const gridRows: StagedInvGridRow[] = useMemo(
@@ -118,11 +121,18 @@ export function StagedInvRowSubGrid({
     }
     if (control.kind === "actions") {
       return (
-        <StagedRowDuplicateButton
-          isDraft={isDraft}
-          isSectionBusy={isSectionBusy}
-          onClick={() => onDuplicate(row)}
-        />
+        <div className="flex items-center gap-1">
+          <StagedRowDuplicateButton
+            isDraft={isDraft}
+            isSectionBusy={isSectionBusy}
+            onClick={() => onDuplicate(row)}
+          />
+          <StagedRowDeleteButton
+            isDraft={isDraft}
+            isSectionBusy={isSectionBusy}
+            onConfirm={() => onDelete(row)}
+          />
+        </div>
       )
     }
     return null
