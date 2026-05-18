@@ -34,7 +34,10 @@ export async function createWarehouseUseCase(
           {
             number,
             name: input.name,
-            address: input.address,
+            streetAddress: input.streetAddress,
+            city: input.city,
+            state: input.state,
+            postalCode: input.postalCode,
             phone: input.phone,
           },
           c,
