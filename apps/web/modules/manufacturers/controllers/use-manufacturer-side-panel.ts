@@ -137,6 +137,12 @@ export function useManufacturerSidePanel() {
     deleteMutation.mutate(open.manufacturer)
   }, [open, isSaving, deleteMutation])
 
+  const discard = useCallback(() => {
+    if (isSaving) return
+    setForm(baseline)
+    setError(null)
+  }, [isSaving, baseline])
+
   const close = useCallback(() => {
     if (isSaving) return
     setOpen(null)
@@ -154,6 +160,7 @@ export function useManufacturerSidePanel() {
     close,
     setField,
     save,
+    discard,
     deleteManufacturer,
   }
 }

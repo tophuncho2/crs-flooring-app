@@ -2,7 +2,10 @@
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
 import type { ManufacturerSidePanelController } from "@/modules/manufacturers/controllers/use-manufacturer-side-panel"
-import { ManufacturerSidePanelActionButtons } from "./toolbar-controls/manufacturer-side-panel-action-buttons"
+import { ManufacturerSidePanelDeleteButton } from "./toolbar-controls/manufacturer-side-panel-delete-button"
+import { ManufacturerSidePanelDiscardButton } from "./toolbar-controls/manufacturer-side-panel-discard-button"
+import { ManufacturerSidePanelSaveButton } from "./toolbar-controls/manufacturer-side-panel-save-button"
+import { ManufacturerSidePanelStatusPill } from "./toolbar-controls/manufacturer-side-panel-status-pill"
 import { ManufacturerSidePanelDetailSummary } from "./manufacturer-side-panel-detail-summary"
 import { ManufacturerSidePanelFormFields } from "./manufacturer-side-panel-form-fields"
 
@@ -29,15 +32,16 @@ export function ManufacturerSidePanel({ controller }: ManufacturerSidePanelProps
       title={title}
       widthClassName="w-[34rem]"
       footer={
-        <ManufacturerSidePanelActionButtons
-          mode={mode}
-          isDirty={controller.isDirty}
-          isSaving={controller.isSaving}
-          canSave={controller.isValid}
-          onSave={controller.save}
-          onClose={controller.close}
-          onDelete={controller.deleteManufacturer}
-        />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <ManufacturerSidePanelStatusPill controller={controller} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <ManufacturerSidePanelDeleteButton controller={controller} mode={mode} />
+            <ManufacturerSidePanelDiscardButton controller={controller} />
+            <ManufacturerSidePanelSaveButton controller={controller} mode={mode} />
+          </div>
+        </div>
       }
     >
       {open ? (
