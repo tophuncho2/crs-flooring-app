@@ -66,11 +66,18 @@ export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
       <div className="flex flex-col gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         <ListToolbar>
           <ListToolbarCell>
-            <WarehouseListSearch query={searchQuery} onQueryChange={setSearchQuery} />
-            <ListToolbarBottomRow
-              left={<WarehouseClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-              right={<WarehouseRowCount count={filteredRows.length} total={total} />}
-            />
+            <div className="flex flex-col">
+              <span className="self-start rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
+                Warehouse
+              </span>
+              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
+                <WarehouseListSearch query={searchQuery} onQueryChange={setSearchQuery} />
+                <ListToolbarBottomRow
+                  left={<WarehouseClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+                  right={<WarehouseRowCount count={filteredRows.length} total={total} />}
+                />
+              </div>
+            </div>
           </ListToolbarCell>
 
           {/* Placeholder action: 2-row × 2-col chip; disabled until the
