@@ -38,12 +38,12 @@ export function PropertySidePanel({ controller }: PropertySidePanelProps) {
       onClose={close}
       title={title}
       widthClassName="w-[34rem]"
-      titleEnd={<PropertySidePanelHubViewButton controller={controller} />}
       footer={
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <PropertySidePanelSaveButton controller={controller} mode={resolvedMode} />
             <PropertySidePanelDiscardButton controller={controller} />
+            <PropertySidePanelHubViewButton controller={controller} />
           </div>
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             <PropertySidePanelStatusPill controller={controller} />
