@@ -39,7 +39,7 @@ export function ManagementCompanySidePanel({ controller }: ManagementCompanySide
       title={title}
       widthClassName="w-[34rem]"
       footer={
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <ManagementCompanySidePanelSaveButton controller={controller} mode={resolvedMode} />
           <ManagementCompanySidePanelDiscardButton controller={controller} />
           <ManagementCompanySidePanelHubViewButton controller={controller} />
