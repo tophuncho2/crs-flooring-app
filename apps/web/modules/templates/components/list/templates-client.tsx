@@ -21,7 +21,7 @@ import {
   listTemplatesRequest,
   TEMPLATES_LIST_QUERY_KEY,
 } from "@/modules/templates/data/list-templates-request"
-import { useTemplatesListController } from "@/modules/templates/controllers/use-templates-list-controller"
+import { useTemplatesListController } from "@/modules/templates/controllers/list/use-templates-list-controller"
 import { TemplatesTable } from "./templates-table"
 import { AddTemplateButton } from "./toolbar-controls/add-template-button"
 import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
