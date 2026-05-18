@@ -2,7 +2,10 @@
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
 import type { WarehouseSidePanelController } from "@/modules/warehouse/controllers/use-warehouse-side-panel"
-import { WarehouseSidePanelActionButtons } from "./toolbar-controls/warehouse-side-panel-action-buttons"
+import { WarehouseSidePanelDeleteButton } from "./toolbar-controls/warehouse-side-panel-delete-button"
+import { WarehouseSidePanelDiscardButton } from "./toolbar-controls/warehouse-side-panel-discard-button"
+import { WarehouseSidePanelSaveButton } from "./toolbar-controls/warehouse-side-panel-save-button"
+import { WarehouseSidePanelStatusPill } from "./toolbar-controls/warehouse-side-panel-status-pill"
 import { WarehouseSidePanelDetailSummary } from "./warehouse-side-panel-detail-summary"
 import { WarehouseSidePanelFormFields } from "./warehouse-side-panel-form-fields"
 
@@ -14,7 +17,8 @@ export type WarehouseSidePanelProps = {
  * Right-anchored side panel that owns the warehouse create + edit + delete
  * flows. Built on the canonical `SidePanelPreview` primitive: title bar,
  * scrolling form body (with an optional read-only summary card in edit
- * mode), sticky footer with action buttons.
+ * mode), sticky footer composed from per-control adapters in
+ * `./toolbar-controls/`.
  *
  * The parent (warehouse list client) renders this once alongside the table
  * and drives it through `useWarehouseSidePanel`. Row click → edit mode;
@@ -37,15 +41,16 @@ export function WarehouseSidePanel({ controller }: WarehouseSidePanelProps) {
       title={title}
       widthClassName="w-[34rem]"
       footer={
-        <WarehouseSidePanelActionButtons
-          mode={mode}
-          isDirty={controller.isDirty}
-          isSaving={controller.isSaving}
-          canSave={controller.isValid}
-          onSave={controller.save}
-          onDiscard={controller.discard}
-          onDelete={controller.deleteWarehouse}
-        />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <WarehouseSidePanelStatusPill controller={controller} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <WarehouseSidePanelDeleteButton controller={controller} mode={mode} />
+            <WarehouseSidePanelDiscardButton controller={controller} />
+            <WarehouseSidePanelSaveButton controller={controller} mode={mode} />
+          </div>
+        </div>
       }
     >
       {open ? (
