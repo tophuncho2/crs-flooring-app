@@ -23,6 +23,7 @@ import {
 } from "@/modules/imports/data/list-imports-request"
 import { useImportsListController } from "@/modules/imports/controllers/list/use-imports-list-controller"
 import { ImportsTable } from "./imports-table"
+import { AddImportButton } from "./toolbar-controls/add-import-button"
 import { ImportsListSearch } from "./toolbar-controls/imports-list-search"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 import { ImportsClearAll } from "./toolbar-controls/sub-controls/imports-clear-all"
@@ -121,10 +122,7 @@ export default function ImportsClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader
-          title="Imports"
-          actions={[{ key: "new", label: "+ Import", onClick: () => openCreate(), kind: "primary" }]}
-        />
+        <SectionHeader title="Imports" />
 
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
@@ -160,6 +158,12 @@ export default function ImportsClient({
               onChange={handleWarehouseChange}
               initialOptions={initialWarehouseOptions}
             />
+          </ListToolbarCell>
+
+          {/* Right-anchored action: + Import occupies the top row of a
+              single right-anchored cell; the bottom row is empty. */}
+          <ListToolbarCell className="ml-auto">
+            <AddImportButton onClick={() => openCreate()} />
           </ListToolbarCell>
         </ListToolbar>
 
