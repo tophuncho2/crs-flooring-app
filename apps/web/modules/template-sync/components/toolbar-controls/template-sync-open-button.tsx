@@ -1,6 +1,6 @@
 "use client"
 
-import { FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
+import { SidePanelPreviewOpenButton } from "@/components/side-panel-preview"
 
 type Props = {
   disabled: boolean
@@ -8,14 +8,5 @@ type Props = {
 }
 
 export function TemplateSyncOpenButton({ disabled, onClick }: Props) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
-    >
-      Open
-    </button>
-  )
+  return <SidePanelPreviewOpenButton disabled={disabled} onClick={onClick} />
 }

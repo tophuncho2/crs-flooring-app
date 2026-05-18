@@ -1,6 +1,6 @@
 "use client"
 
-import { FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
+import { SidePanelPreviewSyncButton } from "@/components/side-panel-preview"
 
 type Props = {
   disabled: boolean
@@ -10,13 +10,10 @@ type Props = {
 
 export function TemplateSyncSyncButton({ disabled, isSyncing, onClick }: Props) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <SidePanelPreviewSyncButton
       disabled={disabled}
-      className={FLOORING_PRIMARY_ACTION_BUTTON_COMPACT_CLASS_NAME}
-    >
-      {isSyncing ? "Syncing…" : "Sync"}
-    </button>
+      isSyncing={isSyncing}
+      onClick={onClick}
+    />
   )
 }

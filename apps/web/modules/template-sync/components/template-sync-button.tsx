@@ -130,29 +130,31 @@ export function TemplateSyncButton() {
   )
 
   const footer = (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {errorMessage ? (
         <p className="text-xs text-rose-400" role="alert">
           {errorMessage}
         </p>
       ) : null}
-      <TemplateSyncClearButton
-        disabled={!hasSelections || isSyncing}
-        onClick={resetSelections}
-      />
-      <TemplateSyncNewButton
-        disabled={!canCreateForProperty || isSyncing}
-        onClick={handleCreate}
-      />
-      <TemplateSyncOpenButton
-        disabled={!canActOnTemplate || isSyncing}
-        onClick={handleOpen}
-      />
-      <TemplateSyncSyncButton
-        disabled={!canActOnTemplate || isSyncing}
-        isSyncing={isSyncing}
-        onClick={handleSync}
-      />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <TemplateSyncClearButton
+          disabled={!hasSelections || isSyncing}
+          onClick={resetSelections}
+        />
+        <TemplateSyncNewButton
+          disabled={!canCreateForProperty || isSyncing}
+          onClick={handleCreate}
+        />
+        <TemplateSyncOpenButton
+          disabled={!canActOnTemplate || isSyncing}
+          onClick={handleOpen}
+        />
+        <TemplateSyncSyncButton
+          disabled={!canActOnTemplate || isSyncing}
+          isSyncing={isSyncing}
+          onClick={handleSync}
+        />
+      </div>
     </div>
   )
 
