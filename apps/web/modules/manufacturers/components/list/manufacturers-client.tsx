@@ -23,6 +23,7 @@ import {
 import { useManufacturerSidePanel } from "@/modules/manufacturers/controllers/use-manufacturer-side-panel"
 import { ManufacturerSidePanel } from "@/modules/manufacturers/components/side-panel"
 import { ManufacturersTable } from "./manufacturers-table"
+import { AddManufacturerButton } from "./toolbar-controls/add-manufacturer-button"
 import { ManufacturersListSearch } from "./toolbar-controls/manufacturers-list-search"
 import { ManufacturersClearAll } from "./toolbar-controls/sub-controls/manufacturers-clear-all"
 import { ManufacturersRowCount } from "./toolbar-controls/sub-controls/manufacturers-row-count"
@@ -77,17 +78,7 @@ export default function ManufacturersClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader
-          title="Manufacturers"
-          actions={[
-            {
-              key: "new",
-              label: "+ Manufacturer",
-              onClick: () => sidePanel.openCreate(),
-              kind: "primary",
-            },
-          ]}
-        />
+        <SectionHeader title="Manufacturers" />
 
         <ListToolbar>
           <ListToolbarCell>
@@ -99,6 +90,13 @@ export default function ManufacturersClient({
               left={<ManufacturersClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
               right={<ManufacturersRowCount count={rows.length} total={total} />}
             />
+          </ListToolbarCell>
+
+          {/* Right-anchored action: + Manufacturer occupies the top row of
+              a single right-anchored cell; the bottom row is empty (no
+              secondary create flow). */}
+          <ListToolbarCell className="ml-auto">
+            <AddManufacturerButton onClick={() => sidePanel.openCreate()} />
           </ListToolbarCell>
         </ListToolbar>
 
