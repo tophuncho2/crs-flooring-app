@@ -207,33 +207,31 @@ export function ImportStagedInventorySection({
               >
                 {isExpanded ? (
                   server ? (
-                    <div className="px-4 py-3">
-                      <StagedInvRowSubGrid
-                        filterRow={server}
-                        rows={childRows}
-                        selectedIds={section.selectedIds}
-                        canToggleSelection={section.canToggleSelection}
-                        isSectionBusy={
-                          section.isSaving ||
-                          section.isMarking ||
-                          section.isSelectionActive ||
-                          section.isDuplicating
-                        }
-                        onOpenEdit={(row, filterRow) =>
-                          panel.openPanel({ mode: "edit", row, filterRow })
-                        }
-                        onCreateNew={(filterRow) =>
-                          panel.openPanel({
-                            mode: "create",
-                            filterRowId: filterRow.id,
-                            filterRowProductName: filterRow.productName,
-                            filterRowStockUnitAbbrev: filterRow.stockUnitAbbrev,
-                          })
-                        }
-                        onDuplicate={(row) => section.duplicateStagedRow(row)}
-                        onToggleSelection={section.toggleSelection}
-                      />
-                    </div>
+                    <StagedInvRowSubGrid
+                      filterRow={server}
+                      rows={childRows}
+                      selectedIds={section.selectedIds}
+                      canToggleSelection={section.canToggleSelection}
+                      isSectionBusy={
+                        section.isSaving ||
+                        section.isMarking ||
+                        section.isSelectionActive ||
+                        section.isDuplicating
+                      }
+                      onOpenEdit={(row, filterRow) =>
+                        panel.openPanel({ mode: "edit", row, filterRow })
+                      }
+                      onCreateNew={(filterRow) =>
+                        panel.openPanel({
+                          mode: "create",
+                          filterRowId: filterRow.id,
+                          filterRowProductName: filterRow.productName,
+                          filterRowStockUnitAbbrev: filterRow.stockUnitAbbrev,
+                        })
+                      }
+                      onDuplicate={(row) => section.duplicateStagedRow(row)}
+                      onToggleSelection={section.toggleSelection}
+                    />
                   ) : (
                     <UnsavedParentMessage>
                       Save this filter row to add staged inventory rows.

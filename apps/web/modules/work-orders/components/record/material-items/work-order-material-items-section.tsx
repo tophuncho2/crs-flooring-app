@@ -242,15 +242,13 @@ export function WorkOrderMaterialItemsSection({
                       Save this material item to add cut logs.
                     </UnsavedParentMessage>
                   ) : (
-                    <div className="px-4 py-3">
-                      <WorkOrderCutLogRow
-                        workOrderItemId={row.id}
-                        serverRows={cutLogs}
-                        onOpenEdit={handleOpenEdit}
-                        onCreateNew={handleCreateNew}
-                        isSectionBusy={sectionBusy}
-                      />
-                    </div>
+                    <WorkOrderCutLogRow
+                      workOrderItemId={row.id}
+                      serverRows={cutLogs}
+                      onOpenEdit={handleOpenEdit}
+                      onCreateNew={handleCreateNew}
+                      isSectionBusy={sectionBusy}
+                    />
                   )
                 ) : null}
               </ExpandableRow>

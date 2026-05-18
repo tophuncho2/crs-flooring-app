@@ -11,19 +11,12 @@ import { GridHeader } from "../grid-header"
 import { buildGridTemplateColumns } from "../internals/build-grid-template"
 
 // ---------- Accent tone palette -------------------------------------------
-// A handful of curated tones for the encasing group border + ambient bg tint.
+// A handful of curated tones for the encasing group border + label/badge.
 // Default "sky" reads as informational; consumers can shift the palette per
 // parent context (e.g. "rose" for a destructive grouping).
 
 type AccentTone = "sky" | "amber" | "emerald" | "rose" | "neutral"
 
-const ACCENT_BG_CLASS_NAME: Record<AccentTone, string> = {
-  sky: "bg-sky-500/[0.025]",
-  amber: "bg-amber-500/[0.025]",
-  emerald: "bg-emerald-500/[0.025]",
-  rose: "bg-rose-500/[0.025]",
-  neutral: "bg-[var(--panel-border)]/[0.04]",
-}
 const ACCENT_LABEL_CLASS_NAME: Record<AccentTone, string> = {
   sky: "text-sky-700/85",
   amber: "text-amber-800/85",
@@ -97,7 +90,7 @@ export type ExpandableRowProps<
   /** Shown after children when expanded — typically an "Add row" affordance. */
   footer?: ReactNode
 
-  /** Accent tone for the encasing group border, ambient bg, label, and badge. Default: "sky". */
+  /** Accent tone for the encasing group border, label, and badge. Default: "sky". */
   accentTone?: AccentTone
 }
 
@@ -109,7 +102,6 @@ export type ExpandableRowProps<
  *
  *   ┌─ encasing accent border ──────────────────────────────────────────┐
  *   │ [parent row]                                                      │
- *   │ children area (subtle ambient tint)                               │
  *   │   <CHILD GROUP LABEL>          [count]                            │
  *   │   <child column header (optional)>                                │
  *   │   <child rows — ScopedRow instances>                              │
@@ -118,12 +110,14 @@ export type ExpandableRowProps<
  *   └───────────────────────────────────────────────────────────────────┘
  *
  * - **Encasing accent border** wraps the parent row + its children as one
- *   visual group. Rendered as `border-t border-l border-r` so vertically
- *   adjacent groups share a single 1px line (each group's top doubles as the
+ *   visual group. Rendered as `border-t-2 border-l-2 border-r-2` so vertically
+ *   adjacent groups share a single line (each group's top doubles as the
  *   previous group's bottom). The outer Grid panel's own border closes off
  *   the last group's bottom edge.
- * - **Ambient tint** sits behind the children area; child rows render with
- *   their own tone on top, producing a layered "card within bay" effect.
+ * - **No inner padding or ambient tint** — children render flush against the
+ *   encasing border. Consumers that want padding around their child sub-grid
+ *   own that padding themselves; the primitive stays minimal so the sub-grid
+ *   panel can fill the encased space edge-to-edge.
  * - **Group label + count** are rendered in a tasteful header strip with the
  *   accent tone, replacing the previous flat divider.
  * - **Child column header** (opt-in via `childLayout`) lets children with a
@@ -201,12 +195,7 @@ export function ExpandableRow<
         ariaLabel={parentAriaLabel}
       />
       {expanded ? (
-        <div
-          className={joinClassNames(
-            "relative",
-            ACCENT_BG_CLASS_NAME[accentTone],
-          )}
-        >
+        <>
           {childGroupLabel ? (
             <div className="flex items-center gap-2 border-b border-[var(--panel-border)]/45 bg-[var(--panel-background)]/50 px-4 py-2">
               <span
@@ -251,7 +240,7 @@ export function ExpandableRow<
               {footer}
             </div>
           ) : null}
-        </div>
+        </>
       ) : null}
     </div>
   )
