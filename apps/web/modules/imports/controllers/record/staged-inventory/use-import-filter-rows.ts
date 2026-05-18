@@ -276,9 +276,9 @@ export function useImportFilterRows({
   })
 
   const deleteStagedRow = useCallback(
-    async (row: StagedInventoryRow) => {
+    (row: StagedInventoryRow) => {
       if (row.status !== "DRAFT") return
-      await deleteMutation.mutateAsync({ row })
+      deleteMutation.mutate({ row })
     },
     [deleteMutation],
   )

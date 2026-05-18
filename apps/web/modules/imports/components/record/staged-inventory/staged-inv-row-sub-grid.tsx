@@ -48,7 +48,7 @@ export type StagedInvRowSubGridProps = {
   onOpenEdit: (row: StagedInventoryRow, filterRow: StagedInventoryFilterRow) => void
   onCreateNew: (filterRow: StagedInventoryFilterRow) => void
   onDuplicate: (row: StagedInventoryRow) => void
-  onDelete: (row: StagedInventoryRow) => void | Promise<void>
+  onDelete: (row: StagedInventoryRow) => void
   onToggleSelection: (rowId: string) => void
 }
 
@@ -130,7 +130,7 @@ export function StagedInvRowSubGrid({
           <StagedRowDeleteButton
             isDraft={isDraft}
             isSectionBusy={isSectionBusy}
-            onConfirm={() => onDelete(row)}
+            onClick={() => onDelete(row)}
           />
         </div>
       )

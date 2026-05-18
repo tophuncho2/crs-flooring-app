@@ -1,30 +1,26 @@
 "use client"
 
-import { ConfirmActionButton } from "@/components/features/confirm-action"
+import { RowActionButton } from "@/components/cells/row-action-button"
 
 export type StagedRowDeleteButtonProps = {
   isDraft: boolean
   isSectionBusy: boolean
-  onConfirm: () => void | Promise<void>
+  onClick: () => void
 }
 
 export function StagedRowDeleteButton({
   isDraft,
   isSectionBusy,
-  onConfirm,
+  onClick,
 }: StagedRowDeleteButtonProps) {
   return (
-    <ConfirmActionButton
+    <RowActionButton
       label={<TrashIcon />}
       ariaLabel="Delete row"
-      buttonTone="destructive"
+      tone="destructive"
       editable={isDraft && !isSectionBusy}
       title={isDraft ? "Delete this row" : "Only draft rows can be deleted"}
-      confirmTitle="Delete this staged row?"
-      confirmMessage="This cannot be undone."
-      confirmLabel="Delete"
-      pendingLabel="Deleting…"
-      onConfirm={onConfirm}
+      onClick={onClick}
     />
   )
 }
