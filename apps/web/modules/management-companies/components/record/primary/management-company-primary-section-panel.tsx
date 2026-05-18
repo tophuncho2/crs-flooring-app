@@ -3,24 +3,18 @@
 import { RecordMultiSectionPanel } from "@/components/panels/record-multi-section-panel"
 import { RecordPrimarySectionInstance } from "@/components/sections/panels/record-primary-section-instance"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
-import { buildDeleteConfirmationMessage } from "@/components/dialogs/confirm-delete"
 import { normalizeAddressState } from "@builders/domain"
-import { useManagementCompanyPrimarySection } from "@/modules/management-companies/controllers/record/primary/use-management-company-primary-section"
+import type { useManagementCompanyPrimarySection } from "@/modules/management-companies/controllers/record/primary/use-management-company-primary-section"
 import { ManagementCompanyPrimaryFieldsSection } from "./management-company-primary-fields-section"
-import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
+import type { ManagementCompanyForm } from "@builders/domain"
 
 export function ManagementCompanyPrimarySectionPanel({
   page,
-  company,
+  controller,
 }: {
   page: RecordDetailClientScaffoldContext
-  company: ManagementCompanyDetail
+  controller: ReturnType<typeof useManagementCompanyPrimarySection>
 }) {
-  const controller = useManagementCompanyPrimarySection({
-    page,
-    company,
-  })
-
   return (
     <RecordMultiSectionPanel
       page={page}
@@ -62,11 +56,6 @@ export function ManagementCompanyPrimarySectionPanel({
           ),
         },
       ]}
-      footer={{
-        deleteLabel: "Delete Company",
-        deleteConfirmMessage: buildDeleteConfirmationMessage("management company"),
-        onDelete: () => void controller.deleteRecord(),
-      }}
     />
   )
 }
