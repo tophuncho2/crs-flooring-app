@@ -9,10 +9,9 @@ export type ImportLinkState = {
 
 /**
  * Deletion is blocked whenever an import has any downstream rows — staged
- * drafts OR live inventory. The FK on live inventory is `Restrict` at the
- * schema level, so this predicate mirrors that DB-side invariant and also
- * covers staged rows (whose schema FK is `Cascade`, but the domain predicate
- * supersedes the cascade — delete is rejected before it reaches the DB).
+ * drafts OR live inventory. Both FKs (staged inventory rows and live
+ * inventory) are `Restrict` at the schema level, so this predicate mirrors
+ * that DB-side invariant and rejects the delete before it reaches the DB.
  */
 export function isImportDeleteBlocked(state: ImportLinkState): boolean {
   return state.stagedInventoryRowCount > 0 || state.liveInventoryRowCount > 0
