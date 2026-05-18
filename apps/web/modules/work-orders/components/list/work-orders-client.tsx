@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { SectionHeader } from "@/components/headers"
 import { PaginateControls } from "@/components/features/paginate"
 import {
   ListToolbar,
@@ -210,8 +209,6 @@ export default function WorkOrdersClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader title="Work Orders" />
-
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
             {message ? (
@@ -227,74 +224,82 @@ export default function WorkOrdersClient({
           </div>
         ) : null}
 
-        <ListToolbar>
-          {/* Search + (Clear all | row count) */}
-          <ListToolbarCell>
-            <WorkOrdersListSearch
-              query={searchQuery}
-              onQueryChange={onSearchQueryChange}
-            />
-            <ListToolbarBottomRow
-              left={<WorkOrdersClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-              right={<WorkOrdersRowCount count={rows.length} total={total} />}
-            />
-          </ListToolbarCell>
+        <div>
+          <div className="px-4 pt-3">
+            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
+              Work Orders
+            </span>
+          </div>
+          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
+              the encased card's top edge (rounded-tl-none seam). */}
+          <ListToolbar className="pt-0">
+            {/* Search + (Clear all | row count) — encased card attached to the tab above */}
+            <ListToolbarCell>
+              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
+                <WorkOrdersListSearch
+                  query={searchQuery}
+                  onQueryChange={onSearchQueryChange}
+                />
+                <ListToolbarBottomRow
+                  left={<WorkOrdersClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+                  right={<WorkOrdersRowCount count={rows.length} total={total} />}
+                />
+              </div>
+            </ListToolbarCell>
 
-          {/* Mgmt Co → Property: property is mgmt-co-scoped (mgmt-co change
-              cascades the property + template chip clears via
-              handleMgmtCoChange). */}
-          <ListToolbarCell>
-            <MgmtCoFilterChip
-              value={selectedMgmtCoId}
-              selectedLabel={mgmtCoLabel}
-              onChange={handleMgmtCoChange}
-              initialOptions={initialMgmtCoOptions}
-            />
-            <PropertyFilterChip
-              value={selectedPropertyId}
-              selectedLabel={propertyLabel}
-              managementCompanyId={selectedMgmtCoId}
-              onChange={handlePropertyChange}
-              initialOptions={initialPropertyOptions}
-            />
-          </ListToolbarCell>
-
-          {/* Warehouse (independent) + Template (property-scoped). Template
-              picker is disabled until a property is picked; property change
-              cascades the template chip clear via handlePropertyChange. */}
-          <ListToolbarCell>
-            <WarehouseFilterChip
-              value={selectedWarehouseId}
-              selectedLabel={warehouseLabel}
-              onChange={handleWarehouseChange}
-              initialOptions={initialWarehouseOptions}
-            />
-            <TemplateFilterChip
-              value={selectedTemplateId}
-              selectedLabel={templateLabel}
-              propertyId={selectedPropertyId}
-              onChange={handleTemplateChange}
-              initialOptions={initialTemplateOptions}
-            />
-          </ListToolbarCell>
-
-          {/* Status: 2-row-tall card holding the complete segmented control. */}
-          <ListToolbarCell>
-            <ListToolbarTallCard label="Status">
-              <CompleteSegmentedControl
-                value={completeValue}
-                onChange={handleCompleteChange}
+            {/* Mgmt Co → Property: property is mgmt-co-scoped (mgmt-co change
+                cascades the property + template chip clears via
+                handleMgmtCoChange). */}
+            <ListToolbarCell>
+              <MgmtCoFilterChip
+                value={selectedMgmtCoId}
+                selectedLabel={mgmtCoLabel}
+                onChange={handleMgmtCoChange}
+                initialOptions={initialMgmtCoOptions}
               />
-            </ListToolbarTallCard>
-          </ListToolbarCell>
+              <PropertyFilterChip
+                value={selectedPropertyId}
+                selectedLabel={propertyLabel}
+                managementCompanyId={selectedMgmtCoId}
+                onChange={handlePropertyChange}
+                initialOptions={initialPropertyOptions}
+              />
+            </ListToolbarCell>
 
-          {/* Right-anchored action: + Work Order occupies the top row of a
-              single right-anchored cell; the bottom row is empty (no
-              secondary create flow). */}
-          <ListToolbarCell className="ml-auto">
-            <AddWorkOrderButton onClick={() => openCreate()} />
-          </ListToolbarCell>
-        </ListToolbar>
+            {/* Warehouse (independent) + Template (property-scoped). Template
+                picker is disabled until a property is picked; property change
+                cascades the template chip clear via handlePropertyChange. */}
+            <ListToolbarCell>
+              <WarehouseFilterChip
+                value={selectedWarehouseId}
+                selectedLabel={warehouseLabel}
+                onChange={handleWarehouseChange}
+                initialOptions={initialWarehouseOptions}
+              />
+              <TemplateFilterChip
+                value={selectedTemplateId}
+                selectedLabel={templateLabel}
+                propertyId={selectedPropertyId}
+                onChange={handleTemplateChange}
+                initialOptions={initialTemplateOptions}
+              />
+            </ListToolbarCell>
+
+            {/* Status: 2-row-tall card holding the complete segmented control. */}
+            <ListToolbarCell>
+              <ListToolbarTallCard label="Status">
+                <CompleteSegmentedControl
+                  value={completeValue}
+                  onChange={handleCompleteChange}
+                />
+              </ListToolbarTallCard>
+            </ListToolbarCell>
+
+            <ListToolbarCell className="ml-auto">
+              <AddWorkOrderButton onClick={() => openCreate()} />
+            </ListToolbarCell>
+          </ListToolbar>
+        </div>
 
         <WorkOrdersTable
           rows={rows}

@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { SectionHeader } from "@/components/headers"
 import { PaginateControls } from "@/components/features/paginate"
 import {
   ListToolbar,
@@ -137,8 +136,6 @@ export default function TemplatesClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader title="Templates" />
-
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
             {message ? (
@@ -154,43 +151,51 @@ export default function TemplatesClient({
           </div>
         ) : null}
 
-        <ListToolbar>
-          {/* Search + (Clear all | row count) */}
-          <ListToolbarCell>
-            <TemplatesListSearch
-              query={searchQuery}
-              onQueryChange={onSearchQueryChange}
-            />
-            <ListToolbarBottomRow
-              left={<TemplatesClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-              right={<TemplatesRowCount count={rows.length} total={total} />}
-            />
-          </ListToolbarCell>
+        <div>
+          <div className="px-4 pt-3">
+            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
+              Templates
+            </span>
+          </div>
+          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
+              the encased card's top edge (rounded-tl-none seam). */}
+          <ListToolbar className="pt-0">
+            {/* Search + (Clear all | row count) — encased card attached to the tab above */}
+            <ListToolbarCell>
+              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
+                <TemplatesListSearch
+                  query={searchQuery}
+                  onQueryChange={onSearchQueryChange}
+                />
+                <ListToolbarBottomRow
+                  left={<TemplatesClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+                  right={<TemplatesRowCount count={rows.length} total={total} />}
+                />
+              </div>
+            </ListToolbarCell>
 
-          {/* Management Company → Property: property is MC-scoped (MC change
-              cascades the property chip clear via handleManagementCompanyChange). */}
-          <ListToolbarCell>
-            <ManagementCompanyFilterChip
-              value={selectedManagementCompanyId}
-              selectedLabel={managementCompanyLabel}
-              onChange={handleManagementCompanyChange}
-              initialOptions={initialManagementCompanyOptions}
-            />
-            <PropertyFilterChip
-              value={selectedPropertyId}
-              selectedLabel={propertyLabel}
-              managementCompanyId={selectedManagementCompanyId}
-              onChange={handlePropertyChange}
-            />
-          </ListToolbarCell>
+            {/* Management Company → Property: property is MC-scoped (MC change
+                cascades the property chip clear via handleManagementCompanyChange). */}
+            <ListToolbarCell>
+              <ManagementCompanyFilterChip
+                value={selectedManagementCompanyId}
+                selectedLabel={managementCompanyLabel}
+                onChange={handleManagementCompanyChange}
+                initialOptions={initialManagementCompanyOptions}
+              />
+              <PropertyFilterChip
+                value={selectedPropertyId}
+                selectedLabel={propertyLabel}
+                managementCompanyId={selectedManagementCompanyId}
+                onChange={handlePropertyChange}
+              />
+            </ListToolbarCell>
 
-          {/* Right-anchored action: + Template occupies the top row of a
-              single right-anchored cell; the bottom row is empty (no
-              secondary create flow). */}
-          <ListToolbarCell className="ml-auto">
-            <AddTemplateButton onClick={() => openCreate()} />
-          </ListToolbarCell>
-        </ListToolbar>
+            <ListToolbarCell className="ml-auto">
+              <AddTemplateButton onClick={() => openCreate()} />
+            </ListToolbarCell>
+          </ListToolbar>
+        </div>
 
         <TemplatesTable
           rows={rows}
