@@ -72,6 +72,12 @@ function WorkOrderCreatePanel({
               [field]: value,
             }))
           }}
+          onFieldsChange={(patch) => {
+            controller.primarySection.setLocalValue((previous) => ({
+              ...previous,
+              ...patch,
+            }))
+          }}
         />
       </RecordSingleSectionPanel>
       <RecordPanelFooter onClose={page.closePage} />
