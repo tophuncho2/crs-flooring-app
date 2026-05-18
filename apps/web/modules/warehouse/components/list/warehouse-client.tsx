@@ -72,12 +72,16 @@ export default function WarehouseClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="flex flex-col gap-3 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <ListToolbar>
-          <ListToolbarCell>
-            <div className="flex flex-col">
-              <span className="self-start rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-                Warehouse
-              </span>
+        <div>
+          <div className="px-4 pt-3">
+            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
+              Warehouse
+            </span>
+          </div>
+          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
+              the encased card's top edge (rounded-tl-none seam). */}
+          <ListToolbar className="pt-0">
+            <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <WarehouseListSearch query={searchQuery} onQueryChange={onSearchQueryChange} />
                 <ListToolbarBottomRow
@@ -85,16 +89,13 @@ export default function WarehouseClient({
                   right={<WarehouseRowCount count={rows.length} total={total} />}
                 />
               </div>
-            </div>
-          </ListToolbarCell>
+            </ListToolbarCell>
 
-          {/* Right-anchored action: + Warehouse occupies the top row of a
-              single right-anchored cell; the bottom row is empty (warehouse
-              has no secondary create flow like properties' + Hub). */}
-          <ListToolbarCell className="ml-auto">
-            <AddWarehouseButton onClick={() => sidePanel.openCreate()} />
-          </ListToolbarCell>
-        </ListToolbar>
+            <ListToolbarCell className="ml-auto">
+              <AddWarehouseButton onClick={() => sidePanel.openCreate()} />
+            </ListToolbarCell>
+          </ListToolbar>
+        </div>
 
         <WarehouseTable
           rows={rows}

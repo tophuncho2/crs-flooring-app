@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { SectionHeader } from "@/components/headers"
 import { PaginateControls } from "@/components/features/paginate"
 import {
   ListToolbar,
@@ -264,8 +263,6 @@ export default function InventoryClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader title="Inventory" />
-
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
             {message ? (
@@ -281,74 +278,85 @@ export default function InventoryClient({
           </div>
         ) : null}
 
-        <ListToolbar>
-          {/* Search + (Clear all | row count) */}
-          <ListToolbarCell>
-            <InventoryListSearch
-              query={searchQuery}
-              onQueryChange={onSearchQueryChange}
-            />
-            <ListToolbarBottomRow
-              left={<InventoryClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-              right={<InventoryRowCount count={rows.length} total={total} />}
-            />
-          </ListToolbarCell>
+        <div>
+          <div className="px-4 pt-3">
+            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
+              Inventory
+            </span>
+          </div>
+          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
+              the encased card's top edge (rounded-tl-none seam). */}
+          <ListToolbar className="pt-0">
+            {/* Search + (Clear all | row count) — encased card attached to the tab above */}
+            <ListToolbarCell>
+              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
+                <InventoryListSearch
+                  query={searchQuery}
+                  onQueryChange={onSearchQueryChange}
+                />
+                <ListToolbarBottomRow
+                  left={<InventoryClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+                  right={<InventoryRowCount count={rows.length} total={total} />}
+                />
+              </div>
+            </ListToolbarCell>
 
-          {/* Warehouse → Location: location is warehouse-scoped (picker is
-              disabled until a warehouse is picked; warehouse change cascades
-              the location chip clear via handleWarehouseChange). */}
-          <ListToolbarCell>
-            <WarehouseFilterChip
-              value={selectedWarehouseId}
-              selectedLabel={warehouseLabel}
-              onChange={handleWarehouseChange}
-              initialOptions={initialWarehouseOptions}
-            />
-            <LocationPicker
-              value={locationValue || null}
-              onChange={handleLocationChange}
-              warehouseId={selectedWarehouseId}
-              placeholder="Location"
-              disabledPlaceholder="Select warehouse first"
-              ariaLabel="Filter inventory by location"
-            />
-          </ListToolbarCell>
-
-          {/* Category → Product: product is category-scoped (category change
-              cascades the product chip clear via handleCategoryChange). */}
-          <ListToolbarCell>
-            <CategoryFilterChip
-              value={selectedCategoryId}
-              selectedLabel={categoryLabel}
-              onChange={handleCategoryChange}
-              initialOptions={initialCategoryOptions}
-            />
-            <ProductFilterChip
-              value={selectedProductId}
-              selectedLabel={productLabel}
-              categoryId={selectedCategoryId}
-              onChange={handleProductChange}
-            />
-          </ListToolbarCell>
-
-          {/* Status: 2-row-tall card holding the archive segmented control. */}
-          <ListToolbarCell>
-            <ListToolbarTallCard label="Status">
-              <ArchiveSegmentedControl
-                value={isArchivedValue}
-                onChange={handleArchivedChange}
+            {/* Warehouse → Location: location is warehouse-scoped (picker is
+                disabled until a warehouse is picked; warehouse change cascades
+                the location chip clear via handleWarehouseChange). */}
+            <ListToolbarCell>
+              <WarehouseFilterChip
+                value={selectedWarehouseId}
+                selectedLabel={warehouseLabel}
+                onChange={handleWarehouseChange}
+                initialOptions={initialWarehouseOptions}
               />
-            </ListToolbarTallCard>
-          </ListToolbarCell>
+              <LocationPicker
+                value={locationValue || null}
+                onChange={handleLocationChange}
+                warehouseId={selectedWarehouseId}
+                placeholder="Location"
+                disabledPlaceholder="Select warehouse first"
+                ariaLabel="Filter inventory by location"
+              />
+            </ListToolbarCell>
 
-          {/* Import # → Purchase order: UI placeholders. The chip visuals
-              match the closed-state of `AsyncRichDropdown`; queries get
-              wired in a follow-up. */}
-          <ListToolbarCell>
-            <ImportNumberFilterChip />
-            <PurchaseOrderFilterChip />
-          </ListToolbarCell>
-        </ListToolbar>
+            {/* Category → Product: product is category-scoped (category change
+                cascades the product chip clear via handleCategoryChange). */}
+            <ListToolbarCell>
+              <CategoryFilterChip
+                value={selectedCategoryId}
+                selectedLabel={categoryLabel}
+                onChange={handleCategoryChange}
+                initialOptions={initialCategoryOptions}
+              />
+              <ProductFilterChip
+                value={selectedProductId}
+                selectedLabel={productLabel}
+                categoryId={selectedCategoryId}
+                onChange={handleProductChange}
+              />
+            </ListToolbarCell>
+
+            {/* Status: 2-row-tall card holding the archive segmented control. */}
+            <ListToolbarCell>
+              <ListToolbarTallCard label="Status">
+                <ArchiveSegmentedControl
+                  value={isArchivedValue}
+                  onChange={handleArchivedChange}
+                />
+              </ListToolbarTallCard>
+            </ListToolbarCell>
+
+            {/* Import # → Purchase order: UI placeholders. The chip visuals
+                match the closed-state of `AsyncRichDropdown`; queries get
+                wired in a follow-up. */}
+            <ListToolbarCell>
+              <ImportNumberFilterChip />
+              <PurchaseOrderFilterChip />
+            </ListToolbarCell>
+          </ListToolbar>
+        </div>
 
         <InventoryTable
           rows={rows}
