@@ -144,6 +144,12 @@ export function useWarehouseSidePanel() {
     deleteMutation.mutate(open.warehouse)
   }, [open, isSaving, deleteMutation])
 
+  const discard = useCallback(() => {
+    if (isSaving) return
+    setForm(baseline)
+    setError(null)
+  }, [isSaving, baseline])
+
   const close = useCallback(() => {
     if (isSaving) return
     setOpen(null)
@@ -161,6 +167,7 @@ export function useWarehouseSidePanel() {
     close,
     setField,
     save,
+    discard,
     deleteWarehouse,
   }
 }

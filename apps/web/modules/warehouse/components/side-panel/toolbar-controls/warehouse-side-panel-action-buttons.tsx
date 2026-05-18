@@ -1,74 +1,47 @@
 "use client"
 
-const PRIMARY =
-  "rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
-const SECONDARY =
-  "rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:border-sky-500/45 disabled:cursor-not-allowed disabled:opacity-50"
-const DESTRUCTIVE =
-  "rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+import { SidePanelEditActionBar } from "@/components/side-panel-edit"
 
 export type WarehouseSidePanelActionButtonsProps = {
   mode: "create" | "edit"
   isDirty: boolean
   isSaving: boolean
   canSave: boolean
+  hasConflict?: boolean
   onSave: () => void
-  onClose: () => void
+  onDiscard: () => void
   onDelete: () => void
 }
 
 /**
- * Footer action strip for the warehouse side panel.
- *
- * Disabled rules:
- *   - Save: !canSave OR (edit mode && !isDirty) OR isSaving
- *   - Delete: edit mode only; hidden in create mode; disabled while isSaving
+ * Footer action strip for the warehouse side panel. Thin adapter over the
+ * shared `SidePanelEditActionBar` primitive — owns the create/edit label
+ * swap and hides Delete in create mode. Close is handled by the side panel's
+ * title bar (X / backdrop / Escape), so there is no Cancel button here.
  */
 export function WarehouseSidePanelActionButtons({
   mode,
   isDirty,
   isSaving,
   canSave,
+  hasConflict = false,
   onSave,
-  onClose,
+  onDiscard,
   onDelete,
 }: WarehouseSidePanelActionButtonsProps) {
-  const saveDisabled = isSaving || !canSave || (mode === "edit" && !isDirty)
+  const isCreate = mode === "create"
 
   return (
-    <div className="flex items-center justify-between gap-2">
-      <div className="flex items-center gap-2">
-        {mode === "edit" ? (
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={isSaving}
-            className={DESTRUCTIVE}
-          >
-            Delete
-          </button>
-        ) : null}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button type="button" onClick={onClose} disabled={isSaving} className={SECONDARY}>
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saveDisabled}
-          className={PRIMARY}
-        >
-          {isSaving
-            ? mode === "create"
-              ? "Creating…"
-              : "Saving…"
-            : mode === "create"
-              ? "Create"
-              : "Save"}
-        </button>
-      </div>
-    </div>
+    <SidePanelEditActionBar
+      isDirty={isCreate ? true : isDirty}
+      isSaving={isSaving}
+      hasConflict={hasConflict}
+      canSave={canSave}
+      onSave={onSave}
+      onDiscard={onDiscard}
+      onDelete={isCreate ? undefined : onDelete}
+      saveLabel={isCreate ? "Create" : "Save"}
+      savingLabel={isCreate ? "Creating…" : "Saving…"}
+    />
   )
 }

@@ -43,7 +43,7 @@ export function WarehouseSidePanel({ controller }: WarehouseSidePanelProps) {
           isSaving={controller.isSaving}
           canSave={controller.isValid}
           onSave={controller.save}
-          onClose={controller.close}
+          onDiscard={controller.discard}
           onDelete={controller.deleteWarehouse}
         />
       }
