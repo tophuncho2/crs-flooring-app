@@ -1,10 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, type ReactNode } from "react"
 import type { CutLogRow } from "@builders/domain"
-import { INVENTORY_CUT_LOG_LAYOUT, renderCutLogReadOnlyCell } from "@/modules/cut-logs"
+import { renderCutLogReadOnlyCell } from "@/modules/cut-logs"
 import { Grid, GridEmpty } from "@/components/grid"
 import { CutLogRowToolbar } from "./toolbar-controls"
+import { CutLogDuplicateButton } from "./row-controls/sub-controls"
+import { WORK_ORDER_CUT_LOG_LAYOUT } from "./work-order-cut-log-row-layout"
 
 export type WorkOrderCutLogRowProps = {
   workOrderItemId: string
@@ -13,6 +15,12 @@ export type WorkOrderCutLogRowProps = {
   onOpenEdit: (workOrderItemId: string, cutLog: CutLogRow) => void
   /** Open the edit panel in create mode for this WOMI. */
   onCreateNew: (workOrderItemId: string) => void
+  /**
+   * Open the create panel pre-seeded with the source row's inventory item.
+   * UI-only affordance — does not invoke a duplicate use case, so no
+   * inventory-balance recalculation runs until the operator saves.
+   */
+  onDuplicate: (workOrderItemId: string, cutLog: CutLogRow) => void
   /**
    * True when the parent material-items section is mid-save. Used to dim
    * the rows + disable the "+ Add Cut Log" button so the user can't open
@@ -32,19 +40,37 @@ export function WorkOrderCutLogRow({
   serverRows,
   onOpenEdit,
   onCreateNew,
+  onDuplicate,
   isSectionBusy,
 }: WorkOrderCutLogRowProps) {
   const rows = useMemo<CutLogRow[]>(() => [...serverRows], [serverRows])
 
   const renderCell = useMemo(() => renderCutLogReadOnlyCell({}), [])
 
+  function renderControl(
+    control: { key: string; kind: string },
+    row: CutLogRow,
+  ): ReactNode {
+    if (control.kind === "actions") {
+      return (
+        <CutLogDuplicateButton
+          isPending={row.status === "PENDING"}
+          isSectionBusy={isSectionBusy}
+          onClick={() => onDuplicate(workOrderItemId, row)}
+        />
+      )
+    }
+    return null
+  }
+
   return (
     <div className="space-y-3 border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
       <Grid<CutLogRow>
         rows={rows}
-        layout={INVENTORY_CUT_LOG_LAYOUT}
+        layout={WORK_ORDER_CUT_LOG_LAYOUT}
         empty={<GridEmpty>No cut logs yet.</GridEmpty>}
         renderCell={renderCell}
+        renderControl={renderControl}
         onRowClick={(row) => onOpenEdit(workOrderItemId, row)}
         getRowAriaLabel={(row) => `Edit cut log ${row.cutLogNumber}`}
       />

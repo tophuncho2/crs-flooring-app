@@ -81,8 +81,26 @@ export type CutLogPanelRow = CutLogRow & {
   workOrderItemProductLabel?: string | null
 }
 
+/**
+ * Optional prefill carried through create mode. Used by the work-orders
+ * cut-log "duplicate" affordance to open the create panel with an inventory
+ * item already selected (matching the source row). Carries the id + the two
+ * picker-trigger labels so the `InventoryPicker` renders with the selection
+ * visible immediately, before the user types into search.
+ */
+export type CutLogCreatePresetInventory = {
+  id: string
+  label: string
+  stockUnitAbbrev: string | null
+}
+
 export type CutLogEditPanelOpenSpec =
-  | { mode: "create"; workOrderItemId: string; productId: string }
+  | {
+      mode: "create"
+      workOrderItemId: string
+      productId: string
+      presetInventory?: CutLogCreatePresetInventory
+    }
   | { mode: "edit"; workOrderItemId: string | null; cutLog: CutLogPanelRow }
 
 function buildEditForm(cutLog: CutLogRow): CutLogEditForm {
@@ -164,11 +182,25 @@ export function useCutLogEditPanel({
       const next = buildEditForm(open.cutLog)
       setForm(next)
       setBaseline(next)
+      setLocal(EMPTY_LOCAL)
     } else {
-      setForm(EMPTY_FORM)
-      setBaseline(EMPTY_FORM)
+      // Create mode: seed inventoryId from the preset (if any) so a
+      // "duplicate" flow opens with the source row's inventory pre-selected.
+      // Baseline matches the seeded form so isDirty starts false — closing
+      // an unmodified prefilled panel doesn't trigger a discard guard.
+      const preset = open.presetInventory
+      const seeded: CutLogEditForm = {
+        ...EMPTY_FORM,
+        inventoryId: preset?.id ?? "",
+      }
+      setForm(seeded)
+      setBaseline(seeded)
+      setLocal({
+        locationFilter: "",
+        pickedInventoryLabel: preset?.label ?? "",
+        pickedInventoryStockUnitAbbrev: preset?.stockUnitAbbrev ?? "",
+      })
     }
-    setLocal(EMPTY_LOCAL)
     setError(null)
   }, [open])
 

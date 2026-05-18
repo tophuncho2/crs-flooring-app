@@ -52,7 +52,15 @@ export function RowActionButton({
   return (
     <button
       type="button"
-      onClick={isEnabled ? onClick : undefined}
+      onClick={(event) => {
+        // Row-action buttons live inside a clickable row. Without stopping
+        // propagation, clicking the action also fires the row's `onClick`
+        // (typically an "open detail panel" handler) — a confusing
+        // double-action. Stop unconditionally so disabled clicks don't
+        // bubble either.
+        event.stopPropagation()
+        if (isEnabled) onClick()
+      }}
       disabled={!isEnabled}
       aria-label={ariaLabel}
       title={title}

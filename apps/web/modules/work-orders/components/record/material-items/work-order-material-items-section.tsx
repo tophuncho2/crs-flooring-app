@@ -106,6 +106,28 @@ export function WorkOrderMaterialItemsSection({
     [cutLogPanel, section.items],
   )
 
+  const handleDuplicate = useCallback(
+    (workOrderItemId: string, cutLog: CutLogRow) => {
+      // UI-only "duplicate": open the create panel with the source row's
+      // inventory item pre-selected. No use case fires — the operator must
+      // still save the new cut log to materialize it (and only then does
+      // inventory-balance recalculation run, via the normal create path).
+      const productId =
+        section.items.find((item) => item.id === workOrderItemId)?.productId ?? ""
+      cutLogPanel.openPanel({
+        mode: "create",
+        workOrderItemId,
+        productId,
+        presetInventory: {
+          id: cutLog.inventoryId,
+          label: cutLog.inventoryItem,
+          stockUnitAbbrev: cutLog.stockUnitAbbrev,
+        },
+      })
+    },
+    [cutLogPanel, section.items],
+  )
+
   function renderParentCell(
     column: { key: string },
     item: WorkOrderMaterialItemLocal,
@@ -247,6 +269,7 @@ export function WorkOrderMaterialItemsSection({
                       serverRows={cutLogs}
                       onOpenEdit={handleOpenEdit}
                       onCreateNew={handleCreateNew}
+                      onDuplicate={handleDuplicate}
                       isSectionBusy={sectionBusy}
                     />
                   )

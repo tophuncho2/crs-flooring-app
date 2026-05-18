@@ -17,6 +17,7 @@ export {
 } from "./components/row"
 export {
   useCutLogEditPanel,
+  type CutLogCreatePresetInventory,
   type CutLogEditPanelController,
   type CutLogEditPanelOpenSpec,
   type CutLogEditPanelMode,
