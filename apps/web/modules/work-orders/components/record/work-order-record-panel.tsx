@@ -4,7 +4,6 @@ import { useCallback, useState } from "react"
 import { RecordMultiSectionPanel } from "@/components/panels/record-multi-section-panel"
 import { RecordPrimarySectionInstance } from "@/components/sections/panels/record-primary-section-instance"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
-import { buildDeleteConfirmationMessage } from "@/components/dialogs/confirm-delete"
 import type {
   CutLogRow,
   WorkOrderDetail,
@@ -14,6 +13,7 @@ import type { WorkOrderFileRow } from "@/modules/work-orders/data/queries"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
 import type { CutLogPanelPatch } from "@/modules/cut-logs"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
+import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
 import { WorkOrderFilesSection } from "./files/work-order-files-section"
 
@@ -35,6 +35,12 @@ export function WorkOrderRecordPanel({
   const [cutLogsByWorkOrderItemId, setCutLogsByWorkOrderItemId] = useState(
     initialCutLogsByWorkOrderItemId,
   )
+
+  const primaryActions = workOrderPrimarySectionActions({
+    onSave: () => void controller.primarySection.save(),
+    onDiscard: controller.primarySection.discard,
+    onDelete: () => void controller.deleteRecord(),
+  })
 
   const publishCutLogPatch = useCallback((patch: CutLogPanelPatch) => {
     // WO-side patches always carry the WOMI id (callers open the panel
@@ -78,10 +84,10 @@ export function WorkOrderRecordPanel({
               isDirty={controller.primarySection.isDirty}
               isSaving={controller.primarySection.isSaving}
               hasConflict={controller.primarySection.hasConflict}
-              onSave={() => void controller.primarySection.save()}
-              onDiscard={controller.primarySection.discard}
-              saveLabel="Save Work Order"
-              savingLabel="Saving Work Order..."
+              onSave={primaryActions.onSave}
+              onDiscard={primaryActions.onDiscard}
+              saveLabel={primaryActions.saveLabel}
+              savingLabel={primaryActions.savingLabel}
               showHeader={false}
             >
               <WorkOrderPrimaryFieldsSection
@@ -141,11 +147,7 @@ export function WorkOrderRecordPanel({
           ),
         },
       ]}
-      footer={{
-        deleteLabel: "Delete Work Order",
-        deleteConfirmMessage: buildDeleteConfirmationMessage("work order"),
-        onDelete: () => void controller.deleteRecord(),
-      }}
+      footer={primaryActions.delete}
     />
   )
 }
