@@ -13,8 +13,9 @@ const FINALIZE_BUTTON_CLASS_NAME = [
 
 /**
  * Cut-log-specific finalize button. No shared primitive: finalize is a
- * domain action unique to cut logs. Edit mode only; disabled unless the
- * row is PENDING, clean (no unsaved edits), and no mutation is in flight.
+ * domain action unique to cut logs. Renders ONLY when the row is PENDING
+ * — shares one toolbar slot with the void button, which takes over once
+ * the row is finalized. Within PENDING, disabled while saving or dirty.
  */
 export function CutLogEditFinalizeButton({
   controller,
@@ -27,14 +28,10 @@ export function CutLogEditFinalizeButton({
 
   const cutLog = controller.open?.mode === "edit" ? controller.open.cutLog : null
   const status = (cutLog?.status ?? null) as FlooringCutLogStatus | null
-  const isPending = status === "PENDING"
-  const isDisabled = controller.isSaving || !isPending || controller.isDirty
+  if (status !== "PENDING") return null
 
-  const title = controller.isDirty
-    ? "Save changes before finalizing"
-    : !isPending
-      ? "Only pending cut logs can be finalized"
-      : undefined
+  const isDisabled = controller.isSaving || controller.isDirty
+  const title = controller.isDirty ? "Save changes before finalizing" : undefined
 
   return (
     <button

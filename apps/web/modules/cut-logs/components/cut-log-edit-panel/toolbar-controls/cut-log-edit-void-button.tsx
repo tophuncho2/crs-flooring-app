@@ -14,9 +14,9 @@ const VOID_BUTTON_CLASS_NAME = [
 
 /**
  * Cut-log-specific void button. No shared primitive: void is a domain
- * action unique to cut logs (reverses a FINAL row or cancels a PENDING
- * one). Edit mode only; mirrors the data-layer rule: PENDING or unvoided
- * FINAL rows can be voided.
+ * action unique to cut logs (reverses a FINAL row). Renders ONLY when the
+ * row is FINAL and not already voided — shares one toolbar slot with the
+ * finalize button, which owns the PENDING state.
  */
 export function CutLogEditVoidButton({
   controller,
@@ -29,24 +29,13 @@ export function CutLogEditVoidButton({
 
   const cutLog = controller.open?.mode === "edit" ? controller.open.cutLog : null
   const status = (cutLog?.status ?? null) as FlooringCutLogStatus | null
-  const isPending = status === "PENDING"
-  const isFinal = status === "FINAL"
-  const isVoid = status === "VOID"
-  const isDisabled =
-    controller.isSaving || !(isPending || (isFinal && !cutLog?.void))
-
-  const title = isVoid
-    ? "Already voided"
-    : isDisabled && !controller.isSaving
-      ? "Void unavailable for this status"
-      : undefined
+  if (status !== "FINAL" || cutLog?.void) return null
 
   return (
     <button
       type="button"
       onClick={controller.voidCutLog}
-      disabled={isDisabled}
-      title={title}
+      disabled={controller.isSaving}
       className={VOID_BUTTON_CLASS_NAME}
     >
       Void
