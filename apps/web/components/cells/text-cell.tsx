@@ -1,5 +1,6 @@
 "use client"
 
+import { useId } from "react"
 import type { CellProps } from "./contracts/cell-base"
 
 const ALIGN_CLASS_NAME = {
@@ -35,20 +36,33 @@ export type TextCellProps = CellProps<string> & {
 /**
  * Plain text cell. Renders as `<input>` when `editable: true`; renders as a
  * styled `<span>` when `editable: false`. Honors `align` / `tone` / `invalid`.
+ *
+ * Anti-autofill: Chrome ignores `autocomplete="off"` once it classifies a
+ * group of inputs as an address / personal-name form, and sprays its profile
+ * across every nearby text input. We defeat that by giving each instance a
+ * unique `name` (via `useId`) so Chrome's name-pattern matcher can't classify
+ * the field, plus signals that suppress 1Password / LastPass dropdowns. Pass
+ * an explicit `autoComplete` if you want to opt back in.
  */
 export function TextCell(props: TextCellProps) {
   const align = props.align ?? "start"
   const tone = props.tone ?? "default"
+  const uniqueName = `text-${useId()}`
 
   if (props.editable) {
     return (
       <input
         type="text"
+        name={uniqueName}
         value={props.value}
         onChange={(event) => props.onChange?.(event.target.value)}
         placeholder={props.placeholder}
         maxLength={props.maxLength}
         autoComplete={props.autoComplete ?? "off"}
+        data-form-type="other"
+        data-1p-ignore
+        data-lpignore="true"
+        aria-autocomplete="none"
         aria-label={props.ariaLabel}
         aria-invalid={props.invalid || undefined}
         className={joinClassNames(

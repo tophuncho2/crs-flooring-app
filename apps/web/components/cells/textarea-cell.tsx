@@ -1,5 +1,6 @@
 "use client"
 
+import { useId } from "react"
 import type { CellProps } from "./contracts/cell-base"
 
 const ALIGN_CLASS_NAME = {
@@ -37,21 +38,31 @@ export type TextareaCellProps = CellProps<string> & {
 /**
  * Multi-line text cell. Renders as `<textarea>` when `editable: true`; renders
  * as a styled `<p>` preserving line breaks when `editable: false`.
+ *
+ * Anti-autofill: see TextCell — same defenses applied here so multi-line
+ * inputs (notes, instructions, etc.) also don't trigger Chrome's address
+ * heuristic or password-manager dropdowns.
  */
 export function TextareaCell(props: TextareaCellProps) {
   const align = props.align ?? "start"
   const tone = props.tone ?? "default"
   const rows = props.rows ?? 3
+  const uniqueName = `textarea-${useId()}`
 
   if (props.editable) {
     return (
       <textarea
+        name={uniqueName}
         value={props.value}
         onChange={(event) => props.onChange?.(event.target.value)}
         placeholder={props.placeholder}
         maxLength={props.maxLength}
         rows={rows}
         autoComplete={props.autoComplete ?? "off"}
+        data-form-type="other"
+        data-1p-ignore
+        data-lpignore="true"
+        aria-autocomplete="none"
         aria-label={props.ariaLabel}
         aria-invalid={props.invalid || undefined}
         className={joinClassNames(

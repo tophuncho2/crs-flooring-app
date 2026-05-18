@@ -1,5 +1,6 @@
 "use client"
 
+import { useId } from "react"
 import type { SearchContract } from "./contracts/search-contract"
 
 const INPUT_BASE_CLASS_NAME =
@@ -13,6 +14,13 @@ export type SearchControlProps = SearchContract & {
  * Controlled search input. Emits every keystroke through `onQueryChange` —
  * `debounceMs` is reserved on the contract; consumers can wrap with a
  * debounce hook if they need it.
+ *
+ * Anti-autofill: Chrome ignores `autocomplete="off"` once it classifies a
+ * page as an address form (e.g. side panels with street/city/state/postal
+ * fields), and sprays its address profile into every nearby text input —
+ * including this search bar. We defeat that by giving the input a unique
+ * `name` (via `useId`) so Chrome's pattern matcher can't classify it, and
+ * by setting `data-form-type="other"`.
  */
 export function SearchControl({
   query,
@@ -21,14 +29,20 @@ export function SearchControl({
   ariaLabel,
   className,
 }: SearchControlProps) {
+  const uniqueName = `search-${useId()}`
   return (
     <div className={["relative", className].filter(Boolean).join(" ")}>
       <input
         type="search"
+        name={uniqueName}
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
         placeholder={placeholder}
         autoComplete="off"
+        data-form-type="other"
+        data-1p-ignore
+        data-lpignore="true"
+        aria-autocomplete="none"
         aria-label={ariaLabel ?? placeholder}
         className={INPUT_BASE_CLASS_NAME}
       />
