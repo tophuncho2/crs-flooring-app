@@ -271,6 +271,7 @@ export function usePropertySidePanel() {
   return {
     open,
     mode,
+    recordId,
     form,
     managementCompanyLabel,
     isDirty,

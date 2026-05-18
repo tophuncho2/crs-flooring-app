@@ -16,6 +16,12 @@ export type SidePanelPreviewProps = {
   title?: ReactNode
   /** Accessible label for the dialog when no visible title is supplied. */
   ariaLabel?: string
+  /**
+   * Optional node rendered in the title row just before the close (X)
+   * button. Use for header-level affordances (e.g. an "Open Hub View"
+   * link) that should sit flush-right next to the close control.
+   */
+  titleEnd?: ReactNode
   /** Tailwind width class applied to the panel. Default `w-72`. */
   widthClassName?: string
   /**
@@ -60,6 +66,7 @@ export function SidePanelPreview({
   onClose,
   title,
   ariaLabel,
+  titleEnd,
   widthClassName = "w-72",
   stickyHeader,
   footer,
@@ -103,16 +110,19 @@ export function SidePanelPreview({
         ].join(" ")}
       >
         {title ? (
-          <div className="flex shrink-0 items-center justify-between border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--panel-border)] px-4 py-3">
             <div className="text-sm font-semibold text-[var(--foreground)]">{title}</div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="flex h-7 w-7 items-center justify-center rounded text-[var(--foreground)]/65 transition hover:bg-[var(--panel-hover)]"
-            >
-              <X size={14} />
-            </button>
+            <div className="flex items-center gap-2">
+              {titleEnd}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="flex h-7 w-7 items-center justify-center rounded text-[var(--foreground)]/65 transition hover:bg-[var(--panel-hover)]"
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
         ) : null}
 

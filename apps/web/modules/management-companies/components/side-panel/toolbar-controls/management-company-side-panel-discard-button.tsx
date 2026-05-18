@@ -1,7 +1,7 @@
 "use client"
 
 import { SidePanelEditDiscardButton } from "@/components/side-panel-edit"
-import type { ManagementCompanySidePanelController } from "@/modules/management-companies/controllers/use-management-company-side-panel"
+import type { ManagementCompanySidePanelController } from "@/modules/management-companies/controllers/list/use-management-company-side-panel"
 
 export function ManagementCompanySidePanelDiscardButton({
   controller,

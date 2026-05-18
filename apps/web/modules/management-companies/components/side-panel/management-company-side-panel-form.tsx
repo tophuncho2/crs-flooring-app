@@ -4,7 +4,7 @@ import { normalizeAddressState, type ManagementCompanyForm } from "@builders/dom
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField } from "@/components/fields"
 import { TextCell } from "@/components/cells"
-import type { ManagementCompanySidePanelController } from "@/modules/management-companies/controllers/use-management-company-side-panel"
+import type { ManagementCompanySidePanelController } from "@/modules/management-companies/controllers/list/use-management-company-side-panel"
 
 export function ManagementCompanySidePanelForm({
   controller,

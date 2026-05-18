@@ -5,11 +5,11 @@ import { RecordPrimarySectionInstance } from "@/components/sections/panels/recor
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import { buildDeleteConfirmationMessage } from "@/components/dialogs/confirm-delete"
 import { normalizeAddressState } from "@builders/domain"
-import { useManagementCompanyPrimarySection } from "@/modules/management-companies/controllers/use-management-company-primary-section"
+import { useManagementCompanyPrimarySection } from "@/modules/management-companies/controllers/record/primary/use-management-company-primary-section"
 import { ManagementCompanyPrimaryFieldsSection } from "./management-company-primary-fields-section"
 import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
 
-export function ManagementCompanyRecordPanel({
+export function ManagementCompanyPrimarySectionPanel({
   page,
   company,
 }: {

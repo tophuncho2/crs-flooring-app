@@ -19,8 +19,8 @@ import {
   MANAGEMENT_COMPANIES_LIST_QUERY_KEY,
   listManagementCompaniesRequest,
 } from "@/modules/management-companies/data/list-management-companies-request"
-import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/use-management-companies-list-controller"
-import { useManagementCompanySidePanel } from "@/modules/management-companies/controllers/use-management-company-side-panel"
+import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/list/use-management-companies-list-controller"
+import { useManagementCompanySidePanel } from "@/modules/management-companies/controllers/list/use-management-company-side-panel"
 import { ManagementCompanySidePanel } from "@/modules/management-companies/components/side-panel"
 import { ManagementCompaniesTable } from "./management-companies-table"
 import { AddCompanyButton } from "./toolbar-controls/add-company-button"

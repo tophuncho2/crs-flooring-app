@@ -4,6 +4,7 @@ import { SidePanelPreview } from "@/components/side-panel-preview"
 import type { PropertySidePanelController } from "@/modules/properties/controllers/use-property-side-panel"
 import { PropertySidePanelDeleteButton } from "./toolbar-controls/property-side-panel-delete-button"
 import { PropertySidePanelDiscardButton } from "./toolbar-controls/property-side-panel-discard-button"
+import { PropertySidePanelHubViewButton } from "./toolbar-controls/property-side-panel-hub-view-button"
 import { PropertySidePanelSaveButton } from "./toolbar-controls/property-side-panel-save-button"
 import { PropertySidePanelStatusPill } from "./toolbar-controls/property-side-panel-status-pill"
 import { PropertySidePanelForm } from "./property-side-panel-form"
@@ -37,6 +38,7 @@ export function PropertySidePanel({ controller }: PropertySidePanelProps) {
       onClose={close}
       title={title}
       widthClassName="w-[34rem]"
+      titleEnd={<PropertySidePanelHubViewButton controller={controller} />}
       footer={
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">

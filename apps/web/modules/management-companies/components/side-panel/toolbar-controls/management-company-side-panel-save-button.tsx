@@ -4,7 +4,7 @@ import { SidePanelEditSaveButton } from "@/components/side-panel-edit"
 import type {
   ManagementCompanySidePanelController,
   ManagementCompanySidePanelMode,
-} from "@/modules/management-companies/controllers/use-management-company-side-panel"
+} from "@/modules/management-companies/controllers/list/use-management-company-side-panel"
 
 export function ManagementCompanySidePanelSaveButton({
   controller,

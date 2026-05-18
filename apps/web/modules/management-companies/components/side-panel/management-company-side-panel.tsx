@@ -1,9 +1,10 @@
 "use client"
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
-import type { ManagementCompanySidePanelController } from "@/modules/management-companies/controllers/use-management-company-side-panel"
+import type { ManagementCompanySidePanelController } from "@/modules/management-companies/controllers/list/use-management-company-side-panel"
 import { ManagementCompanySidePanelDeleteButton } from "./toolbar-controls/management-company-side-panel-delete-button"
 import { ManagementCompanySidePanelDiscardButton } from "./toolbar-controls/management-company-side-panel-discard-button"
+import { ManagementCompanySidePanelHubViewButton } from "./toolbar-controls/management-company-side-panel-hub-view-button"
 import { ManagementCompanySidePanelSaveButton } from "./toolbar-controls/management-company-side-panel-save-button"
 import { ManagementCompanySidePanelStatusPill } from "./toolbar-controls/management-company-side-panel-status-pill"
 import { ManagementCompanySidePanelForm } from "./management-company-side-panel-form"
@@ -37,6 +38,7 @@ export function ManagementCompanySidePanel({ controller }: ManagementCompanySide
       onClose={close}
       title={title}
       widthClassName="w-[34rem]"
+      titleEnd={<ManagementCompanySidePanelHubViewButton controller={controller} />}
       footer={
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">

@@ -9,7 +9,7 @@ import { useSingleSectionCreateController } from "@/controllers/record/use-singl
 import { buildRecordDetailHref } from "@/hooks/navigation/routes"
 import { createManagementCompanyRequest } from "@/modules/management-companies/data/mutations"
 import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
-import { ManagementCompanyPrimaryFieldsSection } from "./management-company-primary-fields-section"
+import { ManagementCompanyPrimaryFieldsSection } from "./primary/management-company-primary-fields-section"
 
 const EMPTY_MANAGEMENT_COMPANY: ManagementCompanyDetail = {
   id: "new",
