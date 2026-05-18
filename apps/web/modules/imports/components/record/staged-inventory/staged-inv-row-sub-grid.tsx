@@ -86,6 +86,8 @@ export function StagedInvRowSubGrid({
     switch (column.key) {
       case "status":
         return <StatusBadge tone={statusTone(row.status)}>{statusLabel(row.status)}</StatusBadge>
+      case "product":
+        return row.productName || "—"
       case "rollNumber":
         return row.rollNumber ? `${row.rollPrefix}${row.rollNumber}` : "—"
       case "startingStock":

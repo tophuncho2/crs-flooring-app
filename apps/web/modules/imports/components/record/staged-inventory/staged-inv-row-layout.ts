@@ -12,14 +12,15 @@ export type StagedInvGridRow = {
  * row opens it. QUEUED / IMPORTED rows stay in the grid as
  * non-interactive display.
  *
- * Column order — status leftmost (user-mandated): status → rollNumber
- * → startingStock → dyeLot → location → note. Trailing control holds
- * the inline duplicate + delete row-action buttons.
+ * Column order — status leftmost (user-mandated): status → product →
+ * rollNumber → startingStock → dyeLot → location → note. Trailing
+ * control holds the inline duplicate + delete row-action buttons.
  */
 export const STAGED_INV_ROW_LAYOUT: GridLayout<StagedInvGridRow> = {
   leadingControls: [{ key: "select", kind: "selection", width: 40 }],
   dataColumns: [
     { key: "status", label: "Status", minWidth: 120, grow: 0, align: "center" },
+    { key: "product", label: "Product", minWidth: 200, grow: 0.4 },
     { key: "rollNumber", label: "Roll #", minWidth: 160, grow: 0 },
     {
       key: "startingStock",
