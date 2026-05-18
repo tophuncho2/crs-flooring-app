@@ -23,6 +23,7 @@ import {
 } from "@/modules/products/data/list-products-request"
 import { useProductsListController } from "@/modules/products/controllers/use-products-list-controller"
 import { ProductsTable } from "./products-table"
+import { AddProductButton } from "./toolbar-controls/add-product-button"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
 import { ProductsListSearch } from "./toolbar-controls/products-list-search"
 import { ProductsClearAll } from "./toolbar-controls/sub-controls/products-clear-all"
@@ -122,10 +123,7 @@ export default function ProductsClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader
-          title="Flooring Products"
-          actions={[{ key: "new", label: "+ Product", onClick: () => openCreate(), kind: "primary" }]}
-        />
+        <SectionHeader title="Flooring Products" />
 
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
@@ -163,6 +161,13 @@ export default function ProductsClient({
               onChange={handleCategoryChange}
               initialOptions={initialCategoryOptions}
             />
+          </ListToolbarCell>
+
+          {/* Right-anchored action: + Product occupies the top row of a
+              single right-anchored cell; the bottom row is empty (no
+              secondary create flow). */}
+          <ListToolbarCell className="ml-auto">
+            <AddProductButton onClick={() => openCreate()} />
           </ListToolbarCell>
         </ListToolbar>
 
