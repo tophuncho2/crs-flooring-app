@@ -39,11 +39,11 @@ const ACCENT_BADGE_CLASS_NAME: Record<AccentTone, string> = {
   neutral: "bg-[var(--panel-border)]/35 text-[var(--foreground)]/75",
 }
 const ACCENT_BORDER_CLASS_NAME: Record<AccentTone, string> = {
-  sky: "border-sky-400/55",
-  amber: "border-amber-400/55",
-  emerald: "border-emerald-400/55",
-  rose: "border-rose-400/55",
-  neutral: "border-[var(--panel-border)]/65",
+  sky: "border-sky-400/85",
+  amber: "border-amber-400/85",
+  emerald: "border-emerald-400/85",
+  rose: "border-rose-400/85",
+  neutral: "border-[var(--panel-border)]",
 }
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
@@ -186,7 +186,7 @@ export function ExpandableRow<
   return (
     <div
       className={joinClassNames(
-        "border-t border-l border-r",
+        "border-t-2 border-l-2 border-r-2",
         ACCENT_BORDER_CLASS_NAME[accentTone],
       )}
     >
