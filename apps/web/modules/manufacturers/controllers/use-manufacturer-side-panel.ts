@@ -1,8 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   EMPTY_MANUFACTURER_FORM,
   toManufacturerForm,
@@ -14,6 +13,7 @@ import {
   deleteManufacturerRequest,
   updateManufacturerRequest,
 } from "@/modules/manufacturers/data/mutations"
+import { MANUFACTURERS_LIST_QUERY_KEY } from "@/modules/manufacturers/data/list-manufacturers-request"
 
 export type ManufacturerSidePanelOpenSpec =
   | { mode: "create" }
@@ -30,7 +30,7 @@ function formIsDirty(current: ManufacturerForm, baseline: ManufacturerForm): boo
 }
 
 export function useManufacturerSidePanel() {
-  const router = useRouter()
+  const queryClient = useQueryClient()
 
   const [open, setOpen] = useState<ManufacturerSidePanelOpenSpec | null>(null)
   const [form, setForm] = useState<ManufacturerForm>(EMPTY_MANUFACTURER_FORM)
@@ -80,7 +80,7 @@ export function useManufacturerSidePanel() {
       setForm(next)
       setBaseline(next)
       setOpen({ mode: "edit", manufacturer })
-      router.refresh()
+      void queryClient.invalidateQueries({ queryKey: [...MANUFACTURERS_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
@@ -95,7 +95,7 @@ export function useManufacturerSidePanel() {
       setForm(next)
       setBaseline(next)
       setOpen({ mode: "edit", manufacturer })
-      router.refresh()
+      void queryClient.invalidateQueries({ queryKey: [...MANUFACTURERS_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
@@ -107,7 +107,7 @@ export function useManufacturerSidePanel() {
       deleteManufacturerRequest(manufacturer.id, manufacturer.updatedAt),
     onSuccess: () => {
       setOpen(null)
-      router.refresh()
+      void queryClient.invalidateQueries({ queryKey: [...MANUFACTURERS_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
