@@ -64,22 +64,18 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
         </div>
       }
     >
-      <div className="flex h-full flex-col">
-        <div className="mt-auto">
-          {open ? (
-            <CutLogEditFormFields
-              mode={mode}
-              cutLog={cutLog}
-              controller={controller}
-            />
-          ) : null}
-          {controller.error ? (
-            <div className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-              {controller.error}
-            </div>
-          ) : null}
+      {open ? (
+        <CutLogEditFormFields
+          mode={mode}
+          cutLog={cutLog}
+          controller={controller}
+        />
+      ) : null}
+      {controller.error ? (
+        <div className="mt-4 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+          {controller.error}
         </div>
-      </div>
+      ) : null}
     </SidePanelPreview>
   )
 }
