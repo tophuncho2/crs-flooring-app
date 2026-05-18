@@ -11,19 +11,12 @@ import { GridHeader } from "../grid-header"
 import { buildGridTemplateColumns } from "../internals/build-grid-template"
 
 // ---------- Accent tone palette -------------------------------------------
-// A handful of curated tones for the left rail + ambient bg tint. Default
-// "sky" reads as informational; consumers can shift the palette per parent
-// context (e.g. "rose" for a destructive grouping).
+// A handful of curated tones for the encasing group border + ambient bg tint.
+// Default "sky" reads as informational; consumers can shift the palette per
+// parent context (e.g. "rose" for a destructive grouping).
 
 type AccentTone = "sky" | "amber" | "emerald" | "rose" | "neutral"
 
-const ACCENT_RAIL_CLASS_NAME: Record<AccentTone, string> = {
-  sky: "bg-sky-400/55",
-  amber: "bg-amber-400/55",
-  emerald: "bg-emerald-400/55",
-  rose: "bg-rose-400/55",
-  neutral: "bg-[var(--panel-border)]/65",
-}
 const ACCENT_BG_CLASS_NAME: Record<AccentTone, string> = {
   sky: "bg-sky-500/[0.025]",
   amber: "bg-amber-500/[0.025]",
@@ -44,6 +37,13 @@ const ACCENT_BADGE_CLASS_NAME: Record<AccentTone, string> = {
   emerald: "bg-emerald-500/15 text-emerald-700",
   rose: "bg-rose-500/15 text-rose-700",
   neutral: "bg-[var(--panel-border)]/35 text-[var(--foreground)]/75",
+}
+const ACCENT_BORDER_CLASS_NAME: Record<AccentTone, string> = {
+  sky: "border-sky-400/55",
+  amber: "border-amber-400/55",
+  emerald: "border-emerald-400/55",
+  rose: "border-rose-400/55",
+  neutral: "border-[var(--panel-border)]/65",
 }
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
@@ -97,7 +97,7 @@ export type ExpandableRowProps<
   /** Shown after children when expanded — typically an "Add row" affordance. */
   footer?: ReactNode
 
-  /** Accent tone for the left rail, ambient bg, label, and badge. Default: "sky". */
+  /** Accent tone for the encasing group border, ambient bg, label, and badge. Default: "sky". */
   accentTone?: AccentTone
 }
 
@@ -107,17 +107,21 @@ export type ExpandableRowProps<
  *
  * Visual structure when expanded:
  *
- *   [parent row]
- *   ┌─ accent rail ── children area (subtle ambient tint) ──────────────┐
- *   │ ▎ <CHILD GROUP LABEL>          [count]                            │
- *   │ ▎ <child column header (optional)>                                │
- *   │ ▎ <child rows — ScopedRow instances>                              │
- *   │ ▎ <empty state (when no children)>                                │
- *   │ ▎ <footer (e.g. "+ Add Row")>                                     │
+ *   ┌─ encasing accent border ──────────────────────────────────────────┐
+ *   │ [parent row]                                                      │
+ *   │ children area (subtle ambient tint)                               │
+ *   │   <CHILD GROUP LABEL>          [count]                            │
+ *   │   <child column header (optional)>                                │
+ *   │   <child rows — ScopedRow instances>                              │
+ *   │   <empty state (when no children)>                                │
+ *   │   <footer (e.g. "+ Add Row")>                                     │
  *   └───────────────────────────────────────────────────────────────────┘
  *
- * - **Left accent rail** scopes the whole region to the parent above without
- *   indenting child rows (rail is positioned absolutely, doesn't displace).
+ * - **Encasing accent border** wraps the parent row + its children as one
+ *   visual group. Rendered as `border-t border-l border-r` so vertically
+ *   adjacent groups share a single 1px line (each group's top doubles as the
+ *   previous group's bottom). The outer Grid panel's own border closes off
+ *   the last group's bottom edge.
  * - **Ambient tint** sits behind the children area; child rows render with
  *   their own tone on top, producing a layered "card within bay" effect.
  * - **Group label + count** are rendered in a tasteful header strip with the
@@ -180,7 +184,12 @@ export function ExpandableRow<
   const showChildHeader = Boolean(childLayout) && !hideChildHeader && hasChildren
 
   return (
-    <>
+    <div
+      className={joinClassNames(
+        "border-t border-l border-r",
+        ACCENT_BORDER_CLASS_NAME[accentTone],
+      )}
+    >
       <GridBodyRow
         row={parentRow}
         layout={parentLayout}
@@ -194,19 +203,10 @@ export function ExpandableRow<
       {expanded ? (
         <div
           className={joinClassNames(
-            "relative border-b border-[var(--panel-border)]",
+            "relative",
             ACCENT_BG_CLASS_NAME[accentTone],
           )}
         >
-          {/* Left accent rail — purely visual, doesn't displace content. */}
-          <span
-            aria-hidden="true"
-            className={joinClassNames(
-              "pointer-events-none absolute inset-y-0 left-0 w-[3px]",
-              ACCENT_RAIL_CLASS_NAME[accentTone],
-            )}
-          />
-
           {childGroupLabel ? (
             <div className="flex items-center gap-2 border-b border-[var(--panel-border)]/45 bg-[var(--panel-background)]/50 px-4 py-2">
               <span
@@ -253,6 +253,6 @@ export function ExpandableRow<
           ) : null}
         </div>
       ) : null}
-    </>
+    </div>
   )
 }
