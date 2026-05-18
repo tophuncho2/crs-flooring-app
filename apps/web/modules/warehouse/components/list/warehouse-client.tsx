@@ -16,6 +16,7 @@ import {
   searchWarehouseOptionsRequest,
 } from "@/modules/warehouse/data/warehouse-options-request"
 import { WarehouseTable } from "./warehouse-table"
+import { AddWarehouseButton } from "./toolbar-controls/add-warehouse-button"
 import { WarehouseListSearch } from "./toolbar-controls/warehouse-list-search"
 import { WarehouseClearAll } from "./toolbar-controls/sub-controls/warehouse-clear-all"
 import { WarehouseRowCount } from "./toolbar-controls/sub-controls/warehouse-row-count"
@@ -63,17 +64,7 @@ export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader
-          title="Warehouse"
-          actions={[
-            {
-              key: "new",
-              label: "+ Warehouse",
-              onClick: () => sidePanel.openCreate(),
-              kind: "primary",
-            },
-          ]}
-        />
+        <SectionHeader title="Warehouse" />
 
         <ListToolbar>
           <ListToolbarCell>
@@ -82,6 +73,13 @@ export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
               left={<WarehouseClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
               right={<WarehouseRowCount count={filteredRows.length} total={total} />}
             />
+          </ListToolbarCell>
+
+          {/* Right-anchored action: + Warehouse occupies the top row of a
+              single right-anchored cell; the bottom row is empty (warehouse
+              has no secondary create flow like properties' + Hub). */}
+          <ListToolbarCell className="ml-auto">
+            <AddWarehouseButton onClick={() => sidePanel.openCreate()} />
           </ListToolbarCell>
         </ListToolbar>
 
