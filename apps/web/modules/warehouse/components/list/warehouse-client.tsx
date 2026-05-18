@@ -17,6 +17,7 @@ import {
 } from "@/modules/warehouse/data/warehouse-options-request"
 import { WarehouseTable } from "./warehouse-table"
 import { AddWarehouseButton } from "./toolbar-controls/add-warehouse-button"
+import { GenerateFileButton } from "./toolbar-controls/generate-file-button"
 import { WarehouseListSearch } from "./toolbar-controls/warehouse-list-search"
 import { WarehouseClearAll } from "./toolbar-controls/sub-controls/warehouse-clear-all"
 import { WarehouseRowCount } from "./toolbar-controls/sub-controls/warehouse-row-count"
@@ -73,6 +74,12 @@ export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
               left={<WarehouseClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
               right={<WarehouseRowCount count={filteredRows.length} total={total} />}
             />
+          </ListToolbarCell>
+
+          {/* Placeholder action: 2-row × 2-col chip; disabled until the
+              real generate-file flow lands. */}
+          <ListToolbarCell colSpan={2}>
+            <GenerateFileButton />
           </ListToolbarCell>
 
           {/* Right-anchored action: + Warehouse occupies the top row of a
