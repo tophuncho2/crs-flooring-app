@@ -67,7 +67,9 @@ export function WorkOrderPrimaryFieldsSection({
         draft={draft}
         onFieldChange={onFieldChange}
       />
-      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={7} />
+      {draft.propertyId ? (
+        <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={7} />
+      ) : null}
     </FieldSection>
   )
 }
