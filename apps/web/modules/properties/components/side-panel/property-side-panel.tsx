@@ -40,12 +40,12 @@ export function PropertySidePanel({ controller }: PropertySidePanelProps) {
       footer={
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
-            <PropertySidePanelStatusPill controller={controller} />
+            <PropertySidePanelSaveButton controller={controller} mode={resolvedMode} />
+            <PropertySidePanelDiscardButton controller={controller} />
           </div>
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <PropertySidePanelStatusPill controller={controller} />
             <PropertySidePanelDeleteButton controller={controller} mode={resolvedMode} />
-            <PropertySidePanelDiscardButton controller={controller} />
-            <PropertySidePanelSaveButton controller={controller} mode={resolvedMode} />
           </div>
         </div>
       }
