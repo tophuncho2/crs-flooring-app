@@ -22,7 +22,10 @@ export type WarehouseSidePanelOpenSpec =
 function formIsDirty(current: WarehouseForm, baseline: WarehouseForm): boolean {
   return (
     current.name !== baseline.name ||
-    current.address !== baseline.address ||
+    current.streetAddress !== baseline.streetAddress ||
+    current.city !== baseline.city ||
+    current.state !== baseline.state ||
+    current.postalCode !== baseline.postalCode ||
     current.phone !== baseline.phone
   )
 }

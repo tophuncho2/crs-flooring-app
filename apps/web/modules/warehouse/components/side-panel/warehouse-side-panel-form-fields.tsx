@@ -1,6 +1,7 @@
 "use client"
 
-import { TextCell, TextareaCell } from "@/components/cells"
+import { normalizeAddressState } from "@builders/domain"
+import { TextCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import type { WarehouseSidePanelController } from "@/modules/warehouse/controllers/use-warehouse-side-panel"
@@ -38,14 +39,46 @@ export function WarehouseSidePanelFormFields({ controller }: WarehouseSidePanelF
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={8}>
-        <FormField label="Address">
-          <TextareaCell
+        <FormField label="Street Address">
+          <TextCell
             editable={editable}
-            value={form.address}
-            onChange={(next) => controller.setField("address", next)}
-            placeholder="Address"
-            ariaLabel="Warehouse address"
-            rows={3}
+            value={form.streetAddress}
+            onChange={(next) => controller.setField("streetAddress", next)}
+            placeholder="Street address"
+            ariaLabel="Warehouse street address"
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="City">
+          <TextCell
+            editable={editable}
+            value={form.city}
+            onChange={(next) => controller.setField("city", next)}
+            placeholder="City"
+            ariaLabel="Warehouse city"
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={2}>
+        <FormField label="State">
+          <TextCell
+            editable={editable}
+            value={form.state}
+            onChange={(next) => controller.setField("state", normalizeAddressState(next))}
+            placeholder="ST"
+            ariaLabel="Warehouse state"
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={7} colSpan={2}>
+        <FormField label="Postal Code">
+          <TextCell
+            editable={editable}
+            value={form.postalCode}
+            onChange={(next) => controller.setField("postalCode", next)}
+            placeholder="Postal code"
+            ariaLabel="Warehouse postal code"
           />
         </FormField>
       </CellAt>

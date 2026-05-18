@@ -11,8 +11,14 @@ export function renderWarehouseRowCell(
       return <span className="tabular-nums">{row.number}</span>
     case "name":
       return <span className="font-medium">{row.name}</span>
-    case "address":
-      return row.address || "-"
+    case "streetAddress":
+      return row.streetAddress || "-"
+    case "city":
+      return row.city || "-"
+    case "state":
+      return row.state || "-"
+    case "postalCode":
+      return row.postalCode || "-"
     case "phone":
       return row.phone || "-"
     case "workOrdersCount":
