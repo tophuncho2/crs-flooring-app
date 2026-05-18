@@ -9,10 +9,12 @@ import { PropertyPicker } from "@/modules/properties/components/picker/property-
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
 import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
 import { TemplateSyncPreviewBody } from "@/modules/template-sync/components/template-sync-preview-body"
+import { TemplateSyncItemsSubHeader } from "@/modules/template-sync/components/header/template-sync-items-sub-header"
 import { TemplateSyncClearButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-clear-button"
 import { TemplateSyncNewButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-new-button"
 import { TemplateSyncOpenButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-open-button"
 import { TemplateSyncSyncButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-sync-button"
+import { useTemplateSyncItems } from "@/modules/template-sync/controllers/use-template-sync-items"
 
 // Cascade: Management Company (optional) → Property → Template.
 // Property has a direct managementCompanyId FK; Template has a propertyId FK.
@@ -27,6 +29,7 @@ export function TemplateSyncButton() {
   const [templateId, setTemplateId] = useState<string | null>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const itemsController = useTemplateSyncItems(templateId)
 
   const handleManagementCompanyChange = useCallback((value: string | null) => {
     setManagementCompanyId(value)
@@ -126,6 +129,10 @@ export function TemplateSyncButton() {
           ariaLabel="Template"
         />
       </label>
+
+      {itemsController.showSubHeader ? (
+        <TemplateSyncItemsSubHeader controller={itemsController} />
+      ) : null}
     </div>
   )
 
@@ -186,7 +193,12 @@ export function TemplateSyncButton() {
         stickyHeader={stickyHeader}
         footer={footer}
       >
-        {templateId ? <TemplateSyncPreviewBody templateId={templateId} /> : null}
+        {templateId ? (
+          <TemplateSyncPreviewBody
+            templateId={templateId}
+            itemsController={itemsController}
+          />
+        ) : null}
       </SidePanelPreview>
     </>
   )
