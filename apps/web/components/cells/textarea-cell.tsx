@@ -31,6 +31,7 @@ export type TextareaCellProps = CellProps<string> & {
   maxLength?: number
   /** Visible row count when editable; default `3`. */
   rows?: number
+  autoComplete?: string
 }
 
 /**
@@ -50,6 +51,7 @@ export function TextareaCell(props: TextareaCellProps) {
         placeholder={props.placeholder}
         maxLength={props.maxLength}
         rows={rows}
+        autoComplete={props.autoComplete ?? "off"}
         aria-label={props.ariaLabel}
         aria-invalid={props.invalid || undefined}
         className={joinClassNames(

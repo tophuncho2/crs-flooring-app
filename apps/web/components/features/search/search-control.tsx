@@ -28,6 +28,7 @@ export function SearchControl({
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
         placeholder={placeholder}
+        autoComplete="off"
         aria-label={ariaLabel ?? placeholder}
         className={INPUT_BASE_CLASS_NAME}
       />

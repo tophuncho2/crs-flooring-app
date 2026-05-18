@@ -29,6 +29,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
 export type TextCellProps = CellProps<string> & {
   placeholder?: string
   maxLength?: number
+  autoComplete?: string
 }
 
 /**
@@ -47,6 +48,7 @@ export function TextCell(props: TextCellProps) {
         onChange={(event) => props.onChange?.(event.target.value)}
         placeholder={props.placeholder}
         maxLength={props.maxLength}
+        autoComplete={props.autoComplete ?? "off"}
         aria-label={props.ariaLabel}
         aria-invalid={props.invalid || undefined}
         className={joinClassNames(
