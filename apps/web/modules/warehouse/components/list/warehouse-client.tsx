@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { SectionHeader } from "@/components/headers"
 import {
   ListToolbar,
   ListToolbarBottomRow,
@@ -65,8 +64,6 @@ export default function WarehouseClient({ initialRows }: WarehouseClientProps) {
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader title="Warehouse" />
-
         <ListToolbar>
           <ListToolbarCell>
             <WarehouseListSearch query={searchQuery} onQueryChange={setSearchQuery} />
