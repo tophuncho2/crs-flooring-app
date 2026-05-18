@@ -14,10 +14,15 @@ export function validateWarehouseInput(body: Record<string, unknown>): CreateWar
     })
   }
 
-  const address = typeof body.address === "string" && body.address.trim() !== "" ? body.address : null
+  const streetAddress =
+    typeof body.streetAddress === "string" && body.streetAddress.trim() !== "" ? body.streetAddress : null
+  const city = typeof body.city === "string" && body.city.trim() !== "" ? body.city : null
+  const state = typeof body.state === "string" && body.state.trim() !== "" ? body.state : null
+  const postalCode =
+    typeof body.postalCode === "string" && body.postalCode.trim() !== "" ? body.postalCode : null
   const phone = typeof body.phone === "string" && body.phone.trim() !== "" ? body.phone : null
 
-  return { name, address, phone }
+  return { name, streetAddress, city, state, postalCode, phone }
 }
 
 // --- Options query validator ---
