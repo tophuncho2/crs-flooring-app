@@ -17,6 +17,8 @@ export function renderProductRowCell(
       return row.style || "-"
     case "color":
       return row.color || "-"
+    case "note":
+      return row.note || "-"
     case "coverage":
       return row.coveragePerUnit ? (
         <span className="tabular-nums">
