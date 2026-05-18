@@ -28,7 +28,7 @@ export function WarehouseFilterChip({
         selectedLabel={selectedLabel}
         onChange={onChange}
         initialOptions={initialOptions}
-        placeholder="Filter by warehouse"
+        placeholder="Warehouse"
         searchPlaceholder="Search warehouses"
         emptyMessage="No warehouses match"
         clearLabel="Clear filter"

@@ -1,8 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { SectionHeader } from "@/components/headers"
-import { SearchControl } from "@/components/features/search"
+import { PaginateControls } from "@/components/features/paginate"
+import {
+  ListToolbar,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+} from "@/components/features/list-toolbar"
 import { useServerListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ImportsListFilters } from "@builders/application"
@@ -18,7 +23,10 @@ import {
 } from "@/modules/imports/data/list-imports-request"
 import { useImportsListController } from "@/modules/imports/controllers/list/use-imports-list-controller"
 import { ImportsTable } from "./imports-table"
-import { WarehouseFilterChip } from "./warehouse-filter-chip"
+import { ImportsListSearch } from "./toolbar-controls/imports-list-search"
+import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
+import { ImportsClearAll } from "./toolbar-controls/sub-controls/imports-clear-all"
+import { ImportsRowCount } from "./toolbar-controls/sub-controls/imports-row-count"
 
 const IMPORTS_ALLOWED_GROUP_FIELDS = ["warehouse", "manufacturer"] as const
 const IMPORTS_FILTERABLE_FIELDS = ["warehouseId"] as const
@@ -56,6 +64,7 @@ export default function ImportsClient({
     goToNextPage,
     onSearchQueryChange,
     onFilterChange,
+    onClearAllFilters,
   } = useServerListController<ImportRow, ImportsListFilters>({
     mode: "fetch",
     queryKey: [...IMPORTS_LIST_QUERY_KEY],
@@ -91,6 +100,24 @@ export default function ImportsClient({
     return seeded ? seeded.name : null
   }, [selectedWarehouseId, initialSelectedWarehouse, initialWarehouseOptions])
 
+  const hasActiveFilters = useMemo(() => {
+    if (searchQuery.trim().length > 0) return true
+    if (selectedWarehouseId) return true
+    return false
+  }, [searchQuery, selectedWarehouseId])
+
+  const handleClearAll = useCallback(() => {
+    onClearAllFilters()
+    onSearchQueryChange("")
+  }, [onClearAllFilters, onSearchQueryChange])
+
+  const handleWarehouseChange = useCallback(
+    (id: string | null) => {
+      onFilterChange("warehouseId", id ? [id] : [])
+    },
+    [onFilterChange],
+  )
+
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -114,38 +141,43 @@ export default function ImportsClient({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--panel-border)] px-4 py-3">
-          <div className="min-w-[16rem] flex-1">
-            <SearchControl
+        <ListToolbar>
+          <ListToolbarCell>
+            <ImportsListSearch
               query={searchQuery}
               onQueryChange={onSearchQueryChange}
-              placeholder="Search import #"
             />
-          </div>
-          <WarehouseFilterChip
-            value={selectedWarehouseId}
-            selectedLabel={selectedWarehouseLabel}
-            onChange={(id) =>
-              onFilterChange("warehouseId", id ? [id] : [])
-            }
-            initialOptions={initialWarehouseOptions}
-          />
-          <span className="text-xs text-[var(--foreground)]/55">
-            {rows.length} of {total} imports
-          </span>
-        </div>
+            <ListToolbarBottomRow
+              left={<ImportsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+              right={<ImportsRowCount count={rows.length} total={total} />}
+            />
+          </ListToolbarCell>
+
+          <ListToolbarCell>
+            <WarehouseFilterChip
+              value={selectedWarehouseId}
+              selectedLabel={selectedWarehouseLabel}
+              onChange={handleWarehouseChange}
+              initialOptions={initialWarehouseOptions}
+            />
+          </ListToolbarCell>
+        </ListToolbar>
 
         <ImportsTable
           rows={rows}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={total}
-          hasPreviousPage={hasPreviousPage}
-          hasNextPage={hasNextPage}
-          onPreviousPage={goToPreviousPage}
-          onNextPage={goToNextPage}
           onOpenImport={openImport}
+          pagination={
+            <PaginateControls
+              page={page}
+              pageSize={pageSize}
+              totalItems={total}
+              totalPages={totalPages}
+              hasPreviousPage={hasPreviousPage}
+              hasNextPage={hasNextPage}
+              onPreviousPage={goToPreviousPage}
+              onNextPage={goToNextPage}
+            />
+          }
         />
       </div>
     </div>
