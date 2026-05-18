@@ -243,7 +243,17 @@ export function useCutLogEditPanel({
         workOrderItemId: variables.workOrderItemId,
         cutLog: response.cutLog,
       })
-      setOpen(null)
+      // Stay open; transition create → edit on the newly-created row so the
+      // user can keep working (finalize, tweak cut, etc.) without reopening
+      // the panel.
+      const next = buildEditForm(response.cutLog)
+      setForm(next)
+      setBaseline(next)
+      setOpen({
+        mode: "edit",
+        workOrderItemId: variables.workOrderItemId,
+        cutLog: response.cutLog,
+      })
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
