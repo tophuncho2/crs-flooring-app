@@ -16,6 +16,7 @@ import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fiel
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
 import { WorkOrderFilesSection } from "./files/work-order-files-section"
+import { WorkOrderRecordFooter } from "./footer"
 
 export function WorkOrderRecordPanel({
   page,
@@ -39,7 +40,6 @@ export function WorkOrderRecordPanel({
   const primaryActions = workOrderPrimarySectionActions({
     onSave: () => void controller.primarySection.save(),
     onDiscard: controller.primarySection.discard,
-    onDelete: () => void controller.deleteRecord(),
   })
 
   const publishCutLogPatch = useCallback((patch: CutLogPanelPatch) => {
@@ -65,95 +65,100 @@ export function WorkOrderRecordPanel({
   }, [])
 
   return (
-    <RecordMultiSectionPanel
-      page={page}
-      sections={[
-        {
-          key: "primary",
-          type: "field",
-          slot: "primary",
-          order: 0,
-          dirtyLabel: "primary",
-          controller: controller.primarySection,
-          render: () => (
-            <RecordPrimarySectionInstance
-              title="Work Order Details"
-              error={controller.primarySection.error}
-              noticeMessage={controller.primarySection.noticeMessage}
-              noticeError={controller.primarySection.noticeError}
-              isDirty={controller.primarySection.isDirty}
-              isSaving={controller.primarySection.isSaving}
-              hasConflict={controller.primarySection.hasConflict}
-              onSave={primaryActions.onSave}
-              onDiscard={primaryActions.onDiscard}
-              saveLabel={primaryActions.saveLabel}
-              savingLabel={primaryActions.savingLabel}
-              showHeader={false}
-            >
-              <WorkOrderPrimaryFieldsSection
-                draft={controller.primarySection.localValue}
-                detail={{
-                  propertyId: controller.record.propertyId,
-                  propertyName: controller.record.propertyName,
-                  propertyStreetAddress: controller.record.propertyStreetAddress,
-                  propertyCity: controller.record.propertyCity,
-                  propertyState: controller.record.propertyState,
-                  propertyPostalCode: controller.record.propertyPostalCode,
-                  propertyInstructions: controller.record.propertyInstructions,
-                  managementCompanyId: controller.record.managementCompanyId,
-                  managementCompanyName: controller.record.managementCompanyName,
-                  templateId: controller.record.templateId,
-                  templateNumber: controller.record.templateNumber,
-                  jobTypeId: controller.record.jobTypeId,
-                  jobTypeName: controller.record.jobTypeName,
-                  warehouseId: controller.record.warehouseId,
-                  warehouseName: controller.record.warehouseName,
-                }}
-                disabled={controller.primarySection.isSaving}
-                onFieldChange={(field, value) => {
-                  controller.primarySection.setLocalValue((previous) => ({
-                    ...previous,
-                    [field]: value,
-                  }))
-                }}
-                onFieldsChange={(patch) => {
-                  controller.primarySection.setLocalValue((previous) => ({
-                    ...previous,
-                    ...patch,
-                  }))
-                }}
+    <>
+      <RecordMultiSectionPanel
+        page={page}
+        sections={[
+          {
+            key: "primary",
+            type: "field",
+            slot: "primary",
+            order: 0,
+            dirtyLabel: "primary",
+            controller: controller.primarySection,
+            render: () => (
+              <RecordPrimarySectionInstance
+                title="Work Order Details"
+                error={controller.primarySection.error}
+                noticeMessage={controller.primarySection.noticeMessage}
+                noticeError={controller.primarySection.noticeError}
+                isDirty={controller.primarySection.isDirty}
+                isSaving={controller.primarySection.isSaving}
+                hasConflict={controller.primarySection.hasConflict}
+                onSave={primaryActions.onSave}
+                onDiscard={primaryActions.onDiscard}
+                saveLabel={primaryActions.saveLabel}
+                savingLabel={primaryActions.savingLabel}
+                showHeader={false}
+              >
+                <WorkOrderPrimaryFieldsSection
+                  draft={controller.primarySection.localValue}
+                  detail={{
+                    propertyId: controller.record.propertyId,
+                    propertyName: controller.record.propertyName,
+                    propertyStreetAddress: controller.record.propertyStreetAddress,
+                    propertyCity: controller.record.propertyCity,
+                    propertyState: controller.record.propertyState,
+                    propertyPostalCode: controller.record.propertyPostalCode,
+                    propertyInstructions: controller.record.propertyInstructions,
+                    managementCompanyId: controller.record.managementCompanyId,
+                    managementCompanyName: controller.record.managementCompanyName,
+                    templateId: controller.record.templateId,
+                    templateNumber: controller.record.templateNumber,
+                    jobTypeId: controller.record.jobTypeId,
+                    jobTypeName: controller.record.jobTypeName,
+                    warehouseId: controller.record.warehouseId,
+                    warehouseName: controller.record.warehouseName,
+                  }}
+                  disabled={controller.primarySection.isSaving}
+                  onFieldChange={(field, value) => {
+                    controller.primarySection.setLocalValue((previous) => ({
+                      ...previous,
+                      [field]: value,
+                    }))
+                  }}
+                  onFieldsChange={(patch) => {
+                    controller.primarySection.setLocalValue((previous) => ({
+                      ...previous,
+                      ...patch,
+                    }))
+                  }}
+                />
+              </RecordPrimarySectionInstance>
+            ),
+          },
+          {
+            key: "material-items",
+            type: "item",
+            order: 10,
+            render: () => (
+              <WorkOrderMaterialItemsSection
+                workOrder={controller.record}
+                materialItems={materialItems}
+                cutLogsByWorkOrderItemId={cutLogsByWorkOrderItemId}
+                publishMaterialItems={setMaterialItems}
+                publishWorkOrder={controller.publishRecord}
+                publishCutLogPatch={publishCutLogPatch}
               />
-            </RecordPrimarySectionInstance>
-          ),
-        },
-        {
-          key: "material-items",
-          type: "item",
-          order: 10,
-          render: () => (
-            <WorkOrderMaterialItemsSection
-              workOrder={controller.record}
-              materialItems={materialItems}
-              cutLogsByWorkOrderItemId={cutLogsByWorkOrderItemId}
-              publishMaterialItems={setMaterialItems}
-              publishWorkOrder={controller.publishRecord}
-              publishCutLogPatch={publishCutLogPatch}
-            />
-          ),
-        },
-        {
-          key: "files",
-          type: "item",
-          order: 20,
-          render: () => (
-            <WorkOrderFilesSection
-              workOrderId={controller.record.id}
-              initialFiles={initialFiles}
-            />
-          ),
-        },
-      ]}
-      footer={primaryActions.delete}
-    />
+            ),
+          },
+          {
+            key: "files",
+            type: "item",
+            order: 20,
+            render: () => (
+              <WorkOrderFilesSection
+                workOrderId={controller.record.id}
+                initialFiles={initialFiles}
+              />
+            ),
+          },
+        ]}
+      />
+      <WorkOrderRecordFooter
+        onClose={page.closePage}
+        onDelete={controller.deleteRecord}
+      />
+    </>
   )
 }

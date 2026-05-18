@@ -3,13 +3,13 @@
 import { buildRecordDetailHref } from "@/hooks/navigation"
 import { createWorkOrderRequest } from "@/modules/work-orders/data/mutations"
 import { RecordCreateClientScaffold } from "@/scaffolds/record-create-client-scaffold"
-import { RecordPanelFooter } from "@/components/panels/record-panel-footer"
 import { RecordSingleSectionPanel } from "@/components/sections/panels/record-single-section-panel"
 import { useSingleSectionCreateController } from "@/controllers/record/use-single-section-create-controller"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import { EMPTY_WORK_ORDER_FORM, type WorkOrderForm } from "@builders/domain"
 import { toUpdateWorkOrderInput } from "@/modules/work-orders/controllers/record/drafts"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
+import { WorkOrderRecordFooter } from "./footer"
 
 function WorkOrderCreatePanel({
   page,
@@ -80,7 +80,7 @@ function WorkOrderCreatePanel({
           }}
         />
       </RecordSingleSectionPanel>
-      <RecordPanelFooter onClose={page.closePage} />
+      <WorkOrderRecordFooter onClose={page.closePage} />
     </div>
   )
 }
