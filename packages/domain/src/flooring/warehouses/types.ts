@@ -2,7 +2,11 @@ export type WarehouseRow = {
   id: string
   number: number
   name: string
-  address: string | null
+  streetAddress: string
+  city: string
+  state: string
+  postalCode: string
+  fullAddress: string
   phone: string | null
   workOrdersCount: number
   createdAt: string
@@ -19,20 +23,29 @@ export type WarehouseOption = {
 
 export type WarehouseForm = {
   name: string
-  address: string
+  streetAddress: string
+  city: string
+  state: string
+  postalCode: string
   phone: string
 }
 
 export const EMPTY_WAREHOUSE_FORM: WarehouseForm = {
   name: "",
-  address: "",
+  streetAddress: "",
+  city: "",
+  state: "",
+  postalCode: "",
   phone: "",
 }
 
 export function toWarehouseForm(row: WarehouseRow): WarehouseForm {
   return {
     name: row.name,
-    address: row.address ?? "",
+    streetAddress: row.streetAddress,
+    city: row.city,
+    state: row.state,
+    postalCode: row.postalCode,
     phone: row.phone ?? "",
   }
 }

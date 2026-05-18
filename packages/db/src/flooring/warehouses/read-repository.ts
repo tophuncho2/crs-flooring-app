@@ -1,3 +1,4 @@
+import { buildAddressLine } from "@builders/domain"
 import { db } from "../../client.js"
 import {
   type WarehouseRowPayload,
@@ -12,7 +13,11 @@ export type WarehouseRecord = {
   id: string
   number: number
   name: string
-  address: string | null
+  streetAddress: string
+  city: string
+  state: string
+  postalCode: string
+  fullAddress: string
   phone: string | null
   workOrdersCount: number
   createdAt: string
@@ -28,7 +33,11 @@ export function normalizeWarehouseRow(row: WarehouseRowPayload): WarehouseRecord
     id: row.id,
     number: row.number,
     name: row.name,
-    address: row.address,
+    streetAddress: row.streetAddress ?? "",
+    city: row.city ?? "",
+    state: row.state ?? "",
+    postalCode: row.postalCode ?? "",
+    fullAddress: buildAddressLine(row),
     phone: row.phone,
     workOrdersCount: row._count.workOrders,
     createdAt: row.createdAt.toISOString(),

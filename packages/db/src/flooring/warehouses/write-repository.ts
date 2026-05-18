@@ -8,13 +8,19 @@ import { normalizeWarehouseRow, type WarehouseRecord } from "./read-repository.j
 export type CreateWarehouseInput = {
   number: number
   name: string
-  address: string | null
+  streetAddress: string | null
+  city: string | null
+  state: string | null
+  postalCode: string | null
   phone: string | null
 }
 
 export type UpdateWarehouseInput = {
   name?: string
-  address?: string | null
+  streetAddress?: string | null
+  city?: string | null
+  state?: string | null
+  postalCode?: string | null
   phone?: string | null
 }
 
@@ -28,7 +34,10 @@ export async function createWarehouse(
     data: {
       number: input.number,
       name: input.name,
-      address: input.address,
+      streetAddress: input.streetAddress,
+      city: input.city,
+      state: input.state,
+      postalCode: input.postalCode,
       phone: input.phone,
     },
     select: warehouseRowSelect,
@@ -43,7 +52,10 @@ export async function updateWarehouse(
 ): Promise<WarehouseRecord> {
   const data: Prisma.FlooringWarehouseUpdateInput = {}
   if (input.name !== undefined) data.name = input.name
-  if (input.address !== undefined) data.address = input.address
+  if (input.streetAddress !== undefined) data.streetAddress = input.streetAddress
+  if (input.city !== undefined) data.city = input.city
+  if (input.state !== undefined) data.state = input.state
+  if (input.postalCode !== undefined) data.postalCode = input.postalCode
   if (input.phone !== undefined) data.phone = input.phone
 
   const row = await client.flooringWarehouse.update({
