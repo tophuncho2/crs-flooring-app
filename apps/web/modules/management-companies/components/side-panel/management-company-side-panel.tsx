@@ -2,7 +2,10 @@
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
 import type { ManagementCompanySidePanelController } from "@/modules/management-companies/controllers/use-management-company-side-panel"
-import { ManagementCompanySidePanelActions } from "./management-company-side-panel-actions"
+import { ManagementCompanySidePanelDeleteButton } from "./toolbar-controls/management-company-side-panel-delete-button"
+import { ManagementCompanySidePanelDiscardButton } from "./toolbar-controls/management-company-side-panel-discard-button"
+import { ManagementCompanySidePanelSaveButton } from "./toolbar-controls/management-company-side-panel-save-button"
+import { ManagementCompanySidePanelStatusPill } from "./toolbar-controls/management-company-side-panel-status-pill"
 import { ManagementCompanySidePanelForm } from "./management-company-side-panel-form"
 
 export type ManagementCompanySidePanelProps = {
@@ -11,16 +14,12 @@ export type ManagementCompanySidePanelProps = {
 
 /**
  * Right-anchored side panel that owns the management-company create + edit
- * flow from the MC list view. One panel, two modes:
- *   - create: blank form, "Create" button, no delete.
- *   - edit:   form prefilled from the row clicked on the list; "Save" + "Delete".
- *
- * Open state lives entirely in the controller; this component is a pure
- * projection. After a successful create the controller transitions to edit
- * mode for the new record (panel stays open); after delete the panel closes.
+ * flow from the MC list view. Footer composed from the canonical
+ * side-panel-edit toolbar controls: status pill + delete + discard + save.
+ * The title-bar X (provided by SidePanelPreview) handles close.
  */
 export function ManagementCompanySidePanel({ controller }: ManagementCompanySidePanelProps) {
-  const { open, mode, isSaving, canSave, error, save, close, deleteCompany, form } = controller
+  const { open, mode, error, close, form } = controller
   const isOpen = open !== null
   const resolvedMode = mode ?? "create"
 
@@ -39,14 +38,16 @@ export function ManagementCompanySidePanel({ controller }: ManagementCompanySide
       title={title}
       widthClassName="w-[34rem]"
       footer={
-        <ManagementCompanySidePanelActions
-          mode={resolvedMode}
-          isSaving={isSaving}
-          canSave={canSave}
-          onSave={save}
-          onClose={close}
-          onDelete={deleteCompany}
-        />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <ManagementCompanySidePanelStatusPill controller={controller} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <ManagementCompanySidePanelDeleteButton controller={controller} mode={resolvedMode} />
+            <ManagementCompanySidePanelDiscardButton controller={controller} />
+            <ManagementCompanySidePanelSaveButton controller={controller} mode={resolvedMode} />
+          </div>
+        </div>
       }
     >
       <div className="flex flex-col gap-4">

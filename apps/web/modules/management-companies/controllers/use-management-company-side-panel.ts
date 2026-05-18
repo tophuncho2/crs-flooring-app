@@ -235,6 +235,12 @@ export function useManagementCompanySidePanel() {
     deleteMutation.mutate({ id: recordId, updatedAt })
   }, [mode, recordId, updatedAt, isSaving, deleteMutation])
 
+  const discard = useCallback(() => {
+    if (isSaving) return
+    setForm(baseline)
+    setError(null)
+  }, [isSaving, baseline])
+
   const close = useCallback(() => {
     if (isSaving) return
     setOpen(null)
@@ -253,6 +259,7 @@ export function useManagementCompanySidePanel() {
     close,
     setField,
     save,
+    discard,
     deleteCompany,
   }
 }

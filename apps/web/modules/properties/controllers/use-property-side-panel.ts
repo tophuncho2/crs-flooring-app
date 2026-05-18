@@ -257,6 +257,12 @@ export function usePropertySidePanel() {
     deleteMutation.mutate({ id: recordId, updatedAt })
   }, [mode, recordId, updatedAt, isSaving, deleteMutation])
 
+  const discard = useCallback(() => {
+    if (isSaving) return
+    setForm(baseline)
+    setError(null)
+  }, [isSaving, baseline])
+
   const close = useCallback(() => {
     if (isSaving) return
     setOpen(null)
@@ -277,6 +283,7 @@ export function usePropertySidePanel() {
     setField,
     setManagementCompany,
     save,
+    discard,
     deleteProperty,
   }
 }

@@ -2,7 +2,10 @@
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
 import type { PropertySidePanelController } from "@/modules/properties/controllers/use-property-side-panel"
-import { PropertySidePanelActions } from "./property-side-panel-actions"
+import { PropertySidePanelDeleteButton } from "./toolbar-controls/property-side-panel-delete-button"
+import { PropertySidePanelDiscardButton } from "./toolbar-controls/property-side-panel-discard-button"
+import { PropertySidePanelSaveButton } from "./toolbar-controls/property-side-panel-save-button"
+import { PropertySidePanelStatusPill } from "./toolbar-controls/property-side-panel-status-pill"
 import { PropertySidePanelForm } from "./property-side-panel-form"
 
 export type PropertySidePanelProps = {
@@ -10,17 +13,13 @@ export type PropertySidePanelProps = {
 }
 
 /**
- * Right-anchored side panel that owns the property create + edit flow
- * from the properties list view. One panel, two modes:
- *   - create: blank form, "Create" button, no delete.
- *   - edit:   form prefilled from the row clicked on the list; "Save" + "Delete".
- *
- * Open state lives entirely in the controller; this component is a pure
- * projection. After a successful create the controller transitions to edit
- * mode for the new record (panel stays open); after delete the panel closes.
+ * Right-anchored side panel that owns the property create + edit flow from
+ * the properties list view. Footer composed from the canonical
+ * side-panel-edit toolbar controls: status pill + delete + discard + save.
+ * The title-bar X (provided by SidePanelPreview) handles close.
  */
 export function PropertySidePanel({ controller }: PropertySidePanelProps) {
-  const { open, mode, isSaving, canSave, error, save, close, deleteProperty, form } = controller
+  const { open, mode, error, close, form } = controller
   const isOpen = open !== null
   const resolvedMode = mode ?? "create"
 
@@ -39,14 +38,16 @@ export function PropertySidePanel({ controller }: PropertySidePanelProps) {
       title={title}
       widthClassName="w-[34rem]"
       footer={
-        <PropertySidePanelActions
-          mode={resolvedMode}
-          isSaving={isSaving}
-          canSave={canSave}
-          onSave={save}
-          onClose={close}
-          onDelete={deleteProperty}
-        />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <PropertySidePanelStatusPill controller={controller} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <PropertySidePanelDeleteButton controller={controller} mode={resolvedMode} />
+            <PropertySidePanelDiscardButton controller={controller} />
+            <PropertySidePanelSaveButton controller={controller} mode={resolvedMode} />
+          </div>
+        </div>
       }
     >
       <div className="flex flex-col gap-4">
