@@ -481,7 +481,10 @@ model FlooringWarehouse {
   id                  String                             @id @default(uuid())
   number              Int                                @unique
   name                String                             @unique
-  address             String?
+  streetAddress       String?
+  city                String?
+  state               String?
+  postalCode          String?
   phone               String?
   createdAt           DateTime                           @default(now())
   updatedAt           DateTime                           @updatedAt
