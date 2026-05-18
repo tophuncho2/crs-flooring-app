@@ -1,0 +1,311 @@
+"use client"
+
+import { useMemo } from "react"
+import {
+  createLocalRecordRowId,
+  isLocalOnlyRecordRow,
+} from "@/controllers/record/utils/record-row-ids"
+import { useRecordScopedSectionController } from "@/controllers/record/use-record-scoped-section-controller"
+import { createRecordSectionError } from "@/types/record/section-error"
+import { buildDuplicatedRow } from "@/components/features/duplicate-row"
+import type {
+  ProductOption,
+  WorkOrderDetail,
+  WorkOrderMaterialItemCreateForm,
+  WorkOrderMaterialItemRow,
+  WorkOrderMaterialItemUpdateForm,
+  WorkOrderMaterialItemsDiff,
+} from "@builders/domain"
+import {
+  validateWorkOrderMaterialItemCreateForm,
+  validateWorkOrderMaterialItemUpdateForm,
+} from "@builders/domain"
+import { useSaveMaterialItemsMutation } from "./mutations/use-save-material-items-mutation"
+import type {
+  WorkOrderMaterialItemLocal,
+  WorkOrderMaterialItemsLocalState,
+} from "./types"
+
+function toLocalItem(row: WorkOrderMaterialItemRow): WorkOrderMaterialItemLocal {
+  return {
+    id: row.id,
+    productId: row.productId,
+    productName: row.productName,
+    sendUnitAbbrev: row.sendUnitAbbrev,
+    quantity: row.quantity,
+    notes: row.notes,
+    categoryFilterId: null,
+  }
+}
+
+function createLocalState(
+  rows: WorkOrderMaterialItemRow[],
+): WorkOrderMaterialItemsLocalState {
+  return { items: rows.map(toLocalItem) }
+}
+
+function createItemsRevisionKey(rows: WorkOrderMaterialItemRow[]) {
+  return JSON.stringify(
+    rows.map((row) => `${row.id}:${row.productId}:${row.quantity}:${row.notes}`),
+  )
+}
+
+function serverItemById(rows: WorkOrderMaterialItemRow[]) {
+  const map = new Map<string, WorkOrderMaterialItemRow>()
+  for (const row of rows) map.set(row.id, row)
+  return map
+}
+
+// productId is locked post-create — diff identity for modified rows is
+// (quantity, notes). A productId mismatch on a saved row would mean a
+// UI bug; the API would reject it anyway via
+// WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED.
+function itemsDiffer(local: WorkOrderMaterialItemLocal, server: WorkOrderMaterialItemRow) {
+  return local.quantity !== server.quantity || local.notes !== server.notes
+}
+
+function toCreateForm(local: WorkOrderMaterialItemLocal): WorkOrderMaterialItemCreateForm {
+  return {
+    productId: local.productId,
+    quantity: local.quantity,
+    notes: local.notes,
+  }
+}
+
+function toUpdateForm(local: WorkOrderMaterialItemLocal): WorkOrderMaterialItemUpdateForm {
+  return {
+    quantity: local.quantity,
+    notes: local.notes,
+  }
+}
+
+function buildDiff(
+  local: WorkOrderMaterialItemsLocalState,
+  serverRows: WorkOrderMaterialItemRow[],
+): WorkOrderMaterialItemsDiff {
+  const serverById = serverItemById(serverRows)
+  const localIds = new Set(local.items.map((item) => item.id))
+
+  const added = local.items
+    .filter((item) => isLocalOnlyRecordRow(item.id))
+    .map((item) => ({ tempId: item.id, form: toCreateForm(item) }))
+
+  // Local iterates newest-first (prepend on add/duplicate). Reverse so the
+  // server stamps createdAt oldest → newest in submission order — keeps
+  // the post-save DESC sort consistent with the user's local view.
+  added.reverse()
+
+  const modified: WorkOrderMaterialItemsDiff["modified"] = []
+  for (const item of local.items) {
+    if (isLocalOnlyRecordRow(item.id)) continue
+    const serverRow = serverById.get(item.id)
+    if (!serverRow) continue
+    if (itemsDiffer(item, serverRow)) {
+      modified.push({ id: item.id, form: toUpdateForm(item) })
+    }
+  }
+
+  const deleted = serverRows
+    .filter((row) => !localIds.has(row.id))
+    .map((row) => ({ id: row.id }))
+
+  return { added, modified, deleted }
+}
+
+function byCreatedAtDesc(
+  a: WorkOrderMaterialItemRow,
+  b: WorkOrderMaterialItemRow,
+): number {
+  return b.createdAt.localeCompare(a.createdAt)
+}
+
+/**
+ * Material-items rows slice: owns the draft list, diff/form helpers, the
+ * engine's section controller wrap (with `onSave` driving the
+ * save-material-items mutation), and the six CRUD callbacks. The
+ * orchestrator composes this into the public surface the section
+ * component consumes.
+ */
+export function useWorkOrderMaterialItemsRows({
+  workOrder,
+  materialItems,
+  publishMaterialItems,
+  publishWorkOrder,
+}: {
+  workOrder: WorkOrderDetail
+  materialItems: WorkOrderMaterialItemRow[]
+  publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
+  publishWorkOrder: (record: WorkOrderDetail) => void
+}) {
+  const saveMutation = useSaveMaterialItemsMutation({ workOrderId: workOrder.id })
+
+  // Display order: newest material item first. Sort at the controller
+  // boundary so the engine + UI both see DESC-by-createdAt regardless of
+  // what the API returned.
+  const orderedMaterialItems = useMemo(
+    () => [...materialItems].sort(byCreatedAtDesc),
+    [materialItems],
+  )
+
+  const section = useRecordScopedSectionController<
+    WorkOrderMaterialItemRow[],
+    WorkOrderMaterialItemsLocalState
+  >({
+    recordId: workOrder.id,
+    sectionKey: "material-items",
+    serverValue: orderedMaterialItems,
+    serverRevisionKey: createItemsRevisionKey(orderedMaterialItems),
+    createLocalValue: createLocalState,
+    persistDraft: false,
+    policy: {
+      addRowPlacement: "top",
+      childRows: "inline",
+    },
+    onSave: async (localValue, currentRows) => {
+      for (const item of localValue.items) {
+        const validationError = isLocalOnlyRecordRow(item.id)
+          ? validateWorkOrderMaterialItemCreateForm(toCreateForm(item))
+          : validateWorkOrderMaterialItemUpdateForm(toUpdateForm(item))
+        if (validationError) {
+          throw createRecordSectionError({
+            kind: "validation",
+            message: validationError,
+            retryable: true,
+          })
+        }
+      }
+
+      const diff = buildDiff(localValue, currentRows)
+      const { workOrder: nextWorkOrder, materialItems: nextItems } =
+        await saveMutation.mutateAsync({
+          diff,
+          revisionKey: workOrder.updatedAt,
+        })
+
+      const sortedNextItems = [...nextItems].sort(byCreatedAtDesc)
+      publishWorkOrder(nextWorkOrder)
+      publishMaterialItems(sortedNextItems)
+
+      return {
+        serverValue: sortedNextItems,
+        serverRevisionKey: createItemsRevisionKey(sortedNextItems),
+        noticeMessage: "Material items saved",
+      }
+    },
+  })
+
+  function addItem() {
+    section.setLocalValue((previous) => ({
+      items: [
+        {
+          id: createLocalRecordRowId("work-order-material-item"),
+          productId: "",
+          productName: "",
+          sendUnitAbbrev: "",
+          quantity: "",
+          notes: "",
+          categoryFilterId: null,
+        },
+        ...previous.items,
+      ],
+    }))
+    section.setError(null)
+  }
+
+  function removeItem(itemId: string) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.filter((row) => row.id !== itemId),
+    }))
+    section.setError(null)
+  }
+
+  function duplicateItem(sourceItemId: string) {
+    section.setLocalValue((previous) => {
+      const source = previous.items.find((row) => row.id === sourceItemId)
+      if (!source) return previous
+      // Copy productId + productName + sendUnitAbbrev + categoryFilterId so
+      // the new row's picker shows the same product (with label) and the
+      // unit-abbrev display is preserved. Quantity + notes start blank so
+      // the user confirms per-row values for the new line.
+      const duplicated: WorkOrderMaterialItemLocal = {
+        id: createLocalRecordRowId("work-order-material-item"),
+        ...buildDuplicatedRow(
+          {
+            productId: source.productId,
+            productName: source.productName,
+            sendUnitAbbrev: source.sendUnitAbbrev,
+            quantity: source.quantity,
+            notes: source.notes,
+            categoryFilterId: source.categoryFilterId,
+          },
+          {
+            copy: ["productId", "productName", "sendUnitAbbrev", "categoryFilterId"],
+            defaults: {
+              productId: "",
+              productName: "",
+              sendUnitAbbrev: "",
+              quantity: "",
+              notes: "",
+              categoryFilterId: null,
+            },
+          },
+        ),
+      }
+      return { items: [duplicated, ...previous.items] }
+    })
+    section.setError(null)
+  }
+
+  function changeField(
+    itemId: string,
+    field: keyof WorkOrderMaterialItemLocal,
+    value: string,
+  ) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) =>
+        row.id === itemId ? { ...row, [field]: value } : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
+  function changeCategoryFilter(itemId: string, categoryId: string | null) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) => {
+        if (row.id !== itemId) return row
+        if (row.categoryFilterId === categoryId) return row
+        // Filter-only cascade — narrowing the product picker's results
+        // never clears the saved product. User picks a different product
+        // explicitly if they want to change it.
+        return { ...row, categoryFilterId: categoryId }
+      }),
+    }))
+  }
+
+  function setProductSnapshot(itemId: string, option: ProductOption | null) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) => {
+        if (row.id !== itemId) return row
+        if (option === null) {
+          return { ...row, productName: "", sendUnitAbbrev: "" }
+        }
+        return {
+          ...row,
+          productName: option.name,
+          sendUnitAbbrev: option.sendUnitAbbrev,
+        }
+      }),
+    }))
+  }
+
+  return {
+    section,
+    items: section.localValue.items,
+    addItem,
+    removeItem,
+    duplicateItem,
+    changeField,
+    changeCategoryFilter,
+    setProductSnapshot,
+  }
+}

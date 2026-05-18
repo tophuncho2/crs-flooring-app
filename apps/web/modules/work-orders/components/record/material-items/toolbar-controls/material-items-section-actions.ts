@@ -19,6 +19,13 @@ export function materialItemsSectionActions({
 }: MaterialItemsSectionActionsInput): ReadonlyArray<HeaderAction> {
   return [
     {
+      key: "add-mi",
+      label: "+ Add Material Item",
+      onClick: onAddItem,
+      kind: "secondary",
+      disabled: isSaving,
+    },
+    {
       key: "discard-mi",
       label: "Discard",
       onClick: onDiscard,
@@ -31,13 +38,6 @@ export function materialItemsSectionActions({
       onClick: onSave,
       kind: "primary",
       disabled: !isDirty || isSaving || hasConflict,
-    },
-    {
-      key: "add-mi",
-      label: "+ Add Material Item",
-      onClick: onAddItem,
-      kind: "secondary",
-      disabled: isSaving,
     },
   ]
 }
