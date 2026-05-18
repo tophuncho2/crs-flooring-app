@@ -2,7 +2,6 @@
 
 import {
   RecordCreateClientScaffold,
-  RecordPanelFooter,
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
@@ -11,6 +10,7 @@ import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-en
 import { createTemplateRequest } from "@/modules/templates/data/mutations"
 import { EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
+import { TemplateRecordFooter } from "./footer"
 
 function TemplateCreatePanel({
   page,
@@ -60,7 +60,7 @@ function TemplateCreatePanel({
           }}
         />
       </RecordSingleSectionPanel>
-      <RecordPanelFooter onClose={page.closePage} />
+      <TemplateRecordFooter onClose={page.closePage} />
     </div>
   )
 }

@@ -5,10 +5,8 @@ import {
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import {
-  deleteTemplateRequest,
-  updateTemplateRequest,
-} from "@/modules/templates/data/mutations"
+import { updateTemplateRequest } from "@/modules/templates/data/mutations"
+import { useTemplatesListMutations } from "@/modules/templates/controllers/list/use-templates-list-mutations"
 import {
   toTemplateForm,
   validateTemplateForm,
@@ -23,6 +21,8 @@ export function useTemplatePrimarySection({
   page: RecordDetailClientScaffoldContext
   template: TemplateDetail
 }) {
+  const { deleteTemplate } = useTemplatesListMutations()
+
   return useSingleSectionRecordController<TemplateDetail, TemplateForm>({
     page,
     scope: "template",
@@ -50,7 +50,7 @@ export function useTemplatePrimarySection({
       }
     },
     deleteRecord: async (record) => {
-      await deleteTemplateRequest(record.id, record.updatedAt)
+      await deleteTemplate.mutateAsync({ id: record.id, updatedAt: record.updatedAt })
     },
     deleteErrorMessage: "Failed to delete template",
   })

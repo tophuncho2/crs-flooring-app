@@ -8,7 +8,7 @@ import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import type { ProductOption } from "@builders/domain"
-import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/use-template-material-items-section"
+import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/record/use-template-material-items-section"
 
 const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
   dataColumns: [
