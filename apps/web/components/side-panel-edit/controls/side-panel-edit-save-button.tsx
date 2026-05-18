@@ -16,6 +16,7 @@ export type SidePanelEditSaveButtonProps = {
   onClick: () => void | Promise<void>
   label?: string
   savingLabel?: string
+  title?: string
 }
 
 /**
@@ -32,6 +33,7 @@ export function SidePanelEditSaveButton({
   onClick,
   label = "Save",
   savingLabel = "Saving...",
+  title,
 }: SidePanelEditSaveButtonProps) {
   const isDisabled = disabled ?? (!isDirty || isSaving || !canSave)
 
@@ -40,6 +42,7 @@ export function SidePanelEditSaveButton({
       type="button"
       onClick={() => void onClick()}
       disabled={isDisabled}
+      title={title}
       className={SAVE_BUTTON_CLASS_NAME}
     >
       {isSaving ? savingLabel : label}

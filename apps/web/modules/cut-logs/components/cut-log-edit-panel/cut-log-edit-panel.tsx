@@ -2,9 +2,16 @@
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
 import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
-import { CutLogEditActionButtons } from "./cut-log-edit-action-buttons"
 import { CutLogEditFormFields } from "./cut-log-edit-form-fields"
 import { CutLogEditHeader } from "./cut-log-edit-header"
+import {
+  CutLogEditDeleteButton,
+  CutLogEditDiscardButton,
+  CutLogEditFinalizeButton,
+  CutLogEditSaveButton,
+  CutLogEditStatusPill,
+  CutLogEditVoidButton,
+} from "./toolbar-controls"
 
 export type CutLogEditPanelProps = {
   controller: CutLogEditPanelController
@@ -30,11 +37,6 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
   const title =
     mode === "create" ? "New cut log" : (cutLog?.cutLogNumber ?? "Cut log")
 
-  const canSave =
-    mode === "create"
-      ? controller.form.inventoryId !== "" && controller.form.cut.trim() !== ""
-      : controller.form.cut.trim() !== ""
-
   const stickyHeader = cutLog ? (
     <CutLogEditHeader cutLog={cutLog} isSaving={controller.isSaving} />
   ) : undefined
@@ -48,18 +50,18 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
       widthClassName="w-[34rem]"
       stickyHeader={stickyHeader}
       footer={
-        <CutLogEditActionButtons
-          mode={mode}
-          cutLog={cutLog}
-          isDirty={controller.isDirty}
-          isSaving={controller.isSaving}
-          canSave={canSave}
-          onSave={controller.save}
-          onClose={controller.close}
-          onFinalize={controller.finalize}
-          onVoid={controller.voidCutLog}
-          onDelete={controller.deleteCutLog}
-        />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <CutLogEditSaveButton controller={controller} mode={mode} />
+            <CutLogEditDiscardButton controller={controller} />
+            <CutLogEditFinalizeButton controller={controller} mode={mode} />
+            <CutLogEditVoidButton controller={controller} mode={mode} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <CutLogEditStatusPill controller={controller} />
+            <CutLogEditDeleteButton controller={controller} mode={mode} />
+          </div>
+        </div>
       }
     >
       <div className="flex h-full flex-col">

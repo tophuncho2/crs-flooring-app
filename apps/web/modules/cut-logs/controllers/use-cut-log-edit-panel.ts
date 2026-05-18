@@ -410,6 +410,11 @@ export function useCutLogEditPanel({
     setOpen(null)
   }, [isSaving])
 
+  const discard = useCallback(() => {
+    setForm(baseline)
+    setError(null)
+  }, [baseline])
+
   return {
     open,
     form,
@@ -421,6 +426,7 @@ export function useCutLogEditPanel({
     canCreate,
     openPanel,
     close,
+    discard,
     setField,
     setLocationFilter,
     setInventoryId,

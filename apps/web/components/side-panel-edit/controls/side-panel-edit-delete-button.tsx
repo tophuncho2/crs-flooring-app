@@ -14,6 +14,7 @@ export type SidePanelEditDeleteButtonProps = {
   disabled?: boolean
   onClick: () => void | Promise<void>
   label?: string
+  title?: string
 }
 
 /**
@@ -25,6 +26,7 @@ export function SidePanelEditDeleteButton({
   disabled,
   onClick,
   label = "Delete",
+  title,
 }: SidePanelEditDeleteButtonProps) {
   const isDisabled = disabled ?? isSaving
 
@@ -33,6 +35,7 @@ export function SidePanelEditDeleteButton({
       type="button"
       onClick={() => void onClick()}
       disabled={isDisabled}
+      title={title}
       className={DELETE_BUTTON_CLASS_NAME}
     >
       {label}
