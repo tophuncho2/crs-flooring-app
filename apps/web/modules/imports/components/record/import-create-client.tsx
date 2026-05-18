@@ -4,7 +4,6 @@ import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-en
 import { createImportRequest } from "@/modules/imports/data/mutations"
 import {
   RecordCreateClientScaffold,
-  RecordPanelFooter,
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
@@ -14,6 +13,7 @@ import {
   type ImportPrimaryForm,
 } from "@builders/domain"
 import { ImportPrimaryFieldsSection } from "./primary/import-primary-fields-section"
+import { ImportRecordFooter } from "./footer"
 
 function ImportCreatePanel({
   page,
@@ -55,7 +55,7 @@ function ImportCreatePanel({
           }}
         />
       </RecordSingleSectionPanel>
-      <RecordPanelFooter onClose={page.closePage} />
+      <ImportRecordFooter onClose={page.closePage} />
     </div>
   )
 }
