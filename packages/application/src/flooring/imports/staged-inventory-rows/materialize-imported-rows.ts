@@ -4,7 +4,7 @@ import {
   listStagedInventoryForMaterialization,
   materializeStagedRowsToInventory,
   withDatabaseTransaction,
-  type CreateInventoryRecordInput,
+  type MaterializeInventoryRowFields,
 } from "@builders/db"
 import { type ImportMaterializeBatchPayload } from "@builders/domain"
 import { StagedInventoryExecutionError } from "./errors.js"
@@ -88,7 +88,7 @@ export async function materializeImportedStagedRowsUseCase(
     const fifoReceivedAt = new Date()
 
     const inventoryRowsToCreate: Array<
-      CreateInventoryRecordInput & { id: string; sourceStagedRowId: string }
+      MaterializeInventoryRowFields & { id: string; sourceStagedRowId: string }
     > = loadedRows.map((row) => ({
       id: randomUUID(),
       sourceStagedRowId: row.id,

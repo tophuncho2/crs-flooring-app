@@ -29,16 +29,12 @@ export function useInventoryPrimarySection({
     createLocalValue: toInventoryForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      // `warehouseId` is set-on-insert by the materialize worker — stripped
-      // here so it never crosses the wire on a user-driven update.
-      const { warehouseId: _warehouseId, ...editable } = localValue
-
       const payload = await requestJson<{ inventory: InventoryDetail }>(
         `/api/inventory/${record.id}/primary/section`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(withMutationMeta(editable, record.updatedAt)),
+          body: JSON.stringify(withMutationMeta(localValue, record.updatedAt)),
         },
       )
 

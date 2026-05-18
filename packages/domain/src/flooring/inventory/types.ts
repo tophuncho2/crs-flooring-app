@@ -76,36 +76,25 @@ export type InventoryDetail = InventoryRow & {
 }
 
 /**
- * Edit form for the inventory primary section. Only the columns the user is
- * allowed to change post-create — see `editability.ts` for the canonical
- * immutable/editable split. The worker seeds startingStock + per-unit
- * coverage + unit snapshots; those never appear on a user form.
+ * Update-form shape for the inventory primary section. Inventory rows are
+ * not user-creatable — the materialize import worker is the only path that
+ * adds rows. This form only carries the columns the user is allowed to
+ * change post-create; see `editability.ts` for the canonical
+ * immutable/editable split.
  */
 export type InventoryForm = {
   rollNumber: string
   dyeLot: string
-  warehouseId: string
   location: string
   note: string
   internalNotes: string
   isArchived: boolean
 }
 
-export const EMPTY_INVENTORY_FORM: InventoryForm = {
-  rollNumber: "",
-  dyeLot: "",
-  warehouseId: "",
-  location: "",
-  note: "",
-  internalNotes: "",
-  isArchived: false,
-}
-
 export function toInventoryForm(row: InventoryRow): InventoryForm {
   return {
     rollNumber: row.rollNumber,
     dyeLot: row.dyeLot,
-    warehouseId: row.warehouseId,
     location: row.location,
     note: row.note,
     internalNotes: row.internalNotes,

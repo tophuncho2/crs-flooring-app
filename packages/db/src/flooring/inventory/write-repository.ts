@@ -25,19 +25,19 @@ export async function lockInventoryRow(
 }
 
 /**
- * Create input for a real inventory row. Every field is worker-owned — the
- * worker materializes staged rows into real inventory at import time, stamping
- * the snapshot columns (`productName`, `categoryName`, `categorySlug`, the 6
- * unit fields, `importNumber`, `purchaseOrderNumber`, `inventoryItem`) and
- * picking up the FIFO timestamp. User flows never call this directly.
- *
- * The snapshot fields come from the linked product + import entry at
- * materialize time and are immutable post-create; product-level locks
+ * Worker-only field set for a real inventory row. Inventory rows are not
+ * user-creatable — the materialize import worker is the sole construction
+ * path, consumed exclusively via `materializeStagedRowsToInventory` and
+ * `MaterializeStagedRowsToInventoryInput` below. The snapshot columns
+ * (`productName`, `categoryName`, `categorySlug`, the 6 unit fields,
+ * `importNumber`, `purchaseOrderNumber`, `inventoryItem`) are stamped at
+ * materialize time from the linked product + import entry and are
+ * immutable post-create; product-level locks
  * (`isProductCategoryChangeBlocked`, `isProductCoveragePerUnitChangeBlocked`)
  * keep the joined source consistent with the snapshots for the lifetime of
  * the inventory row.
  */
-export type CreateInventoryRecordInput = {
+export type MaterializeInventoryRowFields = {
   importEntryId: string | null
   importNumber: string | null
   purchaseOrderNumber: string | null
@@ -99,38 +99,6 @@ export type UpdateInventoryTotalCutSumInput = {
   totalCutSum: Prisma.Decimal | string | number
 }
 
-function buildCreateData(
-  input: CreateInventoryRecordInput,
-): Prisma.FlooringInventoryCreateInput {
-  const data: Prisma.FlooringInventoryCreateInput = {
-    product: { connect: { id: input.productId } },
-    productName: input.productName,
-    warehouse: { connect: { id: input.warehouseId } },
-    categorySlug: input.categorySlug,
-    categoryName: input.categoryName,
-    importNumber: input.importNumber,
-    purchaseOrderNumber: input.purchaseOrderNumber,
-    stockUnitName: input.stockUnitName,
-    stockUnitAbbrev: input.stockUnitAbbrev,
-    itemCoverageUnitName: input.itemCoverageUnitName,
-    itemCoverageUnitAbbrev: input.itemCoverageUnitAbbrev,
-    sendUnitName: input.sendUnitName,
-    sendUnitAbbrev: input.sendUnitAbbrev,
-    rollPrefix: input.rollPrefix,
-    rollNumber: input.rollNumber,
-    dyeLot: input.dyeLot,
-    location: input.location,
-    note: input.note,
-    internalNotes: input.internalNotes,
-    inventoryItem: input.inventoryItem,
-    startingStock: input.startingStock,
-    coveragePerUnit: input.coveragePerUnit,
-    fifoReceivedAt: input.fifoReceivedAt,
-  }
-  if (input.importEntryId) data.importEntry = { connect: { id: input.importEntryId } }
-  return data
-}
-
 function buildUpdateData(
   input: UpdateInventoryRecordInput,
 ): Prisma.FlooringInventoryUpdateInput {
@@ -143,19 +111,6 @@ function buildUpdateData(
   if (input.inventoryItem !== undefined) data.inventoryItem = input.inventoryItem
   if (input.isArchived !== undefined) data.isArchived = input.isArchived
   return data
-}
-
-export async function createInventoryRecord(
-  input: CreateInventoryRecordInput,
-  client: InventoryDbClient = db,
-): Promise<InventoryRecord> {
-  const row = await client.flooringInventory.create({
-    data: buildCreateData(input),
-    select: { id: true },
-  })
-  const record = await getInventoryById(row.id, client)
-  if (!record) throw new Error("createInventoryRecord: record disappeared mid-transaction")
-  return record
 }
 
 export async function updateInventoryRecord(
@@ -238,7 +193,7 @@ export async function deleteInventoryRecordById(
 export type MaterializeStagedRowsToInventoryInput = {
   importEntryId: string
   inventoryRowsToCreate: Array<
-    CreateInventoryRecordInput & { id: string; sourceStagedRowId: string }
+    MaterializeInventoryRowFields & { id: string; sourceStagedRowId: string }
   >
 }
 
