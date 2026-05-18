@@ -29,7 +29,12 @@ export function TemplateSyncButton() {
   const [templateId, setTemplateId] = useState<string | null>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [headerCollapsed, setHeaderCollapsed] = useState(false)
   const itemsController = useTemplateSyncItems(templateId)
+
+  const toggleHeaderCollapsed = useCallback(() => {
+    setHeaderCollapsed((value) => !value)
+  }, [])
 
   const handleManagementCompanyChange = useCallback((value: string | null) => {
     setManagementCompanyId(value)
@@ -131,7 +136,11 @@ export function TemplateSyncButton() {
       </label>
 
       {itemsController.showSubHeader ? (
-        <TemplateSyncItemsSubHeader controller={itemsController} />
+        <TemplateSyncItemsSubHeader
+          controller={itemsController}
+          headerCollapsed={headerCollapsed}
+          onToggleHeader={toggleHeaderCollapsed}
+        />
       ) : null}
     </div>
   )
@@ -197,6 +206,7 @@ export function TemplateSyncButton() {
           <TemplateSyncPreviewBody
             templateId={templateId}
             itemsController={itemsController}
+            headerCollapsed={headerCollapsed}
           />
         ) : null}
       </SidePanelPreview>
