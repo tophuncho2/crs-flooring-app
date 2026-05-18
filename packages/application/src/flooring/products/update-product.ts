@@ -121,10 +121,6 @@ export async function updateProductUseCase(
     if (manufacturerName !== undefined) patch.manufacturerName = manufacturerName
     if ("style" in input) patch.style = input.style
     if ("color" in input) patch.color = input.color
-    if ("width" in input) patch.width = input.width
-    if ("sheetSize" in input) patch.sheetSize = input.sheetSize
-    if ("thickness" in input) patch.thickness = input.thickness
-    if ("unitWeight" in input) patch.unitWeight = input.unitWeight
     if ("coveragePerUnit" in input) patch.coveragePerUnit = input.coveragePerUnit
     if ("note" in input) patch.note = input.note
 

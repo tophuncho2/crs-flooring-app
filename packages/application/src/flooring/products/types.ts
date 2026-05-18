@@ -9,10 +9,6 @@ export type CreateProductInput = {
   manufacturerId: string | null
   style: string | null
   color: string | null
-  width: string | null
-  sheetSize: string | null
-  thickness: string | null
-  unitWeight: string | null
   coveragePerUnit: Prisma.Decimal | null
   note: string | null
 }

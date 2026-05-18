@@ -30,10 +30,6 @@ function parseSharedFields(body: Record<string, unknown>) {
     manufacturerId: parseOptionalString(body.manufacturerId),
     style: parseOptionalString(body.style),
     color: parseOptionalString(body.color),
-    width: parseOptionalString(body.width),
-    sheetSize: parseOptionalString(body.sheetSize),
-    thickness: parseOptionalString(body.thickness),
-    unitWeight: parseOptionalString(body.unitWeight),
     coveragePerUnit: parseCoveragePerUnit(body.coveragePerUnit),
     note: parseOptionalString(body.note),
   }

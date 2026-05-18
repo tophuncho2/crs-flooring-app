@@ -21,10 +21,6 @@ export type ProductRow = {
   manufacturerName: string
   style: string
   color: string
-  width: string
-  sheetSize: string
-  thickness: string
-  unitWeight: string
   coveragePerUnit: string
   // Send / stock / item-coverage unit name + abbreviation snapshots, stamped onto
   // the product row at write time from the chosen category. Reads never join
@@ -50,10 +46,6 @@ export type ProductCreateForm = {
   manufacturerId: string
   style: string
   color: string
-  width: string
-  sheetSize: string
-  thickness: string
-  unitWeight: string
   coveragePerUnit: string
   note: string
 }
@@ -85,10 +77,6 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   manufacturerId: "",
   style: "",
   color: "",
-  width: "",
-  sheetSize: "",
-  thickness: "",
-  unitWeight: "",
   coveragePerUnit: "",
   note: "",
 }
@@ -98,10 +86,6 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     manufacturerId: row.manufacturerId,
     style: row.style,
     color: row.color,
-    width: row.width,
-    sheetSize: row.sheetSize,
-    thickness: row.thickness,
-    unitWeight: row.unitWeight,
     coveragePerUnit: row.coveragePerUnit,
     note: row.note,
   }

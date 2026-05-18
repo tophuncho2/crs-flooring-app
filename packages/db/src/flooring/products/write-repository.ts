@@ -24,10 +24,6 @@ export type CreateProductInput = {
   manufacturerName: string | null
   style: string | null
   color: string | null
-  width: string | null
-  sheetSize: string | null
-  thickness: string | null
-  unitWeight: string | null
   coveragePerUnit: Prisma.Decimal | null
   note: string | null
   sendUnitName: string | null
@@ -67,10 +63,6 @@ export async function createProduct(
       manufacturerName: input.manufacturerName,
       style: input.style,
       color: input.color,
-      width: input.width,
-      sheetSize: input.sheetSize,
-      thickness: input.thickness,
-      unitWeight: input.unitWeight,
       coveragePerUnit: input.coveragePerUnit,
       note: input.note,
       sendUnitName: input.sendUnitName,
@@ -96,10 +88,6 @@ export async function updateProduct(
   if (input.manufacturerName !== undefined) data.manufacturerName = input.manufacturerName
   if (input.style !== undefined) data.style = input.style
   if (input.color !== undefined) data.color = input.color
-  if (input.width !== undefined) data.width = input.width
-  if (input.sheetSize !== undefined) data.sheetSize = input.sheetSize
-  if (input.thickness !== undefined) data.thickness = input.thickness
-  if (input.unitWeight !== undefined) data.unitWeight = input.unitWeight
   if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
   if (input.note !== undefined) data.note = input.note
 

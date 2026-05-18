@@ -32,10 +32,6 @@ export type ProductRecord = {
   manufacturerName: string
   style: string
   color: string
-  width: string
-  sheetSize: string
-  thickness: string
-  unitWeight: string
   coveragePerUnit: string
   sendUnitName: string
   sendUnitAbbrev: string
@@ -92,10 +88,6 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     manufacturerName: product.manufacturer?.companyName ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
-    width: product.width ?? "",
-    sheetSize: product.sheetSize ?? "",
-    thickness: product.thickness ?? "",
-    unitWeight: product.unitWeight ?? "",
     coveragePerUnit: product.coveragePerUnit?.toString() ?? "",
     sendUnitName: product.sendUnitName ?? "",
     sendUnitAbbrev: product.sendUnitAbbrev ?? "",

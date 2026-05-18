@@ -12,10 +12,6 @@ export type ProductRequestInput = {
   manufacturerId: string
   style: string
   color: string
-  width: string
-  sheetSize: string
-  thickness: string
-  unitWeight: string
   coveragePerUnit: string
   note: string
 }
