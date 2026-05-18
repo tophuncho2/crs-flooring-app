@@ -24,6 +24,7 @@ import {
 } from "@/modules/templates/data/list-templates-request"
 import { useTemplatesListController } from "@/modules/templates/controllers/use-templates-list-controller"
 import { TemplatesTable } from "./templates-table"
+import { AddTemplateButton } from "./toolbar-controls/add-template-button"
 import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { TemplatesListSearch } from "./toolbar-controls/templates-list-search"
@@ -136,17 +137,7 @@ export default function TemplatesClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader
-          title="Templates"
-          actions={[
-            {
-              key: "new",
-              label: "+ Template",
-              onClick: () => openCreate(),
-              kind: "primary",
-            },
-          ]}
-        />
+        <SectionHeader title="Templates" />
 
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
@@ -191,6 +182,13 @@ export default function TemplatesClient({
               managementCompanyId={selectedManagementCompanyId}
               onChange={handlePropertyChange}
             />
+          </ListToolbarCell>
+
+          {/* Right-anchored action: + Template occupies the top row of a
+              single right-anchored cell; the bottom row is empty (no
+              secondary create flow). */}
+          <ListToolbarCell className="ml-auto">
+            <AddTemplateButton onClick={() => openCreate()} />
           </ListToolbarCell>
         </ListToolbar>
 

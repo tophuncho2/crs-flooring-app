@@ -27,6 +27,7 @@ import {
 } from "@/modules/work-orders/data/list-work-orders-request"
 import { useWorkOrdersListController } from "@/modules/work-orders/controllers/list/use-work-orders-list-controller"
 import { WorkOrdersTable } from "./work-orders-table"
+import { AddWorkOrderButton } from "./toolbar-controls/add-work-order-button"
 import { MgmtCoFilterChip } from "./toolbar-controls/mgmt-co-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
@@ -209,12 +210,7 @@ export default function WorkOrdersClient({
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <SectionHeader
-          title="Work Orders"
-          actions={[
-            { key: "new", label: "+ Work Order", onClick: () => openCreate(), kind: "primary" },
-          ]}
-        />
+        <SectionHeader title="Work Orders" />
 
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
@@ -290,6 +286,13 @@ export default function WorkOrdersClient({
                 onChange={handleCompleteChange}
               />
             </ListToolbarTallCard>
+          </ListToolbarCell>
+
+          {/* Right-anchored action: + Work Order occupies the top row of a
+              single right-anchored cell; the bottom row is empty (no
+              secondary create flow). */}
+          <ListToolbarCell className="ml-auto">
+            <AddWorkOrderButton onClick={() => openCreate()} />
           </ListToolbarCell>
         </ListToolbar>
 
