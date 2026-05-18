@@ -223,10 +223,6 @@ model FlooringProduct {
   manufacturer                     FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
   style                            String?
   color                            String?
-  width                            String?
-  sheetSize                        String?
-  thickness                        String?
-  unitWeight                       String?
   coveragePerUnit                  Decimal?                           @db.Decimal(12, 4)
   note                             String?                            @db.VarChar(80)
   sendUnitName                     String?
