@@ -26,16 +26,14 @@ export function TemplateSyncItemsSubHeader({
   const { page, totalPages, canPrev, canNext, goPrev, goNext } = controller
 
   return (
-    <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--panel-border)] pt-3">
+    <div className="mt-3 flex items-center justify-end gap-2 border-t border-[var(--panel-border)] pt-3">
+      <TemplateSyncPageIndicator page={page} totalPages={totalPages} />
+      <TemplateSyncPrevButton disabled={!canPrev} onClick={goPrev} />
+      <TemplateSyncNextButton disabled={!canNext} onClick={goNext} />
       <TemplateSyncSectionToggleButton
         collapsed={headerCollapsed}
         onToggle={onToggleHeader}
       />
-      <div className="flex items-center gap-2">
-        <TemplateSyncPageIndicator page={page} totalPages={totalPages} />
-        <TemplateSyncPrevButton disabled={!canPrev} onClick={goPrev} />
-        <TemplateSyncNextButton disabled={!canNext} onClick={goNext} />
-      </div>
     </div>
   )
 }
