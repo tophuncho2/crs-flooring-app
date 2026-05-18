@@ -14,7 +14,7 @@ import { LocationPicker } from "@/modules/inventory/components/picker/location-p
 import type {
   CutLogEditPanelController,
   CutLogPanelRow,
-} from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
+} from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
 const EMPTY_CELL = "—"
 

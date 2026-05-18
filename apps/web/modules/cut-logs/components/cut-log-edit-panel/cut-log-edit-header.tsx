@@ -3,7 +3,7 @@
 import { isCutLogPendingEditable } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { SidePanelEditPickerRow } from "@/components/side-panel-edit"
-import type { CutLogPanelRow } from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
+import type { CutLogPanelRow } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
 export type CutLogEditHeaderProps = {
   cutLog: CutLogPanelRow

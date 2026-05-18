@@ -1,0 +1,75 @@
+import type { CutLogRow } from "@builders/domain"
+
+/**
+ * Editable form values for the cut-log side panel. `inventoryId` is editable
+ * only in create mode; saved rows treat it as immutable.
+ */
+export type CutLogEditForm = {
+  inventoryId: string
+  cut: string
+  isWaste: boolean
+  notes: string
+}
+
+/**
+ * UI-only narrowing filter (free-text location) plus snapshot label + unit
+ * for the picker trigger. None of these ship to the cut-log API — the
+ * persisted row carries only `inventoryId`. Local state lives outside
+ * `CutLogEditForm` so the dirty check + mutation payload stay clean.
+ */
+export type CutLogPanelLocal = {
+  locationFilter: string
+  pickedInventoryLabel: string
+  pickedInventoryStockUnitAbbrev: string
+}
+
+/**
+ * Local "patch" emitted to the parent when a cut-log mutation completes.
+ * Parents apply the patch to their cut-log snapshot (per-WOMI map on the
+ * WO side, flat array on the inv side) to keep the section in sync
+ * without a refetch.
+ *
+ * `workOrderItemId` is carried so the WO-side parent can route the patch
+ * into the right WOMI bucket. The inv-side parent ignores it (its
+ * snapshot is keyed by cut-log id).
+ */
+export type CutLogPanelPatch =
+  | { kind: "upsert"; workOrderItemId: string | null; cutLog: CutLogRow }
+  | { kind: "delete"; workOrderItemId: string | null; cutLogId: string }
+
+export type CutLogEditPanelMode = "create" | "edit"
+
+/**
+ * Row shape the panel renders in edit mode. Widens `CutLogRow` with the two
+ * server-resolved labels the inventory record view already surfaces on
+ * `InventoryCutLogRow` (`workOrderNumber`, `workOrderItemProductLabel`).
+ * Optional because mutation responses come back as plain `CutLogRow` —
+ * callers (and the update-mutation handler) carry labels forward from the
+ * prior snapshot.
+ */
+export type CutLogPanelRow = CutLogRow & {
+  workOrderNumber?: string | null
+  workOrderItemProductLabel?: string | null
+}
+
+/**
+ * Optional prefill carried through create mode. Used by the work-orders
+ * cut-log "duplicate" affordance to open the create panel with an inventory
+ * item already selected (matching the source row). Carries the id + the two
+ * picker-trigger labels so the `InventoryPicker` renders with the selection
+ * visible immediately, before the user types into search.
+ */
+export type CutLogCreatePresetInventory = {
+  id: string
+  label: string
+  stockUnitAbbrev: string | null
+}
+
+export type CutLogEditPanelOpenSpec =
+  | {
+      mode: "create"
+      workOrderItemId: string
+      productId: string
+      presetInventory?: CutLogCreatePresetInventory
+    }
+  | { mode: "edit"; workOrderItemId: string | null; cutLog: CutLogPanelRow }

@@ -1,7 +1,7 @@
 "use client"
 
 import { SidePanelEditDiscardButton } from "@/components/side-panel-edit"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
+import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
 /**
  * Cut-log side-panel adapter for the shared discard button. Reverts the

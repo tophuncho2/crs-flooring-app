@@ -23,7 +23,7 @@ export {
   type CutLogEditPanelMode,
   type CutLogPanelPatch,
   type CutLogPanelRow,
-} from "./controllers/use-cut-log-edit-panel"
+} from "./controllers/cut-log-side-panel"
 export {
   createPendingCutLogRequest,
   updatePendingCutLogRequest,

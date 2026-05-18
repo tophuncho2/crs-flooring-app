@@ -1,7 +1,7 @@
 "use client"
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
+import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 import { CutLogEditFormFields } from "./cut-log-edit-form-fields"
 import { CutLogEditHeader } from "./cut-log-edit-header"
 import {

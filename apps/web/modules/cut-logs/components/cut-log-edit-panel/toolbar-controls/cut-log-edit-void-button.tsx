@@ -1,7 +1,7 @@
 "use client"
 
 import type { FlooringCutLogStatus } from "@builders/domain"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
+import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
 const VOID_BUTTON_CLASS_NAME = [
   "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-all duration-200",

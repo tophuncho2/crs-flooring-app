@@ -1,7 +1,7 @@
 "use client"
 
 import type { FlooringCutLogStatus } from "@builders/domain"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
+import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
 const FINALIZE_BUTTON_CLASS_NAME = [
   "rounded-lg px-4 py-2 text-sm font-semibold transition disabled:opacity-60",

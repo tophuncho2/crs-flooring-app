@@ -2,7 +2,7 @@
 
 import type { FlooringCutLogStatus } from "@builders/domain"
 import { SidePanelEditDeleteButton } from "@/components/side-panel-edit"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/use-cut-log-edit-panel"
+import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
 /**
  * Cut-log side-panel adapter for the shared delete button. Edit mode only;
