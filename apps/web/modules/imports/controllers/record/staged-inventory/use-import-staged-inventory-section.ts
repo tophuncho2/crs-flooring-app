@@ -1,115 +1,24 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
-import { useMutation } from "@tanstack/react-query"
-import {
-  createLocalRecordRowId,
-  createRecordSectionError,
-  isLocalOnlyRecordRow,
-  useRecordScopedSectionController,
-} from "@/modules/shared/engines/record-view"
-import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select"
 import type {
   ImportDetail,
-  ProductOption,
   StagedInventoryFilterRow,
-  StagedInventoryFilterRowDelete,
-  StagedInventoryFilterRowDraft,
-  StagedInventoryFilterRowUpdate,
-  StagedInventoryFiltersDiff,
   StagedInventoryRow,
 } from "@builders/domain"
-import {
-  createImportFilterRowDraft,
-  toImportFilterRowDrafts,
-  validateImportFilterRowDrafts,
-  type ImportFilterRowDraft,
-} from "@/modules/imports/controllers/record/drafts"
-import {
-  createStagedInventoryRowRequest,
-  markStagedRowsForImportRequest,
-  updateImportStagedInventoryRequest,
-} from "@/modules/imports/data/mutations"
+import { useImportFilterRows } from "./use-import-filter-rows"
+import { useImportStagedRowSelection } from "./use-import-staged-row-selection"
 
-function createRevisionKey(record: ImportDetail, filterRows: StagedInventoryFilterRow[]) {
-  return `${record.updatedAt}:${filterRows.length}`
-}
-
-function toDraftForm(draft: ImportFilterRowDraft) {
-  return {
-    categoryFilterId: draft.categoryFilterId,
-    productId: draft.productId,
-    stockOrdered: draft.stockOrdered,
-  }
-}
-
-function formIsDirty(draft: ImportFilterRowDraft, server: StagedInventoryFilterRow): boolean {
-  return (
-    draft.categoryFilterId !== server.categoryFilterId ||
-    draft.productId !== server.productId ||
-    draft.stockOrdered !== server.stockOrdered
-  )
-}
-
-function buildFiltersDiff(
-  drafts: ImportFilterRowDraft[],
-  serverRows: StagedInventoryFilterRow[],
-): StagedInventoryFiltersDiff {
-  const serverById = new Map(serverRows.map((row) => [row.id, row]))
-  const liveDraftIds = new Set(
-    drafts.filter((draft) => !isLocalOnlyRecordRow(draft.clientId)).map((d) => d.clientId),
-  )
-
-  const added: StagedInventoryFilterRowDraft[] = []
-  const modified: StagedInventoryFilterRowUpdate[] = []
-  const deleted: StagedInventoryFilterRowDelete[] = []
-
-  for (const draft of drafts) {
-    if (isLocalOnlyRecordRow(draft.clientId)) {
-      added.push({ tempId: draft.clientId, form: toDraftForm(draft) })
-      continue
-    }
-    const existing = serverById.get(draft.clientId)
-    if (!existing) {
-      // Server drift — treat as add.
-      added.push({ tempId: draft.clientId, form: toDraftForm(draft) })
-      continue
-    }
-    if (formIsDirty(draft, existing)) {
-      modified.push({ id: existing.id, form: toDraftForm(draft) })
-    }
-  }
-
-  // Drafts iterate newest-first (prepend on add). Reverse so the server
-  // creates oldest → newest, giving the newest draft the latest
-  // createdAt — keeps post-save DESC sort consistent with local view.
-  added.reverse()
-
-  for (const serverRow of serverRows) {
-    if (!liveDraftIds.has(serverRow.id)) {
-      deleted.push({ id: serverRow.id })
-    }
-  }
-
-  return { added, modified, deleted }
-}
-
-function byCreatedAtDesc(
-  a: StagedInventoryFilterRow,
-  b: StagedInventoryFilterRow,
-): number {
-  return b.createdAt.localeCompare(a.createdAt)
-}
+export type { StagedInvRowPanelPatch } from "./types"
 
 /**
- * Patches emitted by the staged-inv-row side panel. Carries the
- * refreshed filter row so the parent can keep `remainingStock` +
- * `startingStockSum` + `childRowCount` in sync without a list refetch.
+ * Top-level staged-inventory section controller. Composes the filter-row
+ * slice (drafts + diff save + duplicate + patch path) with the staged-row
+ * selection slice (mark-for-import batch). Threads section dirty/busy
+ * flags from the engine into the selection gate.
+ *
+ * Return shape is the flat surface the section component consumes — no
+ * public API change vs. the pre-split version.
  */
-export type StagedInvRowPanelPatch =
-  | { kind: "upsert"; row: StagedInventoryRow; filterRow: StagedInventoryFilterRow }
-  | { kind: "delete"; rowId: string; filterRow: StagedInventoryFilterRow }
-
 export function useImportStagedInventorySection({
   record,
   filterRows,
@@ -129,240 +38,33 @@ export function useImportStagedInventorySection({
    */
   publishMarkedForImport: (markedIds: string[]) => void
 }) {
-  const filterDiffMutation = useMutation({
-    mutationFn: (input: { diff: StagedInventoryFiltersDiff; revisionKey: string }) =>
-      updateImportStagedInventoryRequest(record.id, input.diff, input.revisionKey),
+  const filters = useImportFilterRows({
+    record,
+    filterRows,
+    stagedRows,
+    publishFilterRows,
+    publishStagedRows,
   })
 
-  // Display order: newest filter row first. Sort at the controller boundary
-  // so both the engine's serverValue and any downstream consumers see the
-  // same DESC-by-createdAt ordering regardless of what the API returns.
-  const orderedFilterRows = useMemo(
-    () => [...filterRows].sort(byCreatedAtDesc),
-    [filterRows],
-  )
-
-  const section = useRecordScopedSectionController<
-    StagedInventoryFilterRow[],
-    ImportFilterRowDraft[]
-  >({
-    recordId: record.id,
-    sectionKey: "staged-inventory",
-    serverValue: orderedFilterRows,
-    serverRevisionKey: createRevisionKey(record, orderedFilterRows),
-    createLocalValue: toImportFilterRowDrafts,
-    persistDraft: false,
-    policy: {
-      addRowPlacement: "top",
-      childRows: "none",
-    },
-    onSave: async (localValue, currentServer) => {
-      const validationError = validateImportFilterRowDrafts(localValue)
-      if (validationError) {
-        throw createRecordSectionError({
-          kind: "validation",
-          message: validationError,
-          retryable: true,
-        })
-      }
-
-      const diff = buildFiltersDiff(localValue, currentServer)
-      if (diff.added.length === 0 && diff.modified.length === 0 && diff.deleted.length === 0) {
-        return {
-          serverValue: currentServer,
-          serverRevisionKey: createRevisionKey(record, currentServer),
-          noticeMessage: "No changes to save",
-        }
-      }
-
-      const response = await filterDiffMutation.mutateAsync({
-        diff,
-        revisionKey: record.updatedAt,
-      })
-      const sortedResponse = [...response.filterRows].sort(byCreatedAtDesc)
-      publishFilterRows(sortedResponse)
-
-      return {
-        serverValue: sortedResponse,
-        serverRevisionKey: createRevisionKey(response.import ?? record, sortedResponse),
-        noticeMessage: "Filter rows saved",
-      }
-    },
+  const selection = useImportStagedRowSelection({
+    importId: record.id,
+    stagedRows,
+    publishMarkedForImport,
+    isSectionDirty: filters.section.isDirty,
+    isSectionBusy: filters.section.isSaving,
   })
-
-  // --- Draft mutators (inline edits in the parent grid) ---
-
-  const addFilterRow = useCallback(() => {
-    section.setLocalValue((prev) => [
-      createImportFilterRowDraft(createLocalRecordRowId("import-filter-row")),
-      ...prev,
-    ])
-    if (section.error) section.setError(null)
-  }, [section])
-
-  const removeFilterRow = useCallback(
-    (clientId: string) => {
-      section.setLocalValue((prev) => prev.filter((row) => row.clientId !== clientId))
-      if (section.error) section.setError(null)
-    },
-    [section],
-  )
-
-  const setFilterField = useCallback(
-    <K extends keyof Pick<ImportFilterRowDraft, "productId" | "stockOrdered">>(
-      clientId: string,
-      field: K,
-      value: ImportFilterRowDraft[K],
-    ) => {
-      section.setLocalValue((prev) =>
-        prev.map((row) => (row.clientId === clientId ? { ...row, [field]: value } : row)),
-      )
-      if (section.error) section.setError(null)
-    },
-    [section],
-  )
-
-  const setFilterCategoryFilter = useCallback(
-    (clientId: string, categoryId: string | null) => {
-      section.setLocalValue((prev) =>
-        prev.map((row) =>
-          row.clientId === clientId ? { ...row, categoryFilterId: categoryId } : row,
-        ),
-      )
-      if (section.error) section.setError(null)
-    },
-    [section],
-  )
-
-  const setFilterProductSnapshot = useCallback(
-    (clientId: string, option: ProductOption | null) => {
-      section.setLocalValue((prev) =>
-        prev.map((row) => {
-          if (row.clientId !== clientId) return row
-          if (option === null) {
-            return { ...row, productName: "", stockUnitName: "", stockUnitAbbrev: "" }
-          }
-          return {
-            ...row,
-            productName: option.name,
-            stockUnitName: option.stockUnitName ?? "",
-            stockUnitAbbrev: option.stockUnitAbbrev,
-          }
-        }),
-      )
-    },
-    [section],
-  )
-
-  // --- Patch from the side panel after a per-row staged mutation ---
-
-  const applyStagedRowPatch = useCallback(
-    (patch: StagedInvRowPanelPatch) => {
-      // Splice the refreshed filter row into the server snapshot — the
-      // engine's revisionKey ignores totals changes (it's record.updatedAt
-      // + filterRows.length), so the user's in-progress draft isn't
-      // rebased.
-      publishFilterRows(
-        orderedFilterRows.map((row) =>
-          row.id === patch.filterRow.id ? patch.filterRow : row,
-        ),
-      )
-
-      if (patch.kind === "upsert") {
-        const exists = stagedRows.some((row) => row.id === patch.row.id)
-        publishStagedRows(
-          exists
-            ? stagedRows.map((row) => (row.id === patch.row.id ? patch.row : row))
-            : [...stagedRows, patch.row],
-        )
-      } else {
-        publishStagedRows(stagedRows.filter((row) => row.id !== patch.rowId))
-      }
-    },
-    [orderedFilterRows, stagedRows, publishFilterRows, publishStagedRows],
-  )
-
-  // --- Inline duplicate (synchronous POST, no panel) ---
-
-  const duplicateMutation = useMutation({
-    mutationFn: (input: { source: StagedInventoryRow }) =>
-      createStagedInventoryRowRequest({
-        importId: record.id,
-        filterRowId: input.source.filterRowId,
-        form: {
-          rollNumber: input.source.rollNumber,
-          dyeLot: input.source.dyeLot,
-          location: input.source.location,
-          startingStock: input.source.startingStock,
-          note: input.source.note,
-        },
-      }),
-    onSuccess: (response) => {
-      applyStagedRowPatch({ kind: "upsert", row: response.row, filterRow: response.filterRow })
-    },
-  })
-
-  const duplicateStagedRow = useCallback(
-    (source: StagedInventoryRow) => {
-      if (source.status !== "DRAFT") return
-      duplicateMutation.mutate({ source })
-    },
-    [duplicateMutation],
-  )
-
-  // --- Mark-for-import batch flow ---
-
-  const markForImport = useGatedBatchSelect({
-    rows: stagedRows,
-    isEligible: (row) => {
-      if (row.status !== "DRAFT") return false
-      if (!row.productId) return false
-      if (!row.startingStock) return false
-      return true
-    },
-    performAction: useCallback(
-      async (ids) => {
-        const result = await markStagedRowsForImportRequest(record.id, ids)
-        publishMarkedForImport(result.batch.markedRowIds)
-      },
-      [record.id, publishMarkedForImport],
-    ),
-    isSectionDirty: section.isDirty,
-    isSectionBusy: section.isSaving,
-  })
-
-  const stagedRowsByFilterId = useMemo(() => {
-    const map = new Map<string, StagedInventoryRow[]>()
-    for (const row of stagedRows) {
-      const list = map.get(row.filterRowId) ?? []
-      list.push(row)
-      map.set(row.filterRowId, list)
-    }
-    return map
-  }, [stagedRows])
 
   return {
-    ...section,
-    addFilterRow,
-    removeFilterRow,
-    setFilterField,
-    setFilterCategoryFilter,
-    setFilterProductSnapshot,
-    applyStagedRowPatch,
-    duplicateStagedRow,
-    isDuplicating: duplicateMutation.isPending,
-    stagedRowsByFilterId,
-    // Mark-for-import surface
-    selectedIds: markForImport.selectedIds,
-    toggleSelection: markForImport.toggleSelected,
-    clearSelection: markForImport.clearSelection,
-    eligibleSelectedIds: markForImport.eligibleSelectedIds,
-    isMarking: markForImport.isFiring,
-    markError: markForImport.error,
-    markForImport: markForImport.fire,
-    isSelectionActive: markForImport.isSelectionActive,
-    canToggleSelection: markForImport.canToggleSelection,
-    eligibleCount: markForImport.eligibleCount,
-    toggleAllEligible: markForImport.toggleAllEligible,
+    ...filters.section,
+    addFilterRow: filters.addFilterRow,
+    removeFilterRow: filters.removeFilterRow,
+    setFilterField: filters.setFilterField,
+    setFilterCategoryFilter: filters.setFilterCategoryFilter,
+    setFilterProductSnapshot: filters.setFilterProductSnapshot,
+    applyStagedRowPatch: filters.applyStagedRowPatch,
+    duplicateStagedRow: filters.duplicateStagedRow,
+    isDuplicating: filters.isDuplicating,
+    stagedRowsByFilterId: filters.stagedRowsByFilterId,
+    ...selection,
   }
 }

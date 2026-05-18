@@ -6,11 +6,9 @@ export type StagedInventorySectionActionsInput = {
   isMarking: boolean
   isSelectionActive: boolean
   hasConflict: boolean
-  eligibleSelectedCount: number
   onAddFilterRow: () => void
   onDiscard: () => void
   onSave: () => void
-  onRunImport: () => void
 }
 
 export function stagedInventorySectionActions({
@@ -19,11 +17,9 @@ export function stagedInventorySectionActions({
   isMarking,
   isSelectionActive,
   hasConflict,
-  eligibleSelectedCount,
   onAddFilterRow,
   onDiscard,
   onSave,
-  onRunImport,
 }: StagedInventorySectionActionsInput): ReadonlyArray<HeaderAction> {
   return [
     {
@@ -47,14 +43,6 @@ export function stagedInventorySectionActions({
       kind: "primary",
       disabled:
         !isDirty || isSaving || hasConflict || isMarking || isSelectionActive,
-    },
-    {
-      key: "run",
-      label: isMarking ? "Running..." : "Run Import",
-      onClick: onRunImport,
-      kind: "primary",
-      disabled:
-        eligibleSelectedCount === 0 || isMarking || isSaving || isDirty,
     },
   ]
 }

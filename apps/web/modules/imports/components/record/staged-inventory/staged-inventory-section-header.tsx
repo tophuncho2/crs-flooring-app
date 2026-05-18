@@ -3,8 +3,8 @@
 import type { ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
 import {
-  SelectAllEligibleButton,
   StagedInventoryExpandToggle,
+  StagedInventorySelectionCluster,
   stagedInventorySectionActions,
 } from "./toolbar-controls"
 
@@ -74,22 +74,22 @@ export function StagedInventorySectionHeader({
             : ""}
         </span>
       }
-      status={
-        eligibleSelectedCount > 0
-          ? {
-              tone: "processing",
-              label: "Ready to queue",
-              detail: "Worker will materialize on Run",
-            }
-          : undefined
-      }
       extraActions={
-        <SelectAllEligibleButton
-          isSelectionActive={isSelectionActive}
-          selectedCount={selectedCount}
-          eligibleCount={eligibleCount}
-          canSelect={canToggleSelection}
-          onToggle={onToggleSelection}
+        <StagedInventorySelectionCluster
+          selection={{
+            isSelectionActive,
+            selectedCount,
+            eligibleCount,
+            canToggleSelection,
+            onToggleSelection,
+          }}
+          runImport={{
+            eligibleSelectedCount,
+            isMarking,
+            isSaving,
+            isDirty,
+            onRunImport,
+          }}
         />
       }
       actions={stagedInventorySectionActions({
@@ -98,11 +98,9 @@ export function StagedInventorySectionHeader({
         isMarking,
         isSelectionActive,
         hasConflict,
-        eligibleSelectedCount,
         onAddFilterRow,
         onDiscard,
         onSave,
-        onRunImport,
       })}
       message={noticeMessage}
       error={error}
