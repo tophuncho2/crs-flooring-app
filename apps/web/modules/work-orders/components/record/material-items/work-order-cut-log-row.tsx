@@ -39,7 +39,7 @@ export function WorkOrderCutLogRow({
   const renderCell = useMemo(() => renderCutLogReadOnlyCell({}), [])
 
   return (
-    <div className="space-y-3 rounded-md border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
+    <div className="space-y-3 border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
       <Grid<CutLogRow>
         rows={rows}
         layout={INVENTORY_CUT_LOG_LAYOUT}

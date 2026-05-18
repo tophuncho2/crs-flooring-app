@@ -129,7 +129,7 @@ export function StagedInvRowSubGrid({
   }
 
   return (
-    <div className="space-y-3 rounded-md border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
+    <div className="space-y-3 border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
       <Grid<StagedInvGridRow>
         rows={gridRows}
         layout={STAGED_INV_ROW_LAYOUT}
