@@ -39,16 +39,12 @@ export function ManagementCompanySidePanel({ controller }: ManagementCompanySide
       title={title}
       widthClassName="w-[34rem]"
       footer={
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <ManagementCompanySidePanelSaveButton controller={controller} mode={resolvedMode} />
-            <ManagementCompanySidePanelDiscardButton controller={controller} />
-            <ManagementCompanySidePanelHubViewButton controller={controller} />
-          </div>
-          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-            <ManagementCompanySidePanelStatusPill controller={controller} />
-            <ManagementCompanySidePanelDeleteButton controller={controller} mode={resolvedMode} />
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <ManagementCompanySidePanelSaveButton controller={controller} mode={resolvedMode} />
+          <ManagementCompanySidePanelDiscardButton controller={controller} />
+          <ManagementCompanySidePanelHubViewButton controller={controller} />
+          <ManagementCompanySidePanelStatusPill controller={controller} />
+          <ManagementCompanySidePanelDeleteButton controller={controller} mode={resolvedMode} />
         </div>
       }
     >
