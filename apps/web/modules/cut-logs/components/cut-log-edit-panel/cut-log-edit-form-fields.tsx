@@ -163,6 +163,18 @@ export function CutLogEditFormFields({
       {/* Editable cells — notes, waste, cut. Stacked vertically per the panel
           spec; each row uses the 8-col invisible grid for consistent gutters. */}
       <FieldSection gap="0.75rem">
+        <CellAt col={1} colSpan={4}>
+          <FormField label="Cut" required>
+            <UnitCell
+              editable={fieldsEditable}
+              value={form.cut}
+              onChange={(next) => controller.setField("cut", next)}
+              unit={stockUnit}
+              placeholder="0"
+              ariaLabel="Cut amount"
+            />
+          </FormField>
+        </CellAt>
         <CellAt col={1} colSpan={8}>
           <FormField label="Notes">
             <TextCell
@@ -182,18 +194,6 @@ export function CutLogEditFormFields({
               value={form.isWaste}
               onChange={(next) => controller.setField("isWaste", next)}
               ariaLabel="Waste flag"
-            />
-          </FormField>
-        </CellAt>
-        <CellAt col={1} colSpan={4}>
-          <FormField label="Cut" required>
-            <UnitCell
-              editable={fieldsEditable}
-              value={form.cut}
-              onChange={(next) => controller.setField("cut", next)}
-              unit={stockUnit}
-              placeholder="0"
-              ariaLabel="Cut amount"
             />
           </FormField>
         </CellAt>
