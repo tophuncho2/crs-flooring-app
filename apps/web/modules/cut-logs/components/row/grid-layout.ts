@@ -23,13 +23,14 @@ export const CUT_LOG_COLUMN_DEFINITIONS = {
   isWaste: { key: "isWaste", label: "Waste", minWidth: 88, grow: 0, align: "center" },
   notes: { key: "notes", label: "Notes", minWidth: 200, grow: 1 },
   cutLogNumber: { key: "cutLogNumber", label: "Cut Log #", minWidth: 132, grow: 0 },
+  warehouse: { key: "warehouse", label: "Warehouse", minWidth: 160, grow: 0 },
 } as const satisfies Record<string, GridColumn<CutLogRow>>
 
 /**
- * Canonical 10-column shape used by BOTH the inventory record view's cut-log
+ * Canonical 11-column shape used by BOTH the inventory record view's cut-log
  * section AND the work-orders material items section's cut-log grid. Order:
  * status → inventoryItem → location → before → cut → after → coverageCut →
- * isWaste → notes → cutLogNumber.
+ * isWaste → notes → cutLogNumber → warehouse.
  *
  * `inventoryItem` cell renders the cut log's frozen-at-create snapshot of
  * the parent inventory's identity (inv# / roll# / dyeLot / note). `location`
@@ -38,6 +39,11 @@ export const CUT_LOG_COLUMN_DEFINITIONS = {
  * the cut originated without opening the panel. `isWaste` and `notes` are
  * the operator-editable fields from the cut-log side panel, surfaced as
  * read-only columns here so operators can scan without opening the panel.
+ * `warehouse` reads the cut log's snapshot warehouse name — on the inv side
+ * it comes from the joined `InventoryCutLogRow.warehouseName`; on the WO
+ * side the row shape (`CutLogRow`) doesn't carry it, so the consumer
+ * passes the parent WO's warehouse name via `warehouseFallback` to the
+ * shared cell renderer.
  */
 export const INVENTORY_CUT_LOG_LAYOUT: GridLayout<CutLogRow> = {
   dataColumns: [
@@ -51,5 +57,6 @@ export const INVENTORY_CUT_LOG_LAYOUT: GridLayout<CutLogRow> = {
     CUT_LOG_COLUMN_DEFINITIONS.isWaste,
     CUT_LOG_COLUMN_DEFINITIONS.notes,
     CUT_LOG_COLUMN_DEFINITIONS.cutLogNumber,
+    CUT_LOG_COLUMN_DEFINITIONS.warehouse,
   ],
 }

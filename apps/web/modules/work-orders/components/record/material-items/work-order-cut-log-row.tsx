@@ -11,6 +11,14 @@ import { WORK_ORDER_CUT_LOG_LAYOUT } from "./work-order-cut-log-row-layout"
 export type WorkOrderCutLogRowProps = {
   workOrderItemId: string
   serverRows: ReadonlyArray<CutLogRow>
+  /**
+   * Parent WO's warehouse name. Passed to the shared cut-log cell renderer
+   * as the `warehouseFallback` so the `warehouse` column renders on the WO
+   * side too — WO-side rows are plain `CutLogRow` and don't carry a joined
+   * `warehouseName`, and every row in this grid shares the parent WO's
+   * warehouse by construction.
+   */
+  warehouseName: string
   /** Open the edit panel for a saved cut log. */
   onOpenEdit: (workOrderItemId: string, cutLog: CutLogRow) => void
   /** Open the edit panel in create mode for this WOMI. */
@@ -38,6 +46,7 @@ export type WorkOrderCutLogRowProps = {
 export function WorkOrderCutLogRow({
   workOrderItemId,
   serverRows,
+  warehouseName,
   onOpenEdit,
   onCreateNew,
   onDuplicate,
@@ -45,7 +54,10 @@ export function WorkOrderCutLogRow({
 }: WorkOrderCutLogRowProps) {
   const rows = useMemo<CutLogRow[]>(() => [...serverRows], [serverRows])
 
-  const renderCell = useMemo(() => renderCutLogReadOnlyCell({}), [])
+  const renderCell = useMemo(
+    () => renderCutLogReadOnlyCell({ warehouseFallback: warehouseName }),
+    [warehouseName],
+  )
 
   function renderControl(
     control: { key: string; kind: string },

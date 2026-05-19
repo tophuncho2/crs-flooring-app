@@ -29,6 +29,14 @@ export type CutLogReadOnlyRenderOptions = {
    * always use their own `itemCoverageUnitAbbrev`.
    */
   coverageUnitFallback?: string
+  /**
+   * Fallback label for the `warehouse` column when the row shape doesn't
+   * carry a joined `warehouseName` (i.e. plain `CutLogRow` on the WO side).
+   * Consumers on the inv side pass `InventoryCutLogRow` which already
+   * carries `warehouseName`; the WO side passes the parent WO's warehouse
+   * name here so every row in that grid renders the same warehouse.
+   */
+  warehouseFallback?: string
 }
 
 function pickStockUnit(row: CutLogRow, options: CutLogReadOnlyRenderOptions): string {
@@ -37,6 +45,13 @@ function pickStockUnit(row: CutLogRow, options: CutLogReadOnlyRenderOptions): st
 
 function pickCoverageUnit(row: CutLogRow, options: CutLogReadOnlyRenderOptions): string {
   return row.itemCoverageUnitAbbrev ?? options.coverageUnitFallback ?? ""
+}
+
+function pickWarehouseName(
+  row: CutLogRow & { warehouseName?: string | null },
+  options: CutLogReadOnlyRenderOptions,
+): string {
+  return row.warehouseName ?? options.warehouseFallback ?? ""
 }
 
 /**
@@ -88,6 +103,16 @@ export function renderCutLogReadOnlyCell(
             ariaLabel={`${row.cutLogNumber} number`}
           />
         )
+      case "warehouse": {
+        const warehouseName = pickWarehouseName(row, options)
+        return (
+          <TextCell
+            editable={false}
+            value={warehouseName || "—"}
+            ariaLabel={`${row.cutLogNumber} warehouse`}
+          />
+        )
+      }
       case "cut":
         return (
           <UnitCell

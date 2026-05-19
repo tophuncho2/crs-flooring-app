@@ -276,6 +276,7 @@ export function WorkOrderMaterialItemsSection({
                     <WorkOrderCutLogRow
                       workOrderItemId={row.id}
                       serverRows={cutLogs}
+                      warehouseName={workOrder.warehouseName}
                       onOpenEdit={handleOpenEdit}
                       onCreateNew={handleCreateNew}
                       onDuplicate={handleDuplicate}
