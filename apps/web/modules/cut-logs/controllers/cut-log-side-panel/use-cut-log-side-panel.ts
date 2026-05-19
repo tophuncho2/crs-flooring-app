@@ -42,9 +42,11 @@ import type {
  * Behavior contract:
  *   - Save (create) → stay open, transition to edit on the new row
  *   - Save (edit)   → stay open, refresh form to server values
- *   - Finalize      → close (status optimistically becomes FINAL)
- *   - Void          → close (status becomes VOID)
- *   - Delete        → close (row removed)
+ *   - Finalize      → stay open on the now-FINAL row (input cells go
+ *                     read-only via `isCutLogPendingEditable`)
+ *   - Void          → stay open on the now-VOID row (input cells go
+ *                     read-only)
+ *   - Delete        → close (row no longer exists)
  *   - Backdrop / ESC / X → close, discard unsaved
  */
 export function useCutLogEditPanel({
@@ -169,12 +171,16 @@ export function useCutLogEditPanel({
   const voidMutation = useVoidCutLogMutation({
     scope,
     publish,
+    setForm,
+    setBaseline,
     setOpen,
     setError,
   })
   const finalizeMutation = useFinalizeCutLogMutation({
     scope,
     publish,
+    setForm,
+    setBaseline,
     setOpen,
     setError,
   })

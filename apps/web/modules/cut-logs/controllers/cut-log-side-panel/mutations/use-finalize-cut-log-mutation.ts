@@ -7,22 +7,37 @@ import {
   finalizeCutLogRequest,
   type CutLogScopeUrl,
 } from "@/modules/cut-logs/data/mutations"
-import type { CutLogEditPanelOpenSpec, CutLogPanelPatch } from "../types"
+import { buildEditForm } from "../form"
+import type {
+  CutLogEditForm,
+  CutLogEditPanelOpenSpec,
+  CutLogPanelPatch,
+} from "../types"
 
 type Deps = {
   scope: CutLogScopeUrl
   publish: (patch: CutLogPanelPatch) => void
+  setForm: Dispatch<SetStateAction<CutLogEditForm>>
+  setBaseline: Dispatch<SetStateAction<CutLogEditForm>>
   setOpen: Dispatch<SetStateAction<CutLogEditPanelOpenSpec | null>>
   setError: Dispatch<SetStateAction<string | null>>
 }
 
 /**
- * Finalize mutation. Closes the panel on success; the new FINAL row is
- * upserted into the parent snapshot via the standard `publish` patch.
+ * Finalize mutation. Stays open on success — the now-FINAL row replaces
+ * the prior PENDING row in the panel state and the form/baseline reset
+ * to the server-fresh values. The cut log is no longer pending-editable
+ * after this, so the panel's input cells go read-only via
+ * `isCutLogPendingEditable`. The standard `publish` patch upserts the
+ * new row into the parent snapshot. The WO/WOMI + warehouse labels are
+ * carried forward from the prior open spec so the read-only cells stay
+ * populated (the response is a plain `CutLogRow` with no joined labels).
  */
 export function useFinalizeCutLogMutation({
   scope,
   publish,
+  setForm,
+  setBaseline,
   setOpen,
   setError,
 }: Deps) {
@@ -35,7 +50,24 @@ export function useFinalizeCutLogMutation({
         workOrderItemId: variables.workOrderItemId,
         cutLog: response.cutLog,
       })
-      setOpen(null)
+      const next = buildEditForm(response.cutLog)
+      setForm(next)
+      setBaseline(next)
+      setOpen((prev) => ({
+        mode: "edit",
+        workOrderItemId: variables.workOrderItemId,
+        cutLog: {
+          ...response.cutLog,
+          workOrderNumber:
+            prev?.mode === "edit" ? (prev.cutLog.workOrderNumber ?? null) : null,
+          workOrderItemProductLabel:
+            prev?.mode === "edit"
+              ? (prev.cutLog.workOrderItemProductLabel ?? null)
+              : null,
+          warehouseName:
+            prev?.mode === "edit" ? (prev.cutLog.warehouseName ?? null) : null,
+        },
+      }))
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))

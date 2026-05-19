@@ -7,11 +7,18 @@ import {
   voidCutLogRequest,
   type CutLogScopeUrl,
 } from "@/modules/cut-logs/data/mutations"
-import type { CutLogEditPanelOpenSpec, CutLogPanelPatch } from "../types"
+import { buildEditForm } from "../form"
+import type {
+  CutLogEditForm,
+  CutLogEditPanelOpenSpec,
+  CutLogPanelPatch,
+} from "../types"
 
 type Deps = {
   scope: CutLogScopeUrl
   publish: (patch: CutLogPanelPatch) => void
+  setForm: Dispatch<SetStateAction<CutLogEditForm>>
+  setBaseline: Dispatch<SetStateAction<CutLogEditForm>>
   setOpen: Dispatch<SetStateAction<CutLogEditPanelOpenSpec | null>>
   setError: Dispatch<SetStateAction<string | null>>
 }
@@ -19,11 +26,18 @@ type Deps = {
 /**
  * Void mutation. Server returns the full voided row (link cols + `location`
  * cleared, status flipped to VOID). Falls back to an optimistic patch if
- * the server response is ever shaped without the row (defensive).
+ * the server response is ever shaped without the row (defensive). Stays
+ * open on success so the operator can see the VOID status reflected in
+ * place — form/baseline reset to the server-fresh values; the cut log is
+ * no longer pending-editable, so the panel's input cells go read-only
+ * via `isCutLogPendingEditable`. WO/WOMI + warehouse labels are carried
+ * forward from the prior open spec so the read-only cells stay populated.
  */
 export function useVoidCutLogMutation({
   scope,
   publish,
+  setForm,
+  setBaseline,
   setOpen,
   setError,
 }: Deps) {
@@ -45,7 +59,24 @@ export function useVoidCutLogMutation({
         workOrderItemId: variables.workOrderItemId,
         cutLog: voided,
       })
-      setOpen(null)
+      const next = buildEditForm(voided)
+      setForm(next)
+      setBaseline(next)
+      setOpen((prev) => ({
+        mode: "edit",
+        workOrderItemId: variables.workOrderItemId,
+        cutLog: {
+          ...voided,
+          workOrderNumber:
+            prev?.mode === "edit" ? (prev.cutLog.workOrderNumber ?? null) : null,
+          workOrderItemProductLabel:
+            prev?.mode === "edit"
+              ? (prev.cutLog.workOrderItemProductLabel ?? null)
+              : null,
+          warehouseName:
+            prev?.mode === "edit" ? (prev.cutLog.warehouseName ?? null) : null,
+        },
+      }))
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
