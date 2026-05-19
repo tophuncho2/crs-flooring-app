@@ -26,7 +26,7 @@ import { PropertySidePanel } from "@/modules/properties/components/side-panel"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { AddPropertyButton } from "./toolbar-controls/add-property-button"
-import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
+import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
 import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
 import { PropertiesListSearch } from "./toolbar-controls/properties-list-search"
 import { PropertiesClearAll } from "./toolbar-controls/sub-controls/properties-clear-all"
@@ -171,10 +171,10 @@ export default function PropertiesClient({
               />
             </ListToolbarCell>
 
-            {/* Job Type: placeholder chip for now; will be wired once the
-                properties list filter contract accepts a job-type id. */}
+            {/* State: placeholder chip for now; will be wired once the
+                properties list filter contract accepts a state code. */}
             <ListToolbarCell>
-              <JobTypeFilterChip />
+              <StateFilterChip />
             </ListToolbarCell>
 
             {/* Right-anchored actions stacked vertically: + Property on top,
