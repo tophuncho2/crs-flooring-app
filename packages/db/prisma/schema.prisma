@@ -236,6 +236,7 @@ model FlooringProduct {
   templateItems                          FlooringTemplateItem[]
   workOrderItems                         FlooringWorkOrderItem[]
   inventories                            FlooringInventory[]
+  cutLogs                                FlooringCutLog[]
   FlooringImportStagedInventoryRow       FlooringImportStagedInventoryRow[]
   FlooringImportStagedInventoryFilterRow FlooringImportStagedInventoryFilterRow[]
 
@@ -368,7 +369,7 @@ model FlooringImportEntry {
 
 model FlooringCutLog {
   id               String                 @id @default(uuid())
-  cutLogNumber     String                 @unique @default(dbgenerated("('CUT-'::text || lpad((nextval('flooring_cut_log_number_seq'::regclass))::text, 7, '0'::text))"))
+  cutLogNumber     String                 @unique @default(dbgenerated("('CUT-'::text || (nextval('flooring_cut_log_number_seq'::regclass))::text)"))
   inventoryId      String
   inventory        FlooringInventory      @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   inventoryItem    String                 @default("")
@@ -379,6 +380,11 @@ model FlooringCutLog {
   inventoryNote    String?                @db.VarChar(30)
   location         String?                @db.VarChar(30)
   categorySlug     String
+  productId        String
+  product          FlooringProduct        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName      String                 @default("")
+  warehouseId      String
+  warehouse        FlooringWarehouse      @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   workOrderId      String?
   workOrder        FlooringWorkOrder?     @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
   workOrderItemId  String?
@@ -403,6 +409,8 @@ model FlooringCutLog {
   @@unique([inventoryId, finalCutSequence])
   @@index([cutLogNumber])
   @@index([inventoryId])
+  @@index([productId])
+  @@index([warehouseId])
   @@index([workOrderId])
   @@index([workOrderItemId])
   @@index([workOrderItemId, status])
@@ -487,6 +495,7 @@ model FlooringWarehouse {
   imports             FlooringImportEntry[]
   stagedInventoryRows FlooringImportStagedInventoryRow[]
   inventories         FlooringInventory[]
+  cutLogs             FlooringCutLog[]
   workOrders          FlooringWorkOrder[]
   templates           FlooringTemplate[]
 

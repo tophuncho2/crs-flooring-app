@@ -7,7 +7,7 @@ export type CutLogActionDialogProps = {
   open: boolean
   /** Status of the cut log the action targets — drives the dialog copy. */
   status: FlooringCutLogStatus
-  /** Cut log number (the user-visible "CUT-XXXXXXX" identifier). */
+  /** Cut log number (the user-visible "CUT-N" identifier). */
   cutLogNumber: string
   /** Fired when the user confirms. The consumer is responsible for closing. */
   onConfirm: () => void
