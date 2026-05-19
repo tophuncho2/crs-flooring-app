@@ -55,7 +55,7 @@ export function WorkOrderMetaFieldsBand({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} row={1} colSpan={1}>
+      <CellAt col={5} row={1} colSpan={2}>
         <FormField label="Scheduled For">
           <DateCell
             editable={editable}
