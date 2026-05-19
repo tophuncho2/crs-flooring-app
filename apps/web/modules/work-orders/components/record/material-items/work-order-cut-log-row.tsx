@@ -12,11 +12,12 @@ export type WorkOrderCutLogRowProps = {
   workOrderItemId: string
   serverRows: ReadonlyArray<CutLogRow>
   /**
-   * Parent WO's warehouse name. Passed to the shared cut-log cell renderer
-   * as the `warehouseFallback` so the `warehouse` column renders on the WO
-   * side too — WO-side rows are plain `CutLogRow` and don't carry a joined
-   * `warehouseName`, and every row in this grid shares the parent WO's
-   * warehouse by construction.
+   * Parent WO's warehouse name. The WO-side cut-log read returns plain
+   * `CutLogRow` with no joined warehouse name, so we hydrate each row
+   * here before handing the array to `Grid`. Every cut log on a WO
+   * shares the WO's warehouse by construction (the snapshot column
+   * matches the parent WO's warehouse), so this is the snapshot value
+   * the `warehouse` column should render.
    */
   warehouseName: string
   /** Open the edit panel for a saved cut log. */
@@ -52,12 +53,12 @@ export function WorkOrderCutLogRow({
   onDuplicate,
   isSectionBusy,
 }: WorkOrderCutLogRowProps) {
-  const rows = useMemo<CutLogRow[]>(() => [...serverRows], [serverRows])
-
-  const renderCell = useMemo(
-    () => renderCutLogReadOnlyCell({ warehouseFallback: warehouseName }),
-    [warehouseName],
+  const rows = useMemo<CutLogRow[]>(
+    () => serverRows.map((row) => ({ ...row, warehouseName })),
+    [serverRows, warehouseName],
   )
+
+  const renderCell = useMemo(() => renderCutLogReadOnlyCell({}), [])
 
   function renderControl(
     control: { key: string; kind: string },

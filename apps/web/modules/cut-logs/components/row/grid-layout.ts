@@ -39,11 +39,11 @@ export const CUT_LOG_COLUMN_DEFINITIONS = {
  * the cut originated without opening the panel. `isWaste` and `notes` are
  * the operator-editable fields from the cut-log side panel, surfaced as
  * read-only columns here so operators can scan without opening the panel.
- * `warehouse` reads the cut log's snapshot warehouse name — on the inv side
- * it comes from the joined `InventoryCutLogRow.warehouseName`; on the WO
- * side the row shape (`CutLogRow`) doesn't carry it, so the consumer
- * passes the parent WO's warehouse name via `warehouseFallback` to the
- * shared cell renderer.
+ * `warehouse` reads `warehouseName` straight off the row. On the inv side
+ * it's the joined snapshot label on `InventoryCutLogRow`. On the WO side
+ * the row shape is plain `CutLogRow`, so the consuming section hydrates
+ * each row with the WO's warehouse name before handing the array to the
+ * grid (every cut log on a WO shares the WO's warehouse by construction).
  */
 export const INVENTORY_CUT_LOG_LAYOUT: GridLayout<CutLogRow> = {
   dataColumns: [
