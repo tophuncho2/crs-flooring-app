@@ -13,6 +13,12 @@
  *   - The 5 underlying primitives (`inventoryNumber` / `rollPrefix` /
  *     `rollNumber` / `dyeLot` / `inventoryNote`) — stamped here for
  *     queryability / future render flexibility.
+ *   - `productId` / `productName` / `warehouseId` — stamped here so the cut
+ *     log carries its own product + warehouse linkage independent of the
+ *     parent inventory. `productName` is the user-facing label rendered in
+ *     the cut-log edit panel; `productId` and `warehouseId` are FKs used
+ *     for joins and dropdown filtering (material-item picker scopes by
+ *     `productId`, work-order picker scopes by `warehouseId`).
  *
  * `categorySlug` stays on the snapshot because cut-log routing logic keys
  * off it after create.
@@ -22,9 +28,11 @@
  * separate parameter alongside the snapshot through the data + application
  * layers.
  *
- * All 5 primitive fields are nullable so the snapshot can be reused on
+ * The 5 identity primitives are nullable so the snapshot can be reused on
  * pre-migration cut log records (which surface as null) and to mirror the
- * cut log schema columns.
+ * cut log schema columns. `productId` / `productName` / `warehouseId` are
+ * non-null — the underlying inventory columns are NOT NULL and the cut log
+ * table was empty when the columns were added.
  */
 export type PendingCutLogInventorySnapshot = {
   inventoryItem: string
@@ -34,6 +42,9 @@ export type PendingCutLogInventorySnapshot = {
   rollNumber: string | null
   dyeLot: string | null
   inventoryNote: string | null
+  productId: string
+  productName: string
+  warehouseId: string
 }
 
 /**
@@ -53,5 +64,8 @@ export function buildPendingCutLogInventorySnapshot(
     rollNumber: inv.rollNumber,
     dyeLot: inv.dyeLot,
     inventoryNote: inv.inventoryNote,
+    productId: inv.productId,
+    productName: inv.productName,
+    warehouseId: inv.warehouseId,
   }
 }

@@ -216,11 +216,13 @@ export type InsertPendingCutLogRowInput = {
  * persistence call — no business rules, no invariant checks (those run in
  * the use case before/after via the domain).
  *
- * Stamps the four unit-snapshot fields, the seven identity-snapshot
- * fields, and the `location` mirror from the input (which the use case
- * sourced from the parent inventory). After this insert returns, the
- * snapshot fields are immutable on the cut log; `location` is mutable
- * (re-stamped on update / finalize, cleared on void).
+ * Stamps the four unit-snapshot fields, the ten identity-snapshot fields
+ * (`inventoryItem`, `categorySlug`, the 5 identity primitives, plus
+ * `productId` / `productName` / `warehouseId`), and the `location` mirror
+ * from the input (which the use case sourced from the parent inventory).
+ * After this insert returns, the snapshot fields are immutable on the
+ * cut log; `location` is mutable (re-stamped on update / finalize,
+ * cleared on void).
  *
  * Worker-only fields stay at their schema defaults / null:
  *   - `before` / `after` / `finalCutSequence`: null (finalize stamps them).
@@ -252,6 +254,9 @@ export async function insertPendingCutLogRow(
       rollNumber: input.inventorySnapshot.rollNumber,
       dyeLot: input.inventorySnapshot.dyeLot,
       inventoryNote: input.inventorySnapshot.inventoryNote,
+      productId: input.inventorySnapshot.productId,
+      productName: input.inventorySnapshot.productName,
+      warehouseId: input.inventorySnapshot.warehouseId,
       location: input.location,
     },
     select: cutLogRowSelect,

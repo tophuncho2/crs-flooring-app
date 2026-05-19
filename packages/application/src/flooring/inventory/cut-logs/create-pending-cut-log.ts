@@ -28,10 +28,12 @@ import type { CreatePendingCutLogInput, CutLogMutationResult } from "./types.js"
  *   4. Lock the parent inventory FOR UPDATE.
  *   5. Read the inventory parent context (startingStock, categorySlug,
  *      coveragePerUnit, the four unit-snapshot fields, the 5 inventory-
- *      identity snapshot primitives, and `location`).
+ *      identity snapshot primitives, the `productId` / `productName` /
+ *      `warehouseId` snapshot fields, and `location`).
  *   6. Derive `coverageCut` via the domain helper.
- *   7. Insert the row, stamping the unit snapshot, the identity snapshot,
- *      and the `location` mirror from the inventory.
+ *   7. Insert the row, stamping the unit snapshot, the identity snapshot
+ *      (including `productId` / `productName` / `warehouseId`), and the
+ *      `location` mirror from the inventory.
  *   8. Recompute the inventory's `totalCutSum`.
  *   9. Assert `totalCutSum ≤ startingStock` (translated to a 400
  *      `CUT_LOG_EXCEEDS_INVENTORY` execution error on failure).
@@ -139,6 +141,9 @@ export async function createPendingCutLogUseCase(
         rollNumber: inventory.rollNumber,
         dyeLot: inventory.dyeLot,
         inventoryNote: inventory.inventoryNote,
+        productId: inventory.productId,
+        productName: inventory.productName,
+        warehouseId: inventory.warehouseId,
       }),
       location: inventory.location,
     })

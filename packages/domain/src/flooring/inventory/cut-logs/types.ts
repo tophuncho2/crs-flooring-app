@@ -32,7 +32,13 @@ export type CutLogStatus = FlooringCutLogStatus
 //      `inventoryNote` (the 5 parent-identity primitives)
 //    - `stockUnitName` / `stockUnitAbbrev` / `itemCoverageUnitName` /
 //      `itemCoverageUnitAbbrev` (unit-of-measure labels)
-//    Pre-snapshot rows (created before each column landed) surface as null.
+//    - `productId` / `productName` / `warehouseId` (parent product +
+//      warehouse linkage). `productName` is the user-facing label;
+//      `productId` and `warehouseId` are FKs used for joins and to filter
+//      the link-picker option lists in the cut-log edit panel.
+//    Pre-snapshot rows (created before each column landed) surface as null
+//    for the nullable fields. `productId` / `productName` / `warehouseId`
+//    are non-null — the table was empty when those columns were added.
 //
 // 2. Denormalized mirror — re-stamped on every state-changing write:
 //    - `location` is re-snapped from the parent inventory on create,
@@ -50,6 +56,9 @@ export type CutLogRow = {
   inventoryNote: string | null
   location: string | null
   categorySlug: string
+  productId: string
+  productName: string
+  warehouseId: string
   workOrderId: string | null
   workOrderItemId: string | null
   before: string | null
@@ -91,13 +100,17 @@ export type CutLogLinkUpdate = {
 }
 
 // Read shape returned to the inventory record view: a `CutLogRow` plus
-// server-resolved labels for its work-order / material-item links. The
-// work-orders side reads plain `CutLogRow` (the WO + WOMI context is
-// already in scope on that surface). Both fields are nullable to mirror
-// the underlying link columns.
+// server-resolved labels for its work-order / material-item links and the
+// snapshot warehouse's name. The work-orders side reads plain `CutLogRow`
+// (the WO + WOMI context is already in scope on that surface).
+//
+// `workOrderNumber` and `workOrderItemProductLabel` are nullable to mirror
+// the underlying link columns. `warehouseName` is non-null — it joins off
+// the cut log's snapshot `warehouseId` which is NOT NULL.
 export type InventoryCutLogRow = CutLogRow & {
   workOrderNumber: string | null
   workOrderItemProductLabel: string | null
+  warehouseName: string
 }
 
 // Page envelope returned by the inventory cut-logs list endpoint. `rows`
@@ -145,4 +158,7 @@ export type CutLogParentContext = {
   dyeLot: string | null
   inventoryNote: string | null
   location: string | null
+  productId: string
+  productName: string
+  warehouseId: string
 }

@@ -14,6 +14,9 @@ export const cutLogRowSelect = {
   inventoryNote: true,
   location: true,
   categorySlug: true,
+  productId: true,
+  productName: true,
+  warehouseId: true,
   workOrderId: true,
   workOrderItemId: true,
   before: true,
@@ -40,10 +43,11 @@ export type CutLogRowPayload = Prisma.FlooringCutLogGetPayload<{
 
 /**
  * Inventory-side cut-log read shape: `cutLogRowSelect` plus the linked
- * work-order's `workOrderNumber` and the linked work-order item's product
- * name parts. Used only by `inventoryDetailSelect` so the inventory side
- * can render labels in the cut-log row + side panel without a follow-up
- * fetch. The work-orders side still uses plain `cutLogRowSelect`.
+ * work-order's `workOrderNumber`, the linked work-order item's product
+ * name parts, and the snapshot warehouse's `name`. Used only by
+ * `inventoryDetailSelect` so the inventory side can render labels in the
+ * cut-log row + side panel without a follow-up fetch. The work-orders
+ * side still uses plain `cutLogRowSelect`.
  */
 export const inventoryCutLogRowSelect = {
   ...cutLogRowSelect,
@@ -61,6 +65,11 @@ export const inventoryCutLogRowSelect = {
           color: true,
         },
       },
+    },
+  },
+  warehouse: {
+    select: {
+      name: true,
     },
   },
 } as const satisfies Prisma.FlooringCutLogSelect

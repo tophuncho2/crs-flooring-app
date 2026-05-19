@@ -56,6 +56,9 @@ export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
     inventoryNote: row.inventoryNote ?? null,
     location: row.location ?? null,
     categorySlug: row.categorySlug,
+    productId: row.productId,
+    productName: row.productName,
+    warehouseId: row.warehouseId,
     workOrderId: row.workOrderId ?? null,
     workOrderItemId: row.workOrderItemId ?? null,
     before: toDecimalStringOrNull(row.before),
@@ -99,6 +102,7 @@ export function normalizeInventoryCutLogRow(
           color: product.color,
         })
       : null,
+    warehouseName: row.warehouse.name,
   }
 }
 
@@ -123,6 +127,10 @@ export async function getCutLogById(
  *     (frozen thereafter).
  *   - The 5 inventory-identity primitives + the composed `inventoryItem`
  *     — stamped on the cut log at create (frozen thereafter).
+ *   - `productId` / `productName` / `warehouseId` — stamped on the cut log
+ *     at create (frozen thereafter); `productName` surfaces to the UI as
+ *     a label, `productId` / `warehouseId` are FKs used for joins and to
+ *     filter the cut-log edit panel's link pickers.
  *   - `location` — re-snapped on every state-changing write; cleared on
  *     void. Carries the parent's current value at call time.
  *
@@ -151,6 +159,9 @@ export async function getInventoryParentContextForCutLogs(
       stockUnitAbbrev: true,
       itemCoverageUnitName: true,
       itemCoverageUnitAbbrev: true,
+      productId: true,
+      productName: true,
+      warehouseId: true,
     },
   })
   if (!row) return null
@@ -172,6 +183,9 @@ export async function getInventoryParentContextForCutLogs(
     dyeLot: row.dyeLot ?? null,
     inventoryNote: row.note ?? null,
     location: row.location ?? null,
+    productId: row.productId,
+    productName: row.productName,
+    warehouseId: row.warehouseId,
   }
 }
 
@@ -323,6 +337,9 @@ export async function getPendingCutLogWithInventoryForMutation(
           stockUnitAbbrev: true,
           itemCoverageUnitName: true,
           itemCoverageUnitAbbrev: true,
+          productId: true,
+          productName: true,
+          warehouseId: true,
         },
       },
     },
@@ -349,6 +366,9 @@ export async function getPendingCutLogWithInventoryForMutation(
       dyeLot: inv.dyeLot ?? null,
       inventoryNote: inv.note ?? null,
       location: inv.location ?? null,
+      productId: inv.productId,
+      productName: inv.productName,
+      warehouseId: inv.warehouseId,
     },
   }
 }

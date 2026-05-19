@@ -33,7 +33,7 @@ export function CutLogEditHeader({ cutLog, isSaving }: CutLogEditHeaderProps) {
       />
       <SidePanelEditPickerRow
         label="Material item"
-        value={cutLog.workOrderItemProductLabel ?? null}
+        value={cutLog.productName || cutLog.workOrderItemProductLabel || null}
         placeholder="Pick material item…"
         disabled={pickersDisabled}
         ariaLabel="Material item"
