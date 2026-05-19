@@ -102,9 +102,15 @@ export function WorkOrderMaterialItemsSection({
       // a cut log can only reference inventory of the same product.
       const productId =
         section.items.find((item) => item.id === workOrderItemId)?.productId ?? ""
-      cutLogPanel.openPanel({ mode: "create", workOrderItemId, productId })
+      cutLogPanel.openPanel({
+        mode: "create",
+        workOrderItemId,
+        productId,
+        workOrderNumber: workOrder.workOrderNumber,
+        warehouseName: workOrder.warehouseName,
+      })
     },
-    [cutLogPanel, section.items],
+    [cutLogPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
   )
 
   const handleDuplicate = useCallback(
@@ -119,6 +125,8 @@ export function WorkOrderMaterialItemsSection({
         mode: "create",
         workOrderItemId,
         productId,
+        workOrderNumber: workOrder.workOrderNumber,
+        warehouseName: workOrder.warehouseName,
         presetInventory: {
           id: cutLog.inventoryId,
           label: cutLog.inventoryItem,
@@ -126,7 +134,7 @@ export function WorkOrderMaterialItemsSection({
         },
       })
     },
-    [cutLogPanel, section.items],
+    [cutLogPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
   )
 
   function renderParentCell(

@@ -71,6 +71,14 @@ export type CutLogEditPanelOpenSpec =
       mode: "create"
       workOrderItemId: string
       productId: string
+      /**
+       * Parent WO/warehouse labels carried through create so the panel can
+       * hoist them onto the new row after a successful save (the create
+       * response is a plain `CutLogRow` with no joined labels). The
+       * subsequent re-open path hydrates these via `handleOpenEdit`.
+       */
+      workOrderNumber?: string | null
+      warehouseName?: string | null
       presetInventory?: CutLogCreatePresetInventory
     }
   | { mode: "edit"; workOrderItemId: string | null; cutLog: CutLogPanelRow }

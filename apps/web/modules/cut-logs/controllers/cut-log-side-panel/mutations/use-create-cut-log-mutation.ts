@@ -26,7 +26,11 @@ type Deps = {
  * Create-pending mutation. WO-only — the inventory side never reaches this
  * path because `canCreate` is false there. On success transitions the panel
  * from create → edit on the newly-created row so the operator can finalize
- * or tweak without reopening the panel.
+ * or tweak without reopening the panel. The parent WO label
+ * (`workOrderNumber`) and warehouse label (`warehouseName`) are carried
+ * forward from the create-mode open spec so the panel's read-only cells
+ * stay populated without a reopen. `productName` rides along on the
+ * response (snapshot column), so it doesn't need a carry-forward.
  */
 export function useCreateCutLogMutation({
   scope,
@@ -62,11 +66,17 @@ export function useCreateCutLogMutation({
       const next = buildEditForm(response.cutLog)
       setForm(next)
       setBaseline(next)
-      setOpen({
+      setOpen((prev) => ({
         mode: "edit",
         workOrderItemId: variables.workOrderItemId,
-        cutLog: response.cutLog,
-      })
+        cutLog: {
+          ...response.cutLog,
+          workOrderNumber:
+            prev?.mode === "create" ? (prev.workOrderNumber ?? null) : null,
+          warehouseName:
+            prev?.mode === "create" ? (prev.warehouseName ?? null) : null,
+        },
+      }))
     },
     onError: (err: unknown) => {
       setError(err instanceof Error ? err.message : String(err))
