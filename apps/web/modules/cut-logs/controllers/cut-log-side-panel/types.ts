@@ -40,16 +40,17 @@ export type CutLogPanelPatch =
 export type CutLogEditPanelMode = "create" | "edit"
 
 /**
- * Row shape the panel renders in edit mode. Widens `CutLogRow` with the two
+ * Row shape the panel renders in edit mode. Widens `CutLogRow` with the
  * server-resolved labels the inventory record view already surfaces on
- * `InventoryCutLogRow` (`workOrderNumber`, `workOrderItemProductLabel`).
- * Optional because mutation responses come back as plain `CutLogRow` —
- * callers (and the update-mutation handler) carry labels forward from the
- * prior snapshot.
+ * `InventoryCutLogRow` (`workOrderNumber`, `workOrderItemProductLabel`,
+ * `warehouseName`). Optional because mutation responses come back as plain
+ * `CutLogRow` — callers (and the update-mutation handler) carry labels
+ * forward from the prior snapshot.
  */
 export type CutLogPanelRow = CutLogRow & {
   workOrderNumber?: string | null
   workOrderItemProductLabel?: string | null
+  warehouseName?: string | null
 }
 
 /**

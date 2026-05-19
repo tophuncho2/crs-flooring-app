@@ -77,6 +77,14 @@ export function CutLogEditFormFields({
       {mode === "edit" && cutLog ? (
         <SidePanelPreviewReadonlySection>
           <SidePanelPreviewReadonlyRow
+            label="Warehouse"
+            value={valueOrDash(cutLog.warehouseName)}
+          />
+          <SidePanelPreviewReadonlyRow
+            label="Product"
+            value={valueOrDash(cutLog.productName)}
+          />
+          <SidePanelPreviewReadonlyRow
             label="Created"
             value={formatCutLogTimestamp(cutLog.createdAt)}
           />

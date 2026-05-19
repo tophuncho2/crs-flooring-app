@@ -89,10 +89,11 @@ export function WorkOrderMaterialItemsSection({
           ...cutLog,
           workOrderNumber: workOrder.workOrderNumber,
           workOrderItemProductLabel: item?.productName || null,
+          warehouseName: workOrder.warehouseName,
         },
       })
     },
-    [cutLogPanel, section.items, workOrder.workOrderNumber],
+    [cutLogPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
   )
 
   const handleCreateNew = useCallback(

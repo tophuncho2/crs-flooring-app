@@ -27,9 +27,10 @@ type Deps = {
  * Update-pending mutation. Stays open on success and refreshes the form +
  * baseline to the server-fresh row. Mutation responses come back as plain
  * `CutLogRow` — the WO/WOMI labels (`workOrderNumber`,
- * `workOrderItemProductLabel`) are carried forward from the prior snapshot
- * so the panel's read-only cells stay populated. A pending-edit can't
- * change the WO link, so those labels remain accurate.
+ * `workOrderItemProductLabel`) and the warehouse label (`warehouseName`)
+ * are carried forward from the prior snapshot so the panel's read-only
+ * cells stay populated. A pending-edit can't change the WO link or the
+ * warehouse snapshot, so those labels remain accurate.
  */
 export function useUpdateCutLogMutation({
   scope,
@@ -75,6 +76,8 @@ export function useUpdateCutLogMutation({
             prev?.mode === "edit"
               ? (prev.cutLog.workOrderItemProductLabel ?? null)
               : null,
+          warehouseName:
+            prev?.mode === "edit" ? (prev.cutLog.warehouseName ?? null) : null,
         },
       }))
     },
