@@ -143,9 +143,9 @@ export function useTemplateMaterialItemsSection({
 
       const diff = buildDiff(localValue, currentRecord)
       const { template: nextTemplate } = await saveTemplateMaterialItemsSectionRequest(
-        currentRecord.id,
+        template.id,
         diff,
-        currentRecord.updatedAt,
+        template.updatedAt,
       )
 
       publishTemplate(nextTemplate)
