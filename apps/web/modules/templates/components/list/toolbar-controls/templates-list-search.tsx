@@ -15,7 +15,7 @@ export function TemplatesListSearch({
     <SearchControl
       query={query}
       onQueryChange={onQueryChange}
-      placeholder="template #, unit type, description"
+      placeholder="unit type, description"
     />
   )
 }
