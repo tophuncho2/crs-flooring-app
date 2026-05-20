@@ -1,15 +1,16 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { RefreshCw } from "lucide-react"
 import { SidePanelPreview } from "@/components/side-panel-preview"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
-import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
 import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
 import { TemplateSyncPreviewBody } from "@/modules/template-sync/components/template-sync-preview-body"
 import { TemplateSyncItemsSubHeader } from "@/modules/template-sync/components/header/template-sync-items-sub-header"
+import { TemplateSyncTemplateTrigger } from "@/modules/template-sync/components/template-sync-template-trigger"
+import { TemplateSyncOptionsPanel } from "@/modules/template-sync/components/template-sync-options-panel"
 import { TemplateSyncClearButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-clear-button"
 import { TemplateSyncNewButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-new-button"
 import { TemplateSyncOpenButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-open-button"
@@ -27,10 +28,13 @@ export function TemplateSyncButton() {
   const [managementCompanyId, setManagementCompanyId] = useState<string | null>(null)
   const [propertyId, setPropertyId] = useState<string | null>(null)
   const [templateId, setTemplateId] = useState<string | null>(null)
+  const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string | null>(null)
+  const [templatePickerExpanded, setTemplatePickerExpanded] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [headerCollapsed, setHeaderCollapsed] = useState(false)
   const itemsController = useTemplateSyncItems(templateId)
+  const templateTriggerRef = useRef<HTMLButtonElement | null>(null)
 
   const toggleHeaderCollapsed = useCallback(() => {
     setHeaderCollapsed((value) => !value)
@@ -40,18 +44,51 @@ export function TemplateSyncButton() {
     setManagementCompanyId(value)
     setPropertyId(null)
     setTemplateId(null)
+    setSelectedTemplateLabel(null)
+    setTemplatePickerExpanded(false)
   }, [])
 
   const handlePropertyChange = useCallback((value: string | null) => {
     setPropertyId(value)
     setTemplateId(null)
+    setSelectedTemplateLabel(null)
+    setTemplatePickerExpanded(false)
   }, [])
 
   const resetSelections = useCallback(() => {
     setManagementCompanyId(null)
     setPropertyId(null)
     setTemplateId(null)
+    setSelectedTemplateLabel(null)
+    setTemplatePickerExpanded(false)
     setErrorMessage(null)
+  }, [])
+
+  // Defensive: if the property cascade clears propertyId while the options
+  // panel is open, collapse — the trigger becomes disabled in that state.
+  useEffect(() => {
+    if (propertyId === null && templatePickerExpanded) {
+      setTemplatePickerExpanded(false)
+    }
+  }, [propertyId, templatePickerExpanded])
+
+  const handleToggleTemplatePicker = useCallback(() => {
+    setTemplatePickerExpanded((value) => !value)
+  }, [])
+
+  const handleTemplateOptionSelect = useCallback(
+    (id: string | null, label: string | null) => {
+      setTemplateId(id)
+      setSelectedTemplateLabel(label)
+      setTemplatePickerExpanded(false)
+      templateTriggerRef.current?.focus()
+    },
+    [],
+  )
+
+  const handleTemplateOptionCancel = useCallback(() => {
+    setTemplatePickerExpanded(false)
+    templateTriggerRef.current?.focus()
   }, [])
 
   const handleClose = useCallback(() => {
@@ -127,15 +164,17 @@ export function TemplateSyncButton() {
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
           Template
         </span>
-        <TemplatePicker
-          value={templateId}
-          onChange={setTemplateId}
+        <TemplateSyncTemplateTrigger
+          ref={templateTriggerRef}
           propertyId={propertyId}
+          expanded={templatePickerExpanded}
+          onToggle={handleToggleTemplatePicker}
+          selectedLabel={selectedTemplateLabel}
           ariaLabel="Template"
         />
       </label>
 
-      {itemsController.showSubHeader ? (
+      {!templatePickerExpanded && itemsController.showSubHeader ? (
         <TemplateSyncItemsSubHeader
           controller={itemsController}
           headerCollapsed={headerCollapsed}
@@ -202,7 +241,15 @@ export function TemplateSyncButton() {
         stickyHeader={stickyHeader}
         footer={footer}
       >
-        {templateId ? (
+        {templatePickerExpanded && propertyId ? (
+          <TemplateSyncOptionsPanel
+            propertyId={propertyId}
+            currentValue={templateId}
+            currentLabel={selectedTemplateLabel}
+            onSelect={handleTemplateOptionSelect}
+            onCancel={handleTemplateOptionCancel}
+          />
+        ) : templateId ? (
           <TemplateSyncPreviewBody
             templateId={templateId}
             itemsController={itemsController}
