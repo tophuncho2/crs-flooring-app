@@ -1,5 +1,6 @@
 import {
   Prisma,
+  db,
   getPendingCutLogWithInventoryForMutation,
   lockInventoryForCutLog,
   recomputeAndPersistTotalCutSums,
@@ -50,6 +51,70 @@ export async function updatePendingCutLogUseCase(
   input: UpdatePendingCutLogInput,
   client?: Prisma.TransactionClient,
 ): Promise<CutLogMutationResult> {
+  // Pre-TX: link-symmetry + relink-target lookup. The WOMI read is
+  // read-only validation against immutable snapshots (WO.warehouseId and
+  // WOMI.productId never change post-create), so doing it outside the
+  // interactive transaction keeps the in-TX work below Prisma's 5s
+  // default budget. The TX below re-confirms the cut log's snapshot
+  // matches what we resolved here.
+  let resolvedWomiTarget: {
+    workOrderId: string
+    workOrderItemId: string
+    workOrderWarehouseId: string
+    productId: string
+  } | null = null
+  if (input.patch.link !== undefined) {
+    assertCutLogLinkageSymmetry(input.patch.link)
+    if (input.patch.link.workOrderId !== null) {
+      const womi = await db.flooringWorkOrderItem.findUnique({
+        where: { id: input.patch.link.workOrderItemId! },
+        select: {
+          id: true,
+          workOrderId: true,
+          productId: true,
+          workOrder: { select: { warehouseId: true } },
+        },
+      })
+      if (!womi) {
+        throw new CutLogExecutionError({
+          code: "CUT_LOG_NOT_FOUND",
+          message: "Re-link target work-order material item not found",
+          status: 404,
+          payload: { workOrderItemId: input.patch.link.workOrderItemId },
+        })
+      }
+      if (womi.workOrderId !== input.patch.link.workOrderId) {
+        throw new CutLogExecutionError({
+          code: "CUT_LOG_SCOPE_MISMATCH",
+          message:
+            "Re-link target material item does not belong to the provided work order",
+          status: 400,
+          payload: {
+            providedWorkOrderId: input.patch.link.workOrderId,
+            actualWorkOrderId: womi.workOrderId,
+          },
+        })
+      }
+      // FlooringWorkOrder.warehouseId is nullable in the schema, but cut
+      // logs require a non-null warehouse snapshot — a WO without a
+      // warehouse cannot be a relink target.
+      if (womi.workOrder.warehouseId === null) {
+        throw new CutLogExecutionError({
+          code: "CUT_LOG_LINK_SCOPE_MISMATCH",
+          message: "Re-link target work order has no warehouse assigned",
+          status: 400,
+          payload: { targetWorkOrderId: womi.workOrderId },
+        })
+      }
+      resolvedWomiTarget = {
+        workOrderId: womi.workOrderId,
+        workOrderItemId: womi.id,
+        workOrderWarehouseId: womi.workOrder.warehouseId,
+        productId: womi.productId,
+      }
+    }
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -153,67 +218,34 @@ export async function updatePendingCutLogUseCase(
       throw error
     }
 
-    // 5. Link patch — symmetry + re-link target validity. Defense-in-depth
-    //    scope guards: the new WOMI's parent WO must share the cut log's
-    //    snapshot `warehouseId`, and the WOMI's product must match the cut
-    //    log's snapshot `productId`. The UI picker filters on both, but the
-    //    route is independently reachable so we enforce here too.
-    if (input.patch.link !== undefined) {
-      assertCutLogLinkageSymmetry(input.patch.link)
-      if (input.patch.link.workOrderId !== null) {
-        const womi = await c.flooringWorkOrderItem.findUnique({
-          where: { id: input.patch.link.workOrderItemId! },
-          select: {
-            id: true,
-            workOrderId: true,
-            productId: true,
-            workOrder: { select: { warehouseId: true } },
+    // 5. Link patch — defense-in-depth scope guards. WOMI symmetry +
+    //    target-WO ownership were validated pre-TX; here we compare the
+    //    pre-resolved target against the cut log's frozen snapshot
+    //    (warehouseId + productId) which we just read inside the TX.
+    if (resolvedWomiTarget !== null) {
+      if (resolvedWomiTarget.workOrderWarehouseId !== existing.warehouseId) {
+        throw new CutLogExecutionError({
+          code: "CUT_LOG_LINK_SCOPE_MISMATCH",
+          message:
+            "Re-link target work order is in a different warehouse than the cut log",
+          status: 400,
+          payload: {
+            cutLogWarehouseId: existing.warehouseId,
+            targetWarehouseId: resolvedWomiTarget.workOrderWarehouseId,
           },
         })
-        if (!womi) {
-          throw new CutLogExecutionError({
-            code: "CUT_LOG_NOT_FOUND",
-            message: "Re-link target work-order material item not found",
-            status: 404,
-            payload: { workOrderItemId: input.patch.link.workOrderItemId },
-          })
-        }
-        if (womi.workOrderId !== input.patch.link.workOrderId) {
-          throw new CutLogExecutionError({
-            code: "CUT_LOG_SCOPE_MISMATCH",
-            message:
-              "Re-link target material item does not belong to the provided work order",
-            status: 400,
-            payload: {
-              providedWorkOrderId: input.patch.link.workOrderId,
-              actualWorkOrderId: womi.workOrderId,
-            },
-          })
-        }
-        if (womi.workOrder.warehouseId !== existing.warehouseId) {
-          throw new CutLogExecutionError({
-            code: "CUT_LOG_LINK_SCOPE_MISMATCH",
-            message:
-              "Re-link target work order is in a different warehouse than the cut log",
-            status: 400,
-            payload: {
-              cutLogWarehouseId: existing.warehouseId,
-              targetWarehouseId: womi.workOrder.warehouseId,
-            },
-          })
-        }
-        if (womi.productId !== existing.productId) {
-          throw new CutLogExecutionError({
-            code: "CUT_LOG_LINK_SCOPE_MISMATCH",
-            message:
-              "Re-link target material item is for a different product than the cut log",
-            status: 400,
-            payload: {
-              cutLogProductId: existing.productId,
-              targetProductId: womi.productId,
-            },
-          })
-        }
+      }
+      if (resolvedWomiTarget.productId !== existing.productId) {
+        throw new CutLogExecutionError({
+          code: "CUT_LOG_LINK_SCOPE_MISMATCH",
+          message:
+            "Re-link target material item is for a different product than the cut log",
+          status: 400,
+          payload: {
+            cutLogProductId: existing.productId,
+            targetProductId: resolvedWomiTarget.productId,
+          },
+        })
       }
     }
 

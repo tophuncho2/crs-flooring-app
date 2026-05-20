@@ -23,9 +23,17 @@ export function CutLogEditSaveButton({
   const cutLog = controller.open?.mode === "edit" ? controller.open.cutLog : null
   const status = (cutLog?.status ?? null) as FlooringCutLogStatus | null
 
+  // Link symmetry: either both null (unlinked) or both set. Save needs to
+  // be disabled when only one side is picked — otherwise the server 400s
+  // on the both-or-neither validator. Mirrors `assertCutLogLinkageSymmetry`.
+  const linkAsymmetric =
+    !isCreate &&
+    (controller.form.workOrderId === null) !==
+      (controller.form.workOrderItemId === null)
+
   const canSave = isCreate
     ? controller.form.inventoryId !== "" && controller.form.cut.trim() !== ""
-    : controller.form.cut.trim() !== ""
+    : controller.form.cut.trim() !== "" && !linkAsymmetric
 
   const isLocked = !isCreate && cutLog != null && !canRelinkCutLog(cutLog)
   const title = isLocked
