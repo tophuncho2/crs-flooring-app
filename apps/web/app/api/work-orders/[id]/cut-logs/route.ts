@@ -1,4 +1,7 @@
-import { createPendingCutLogUseCase } from "@builders/application"
+import {
+  createPendingCutLogUseCase,
+  listWorkOrderCutLogsUseCase,
+} from "@builders/application"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -6,6 +9,7 @@ import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
   enforceMutationReceipt,
+  enforceQueryRateLimit,
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
@@ -13,6 +17,37 @@ import { validateCreatePendingCutLogInput } from "../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
+}
+
+/**
+ * GET /api/work-orders/[id]/cut-logs
+ *
+ * Read-only flat list of every cut log for this work order. Powers the
+ * "cuts-only-preview" side panel on the WO record view. No pagination;
+ * sort matches the per-WOMI panel (`isFinal ASC, finalCutSequence ASC,
+ * createdAt ASC`).
+ */
+export async function GET(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request, {
+    toolSlug: WORK_ORDERS_TOOL_SLUG,
+  })
+  if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(
+    request,
+    access,
+    "/api/work-orders/[id]/cut-logs",
+  )
+  if (rateLimited) return rateLimited
+
+  try {
+    const { id: rawId } = await params
+    const workOrderId = parseUuidParam(rawId, "id")
+    const result = await listWorkOrderCutLogsUseCase({ workOrderId })
+    return routeJson(access, result)
+  } catch (error) {
+    return routeError(access, error)
+  }
 }
 
 /**

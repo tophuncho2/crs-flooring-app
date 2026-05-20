@@ -7,6 +7,7 @@ import type {
   UpdateWorkOrderUseCaseInput,
 } from "@builders/application"
 import type {
+  CutLogRow,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
   WorkOrderMaterialItemsDiff,
@@ -133,4 +134,18 @@ export async function listWorkOrderFilesRequest(
     headers: { Accept: "application/json" },
     signal,
   })
+}
+
+export async function listWorkOrderCutsRequest(
+  workOrderId: string,
+  signal?: AbortSignal,
+) {
+  return requestJson<{ rows: CutLogRow[] }>(
+    `/api/work-orders/${workOrderId}/cut-logs`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal,
+    },
+  )
 }

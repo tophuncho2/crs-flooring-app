@@ -14,6 +14,7 @@ import type { CutLogPanelPatch } from "@/modules/cut-logs"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
+import { useCutsOnlyPreviewTrigger } from "./cuts/cuts-only-preview-trigger"
 import { useWorkOrderFilesPanelTrigger } from "./files/work-order-files-panel-trigger"
 import { WorkOrderRecordFooter } from "./footer"
 
@@ -34,6 +35,7 @@ export function WorkOrderRecordPanel({
     initialCutLogsByWorkOrderItemId,
   )
 
+  const cutsPanel = useCutsOnlyPreviewTrigger(controller.record.id)
   const filesPanel = useWorkOrderFilesPanelTrigger(controller.record.id)
 
   const primaryActions = workOrderPrimarySectionActions({
@@ -89,7 +91,7 @@ export function WorkOrderRecordPanel({
                 saveLabel={primaryActions.saveLabel}
                 savingLabel={primaryActions.savingLabel}
                 showHeader={false}
-                actions={[filesPanel.action]}
+                actions={[cutsPanel.action, filesPanel.action]}
               >
                 <WorkOrderPrimaryFieldsSection
                   draft={controller.primarySection.localValue}
@@ -144,6 +146,7 @@ export function WorkOrderRecordPanel({
           },
         ]}
       />
+      {cutsPanel.panel}
       {filesPanel.panel}
       <WorkOrderRecordFooter
         onClose={page.closePage}
