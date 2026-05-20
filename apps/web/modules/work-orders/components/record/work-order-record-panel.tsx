@@ -9,13 +9,12 @@ import type {
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
-import type { WorkOrderFileRow } from "@/modules/work-orders/data/queries"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
 import type { CutLogPanelPatch } from "@/modules/cut-logs"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
-import { WorkOrderFilesSection } from "./files/work-order-files-section"
+import { useWorkOrderFilesPanelTrigger } from "./files/work-order-files-panel-trigger"
 import { WorkOrderRecordFooter } from "./footer"
 
 export function WorkOrderRecordPanel({
@@ -23,19 +22,19 @@ export function WorkOrderRecordPanel({
   entry,
   initialMaterialItems,
   initialCutLogsByWorkOrderItemId,
-  initialFiles,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialCutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
-  initialFiles: WorkOrderFileRow[]
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
   const [cutLogsByWorkOrderItemId, setCutLogsByWorkOrderItemId] = useState(
     initialCutLogsByWorkOrderItemId,
   )
+
+  const filesPanel = useWorkOrderFilesPanelTrigger(controller.record.id)
 
   const primaryActions = workOrderPrimarySectionActions({
     onSave: () => void controller.primarySection.save(),
@@ -90,6 +89,7 @@ export function WorkOrderRecordPanel({
                 saveLabel={primaryActions.saveLabel}
                 savingLabel={primaryActions.savingLabel}
                 showHeader={false}
+                actions={[filesPanel.action]}
               >
                 <WorkOrderPrimaryFieldsSection
                   draft={controller.primarySection.localValue}
@@ -142,19 +142,9 @@ export function WorkOrderRecordPanel({
               />
             ),
           },
-          {
-            key: "files",
-            type: "item",
-            order: 20,
-            render: () => (
-              <WorkOrderFilesSection
-                workOrderId={controller.record.id}
-                initialFiles={initialFiles}
-              />
-            ),
-          },
         ]}
       />
+      {filesPanel.panel}
       <WorkOrderRecordFooter
         onClose={page.closePage}
         onDelete={controller.deleteRecord}

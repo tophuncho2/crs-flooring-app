@@ -9,20 +9,17 @@ import type {
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
-import type { WorkOrderFileRow } from "@/modules/work-orders/data/queries"
 import { WorkOrderRecordPanel } from "./work-order-record-panel"
 
 export function WorkOrderDetailClient({
   initialWorkOrder,
   initialMaterialItems,
   initialCutLogsByWorkOrderItemId,
-  initialFiles,
   backHref,
 }: {
   initialWorkOrder: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
   initialCutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
-  initialFiles: WorkOrderFileRow[]
   backHref: string
 }) {
   return (
@@ -38,7 +35,6 @@ export function WorkOrderDetailClient({
           entry={initialWorkOrder}
           initialMaterialItems={initialMaterialItems}
           initialCutLogsByWorkOrderItemId={initialCutLogsByWorkOrderItemId}
-          initialFiles={initialFiles}
         />
       )}
     </RecordDetailClientScaffold>

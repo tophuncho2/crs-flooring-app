@@ -3,7 +3,6 @@ import {
   getWorkOrderDetailById,
   isPrismaNotFoundError,
   listCutLogsForWorkOrderItemIds,
-  listWorkOrderFiles,
   listWorkOrderMaterialItems,
   type PrismaDetailPageResult,
   type WorkOrderFileRow,
@@ -16,7 +15,9 @@ import type {
 
 // Re-export Prisma payload types so module UI files don't have to
 // import `@builders/db` directly. Per `apps/web/modules/CLAUDE.md`,
-// db imports stay inside `data/`.
+// db imports stay inside `data/`. `WorkOrderFileRow` is consumed by
+// the files side panel (mutations/queries) even though the row list
+// itself is no longer SSR-pre-fetched here.
 export type { WorkOrderFileRow }
 
 // All form-option fields are powered by async pickers
@@ -29,17 +30,15 @@ export type WorkOrderDetailPageData = {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
   cutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
-  files: WorkOrderFileRow[]
 }
 
 export async function getWorkOrderDetailPageData(
   id: string,
 ): Promise<PrismaDetailPageResult<WorkOrderDetailPageData>> {
   try {
-    const [workOrder, materialItems, files] = await Promise.all([
+    const [workOrder, materialItems] = await Promise.all([
       getWorkOrderDetailById(id),
       listWorkOrderMaterialItems(id),
-      listWorkOrderFiles(id),
     ])
 
     if (!workOrder) {
@@ -58,7 +57,7 @@ export async function getWorkOrderDetailPageData(
 
     return {
       ok: true,
-      data: { workOrder, materialItems, cutLogsByWorkOrderItemId, files },
+      data: { workOrder, materialItems, cutLogsByWorkOrderItemId },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {

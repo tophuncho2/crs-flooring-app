@@ -124,9 +124,13 @@ export async function listEligibleInventoryRequest(args: {
   )
 }
 
-export async function listWorkOrderFilesRequest(workOrderId: string) {
+export async function listWorkOrderFilesRequest(
+  workOrderId: string,
+  signal?: AbortSignal,
+) {
   return requestJson<{ files: WorkOrderFileRow[] }>(`/api/work-orders/${workOrderId}/files`, {
     method: "GET",
     headers: { Accept: "application/json" },
+    signal,
   })
 }
