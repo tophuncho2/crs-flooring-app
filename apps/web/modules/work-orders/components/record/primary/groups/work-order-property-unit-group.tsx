@@ -111,6 +111,19 @@ export function WorkOrderPropertyUnitGroup({
                 <StaticFieldValue>{propertyLabel ?? "—"}</StaticFieldValue>
               )}
             </WorkOrderField>
+            <WorkOrderField label="Vacancy">
+              <SelectCell
+                editable={editable}
+                value={draft.vacancy}
+                options={VACANCY_OPTIONS}
+                placeholder="—"
+                onChange={(value) =>
+                  onFieldChange("vacancy", value as WorkOrderForm["vacancy"])
+                }
+              />
+            </WorkOrderField>
+          </div>
+          <div className="flex flex-col gap-3">
             <WorkOrderField label="Template">
               {editable ? (
                 <TemplatePicker
@@ -128,8 +141,6 @@ export function WorkOrderPropertyUnitGroup({
                 <StaticFieldValue>{templateLabel ?? "—"}</StaticFieldValue>
               )}
             </WorkOrderField>
-          </div>
-          <div className="flex flex-col gap-3">
             <WorkOrderField label="Unit Type">
               <TextCell
                 editable={editable}
@@ -144,17 +155,6 @@ export function WorkOrderPropertyUnitGroup({
                 value={draft.unitNumber}
                 onChange={(value) => onFieldChange("unitNumber", value)}
                 maxLength={WO_UNIT_NUMBER_MAX}
-              />
-            </WorkOrderField>
-            <WorkOrderField label="Vacancy">
-              <SelectCell
-                editable={editable}
-                value={draft.vacancy}
-                options={VACANCY_OPTIONS}
-                placeholder="—"
-                onChange={(value) =>
-                  onFieldChange("vacancy", value as WorkOrderForm["vacancy"])
-                }
               />
             </WorkOrderField>
           </div>
