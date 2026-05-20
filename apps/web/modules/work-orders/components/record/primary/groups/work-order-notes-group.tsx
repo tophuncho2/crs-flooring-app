@@ -2,14 +2,12 @@
 
 import { TextareaCell } from "@/components/cells"
 import { WO_INTERNAL_NOTES_MAX, type WorkOrderForm } from "@builders/domain"
-import { WorkOrderCompleteChip } from "../controls/work-order-complete-chip"
 import { WorkOrderField } from "./work-order-field"
 import { WorkOrderGroup } from "./work-order-group"
 
 /**
- * Group 3: Notes. Holds the internal-notes textarea and surfaces the
- * complete-status chip in the group header (next to the tab) rather
- * than as a body field.
+ * Group 3: Notes. Holds the internal-notes textarea. The complete-status
+ * chip lives in the Schedule group header, not here.
  */
 export function WorkOrderNotesGroup({
   editable,
@@ -21,16 +19,7 @@ export function WorkOrderNotesGroup({
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
 }) {
   return (
-    <WorkOrderGroup
-      title="Notes"
-      headerRight={
-        <WorkOrderCompleteChip
-          value={draft.isComplete}
-          onChange={(next) => onFieldChange("isComplete", next)}
-          disabled={!editable}
-        />
-      }
-    >
+    <WorkOrderGroup title="Notes">
       <WorkOrderField label="Internal Notes (not shown on PDF)">
         <TextareaCell
           editable={editable}

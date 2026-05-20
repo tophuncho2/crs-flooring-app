@@ -1,20 +1,20 @@
 "use client"
 
-import { TextareaCell } from "@/components/cells"
+import { DateCell, TextareaCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { WO_DESCRIPTION_MAX, type WorkOrderForm } from "@builders/domain"
-import { WorkOrderScheduleCalendar } from "../schedule-calendar/work-order-schedule-calendar"
+import { WorkOrderCompleteChip } from "../controls/work-order-complete-chip"
 import type { WorkOrderPrimaryDetail } from "../types"
 import { WorkOrderField } from "./work-order-field"
 import { WorkOrderGroup } from "./work-order-group"
 
 /**
- * Group 1: Schedule. Left column stacks Warehouse → Job Type →
- * Description, vertically centered against the calendar's height.
- * Right column is the always-visible inline mini calendar bound to
- * `scheduledFor`.
+ * Group 1: Schedule. Left column stacks Warehouse → Scheduled For →
+ * Job Type → Description. Right column is intentionally empty (visual
+ * breathing room). The complete-status chip sits in the group header
+ * next to the "Schedule" tab.
  */
 export function WorkOrderScheduleGroup({
   editable,
@@ -28,9 +28,18 @@ export function WorkOrderScheduleGroup({
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
 }) {
   return (
-    <WorkOrderGroup title="Schedule">
+    <WorkOrderGroup
+      title="Schedule"
+      headerRight={
+        <WorkOrderCompleteChip
+          value={draft.isComplete}
+          onChange={(next) => onFieldChange("isComplete", next)}
+          disabled={!editable}
+        />
+      }
+    >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="flex flex-col justify-center gap-3">
+        <div className="flex flex-col gap-3">
           <WorkOrderField label="Warehouse">
             {editable ? (
               <WarehousePicker
@@ -43,6 +52,13 @@ export function WorkOrderScheduleGroup({
             ) : (
               <StaticFieldValue>{detail?.warehouseName || "—"}</StaticFieldValue>
             )}
+          </WorkOrderField>
+          <WorkOrderField label="Scheduled For">
+            <DateCell
+              editable={editable}
+              value={draft.scheduledFor}
+              onChange={(value) => onFieldChange("scheduledFor", value)}
+            />
           </WorkOrderField>
           <WorkOrderField label="Job Type">
             {editable ? (
@@ -67,13 +83,7 @@ export function WorkOrderScheduleGroup({
             />
           </WorkOrderField>
         </div>
-        <WorkOrderField label="Scheduled For">
-          <WorkOrderScheduleCalendar
-            value={draft.scheduledFor}
-            onChange={(value) => onFieldChange("scheduledFor", value)}
-            editable={editable}
-          />
-        </WorkOrderField>
+        <div />
       </div>
     </WorkOrderGroup>
   )
