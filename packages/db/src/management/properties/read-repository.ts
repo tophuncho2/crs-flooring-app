@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
-import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
+import { Prisma } from "../../generated/prisma/client.js"
+import type { PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeProperty,
   normalizePropertyListRow,
@@ -7,6 +8,7 @@ import {
   type PropertyDetailRecord,
   type PropertyListRow,
   type PropertyOption,
+  type PropertyStateOption,
 } from "@builders/domain"
 
 type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
@@ -88,7 +90,10 @@ export async function countTemplatesByPropertyId(
 
 export type PropertyListViewOptions = {
   search?: string
-  filters?: { managementCompanyId?: ReadonlyArray<string> }
+  filters?: {
+    managementCompanyId?: ReadonlyArray<string>
+    state?: ReadonlyArray<string>
+  }
   skip: number
   take: number
 }
@@ -110,6 +115,11 @@ function buildListViewWhere(
   const managementCompanyIds = options.filters?.managementCompanyId
   if (managementCompanyIds && managementCompanyIds.length > 0) {
     clauses.push({ managementCompanyId: { in: [...managementCompanyIds] } })
+  }
+
+  const stateCodes = options.filters?.state
+  if (stateCodes && stateCodes.length > 0) {
+    clauses.push({ state: { in: [...stateCodes] } })
   }
 
   if (clauses.length === 0) return undefined
@@ -168,4 +178,39 @@ export async function searchPropertyOptions(
   })
 
   return properties.map(normalizePropertyOption)
+}
+
+export type PropertyStatesSearchArgs = {
+  search?: string
+  take: number
+}
+
+/**
+ * Distinct state codes across all properties. Excludes NULL/whitespace-only
+ * values. Optional ILIKE substring on the search term. Sorted ASC, deduped at
+ * the SQL layer.
+ */
+export async function searchPropertyStates(
+  args: PropertyStatesSearchArgs,
+  client: PropertiesDbClient = db,
+): Promise<PropertyStateOption[]> {
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"state" IS NOT NULL`,
+    Prisma.sql`length(trim("state")) > 0`,
+  ]
+  const trimmed = args.search?.trim() ?? ""
+  if (trimmed.length > 0) {
+    conditions.push(Prisma.sql`"state" ILIKE ${`%${trimmed}%`}`)
+  }
+  const whereClause = Prisma.join(conditions, " AND ")
+
+  const rows = await client.$queryRaw<{ state: string }[]>(Prisma.sql`
+    SELECT DISTINCT "state"
+    FROM "property_hub"
+    WHERE ${whereClause}
+    ORDER BY "state" ASC
+    LIMIT ${args.take}
+  `)
+
+  return rows.map((row) => ({ value: row.state }))
 }

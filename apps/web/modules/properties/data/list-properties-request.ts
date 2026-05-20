@@ -38,9 +38,25 @@ export function parsePropertiesListInputFromSearchParams(
     new Set(readSearchParamArray(searchParams, "managementCompanyId")),
   )
 
+  const state = Array.from(
+    new Set(
+      readSearchParamArray(searchParams, "state")
+        .map((entry) => entry.toUpperCase())
+        .filter((entry) => /^[A-Z]{2}$/.test(entry)),
+    ),
+  )
+
+  const filters =
+    managementCompanyId.length > 0 || state.length > 0
+      ? {
+          ...(managementCompanyId.length > 0 ? { managementCompanyId } : {}),
+          ...(state.length > 0 ? { state } : {}),
+        }
+      : undefined
+
   return {
     search: searchRaw || undefined,
-    filters: managementCompanyId.length > 0 ? { managementCompanyId } : undefined,
+    filters,
     page,
     pageSize: LIST_PROPERTIES_PAGE_SIZE,
   }
@@ -53,6 +69,9 @@ export function buildPropertiesListSearchString(
   if (input.search) params.set("q", input.search)
   for (const id of input.filters?.managementCompanyId ?? []) {
     params.append("managementCompanyId", id)
+  }
+  for (const code of input.filters?.state ?? []) {
+    params.append("state", code)
   }
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))

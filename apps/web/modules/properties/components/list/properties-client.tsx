@@ -12,6 +12,7 @@ import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
+  normalizeAddressState,
   type ManagementCompanyOption,
   type PropertyListRow,
   type TablePreferencePayload,
@@ -36,7 +37,7 @@ import { PropertiesListSearch } from "./toolbar-controls/properties-list-search"
 import { PropertiesClearAll } from "./toolbar-controls/sub-controls/properties-clear-all"
 import { PropertiesRowCount } from "./toolbar-controls/sub-controls/properties-row-count"
 
-const PROPERTIES_FILTERABLE_FIELDS = ["managementCompanyId"] as const
+const PROPERTIES_FILTERABLE_FIELDS = ["managementCompanyId", "state"] as const
 
 export type PropertiesClientProps = {
   initialTablePreferences?: TablePreferencePayload | null
@@ -115,11 +116,23 @@ export default function PropertiesClient({
     [onFilterChange],
   )
 
+  const selectedState =
+    (filters as PropertiesListFilters).state?.[0] ?? null
+
+  const handleStateChange = useCallback(
+    (next: string | null) => {
+      const normalized = next ? normalizeAddressState(next) : ""
+      onFilterChange("state", normalized.length === 2 ? [normalized] : [])
+    },
+    [onFilterChange],
+  )
+
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (selectedManagementCompanyId) return true
+    if (selectedState) return true
     return false
-  }, [searchQuery, selectedManagementCompanyId])
+  }, [searchQuery, selectedManagementCompanyId, selectedState])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -177,10 +190,12 @@ export default function PropertiesClient({
               />
             </ListToolbarCell>
 
-            {/* State: placeholder chip for now; will be wired once the
-                properties list filter contract accepts a state code. */}
+            {/* State */}
             <ListToolbarCell>
-              <StateFilterChip />
+              <StateFilterChip
+                value={selectedState}
+                onChange={handleStateChange}
+              />
             </ListToolbarCell>
 
             {/* Right-anchored actions stacked vertically: + Property on top,

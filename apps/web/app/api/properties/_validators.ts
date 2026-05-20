@@ -101,7 +101,7 @@ export function validateListPropertiesQuery(
 ): ListInput<PropertiesListFilters> {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
-    if (key === "managementCompanyId") return
+    if (key === "managementCompanyId" || key === "state") return
     raw[key] = value
   })
 
@@ -124,12 +124,26 @@ export function validateListPropertiesQuery(
     ),
   )
 
+  const stateRaw = searchParams.getAll("state")
+  const state = Array.from(
+    new Set(
+      stateRaw
+        .map((entry) => entry.trim().toUpperCase())
+        .filter((entry) => /^[A-Z]{2}$/.test(entry)),
+    ),
+  )
+
+  const filters =
+    managementCompanyId.length > 0 || state.length > 0
+      ? {
+          ...(managementCompanyId.length > 0 ? { managementCompanyId } : {}),
+          ...(state.length > 0 ? { state } : {}),
+        }
+      : undefined
+
   return {
     search,
-    filters:
-      managementCompanyId.length > 0
-        ? { managementCompanyId }
-        : undefined,
+    filters,
     page: parsed.page,
     pageSize: parsed.pageSize,
   }
@@ -172,6 +186,43 @@ export function validatePropertyOptionsQuery(
   return {
     search: trimmedSearch ? trimmedSearch : undefined,
     managementCompanyId: trimmedManagementCompanyId ? trimmedManagementCompanyId : undefined,
+    take: parsed.take,
+  }
+}
+
+// --- States picker (distinct) validator ---
+
+const propertyStatesSearchQuerySchema = z.object({
+  search: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(50).default(20),
+})
+
+export type ValidatedPropertyStatesSearchQuery = {
+  search?: string
+  take: number
+}
+
+export function validatePropertyStatesSearchQuery(
+  searchParams: URLSearchParams,
+): ValidatedPropertyStatesSearchQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = propertyStatesSearchQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid property states query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.search?.trim()
+  return {
+    ...(trimmedSearch ? { search: trimmedSearch } : {}),
     take: parsed.take,
   }
 }

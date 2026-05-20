@@ -1,24 +1,37 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
+import type { PropertyStateOption } from "@builders/domain"
+import { PropertyStatePicker } from "@/modules/properties/components/picker/property-state-picker"
+
+export type StateFilterChipProps = {
+  value: string | null
+  onChange: (value: string | null) => void
+  initialOptions?: PropertyStateOption[]
+}
 
 /**
- * Placeholder chip for a State picker. Visual matches the closed-state
- * trigger of `AsyncRichDropdown` so the toolbar reads as a full grid of
- * controls even before the properties list filter accepts a state code.
- * Replace with a real picker wrapper once the list-view filter contract
- * is extended.
+ * Properties list-view chip — narrows the table to a single state code.
+ * State values are derived via `SELECT DISTINCT state` over property_hub, so
+ * the dropdown never shows duplicates.
  */
-export function StateFilterChip() {
+export function StateFilterChip({
+  value,
+  onChange,
+  initialOptions,
+}: StateFilterChipProps) {
   return (
-    <button
-      type="button"
-      disabled
-      aria-label="Filter properties by state (coming soon)"
-      className="flex w-full items-center justify-between gap-2 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-left text-sm text-[var(--foreground)]/55 outline-none transition disabled:cursor-not-allowed"
-    >
-      <span>State</span>
-      <ChevronDown size={16} className="shrink-0 text-[var(--foreground)]/40" />
-    </button>
+    <div className="min-w-[8rem] max-w-[12rem]">
+      <PropertyStatePicker
+        value={value}
+        selectedLabel={value}
+        onChange={onChange}
+        initialOptions={initialOptions}
+        placeholder="State"
+        searchPlaceholder="Search state"
+        emptyMessage="No states match"
+        clearLabel="Clear filter"
+        ariaLabel="Filter properties by state"
+      />
+    </div>
   )
 }

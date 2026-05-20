@@ -8,6 +8,7 @@ import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type PropertiesListFilters = {
   managementCompanyId?: ReadonlyArray<string>
+  state?: ReadonlyArray<string>
 }
 
 function normalizeManagementCompanyIds(
@@ -16,6 +17,20 @@ function normalizeManagementCompanyIds(
   if (!raw || raw.length === 0) return undefined
   const cleaned = Array.from(
     new Set(raw.map((entry) => entry.trim()).filter((entry) => entry.length > 0)),
+  )
+  return cleaned.length > 0 ? cleaned : undefined
+}
+
+function normalizeStateCodes(
+  raw: ReadonlyArray<string> | undefined,
+): ReadonlyArray<string> | undefined {
+  if (!raw || raw.length === 0) return undefined
+  const cleaned = Array.from(
+    new Set(
+      raw
+        .map((entry) => entry.trim().toUpperCase())
+        .filter((entry) => /^[A-Z]{2}$/.test(entry)),
+    ),
   )
   return cleaned.length > 0 ? cleaned : undefined
 }
@@ -29,10 +44,19 @@ export async function listPropertiesUseCase(
 
   const search = input.search?.trim() || undefined
   const managementCompanyId = normalizeManagementCompanyIds(input.filters?.managementCompanyId)
+  const state = normalizeStateCodes(input.filters?.state)
+
+  const filters =
+    managementCompanyId || state
+      ? {
+          ...(managementCompanyId ? { managementCompanyId } : {}),
+          ...(state ? { state } : {}),
+        }
+      : undefined
 
   const { rows, total } = await listPropertiesForListView({
     search,
-    filters: managementCompanyId ? { managementCompanyId } : undefined,
+    filters,
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

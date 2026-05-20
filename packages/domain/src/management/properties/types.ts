@@ -61,3 +61,7 @@ export type PropertyTemplateDraft = {
   unitType: string
   warehouseId: string
 }
+
+export type PropertyStateOption = {
+  value: string
+}
