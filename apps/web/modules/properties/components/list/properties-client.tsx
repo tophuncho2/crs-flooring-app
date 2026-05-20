@@ -180,7 +180,7 @@ export default function PropertiesClient({
               </div>
             </ListToolbarCell>
 
-            {/* Management Company */}
+            {/* Management Company + State (stacked) */}
             <ListToolbarCell>
               <ManagementCompanyFilterChip
                 value={selectedManagementCompanyId}
@@ -188,10 +188,6 @@ export default function PropertiesClient({
                 onChange={handleManagementCompanyChange}
                 initialOptions={initialManagementCompanyOptions}
               />
-            </ListToolbarCell>
-
-            {/* State */}
-            <ListToolbarCell>
               <StateFilterChip
                 value={selectedState}
                 onChange={handleStateChange}
