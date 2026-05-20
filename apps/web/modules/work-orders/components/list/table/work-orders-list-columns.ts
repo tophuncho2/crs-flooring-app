@@ -13,7 +13,6 @@ export const WORK_ORDERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WorkOrderLi
   { key: "warehouseName", label: "Warehouse" },
   { key: "description", label: "Description" },
   { key: "propertyName", label: "Property" },
-  { key: "templateNumber", label: "Template" },
   { key: "managementCompanyName", label: "Management Company" },
   { key: "jobTypeName", label: "Job Type" },
   { key: "vacancy", label: "Vacancy" },

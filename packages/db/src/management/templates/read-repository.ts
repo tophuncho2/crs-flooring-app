@@ -81,10 +81,9 @@ const templateDetailSelect = {
 } as const
 
 /**
- * List-view search: OR-ILIKE across templateNumber, unitType, and description.
- * Filters AND together via exact `IN (...)` matches on the direct columns of
- * `FlooringTemplate`. Diverges from the picker (`searchTemplateOptions`), which
- * no longer searches `templateNumber` — list-view follow-up will mirror that.
+ * List-view search mirrors the picker (`searchTemplateOptions`): OR-ILIKE
+ * across unitType and description. Filters AND together via exact `IN (...)`
+ * matches on the direct columns of `FlooringTemplate`.
  */
 function buildTemplatesWhere(
   searchQuery: string | undefined,
@@ -96,7 +95,6 @@ function buildTemplatesWhere(
   if (trimmed.length > 0) {
     clauses.push({
       OR: [
-        { templateNumber: { contains: trimmed, mode: "insensitive" } },
         { unitType: { contains: trimmed, mode: "insensitive" } },
         { description: { contains: trimmed, mode: "insensitive" } },
       ],

@@ -22,8 +22,6 @@ export function renderWorkOrderRowCell(
       return row.description || "-"
     case "propertyName":
       return row.propertyName || "-"
-    case "templateNumber":
-      return row.templateNumber || "-"
     case "managementCompanyName":
       return row.managementCompanyName || "-"
     case "jobTypeName":
