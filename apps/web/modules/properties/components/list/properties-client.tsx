@@ -21,8 +21,8 @@ import {
   listPropertiesRequest,
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
-import { usePropertySidePanel } from "@/modules/properties/controllers/use-property-side-panel"
-import { usePropertyHubSidePanel } from "@/modules/properties/controllers/list/use-property-hub-side-panel"
+import { usePropertySidePanel } from "@/modules/properties/controllers/side-panel/use-property-side-panel"
+import { usePropertyHubSidePanel } from "@/modules/properties/controllers/side-panel/use-property-hub-side-panel"
 import { PropertySidePanel } from "@/modules/properties/components/side-panel"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
 import { PropertiesTable } from "./properties-table"

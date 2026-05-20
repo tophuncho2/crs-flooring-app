@@ -4,7 +4,7 @@ import { SidePanelEditDeleteButton } from "@/components/side-panel-edit"
 import type {
   PropertySidePanelController,
   PropertySidePanelMode,
-} from "@/modules/properties/controllers/use-property-side-panel"
+} from "@/modules/properties/controllers/side-panel/use-property-side-panel"
 
 export function PropertySidePanelDeleteButton({
   controller,

@@ -1,7 +1,7 @@
 "use client"
 
 import { SidePanelEditStatusPill } from "@/components/side-panel-edit"
-import type { PropertySidePanelController } from "@/modules/properties/controllers/use-property-side-panel"
+import type { PropertySidePanelController } from "@/modules/properties/controllers/side-panel/use-property-side-panel"
 
 export function PropertySidePanelStatusPill({
   controller,

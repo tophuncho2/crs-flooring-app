@@ -9,7 +9,7 @@ import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField } from "@/components/fields"
 import { TextCell, TextareaCell } from "@/components/cells"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
-import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/list/use-property-hub-side-panel"
+import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/side-panel/use-property-hub-side-panel"
 
 const SECTION_HEADER_CLASS =
   "text-xs font-semibold uppercase tracking-wide text-[var(--panel-foreground-muted)]"

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import type { PropertySidePanelController } from "@/modules/properties/controllers/use-property-side-panel"
+import type { PropertySidePanelController } from "@/modules/properties/controllers/side-panel/use-property-side-panel"
 
 const BASE_CLASS_NAME = [
   "inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200",

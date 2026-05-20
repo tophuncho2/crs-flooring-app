@@ -1,7 +1,7 @@
 "use client"
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
-import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/list/use-property-hub-side-panel"
+import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/side-panel/use-property-hub-side-panel"
 import { PropertyHubSidePanelForm } from "./property-hub-side-panel-form"
 
 export type PropertyHubSidePanelProps = {

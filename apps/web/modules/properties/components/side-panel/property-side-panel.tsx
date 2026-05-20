@@ -1,7 +1,7 @@
 "use client"
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
-import type { PropertySidePanelController } from "@/modules/properties/controllers/use-property-side-panel"
+import type { PropertySidePanelController } from "@/modules/properties/controllers/side-panel/use-property-side-panel"
 import { PropertySidePanelDeleteButton } from "./toolbar-controls/property-side-panel-delete-button"
 import { PropertySidePanelDiscardButton } from "./toolbar-controls/property-side-panel-discard-button"
 import { PropertySidePanelHubViewButton } from "./toolbar-controls/property-side-panel-hub-view-button"

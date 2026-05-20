@@ -5,7 +5,7 @@ import type { PropertyListRow } from "@builders/domain"
 import {
   usePropertySidePanel,
   type PropertySidePanelController,
-} from "@/modules/properties/controllers/use-property-side-panel"
+} from "@/modules/properties/controllers/side-panel/use-property-side-panel"
 
 /**
  * Owns the properties-section state for the management-company hub view:
