@@ -6,11 +6,8 @@ import { CheckboxCell, TextCell } from "@/components/cells"
 import {
   formatFifoReceivedAtEastern,
   formatInventoryQuantity,
-  INVENTORY_DYE_LOT_MAX,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
-  INVENTORY_NOTE_MAX,
-  INVENTORY_ROLL_NUMBER_MAX,
   type InventoryForm,
   type InventoryRow,
 } from "@builders/domain"
@@ -85,22 +82,12 @@ export function InventoryPrimaryFieldsSection({
       {/* Row 3: Roll # · Dye Lot · Total Cut · FIFO Received */}
       <CellAt col={1} row={3} colSpan={2}>
         <FormField label="Roll #">
-          <TextCell
-            editable={editable}
-            value={draft.rollNumber}
-            onChange={(value) => onFieldChange("rollNumber", value)}
-            maxLength={INVENTORY_ROLL_NUMBER_MAX}
-          />
+          <StaticFieldValue>{inventory.rollNumber || "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
       <CellAt col={3} row={3} colSpan={2}>
         <FormField label="Dye Lot">
-          <TextCell
-            editable={editable}
-            value={draft.dyeLot}
-            onChange={(value) => onFieldChange("dyeLot", value)}
-            maxLength={INVENTORY_DYE_LOT_MAX}
-          />
+          <StaticFieldValue>{inventory.dyeLot || "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
       <CellAt col={5} row={3} colSpan={2}>
@@ -121,12 +108,7 @@ export function InventoryPrimaryFieldsSection({
       {/* Row 4: Note · Starting Stock · Import # */}
       <CellAt col={1} row={4} colSpan={4}>
         <FormField label="Note">
-          <TextCell
-            editable={editable}
-            value={draft.note}
-            onChange={(value) => onFieldChange("note", value)}
-            maxLength={INVENTORY_NOTE_MAX}
-          />
+          <StaticFieldValue>{inventory.note || "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
       <CellAt col={5} row={4} colSpan={2}>
