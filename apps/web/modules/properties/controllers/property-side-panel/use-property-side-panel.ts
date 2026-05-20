@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   toPropertyPrimaryForm,
   validatePropertyPrimaryForm,
+  type ManagementCompanyDetail,
   type PropertyDetailRecord,
   type PropertyPrimaryForm,
 } from "@builders/domain"
@@ -12,6 +13,10 @@ import {
   PROPERTY_DETAIL_QUERY_KEY,
   getPropertyDetailRequest,
 } from "@/modules/properties/data/property-detail-request"
+import {
+  MANAGEMENT_COMPANY_DETAIL_QUERY_KEY,
+  getManagementCompanyDetailRequest,
+} from "@/modules/management-companies/data/management-company-detail-request"
 import { EMPTY_FORM, buildFormFromRow, formIsDirty } from "./form"
 import {
   useCreatePropertyMutation,
@@ -97,6 +102,18 @@ export function usePropertySidePanel() {
     setUpdatedAt(detail.updatedAt)
     setManagementCompanyLabel(detail.managementCompany?.name ?? null)
   }, [detailQuery.data, recordId])
+
+  const managementCompanyId =
+    form.managementCompanyId.length > 0 ? form.managementCompanyId : null
+
+  const managementCompanyDetailQuery = useQuery<ManagementCompanyDetail>({
+    queryKey: [...MANAGEMENT_COMPANY_DETAIL_QUERY_KEY, managementCompanyId],
+    queryFn: () => getManagementCompanyDetailRequest(managementCompanyId as string),
+    enabled: managementCompanyId !== null,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnWindowFocus: false,
+  })
 
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
 
@@ -195,6 +212,9 @@ export function usePropertySidePanel() {
     recordId,
     form,
     managementCompanyLabel,
+    managementCompanyDetail: managementCompanyDetailQuery.data ?? null,
+    isLoadingManagementCompany: managementCompanyDetailQuery.isFetching,
+    isManagementCompanyError: managementCompanyDetailQuery.isError,
     isDirty,
     isSaving,
     canSave,
