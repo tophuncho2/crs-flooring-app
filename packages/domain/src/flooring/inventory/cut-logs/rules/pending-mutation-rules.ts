@@ -1,3 +1,4 @@
+import { canRelinkCutLog } from "../editability.js"
 import { assertCutLogDeleteAllowed } from "./cut-log-rules.js"
 import { CutLogDomainError } from "../errors.js"
 import type { CutLogRow } from "../types.js"
@@ -24,6 +25,22 @@ export function assertCutLogPendingMutationAllowed(
   row: Pick<CutLogRow, "status" | "isFinal" | "void">,
 ): void {
   assertCutLogDeleteAllowed(row)
+}
+
+/**
+ * Link-only mutation gate. Patches that only change `workOrderId` /
+ * `workOrderItemId` are allowed on PENDING or FINAL rows — voided or
+ * queued rows reject. Pairs with `canRelinkCutLog` for the predicate form.
+ */
+export function assertCutLogLinkMutationAllowed(
+  row: Pick<CutLogRow, "status" | "void">,
+): void {
+  if (!canRelinkCutLog(row)) {
+    throw new CutLogDomainError("CUT_LOG_LINK_NOT_ALLOWED", {
+      status: row.status,
+      void: row.void,
+    })
+  }
 }
 
 /**

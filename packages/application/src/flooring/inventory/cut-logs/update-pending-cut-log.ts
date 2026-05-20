@@ -9,6 +9,7 @@ import {
 } from "@builders/db"
 import {
   assertCutLogExpectedUpdatedAtMatches,
+  assertCutLogLinkMutationAllowed,
   assertCutLogLinkageSymmetry,
   assertCutLogPendingMutationAllowed,
   assertCutSumWithinStartingStock,
@@ -69,29 +70,64 @@ export async function updatePendingCutLogUseCase(
       inventoryId: existing.inventoryId,
     })
 
-    // 3. Pending-status check (final/void cuts can't be edited via this path).
-    try {
-      assertCutLogPendingMutationAllowed({
-        status: existing.status,
-        isFinal: existing.isFinal,
-        void: existing.void,
-      })
-    } catch (error) {
-      if (error instanceof CutLogDomainError) {
-        throw new CutLogExecutionError({
-          code: "CUT_LOG_NOT_PENDING",
-          message:
-            "Cut log cannot be edited; it has been finalized or voided",
-          status: 409,
-          payload: {
-            cutLogId: existing.id,
-            status: existing.status,
-            isFinal: existing.isFinal,
-            void: existing.void,
-          },
+    // 3. Mutation gate — split by patch kind:
+    //    - Field patches (cut / isWaste / notes) require PENDING-editable.
+    //    - Link patches (workOrderId / workOrderItemId) allow PENDING or
+    //      FINAL — voided / queued rows still reject. This is how a
+    //      finalized cut log gets re-linked to a different WO/WOMI without
+    //      ever leaving FINAL.
+    const hasLinkPatch = input.patch.link !== undefined
+    const hasFieldPatch =
+      input.patch.cut !== undefined ||
+      input.patch.isWaste !== undefined ||
+      input.patch.notes !== undefined
+    if (hasFieldPatch) {
+      try {
+        assertCutLogPendingMutationAllowed({
+          status: existing.status,
+          isFinal: existing.isFinal,
+          void: existing.void,
         })
+      } catch (error) {
+        if (error instanceof CutLogDomainError) {
+          throw new CutLogExecutionError({
+            code: "CUT_LOG_NOT_PENDING",
+            message:
+              "Cut log cannot be edited; it has been finalized or voided",
+            status: 409,
+            payload: {
+              cutLogId: existing.id,
+              status: existing.status,
+              isFinal: existing.isFinal,
+              void: existing.void,
+            },
+          })
+        }
+        throw error
       }
-      throw error
+    }
+    if (hasLinkPatch) {
+      try {
+        assertCutLogLinkMutationAllowed({
+          status: existing.status,
+          void: existing.void,
+        })
+      } catch (error) {
+        if (error instanceof CutLogDomainError) {
+          throw new CutLogExecutionError({
+            code: "CUT_LOG_LINK_NOT_ALLOWED",
+            message:
+              "Cut log link cannot be changed; it has been voided or a worker job is in flight",
+            status: 409,
+            payload: {
+              cutLogId: existing.id,
+              status: existing.status,
+              void: existing.void,
+            },
+          })
+        }
+        throw error
+      }
     }
 
     // 4. Optimistic concurrency check.
@@ -117,13 +153,22 @@ export async function updatePendingCutLogUseCase(
       throw error
     }
 
-    // 5. Link patch — symmetry + re-link target validity.
+    // 5. Link patch — symmetry + re-link target validity. Defense-in-depth
+    //    scope guards: the new WOMI's parent WO must share the cut log's
+    //    snapshot `warehouseId`, and the WOMI's product must match the cut
+    //    log's snapshot `productId`. The UI picker filters on both, but the
+    //    route is independently reachable so we enforce here too.
     if (input.patch.link !== undefined) {
       assertCutLogLinkageSymmetry(input.patch.link)
       if (input.patch.link.workOrderId !== null) {
         const womi = await c.flooringWorkOrderItem.findUnique({
           where: { id: input.patch.link.workOrderItemId! },
-          select: { id: true, workOrderId: true },
+          select: {
+            id: true,
+            workOrderId: true,
+            productId: true,
+            workOrder: { select: { warehouseId: true } },
+          },
         })
         if (!womi) {
           throw new CutLogExecutionError({
@@ -142,6 +187,30 @@ export async function updatePendingCutLogUseCase(
             payload: {
               providedWorkOrderId: input.patch.link.workOrderId,
               actualWorkOrderId: womi.workOrderId,
+            },
+          })
+        }
+        if (womi.workOrder.warehouseId !== existing.warehouseId) {
+          throw new CutLogExecutionError({
+            code: "CUT_LOG_LINK_SCOPE_MISMATCH",
+            message:
+              "Re-link target work order is in a different warehouse than the cut log",
+            status: 400,
+            payload: {
+              cutLogWarehouseId: existing.warehouseId,
+              targetWarehouseId: womi.workOrder.warehouseId,
+            },
+          })
+        }
+        if (womi.productId !== existing.productId) {
+          throw new CutLogExecutionError({
+            code: "CUT_LOG_LINK_SCOPE_MISMATCH",
+            message:
+              "Re-link target material item is for a different product than the cut log",
+            status: 400,
+            payload: {
+              cutLogProductId: existing.productId,
+              targetProductId: womi.productId,
             },
           })
         }

@@ -2,13 +2,18 @@ import type { CutLogRow } from "@builders/domain"
 
 /**
  * Editable form values for the cut-log side panel. `inventoryId` is editable
- * only in create mode; saved rows treat it as immutable.
+ * only in create mode; saved rows treat it as immutable. The `workOrderId` /
+ * `workOrderItemId` pair is editable in edit mode on any non-voided,
+ * non-queued row (the cut-log relink path — independent from the
+ * pending-editable rule that locks `cut` / `notes` / `isWaste`).
  */
 export type CutLogEditForm = {
   inventoryId: string
   cut: string
   isWaste: boolean
   notes: string
+  workOrderId: string | null
+  workOrderItemId: string | null
 }
 
 /**

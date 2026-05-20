@@ -38,7 +38,7 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
     mode === "create" ? "New cut log" : (cutLog?.cutLogNumber ?? "Cut log")
 
   const stickyHeader = cutLog ? (
-    <CutLogEditHeader cutLog={cutLog} isSaving={controller.isSaving} />
+    <CutLogEditHeader cutLog={cutLog} controller={controller} />
   ) : undefined
 
   return (

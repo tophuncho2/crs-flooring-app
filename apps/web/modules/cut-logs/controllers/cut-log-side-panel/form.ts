@@ -6,6 +6,8 @@ export const EMPTY_FORM: CutLogEditForm = {
   cut: "",
   isWaste: false,
   notes: "",
+  workOrderId: null,
+  workOrderItemId: null,
 }
 
 export const EMPTY_LOCAL: CutLogPanelLocal = {
@@ -20,6 +22,8 @@ export function buildEditForm(cutLog: CutLogRow): CutLogEditForm {
     cut: cutLog.cut,
     isWaste: cutLog.isWaste,
     notes: cutLog.notes,
+    workOrderId: cutLog.workOrderId,
+    workOrderItemId: cutLog.workOrderItemId,
   }
 }
 
@@ -28,7 +32,9 @@ export function formIsDirty(current: CutLogEditForm, baseline: CutLogEditForm): 
     current.inventoryId !== baseline.inventoryId ||
     current.cut !== baseline.cut ||
     current.isWaste !== baseline.isWaste ||
-    current.notes !== baseline.notes
+    current.notes !== baseline.notes ||
+    current.workOrderId !== baseline.workOrderId ||
+    current.workOrderItemId !== baseline.workOrderItemId
   )
 }
 

@@ -1,43 +1,64 @@
 "use client"
 
-import { isCutLogPendingEditable } from "@builders/domain"
+import { canRelinkCutLog } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
-import { SidePanelEditPickerRow } from "@/components/side-panel-edit"
-import type { CutLogPanelRow } from "@/modules/cut-logs/controllers/cut-log-side-panel"
+import { WorkOrderPicker } from "@/modules/work-orders/components/picker/work-order-picker"
+import { WorkOrderMaterialItemPicker } from "@/modules/work-orders/components/picker/work-order-material-item-picker"
+import type {
+  CutLogEditPanelController,
+  CutLogPanelRow,
+} from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
 export type CutLogEditHeaderProps = {
   cutLog: CutLogPanelRow
-  isSaving: boolean
+  controller: CutLogEditPanelController
 }
 
 /**
- * Sticky-header content for the cut-log edit panel. Mirrors the template-sync
- * preview header layout: stacked pickers above non-editable context.
- *
- * Pickers are placeholders today — `onOpen` is unwired and the value reflects
- * the cut log's current snapshot (WO number, product label). The follow-up
- * pass swaps these for real menus that emit a `link` patch.
+ * Sticky-header content for the cut-log edit panel. Hosts the two
+ * relink pickers (Work order + Material item) and the status / final-
+ * sequence read-outs. The two pickers are enabled whenever the row is
+ * relinkable (`canRelinkCutLog` — PENDING or FINAL, not voided / queued).
+ * The cell-level form fields below the header (cut / notes / waste)
+ * remain gated by `isCutLogPendingEditable`, so a FINAL row exposes the
+ * pickers as live while keeping the value cells read-only.
  */
-export function CutLogEditHeader({ cutLog, isSaving }: CutLogEditHeaderProps) {
-  const isPendingEditable = isCutLogPendingEditable(cutLog)
-  const pickersDisabled = isSaving || !isPendingEditable
+export function CutLogEditHeader({ cutLog, controller }: CutLogEditHeaderProps) {
+  const { form, isSaving } = controller
+  const relinkAllowed = canRelinkCutLog(cutLog)
+  const pickersDisabled = isSaving || !relinkAllowed
 
   return (
     <div className="flex flex-col gap-3">
-      <SidePanelEditPickerRow
-        label="Work order"
-        value={cutLog.workOrderNumber ?? null}
-        placeholder="Pick work order…"
-        disabled={pickersDisabled}
-        ariaLabel="Work order"
-      />
-      <SidePanelEditPickerRow
-        label="Material item"
-        value={cutLog.productName || cutLog.workOrderItemProductLabel || null}
-        placeholder="Pick material item…"
-        disabled={pickersDisabled}
-        ariaLabel="Material item"
-      />
+      <label className="flex flex-col gap-1.5">
+        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
+          Work order
+        </span>
+        <WorkOrderPicker
+          value={form.workOrderId}
+          onChange={controller.setWorkOrderId}
+          warehouseId={cutLog.warehouseId}
+          selectedLabel={cutLog.workOrderNumber ?? null}
+          disabled={pickersDisabled}
+          ariaLabel="Work order"
+        />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
+          Material item
+        </span>
+        <WorkOrderMaterialItemPicker
+          value={form.workOrderItemId}
+          onChange={controller.setWorkOrderItemId}
+          workOrderId={form.workOrderId}
+          productId={cutLog.productId}
+          selectedLabel={
+            cutLog.workOrderItemProductLabel ?? cutLog.productName ?? null
+          }
+          disabled={pickersDisabled}
+          ariaLabel="Material item"
+        />
+      </label>
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">

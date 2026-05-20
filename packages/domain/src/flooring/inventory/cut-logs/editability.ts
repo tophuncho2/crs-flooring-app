@@ -77,6 +77,21 @@ export function canVoidCutLog(
   return row.isFinal || row.status === "PENDING"
 }
 
+/**
+ * Re-link (change `workOrderId` / `workOrderItemId`) is allowed on PENDING
+ * or FINAL rows. Voided rows are terminal; queued rows have a worker job in
+ * flight. Independent from `isCutLogPendingEditable` — FINAL rows lock the
+ * value cells (`cut` / `notes` / `isWaste`) but the WO/WOMI link remains
+ * editable until the row is voided.
+ */
+export function canRelinkCutLog(
+  row: Pick<CutLogRow, "status" | "void">,
+): boolean {
+  if (row.void) return false
+  if (row.status === "QUEUED") return false
+  return true
+}
+
 // ---------------------------------------------------------------------------
 // Status formatting
 // ---------------------------------------------------------------------------

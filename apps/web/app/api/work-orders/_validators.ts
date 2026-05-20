@@ -464,3 +464,91 @@ export function validateListWorkOrdersQuery(
     pageSize: parsed.pageSize,
   }
 }
+
+// ---------------------------------------------------------------------------
+// Picker / options search validators (cut-log relink dropdowns)
+// ---------------------------------------------------------------------------
+
+const WO_OPTIONS_DEFAULT_TAKE = 20
+const WO_OPTIONS_MAX_TAKE = 50
+
+const workOrderOptionsSearchQuerySchema = z.object({
+  warehouseId: z.string().min(1, "warehouseId is required"),
+  search: z.string().optional(),
+  take: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(WO_OPTIONS_MAX_TAKE)
+    .default(WO_OPTIONS_DEFAULT_TAKE),
+})
+
+export type ValidatedWorkOrderOptionsSearchQuery = {
+  warehouseId: string
+  search?: string
+  take: number
+}
+
+export function validateWorkOrderOptionsSearchQuery(
+  searchParams: URLSearchParams,
+): ValidatedWorkOrderOptionsSearchQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+  const parseResult = workOrderOptionsSearchQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    failWorkOrder(
+      issue?.message ?? "Invalid work-order options query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+  const parsed = parseResult.data
+  const trimSearch = parsed.search?.trim()
+  return {
+    warehouseId: parsed.warehouseId.trim(),
+    ...(trimSearch ? { search: trimSearch } : {}),
+    take: parsed.take,
+  }
+}
+
+const WOMI_OPTIONS_DEFAULT_TAKE = 50
+const WOMI_OPTIONS_MAX_TAKE = 100
+
+const workOrderMaterialItemOptionsQuerySchema = z.object({
+  productId: z.string().min(1, "productId is required"),
+  take: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(WOMI_OPTIONS_MAX_TAKE)
+    .default(WOMI_OPTIONS_DEFAULT_TAKE),
+})
+
+export type ValidatedWorkOrderMaterialItemOptionsQuery = {
+  productId: string
+  take: number
+}
+
+export function validateWorkOrderMaterialItemOptionsQuery(
+  searchParams: URLSearchParams,
+): ValidatedWorkOrderMaterialItemOptionsQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+  const parseResult = workOrderMaterialItemOptionsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    failMaterialItem(
+      issue?.message ?? "Invalid material-item options query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+  const parsed = parseResult.data
+  return {
+    productId: parsed.productId.trim(),
+    take: parsed.take,
+  }
+}

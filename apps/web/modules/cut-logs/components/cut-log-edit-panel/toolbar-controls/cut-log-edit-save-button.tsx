@@ -1,14 +1,16 @@
 "use client"
 
-import { isCutLogPendingEditable, type FlooringCutLogStatus } from "@builders/domain"
+import { canRelinkCutLog, type FlooringCutLogStatus } from "@builders/domain"
 import { SidePanelEditSaveButton } from "@/components/side-panel-edit"
 import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
 /**
  * Cut-log side-panel adapter for the shared save button. Mirrors the server
- * guard: a row that isn't pending-editable cannot be saved, and the disabled
- * tooltip explains why. Create mode is always treated as dirty so a fresh
- * cut log can be persisted without re-touching a field.
+ * gate: save is allowed whenever the row is relinkable (PENDING or FINAL,
+ * not voided / queued). A FINAL row only accepts the link patch — the
+ * value cells stay read-only — but a dirty link change still routes
+ * through the save button. Create mode is always treated as dirty so a
+ * fresh cut log can be persisted without re-touching a field.
  */
 export function CutLogEditSaveButton({
   controller,
@@ -25,11 +27,11 @@ export function CutLogEditSaveButton({
     ? controller.form.inventoryId !== "" && controller.form.cut.trim() !== ""
     : controller.form.cut.trim() !== ""
 
-  const isLocked = !isCreate && cutLog != null && !isCutLogPendingEditable(cutLog)
+  const isLocked = !isCreate && cutLog != null && !canRelinkCutLog(cutLog)
   const title = isLocked
     ? status === "VOID"
       ? "This cut log is voided. No further changes are permitted."
-      : "This cut log is finalized. Use Void to reverse it."
+      : "A worker job is in flight on this cut log. Try again once it settles."
     : undefined
 
   const isDirty = isCreate ? true : controller.isDirty

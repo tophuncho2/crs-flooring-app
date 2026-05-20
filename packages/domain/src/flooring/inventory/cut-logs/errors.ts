@@ -12,6 +12,8 @@ export type CutLogDomainErrorCode =
   | "CUT_LOG_TOTALCUTSUM_EXCEEDS_STARTING_STOCK"
   | "CUT_LOG_FINAL_SEQUENCE_INVALID"
   | "CUT_LOG_STALE_UPDATED_AT"
+  | "CUT_LOG_LINK_NOT_ALLOWED"
+  | "CUT_LOG_LINK_SCOPE_MISMATCH"
 
 export class CutLogDomainError extends Error {
   readonly code: CutLogDomainErrorCode

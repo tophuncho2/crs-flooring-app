@@ -147,6 +147,39 @@ export async function listWorkOrderOptions(
   return workOrders.map(normalizeWorkOrderOption)
 }
 
+/**
+ * Async-picker search: warehouse-scoped work-order options for the cut-log
+ * relink dropdown. Filters by `warehouseId` (required) + an optional
+ * `workOrderNumber` ILIKE search. Takes a bounded count to keep the
+ * dropdown responsive.
+ */
+export type SearchWorkOrderOptionsInput = {
+  warehouseId: string
+  search?: string
+  take?: number
+}
+
+export async function searchWorkOrderOptions(
+  input: SearchWorkOrderOptionsInput,
+  client: WorkOrdersDbClient = db,
+): Promise<WorkOrderOption[]> {
+  const search = input.search?.trim() ?? ""
+  const take = input.take ?? 20
+  const workOrders = await client.flooringWorkOrder.findMany({
+    where: {
+      warehouseId: input.warehouseId,
+      ...(search.length > 0
+        ? { workOrderNumber: { contains: search, mode: "insensitive" } }
+        : {}),
+    },
+    orderBy: { workOrderNumber: "asc" },
+    select: { id: true, workOrderNumber: true },
+    take,
+  })
+
+  return workOrders.map(normalizeWorkOrderOption)
+}
+
 export async function getWorkOrderById(
   id: string,
   client: WorkOrdersDbClient = db,

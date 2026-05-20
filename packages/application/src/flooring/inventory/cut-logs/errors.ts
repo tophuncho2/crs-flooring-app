@@ -8,6 +8,8 @@ export type CutLogExecutionErrorCode =
   | "CUT_LOG_STALE"
   | "CUT_LOG_FINALIZE_BLOCKED"
   | "CUT_LOG_EXCEEDS_INVENTORY"
+  | "CUT_LOG_LINK_NOT_ALLOWED"
+  | "CUT_LOG_LINK_SCOPE_MISMATCH"
 
 /**
  * HTTP-shaped execution error thrown by every cut-log use case. Scope-

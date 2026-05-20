@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react"
 import { useMutation } from "@tanstack/react-query"
-import type { CutLogRow } from "@builders/domain"
+import { isCutLogPendingEditable, type CutLogRow } from "@builders/domain"
 import {
   updatePendingCutLogRequest,
   type CutLogScopeUrl,
@@ -45,21 +45,56 @@ export function useUpdateCutLogMutation({
       workOrderItemId: string | null
       cutLog: CutLogRow
       form: CutLogEditForm
-    }) =>
-      updatePendingCutLogRequest({
+    }) => {
+      // FINAL rows lock `cut` / `notes` / `isWaste`; only the link is
+      // mutable. Send those fields only when the row is still
+      // PENDING-editable so the server gate (which separates field
+      // patches from link patches) doesn't 409.
+      const fieldsEditable = isCutLogPendingEditable(input.cutLog)
+      const linkChanged =
+        input.form.workOrderId !== input.cutLog.workOrderId ||
+        input.form.workOrderItemId !== input.cutLog.workOrderItemId
+      return updatePendingCutLogRequest({
         scope,
         cutLogId: input.cutLog.id,
         expectedUpdatedAt: input.cutLog.updatedAt,
         patch: {
-          cut: input.form.cut,
-          isWaste: input.form.isWaste,
-          notes: input.form.notes,
+          ...(fieldsEditable
+            ? {
+                cut: input.form.cut,
+                isWaste: input.form.isWaste,
+                notes: input.form.notes,
+              }
+            : {}),
+          ...(linkChanged
+            ? {
+                link: {
+                  workOrderId: input.form.workOrderId,
+                  workOrderItemId: input.form.workOrderItemId,
+                },
+              }
+            : {}),
         },
-      }),
+      })
+    },
     onSuccess: (response, variables) => {
+      // Bucket move: on the WO side, cut logs are grouped by WOMI id. A
+      // relink (`workOrderItemId` changed) needs to remove the row from
+      // the old bucket and add it to the new one. The inv-side publish is
+      // a cache-invalidation shim that ignores `workOrderItemId`, so the
+      // extra delete is a harmless no-op there.
+      const oldWomiId = variables.workOrderItemId
+      const newWomiId = response.cutLog.workOrderItemId
+      if (oldWomiId !== newWomiId) {
+        publish({
+          kind: "delete",
+          workOrderItemId: oldWomiId,
+          cutLogId: response.cutLog.id,
+        })
+      }
       publish({
         kind: "upsert",
-        workOrderItemId: variables.workOrderItemId,
+        workOrderItemId: newWomiId,
         cutLog: response.cutLog,
       })
       const next = buildEditForm(response.cutLog)
@@ -67,7 +102,7 @@ export function useUpdateCutLogMutation({
       setBaseline(next)
       setOpen((prev) => ({
         mode: "edit",
-        workOrderItemId: variables.workOrderItemId,
+        workOrderItemId: newWomiId,
         cutLog: {
           ...response.cutLog,
           workOrderNumber:

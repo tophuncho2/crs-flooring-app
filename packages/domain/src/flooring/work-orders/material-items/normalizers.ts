@@ -1,4 +1,8 @@
-import type { WorkOrderItemStatus, WorkOrderMaterialItemRow } from "./types.js"
+import type {
+  WorkOrderItemStatus,
+  WorkOrderMaterialItemOption,
+  WorkOrderMaterialItemRow,
+} from "./types.js"
 
 type WorkOrderMaterialItemInput = {
   id: string
@@ -27,5 +31,25 @@ export function normalizeWorkOrderMaterialItem(
     status: item.status,
     sourceTemplateItemId: item.sourceTemplateItemId,
     createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : item.createdAt,
+  }
+}
+
+type WorkOrderMaterialItemOptionInput = {
+  id: string
+  productId: string
+  product: { name: string }
+  quantity: { toString(): string }
+  sendUnitAbbrev: string | null
+}
+
+export function normalizeWorkOrderMaterialItemOption(
+  item: WorkOrderMaterialItemOptionInput,
+): WorkOrderMaterialItemOption {
+  return {
+    id: item.id,
+    productId: item.productId,
+    productName: item.product.name,
+    quantity: item.quantity.toString(),
+    sendUnitAbbrev: item.sendUnitAbbrev ?? "",
   }
 }

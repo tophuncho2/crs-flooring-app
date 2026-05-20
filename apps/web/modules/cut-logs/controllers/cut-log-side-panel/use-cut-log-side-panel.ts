@@ -146,6 +146,23 @@ export function useCutLogEditPanel({
     }))
   }, [])
 
+  // Picking a new work order invalidates the current WOMI selection — the
+  // dependent picker re-fetches under the new WO scope, so we null the WOMI
+  // here to avoid carrying a stale id into the patch.
+  const setWorkOrderId = useCallback((id: string | null) => {
+    setForm((prev) =>
+      prev.workOrderId === id
+        ? prev
+        : { ...prev, workOrderId: id, workOrderItemId: null },
+    )
+    setError(null)
+  }, [])
+
+  const setWorkOrderItemId = useCallback((id: string | null) => {
+    setForm((prev) => ({ ...prev, workOrderItemId: id }))
+    setError(null)
+  }, [])
+
   const createMutation = useCreateCutLogMutation({
     scope,
     publish,
@@ -251,6 +268,8 @@ export function useCutLogEditPanel({
     setLocationFilter,
     setInventoryId,
     snapshotInventoryOption,
+    setWorkOrderId,
+    setWorkOrderItemId,
     save,
     finalize,
     voidCutLog,

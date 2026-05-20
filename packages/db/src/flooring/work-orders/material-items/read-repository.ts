@@ -2,6 +2,8 @@ import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "../../../generated/prisma/client.js"
 import {
   normalizeWorkOrderMaterialItem,
+  normalizeWorkOrderMaterialItemOption,
+  type WorkOrderMaterialItemOption,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
 
@@ -31,6 +33,43 @@ export async function listWorkOrderMaterialItems(
   })
 
   return items.map(normalizeWorkOrderMaterialItem)
+}
+
+/**
+ * Async-picker search: WOMI options scoped to a work order and a product.
+ * Drives the cut-log relink material-item dropdown. No free-text search —
+ * the per-WO row count is small enough that the picker renders all
+ * matching WOMIs in `createdAt` order.
+ */
+export type SearchWorkOrderMaterialItemOptionsInput = {
+  workOrderId: string
+  productId: string
+  take?: number
+}
+
+const workOrderMaterialItemOptionSelect = {
+  id: true,
+  productId: true,
+  product: { select: { name: true } },
+  quantity: true,
+  sendUnitAbbrev: true,
+} as const
+
+export async function searchWorkOrderMaterialItemOptions(
+  input: SearchWorkOrderMaterialItemOptionsInput,
+  client: WorkOrdersDbClient = db,
+): Promise<WorkOrderMaterialItemOption[]> {
+  const items = await client.flooringWorkOrderItem.findMany({
+    where: {
+      workOrderId: input.workOrderId,
+      productId: input.productId,
+    },
+    select: workOrderMaterialItemOptionSelect,
+    orderBy: { createdAt: "asc" },
+    take: input.take ?? 50,
+  })
+
+  return items.map(normalizeWorkOrderMaterialItemOption)
 }
 
 /**
