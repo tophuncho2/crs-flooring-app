@@ -6,7 +6,7 @@ export type CutLogRowToolbarProps = {
   onCreateNew: (workOrderItemId: string) => void
 }
 
-// Right-aligned control cluster shown under each material item's cut-log
+// Left-aligned control cluster shown under each material item's cut-log
 // sub-grid: just the create-new button.
 export function CutLogRowToolbar({
   workOrderItemId,
@@ -14,7 +14,7 @@ export function CutLogRowToolbar({
   onCreateNew,
 }: CutLogRowToolbarProps) {
   return (
-    <div className="flex items-center justify-end gap-2 text-xs">
+    <div className="flex items-center justify-start gap-2 text-xs">
       <button
         type="button"
         className="rounded border border-[var(--panel-border)] px-2 py-1 hover:bg-[var(--panel-border)]/10 disabled:cursor-not-allowed disabled:opacity-50"
