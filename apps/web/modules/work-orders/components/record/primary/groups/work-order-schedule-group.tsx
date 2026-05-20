@@ -1,18 +1,20 @@
 "use client"
 
+import { TextareaCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
-import type { WorkOrderForm } from "@builders/domain"
+import { WO_DESCRIPTION_MAX, type WorkOrderForm } from "@builders/domain"
 import { WorkOrderScheduleCalendar } from "../schedule-calendar/work-order-schedule-calendar"
 import type { WorkOrderPrimaryDetail } from "../types"
 import { WorkOrderField } from "./work-order-field"
 import { WorkOrderGroup } from "./work-order-group"
 
 /**
- * Group 1: Schedule. Warehouse stacked over Job Type on the left
- * (vertically centered against the calendar), inline mini calendar on
- * the right.
+ * Group 1: Schedule. Left column stacks Warehouse → Job Type →
+ * Description, vertically centered against the calendar's height.
+ * Right column is the always-visible inline mini calendar bound to
+ * `scheduledFor`.
  */
 export function WorkOrderScheduleGroup({
   editable,
@@ -54,6 +56,15 @@ export function WorkOrderScheduleGroup({
             ) : (
               <StaticFieldValue>{detail?.jobTypeName ?? "—"}</StaticFieldValue>
             )}
+          </WorkOrderField>
+          <WorkOrderField label="Description">
+            <TextareaCell
+              editable={editable}
+              value={draft.description}
+              onChange={(value) => onFieldChange("description", value)}
+              maxLength={WO_DESCRIPTION_MAX}
+              rows={2}
+            />
           </WorkOrderField>
         </div>
         <WorkOrderField label="Scheduled For">

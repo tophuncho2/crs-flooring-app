@@ -68,6 +68,7 @@ export function WorkOrderPropertyUnitGroup({
       })
     : ""
   const addressDisplay = formattedAddress || "—"
+  const instructionsDisplay = propertyJoined?.instructions || "—"
 
   return (
     <WorkOrderGroup title="Property & Unit">
@@ -165,6 +166,11 @@ export function WorkOrderPropertyUnitGroup({
           <WorkOrderField label="Property Address (read-only)">
             <StaticFieldValue>
               <span className="whitespace-pre-line">{addressDisplay}</span>
+            </StaticFieldValue>
+          </WorkOrderField>
+          <WorkOrderField label="Property Instructions (read-only)">
+            <StaticFieldValue>
+              <span className="whitespace-pre-line">{instructionsDisplay}</span>
             </StaticFieldValue>
           </WorkOrderField>
           <WorkOrderField label="Custom Address (overrides property address on PDF)">

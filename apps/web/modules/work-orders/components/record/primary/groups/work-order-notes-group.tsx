@@ -1,11 +1,7 @@
 "use client"
 
 import { TextareaCell } from "@/components/cells"
-import {
-  WO_DESCRIPTION_MAX,
-  WO_INTERNAL_NOTES_MAX,
-  type WorkOrderForm,
-} from "@builders/domain"
+import { WO_INTERNAL_NOTES_MAX, type WorkOrderForm } from "@builders/domain"
 import { WorkOrderCompleteChip } from "../controls/work-order-complete-chip"
 import { WorkOrderField } from "./work-order-field"
 import { WorkOrderGroup } from "./work-order-group"
@@ -35,26 +31,15 @@ export function WorkOrderNotesGroup({
         />
       }
     >
-      <div className="flex flex-col gap-3">
-        <WorkOrderField label="Description">
-          <TextareaCell
-            editable={editable}
-            value={draft.description}
-            onChange={(value) => onFieldChange("description", value)}
-            maxLength={WO_DESCRIPTION_MAX}
-            rows={2}
-          />
-        </WorkOrderField>
-        <WorkOrderField label="Internal Notes (not shown on PDF)">
-          <TextareaCell
-            editable={editable}
-            value={draft.internalNotes}
-            onChange={(value) => onFieldChange("internalNotes", value)}
-            maxLength={WO_INTERNAL_NOTES_MAX}
-            rows={4}
-          />
-        </WorkOrderField>
-      </div>
+      <WorkOrderField label="Internal Notes (not shown on PDF)">
+        <TextareaCell
+          editable={editable}
+          value={draft.internalNotes}
+          onChange={(value) => onFieldChange("internalNotes", value)}
+          maxLength={WO_INTERNAL_NOTES_MAX}
+          rows={4}
+        />
+      </WorkOrderField>
     </WorkOrderGroup>
   )
 }
