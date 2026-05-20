@@ -15,7 +15,7 @@ export type WorkOrderPrimaryDetail = {
   managementCompanyId: string | null
   managementCompanyName: string | null
   templateId: string | null
-  templateNumber: string
+  templateUnitType: string
   jobTypeId: string | null
   jobTypeName: string | null
   warehouseId: string | null

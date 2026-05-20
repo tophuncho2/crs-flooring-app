@@ -33,6 +33,7 @@ export type TemplateOption = {
   id: string
   templateNumber: string
   unitType: string
+  description: string | null
 }
 
 // Side-panel preview header: the stable per-template snapshot rendered above

@@ -37,8 +37,8 @@ export type TemplatePickerProps = {
 }
 
 function toDropdownOption(option: TemplateOption): AsyncRichDropdownOption {
-  const subtitles = option.unitType ? [option.unitType] : []
-  return { id: option.id, title: `#${option.templateNumber}`, subtitles }
+  const subtitles = option.description ? [option.description] : []
+  return { id: option.id, title: option.unitType || "—", subtitles }
 }
 
 export function TemplatePicker({

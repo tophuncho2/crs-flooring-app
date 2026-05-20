@@ -130,10 +130,10 @@ export default function WorkOrdersClient({
   const templateLabel = useMemo(() => {
     if (!selectedTemplateId) return null
     if (initialSelectedTemplate?.id === selectedTemplateId) {
-      return `#${initialSelectedTemplate.templateNumber}`
+      return initialSelectedTemplate.unitType || null
     }
     const match = initialTemplateOptions.find((o) => o.id === selectedTemplateId)
-    return match ? `#${match.templateNumber}` : null
+    return match ? match.unitType || null : null
   }, [selectedTemplateId, initialSelectedTemplate, initialTemplateOptions])
 
   const warehouseLabel = useMemo(() => {

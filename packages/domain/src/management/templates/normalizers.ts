@@ -134,10 +134,12 @@ export function normalizeTemplateOption(template: {
   id: string
   templateNumber: string
   unitType: string
+  description: string | null
 }): TemplateOption {
   return {
     id: template.id,
     templateNumber: template.templateNumber,
     unitType: template.unitType,
+    description: template.description,
   }
 }

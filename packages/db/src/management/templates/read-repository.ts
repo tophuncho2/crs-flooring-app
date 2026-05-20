@@ -81,9 +81,10 @@ const templateDetailSelect = {
 } as const
 
 /**
- * Search semantics mirror `searchTemplateOptions` (the picker's read): OR-ILIKE
- * across templateNumber, unitType, and description. Filters AND together via
- * exact `IN (...)` matches on the direct columns of `FlooringTemplate`.
+ * List-view search: OR-ILIKE across templateNumber, unitType, and description.
+ * Filters AND together via exact `IN (...)` matches on the direct columns of
+ * `FlooringTemplate`. Diverges from the picker (`searchTemplateOptions`), which
+ * no longer searches `templateNumber` — list-view follow-up will mirror that.
  */
 function buildTemplatesWhere(
   searchQuery: string | undefined,
@@ -144,8 +145,8 @@ export async function listTemplateOptions(
   client: TemplatesDbClient = db,
 ): Promise<TemplateOption[]> {
   const templates = await client.flooringTemplate.findMany({
-    orderBy: { templateNumber: "asc" },
-    select: { id: true, templateNumber: true, unitType: true },
+    orderBy: [{ unitType: "asc" }, { id: "asc" }],
+    select: { id: true, templateNumber: true, unitType: true, description: true },
   })
 
   return templates.map(normalizeTemplateOption)
@@ -165,7 +166,6 @@ export async function searchTemplateOptions(
   if (args.search) {
     clauses.push({
       OR: [
-        { templateNumber: { contains: args.search, mode: "insensitive" } },
         { unitType: { contains: args.search, mode: "insensitive" } },
         { description: { contains: args.search, mode: "insensitive" } },
       ],
@@ -176,9 +176,9 @@ export async function searchTemplateOptions(
 
   const templates = await client.flooringTemplate.findMany({
     where,
-    orderBy: { templateNumber: "asc" },
+    orderBy: [{ unitType: "asc" }, { id: "asc" }],
     take: args.take,
-    select: { id: true, templateNumber: true, unitType: true },
+    select: { id: true, templateNumber: true, unitType: true, description: true },
   })
 
   return templates.map(normalizeTemplateOption)

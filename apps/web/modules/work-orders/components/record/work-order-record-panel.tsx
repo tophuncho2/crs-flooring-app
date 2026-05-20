@@ -104,7 +104,7 @@ export function WorkOrderRecordPanel({
                     managementCompanyId: controller.record.managementCompanyId,
                     managementCompanyName: controller.record.managementCompanyName,
                     templateId: controller.record.templateId,
-                    templateNumber: controller.record.templateNumber,
+                    templateUnitType: controller.record.unitType,
                     jobTypeId: controller.record.jobTypeId,
                     jobTypeName: controller.record.jobTypeName,
                     warehouseId: controller.record.warehouseId,

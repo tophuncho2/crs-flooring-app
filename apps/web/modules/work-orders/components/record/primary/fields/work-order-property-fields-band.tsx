@@ -44,7 +44,7 @@ export function WorkOrderPropertyFieldsBand({
 
   const managementCompanyLabel = detail?.managementCompanyName ?? null
   const propertyLabel = detail?.propertyName ?? null
-  const templateLabel = detail?.templateNumber ? `#${detail.templateNumber}` : null
+  const templateLabel = detail?.templateUnitType ? detail.templateUnitType : null
 
   return (
     <>
