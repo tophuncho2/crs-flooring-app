@@ -12,7 +12,9 @@ import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ManagementCompaniesListFilters } from "@builders/application"
 import {
   LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
+  normalizeAddressState,
   type ManagementCompanyListRow,
+  type ManagementCompanyStateOption,
   type TablePreferencePayload,
 } from "@builders/domain"
 import {
@@ -32,19 +34,26 @@ import { ManagementCompaniesTable } from "./management-companies-table"
 import { AddCompanyButton } from "./toolbar-controls/add-company-button"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { ManagementCompaniesListSearch } from "./toolbar-controls/management-companies-list-search"
+import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
 import { ManagementCompaniesClearAll } from "./toolbar-controls/sub-controls/management-companies-clear-all"
 import { ManagementCompaniesRowCount } from "./toolbar-controls/sub-controls/management-companies-row-count"
+
+const MANAGEMENT_COMPANIES_FILTERABLE_FIELDS = ["state"] as const
 
 export type ManagementCompaniesClientProps = {
   initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
   initialPage: number
+  initialFilters: ManagementCompaniesListFilters
+  initialStateOptions?: ManagementCompanyStateOption[]
 }
 
 export default function ManagementCompaniesClient({
   initialTablePreferences,
   initialSearchQuery,
   initialPage,
+  initialFilters,
+  initialStateOptions,
 }: ManagementCompaniesClientProps) {
   const { message, pageError } = useManagementCompaniesListController()
   const sidePanel = useManagementCompanySidePanel()
@@ -56,6 +65,7 @@ export default function ManagementCompaniesClient({
     rows,
     total,
     searchQuery,
+    filters,
     page,
     pageSize,
     totalPages,
@@ -64,26 +74,43 @@ export default function ManagementCompaniesClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
+    onFilterChange,
+    onClearAllFilters,
   } = useServerListController<ManagementCompanyListRow, ManagementCompaniesListFilters>({
     mode: "fetch",
     queryKey: [...MANAGEMENT_COMPANIES_LIST_QUERY_KEY],
     listFn: listManagementCompaniesRequest,
     initialSearchQuery,
     initialPage,
+    initialFilters,
     pageSize: LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
     tableKey: "management-companies-main",
     initialTablePreferences,
+    filterableFields: MANAGEMENT_COMPANIES_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  const hasActiveFilters = useMemo(
-    () => searchQuery.trim().length > 0,
-    [searchQuery],
+  const selectedState =
+    (filters as ManagementCompaniesListFilters).state?.[0] ?? null
+
+  const handleStateChange = useCallback(
+    (next: string | null) => {
+      const normalized = next ? normalizeAddressState(next) : ""
+      onFilterChange("state", normalized.length === 2 ? [normalized] : [])
+    },
+    [onFilterChange],
   )
 
+  const hasActiveFilters = useMemo(() => {
+    if (searchQuery.trim().length > 0) return true
+    if (selectedState) return true
+    return false
+  }, [searchQuery, selectedState])
+
   const handleClearAll = useCallback(() => {
+    onClearAllFilters()
     onSearchQueryChange("")
-  }, [onSearchQueryChange])
+  }, [onClearAllFilters, onSearchQueryChange])
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -129,6 +156,15 @@ export default function ManagementCompaniesClient({
                   right={<ManagementCompaniesRowCount count={rows.length} total={total} />}
                 />
               </div>
+            </ListToolbarCell>
+
+            {/* State */}
+            <ListToolbarCell>
+              <StateFilterChip
+                value={selectedState}
+                onChange={handleStateChange}
+                initialOptions={initialStateOptions}
+              />
             </ListToolbarCell>
 
             {/* Right-anchored actions stacked vertically: + Company on top,

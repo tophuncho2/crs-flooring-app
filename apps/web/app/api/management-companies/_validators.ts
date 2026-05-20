@@ -97,6 +97,7 @@ export function validateListManagementCompaniesQuery(
 ): ListInput<ManagementCompaniesListFilters> {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
+    if (key === "state") return
     raw[key] = value
   })
 
@@ -113,8 +114,20 @@ export function validateListManagementCompaniesQuery(
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
 
+  const stateRaw = searchParams.getAll("state")
+  const state = Array.from(
+    new Set(
+      stateRaw
+        .map((entry) => entry.trim().toUpperCase())
+        .filter((entry) => /^[A-Z]{2}$/.test(entry)),
+    ),
+  )
+
+  const filters = state.length > 0 ? { state } : undefined
+
   return {
     search,
+    filters,
     page: parsed.page,
     pageSize: parsed.pageSize,
   }
@@ -153,6 +166,43 @@ export function validateManagementCompanyOptionsQuery(
   const trimmed = parsed.search?.trim()
   return {
     search: trimmed ? trimmed : undefined,
+    take: parsed.take,
+  }
+}
+
+// --- States picker (distinct) validator ---
+
+const managementCompanyStatesSearchQuerySchema = z.object({
+  search: z.string().optional(),
+  take: z.coerce.number().int().min(1).max(50).default(20),
+})
+
+export type ValidatedManagementCompanyStatesSearchQuery = {
+  search?: string
+  take: number
+}
+
+export function validateManagementCompanyStatesSearchQuery(
+  searchParams: URLSearchParams,
+): ValidatedManagementCompanyStatesSearchQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = managementCompanyStatesSearchQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid management company states query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmed = parsed.search?.trim()
+  return {
+    ...(trimmed ? { search: trimmed } : {}),
     take: parsed.take,
   }
 }

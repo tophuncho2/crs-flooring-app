@@ -10,7 +10,23 @@ import {
 } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
-export type ManagementCompaniesListFilters = Record<string, never>
+export type ManagementCompaniesListFilters = {
+  state?: ReadonlyArray<string>
+}
+
+function normalizeStateCodes(
+  raw: ReadonlyArray<string> | undefined,
+): ReadonlyArray<string> | undefined {
+  if (!raw || raw.length === 0) return undefined
+  const cleaned = Array.from(
+    new Set(
+      raw
+        .map((entry) => entry.trim().toUpperCase())
+        .filter((entry) => /^[A-Z]{2}$/.test(entry)),
+    ),
+  )
+  return cleaned.length > 0 ? cleaned : undefined
+}
 
 export async function listManagementCompaniesUseCase(
   input: ListInput<ManagementCompaniesListFilters>,
@@ -23,9 +39,11 @@ export async function listManagementCompaniesUseCase(
   )
 
   const search = input.search?.trim() || undefined
+  const state = normalizeStateCodes(input.filters?.state)
 
   const { rows, total } = await listManagementCompaniesForListView({
     search,
+    filters: state ? { state } : undefined,
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

@@ -39,3 +39,7 @@ export type ManagementCompanyForm = {
   phone: string
   email: string
 }
+
+export type ManagementCompanyStateOption = {
+  value: string
+}

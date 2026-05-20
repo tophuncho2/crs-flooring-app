@@ -2,8 +2,12 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 import {
   getResolvedUserTablePreference,
   listManagementCompaniesUseCase,
+  searchManagementCompanyStatesUseCase,
 } from "@builders/application"
-import type { TablePreferencePayload } from "@builders/domain"
+import type {
+  ManagementCompanyStateOption,
+  TablePreferencePayload,
+} from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import ManagementCompaniesClient from "@/modules/management-companies/components/list/management-companies-client"
@@ -19,6 +23,8 @@ const MANAGEMENT_COMPANIES_FALLBACK_PREFERENCES: TablePreferencePayload = {
   columnOrder: [],
   grouping: { enabled: false, keys: [] },
 }
+
+const INITIAL_STATE_OPTIONS_TAKE = 20
 
 export default async function ManagementCompaniesPage({
   searchParams,
@@ -40,11 +46,20 @@ export default async function ManagementCompaniesPage({
 
   const queryClient = new QueryClient()
 
+  let initialStateOptions: ManagementCompanyStateOption[] = []
+
   try {
-    await queryClient.prefetchQuery({
-      queryKey: [...MANAGEMENT_COMPANIES_LIST_QUERY_KEY, initialInput],
-      queryFn: () => listManagementCompaniesUseCase(initialInput),
-    })
+    await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: [...MANAGEMENT_COMPANIES_LIST_QUERY_KEY, initialInput],
+        queryFn: () => listManagementCompaniesUseCase(initialInput),
+      }),
+      (async () => {
+        initialStateOptions = await searchManagementCompanyStatesUseCase({
+          take: INITIAL_STATE_OPTIONS_TAKE,
+        })
+      })(),
+    ])
   } catch (error) {
     return (
       <DashboardErrorState
@@ -62,6 +77,8 @@ export default async function ManagementCompaniesPage({
         initialTablePreferences={effectivePreferences}
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
+        initialFilters={initialInput.filters ?? {}}
+        initialStateOptions={initialStateOptions}
       />
     </HydrationBoundary>
   )

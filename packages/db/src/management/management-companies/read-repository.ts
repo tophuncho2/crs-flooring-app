@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
-import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
+import { Prisma } from "../../generated/prisma/client.js"
+import type { PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeManagementCompany,
   normalizeManagementCompanyListRow,
@@ -7,6 +8,7 @@ import {
   type ManagementCompanyDetail,
   type ManagementCompanyListRow,
   type ManagementCompanyOption,
+  type ManagementCompanyStateOption,
 } from "@builders/domain"
 
 type ManagementCompaniesDbClient = PrismaClient | Prisma.TransactionClient
@@ -70,6 +72,7 @@ export async function countPropertiesByManagementCompanyId(
 
 export type ManagementCompanyListViewOptions = {
   search?: string
+  filters?: { state?: ReadonlyArray<string> }
   skip: number
   take: number
 }
@@ -80,17 +83,29 @@ export type ManagementCompanyListViewResult = {
 }
 
 function buildListViewWhere(
-  search: string | undefined,
+  options: Pick<ManagementCompanyListViewOptions, "search" | "filters">,
 ): Prisma.FlooringManagementCompanyWhereInput | undefined {
-  if (!search) return undefined
-  return { name: { contains: search, mode: "insensitive" } }
+  const clauses: Prisma.FlooringManagementCompanyWhereInput[] = []
+
+  if (options.search) {
+    clauses.push({ name: { contains: options.search, mode: "insensitive" } })
+  }
+
+  const stateCodes = options.filters?.state
+  if (stateCodes && stateCodes.length > 0) {
+    clauses.push({ state: { in: [...stateCodes] } })
+  }
+
+  if (clauses.length === 0) return undefined
+  if (clauses.length === 1) return clauses[0]
+  return { AND: clauses }
 }
 
 export async function listManagementCompaniesForListView(
   options: ManagementCompanyListViewOptions,
   client: ManagementCompaniesDbClient = db,
 ): Promise<ManagementCompanyListViewResult> {
-  const where = buildListViewWhere(options.search)
+  const where = buildListViewWhere(options)
 
   const [total, rows] = await Promise.all([
     client.flooringManagementCompany.count({ where }),
@@ -130,4 +145,39 @@ export async function searchManagementCompanyOptions(
   })
 
   return companies.map(normalizeManagementCompanyOption)
+}
+
+export type ManagementCompanyStatesSearchArgs = {
+  search?: string
+  take: number
+}
+
+/**
+ * Distinct state codes across all management companies. Excludes
+ * NULL/whitespace-only values. Optional ILIKE substring on the search term.
+ * Sorted ASC, deduped at the SQL layer.
+ */
+export async function searchManagementCompanyStates(
+  args: ManagementCompanyStatesSearchArgs,
+  client: ManagementCompaniesDbClient = db,
+): Promise<ManagementCompanyStateOption[]> {
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"state" IS NOT NULL`,
+    Prisma.sql`length(trim("state")) > 0`,
+  ]
+  const trimmed = args.search?.trim() ?? ""
+  if (trimmed.length > 0) {
+    conditions.push(Prisma.sql`"state" ILIKE ${`%${trimmed}%`}`)
+  }
+  const whereClause = Prisma.join(conditions, " AND ")
+
+  const rows = await client.$queryRaw<{ state: string }[]>(Prisma.sql`
+    SELECT DISTINCT "state"
+    FROM "flooring_management_company"
+    WHERE ${whereClause}
+    ORDER BY "state" ASC
+    LIMIT ${args.take}
+  `)
+
+  return rows.map((row) => ({ value: row.state }))
 }
