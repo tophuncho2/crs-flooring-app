@@ -94,6 +94,9 @@ export function WorkOrderPropertyFieldsBand({
             <TemplatePicker
               value={templateValue}
               onChange={(id) => onFieldChange("templateId", id ?? "")}
+              onOptionSelected={(option) => {
+                if (option) onFieldChange("unitType", option.unitType)
+              }}
               propertyId={propertyValue}
               selectedLabel={templateLabel}
               placeholder="—"

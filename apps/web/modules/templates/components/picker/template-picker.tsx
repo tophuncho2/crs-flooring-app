@@ -14,6 +14,12 @@ export type TemplatePickerProps = {
   value: string | null
   onChange: (id: string | null) => void
   /**
+   * Fires alongside `onChange` with the full picked option (or null on clear).
+   * Used by forms that need to cascade other fields from the template — e.g.
+   * the WO form pastes `option.unitType` into the editable `unitType` field.
+   */
+  onOptionSelected?: (option: TemplateOption | null) => void
+  /**
    * Required filter — templates dropdown is property-scoped. When null the
    * picker is rendered disabled with a "Select a property first" placeholder.
    */
@@ -44,6 +50,7 @@ function toDropdownOption(option: TemplateOption): AsyncRichDropdownOption {
 export function TemplatePicker({
   value,
   onChange,
+  onOptionSelected,
   propertyId,
   selectedLabel = null,
   placeholder = "Select a template",
@@ -81,6 +88,17 @@ export function TemplatePicker({
     enabled,
   })
 
+  const handleChange = useCallback(
+    (id: string | null) => {
+      onChange(id)
+      if (onOptionSelected) {
+        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
+        onOptionSelected(option)
+      }
+    },
+    [onChange, onOptionSelected, controller.options],
+  )
+
   const options = useMemo<AsyncRichDropdownOption[]>(
     () => controller.options.map(toDropdownOption),
     [controller.options],
@@ -95,7 +113,7 @@ export function TemplatePicker({
   return (
     <AsyncRichDropdown
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       options={options}
       selectedOption={selectedOption}
       query={controller.query}
