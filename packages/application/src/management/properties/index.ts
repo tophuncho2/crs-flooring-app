@@ -1,6 +1,7 @@
 export * from "./errors.js"
 export * from "./types.js"
 export * from "./create-property.js"
+export * from "./create-property-hub.js"
 export * from "./update-property.js"
 export * from "./delete-property.js"
 export * from "./list-properties.js"

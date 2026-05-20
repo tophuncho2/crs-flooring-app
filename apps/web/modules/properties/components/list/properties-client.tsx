@@ -22,7 +22,9 @@ import {
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
 import { usePropertySidePanel } from "@/modules/properties/controllers/use-property-side-panel"
+import { usePropertyHubSidePanel } from "@/modules/properties/controllers/list/use-property-hub-side-panel"
 import { PropertySidePanel } from "@/modules/properties/components/side-panel"
+import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { AddPropertyButton } from "./toolbar-controls/add-property-button"
@@ -53,6 +55,7 @@ export default function PropertiesClient({
 }: PropertiesClientProps) {
   const { message, pageError } = usePropertiesListController()
   const sidePanel = usePropertySidePanel()
+  const hubPanel = usePropertyHubSidePanel()
 
   const {
     rows,
@@ -181,7 +184,7 @@ export default function PropertiesClient({
                 + Hub below. */}
             <ListToolbarCell className="ml-auto">
               <AddPropertyButton onClick={() => sidePanel.openPanel({ mode: "create" })} />
-              <AddHubButton />
+              <AddHubButton onClick={() => hubPanel.open()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
@@ -204,6 +207,7 @@ export default function PropertiesClient({
         />
       </div>
       <PropertySidePanel controller={sidePanel} />
+      <PropertyHubSidePanel controller={hubPanel} />
     </div>
   )
 }

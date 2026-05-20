@@ -22,6 +22,8 @@ import {
 import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/list/use-management-companies-list-controller"
 import { useManagementCompanySidePanel } from "@/modules/management-companies/controllers/list/use-management-company-side-panel"
 import { ManagementCompanySidePanel } from "@/modules/management-companies/components/side-panel"
+import { usePropertyHubSidePanel } from "@/modules/properties/controllers/list/use-property-hub-side-panel"
+import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
 import { ManagementCompaniesTable } from "./management-companies-table"
 import { AddCompanyButton } from "./toolbar-controls/add-company-button"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
@@ -42,6 +44,7 @@ export default function ManagementCompaniesClient({
 }: ManagementCompaniesClientProps) {
   const { message, pageError } = useManagementCompaniesListController()
   const sidePanel = useManagementCompanySidePanel()
+  const hubPanel = usePropertyHubSidePanel()
 
   const {
     rows,
@@ -126,7 +129,7 @@ export default function ManagementCompaniesClient({
                 + Hub below. */}
             <ListToolbarCell className="ml-auto">
               <AddCompanyButton onClick={() => sidePanel.openPanel({ mode: "create" })} />
-              <AddHubButton />
+              <AddHubButton onClick={() => hubPanel.open()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
@@ -149,6 +152,7 @@ export default function ManagementCompaniesClient({
         />
       </div>
       <ManagementCompanySidePanel controller={sidePanel} />
+      <PropertyHubSidePanel controller={hubPanel} />
     </div>
   )
 }
