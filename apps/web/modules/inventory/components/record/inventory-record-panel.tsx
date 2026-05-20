@@ -7,13 +7,13 @@ import {
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
-import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import type { InventoryDetail, InventoryForm } from "@builders/domain"
 import { CutLogEditPanel, useCutLogEditPanel } from "@/modules/cut-logs"
 import { useInventoryPrimarySection } from "../../controllers/use-inventory-primary-section"
 import { INVENTORY_CUT_LOGS_QUERY_KEY } from "../../data/inventory-cut-logs-request"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
 import { InventoryCutLogsSection } from "./cut-logs/inventory-cut-logs-section"
+import { InventoryRecordFooter } from "./footer"
 
 export function InventoryRecordPanel({
   page,
@@ -109,11 +109,10 @@ export function InventoryRecordPanel({
             ),
           },
         ]}
-        footer={{
-          deleteLabel: "Delete Inventory",
-          deleteConfirmMessage: buildDeleteConfirmationMessage("inventory row"),
-          onDelete: () => void controller.deleteRecord(),
-        }}
+      />
+      <InventoryRecordFooter
+        onClose={page.closePage}
+        onDelete={controller.deleteRecord}
       />
       <CutLogEditPanel controller={cutLogPanel} />
     </>
