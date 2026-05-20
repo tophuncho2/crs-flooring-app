@@ -10,7 +10,7 @@ export async function updateInventoryRequest(
   input: UpdateInventoryInput,
   revisionKey: string,
 ) {
-  return requestJson<{ inventory: InventoryRecord }>(`/api/inventory/${id}/primary/section`, {
+  return requestJson<{ inventory: InventoryDetailRecord }>(`/api/inventory/${id}/primary/section`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta(input, revisionKey)),

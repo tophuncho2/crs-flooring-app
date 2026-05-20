@@ -9,7 +9,7 @@ import {
 } from "@/modules/shared/engines/record-view"
 import type { InventoryDetail, InventoryForm } from "@builders/domain"
 import { CutLogEditPanel, useCutLogEditPanel } from "@/modules/cut-logs"
-import { useInventoryPrimarySection } from "../../controllers/use-inventory-primary-section"
+import { useInventoryPrimarySection } from "../../controllers/record/primary/use-inventory-primary-section"
 import { INVENTORY_CUT_LOGS_QUERY_KEY } from "../../data/inventory-cut-logs-request"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
 import { InventoryCutLogsSection } from "./cut-logs/inventory-cut-logs-section"

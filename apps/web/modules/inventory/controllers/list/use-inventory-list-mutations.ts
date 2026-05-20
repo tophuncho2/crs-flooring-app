@@ -1,0 +1,31 @@
+"use client"
+
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import type { UpdateInventoryInput } from "@builders/application"
+import {
+  deleteInventoryRequest,
+  updateInventoryRequest,
+} from "@/modules/inventory/data/mutations"
+import { INVENTORY_LIST_QUERY_KEY } from "@/modules/inventory/data/list-inventory-request"
+
+type UpdateArgs = { id: string; input: UpdateInventoryInput; revisionKey: string }
+type DeleteArgs = { id: string; updatedAt: string }
+
+export function useInventoryListMutations() {
+  const queryClient = useQueryClient()
+  const invalidateList = () =>
+    queryClient.invalidateQueries({ queryKey: [...INVENTORY_LIST_QUERY_KEY] })
+
+  const updateInventory = useMutation({
+    mutationFn: ({ id, input, revisionKey }: UpdateArgs) =>
+      updateInventoryRequest(id, input, revisionKey),
+    onSuccess: invalidateList,
+  })
+
+  const deleteInventory = useMutation({
+    mutationFn: ({ id, updatedAt }: DeleteArgs) => deleteInventoryRequest(id, updatedAt),
+    onSuccess: invalidateList,
+  })
+
+  return { updateInventory, deleteInventory }
+}

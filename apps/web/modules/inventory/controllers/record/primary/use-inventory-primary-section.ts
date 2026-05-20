@@ -1,7 +1,5 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
-import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
 import {
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
@@ -11,6 +9,7 @@ import {
   type InventoryDetail,
   type InventoryForm,
 } from "@builders/domain"
+import { useInventoryListMutations } from "@/modules/inventory/controllers/list/use-inventory-list-mutations"
 
 export function useInventoryPrimarySection({
   page,
@@ -19,7 +18,9 @@ export function useInventoryPrimarySection({
   page: RecordDetailClientScaffoldContext
   inventory: InventoryDetail
 }) {
-  const controller = useSingleSectionRecordController<InventoryDetail, InventoryForm>({
+  const { updateInventory, deleteInventory } = useInventoryListMutations()
+
+  return useSingleSectionRecordController<InventoryDetail, InventoryForm>({
     page,
     scope: "inventory",
     id: inventory.id,
@@ -29,29 +30,19 @@ export function useInventoryPrimarySection({
     createLocalValue: toInventoryForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      const payload = await requestJson<{ inventory: InventoryDetail }>(
-        `/api/inventory/${record.id}/primary/section`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(withMutationMeta(localValue, record.updatedAt)),
-        },
-      )
-
+      const payload = await updateInventory.mutateAsync({
+        id: record.id,
+        input: localValue,
+        revisionKey: record.updatedAt,
+      })
       return {
         serverValue: payload.inventory,
         noticeMessage: "Inventory saved",
       }
     },
     deleteRecord: async (record) => {
-      await requestJson<{ ok: true }>(`/api/inventory/${record.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(withMutationMeta({}, record.updatedAt)),
-      })
+      await deleteInventory.mutateAsync({ id: record.id, updatedAt: record.updatedAt })
     },
     deleteErrorMessage: "Failed to delete inventory",
   })
-
-  return controller
 }

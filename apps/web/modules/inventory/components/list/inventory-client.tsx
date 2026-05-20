@@ -23,7 +23,7 @@ import {
   INVENTORY_LIST_QUERY_KEY,
   listInventoryRequest,
 } from "@/modules/inventory/data/list-inventory-request"
-import { useInventoryListController } from "@/modules/inventory/controllers/use-inventory-list-controller"
+import { useInventoryListController } from "@/modules/inventory/controllers/list/use-inventory-list-controller"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
