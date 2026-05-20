@@ -14,6 +14,13 @@ export type WorkOrderPickerProps = {
   value: string | null
   onChange: (id: string | null) => void
   /**
+   * Optional notification fired alongside `onChange` carrying the full
+   * picked option. Lets callers snapshot the picked WO's label so the
+   * trigger reflects the new selection on the cut-log relink flow,
+   * where `selectedLabel` would otherwise stay pinned to the original.
+   */
+  onOptionSelected?: (option: WorkOrderOption | null) => void
+  /**
    * Required scope — every work order belongs to a warehouse. Picker
    * renders disabled when null.
    */
@@ -43,6 +50,7 @@ function toDropdownOption(option: WorkOrderOption): AsyncRichDropdownOption {
 export function WorkOrderPicker({
   value,
   onChange,
+  onOptionSelected,
   warehouseId,
   selectedLabel = null,
   placeholder = "Select work order",
@@ -79,6 +87,17 @@ export function WorkOrderPicker({
     enabled,
   })
 
+  const handleChange = useCallback(
+    (id: string | null) => {
+      onChange(id)
+      if (onOptionSelected) {
+        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
+        onOptionSelected(option)
+      }
+    },
+    [onChange, onOptionSelected, controller.options],
+  )
+
   const options = useMemo<AsyncRichDropdownOption[]>(
     () => controller.options.map(toDropdownOption),
     [controller.options],
@@ -96,7 +115,7 @@ export function WorkOrderPicker({
   return (
     <AsyncRichDropdown
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       options={options}
       selectedOption={selectedOption}
       query={controller.query}

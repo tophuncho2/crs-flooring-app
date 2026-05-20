@@ -17,15 +17,23 @@ export type CutLogEditForm = {
 }
 
 /**
- * UI-only narrowing filter (free-text location) plus snapshot label + unit
- * for the picker trigger. None of these ship to the cut-log API — the
- * persisted row carries only `inventoryId`. Local state lives outside
- * `CutLogEditForm` so the dirty check + mutation payload stay clean.
+ * UI-only narrowing filter (free-text location) plus snapshot labels for
+ * the picker triggers. None of these ship to the cut-log API — the
+ * persisted row carries only `inventoryId` / `workOrderId` /
+ * `workOrderItemId`. Local state lives outside `CutLogEditForm` so the
+ * dirty check + mutation payload stay clean.
+ *
+ * `pickedWorkOrderLabel` / `pickedWorkOrderItemLabel` keep the relink
+ * pickers' triggers in sync with `form.workOrderId` / `workOrderItemId`
+ * after the user picks a new option — otherwise the triggers would stay
+ * pinned to the original cut log's labels.
  */
 export type CutLogPanelLocal = {
   locationFilter: string
   pickedInventoryLabel: string
   pickedInventoryStockUnitAbbrev: string
+  pickedWorkOrderLabel: string
+  pickedWorkOrderItemLabel: string
 }
 
 /**

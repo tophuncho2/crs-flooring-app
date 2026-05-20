@@ -1,7 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import type { InventoryOption } from "@builders/domain"
+import type {
+  InventoryOption,
+  WorkOrderMaterialItemOption,
+  WorkOrderOption,
+} from "@builders/domain"
 import type { CutLogScopeUrl } from "@/modules/cut-logs/data/mutations"
 import {
   EMPTY_FORM,
@@ -94,7 +98,7 @@ export function useCutLogEditPanel({
       setForm(seeded)
       setBaseline(seeded)
       setLocal({
-        locationFilter: "",
+        ...EMPTY_LOCAL,
         pickedInventoryLabel: preset?.label ?? "",
         pickedInventoryStockUnitAbbrev: preset?.stockUnitAbbrev ?? "",
       })
@@ -155,6 +159,10 @@ export function useCutLogEditPanel({
         ? prev
         : { ...prev, workOrderId: id, workOrderItemId: null },
     )
+    // Mirror the form-side cascade: clearing the WOMI id also clears its
+    // snapshot label so the dependent picker's trigger doesn't carry the
+    // stale label from the old WO into the new scope.
+    setLocal((prev) => ({ ...prev, pickedWorkOrderItemLabel: "" }))
     setError(null)
   }, [])
 
@@ -162,6 +170,23 @@ export function useCutLogEditPanel({
     setForm((prev) => ({ ...prev, workOrderItemId: id }))
     setError(null)
   }, [])
+
+  const snapshotWorkOrderOption = useCallback((option: WorkOrderOption | null) => {
+    setLocal((prev) => ({
+      ...prev,
+      pickedWorkOrderLabel: option?.workOrderNumber ?? "",
+    }))
+  }, [])
+
+  const snapshotWorkOrderItemOption = useCallback(
+    (option: WorkOrderMaterialItemOption | null) => {
+      setLocal((prev) => ({
+        ...prev,
+        pickedWorkOrderItemLabel: option?.productName ?? "",
+      }))
+    },
+    [],
+  )
 
   const createMutation = useCreateCutLogMutation({
     scope,
@@ -270,6 +295,8 @@ export function useCutLogEditPanel({
     snapshotInventoryOption,
     setWorkOrderId,
     setWorkOrderItemId,
+    snapshotWorkOrderOption,
+    snapshotWorkOrderItemOption,
     save,
     finalize,
     voidCutLog,

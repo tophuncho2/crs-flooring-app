@@ -14,6 +14,8 @@ export const EMPTY_LOCAL: CutLogPanelLocal = {
   locationFilter: "",
   pickedInventoryLabel: "",
   pickedInventoryStockUnitAbbrev: "",
+  pickedWorkOrderLabel: "",
+  pickedWorkOrderItemLabel: "",
 }
 
 export function buildEditForm(cutLog: CutLogRow): CutLogEditForm {

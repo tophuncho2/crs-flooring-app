@@ -24,9 +24,21 @@ export type CutLogEditHeaderProps = {
  * pickers as live while keeping the value cells read-only.
  */
 export function CutLogEditHeader({ cutLog, controller }: CutLogEditHeaderProps) {
-  const { form, isSaving } = controller
+  const { form, local, isSaving } = controller
   const relinkAllowed = canRelinkCutLog(cutLog)
   const pickersDisabled = isSaving || !relinkAllowed
+
+  // Trigger label prefers the live picker snapshot once the user picks a
+  // new option; falls back to the original cut log's label on first open.
+  // Without this fallback the trigger would render the (stale) original
+  // label even after `form.workOrderId` has flipped to the new selection.
+  const workOrderTriggerLabel =
+    local.pickedWorkOrderLabel || cutLog.workOrderNumber || null
+  const workOrderItemTriggerLabel =
+    local.pickedWorkOrderItemLabel ||
+    cutLog.workOrderItemProductLabel ||
+    cutLog.productName ||
+    null
 
   return (
     <div className="flex flex-col gap-3">
@@ -37,8 +49,9 @@ export function CutLogEditHeader({ cutLog, controller }: CutLogEditHeaderProps) 
         <WorkOrderPicker
           value={form.workOrderId}
           onChange={controller.setWorkOrderId}
+          onOptionSelected={controller.snapshotWorkOrderOption}
           warehouseId={cutLog.warehouseId}
-          selectedLabel={cutLog.workOrderNumber ?? null}
+          selectedLabel={workOrderTriggerLabel}
           disabled={pickersDisabled}
           ariaLabel="Work order"
         />
@@ -50,11 +63,10 @@ export function CutLogEditHeader({ cutLog, controller }: CutLogEditHeaderProps) 
         <WorkOrderMaterialItemPicker
           value={form.workOrderItemId}
           onChange={controller.setWorkOrderItemId}
+          onOptionSelected={controller.snapshotWorkOrderItemOption}
           workOrderId={form.workOrderId}
           productId={cutLog.productId}
-          selectedLabel={
-            cutLog.workOrderItemProductLabel ?? cutLog.productName ?? null
-          }
+          selectedLabel={workOrderItemTriggerLabel}
           disabled={pickersDisabled}
           ariaLabel="Material item"
         />

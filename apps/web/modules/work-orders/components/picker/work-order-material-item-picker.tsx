@@ -14,6 +14,12 @@ export type WorkOrderMaterialItemPickerProps = {
   value: string | null
   onChange: (id: string | null) => void
   /**
+   * Optional notification fired alongside `onChange` carrying the full
+   * picked option. Lets callers snapshot the picked WOMI's label so the
+   * trigger reflects the new selection on the cut-log relink flow.
+   */
+  onOptionSelected?: (option: WorkOrderMaterialItemOption | null) => void
+  /**
    * Required scope — WOMIs are picked under a specific work order. Picker
    * renders disabled when null.
    */
@@ -59,6 +65,7 @@ function toDropdownOption(option: WorkOrderMaterialItemOption): AsyncRichDropdow
 export function WorkOrderMaterialItemPicker({
   value,
   onChange,
+  onOptionSelected,
   workOrderId,
   productId,
   selectedLabel = null,
@@ -102,6 +109,17 @@ export function WorkOrderMaterialItemPicker({
     enabled,
   })
 
+  const handleChange = useCallback(
+    (id: string | null) => {
+      onChange(id)
+      if (onOptionSelected) {
+        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
+        onOptionSelected(option)
+      }
+    },
+    [onChange, onOptionSelected, controller.options],
+  )
+
   const options = useMemo<AsyncRichDropdownOption[]>(
     () => controller.options.map(toDropdownOption),
     [controller.options],
@@ -116,7 +134,7 @@ export function WorkOrderMaterialItemPicker({
   return (
     <AsyncRichDropdown
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       options={options}
       selectedOption={selectedOption}
       query={controller.query}
