@@ -11,6 +11,7 @@ import { ManagementCompanySidePanelForm } from "./management-company-side-panel-
 
 export type ManagementCompanySidePanelProps = {
   controller: ManagementCompanySidePanelController
+  onOpenHubView: (managementCompanyId: string) => void
 }
 
 /**
@@ -19,7 +20,7 @@ export type ManagementCompanySidePanelProps = {
  * side-panel-edit toolbar controls: status pill + delete + discard + save.
  * The title-bar X (provided by SidePanelPreview) handles close.
  */
-export function ManagementCompanySidePanel({ controller }: ManagementCompanySidePanelProps) {
+export function ManagementCompanySidePanel({ controller, onOpenHubView }: ManagementCompanySidePanelProps) {
   const { open, mode, error, close, form } = controller
   const isOpen = open !== null
   const resolvedMode = mode ?? "create"
@@ -42,7 +43,7 @@ export function ManagementCompanySidePanel({ controller }: ManagementCompanySide
         <div className="flex flex-wrap items-center justify-end gap-2">
           <ManagementCompanySidePanelSaveButton controller={controller} mode={resolvedMode} />
           <ManagementCompanySidePanelDiscardButton controller={controller} />
-          <ManagementCompanySidePanelHubViewButton controller={controller} />
+          <ManagementCompanySidePanelHubViewButton controller={controller} onOpenHubView={onOpenHubView} />
           <ManagementCompanySidePanelStatusPill controller={controller} />
           <ManagementCompanySidePanelDeleteButton controller={controller} mode={resolvedMode} />
         </div>

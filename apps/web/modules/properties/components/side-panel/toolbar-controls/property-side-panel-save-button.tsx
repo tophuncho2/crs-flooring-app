@@ -4,7 +4,7 @@ import { SidePanelEditSaveButton } from "@/components/side-panel-edit"
 import type {
   PropertySidePanelController,
   PropertySidePanelMode,
-} from "@/modules/properties/controllers/side-panel/use-property-side-panel"
+} from "@/modules/properties/controllers/property-side-panel"
 
 export function PropertySidePanelSaveButton({
   controller,

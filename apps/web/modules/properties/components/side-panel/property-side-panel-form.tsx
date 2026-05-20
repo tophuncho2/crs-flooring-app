@@ -5,7 +5,7 @@ import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField } from "@/components/fields"
 import { TextCell, TextareaCell } from "@/components/cells"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
-import type { PropertySidePanelController } from "@/modules/properties/controllers/side-panel/use-property-side-panel"
+import type { PropertySidePanelController } from "@/modules/properties/controllers/property-side-panel"
 
 export function PropertySidePanelForm({
   controller,

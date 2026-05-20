@@ -1,7 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import type { PropertySidePanelController } from "@/modules/properties/controllers/side-panel/use-property-side-panel"
+import type { PropertySidePanelController } from "@/modules/properties/controllers/property-side-panel"
 
 const BASE_CLASS_NAME = [
   "inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200",
@@ -17,12 +16,15 @@ const DISABLED_CLASS_NAME =
  * "Open Hub View" affordance for the property side panel. Disabled in
  * create mode and when the property has no linked management company.
  * Tracks `form.managementCompanyId` so linking a company in the panel
- * enables the button without a remount.
+ * enables the button without a remount. Opens the read-only Hub View
+ * side panel via the parent-supplied callback (no URL navigation).
  */
 export function PropertySidePanelHubViewButton({
   controller,
+  onOpenHubView,
 }: {
   controller: PropertySidePanelController
+  onOpenHubView: (managementCompanyId: string) => void
 }) {
   const managementCompanyId = controller.form.managementCompanyId.trim()
   const inEditMode = controller.recordId !== null
@@ -40,11 +42,12 @@ export function PropertySidePanelHubViewButton({
   }
 
   return (
-    <Link
-      href={`/dashboard/management-companies/${managementCompanyId}`}
+    <button
+      type="button"
+      onClick={() => onOpenHubView(managementCompanyId)}
       className={BASE_CLASS_NAME}
     >
       Open Hub View
-    </Link>
+    </button>
   )
 }

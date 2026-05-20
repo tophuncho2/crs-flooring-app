@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import type { ManagementCompanySidePanelController } from "@/modules/management-companies/controllers/list/use-management-company-side-panel"
 
 const BASE_CLASS_NAME = [
@@ -16,13 +15,16 @@ const DISABLED_CLASS_NAME =
 /**
  * "Open Hub View" affordance for the management-company side panel. Always
  * rendered; disabled in create mode (no id yet). After a successful create,
- * the controller flips its internal `recordId` so the link enables without
- * remount.
+ * the controller flips its internal `recordId` so the button enables
+ * without remount. Opens the read-only Hub View side panel via the
+ * parent-supplied callback (no URL navigation).
  */
 export function ManagementCompanySidePanelHubViewButton({
   controller,
+  onOpenHubView,
 }: {
   controller: ManagementCompanySidePanelController
+  onOpenHubView: (managementCompanyId: string) => void
 }) {
   const id = controller.recordId
   const isDisabled = id === null
@@ -39,8 +41,8 @@ export function ManagementCompanySidePanelHubViewButton({
   }
 
   return (
-    <Link href={`/dashboard/management-companies/${id}`} className={BASE_CLASS_NAME}>
+    <button type="button" onClick={() => onOpenHubView(id)} className={BASE_CLASS_NAME}>
       Open Hub View
-    </Link>
+    </button>
   )
 }

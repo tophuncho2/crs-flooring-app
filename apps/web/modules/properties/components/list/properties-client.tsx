@@ -21,10 +21,12 @@ import {
   listPropertiesRequest,
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
-import { usePropertySidePanel } from "@/modules/properties/controllers/side-panel/use-property-side-panel"
-import { usePropertyHubSidePanel } from "@/modules/properties/controllers/side-panel/use-property-hub-side-panel"
+import { usePropertySidePanel } from "@/modules/properties/controllers/property-side-panel"
+import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
+import { usePropertyHubViewSidePanel } from "@/modules/properties/controllers/property-hub-view-side-panel"
 import { PropertySidePanel } from "@/modules/properties/components/side-panel"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
+import { PropertyHubViewSidePanel } from "@/modules/properties/components/side-panel/hub-view"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { AddPropertyButton } from "./toolbar-controls/add-property-button"
@@ -56,6 +58,7 @@ export default function PropertiesClient({
   const { message, pageError } = usePropertiesListController()
   const sidePanel = usePropertySidePanel()
   const hubPanel = usePropertyHubSidePanel()
+  const hubViewPanel = usePropertyHubViewSidePanel()
 
   const {
     rows,
@@ -206,8 +209,21 @@ export default function PropertiesClient({
           }
         />
       </div>
-      <PropertySidePanel controller={sidePanel} />
+      <PropertySidePanel
+        controller={sidePanel}
+        onOpenHubView={(id) => {
+          sidePanel.close()
+          hubViewPanel.open(id)
+        }}
+      />
       <PropertyHubSidePanel controller={hubPanel} />
+      <PropertyHubViewSidePanel
+        controller={hubViewPanel}
+        onOpenProperty={(row) => {
+          hubViewPanel.close()
+          sidePanel.openPanel({ mode: "edit", row })
+        }}
+      />
     </div>
   )
 }

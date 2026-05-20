@@ -1,8 +1,10 @@
 "use client"
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
-import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/side-panel/use-property-hub-side-panel"
+import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/property-hub-side-panel"
 import { PropertyHubSidePanelForm } from "./property-hub-side-panel-form"
+import { PropertyHubSidePanelDiscardButton } from "./toolbar-controls/property-hub-side-panel-discard-button"
+import { PropertyHubSidePanelSaveButton } from "./toolbar-controls/property-hub-side-panel-save-button"
 
 export type PropertyHubSidePanelProps = {
   controller: PropertyHubSidePanelController
@@ -16,17 +18,7 @@ export type PropertyHubSidePanelProps = {
  * via POST /api/properties/hub.
  */
 export function PropertyHubSidePanel({ controller }: PropertyHubSidePanelProps) {
-  const {
-    isOpen,
-    canSave,
-    isSaving,
-    hasAnyInteraction,
-    validationError,
-    error,
-    close,
-    discard,
-    save,
-  } = controller
+  const { isOpen, validationError, error, close } = controller
 
   return (
     <SidePanelPreview
@@ -37,22 +29,8 @@ export function PropertyHubSidePanel({ controller }: PropertyHubSidePanelProps) 
       widthClassName="w-[34rem]"
       footer={
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={save}
-            disabled={!canSave}
-            className="rounded-md border border-emerald-600/70 bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSaving ? "Saving…" : "Save"}
-          </button>
-          <button
-            type="button"
-            onClick={discard}
-            disabled={isSaving || !hasAnyInteraction}
-            className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-sm font-semibold text-[var(--foreground)] shadow-sm transition hover:bg-[var(--panel-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Discard
-          </button>
+          <PropertyHubSidePanelSaveButton controller={controller} />
+          <PropertyHubSidePanelDiscardButton controller={controller} />
         </div>
       }
     >

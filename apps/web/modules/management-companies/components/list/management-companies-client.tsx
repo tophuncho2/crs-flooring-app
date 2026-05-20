@@ -22,8 +22,12 @@ import {
 import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/list/use-management-companies-list-controller"
 import { useManagementCompanySidePanel } from "@/modules/management-companies/controllers/list/use-management-company-side-panel"
 import { ManagementCompanySidePanel } from "@/modules/management-companies/components/side-panel"
-import { usePropertyHubSidePanel } from "@/modules/properties/controllers/side-panel/use-property-hub-side-panel"
+import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
+import { usePropertyHubViewSidePanel } from "@/modules/properties/controllers/property-hub-view-side-panel"
+import { usePropertySidePanel } from "@/modules/properties/controllers/property-side-panel"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
+import { PropertyHubViewSidePanel } from "@/modules/properties/components/side-panel/hub-view"
+import { PropertySidePanel } from "@/modules/properties/components/side-panel"
 import { ManagementCompaniesTable } from "./management-companies-table"
 import { AddCompanyButton } from "./toolbar-controls/add-company-button"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
@@ -45,6 +49,8 @@ export default function ManagementCompaniesClient({
   const { message, pageError } = useManagementCompaniesListController()
   const sidePanel = useManagementCompanySidePanel()
   const hubPanel = usePropertyHubSidePanel()
+  const hubViewPanel = usePropertyHubViewSidePanel()
+  const propertyPanel = usePropertySidePanel()
 
   const {
     rows,
@@ -151,8 +157,28 @@ export default function ManagementCompaniesClient({
           }
         />
       </div>
-      <ManagementCompanySidePanel controller={sidePanel} />
+      <ManagementCompanySidePanel
+        controller={sidePanel}
+        onOpenHubView={(id) => {
+          sidePanel.close()
+          hubViewPanel.open(id)
+        }}
+      />
       <PropertyHubSidePanel controller={hubPanel} />
+      <PropertySidePanel
+        controller={propertyPanel}
+        onOpenHubView={(id) => {
+          propertyPanel.close()
+          hubViewPanel.open(id)
+        }}
+      />
+      <PropertyHubViewSidePanel
+        controller={hubViewPanel}
+        onOpenProperty={(row) => {
+          hubViewPanel.close()
+          propertyPanel.openPanel({ mode: "edit", row })
+        }}
+      />
     </div>
   )
 }

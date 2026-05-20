@@ -1,7 +1,7 @@
 "use client"
 
 import { SidePanelPreview } from "@/components/side-panel-preview"
-import type { PropertySidePanelController } from "@/modules/properties/controllers/side-panel/use-property-side-panel"
+import type { PropertySidePanelController } from "@/modules/properties/controllers/property-side-panel"
 import { PropertySidePanelDeleteButton } from "./toolbar-controls/property-side-panel-delete-button"
 import { PropertySidePanelDiscardButton } from "./toolbar-controls/property-side-panel-discard-button"
 import { PropertySidePanelHubViewButton } from "./toolbar-controls/property-side-panel-hub-view-button"
@@ -11,6 +11,7 @@ import { PropertySidePanelForm } from "./property-side-panel-form"
 
 export type PropertySidePanelProps = {
   controller: PropertySidePanelController
+  onOpenHubView: (managementCompanyId: string) => void
 }
 
 /**
@@ -19,7 +20,7 @@ export type PropertySidePanelProps = {
  * side-panel-edit toolbar controls: status pill + delete + discard + save.
  * The title-bar X (provided by SidePanelPreview) handles close.
  */
-export function PropertySidePanel({ controller }: PropertySidePanelProps) {
+export function PropertySidePanel({ controller, onOpenHubView }: PropertySidePanelProps) {
   const { open, mode, error, close, form } = controller
   const isOpen = open !== null
   const resolvedMode = mode ?? "create"
@@ -42,7 +43,7 @@ export function PropertySidePanel({ controller }: PropertySidePanelProps) {
         <div className="flex flex-wrap items-center justify-end gap-2">
           <PropertySidePanelSaveButton controller={controller} mode={resolvedMode} />
           <PropertySidePanelDiscardButton controller={controller} />
-          <PropertySidePanelHubViewButton controller={controller} />
+          <PropertySidePanelHubViewButton controller={controller} onOpenHubView={onOpenHubView} />
           <PropertySidePanelStatusPill controller={controller} />
           <PropertySidePanelDeleteButton controller={controller} mode={resolvedMode} />
         </div>
