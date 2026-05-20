@@ -2,6 +2,14 @@
 
 This repository is organized as an npm-workspaces monorepo.
 
+## Service Status
+
+<!--start: status pages-->
+<!--end: status pages-->
+
+Live status page: https://tophuncho2.github.io/builderswebapp/
+
+
 ## Workspace Layout
 
 - `apps/web`: Next.js web application

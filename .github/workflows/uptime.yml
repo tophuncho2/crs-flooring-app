@@ -1,0 +1,20 @@
+name: Uptime CI
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  repository_dispatch:
+    types:
+      - uptime
+  workflow_dispatch: {}
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check endpoints
+        uses: upptime/uptime-monitor-action@v1
+        with:
+          command: "update"
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
