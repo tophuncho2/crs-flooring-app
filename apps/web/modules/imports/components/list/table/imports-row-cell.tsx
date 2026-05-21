@@ -3,7 +3,7 @@ import type { DataTableColumn } from "@/components/data-table"
 import { formatStableDate, type ImportRow } from "@builders/domain"
 
 function formatImportNumber(value: number): string {
-  return `IMP-${String(value).padStart(4, "0")}`
+  return `IMP-${value}`
 }
 
 export function renderImportsRowCell(

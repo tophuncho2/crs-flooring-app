@@ -7,7 +7,7 @@ import { IMPORTS_LIST_COLUMNS } from "./table/imports-list-columns"
 import { renderImportsRowCell } from "./table/imports-row-cell"
 
 function formatImportNumber(value: number): string {
-  return `IMP-${String(value).padStart(4, "0")}`
+  return `IMP-${value}`
 }
 
 export function ImportsTable({

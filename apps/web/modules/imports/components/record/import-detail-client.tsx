@@ -11,7 +11,7 @@ import type {
 } from "@builders/domain"
 
 function formatImportNumber(value: number) {
-  return `IMP-${String(value).padStart(4, "0")}`
+  return `IMP-${value}`
 }
 
 export function ImportDetailClient({
