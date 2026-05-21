@@ -16,7 +16,7 @@ import {
 } from "@builders/domain"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
 import { createProductRequest } from "@/modules/products/data/mutations"
-import { ProductPrimaryFieldsSection } from "./product-primary-fields-section"
+import { ProductPrimaryFieldsSection } from "./primary/product-primary-fields-section"
 
 const EMPTY_PRODUCT: ProductRecord = {
   id: "new",

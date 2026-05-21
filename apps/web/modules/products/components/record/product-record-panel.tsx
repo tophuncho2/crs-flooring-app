@@ -8,7 +8,7 @@ import {
 import { buildDeleteConfirmationMessage } from "@/modules/shared/engines/common/feedback/confirm-delete"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
 import { useProductPrimarySection } from "@/modules/products/controllers/use-product-primary-section"
-import { ProductPrimaryFieldsSection } from "./product-primary-fields-section"
+import { ProductPrimaryFieldsSection } from "./primary/product-primary-fields-section"
 
 export function ProductRecordPanel({
   page,
