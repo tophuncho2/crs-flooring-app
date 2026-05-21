@@ -13,7 +13,16 @@ import {
   EMPTY_MC_FORM,
   EMPTY_PROPERTY_HUB_PROPERTY_FIELDS,
 } from "./form"
+import {
+  useCreatePropertyHubMutation,
+  type PropertyHubCreateResult,
+} from "./mutations"
 import type { PropertyHubMcMode } from "./types"
+
+export type CommitCreateCallbacks = {
+  onSuccess?: (result: PropertyHubCreateResult) => void
+  onError?: (message: string) => void
+}
 
 export type UseHubCreateFormArgs = {
   clearError: () => void
@@ -39,6 +48,8 @@ export type HubCreateFormSlice = {
     value: PropertyHubPropertyFields[K],
   ) => void
   resetCreate: () => void
+  isPending: boolean
+  commitCreate: (callbacks: CommitCreateCallbacks) => void
 }
 
 /**
@@ -113,6 +124,19 @@ export function useHubCreateForm({ clearError }: UseHubCreateFormArgs): HubCreat
 
   const hasAnyCreateInteraction = mcMode !== "none" || propertyTouched
 
+  const createMutation = useCreatePropertyHubMutation()
+
+  const commitCreate = useCallback(
+    ({ onSuccess, onError }: CommitCreateCallbacks) => {
+      createMutation.mutate(createPayload, {
+        onSuccess: (result) => onSuccess?.(result),
+        onError: (err) =>
+          onError?.(err instanceof Error ? err.message : String(err)),
+      })
+    },
+    [createMutation, createPayload],
+  )
+
   return {
     mcLinkId,
     mcLinkLabel,
@@ -127,5 +151,7 @@ export function useHubCreateForm({ clearError }: UseHubCreateFormArgs): HubCreat
     setMcField,
     setPropertyField,
     resetCreate,
+    isPending: createMutation.isPending,
+    commitCreate,
   }
 }

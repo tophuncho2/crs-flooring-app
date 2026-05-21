@@ -1,17 +1,12 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import {
   PROPERTY_HUB_NO_ACTIONS_MESSAGE,
   toManagementCompanyForm,
-  toPropertyPrimaryForm,
   type ManagementCompanyListRow,
   type PropertyListRow,
 } from "@builders/domain"
-import { MANAGEMENT_COMPANIES_LIST_QUERY_KEY } from "@/modules/management-companies/data/list-management-companies-request"
-import { MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY } from "@/modules/management-companies/data/management-company-options-request"
-import { PROPERTIES_LIST_QUERY_KEY } from "@/modules/properties/data/list-properties-request"
 import { buildMcFormFromRow, buildPropertyFormFromRow } from "./form"
 import { useHubCreateForm } from "./use-hub-create-form"
 import { useHubMcEdit } from "./use-hub-mc-edit"
@@ -24,14 +19,7 @@ import {
   type PropertyHubPropertiesController,
   type PropertyHubTemplatesController,
 } from "./queries"
-import {
-  useCreatePropertyHubMutation,
-  useDeleteMcMutation,
-  useDeletePropertyMutation,
-  useUpdateMcMutation,
-  useUpdatePropertyMutation,
-  type PropertyHubCreateResult,
-} from "./mutations"
+import type { PropertyHubCreateResult } from "./mutations"
 import type { HubMode, HubPickerKind } from "./types"
 
 export type { PropertyHubCreateResult } from "./mutations"
@@ -54,12 +42,12 @@ export type UsePropertyHubSidePanelOptions = {
  * inline "+ New property" affordance.
  */
 export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions = {}) {
-  const queryClient = useQueryClient()
   const { onCreated } = options
 
   const [mode, setMode] = useState<HubMode>({ kind: "closed" })
   const [error, setError] = useState<string | null>(null)
   const clearError = useCallback(() => setError(null), [])
+  const setErrorMessage = useCallback((message: string) => setError(message), [])
 
   // ===== Mode-derived context =====
   const contextMcId: string | null = useMemo(() => {
@@ -100,19 +88,8 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
   })
   const propertyEdit = useHubPropertyEdit({ editingPropertyId, clearError })
 
-  // ===== Mutations =====
-  const createMutation = useCreatePropertyHubMutation()
-  const updatePropertyMutation = useUpdatePropertyMutation()
-  const deletePropertyMutation = useDeletePropertyMutation()
-  const updateMcMutation = useUpdateMcMutation()
-  const deleteMcMutation = useDeleteMcMutation()
-
-  const isSaving =
-    createMutation.isPending ||
-    updatePropertyMutation.isPending ||
-    deletePropertyMutation.isPending ||
-    updateMcMutation.isPending ||
-    deleteMcMutation.isPending
+  // Combined isPending across all slice-owned mutations.
+  const isSaving = createForm.isPending || mcEdit.isPending || propertyEdit.isPending
 
   const resetAll = useCallback(() => {
     createForm.resetCreate()
@@ -356,158 +333,90 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     closePicker()
   }, [view, closePicker])
 
-  // ===== Save / Discard / Delete (mode-dispatched) =====
+  // ===== Save / Discard / Delete — thin mode-switched dispatch =====
+  // Each slice owns its mutation + the server-snapshot apply. The
+  // coordinator only decides what mode to land in on success.
   const save = useCallback(() => {
     if (!canSave) return
     if (mode.kind === "create") {
-      createMutation.mutate(createForm.createPayload, {
+      createForm.commitCreate({
         onSuccess: (result) => {
           setMode({ kind: "closed" })
           resetAll()
           onCreated?.(result)
         },
-        onError: (err: unknown) => {
-          setError(err instanceof Error ? err.message : String(err))
-        },
+        onError: setErrorMessage,
       })
       return
     }
-    if (mode.kind === "section-edit-mc" && mcEdit.updatedAt !== null) {
-      updateMcMutation.mutate(
-        { id: mode.mcId, form: mcEdit.form, revisionKey: mcEdit.updatedAt },
-        {
-          onSuccess: (response) => {
-            const detail = response.managementCompany
-            mcEdit.applyServerSnapshot(toManagementCompanyForm(detail), detail.updatedAt)
-            setError(null)
-            // Stay open: pop back to view for the same MC.
-            setMode({ kind: "view", mcId: detail.id, tab: "properties" })
-          },
-          onError: (err: unknown) => {
-            setError(err instanceof Error ? err.message : String(err))
-          },
-        },
-      )
-      return
-    }
-    if (mode.kind === "section-edit-property" && propertyEdit.updatedAt !== null) {
-      updatePropertyMutation.mutate(
-        {
-          id: mode.propertyId,
-          form: propertyEdit.form,
-          revisionKey: propertyEdit.updatedAt,
-        },
-        {
-          onSuccess: (response) => {
-            const detail = response.property
-            propertyEdit.applyServerSnapshot(
-              toPropertyPrimaryForm(detail),
-              detail.updatedAt,
-              detail.managementCompany?.name ?? null,
-            )
-            setError(null)
-            // Stay open: pop back to the hub view that owns this property,
-            // if known; otherwise close.
-            const mcId = detail.managementCompany?.id ?? mode.mcId
-            if (mcId) {
-              setMode({ kind: "view", mcId, tab: "properties" })
-            } else {
-              setMode({ kind: "closed" })
-              resetAll()
-            }
-          },
-          onError: (err: unknown) => {
-            setError(err instanceof Error ? err.message : String(err))
-          },
-        },
-      )
-      return
-    }
-  }, [
-    canSave,
-    mode,
-    createMutation,
-    createForm.createPayload,
-    onCreated,
-    resetAll,
-    updateMcMutation,
-    mcEdit,
-    updatePropertyMutation,
-    propertyEdit,
-  ])
-
-  const discard = useCallback(() => {
-    if (isSaving) return
-    if (mode.kind === "create") {
-      createForm.resetCreate()
-      setError(null)
-      return
-    }
     if (mode.kind === "section-edit-mc") {
-      mcEdit.resetToBaseline()
-      setError(null)
+      mcEdit.commitUpdate(mode.mcId, {
+        onSuccess: (detail) => {
+          setError(null)
+          // Stay open: pop back to view for the same MC.
+          setMode({ kind: "view", mcId: detail.id, tab: "properties" })
+        },
+        onError: setErrorMessage,
+      })
       return
     }
     if (mode.kind === "section-edit-property") {
-      propertyEdit.resetToBaseline()
-      setError(null)
-      return
-    }
-  }, [isSaving, mode.kind, createForm, mcEdit, propertyEdit])
-
-  const deleteMc = useCallback(() => {
-    if (mode.kind !== "section-edit-mc" || mcEdit.updatedAt === null || isSaving) return
-    deleteMcMutation.mutate(
-      { id: mode.mcId, updatedAt: mcEdit.updatedAt },
-      {
-        onSuccess: () => {
-          void queryClient.invalidateQueries({
-            queryKey: [...MANAGEMENT_COMPANIES_LIST_QUERY_KEY],
-          })
-          void queryClient.invalidateQueries({
-            queryKey: [...MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY],
-          })
-          setMode({ kind: "closed" })
-          resetAll()
-        },
-        onError: (err: unknown) => {
-          setError(err instanceof Error ? err.message : String(err))
-        },
-      },
-    )
-  }, [mode, mcEdit.updatedAt, isSaving, deleteMcMutation, queryClient, resetAll])
-
-  const deleteProperty = useCallback(() => {
-    if (
-      mode.kind !== "section-edit-property" ||
-      propertyEdit.updatedAt === null ||
-      isSaving
-    ) {
-      return
-    }
-    deletePropertyMutation.mutate(
-      { id: mode.propertyId, updatedAt: propertyEdit.updatedAt },
-      {
-        onSuccess: () => {
-          void queryClient.invalidateQueries({
-            queryKey: [...PROPERTIES_LIST_QUERY_KEY],
-          })
-          // After deleting, return to view if we know the parent hub.
-          const mcId = mode.mcId
+      const fallbackMcId = mode.mcId
+      propertyEdit.commitUpdate(mode.propertyId, {
+        onSuccess: (detail) => {
+          setError(null)
+          // Stay open: pop back to the hub view that owns this property,
+          // if known; otherwise close.
+          const mcId = detail.managementCompany?.id ?? fallbackMcId
           if (mcId) {
             setMode({ kind: "view", mcId, tab: "properties" })
-            propertyEdit.reset()
           } else {
             setMode({ kind: "closed" })
             resetAll()
           }
         },
-        onError: (err: unknown) => {
-          setError(err instanceof Error ? err.message : String(err))
-        },
+        onError: setErrorMessage,
+      })
+      return
+    }
+  }, [canSave, mode, createForm, mcEdit, propertyEdit, onCreated, resetAll, setErrorMessage])
+
+  const discard = useCallback(() => {
+    if (isSaving) return
+    if (mode.kind === "create") createForm.resetCreate()
+    else if (mode.kind === "section-edit-mc") mcEdit.resetToBaseline()
+    else if (mode.kind === "section-edit-property") propertyEdit.resetToBaseline()
+    setError(null)
+  }, [isSaving, mode.kind, createForm, mcEdit, propertyEdit])
+
+  const deleteMc = useCallback(() => {
+    if (mode.kind !== "section-edit-mc" || isSaving) return
+    mcEdit.commitDelete(mode.mcId, {
+      onSuccess: () => {
+        setMode({ kind: "closed" })
+        resetAll()
       },
-    )
-  }, [mode, propertyEdit, isSaving, deletePropertyMutation, queryClient, resetAll])
+      onError: setErrorMessage,
+    })
+  }, [mode, isSaving, mcEdit, resetAll, setErrorMessage])
+
+  const deleteProperty = useCallback(() => {
+    if (mode.kind !== "section-edit-property" || isSaving) return
+    const fallbackMcId = mode.mcId
+    propertyEdit.commitDelete(mode.propertyId, {
+      onSuccess: () => {
+        // After deleting, return to view if we know the parent hub.
+        if (fallbackMcId) {
+          setMode({ kind: "view", mcId: fallbackMcId, tab: "properties" })
+          propertyEdit.reset()
+        } else {
+          setMode({ kind: "closed" })
+          resetAll()
+        }
+      },
+      onError: setErrorMessage,
+    })
+  }, [mode, isSaving, propertyEdit, resetAll, setErrorMessage])
 
   const isOpen = mode.kind !== "closed"
 

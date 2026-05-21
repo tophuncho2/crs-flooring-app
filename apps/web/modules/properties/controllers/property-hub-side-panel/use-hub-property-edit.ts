@@ -13,11 +13,22 @@ import {
   getPropertyDetailRequest,
 } from "@/modules/properties/data/property-detail-request"
 import { EMPTY_PROPERTY_PRIMARY_FORM, propertyFormIsDirty } from "./form"
+import { useDeletePropertyMutation, useUpdatePropertyMutation } from "./mutations"
 
 export type UseHubPropertyEditArgs = {
   /** mode.propertyId when mode.kind === "section-edit-property"; otherwise null. */
   editingPropertyId: string | null
   clearError: () => void
+}
+
+export type CommitPropertyUpdateCallbacks = {
+  onSuccess?: (detail: PropertyDetailRecord) => void
+  onError?: (message: string) => void
+}
+
+export type CommitPropertyDeleteCallbacks = {
+  onSuccess?: () => void
+  onError?: (message: string) => void
 }
 
 export type HubPropertyEditSlice = {
@@ -44,6 +55,25 @@ export type HubPropertyEditSlice = {
     form: PropertyPrimaryForm,
     updatedAt: string,
     mcLabel: string | null,
+  ) => void
+  /** Combined isPending for update + delete (the slice's mutations). */
+  isPending: boolean
+  /**
+   * Dispatch updateProperty with the current form + updatedAt revision. On
+   * success, applies the server snapshot to this slice's state and fires
+   * `onSuccess` with the returned detail (caller handles mode transition).
+   */
+  commitUpdate: (
+    propertyId: string,
+    callbacks: CommitPropertyUpdateCallbacks,
+  ) => void
+  /**
+   * Dispatch deleteProperty with the current updatedAt revision. The
+   * mutation hook already invalidates the properties list cache.
+   */
+  commitDelete: (
+    propertyId: string,
+    callbacks: CommitPropertyDeleteCallbacks,
   ) => void
 }
 
@@ -136,6 +166,49 @@ export function useHubPropertyEdit({
   const isDirty = useMemo(() => propertyFormIsDirty(form, baseline), [form, baseline])
   const validation = useMemo(() => validatePropertyPrimaryForm(form), [form])
 
+  // ===== Mutations =====
+  const updateMutation = useUpdatePropertyMutation()
+  const deleteMutation = useDeletePropertyMutation()
+  const isPending = updateMutation.isPending || deleteMutation.isPending
+
+  const commitUpdate = useCallback(
+    (propertyId: string, { onSuccess, onError }: CommitPropertyUpdateCallbacks) => {
+      if (updatedAt === null) return
+      updateMutation.mutate(
+        { id: propertyId, form, revisionKey: updatedAt },
+        {
+          onSuccess: (response) => {
+            const detail = response.property
+            applyServerSnapshot(
+              toPropertyPrimaryForm(detail),
+              detail.updatedAt,
+              detail.managementCompany?.name ?? null,
+            )
+            onSuccess?.(detail)
+          },
+          onError: (err) =>
+            onError?.(err instanceof Error ? err.message : String(err)),
+        },
+      )
+    },
+    [updateMutation, form, updatedAt, applyServerSnapshot],
+  )
+
+  const commitDelete = useCallback(
+    (propertyId: string, { onSuccess, onError }: CommitPropertyDeleteCallbacks) => {
+      if (updatedAt === null) return
+      deleteMutation.mutate(
+        { id: propertyId, updatedAt },
+        {
+          onSuccess: () => onSuccess?.(),
+          onError: (err) =>
+            onError?.(err instanceof Error ? err.message : String(err)),
+        },
+      )
+    },
+    [deleteMutation, updatedAt],
+  )
+
   return {
     form,
     baseline,
@@ -149,5 +222,8 @@ export function useHubPropertyEdit({
     resetToBaseline,
     applyServerSnapshot,
     hydrateFromRow,
+    isPending,
+    commitUpdate,
+    commitDelete,
   }
 }
