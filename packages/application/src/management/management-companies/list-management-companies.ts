@@ -53,7 +53,13 @@ export async function listManagementCompaniesUseCase(
 
 export type SearchManagementCompanyOptionsInput = {
   search?: string
+  skip?: number
   take?: number
+}
+
+export type SearchManagementCompanyOptionsResult = {
+  items: ManagementCompanyOption[]
+  hasMore: boolean
 }
 
 const OPTIONS_DEFAULT_TAKE = 20
@@ -61,9 +67,10 @@ const OPTIONS_MAX_TAKE = 50
 
 export async function searchManagementCompanyOptionsUseCase(
   input: SearchManagementCompanyOptionsInput,
-): Promise<ManagementCompanyOption[]> {
+): Promise<SearchManagementCompanyOptionsResult> {
   const search = input.search?.trim() || undefined
   const requested = Math.floor(input.take ?? OPTIONS_DEFAULT_TAKE)
   const take = Math.max(1, Math.min(OPTIONS_MAX_TAKE, requested))
-  return searchManagementCompanyOptions({ search, take })
+  const skip = Math.max(0, Math.floor(input.skip ?? 0))
+  return searchManagementCompanyOptions({ search, skip, take })
 }

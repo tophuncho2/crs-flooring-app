@@ -126,25 +126,35 @@ export async function listManagementCompaniesForListView(
 
 export type ManagementCompanyOptionsSearchArgs = {
   search?: string
+  skip?: number
   take: number
+}
+
+export type ManagementCompanyOptionsSearchResult = {
+  items: ManagementCompanyOption[]
+  hasMore: boolean
 }
 
 export async function searchManagementCompanyOptions(
   args: ManagementCompanyOptionsSearchArgs,
   client: ManagementCompaniesDbClient = db,
-): Promise<ManagementCompanyOption[]> {
+): Promise<ManagementCompanyOptionsSearchResult> {
   const where = args.search
     ? { name: { contains: args.search, mode: "insensitive" as const } }
     : undefined
 
-  const companies = await client.flooringManagementCompany.findMany({
+  // Fetch take+1 to detect a next page without a separate count query.
+  const rows = await client.flooringManagementCompany.findMany({
     where,
     orderBy: { name: "asc" },
-    take: args.take,
+    skip: args.skip ?? 0,
+    take: args.take + 1,
     select: { id: true, name: true },
   })
 
-  return companies.map(normalizeManagementCompanyOption)
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return { items: page.map(normalizeManagementCompanyOption), hasMore }
 }
 
 export type ManagementCompanyStatesSearchArgs = {

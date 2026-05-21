@@ -49,7 +49,7 @@ export default async function TemplatesPage({
       initialInput.filters?.managementCompanyId?.[0] ?? null
     const selectedPropertyId = initialInput.filters?.propertyId?.[0] ?? null
 
-    const [, mcOptions] = await Promise.all([
+    const [, mcOptionsPage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...TEMPLATES_LIST_QUERY_KEY, initialInput],
         queryFn: () => listTemplatesUseCase(initialInput),
@@ -57,30 +57,30 @@ export default async function TemplatesPage({
       searchManagementCompanyOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
-    initialManagementCompanyOptions = mcOptions
+    initialManagementCompanyOptions = mcOptionsPage.items
 
     if (selectedManagementCompanyId) {
       initialSelectedManagementCompany = await resolveSelectedById(
         selectedManagementCompanyId,
-        mcOptions,
+        mcOptionsPage.items,
         async (id) => {
-          const [match] = await searchManagementCompanyOptionsUseCase({
-            search: id,
-            take: 1,
-          })
+          const match = (
+            await searchManagementCompanyOptionsUseCase({ search: id, take: 1 })
+          ).items[0]
           return match && match.id === id ? match : null
         },
       )
     }
 
     if (selectedPropertyId) {
-      const properties = await searchPropertyOptionsUseCase({
+      const propertiesPage = await searchPropertyOptionsUseCase({
         ...(selectedManagementCompanyId
           ? { managementCompanyId: selectedManagementCompanyId }
           : {}),
         take: INITIAL_OPTIONS_TAKE,
       })
-      initialSelectedProperty = properties.find((p) => p.id === selectedPropertyId) ?? null
+      initialSelectedProperty =
+        propertiesPage.items.find((p) => p.id === selectedPropertyId) ?? null
     }
   } catch (error) {
     return (

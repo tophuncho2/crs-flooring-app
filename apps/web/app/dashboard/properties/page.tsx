@@ -47,7 +47,7 @@ export default async function FlooringPropertiesPage({
     const selectedManagementCompanyId =
       initialInput.filters?.managementCompanyId?.[0] ?? null
 
-    const [, options] = await Promise.all([
+    const [, optionsPage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...PROPERTIES_LIST_QUERY_KEY, initialInput],
         queryFn: () => listPropertiesUseCase(initialInput),
@@ -55,17 +55,21 @@ export default async function FlooringPropertiesPage({
       searchManagementCompanyOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
-    initialManagementCompanyOptions = options
+    initialManagementCompanyOptions = optionsPage.items
 
     if (selectedManagementCompanyId) {
-      const seeded = options.find((option) => option.id === selectedManagementCompanyId)
+      const seeded = optionsPage.items.find(
+        (option) => option.id === selectedManagementCompanyId,
+      )
       if (seeded) {
         initialSelectedManagementCompany = seeded
       } else {
-        const [match] = await searchManagementCompanyOptionsUseCase({
-          search: selectedManagementCompanyId,
-          take: 1,
-        })
+        const match = (
+          await searchManagementCompanyOptionsUseCase({
+            search: selectedManagementCompanyId,
+            take: 1,
+          })
+        ).items[0]
         if (match && match.id === selectedManagementCompanyId) {
           initialSelectedManagementCompany = match
         }

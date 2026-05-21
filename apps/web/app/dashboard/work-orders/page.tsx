@@ -58,7 +58,7 @@ export default async function FlooringWorkOrdersPage({
     const selectedTemplateId = initialInput.filters?.templateId?.[0] ?? null
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
 
-    const [, mgmtCoOptions, propertyOptions, warehouseOptions] = await Promise.all([
+    const [, mgmtCoPage, propertyPage, warehouseOptions] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...WORK_ORDERS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listWorkOrdersUseCase(initialInput),
@@ -71,8 +71,8 @@ export default async function FlooringWorkOrdersPage({
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
-    initialMgmtCoOptions = mgmtCoOptions
-    initialPropertyOptions = propertyOptions
+    initialMgmtCoOptions = mgmtCoPage.items
+    initialPropertyOptions = propertyPage.items
     initialWarehouseOptions = warehouseOptions
 
     // Templates are property-scoped — only prefetch when a property is picked.
@@ -86,9 +86,11 @@ export default async function FlooringWorkOrdersPage({
     if (selectedMgmtCoId) {
       initialSelectedMgmtCo = await resolveSelectedById(
         selectedMgmtCoId,
-        mgmtCoOptions,
+        mgmtCoPage.items,
         async (id) => {
-          const [match] = await searchManagementCompanyOptionsUseCase({ search: id, take: 1 })
+          const match = (
+            await searchManagementCompanyOptionsUseCase({ search: id, take: 1 })
+          ).items[0]
           return match && match.id === id ? match : null
         },
       )
@@ -97,9 +99,11 @@ export default async function FlooringWorkOrdersPage({
     if (selectedPropertyId) {
       initialSelectedProperty = await resolveSelectedById(
         selectedPropertyId,
-        propertyOptions,
+        propertyPage.items,
         async (id) => {
-          const [match] = await searchPropertyOptionsUseCase({ search: id, take: 1 })
+          const match = (
+            await searchPropertyOptionsUseCase({ search: id, take: 1 })
+          ).items[0]
           return match && match.id === id ? match : null
         },
       )

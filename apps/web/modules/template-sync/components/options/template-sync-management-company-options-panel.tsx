@@ -12,10 +12,6 @@ import {
   type TemplateSyncOptionRow,
 } from "@/modules/template-sync/components/template-sync-options-panel"
 
-// Body-mode bump: the side-panel surface has room for the server cap of 50,
-// while the popover-mode picker elsewhere stays at the default 20.
-const BODY_MODE_TAKE = 50
-
 function toOptionRow(option: ManagementCompanyOption): TemplateSyncOptionRow {
   return { id: option.id, title: option.name, subtitles: [] }
 }
@@ -33,15 +29,15 @@ export function TemplateSyncManagementCompanyOptionsPanel({
   onSelect,
   onCancel,
 }: TemplateSyncManagementCompanyOptionsPanelProps) {
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
-      searchManagementCompanyOptionsRequest(search, signal, BODY_MODE_TAKE),
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
+      searchManagementCompanyOptionsRequest(search, signal, { skip }),
     [],
   )
 
   const controller = useAsyncRichDropdownController<ManagementCompanyOption>({
     bucketKey: MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY,
-    searchFn,
+    pagedSearchFn,
   })
 
   return (

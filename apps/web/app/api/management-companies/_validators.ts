@@ -137,11 +137,13 @@ export function validateListManagementCompaniesQuery(
 
 const managementCompanyOptionsQuerySchema = z.object({
   search: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedManagementCompanyOptionsQuery = {
   search?: string
+  skip: number
   take: number
 }
 
@@ -166,6 +168,7 @@ export function validateManagementCompanyOptionsQuery(
   const trimmed = parsed.search?.trim()
   return {
     search: trimmed ? trimmed : undefined,
+    skip: parsed.skip,
     take: parsed.take,
   }
 }
