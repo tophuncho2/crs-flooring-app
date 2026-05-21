@@ -313,7 +313,7 @@ export function TemplateSyncButton() {
         side="right"
         onClose={handleClose}
         title="Hub & template sync"
-        widthClassName="w-[34rem]"
+        widthClassName="w-[48rem]"
         stickyHeader={stickyHeader}
         footer={footer}
       >
