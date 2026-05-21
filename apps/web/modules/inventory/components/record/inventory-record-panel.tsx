@@ -12,7 +12,7 @@ import { CutLogEditPanel, useCutLogEditPanel } from "@/modules/cut-logs"
 import { useInventoryPrimarySection } from "../../controllers/record/primary/use-inventory-primary-section"
 import { fetchInventoryBalances } from "../../data/inventory-balances-request"
 import { INVENTORY_CUT_LOGS_QUERY_KEY } from "../../data/inventory-cut-logs-request"
-import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
+import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryCutLogsSection } from "./cut-logs/inventory-cut-logs-section"
 import { InventoryRecordFooter } from "./footer"
 
