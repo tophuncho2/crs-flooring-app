@@ -2,15 +2,20 @@
 
 import { useCallback, useMemo, useState } from "react"
 import {
-  PROPERTY_HUB_NO_ACTIONS_MESSAGE,
-  toManagementCompanyForm,
   type ManagementCompanyListRow,
   type PropertyListRow,
 } from "@builders/domain"
+import {
+  deriveCanSave,
+  deriveIsDirty,
+  deriveValidationError,
+} from "./derive-hub-mode-flags"
 import { buildMcFormFromRow, buildPropertyFormFromRow } from "./form"
 import { useHubCreateForm } from "./use-hub-create-form"
 import { useHubMcEdit } from "./use-hub-mc-edit"
+import { useHubPickerTakeover } from "./use-hub-picker-takeover"
 import { useHubPropertyEdit } from "./use-hub-property-edit"
+import { useHubSectionTransitions } from "./use-hub-section-transitions"
 import { useHubViewFilter } from "./use-hub-view-filter"
 import {
   usePropertyHubDetailQuery,
@@ -20,7 +25,7 @@ import {
   type PropertyHubTemplatesController,
 } from "./queries"
 import type { PropertyHubCreateResult } from "./mutations"
-import type { HubMode, HubPickerKind } from "./types"
+import type { HubMode } from "./types"
 
 export type { PropertyHubCreateResult } from "./mutations"
 export type { HubActiveView, HubMode, HubPickerKind, PropertyHubMcMode } from "./types"
@@ -99,72 +104,68 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     setError(null)
   }, [createForm, mcEdit, propertyEdit, view])
 
-  // ===== Mode-dispatched isDirty / canSave / validationError =====
-  const isDirty = useMemo(() => {
-    if (mode.kind === "create") return createForm.hasAnyCreateInteraction
-    if (mode.kind === "section-edit-mc") return mcEdit.isDirty
-    if (mode.kind === "section-edit-property") return propertyEdit.isDirty
-    return false
-  }, [
-    mode.kind,
-    createForm.hasAnyCreateInteraction,
-    mcEdit.isDirty,
-    propertyEdit.isDirty,
-  ])
+  // ===== Mode-dispatched derivations (pure fns in derive-hub-mode-flags) =====
+  const isDirty = useMemo(
+    () =>
+      deriveIsDirty(
+        mode.kind,
+        createForm.hasAnyCreateInteraction,
+        mcEdit.isDirty,
+        propertyEdit.isDirty,
+      ),
+    [
+      mode.kind,
+      createForm.hasAnyCreateInteraction,
+      mcEdit.isDirty,
+      propertyEdit.isDirty,
+    ],
+  )
 
-  const canSave = useMemo(() => {
-    if (isSaving) return false
-    if (mode.kind === "create") {
-      return createForm.hasAnyCreateInteraction && createForm.createValidationRaw === ""
-    }
-    if (mode.kind === "section-edit-mc") {
-      return mcEdit.isDirty && mcEdit.validation === "" && mcEdit.updatedAt !== null
-    }
-    if (mode.kind === "section-edit-property") {
-      return (
-        propertyEdit.isDirty &&
-        propertyEdit.validation === "" &&
-        propertyEdit.updatedAt !== null
-      )
-    }
-    return false
-  }, [
-    isSaving,
-    mode.kind,
-    createForm.hasAnyCreateInteraction,
-    createForm.createValidationRaw,
-    mcEdit.isDirty,
-    mcEdit.validation,
-    mcEdit.updatedAt,
-    propertyEdit.isDirty,
-    propertyEdit.validation,
-    propertyEdit.updatedAt,
-  ])
+  const canSave = useMemo(
+    () =>
+      deriveCanSave(
+        isSaving,
+        mode.kind,
+        createForm.hasAnyCreateInteraction,
+        createForm.createValidationRaw,
+        mcEdit.isDirty,
+        mcEdit.validation,
+        mcEdit.updatedAt,
+        propertyEdit.isDirty,
+        propertyEdit.validation,
+        propertyEdit.updatedAt,
+      ),
+    [
+      isSaving,
+      mode.kind,
+      createForm.hasAnyCreateInteraction,
+      createForm.createValidationRaw,
+      mcEdit.isDirty,
+      mcEdit.validation,
+      mcEdit.updatedAt,
+      propertyEdit.isDirty,
+      propertyEdit.validation,
+      propertyEdit.updatedAt,
+    ],
+  )
 
-  const validationError = useMemo<string | null>(() => {
-    if (mode.kind === "create") {
-      if (
-        !createForm.hasAnyCreateInteraction ||
-        createForm.createValidationRaw === PROPERTY_HUB_NO_ACTIONS_MESSAGE
-      ) {
-        return null
-      }
-      return createForm.createValidationRaw === "" ? null : createForm.createValidationRaw
-    }
-    if (mode.kind === "section-edit-mc") {
-      return mcEdit.validation === "" ? null : mcEdit.validation
-    }
-    if (mode.kind === "section-edit-property") {
-      return propertyEdit.validation === "" ? null : propertyEdit.validation
-    }
-    return null
-  }, [
-    mode.kind,
-    createForm.hasAnyCreateInteraction,
-    createForm.createValidationRaw,
-    mcEdit.validation,
-    propertyEdit.validation,
-  ])
+  const validationError = useMemo<string | null>(
+    () =>
+      deriveValidationError(
+        mode.kind,
+        createForm.hasAnyCreateInteraction,
+        createForm.createValidationRaw,
+        mcEdit.validation,
+        propertyEdit.validation,
+      ),
+    [
+      mode.kind,
+      createForm.hasAnyCreateInteraction,
+      createForm.createValidationRaw,
+      mcEdit.validation,
+      propertyEdit.validation,
+    ],
+  )
 
   // ===== Openers =====
   const openForCreate = useCallback(() => {
@@ -228,88 +229,27 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     resetAll()
   }, [isSaving, resetAll])
 
-  // ===== Section transitions =====
-  const enterMcEditFromContext = useCallback(() => {
-    if (contextMcId === null) return
-    const detail = detailQuery.data
-    if (detail) {
-      mcEdit.hydrateFromRow(toManagementCompanyForm(detail), detail.updatedAt)
-    } else {
-      mcEdit.reset()
-    }
-    setError(null)
-    setMode({ kind: "section-edit-mc", mcId: contextMcId })
-  }, [contextMcId, detailQuery.data, mcEdit])
-
-  const enterPropertyEditFromContext = useCallback(
-    (row: PropertyListRow) => {
-      openForPropertyEdit(row)
-    },
-    [openForPropertyEdit],
-  )
-
-  const exitToView = useCallback(() => {
-    if (contextMcId === null) {
-      setMode({ kind: "closed" })
-      resetAll()
-      return
-    }
-    mcEdit.reset()
-    propertyEdit.reset()
-    setError(null)
-    setMode((prev) => {
-      const tab = prev.kind === "view" ? prev.tab : "properties"
-      return { kind: "view", mcId: contextMcId, tab }
+  // ===== Section transitions (panel-internal nav) =====
+  const { enterMcEditFromContext, enterPropertyEditFromContext, exitToView } =
+    useHubSectionTransitions({
+      contextMcId,
+      mcDetail: detailQuery.data,
+      setMode,
+      setError,
+      mcEdit,
+      propertyEdit,
+      resetAll,
+      openForPropertyEdit,
     })
-  }, [contextMcId, mcEdit, propertyEdit, resetAll])
 
   // ===== Picker takeover =====
-  const openPicker = useCallback((pickerKind: HubPickerKind) => {
-    setMode((prev) => {
-      if (prev.kind === "picker-takeover") return prev
-      if (prev.kind === "closed") return prev
-      return { kind: "picker-takeover", returnTo: prev, pickerKind }
-    })
-  }, [])
-
-  const closePicker = useCallback(() => {
-    setMode((prev) => {
-      if (prev.kind !== "picker-takeover") return prev
-      return prev.returnTo
-    })
-  }, [])
-
-  // The same inline MC link picker serves both the create flow (writes
-  // mcLinkId / mcLinkLabel into the create draft) and the property-edit
-  // flow (writes managementCompanyId into the property edit form). The
-  // picker reads selectedId/Label from the appropriate state.
-  const mcLinkPickerReturnTarget =
-    mode.kind === "picker-takeover" ? mode.returnTo.kind : null
-
-  const mcLinkSelectedId: string | null =
-    mcLinkPickerReturnTarget === "section-edit-property"
-      ? propertyEdit.form.managementCompanyId.length > 0
-        ? propertyEdit.form.managementCompanyId
-        : null
-      : createForm.mcLinkId
-
-  const mcLinkSelectedLabel: string | null =
-    mcLinkPickerReturnTarget === "section-edit-property"
-      ? propertyEdit.managementCompanyLabel
-      : createForm.mcLinkLabel
-
-  const commitMcLink = useCallback(
-    (id: string | null, label: string | null) => {
-      const returnTo = mode.kind === "picker-takeover" ? mode.returnTo : null
-      if (returnTo?.kind === "section-edit-property") {
-        propertyEdit.setManagementCompany(id, label)
-      } else {
-        createForm.setMcLink(id, label)
-      }
-      closePicker()
-    },
-    [mode, propertyEdit, createForm, closePicker],
-  )
+  const {
+    openPicker,
+    closePicker,
+    mcLinkSelectedId,
+    mcLinkSelectedLabel,
+    commitMcLink,
+  } = useHubPickerTakeover({ mode, setMode, createForm, propertyEdit })
 
   // ===== View tab + property-filter handlers =====
   const goToProperties = useCallback(() => {
