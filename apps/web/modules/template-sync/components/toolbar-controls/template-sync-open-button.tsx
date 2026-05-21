@@ -8,5 +8,5 @@ type Props = {
 }
 
 export function TemplateSyncOpenButton({ disabled, onClick }: Props) {
-  return <SidePanelPreviewOpenButton disabled={disabled} onClick={onClick} />
+  return <SidePanelPreviewOpenButton disabled={disabled} onClick={onClick} label="Open template" />
 }
