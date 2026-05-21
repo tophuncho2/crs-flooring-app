@@ -1,10 +1,16 @@
 "use client"
 
+import { useCallback, useEffect, useState } from "react"
 import { TextCell, TextareaCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import type { PropertyJoinedFields } from "@/modules/shared/property-fields"
+import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
+import {
+  usePropertyHubSidePanel,
+  type PropertyHubCreateResult,
+} from "@/modules/properties/controllers/property-hub-side-panel"
 import {
   buildAddressBlock,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
@@ -42,8 +48,57 @@ export function TemplatePropertyUnitGroup({
   const managementCompanyValue = draft.managementCompanyId || null
   const propertyValue = draft.propertyId || null
 
-  const managementCompanyLabel = detail?.managementCompanyName ?? null
-  const propertyLabel = detail?.propertyName ?? null
+  const [pickedMcLabel, setPickedMcLabel] = useState<string | null>(null)
+  const [pickedPropertyLabel, setPickedPropertyLabel] = useState<string | null>(null)
+
+  useEffect(() => {
+    setPickedMcLabel(null)
+  }, [detail?.managementCompanyId])
+  useEffect(() => {
+    setPickedPropertyLabel(null)
+  }, [detail?.propertyId])
+
+  const managementCompanyLabel = pickedMcLabel ?? detail?.managementCompanyName ?? null
+  const propertyLabel = pickedPropertyLabel ?? detail?.propertyName ?? null
+
+  const handleHubCreated = useCallback(
+    (result: PropertyHubCreateResult) => {
+      const property = result.property
+      if (!property) {
+        if (result.managementCompany) {
+          onFieldChange("managementCompanyId", result.managementCompany.id)
+          setPickedMcLabel(result.managementCompany.name)
+        }
+        return
+      }
+
+      const mcId =
+        result.managementCompany?.id ?? property.managementCompany?.id ?? ""
+      const mcName =
+        result.managementCompany?.name ?? property.managementCompany?.name ?? null
+
+      onFieldChange("managementCompanyId", mcId)
+      onFieldChange("propertyId", property.id)
+
+      const syntheticOption: PropertyOption = {
+        id: property.id,
+        name: property.name,
+        address: property.fullAddress,
+        streetAddress: property.streetAddress,
+        city: property.city,
+        state: property.state,
+        postalCode: property.zip,
+        instructions: property.instructions,
+      }
+      onPropertyOption(syntheticOption)
+
+      setPickedMcLabel(mcName)
+      setPickedPropertyLabel(property.name)
+    },
+    [onFieldChange, onPropertyOption],
+  )
+
+  const hubPanel = usePropertyHubSidePanel({ onCreated: handleHubCreated })
 
   const formattedAddress = propertyJoined
     ? buildAddressBlock({
@@ -58,9 +113,19 @@ export function TemplatePropertyUnitGroup({
 
   return (
     <TemplateGroup title="Property & Unit">
+      <PropertyHubSidePanel controller={hubPanel} />
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-3">
+            {editable ? (
+              <button
+                type="button"
+                onClick={hubPanel.open}
+                className="self-start text-xs font-medium text-sky-700 hover:text-sky-800"
+              >
+                + New property
+              </button>
+            ) : null}
             <TemplateField label="Management Company">
               {editable ? (
                 <ManagementCompanyPicker

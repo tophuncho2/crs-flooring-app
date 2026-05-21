@@ -15,7 +15,10 @@ import {
   buildFormPayload,
   deriveMcMode,
 } from "./form"
-import { useCreatePropertyHubMutation } from "./mutations"
+import {
+  useCreatePropertyHubMutation,
+  type PropertyHubCreateResult,
+} from "./mutations"
 
 /**
  * Owns the "+ Hub" side-panel lifecycle: creates a management company,
@@ -26,7 +29,9 @@ import { useCreatePropertyHubMutation } from "./mutations"
  * the other. At least one of {create MC, create property} must be filled
  * before the save button enables.
  */
-export function usePropertyHubSidePanel() {
+export function usePropertyHubSidePanel(options?: {
+  onCreated?: (result: PropertyHubCreateResult) => void
+}) {
   const queryClient = useQueryClient()
   const [isOpen, setIsOpen] = useState(false)
   const [mcLinkId, setMcLinkId] = useState<string | null>(null)
@@ -95,6 +100,7 @@ export function usePropertyHubSidePanel() {
     setIsOpen,
     resetAll,
     setError,
+    onCreated: options?.onCreated,
   })
 
   const isSaving = createMutation.isPending
