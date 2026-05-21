@@ -335,10 +335,10 @@ function buildListViewWhere(
 
 /**
  * Server-side paginated read for the inventory list view. Default sort is
- * `productName ASC, createdAt ASC` (alphabetical by product, oldest row first
- * within each product), with `id ASC` as a stable tiebreak. Users are
- * responsible for archiving spent rows so the list stays scoped to live
- * inventory. Filters AND together; search ILIKEs across the identity columns
+ * `inventoryNumber ASC` (oldest INV# first — sequence-assigned, monotonic
+ * with creation), with `id ASC` as a stable tiebreak. Users are responsible
+ * for archiving spent rows so the list stays scoped to live inventory.
+ * Filters AND together; search ILIKEs across the identity columns
  * (`inventoryNumber`, `rollNumber`, `dyeLot`, `note`) only — location lives
  * on its own filter chip. Archived rows hidden by default.
  *
@@ -351,8 +351,7 @@ export async function listInventoryForListView(
 ): Promise<InventoryListViewResult> {
   const where = buildListViewWhere(options)
   const orderBy: Prisma.FlooringInventoryOrderByWithRelationInput[] = [
-    { productName: "asc" },
-    { createdAt: "asc" },
+    { inventoryNumber: "asc" },
     { id: "asc" },
   ]
 
@@ -409,9 +408,8 @@ type InventoryOptionRawRow = {
  * across `inventoryNumber`, `rollNumber`, `dyeLot`, `note`. Balance + coverage
  * are stamped via the same pure helpers used by the row normalizer (single
  * source of truth for the math) — coverage is null for non-coverage categories.
- * Results are ordered `productName ASC, createdAt ASC` (alphabetical by
- * product, oldest first within each product), matching the inventory list
- * view's primary sort.
+ * Results are ordered `inventoryNumber ASC` (oldest INV# first), matching
+ * the inventory list view's primary sort.
  *
  * Built on `$queryRaw` so the column-to-column compare for the
  * positive-balance constraint can live in SQL — Prisma's typed `where` cannot
@@ -456,7 +454,7 @@ export async function searchInventoryOptions(
       "coveragePerUnit"
     FROM "flooring_inventory"
     WHERE ${whereClause}
-    ORDER BY "productName" ASC, "createdAt" ASC, "id" ASC
+    ORDER BY "inventory_number" ASC, "id" ASC
     LIMIT ${args.take}
   `)
 
