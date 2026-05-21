@@ -356,3 +356,50 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
     pageSize: parsed.pageSize,
   }
 }
+
+// --- Options (picker) query validator ---
+
+const OPTIONS_DEFAULT_TAKE = 20
+const OPTIONS_MAX_TAKE = 50
+
+const importOptionsQuerySchema = z.object({
+  search: z.string().optional(),
+  take: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(OPTIONS_MAX_TAKE)
+    .default(OPTIONS_DEFAULT_TAKE),
+})
+
+export type ValidatedImportOptionsQuery = {
+  search?: string
+  take: number
+}
+
+export function validateImportOptionsQuery(
+  searchParams: URLSearchParams,
+): ValidatedImportOptionsQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = importOptionsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    throw new ImportExecutionError({
+      code: "IMPORT_VALIDATION_FAILED",
+      message: issue?.message ?? "Invalid import options query",
+      status: 400,
+      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
+    })
+  }
+
+  const parsed = parseResult.data
+  const trimmed = parsed.search?.trim()
+  return {
+    ...(trimmed ? { search: trimmed } : {}),
+    take: parsed.take,
+  }
+}

@@ -11,6 +11,15 @@ export type InventoryListFilters = {
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
   /**
+   * Import-number snapshot match (`flooring_inventory.importNumber`).
+   * Values are the stringified `Int` from `FlooringImportEntry.importNumber`
+   * — the same form the materialize worker stamps into the snapshot column,
+   * so the picker can push its selection through verbatim.
+   */
+  importNumber?: ReadonlyArray<string>
+  /** Purchase-order-number snapshot match. */
+  purchaseOrderNumber?: ReadonlyArray<string>
+  /**
    * Free-text location filter chip. Server-side ILIKE on `inventory.location`.
    * Independent from the search bar (which targets `inventoryItem`).
    */
@@ -45,15 +54,25 @@ export async function listInventoryUseCase(
   const warehouseId = normalizeIds(input.filters?.warehouseId)
   const categoryId = normalizeIds(input.filters?.categoryId)
   const productId = normalizeIds(input.filters?.productId)
+  const importNumber = normalizeIds(input.filters?.importNumber)
+  const purchaseOrderNumber = normalizeIds(input.filters?.purchaseOrderNumber)
   const location = input.filters?.location?.trim() || undefined
   const isArchived = input.filters?.isArchived
 
   const filters =
-    warehouseId || categoryId || productId || location || isArchived !== undefined
+    warehouseId ||
+    categoryId ||
+    productId ||
+    importNumber ||
+    purchaseOrderNumber ||
+    location ||
+    isArchived !== undefined
       ? {
           ...(warehouseId ? { warehouseId } : {}),
           ...(categoryId ? { categoryId } : {}),
           ...(productId ? { productId } : {}),
+          ...(importNumber ? { importNumber } : {}),
+          ...(purchaseOrderNumber ? { purchaseOrderNumber } : {}),
           ...(location ? { location } : {}),
           ...(isArchived !== undefined ? { isArchived } : {}),
         }

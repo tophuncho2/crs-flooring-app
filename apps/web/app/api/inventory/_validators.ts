@@ -160,8 +160,20 @@ export function validateInventoryLocationsSearchQuery(
 
 // --- List view query validator (search + filters + pagination) ---
 
-const ID_FILTER_KEYS = ["warehouseId", "categoryId", "productId"] as const
-type IdFilterKey = (typeof ID_FILTER_KEYS)[number]
+// Multi-value filter keys parsed off the raw URLSearchParams via
+// `readMultiValue` (NOT via zod). `warehouseId`/`categoryId`/`productId` are
+// canonical entity-id filters; `importNumber`/`purchaseOrderNumber` are the
+// denormalized snapshot strings on `flooring_inventory` that the Import #
+// and PO # picker chips emit. They share the same multi-value wire shape,
+// so they all live in this list.
+const MULTI_VALUE_FILTER_KEYS = [
+  "warehouseId",
+  "categoryId",
+  "productId",
+  "importNumber",
+  "purchaseOrderNumber",
+] as const
+type MultiValueFilterKey = (typeof MULTI_VALUE_FILTER_KEYS)[number]
 
 const listInventoryQuerySchema = z.object({
   q: z.string().optional(),
@@ -190,10 +202,10 @@ function readMultiValue(searchParams: URLSearchParams, key: string): string[] {
 export function validateListInventoryQuery(
   searchParams: URLSearchParams,
 ): ListInput<InventoryListFilters> {
-  // Strip multi-value ID filter keys before zod validation — zod sees only scalar params.
+  // Strip multi-value filter keys before zod validation — zod sees only scalar params.
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
-    if ((ID_FILTER_KEYS as readonly string[]).includes(key)) return
+    if ((MULTI_VALUE_FILTER_KEYS as readonly string[]).includes(key)) return
     raw[key] = value
   })
 
@@ -216,12 +228,10 @@ export function validateListInventoryQuery(
   const archived =
     parsed.archived === "true" ? true : parsed.archived === "false" ? false : undefined
 
-  const idFilterEntries: Array<[IdFilterKey, string[]]> = ID_FILTER_KEYS.map((key) => [
-    key,
-    readMultiValue(searchParams, key),
-  ])
+  const multiValueEntries: Array<[MultiValueFilterKey, string[]]> =
+    MULTI_VALUE_FILTER_KEYS.map((key) => [key, readMultiValue(searchParams, key)])
   const filterRecord: Partial<InventoryListFilters> = {}
-  for (const [key, values] of idFilterEntries) {
+  for (const [key, values] of multiValueEntries) {
     if (values.length > 0) filterRecord[key] = values
   }
   if (location) filterRecord.location = location

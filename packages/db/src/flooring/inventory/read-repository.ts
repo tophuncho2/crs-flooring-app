@@ -197,6 +197,14 @@ export type InventoryListViewOptions = {
     categoryId?: ReadonlyArray<string>
     productId?: ReadonlyArray<string>
     /**
+     * Import-number snapshot match (`flooring_inventory.importNumber` = the
+     * stringified `Int` stamped at materialize time). Filters rows whose
+     * snapshot equals any value in the array.
+     */
+    importNumber?: ReadonlyArray<string>
+    /** Purchase-order-number snapshot match (same shape as `importNumber`). */
+    purchaseOrderNumber?: ReadonlyArray<string>
+    /**
      * `true` = show archived, `false` = hide archived. When undefined the
      * default is "hide archived" — the list view defaults to not showing
      * archived rows; users opt in via a filter chip.
@@ -267,6 +275,16 @@ function buildListViewWhere(
   const productIds = options.filters?.productId
   if (productIds && productIds.length > 0) {
     clauses.push({ productId: { in: [...productIds] } })
+  }
+
+  const importNumbers = options.filters?.importNumber
+  if (importNumbers && importNumbers.length > 0) {
+    clauses.push({ importNumber: { in: [...importNumbers] } })
+  }
+
+  const purchaseOrderNumbers = options.filters?.purchaseOrderNumber
+  if (purchaseOrderNumbers && purchaseOrderNumbers.length > 0) {
+    clauses.push({ purchaseOrderNumber: { in: [...purchaseOrderNumbers] } })
   }
 
   if (clauses.length === 0) return undefined

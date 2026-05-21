@@ -7,7 +7,17 @@ import { requestJson } from "@/transport/http"
 
 export const INVENTORY_LIST_QUERY_KEY = ["inventory", "list"] as const
 
-const ID_FILTER_KEYS = ["warehouseId", "categoryId", "productId"] as const
+// Multi-value filter keys shared by parse + build. ID-shaped keys
+// (`warehouseId`/`categoryId`/`productId`) and the inventory snapshot strings
+// (`importNumber`/`purchaseOrderNumber` — picker chips) all encode as
+// repeated URL params with the same wire shape, so they share this list.
+const MULTI_VALUE_FILTER_KEYS = [
+  "warehouseId",
+  "categoryId",
+  "productId",
+  "importNumber",
+  "purchaseOrderNumber",
+] as const
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -43,7 +53,7 @@ export function parseInventoryListInputFromSearchParams(
     archivedRaw === "true" ? true : archivedRaw === "false" ? false : undefined
 
   const filterRecord: Partial<InventoryListFilters> = {}
-  for (const key of ID_FILTER_KEYS) {
+  for (const key of MULTI_VALUE_FILTER_KEYS) {
     const values = Array.from(new Set(readSearchParamArray(searchParams, key)))
     if (values.length > 0) filterRecord[key] = values
   }
@@ -65,7 +75,7 @@ export function buildInventoryListSearchString(
 ): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
-  for (const key of ID_FILTER_KEYS) {
+  for (const key of MULTI_VALUE_FILTER_KEYS) {
     const values = (input.filters?.[key] ?? []) as ReadonlyArray<string>
     for (const id of values) params.append(key, id)
   }

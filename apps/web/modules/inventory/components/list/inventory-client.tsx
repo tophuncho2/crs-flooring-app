@@ -14,6 +14,7 @@ import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
   type CategoryOption,
+  type ImportOption,
   type InventoryRow,
   type ProductOption,
   type TablePreferencePayload,
@@ -40,6 +41,8 @@ const INVENTORY_FILTERABLE_FIELDS = [
   "warehouseId",
   "categoryId",
   "productId",
+  "importNumber",
+  "purchaseOrderNumber",
   "location",
   "isArchived",
 ] as const
@@ -55,6 +58,8 @@ type EngineInventoryFilters = {
   warehouseId?: ReadonlyArray<string>
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
+  importNumber?: ReadonlyArray<string>
+  purchaseOrderNumber?: ReadonlyArray<string>
   location?: ReadonlyArray<string>
   isArchived?: ReadonlyArray<string>
 }
@@ -64,6 +69,8 @@ function toEngineFilters(app: InventoryListFilters): EngineInventoryFilters {
   if (app.warehouseId?.length) out.warehouseId = app.warehouseId
   if (app.categoryId?.length) out.categoryId = app.categoryId
   if (app.productId?.length) out.productId = app.productId
+  if (app.importNumber?.length) out.importNumber = app.importNumber
+  if (app.purchaseOrderNumber?.length) out.purchaseOrderNumber = app.purchaseOrderNumber
   if (app.location && app.location.length > 0) out.location = [app.location]
   if (app.isArchived !== undefined) out.isArchived = [app.isArchived ? "true" : "false"]
   return out
@@ -74,6 +81,8 @@ function toAppFilters(engine: EngineInventoryFilters): InventoryListFilters {
   if (engine.warehouseId?.length) out.warehouseId = engine.warehouseId
   if (engine.categoryId?.length) out.categoryId = engine.categoryId
   if (engine.productId?.length) out.productId = engine.productId
+  if (engine.importNumber?.length) out.importNumber = engine.importNumber
+  if (engine.purchaseOrderNumber?.length) out.purchaseOrderNumber = engine.purchaseOrderNumber
   const loc = engine.location?.[0]?.trim()
   if (loc) out.location = loc
   const arch = engine.isArchived?.[0]
@@ -92,6 +101,9 @@ export default function InventoryClient({
   initialCategoryOptions,
   initialSelectedCategory = null,
   initialSelectedProduct = null,
+  initialImportOptions = [],
+  initialSelectedImport = null,
+  initialSelectedPurchaseOrder = null,
 }: {
   initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
@@ -102,6 +114,12 @@ export default function InventoryClient({
   initialCategoryOptions: CategoryOption[]
   initialSelectedCategory?: CategoryOption | null
   initialSelectedProduct?: ProductOption | null
+  /** SSR-loaded seed for both imports pickers (Import # and PO #). */
+  initialImportOptions?: ImportOption[]
+  /** Pre-resolved selection (when URL preloads `?importNumber=…`). */
+  initialSelectedImport?: ImportOption | null
+  /** Pre-resolved selection (when URL preloads `?purchaseOrderNumber=…`). */
+  initialSelectedPurchaseOrder?: ImportOption | null
 }) {
   const { message, pageError, openInventory } = useInventoryListController()
 
@@ -150,6 +168,8 @@ export default function InventoryClient({
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
   const selectedCategoryId = filters.categoryId?.[0] ?? null
   const selectedProductId = filters.productId?.[0] ?? null
+  const selectedImportNumber = filters.importNumber?.[0] ?? null
+  const selectedPurchaseOrderNumber = filters.purchaseOrderNumber?.[0] ?? null
   const locationValue = filters.location?.[0] ?? ""
   const archivedRaw = filters.isArchived?.[0]
   const isArchivedValue =
@@ -185,6 +205,28 @@ export default function InventoryClient({
       ? initialSelectedProduct.name
       : null
   }, [selectedProductId, initialSelectedProduct])
+
+  const importLabel = useMemo(() => {
+    if (!selectedImportNumber) return null
+    if (initialSelectedImport?.importNumber === selectedImportNumber) {
+      return `#IMP-${initialSelectedImport.importNumber}`
+    }
+    const seeded = initialImportOptions.find((o) => o.importNumber === selectedImportNumber)
+    return seeded ? `#IMP-${seeded.importNumber}` : null
+  }, [selectedImportNumber, initialSelectedImport, initialImportOptions])
+
+  const purchaseOrderLabel = useMemo(() => {
+    if (!selectedPurchaseOrderNumber) return null
+    if (
+      initialSelectedPurchaseOrder?.purchaseOrderNumber === selectedPurchaseOrderNumber
+    ) {
+      return `PO# ${initialSelectedPurchaseOrder.purchaseOrderNumber}`
+    }
+    const seeded = initialImportOptions.find(
+      (o) => o.purchaseOrderNumber === selectedPurchaseOrderNumber,
+    )
+    return seeded ? `PO# ${seeded.purchaseOrderNumber}` : null
+  }, [selectedPurchaseOrderNumber, initialSelectedPurchaseOrder, initialImportOptions])
 
   // --- Cascade-clear filter handlers ---
   // Category change → clear Product.
@@ -234,12 +276,28 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
+  const handleImportNumberChange = useCallback(
+    (next: string | null) => {
+      onFilterChange("importNumber", next ? [next] : [])
+    },
+    [onFilterChange],
+  )
+
+  const handlePurchaseOrderNumberChange = useCallback(
+    (next: string | null) => {
+      onFilterChange("purchaseOrderNumber", next ? [next] : [])
+    },
+    [onFilterChange],
+  )
+
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (
       selectedWarehouseId ||
       selectedCategoryId ||
       selectedProductId ||
+      selectedImportNumber ||
+      selectedPurchaseOrderNumber ||
       locationValue
     ) {
       return true
@@ -251,6 +309,8 @@ export default function InventoryClient({
     selectedWarehouseId,
     selectedCategoryId,
     selectedProductId,
+    selectedImportNumber,
+    selectedPurchaseOrderNumber,
     locationValue,
     isArchivedValue,
   ])
@@ -348,12 +408,24 @@ export default function InventoryClient({
               </ListToolbarTallCard>
             </ListToolbarCell>
 
-            {/* Import # → Purchase order: UI placeholders. The chip visuals
-                match the closed-state of `AsyncRichDropdown`; queries get
-                wired in a follow-up. */}
+            {/* Import # → Purchase order: independent async pickers backed
+                by `/api/imports/options`. Each filters inventory rows by
+                their denormalized snapshot column directly — picks survive
+                across reloads via the `importNumber` / `purchaseOrderNumber`
+                URL params. */}
             <ListToolbarCell>
-              <ImportNumberFilterChip />
-              <PurchaseOrderFilterChip />
+              <ImportNumberFilterChip
+                value={selectedImportNumber}
+                selectedLabel={importLabel}
+                onChange={handleImportNumberChange}
+                initialOptions={initialImportOptions}
+              />
+              <PurchaseOrderFilterChip
+                value={selectedPurchaseOrderNumber}
+                selectedLabel={purchaseOrderLabel}
+                onChange={handlePurchaseOrderNumberChange}
+                initialOptions={initialImportOptions}
+              />
             </ListToolbarCell>
           </ListToolbar>
         </div>

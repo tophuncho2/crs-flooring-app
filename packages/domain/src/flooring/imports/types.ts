@@ -52,3 +52,21 @@ export function toImportPrimaryForm(record: ImportRow): ImportPrimaryForm {
   }
 }
 
+/**
+ * Picker option row for the imports async dropdowns (Import # / PO # filter
+ * chips on the inventory list view). `importNumber` is the stringified `Int`
+ * from `FlooringImportEntry` so the value matches the denormalized snapshot
+ * stored on `FlooringInventory.importNumber` (worker stamps
+ * `String(importEntry.importNumber)` at materialize time). That alignment is
+ * what lets the chip push the picked string straight through to the inventory
+ * list filter as-is. `purchaseOrderNumber` is the canonical column on the
+ * import entry, also written verbatim to the inventory snapshot.
+ */
+export type ImportOption = {
+  id: string
+  importNumber: string
+  purchaseOrderNumber: string
+  warehouseName: string
+  createdAt: string
+}
+

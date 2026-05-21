@@ -1,4 +1,4 @@
-import type { ImportDetail, ImportRow } from "@builders/domain"
+import type { ImportDetail, ImportOption, ImportRow } from "@builders/domain"
 import type { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
 import {
@@ -220,5 +220,62 @@ export async function getImportLinkState(
     stagedInventoryRowCount: row._count.stagedInventoryRows,
     liveInventoryRowCount: row._count.inventories,
   }
+}
+
+// --- Picker / options search ---
+
+export type ImportOptionsSearchArgs = {
+  search?: string
+  take: number
+}
+
+/**
+ * Async-dropdown options for the imports pickers (Import # / PO # filter chips
+ * on the inventory list view). Search ORs across the two identity columns:
+ * `purchaseOrderNumber` is a `String` (ILIKE substring) and `importNumber` is
+ * an `Int` (exact match when the query parses as a safe positive integer).
+ * Ordered `createdAt DESC` so the newest imports surface first when the user
+ * opens the picker without a query.
+ */
+export async function searchImportOptions(
+  args: ImportOptionsSearchArgs,
+  client: ImportsDbClient = db,
+): Promise<ImportOption[]> {
+  const trimmed = args.search?.trim() ?? ""
+
+  let where: Prisma.FlooringImportEntryWhereInput | undefined
+  if (trimmed.length > 0) {
+    const orClauses: Prisma.FlooringImportEntryWhereInput[] = [
+      { purchaseOrderNumber: { contains: trimmed, mode: "insensitive" } },
+    ]
+    if (/^\d+$/.test(trimmed)) {
+      const numeric = Number(trimmed)
+      if (Number.isSafeInteger(numeric) && numeric >= 0) {
+        orClauses.push({ importNumber: numeric })
+      }
+    }
+    where = { OR: orClauses }
+  }
+
+  const rows = await client.flooringImportEntry.findMany({
+    where,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: args.take,
+    select: {
+      id: true,
+      importNumber: true,
+      purchaseOrderNumber: true,
+      warehouse: { select: { name: true } },
+      createdAt: true,
+    },
+  })
+
+  return rows.map((row) => ({
+    id: row.id,
+    importNumber: String(row.importNumber),
+    purchaseOrderNumber: row.purchaseOrderNumber ?? "",
+    warehouseName: row.warehouse?.name ?? "",
+    createdAt: row.createdAt.toISOString(),
+  }))
 }
 

@@ -3,11 +3,13 @@ import {
   getResolvedUserTablePreference,
   listInventoryUseCase,
   searchCategoryOptionsUseCase,
+  searchImportOptionsUseCase,
   searchProductOptionsUseCase,
   searchWarehouseOptionsUseCase,
 } from "@builders/application"
 import type {
   CategoryOption,
+  ImportOption,
   ProductOption,
   TablePreferencePayload,
   WarehouseOption,
@@ -62,23 +64,31 @@ export default async function FlooringInventoryPage({
   let initialCategoryOptions: CategoryOption[] = []
   let initialSelectedCategory: CategoryOption | null = null
   let initialSelectedProduct: ProductOption | null = null
+  let initialImportOptions: ImportOption[] = []
+  let initialSelectedImport: ImportOption | null = null
+  let initialSelectedPurchaseOrder: ImportOption | null = null
 
   try {
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
     const selectedCategoryId = initialInput.filters?.categoryId?.[0] ?? null
     const selectedProductId = initialInput.filters?.productId?.[0] ?? null
+    const selectedImportNumber = initialInput.filters?.importNumber?.[0] ?? null
+    const selectedPurchaseOrderNumber =
+      initialInput.filters?.purchaseOrderNumber?.[0] ?? null
 
-    const [, warehouseOptions, categoryOptions] = await Promise.all([
+    const [, warehouseOptions, categoryOptions, importOptions] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...INVENTORY_LIST_QUERY_KEY, initialInput],
         queryFn: () => listInventoryUseCase(initialInput),
       }),
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
       searchCategoryOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
+      searchImportOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
     initialWarehouseOptions = warehouseOptions
     initialCategoryOptions = categoryOptions
+    initialImportOptions = importOptions
 
     if (selectedWarehouseId) {
       initialSelectedWarehouse = await resolveSelectedById(
@@ -109,6 +119,42 @@ export default async function FlooringInventoryPage({
       })
       initialSelectedProduct = products.find((p) => p.id === selectedProductId) ?? null
     }
+
+    if (selectedImportNumber) {
+      // Try the seed first; if the URL preset isn't in the most-recent 20,
+      // fall back to a targeted search by the import number itself (numeric
+      // string both matches the integer column in the read repo and the
+      // denormalized snapshot ID we use as the picker value).
+      const seeded = importOptions.find((o) => o.importNumber === selectedImportNumber)
+      if (seeded) {
+        initialSelectedImport = seeded
+      } else {
+        const [match] = await searchImportOptionsUseCase({
+          search: selectedImportNumber,
+          take: 1,
+        })
+        initialSelectedImport =
+          match && match.importNumber === selectedImportNumber ? match : null
+      }
+    }
+
+    if (selectedPurchaseOrderNumber) {
+      const seeded = importOptions.find(
+        (o) => o.purchaseOrderNumber === selectedPurchaseOrderNumber,
+      )
+      if (seeded) {
+        initialSelectedPurchaseOrder = seeded
+      } else {
+        const [match] = await searchImportOptionsUseCase({
+          search: selectedPurchaseOrderNumber,
+          take: 1,
+        })
+        initialSelectedPurchaseOrder =
+          match && match.purchaseOrderNumber === selectedPurchaseOrderNumber
+            ? match
+            : null
+      }
+    }
   } catch (error) {
     return (
       <DashboardErrorState
@@ -132,6 +178,9 @@ export default async function FlooringInventoryPage({
         initialCategoryOptions={initialCategoryOptions}
         initialSelectedCategory={initialSelectedCategory}
         initialSelectedProduct={initialSelectedProduct}
+        initialImportOptions={initialImportOptions}
+        initialSelectedImport={initialSelectedImport}
+        initialSelectedPurchaseOrder={initialSelectedPurchaseOrder}
       />
     </HydrationBoundary>
   )

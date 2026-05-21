@@ -1,23 +1,36 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
+import type { ImportOption } from "@builders/domain"
+import { PurchaseOrderNumberPicker } from "@/modules/imports/components/picker/purchase-order-number-picker"
 
-/**
- * Placeholder chip for a Purchase Order picker. Visual matches the
- * closed-state trigger of `AsyncRichDropdown` so the toolbar reads as a
- * full grid of controls even before the query layer is wired up.
- * Replace with a real picker wrapper once the search endpoint exists.
- */
-export function PurchaseOrderFilterChip() {
+export type PurchaseOrderFilterChipProps = {
+  /** Selected purchaseOrderNumber snapshot string. */
+  value: string | null
+  /** Pre-resolved display label (e.g. `"PO# ABC-123"`). */
+  selectedLabel: string | null
+  onChange: (next: string | null) => void
+  initialOptions?: ImportOption[]
+}
+
+export function PurchaseOrderFilterChip({
+  value,
+  selectedLabel,
+  onChange,
+  initialOptions,
+}: PurchaseOrderFilterChipProps) {
   return (
-    <button
-      type="button"
-      disabled
-      aria-label="Filter inventory by purchase order (coming soon)"
-      className="flex w-full items-center justify-between gap-2 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-left text-sm text-[var(--foreground)]/55 outline-none transition disabled:cursor-not-allowed"
-    >
-      <span>Purchase order #</span>
-      <ChevronDown size={16} className="shrink-0 text-[var(--foreground)]/40" />
-    </button>
+    <div className="min-w-[14rem] max-w-[20rem]">
+      <PurchaseOrderNumberPicker
+        value={value}
+        selectedLabel={selectedLabel}
+        onChange={onChange}
+        initialOptions={initialOptions}
+        placeholder="Purchase order #"
+        searchPlaceholder="Search PO # or import #"
+        emptyMessage="No POs match"
+        clearLabel="Clear filter"
+        ariaLabel="Filter inventory by purchase order number"
+      />
+    </div>
   )
 }
