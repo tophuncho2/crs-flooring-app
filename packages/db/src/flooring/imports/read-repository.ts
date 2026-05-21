@@ -120,16 +120,13 @@ function buildListViewWhere(
 ): Prisma.FlooringImportEntryWhereInput | undefined {
   const clauses: Prisma.FlooringImportEntryWhereInput[] = []
 
-  // Search targets the import number only — exact integer match. Non-numeric
-  // input matches nothing (an unreachable `importNumber` value).
+  // Search targets purchaseOrderNumber (case-insensitive contains). Empty input
+  // matches everything.
   if (options.search && options.search.trim() !== "") {
     const trimmed = options.search.trim()
-    const numericImportNumber = Number(trimmed)
-    if (Number.isFinite(numericImportNumber)) {
-      clauses.push({ importNumber: Math.floor(numericImportNumber) })
-    } else {
-      clauses.push({ importNumber: -1 })
-    }
+    clauses.push({
+      purchaseOrderNumber: { contains: trimmed, mode: "insensitive" },
+    })
   }
 
   const warehouseIds = options.filters?.warehouseId
@@ -155,7 +152,8 @@ function buildListViewOrderBy(
     }
   }
 
-  orderBy.push({ importNumber: "desc" })
+  orderBy.push({ createdAt: "desc" })
+  orderBy.push({ id: "desc" })
   return orderBy
 }
 

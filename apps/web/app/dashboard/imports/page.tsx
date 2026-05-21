@@ -14,7 +14,7 @@ import {
 } from "@/modules/imports/data/list-imports-request"
 
 const IMPORTS_FALLBACK_PREFERENCES: TablePreferencePayload = {
-  sort: { key: "importNumber", direction: "desc" },
+  sort: { key: "createdAt", direction: "desc" },
   filters: {},
   columnVisibility: {},
   columnOrder: [],

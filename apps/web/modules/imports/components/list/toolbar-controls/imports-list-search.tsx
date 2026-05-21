@@ -12,7 +12,7 @@ export function ImportsListSearch({ query, onQueryChange }: ImportsListSearchPro
     <SearchControl
       query={query}
       onQueryChange={onQueryChange}
-      placeholder="Search import #"
+      placeholder="Search PO #"
     />
   )
 }

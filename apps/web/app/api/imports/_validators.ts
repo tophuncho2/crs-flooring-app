@@ -18,7 +18,7 @@ import {
   STAGED_INVENTORY_ROW_NOTE_MAX,
   STAGED_INVENTORY_ROW_ROLL_NUMBER_MAX,
 } from "@builders/domain"
-// no sort param — imports default to importNumber desc, hardcoded server-side
+// no sort param — imports default to createdAt desc, hardcoded server-side
 import type {
   StagedInventoryFilterForm,
   StagedInventoryFilterRowDelete,
