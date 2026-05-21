@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   PROPERTY_HUB_NO_ACTIONS_MESSAGE,
@@ -113,6 +113,10 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
   const [activeView, setActiveView] = useState<HubActiveView>("properties")
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
   const [selectedPropertyLabel, setSelectedPropertyLabel] = useState<string | null>(null)
+  // When openForTemplatesView pre-applies a property filter, the auto-reset
+  // useEffect below will fire on contextMcId change and wipe it. The ref
+  // carries the filter through that reset so it can be re-applied afterwards.
+  const pendingPropertyFilterRef = useRef<{ id: string; label: string } | null>(null)
 
   const resetCreate = useCallback(() => {
     setMcLinkId(null)
@@ -341,6 +345,20 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     [resetView],
   )
 
+  // Open hub view on the Templates tab, pre-filtered to a specific property.
+  // Used by the template-sync panel's right arrow to "exit into" the hub at
+  // the templates list for the currently selected template's property.
+  const openForTemplatesView = useCallback(
+    (mcId: string, propertyId: string, propertyLabel: string) => {
+      pendingPropertyFilterRef.current = { id: propertyId, label: propertyLabel }
+      setError(null)
+      setSelectedPropertyId(propertyId)
+      setSelectedPropertyLabel(propertyLabel)
+      setMode({ kind: "view", mcId, tab: "templates" })
+    },
+    [],
+  )
+
   const openForMcEdit = useCallback((row: ManagementCompanyListRow) => {
     const next = buildMcFormFromRow(row)
     setMcEditForm(next)
@@ -486,9 +504,16 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     closePicker()
   }, [closePicker])
 
-  // Reset view-aux state when the context MC changes.
+  // Reset view-aux state when the context MC changes — then re-apply any
+  // filter the opener intentionally queued via pendingPropertyFilterRef.
   useEffect(() => {
     resetView()
+    const pending = pendingPropertyFilterRef.current
+    if (pending) {
+      setSelectedPropertyId(pending.id)
+      setSelectedPropertyLabel(pending.label)
+      pendingPropertyFilterRef.current = null
+    }
   }, [contextMcId, resetView])
 
   // ===== Create-mode setters =====
@@ -731,6 +756,7 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     open,
     openForCreate,
     openForView,
+    openForTemplatesView,
     openForMcEdit,
     openForPropertyEdit,
     close,

@@ -10,16 +10,16 @@ import type {
   TemplateOption,
 } from "@builders/domain"
 import {
-  SidePanelPreview,
-  SidePanelPreviewNewButton,
-  SidePanelPreviewOpenButton,
-} from "@/components/side-panel-preview"
+  HubSidePanelPickerTrigger,
+  HubSidePanelShell,
+  HubSidePanelViewSwitcher,
+} from "@/components/hub-side-panel"
+import { SidePanelPreviewNewButton } from "@/components/side-panel-preview"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
 import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
 import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
 import { TemplateSyncPreviewBody } from "@/modules/template-sync/components/template-sync-preview-body"
 import { TemplateSyncItemsSubHeader } from "@/modules/template-sync/components/header/template-sync-items-sub-header"
-import { TemplateSyncPickerTrigger } from "@/modules/template-sync/components/template-sync-picker-trigger"
 import { TemplateSyncManagementCompanyOptionsPanel } from "@/modules/template-sync/components/options/template-sync-management-company-options-panel"
 import { TemplateSyncPropertyOptionsPanel } from "@/modules/template-sync/components/options/template-sync-property-options-panel"
 import { TemplateSyncTemplateOptionsPanel } from "@/modules/template-sync/components/options/template-sync-template-options-panel"
@@ -30,11 +30,14 @@ import { TemplateSyncSyncButton } from "@/modules/template-sync/components/toolb
 import { useTemplateSyncItems } from "@/modules/template-sync/controllers/use-template-sync-items"
 
 // Cascade: Management Company (optional) → Property → Template.
-// All three pickers are body-mode: their triggers in the sticky header toggle
-// the side-panel body between the options surface and the template preview.
-// Only one picker may be expanded at a time — switching collapses the others.
+// All three pickers are body-mode: their triggers in the sticky top-toolbar
+// toggle the side-panel body between the options surface and the template
+// preview. Only one picker may be expanded at a time — switching collapses
+// the others.
 
 type ExpandedPicker = "managementCompany" | "property" | "template" | null
+
+const PICKER_LABEL_CLASS = "text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65"
 
 export function TemplateSyncButton() {
   const router = useRouter()
@@ -44,6 +47,8 @@ export function TemplateSyncButton() {
     useState<string | null>(null)
   const [propertyId, setPropertyId] = useState<string | null>(null)
   const [selectedPropertyLabel, setSelectedPropertyLabel] = useState<string | null>(null)
+  // Carries the chosen property's mgmt-co id so the arrow handlers can open
+  // the hub view even when the user skipped the (optional) mgmt-co picker.
   const [selectedPropertyOption, setSelectedPropertyOption] = useState<PropertyOption | null>(
     null,
   )
@@ -62,13 +67,6 @@ export function TemplateSyncButton() {
   // Single unified hub panel — covers Create hub, hub view, and property edit
   // (clicking a property row inside the hub view transitions in-place).
   const hubPanel = usePropertyHubSidePanel()
-
-  const handleOpenTemplateRow = useCallback(
-    (row: TemplateListRow) => {
-      router.push(`/dashboard/templates/${row.id}`)
-    },
-    [router],
-  )
 
   const toggleHeaderCollapsed = useCallback(() => {
     setHeaderCollapsed((value) => !value)
@@ -122,6 +120,21 @@ export function TemplateSyncButton() {
     setErrorMessage(null)
   }, [])
 
+  // Pre-populate all three pickers from a template row inside the hub view.
+  // Drives the row-click handoff back into this panel.
+  const presetFromTemplateRow = useCallback((row: TemplateListRow) => {
+    setManagementCompanyId(row.managementCompanyId)
+    setSelectedManagementCompanyLabel(row.managementCompanyName)
+    setPropertyId(row.propertyId)
+    setSelectedPropertyLabel(row.propertyName)
+    setSelectedPropertyOption(null)
+    setTemplateId(row.id)
+    const unit = row.unitType.trim()
+    setSelectedTemplateLabel(unit.length > 0 ? unit : "—")
+    setExpandedPicker(null)
+    setErrorMessage(null)
+  }, [])
+
   // Defensive: template picker is gated on propertyId; if the cascade clears
   // it while the picker is expanded, collapse — the trigger becomes disabled.
   useEffect(() => {
@@ -149,9 +162,12 @@ export function TemplateSyncButton() {
   const canActOnTemplate = templateId !== null
   const canCreateForProperty = propertyId !== null
   const hasSelections = managementCompanyId !== null || propertyId !== null || templateId !== null
-  const resolvedHubManagementCompanyId =
-    selectedPropertyOption?.managementCompanyId ?? managementCompanyId
-  const canOpenHubView = resolvedHubManagementCompanyId !== null
+  const resolvedHubMcId =
+    managementCompanyId ?? selectedPropertyOption?.managementCompanyId ?? null
+  // Arrows mirror the hub's Properties ◂ ▸ Templates switcher — both are
+  // enabled together once a template is selected (which guarantees a
+  // resolvable mgmt-co + property pair).
+  const arrowsEnabled = canActOnTemplate && resolvedHubMcId !== null
 
   const handleOpen = useCallback(() => {
     if (!templateId) return
@@ -169,18 +185,35 @@ export function TemplateSyncButton() {
     router.push(`/dashboard/templates/new?${params.toString()}`)
   }, [propertyId, managementCompanyId, resetSelections, router])
 
-  const handleOpenHubView = useCallback(() => {
-    if (!resolvedHubManagementCompanyId) return
-    setOpen(false)
-    resetSelections()
-    hubPanel.openForView(resolvedHubManagementCompanyId)
-  }, [resolvedHubManagementCompanyId, resetSelections, hubPanel])
-
   const handleCreateHub = useCallback(() => {
     setOpen(false)
     resetSelections()
     hubPanel.openForCreate()
   }, [resetSelections, hubPanel])
+
+  // Left arrow ◂ — open hub view at Properties tab for this template's mgmt-co.
+  const handleArrowPrev = useCallback(() => {
+    if (!arrowsEnabled || !resolvedHubMcId) return
+    setOpen(false)
+    resetSelections()
+    hubPanel.openForView(resolvedHubMcId)
+  }, [arrowsEnabled, resolvedHubMcId, resetSelections, hubPanel])
+
+  // Right arrow ▸ — open hub view at Templates tab, pre-filtered to this
+  // template's property under its mgmt-co.
+  const handleArrowNext = useCallback(() => {
+    if (!arrowsEnabled || !resolvedHubMcId || !propertyId || !selectedPropertyLabel) return
+    setOpen(false)
+    resetSelections()
+    hubPanel.openForTemplatesView(resolvedHubMcId, propertyId, selectedPropertyLabel)
+  }, [
+    arrowsEnabled,
+    resolvedHubMcId,
+    propertyId,
+    selectedPropertyLabel,
+    resetSelections,
+    hubPanel,
+  ])
 
   const handleSync = useCallback(async () => {
     if (!templateId || isSyncing) return
@@ -200,13 +233,32 @@ export function TemplateSyncButton() {
     }
   }, [templateId, isSyncing, resetSelections, router])
 
-  const stickyHeader = (
+  // Row click inside the hub view's templates tab — close the hub and
+  // re-open this panel preselected to the row's mgmt-co + property + template.
+  const handleOpenTemplateRow = useCallback(
+    (row: TemplateListRow) => {
+      hubPanel.close()
+      presetFromTemplateRow(row)
+      setOpen(true)
+    },
+    [hubPanel, presetFromTemplateRow],
+  )
+
+  const topToolbar = (
     <div className="flex flex-col gap-3">
+      <HubSidePanelViewSwitcher
+        label="Template sync"
+        prevDisabled={!arrowsEnabled || isSyncing}
+        nextDisabled={!arrowsEnabled || isSyncing}
+        onGoPrev={handleArrowPrev}
+        onGoNext={handleArrowNext}
+        prevAriaLabel="Open properties hub view"
+        nextAriaLabel="Open templates hub view"
+      />
+
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
-          Management company
-        </span>
-        <TemplateSyncPickerTrigger
+        <span className={PICKER_LABEL_CLASS}>Management company</span>
+        <HubSidePanelPickerTrigger
           ref={managementCompanyTriggerRef}
           expanded={expandedPicker === "managementCompany"}
           onToggle={() => togglePicker("managementCompany")}
@@ -217,10 +269,8 @@ export function TemplateSyncButton() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
-          Property
-        </span>
-        <TemplateSyncPickerTrigger
+        <span className={PICKER_LABEL_CLASS}>Property</span>
+        <HubSidePanelPickerTrigger
           ref={propertyTriggerRef}
           expanded={expandedPicker === "property"}
           onToggle={() => togglePicker("property")}
@@ -231,10 +281,8 @@ export function TemplateSyncButton() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
-          Template
-        </span>
-        <TemplateSyncPickerTrigger
+        <span className={PICKER_LABEL_CLASS}>Template</span>
+        <HubSidePanelPickerTrigger
           ref={templateTriggerRef}
           expanded={expandedPicker === "template"}
           onToggle={() => togglePicker("template")}
@@ -253,44 +301,37 @@ export function TemplateSyncButton() {
           onToggleHeader={toggleHeaderCollapsed}
         />
       ) : null}
-    </div>
-  )
 
-  const footer = (
-    <div className="flex flex-col gap-3">
-      {errorMessage ? (
-        <p className="text-xs text-rose-400" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <TemplateSyncClearButton
-          disabled={!hasSelections || isSyncing}
-          onClick={resetSelections}
-        />
-        <SidePanelPreviewNewButton
-          disabled={isSyncing}
-          onClick={handleCreateHub}
-          label="Create hub"
-        />
-        <SidePanelPreviewOpenButton
-          disabled={!canOpenHubView || isSyncing}
-          onClick={handleOpenHubView}
-          label="Open hub view"
-        />
-        <TemplateSyncNewButton
-          disabled={!canCreateForProperty || isSyncing}
-          onClick={handleCreate}
-        />
-        <TemplateSyncOpenButton
-          disabled={!canActOnTemplate || isSyncing}
-          onClick={handleOpen}
-        />
-        <TemplateSyncSyncButton
-          disabled={!canActOnTemplate || isSyncing}
-          isSyncing={isSyncing}
-          onClick={handleSync}
-        />
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <TemplateSyncClearButton
+            disabled={!hasSelections || isSyncing}
+            onClick={resetSelections}
+          />
+          <SidePanelPreviewNewButton
+            disabled={isSyncing}
+            onClick={handleCreateHub}
+            label="Create hub"
+          />
+          <TemplateSyncNewButton
+            disabled={!canCreateForProperty || isSyncing}
+            onClick={handleCreate}
+          />
+          <TemplateSyncOpenButton
+            disabled={!canActOnTemplate || isSyncing}
+            onClick={handleOpen}
+          />
+          <TemplateSyncSyncButton
+            disabled={!canActOnTemplate || isSyncing}
+            isSyncing={isSyncing}
+            onClick={handleSync}
+          />
+        </div>
+        {errorMessage ? (
+          <p className="text-xs text-rose-400" role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
       </div>
     </div>
   )
@@ -314,14 +355,11 @@ export function TemplateSyncButton() {
         <RefreshCw size={18} className="text-blue-500" />
       </button>
 
-      <SidePanelPreview
+      <HubSidePanelShell
         open={open}
-        side="right"
         onClose={handleClose}
         title="Hub & template sync"
-        widthClassName="w-[48rem]"
-        stickyHeader={stickyHeader}
-        footer={footer}
+        topToolbar={topToolbar}
       >
         {expandedPicker === "managementCompany" ? (
           <TemplateSyncManagementCompanyOptionsPanel
@@ -353,7 +391,7 @@ export function TemplateSyncButton() {
             headerCollapsed={headerCollapsed}
           />
         ) : null}
-      </SidePanelPreview>
+      </HubSidePanelShell>
 
       <PropertyHubSidePanel controller={hubPanel} onOpenTemplate={handleOpenTemplateRow} />
     </>
