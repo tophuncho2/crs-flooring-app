@@ -248,6 +248,7 @@ model FlooringProduct {
 model FlooringInventory {
   id                     String               @id @default(uuid())
   inventoryNumber        String               @unique @default(dbgenerated("('INV-'::text || (nextval('flooring_inventory_number_seq'::regclass))::text)")) @map("inventory_number")
+  inventoryNumberInt     Int?                 @default(dbgenerated("(SUBSTRING(inventory_number FROM 5))::integer"))
   importEntryId          String?
   importEntry            FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
   importNumber           String?
@@ -282,6 +283,7 @@ model FlooringInventory {
   updatedAt              DateTime             @updatedAt
 
   @@index([inventoryNumber])
+  @@index([inventoryNumberInt])
   @@index([importEntryId])
   @@index([productId])
   @@index([warehouseId])
