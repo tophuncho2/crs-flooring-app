@@ -247,7 +247,7 @@ model FlooringProduct {
 
 model FlooringInventory {
   id                     String               @id @default(uuid())
-  inventoryNumber        String               @unique @default(dbgenerated("('INV-'::text || lpad((nextval('flooring_inventory_number_seq'::regclass))::text, 5, '0'::text))")) @map("inventory_number")
+  inventoryNumber        String               @unique @default(dbgenerated("('INV-'::text || (nextval('flooring_inventory_number_seq'::regclass))::text)")) @map("inventory_number")
   importEntryId          String?
   importEntry            FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
   importNumber           String?
