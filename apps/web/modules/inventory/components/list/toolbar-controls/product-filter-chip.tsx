@@ -22,18 +22,16 @@ export function ProductFilterChip({
   onChange,
 }: ProductFilterChipProps) {
   return (
-    <div className="min-w-[14rem] max-w-[20rem]">
-      <ProductPicker
-        value={value}
-        selectedLabel={selectedLabel}
-        onChange={onChange}
-        categoryId={categoryId}
-        placeholder="Product"
-        searchPlaceholder="Search products"
-        emptyMessage="No products match"
-        clearLabel="Clear filter"
-        ariaLabel="Filter inventory by product"
-      />
-    </div>
+    <ProductPicker
+      value={value}
+      selectedLabel={selectedLabel}
+      onChange={onChange}
+      categoryId={categoryId}
+      placeholder="Product"
+      searchPlaceholder="Search products"
+      emptyMessage="No products match"
+      clearLabel="Clear filter"
+      ariaLabel="Filter inventory by product"
+    />
   )
 }

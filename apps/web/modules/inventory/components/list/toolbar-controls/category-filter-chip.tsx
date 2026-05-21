@@ -22,18 +22,16 @@ export function CategoryFilterChip({
   initialOptions,
 }: CategoryFilterChipProps) {
   return (
-    <div className="min-w-[12rem] max-w-[18rem]">
-      <CategoryPicker
-        value={value}
-        selectedLabel={selectedLabel}
-        onChange={onChange}
-        initialOptions={initialOptions}
-        placeholder="Category"
-        searchPlaceholder="Search categories"
-        emptyMessage="No categories match"
-        clearLabel="Clear filter"
-        ariaLabel="Filter inventory by category"
-      />
-    </div>
+    <CategoryPicker
+      value={value}
+      selectedLabel={selectedLabel}
+      onChange={onChange}
+      initialOptions={initialOptions}
+      placeholder="Category"
+      searchPlaceholder="Search categories"
+      emptyMessage="No categories match"
+      clearLabel="Clear filter"
+      ariaLabel="Filter inventory by category"
+    />
   )
 }

@@ -335,18 +335,20 @@ export default function InventoryClient({
             {/* Category → Product: product is category-scoped (category change
                 cascades the product chip clear via handleCategoryChange). */}
             <ListToolbarCell>
-              <CategoryFilterChip
-                value={selectedCategoryId}
-                selectedLabel={categoryLabel}
-                onChange={handleCategoryChange}
-                initialOptions={initialCategoryOptions}
-              />
-              <ProductFilterChip
-                value={selectedProductId}
-                selectedLabel={productLabel}
-                categoryId={selectedCategoryId}
-                onChange={handleProductChange}
-              />
+              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
+                <CategoryFilterChip
+                  value={selectedCategoryId}
+                  selectedLabel={categoryLabel}
+                  onChange={handleCategoryChange}
+                  initialOptions={initialCategoryOptions}
+                />
+                <ProductFilterChip
+                  value={selectedProductId}
+                  selectedLabel={productLabel}
+                  categoryId={selectedCategoryId}
+                  onChange={handleProductChange}
+                />
+              </div>
             </ListToolbarCell>
 
             {/* Status: 2-row-tall card holding the archive segmented control. */}
