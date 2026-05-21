@@ -112,20 +112,25 @@ export function TemplatePropertyUnitGroup({
   const instructionsDisplay = propertyJoined?.instructions || "—"
 
   return (
-    <TemplateGroup title="Property & Unit">
+    <TemplateGroup
+      title="Property & Unit"
+      headerRight={
+        editable ? (
+          <button
+            type="button"
+            aria-label="New property"
+            onClick={hubPanel.open}
+            className="inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 focus:outline-none focus:ring-1 focus:ring-sky-500/40"
+          >
+            + New property
+          </button>
+        ) : null
+      }
+    >
       <PropertyHubSidePanel controller={hubPanel} />
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-3">
-            {editable ? (
-              <button
-                type="button"
-                onClick={hubPanel.open}
-                className="self-start text-xs font-medium text-sky-700 hover:text-sky-800"
-              >
-                + New property
-              </button>
-            ) : null}
             <TemplateField label="Management Company">
               {editable ? (
                 <ManagementCompanyPicker
