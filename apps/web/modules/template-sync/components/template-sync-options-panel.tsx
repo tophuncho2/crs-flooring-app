@@ -1,12 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
-import type { TemplateOption } from "@builders/domain"
-import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
-import {
-  TEMPLATE_OPTIONS_QUERY_KEY,
-  searchTemplateOptionsRequest,
-} from "@/modules/templates/data/template-options-request"
+import type { AsyncRichDropdownControllerOutput } from "@/controllers/dropdown-search"
 
 const SEARCH_INPUT_CLASS_NAME =
   "w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2.5 py-1.5 text-sm text-[var(--foreground)] outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40"
@@ -15,22 +10,18 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ")
 }
 
-type OptionRow = {
+export type TemplateSyncOptionRow = {
   id: string
   title: string
   subtitles: string[]
 }
 
-function toOptionRow(option: TemplateOption): OptionRow {
-  const subtitles = option.description ? [option.description] : []
-  return { id: option.id, title: option.unitType || "—", subtitles }
-}
-
-export type TemplateSyncOptionsPanelProps = {
-  propertyId: string
+export type TemplateSyncOptionsPanelProps<TOption extends { id: string }> = {
+  controller: AsyncRichDropdownControllerOutput<TOption>
+  toOptionRow: (option: TOption) => TemplateSyncOptionRow
   currentValue: string | null
   currentLabel: string | null
-  onSelect: (id: string | null, label: string | null) => void
+  onSelect: (option: TOption | null) => void
   onCancel: () => void
   searchPlaceholder?: string
   emptyMessage?: string
@@ -38,62 +29,47 @@ export type TemplateSyncOptionsPanelProps = {
   clearLabel?: string
 }
 
-// Body-mode template options surface. Mirrors the popover content of
-// AsyncRichDropdown (search input + optional clear row + listbox) but anchored
-// as the side-panel body block — no portal, fills the available height.
-// Shares the data layer with TemplatePicker (same controller hook, same
-// search request, same bucket-key shape) so cache hits and selection
-// semantics stay identical.
-export function TemplateSyncOptionsPanel({
-  propertyId,
+// Body-mode options surface. Mirrors the popover content of AsyncRichDropdown
+// (search input + optional clear row + listbox) but anchored as the side-panel
+// body block — no portal, fills the available height. Per-entity wrappers feed
+// the controller + row mapper so the data-layer wiring stays colocated with
+// each picker's options request.
+export function TemplateSyncOptionsPanel<TOption extends { id: string }>({
+  controller,
+  toOptionRow,
   currentValue,
   currentLabel,
   onSelect,
   onCancel,
-  searchPlaceholder = "Search templates",
+  searchPlaceholder = "Search",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
   clearLabel = "Clear selection",
-}: TemplateSyncOptionsPanelProps) {
+}: TemplateSyncOptionsPanelProps<TOption>) {
   const listboxId = useId()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const listboxRef = useRef<HTMLDivElement | null>(null)
   const [activeIndex, setActiveIndex] = useState<number>(-1)
 
-  const bucketKey = useMemo(
-    () => [...TEMPLATE_OPTIONS_QUERY_KEY, propertyId] as const,
-    [propertyId],
-  )
-
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
-      searchTemplateOptionsRequest(search, signal, { propertyId }),
-    [propertyId],
-  )
-
-  const controller = useAsyncRichDropdownController<TemplateOption>({
-    bucketKey,
-    searchFn,
-  })
-
-  const options = useMemo<OptionRow[]>(
+  const rows = useMemo<TemplateSyncOptionRow[]>(
     () => controller.options.map(toOptionRow),
-    [controller.options],
+    [controller.options, toOptionRow],
   )
 
   const isLoading = controller.isLoading || controller.isFetching
   const errorMessage = controller.errorMessage
-  const showEmptyState = !isLoading && options.length === 0 && !errorMessage
+  const showEmptyState = !isLoading && rows.length === 0 && !errorMessage
 
   const commitSelect = useCallback(
-    (option: OptionRow) => {
-      onSelect(option.id, option.title)
+    (index: number) => {
+      const option = controller.options[index]
+      if (option) onSelect(option)
     },
-    [onSelect],
+    [controller.options, onSelect],
   )
 
   const commitClear = useCallback(() => {
-    onSelect(null, null)
+    onSelect(null)
   }, [onSelect])
 
   useEffect(() => {
@@ -101,13 +77,13 @@ export function TemplateSyncOptionsPanel({
   }, [])
 
   useEffect(() => {
-    if (options.length === 0) {
+    if (rows.length === 0) {
       setActiveIndex(-1)
       return
     }
-    const currentIndex = options.findIndex((option) => option.id === currentValue)
+    const currentIndex = rows.findIndex((row) => row.id === currentValue)
     setActiveIndex(currentIndex >= 0 ? currentIndex : 0)
-  }, [options, currentValue])
+  }, [rows, currentValue])
 
   useEffect(() => {
     if (activeIndex < 0) return
@@ -129,34 +105,34 @@ export function TemplateSyncOptionsPanel({
           onCancel()
           return
         case "ArrowDown":
-          if (options.length === 0) return
+          if (rows.length === 0) return
           event.preventDefault()
-          setActiveIndex((prev) => (prev < options.length - 1 ? prev + 1 : 0))
+          setActiveIndex((prev) => (prev < rows.length - 1 ? prev + 1 : 0))
           return
         case "ArrowUp":
-          if (options.length === 0) return
+          if (rows.length === 0) return
           event.preventDefault()
-          setActiveIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1))
+          setActiveIndex((prev) => (prev > 0 ? prev - 1 : rows.length - 1))
           return
         case "Home":
-          if (options.length === 0) return
+          if (rows.length === 0) return
           event.preventDefault()
           setActiveIndex(0)
           return
         case "End":
-          if (options.length === 0) return
+          if (rows.length === 0) return
           event.preventDefault()
-          setActiveIndex(options.length - 1)
+          setActiveIndex(rows.length - 1)
           return
         case "Enter":
           event.preventDefault()
-          if (activeIndex >= 0 && activeIndex < options.length) {
-            commitSelect(options[activeIndex])
+          if (activeIndex >= 0 && activeIndex < rows.length) {
+            commitSelect(activeIndex)
           }
           return
       }
     },
-    [options, activeIndex, commitSelect, onCancel],
+    [rows, activeIndex, commitSelect, onCancel],
   )
 
   const hasSelection = currentValue !== null && currentLabel !== null
@@ -205,7 +181,7 @@ export function TemplateSyncOptionsPanel({
           <div className="px-3 py-6 text-center text-sm text-rose-400">
             {errorMessage}
           </div>
-        ) : isLoading && options.length === 0 ? (
+        ) : isLoading && rows.length === 0 ? (
           <div className="px-3 py-6 text-center text-sm text-[var(--foreground)]/55">
             {loadingMessage}
           </div>
@@ -214,18 +190,18 @@ export function TemplateSyncOptionsPanel({
             {emptyMessage}
           </div>
         ) : (
-          options.map((option, index) => {
+          rows.map((row, index) => {
             const isActive = index === activeIndex
-            const isSelected = option.id === currentValue
+            const isSelected = row.id === currentValue
             return (
               <div
-                key={option.id}
+                key={row.id}
                 id={`${listboxId}-option-${index}`}
                 role="option"
                 aria-selected={isSelected}
                 data-option-index={index}
                 onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => commitSelect(option)}
+                onClick={() => commitSelect(index)}
                 className={joinClassNames(
                   "cursor-pointer px-3 py-2 transition",
                   isActive ? "bg-sky-500/15" : undefined,
@@ -234,7 +210,7 @@ export function TemplateSyncOptionsPanel({
               >
                 <div className="flex items-center gap-2">
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
-                    {option.title}
+                    {row.title}
                   </span>
                   {isSelected ? (
                     <span aria-hidden="true" className="text-xs text-sky-500">
@@ -242,9 +218,9 @@ export function TemplateSyncOptionsPanel({
                     </span>
                   ) : null}
                 </div>
-                {option.subtitles.length > 0 ? (
+                {row.subtitles.length > 0 ? (
                   <div className="mt-0.5 truncate text-xs text-[var(--foreground)]/55">
-                    {option.subtitles.join(" · ")}
+                    {row.subtitles.join(" · ")}
                   </div>
                 ) : null}
               </div>

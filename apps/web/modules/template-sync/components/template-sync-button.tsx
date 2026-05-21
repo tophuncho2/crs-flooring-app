@@ -3,14 +3,18 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { RefreshCw } from "lucide-react"
-import type { PropertyListRow, PropertyOption, TemplateListRow } from "@builders/domain"
+import type {
+  ManagementCompanyOption,
+  PropertyListRow,
+  PropertyOption,
+  TemplateListRow,
+  TemplateOption,
+} from "@builders/domain"
 import {
   SidePanelPreview,
   SidePanelPreviewNewButton,
   SidePanelPreviewOpenButton,
 } from "@/components/side-panel-preview"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
-import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { PropertyHubViewSidePanel } from "@/modules/properties/components/side-panel/hub-view"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
 import { PropertySidePanel } from "@/modules/properties/components/side-panel"
@@ -20,8 +24,10 @@ import { usePropertySidePanel } from "@/modules/properties/controllers/property-
 import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
 import { TemplateSyncPreviewBody } from "@/modules/template-sync/components/template-sync-preview-body"
 import { TemplateSyncItemsSubHeader } from "@/modules/template-sync/components/header/template-sync-items-sub-header"
-import { TemplateSyncTemplateTrigger } from "@/modules/template-sync/components/template-sync-template-trigger"
-import { TemplateSyncOptionsPanel } from "@/modules/template-sync/components/template-sync-options-panel"
+import { TemplateSyncPickerTrigger } from "@/modules/template-sync/components/template-sync-picker-trigger"
+import { TemplateSyncManagementCompanyOptionsPanel } from "@/modules/template-sync/components/options/template-sync-management-company-options-panel"
+import { TemplateSyncPropertyOptionsPanel } from "@/modules/template-sync/components/options/template-sync-property-options-panel"
+import { TemplateSyncTemplateOptionsPanel } from "@/modules/template-sync/components/options/template-sync-template-options-panel"
 import { TemplateSyncClearButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-clear-button"
 import { TemplateSyncNewButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-new-button"
 import { TemplateSyncOpenButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-open-button"
@@ -29,25 +35,33 @@ import { TemplateSyncSyncButton } from "@/modules/template-sync/components/toolb
 import { useTemplateSyncItems } from "@/modules/template-sync/controllers/use-template-sync-items"
 
 // Cascade: Management Company (optional) → Property → Template.
-// Property has a direct managementCompanyId FK; Template has a propertyId FK.
-// Each picker fetches its own server-side options via React Query;
-// the bucket key folds in the parent filter so caches reset on parent change.
+// All three pickers are body-mode: their triggers in the sticky header toggle
+// the side-panel body between the options surface and the template preview.
+// Only one picker may be expanded at a time — switching collapses the others.
+
+type ExpandedPicker = "managementCompany" | "property" | "template" | null
 
 export function TemplateSyncButton() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [managementCompanyId, setManagementCompanyId] = useState<string | null>(null)
+  const [selectedManagementCompanyLabel, setSelectedManagementCompanyLabel] =
+    useState<string | null>(null)
   const [propertyId, setPropertyId] = useState<string | null>(null)
+  const [selectedPropertyLabel, setSelectedPropertyLabel] = useState<string | null>(null)
   const [selectedPropertyOption, setSelectedPropertyOption] = useState<PropertyOption | null>(
     null,
   )
   const [templateId, setTemplateId] = useState<string | null>(null)
   const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string | null>(null)
-  const [templatePickerExpanded, setTemplatePickerExpanded] = useState(false)
+  const [expandedPicker, setExpandedPicker] = useState<ExpandedPicker>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [headerCollapsed, setHeaderCollapsed] = useState(false)
   const itemsController = useTemplateSyncItems(templateId)
+
+  const managementCompanyTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const propertyTriggerRef = useRef<HTMLButtonElement | null>(null)
   const templateTriggerRef = useRef<HTMLButtonElement | null>(null)
 
   const hubViewPanel = usePropertyHubViewSidePanel()
@@ -58,63 +72,72 @@ export function TemplateSyncButton() {
     setHeaderCollapsed((value) => !value)
   }, [])
 
-  const handleManagementCompanyChange = useCallback((value: string | null) => {
-    setManagementCompanyId(value)
-    setPropertyId(null)
-    setSelectedPropertyOption(null)
-    setTemplateId(null)
-    setSelectedTemplateLabel(null)
-    setTemplatePickerExpanded(false)
+  const togglePicker = useCallback((picker: Exclude<ExpandedPicker, null>) => {
+    setExpandedPicker((current) => (current === picker ? null : picker))
   }, [])
 
-  const handlePropertyChange = useCallback((value: string | null) => {
-    setPropertyId(value)
-    if (value === null) setSelectedPropertyOption(null)
-    setTemplateId(null)
-    setSelectedTemplateLabel(null)
-    setTemplatePickerExpanded(false)
-  }, [])
-
-  const handlePropertyOptionSelected = useCallback((option: PropertyOption | null) => {
-    setSelectedPropertyOption(option)
-  }, [])
-
-  const resetSelections = useCallback(() => {
-    setManagementCompanyId(null)
-    setPropertyId(null)
-    setSelectedPropertyOption(null)
-    setTemplateId(null)
-    setSelectedTemplateLabel(null)
-    setTemplatePickerExpanded(false)
-    setErrorMessage(null)
-  }, [])
-
-  // Defensive: if the property cascade clears propertyId while the options
-  // panel is open, collapse — the trigger becomes disabled in that state.
-  useEffect(() => {
-    if (propertyId === null && templatePickerExpanded) {
-      setTemplatePickerExpanded(false)
-    }
-  }, [propertyId, templatePickerExpanded])
-
-  const handleToggleTemplatePicker = useCallback(() => {
-    setTemplatePickerExpanded((value) => !value)
-  }, [])
-
-  const handleTemplateOptionSelect = useCallback(
-    (id: string | null, label: string | null) => {
-      setTemplateId(id)
-      setSelectedTemplateLabel(label)
-      setTemplatePickerExpanded(false)
-      templateTriggerRef.current?.focus()
+  const handleManagementCompanySelect = useCallback(
+    (option: ManagementCompanyOption | null) => {
+      setManagementCompanyId(option?.id ?? null)
+      setSelectedManagementCompanyLabel(option?.name ?? null)
+      setPropertyId(null)
+      setSelectedPropertyLabel(null)
+      setSelectedPropertyOption(null)
+      setTemplateId(null)
+      setSelectedTemplateLabel(null)
+      setExpandedPicker(null)
+      managementCompanyTriggerRef.current?.focus()
     },
     [],
   )
 
-  const handleTemplateOptionCancel = useCallback(() => {
-    setTemplatePickerExpanded(false)
+  const handlePropertySelect = useCallback((option: PropertyOption | null) => {
+    setPropertyId(option?.id ?? null)
+    setSelectedPropertyLabel(option?.name ?? null)
+    setSelectedPropertyOption(option)
+    setTemplateId(null)
+    setSelectedTemplateLabel(null)
+    setExpandedPicker(null)
+    propertyTriggerRef.current?.focus()
+  }, [])
+
+  const handleTemplateSelect = useCallback((option: TemplateOption | null) => {
+    setTemplateId(option?.id ?? null)
+    setSelectedTemplateLabel(option ? option.unitType || "—" : null)
+    setExpandedPicker(null)
     templateTriggerRef.current?.focus()
   }, [])
+
+  const resetSelections = useCallback(() => {
+    setManagementCompanyId(null)
+    setSelectedManagementCompanyLabel(null)
+    setPropertyId(null)
+    setSelectedPropertyLabel(null)
+    setSelectedPropertyOption(null)
+    setTemplateId(null)
+    setSelectedTemplateLabel(null)
+    setExpandedPicker(null)
+    setErrorMessage(null)
+  }, [])
+
+  // Defensive: template picker is gated on propertyId; if the cascade clears
+  // it while the picker is expanded, collapse — the trigger becomes disabled.
+  useEffect(() => {
+    if (propertyId === null && expandedPicker === "template") {
+      setExpandedPicker(null)
+    }
+  }, [propertyId, expandedPicker])
+
+  const handleCancelExpanded = useCallback(() => {
+    setExpandedPicker(null)
+    if (expandedPicker === "managementCompany") {
+      managementCompanyTriggerRef.current?.focus()
+    } else if (expandedPicker === "property") {
+      propertyTriggerRef.current?.focus()
+    } else if (expandedPicker === "template") {
+      templateTriggerRef.current?.focus()
+    }
+  }, [expandedPicker])
 
   const handleClose = useCallback(() => {
     if (isSyncing) return
@@ -205,9 +228,11 @@ export function TemplateSyncButton() {
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
           Management company
         </span>
-        <ManagementCompanyPicker
-          value={managementCompanyId}
-          onChange={handleManagementCompanyChange}
+        <TemplateSyncPickerTrigger
+          ref={managementCompanyTriggerRef}
+          expanded={expandedPicker === "managementCompany"}
+          onToggle={() => togglePicker("managementCompany")}
+          selectedLabel={selectedManagementCompanyLabel}
           placeholder="Any management company (optional)"
           ariaLabel="Management company"
         />
@@ -217,11 +242,12 @@ export function TemplateSyncButton() {
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
           Property
         </span>
-        <PropertyPicker
-          value={propertyId}
-          onChange={handlePropertyChange}
-          onOptionSelected={handlePropertyOptionSelected}
-          managementCompanyId={managementCompanyId}
+        <TemplateSyncPickerTrigger
+          ref={propertyTriggerRef}
+          expanded={expandedPicker === "property"}
+          onToggle={() => togglePicker("property")}
+          selectedLabel={selectedPropertyLabel}
+          placeholder="Select a property"
           ariaLabel="Property"
         />
       </label>
@@ -230,17 +256,19 @@ export function TemplateSyncButton() {
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
           Template
         </span>
-        <TemplateSyncTemplateTrigger
+        <TemplateSyncPickerTrigger
           ref={templateTriggerRef}
-          propertyId={propertyId}
-          expanded={templatePickerExpanded}
-          onToggle={handleToggleTemplatePicker}
+          expanded={expandedPicker === "template"}
+          onToggle={() => togglePicker("template")}
           selectedLabel={selectedTemplateLabel}
+          disabled={propertyId === null}
+          placeholder="Select a template"
+          disabledPlaceholder="Select a property first"
           ariaLabel="Template"
         />
       </label>
 
-      {!templatePickerExpanded && itemsController.showSubHeader ? (
+      {expandedPicker === null && itemsController.showSubHeader ? (
         <TemplateSyncItemsSubHeader
           controller={itemsController}
           headerCollapsed={headerCollapsed}
@@ -317,13 +345,28 @@ export function TemplateSyncButton() {
         stickyHeader={stickyHeader}
         footer={footer}
       >
-        {templatePickerExpanded && propertyId ? (
-          <TemplateSyncOptionsPanel
+        {expandedPicker === "managementCompany" ? (
+          <TemplateSyncManagementCompanyOptionsPanel
+            currentValue={managementCompanyId}
+            currentLabel={selectedManagementCompanyLabel}
+            onSelect={handleManagementCompanySelect}
+            onCancel={handleCancelExpanded}
+          />
+        ) : expandedPicker === "property" ? (
+          <TemplateSyncPropertyOptionsPanel
+            managementCompanyId={managementCompanyId}
+            currentValue={propertyId}
+            currentLabel={selectedPropertyLabel}
+            onSelect={handlePropertySelect}
+            onCancel={handleCancelExpanded}
+          />
+        ) : expandedPicker === "template" && propertyId ? (
+          <TemplateSyncTemplateOptionsPanel
             propertyId={propertyId}
             currentValue={templateId}
             currentLabel={selectedTemplateLabel}
-            onSelect={handleTemplateOptionSelect}
-            onCancel={handleTemplateOptionCancel}
+            onSelect={handleTemplateSelect}
+            onCancel={handleCancelExpanded}
           />
         ) : templateId ? (
           <TemplateSyncPreviewBody
