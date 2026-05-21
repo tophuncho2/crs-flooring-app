@@ -335,15 +335,16 @@ function buildListViewWhere(
 
 /**
  * Server-side paginated read for the inventory list view. Default sort is
- * `inventoryNumberInt ASC` (oldest INV# first — the stored generated int
- * column derived from `inventoryNumber`'s numeric tail, sequence-assigned
- * and monotonic with creation). Sorting on the int avoids the lex-vs-numeric
- * trap of the unpadded string format (`INV-10` < `INV-2` lexically). `id ASC`
- * is the stable tiebreak. Users are responsible for archiving spent rows so
- * the list stays scoped to live inventory. Filters AND together; search
- * ILIKEs across the identity columns (`inventoryNumber`, `rollNumber`,
- * `dyeLot`, `note`) only — location lives on its own filter chip. Archived
- * rows hidden by default.
+ * `productName ASC, inventoryNumberInt ASC` — alphabetical by product (the
+ * denormalized snapshot stamped at worker create time), then oldest INV#
+ * first within each product cluster. The int sort key is the stored
+ * generated column derived from `inventoryNumber`'s numeric tail, which
+ * avoids the lex-vs-numeric trap of the unpadded string format (`INV-10` <
+ * `INV-2` lexically). `id ASC` is the stable tiebreak. Users are responsible
+ * for archiving spent rows so the list stays scoped to live inventory.
+ * Filters AND together; search ILIKEs across the identity columns
+ * (`inventoryNumber`, `rollNumber`, `dyeLot`, `note`) only — location lives
+ * on its own filter chip. Archived rows hidden by default.
  *
  * Lives alongside `listInventory(filter?)` which is still used by the imports
  * record view's "live rows" section to fetch all rows for a given import.
@@ -354,6 +355,7 @@ export async function listInventoryForListView(
 ): Promise<InventoryListViewResult> {
   const where = buildListViewWhere(options)
   const orderBy: Prisma.FlooringInventoryOrderByWithRelationInput[] = [
+    { productName: "asc" },
     { inventoryNumberInt: "asc" },
     { id: "asc" },
   ]
@@ -411,9 +413,10 @@ type InventoryOptionRawRow = {
  * across `inventoryNumber`, `rollNumber`, `dyeLot`, `note`. Balance + coverage
  * are stamped via the same pure helpers used by the row normalizer (single
  * source of truth for the math) — coverage is null for non-coverage categories.
- * Results are ordered `inventoryNumberInt ASC` (oldest INV# first via the
- * stored generated int column), matching the inventory list view's primary
- * sort and avoiding the lex-vs-numeric trap of the unpadded string format.
+ * Results are ordered `productName ASC, inventoryNumberInt ASC` (alphabetical
+ * by product, then oldest INV# first within each product via the stored
+ * generated int column), matching the inventory list view's primary sort
+ * and avoiding the lex-vs-numeric trap of the unpadded string format.
  *
  * Built on `$queryRaw` so the column-to-column compare for the
  * positive-balance constraint can live in SQL — Prisma's typed `where` cannot
@@ -458,7 +461,7 @@ export async function searchInventoryOptions(
       "coveragePerUnit"
     FROM "flooring_inventory"
     WHERE ${whereClause}
-    ORDER BY "inventoryNumberInt" ASC, "id" ASC
+    ORDER BY "productName" ASC, "inventoryNumberInt" ASC, "id" ASC
     LIMIT ${args.take}
   `)
 
