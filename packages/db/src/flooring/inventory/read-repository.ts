@@ -7,7 +7,6 @@ import {
 import type {
   InventoryDetail,
   InventoryFormOptions,
-  InventoryImportNumberOption,
   InventoryLocationOption,
   InventoryOption,
   InventoryPurchaseOrderOption,
@@ -477,7 +476,7 @@ export async function searchInventoryLocationsForWarehouse(
   return rows.map((row) => ({ value: row.location }))
 }
 
-export type InventoryImportNumberOptionsSearchArgs = {
+export type InventoryPurchaseOrderOptionsSearchArgs = {
   warehouseId: string
   /**
    * Optional archive scope — mirrors `InventoryListFilter.isArchived`.
@@ -494,60 +493,12 @@ export type InventoryImportNumberOptionsSearchArgs = {
 }
 
 /**
- * Distinct, warehouse-scoped `importNumber` snapshot values for the inventory
- * list's Import # filter chip. Sourced from `flooring_inventory` (not from
- * `FlooringImportEntry`) so the chip only ever surfaces values that have at
- * least one inventory row in scope. Excludes NULL/whitespace-only snapshots.
- * Sorted DESC so the newest imports surface first.
- */
-export async function searchInventoryImportNumberOptions(
-  args: InventoryImportNumberOptionsSearchArgs,
-  client: InventoryDbClient = db,
-): Promise<InventoryImportNumberOption[]> {
-  const conditions: Prisma.Sql[] = [
-    Prisma.sql`"warehouseId" = ${args.warehouseId}`,
-    Prisma.sql`"importNumber" IS NOT NULL`,
-    Prisma.sql`length(trim("importNumber")) > 0`,
-  ]
-  if (args.isArchived !== undefined) {
-    conditions.push(Prisma.sql`"isArchived" = ${args.isArchived}`)
-  }
-  const trimmed = args.search?.trim() ?? ""
-  if (trimmed.length > 0) {
-    conditions.push(Prisma.sql`"importNumber" ILIKE ${`%${trimmed}%`}`)
-  }
-  const whereClause = Prisma.join(conditions, " AND ")
-
-  // Cast to int for numeric DESC ordering so "10" sorts after "9" rather than
-  // before. The snapshot column is text, but every value is a positive integer
-  // mirrored from `FlooringImportEntry.importNumber`. Postgres requires
-  // ORDER BY expressions to appear in the SELECT list when SELECT DISTINCT is
-  // used — selecting the cast alongside the value satisfies that rule, and the
-  // pair stays 1:1 with distinct values (sort_key is a function of importNumber).
-  const rows = await client.$queryRaw<{ importNumber: string; sort_key: number }[]>(Prisma.sql`
-    SELECT DISTINCT "importNumber", ("importNumber")::int AS sort_key
-    FROM "flooring_inventory"
-    WHERE ${whereClause}
-    ORDER BY sort_key DESC
-    LIMIT ${args.take}
-  `)
-
-  return rows.map((row) => ({ importNumber: row.importNumber }))
-}
-
-export type InventoryPurchaseOrderOptionsSearchArgs = {
-  warehouseId: string
-  isArchived?: boolean
-  search?: string
-  take: number
-}
-
-/**
  * Distinct, warehouse-scoped `purchaseOrderNumber` snapshot values for the
- * inventory list's PO # filter chip. Same shape as
- * `searchInventoryImportNumberOptions` but on the PO snapshot column.
- * Excludes NULL/whitespace-only snapshots so the chip never offers an empty
- * selection. Sorted ASC (POs are arbitrary alphanumeric strings).
+ * inventory list's PO # filter chip. Sourced from `flooring_inventory` (not
+ * from `FlooringImportEntry`) so the chip only ever surfaces values that have
+ * at least one inventory row in scope. Excludes NULL/whitespace-only snapshots
+ * so the chip never offers an empty selection. Sorted ASC (POs are arbitrary
+ * alphanumeric strings).
  */
 export async function searchInventoryPurchaseOrderOptions(
   args: InventoryPurchaseOrderOptionsSearchArgs,

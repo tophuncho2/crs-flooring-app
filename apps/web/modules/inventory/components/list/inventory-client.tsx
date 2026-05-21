@@ -14,7 +14,6 @@ import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
   type CategoryOption,
-  type InventoryImportNumberOption,
   type InventoryPurchaseOrderOption,
   type InventoryRow,
   type ProductOption,
@@ -30,7 +29,6 @@ import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
-import { ImportNumberFilterChip } from "./toolbar-controls/import-number-filter-chip"
 import { InventoryListSearch } from "./toolbar-controls/inventory-list-search"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
 import { PurchaseOrderFilterChip } from "./toolbar-controls/purchase-order-filter-chip"
@@ -102,7 +100,6 @@ export default function InventoryClient({
   initialCategoryOptions,
   initialSelectedCategory = null,
   initialSelectedProduct = null,
-  initialImportNumberOptions = [],
   initialPurchaseOrderOptions = [],
 }: {
   initialTablePreferences?: TablePreferencePayload | null
@@ -114,8 +111,6 @@ export default function InventoryClient({
   initialCategoryOptions: CategoryOption[]
   initialSelectedCategory?: CategoryOption | null
   initialSelectedProduct?: ProductOption | null
-  /** SSR-loaded seed for the Import # picker (distinct values on inventory). */
-  initialImportNumberOptions?: InventoryImportNumberOption[]
   /** SSR-loaded seed for the PO # picker (distinct values on inventory). */
   initialPurchaseOrderOptions?: InventoryPurchaseOrderOption[]
 }) {
@@ -166,7 +161,6 @@ export default function InventoryClient({
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
   const selectedCategoryId = filters.categoryId?.[0] ?? null
   const selectedProductId = filters.productId?.[0] ?? null
-  const selectedImportNumber = filters.importNumber?.[0] ?? null
   const selectedPurchaseOrderNumber = filters.purchaseOrderNumber?.[0] ?? null
   const locationValue = filters.location?.[0] ?? ""
   const archivedRaw = filters.isArchived?.[0]
@@ -213,12 +207,11 @@ export default function InventoryClient({
   const handleWarehouseChange = useCallback(
     (id: string | null) => {
       onFilterChange("warehouseId", id ? [id] : [])
-      // Locations + import #/PO # are all warehouse-scoped (pickers are
-      // gated on a picked warehouse). Cascade-clear whenever the warehouse
-      // changes (or is cleared) so no chip carries a value that's invalid
-      // for the new scope. Mirrors the Category → Product cascade below.
+      // Location + PO # are warehouse-scoped (pickers are gated on a picked
+      // warehouse). Cascade-clear whenever the warehouse changes (or is
+      // cleared) so no chip carries a value that's invalid for the new scope.
+      // Mirrors the Category → Product cascade below.
       onFilterChange("location", [])
-      onFilterChange("importNumber", [])
       onFilterChange("purchaseOrderNumber", [])
     },
     [onFilterChange],
@@ -257,13 +250,6 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
-  const handleImportNumberChange = useCallback(
-    (next: string | null) => {
-      onFilterChange("importNumber", next ? [next] : [])
-    },
-    [onFilterChange],
-  )
-
   const handlePurchaseOrderNumberChange = useCallback(
     (next: string | null) => {
       onFilterChange("purchaseOrderNumber", next ? [next] : [])
@@ -277,7 +263,6 @@ export default function InventoryClient({
       selectedWarehouseId ||
       selectedCategoryId ||
       selectedProductId ||
-      selectedImportNumber ||
       selectedPurchaseOrderNumber ||
       locationValue
     ) {
@@ -290,7 +275,6 @@ export default function InventoryClient({
     selectedWarehouseId,
     selectedCategoryId,
     selectedProductId,
-    selectedImportNumber,
     selectedPurchaseOrderNumber,
     locationValue,
     isArchivedValue,
@@ -342,28 +326,19 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* Warehouse-scoped chips: Warehouse + Location + Import # + PO #
-                all live inside one encased card mirroring the search-bar
-                encasing minus the tab/label. The warehouse pick gates the
-                other three (each picker renders disabled until a warehouse is
-                picked); a warehouse change cascades a clear into Location,
-                Import #, and PO # via handleWarehouseChange. */}
+            {/* Warehouse-scoped chips: Warehouse + Location + PO # all live
+                inside one encased card mirroring the search-bar encasing
+                minus the tab/label. The warehouse pick gates the other two
+                (each picker renders disabled until a warehouse is picked); a
+                warehouse change cascades a clear into Location and PO # via
+                handleWarehouseChange. */}
             <ListToolbarCell colSpan={2}>
-              <div className="grid grid-cols-2 gap-2 rounded-md border border-[var(--panel-border)] p-2">
+              <div className="grid grid-cols-3 gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <WarehouseFilterChip
                   value={selectedWarehouseId}
                   selectedLabel={warehouseLabel}
                   onChange={handleWarehouseChange}
                   initialOptions={initialWarehouseOptions}
-                />
-                <ImportNumberFilterChip
-                  value={selectedImportNumber}
-                  onChange={handleImportNumberChange}
-                  warehouseId={selectedWarehouseId}
-                  {...(isArchivedValue !== undefined
-                    ? { isArchived: isArchivedValue }
-                    : {})}
-                  initialOptions={initialImportNumberOptions}
                 />
                 <LocationPicker
                   value={locationValue || null}
