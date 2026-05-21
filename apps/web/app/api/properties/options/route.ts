@@ -19,8 +19,8 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const input = validatePropertyOptionsQuery(url.searchParams)
-    const options = await searchPropertyOptionsUseCase(input)
-    return routeJson(access, { options })
+    const result = await searchPropertyOptionsUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

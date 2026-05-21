@@ -73,17 +73,18 @@ export function PropertyPicker({
     [managementCompanyId],
   )
 
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchPropertyOptionsRequest(search, signal, {
         managementCompanyId: managementCompanyId ?? undefined,
+        skip,
       }),
     [managementCompanyId],
   )
 
   const controller = useAsyncRichDropdownController<PropertyOption>({
     bucketKey,
-    searchFn,
+    pagedSearchFn,
     initialOptions,
   })
 
@@ -117,7 +118,7 @@ export function PropertyPicker({
       selectedOption={selectedOption}
       query={controller.query}
       onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
+      isLoading={controller.isLoading}
       errorMessage={controller.errorMessage}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}
@@ -128,6 +129,9 @@ export function PropertyPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      hasMore={controller.hasMore}
+      isFetchingMore={controller.isFetchingMore}
+      onLoadMore={controller.loadMore}
     />
   )
 }

@@ -18,6 +18,7 @@ const SEARCH_INPUT_CLASS_NAME =
 const VIEWPORT_MARGIN_PX = 8
 const POPOVER_GAP_PX = 6
 const POPOVER_MAX_HEIGHT_PX = 320
+const LOAD_MORE_SCROLL_THRESHOLD_PX = 80
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
@@ -57,6 +58,7 @@ export type AsyncRichDropdownProps = {
   searchPlaceholder?: string
   emptyMessage?: string
   loadingMessage?: string
+  loadingMoreMessage?: string
   clearLabel?: string
   disabled?: boolean
   invalid?: boolean
@@ -69,6 +71,15 @@ export type AsyncRichDropdownProps = {
    * `onOpenChange={(open) => { if (open) controller.refetch() }}`.
    */
   onOpenChange?: (open: boolean) => void
+  /**
+   * Pagination wiring. When `hasMore` is true the listbox calls
+   * `onLoadMore` as the user nears the bottom; `isFetchingMore` renders a
+   * footer affordance during the fetch. Pickers backed by a paginated
+   * options endpoint thread these straight from the controller.
+   */
+  hasMore?: boolean
+  isFetchingMore?: boolean
+  onLoadMore?: () => void
 }
 
 /**
@@ -96,12 +107,16 @@ export function AsyncRichDropdown({
   searchPlaceholder = "Search…",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
+  loadingMoreMessage = "Loading more…",
   clearLabel = "Clear selection",
   disabled = false,
   invalid = false,
   ariaLabel,
   className,
   onOpenChange,
+  hasMore = false,
+  isFetchingMore = false,
+  onLoadMore,
 }: AsyncRichDropdownProps) {
   const listboxId = useId()
   const [open, setOpen] = useState(false)
@@ -263,6 +278,19 @@ export function AsyncRichDropdown({
   const triggerLabel = visibleSelected ? visibleSelected.title : placeholder
   const showEmptyState = !isLoading && options.length === 0 && !errorMessage
 
+  const handleListboxScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      if (!hasMore || !onLoadMore || isFetchingMore) return
+      const target = event.currentTarget
+      const distanceFromBottom =
+        target.scrollHeight - target.scrollTop - target.clientHeight
+      if (distanceFromBottom <= LOAD_MORE_SCROLL_THRESHOLD_PX) {
+        onLoadMore()
+      }
+    },
+    [hasMore, isFetchingMore, onLoadMore],
+  )
+
   return (
     <div ref={containerRef} className={joinClassNames("relative", className)}>
       <button
@@ -342,6 +370,7 @@ export function AsyncRichDropdown({
                   activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
                 }
                 aria-busy={isLoading || undefined}
+                onScroll={handleListboxScroll}
                 className="min-h-0 flex-1 overflow-y-auto py-1"
               >
                 {errorMessage ? (
@@ -357,44 +386,51 @@ export function AsyncRichDropdown({
                     {emptyMessage}
                   </div>
                 ) : (
-                  options.map((option, index) => {
-                    const isActive = index === activeIndex
-                    const isSelected = option.id === value
-                    return (
-                      <div
-                        key={option.id}
-                        id={`${listboxId}-option-${index}`}
-                        role="option"
-                        aria-selected={isSelected}
-                        aria-disabled={option.disabled || undefined}
-                        data-option-index={index}
-                        onMouseEnter={() => setActiveIndex(index)}
-                        onClick={() => !option.disabled && commitSelection(option.id)}
-                        className={joinClassNames(
-                          "cursor-pointer px-3 py-2 transition",
-                          isActive ? "bg-sky-500/15" : undefined,
-                          isSelected ? "bg-sky-500/10" : undefined,
-                          option.disabled ? "cursor-not-allowed opacity-50" : undefined,
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
-                            {option.title}
-                          </span>
-                          {isSelected ? (
-                            <span aria-hidden="true" className="text-xs text-sky-600">
-                              ✓
+                  <>
+                    {options.map((option, index) => {
+                      const isActive = index === activeIndex
+                      const isSelected = option.id === value
+                      return (
+                        <div
+                          key={option.id}
+                          id={`${listboxId}-option-${index}`}
+                          role="option"
+                          aria-selected={isSelected}
+                          aria-disabled={option.disabled || undefined}
+                          data-option-index={index}
+                          onMouseEnter={() => setActiveIndex(index)}
+                          onClick={() => !option.disabled && commitSelection(option.id)}
+                          className={joinClassNames(
+                            "cursor-pointer px-3 py-2 transition",
+                            isActive ? "bg-sky-500/15" : undefined,
+                            isSelected ? "bg-sky-500/10" : undefined,
+                            option.disabled ? "cursor-not-allowed opacity-50" : undefined,
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
+                              {option.title}
                             </span>
+                            {isSelected ? (
+                              <span aria-hidden="true" className="text-xs text-sky-600">
+                                ✓
+                              </span>
+                            ) : null}
+                          </div>
+                          {option.subtitles && option.subtitles.length > 0 ? (
+                            <div className="mt-0.5 truncate text-xs text-[var(--foreground)]/55">
+                              {option.subtitles.join(" · ")}
+                            </div>
                           ) : null}
                         </div>
-                        {option.subtitles && option.subtitles.length > 0 ? (
-                          <div className="mt-0.5 truncate text-xs text-[var(--foreground)]/55">
-                            {option.subtitles.join(" · ")}
-                          </div>
-                        ) : null}
+                      )
+                    })}
+                    {isFetchingMore ? (
+                      <div className="px-3 py-3 text-center text-xs text-[var(--foreground)]/55">
+                        {loadingMoreMessage}
                       </div>
-                    )
-                  })
+                    ) : null}
+                  </>
                 )}
               </div>
             </div>,

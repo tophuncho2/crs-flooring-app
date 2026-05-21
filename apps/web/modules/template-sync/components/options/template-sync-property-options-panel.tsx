@@ -12,8 +12,6 @@ import {
   type TemplateSyncOptionRow,
 } from "@/modules/template-sync/components/template-sync-options-panel"
 
-const BODY_MODE_TAKE = 50
-
 function toOptionRow(option: PropertyOption): TemplateSyncOptionRow {
   const subtitles = option.address ? [option.address] : []
   return { id: option.id, title: option.name, subtitles }
@@ -41,18 +39,18 @@ export function TemplateSyncPropertyOptionsPanel({
     [managementCompanyId],
   )
 
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchPropertyOptionsRequest(search, signal, {
         managementCompanyId: managementCompanyId ?? undefined,
-        take: BODY_MODE_TAKE,
+        skip,
       }),
     [managementCompanyId],
   )
 
   const controller = useAsyncRichDropdownController<PropertyOption>({
     bucketKey,
-    searchFn,
+    pagedSearchFn,
   })
 
   return (

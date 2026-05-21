@@ -154,13 +154,19 @@ export async function listPropertiesForListView(
 export type PropertyOptionsSearchArgs = {
   search?: string
   managementCompanyId?: string
+  skip?: number
   take: number
+}
+
+export type PropertyOptionsSearchResult = {
+  items: PropertyOption[]
+  hasMore: boolean
 }
 
 export async function searchPropertyOptions(
   args: PropertyOptionsSearchArgs,
   client: PropertiesDbClient = db,
-): Promise<PropertyOption[]> {
+): Promise<PropertyOptionsSearchResult> {
   const clauses: Prisma.PropertyWhereInput[] = []
   if (args.search) {
     clauses.push({ name: { contains: args.search, mode: "insensitive" } })
@@ -171,14 +177,18 @@ export async function searchPropertyOptions(
   const where: Prisma.PropertyWhereInput | undefined =
     clauses.length === 0 ? undefined : clauses.length === 1 ? clauses[0] : { AND: clauses }
 
-  const properties = await client.property.findMany({
+  // Fetch take+1 to detect a next page without a separate count query.
+  const rows = await client.property.findMany({
     where,
     orderBy: { name: "asc" },
-    take: args.take,
+    skip: args.skip ?? 0,
+    take: args.take + 1,
     select: propertyOptionSelect,
   })
 
-  return properties.map(normalizePropertyOption)
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return { items: page.map(normalizePropertyOption), hasMore }
 }
 
 export type PropertyStatesSearchArgs = {

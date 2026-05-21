@@ -154,12 +154,14 @@ export function validateListPropertiesQuery(
 const propertyOptionsQuerySchema = z.object({
   search: z.string().optional(),
   managementCompanyId: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedPropertyOptionsQuery = {
   search?: string
   managementCompanyId?: string
+  skip: number
   take: number
 }
 
@@ -186,6 +188,7 @@ export function validatePropertyOptionsQuery(
   return {
     search: trimmedSearch ? trimmedSearch : undefined,
     managementCompanyId: trimmedManagementCompanyId ? trimmedManagementCompanyId : undefined,
+    skip: parsed.skip,
     take: parsed.take,
   }
 }
