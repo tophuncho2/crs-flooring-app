@@ -287,6 +287,13 @@ model FlooringInventory {
   @@index([warehouseId])
   @@index([isArchived])
   @@index([productId, fifoReceivedAt, rollNumber, id])
+  @@index([warehouseId, importNumber])
+  @@index([warehouseId, purchaseOrderNumber])
+  @@index([inventoryNumber(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([rollNumber(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([dyeLot(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([note(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([location(ops: raw("gin_trgm_ops"))], type: Gin)
   @@map("flooring_inventory")
 }
 
@@ -364,6 +371,7 @@ model FlooringImportEntry {
   @@index([createdAt])
   @@index([warehouseId])
   @@index([manufacturerId])
+  @@index([purchaseOrderNumber(ops: raw("gin_trgm_ops"))], type: Gin)
   @@map("flooring_import_entry")
 }
 
