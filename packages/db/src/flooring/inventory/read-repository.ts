@@ -520,12 +520,15 @@ export async function searchInventoryImportNumberOptions(
 
   // Cast to int for numeric DESC ordering so "10" sorts after "9" rather than
   // before. The snapshot column is text, but every value is a positive integer
-  // mirrored from `FlooringImportEntry.importNumber`.
-  const rows = await client.$queryRaw<{ importNumber: string }[]>(Prisma.sql`
-    SELECT DISTINCT "importNumber"
+  // mirrored from `FlooringImportEntry.importNumber`. Postgres requires
+  // ORDER BY expressions to appear in the SELECT list when SELECT DISTINCT is
+  // used — selecting the cast alongside the value satisfies that rule, and the
+  // pair stays 1:1 with distinct values (sort_key is a function of importNumber).
+  const rows = await client.$queryRaw<{ importNumber: string; sort_key: number }[]>(Prisma.sql`
+    SELECT DISTINCT "importNumber", ("importNumber")::int AS sort_key
     FROM "flooring_inventory"
     WHERE ${whereClause}
-    ORDER BY ("importNumber")::int DESC
+    ORDER BY sort_key DESC
     LIMIT ${args.take}
   `)
 
