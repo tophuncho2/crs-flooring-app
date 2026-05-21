@@ -152,7 +152,11 @@ function buildListViewOrderBy(
     }
   }
 
-  orderBy.push({ createdAt: "desc" })
+  // `importNumber` is the autoincrement int — monotonic per insert, so DESC
+  // gives newest-first deterministically. `createdAt` would tie on rows
+  // created in the same transaction (e.g. batched seed/materialize paths),
+  // letting the random uuid `id` tiebreak scramble the visible order.
+  orderBy.push({ importNumber: "desc" })
   orderBy.push({ id: "desc" })
   return orderBy
 }
@@ -240,8 +244,10 @@ export type ImportOptionsSearchArgs = {
  * on the inventory list view). Scoped to a single warehouse. Search ORs across
  * the two identity columns: `purchaseOrderNumber` is a `String` (ILIKE
  * substring) and `importNumber` is an `Int` (exact match when the query parses
- * as a safe positive integer). Ordered `createdAt DESC` so the newest imports
- * surface first when the user opens the picker without a query.
+ * as a safe positive integer). Ordered `importNumber DESC` so the newest
+ * imports surface first when the user opens the picker without a query —
+ * deterministic because the autoincrement int is monotonic per insert (unlike
+ * `createdAt`, which ties on rows created in the same transaction).
  */
 export async function searchImportOptions(
   args: ImportOptionsSearchArgs,
@@ -270,7 +276,7 @@ export async function searchImportOptions(
 
   const rows = await client.flooringImportEntry.findMany({
     where,
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    orderBy: [{ importNumber: "desc" }, { id: "desc" }],
     take: args.take,
     select: {
       id: true,
