@@ -1,25 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { CellAt } from "@/components/layout-grid"
-import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { TextCell, TextareaCell } from "@/components/cells"
-import {
-  PropertyJoinedReadOnlyCells,
-  type PropertyJoinedFields,
-} from "@/modules/shared/property-fields"
-import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
-import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
-import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
-import {
-  TEMPLATE_DESCRIPTION_MAX,
-  TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
-  TEMPLATE_INTERNAL_NOTES_MAX,
-  TEMPLATE_UNIT_TYPE_MAX,
-  type PropertyOption,
-  type TemplateForm,
-} from "@builders/domain"
+import type { TemplateForm } from "@builders/domain"
+import { TemplateJobGroup } from "./groups/template-job-group"
+import { TemplateNotesGroup } from "./groups/template-notes-group"
+import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group"
+import { usePropertyJoinedOverride } from "./use-property-joined-override"
 
 /**
  * Slim joined-name + joined-property snapshot the section needs from
@@ -43,19 +28,13 @@ export type TemplatePrimaryDetail = {
   warehouseName: string
 }
 
-function detailToPropertyJoined(
-  detail: TemplatePrimaryDetail | null,
-): PropertyJoinedFields | null {
-  if (!detail) return null
-  return {
-    streetAddress: detail.propertyStreetAddress,
-    city: detail.propertyCity,
-    state: detail.propertyState,
-    postalCode: detail.propertyPostalCode,
-    instructions: detail.propertyInstructions,
-  }
-}
-
+/**
+ * Composer for the templates primary section. Renders three visual
+ * groups in order — Job, Property & Unit, Notes — each with a
+ * tab-style header matching the WO record view. Pure UI orchestration;
+ * the `draft` / `onFieldChange` interface is unchanged from the prior
+ * monolithic `FieldSection` composition.
+ */
 export function TemplatePrimaryFieldsSection({
   draft,
   detail,
@@ -68,157 +47,29 @@ export function TemplatePrimaryFieldsSection({
   onFieldChange: (field: keyof TemplateForm, value: string) => void
 }) {
   const editable = !disabled
-
-  // Live preview override for the joined readonly cells (mirrors WO).
-  // Initializes from the saved detail; updates when PropertyPicker
-  // emits a new option so the address/instructions cells track the
-  // dropdown selection rather than waiting for save. Cleared whenever
-  // the saved propertyId changes (after save / record swap).
-  const [pickedPropertyJoined, setPickedPropertyJoined] = useState<PropertyJoinedFields | null>(
-    null,
-  )
-  useEffect(() => {
-    setPickedPropertyJoined(null)
-  }, [detail?.propertyId])
-
-  const propertyJoined = pickedPropertyJoined ?? detailToPropertyJoined(detail)
-
-  const handlePropertyOption = useCallback((option: PropertyOption | null) => {
-    if (option === null) {
-      setPickedPropertyJoined(null)
-      return
-    }
-    setPickedPropertyJoined({
-      streetAddress: option.streetAddress,
-      city: option.city,
-      state: option.state,
-      postalCode: option.postalCode,
-      instructions: option.instructions,
-    })
-  }, [])
-
-  const managementCompanyValue = draft.managementCompanyId || null
-  const propertyValue = draft.propertyId || null
-
-  const managementCompanyLabel = detail?.managementCompanyName ?? null
-  const propertyLabel = detail?.propertyName ?? null
+  const { propertyJoined, handlePropertyOption } = usePropertyJoinedOverride(detail)
 
   return (
-    <FieldSection>
-      {/* Row 1: Management Company · Property · Job Type · Unit Type */}
-      <CellAt col={1} row={1} colSpan={2}>
-        <FormField label="Management Company">
-          {editable ? (
-            <ManagementCompanyPicker
-              value={managementCompanyValue}
-              onChange={(id) => onFieldChange("managementCompanyId", id ?? "")}
-              selectedLabel={managementCompanyLabel}
-              placeholder="No management company"
-              ariaLabel="Management company"
-            />
-          ) : (
-            <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={3} row={1} colSpan={2}>
-        <FormField label="Property" required>
-          {editable ? (
-            <PropertyPicker
-              value={propertyValue}
-              onChange={(id) => onFieldChange("propertyId", id ?? "")}
-              onOptionSelected={handlePropertyOption}
-              managementCompanyId={managementCompanyValue}
-              selectedLabel={propertyLabel}
-              placeholder="Select property"
-              ariaLabel="Property"
-            />
-          ) : (
-            <StaticFieldValue>{propertyLabel ?? "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={1} colSpan={2}>
-        <FormField label="Job Type">
-          {editable ? (
-            <JobTypePicker
-              value={draft.jobTypeId || null}
-              onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
-              selectedLabel={detail?.jobTypeName ?? null}
-              placeholder="No job type"
-              ariaLabel="Job type"
-            />
-          ) : (
-            <StaticFieldValue>{detail?.jobTypeName ?? "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={7} row={1} colSpan={2}>
-        <FormField label="Unit Type" required>
-          <TextCell
-            editable={editable}
-            value={draft.unitType}
-            onChange={(value) => onFieldChange("unitType", value)}
-            maxLength={TEMPLATE_UNIT_TYPE_MAX}
-          />
-        </FormField>
-      </CellAt>
-
-      {/* Row 2: Warehouse · Description */}
-      <CellAt col={1} row={2} colSpan={2}>
-        <FormField label="Warehouse">
-          {editable ? (
-            <WarehousePicker
-              value={draft.warehouseId || null}
-              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
-              selectedLabel={detail?.warehouseName || null}
-              placeholder="No warehouse"
-              ariaLabel="Warehouse"
-            />
-          ) : (
-            <StaticFieldValue>{detail?.warehouseName || "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={3} row={2} colSpan={6}>
-        <FormField label="Description">
-          <TextCell
-            editable={editable}
-            value={draft.description}
-            onChange={(value) => onFieldChange("description", value)}
-            maxLength={TEMPLATE_DESCRIPTION_MAX}
-          />
-        </FormField>
-      </CellAt>
-
-      {/* Rows 3-4: Property address + instructions (read-only, live from selection) */}
-      <PropertyJoinedReadOnlyCells property={propertyJoined} startRow={3} />
-
-      {/* Installer instructions copy to the synced work order (and onto the
-          PDF via that path); internal notes stay on the template only. */}
-      <CellAt col={1} row={5} colSpan={8}>
-        <FormField label="Installer Instructions (copied to synced work order)">
-          <TextareaCell
-            editable={editable}
-            value={draft.installerInstructions}
-            onChange={(value) => onFieldChange("installerInstructions", value)}
-            maxLength={TEMPLATE_INSTALLER_INSTRUCTIONS_MAX}
-            rows={3}
-          />
-        </FormField>
-      </CellAt>
-
-      <CellAt col={1} row={6} colSpan={8}>
-        <FormField label="Internal Notes (template-only, not synced)">
-          <TextareaCell
-            editable={editable}
-            value={draft.internalNotes}
-            onChange={(value) => onFieldChange("internalNotes", value)}
-            maxLength={TEMPLATE_INTERNAL_NOTES_MAX}
-            rows={3}
-          />
-        </FormField>
-      </CellAt>
-    </FieldSection>
+    <div className="flex flex-col gap-4">
+      <TemplateJobGroup
+        editable={editable}
+        draft={draft}
+        detail={detail}
+        onFieldChange={onFieldChange}
+      />
+      <TemplatePropertyUnitGroup
+        editable={editable}
+        draft={draft}
+        detail={detail}
+        propertyJoined={draft.propertyId ? propertyJoined : null}
+        onFieldChange={onFieldChange}
+        onPropertyOption={handlePropertyOption}
+      />
+      <TemplateNotesGroup
+        editable={editable}
+        draft={draft}
+        onFieldChange={onFieldChange}
+      />
+    </div>
   )
 }
