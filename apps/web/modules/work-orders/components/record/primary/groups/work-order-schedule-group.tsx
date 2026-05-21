@@ -1,6 +1,6 @@
 "use client"
 
-import { DateCell, TextareaCell } from "@/components/cells"
+import { DateCell, TextCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
@@ -79,12 +79,11 @@ export function WorkOrderScheduleGroup({
             currentLength={draft.description.length}
             maxLength={WO_DESCRIPTION_MAX}
           >
-            <TextareaCell
+            <TextCell
               editable={editable}
               value={draft.description}
               onChange={(value) => onFieldChange("description", value)}
               maxLength={WO_DESCRIPTION_MAX}
-              rows={2}
             />
           </WorkOrderField>
         </div>
