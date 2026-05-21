@@ -61,7 +61,7 @@ export function parseWorkOrdersListInputFromSearchParams(
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
   return {
     search: search || undefined,
-    sort: { field: "workOrderNumber", direction: "desc" },
+    sort: { field: "createdAt", direction: "desc" },
     filters: readFiltersFromSearchParams(searchParams),
     page,
     pageSize: WORK_ORDERS_LIST_PAGE_SIZE,

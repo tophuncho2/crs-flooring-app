@@ -20,7 +20,7 @@ export function WorkOrdersListSearch({
     <SearchControl
       query={query}
       onQueryChange={onQueryChange}
-      placeholder="Search WO #, description, property, job type"
+      placeholder="Search description, unit type, property, job type"
     />
   )
 }

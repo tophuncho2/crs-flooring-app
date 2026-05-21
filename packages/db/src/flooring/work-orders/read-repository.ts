@@ -53,7 +53,7 @@ function buildWorkOrdersWhere(
   if (searchQuery) {
     andClauses.push({
       OR: [
-        { workOrderNumber: { contains: searchQuery, mode: "insensitive" } },
+        { unitType: { contains: searchQuery, mode: "insensitive" } },
         { description: { contains: searchQuery, mode: "insensitive" } },
         { property: { name: { contains: searchQuery, mode: "insensitive" } } },
         { jobType: { name: { contains: searchQuery, mode: "insensitive" } } },
@@ -117,7 +117,7 @@ function buildWorkOrdersOrderBy(
     }
   }
 
-  appendUniqueOrderBy(orderBy, { workOrderNumber: direction })
+  appendUniqueOrderBy(orderBy, { createdAt: direction })
 
   return orderBy
 }

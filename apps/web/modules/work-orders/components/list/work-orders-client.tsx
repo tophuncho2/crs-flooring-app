@@ -40,7 +40,7 @@ import { WorkOrdersListSearch } from "./toolbar-controls/work-orders-list-search
 import { WorkOrdersClearAll } from "./toolbar-controls/sub-controls/work-orders-clear-all"
 import { WorkOrdersRowCount } from "./toolbar-controls/sub-controls/work-orders-row-count"
 
-const WORK_ORDERS_ALLOWED_SORT_FIELDS = ["workOrderNumber"] as const
+const WORK_ORDERS_ALLOWED_SORT_FIELDS = ["createdAt"] as const
 
 function asCompleteValue(raw: string | undefined): CompleteSegmentedControlValue {
   if (raw === "only" || raw === "all" || raw === "hide") return raw
@@ -94,7 +94,7 @@ export default function WorkOrdersClient({
     queryKey: [...WORK_ORDERS_LIST_QUERY_KEY],
     listFn: listWorkOrdersRequest,
     initialSearchQuery,
-    initialSort: { field: "workOrderNumber", direction: "desc" },
+    initialSort: { field: "createdAt", direction: "desc" },
     initialGroupField: null,
     initialPage,
     initialFilters,

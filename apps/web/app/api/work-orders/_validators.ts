@@ -458,7 +458,7 @@ export function validateListWorkOrdersQuery(
 
   return {
     search,
-    sort: { field: "workOrderNumber", direction: "desc" },
+    sort: { field: "createdAt", direction: "desc" },
     ...(hasAnyFilter ? { filters: filterRecord } : {}),
     page: parsed.page,
     pageSize: parsed.pageSize,
