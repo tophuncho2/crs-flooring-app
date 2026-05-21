@@ -307,14 +307,14 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* Warehouse-scoped chips: Warehouse + Location live inside one
-                encased card mirroring the search-bar encasing minus the
+            {/* Warehouse-scoped chips: Warehouse stacked over Location inside
+                one encased card mirroring the search-bar encasing minus the
                 tab/label. The warehouse pick gates Location (the picker
                 renders disabled until a warehouse is picked); a warehouse
                 change cascades a clear into Location via
                 handleWarehouseChange. */}
-            <ListToolbarCell colSpan={2}>
-              <div className="grid grid-cols-2 gap-2 rounded-md border border-[var(--panel-border)] p-2">
+            <ListToolbarCell>
+              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <WarehouseFilterChip
                   value={selectedWarehouseId}
                   selectedLabel={warehouseLabel}
