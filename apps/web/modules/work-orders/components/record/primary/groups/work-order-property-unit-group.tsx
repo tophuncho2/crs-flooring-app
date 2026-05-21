@@ -106,6 +106,8 @@ export function WorkOrderPropertyUnitGroup({
         state: property.state,
         postalCode: property.zip,
         instructions: property.instructions,
+        managementCompanyId:
+          result.managementCompany?.id ?? property.managementCompany?.id ?? null,
       }
       onPropertyOption(syntheticOption)
 

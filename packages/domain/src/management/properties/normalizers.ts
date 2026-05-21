@@ -38,6 +38,7 @@ type PropertyOptionInput = {
   state: string | null
   postalCode: string | null
   instructions: string | null
+  managementCompanyId: string | null
 }
 
 export function normalizeProperty(property: PropertyDetailInput): PropertyDetailRecord {
@@ -84,5 +85,6 @@ export function normalizePropertyOption(property: PropertyOptionInput): Property
     state: property.state ?? "",
     postalCode: property.postalCode ?? "",
     instructions: property.instructions ?? "",
+    managementCompanyId: property.managementCompanyId,
   }
 }

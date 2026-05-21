@@ -56,6 +56,7 @@ const propertyOptionSelect = {
   state: true,
   postalCode: true,
   instructions: true,
+  managementCompanyId: true,
 } as const
 
 export async function listPropertyOptions(

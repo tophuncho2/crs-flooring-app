@@ -42,6 +42,7 @@ export type PropertyOption = {
   state: string
   postalCode: string
   instructions: string
+  managementCompanyId: string | null
 }
 
 export type PropertyPrimaryForm = {
