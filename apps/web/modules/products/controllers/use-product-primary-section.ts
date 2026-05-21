@@ -11,7 +11,7 @@ import {
   type ProductCreateForm,
 } from "@builders/domain"
 import type { ProductRecord } from "@builders/db"
-import { deleteProductRequest, updateProductRequest } from "@/modules/products/data/mutations"
+import { useProductsListMutations } from "@/modules/products/controllers/list/use-products-list-mutations"
 
 // Synthesize a ProductCreateForm-shaped local value for the record-view section.
 // `categoryId` is sourced from the loaded record and never edited (the section
@@ -32,6 +32,8 @@ export function useProductPrimarySection({
   page: RecordDetailClientScaffoldContext
   product: ProductRecord
 }) {
+  const { updateProduct, deleteProduct } = useProductsListMutations()
+
   return useSingleSectionRecordController<ProductRecord, ProductCreateForm>({
     page,
     scope: "products",
@@ -41,7 +43,7 @@ export function useProductPrimarySection({
     payloadKey: "product",
     createLocalValue: toProductRecordViewForm,
     manageDirtySections: false,
-    saveSection: async ({ localValue, record, revisionKey }) => {
+    saveSection: async ({ localValue, record }) => {
       // Category is immutable post-create — pass the loaded record's category
       // slug + name so `validateProductPrimaryForm` can fire its required /
       // not-allowed branches before the network roundtrip. Without these,
@@ -59,7 +61,11 @@ export function useProductPrimarySection({
         })
       }
 
-      const { product: updated } = await updateProductRequest(record.id, localValue, revisionKey)
+      const { product: updated } = await updateProduct.mutateAsync({
+        id: record.id,
+        input: localValue,
+        revisionKey: record.updatedAt,
+      })
 
       return {
         serverValue: updated,
@@ -67,7 +73,7 @@ export function useProductPrimarySection({
       }
     },
     deleteRecord: async (record) => {
-      await deleteProductRequest(record.id, record.updatedAt)
+      await deleteProduct.mutateAsync({ id: record.id, updatedAt: record.updatedAt })
     },
     deleteErrorMessage: "Failed to delete product",
   })

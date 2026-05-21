@@ -15,7 +15,7 @@ import {
   type ProductCreateForm,
 } from "@builders/domain"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
-import { createProductRequest } from "@/modules/products/data/mutations"
+import { useProductsListMutations } from "@/modules/products/controllers/list/use-products-list-mutations"
 import { ProductPrimaryFieldsSection } from "./primary/product-primary-fields-section"
 
 const EMPTY_PRODUCT: ProductRecord = {
@@ -56,6 +56,7 @@ function ProductCreatePanel({
   backHref: string
   categoryOptions: CategoryRecord[]
 }) {
+  const { createProduct } = useProductsListMutations()
   const controller = useSingleSectionCreateController<ProductCreateForm>({
     page,
     createInitialValue: () => ({ ...EMPTY_PRODUCT_CREATE_FORM }),
@@ -74,7 +75,7 @@ function ProductCreatePanel({
         })
       }
 
-      const { product } = await createProductRequest(localValue)
+      const { product } = await createProduct.mutateAsync(localValue)
 
       return {
         redirectTo: buildRecordDetailHref("/dashboard/products", product.id, backHref),
