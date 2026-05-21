@@ -8,7 +8,7 @@ export function toInventoryFixedString(value: number): string {
 }
 
 export function formatInventoryImportNumber(value: string): string {
-  return value ? `IMP-${value.padStart(4, "0")}` : "-"
+  return value ? `IMP-${value}` : "-"
 }
 
 export function formatInventoryQuantity(value: string, unitLabel: string): string {
