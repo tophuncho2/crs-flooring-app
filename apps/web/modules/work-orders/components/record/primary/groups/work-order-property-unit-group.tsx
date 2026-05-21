@@ -173,18 +173,18 @@ export function WorkOrderPropertyUnitGroup({
         <div className="border-t border-[var(--panel-border)]/60" />
 
         <div className="flex flex-col gap-3">
-          <WorkOrderField label="Property Address (read-only)">
+          <WorkOrderField label="Property Address">
             <StaticFieldValue>
               <span className="whitespace-pre-line">{addressDisplay}</span>
             </StaticFieldValue>
           </WorkOrderField>
-          <WorkOrderField label="Property Instructions (read-only)">
+          <WorkOrderField label="Property Instructions">
             <StaticFieldValue>
               <span className="whitespace-pre-line">{instructionsDisplay}</span>
             </StaticFieldValue>
           </WorkOrderField>
           <WorkOrderField
-            label="Custom Address (overrides property address on PDF)"
+            label="Custom Address"
             editable={editable}
             currentLength={draft.customAddress.length}
             maxLength={WO_CUSTOM_ADDRESS_MAX}
@@ -198,7 +198,7 @@ export function WorkOrderPropertyUnitGroup({
             />
           </WorkOrderField>
           <WorkOrderField
-            label="Installer Instructions (appears on PDF)"
+            label="Installer Instructions"
             editable={editable}
             currentLength={draft.installerInstructions.length}
             maxLength={WO_INSTALLER_INSTRUCTIONS_MAX}

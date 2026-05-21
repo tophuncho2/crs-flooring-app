@@ -21,7 +21,7 @@ export function TemplateNotesGroup({
   return (
     <TemplateGroup title="Notes">
       <TemplateField
-        label="Internal Notes (template-only, not synced)"
+        label="Internal Notes"
         editable={editable}
         currentLength={draft.internalNotes.length}
         maxLength={TEMPLATE_INTERNAL_NOTES_MAX}

@@ -21,7 +21,7 @@ export function WorkOrderNotesGroup({
   return (
     <WorkOrderGroup title="Notes">
       <WorkOrderField
-        label="Internal Notes (not shown on PDF)"
+        label="Internal Notes"
         editable={editable}
         currentLength={draft.internalNotes.length}
         maxLength={WO_INTERNAL_NOTES_MAX}

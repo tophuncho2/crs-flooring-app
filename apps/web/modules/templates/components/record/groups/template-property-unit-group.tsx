@@ -110,18 +110,18 @@ export function TemplatePropertyUnitGroup({
         <div className="border-t border-[var(--panel-border)]/60" />
 
         <div className="flex flex-col gap-3">
-          <TemplateField label="Property Address (read-only)">
+          <TemplateField label="Property Address">
             <StaticFieldValue>
               <span className="whitespace-pre-line">{addressDisplay}</span>
             </StaticFieldValue>
           </TemplateField>
-          <TemplateField label="Property Instructions (read-only)">
+          <TemplateField label="Property Instructions">
             <StaticFieldValue>
               <span className="whitespace-pre-line">{instructionsDisplay}</span>
             </StaticFieldValue>
           </TemplateField>
           <TemplateField
-            label="Installer Instructions (copied to synced work order)"
+            label="Installer Instructions"
             editable={editable}
             currentLength={draft.installerInstructions.length}
             maxLength={TEMPLATE_INSTALLER_INSTRUCTIONS_MAX}
