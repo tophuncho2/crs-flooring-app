@@ -289,11 +289,11 @@ model FlooringInventory {
   @@index([productId, fifoReceivedAt, rollNumber, id])
   @@index([warehouseId, importNumber])
   @@index([warehouseId, purchaseOrderNumber])
-  @@index([inventoryNumber(ops: raw("gin_trgm_ops"))], type: Gin)
-  @@index([rollNumber(ops: raw("gin_trgm_ops"))], type: Gin)
-  @@index([dyeLot(ops: raw("gin_trgm_ops"))], type: Gin)
-  @@index([note(ops: raw("gin_trgm_ops"))], type: Gin)
-  @@index([location(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([inventoryNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_inventory_number_trgm_idx")
+  @@index([rollNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_rollNumber_trgm_idx")
+  @@index([dyeLot(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_dyeLot_trgm_idx")
+  @@index([note(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_note_trgm_idx")
+  @@index([location(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_location_trgm_idx")
   @@map("flooring_inventory")
 }
 
@@ -371,7 +371,7 @@ model FlooringImportEntry {
   @@index([createdAt])
   @@index([warehouseId])
   @@index([manufacturerId])
-  @@index([purchaseOrderNumber(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([purchaseOrderNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_import_entry_purchaseOrderNumber_trgm_idx")
   @@map("flooring_import_entry")
 }
 
