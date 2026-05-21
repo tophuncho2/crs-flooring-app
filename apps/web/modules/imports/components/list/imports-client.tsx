@@ -13,7 +13,6 @@ import type { ImportsListFilters } from "@builders/application"
 import {
   LIST_IMPORTS_PAGE_SIZE,
   type ImportRow,
-  type TablePreferencePayload,
   type WarehouseOption,
 } from "@builders/domain"
 import {
@@ -28,21 +27,16 @@ import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 import { ImportsClearAll } from "./toolbar-controls/sub-controls/imports-clear-all"
 import { ImportsRowCount } from "./toolbar-controls/sub-controls/imports-row-count"
 
-const IMPORTS_ALLOWED_GROUP_FIELDS = ["warehouse", "manufacturer"] as const
 const IMPORTS_FILTERABLE_FIELDS = ["warehouseId"] as const
 
 export default function ImportsClient({
-  initialTablePreferences,
   initialSearchQuery,
-  initialGroupField,
   initialPage,
   initialFilters,
   initialWarehouseOptions,
   initialSelectedWarehouse = null,
 }: {
-  initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
-  initialGroupField: string | null
   initialPage: number
   initialFilters: ImportsListFilters
   initialWarehouseOptions: WarehouseOption[]
@@ -70,13 +64,9 @@ export default function ImportsClient({
     queryKey: [...IMPORTS_LIST_QUERY_KEY],
     listFn: listImportsRequest,
     initialSearchQuery,
-    initialGroupField,
     initialPage,
     initialFilters,
     pageSize: LIST_IMPORTS_PAGE_SIZE,
-    tableKey: "imports-main",
-    initialTablePreferences,
-    allowedGroupFields: IMPORTS_ALLOWED_GROUP_FIELDS,
     filterableFields: IMPORTS_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })

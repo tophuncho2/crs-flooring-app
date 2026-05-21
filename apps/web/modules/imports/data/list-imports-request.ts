@@ -1,18 +1,7 @@
 import type { ImportsListFilters } from "@builders/application"
 import type { ListInput, ListOutput } from "@builders/application"
-import {
-  LIST_IMPORTS_PAGE_SIZE,
-  type ImportRow,
-  type ListImportsAllowedGroupField,
-  type TablePreferencePayload,
-} from "@builders/domain"
+import { LIST_IMPORTS_PAGE_SIZE, type ImportRow } from "@builders/domain"
 import { requestJson } from "@/transport/http"
-
-export type ImportsListInitialDefaults = {
-  groupField?: ListImportsAllowedGroupField | null
-}
-
-const ALLOWED_GROUP_FIELDS: ReadonlyArray<ListImportsAllowedGroupField> = ["warehouse", "manufacturer"]
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -35,51 +24,11 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
-function defaultsFromTablePreferences(
-  preferences?: TablePreferencePayload | null,
-): ImportsListInitialDefaults {
-  if (!preferences) return {}
-  const groupKey = preferences.grouping.enabled
-    ? preferences.grouping.keys[0]
-    : undefined
-  return {
-    groupField:
-      groupKey && (ALLOWED_GROUP_FIELDS as readonly string[]).includes(groupKey)
-        ? (groupKey as ListImportsAllowedGroupField)
-        : null,
-  }
-}
-
 export function parseImportsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
-  preferences?: TablePreferencePayload | null,
 ): ListInput<ImportsListFilters> {
-  const defaults = defaultsFromTablePreferences(preferences)
-
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
-  const groupedRaw = (readSearchParam(searchParams, "grouped") ?? "").trim()
-  const groupsRaw = (readSearchParam(searchParams, "groups") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
-
-  const isGroupedExplicit = groupedRaw === "1" || groupedRaw === "0"
-  const isGrouped = isGroupedExplicit
-    ? groupedRaw === "1"
-    : defaults.groupField !== null && defaults.groupField !== undefined
-
-  const firstGroupKey = groupsRaw
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)[0]
-
-  const groupCandidate: string | null = isGrouped
-    ? (firstGroupKey ?? defaults.groupField ?? null)
-    : null
-
-  const validGroupField =
-    groupCandidate && (ALLOWED_GROUP_FIELDS as readonly string[]).includes(groupCandidate)
-      ? (groupCandidate as ListImportsAllowedGroupField)
-      : null
-
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
   const warehouseId = Array.from(
@@ -89,7 +38,6 @@ export function parseImportsListInputFromSearchParams(
   return {
     search: searchRaw || undefined,
     filters: warehouseId.length > 0 ? { warehouseId } : undefined,
-    group: validGroupField ? { field: validGroupField } : undefined,
     page,
     pageSize: LIST_IMPORTS_PAGE_SIZE,
   }
@@ -100,10 +48,6 @@ export function buildImportsListSearchString(input: ListInput<ImportsListFilters
   if (input.search) params.set("q", input.search)
   for (const id of input.filters?.warehouseId ?? []) {
     params.append("warehouseId", id)
-  }
-  if (input.group) {
-    params.set("grouped", "1")
-    params.set("groups", input.group.field)
   }
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))

@@ -1,10 +1,9 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
-  getResolvedUserTablePreference,
   listImportsUseCase,
   searchWarehouseOptionsUseCase,
 } from "@builders/application"
-import type { TablePreferencePayload, WarehouseOption } from "@builders/domain"
+import type { WarehouseOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import ImportsClient from "@/modules/imports/components/list/imports-client"
@@ -13,14 +12,6 @@ import {
   parseImportsListInputFromSearchParams,
 } from "@/modules/imports/data/list-imports-request"
 
-const IMPORTS_FALLBACK_PREFERENCES: TablePreferencePayload = {
-  sort: { key: "createdAt", direction: "desc" },
-  filters: {},
-  columnVisibility: {},
-  columnOrder: [],
-  grouping: { enabled: true, keys: ["warehouse"] },
-}
-
 const INITIAL_OPTIONS_TAKE = 20
 
 export default async function FlooringImportsPage({
@@ -28,18 +19,10 @@ export default async function FlooringImportsPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const user = await requireToolAccess("warehouse")
-  const userPreferences = await getResolvedUserTablePreference(user.id, "imports-main")
+  await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
-  const effectivePreferences: TablePreferencePayload = userPreferences.hasSavedPreference
-    ? userPreferences
-    : IMPORTS_FALLBACK_PREFERENCES
-
-  const initialInput = parseImportsListInputFromSearchParams(
-    resolvedSearchParams,
-    effectivePreferences,
-  )
+  const initialInput = parseImportsListInputFromSearchParams(resolvedSearchParams)
 
   const queryClient = new QueryClient()
 
@@ -87,9 +70,7 @@ export default async function FlooringImportsPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ImportsClient
-        initialTablePreferences={userPreferences}
         initialSearchQuery={initialInput.search ?? ""}
-        initialGroupField={initialInput.group?.field ?? null}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}
         initialWarehouseOptions={initialWarehouseOptions}
