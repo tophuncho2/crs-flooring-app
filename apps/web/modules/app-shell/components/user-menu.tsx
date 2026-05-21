@@ -80,6 +80,15 @@ export default function UserMenu({ email, role, canUseTools: canUseToolsProp, un
               {email}
             </div>
 
+            <a
+              href="https://status.railway.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
+            >
+              Railway status
+            </a>
+
             <button
               onClick={() => void handleLogout()}
               className="w-full text-left px-4 py-2 hover:bg-[var(--panel-hover)] transition"
