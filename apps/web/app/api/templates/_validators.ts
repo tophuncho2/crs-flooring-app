@@ -292,12 +292,14 @@ export function validateTemplatePreviewMaterialItemsQuery(
 const templateOptionsQuerySchema = z.object({
   search: z.string().optional(),
   propertyId: z.string().min(1, "propertyId is required"),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedTemplateOptionsQuery = {
   search?: string
   propertyId: string
+  skip: number
   take: number
 }
 
@@ -323,6 +325,7 @@ export function validateTemplateOptionsQuery(
   return {
     search: trimmedSearch ? trimmedSearch : undefined,
     propertyId: parsed.propertyId.trim(),
+    skip: parsed.skip,
     take: parsed.take,
   }
 }

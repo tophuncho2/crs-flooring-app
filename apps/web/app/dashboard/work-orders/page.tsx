@@ -77,10 +77,11 @@ export default async function FlooringWorkOrdersPage({
 
     // Templates are property-scoped — only prefetch when a property is picked.
     if (selectedPropertyId) {
-      initialTemplateOptions = await searchTemplateOptionsUseCase({
+      const templatePage = await searchTemplateOptionsUseCase({
         take: INITIAL_OPTIONS_TAKE,
         propertyId: selectedPropertyId,
       })
+      initialTemplateOptions = templatePage.items
     }
 
     if (selectedMgmtCoId) {
@@ -114,11 +115,13 @@ export default async function FlooringWorkOrdersPage({
         selectedTemplateId,
         initialTemplateOptions,
         async (id) => {
-          const [match] = await searchTemplateOptionsUseCase({
-            search: id,
-            propertyId: selectedPropertyId,
-            take: 1,
-          })
+          const match = (
+            await searchTemplateOptionsUseCase({
+              search: id,
+              propertyId: selectedPropertyId,
+              take: 1,
+            })
+          ).items[0]
           return match && match.id === id ? match : null
         },
       )

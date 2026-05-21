@@ -165,13 +165,19 @@ export async function listTemplateOptions(
 export type TemplateOptionsSearchArgs = {
   search?: string
   propertyId: string
+  skip?: number
   take: number
+}
+
+export type TemplateOptionsSearchResult = {
+  items: TemplateOption[]
+  hasMore: boolean
 }
 
 export async function searchTemplateOptions(
   args: TemplateOptionsSearchArgs,
   client: TemplatesDbClient = db,
-): Promise<TemplateOption[]> {
+): Promise<TemplateOptionsSearchResult> {
   const clauses: Prisma.FlooringTemplateWhereInput[] = [{ propertyId: args.propertyId }]
   if (args.search) {
     clauses.push({
@@ -184,14 +190,18 @@ export async function searchTemplateOptions(
   const where: Prisma.FlooringTemplateWhereInput =
     clauses.length === 1 ? clauses[0] : { AND: clauses }
 
-  const templates = await client.flooringTemplate.findMany({
+  // Fetch take+1 to detect a next page without a separate count query.
+  const rows = await client.flooringTemplate.findMany({
     where,
     orderBy: [{ unitType: "asc" }, { createdAt: "asc" }, { id: "asc" }],
-    take: args.take,
+    skip: args.skip ?? 0,
+    take: args.take + 1,
     select: { id: true, unitType: true, description: true },
   })
 
-  return templates.map(normalizeTemplateOption)
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return { items: page.map(normalizeTemplateOption), hasMore }
 }
 
 const templatePreviewHeaderSelect = {

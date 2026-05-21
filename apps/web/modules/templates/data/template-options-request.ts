@@ -3,12 +3,14 @@ import { requestJson } from "@/transport/http"
 
 export const TEMPLATE_OPTIONS_QUERY_KEY = ["templates", "options"] as const
 
-export type TemplateOptionsResponse = {
-  options: TemplateOption[]
+export type TemplateOptionsPage = {
+  items: TemplateOption[]
+  hasMore: boolean
 }
 
 export type TemplateOptionsRequestArgs = {
   propertyId: string
+  skip?: number
   take?: number
 }
 
@@ -16,16 +18,16 @@ export async function searchTemplateOptionsRequest(
   search: string,
   signal: AbortSignal | undefined,
   args: TemplateOptionsRequestArgs,
-): Promise<TemplateOption[]> {
+): Promise<TemplateOptionsPage> {
   const params = new URLSearchParams()
   if (search) params.set("search", search)
   params.set("propertyId", args.propertyId)
-  params.set("take", String(args.take ?? 20))
+  if (args.skip !== undefined && args.skip > 0) params.set("skip", String(args.skip))
+  params.set("take", String(args.take ?? 50))
   const url = `/api/templates/options?${params.toString()}`
-  const result = await requestJson<TemplateOptionsResponse>(url, {
+  return requestJson<TemplateOptionsPage>(url, {
     method: "GET",
     headers: { Accept: "application/json" },
     signal,
   })
-  return result.options
 }
