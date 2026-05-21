@@ -1,7 +1,6 @@
 "use client"
 
-import type { Dispatch, SetStateAction } from "react"
-import { useMutation, type QueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   CreatePropertyHubForm,
   ManagementCompanyDetail,
@@ -17,24 +16,18 @@ export type PropertyHubCreateResult = {
   managementCompany: ManagementCompanyDetail | null
 }
 
-type Deps = {
-  queryClient: QueryClient
-  setIsOpen: Dispatch<SetStateAction<boolean>>
-  resetAll: () => void
-  setError: Dispatch<SetStateAction<string | null>>
-  onCreated?: (result: PropertyHubCreateResult) => void
-}
+/**
+ * Mutation hook for the "+ Hub" create flow. Invalidates the list and
+ * options caches on success; consumers handle the panel close + reset and
+ * any post-create navigation via `onSuccess` / `onError` overrides on the
+ * call site (the controller does this).
+ */
+export function useCreatePropertyHubMutation() {
+  const queryClient = useQueryClient()
 
-export function useCreatePropertyHubMutation({
-  queryClient,
-  setIsOpen,
-  resetAll,
-  setError,
-  onCreated,
-}: Deps) {
   return useMutation({
     mutationFn: (input: CreatePropertyHubForm) => createPropertyHubRequest(input),
-    onSuccess: (result) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [...PROPERTIES_LIST_QUERY_KEY] })
       void queryClient.invalidateQueries({
         queryKey: [...MANAGEMENT_COMPANIES_LIST_QUERY_KEY],
@@ -42,12 +35,6 @@ export function useCreatePropertyHubMutation({
       void queryClient.invalidateQueries({
         queryKey: [...MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY],
       })
-      setIsOpen(false)
-      resetAll()
-      onCreated?.(result)
-    },
-    onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
     },
   })
 }

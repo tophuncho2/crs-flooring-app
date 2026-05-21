@@ -1,6 +1,14 @@
 export {
   usePropertyHubSidePanel,
   type PropertyHubSidePanelController,
+  type UsePropertyHubSidePanelOptions,
+  type PropertyHubPropertiesController,
+  type PropertyHubTemplatesController,
 } from "./use-property-hub-side-panel"
-export type { PropertyHubMcMode } from "./types"
+export type {
+  HubActiveView,
+  HubMode,
+  HubPickerKind,
+  PropertyHubMcMode,
+} from "./types"
 export type { PropertyHubCreateResult } from "./mutations"

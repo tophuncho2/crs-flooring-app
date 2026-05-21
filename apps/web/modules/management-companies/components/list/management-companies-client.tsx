@@ -22,16 +22,9 @@ import {
   listManagementCompaniesRequest,
 } from "@/modules/management-companies/data/list-management-companies-request"
 import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/list/use-management-companies-list-controller"
-import { useManagementCompanySidePanel } from "@/modules/management-companies/controllers/list/use-management-company-side-panel"
-import { ManagementCompanySidePanel } from "@/modules/management-companies/components/side-panel"
 import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
-import { usePropertyHubViewSidePanel } from "@/modules/properties/controllers/property-hub-view-side-panel"
-import { usePropertySidePanel } from "@/modules/properties/controllers/property-side-panel"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
-import { PropertyHubViewSidePanel } from "@/modules/properties/components/side-panel/hub-view"
-import { PropertySidePanel } from "@/modules/properties/components/side-panel"
 import { ManagementCompaniesTable } from "./management-companies-table"
-import { AddCompanyButton } from "./toolbar-controls/add-company-button"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { ManagementCompaniesListSearch } from "./toolbar-controls/management-companies-list-search"
 import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
@@ -56,10 +49,7 @@ export default function ManagementCompaniesClient({
   initialStateOptions,
 }: ManagementCompaniesClientProps) {
   const { message, pageError } = useManagementCompaniesListController()
-  const sidePanel = useManagementCompanySidePanel()
   const hubPanel = usePropertyHubSidePanel()
-  const hubViewPanel = usePropertyHubViewSidePanel()
-  const propertyPanel = usePropertySidePanel()
 
   const {
     rows,
@@ -136,10 +126,7 @@ export default function ManagementCompaniesClient({
               Management Companies
             </span>
           </div>
-          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-              the encased card's top edge (rounded-tl-none seam). */}
           <ListToolbar className="pt-0">
-            {/* Search + (Clear all | row count) — encased card attached to the tab above */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <ManagementCompaniesListSearch
@@ -158,7 +145,6 @@ export default function ManagementCompaniesClient({
               </div>
             </ListToolbarCell>
 
-            {/* State */}
             <ListToolbarCell>
               <StateFilterChip
                 value={selectedState}
@@ -167,18 +153,15 @@ export default function ManagementCompaniesClient({
               />
             </ListToolbarCell>
 
-            {/* Right-anchored actions stacked vertically: + Company on top,
-                + Hub below. */}
             <ListToolbarCell className="ml-auto">
-              <AddCompanyButton onClick={() => sidePanel.openPanel({ mode: "create" })} />
-              <AddHubButton onClick={() => hubPanel.open()} />
+              <AddHubButton onClick={() => hubPanel.openForCreate()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
 
         <ManagementCompaniesTable
           rows={rows}
-          onOpenCompany={(row) => sidePanel.openPanel({ mode: "edit", row })}
+          onOpenCompany={(row) => hubPanel.openForMcEdit(row)}
           pagination={
             <PaginateControls
               page={page}
@@ -193,28 +176,7 @@ export default function ManagementCompaniesClient({
           }
         />
       </div>
-      <ManagementCompanySidePanel
-        controller={sidePanel}
-        onOpenHubView={(id) => {
-          sidePanel.close()
-          hubViewPanel.open(id)
-        }}
-      />
       <PropertyHubSidePanel controller={hubPanel} />
-      <PropertySidePanel
-        controller={propertyPanel}
-        onOpenHubView={(id) => {
-          propertyPanel.close()
-          hubViewPanel.open(id)
-        }}
-      />
-      <PropertyHubViewSidePanel
-        controller={hubViewPanel}
-        onOpenProperty={(row) => {
-          hubViewPanel.close()
-          propertyPanel.openPanel({ mode: "edit", row })
-        }}
-      />
     </div>
   )
 }

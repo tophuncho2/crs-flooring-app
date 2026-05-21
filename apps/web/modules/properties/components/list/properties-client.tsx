@@ -22,15 +22,10 @@ import {
   listPropertiesRequest,
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
-import { usePropertySidePanel } from "@/modules/properties/controllers/property-side-panel"
 import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
-import { usePropertyHubViewSidePanel } from "@/modules/properties/controllers/property-hub-view-side-panel"
-import { PropertySidePanel } from "@/modules/properties/components/side-panel"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
-import { PropertyHubViewSidePanel } from "@/modules/properties/components/side-panel/hub-view"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
-import { AddPropertyButton } from "./toolbar-controls/add-property-button"
 import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
 import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
 import { PropertiesListSearch } from "./toolbar-controls/properties-list-search"
@@ -57,9 +52,7 @@ export default function PropertiesClient({
   initialSelectedManagementCompany = null,
 }: PropertiesClientProps) {
   const { message, pageError } = usePropertiesListController()
-  const sidePanel = usePropertySidePanel()
   const hubPanel = usePropertyHubSidePanel()
-  const hubViewPanel = usePropertyHubViewSidePanel()
 
   const {
     rows,
@@ -163,10 +156,7 @@ export default function PropertiesClient({
               Properties
             </span>
           </div>
-          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-              the encased card's top edge (rounded-tl-none seam). */}
           <ListToolbar className="pt-0">
-            {/* Search + (Clear all | row count) — encased card attached to the tab above */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <PropertiesListSearch
@@ -180,7 +170,6 @@ export default function PropertiesClient({
               </div>
             </ListToolbarCell>
 
-            {/* Management Company + State (stacked) */}
             <ListToolbarCell>
               <ManagementCompanyFilterChip
                 value={selectedManagementCompanyId}
@@ -194,18 +183,15 @@ export default function PropertiesClient({
               />
             </ListToolbarCell>
 
-            {/* Right-anchored actions stacked vertically: + Property on top,
-                + Hub below. */}
             <ListToolbarCell className="ml-auto">
-              <AddPropertyButton onClick={() => sidePanel.openPanel({ mode: "create" })} />
-              <AddHubButton onClick={() => hubPanel.open()} />
+              <AddHubButton onClick={() => hubPanel.openForCreate()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
 
         <PropertiesTable
           rows={rows}
-          onOpenProperty={(row) => sidePanel.openPanel({ mode: "edit", row })}
+          onOpenProperty={(row) => hubPanel.openForPropertyEdit(row)}
           pagination={
             <PaginateControls
               page={page}
@@ -220,21 +206,7 @@ export default function PropertiesClient({
           }
         />
       </div>
-      <PropertySidePanel
-        controller={sidePanel}
-        onOpenHubView={(id) => {
-          sidePanel.close()
-          hubViewPanel.open(id)
-        }}
-      />
       <PropertyHubSidePanel controller={hubPanel} />
-      <PropertyHubViewSidePanel
-        controller={hubViewPanel}
-        onOpenProperty={(row) => {
-          hubViewPanel.close()
-          sidePanel.openPanel({ mode: "edit", row })
-        }}
-      />
     </div>
   )
 }

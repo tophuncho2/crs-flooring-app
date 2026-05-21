@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { RefreshCw } from "lucide-react"
 import type {
   ManagementCompanyOption,
-  PropertyListRow,
   PropertyOption,
   TemplateListRow,
   TemplateOption,
@@ -15,12 +14,8 @@ import {
   SidePanelPreviewNewButton,
   SidePanelPreviewOpenButton,
 } from "@/components/side-panel-preview"
-import { PropertyHubViewSidePanel } from "@/modules/properties/components/side-panel/hub-view"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
-import { PropertySidePanel } from "@/modules/properties/components/side-panel"
-import { usePropertyHubViewSidePanel } from "@/modules/properties/controllers/property-hub-view-side-panel"
 import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
-import { usePropertySidePanel } from "@/modules/properties/controllers/property-side-panel"
 import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
 import { TemplateSyncPreviewBody } from "@/modules/template-sync/components/template-sync-preview-body"
 import { TemplateSyncItemsSubHeader } from "@/modules/template-sync/components/header/template-sync-items-sub-header"
@@ -64,9 +59,16 @@ export function TemplateSyncButton() {
   const propertyTriggerRef = useRef<HTMLButtonElement | null>(null)
   const templateTriggerRef = useRef<HTMLButtonElement | null>(null)
 
-  const hubViewPanel = usePropertyHubViewSidePanel()
-  const hubCreatePanel = usePropertyHubSidePanel()
-  const propertyPanel = usePropertySidePanel()
+  // Single unified hub panel — covers Create hub, hub view, and property edit
+  // (clicking a property row inside the hub view transitions in-place).
+  const hubPanel = usePropertyHubSidePanel()
+
+  const handleOpenTemplateRow = useCallback(
+    (row: TemplateListRow) => {
+      router.push(`/dashboard/templates/${row.id}`)
+    },
+    [router],
+  )
 
   const toggleHeaderCollapsed = useCallback(() => {
     setHeaderCollapsed((value) => !value)
@@ -171,38 +173,14 @@ export function TemplateSyncButton() {
     if (!resolvedHubManagementCompanyId) return
     setOpen(false)
     resetSelections()
-    hubViewPanel.open(resolvedHubManagementCompanyId)
-  }, [resolvedHubManagementCompanyId, resetSelections, hubViewPanel])
+    hubPanel.openForView(resolvedHubManagementCompanyId)
+  }, [resolvedHubManagementCompanyId, resetSelections, hubPanel])
 
   const handleCreateHub = useCallback(() => {
     setOpen(false)
     resetSelections()
-    hubCreatePanel.open()
-  }, [resetSelections, hubCreatePanel])
-
-  const handleHubViewOpenProperty = useCallback(
-    (row: PropertyListRow) => {
-      hubViewPanel.close()
-      propertyPanel.openPanel({ mode: "edit", row })
-    },
-    [hubViewPanel, propertyPanel],
-  )
-
-  const handleHubViewOpenTemplate = useCallback(
-    (row: TemplateListRow) => {
-      hubViewPanel.close()
-      router.push(`/dashboard/templates/${row.id}`)
-    },
-    [hubViewPanel, router],
-  )
-
-  const handlePropertyPanelOpenHubView = useCallback(
-    (id: string) => {
-      propertyPanel.close()
-      hubViewPanel.open(id)
-    },
-    [propertyPanel, hubViewPanel],
-  )
+    hubPanel.openForCreate()
+  }, [resetSelections, hubPanel])
 
   const handleSync = useCallback(async () => {
     if (!templateId || isSyncing) return
@@ -377,16 +355,7 @@ export function TemplateSyncButton() {
         ) : null}
       </SidePanelPreview>
 
-      <PropertyHubViewSidePanel
-        controller={hubViewPanel}
-        onOpenProperty={handleHubViewOpenProperty}
-        onOpenTemplate={handleHubViewOpenTemplate}
-      />
-      <PropertyHubSidePanel controller={hubCreatePanel} />
-      <PropertySidePanel
-        controller={propertyPanel}
-        onOpenHubView={handlePropertyPanelOpenHubView}
-      />
+      <PropertyHubSidePanel controller={hubPanel} onOpenTemplate={handleOpenTemplateRow} />
     </>
   )
 }

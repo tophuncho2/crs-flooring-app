@@ -9,10 +9,9 @@ export type AddHubButtonProps = {
 }
 
 /**
- * Toolbar action placeholder for the future Property Hub create flow.
- * Card-style button sized to one toolbar row; designed to live stacked
- * below `AddCompanyButton` inside a single `ListToolbarCell`. Outlined
- * variant — reads as the secondary action. No-op until the hub form lands.
+ * Toolbar action: opens the unified hub side panel in create mode. Card-
+ * style button sized to one toolbar row; the canonical (and only) entry
+ * point for creating a management company + property pair from this list.
  */
 export function AddHubButton({ onClick, disabled }: AddHubButtonProps) {
   return (
