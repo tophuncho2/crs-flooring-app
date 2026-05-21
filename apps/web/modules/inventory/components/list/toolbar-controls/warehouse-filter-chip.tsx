@@ -22,18 +22,16 @@ export function WarehouseFilterChip({
   initialOptions,
 }: WarehouseFilterChipProps) {
   return (
-    <div className="min-w-[14rem] max-w-[20rem]">
-      <WarehousePicker
-        value={value}
-        selectedLabel={selectedLabel}
-        onChange={onChange}
-        initialOptions={initialOptions}
-        placeholder="Warehouse"
-        searchPlaceholder="Search warehouses"
-        emptyMessage="No warehouses match"
-        clearLabel="Clear filter"
-        ariaLabel="Filter inventory by warehouse"
-      />
-    </div>
+    <WarehousePicker
+      value={value}
+      selectedLabel={selectedLabel}
+      onChange={onChange}
+      initialOptions={initialOptions}
+      placeholder="Warehouse"
+      searchPlaceholder="Search warehouses"
+      emptyMessage="No warehouses match"
+      clearLabel="Clear filter"
+      ariaLabel="Filter inventory by warehouse"
+    />
   )
 }

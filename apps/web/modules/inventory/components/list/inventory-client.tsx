@@ -234,11 +234,13 @@ export default function InventoryClient({
   const handleWarehouseChange = useCallback(
     (id: string | null) => {
       onFilterChange("warehouseId", id ? [id] : [])
-      // Locations are warehouse-scoped; clear any picked location whenever
-      // the warehouse changes (or is cleared) so the chip never carries a
-      // value that's invalid for the new scope. Mirrors the Category → Product
-      // cascade below.
+      // Locations + import #/PO # are all warehouse-scoped (pickers are
+      // gated on a picked warehouse). Cascade-clear whenever the warehouse
+      // changes (or is cleared) so no chip carries a value that's invalid
+      // for the new scope. Mirrors the Category → Product cascade below.
       onFilterChange("location", [])
+      onFilterChange("importNumber", [])
+      onFilterChange("purchaseOrderNumber", [])
     },
     [onFilterChange],
   )
@@ -361,24 +363,43 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* Warehouse → Location: location is warehouse-scoped (picker is
-                disabled until a warehouse is picked; warehouse change cascades
-                the location chip clear via handleWarehouseChange). */}
-            <ListToolbarCell>
-              <WarehouseFilterChip
-                value={selectedWarehouseId}
-                selectedLabel={warehouseLabel}
-                onChange={handleWarehouseChange}
-                initialOptions={initialWarehouseOptions}
-              />
-              <LocationPicker
-                value={locationValue || null}
-                onChange={handleLocationChange}
-                warehouseId={selectedWarehouseId}
-                placeholder="Location"
-                disabledPlaceholder="Select warehouse first"
-                ariaLabel="Filter inventory by location"
-              />
+            {/* Warehouse-scoped chips: Warehouse + Location + Import # + PO #
+                all live inside one encased card mirroring the search-bar
+                encasing minus the tab/label. The warehouse pick gates the
+                other three (each picker renders disabled until a warehouse is
+                picked); a warehouse change cascades a clear into Location,
+                Import #, and PO # via handleWarehouseChange. */}
+            <ListToolbarCell colSpan={2}>
+              <div className="grid grid-cols-2 gap-2 rounded-md border border-[var(--panel-border)] p-2">
+                <WarehouseFilterChip
+                  value={selectedWarehouseId}
+                  selectedLabel={warehouseLabel}
+                  onChange={handleWarehouseChange}
+                  initialOptions={initialWarehouseOptions}
+                />
+                <ImportNumberFilterChip
+                  value={selectedImportNumber}
+                  selectedLabel={importLabel}
+                  onChange={handleImportNumberChange}
+                  warehouseId={selectedWarehouseId}
+                  initialOptions={initialImportOptions}
+                />
+                <LocationPicker
+                  value={locationValue || null}
+                  onChange={handleLocationChange}
+                  warehouseId={selectedWarehouseId}
+                  placeholder="Location"
+                  disabledPlaceholder="Select warehouse first"
+                  ariaLabel="Filter inventory by location"
+                />
+                <PurchaseOrderFilterChip
+                  value={selectedPurchaseOrderNumber}
+                  selectedLabel={purchaseOrderLabel}
+                  onChange={handlePurchaseOrderNumberChange}
+                  warehouseId={selectedWarehouseId}
+                  initialOptions={initialImportOptions}
+                />
+              </div>
             </ListToolbarCell>
 
             {/* Category → Product: product is category-scoped (category change
@@ -406,26 +427,6 @@ export default function InventoryClient({
                   onChange={handleArchivedChange}
                 />
               </ListToolbarTallCard>
-            </ListToolbarCell>
-
-            {/* Import # → Purchase order: independent async pickers backed
-                by `/api/imports/options`. Each filters inventory rows by
-                their denormalized snapshot column directly — picks survive
-                across reloads via the `importNumber` / `purchaseOrderNumber`
-                URL params. */}
-            <ListToolbarCell>
-              <ImportNumberFilterChip
-                value={selectedImportNumber}
-                selectedLabel={importLabel}
-                onChange={handleImportNumberChange}
-                initialOptions={initialImportOptions}
-              />
-              <PurchaseOrderFilterChip
-                value={selectedPurchaseOrderNumber}
-                selectedLabel={purchaseOrderLabel}
-                onChange={handlePurchaseOrderNumberChange}
-                initialOptions={initialImportOptions}
-              />
             </ListToolbarCell>
           </ListToolbar>
         </div>

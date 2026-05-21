@@ -9,6 +9,12 @@ export type ImportNumberFilterChipProps = {
   /** Pre-resolved display label (e.g. `"#IMP-123"`). */
   selectedLabel: string | null
   onChange: (next: string | null) => void
+  /**
+   * Required scope. Imports belong to a warehouse; the chip is disabled
+   * until a warehouse is picked, and the inventory list cascades a clear
+   * here whenever the warehouse changes.
+   */
+  warehouseId: string | null
   initialOptions?: ImportOption[]
 }
 
@@ -16,21 +22,22 @@ export function ImportNumberFilterChip({
   value,
   selectedLabel,
   onChange,
+  warehouseId,
   initialOptions,
 }: ImportNumberFilterChipProps) {
   return (
-    <div className="min-w-[14rem] max-w-[20rem]">
-      <ImportNumberPicker
-        value={value}
-        selectedLabel={selectedLabel}
-        onChange={onChange}
-        initialOptions={initialOptions}
-        placeholder="Import #"
-        searchPlaceholder="Search import # or PO #"
-        emptyMessage="No imports match"
-        clearLabel="Clear filter"
-        ariaLabel="Filter inventory by import number"
-      />
-    </div>
+    <ImportNumberPicker
+      value={value}
+      selectedLabel={selectedLabel}
+      onChange={onChange}
+      warehouseId={warehouseId}
+      initialOptions={initialOptions}
+      placeholder="Import #"
+      disabledPlaceholder="Select warehouse first"
+      searchPlaceholder="Search import # or PO #"
+      emptyMessage="No imports match"
+      clearLabel="Clear filter"
+      ariaLabel="Filter inventory by import number"
+    />
   )
 }

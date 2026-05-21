@@ -9,6 +9,11 @@ export type PurchaseOrderFilterChipProps = {
   /** Pre-resolved display label (e.g. `"PO# ABC-123"`). */
   selectedLabel: string | null
   onChange: (next: string | null) => void
+  /**
+   * Required scope — chip is disabled until a warehouse is picked, and the
+   * inventory list cascades a clear here whenever the warehouse changes.
+   */
+  warehouseId: string | null
   initialOptions?: ImportOption[]
 }
 
@@ -16,21 +21,22 @@ export function PurchaseOrderFilterChip({
   value,
   selectedLabel,
   onChange,
+  warehouseId,
   initialOptions,
 }: PurchaseOrderFilterChipProps) {
   return (
-    <div className="min-w-[14rem] max-w-[20rem]">
-      <PurchaseOrderNumberPicker
-        value={value}
-        selectedLabel={selectedLabel}
-        onChange={onChange}
-        initialOptions={initialOptions}
-        placeholder="Purchase order #"
-        searchPlaceholder="Search PO # or import #"
-        emptyMessage="No POs match"
-        clearLabel="Clear filter"
-        ariaLabel="Filter inventory by purchase order number"
-      />
-    </div>
+    <PurchaseOrderNumberPicker
+      value={value}
+      selectedLabel={selectedLabel}
+      onChange={onChange}
+      warehouseId={warehouseId}
+      initialOptions={initialOptions}
+      placeholder="Purchase order #"
+      disabledPlaceholder="Select warehouse first"
+      searchPlaceholder="Search PO # or import #"
+      emptyMessage="No POs match"
+      clearLabel="Clear filter"
+      ariaLabel="Filter inventory by purchase order number"
+    />
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import type { ImportOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
@@ -18,9 +18,15 @@ export type PurchaseOrderNumberPickerProps = {
    */
   value: string | null
   onChange: (next: string | null) => void
+  /**
+   * Required scope — imports belong to a warehouse, so PO options come from
+   * imports in that warehouse only. Picker renders disabled when null.
+   */
+  warehouseId: string | null
   /** Pre-resolved display label (`PO# ABC-123`) for the trigger. */
   selectedLabel?: string | null
   placeholder?: string
+  disabledPlaceholder?: string
   searchPlaceholder?: string
   emptyMessage?: string
   loadingMessage?: string
@@ -40,7 +46,7 @@ function toDropdownOption(option: ImportOption): AsyncRichDropdownOption | null 
   // Imports may have a blank PO; skip those so the chip never lets you pick
   // a value that would filter inventory by `purchaseOrderNumber = ''`.
   if (!option.purchaseOrderNumber) return null
-  const subtitle = joinNonEmpty(`#IMP-${option.importNumber}`, option.warehouseName)
+  const subtitle = joinNonEmpty(`#IMP-${option.importNumber}`)
   return {
     id: option.purchaseOrderNumber,
     title: `PO# ${option.purchaseOrderNumber}`,
@@ -51,8 +57,10 @@ function toDropdownOption(option: ImportOption): AsyncRichDropdownOption | null 
 export function PurchaseOrderNumberPicker({
   value,
   onChange,
+  warehouseId,
   selectedLabel = null,
   placeholder = "Filter by PO #",
+  disabledPlaceholder = "Select warehouse first",
   searchPlaceholder = "Search PO # or import #",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
@@ -63,10 +71,26 @@ export function PurchaseOrderNumberPicker({
   className,
   initialOptions,
 }: PurchaseOrderNumberPickerProps) {
+  const enabled = warehouseId !== null && !disabled
+
+  const bucketKey = useMemo(
+    () => [...IMPORTS_OPTIONS_QUERY_KEY, warehouseId ?? null] as const,
+    [warehouseId],
+  )
+
+  const searchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined) =>
+      searchImportOptionsRequest(search, signal, {
+        warehouseId: warehouseId ?? "",
+      }),
+    [warehouseId],
+  )
+
   const controller = useAsyncRichDropdownController<ImportOption>({
-    bucketKey: IMPORTS_OPTIONS_QUERY_KEY,
-    searchFn: searchImportOptionsRequest,
+    bucketKey,
+    searchFn,
     initialOptions,
+    enabled,
   })
 
   const options = useMemo<AsyncRichDropdownOption[]>(() => {
@@ -98,12 +122,12 @@ export function PurchaseOrderNumberPicker({
       onQueryChange={controller.onQueryChange}
       isLoading={controller.isLoading || controller.isFetching}
       errorMessage={controller.errorMessage}
-      placeholder={placeholder}
+      placeholder={enabled ? placeholder : disabledPlaceholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
       clearLabel={clearLabel}
-      disabled={disabled}
+      disabled={disabled || warehouseId === null}
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}

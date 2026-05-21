@@ -225,17 +225,23 @@ export async function getImportLinkState(
 // --- Picker / options search ---
 
 export type ImportOptionsSearchArgs = {
+  /**
+   * Required scope — imports belong to a warehouse, and the inventory list
+   * gates the Import # / PO # pickers on a picked warehouse. Mirrors the
+   * `LocationPicker` contract (locations are warehouse-scoped too).
+   */
+  warehouseId: string
   search?: string
   take: number
 }
 
 /**
  * Async-dropdown options for the imports pickers (Import # / PO # filter chips
- * on the inventory list view). Search ORs across the two identity columns:
- * `purchaseOrderNumber` is a `String` (ILIKE substring) and `importNumber` is
- * an `Int` (exact match when the query parses as a safe positive integer).
- * Ordered `createdAt DESC` so the newest imports surface first when the user
- * opens the picker without a query.
+ * on the inventory list view). Scoped to a single warehouse. Search ORs across
+ * the two identity columns: `purchaseOrderNumber` is a `String` (ILIKE
+ * substring) and `importNumber` is an `Int` (exact match when the query parses
+ * as a safe positive integer). Ordered `createdAt DESC` so the newest imports
+ * surface first when the user opens the picker without a query.
  */
 export async function searchImportOptions(
   args: ImportOptionsSearchArgs,
@@ -243,7 +249,9 @@ export async function searchImportOptions(
 ): Promise<ImportOption[]> {
   const trimmed = args.search?.trim() ?? ""
 
-  let where: Prisma.FlooringImportEntryWhereInput | undefined
+  const clauses: Prisma.FlooringImportEntryWhereInput[] = [
+    { warehouseId: args.warehouseId },
+  ]
   if (trimmed.length > 0) {
     const orClauses: Prisma.FlooringImportEntryWhereInput[] = [
       { purchaseOrderNumber: { contains: trimmed, mode: "insensitive" } },
@@ -254,8 +262,11 @@ export async function searchImportOptions(
         orClauses.push({ importNumber: numeric })
       }
     }
-    where = { OR: orClauses }
+    clauses.push({ OR: orClauses })
   }
+
+  const where: Prisma.FlooringImportEntryWhereInput =
+    clauses.length === 1 ? clauses[0]! : { AND: clauses }
 
   const rows = await client.flooringImportEntry.findMany({
     where,
