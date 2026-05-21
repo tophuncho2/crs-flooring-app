@@ -7,6 +7,7 @@ import type {
   WorkOrderOption,
 } from "@builders/domain"
 import type { CutLogScopeUrl } from "@/modules/cut-logs/data/mutations"
+import { formatWorkOrderOptionTitle } from "@/modules/work-orders/components/picker/work-order-picker"
 import {
   EMPTY_FORM,
   EMPTY_LOCAL,
@@ -174,7 +175,7 @@ export function useCutLogEditPanel({
   const snapshotWorkOrderOption = useCallback((option: WorkOrderOption | null) => {
     setLocal((prev) => ({
       ...prev,
-      pickedWorkOrderLabel: option?.workOrderNumber ?? "",
+      pickedWorkOrderLabel: option ? formatWorkOrderOptionTitle(option) : "",
     }))
   }, [])
 

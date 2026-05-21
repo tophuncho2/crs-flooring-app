@@ -136,12 +136,21 @@ export async function listWorkOrders(
   return workOrders.map(normalizeWorkOrderListRow)
 }
 
+const workOrderOptionSelect = {
+  id: true,
+  workOrderNumber: true,
+  property: { select: { name: true } },
+  unitType: true,
+  unitNumber: true,
+  description: true,
+} as const
+
 export async function listWorkOrderOptions(
   client: WorkOrdersDbClient = db,
 ): Promise<WorkOrderOption[]> {
   const workOrders = await client.flooringWorkOrder.findMany({
-    orderBy: { workOrderNumber: "asc" },
-    select: { id: true, workOrderNumber: true },
+    orderBy: { createdAt: "desc" },
+    select: workOrderOptionSelect,
   })
 
   return workOrders.map(normalizeWorkOrderOption)
@@ -149,9 +158,10 @@ export async function listWorkOrderOptions(
 
 /**
  * Async-picker search: warehouse-scoped work-order options for the cut-log
- * relink dropdown. Filters by `warehouseId` (required) + an optional
- * `workOrderNumber` ILIKE search. Takes a bounded count to keep the
- * dropdown responsive.
+ * relink dropdown. Filters by `warehouseId` (required), hides completed
+ * work orders, and matches `unitType` or `description` via ILIKE on the
+ * optional search term. Takes a bounded count to keep the dropdown
+ * responsive.
  */
 export type SearchWorkOrderOptionsInput = {
   warehouseId: string
@@ -168,12 +178,18 @@ export async function searchWorkOrderOptions(
   const workOrders = await client.flooringWorkOrder.findMany({
     where: {
       warehouseId: input.warehouseId,
+      isComplete: false,
       ...(search.length > 0
-        ? { workOrderNumber: { contains: search, mode: "insensitive" } }
+        ? {
+            OR: [
+              { unitType: { contains: search, mode: "insensitive" } },
+              { description: { contains: search, mode: "insensitive" } },
+            ],
+          }
         : {}),
     },
-    orderBy: { workOrderNumber: "asc" },
-    select: { id: true, workOrderNumber: true },
+    orderBy: { createdAt: "desc" },
+    select: workOrderOptionSelect,
     take,
   })
 

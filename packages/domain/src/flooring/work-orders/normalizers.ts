@@ -88,6 +88,20 @@ export function normalizeWorkOrder(workOrder: WorkOrderDetailInput): WorkOrderDe
   }
 }
 
-export function normalizeWorkOrderOption(workOrder: { id: string; workOrderNumber: string }): WorkOrderOption {
-  return { id: workOrder.id, workOrderNumber: workOrder.workOrderNumber }
+export function normalizeWorkOrderOption(workOrder: {
+  id: string
+  workOrderNumber: string
+  property: { name: string }
+  unitType: string | null
+  unitNumber: string | null
+  description: string | null
+}): WorkOrderOption {
+  return {
+    id: workOrder.id,
+    workOrderNumber: workOrder.workOrderNumber,
+    propertyName: workOrder.property.name,
+    unitType: workOrder.unitType ?? "",
+    unitNumber: workOrder.unitNumber ?? "",
+    description: workOrder.description ?? "",
+  }
 }

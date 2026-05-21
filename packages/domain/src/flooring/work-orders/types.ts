@@ -37,6 +37,10 @@ export type WorkOrderDetail = WorkOrderListRow & {
 export type WorkOrderOption = {
   id: string
   workOrderNumber: string
+  propertyName: string
+  unitType: string
+  unitNumber: string
+  description: string
 }
 
 export type WorkOrderForm = {

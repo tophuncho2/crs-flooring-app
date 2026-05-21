@@ -43,8 +43,31 @@ export type WorkOrderPickerProps = {
   initialOptions?: WorkOrderOption[]
 }
 
+function joinNonEmpty(...parts: Array<string | null | undefined>): string {
+  return parts.filter((p): p is string => !!p && p.trim().length > 0).join(" · ")
+}
+
+/**
+ * Canonical title for a `WorkOrderOption` — used by the picker's option
+ * list, by the picker's selected-option trigger, and by callers that
+ * snapshot the picked option's label so the trigger stays in sync after
+ * close/reopen (cut-log relink flow).
+ */
+export function formatWorkOrderOptionTitle(option: WorkOrderOption): string {
+  return joinNonEmpty(`#${option.workOrderNumber}`, option.propertyName, option.unitType)
+}
+
+function formatWorkOrderOptionSubtitle(option: WorkOrderOption): string {
+  return joinNonEmpty(option.unitNumber, option.description)
+}
+
 function toDropdownOption(option: WorkOrderOption): AsyncRichDropdownOption {
-  return { id: option.id, title: `#${option.workOrderNumber}` }
+  const subtitle = formatWorkOrderOptionSubtitle(option)
+  return {
+    id: option.id,
+    title: formatWorkOrderOptionTitle(option),
+    ...(subtitle ? { subtitles: [subtitle] } : {}),
+  }
 }
 
 export function WorkOrderPicker({
@@ -55,7 +78,7 @@ export function WorkOrderPicker({
   selectedLabel = null,
   placeholder = "Select work order",
   disabledPlaceholder = "Select warehouse first",
-  searchPlaceholder = "Search work-order number",
+  searchPlaceholder = "Search description or unit type",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
   clearLabel = "Clear selection",
