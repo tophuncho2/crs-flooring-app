@@ -78,7 +78,6 @@ export function normalizeTemplate(template: TemplateDetailInput): TemplateDetail
 
 type TemplatePreviewHeaderInput = {
   id: string
-  templateNumber: string
   unitType: string
   description: string | null
   installerInstructions: string | null
@@ -98,7 +97,6 @@ export function normalizeTemplatePreviewHeader(
 ): TemplatePreviewHeader {
   return {
     id: template.id,
-    templateNumber: template.templateNumber,
     propertyStreetAddress: template.property.streetAddress ?? "",
     propertyCity: template.property.city ?? "",
     propertyState: template.property.state ?? "",
@@ -132,13 +130,11 @@ export function normalizeTemplatePreviewMaterialItemPage(
 
 export function normalizeTemplateOption(template: {
   id: string
-  templateNumber: string
   unitType: string
   description: string | null
 }): TemplateOption {
   return {
     id: template.id,
-    templateNumber: template.templateNumber,
     unitType: template.unitType,
     description: template.description,
   }

@@ -66,6 +66,5 @@ export type WorkOrderFileGenerationInput = {
   managementCompanyName: string
   warehouseName: string
   jobTypeName: string
-  templateNumber: string
   materialItems: WorkOrderFileMaterialItemProjection[]
 }

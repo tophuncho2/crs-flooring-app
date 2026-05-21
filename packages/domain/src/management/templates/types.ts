@@ -31,7 +31,6 @@ export type TemplateDetail = TemplateListRow & {
 
 export type TemplateOption = {
   id: string
-  templateNumber: string
   unitType: string
   description: string | null
 }
@@ -42,7 +41,6 @@ export type TemplateOption = {
 // template-only back-office notes and are intentionally excluded.
 export type TemplatePreviewHeader = {
   id: string
-  templateNumber: string
   propertyStreetAddress: string
   propertyCity: string
   propertyState: string

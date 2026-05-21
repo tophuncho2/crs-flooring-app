@@ -10,7 +10,6 @@ export type WorkOrderListRow = {
   jobTypeId: string | null
   jobTypeName: string | null
   templateId: string | null
-  templateNumber: string
   warehouseId: string | null
   warehouseName: string
   unitNumber: string

@@ -14,7 +14,6 @@ import {
   LIST_TEMPLATES_PAGE_SIZE,
   type ManagementCompanyOption,
   type PropertyOption,
-  type TablePreferencePayload,
   type TemplateListRow,
 } from "@builders/domain"
 import {
@@ -33,7 +32,6 @@ import { TemplatesRowCount } from "./toolbar-controls/sub-controls/templates-row
 const TEMPLATES_FILTERABLE_FIELDS = ["managementCompanyId", "propertyId"] as const
 
 export default function TemplatesClient({
-  initialTablePreferences,
   initialSearchQuery,
   initialPage,
   initialFilters,
@@ -41,7 +39,6 @@ export default function TemplatesClient({
   initialSelectedManagementCompany = null,
   initialSelectedProperty = null,
 }: {
-  initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
   initialPage: number
   initialFilters: TemplatesListFilters
@@ -75,7 +72,6 @@ export default function TemplatesClient({
     initialFilters,
     pageSize: LIST_TEMPLATES_PAGE_SIZE,
     tableKey: "templates-main",
-    initialTablePreferences,
     filterableFields: TEMPLATES_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })

@@ -268,7 +268,6 @@ export async function getWorkOrderForFileGeneration(
       managementCompany: { select: { name: true } },
       warehouse: { select: { name: true } },
       jobType: { select: { name: true } },
-      template: { select: { templateNumber: true } },
       items: {
         orderBy: { createdAt: "asc" as const },
         select: {
@@ -351,7 +350,6 @@ export async function getWorkOrderForFileGeneration(
     managementCompanyName: workOrder.managementCompany?.name ?? "",
     warehouseName: workOrder.warehouse?.name ?? "",
     jobTypeName: workOrder.jobType?.name ?? "",
-    templateNumber: workOrder.template?.templateNumber ?? "",
     materialItems,
   }
 }

@@ -117,12 +117,19 @@ function buildTemplatesWhere(
 }
 
 /**
- * Default sort is fixed: `templateNumber DESC` (newest TP-NNNNN first), with
- * `id DESC` as a stable tiebreak. The list-view toolbar no longer exposes a
- * sort toggle — this matches the imports / inventory list views.
+ * Default sort is fixed: property name ASC → unitType ASC → createdAt ASC,
+ * with `id ASC` as a stable tiebreak. Used for the templates list view AND
+ * the picker options (`listTemplateOptions` / `searchTemplateOptions` mirror
+ * the same chain modulo redundant keys). The list-view toolbar does not
+ * expose a sort toggle — this ordering is the single source of truth.
  */
 function buildTemplatesOrderBy(): Prisma.FlooringTemplateOrderByWithRelationInput[] {
-  return [{ templateNumber: "desc" }, { id: "desc" }]
+  return [
+    { property: { name: "asc" } },
+    { unitType: "asc" },
+    { createdAt: "asc" },
+    { id: "asc" },
+  ]
 }
 
 export async function listTemplates(
@@ -143,8 +150,13 @@ export async function listTemplateOptions(
   client: TemplatesDbClient = db,
 ): Promise<TemplateOption[]> {
   const templates = await client.flooringTemplate.findMany({
-    orderBy: [{ unitType: "asc" }, { id: "asc" }],
-    select: { id: true, templateNumber: true, unitType: true, description: true },
+    orderBy: [
+      { property: { name: "asc" } },
+      { unitType: "asc" },
+      { createdAt: "asc" },
+      { id: "asc" },
+    ],
+    select: { id: true, unitType: true, description: true },
   })
 
   return templates.map(normalizeTemplateOption)
@@ -174,9 +186,9 @@ export async function searchTemplateOptions(
 
   const templates = await client.flooringTemplate.findMany({
     where,
-    orderBy: [{ unitType: "asc" }, { id: "asc" }],
+    orderBy: [{ unitType: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     take: args.take,
-    select: { id: true, templateNumber: true, unitType: true, description: true },
+    select: { id: true, unitType: true, description: true },
   })
 
   return templates.map(normalizeTemplateOption)
@@ -184,7 +196,6 @@ export async function searchTemplateOptions(
 
 const templatePreviewHeaderSelect = {
   id: true,
-  templateNumber: true,
   unitType: true,
   description: true,
   installerInstructions: true,

@@ -1,6 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
-  getResolvedUserTablePreference,
   listTemplatesUseCase,
   searchManagementCompanyOptionsUseCase,
   searchPropertyOptionsUseCase,
@@ -8,7 +7,6 @@ import {
 import type {
   ManagementCompanyOption,
   PropertyOption,
-  TablePreferencePayload,
 } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
@@ -17,14 +15,6 @@ import {
   parseTemplatesListInputFromSearchParams,
   TEMPLATES_LIST_QUERY_KEY,
 } from "@/modules/templates/data/list-templates-request"
-
-const TEMPLATES_FALLBACK_PREFERENCES: TablePreferencePayload = {
-  sort: { key: "templateNumber", direction: "desc" },
-  filters: {},
-  columnVisibility: {},
-  columnOrder: [],
-  grouping: { enabled: false, keys: [] },
-}
 
 const INITIAL_OPTIONS_TAKE = 20
 
@@ -43,14 +33,8 @@ export default async function TemplatesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const user = await requireToolAccess("templates")
-  const userPreferences = await getResolvedUserTablePreference(user.id, "templates-main")
+  await requireToolAccess("templates")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-
-  const effectivePreferences: TablePreferencePayload = userPreferences.hasSavedPreference
-    ? userPreferences
-    : TEMPLATES_FALLBACK_PREFERENCES
-  void effectivePreferences
 
   const initialInput = parseTemplatesListInputFromSearchParams(resolvedSearchParams)
 
@@ -112,7 +96,6 @@ export default async function TemplatesPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <TemplatesClient
-        initialTablePreferences={userPreferences}
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}

@@ -15,7 +15,6 @@ type WorkOrderListInput = {
   jobTypeId: string | null
   jobType: { id: string; name: string } | null
   templateId: string | null
-  template: { templateNumber: string } | null
   warehouseId: string | null
   warehouse: { name: string } | null
   unitNumber: string | null
@@ -60,7 +59,6 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     jobTypeId: workOrder.jobTypeId,
     jobTypeName: workOrder.jobType?.name ?? null,
     templateId: workOrder.templateId,
-    templateNumber: workOrder.template?.templateNumber ?? "",
     warehouseId: workOrder.warehouseId,
     warehouseName: workOrder.warehouse?.name ?? "",
     unitNumber: workOrder.unitNumber ?? "",
