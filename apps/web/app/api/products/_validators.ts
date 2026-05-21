@@ -146,12 +146,14 @@ export function validateListProductsQuery(
 const productOptionsQuerySchema = z.object({
   search: z.string().optional(),
   categoryId: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedProductOptionsQuery = {
   search?: string
   categoryId?: string
+  skip: number
   take: number
 }
 
@@ -178,6 +180,7 @@ export function validateProductOptionsQuery(
   return {
     search: trimmedSearch ? trimmedSearch : undefined,
     categoryId: trimmedCategoryId ? trimmedCategoryId : undefined,
+    skip: parsed.skip,
     take: parsed.take,
   }
 }

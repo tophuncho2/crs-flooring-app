@@ -271,13 +271,19 @@ export async function listProductsForListView(
 export type ProductOptionsSearchArgs = {
   search?: string
   categoryId?: string
+  skip?: number
   take: number
+}
+
+export type ProductOptionsSearchResult = {
+  items: ProductOption[]
+  hasMore: boolean
 }
 
 export async function searchProductOptions(
   args: ProductOptionsSearchArgs,
   client: ProductsDbClient = db,
-): Promise<ProductOption[]> {
+): Promise<ProductOptionsSearchResult> {
   const clauses: Prisma.FlooringProductWhereInput[] = []
   if (args.search) {
     clauses.push({ name: { contains: args.search, mode: "insensitive" } })
@@ -288,11 +294,16 @@ export async function searchProductOptions(
   const where: Prisma.FlooringProductWhereInput | undefined =
     clauses.length === 0 ? undefined : clauses.length === 1 ? clauses[0] : { AND: clauses }
 
+  // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.flooringProduct.findMany({
     where,
     orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
-    take: args.take,
+    skip: args.skip ?? 0,
+    take: args.take + 1,
     select: productOptionSelect,
   })
-  return rows.map(normalizeProductOption)
+
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return { items: page.map(normalizeProductOption), hasMore }
 }

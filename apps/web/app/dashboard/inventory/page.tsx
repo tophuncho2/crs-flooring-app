@@ -90,11 +90,12 @@ export default async function FlooringInventoryPage({
     }
 
     if (selectedProductId) {
-      const products = await searchProductOptionsUseCase({
+      const productsPage = await searchProductOptionsUseCase({
         ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
         take: INITIAL_OPTIONS_TAKE,
       })
-      initialSelectedProduct = products.find((p) => p.id === selectedProductId) ?? null
+      initialSelectedProduct =
+        productsPage.items.find((p) => p.id === selectedProductId) ?? null
     }
   } catch (error) {
     return (

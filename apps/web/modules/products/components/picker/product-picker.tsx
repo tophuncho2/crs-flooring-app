@@ -73,17 +73,18 @@ export function ProductPicker({
     [categoryId],
   )
 
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchProductOptionsRequest(search, signal, {
         categoryId: categoryId ?? undefined,
+        skip,
       }),
     [categoryId],
   )
 
   const controller = useAsyncRichDropdownController<ProductOption>({
     bucketKey,
-    searchFn,
+    pagedSearchFn,
     initialOptions,
   })
 
@@ -117,7 +118,7 @@ export function ProductPicker({
       selectedOption={selectedOption}
       query={controller.query}
       onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
+      isLoading={controller.isLoading}
       errorMessage={controller.errorMessage}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}
@@ -128,6 +129,9 @@ export function ProductPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      hasMore={controller.hasMore}
+      isFetchingMore={controller.isFetchingMore}
+      onLoadMore={controller.loadMore}
     />
   )
 }

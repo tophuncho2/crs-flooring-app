@@ -17,8 +17,8 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const input = validateProductOptionsQuery(url.searchParams)
-    const options = await searchProductOptionsUseCase(input)
-    return routeJson(access, { options })
+    const result = await searchProductOptionsUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }
