@@ -14,7 +14,8 @@ import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
   type CategoryOption,
-  type ImportOption,
+  type InventoryImportNumberOption,
+  type InventoryPurchaseOrderOption,
   type InventoryRow,
   type ProductOption,
   type TablePreferencePayload,
@@ -101,9 +102,8 @@ export default function InventoryClient({
   initialCategoryOptions,
   initialSelectedCategory = null,
   initialSelectedProduct = null,
-  initialImportOptions = [],
-  initialSelectedImport = null,
-  initialSelectedPurchaseOrder = null,
+  initialImportNumberOptions = [],
+  initialPurchaseOrderOptions = [],
 }: {
   initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
@@ -114,12 +114,10 @@ export default function InventoryClient({
   initialCategoryOptions: CategoryOption[]
   initialSelectedCategory?: CategoryOption | null
   initialSelectedProduct?: ProductOption | null
-  /** SSR-loaded seed for both imports pickers (Import # and PO #). */
-  initialImportOptions?: ImportOption[]
-  /** Pre-resolved selection (when URL preloads `?importNumber=…`). */
-  initialSelectedImport?: ImportOption | null
-  /** Pre-resolved selection (when URL preloads `?purchaseOrderNumber=…`). */
-  initialSelectedPurchaseOrder?: ImportOption | null
+  /** SSR-loaded seed for the Import # picker (distinct values on inventory). */
+  initialImportNumberOptions?: InventoryImportNumberOption[]
+  /** SSR-loaded seed for the PO # picker (distinct values on inventory). */
+  initialPurchaseOrderOptions?: InventoryPurchaseOrderOption[]
 }) {
   const { message, pageError, openInventory } = useInventoryListController()
 
@@ -206,27 +204,8 @@ export default function InventoryClient({
       : null
   }, [selectedProductId, initialSelectedProduct])
 
-  const importLabel = useMemo(() => {
-    if (!selectedImportNumber) return null
-    if (initialSelectedImport?.importNumber === selectedImportNumber) {
-      return `#IMP-${initialSelectedImport.importNumber}`
-    }
-    const seeded = initialImportOptions.find((o) => o.importNumber === selectedImportNumber)
-    return seeded ? `#IMP-${seeded.importNumber}` : null
-  }, [selectedImportNumber, initialSelectedImport, initialImportOptions])
-
-  const purchaseOrderLabel = useMemo(() => {
-    if (!selectedPurchaseOrderNumber) return null
-    if (
-      initialSelectedPurchaseOrder?.purchaseOrderNumber === selectedPurchaseOrderNumber
-    ) {
-      return `PO# ${initialSelectedPurchaseOrder.purchaseOrderNumber}`
-    }
-    const seeded = initialImportOptions.find(
-      (o) => o.purchaseOrderNumber === selectedPurchaseOrderNumber,
-    )
-    return seeded ? `PO# ${seeded.purchaseOrderNumber}` : null
-  }, [selectedPurchaseOrderNumber, initialSelectedPurchaseOrder, initialImportOptions])
+  // Import # / PO # chip labels are derived directly from the selected value by
+  // each picker (`#IMP-${value}` / `PO# ${value}`); no SSR pre-resolve needed.
 
   // --- Cascade-clear filter handlers ---
   // Category change → clear Product.
@@ -379,10 +358,12 @@ export default function InventoryClient({
                 />
                 <ImportNumberFilterChip
                   value={selectedImportNumber}
-                  selectedLabel={importLabel}
                   onChange={handleImportNumberChange}
                   warehouseId={selectedWarehouseId}
-                  initialOptions={initialImportOptions}
+                  {...(isArchivedValue !== undefined
+                    ? { isArchived: isArchivedValue }
+                    : {})}
+                  initialOptions={initialImportNumberOptions}
                 />
                 <LocationPicker
                   value={locationValue || null}
@@ -394,10 +375,12 @@ export default function InventoryClient({
                 />
                 <PurchaseOrderFilterChip
                   value={selectedPurchaseOrderNumber}
-                  selectedLabel={purchaseOrderLabel}
                   onChange={handlePurchaseOrderNumberChange}
                   warehouseId={selectedWarehouseId}
-                  initialOptions={initialImportOptions}
+                  {...(isArchivedValue !== undefined
+                    ? { isArchived: isArchivedValue }
+                    : {})}
+                  initialOptions={initialPurchaseOrderOptions}
                 />
               </div>
             </ListToolbarCell>

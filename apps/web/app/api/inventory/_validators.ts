@@ -111,6 +111,74 @@ export function validateInventorySearchQuery(
   }
 }
 
+// --- Import # / PO # picker (inventory-row-backed, distinct) validators ---
+//
+// Distinct-snapshot pickers backed by `flooring_inventory.importNumber` and
+// `.purchaseOrderNumber` (not by `FlooringImportEntry`). Both share the same
+// shape: required warehouseId scope, optional archive scope (mirrors the
+// inventory list's archive segmented control), optional search, clamped take.
+
+const inventoryImportNumberOptionsQuerySchema = z.object({
+  warehouseId: z.string().min(1, "warehouseId is required"),
+  archived: z.enum(["true", "false"]).optional(),
+  search: z.string().optional(),
+  take: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(OPTIONS_MAX_TAKE)
+    .default(OPTIONS_DEFAULT_TAKE),
+})
+
+export type ValidatedInventoryImportNumberOptionsQuery = {
+  warehouseId: string
+  isArchived?: boolean
+  search?: string
+  take: number
+}
+
+export function validateInventoryImportNumberOptionsQuery(
+  searchParams: URLSearchParams,
+): ValidatedInventoryImportNumberOptionsQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = inventoryImportNumberOptionsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    throw new InventoryExecutionError({
+      code: "INVENTORY_VALIDATION_FAILED",
+      message: issue?.message ?? "Invalid inventory import-number options query",
+      status: 400,
+      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
+    })
+  }
+
+  const parsed = parseResult.data
+  const trimSearch = parsed.search?.trim()
+  const isArchived =
+    parsed.archived === "true" ? true : parsed.archived === "false" ? false : undefined
+  return {
+    warehouseId: parsed.warehouseId.trim(),
+    ...(isArchived !== undefined ? { isArchived } : {}),
+    ...(trimSearch ? { search: trimSearch } : {}),
+    take: parsed.take,
+  }
+}
+
+// PO # picker shares the import-number picker's wire shape. Kept as a separate
+// validator (and exported type) so route handlers stay one-validator-per-route.
+export type ValidatedInventoryPurchaseOrderOptionsQuery =
+  ValidatedInventoryImportNumberOptionsQuery
+
+export function validateInventoryPurchaseOrderOptionsQuery(
+  searchParams: URLSearchParams,
+): ValidatedInventoryPurchaseOrderOptionsQuery {
+  return validateInventoryImportNumberOptionsQuery(searchParams)
+}
+
 // --- Locations picker (warehouse-scoped, distinct) validator ---
 
 const inventoryLocationsSearchQuerySchema = z.object({

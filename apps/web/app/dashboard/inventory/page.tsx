@@ -3,15 +3,16 @@ import {
   getResolvedUserTablePreference,
   listInventoryUseCase,
   searchCategoryOptionsUseCase,
-  searchImportOptionsUseCase,
+  searchInventoryImportNumberOptionsUseCase,
+  searchInventoryPurchaseOrderOptionsUseCase,
   searchProductOptionsUseCase,
   searchWarehouseOptionsUseCase,
 } from "@builders/application"
 import type {
   CategoryOption,
-  ImportOption,
+  InventoryImportNumberOption,
+  InventoryPurchaseOrderOption,
   ProductOption,
-  TablePreferencePayload,
   WarehouseOption,
 } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
@@ -21,14 +22,6 @@ import {
   INVENTORY_LIST_QUERY_KEY,
   parseInventoryListInputFromSearchParams,
 } from "@/modules/inventory/data/list-inventory-request"
-
-const INVENTORY_FALLBACK_PREFERENCES: TablePreferencePayload = {
-  sort: { key: "inventoryNumber", direction: "desc" },
-  filters: {},
-  columnVisibility: {},
-  columnOrder: [],
-  grouping: { enabled: false, keys: [] },
-}
 
 const INITIAL_OPTIONS_TAKE = 20
 
@@ -51,10 +44,6 @@ export default async function FlooringInventoryPage({
   const userPreferences = await getResolvedUserTablePreference(user.id, "inventory-main")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
-  const effectivePreferences: TablePreferencePayload = userPreferences.hasSavedPreference
-    ? userPreferences
-    : INVENTORY_FALLBACK_PREFERENCES
-
   const initialInput = parseInventoryListInputFromSearchParams(resolvedSearchParams)
 
   const queryClient = new QueryClient()
@@ -64,17 +53,14 @@ export default async function FlooringInventoryPage({
   let initialCategoryOptions: CategoryOption[] = []
   let initialSelectedCategory: CategoryOption | null = null
   let initialSelectedProduct: ProductOption | null = null
-  let initialImportOptions: ImportOption[] = []
-  let initialSelectedImport: ImportOption | null = null
-  let initialSelectedPurchaseOrder: ImportOption | null = null
+  let initialImportNumberOptions: InventoryImportNumberOption[] = []
+  let initialPurchaseOrderOptions: InventoryPurchaseOrderOption[] = []
 
   try {
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
     const selectedCategoryId = initialInput.filters?.categoryId?.[0] ?? null
     const selectedProductId = initialInput.filters?.productId?.[0] ?? null
-    const selectedImportNumber = initialInput.filters?.importNumber?.[0] ?? null
-    const selectedPurchaseOrderNumber =
-      initialInput.filters?.purchaseOrderNumber?.[0] ?? null
+    const isArchivedScope = initialInput.filters?.isArchived
 
     const [, warehouseOptions, categoryOptions] = await Promise.all([
       queryClient.prefetchQuery({
@@ -118,50 +104,26 @@ export default async function FlooringInventoryPage({
       initialSelectedProduct = products.find((p) => p.id === selectedProductId) ?? null
     }
 
-    // Imports picker is warehouse-gated. Only prefetch + resolve when a
-    // warehouse is preset in the URL; otherwise the chips render disabled
-    // and there's nothing to label.
+    // Import # / PO # pickers are warehouse-gated and inventory-row-backed —
+    // distinct values come from `flooring_inventory` (not from
+    // `FlooringImportEntry`), filtered to the same archive scope the list
+    // view is rendering. Only prefetch when a warehouse is preset; otherwise
+    // the chips render disabled.
     if (selectedWarehouseId) {
-      initialImportOptions = await searchImportOptionsUseCase({
-        warehouseId: selectedWarehouseId,
-        take: INITIAL_OPTIONS_TAKE,
-      })
-
-      if (selectedImportNumber) {
-        const seeded = initialImportOptions.find(
-          (o) => o.importNumber === selectedImportNumber,
-        )
-        if (seeded) {
-          initialSelectedImport = seeded
-        } else {
-          const [match] = await searchImportOptionsUseCase({
-            warehouseId: selectedWarehouseId,
-            search: selectedImportNumber,
-            take: 1,
-          })
-          initialSelectedImport =
-            match && match.importNumber === selectedImportNumber ? match : null
-        }
-      }
-
-      if (selectedPurchaseOrderNumber) {
-        const seeded = initialImportOptions.find(
-          (o) => o.purchaseOrderNumber === selectedPurchaseOrderNumber,
-        )
-        if (seeded) {
-          initialSelectedPurchaseOrder = seeded
-        } else {
-          const [match] = await searchImportOptionsUseCase({
-            warehouseId: selectedWarehouseId,
-            search: selectedPurchaseOrderNumber,
-            take: 1,
-          })
-          initialSelectedPurchaseOrder =
-            match && match.purchaseOrderNumber === selectedPurchaseOrderNumber
-              ? match
-              : null
-        }
-      }
+      const [importNumberOptions, purchaseOrderOptions] = await Promise.all([
+        searchInventoryImportNumberOptionsUseCase({
+          warehouseId: selectedWarehouseId,
+          ...(isArchivedScope !== undefined ? { isArchived: isArchivedScope } : {}),
+          take: INITIAL_OPTIONS_TAKE,
+        }),
+        searchInventoryPurchaseOrderOptionsUseCase({
+          warehouseId: selectedWarehouseId,
+          ...(isArchivedScope !== undefined ? { isArchived: isArchivedScope } : {}),
+          take: INITIAL_OPTIONS_TAKE,
+        }),
+      ])
+      initialImportNumberOptions = importNumberOptions
+      initialPurchaseOrderOptions = purchaseOrderOptions
     }
   } catch (error) {
     return (
@@ -186,9 +148,8 @@ export default async function FlooringInventoryPage({
         initialCategoryOptions={initialCategoryOptions}
         initialSelectedCategory={initialSelectedCategory}
         initialSelectedProduct={initialSelectedProduct}
-        initialImportOptions={initialImportOptions}
-        initialSelectedImport={initialSelectedImport}
-        initialSelectedPurchaseOrder={initialSelectedPurchaseOrder}
+        initialImportNumberOptions={initialImportNumberOptions}
+        initialPurchaseOrderOptions={initialPurchaseOrderOptions}
       />
     </HydrationBoundary>
   )

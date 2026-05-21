@@ -7,8 +7,10 @@ import {
 import type {
   InventoryDetail,
   InventoryFormOptions,
+  InventoryImportNumberOption,
   InventoryLocationOption,
   InventoryOption,
+  InventoryPurchaseOrderOption,
   InventoryRow,
 } from "@builders/domain"
 import { Prisma } from "../../generated/prisma/client.js"
@@ -473,6 +475,104 @@ export async function searchInventoryLocationsForWarehouse(
   `)
 
   return rows.map((row) => ({ value: row.location }))
+}
+
+export type InventoryImportNumberOptionsSearchArgs = {
+  warehouseId: string
+  /**
+   * Optional archive scope — mirrors `InventoryListFilter.isArchived`.
+   *   undefined → both (no archive filter applied)
+   *   true      → archived rows only
+   *   false     → active rows only
+   * Passed through from the inventory list's archive segmented control so the
+   * chip surfaces only values that exist within the current list scope.
+   */
+  isArchived?: boolean
+  /** Free-text identity search — `ILIKE %value%` on the snapshot column. */
+  search?: string
+  take: number
+}
+
+/**
+ * Distinct, warehouse-scoped `importNumber` snapshot values for the inventory
+ * list's Import # filter chip. Sourced from `flooring_inventory` (not from
+ * `FlooringImportEntry`) so the chip only ever surfaces values that have at
+ * least one inventory row in scope. Excludes NULL/whitespace-only snapshots.
+ * Sorted DESC so the newest imports surface first.
+ */
+export async function searchInventoryImportNumberOptions(
+  args: InventoryImportNumberOptionsSearchArgs,
+  client: InventoryDbClient = db,
+): Promise<InventoryImportNumberOption[]> {
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"warehouseId" = ${args.warehouseId}`,
+    Prisma.sql`"importNumber" IS NOT NULL`,
+    Prisma.sql`length(trim("importNumber")) > 0`,
+  ]
+  if (args.isArchived !== undefined) {
+    conditions.push(Prisma.sql`"isArchived" = ${args.isArchived}`)
+  }
+  const trimmed = args.search?.trim() ?? ""
+  if (trimmed.length > 0) {
+    conditions.push(Prisma.sql`"importNumber" ILIKE ${`%${trimmed}%`}`)
+  }
+  const whereClause = Prisma.join(conditions, " AND ")
+
+  // Cast to int for numeric DESC ordering so "10" sorts after "9" rather than
+  // before. The snapshot column is text, but every value is a positive integer
+  // mirrored from `FlooringImportEntry.importNumber`.
+  const rows = await client.$queryRaw<{ importNumber: string }[]>(Prisma.sql`
+    SELECT DISTINCT "importNumber"
+    FROM "flooring_inventory"
+    WHERE ${whereClause}
+    ORDER BY ("importNumber")::int DESC
+    LIMIT ${args.take}
+  `)
+
+  return rows.map((row) => ({ importNumber: row.importNumber }))
+}
+
+export type InventoryPurchaseOrderOptionsSearchArgs = {
+  warehouseId: string
+  isArchived?: boolean
+  search?: string
+  take: number
+}
+
+/**
+ * Distinct, warehouse-scoped `purchaseOrderNumber` snapshot values for the
+ * inventory list's PO # filter chip. Same shape as
+ * `searchInventoryImportNumberOptions` but on the PO snapshot column.
+ * Excludes NULL/whitespace-only snapshots so the chip never offers an empty
+ * selection. Sorted ASC (POs are arbitrary alphanumeric strings).
+ */
+export async function searchInventoryPurchaseOrderOptions(
+  args: InventoryPurchaseOrderOptionsSearchArgs,
+  client: InventoryDbClient = db,
+): Promise<InventoryPurchaseOrderOption[]> {
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"warehouseId" = ${args.warehouseId}`,
+    Prisma.sql`"purchaseOrderNumber" IS NOT NULL`,
+    Prisma.sql`length(trim("purchaseOrderNumber")) > 0`,
+  ]
+  if (args.isArchived !== undefined) {
+    conditions.push(Prisma.sql`"isArchived" = ${args.isArchived}`)
+  }
+  const trimmed = args.search?.trim() ?? ""
+  if (trimmed.length > 0) {
+    conditions.push(Prisma.sql`"purchaseOrderNumber" ILIKE ${`%${trimmed}%`}`)
+  }
+  const whereClause = Prisma.join(conditions, " AND ")
+
+  const rows = await client.$queryRaw<{ purchaseOrderNumber: string }[]>(Prisma.sql`
+    SELECT DISTINCT "purchaseOrderNumber"
+    FROM "flooring_inventory"
+    WHERE ${whereClause}
+    ORDER BY "purchaseOrderNumber" ASC
+    LIMIT ${args.take}
+  `)
+
+  return rows.map((row) => ({ purchaseOrderNumber: row.purchaseOrderNumber }))
 }
 
 export async function listInventoryOptions(

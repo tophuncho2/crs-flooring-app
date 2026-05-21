@@ -161,3 +161,23 @@ export type InventoryOption = {
 export type InventoryLocationOption = {
   value: string
 }
+
+/**
+ * Option shape for the inventory list's Import # filter chip. Values are the
+ * `importNumber` snapshot column on `flooring_inventory`, surfaced as
+ * `SELECT DISTINCT` over rows in the picked warehouse. Carries only the raw
+ * string — the picker renders it as both id and title.
+ */
+export type InventoryImportNumberOption = {
+  importNumber: string
+}
+
+/**
+ * Option shape for the inventory list's PO # filter chip. Mirrors
+ * `InventoryImportNumberOption` against the `purchaseOrderNumber` snapshot
+ * column on `flooring_inventory`. Blank PO snapshots are filtered out server-
+ * side so the chip never offers an empty selection.
+ */
+export type InventoryPurchaseOrderOption = {
+  purchaseOrderNumber: string
+}
