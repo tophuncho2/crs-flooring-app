@@ -10,6 +10,7 @@ import {
 import type { InventoryDetail, InventoryForm } from "@builders/domain"
 import { CutLogEditPanel, useCutLogEditPanel } from "@/modules/cut-logs"
 import { useInventoryPrimarySection } from "../../controllers/record/primary/use-inventory-primary-section"
+import { fetchInventoryBalances } from "../../data/inventory-balances-request"
 import { INVENTORY_CUT_LOGS_QUERY_KEY } from "../../data/inventory-cut-logs-request"
 import { InventoryPrimaryFieldsSection } from "./sections/inventory-primary-fields-section"
 import { InventoryCutLogsSection } from "./cut-logs/inventory-cut-logs-section"
@@ -28,15 +29,27 @@ export function InventoryRecordPanel({
   })
 
   // The cut-log section fetches its own paginated page via react-query
-  // (`/api/inventory/[id]/cut-logs`). After any cut-log mutation, the
-  // shared edit panel calls `publish`, which invalidates the section's
-  // query so the visible page refetches with fresh data.
+  // (`/api/inventory/[id]/cut-logs`). After any cut-log mutation the shared
+  // edit panel calls `publish`, which (1) invalidates the section's query so
+  // the visible page refetches with fresh rows, and (2) refetches the three
+  // derived cells on the primary section (stock balance, total cut, coverage
+  // balance) via `/api/inventory/[id]/balances` and merges them via
+  // `patchRecord` — the rest of the cached record (and any in-flight draft)
+  // is left untouched.
   const queryClient = useQueryClient()
   const publishCutLogPatch = useCallback(() => {
     void queryClient.invalidateQueries({
       queryKey: [...INVENTORY_CUT_LOGS_QUERY_KEY, inventory.id],
     })
-  }, [queryClient, inventory.id])
+    void fetchInventoryBalances(inventory.id)
+      .then((balances) => {
+        controller.patchRecord(balances)
+      })
+      .catch(() => {
+        // Inventory row gone (e.g. deleted in another tab) — swallow; the
+        // record page will surface the not-found state on its next refresh.
+      })
+  }, [controller, inventory.id, queryClient])
 
   const cutLogPanel = useCutLogEditPanel({
     scope: { kind: "inventory", inventoryId: inventory.id },

@@ -57,6 +57,19 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
     syncRecord(nextRecord)
   }, [syncRecord])
 
+  // Merge a partial server snapshot into the cached record without touching the
+  // draft. Use for narrow reconciliations (e.g. refreshing derived cells after
+  // a child-section mutation) where a full refetch would be wasteful and the
+  // patched fields are not part of the section's editable form.
+  const patchRecord = useCallback((partial: Partial<TRecord>) => {
+    setRecord((previous) => {
+      if (!previous) return previous
+      const next = { ...previous, ...partial } as TRecord
+      setCachedRecordDetail(scope, next.id, next.updatedAt, next)
+      return next
+    })
+  }, [scope])
+
   const refreshRecord = useCallback(async () => {
     const payload = await requestJson<Record<string, TRecord>>(url)
     const nextRecord = payload[payloadKey]
@@ -98,6 +111,7 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
     error,
     setError,
     publishRecord,
+    patchRecord,
     syncRecord,
     refreshRecord,
     clearRecordCache,

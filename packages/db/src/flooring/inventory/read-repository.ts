@@ -160,6 +160,47 @@ export async function getInventoryDetailById(
   return row ? normalizeInventoryDetail(row) : null
 }
 
+export type InventoryBalances = Pick<
+  InventoryRow,
+  "stockBalance" | "totalCutSum" | "coverageBalance"
+>
+
+// Narrow projection used by the inventory record view to reconcile the three
+// derived "balance" cells (stock balance, total cut, coverage balance) after a
+// cut-log mutation without refetching the full detail row.
+export async function getInventoryBalancesById(
+  id: string,
+  client: InventoryDbClient = db,
+): Promise<InventoryBalances | null> {
+  const row = await client.flooringInventory.findUnique({
+    where: { id },
+    select: {
+      startingStock: true,
+      totalCutSum: true,
+      coveragePerUnit: true,
+      categorySlug: true,
+    },
+  })
+  if (!row) return null
+
+  const balanceNum = computeInventoryBalance({
+    startingStock: row.startingStock.toString(),
+    totalCutSum: row.totalCutSum.toString(),
+  })
+  const coverageNum = computeInventoryCoverage({
+    balance: balanceNum,
+    coveragePerUnit:
+      row.coveragePerUnit === null ? null : row.coveragePerUnit.toString(),
+    categorySlug: row.categorySlug,
+  })
+
+  return {
+    totalCutSum: toDecimalString(row.totalCutSum),
+    stockBalance: toInventoryFixedString(balanceNum),
+    coverageBalance: coverageNum === null ? "" : toInventoryFixedString(coverageNum),
+  }
+}
+
 export async function countInventory(
   filter?: InventoryListFilter,
   client: InventoryDbClient = db,
