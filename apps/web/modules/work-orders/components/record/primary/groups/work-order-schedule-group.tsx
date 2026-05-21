@@ -73,7 +73,12 @@ export function WorkOrderScheduleGroup({
               <StaticFieldValue>{detail?.jobTypeName ?? "—"}</StaticFieldValue>
             )}
           </WorkOrderField>
-          <WorkOrderField label="Description">
+          <WorkOrderField
+            label="Description"
+            editable={editable}
+            currentLength={draft.description.length}
+            maxLength={WO_DESCRIPTION_MAX}
+          >
             <TextareaCell
               editable={editable}
               value={draft.description}

@@ -141,7 +141,12 @@ export function WorkOrderPropertyUnitGroup({
                 <StaticFieldValue>{templateLabel ?? "—"}</StaticFieldValue>
               )}
             </WorkOrderField>
-            <WorkOrderField label="Unit Type">
+            <WorkOrderField
+              label="Unit Type"
+              editable={editable}
+              currentLength={draft.unitType.length}
+              maxLength={WO_UNIT_TYPE_MAX}
+            >
               <TextCell
                 editable={editable}
                 value={draft.unitType}
@@ -149,7 +154,12 @@ export function WorkOrderPropertyUnitGroup({
                 maxLength={WO_UNIT_TYPE_MAX}
               />
             </WorkOrderField>
-            <WorkOrderField label="Unit Number">
+            <WorkOrderField
+              label="Unit Number"
+              editable={editable}
+              currentLength={draft.unitNumber.length}
+              maxLength={WO_UNIT_NUMBER_MAX}
+            >
               <TextCell
                 editable={editable}
                 value={draft.unitNumber}
@@ -173,7 +183,12 @@ export function WorkOrderPropertyUnitGroup({
               <span className="whitespace-pre-line">{instructionsDisplay}</span>
             </StaticFieldValue>
           </WorkOrderField>
-          <WorkOrderField label="Custom Address (overrides property address on PDF)">
+          <WorkOrderField
+            label="Custom Address (overrides property address on PDF)"
+            editable={editable}
+            currentLength={draft.customAddress.length}
+            maxLength={WO_CUSTOM_ADDRESS_MAX}
+          >
             <TextareaCell
               editable={editable}
               value={draft.customAddress}
@@ -182,7 +197,12 @@ export function WorkOrderPropertyUnitGroup({
               rows={2}
             />
           </WorkOrderField>
-          <WorkOrderField label="Installer Instructions (appears on PDF)">
+          <WorkOrderField
+            label="Installer Instructions (appears on PDF)"
+            editable={editable}
+            currentLength={draft.installerInstructions.length}
+            maxLength={WO_INSTALLER_INSTRUCTIONS_MAX}
+          >
             <TextareaCell
               editable={editable}
               value={draft.installerInstructions}

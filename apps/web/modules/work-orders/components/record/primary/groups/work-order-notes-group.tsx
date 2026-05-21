@@ -20,7 +20,12 @@ export function WorkOrderNotesGroup({
 }) {
   return (
     <WorkOrderGroup title="Notes">
-      <WorkOrderField label="Internal Notes (not shown on PDF)">
+      <WorkOrderField
+        label="Internal Notes (not shown on PDF)"
+        editable={editable}
+        currentLength={draft.internalNotes.length}
+        maxLength={WO_INTERNAL_NOTES_MAX}
+      >
         <TextareaCell
           editable={editable}
           value={draft.internalNotes}
