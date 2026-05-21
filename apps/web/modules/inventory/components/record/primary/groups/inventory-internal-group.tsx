@@ -12,9 +12,10 @@ import { InventoryField } from "./inventory-field"
 import { InventoryGroup } from "./inventory-group"
 
 /**
- * Group 3: Internal. Left column stacks FIFO Received → Import #.
- * Right column stacks PO # → Internal Notes. All four are
- * internal-only operations data — never customer-facing.
+ * Group 3: Internal. Top row is a three-column inline of Import # · PO
+ * # · FIFO Received. Internal Notes sits below, spanning the full
+ * width. All four are internal-only operations data — never
+ * customer-facing.
  */
 export function InventoryInternalGroup({
   editable,
@@ -29,35 +30,33 @@ export function InventoryInternalGroup({
 }) {
   return (
     <InventoryGroup title="Internal">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <InventoryField label="Import #">
+            <StaticFieldValue>{inventory.importNumber || "—"}</StaticFieldValue>
+          </InventoryField>
+          <InventoryField label="PO #">
+            <StaticFieldValue>{inventory.purchaseOrderNumber || "—"}</StaticFieldValue>
+          </InventoryField>
           <InventoryField label="FIFO Received">
             <StaticFieldValue>
               {inventory.fifoReceivedAt ? formatFifoReceivedAtEastern(inventory.fifoReceivedAt) : "—"}
             </StaticFieldValue>
           </InventoryField>
-          <InventoryField label="Import #">
-            <StaticFieldValue>{inventory.importNumber || "—"}</StaticFieldValue>
-          </InventoryField>
         </div>
-        <div className="flex flex-col gap-3">
-          <InventoryField label="PO #">
-            <StaticFieldValue>{inventory.purchaseOrderNumber || "—"}</StaticFieldValue>
-          </InventoryField>
-          <InventoryField
-            label="Internal Notes"
+        <InventoryField
+          label="Internal Notes"
+          editable={editable}
+          currentLength={draft.internalNotes.length}
+          maxLength={INVENTORY_INTERNAL_NOTES_MAX}
+        >
+          <TextCell
             editable={editable}
-            currentLength={draft.internalNotes.length}
+            value={draft.internalNotes}
+            onChange={(value) => onFieldChange("internalNotes", value)}
             maxLength={INVENTORY_INTERNAL_NOTES_MAX}
-          >
-            <TextCell
-              editable={editable}
-              value={draft.internalNotes}
-              onChange={(value) => onFieldChange("internalNotes", value)}
-              maxLength={INVENTORY_INTERNAL_NOTES_MAX}
-            />
-          </InventoryField>
-        </div>
+          />
+        </InventoryField>
       </div>
     </InventoryGroup>
   )
