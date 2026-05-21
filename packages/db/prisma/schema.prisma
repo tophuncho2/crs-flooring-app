@@ -504,7 +504,7 @@ model FlooringWarehouse {
 
 model FlooringWorkOrder {
   id                   String                     @id @default(uuid())
-  workOrderNumber      String                     @unique @default(dbgenerated("('WO-'::text || lpad((nextval('flooring_work_order_number_seq'::regclass))::text, 5, '0'::text))")) @map("work_order_number")
+  workOrderNumber      String                     @unique @default(dbgenerated("('WO-'::text || (nextval('flooring_work_order_number_seq'::regclass))::text)")) @map("work_order_number")
   propertyId           String
   property             Property                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   templateId           String?

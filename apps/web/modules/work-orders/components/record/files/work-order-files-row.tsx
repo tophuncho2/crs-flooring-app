@@ -19,7 +19,7 @@ function statusTone(status: WorkOrderFileRow["status"]) {
 }
 
 function formatFileNumber(n: number) {
-  return `WO-FILE-${String(n).padStart(3, "0")}`
+  return `WO-FILE-${n}`
 }
 
 /**

@@ -10,7 +10,7 @@ import { WorkOrderFilesGenerateButton } from "./toolbar-controls/sub-controls/wo
 import { WorkOrderFilesRefreshButton } from "./toolbar-controls/sub-controls/work-order-files-refresh-button"
 
 function formatFileNumber(n: number) {
-  return `WO-FILE-${String(n).padStart(3, "0")}`
+  return `WO-FILE-${n}`
 }
 
 /**
