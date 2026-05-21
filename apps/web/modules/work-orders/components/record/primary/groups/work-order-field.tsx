@@ -37,18 +37,20 @@ export function WorkOrderField({
   const atMax = showCounter && (currentLength as number) >= (maxLength as number)
   return (
     <label className={joinClassNames("flex min-w-0 flex-col gap-1 text-sm", className)}>
-      <span className="text-[var(--foreground)]/80">{label}</span>
+      <span className="flex items-baseline justify-between gap-2 text-[var(--foreground)]/80">
+        <span>{label}</span>
+        {showCounter ? (
+          <span
+            className={joinClassNames(
+              "text-[10px] tabular-nums",
+              atMax ? "text-rose-700" : "text-[var(--foreground)]/55",
+            )}
+          >
+            {currentLength}/{maxLength}
+          </span>
+        ) : null}
+      </span>
       {children}
-      {showCounter ? (
-        <span
-          className={joinClassNames(
-            "self-end text-[10px] tabular-nums",
-            atMax ? "text-rose-700" : "text-[var(--foreground)]/55",
-          )}
-        >
-          {currentLength}/{maxLength}
-        </span>
-      ) : null}
     </label>
   )
 }
