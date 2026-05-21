@@ -3,13 +3,11 @@ import {
   getResolvedUserTablePreference,
   listInventoryUseCase,
   searchCategoryOptionsUseCase,
-  searchInventoryPurchaseOrderOptionsUseCase,
   searchProductOptionsUseCase,
   searchWarehouseOptionsUseCase,
 } from "@builders/application"
 import type {
   CategoryOption,
-  InventoryPurchaseOrderOption,
   ProductOption,
   WarehouseOption,
 } from "@builders/domain"
@@ -51,13 +49,11 @@ export default async function FlooringInventoryPage({
   let initialCategoryOptions: CategoryOption[] = []
   let initialSelectedCategory: CategoryOption | null = null
   let initialSelectedProduct: ProductOption | null = null
-  let initialPurchaseOrderOptions: InventoryPurchaseOrderOption[] = []
 
   try {
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
     const selectedCategoryId = initialInput.filters?.categoryId?.[0] ?? null
     const selectedProductId = initialInput.filters?.productId?.[0] ?? null
-    const isArchivedScope = initialInput.filters?.isArchived
 
     const [, warehouseOptions, categoryOptions] = await Promise.all([
       queryClient.prefetchQuery({
@@ -100,18 +96,6 @@ export default async function FlooringInventoryPage({
       })
       initialSelectedProduct = products.find((p) => p.id === selectedProductId) ?? null
     }
-
-    // PO # picker is warehouse-gated and inventory-row-backed — distinct
-    // values come from `flooring_inventory` (not from `FlooringImportEntry`),
-    // filtered to the same archive scope the list view is rendering. Only
-    // prefetch when a warehouse is preset; otherwise the chip renders disabled.
-    if (selectedWarehouseId) {
-      initialPurchaseOrderOptions = await searchInventoryPurchaseOrderOptionsUseCase({
-        warehouseId: selectedWarehouseId,
-        ...(isArchivedScope !== undefined ? { isArchived: isArchivedScope } : {}),
-        take: INITIAL_OPTIONS_TAKE,
-      })
-    }
   } catch (error) {
     return (
       <DashboardErrorState
@@ -135,7 +119,6 @@ export default async function FlooringInventoryPage({
         initialCategoryOptions={initialCategoryOptions}
         initialSelectedCategory={initialSelectedCategory}
         initialSelectedProduct={initialSelectedProduct}
-        initialPurchaseOrderOptions={initialPurchaseOrderOptions}
       />
     </HydrationBoundary>
   )

@@ -111,63 +111,6 @@ export function validateInventorySearchQuery(
   }
 }
 
-// --- PO # picker (inventory-row-backed, distinct) validator ---
-//
-// Distinct-snapshot picker backed by `flooring_inventory.purchaseOrderNumber`
-// (not by `FlooringImportEntry`). Required warehouseId scope, optional archive
-// scope (mirrors the inventory list's archive segmented control), optional
-// search, clamped take.
-
-const inventoryPurchaseOrderOptionsQuerySchema = z.object({
-  warehouseId: z.string().min(1, "warehouseId is required"),
-  archived: z.enum(["true", "false"]).optional(),
-  search: z.string().optional(),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(OPTIONS_MAX_TAKE)
-    .default(OPTIONS_DEFAULT_TAKE),
-})
-
-export type ValidatedInventoryPurchaseOrderOptionsQuery = {
-  warehouseId: string
-  isArchived?: boolean
-  search?: string
-  take: number
-}
-
-export function validateInventoryPurchaseOrderOptionsQuery(
-  searchParams: URLSearchParams,
-): ValidatedInventoryPurchaseOrderOptionsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = inventoryPurchaseOrderOptionsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new InventoryExecutionError({
-      code: "INVENTORY_VALIDATION_FAILED",
-      message: issue?.message ?? "Invalid inventory purchase-order options query",
-      status: 400,
-      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
-    })
-  }
-
-  const parsed = parseResult.data
-  const trimSearch = parsed.search?.trim()
-  const isArchived =
-    parsed.archived === "true" ? true : parsed.archived === "false" ? false : undefined
-  return {
-    warehouseId: parsed.warehouseId.trim(),
-    ...(isArchived !== undefined ? { isArchived } : {}),
-    ...(trimSearch ? { search: trimSearch } : {}),
-    take: parsed.take,
-  }
-}
-
 // --- Locations picker (warehouse-scoped, distinct) validator ---
 
 const inventoryLocationsSearchQuerySchema = z.object({

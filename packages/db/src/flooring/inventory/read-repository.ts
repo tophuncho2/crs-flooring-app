@@ -9,7 +9,6 @@ import type {
   InventoryFormOptions,
   InventoryLocationOption,
   InventoryOption,
-  InventoryPurchaseOrderOption,
   InventoryRow,
 } from "@builders/domain"
 import { Prisma } from "../../generated/prisma/client.js"
@@ -474,59 +473,6 @@ export async function searchInventoryLocationsForWarehouse(
   `)
 
   return rows.map((row) => ({ value: row.location }))
-}
-
-export type InventoryPurchaseOrderOptionsSearchArgs = {
-  warehouseId: string
-  /**
-   * Optional archive scope — mirrors `InventoryListFilter.isArchived`.
-   *   undefined → both (no archive filter applied)
-   *   true      → archived rows only
-   *   false     → active rows only
-   * Passed through from the inventory list's archive segmented control so the
-   * chip surfaces only values that exist within the current list scope.
-   */
-  isArchived?: boolean
-  /** Free-text identity search — `ILIKE %value%` on the snapshot column. */
-  search?: string
-  take: number
-}
-
-/**
- * Distinct, warehouse-scoped `purchaseOrderNumber` snapshot values for the
- * inventory list's PO # filter chip. Sourced from `flooring_inventory` (not
- * from `FlooringImportEntry`) so the chip only ever surfaces values that have
- * at least one inventory row in scope. Excludes NULL/whitespace-only snapshots
- * so the chip never offers an empty selection. Sorted ASC (POs are arbitrary
- * alphanumeric strings).
- */
-export async function searchInventoryPurchaseOrderOptions(
-  args: InventoryPurchaseOrderOptionsSearchArgs,
-  client: InventoryDbClient = db,
-): Promise<InventoryPurchaseOrderOption[]> {
-  const conditions: Prisma.Sql[] = [
-    Prisma.sql`"warehouseId" = ${args.warehouseId}`,
-    Prisma.sql`"purchaseOrderNumber" IS NOT NULL`,
-    Prisma.sql`length(trim("purchaseOrderNumber")) > 0`,
-  ]
-  if (args.isArchived !== undefined) {
-    conditions.push(Prisma.sql`"isArchived" = ${args.isArchived}`)
-  }
-  const trimmed = args.search?.trim() ?? ""
-  if (trimmed.length > 0) {
-    conditions.push(Prisma.sql`"purchaseOrderNumber" ILIKE ${`%${trimmed}%`}`)
-  }
-  const whereClause = Prisma.join(conditions, " AND ")
-
-  const rows = await client.$queryRaw<{ purchaseOrderNumber: string }[]>(Prisma.sql`
-    SELECT DISTINCT "purchaseOrderNumber"
-    FROM "flooring_inventory"
-    WHERE ${whereClause}
-    ORDER BY "purchaseOrderNumber" ASC
-    LIMIT ${args.take}
-  `)
-
-  return rows.map((row) => ({ purchaseOrderNumber: row.purchaseOrderNumber }))
 }
 
 export async function listInventoryOptions(

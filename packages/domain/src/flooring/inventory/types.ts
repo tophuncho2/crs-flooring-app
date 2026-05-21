@@ -162,12 +162,3 @@ export type InventoryLocationOption = {
   value: string
 }
 
-/**
- * Option shape for the inventory list's PO # filter chip. Values are the
- * `purchaseOrderNumber` snapshot column on `flooring_inventory`, surfaced as
- * `SELECT DISTINCT` over rows in the picked warehouse. Blank PO snapshots are
- * filtered out server-side so the chip never offers an empty selection.
- */
-export type InventoryPurchaseOrderOption = {
-  purchaseOrderNumber: string
-}
