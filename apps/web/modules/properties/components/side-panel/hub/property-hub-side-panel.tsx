@@ -50,12 +50,12 @@ export function PropertyHubSidePanel({
   const {
     isOpen,
     mode,
+    contextMcId,
     managementCompany,
     selectedPropertyLabel,
     propertyEditMcLabel,
     properties,
     templates,
-    activeView,
     isDirty,
     isSaving,
     canSave,
@@ -66,10 +66,13 @@ export function PropertyHubSidePanel({
     close,
     deleteMc,
     deleteProperty,
+    exitToView,
     goToProperties,
     goToTemplates,
     openPicker,
   } = controller
+
+  const hasHubViewTarget = contextMcId !== null
 
   const errorMessage = validationError ?? error ?? null
 
@@ -118,6 +121,7 @@ export function PropertyHubSidePanel({
           onSave={save}
           onDiscard={discard}
           onDelete={deleteMc}
+          onOpenHubView={hasHubViewTarget ? exitToView : undefined}
           errorMessage={errorMessage}
         />
       )
@@ -131,6 +135,7 @@ export function PropertyHubSidePanel({
           onSave={save}
           onDiscard={discard}
           onDelete={deleteProperty}
+          onOpenHubView={hasHubViewTarget ? exitToView : undefined}
           errorMessage={errorMessage}
         />
       )
@@ -201,6 +206,8 @@ export function PropertyHubSidePanel({
     discard,
     deleteMc,
     deleteProperty,
+    exitToView,
+    hasHubViewTarget,
     errorMessage,
     properties,
     templates,
