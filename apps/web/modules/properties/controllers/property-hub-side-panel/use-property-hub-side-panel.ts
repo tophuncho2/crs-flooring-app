@@ -426,6 +426,42 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     })
   }, [])
 
+  // ===== MC link picker surface (dispatched by returnTo) =====
+  // The same inline MC link picker serves both the create flow (writes
+  // mcLinkId / mcLinkLabel into the create draft) and the property-edit
+  // flow (writes managementCompanyId into the property edit form). The
+  // picker reads selectedId/Label from the appropriate state.
+  const mcLinkPickerReturnTarget =
+    mode.kind === "picker-takeover" ? mode.returnTo.kind : null
+
+  const mcLinkSelectedId: string | null =
+    mcLinkPickerReturnTarget === "section-edit-property"
+      ? propertyEditForm.managementCompanyId.length > 0
+        ? propertyEditForm.managementCompanyId
+        : null
+      : mcLinkId
+
+  const mcLinkSelectedLabel: string | null =
+    mcLinkPickerReturnTarget === "section-edit-property" ? propertyEditMcLabel : mcLinkLabel
+
+  const commitMcLink = useCallback(
+    (id: string | null, label: string | null) => {
+      const returnTo = mode.kind === "picker-takeover" ? mode.returnTo : null
+      if (returnTo?.kind === "section-edit-property") {
+        setPropertyEditForm((prev) => ({ ...prev, managementCompanyId: id ?? "" }))
+        setPropertyEditMcLabel(label)
+        setError(null)
+      } else {
+        setMcLinkId(id)
+        setMcLinkLabel(id === null ? null : label)
+        if (id !== null) setMcForm(EMPTY_MC_FORM)
+        setError(null)
+      }
+      closePicker()
+    },
+    [mode, closePicker],
+  )
+
   // ===== View tab + property-filter handlers =====
   const goToProperties = useCallback(() => {
     setMode((prev) => (prev.kind === "view" ? { ...prev, tab: "properties" } : prev))
@@ -705,6 +741,9 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     exitToView,
     openPicker,
     closePicker,
+    mcLinkSelectedId,
+    mcLinkSelectedLabel,
+    commitMcLink,
 
     // ===== Create-mode state + setters =====
     mcMode,

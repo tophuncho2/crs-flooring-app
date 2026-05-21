@@ -15,17 +15,17 @@ function toPickerOption(option: ManagementCompanyOption): HubSidePanelPickerOpti
 }
 
 /**
- * Inline-in-body MC link picker, shown during the hub-create flow when the
- * user opens the "Link existing company" picker. Selecting a row writes the
- * picked MC into the create draft and pops the panel back to the create
- * mode.
+ * Inline-in-body MC link picker. Serves two callers via the controller's
+ * `commitMcLink` dispatch: the create flow (writes the link into the
+ * create draft) and the property-edit flow (writes the link into the
+ * property edit form). The picker doesn't need to know which.
  */
 export function PropertyHubMcLinkPicker({
   controller,
 }: {
   controller: PropertyHubSidePanelController
 }) {
-  const { mcLinkId, mcLinkLabel, setMcLink, closePicker } = controller
+  const { mcLinkSelectedId, mcLinkSelectedLabel, commitMcLink, closePicker } = controller
 
   const pagedSearchFn = useCallback(
     (search: string, signal: AbortSignal | undefined, skip: number) =>
@@ -40,16 +40,14 @@ export function PropertyHubMcLinkPicker({
 
   const handleSelect = useCallback(
     (option: HubSidePanelPickerOption) => {
-      setMcLink(option.id, option.title)
-      closePicker()
+      commitMcLink(option.id, option.title)
     },
-    [setMcLink, closePicker],
+    [commitMcLink],
   )
 
   const handleClear = useCallback(() => {
-    setMcLink(null, null)
-    closePicker()
-  }, [setMcLink, closePicker])
+    commitMcLink(null, null)
+  }, [commitMcLink])
 
   const toOption = useMemo(() => toPickerOption, [])
 
@@ -57,8 +55,8 @@ export function PropertyHubMcLinkPicker({
     <HubSidePanelPicker
       controller={dropdown}
       toOption={toOption}
-      selectedId={mcLinkId}
-      selectedLabel={mcLinkLabel}
+      selectedId={mcLinkSelectedId}
+      selectedLabel={mcLinkSelectedLabel}
       onSelect={handleSelect}
       onClear={handleClear}
       onCancel={closePicker}

@@ -16,6 +16,7 @@ import { PropertyHubMcViewSection } from "./property-hub-mc-view-section"
 import { PropertyHubMcLinkPicker } from "./property-hub-mc-link-picker"
 import { PropertyHubPropertiesListSection } from "./property-hub-properties-list-section"
 import { PropertyHubPropertyCreateSection } from "./property-hub-property-create-section"
+import { PropertyHubPropertyEditMcSection } from "./property-hub-property-edit-mc-section"
 import { PropertyHubPropertyEditSection } from "./property-hub-property-edit-section"
 import { PropertyHubPropertyFilterPicker } from "./property-hub-property-filter-picker"
 import { PropertyHubTemplatesListSection } from "./property-hub-templates-list-section"
@@ -232,7 +233,10 @@ export function PropertyHubSidePanel({
           <PropertyHubPropertiesListSection controller={controller} dimmed />
         </div>
       ) : mode.kind === "section-edit-property" ? (
-        <PropertyHubPropertyEditSection controller={controller} />
+        <div className="flex flex-col gap-5">
+          <PropertyHubPropertyEditMcSection controller={controller} />
+          <PropertyHubPropertyEditSection controller={controller} />
+        </div>
       ) : mode.kind === "view" ? (
         mode.tab === "properties" ? (
           <div className="flex flex-col gap-5">
