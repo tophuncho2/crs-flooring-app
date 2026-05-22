@@ -297,7 +297,7 @@ export async function searchProductOptions(
   // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.flooringProduct.findMany({
     where,
-    orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }],
+    orderBy: [{ name: "asc" }, { style: "asc" }, { color: "asc" }, { id: "asc" }],
     skip: args.skip ?? 0,
     take: args.take + 1,
     select: productOptionSelect,
