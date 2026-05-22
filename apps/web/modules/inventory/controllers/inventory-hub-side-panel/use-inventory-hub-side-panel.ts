@@ -189,8 +189,12 @@ export function useInventoryHubSidePanel({
   // to swap the body to the picker takeover. Commit handlers reuse the
   // cut-log panel controller's existing setters + snapshot helpers so
   // the form value + the picker trigger's label move together.
+  //
+  // `openCutLogPicker` toggles — clicking the active trigger closes the
+  // picker (matches the template-sync top-toolbar pattern). The trigger
+  // fires it unconditionally and the function decides open vs. close.
   const openCutLogPicker = useCallback((kind: CutLogPickerKind) => {
-    setCutLogPickerKind(kind)
+    setCutLogPickerKind((current) => (current === kind ? null : kind))
   }, [])
 
   const closeCutLogPicker = useCallback(() => {

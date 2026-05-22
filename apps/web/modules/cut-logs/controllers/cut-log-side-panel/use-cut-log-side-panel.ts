@@ -143,8 +143,12 @@ export function useCutLogEditPanel({
   // Body-takeover picker controls. The panel renders a HubSidePanelPicker
   // in its body while `pickerKind` is non-null; commit handlers below
   // close the takeover and update form state in one render.
+  //
+  // `openPicker` toggles — clicking the active trigger closes the picker
+  // (matches the template-sync top-toolbar pattern). The trigger fires
+  // it unconditionally and the function decides open vs. close.
   const openPicker = useCallback((kind: CutLogPanelPickerKind) => {
-    setPickerKind(kind)
+    setPickerKind((current) => (current === kind ? null : kind))
   }, [])
 
   const closePicker = useCallback(() => {
