@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import type { HubActiveView } from "./types"
 
 export type UseHubViewFilterArgs = {
@@ -14,12 +14,6 @@ export type HubViewFilterSlice = {
   selectedPropertyLabel: string | null
   setPropertyFilter: (id: string, label: string) => void
   clearPropertyFilter: () => void
-  /**
-   * Queue a filter to be re-applied after the contextMcId-keyed auto-reset.
-   * Used by openForTemplatesView when the same call also changes contextMcId,
-   * so the reset doesn't wipe the filter we just set.
-   */
-  queuePropertyFilter: (id: string, label: string) => void
   resetView: () => void
 }
 
@@ -32,7 +26,6 @@ export function useHubViewFilter({ contextMcId }: UseHubViewFilterArgs): HubView
   const [activeView, setActiveView] = useState<HubActiveView>("properties")
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
   const [selectedPropertyLabel, setSelectedPropertyLabel] = useState<string | null>(null)
-  const pendingPropertyFilterRef = useRef<{ id: string; label: string } | null>(null)
 
   const resetView = useCallback(() => {
     setActiveView("properties")
@@ -50,19 +43,9 @@ export function useHubViewFilter({ contextMcId }: UseHubViewFilterArgs): HubView
     setSelectedPropertyLabel(null)
   }, [])
 
-  const queuePropertyFilter = useCallback((id: string, label: string) => {
-    pendingPropertyFilterRef.current = { id, label }
-  }, [])
-
-  // Reset when context MC changes — then re-apply any queued filter.
+  // Reset when context MC changes — so filters from one hub don't leak to another.
   useEffect(() => {
     resetView()
-    const pending = pendingPropertyFilterRef.current
-    if (pending) {
-      setSelectedPropertyId(pending.id)
-      setSelectedPropertyLabel(pending.label)
-      pendingPropertyFilterRef.current = null
-    }
   }, [contextMcId, resetView])
 
   return {
@@ -71,7 +54,6 @@ export function useHubViewFilter({ contextMcId }: UseHubViewFilterArgs): HubView
     selectedPropertyLabel,
     setPropertyFilter,
     clearPropertyFilter,
-    queuePropertyFilter,
     resetView,
   }
 }

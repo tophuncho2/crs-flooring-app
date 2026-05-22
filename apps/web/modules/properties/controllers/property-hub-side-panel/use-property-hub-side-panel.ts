@@ -184,19 +184,6 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     [view],
   )
 
-  // Open hub view on the Templates tab, pre-filtered to a specific property.
-  // Used by the template-sync panel's right arrow to "exit into" the hub at
-  // the templates list for the currently selected template's property.
-  const openForTemplatesView = useCallback(
-    (mcId: string, propertyId: string, propertyLabel: string) => {
-      view.queuePropertyFilter(propertyId, propertyLabel)
-      view.setPropertyFilter(propertyId, propertyLabel)
-      setError(null)
-      setMode({ kind: "view", mcId, tab: "templates" })
-    },
-    [view],
-  )
-
   const openForMcEdit = useCallback(
     (row: ManagementCompanyListRow) => {
       mcEdit.hydrateFromRow(buildMcFormFromRow(row), row.updatedAt)
@@ -369,7 +356,6 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     open,
     openForCreate,
     openForView,
-    openForTemplatesView,
     openForMcEdit,
     openForPropertyEdit,
     close,

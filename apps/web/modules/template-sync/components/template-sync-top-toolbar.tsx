@@ -1,10 +1,10 @@
 "use client"
 
+import { HubSidePanelPickerTrigger } from "@/components/hub-side-panel"
 import {
-  HubSidePanelPickerTrigger,
-  HubSidePanelViewSwitcher,
-} from "@/components/hub-side-panel"
-import { SidePanelPreviewNewButton } from "@/components/side-panel-preview"
+  SidePanelPreviewNewButton,
+  SidePanelPreviewOpenButton,
+} from "@/components/side-panel-preview"
 import { TemplateSyncItemsSubHeader } from "@/modules/template-sync/components/header/template-sync-items-sub-header"
 import { TemplateSyncClearButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-clear-button"
 import { TemplateSyncNewButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-new-button"
@@ -17,16 +17,12 @@ const PICKER_LABEL_CLASS =
 
 /**
  * Sticky top-toolbar for the template-sync side panel. Composes (top to
- * bottom): view-switcher arrows, the three cascade picker triggers, the
- * preview items sub-header (when applicable), and the right-aligned action
- * button row.
+ * bottom): the three cascade picker triggers, the preview items sub-header
+ * (when applicable), and the right-aligned action button row.
  */
 export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyncController }) {
   const {
-    arrowsEnabled,
     isSyncing,
-    handleArrowPrev,
-    handleArrowNext,
     expandedPicker,
     togglePicker,
     selectedManagementCompanyLabel,
@@ -42,9 +38,11 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
     hasSelections,
     canCreateForProperty,
     canActOnTemplate,
+    canOpenHubView,
     errorMessage,
     resetSelections,
     handleCreateHub,
+    handleOpenHubView,
     handleCreate,
     handleOpen,
     handleSync,
@@ -52,16 +50,6 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
 
   return (
     <div className="flex flex-col gap-3">
-      <HubSidePanelViewSwitcher
-        label="Template sync"
-        prevDisabled={!arrowsEnabled || isSyncing}
-        nextDisabled={!arrowsEnabled || isSyncing}
-        onGoPrev={handleArrowPrev}
-        onGoNext={handleArrowNext}
-        prevAriaLabel="Open properties hub view"
-        nextAriaLabel="Open templates hub view"
-      />
-
       <label className="flex flex-col gap-1.5">
         <span className={PICKER_LABEL_CLASS}>Management company</span>
         <HubSidePanelPickerTrigger
@@ -118,6 +106,11 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
             disabled={isSyncing}
             onClick={handleCreateHub}
             label="Create hub"
+          />
+          <SidePanelPreviewOpenButton
+            disabled={!canOpenHubView || isSyncing}
+            onClick={handleOpenHubView}
+            label="Open hub view"
           />
           <TemplateSyncNewButton
             disabled={!canCreateForProperty || isSyncing}

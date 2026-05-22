@@ -57,8 +57,7 @@ export type TemplateSyncController = {
   handleOpen: () => void
   handleCreate: () => void
   handleCreateHub: () => void
-  handleArrowPrev: () => void
-  handleArrowNext: () => void
+  handleOpenHubView: () => void
   handleSync: () => Promise<void>
   toggleHeaderCollapsed: () => void
 
@@ -73,7 +72,7 @@ export type TemplateSyncController = {
   canActOnTemplate: boolean
   canCreateForProperty: boolean
   hasSelections: boolean
-  arrowsEnabled: boolean
+  canOpenHubView: boolean
 }
 
 /**
@@ -209,10 +208,9 @@ export function useTemplateSyncController(): TemplateSyncController {
     managementCompanyId !== null || propertyId !== null || templateId !== null
   const resolvedHubMcId =
     managementCompanyId ?? selectedPropertyOption?.managementCompanyId ?? null
-  // Arrows mirror the hub's Properties ◂ ▸ Templates switcher — both are
-  // enabled together once a template is selected (which guarantees a
-  // resolvable mgmt-co + property pair).
-  const arrowsEnabled = canActOnTemplate && resolvedHubMcId !== null
+  // "Open hub view" is enabled whenever we know which MC's hub to open —
+  // either an explicit mgmt-co pick or one carried by the selected property.
+  const canOpenHubView = resolvedHubMcId !== null
 
   const handleOpen = useCallback(() => {
     if (!templateId) return
@@ -236,29 +234,15 @@ export function useTemplateSyncController(): TemplateSyncController {
     hubPanel.openForCreate()
   }, [resetSelections, hubPanel])
 
-  // Left arrow ◂ — open hub view at Properties tab for this template's mgmt-co.
-  const handleArrowPrev = useCallback(() => {
-    if (!arrowsEnabled || !resolvedHubMcId) return
+  // Open the unified hub view at the resolved mgmt-co's Properties tab.
+  // Replaces the (briefly-tried) two-arrow design with one button — enabled
+  // whenever a mgmt-co is resolvable from the current selections.
+  const handleOpenHubView = useCallback(() => {
+    if (!resolvedHubMcId) return
     setOpen(false)
     resetSelections()
     hubPanel.openForView(resolvedHubMcId)
-  }, [arrowsEnabled, resolvedHubMcId, resetSelections, hubPanel])
-
-  // Right arrow ▸ — open hub view at Templates tab, pre-filtered to this
-  // template's property under its mgmt-co.
-  const handleArrowNext = useCallback(() => {
-    if (!arrowsEnabled || !resolvedHubMcId || !propertyId || !selectedPropertyLabel) return
-    setOpen(false)
-    resetSelections()
-    hubPanel.openForTemplatesView(resolvedHubMcId, propertyId, selectedPropertyLabel)
-  }, [
-    arrowsEnabled,
-    resolvedHubMcId,
-    propertyId,
-    selectedPropertyLabel,
-    resetSelections,
-    hubPanel,
-  ])
+  }, [resolvedHubMcId, resetSelections, hubPanel])
 
   const handleSync = useCallback(async () => {
     if (!templateId || isSyncing) return
@@ -315,8 +299,7 @@ export function useTemplateSyncController(): TemplateSyncController {
     handleOpen,
     handleCreate,
     handleCreateHub,
-    handleArrowPrev,
-    handleArrowNext,
+    handleOpenHubView,
     handleSync,
     toggleHeaderCollapsed,
     hubPanel,
@@ -325,6 +308,6 @@ export function useTemplateSyncController(): TemplateSyncController {
     canActOnTemplate,
     canCreateForProperty,
     hasSelections,
-    arrowsEnabled,
+    canOpenHubView,
   }
 }
