@@ -39,7 +39,8 @@
     "db:seed:uoms": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-unit-of-measures.js",
     "db:seed:categories": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-categories.js",
     "db:seed:job-types": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-job-types.js",
-    "db:seed:demo": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-demo-data.js"
+    "db:seed:demo": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-demo-data.js",
+    "db:wipe:demo": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/wipe-demo-data.js"
   },
   "dependencies": {
     "@builders/domain": "file:../domain",

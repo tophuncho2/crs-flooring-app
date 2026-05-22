@@ -153,6 +153,8 @@ async function nextWarehouseNumber(prisma) {
 async function seedDemoData({ prisma, logger = console }) {
   logger.log("Checking prerequisites...")
 
+  const { buildStoredFlooringProductName } = await import("@builders/domain")
+
   const [uomCount, categoryCount, categories] = await Promise.all([
     prisma.flooringUnitOfMeasure.count(),
     prisma.flooringCategory.count(),
@@ -230,10 +232,17 @@ async function seedDemoData({ prisma, logger = console }) {
     const color = pick(COLORS, n + 1)
     const category = categories[i % categories.length]
     const manufacturer = manufacturers[i % manufacturers.length]
+    const note = `${PRODUCT_NAME_PREFIX} #${pad(n, 3)}`
     return {
-      name: `${PRODUCT_NAME_PREFIX} ${pad(n, 3)} — ${style} ${color}`,
+      name: buildStoredFlooringProductName({
+        categoryName: category.name,
+        style,
+        color,
+        note,
+      }),
       style,
       color,
+      note,
       coveragePerUnit: 20 + (n % 10) * 2,
       categoryId: category.id,
       manufacturerId: manufacturer.id,
