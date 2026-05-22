@@ -1,9 +1,9 @@
 /**
  * Demo data seeder (opt-in — NOT part of `npm run db:seed`).
  *
- * Populates demo-shaped data end-to-end across the flooring stack so the
- * dashboard has volume to look at. Skips reference tables that have their own
- * canonical seeds (unit-of-measures, categories, job types).
+ * Populates demo-shaped data across the flooring stack so the dashboard has
+ * volume to look at. Skips reference tables that have their own canonical
+ * seeds (unit-of-measures, categories). Job types are user-managed.
  *
  * Volumes (override the constants below to dial up/down):
  *   25  management companies
@@ -12,10 +12,10 @@
  *   10  manufacturers
  *   300 products
  *   1000 templates  + 5000 template material items (5 per)
- *   50  imports     + 500 filter rows + 3000 staged inventory rows (all IMPORTED)
- *   3000 inventory rows (one per staged row, totalCutSum precomputed)
- *   ~3600 cut logs (~60% of inventory rows get 1–3 final cut logs, sum ≤ startingStock)
  *   600 work orders + 3000 work order material items (5 per, all status=IDLE, no files)
+ *
+ * Does NOT seed imports, staged filter rows, staged inventory rows, inventory
+ * rows, or cut logs — those flow through real user actions.
  *
  * Idempotent-by-bail: skips if the first demo management company already exists.
  *
@@ -30,18 +30,8 @@ const MANUFACTURER_COUNT = 10
 const PRODUCT_COUNT = 300
 const TEMPLATE_COUNT = 1000
 const TEMPLATE_ITEMS_PER = 5
-const IMPORT_COUNT = 50
-const FILTER_ROWS_PER_IMPORT = 10
-const STAGED_ROWS_PER_FILTER = 6
 const WORK_ORDER_COUNT = 600
 const WORK_ORDER_ITEMS_PER = 5
-
-// Cut log generation: balances are pre-computed so inventory.totalCutSum is
-// set at insert time (no follow-up update). Each cut log is FINAL with a
-// unique sequence per inventory row; sum of cuts never exceeds startingStock.
-const CUT_LOG_INVENTORY_RATIO = 0.6 // 60% of inventory rows get cut logs
-const CUT_LOGS_PER_INVENTORY_MIN = 1
-const CUT_LOGS_PER_INVENTORY_MAX = 3
 
 const COMPANY_NAME_PREFIX = "Demo Mgmt Co"
 const PROPERTY_NAME_PREFIX = "Demo Property"
@@ -76,16 +66,6 @@ function pick(arr, i) {
 
 function normalizeCompanyName(name) {
   return name.trim().toLowerCase().replace(/\s+/g, " ")
-}
-
-// Tiny deterministic PRNG so repeated runs against an empty DB produce the
-// same shape (helps when eyeballing counts). Seeded off a fixed integer.
-function makeRng(seed) {
-  let state = seed >>> 0
-  return () => {
-    state = (state * 1664525 + 1013904223) >>> 0
-    return state / 0xffffffff
-  }
 }
 
 function buildCompanies() {
@@ -188,8 +168,6 @@ async function seedDemoData({ prisma, logger = console }) {
     logger.log(`Demo marker "${markerName}" already exists — skipping. Delete demo rows manually to re-seed.`)
     return
   }
-
-  const rng = makeRng(1234567)
 
   // 1. Management companies
   logger.log(`Seeding ${COMPANY_COUNT} management companies...`)
@@ -313,208 +291,7 @@ async function seedDemoData({ prisma, logger = console }) {
   }
   await batchedCreateMany(prisma.flooringTemplateItem, templateItemInputs)
 
-  // 7. Imports + filter rows + staged rows + inventory rows + cut logs
-  logger.log(
-    `Seeding ${IMPORT_COUNT} imports (${FILTER_ROWS_PER_IMPORT} filter rows × ${STAGED_ROWS_PER_FILTER} staged rows each), all marked imported...`,
-  )
-
-  // 7a. Imports (need IDs + importNumber + createdAt downstream)
-  const importInputs = Array.from({ length: IMPORT_COUNT }, (_, i) => ({
-    warehouseId: warehouses[i % warehouses.length].id,
-    manufacturerId: manufacturers[i % manufacturers.length].id,
-    purchaseOrderNumber: `DEMO-PO-${pad(i + 1, 5)}`,
-    internalNotes: `Auto-seeded demo import #${i + 1}.`,
-  }))
-  const imports = await prisma.flooringImportEntry.createManyAndReturn({
-    data: importInputs,
-    select: { id: true, importNumber: true, createdAt: true, warehouseId: true },
-  })
-
-  // 7b. Filter rows. Per @@unique([importEntryId, productId]) we need distinct
-  // products within each import. With FILTER_ROWS_PER_IMPORT ≤ PRODUCT_COUNT
-  // we just slice a different window per import.
-  const filterRowInputs = []
-  const filterRowMeta = [] // parallel array tracking importIdx + product for staged/inventory
-  for (let i = 0; i < imports.length; i++) {
-    const imp = imports[i]
-    const offset = (i * FILTER_ROWS_PER_IMPORT) % products.length
-    for (let f = 0; f < FILTER_ROWS_PER_IMPORT; f++) {
-      const product = products[(offset + f) % products.length]
-      filterRowInputs.push({
-        importEntryId: imp.id,
-        categoryFilterId: product.category.id,
-        productId: product.id,
-        stockOrdered: (STAGED_ROWS_PER_FILTER * (50 + f * 5)).toFixed(2),
-        stockUnitName: product.stockUnitName,
-        stockUnitAbbrev: product.stockUnitAbbrev,
-      })
-      filterRowMeta.push({ importIdx: i, product })
-    }
-  }
-  const filterRows = await prisma.flooringImportStagedInventoryFilterRow.createManyAndReturn({
-    data: filterRowInputs,
-    select: { id: true },
-  })
-
-  // 7c. Staged rows + inventory rows + cut logs.
-  // We pre-compute cut log specs per inventory row up front so totalCutSum can
-  // be written at insert time (avoiding a follow-up UPDATE per inventory row).
-  const stagedRowInputs = []
-  const inventoryInputs = []
-  const inventoryCutSpecs = [] // parallel: { numCuts, cuts: number[], totalCutSum: string } | null
-
-  for (let fIdx = 0; fIdx < filterRows.length; fIdx++) {
-    const meta = filterRowMeta[fIdx]
-    const filterRow = filterRows[fIdx]
-    const imp = imports[meta.importIdx]
-    const product = meta.product
-    const warehouse = warehouses[meta.importIdx % warehouses.length]
-
-    for (let s = 0; s < STAGED_ROWS_PER_FILTER; s++) {
-      const rollNumber = `${pad(meta.importIdx + 1, 3)}${pad(fIdx % FILTER_ROWS_PER_IMPORT + 1)}${pad(s + 1)}`
-      const dyeLot = `DL-${pad(meta.importIdx + 1, 3)}${pad(fIdx % FILTER_ROWS_PER_IMPORT + 1)}`
-      const location = `A-${pad(fIdx % FILTER_ROWS_PER_IMPORT + 1)}-${pad(s + 1)}`
-      const startingStockNum = 50 + (fIdx % FILTER_ROWS_PER_IMPORT) * 5 + s
-      const startingStock = startingStockNum.toFixed(2)
-
-      stagedRowInputs.push({
-        importEntryId: imp.id,
-        filterRowId: filterRow.id,
-        productId: product.id,
-        warehouseId: warehouse.id,
-        rollPrefix: "ROLL#",
-        rollNumber,
-        dyeLot,
-        location,
-        startingStock,
-        stockUnitName: product.stockUnitName,
-        stockUnitAbbrev: product.stockUnitAbbrev,
-        isImported: true,
-        status: "IMPORTED",
-      })
-
-      // Decide if this inventory row gets cut logs, and pre-compute them.
-      const willHaveCuts = rng() < CUT_LOG_INVENTORY_RATIO
-      let cutSpec = null
-      let totalCutSum = "0.00"
-
-      if (willHaveCuts) {
-        const numCuts =
-          CUT_LOGS_PER_INVENTORY_MIN +
-          Math.floor(rng() * (CUT_LOGS_PER_INVENTORY_MAX - CUT_LOGS_PER_INVENTORY_MIN + 1))
-        // Cap total cuts at 70% of startingStock so balance stays positive.
-        const cutBudget = Math.floor(startingStockNum * 0.7 * 100) / 100
-        const cuts = []
-        let remaining = cutBudget
-        for (let c = 0; c < numCuts; c++) {
-          const isLast = c === numCuts - 1
-          // Each cut: roughly even split with some jitter, but capped by remaining.
-          const target = isLast ? remaining : Math.max(0.5, (remaining / (numCuts - c)) * (0.7 + rng() * 0.6))
-          const cutVal = Math.min(remaining, Math.max(0.5, Math.round(target * 100) / 100))
-          cuts.push(cutVal)
-          remaining = Math.round((remaining - cutVal) * 100) / 100
-          if (remaining <= 0) break
-        }
-        const sum = cuts.reduce((acc, v) => acc + v, 0)
-        totalCutSum = sum.toFixed(2)
-        cutSpec = { cuts, totalCutSum }
-      }
-
-      inventoryInputs.push({
-        importEntryId: imp.id,
-        importNumber: String(imp.importNumber),
-        purchaseOrderNumber: `DEMO-PO-${pad(meta.importIdx + 1, 5)}`,
-        productId: product.id,
-        productName: product.name,
-        categorySlug: product.category.slug,
-        categoryName: product.category.name,
-        stockUnitName: product.stockUnitName,
-        stockUnitAbbrev: product.stockUnitAbbrev,
-        itemCoverageUnitName: product.itemCoverageUnitName,
-        itemCoverageUnitAbbrev: product.itemCoverageUnitAbbrev,
-        sendUnitName: product.sendUnitName,
-        sendUnitAbbrev: product.sendUnitAbbrev,
-        rollPrefix: "ROLL#",
-        rollNumber,
-        dyeLot,
-        location,
-        startingStock,
-        totalCutSum,
-        coveragePerUnit: product.coveragePerUnit,
-        warehouseId: warehouse.id,
-        fifoReceivedAt: imp.createdAt,
-      })
-      inventoryCutSpecs.push(cutSpec)
-    }
-  }
-
-  await batchedCreateMany(prisma.flooringImportStagedInventoryRow, stagedRowInputs)
-  const inventoryRows = await batchedCreateManyAndReturn(
-    prisma.flooringInventory,
-    inventoryInputs,
-    {
-      select: {
-        id: true,
-        productId: true,
-        warehouseId: true,
-        categorySlug: true,
-        productName: true,
-        rollPrefix: true,
-        rollNumber: true,
-        dyeLot: true,
-        location: true,
-        stockUnitName: true,
-        stockUnitAbbrev: true,
-        itemCoverageUnitName: true,
-        itemCoverageUnitAbbrev: true,
-        inventoryNumber: true,
-        startingStock: true,
-      },
-    },
-  )
-
-  // 7d. Cut logs — pre-computed per inventory, sum balances totalCutSum.
-  logger.log("Building cut logs from precomputed balances...")
-  const cutLogInputs = []
-  for (let i = 0; i < inventoryRows.length; i++) {
-    const spec = inventoryCutSpecs[i]
-    if (!spec) continue
-    const inv = inventoryRows[i]
-    let beforeBalance = Number(inv.startingStock)
-    for (let c = 0; c < spec.cuts.length; c++) {
-      const cutVal = spec.cuts[c]
-      const afterBalance = Math.round((beforeBalance - cutVal) * 100) / 100
-      cutLogInputs.push({
-        inventoryId: inv.id,
-        inventoryItem: "",
-        inventoryNumber: inv.inventoryNumber,
-        rollPrefix: inv.rollPrefix,
-        rollNumber: inv.rollNumber,
-        dyeLot: inv.dyeLot,
-        location: inv.location,
-        categorySlug: inv.categorySlug,
-        productId: inv.productId,
-        productName: inv.productName,
-        warehouseId: inv.warehouseId,
-        before: beforeBalance.toFixed(2),
-        cut: cutVal.toFixed(2),
-        after: afterBalance.toFixed(2),
-        stockUnitName: inv.stockUnitName,
-        stockUnitAbbrev: inv.stockUnitAbbrev,
-        itemCoverageUnitName: inv.itemCoverageUnitName,
-        itemCoverageUnitAbbrev: inv.itemCoverageUnitAbbrev,
-        status: "FINAL",
-        isFinal: true,
-        finalCutSequence: c + 1,
-        isWaste: false,
-        void: false,
-      })
-      beforeBalance = afterBalance
-    }
-  }
-  await batchedCreateMany(prisma.flooringCutLog, cutLogInputs)
-
-  // 8. Work orders + work order items (all IDLE, no files)
+  // 7. Work orders + work order items (all IDLE, no files)
   logger.log(`Seeding ${WORK_ORDER_COUNT} work orders with ${WORK_ORDER_ITEMS_PER} material items each (status=IDLE)...`)
   const workOrderInputs = Array.from({ length: WORK_ORDER_COUNT }, (_, i) => {
     const property = properties[i % properties.length]
@@ -565,9 +342,6 @@ async function seedDemoData({ prisma, logger = console }) {
   logger.log(`  ${MANUFACTURER_COUNT} manufacturers`)
   logger.log(`  ${PRODUCT_COUNT} products`)
   logger.log(`  ${TEMPLATE_COUNT} templates / ${templateItemInputs.length} template material items`)
-  logger.log(`  ${IMPORT_COUNT} imports / ${filterRowInputs.length} filter rows / ${stagedRowInputs.length} staged rows (all IMPORTED)`)
-  logger.log(`  ${inventoryInputs.length} inventory rows`)
-  logger.log(`  ${cutLogInputs.length} cut logs (FINAL, balanced against startingStock)`)
   logger.log(`  ${WORK_ORDER_COUNT} work orders / ${workOrderItemInputs.length} work order items (all status=IDLE)`)
 }
 
@@ -580,15 +354,6 @@ async function batchedCreateMany(delegate, rows) {
   for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
     await delegate.createMany({ data: rows.slice(i, i + CHUNK_SIZE) })
   }
-}
-
-async function batchedCreateManyAndReturn(delegate, rows, options) {
-  const out = []
-  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-    const chunk = await delegate.createManyAndReturn({ data: rows.slice(i, i + CHUNK_SIZE), ...options })
-    out.push(...chunk)
-  }
-  return out
 }
 
 async function main() {

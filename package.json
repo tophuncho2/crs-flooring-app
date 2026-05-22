@@ -36,9 +36,7 @@
     "db:upsert-owner": "npm run db:upsert-owner --workspace @builders/db --",
     "db:seed:uoms": "npm run db:seed:uoms --workspace @builders/db",
     "db:seed:categories": "npm run db:seed:categories --workspace @builders/db",
-    "db:seed:job-types": "npm run db:seed:job-types --workspace @builders/db",
-    "db:seed:demo": "npm run db:seed:demo --workspace @builders/db",
-    "db:wipe:demo": "npm run db:wipe:demo --workspace @builders/db"
+    "db:seed:demo": "npm run db:seed:demo --workspace @builders/db"
   },
   "overrides": {
     "flatted": "^3.4.2",
