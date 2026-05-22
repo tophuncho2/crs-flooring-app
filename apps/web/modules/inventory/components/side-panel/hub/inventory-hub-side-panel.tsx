@@ -1,26 +1,14 @@
 "use client"
 
-import { useMemo, type ReactNode } from "react"
-import {
-  HubSidePanelEditToolbar,
-  HubSidePanelPagination,
-  HubSidePanelShell,
-} from "@/components/hub-side-panel"
-import {
-  CutLogEditFinalizeButton,
-  CutLogEditVoidButton,
-} from "@/modules/cut-logs/components/cut-log-edit-panel/toolbar-controls"
-import type {
-  HubMode,
-  InventoryHubSidePanelController,
-} from "@/modules/inventory/controllers/inventory-hub-side-panel"
-import { InventoryHubCutLogEditHeader } from "./inventory-hub-cut-log-edit-header"
+import { HubSidePanelShell } from "@/components/hub-side-panel"
+import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
 import { InventoryHubCutLogEditSection } from "./inventory-hub-cut-log-edit-section"
 import { InventoryHubCutLogsListSection } from "./inventory-hub-cut-logs-list-section"
 import { InventoryHubCutLogWorkOrderItemPicker } from "./inventory-hub-cut-log-work-order-item-picker"
 import { InventoryHubCutLogWorkOrderPicker } from "./inventory-hub-cut-log-work-order-picker"
 import { InventoryHubInventoryEditSection } from "./inventory-hub-inventory-edit-section"
 import { InventoryHubViewSection } from "./inventory-hub-view-section"
+import { useInventoryHubChrome } from "./use-inventory-hub-chrome"
 
 export type InventoryHubSidePanelProps = {
   controller: InventoryHubSidePanelController
@@ -37,11 +25,11 @@ export type InventoryHubSidePanelProps = {
  *   - section-edit-cut-log: cut-log readonly summary + cut / notes /
  *           waste editable cells; toolbar exposes Save / Discard /
  *           Finalize / Void / Delete + back-arrow
+ *   - picker-takeover: body swaps to a HubSidePanelPicker; the cut-log
+ *           relink header stays sticky above via `useInventoryHubChrome`
  *
- * Cut-log status transitions (Finalize / Void) live in the toolbar's
- * extra-left-actions slot so they read as section-scoped actions
- * alongside the back-arrow rather than mixing into Save / Discard /
- * Delete.
+ * Per-mode chrome (title + topToolbar) lives in `useInventoryHubChrome`
+ * — this file is the body dispatch only.
  */
 export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps) {
   const {
@@ -49,162 +37,16 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
     mode,
     cutLogPickerKind,
     inventory,
-    cutLogs,
-    cutLogPanel,
-    isDirty,
-    isSaving,
-    canSave,
-    error,
-    save,
-    discard,
     close,
-    exitToView,
     isLoadingInventory,
     isErrorInventory,
   } = controller
 
-  const isCutLogPickerActive = mode.kind === "picker-takeover"
-
-  // Effective mode for chrome layout: picker-takeover renders the same
-  // header chrome as its returnTo (the cut-log relink triggers stay
-  // sticky above the picker body), so the topToolbar branches off this
-  // rather than off `mode.kind` directly.
-  const effectiveModeKind: HubMode["kind"] =
-    mode.kind === "picker-takeover" ? mode.returnTo.kind : mode.kind
-
-  const cutLog =
-    cutLogPanel.open?.mode === "edit" ? cutLogPanel.open.cutLog : null
-
-  const title = useMemo<ReactNode>(() => {
-    if (isCutLogPickerActive) {
-      if (cutLogPickerKind === "workOrder") return "Select work order"
-      if (cutLogPickerKind === "workOrderItem") return "Select material item"
-    }
-    switch (mode.kind) {
-      case "section-edit-cut-log":
-        return cutLog?.cutLogNumber ?? "Cut log"
-      case "section-edit-inventory":
-      case "view":
-        return inventory?.inventoryItem || "Inventory"
-      default:
-        return "Inventory"
-    }
-  }, [
-    mode.kind,
-    cutLog,
-    inventory?.inventoryItem,
-    isCutLogPickerActive,
-    cutLogPickerKind,
-  ])
-
-  const cutLogExtraLeftActions = useMemo<ReactNode>(() => {
-    if (effectiveModeKind !== "section-edit-cut-log") return null
-    // The toolbar's built-in SidePanelEditStatusPill already shows
-    // dirty/saving; no second status pill here. Finalize + Void are
-    // cut-log-domain actions; they own their own visibility (PENDING /
-    // FINAL gates) so the buttons render or not based on status.
-    return (
-      <>
-        <CutLogEditFinalizeButton controller={cutLogPanel} mode="edit" />
-        <CutLogEditVoidButton controller={cutLogPanel} mode="edit" />
-      </>
-    )
-  }, [effectiveModeKind, cutLogPanel])
-
-  const topToolbar = useMemo<ReactNode>(() => {
-    if (effectiveModeKind === "section-edit-inventory") {
-      return (
-        <HubSidePanelEditToolbar
-          isDirty={isDirty}
-          isSaving={isSaving}
-          canSave={canSave}
-          onSave={save}
-          onDiscard={discard}
-          onOpenHubView={exitToView}
-          errorMessage={error}
-        />
-      )
-    }
-    if (effectiveModeKind === "section-edit-cut-log") {
-      // The WO + WOMI relink header lives in the sticky topToolbar so
-      // it stays visible while a picker takeover swaps the body below
-      // (template-sync pattern). When a picker is active we drop the
-      // actions toolbar so the chrome doesn't clutter the picker view;
-      // the triggers themselves remain reachable above the picker body.
-      const onDelete = cutLog ? cutLogPanel.deleteCutLog : undefined
-      const isPending = cutLog?.status === "PENDING"
-      const deleteDisabled = !isPending
-      const deleteTitle =
-        deleteDisabled && !cutLogPanel.isSaving
-          ? "Only pending cut logs can be deleted"
-          : undefined
-      const header = cutLog ? (
-        <InventoryHubCutLogEditHeader
-          cutLog={cutLog}
-          cutLogPanel={cutLogPanel}
-          hubController={controller}
-        />
-      ) : null
-      const actions = isCutLogPickerActive ? null : (
-        <HubSidePanelEditToolbar
-          isDirty={isDirty}
-          isSaving={isSaving}
-          canSave={canSave}
-          onSave={save}
-          onDiscard={discard}
-          onDelete={onDelete}
-          deleteDisabled={deleteDisabled}
-          deleteTitle={deleteTitle}
-          onOpenHubView={exitToView}
-          extraLeftActions={cutLogExtraLeftActions}
-          errorMessage={error ?? cutLogPanel.error ?? null}
-        />
-      )
-      if (!header && !actions) return null
-      return (
-        <div className="flex flex-col gap-3">
-          {header}
-          {actions}
-        </div>
-      )
-    }
-    if (effectiveModeKind === "view") {
-      const showPagination = cutLogs.hasData && cutLogs.total > cutLogs.pageSize
-      if (!showPagination) return null
-      return (
-        <HubSidePanelPagination
-          page={cutLogs.page}
-          totalPages={cutLogs.totalPages}
-          total={cutLogs.total}
-          totalLabel="cut logs"
-          canPrev={cutLogs.canPrev}
-          canNext={cutLogs.canNext}
-          onGoPrev={cutLogs.goPrev}
-          onGoNext={cutLogs.goNext}
-        />
-      )
-    }
-    return null
-  }, [
-    effectiveModeKind,
-    isDirty,
-    isSaving,
-    canSave,
-    save,
-    discard,
-    exitToView,
-    error,
-    cutLog,
-    cutLogPanel,
-    cutLogExtraLeftActions,
-    cutLogs,
-    isCutLogPickerActive,
-    controller,
-  ])
+  const { title, topToolbar, isCutLogPickerActive } = useInventoryHubChrome(controller)
 
   // Fetched callers (e.g. work-orders) may render before the inventory
   // detail query resolves. Show loading / error placeholders for view +
-  // inventory-edit modes; the cut-log edit mode does not depend on the
+  // inventory-edit modes; cut-log edit mode does not depend on the
   // inventory snapshot (the row carries everything it needs) so it
   // renders normally even while the cells query is in flight.
   const needsInventory =

@@ -9,6 +9,8 @@ import {
   type CutLogPanelRow,
 } from "@/modules/cut-logs"
 import { INVENTORY_DETAIL_QUERY_KEY } from "@/modules/inventory/data/inventory-detail-request"
+import { deriveCanSave, deriveIsDirty } from "./derive-hub-mode-flags"
+import { toCutLogPanelRow } from "./to-cut-log-panel-row"
 import { useCutLogPickerTakeover } from "./use-cut-log-picker-takeover"
 import { useHubCutLogsQuery } from "./use-hub-cut-logs-query"
 import { useHubInventoryEdit } from "./use-hub-inventory-edit"
@@ -199,26 +201,29 @@ export function useInventoryHubSidePanel({
     setError(null)
   }, [inventoryEdit, cutLogPanel])
 
-  // ===== Mode-dispatched derivations =====
-  // Picker-takeover hides the actions toolbar, so isDirty / canSave
-  // values during takeover never reach the UI — treat them as false to
-  // match the property-hub `derive-hub-mode-flags` pattern.
-  const isDirty = useMemo(() => {
-    if (mode.kind === "section-edit-inventory") return inventoryEdit.isDirty
-    if (mode.kind === "section-edit-cut-log") return cutLogPanel.isDirty
-    return false
-  }, [mode.kind, inventoryEdit.isDirty, cutLogPanel.isDirty])
+  // ===== Mode-dispatched derivations (pure fns in derive-hub-mode-flags) =====
+  const isDirty = useMemo(
+    () => deriveIsDirty(mode.kind, inventoryEdit.isDirty, cutLogPanel.isDirty),
+    [mode.kind, inventoryEdit.isDirty, cutLogPanel.isDirty],
+  )
 
-  const canSave = useMemo(() => {
-    if (isSaving) return false
-    if (mode.kind === "section-edit-inventory") {
-      return inventoryEdit.isDirty && inventoryEdit.updatedAt !== null
-    }
-    if (mode.kind === "section-edit-cut-log") {
-      return cutLogPanel.isDirty
-    }
-    return false
-  }, [isSaving, mode.kind, inventoryEdit, cutLogPanel.isDirty])
+  const canSave = useMemo(
+    () =>
+      deriveCanSave(
+        isSaving,
+        mode.kind,
+        inventoryEdit.isDirty,
+        inventoryEdit.updatedAt,
+        cutLogPanel.isDirty,
+      ),
+    [
+      isSaving,
+      mode.kind,
+      inventoryEdit.isDirty,
+      inventoryEdit.updatedAt,
+      cutLogPanel.isDirty,
+    ],
+  )
 
   // ===== Openers =====
   // openForView accepts an optional inventoryId — fetched callers pass
@@ -244,17 +249,11 @@ export function useInventoryHubSidePanel({
   const openForCutLogEdit = useCallback(
     (row: CutLogPanelRow) => {
       resetAll()
-      const panelRow: CutLogPanelRow = {
-        ...row,
-        workOrderNumber: row.workOrderNumber ?? null,
-        workOrderItemProductLabel: row.workOrderItemProductLabel ?? null,
-        warehouseName: row.warehouseName ?? null,
-      }
       setOpenId(row.inventoryId)
       cutLogPanel.openPanel({
         mode: "edit",
         workOrderItemId: row.workOrderItemId,
-        cutLog: panelRow,
+        cutLog: toCutLogPanelRow(row),
       })
       setError(null)
       setMode({

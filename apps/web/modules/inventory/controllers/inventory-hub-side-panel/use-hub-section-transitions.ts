@@ -6,10 +6,8 @@ import {
   type InventoryCutLogRow,
   type InventoryRow,
 } from "@builders/domain"
-import type {
-  CutLogEditPanelController,
-  CutLogPanelRow,
-} from "@/modules/cut-logs"
+import type { CutLogEditPanelController } from "@/modules/cut-logs"
+import { toCutLogPanelRow } from "./to-cut-log-panel-row"
 import type { HubInventoryEditSlice } from "./use-hub-inventory-edit"
 import type { HubMode } from "./types"
 
@@ -61,16 +59,10 @@ export function useHubSectionTransitions({
       // Hand the row to the embedded cut-log panel controller. It owns
       // form/baseline/mutations; the hub just picks the mode and lets the
       // panel handle the data flow.
-      const panelRow: CutLogPanelRow = {
-        ...row,
-        workOrderNumber: row.workOrderNumber ?? null,
-        workOrderItemProductLabel: row.workOrderItemProductLabel ?? null,
-        warehouseName: row.warehouseName ?? null,
-      }
       cutLogPanel.openPanel({
         mode: "edit",
         workOrderItemId: row.workOrderItemId,
-        cutLog: panelRow,
+        cutLog: toCutLogPanelRow(row),
       })
       setError(null)
       setMode({
