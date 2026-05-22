@@ -6,13 +6,13 @@
  * seeds (unit-of-measures, categories). Job types are user-managed.
  *
  * Volumes (override the constants below to dial up/down):
- *   25  management companies
- *   150 properties
- *   4   warehouses
- *   10  manufacturers
- *   300 products
- *   1000 templates  + 5000 template material items (5 per)
- *   600 work orders + 3000 work order material items (5 per, all status=IDLE, no files)
+ *   50   management companies
+ *   300  properties
+ *   3    warehouses
+ *   10   manufacturers (real retailer names — upserted, won't duplicate)
+ *   600  products
+ *   2000 templates  + 10000 template material items (5 per)
+ *   1200 work orders + 6000 work order material items (5 per, all status=IDLE, no files)
  *
  * Does NOT seed imports, staged filter rows, staged inventory rows, inventory
  * rows, or cut logs — those flow through real user actions.
@@ -23,14 +23,14 @@
  * (or `npm run db:seed` for full canonical seed).
  */
 
-const COMPANY_COUNT = 25
-const PROPERTY_COUNT = 150
-const WAREHOUSE_COUNT = 4
+const COMPANY_COUNT = 50
+const PROPERTY_COUNT = 300
+const WAREHOUSE_COUNT = 3
 const MANUFACTURER_COUNT = 10
-const PRODUCT_COUNT = 300
-const TEMPLATE_COUNT = 1000
+const PRODUCT_COUNT = 600
+const TEMPLATE_COUNT = 2000
 const TEMPLATE_ITEMS_PER = 5
-const WORK_ORDER_COUNT = 600
+const WORK_ORDER_COUNT = 1200
 const WORK_ORDER_ITEMS_PER = 5
 
 const COMPANY_NAME_PREFIX = "Demo Mgmt Co"
@@ -44,16 +44,16 @@ const UNIT_TYPES = ["1BR", "2BR", "3BR", "4BR", "Studio", "Townhome", "Penthouse
 const STYLES = ["Oak", "Maple", "Walnut", "Cherry", "Ash", "Pine", "Birch", "Mahogany", "Hickory", "Bamboo"]
 const COLORS = ["Natural", "Espresso", "Honey", "Charcoal", "Slate", "Cream", "Driftwood", "Mocha", "Smoke", "Sienna"]
 const MANUFACTURER_NAMES = [
-  "Demo Shaw Industries",
-  "Demo Mohawk Group",
-  "Demo Mannington Mills",
-  "Demo Armstrong Flooring",
-  "Demo Tarkett",
-  "Demo Karndean",
-  "Demo Interface",
-  "Demo Milliken",
-  "Demo Patcraft",
-  "Demo Bentley Mills",
+  "Home Depot",
+  "Lowe's",
+  "Floor & Decor",
+  "Sherwin-Williams",
+  "LL Flooring",
+  "Menards",
+  "Carpet One",
+  "Empire Today",
+  "50 Floor",
+  "Costco",
 ]
 
 function pad(n, width = 2) {
@@ -116,13 +116,16 @@ function buildWarehouses(baseNumber) {
 }
 
 function buildManufacturers() {
-  return MANUFACTURER_NAMES.slice(0, MANUFACTURER_COUNT).map((name, i) => ({
-    companyName: name,
-    companyNameNormalized: normalizeCompanyName(name),
-    agentName: `Demo Agent ${i + 1}`,
-    phone: `512-555-${pad(4000 + i + 1, 4)}`,
-    email: `sales${i + 1}@${name.toLowerCase().replace(/\s+/g, "")}.example`,
-  }))
+  return MANUFACTURER_NAMES.slice(0, MANUFACTURER_COUNT).map((name, i) => {
+    const emailSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    return {
+      companyName: name,
+      companyNameNormalized: normalizeCompanyName(name),
+      agentName: `Demo Agent ${i + 1}`,
+      phone: `512-555-${pad(4000 + i + 1, 4)}`,
+      email: `sales${i + 1}@${emailSlug}.example`,
+    }
+  })
 }
 
 async function nextWarehouseNumber(prisma) {
@@ -195,12 +198,31 @@ async function seedDemoData({ prisma, logger = console }) {
     select: { id: true, number: true },
   })
 
-  // 4. Manufacturers
-  logger.log(`Seeding ${MANUFACTURER_COUNT} manufacturers...`)
-  const manufacturers = await prisma.flooringManufacturer.createManyAndReturn({
-    data: buildManufacturers(),
-    select: { id: true, companyName: true },
-  })
+  // 4. Manufacturers — upsert by normalized name so an existing real-store row
+  // (e.g. Home Depot already added by a user) is reused rather than duplicated.
+  logger.log(`Seeding ${MANUFACTURER_COUNT} manufacturers (upsert)...`)
+  const manufacturerInputs = buildManufacturers()
+  const manufacturers = []
+  let manufacturersCreated = 0
+  let manufacturersReused = 0
+  for (const input of manufacturerInputs) {
+    const existing = await prisma.flooringManufacturer.findUnique({
+      where: { companyNameNormalized: input.companyNameNormalized },
+      select: { id: true, companyName: true },
+    })
+    if (existing) {
+      manufacturers.push(existing)
+      manufacturersReused += 1
+      continue
+    }
+    const created = await prisma.flooringManufacturer.create({
+      data: input,
+      select: { id: true, companyName: true },
+    })
+    manufacturers.push(created)
+    manufacturersCreated += 1
+  }
+  logger.log(`  ${manufacturersCreated} created, ${manufacturersReused} reused.`)
 
   // 5. Products
   logger.log(`Seeding ${PRODUCT_COUNT} products...`)
@@ -339,7 +361,7 @@ async function seedDemoData({ prisma, logger = console }) {
   logger.log(`  ${COMPANY_COUNT} management companies`)
   logger.log(`  ${PROPERTY_COUNT} properties`)
   logger.log(`  ${WAREHOUSE_COUNT} warehouses`)
-  logger.log(`  ${MANUFACTURER_COUNT} manufacturers`)
+  logger.log(`  ${MANUFACTURER_COUNT} manufacturers (${manufacturersCreated} created, ${manufacturersReused} reused)`)
   logger.log(`  ${PRODUCT_COUNT} products`)
   logger.log(`  ${TEMPLATE_COUNT} templates / ${templateItemInputs.length} template material items`)
   logger.log(`  ${WORK_ORDER_COUNT} work orders / ${workOrderItemInputs.length} work order items (all status=IDLE)`)
