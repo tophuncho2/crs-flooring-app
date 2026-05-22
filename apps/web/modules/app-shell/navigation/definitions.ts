@@ -36,7 +36,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     requiredTool: "warehouse",
     group: "operations",
   },
-  { slug: "flooring-job-types", name: "Job Types", href: "/dashboard/job-types", requiredTool: JOB_TYPES_TOOL_SLUG, group: "catalog" },
+  { slug: "flooring-job-types", name: "Job Types", href: "/dashboard/job-types", requiredTool: JOB_TYPES_TOOL_SLUG, group: "operations" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/inventory", requiredTool: "warehouse", group: "catalog" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/imports", requiredTool: "warehouse", group: "catalog" },
   { slug: "products", name: "Products", href: "/dashboard/products", requiredTool: "products", group: "catalog" },
