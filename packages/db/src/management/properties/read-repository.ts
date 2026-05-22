@@ -138,7 +138,7 @@ export async function listPropertiesForListView(
     client.property.count({ where }),
     client.property.findMany({
       where,
-      orderBy: { name: "asc" },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,
       select: propertyListSelect,
@@ -180,7 +180,7 @@ export async function searchPropertyOptions(
   // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.property.findMany({
     where,
-    orderBy: { name: "asc" },
+    orderBy: [{ name: "asc" }, { id: "asc" }],
     skip: args.skip ?? 0,
     take: args.take + 1,
     select: propertyOptionSelect,

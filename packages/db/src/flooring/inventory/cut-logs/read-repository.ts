@@ -288,6 +288,7 @@ export async function listInventoryCutLogsPage(
       orderBy: [
         { finalCutSequence: { sort: "desc", nulls: "first" } },
         { createdAt: "asc" },
+        { id: "asc" },
       ],
       skip,
       take: args.pageSize,

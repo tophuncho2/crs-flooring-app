@@ -255,7 +255,7 @@ export async function listProductsForListView(
     client.flooringProduct.count({ where }),
     client.flooringProduct.findMany({
       where,
-      orderBy: [{ category: { slug: "asc" } }, { name: "asc" }],
+      orderBy: [{ category: { slug: "asc" } }, { name: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,
       select: productRowSelect,

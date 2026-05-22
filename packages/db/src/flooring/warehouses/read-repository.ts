@@ -170,7 +170,7 @@ export async function listWarehousesForListView(
     client.flooringWarehouse.count({ where }),
     client.flooringWarehouse.findMany({
       where,
-      orderBy: { name: "asc" },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,
       select: warehouseListRowSelect,

@@ -118,6 +118,7 @@ function buildWorkOrdersOrderBy(
   }
 
   appendUniqueOrderBy(orderBy, { createdAt: direction })
+  appendUniqueOrderBy(orderBy, { id: direction })
 
   return orderBy
 }

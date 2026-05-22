@@ -168,7 +168,7 @@ export async function listManufacturersForListView(
     client.flooringManufacturer.count({ where }),
     client.flooringManufacturer.findMany({
       where,
-      orderBy: { companyName: "asc" },
+      orderBy: [{ companyName: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,
       include: manufacturerInclude,

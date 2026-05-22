@@ -111,7 +111,7 @@ export async function listManagementCompaniesForListView(
     client.flooringManagementCompany.count({ where }),
     client.flooringManagementCompany.findMany({
       where,
-      orderBy: { name: "asc" },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,
       select: managementCompanyListSelect,
@@ -146,7 +146,7 @@ export async function searchManagementCompanyOptions(
   // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.flooringManagementCompany.findMany({
     where,
-    orderBy: { name: "asc" },
+    orderBy: [{ name: "asc" }, { id: "asc" }],
     skip: args.skip ?? 0,
     take: args.take + 1,
     select: { id: true, name: true },

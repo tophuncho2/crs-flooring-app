@@ -40,7 +40,7 @@ export async function listJobTypesForListView(
     client.flooringJobType.count({ where }),
     client.flooringJobType.findMany({
       where,
-      orderBy: { name: "asc" },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,
     }),
