@@ -30,7 +30,7 @@ export function InventoryHubCutLogsListSection({
   controller: InventoryHubSidePanelController
 }) {
   const { cutLogs, inventory, enterCutLogEditFromContext } = controller
-  const stockUnit = inventory.stockUnitAbbrev ?? ""
+  const stockUnit = inventory?.stockUnitAbbrev ?? ""
 
   return (
     <HubSidePanelScopedList

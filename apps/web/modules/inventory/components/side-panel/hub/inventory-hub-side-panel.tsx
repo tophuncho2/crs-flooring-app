@@ -53,6 +53,8 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
     discard,
     close,
     exitToView,
+    isLoadingInventory,
+    isErrorInventory,
   } = controller
 
   const cutLog =
@@ -64,11 +66,11 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
         return cutLog?.cutLogNumber ?? "Cut log"
       case "section-edit-inventory":
       case "view":
-        return inventory.inventoryItem || "Inventory"
+        return inventory?.inventoryItem || "Inventory"
       default:
         return "Inventory"
     }
-  }, [mode.kind, cutLog, inventory.inventoryItem])
+  }, [mode.kind, cutLog, inventory?.inventoryItem])
 
   const cutLogExtraLeftActions = useMemo<ReactNode>(() => {
     if (mode.kind !== "section-edit-cut-log") return null
@@ -100,10 +102,19 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
       // the section-busy + dirty derivations stay coherent. Delete +
       // finalize + void are wired straight to the embedded panel —
       // they're domain-specific cut-log actions with their own
-      // visibility rules (Finalize on PENDING, Void on FINAL not voided,
-      // Delete on PENDING only). The embedded buttons already encode
-      // those rules and render null otherwise.
+      // visibility rules. Finalize / Void render conditionally inside
+      // `cutLogExtraLeftActions` based on status. Delete stays visible
+      // for every edit row but is HTML-disabled unless the row is
+      // PENDING — matches the standalone panel's `CutLogEditDeleteButton`
+      // contract and the server gate (FINAL / VOID rows must be reversed
+      // before deletion).
       const onDelete = cutLog ? cutLogPanel.deleteCutLog : undefined
+      const isPending = cutLog?.status === "PENDING"
+      const deleteDisabled = !isPending
+      const deleteTitle =
+        deleteDisabled && !cutLogPanel.isSaving
+          ? "Only pending cut logs can be deleted"
+          : undefined
       return (
         <HubSidePanelEditToolbar
           isDirty={isDirty}
@@ -112,6 +123,8 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
           onSave={save}
           onDiscard={discard}
           onDelete={onDelete}
+          deleteDisabled={deleteDisabled}
+          deleteTitle={deleteTitle}
           onOpenHubView={exitToView}
           extraLeftActions={cutLogExtraLeftActions}
           errorMessage={error ?? cutLogPanel.error ?? null}
@@ -150,9 +163,23 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
     cutLogs,
   ])
 
+  // Fetched callers (e.g. work-orders) may render before the inventory
+  // detail query resolves. Show loading / error placeholders for view +
+  // inventory-edit modes; the cut-log edit mode does not depend on the
+  // inventory snapshot (the row carries everything it needs) so it
+  // renders normally even while the cells query is in flight.
+  const needsInventory =
+    mode.kind === "view" || mode.kind === "section-edit-inventory"
+  const showLoadingPlaceholder = needsInventory && !inventory && isLoadingInventory
+  const showErrorPlaceholder = needsInventory && !inventory && isErrorInventory
+
   return (
     <HubSidePanelShell open={isOpen} onClose={close} title={title} topToolbar={topToolbar}>
-      {mode.kind === "view" ? (
+      {showLoadingPlaceholder ? (
+        <p className="px-1 text-sm text-[var(--foreground)]/65">Loading inventory…</p>
+      ) : showErrorPlaceholder ? (
+        <p className="px-1 text-sm text-rose-700">Could not load inventory.</p>
+      ) : mode.kind === "view" ? (
         <div className="flex flex-col gap-5">
           <InventoryHubViewSection controller={controller} />
           <InventoryHubCutLogsListSection controller={controller} />

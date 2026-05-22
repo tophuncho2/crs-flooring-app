@@ -27,6 +27,18 @@ export type HubSidePanelEditToolbarProps = {
   /** Omit to hide the delete button (e.g. in create mode). */
   onDelete?: () => void
   /**
+   * Render the delete button in a disabled state. Use when the action is
+   * surface-relevant (so the affordance stays visible) but the row is in
+   * a state the server will reject — e.g. cut logs are deletable only
+   * while PENDING; FINAL / VOID rows must be reversed first.
+   */
+  deleteDisabled?: boolean
+  /**
+   * Optional tooltip for the delete button. Useful to explain why the
+   * action is currently disabled.
+   */
+  deleteTitle?: string
+  /**
    * Optional "back to hub view" navigation. Discards local draft changes
    * and pops the panel into the hub's view mode. Omit when the panel has
    * no parent hub to return to (e.g. create mode, or property-edit for an
@@ -61,6 +73,8 @@ export function HubSidePanelEditToolbar({
   onSave,
   onDiscard,
   onDelete,
+  deleteDisabled = false,
+  deleteTitle,
   onOpenHubView,
   extraLeftActions,
   saveLabel,
@@ -92,7 +106,12 @@ export function HubSidePanelEditToolbar({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {onDelete ? (
-            <SidePanelEditDeleteButton isSaving={isSaving} onClick={onDelete} />
+            <SidePanelEditDeleteButton
+              isSaving={isSaving}
+              disabled={deleteDisabled}
+              onClick={onDelete}
+              title={deleteTitle}
+            />
           ) : null}
           <SidePanelEditDiscardButton
             isDirty={isDirty}

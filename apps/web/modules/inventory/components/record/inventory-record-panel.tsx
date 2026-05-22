@@ -8,7 +8,6 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/modules/shared/engines/record-view"
 import type { InventoryDetail, InventoryForm } from "@builders/domain"
-import { CutLogEditPanel, useCutLogEditPanel } from "@/modules/cut-logs"
 import { useInventoryPrimarySection } from "../../controllers/record/primary/use-inventory-primary-section"
 import { useInventoryHubSidePanel } from "../../controllers/inventory-hub-side-panel"
 import { fetchInventoryBalances } from "../../data/inventory-balances-request"
@@ -53,20 +52,15 @@ export function InventoryRecordPanel({
       })
   }, [controller, inventory.id, queryClient])
 
-  const cutLogPanel = useCutLogEditPanel({
-    scope: { kind: "inventory", inventoryId: inventory.id },
-    canCreate: false,
-    publish: publishCutLogPatch,
-  })
-
   // Right-anchored hub side panel: read-only cells + paginated cut-logs
   // on top, click-to-enter editing for either the inventory cells or a
   // cut-log row. Shares the cut-logs query cache + publishCutLogPatch
   // with the inline cut-logs section below, so a hub-driven mutation
-  // refreshes both surfaces.
+  // refreshes both surfaces. The "Open hub" header button enters at the
+  // view step; row clicks on the inline cut-logs grid skip view and
+  // land directly in the cut-log edit step.
   const inventoryHubPanel = useInventoryHubSidePanel({
-    inventory: controller.record as InventoryDetail,
-    warehouseName: controller.record.warehouseName ?? null,
+    initialInventory: controller.record as InventoryDetail,
     publishCutLogPatch,
     onInventoryUpdated: (next) => controller.patchRecord(next),
   })
@@ -133,13 +127,7 @@ export function InventoryRecordPanel({
                 inventoryId={inventory.id}
                 stockUnitAbbrev={stockUnitAbbrev}
                 coverageUnitAbbrev={coverageUnitAbbrev}
-                onRowClick={(cutLog) =>
-                  cutLogPanel.openPanel({
-                    mode: "edit",
-                    workOrderItemId: cutLog.workOrderItemId,
-                    cutLog,
-                  })
-                }
+                onRowClick={inventoryHubPanel.openForCutLogEdit}
               />
             ),
           },
@@ -149,7 +137,6 @@ export function InventoryRecordPanel({
         onClose={page.closePage}
         onDelete={controller.deleteRecord}
       />
-      <CutLogEditPanel controller={cutLogPanel} />
       <InventoryHubSidePanel controller={inventoryHubPanel} />
     </>
   )

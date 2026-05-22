@@ -22,6 +22,7 @@ export function InventoryHubInventoryEditSection({
   controller: InventoryHubSidePanelController
 }) {
   const { inventory, warehouseName, inventoryEdit, isSaving } = controller
+  if (!inventory) return null
   const editable = !isSaving
 
   const onFieldChange = (field: keyof InventoryForm, value: string | boolean) => {

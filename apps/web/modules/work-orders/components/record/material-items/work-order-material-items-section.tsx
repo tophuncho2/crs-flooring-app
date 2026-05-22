@@ -22,6 +22,8 @@ import {
   useCutLogEditPanel,
   type CutLogPanelPatch,
 } from "@/modules/cut-logs"
+import { useInventoryHubSidePanel } from "@/modules/inventory/controllers/inventory-hub-side-panel"
+import { InventoryHubSidePanel } from "@/modules/inventory/components/side-panel/hub"
 import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import {
@@ -67,6 +69,16 @@ export function WorkOrderMaterialItemsSection({
     warehouseId: workOrder.warehouseId,
     canCreate: true,
     publish: publishCutLogPatch,
+  })
+
+  // Inventory hub panel for the "Hub view" jump on the cut-log edit
+  // panel. No initial inventory — the panel opens on demand for whatever
+  // cut log the user clicked; the hub fetches `InventoryDetail` via its
+  // own query path. publishCutLogPatch is shared so a hub-driven cut-log
+  // mutation also refreshes the WO-side snapshot through this panel.
+  const inventoryHubPanel = useInventoryHubSidePanel({
+    initialInventory: null,
+    publishCutLogPatch,
   })
 
   const sectionBusy = section.isSaving
@@ -290,7 +302,11 @@ export function WorkOrderMaterialItemsSection({
         }}
       />
 
-      <CutLogEditPanel controller={cutLogPanel} />
+      <CutLogEditPanel
+        controller={cutLogPanel}
+        onOpenHubView={(inventoryId) => inventoryHubPanel.openForView(inventoryId)}
+      />
+      <InventoryHubSidePanel controller={inventoryHubPanel} />
     </div>
   )
 }

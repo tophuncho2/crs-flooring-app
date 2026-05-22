@@ -28,7 +28,11 @@ export function InventoryHubViewSection({
 
   // Snapshot draft for the read-only render — when the user enters edit
   // mode the slice hydrates its own form from the same source.
-  const draft = useMemo(() => toInventoryForm(inventory), [inventory])
+  const draft = useMemo(
+    () => (inventory ? toInventoryForm(inventory) : null),
+    [inventory],
+  )
+  if (!inventory || !draft) return null
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " ") {
