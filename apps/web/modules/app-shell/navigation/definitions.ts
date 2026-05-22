@@ -1,5 +1,9 @@
 import type { ToolSlug } from "@/server/platform/tool-access"
-import { TEMPLATES_TOOL_SLUG, WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
+import {
+  JOB_TYPES_TOOL_SLUG,
+  TEMPLATES_TOOL_SLUG,
+  WORK_ORDERS_TOOL_SLUG,
+} from "@/modules/shared/access/tool-slugs"
 
 export type FlooringNavGroupId = "operations" | "catalog"
 
@@ -32,6 +36,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     requiredTool: "warehouse",
     group: "operations",
   },
+  { slug: "flooring-job-types", name: "Job Types", href: "/dashboard/job-types", requiredTool: JOB_TYPES_TOOL_SLUG, group: "catalog" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/inventory", requiredTool: "warehouse", group: "catalog" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/imports", requiredTool: "warehouse", group: "catalog" },
   { slug: "products", name: "Products", href: "/dashboard/products", requiredTool: "products", group: "catalog" },

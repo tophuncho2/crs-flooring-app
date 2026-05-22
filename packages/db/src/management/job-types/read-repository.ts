@@ -4,6 +4,7 @@ import {
   normalizeJobType,
   normalizeJobTypeOption,
   type JobType,
+  type JobTypeListRow,
   type JobTypeOption,
 } from "@builders/domain"
 
@@ -14,6 +15,41 @@ export async function listJobTypes(client: JobTypesDbClient = db): Promise<JobTy
     orderBy: { name: "asc" },
   })
   return jobTypes.map(normalizeJobType)
+}
+
+export type JobTypeListViewOptions = {
+  search?: string
+  skip: number
+  take: number
+}
+
+export type JobTypeListViewResult = {
+  rows: JobTypeListRow[]
+  total: number
+}
+
+export async function listJobTypesForListView(
+  options: JobTypeListViewOptions,
+  client: JobTypesDbClient = db,
+): Promise<JobTypeListViewResult> {
+  const where: Prisma.FlooringJobTypeWhereInput | undefined = options.search
+    ? { name: { contains: options.search, mode: "insensitive" } }
+    : undefined
+
+  const [total, rows] = await Promise.all([
+    client.flooringJobType.count({ where }),
+    client.flooringJobType.findMany({
+      where,
+      orderBy: { name: "asc" },
+      skip: options.skip,
+      take: options.take,
+    }),
+  ])
+
+  return {
+    total,
+    rows: rows.map(normalizeJobType),
+  }
 }
 
 export async function listJobTypeOptions(client: JobTypesDbClient = db): Promise<JobTypeOption[]> {

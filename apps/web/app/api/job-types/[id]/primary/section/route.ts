@@ -1,0 +1,83 @@
+import { updateJobTypeUseCase } from "@builders/application"
+import { getJobTypeById } from "@builders/db"
+import { JOB_TYPES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
+import { parseUuidParam } from "@/server/http/api-helpers"
+import { routeError, routeJson } from "@/server/http/route-helpers"
+import {
+  applyRoutePolicy,
+  assertExpectedUpdatedAt,
+  enforceMutationReceipt,
+  finalizeMutationReceipt,
+  parseMutationEnvelope,
+} from "@/server/http/route-policy"
+import { validateUpdateJobTypeInput } from "../../../_validators"
+
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
+
+export async function PATCH(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request, {
+    capability: "system.access",
+    toolSlug: JOB_TYPES_TOOL_SLUG,
+    rateLimit: {
+      scope: "jobTypes.primary.section.replace",
+      limit: 40,
+      windowMs: 10 * 60 * 1000,
+      route: "/api/job-types/[id]/primary/section",
+    },
+  })
+  if (access instanceof Response) return access
+
+  try {
+    const { id: rawId } = await params
+    const id = parseUuidParam(rawId, "id")
+    const body = (await request.json()) as Record<string, unknown>
+    const { input, mutation } = parseMutationEnvelope(body, validateUpdateJobTypeInput, {
+      requireExpectedUpdatedAt: true,
+    })
+
+    const currentSnapshot = await getJobTypeById(id)
+    assertExpectedUpdatedAt({
+      actualUpdatedAt: currentSnapshot.updatedAt,
+      expectedUpdatedAt: mutation.expectedUpdatedAt,
+      snapshot: { jobType: currentSnapshot },
+      message:
+        "Job type changed before section save completed. Refresh and try again.",
+    })
+
+    const receipt = await enforceMutationReceipt({
+      scope: "jobTypes.primary.section.replace",
+      request,
+      access,
+      mutation,
+      body,
+    })
+    if (receipt.replay) return receipt.replay
+
+    const result = await withMutationTelemetry(
+      access,
+      {
+        message: "Job type primary section replaced",
+        action: "jobTypes.primary.section.replace",
+        route: "/api/job-types/[id]/primary/section",
+        entityType: "flooringJobType",
+        entityId: id,
+      },
+      () => updateJobTypeUseCase(id, input),
+    )
+
+    const responseBody = { jobType: result }
+    await finalizeMutationReceipt({
+      scope: "jobTypes.primary.section.replace",
+      access,
+      mutation,
+      responseStatus: 200,
+      responseBody,
+    })
+    return routeJson(access, responseBody)
+  } catch (error) {
+    return routeError(access, error)
+  }
+}

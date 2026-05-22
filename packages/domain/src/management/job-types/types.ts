@@ -5,6 +5,8 @@ export type JobType = {
   updatedAt: string
 }
 
+export type JobTypeListRow = JobType
+
 export type JobTypeOption = {
   id: string
   name: string
