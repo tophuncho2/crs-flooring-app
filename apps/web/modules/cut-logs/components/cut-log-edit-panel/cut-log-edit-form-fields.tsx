@@ -3,7 +3,6 @@
 import { CUT_LOG_NOTES_MAX, isCutLogPendingEditable } from "@builders/domain"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
-import { HubSidePanelPickerTrigger } from "@/components/hub-side-panel"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import {
   SidePanelPreviewReadonlyRow,
@@ -38,23 +37,24 @@ export type CutLogEditFormFieldsProps = {
 }
 
 /**
- * The form body of the cut-log edit panel.
+ * The form body of the cut-log edit panel — the cells only. Picker
+ * triggers (Location + Inventory in create mode; WO + WOMI in edit) live
+ * in the panel's sticky `topToolbar` so they stay visible while the body
+ * swaps to a picker takeover (template-sync pattern).
  *
  * Edit mode: a bordered read-only summary card (matching the template-sync
- * preview header chrome) over the three editable cells (notes, waste, cut).
+ * preview header chrome) over the three editable cells (cut, notes, waste).
  *
- * Create mode: an inventory picker section (location filter + inventory
- * picker, scoped by parent WO's warehouse and parent WOMI's product) over
- * the three editable cells. There is no read-only summary in create mode —
- * the cut log doesn't exist yet, so timestamps / before / after / coverage
- * have nothing to show.
+ * Create mode: just the three editable cells — there is no read-only
+ * summary because the cut log doesn't exist yet (no timestamps / before
+ * / after / coverage to show).
  */
 export function CutLogEditFormFields({
   mode,
   cutLog,
   controller,
 }: CutLogEditFormFieldsProps) {
-  const { form, local, warehouseId, isSaving } = controller
+  const { form, local, isSaving } = controller
 
   // Stock unit source:
   //   - edit mode: the cut log's frozen `stockUnitAbbrev` snapshot (stamped
@@ -112,52 +112,6 @@ export function CutLogEditFormFields({
             value={formatMeasurement(cutLog.coverageCut, coverageUnit)}
           />
         </SidePanelPreviewReadonlySection>
-      ) : null}
-
-      {mode === "create" ? (
-        // Inventory pickers — only path to setting the cut log's inventory.
-        // Both triggers open a body-takeover picker (template-sync style)
-        // via the controller's pickerKind state; the picker swaps the
-        // panel body until the user selects or cancels. Location is a
-        // denormalized mirror: stamped from the parent inventory on
-        // create / update / finalize and cleared on void.
-        <section className="flex flex-col gap-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/65">
-            Inventory
-          </h3>
-          <FieldSection gap="0.75rem">
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Location filter">
-                <HubSidePanelPickerTrigger
-                  expanded={controller.pickerKind === "location"}
-                  onToggle={() => controller.openPicker("location")}
-                  selectedLabel={local.locationFilter || null}
-                  placeholder="Select Location"
-                  disabled={isSaving || warehouseId === null}
-                  disabledPlaceholder={
-                    warehouseId === null ? "Select warehouse first" : undefined
-                  }
-                  ariaLabel="Open location filter picker"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Inventory" required>
-                <HubSidePanelPickerTrigger
-                  expanded={controller.pickerKind === "inventory"}
-                  onToggle={() => controller.openPicker("inventory")}
-                  selectedLabel={local.pickedInventoryLabel || null}
-                  placeholder="Select Inventory"
-                  disabled={isSaving || warehouseId === null}
-                  disabledPlaceholder={
-                    warehouseId === null ? "Select warehouse first" : undefined
-                  }
-                  ariaLabel="Open inventory picker"
-                />
-              </FormField>
-            </CellAt>
-          </FieldSection>
-        </section>
       ) : null}
 
       {/* Editable cells — notes, waste, cut. Stacked vertically per the panel

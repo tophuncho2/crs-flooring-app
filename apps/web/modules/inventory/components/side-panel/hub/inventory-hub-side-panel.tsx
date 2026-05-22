@@ -11,6 +11,7 @@ import {
   CutLogEditVoidButton,
 } from "@/modules/cut-logs/components/cut-log-edit-panel/toolbar-controls"
 import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
+import { InventoryHubCutLogEditHeader } from "./inventory-hub-cut-log-edit-header"
 import { InventoryHubCutLogEditSection } from "./inventory-hub-cut-log-edit-section"
 import { InventoryHubCutLogsListSection } from "./inventory-hub-cut-logs-list-section"
 import { InventoryHubCutLogWorkOrderItemPicker } from "./inventory-hub-cut-log-work-order-item-picker"
@@ -102,11 +103,6 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
   }, [mode.kind, cutLogPanel])
 
   const topToolbar = useMemo<ReactNode>(() => {
-    // Picker takeover replaces the toolbar with a minimal placeholder
-    // so the panel chrome doesn't jump while the body holds the picker.
-    // The picker body owns Escape / clear / cancel; selection commits
-    // via the controller's commit handlers.
-    if (isCutLogPickerActive) return null
     if (mode.kind === "section-edit-inventory") {
       return (
         <HubSidePanelEditToolbar
@@ -121,16 +117,11 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
       )
     }
     if (mode.kind === "section-edit-cut-log") {
-      // Cut-log save/discard are routed through the hub coordinator so
-      // the section-busy + dirty derivations stay coherent. Delete +
-      // finalize + void are wired straight to the embedded panel —
-      // they're domain-specific cut-log actions with their own
-      // visibility rules. Finalize / Void render conditionally inside
-      // `cutLogExtraLeftActions` based on status. Delete stays visible
-      // for every edit row but is HTML-disabled unless the row is
-      // PENDING — matches the standalone panel's `CutLogEditDeleteButton`
-      // contract and the server gate (FINAL / VOID rows must be reversed
-      // before deletion).
+      // The WO + WOMI relink header lives in the sticky topToolbar so
+      // it stays visible while a picker takeover swaps the body below
+      // (template-sync pattern). When a picker is active we drop the
+      // actions toolbar so the chrome doesn't clutter the picker view;
+      // the triggers themselves remain reachable above the picker body.
       const onDelete = cutLog ? cutLogPanel.deleteCutLog : undefined
       const isPending = cutLog?.status === "PENDING"
       const deleteDisabled = !isPending
@@ -138,7 +129,14 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
         deleteDisabled && !cutLogPanel.isSaving
           ? "Only pending cut logs can be deleted"
           : undefined
-      return (
+      const header = cutLog ? (
+        <InventoryHubCutLogEditHeader
+          cutLog={cutLog}
+          cutLogPanel={cutLogPanel}
+          hubController={controller}
+        />
+      ) : null
+      const actions = isCutLogPickerActive ? null : (
         <HubSidePanelEditToolbar
           isDirty={isDirty}
           isSaving={isSaving}
@@ -152,6 +150,13 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
           extraLeftActions={cutLogExtraLeftActions}
           errorMessage={error ?? cutLogPanel.error ?? null}
         />
+      )
+      if (!header && !actions) return null
+      return (
+        <div className="flex flex-col gap-3">
+          {header}
+          {actions}
+        </div>
       )
     }
     if (mode.kind === "view") {
@@ -185,6 +190,7 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
     cutLogExtraLeftActions,
     cutLogs,
     isCutLogPickerActive,
+    controller,
   ])
 
   // Fetched callers (e.g. work-orders) may render before the inventory

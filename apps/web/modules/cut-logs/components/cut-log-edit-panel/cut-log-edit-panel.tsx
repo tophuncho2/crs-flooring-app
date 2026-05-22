@@ -4,6 +4,7 @@ import { useMemo, type ReactNode } from "react"
 import { ChevronRight } from "lucide-react"
 import {
   HubSidePanelEditToolbar,
+  HubSidePanelPickerTrigger,
   HubSidePanelShell,
 } from "@/components/hub-side-panel"
 import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
@@ -15,6 +16,9 @@ import {
   CutLogEditFinalizeButton,
   CutLogEditVoidButton,
 } from "./toolbar-controls"
+
+const PICKER_LABEL_CLASS =
+  "text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65"
 
 const HUB_VIEW_BUTTON_CLASS_NAME = [
   "inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm transition-all duration-200",
@@ -73,6 +77,8 @@ export function CutLogEditPanel({ controller, onOpenHubView }: CutLogEditPanelPr
     discard,
     close,
     deleteCutLog,
+    warehouseId,
+    local,
   } = controller
 
   const isOpen = open !== null
@@ -122,13 +128,52 @@ export function CutLogEditPanel({ controller, onOpenHubView }: CutLogEditPanelPr
     )
   }, [mode, cutLog, onOpenHubView, isSaving, controller])
 
+  // Create-mode picker triggers live in the sticky topToolbar so they
+  // stay visible while the body swaps to a picker takeover (template-sync
+  // pattern). The triggers' `expanded` flag tracks pickerKind so the
+  // active trigger highlights while its picker fills the body below.
+  const createPickerTriggers = useMemo<ReactNode>(() => {
+    if (mode !== "create") return null
+    return (
+      <div className="flex flex-col gap-3">
+        <label className="flex flex-col gap-1.5">
+          <span className={PICKER_LABEL_CLASS}>Location filter</span>
+          <HubSidePanelPickerTrigger
+            expanded={pickerKind === "location"}
+            onToggle={() => controller.openPicker("location")}
+            selectedLabel={local.locationFilter || null}
+            placeholder="Select Location"
+            disabled={isSaving || warehouseId === null}
+            disabledPlaceholder={
+              warehouseId === null ? "Select warehouse first" : undefined
+            }
+            ariaLabel="Open location filter picker"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={PICKER_LABEL_CLASS}>Inventory</span>
+          <HubSidePanelPickerTrigger
+            expanded={pickerKind === "inventory"}
+            onToggle={() => controller.openPicker("inventory")}
+            selectedLabel={local.pickedInventoryLabel || null}
+            placeholder="Select Inventory"
+            disabled={isSaving || warehouseId === null}
+            disabledPlaceholder={
+              warehouseId === null ? "Select warehouse first" : undefined
+            }
+            ariaLabel="Open inventory picker"
+          />
+        </label>
+      </div>
+    )
+  }, [mode, pickerKind, controller, local, isSaving, warehouseId])
+
   const topToolbar = useMemo<ReactNode>(() => {
-    if (isPickerActive) return null
     // canSave needs both isDirty and create-mode-specific validity; the
     // controller's save dispatcher already no-ops when invalid, so we
     // gate the button on the dirty signal alone.
     const onDelete = mode === "edit" && cutLog ? deleteCutLog : undefined
-    return (
+    const actionsToolbar = isPickerActive ? null : (
       <HubSidePanelEditToolbar
         isDirty={isDirty}
         isSaving={isSaving}
@@ -144,6 +189,13 @@ export function CutLogEditPanel({ controller, onOpenHubView }: CutLogEditPanelPr
         errorMessage={error}
       />
     )
+    if (!createPickerTriggers && !actionsToolbar) return null
+    return (
+      <div className="flex flex-col gap-3">
+        {createPickerTriggers}
+        {actionsToolbar}
+      </div>
+    )
   }, [
     isPickerActive,
     mode,
@@ -157,6 +209,7 @@ export function CutLogEditPanel({ controller, onOpenHubView }: CutLogEditPanelPr
     deleteTitle,
     extraLeftActions,
     error,
+    createPickerTriggers,
   ])
 
   return (
