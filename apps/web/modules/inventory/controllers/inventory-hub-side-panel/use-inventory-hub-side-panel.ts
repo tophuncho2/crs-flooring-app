@@ -3,8 +3,9 @@
 import { useCallback, useMemo, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import type {
-  InventoryCutLogRow,
   InventoryDetail,
+  WorkOrderMaterialItemOption,
+  WorkOrderOption,
 } from "@builders/domain"
 import {
   useCutLogEditPanel,
@@ -65,6 +66,8 @@ export type UseInventoryHubSidePanelOptions = {
  * Mirrors the property hub orchestrator pattern at
  * `apps/web/modules/properties/controllers/property-hub-side-panel/`.
  */
+export type CutLogPickerKind = "workOrder" | "workOrderItem"
+
 export function useInventoryHubSidePanel({
   initialInventory,
   publishCutLogPatch,
@@ -72,6 +75,12 @@ export function useInventoryHubSidePanel({
 }: UseInventoryHubSidePanelOptions) {
   const [mode, setMode] = useState<HubMode>({ kind: "closed" })
   const [error, setError] = useState<string | null>(null)
+  // Picker takeover state for the cut-log edit body. Orthogonal to `mode`:
+  // when non-null while mode is section-edit-cut-log, the hub body renders
+  // the picker takeover instead of the cut-log form. Mirrors the property
+  // hub's `picker-takeover` mode but kept as a separate dimension so the
+  // mode union stays minimal.
+  const [cutLogPickerKind, setCutLogPickerKind] = useState<CutLogPickerKind | null>(null)
   const clearError = useCallback(() => setError(null), [])
   const setErrorMessage = useCallback((message: string) => setError(message), [])
 
@@ -171,8 +180,40 @@ export function useInventoryHubSidePanel({
   const resetAll = useCallback(() => {
     inventoryEdit.reset()
     cutLogPanel.close()
+    setCutLogPickerKind(null)
     setError(null)
   }, [inventoryEdit, cutLogPanel])
+
+  // ===== Cut-log picker takeover handlers =====
+  // Triggers on the cut-log edit header (WO + WOMI relinks) fire these
+  // to swap the body to the picker takeover. Commit handlers reuse the
+  // cut-log panel controller's existing setters + snapshot helpers so
+  // the form value + the picker trigger's label move together.
+  const openCutLogPicker = useCallback((kind: CutLogPickerKind) => {
+    setCutLogPickerKind(kind)
+  }, [])
+
+  const closeCutLogPicker = useCallback(() => {
+    setCutLogPickerKind(null)
+  }, [])
+
+  const commitWorkOrderPick = useCallback(
+    (option: WorkOrderOption | null) => {
+      cutLogPanel.setWorkOrderId(option?.id ?? null)
+      cutLogPanel.snapshotWorkOrderOption(option)
+      setCutLogPickerKind(null)
+    },
+    [cutLogPanel],
+  )
+
+  const commitWorkOrderItemPick = useCallback(
+    (option: WorkOrderMaterialItemOption | null) => {
+      cutLogPanel.setWorkOrderItemId(option?.id ?? null)
+      cutLogPanel.snapshotWorkOrderItemOption(option)
+      setCutLogPickerKind(null)
+    },
+    [cutLogPanel],
+  )
 
   // ===== Mode-dispatched derivations =====
   const isDirty = useMemo(() => {
@@ -206,12 +247,15 @@ export function useInventoryHubSidePanel({
     [initialInventory?.id, resetAll],
   )
 
-  // External opener that lands directly in cut-log edit (e.g. clicking a
-  // cut-log row in the inventory record view's inline cut-logs grid, or
-  // a hub-view jump from the work-orders standalone cut-log panel).
+  // External opener that lands directly in cut-log edit. Accepts the
+  // broader `CutLogPanelRow` shape so both call sites can hand off
+  // whatever row they have in scope: the inventory record view passes
+  // `InventoryCutLogRow` (server-resolved labels required), and the
+  // work-orders side passes a `CutLogPanelRow` hydrated from in-scope
+  // workOrder + WOMI state (since WO-side reads return plain CutLogRow).
   // Derives the parent inventoryId from the row.
   const openForCutLogEdit = useCallback(
-    (row: InventoryCutLogRow) => {
+    (row: CutLogPanelRow) => {
       resetAll()
       const panelRow: CutLogPanelRow = {
         ...row,
@@ -298,6 +342,7 @@ export function useInventoryHubSidePanel({
     // ===== Modal state =====
     isOpen,
     mode,
+    cutLogPickerKind,
 
     // ===== Openers =====
     openForView,
@@ -308,6 +353,12 @@ export function useInventoryHubSidePanel({
     enterInventoryEditFromContext,
     enterCutLogEditFromContext,
     exitToView,
+
+    // ===== Cut-log picker takeover =====
+    openCutLogPicker,
+    closeCutLogPicker,
+    commitWorkOrderPick,
+    commitWorkOrderItemPick,
 
     // ===== View-mode data =====
     inventory,

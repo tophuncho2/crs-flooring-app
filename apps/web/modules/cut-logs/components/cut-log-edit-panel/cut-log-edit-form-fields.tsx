@@ -3,14 +3,13 @@
 import { CUT_LOG_NOTES_MAX, isCutLogPendingEditable } from "@builders/domain"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
+import { HubSidePanelPickerTrigger } from "@/components/hub-side-panel"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import {
   SidePanelPreviewReadonlyRow,
   SidePanelPreviewReadonlySection,
 } from "@/components/side-panel-preview"
 import { formatCutLogTimestamp } from "@/modules/cut-logs/components/row/format-cut-log-timestamp"
-import { InventoryPicker } from "@/modules/inventory/components/picker/inventory-picker"
-import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import type {
   CutLogEditPanelController,
   CutLogPanelRow,
@@ -117,8 +116,11 @@ export function CutLogEditFormFields({
 
       {mode === "create" ? (
         // Inventory pickers — only path to setting the cut log's inventory.
-        // Location is a denormalized mirror: stamped from the parent inventory
-        // on create / update / finalize and cleared on void.
+        // Both triggers open a body-takeover picker (template-sync style)
+        // via the controller's pickerKind state; the picker swaps the
+        // panel body until the user selects or cancels. Location is a
+        // denormalized mirror: stamped from the parent inventory on
+        // create / update / finalize and cleared on void.
         <section className="flex flex-col gap-2">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/65">
             Inventory
@@ -126,36 +128,31 @@ export function CutLogEditFormFields({
           <FieldSection gap="0.75rem">
             <CellAt col={1} colSpan={8}>
               <FormField label="Location filter">
-                <LocationPicker
-                  value={local.locationFilter || null}
-                  onChange={controller.setLocationFilter}
-                  warehouseId={warehouseId}
-                  disabled={isSaving}
-                  ariaLabel="Cut log inventory location filter"
+                <HubSidePanelPickerTrigger
+                  expanded={controller.pickerKind === "location"}
+                  onToggle={() => controller.openPicker("location")}
+                  selectedLabel={local.locationFilter || null}
+                  placeholder="Select Location"
+                  disabled={isSaving || warehouseId === null}
+                  disabledPlaceholder={
+                    warehouseId === null ? "Select warehouse first" : undefined
+                  }
+                  ariaLabel="Open location filter picker"
                 />
               </FormField>
             </CellAt>
             <CellAt col={1} colSpan={8}>
               <FormField label="Inventory" required>
-                <InventoryPicker
-                  value={form.inventoryId || null}
-                  // onOptionSelected is the single source of truth — the
-                  // picker calls it synchronously with the full option (or
-                  // null on clear), and the controller updates form +
-                  // labels atomically. onChange stays a no-op so the two
-                  // legacy callbacks can't race.
-                  onChange={() => {}}
-                  onOptionSelected={controller.selectInventoryOption}
-                  warehouseId={warehouseId}
-                  productId={
-                    controller.open?.mode === "create"
-                      ? controller.open.productId || null
-                      : null
-                  }
-                  location={local.locationFilter || null}
+                <HubSidePanelPickerTrigger
+                  expanded={controller.pickerKind === "inventory"}
+                  onToggle={() => controller.openPicker("inventory")}
                   selectedLabel={local.pickedInventoryLabel || null}
-                  disabled={isSaving}
-                  ariaLabel="Cut log inventory"
+                  placeholder="Select Inventory"
+                  disabled={isSaving || warehouseId === null}
+                  disabledPlaceholder={
+                    warehouseId === null ? "Select warehouse first" : undefined
+                  }
+                  ariaLabel="Open inventory picker"
                 />
               </FormField>
             </CellAt>

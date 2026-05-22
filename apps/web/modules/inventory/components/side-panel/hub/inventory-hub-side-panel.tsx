@@ -8,12 +8,13 @@ import {
 } from "@/components/hub-side-panel"
 import {
   CutLogEditFinalizeButton,
-  CutLogEditStatusPill,
   CutLogEditVoidButton,
 } from "@/modules/cut-logs/components/cut-log-edit-panel/toolbar-controls"
 import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
 import { InventoryHubCutLogEditSection } from "./inventory-hub-cut-log-edit-section"
 import { InventoryHubCutLogsListSection } from "./inventory-hub-cut-logs-list-section"
+import { InventoryHubCutLogWorkOrderItemPicker } from "./inventory-hub-cut-log-work-order-item-picker"
+import { InventoryHubCutLogWorkOrderPicker } from "./inventory-hub-cut-log-work-order-picker"
 import { InventoryHubInventoryEditSection } from "./inventory-hub-inventory-edit-section"
 import { InventoryHubViewSection } from "./inventory-hub-view-section"
 
@@ -42,6 +43,7 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
   const {
     isOpen,
     mode,
+    cutLogPickerKind,
     inventory,
     cutLogs,
     cutLogPanel,
@@ -57,10 +59,17 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
     isErrorInventory,
   } = controller
 
+  const isCutLogPickerActive =
+    mode.kind === "section-edit-cut-log" && cutLogPickerKind !== null
+
   const cutLog =
     cutLogPanel.open?.mode === "edit" ? cutLogPanel.open.cutLog : null
 
   const title = useMemo<ReactNode>(() => {
+    if (isCutLogPickerActive) {
+      if (cutLogPickerKind === "workOrder") return "Select work order"
+      if (cutLogPickerKind === "workOrderItem") return "Select material item"
+    }
     switch (mode.kind) {
       case "section-edit-cut-log":
         return cutLog?.cutLogNumber ?? "Cut log"
@@ -70,20 +79,34 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
       default:
         return "Inventory"
     }
-  }, [mode.kind, cutLog, inventory?.inventoryItem])
+  }, [
+    mode.kind,
+    cutLog,
+    inventory?.inventoryItem,
+    isCutLogPickerActive,
+    cutLogPickerKind,
+  ])
 
   const cutLogExtraLeftActions = useMemo<ReactNode>(() => {
     if (mode.kind !== "section-edit-cut-log") return null
+    // The toolbar's built-in SidePanelEditStatusPill already shows
+    // dirty/saving; no second status pill here. Finalize + Void are
+    // cut-log-domain actions; they own their own visibility (PENDING /
+    // FINAL gates) so the buttons render or not based on status.
     return (
       <>
         <CutLogEditFinalizeButton controller={cutLogPanel} mode="edit" />
         <CutLogEditVoidButton controller={cutLogPanel} mode="edit" />
-        <CutLogEditStatusPill controller={cutLogPanel} />
       </>
     )
   }, [mode.kind, cutLogPanel])
 
   const topToolbar = useMemo<ReactNode>(() => {
+    // Picker takeover replaces the toolbar with a minimal placeholder
+    // so the panel chrome doesn't jump while the body holds the picker.
+    // The picker body owns Escape / clear / cancel; selection commits
+    // via the controller's commit handlers.
+    if (isCutLogPickerActive) return null
     if (mode.kind === "section-edit-inventory") {
       return (
         <HubSidePanelEditToolbar
@@ -161,6 +184,7 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
     cutLogPanel,
     cutLogExtraLeftActions,
     cutLogs,
+    isCutLogPickerActive,
   ])
 
   // Fetched callers (e.g. work-orders) may render before the inventory
@@ -175,7 +199,13 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
 
   return (
     <HubSidePanelShell open={isOpen} onClose={close} title={title} topToolbar={topToolbar}>
-      {showLoadingPlaceholder ? (
+      {isCutLogPickerActive ? (
+        cutLogPickerKind === "workOrder" ? (
+          <InventoryHubCutLogWorkOrderPicker controller={controller} />
+        ) : cutLogPickerKind === "workOrderItem" ? (
+          <InventoryHubCutLogWorkOrderItemPicker controller={controller} />
+        ) : null
+      ) : showLoadingPlaceholder ? (
         <p className="px-1 text-sm text-[var(--foreground)]/65">Loading inventory…</p>
       ) : showErrorPlaceholder ? (
         <p className="px-1 text-sm text-rose-700">Could not load inventory.</p>

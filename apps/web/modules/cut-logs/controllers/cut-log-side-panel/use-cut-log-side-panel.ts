@@ -54,6 +54,8 @@ import type {
  *   - Delete        → close (row no longer exists)
  *   - Backdrop / ESC / X → close, discard unsaved
  */
+export type CutLogPanelPickerKind = "location" | "inventory"
+
 export function useCutLogEditPanel({
   scope,
   warehouseId,
@@ -71,6 +73,11 @@ export function useCutLogEditPanel({
   const [baseline, setBaseline] = useState<CutLogEditForm>(EMPTY_FORM)
   const [local, setLocal] = useState<CutLogPanelLocal>(EMPTY_LOCAL)
   const [error, setError] = useState<string | null>(null)
+  // Body-takeover picker state for the create-mode Location + Inventory
+  // pickers. Mirrors the template-sync / property-hub picker takeover
+  // pattern — the panel body swaps to the picker listbox while a kind is
+  // active. Resets to null on close, on open spec change, and on commit.
+  const [pickerKind, setPickerKind] = useState<CutLogPanelPickerKind | null>(null)
 
   // When the open spec changes, reset form + filters + clear error.
   useEffect(() => {
@@ -78,6 +85,7 @@ export function useCutLogEditPanel({
       setForm(EMPTY_FORM)
       setBaseline(EMPTY_FORM)
       setLocal(EMPTY_LOCAL)
+      setPickerKind(null)
       setError(null)
       return
     }
@@ -104,6 +112,7 @@ export function useCutLogEditPanel({
         pickedInventoryStockUnitAbbrev: preset?.stockUnitAbbrev ?? "",
       })
     }
+    setPickerKind(null)
     setError(null)
   }, [open])
 
@@ -131,13 +140,25 @@ export function useCutLogEditPanel({
     setLocal((prev) => ({ ...prev, locationFilter: next ?? "" }))
   }, [])
 
+  // Body-takeover picker controls. The panel renders a HubSidePanelPicker
+  // in its body while `pickerKind` is non-null; commit handlers below
+  // close the takeover and update form state in one render.
+  const openPicker = useCallback((kind: CutLogPanelPickerKind) => {
+    setPickerKind(kind)
+  }, [])
+
+  const closePicker = useCallback(() => {
+    setPickerKind(null)
+  }, [])
+
   // Single source of truth for inventory selection: the picker hands the
   // full option (or null for clear) and the form + local labels move together
   // in one render. The legacy split (setInventoryId + snapshotInventoryOption)
   // raced when the dropdown's commit path reset its search query between the
   // two callbacks — the label would lag behind the form value until save
   // rebuilt the form from the server response. Inventory is immutable after
-  // create, so this only fires from the create-mode picker.
+  // create, so this only fires from the create-mode picker. Closes the
+  // takeover after commit.
   const selectInventoryOption = useCallback((option: InventoryOption | null) => {
     setForm((prev) => ({ ...prev, inventoryId: option?.id ?? "" }))
     setLocal((prev) => ({
@@ -145,6 +166,16 @@ export function useCutLogEditPanel({
       pickedInventoryLabel: option?.inventoryItem ?? "",
       pickedInventoryStockUnitAbbrev: option?.stockUnitAbbrev ?? "",
     }))
+    setPickerKind(null)
+    setError(null)
+  }, [])
+
+  // Atomic location-filter commit that also closes the picker takeover.
+  // The plain `setLocationFilter` stays available for any callers that
+  // need to write the filter without closing a takeover.
+  const selectLocationFilter = useCallback((value: string | null) => {
+    setLocal((prev) => ({ ...prev, locationFilter: value ?? "" }))
+    setPickerKind(null)
     setError(null)
   }, [])
 
@@ -284,12 +315,16 @@ export function useCutLogEditPanel({
     isSaving,
     error,
     canCreate,
+    pickerKind,
     openPanel,
     close,
     discard,
     setField,
     setLocationFilter,
+    selectLocationFilter,
     selectInventoryOption,
+    openPicker,
+    closePicker,
     setWorkOrderId,
     setWorkOrderItemId,
     snapshotWorkOrderOption,

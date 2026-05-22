@@ -89,23 +89,27 @@ export function WorkOrderMaterialItemsSection({
 
   const handleOpenEdit = useCallback(
     (workOrderItemId: string, cutLog: CutLogRow) => {
-      // The WO-side data layer returns plain `CutLogRow` (the WO + WOMI
-      // labels aren't joined in — the WO record view already has them in
-      // scope). Hydrate the labels from in-scope state so the panel's
-      // read-only cells stay populated symmetrically with the inv side.
+      // Editing is hub-driven (mirrors the inventory record view's row
+      // click) — opens the InventoryHubSidePanel directly at
+      // section-edit-cut-log mode for this cut log. The WO-side data
+      // layer returns plain CutLogRow; hydrate WO/WOMI/warehouse labels
+      // from in-scope state so the hub's read-only summary stays
+      // populated symmetrically with the inv side.
       const item = section.items.find((i) => i.id === workOrderItemId)
-      cutLogPanel.openPanel({
-        mode: "edit",
+      inventoryHubPanel.openForCutLogEdit({
+        ...cutLog,
         workOrderItemId,
-        cutLog: {
-          ...cutLog,
-          workOrderNumber: workOrder.workOrderNumber,
-          workOrderItemProductLabel: item?.productName || null,
-          warehouseName: workOrder.warehouseName,
-        },
+        workOrderNumber: workOrder.workOrderNumber,
+        workOrderItemProductLabel: item?.productName || null,
+        warehouseName: workOrder.warehouseName,
       })
     },
-    [cutLogPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
+    [
+      inventoryHubPanel,
+      section.items,
+      workOrder.workOrderNumber,
+      workOrder.warehouseName,
+    ],
   )
 
   const handleCreateNew = useCallback(
