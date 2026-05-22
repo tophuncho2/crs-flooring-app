@@ -49,15 +49,17 @@ export function useGuardedUrlRecordPanel(
   const openRecord = useCallback(
     (recordId: string) => {
       if (panel.activeRecordId === recordId) {
-        return true
+        return
       }
 
-      return guard.confirmNavigation(() => panel.openRecord(recordId))
+      guard.confirmNavigation(() => panel.openRecord(recordId))
     },
     [guard, panel],
   )
 
-  const closeRecord = useCallback(() => guard.confirmNavigation(() => panel.closeRecord()), [guard, panel])
+  const closeRecord = useCallback(() => {
+    guard.confirmNavigation(() => panel.closeRecord())
+  }, [guard, panel])
 
   return {
     ...panel,

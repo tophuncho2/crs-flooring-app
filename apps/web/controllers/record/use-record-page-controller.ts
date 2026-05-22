@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { useRecordCloseGuard } from "@/hooks/record/use-record-close-guard"
+import type { UnsavedChangesDialogProps } from "@/modules/shared/engines/common/navigation/use-unsaved-changes-guard"
 import { useRecordNotices, type RecordNotices } from "@/hooks/record/use-record-notices"
 
 export type RecordPageSummaryMetric = {
@@ -59,6 +60,7 @@ export type RecordPageController = {
   closePage: () => void
   redirectToBack: () => void
   confirmNavigation: (action: () => void) => void
+  dirtyLeaveDialogProps: UnsavedChangesDialogProps
 }
 
 export function useRecordPageController({
@@ -143,11 +145,13 @@ export function useRecordPageController({
       closePage,
       redirectToBack,
       confirmNavigation: guard.confirmNavigation,
+      dirtyLeaveDialogProps: guard.dialogProps,
     }),
     [
       closePage,
       dirtySections,
       guard.confirmNavigation,
+      guard.dialogProps,
       isPrimarySectionOpen,
       notices,
       redirectToBack,

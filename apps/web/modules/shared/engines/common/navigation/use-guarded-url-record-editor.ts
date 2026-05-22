@@ -36,15 +36,17 @@ export function useGuardedUrlRecordEditor<Row extends { id: string }, Draft>({
   const openRecord = useCallback(
     (row: Row) => {
       if (editor.activeRecordId === row.id) {
-        return true
+        return
       }
 
-      return guard.confirmNavigation(() => editor.openRecord(row))
+      guard.confirmNavigation(() => editor.openRecord(row))
     },
     [editor, guard],
   )
 
-  const closeRecord = useCallback(() => guard.confirmNavigation(() => editor.closeRecord()), [editor, guard])
+  const closeRecord = useCallback(() => {
+    guard.confirmNavigation(() => editor.closeRecord())
+  }, [editor, guard])
 
   return {
     ...editor,

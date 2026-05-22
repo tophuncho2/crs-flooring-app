@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
 import { useRecordPageController, type RecordPageController } from "@/controllers/record/use-record-page-controller"
 import { RecordDetailPageShell } from "./record-detail-page-shell"
 
@@ -40,17 +41,29 @@ export function RecordDetailClientScaffold({
   })
 
   return (
-    <RecordDetailPageShell
-      title={title}
-      backHref={backHref}
-      onBack={page.closePage}
-      onHeaderToggle={headerVariant === "section" ? page.togglePrimarySectionOpen : undefined}
-      isHeaderExpanded={headerVariant === "section" ? page.isPrimarySectionOpen : undefined}
-      headerVariant={headerVariant}
-      headerMeta={resolveSlot(headerMeta, page)}
-      headerActions={resolveSlot(headerActions, page)}
-    >
-      {children(page)}
-    </RecordDetailPageShell>
+    <>
+      <RecordDetailPageShell
+        title={title}
+        backHref={backHref}
+        onBack={page.closePage}
+        onHeaderToggle={headerVariant === "section" ? page.togglePrimarySectionOpen : undefined}
+        isHeaderExpanded={headerVariant === "section" ? page.isPrimarySectionOpen : undefined}
+        headerVariant={headerVariant}
+        headerMeta={resolveSlot(headerMeta, page)}
+        headerActions={resolveSlot(headerActions, page)}
+      >
+        {children(page)}
+      </RecordDetailPageShell>
+      <ConfirmDialog
+        open={page.dirtyLeaveDialogProps.open}
+        title="Discard unsaved changes?"
+        message={page.dirtyLeaveDialogProps.message}
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        tone="warning"
+        onConfirm={page.dirtyLeaveDialogProps.onConfirm}
+        onCancel={page.dirtyLeaveDialogProps.onCancel}
+      />
+    </>
   )
 }
