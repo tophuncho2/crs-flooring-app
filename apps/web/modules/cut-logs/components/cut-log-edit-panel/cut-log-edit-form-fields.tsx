@@ -1,6 +1,6 @@
 "use client"
 
-import { CUT_LOG_NOTES_MAX, isCutLogPendingEditable, type InventoryOption } from "@builders/domain"
+import { CUT_LOG_NOTES_MAX, isCutLogPendingEditable } from "@builders/domain"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
@@ -139,10 +139,13 @@ export function CutLogEditFormFields({
               <FormField label="Inventory" required>
                 <InventoryPicker
                   value={form.inventoryId || null}
-                  onChange={controller.setInventoryId}
-                  onOptionSelected={(option: InventoryOption | null) =>
-                    controller.snapshotInventoryOption(option)
-                  }
+                  // onOptionSelected is the single source of truth — the
+                  // picker calls it synchronously with the full option (or
+                  // null on clear), and the controller updates form +
+                  // labels atomically. onChange stays a no-op so the two
+                  // legacy callbacks can't race.
+                  onChange={() => {}}
+                  onOptionSelected={controller.selectInventoryOption}
                   warehouseId={warehouseId}
                   productId={
                     controller.open?.mode === "create"

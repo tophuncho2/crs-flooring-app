@@ -131,24 +131,21 @@ export function useCutLogEditPanel({
     setLocal((prev) => ({ ...prev, locationFilter: next ?? "" }))
   }, [])
 
-  const setInventoryId = useCallback((id: string | null) => {
-    setForm((prev) => ({ ...prev, inventoryId: id ?? "" }))
-    if (id === null) {
-      setLocal((prev) => ({
-        ...prev,
-        pickedInventoryLabel: "",
-        pickedInventoryStockUnitAbbrev: "",
-      }))
-    }
-    setError(null)
-  }, [])
-
-  const snapshotInventoryOption = useCallback((option: InventoryOption | null) => {
+  // Single source of truth for inventory selection: the picker hands the
+  // full option (or null for clear) and the form + local labels move together
+  // in one render. The legacy split (setInventoryId + snapshotInventoryOption)
+  // raced when the dropdown's commit path reset its search query between the
+  // two callbacks — the label would lag behind the form value until save
+  // rebuilt the form from the server response. Inventory is immutable after
+  // create, so this only fires from the create-mode picker.
+  const selectInventoryOption = useCallback((option: InventoryOption | null) => {
+    setForm((prev) => ({ ...prev, inventoryId: option?.id ?? "" }))
     setLocal((prev) => ({
       ...prev,
       pickedInventoryLabel: option?.inventoryItem ?? "",
       pickedInventoryStockUnitAbbrev: option?.stockUnitAbbrev ?? "",
     }))
+    setError(null)
   }, [])
 
   // Picking a new work order invalidates the current WOMI selection — the
@@ -292,8 +289,7 @@ export function useCutLogEditPanel({
     discard,
     setField,
     setLocationFilter,
-    setInventoryId,
-    snapshotInventoryOption,
+    selectInventoryOption,
     setWorkOrderId,
     setWorkOrderItemId,
     snapshotWorkOrderOption,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 import { formatInventoryQuantity, type InventoryOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
@@ -127,15 +127,31 @@ export function InventoryPicker({
     enabled,
   })
 
+  // Sticky option cache. The dropdown's commit path clears the search query
+  // right after firing onChange — that triggers an immediate refetch which
+  // can replace `controller.options` with a list that no longer contains
+  // the picked row. Looking it up in this ref (which accumulates every
+  // option ever returned for the current scope) survives the reset so the
+  // parent always receives the full option that backed the user's click.
+  const optionsByIdRef = useRef<Map<string, InventoryOption>>(new Map())
+  useEffect(() => {
+    for (const option of controller.options) {
+      optionsByIdRef.current.set(option.id, option)
+    }
+  }, [controller.options])
+  useEffect(() => {
+    optionsByIdRef.current = new Map()
+  }, [bucketKey])
+
   const handleChange = useCallback(
     (id: string | null) => {
       onChange(id)
       if (onOptionSelected) {
-        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
+        const option = id ? (optionsByIdRef.current.get(id) ?? null) : null
         onOptionSelected(option)
       }
     },
-    [onChange, onOptionSelected, controller.options],
+    [onChange, onOptionSelected],
   )
 
   const options = useMemo<AsyncRichDropdownOption[]>(

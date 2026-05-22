@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { ChevronLeft } from "lucide-react"
 import {
   SidePanelEditDeleteButton,
@@ -32,6 +33,12 @@ export type HubSidePanelEditToolbarProps = {
    * orphan property).
    */
   onOpenHubView?: () => void
+  /**
+   * Optional extra controls rendered in the left cluster, after the
+   * status pill and back-arrow. Used by hubs that need domain-specific
+   * actions alongside save/discard/delete (e.g. cut-log finalize / void).
+   */
+  extraLeftActions?: ReactNode
   saveLabel?: string
   savingLabel?: string
   errorMessage?: string | null
@@ -55,6 +62,7 @@ export function HubSidePanelEditToolbar({
   onDiscard,
   onDelete,
   onOpenHubView,
+  extraLeftActions,
   saveLabel,
   savingLabel,
   errorMessage,
@@ -80,6 +88,7 @@ export function HubSidePanelEditToolbar({
               <span>Hub view</span>
             </button>
           ) : null}
+          {extraLeftActions}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {onDelete ? (
