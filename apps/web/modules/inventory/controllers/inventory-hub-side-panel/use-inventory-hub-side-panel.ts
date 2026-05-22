@@ -2,17 +2,14 @@
 
 import { useCallback, useMemo, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import type {
-  InventoryDetail,
-  WorkOrderMaterialItemOption,
-  WorkOrderOption,
-} from "@builders/domain"
+import type { InventoryDetail } from "@builders/domain"
 import {
   useCutLogEditPanel,
   type CutLogPanelPatch,
   type CutLogPanelRow,
 } from "@/modules/cut-logs"
 import { INVENTORY_DETAIL_QUERY_KEY } from "@/modules/inventory/data/inventory-detail-request"
+import { useCutLogPickerTakeover } from "./use-cut-log-picker-takeover"
 import { useHubCutLogsQuery } from "./use-hub-cut-logs-query"
 import { useHubInventoryEdit } from "./use-hub-inventory-edit"
 import { useHubSectionTransitions } from "./use-hub-section-transitions"
@@ -46,8 +43,8 @@ export type UseInventoryHubSidePanelOptions = {
 /**
  * Coordinator for the inventory hub side panel. Owns the mode state
  * machine, the current `openId` (inventory under inspection), the
- * inventory-edit slice, the embedded cut-log edit panel controller, and
- * the paginated cut-logs query.
+ * inventory-edit slice, the embedded cut-log edit panel controller, the
+ * picker-takeover slice, and the paginated cut-logs query.
  *
  * Two opening modes:
  *   - Seeded — caller passes `initialInventory` (record view). No fetch;
@@ -63,11 +60,9 @@ export type UseInventoryHubSidePanelOptions = {
  * operator sees the result before back-arrowing. Cut-log delete pops
  * back to view via the publish-callback wrapper.
  *
- * Mirrors the property hub orchestrator pattern at
- * `apps/web/modules/properties/controllers/property-hub-side-panel/`.
+ * Mirrors `properties/.../property-hub-side-panel/`. The picker-takeover
+ * mode + its slice are 1:1 with the property hub's pattern.
  */
-export type CutLogPickerKind = "workOrder" | "workOrderItem"
-
 export function useInventoryHubSidePanel({
   initialInventory,
   publishCutLogPatch,
@@ -75,12 +70,6 @@ export function useInventoryHubSidePanel({
 }: UseInventoryHubSidePanelOptions) {
   const [mode, setMode] = useState<HubMode>({ kind: "closed" })
   const [error, setError] = useState<string | null>(null)
-  // Picker takeover state for the cut-log edit body. Orthogonal to `mode`:
-  // when non-null while mode is section-edit-cut-log, the hub body renders
-  // the picker takeover instead of the cut-log form. Mirrors the property
-  // hub's `picker-takeover` mode but kept as a separate dimension so the
-  // mode union stays minimal.
-  const [cutLogPickerKind, setCutLogPickerKind] = useState<CutLogPickerKind | null>(null)
   const clearError = useCallback(() => setError(null), [])
   const setErrorMessage = useCallback((message: string) => setError(message), [])
 
@@ -129,11 +118,18 @@ export function useInventoryHubSidePanel({
       publishCutLogPatch(patch)
       if (openId !== null) invalidateInventoryDetail(openId)
       if (patch.kind === "delete") {
-        setMode((current) =>
-          current.kind === "section-edit-cut-log"
-            ? { kind: "view", inventoryId: current.inventoryId }
-            : current,
-        )
+        setMode((current) => {
+          if (current.kind === "section-edit-cut-log") {
+            return { kind: "view", inventoryId: current.inventoryId }
+          }
+          if (
+            current.kind === "picker-takeover" &&
+            current.returnTo.kind === "section-edit-cut-log"
+          ) {
+            return { kind: "view", inventoryId: current.returnTo.inventoryId }
+          }
+          return current
+        })
         setError(null)
       }
     },
@@ -146,6 +142,17 @@ export function useInventoryHubSidePanel({
       case "section-edit-inventory":
       case "section-edit-cut-log":
         return mode.inventoryId
+      case "picker-takeover": {
+        const r = mode.returnTo
+        if (
+          r.kind === "view" ||
+          r.kind === "section-edit-inventory" ||
+          r.kind === "section-edit-cut-log"
+        ) {
+          return r.inventoryId
+        }
+        return null
+      }
       default:
         return null
     }
@@ -171,6 +178,15 @@ export function useInventoryHubSidePanel({
     clearError,
   })
 
+  // ===== Cut-log picker takeover slice =====
+  // Owns the picker-takeover mode transitions + commit handlers. Reads
+  // `pickerKind` from the mode union (no orthogonal state).
+  const cutLogPickerTakeover = useCutLogPickerTakeover({
+    mode,
+    setMode,
+    cutLogPanel,
+  })
+
   // ===== Paginated cut-logs list (view mode) =====
   const cutLogs = useHubCutLogsQuery(contextInventoryId)
 
@@ -180,46 +196,13 @@ export function useInventoryHubSidePanel({
   const resetAll = useCallback(() => {
     inventoryEdit.reset()
     cutLogPanel.close()
-    setCutLogPickerKind(null)
     setError(null)
   }, [inventoryEdit, cutLogPanel])
 
-  // ===== Cut-log picker takeover handlers =====
-  // Triggers on the cut-log edit header (WO + WOMI relinks) fire these
-  // to swap the body to the picker takeover. Commit handlers reuse the
-  // cut-log panel controller's existing setters + snapshot helpers so
-  // the form value + the picker trigger's label move together.
-  //
-  // `openCutLogPicker` toggles — clicking the active trigger closes the
-  // picker (matches the template-sync top-toolbar pattern). The trigger
-  // fires it unconditionally and the function decides open vs. close.
-  const openCutLogPicker = useCallback((kind: CutLogPickerKind) => {
-    setCutLogPickerKind((current) => (current === kind ? null : kind))
-  }, [])
-
-  const closeCutLogPicker = useCallback(() => {
-    setCutLogPickerKind(null)
-  }, [])
-
-  const commitWorkOrderPick = useCallback(
-    (option: WorkOrderOption | null) => {
-      cutLogPanel.setWorkOrderId(option?.id ?? null)
-      cutLogPanel.snapshotWorkOrderOption(option)
-      setCutLogPickerKind(null)
-    },
-    [cutLogPanel],
-  )
-
-  const commitWorkOrderItemPick = useCallback(
-    (option: WorkOrderMaterialItemOption | null) => {
-      cutLogPanel.setWorkOrderItemId(option?.id ?? null)
-      cutLogPanel.snapshotWorkOrderItemOption(option)
-      setCutLogPickerKind(null)
-    },
-    [cutLogPanel],
-  )
-
   // ===== Mode-dispatched derivations =====
+  // Picker-takeover hides the actions toolbar, so isDirty / canSave
+  // values during takeover never reach the UI — treat them as false to
+  // match the property-hub `derive-hub-mode-flags` pattern.
   const isDirty = useMemo(() => {
     if (mode.kind === "section-edit-inventory") return inventoryEdit.isDirty
     if (mode.kind === "section-edit-cut-log") return cutLogPanel.isDirty
@@ -346,7 +329,7 @@ export function useInventoryHubSidePanel({
     // ===== Modal state =====
     isOpen,
     mode,
-    cutLogPickerKind,
+    cutLogPickerKind: cutLogPickerTakeover.pickerKind,
 
     // ===== Openers =====
     openForView,
@@ -359,10 +342,10 @@ export function useInventoryHubSidePanel({
     exitToView,
 
     // ===== Cut-log picker takeover =====
-    openCutLogPicker,
-    closeCutLogPicker,
-    commitWorkOrderPick,
-    commitWorkOrderItemPick,
+    openCutLogPicker: cutLogPickerTakeover.openPicker,
+    closeCutLogPicker: cutLogPickerTakeover.closePicker,
+    commitWorkOrderPick: cutLogPickerTakeover.commitWorkOrderPick,
+    commitWorkOrderItemPick: cutLogPickerTakeover.commitWorkOrderItemPick,
 
     // ===== View-mode data =====
     inventory,

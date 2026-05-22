@@ -10,7 +10,10 @@ import {
   CutLogEditFinalizeButton,
   CutLogEditVoidButton,
 } from "@/modules/cut-logs/components/cut-log-edit-panel/toolbar-controls"
-import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
+import type {
+  HubMode,
+  InventoryHubSidePanelController,
+} from "@/modules/inventory/controllers/inventory-hub-side-panel"
 import { InventoryHubCutLogEditHeader } from "./inventory-hub-cut-log-edit-header"
 import { InventoryHubCutLogEditSection } from "./inventory-hub-cut-log-edit-section"
 import { InventoryHubCutLogsListSection } from "./inventory-hub-cut-logs-list-section"
@@ -60,8 +63,14 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
     isErrorInventory,
   } = controller
 
-  const isCutLogPickerActive =
-    mode.kind === "section-edit-cut-log" && cutLogPickerKind !== null
+  const isCutLogPickerActive = mode.kind === "picker-takeover"
+
+  // Effective mode for chrome layout: picker-takeover renders the same
+  // header chrome as its returnTo (the cut-log relink triggers stay
+  // sticky above the picker body), so the topToolbar branches off this
+  // rather than off `mode.kind` directly.
+  const effectiveModeKind: HubMode["kind"] =
+    mode.kind === "picker-takeover" ? mode.returnTo.kind : mode.kind
 
   const cutLog =
     cutLogPanel.open?.mode === "edit" ? cutLogPanel.open.cutLog : null
@@ -89,7 +98,7 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
   ])
 
   const cutLogExtraLeftActions = useMemo<ReactNode>(() => {
-    if (mode.kind !== "section-edit-cut-log") return null
+    if (effectiveModeKind !== "section-edit-cut-log") return null
     // The toolbar's built-in SidePanelEditStatusPill already shows
     // dirty/saving; no second status pill here. Finalize + Void are
     // cut-log-domain actions; they own their own visibility (PENDING /
@@ -100,10 +109,10 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
         <CutLogEditVoidButton controller={cutLogPanel} mode="edit" />
       </>
     )
-  }, [mode.kind, cutLogPanel])
+  }, [effectiveModeKind, cutLogPanel])
 
   const topToolbar = useMemo<ReactNode>(() => {
-    if (mode.kind === "section-edit-inventory") {
+    if (effectiveModeKind === "section-edit-inventory") {
       return (
         <HubSidePanelEditToolbar
           isDirty={isDirty}
@@ -116,7 +125,7 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
         />
       )
     }
-    if (mode.kind === "section-edit-cut-log") {
+    if (effectiveModeKind === "section-edit-cut-log") {
       // The WO + WOMI relink header lives in the sticky topToolbar so
       // it stays visible while a picker takeover swaps the body below
       // (template-sync pattern). When a picker is active we drop the
@@ -159,7 +168,7 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
         </div>
       )
     }
-    if (mode.kind === "view") {
+    if (effectiveModeKind === "view") {
       const showPagination = cutLogs.hasData && cutLogs.total > cutLogs.pageSize
       if (!showPagination) return null
       return (
@@ -177,7 +186,7 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
     }
     return null
   }, [
-    mode.kind,
+    effectiveModeKind,
     isDirty,
     isSaving,
     canSave,

@@ -7,9 +7,12 @@ export type {
   InventoryCutLogRow,
 } from "@builders/domain"
 
+export type CutLogPickerKind = "workOrder" | "workOrderItem"
+
 /**
  * Mode state for the inventory hub side panel. The hub mirrors the property
- * hub's section-edit / view pattern, parameterized for inventory:
+ * hub's section-edit / view / picker-takeover pattern, parameterized for
+ * inventory:
  *
  *   - closed: panel not visible
  *   - view: read-only inventory cells card on top, paginated cut-logs list
@@ -22,10 +25,17 @@ export type {
  *   - section-edit-cut-log: cut-log edit fields (cut / isWaste / notes);
  *           no inventory picker — parent inventory is the hub context
  *           and is immutable after cut-log create on every cut-log edit
- *           surface
+ *           surface. The sticky topToolbar carries the WO + WOMI relink
+ *           triggers; clicking a trigger enters `picker-takeover`.
+ *   - picker-takeover: body swap to a `HubSidePanelPicker` (WO or WOMI).
+ *           `returnTo` snapshots the previous mode so close / commit can
+ *           pop back without re-deriving it. Only entered from
+ *           `section-edit-cut-log` today, but `returnTo: HubMode` keeps
+ *           the union open to future surfaces.
  *
- * The owning inventoryId is carried on every non-closed mode so query
- * caches reset cleanly when the hub re-opens for a different inventory.
+ * The owning inventoryId is carried on every non-closed non-picker mode
+ * so query caches reset cleanly when the hub re-opens for a different
+ * inventory. Picker-takeover reads its inventoryId from `returnTo`.
  */
 export type HubMode =
   | { kind: "closed" }
@@ -35,6 +45,11 @@ export type HubMode =
       kind: "section-edit-cut-log"
       inventoryId: string
       cutLogId: string
+    }
+  | {
+      kind: "picker-takeover"
+      returnTo: HubMode
+      pickerKind: CutLogPickerKind
     }
 
 export type InventoryEditState = {
