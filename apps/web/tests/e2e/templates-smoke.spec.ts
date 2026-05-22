@@ -16,7 +16,7 @@ test.describe("templates smoke", () => {
     await page.getByRole("button", { name: "+ Template" }).click()
     await page.waitForURL("**/dashboard/templates/new**")
 
-    await page.getByRole("button", { name: "+ New property" }).click()
+    await page.getByRole("button", { name: "New property" }).click()
 
     await page.getByLabel("New company name").fill(companyName)
     await page.getByLabel("New company phone").fill("555-0300")
@@ -32,12 +32,18 @@ test.describe("templates smoke", () => {
     await page.getByLabel("Property state").fill("CA")
     await page.getByLabel("Property zip").fill("90001")
 
-    await page.getByRole("button", { name: "Create" }).click()
+    // The hub panel's Create lives alongside the page's "Create Template" —
+    // both are <button>s; match exactly to disambiguate.
+    await page.getByRole("button", { name: "Create", exact: true }).click()
 
     // After hub-create the panel closes and the Property picker on the form
     // is auto-populated with the new property. The MC picker is too.
-    await expect(page.getByLabel("Property", { exact: true })).toContainText(propertyName)
-    await expect(page.getByLabel("Management company")).toContainText(companyName)
+    await expect(page.getByRole("button", { name: "Property", exact: true })).toContainText(
+      propertyName,
+    )
+    await expect(page.getByRole("button", { name: "Management company" })).toContainText(
+      companyName,
+    )
 
     await page.getByLabel("Description").fill(description)
 
