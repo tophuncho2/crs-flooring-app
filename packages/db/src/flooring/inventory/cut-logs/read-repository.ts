@@ -235,29 +235,6 @@ export async function listCutLogsForWorkOrderItemIds(
 }
 
 /**
- * Work-order-scoped read used by the read-only "cuts-only-preview"
- * side panel on the WO record view. Filters directly on the indexed
- * `workOrderId` column (cheaper than fanning out through WOMI ids).
- * Ordering matches the per-WOMI list so users see a consistent
- * sequence between the per-WOMI panel and the WO-level preview.
- */
-export async function listCutLogsForWorkOrderId(
-  workOrderId: string,
-  client: CutLogDbClient = db,
-): Promise<CutLogRecord[]> {
-  const rows = await client.flooringCutLog.findMany({
-    where: { workOrderId },
-    select: cutLogRowSelect,
-    orderBy: [
-      { isFinal: "asc" },
-      { finalCutSequence: "asc" },
-      { createdAt: "asc" },
-    ],
-  })
-  return rows.map(normalizeCutLogRow)
-}
-
-/**
  * Paginated read of inventory-side cut logs for a single parent record.
  * Powers the cut-log section on the inventory record view.
  *
