@@ -453,8 +453,8 @@ model FlooringTemplate {
   jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
   warehouseId          String?
   warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  unitType             String                     @db.VarChar(30)
-  description          String?                    @db.VarChar(60)
+  unitType             String                     @db.VarChar(40)
+  description          String?                    @db.VarChar(120)
   internalNotes        String?                    @db.VarChar(250)
   installerInstructions String?                   @db.VarChar(250)
   createdAt            DateTime                   @default(now())
@@ -530,9 +530,9 @@ model FlooringWorkOrder {
   vacancy              FlooringVacancyStatus?
   scheduledFor         DateTime?                  @db.Date
   unitNumber           String?                    @db.VarChar(30)
-  unitType             String?                    @db.VarChar(30)
+  unitType             String?                    @db.VarChar(40)
   customAddress        String?                    @db.VarChar(200)
-  description          String?                    @db.VarChar(60)
+  description          String?                    @db.VarChar(120)
   internalNotes        String?                    @db.VarChar(250)
   installerInstructions String?                   @db.VarChar(250)
   createdAt            DateTime                   @default(now())
