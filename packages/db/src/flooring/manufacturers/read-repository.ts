@@ -117,25 +117,38 @@ export async function getManufacturerDeleteState(
 
 export type ManufacturerOptionsSearchArgs = {
   search?: string
+  skip?: number
   take: number
+}
+
+export type ManufacturerOptionsSearchResult = {
+  items: ManufacturerOption[]
+  hasMore: boolean
 }
 
 export async function searchManufacturerOptions(
   args: ManufacturerOptionsSearchArgs,
   client: ManufacturerDbClient = db,
-): Promise<ManufacturerOption[]> {
+): Promise<ManufacturerOptionsSearchResult> {
   const where = args.search
     ? { companyName: { contains: args.search, mode: "insensitive" as const } }
     : undefined
 
+  // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.flooringManufacturer.findMany({
     where,
-    orderBy: { companyName: "asc" },
-    take: args.take,
+    orderBy: [{ companyName: "asc" }, { id: "asc" }],
+    skip: args.skip ?? 0,
+    take: args.take + 1,
     select: { id: true, companyName: true },
   })
 
-  return rows.map((row) => ({ id: row.id, name: row.companyName }))
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return {
+    items: page.map((row) => ({ id: row.id, name: row.companyName })),
+    hasMore,
+  }
 }
 
 // --- List-view read ---

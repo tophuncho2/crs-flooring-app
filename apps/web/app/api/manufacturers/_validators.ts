@@ -80,11 +80,13 @@ export function validateListManufacturersQuery(
 
 const manufacturerOptionsQuerySchema = z.object({
   search: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedManufacturerOptionsQuery = {
   search?: string
+  skip: number
   take: number
 }
 
@@ -109,6 +111,7 @@ export function validateManufacturerOptionsQuery(
   const trimmed = parsed.search?.trim()
   return {
     search: trimmed ? trimmed : undefined,
+    skip: parsed.skip,
     take: parsed.take,
   }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import type { ManufacturerOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
@@ -50,9 +50,15 @@ export function ManufacturerPicker({
   className,
   initialOptions,
 }: ManufacturerPickerProps) {
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
+      searchManufacturerOptionsRequest(search, signal, { skip }),
+    [],
+  )
+
   const controller = useAsyncRichDropdownController<ManufacturerOption>({
     bucketKey: MANUFACTURER_OPTIONS_QUERY_KEY,
-    searchFn: searchManufacturerOptionsRequest,
+    pagedSearchFn,
     initialOptions,
   })
 
@@ -75,7 +81,7 @@ export function ManufacturerPicker({
       selectedOption={selectedOption}
       query={controller.query}
       onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
+      isLoading={controller.isLoading}
       errorMessage={controller.errorMessage}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}
@@ -86,6 +92,9 @@ export function ManufacturerPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      hasMore={controller.hasMore}
+      isFetchingMore={controller.isFetchingMore}
+      onLoadMore={controller.loadMore}
     />
   )
 }

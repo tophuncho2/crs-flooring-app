@@ -3,23 +3,29 @@ import { requestJson } from "@/transport/http"
 
 export const MANUFACTURER_OPTIONS_QUERY_KEY = ["manufacturers", "options"] as const
 
-export type ManufacturerOptionsResponse = {
-  options: ManufacturerOption[]
+export type ManufacturerOptionsPage = {
+  items: ManufacturerOption[]
+  hasMore: boolean
+}
+
+export type ManufacturerOptionsRequestArgs = {
+  skip?: number
+  take?: number
 }
 
 export async function searchManufacturerOptionsRequest(
   search: string,
   signal: AbortSignal | undefined,
-  take = 20,
-): Promise<ManufacturerOption[]> {
+  args: ManufacturerOptionsRequestArgs = {},
+): Promise<ManufacturerOptionsPage> {
   const params = new URLSearchParams()
   if (search) params.set("search", search)
-  params.set("take", String(take))
+  if (args.skip !== undefined && args.skip > 0) params.set("skip", String(args.skip))
+  params.set("take", String(args.take ?? 50))
   const url = `/api/manufacturers/options?${params.toString()}`
-  const result = await requestJson<ManufacturerOptionsResponse>(url, {
+  return requestJson<ManufacturerOptionsPage>(url, {
     method: "GET",
     headers: { Accept: "application/json" },
     signal,
   })
-  return result.options
 }

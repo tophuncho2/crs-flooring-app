@@ -78,17 +78,18 @@ export function PurchaseOrderNumberPicker({
     [warehouseId],
   )
 
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchImportOptionsRequest(search, signal, {
         warehouseId: warehouseId ?? "",
+        skip,
       }),
     [warehouseId],
   )
 
   const controller = useAsyncRichDropdownController<ImportOption>({
     bucketKey,
-    searchFn,
+    pagedSearchFn,
     initialOptions,
     enabled,
   })
@@ -120,7 +121,7 @@ export function PurchaseOrderNumberPicker({
       selectedOption={selectedOption}
       query={controller.query}
       onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
+      isLoading={controller.isLoading}
       errorMessage={controller.errorMessage}
       placeholder={enabled ? placeholder : disabledPlaceholder}
       searchPlaceholder={searchPlaceholder}
@@ -131,6 +132,9 @@ export function PurchaseOrderNumberPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      hasMore={controller.hasMore}
+      isFetchingMore={controller.isFetchingMore}
+      onLoadMore={controller.loadMore}
     />
   )
 }

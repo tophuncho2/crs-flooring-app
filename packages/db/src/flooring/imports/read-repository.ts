@@ -236,7 +236,13 @@ export type ImportOptionsSearchArgs = {
    */
   warehouseId: string
   search?: string
+  skip?: number
   take: number
+}
+
+export type ImportOptionsSearchResult = {
+  items: ImportOption[]
+  hasMore: boolean
 }
 
 /**
@@ -252,7 +258,7 @@ export type ImportOptionsSearchArgs = {
 export async function searchImportOptions(
   args: ImportOptionsSearchArgs,
   client: ImportsDbClient = db,
-): Promise<ImportOption[]> {
+): Promise<ImportOptionsSearchResult> {
   const trimmed = args.search?.trim() ?? ""
 
   const clauses: Prisma.FlooringImportEntryWhereInput[] = [
@@ -274,10 +280,12 @@ export async function searchImportOptions(
   const where: Prisma.FlooringImportEntryWhereInput =
     clauses.length === 1 ? clauses[0]! : { AND: clauses }
 
+  // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.flooringImportEntry.findMany({
     where,
     orderBy: [{ importNumber: "desc" }, { id: "desc" }],
-    take: args.take,
+    skip: args.skip ?? 0,
+    take: args.take + 1,
     select: {
       id: true,
       importNumber: true,
@@ -287,12 +295,17 @@ export async function searchImportOptions(
     },
   })
 
-  return rows.map((row) => ({
-    id: row.id,
-    importNumber: String(row.importNumber),
-    purchaseOrderNumber: row.purchaseOrderNumber ?? "",
-    warehouseName: row.warehouse?.name ?? "",
-    createdAt: row.createdAt.toISOString(),
-  }))
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return {
+    items: page.map((row) => ({
+      id: row.id,
+      importNumber: String(row.importNumber),
+      purchaseOrderNumber: row.purchaseOrderNumber ?? "",
+      warehouseName: row.warehouse?.name ?? "",
+      createdAt: row.createdAt.toISOString(),
+    })),
+    hasMore,
+  }
 }
 

@@ -393,6 +393,7 @@ const OPTIONS_MAX_TAKE = 50
 const importOptionsQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
   search: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce
     .number()
     .int()
@@ -404,6 +405,7 @@ const importOptionsQuerySchema = z.object({
 export type ValidatedImportOptionsQuery = {
   warehouseId: string
   search?: string
+  skip: number
   take: number
 }
 
@@ -431,6 +433,7 @@ export function validateImportOptionsQuery(
   return {
     warehouseId: parsed.warehouseId.trim(),
     ...(trimmed ? { search: trimmed } : {}),
+    skip: parsed.skip,
     take: parsed.take,
   }
 }
