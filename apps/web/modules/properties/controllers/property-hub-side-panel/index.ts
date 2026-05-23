@@ -1,5 +1,6 @@
 export {
   usePropertyHubSidePanel,
+  type PropertyHubSaveResult,
   type PropertyHubSidePanelController,
   type UsePropertyHubSidePanelOptions,
   type PropertyHubPropertiesController,

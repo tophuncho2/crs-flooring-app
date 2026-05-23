@@ -4,7 +4,9 @@ import { useCallback, useMemo, useState } from "react"
 import {
   toManagementCompanyForm,
   toPropertyPrimaryForm,
+  type ManagementCompanyDetail,
   type ManagementCompanyListRow,
+  type PropertyDetailRecord,
   type PropertyListRow,
 } from "@builders/domain"
 import { getManagementCompanyDetailRequest } from "@/modules/management-companies/data/management-company-detail-request"
@@ -34,8 +36,19 @@ import type { HubMode } from "./types"
 export type { PropertyHubCreateResult } from "./mutations"
 export type { HubActiveView, HubMode, HubPickerKind, PropertyHubMcMode } from "./types"
 
+export type PropertyHubSaveResult =
+  | { kind: "mc"; managementCompany: ManagementCompanyDetail }
+  | { kind: "property"; property: PropertyDetailRecord }
+
 export type UsePropertyHubSidePanelOptions = {
   onCreated?: (result: PropertyHubCreateResult) => void
+  /**
+   * Fires after an MC or Property edit-mode save commits server-side.
+   * Host record-views use this to patch their locally-held detail
+   * (joined picker labels, address, instructions) without a full
+   * refetch. Identity-gate against the host record's bound id.
+   */
+  onSaved?: (result: PropertyHubSaveResult) => void
 }
 
 /**
@@ -51,7 +64,7 @@ export type UsePropertyHubSidePanelOptions = {
  * inline "+ New property" affordance.
  */
 export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions = {}) {
-  const { onCreated } = options
+  const { onCreated, onSaved } = options
 
   const [mode, setMode] = useState<HubMode>({ kind: "closed" })
   const [error, setError] = useState<string | null>(null)
@@ -358,8 +371,9 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     }
     if (mode.kind === "section-edit-mc") {
       mcEdit.commitUpdate(mode.mcId, {
-        onSuccess: () => {
+        onSuccess: (detail) => {
           setError(null)
+          onSaved?.({ kind: "mc", managementCompany: detail })
           // Stay open in section-edit-mc; the slice already applied the
           // server snapshot to its form + baseline.
         },
@@ -372,6 +386,7 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
       propertyEdit.commitUpdate(mode.propertyId, {
         onSuccess: (detail) => {
           setError(null)
+          onSaved?.({ kind: "property", property: detail })
           // Stay open in section-edit-property; the slice already
           // applied the server snapshot. Re-set mode only if the
           // property was reparented to a different MC (rare; updates
@@ -389,7 +404,7 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
       })
       return
     }
-  }, [canSave, mode, createForm, mcEdit, propertyEdit, onCreated, resetAll, setErrorMessage])
+  }, [canSave, mode, createForm, mcEdit, propertyEdit, onCreated, onSaved, resetAll, setErrorMessage])
 
   const discard = useCallback(() => {
     if (isSaving) return

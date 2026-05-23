@@ -1,6 +1,7 @@
 "use client"
 
 import type { TemplateForm } from "@builders/domain"
+import type { PropertyHubSaveResult } from "@/modules/properties/controllers/property-hub-side-panel"
 import { TemplateJobGroup } from "./groups/template-job-group"
 import { TemplateNotesGroup } from "./groups/template-notes-group"
 import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group"
@@ -41,6 +42,7 @@ export function TemplatePrimaryFieldsSection({
   disabled,
   onFieldChange,
   onFieldsChange,
+  onHubEntitySaved,
 }: {
   draft: TemplateForm
   detail: TemplatePrimaryDetail | null
@@ -48,6 +50,8 @@ export function TemplatePrimaryFieldsSection({
   onFieldChange: (field: keyof TemplateForm, value: string) => void
   /** Multi-field setter — used by the property-unit group for the MC→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
+  /** Forwarded to the embedded property-hub side panel — host patches its detail on save. */
+  onHubEntitySaved?: (result: PropertyHubSaveResult) => void
 }) {
   const editable = !disabled
   const { propertyJoined, handlePropertyOption } = usePropertyJoinedOverride(detail)
@@ -68,6 +72,7 @@ export function TemplatePrimaryFieldsSection({
         onFieldChange={onFieldChange}
         onFieldsChange={onFieldsChange}
         onPropertyOption={handlePropertyOption}
+        onHubEntitySaved={onHubEntitySaved}
       />
       <TemplateNotesGroup
         editable={editable}

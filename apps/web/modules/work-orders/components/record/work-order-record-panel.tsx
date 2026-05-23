@@ -11,6 +11,7 @@ import type {
 } from "@builders/domain"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
 import type { CutLogPanelPatch } from "@/modules/cut-logs"
+import type { PropertyHubSaveResult } from "@/modules/properties/controllers/property-hub-side-panel"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
@@ -42,6 +43,31 @@ export function WorkOrderRecordPanel({
     onSave: () => void controller.primarySection.save(),
     onDiscard: controller.primarySection.discard,
   })
+
+  const handleHubEntitySaved = useCallback(
+    (result: PropertyHubSaveResult) => {
+      const current = controller.record
+      if (!current) return
+      if (result.kind === "mc") {
+        if (current.managementCompanyId !== result.managementCompany.id) return
+        controller.patchRecord({ managementCompanyName: result.managementCompany.name })
+        return
+      }
+      if (current.propertyId !== result.property.id) return
+      const property = result.property
+      controller.patchRecord({
+        propertyName: property.name,
+        propertyStreetAddress: property.streetAddress,
+        propertyCity: property.city,
+        propertyState: property.state,
+        propertyPostalCode: property.zip,
+        propertyInstructions: property.instructions,
+        managementCompanyId: property.managementCompany?.id ?? null,
+        managementCompanyName: property.managementCompany?.name ?? null,
+      })
+    },
+    [controller],
+  )
 
   const publishCutLogPatch = useCallback((patch: CutLogPanelPatch) => {
     // WO-side patches always carry the WOMI id (callers open the panel
@@ -125,6 +151,7 @@ export function WorkOrderRecordPanel({
                       ...patch,
                     }))
                   }}
+                  onHubEntitySaved={handleHubEntitySaved}
                 />
               </RecordPrimarySectionInstance>
             ),
