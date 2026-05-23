@@ -2,6 +2,7 @@ import { getImportDetailById } from "@builders/db"
 import { ImportExecutionError, deleteImportUseCase } from "@builders/application"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
 import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
@@ -35,9 +36,8 @@ export async function DELETE(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
+      ...CRUD_DELETE,
       scope: "imports.delete",
-      limit: 30,
-      windowMs: 10 * 60 * 1000,
       route: "/api/imports/[id]",
     },
   })

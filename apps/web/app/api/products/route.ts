@@ -1,6 +1,7 @@
 import { createProductUseCase, listProductsUseCase } from "@builders/application"
 import { PRODUCTS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import {
   applyRoutePolicy,
   enforceMutationReceipt,
@@ -36,9 +37,8 @@ export async function POST(request: Request) {
     capability: "system.access",
     toolSlug: PRODUCTS_TOOL_SLUG,
     rateLimit: {
+      ...CRUD_CREATE,
       scope: "products.create",
-      limit: 60,
-      windowMs: 10 * 60 * 1000,
       route: "/api/products",
     },
   })

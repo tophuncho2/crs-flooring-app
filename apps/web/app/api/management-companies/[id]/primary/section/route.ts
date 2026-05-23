@@ -3,6 +3,7 @@ import { getManagementCompanyById } from "@builders/db"
 import { MANAGEMENT_COMPANIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
+import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -22,9 +23,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     capability: "system.access",
     toolSlug: MANAGEMENT_COMPANIES_TOOL_SLUG,
     rateLimit: {
+      ...CRUD_UPDATE_SECTION,
       scope: "managementCompanies.primary.section.replace",
-      limit: 40,
-      windowMs: 10 * 60 * 1000,
       route: "/api/management-companies/[id]/primary/section",
     },
   })

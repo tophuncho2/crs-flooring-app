@@ -2,6 +2,7 @@ import { createHash } from "node:crypto"
 import { Prisma, getAppMutationReceipt, reserveAppMutationReceipt, finalizeAppMutationReceipt } from "@builders/db"
 import type { Capability } from "@/server/auth/access-control"
 import type { AuthorizedRouteContext } from "@/server/auth/route-auth"
+import { QUERY_DEFAULT } from "@/server/http/rate-limit-presets"
 import { enforceRouteRateLimit, requireRouteAccess } from "@/server/http/route-helpers"
 import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
 import { jsonWithRequestId } from "@/server/platform/request-context"
@@ -88,9 +89,8 @@ export async function enforceQueryRateLimit(
   route: string,
 ): Promise<Response | null> {
   return enforceRouteRateLimit(request, access, {
+    ...QUERY_DEFAULT,
     scope: "query",
-    limit: 100,
-    windowMs: 60 * 1000,
     route,
   })
 }

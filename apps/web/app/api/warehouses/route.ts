@@ -1,6 +1,7 @@
 import { createWarehouseUseCase, listWarehousesUseCase } from "@builders/application"
 import { WAREHOUSE_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import {
   applyRoutePolicy,
   enforceMutationReceipt,
@@ -35,9 +36,8 @@ export async function POST(request: Request) {
     capability: "system.access",
     toolSlug: WAREHOUSE_TOOL_SLUG,
     rateLimit: {
+      ...CRUD_CREATE,
       scope: "warehouses.create",
-      limit: 20,
-      windowMs: 10 * 60 * 1000,
       route: "/api/warehouses",
     },
   })

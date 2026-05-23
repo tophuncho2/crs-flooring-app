@@ -4,6 +4,7 @@ import { getWarehouseById } from "@builders/db"
 import { validateWarehouseInput } from "../../../_validators"
 import { WAREHOUSE_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { parseUuidParam } from "@/server/http/api-helpers"
+import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -22,9 +23,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     capability: "system.access",
     toolSlug: WAREHOUSE_TOOL_SLUG,
     rateLimit: {
+      ...CRUD_UPDATE_SECTION,
       scope: "warehouses.primary.section.replace",
-      limit: 40,
-      windowMs: 10 * 60 * 1000,
       route: "/api/warehouses/[id]/primary/section",
     },
   })

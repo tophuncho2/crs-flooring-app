@@ -3,6 +3,7 @@ import { getPropertyById } from "@builders/db"
 import { PROPERTIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
+import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -41,9 +42,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     capability: "system.access",
     toolSlug: PROPERTIES_TOOL_SLUG,
     rateLimit: {
+      ...CRUD_DELETE,
       scope: "properties.delete",
-      limit: 10,
-      windowMs: 10 * 60 * 1000,
       route: "/api/properties/[id]",
     },
   })

@@ -4,6 +4,7 @@ import {
 } from "@builders/application"
 import { MANAGEMENT_COMPANIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
+import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -41,9 +42,8 @@ export async function POST(request: Request) {
     capability: "system.access",
     toolSlug: MANAGEMENT_COMPANIES_TOOL_SLUG,
     rateLimit: {
+      ...CRUD_CREATE,
       scope: "managementCompanies.create",
-      limit: 20,
-      windowMs: 10 * 60 * 1000,
       route: "/api/management-companies",
     },
   })

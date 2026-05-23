@@ -3,6 +3,7 @@ import { getProductById } from "@builders/db"
 import { PRODUCTS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
+import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -19,9 +20,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     capability: "system.access",
     toolSlug: PRODUCTS_TOOL_SLUG,
     rateLimit: {
+      ...CRUD_DELETE,
       scope: "products.delete",
-      limit: 40,
-      windowMs: 10 * 60 * 1000,
       route: "/api/products/[id]",
     },
   })

@@ -4,6 +4,7 @@ import {
   saveUserTablePreference,
 } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -33,9 +34,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ table
   const access = await applyRoutePolicy(request, {
     capability: "system.access",
     rateLimit: {
+      ...CRUD_UPDATE_SECTION,
       scope: "account.tablePreferences.update",
-      limit: 120,
-      windowMs: 10 * 60 * 1000,
       route: "/api/account/table-preferences/[tableKey]",
     },
   })

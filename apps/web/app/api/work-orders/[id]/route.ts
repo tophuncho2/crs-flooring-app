@@ -3,6 +3,7 @@ import { getWorkOrderDetailById } from "@builders/db"
 import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
+import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -41,9 +42,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     capability: "system.access",
     toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
+      ...CRUD_DELETE,
       scope: "work-orders.delete",
-      limit: 10,
-      windowMs: 10 * 60 * 1000,
       route: "/api/work-orders/[id]",
     },
   })

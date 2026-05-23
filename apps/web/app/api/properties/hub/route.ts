@@ -1,6 +1,7 @@
 import { createPropertyHubUseCase } from "@builders/application"
 import { PROPERTIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -15,9 +16,8 @@ export async function POST(request: Request) {
     capability: "system.access",
     toolSlug: PROPERTIES_TOOL_SLUG,
     rateLimit: {
+      ...CRUD_CREATE,
       scope: "properties.hub.create",
-      limit: 10,
-      windowMs: 10 * 60 * 1000,
       route: "/api/properties/hub",
     },
   })

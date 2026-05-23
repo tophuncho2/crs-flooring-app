@@ -1,6 +1,7 @@
 import { getImportById, getImportDetailById } from "@builders/db"
 import { ImportExecutionError, updateImportUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
 import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
@@ -19,9 +20,8 @@ export async function PATCH(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
+      ...CRUD_UPDATE_SECTION,
       scope: "imports.primary.section.replace",
-      limit: 50,
-      windowMs: 10 * 60 * 1000,
       route: "/api/imports/[id]/primary/section",
     },
   })

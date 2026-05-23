@@ -1,6 +1,7 @@
 import { getInventoryById, getInventoryDetailById } from "@builders/db"
 import { InventoryExecutionError, updateInventoryUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
 import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
@@ -19,9 +20,8 @@ export async function PATCH(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
+      ...CRUD_UPDATE_SECTION,
       scope: "inventory.primary.section.replace",
-      limit: 50,
-      windowMs: 10 * 60 * 1000,
       route: "/api/inventory/[id]/primary/section",
     },
   })

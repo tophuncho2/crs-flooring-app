@@ -1,5 +1,6 @@
 import { markStagedRowsForImportUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import {
   applyRoutePolicy,
   enforceMutationReceipt,
@@ -17,9 +18,8 @@ export async function POST(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
+      ...CRUD_CREATE,
       scope: "imports.staged-inventory-rows.mark-for-import",
-      limit: 30,
-      windowMs: 10 * 60 * 1000,
       route: "/api/imports/[id]/staged-inventory-rows/mark-for-import",
     },
   })

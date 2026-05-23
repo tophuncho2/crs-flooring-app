@@ -1,6 +1,7 @@
 import { createImportUseCase, listImportsUseCase } from "@builders/application"
 import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import {
   applyRoutePolicy,
   enforceMutationReceipt,
@@ -32,9 +33,8 @@ export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
     toolSlug: "warehouse",
     rateLimit: {
+      ...CRUD_CREATE,
       scope: "imports.create",
-      limit: 50,
-      windowMs: 10 * 60 * 1000,
       route: "/api/imports",
     },
   })
