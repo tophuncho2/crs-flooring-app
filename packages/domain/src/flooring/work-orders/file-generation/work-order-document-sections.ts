@@ -20,14 +20,17 @@ import type {
  * standalone page), not as a standalone Puppeteer document:
  *   - Every selector is scoped under `.wo-print-root` so Tailwind's
  *     preflight reset (which flattens bare h1/h2/table) cannot win.
- *   - The PDF's `body { margin }` becomes `@page { margin }` so browser
- *     print margins are faithful; each view is its own single page so the
- *     PDF's `.page-break` rule is dropped.
+ *   - `@page { margin: 0 }` + the inset moved onto `.wo-print-root` padding:
+ *     with no page-margin box, the browser cannot inject its default
+ *     header/footer (date / URL / page #), so the user never has to uncheck
+ *     "Headers and footers" in the print dialog. The 0.35in padding keeps
+ *     content inside every printer's non-printable edge.
+ *   - Each view is its own single page, so the PDF's `.page-break` rule is dropped.
  */
 
 export const WO_PRINT_STYLE_BLOCK = `
-  @page { size: letter; margin: 0.35in; }
-  .wo-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; }
+  @page { size: letter; margin: 0; }
+  .wo-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; padding: 0.35in; }
   .wo-print-root h1 { font-size: 22px; margin: 0 0 6px 0; }
   .wo-print-root h2 { font-size: 14px; margin: 18px 0 6px 0; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
   .wo-print-root h3 { font-size: 12px; margin: 10px 0 4px 0; }
