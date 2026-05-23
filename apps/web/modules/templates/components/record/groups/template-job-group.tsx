@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useState } from "react"
+import { Pencil } from "lucide-react"
 import { TextCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import { JobTypeSidePanel } from "@/modules/job-types/components/side-panel/job-type-side-panel"
@@ -18,9 +19,11 @@ import { GROUP_HEADER_BUTTON_CLASS, TemplateGroup } from "./template-group"
  * (mirrors WO's Schedule group). Templates have no Scheduled For, so
  * "Job" rather than "Schedule".
  *
- * Header carries a "+ Add job type" button that opens the shared
- * job-type side panel in create mode; on create the new job type is
- * auto-selected into the picker. `pickedJobTypeLabel` seeds the picker
+ * Header carries a pencil "Job type" button (edits the currently
+ * selected job type by id) and a "+ Add job type" button (create). Both
+ * open the shared job-type side panel. On create the new job type is
+ * auto-selected into the picker; on rename `onJobTypeRenamed` lets the
+ * host patch the record cell. `pickedJobTypeLabel` seeds the picker
  * trigger with the new name until the saved record carries it (mirrors
  * the "+ New property" flow in the Property & Unit group). No reset
  * effect is needed: the picker ignores `selectedLabel` when the value
@@ -32,11 +35,18 @@ export function TemplateJobGroup({
   draft,
   detail,
   onFieldChange,
+  onJobTypeRenamed,
 }: {
   editable: boolean
   draft: TemplateForm
   detail: TemplatePrimaryDetail | null
   onFieldChange: (field: keyof TemplateForm, value: string) => void
+  /**
+   * Fires when the user renames a job type via the pencil/edit panel.
+   * The host record-view patches its locally-held `jobTypeName` so the
+   * cell reflects the new name without a refetch (identity-gated host-side).
+   */
+  onJobTypeRenamed?: (jobType: JobType) => void
 }) {
   const [pickedJobTypeLabel, setPickedJobTypeLabel] = useState<string | null>(null)
 
@@ -48,16 +58,42 @@ export function TemplateJobGroup({
     [onFieldChange],
   )
 
-  const jobTypePanel = useJobTypeSidePanel({ onCreated: handleJobTypeCreated })
+  const handleJobTypeUpdated = useCallback(
+    (jobType: JobType) => {
+      setPickedJobTypeLabel(jobType.name)
+      onJobTypeRenamed?.(jobType)
+    },
+    [onJobTypeRenamed],
+  )
 
+  const jobTypePanel = useJobTypeSidePanel({
+    onCreated: handleJobTypeCreated,
+    onUpdated: handleJobTypeUpdated,
+  })
+
+  const jobTypeValue = draft.jobTypeId || null
   const jobTypeLabel = pickedJobTypeLabel ?? detail?.jobTypeName ?? null
 
   return (
     <TemplateGroup
       title="Job"
       headerRight={
-        editable ? (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Edit job type"
+            title="Edit job type"
+            onClick={() => {
+              if (jobTypeValue) {
+                void jobTypePanel.openForEditById(jobTypeValue)
+              }
+            }}
+            disabled={!jobTypeValue}
+            className={GROUP_HEADER_BUTTON_CLASS}
+          >
+            <Pencil size={12} className="mr-1" /> Job type
+          </button>
+          {editable ? (
             <button
               type="button"
               aria-label="Add job type"
@@ -66,8 +102,8 @@ export function TemplateJobGroup({
             >
               + Add job type
             </button>
-          </div>
-        ) : null
+          ) : null}
+        </div>
       }
     >
       <JobTypeSidePanel controller={jobTypePanel} />

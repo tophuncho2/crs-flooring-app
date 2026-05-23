@@ -10,7 +10,7 @@ import { useTemplatePrimarySection } from "@/modules/templates/controllers/recor
 import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/record/use-template-material-items-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
 import type { PropertyHubSaveResult } from "@/modules/properties/controllers/property-hub-side-panel"
-import type { TemplateDetail, TemplateForm } from "@builders/domain"
+import type { JobType, TemplateDetail, TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
 import { TemplateMaterialItemsSection } from "./template-material-items-section"
 import { TemplateRecordFooter } from "./footer"
@@ -52,6 +52,15 @@ export function TemplateRecordPanel({
         managementCompanyId: property.managementCompany?.id ?? null,
         managementCompanyName: property.managementCompany?.name ?? null,
       })
+    },
+    [primary],
+  )
+
+  const handleJobTypeRenamed = useCallback(
+    (jobType: JobType) => {
+      const current = primary.record
+      if (!current || current.jobTypeId !== jobType.id) return
+      primary.patchRecord({ jobTypeName: jobType.name })
     },
     [primary],
   )
@@ -123,6 +132,7 @@ export function TemplateRecordPanel({
                     }))
                   }}
                   onHubEntitySaved={handleHubEntitySaved}
+                  onJobTypeRenamed={handleJobTypeRenamed}
                 />
               </RecordPrimarySectionInstance>
             ),

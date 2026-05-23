@@ -8,6 +8,7 @@ import {
   type JobTypeForm,
   type JobTypeListRow,
 } from "@builders/domain"
+import { getJobTypeDetailRequest } from "@/modules/job-types/data/job-type-detail-request"
 import {
   buildJobTypeFormFromRow,
   EMPTY_JOB_TYPE_FORM,
@@ -36,11 +37,16 @@ import type { JobTypeSidePanelMode } from "./types"
  * `onCreated` (optional) fires once with the newly created job type
  * right after a create succeeds — lets a host (e.g. the templates Job
  * group) auto-select the new job type into its picker without a refetch.
+ * `onUpdated` (optional) fires after an edit-mode save commits — hosts
+ * use it to patch a locally-held name (e.g. the template record cell)
+ * without a refetch; identity-gate against the host's bound id.
  */
 export function useJobTypeSidePanel(options?: {
   onCreated?: (jobType: JobType) => void
+  onUpdated?: (jobType: JobType) => void
 }) {
   const onCreated = options?.onCreated
+  const onUpdated = options?.onUpdated
   const [mode, setMode] = useState<JobTypeSidePanelMode>({ kind: "closed" })
   const [form, setForm] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
   const [baseline, setBaseline] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
@@ -91,6 +97,22 @@ export function useJobTypeSidePanel(options?: {
     setMode({ kind: "edit", id: row.id })
   }, [])
 
+  // ID-only entry point for picker-adjacent shortcut buttons that know
+  // only the selected id. Fetches the canonical job type (so baseline +
+  // updatedAt match the server), then enters edit mode in one shot.
+  const openForEditById = useCallback(
+    async (id: string) => {
+      setError(null)
+      try {
+        const jobType = await getJobTypeDetailRequest(id)
+        openForEdit(jobType)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+      }
+    },
+    [openForEdit],
+  )
+
   const close = useCallback(() => {
     if (isSaving) return
     setMode({ kind: "closed" })
@@ -139,6 +161,7 @@ export function useJobTypeSidePanel(options?: {
             setBaseline(next)
             setUpdatedAt(updated.updatedAt)
             setError(null)
+            onUpdated?.(updated)
           },
           onError: (err: unknown) => {
             setError(err instanceof Error ? err.message : String(err))
@@ -146,7 +169,7 @@ export function useJobTypeSidePanel(options?: {
         },
       )
     }
-  }, [canSave, mode, createMutation, updateMutation, form, updatedAt, onCreated])
+  }, [canSave, mode, createMutation, updateMutation, form, updatedAt, onCreated, onUpdated])
 
   const discard = useCallback(() => {
     if (isSaving) return
@@ -193,6 +216,7 @@ export function useJobTypeSidePanel(options?: {
     error,
     openForCreate,
     openForEdit,
+    openForEditById,
     close,
     setName,
     save,

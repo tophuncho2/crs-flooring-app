@@ -9,12 +9,32 @@ import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
   enforceMutationReceipt,
+  enforceQueryRateLimit,
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string }>
+}
+
+export async function GET(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request, {
+    toolSlug: JOB_TYPES_TOOL_SLUG,
+  })
+  if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/job-types/[id]")
+  if (rateLimited) return rateLimited
+
+  try {
+    const { id: rawId } = await params
+    const id = parseUuidParam(rawId, "id")
+    const jobType = await getJobTypeById(id)
+    return routeJson(access, { jobType })
+  } catch (error) {
+    return routeError(access, error)
+  }
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {

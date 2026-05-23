@@ -1,6 +1,6 @@
 "use client"
 
-import type { TemplateForm } from "@builders/domain"
+import type { JobType, TemplateForm } from "@builders/domain"
 import type { PropertyHubSaveResult } from "@/modules/properties/controllers/property-hub-side-panel"
 import { TemplateJobGroup } from "./groups/template-job-group"
 import { TemplateNotesGroup } from "./groups/template-notes-group"
@@ -43,6 +43,7 @@ export function TemplatePrimaryFieldsSection({
   onFieldChange,
   onFieldsChange,
   onHubEntitySaved,
+  onJobTypeRenamed,
 }: {
   draft: TemplateForm
   detail: TemplatePrimaryDetail | null
@@ -52,6 +53,8 @@ export function TemplatePrimaryFieldsSection({
   onFieldsChange: (patch: Partial<TemplateForm>) => void
   /** Forwarded to the embedded property-hub side panel — host patches its detail on save. */
   onHubEntitySaved?: (result: PropertyHubSaveResult) => void
+  /** Forwarded to the Job group — host patches `jobTypeName` after a rename. */
+  onJobTypeRenamed?: (jobType: JobType) => void
 }) {
   const editable = !disabled
   const { propertyJoined, handlePropertyOption } = usePropertyJoinedOverride(detail)
@@ -63,6 +66,7 @@ export function TemplatePrimaryFieldsSection({
         draft={draft}
         detail={detail}
         onFieldChange={onFieldChange}
+        onJobTypeRenamed={onJobTypeRenamed}
       />
       <TemplatePropertyUnitGroup
         editable={editable}
