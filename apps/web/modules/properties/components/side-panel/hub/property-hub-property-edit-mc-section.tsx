@@ -5,7 +5,6 @@ import type { ManagementCompanyDetail } from "@builders/domain"
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField } from "@/components/fields"
 import { TextCell } from "@/components/cells"
-import { HubSidePanelPickerTrigger } from "@/components/hub-side-panel"
 import {
   MANAGEMENT_COMPANY_DETAIL_QUERY_KEY,
   getManagementCompanyDetailRequest,
@@ -16,20 +15,17 @@ const SECTION_HEADER_CLASS =
   "text-xs font-semibold uppercase tracking-wide text-[var(--panel-foreground-muted,_var(--foreground))]/65"
 
 /**
- * Management Company half of the property-edit body. Picker trigger to
- * re/un-link the property's MC, plus the linked MC's readonly fields
- * underneath (mirrors the legacy property side panel's behavior).
- *
- * The picker trigger opens the inline-in-body MC link picker via the
- * controller's `openPicker("mc-link")`; the picker writes back into the
- * property edit form through the controller's mc-link dispatch.
+ * Read-only MC details for the property-edit body — shown when the property
+ * has a linked MC. The link picker trigger itself lives in the sticky
+ * topToolbar (see `PropertyHubSidePanel`), alongside every other hub
+ * picker. When no MC is linked, this section renders nothing.
  */
 export function PropertyHubPropertyEditMcSection({
   controller,
 }: {
   controller: PropertyHubSidePanelController
 }) {
-  const { propertyEditForm, propertyEditMcLabel, isSaving, openPicker } = controller
+  const { propertyEditForm } = controller
 
   const linkedMcId =
     propertyEditForm.managementCompanyId.length > 0
@@ -50,23 +46,12 @@ export function PropertyHubPropertyEditMcSection({
   const showError = linkedMcId !== null && detailQuery.isError && !detail
   const showDetail = linkedMcId !== null && detail !== undefined
 
+  if (linkedMcId === null) return null
+
   return (
     <section className="flex flex-col gap-2">
       <div className={SECTION_HEADER_CLASS}>Management Company</div>
       <FieldSection gap="0.75rem">
-        <CellAt col={1} colSpan={8}>
-          <FormField label="Linked Company">
-            <HubSidePanelPickerTrigger
-              expanded={false}
-              onToggle={() => openPicker("mc-link")}
-              selectedLabel={propertyEditMcLabel}
-              placeholder="No management company"
-              disabled={isSaving}
-              ariaLabel="Link management company"
-            />
-          </FormField>
-        </CellAt>
-
         {showError ? (
           <CellAt col={1} colSpan={8}>
             <div className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)]/40 p-3 text-xs text-[var(--foreground)]/55">

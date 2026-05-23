@@ -161,6 +161,11 @@ export function WorkOrderPropertyUnitGroup({
                       templateId: "",
                     })
                   }
+                  onOptionSelected={(option) => {
+                    setPickedMcLabel(option?.name ?? null)
+                    // Property cascade clears alongside MC change.
+                    setPickedPropertyLabel(null)
+                  }}
                   selectedLabel={managementCompanyLabel}
                   placeholder="—"
                   ariaLabel="Management company"
@@ -176,7 +181,10 @@ export function WorkOrderPropertyUnitGroup({
                   onChange={(id) =>
                     onFieldsChange({ propertyId: id ?? "", templateId: "" })
                   }
-                  onOptionSelected={onPropertyOption}
+                  onOptionSelected={(option) => {
+                    setPickedPropertyLabel(option?.name ?? null)
+                    onPropertyOption(option)
+                  }}
                   managementCompanyId={managementCompanyValue}
                   selectedLabel={propertyLabel}
                   placeholder="Select property"

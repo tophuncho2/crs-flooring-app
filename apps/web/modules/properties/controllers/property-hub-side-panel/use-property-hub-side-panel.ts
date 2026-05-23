@@ -231,6 +231,7 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
 
   // ===== Picker takeover =====
   const {
+    pickerKind,
     openPicker,
     closePicker,
     mcLinkSelectedId,
@@ -364,6 +365,7 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     enterMcEditFromContext,
     enterPropertyEditFromContext,
     exitToView,
+    pickerKind,
     openPicker,
     closePicker,
     mcLinkSelectedId,

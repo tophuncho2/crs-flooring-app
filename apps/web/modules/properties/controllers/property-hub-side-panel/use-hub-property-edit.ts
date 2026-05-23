@@ -147,20 +147,28 @@ export function useHubPropertyEdit({
     refetchOnWindowFocus: false,
   })
 
-  // Reconcile from server detail. Preserves user edits.
+  // Reconcile from server detail. Preserves user edits — including the
+  // MC label, which would otherwise revert a dirty pick back to the saved
+  // server name on any incidental refetch.
   useEffect(() => {
     const detail = detailQuery.data
     if (!detail || editingPropertyId === null) return
     const fromServer = toPropertyPrimaryForm(detail)
+    let wasDirty = false
     setBaseline((previousBaseline) => {
       setForm((currentForm) => {
-        if (propertyFormIsDirty(currentForm, previousBaseline)) return currentForm
+        if (propertyFormIsDirty(currentForm, previousBaseline)) {
+          wasDirty = true
+          return currentForm
+        }
         return fromServer
       })
       return fromServer
     })
     setUpdatedAt(detail.updatedAt)
-    setManagementCompanyLabel(detail.managementCompany?.name ?? null)
+    if (!wasDirty) {
+      setManagementCompanyLabel(detail.managementCompany?.name ?? null)
+    }
   }, [detailQuery.data, editingPropertyId])
 
   const isDirty = useMemo(() => propertyFormIsDirty(form, baseline), [form, baseline])

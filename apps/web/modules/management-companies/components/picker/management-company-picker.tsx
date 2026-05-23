@@ -14,6 +14,15 @@ export type ManagementCompanyPickerProps = {
   value: string | null
   onChange: (id: string | null) => void
   /**
+   * Optional notification fired alongside `onChange` carrying the full
+   * picked option (or null on clear). Lets callers refresh the trigger's
+   * label snapshot for the new value without waiting for a server refetch.
+   *
+   * Only fires when the option is present in the picker's current
+   * search results; the picker does not refetch by id.
+   */
+  onOptionSelected?: (option: ManagementCompanyOption | null) => void
+  /**
    * Pre-resolved label for the current `value`. Lets the trigger render the
    * selected company's name even when it isn't in the latest server result.
    */
@@ -38,6 +47,7 @@ function toDropdownOption(option: ManagementCompanyOption): AsyncRichDropdownOpt
 export function ManagementCompanyPicker({
   value,
   onChange,
+  onOptionSelected,
   selectedLabel = null,
   placeholder = "Filter by company",
   searchPlaceholder = "Search companies",
@@ -62,6 +72,17 @@ export function ManagementCompanyPicker({
     initialOptions,
   })
 
+  const handleChange = useCallback(
+    (id: string | null) => {
+      onChange(id)
+      if (onOptionSelected) {
+        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
+        onOptionSelected(option)
+      }
+    },
+    [onChange, onOptionSelected, controller.options],
+  )
+
   const options = useMemo<AsyncRichDropdownOption[]>(
     () => controller.options.map(toDropdownOption),
     [controller.options],
@@ -76,7 +97,7 @@ export function ManagementCompanyPicker({
   return (
     <AsyncRichDropdown
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       options={options}
       selectedOption={selectedOption}
       query={controller.query}

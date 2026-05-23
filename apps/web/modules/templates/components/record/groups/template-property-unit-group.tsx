@@ -138,6 +138,7 @@ export function TemplatePropertyUnitGroup({
                 <ManagementCompanyPicker
                   value={managementCompanyValue}
                   onChange={(id) => onFieldChange("managementCompanyId", id ?? "")}
+                  onOptionSelected={(option) => setPickedMcLabel(option?.name ?? null)}
                   selectedLabel={managementCompanyLabel}
                   placeholder="No management company"
                   ariaLabel="Management company"
@@ -151,7 +152,10 @@ export function TemplatePropertyUnitGroup({
                 <PropertyPicker
                   value={propertyValue}
                   onChange={(id) => onFieldChange("propertyId", id ?? "")}
-                  onOptionSelected={onPropertyOption}
+                  onOptionSelected={(option) => {
+                    setPickedPropertyLabel(option?.name ?? null)
+                    onPropertyOption(option)
+                  }}
                   managementCompanyId={managementCompanyValue}
                   selectedLabel={propertyLabel}
                   placeholder="Select property"

@@ -13,6 +13,14 @@ export type UseHubPickerTakeoverArgs = {
 }
 
 export type HubPickerTakeoverSlice = {
+  /** Active picker kind, or null when not in picker-takeover. */
+  pickerKind: HubPickerKind | null
+  /**
+   * Trigger handler. Enters `picker-takeover` from any non-closed mode,
+   * swaps `pickerKind` while already in takeover, and toggles closed when
+   * the active trigger fires again — matches the cut-log / template-sync
+   * click-to-toggle UX.
+   */
   openPicker: (pickerKind: HubPickerKind) => void
   closePicker: () => void
   /** MC-link picker preselect — sourced from create draft OR property-edit form depending on returnTo. */
@@ -39,10 +47,21 @@ export function useHubPickerTakeover({
   createForm,
   propertyEdit,
 }: UseHubPickerTakeoverArgs): HubPickerTakeoverSlice {
+  const pickerKind: HubPickerKind | null =
+    mode.kind === "picker-takeover" ? mode.pickerKind : null
+
   const openPicker = useCallback(
     (pickerKind: HubPickerKind) => {
       setMode((prev) => {
-        if (prev.kind === "picker-takeover") return prev
+        // Same trigger fired again — close the picker.
+        if (prev.kind === "picker-takeover" && prev.pickerKind === pickerKind) {
+          return prev.returnTo
+        }
+        // Different trigger fired while a picker is open — swap kinds,
+        // preserve the original returnTo.
+        if (prev.kind === "picker-takeover") {
+          return { ...prev, pickerKind }
+        }
         if (prev.kind === "closed") return prev
         return { kind: "picker-takeover", returnTo: prev, pickerKind }
       })
@@ -86,6 +105,7 @@ export function useHubPickerTakeover({
   )
 
   return {
+    pickerKind,
     openPicker,
     closePicker,
     mcLinkSelectedId,

@@ -9,7 +9,10 @@ import {
   HubSidePanelShell,
   HubSidePanelViewSwitcher,
 } from "@/components/hub-side-panel"
-import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/property-hub-side-panel"
+import type {
+  HubMode,
+  PropertyHubSidePanelController,
+} from "@/modules/properties/controllers/property-hub-side-panel"
 import { PropertyHubMcCreateSection } from "./property-hub-mc-create-section"
 import { PropertyHubMcEditSection } from "./property-hub-mc-edit-section"
 import { PropertyHubMcViewSection } from "./property-hub-mc-view-section"
@@ -20,6 +23,9 @@ import { PropertyHubPropertyEditMcSection } from "./property-hub-property-edit-m
 import { PropertyHubPropertyEditSection } from "./property-hub-property-edit-section"
 import { PropertyHubPropertyFilterPicker } from "./property-hub-property-filter-picker"
 import { PropertyHubTemplatesListSection } from "./property-hub-templates-list-section"
+
+const PICKER_LABEL_CLASS =
+  "text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65"
 
 export type PropertyHubSidePanelProps = {
   controller: PropertyHubSidePanelController
@@ -55,6 +61,8 @@ export function PropertyHubSidePanel({
     managementCompany,
     selectedPropertyLabel,
     propertyEditMcLabel,
+    mcMode,
+    mcLinkLabel,
     properties,
     templates,
     isDirty,
@@ -70,15 +78,24 @@ export function PropertyHubSidePanel({
     exitToView,
     goToProperties,
     goToTemplates,
+    pickerKind,
     openPicker,
   } = controller
+
+  // Collapse picker-takeover onto its returnTo for chrome rendering — keeps
+  // the trigger sticky and visible while the picker fills the body below,
+  // and lets the trigger toggle the picker closed when fired again
+  // (matches the inventory-hub cut-log relink header pattern).
+  const effectiveMode: HubMode =
+    mode.kind === "picker-takeover" ? mode.returnTo : mode
+  const isPickerActive = mode.kind === "picker-takeover"
 
   const hasHubViewTarget = contextMcId !== null
 
   const errorMessage = validationError ?? error ?? null
 
   const title = useMemo<ReactNode>(() => {
-    switch (mode.kind) {
+    switch (effectiveMode.kind) {
       case "create":
         return "New hub"
       case "section-edit-mc":
@@ -89,31 +106,43 @@ export function PropertyHubSidePanel({
           : "Property"
       case "view":
         return managementCompany?.name ?? "Hub"
-      case "picker-takeover":
-        if (mode.pickerKind === "mc-link") return "Link management company"
-        if (mode.pickerKind === "property-filter") return "Filter by property"
-        return "Hub"
       default:
         return "Hub"
     }
-  }, [mode, managementCompany, propertyEditMcLabel])
+  }, [effectiveMode, managementCompany, propertyEditMcLabel])
 
   const topToolbar = useMemo<ReactNode>(() => {
-    if (mode.kind === "create") {
+    if (effectiveMode.kind === "create") {
+      const linkDisabled = mcMode === "create" || isSaving
       return (
-        <HubSidePanelEditToolbar
-          isDirty={isDirty}
-          isSaving={isSaving}
-          canSave={canSave}
-          onSave={save}
-          onDiscard={discard}
-          saveLabel="Create"
-          savingLabel="Creating…"
-          errorMessage={errorMessage}
-        />
+        <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1.5">
+            <span className={PICKER_LABEL_CLASS}>Management company</span>
+            <HubSidePanelPickerTrigger
+              expanded={pickerKind === "mc-link"}
+              onToggle={() => openPicker("mc-link")}
+              selectedLabel={mcLinkLabel}
+              placeholder="Link existing company"
+              disabled={linkDisabled}
+              ariaLabel="Link management company"
+            />
+          </label>
+          {isPickerActive ? null : (
+            <HubSidePanelEditToolbar
+              isDirty={isDirty}
+              isSaving={isSaving}
+              canSave={canSave}
+              onSave={save}
+              onDiscard={discard}
+              saveLabel="Create"
+              savingLabel="Creating…"
+              errorMessage={errorMessage}
+            />
+          )}
+        </div>
       )
     }
-    if (mode.kind === "section-edit-mc") {
+    if (effectiveMode.kind === "section-edit-mc") {
       return (
         <HubSidePanelEditToolbar
           isDirty={isDirty}
@@ -127,30 +156,48 @@ export function PropertyHubSidePanel({
         />
       )
     }
-    if (mode.kind === "section-edit-property") {
+    if (effectiveMode.kind === "section-edit-property") {
       return (
-        <HubSidePanelEditToolbar
-          isDirty={isDirty}
-          isSaving={isSaving}
-          canSave={canSave}
-          onSave={save}
-          onDiscard={discard}
-          onDelete={deleteProperty}
-          onOpenHubView={hasHubViewTarget ? exitToView : undefined}
-          errorMessage={errorMessage}
-        />
+        <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1.5">
+            <span className={PICKER_LABEL_CLASS}>Management company</span>
+            <HubSidePanelPickerTrigger
+              expanded={pickerKind === "mc-link"}
+              onToggle={() => openPicker("mc-link")}
+              selectedLabel={propertyEditMcLabel}
+              placeholder="No management company"
+              disabled={isSaving}
+              ariaLabel="Link management company"
+            />
+          </label>
+          {isPickerActive ? null : (
+            <HubSidePanelEditToolbar
+              isDirty={isDirty}
+              isSaving={isSaving}
+              canSave={canSave}
+              onSave={save}
+              onDiscard={discard}
+              onDelete={deleteProperty}
+              onOpenHubView={hasHubViewTarget ? exitToView : undefined}
+              errorMessage={errorMessage}
+            />
+          )}
+        </div>
       )
     }
-    if (mode.kind === "view") {
-      const showPropertiesPagination = mode.tab === "properties" && properties.hasData
-      const showTemplatesPagination = mode.tab === "templates" && templates.hasData
-      const isTemplates = mode.tab === "templates"
+    if (effectiveMode.kind === "view") {
+      const tab = effectiveMode.tab
+      const showPropertiesPagination =
+        !isPickerActive && tab === "properties" && properties.hasData
+      const showTemplatesPagination =
+        !isPickerActive && tab === "templates" && templates.hasData
+      const isTemplates = tab === "templates"
       return (
         <div className="flex flex-col gap-2">
           <HubSidePanelViewSwitcher
-            label={mode.tab === "properties" ? "Properties" : "Templates"}
-            prevDisabled={mode.tab === "properties"}
-            nextDisabled={mode.tab === "templates"}
+            label={tab === "properties" ? "Properties" : "Templates"}
+            prevDisabled={tab === "properties"}
+            nextDisabled={tab === "templates"}
             onGoPrev={goToProperties}
             onGoNext={goToTemplates}
             prevAriaLabel="Show properties"
@@ -158,7 +205,7 @@ export function PropertyHubSidePanel({
           />
           {isTemplates ? (
             <HubSidePanelPickerTrigger
-              expanded={false}
+              expanded={pickerKind === "property-filter"}
               onToggle={() => openPicker("property-filter")}
               selectedLabel={selectedPropertyLabel}
               placeholder="All properties"
@@ -192,14 +239,11 @@ export function PropertyHubSidePanel({
         </div>
       )
     }
-    if (mode.kind === "picker-takeover") {
-      // Picker takeover keeps a minimal sticky header: just an empty placeholder
-      // so the panel's chrome doesn't jump. The body owns the picker UI.
-      return null
-    }
     return null
   }, [
-    mode,
+    effectiveMode,
+    isPickerActive,
+    pickerKind,
     isDirty,
     isSaving,
     canSave,
@@ -213,6 +257,9 @@ export function PropertyHubSidePanel({
     properties,
     templates,
     selectedPropertyLabel,
+    propertyEditMcLabel,
+    mcMode,
+    mcLinkLabel,
     goToProperties,
     goToTemplates,
     openPicker,
@@ -224,7 +271,7 @@ export function PropertyHubSidePanel({
     <HubSidePanelShell open={isOpen} onClose={close} title={title} topToolbar={topToolbar}>
       {mode.kind === "create" ? (
         <div className="flex flex-col gap-5">
-          <PropertyHubMcCreateSection controller={controller} pickerExpanded={false} />
+          <PropertyHubMcCreateSection controller={controller} />
           <PropertyHubPropertyCreateSection controller={controller} />
         </div>
       ) : mode.kind === "section-edit-mc" ? (
