@@ -40,13 +40,18 @@ import type { JobTypeSidePanelMode } from "./types"
  * `onUpdated` (optional) fires after an edit-mode save commits — hosts
  * use it to patch a locally-held name (e.g. the template record cell)
  * without a refetch; identity-gate against the host's bound id.
+ * `onDeleted` (optional) fires with the deleted id after a delete
+ * commits — hosts use it to drop a now-dangling selection (e.g. clear
+ * the template's jobTypeId so a deleted job type isn't re-fetched).
  */
 export function useJobTypeSidePanel(options?: {
   onCreated?: (jobType: JobType) => void
   onUpdated?: (jobType: JobType) => void
+  onDeleted?: (id: string) => void
 }) {
   const onCreated = options?.onCreated
   const onUpdated = options?.onUpdated
+  const onDeleted = options?.onDeleted
   const [mode, setMode] = useState<JobTypeSidePanelMode>({ kind: "closed" })
   const [form, setForm] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
   const [baseline, setBaseline] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
@@ -186,8 +191,9 @@ export function useJobTypeSidePanel(options?: {
 
   const deleteCurrent = useCallback(() => {
     if (mode.kind !== "edit" || updatedAt === null || isSaving) return
+    const deletedId = mode.id
     deleteMutation.mutate(
-      { id: mode.id, updatedAt },
+      { id: deletedId, updatedAt },
       {
         onSuccess: () => {
           setMode({ kind: "closed" })
@@ -195,13 +201,14 @@ export function useJobTypeSidePanel(options?: {
           setBaseline(EMPTY_JOB_TYPE_FORM)
           setUpdatedAt(null)
           setError(null)
+          onDeleted?.(deletedId)
         },
         onError: (err: unknown) => {
           setError(err instanceof Error ? err.message : String(err))
         },
       },
     )
-  }, [mode, updatedAt, isSaving, deleteMutation])
+  }, [mode, updatedAt, isSaving, deleteMutation, onDeleted])
 
   return {
     mode,

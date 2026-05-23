@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import type { JobTypeOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
@@ -13,6 +13,12 @@ import {
 export type JobTypePickerProps = {
   value: string | null
   onChange: (id: string | null) => void
+  /**
+   * Fires with the resolved option (or null on clear) whenever the selection
+   * changes via the dropdown. Lets a host keep a label snapshot in sync with
+   * manual picks so the trigger never shows a stale name.
+   */
+  onOptionSelected?: (option: JobTypeOption | null) => void
   /**
    * Pre-resolved label for the current `value`. Lets the trigger render the
    * selected job type's name even when it isn't in the latest server result.
@@ -38,6 +44,7 @@ function toDropdownOption(option: JobTypeOption): AsyncRichDropdownOption {
 export function JobTypePicker({
   value,
   onChange,
+  onOptionSelected,
   selectedLabel = null,
   placeholder = "Select a job type",
   searchPlaceholder = "Search job types",
@@ -67,10 +74,22 @@ export function JobTypePicker({
     return null
   }, [selectedLabel, value])
 
+  const handleChange = useCallback(
+    (next: string | null) => {
+      onChange(next)
+      if (!onOptionSelected) return
+      const option = next
+        ? controller.options.find((candidate) => candidate.id === next) ?? null
+        : null
+      onOptionSelected(option)
+    },
+    [onChange, onOptionSelected, controller.options],
+  )
+
   return (
     <AsyncRichDropdown
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       options={options}
       selectedOption={selectedOption}
       query={controller.query}

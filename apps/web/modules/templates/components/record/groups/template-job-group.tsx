@@ -21,14 +21,15 @@ import { GROUP_HEADER_BUTTON_CLASS, TemplateGroup } from "./template-group"
  *
  * Header carries a pencil "Job type" button (edits the currently
  * selected job type by id) and a "+ Add job type" button (create). Both
- * open the shared job-type side panel. On create the new job type is
- * auto-selected into the picker; on rename `onJobTypeRenamed` lets the
- * host patch the record cell. `pickedJobTypeLabel` seeds the picker
- * trigger with the new name until the saved record carries it (mirrors
- * the "+ New property" flow in the Property & Unit group). No reset
- * effect is needed: the picker ignores `selectedLabel` when the value
- * is cleared and prefers live search results otherwise, and the snapshot
- * naturally aligns with the saved detail.
+ * open the shared job-type side panel.
+ *
+ * `pickedJobTypeLabel` is the picker trigger's label snapshot. The
+ * dropdown's `selectedOption` takes precedence over its live results, so
+ * the snapshot must track every selection source: create (`onCreated`),
+ * rename (`onUpdated`), and manual picks (`onOptionSelected`). Delete
+ * (`onDeleted`) clears the now-dangling selection so the pencil disables
+ * and the deleted id isn't re-fetched. Rename also fires `onJobTypeRenamed`
+ * so the host patches its record cell. Mirrors the "+ New property" flow.
  */
 export function TemplateJobGroup({
   editable,
@@ -66,9 +67,19 @@ export function TemplateJobGroup({
     [onJobTypeRenamed],
   )
 
+  const handleJobTypeDeleted = useCallback(
+    (id: string) => {
+      if (draft.jobTypeId !== id) return
+      onFieldChange("jobTypeId", "")
+      setPickedJobTypeLabel(null)
+    },
+    [draft.jobTypeId, onFieldChange],
+  )
+
   const jobTypePanel = useJobTypeSidePanel({
     onCreated: handleJobTypeCreated,
     onUpdated: handleJobTypeUpdated,
+    onDeleted: handleJobTypeDeleted,
   })
 
   const jobTypeValue = draft.jobTypeId || null
@@ -127,6 +138,7 @@ export function TemplateJobGroup({
               <JobTypePicker
                 value={draft.jobTypeId || null}
                 onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
+                onOptionSelected={(option) => setPickedJobTypeLabel(option?.name ?? null)}
                 selectedLabel={jobTypeLabel}
                 placeholder="No job type"
                 ariaLabel="Job type"
