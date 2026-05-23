@@ -13,9 +13,13 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
   }
 }

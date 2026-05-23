@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -20,5 +21,8 @@
     "@builders/domain": "file:../domain",
     "@builders/lib": "file:../lib",
     "@builders/pdf": "file:../pdf"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
   }
 }
