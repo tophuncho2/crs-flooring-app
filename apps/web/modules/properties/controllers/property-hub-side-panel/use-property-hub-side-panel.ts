@@ -318,6 +318,17 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     closePicker()
   }, [view, closePicker])
 
+  // Per-property-row shortcut: jump straight to the templates tab pre-filtered
+  // to the clicked property. Sets the property filter and flips the view tab in
+  // one shot (same hub → contextMcId is unchanged, so the filter persists).
+  const openTemplatesForProperty = useCallback(
+    (row: PropertyListRow) => {
+      view.setPropertyFilter(row.id, row.name)
+      setMode((prev) => (prev.kind === "view" ? { ...prev, tab: "templates" } : prev))
+    },
+    [view],
+  )
+
   // ===== Save / Discard / Delete — thin mode-switched dispatch =====
   // Each slice owns its mutation + the server-snapshot apply. The
   // coordinator only decides what mode to land in on success.
@@ -514,6 +525,7 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     goToTemplates,
     selectPropertyFilter,
     clearPropertyFilter,
+    openTemplatesForProperty,
 
     // ===== Common =====
     isSaving,
