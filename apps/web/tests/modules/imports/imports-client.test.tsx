@@ -109,10 +109,10 @@ describe("ImportsClient", () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Open import IMP-0007" })).toBeTruthy()
+      expect(screen.getByRole("button", { name: "Open import IMP-7" })).toBeTruthy()
     })
 
-    await user.click(screen.getByRole("button", { name: "Open import IMP-0007" }))
+    await user.click(screen.getByRole("button", { name: "Open import IMP-7" }))
 
     expect(navigationMocks.push).toHaveBeenCalledWith(
       "/dashboard/imports/imp-7?returnTo=%2Fdashboard%2Ftest",
