@@ -1,0 +1,44 @@
+import type { WorkOrderFileGenerationInput } from "./types.js"
+import {
+  WO_PRINT_STYLE_BLOCK,
+  renderWorkOrderDescriptionBlock,
+  renderWorkOrderHeader,
+  renderWorkOrderInstallerInstructionsBlock,
+  renderWorkOrderMaterialItems,
+  renderWorkOrderPropertyInfo,
+  renderWorkOrderTopTable,
+} from "./work-order-document-sections.js"
+
+/**
+ * Page 1 of the work-order document ("Work Order Slip"), rendered as a
+ * self-contained HTML fragment for the on-demand print view. Mirrors the
+ * first page of `buildWorkOrderPdfHtml` exactly:
+ *
+ *   - H1: Work Order number
+ *   - H2 scheduled date + warehouse / mgmt co / job type / property table
+ *   - Description block (omitted when empty)
+ *   - Property Info (address — customAddress overrides property address —
+ *     property instructions always shown when present, vacancy/unit fields)
+ *   - Installer Instructions block (omitted when empty)
+ *   - Material Items + cut logs
+ *
+ * Returns a `<style>` + `.wo-print-root` fragment to inject into the print
+ * page; no `<html>`/`<body>` (those come from the Next root layout).
+ */
+export function buildWorkOrderSlipHtml(input: WorkOrderFileGenerationInput): string {
+  const sections = [
+    renderWorkOrderHeader(input),
+    renderWorkOrderTopTable(input),
+    renderWorkOrderDescriptionBlock(input),
+    renderWorkOrderPropertyInfo(input),
+    renderWorkOrderInstallerInstructionsBlock(input),
+    renderWorkOrderMaterialItems(input.materialItems),
+  ]
+    .filter(Boolean)
+    .join("\n")
+
+  return `<style>${WO_PRINT_STYLE_BLOCK}</style>
+<div class="wo-print-root">
+${sections}
+</div>`
+}

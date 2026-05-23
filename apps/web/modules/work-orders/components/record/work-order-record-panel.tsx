@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react"
 import { RecordMultiSectionPanel } from "@/components/panels/record-multi-section-panel"
 import { RecordPrimarySectionInstance } from "@/components/sections/panels/record-primary-section-instance"
+import type { RecordSectionSubHeaderAction } from "@/components/sections/structure/record-section-sub-header"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import type {
   CutLogRow,
@@ -41,6 +42,36 @@ export function WorkOrderRecordPanel({
     onSave: () => void controller.primarySection.save(),
     onDiscard: controller.primarySection.discard,
   })
+
+  // On-demand print views (live replacement for the file-gen worker output).
+  // The existing Files panel stays until these are confirmed.
+  const workOrderId = controller.record.id
+  const printActions: RecordSectionSubHeaderAction[] = [
+    {
+      key: "print-slip",
+      label: "Work Order Slip",
+      tone: "neutral",
+      onClick: () => {
+        if (typeof window !== "undefined") {
+          window.open(`/print/work-orders/${workOrderId}/slip`, "_blank", "noopener,noreferrer")
+        }
+      },
+    },
+    {
+      key: "print-picking-ticket",
+      label: "Picking Ticket",
+      tone: "neutral",
+      onClick: () => {
+        if (typeof window !== "undefined") {
+          window.open(
+            `/print/work-orders/${workOrderId}/picking-ticket`,
+            "_blank",
+            "noopener,noreferrer",
+          )
+        }
+      },
+    },
+  ]
 
   const handleHubEntitySaved = useCallback(
     (result: PropertyHubSaveResult) => {
@@ -115,7 +146,7 @@ export function WorkOrderRecordPanel({
                 saveLabel={primaryActions.saveLabel}
                 savingLabel={primaryActions.savingLabel}
                 showHeader={false}
-                actions={[filesPanel.action]}
+                actions={[filesPanel.action, ...printActions]}
               >
                 <WorkOrderPrimaryFieldsSection
                   draft={controller.primarySection.localValue}
