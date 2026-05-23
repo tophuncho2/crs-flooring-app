@@ -146,7 +146,9 @@ export function WorkOrderRecordPanel({
                 saveLabel={primaryActions.saveLabel}
                 savingLabel={primaryActions.savingLabel}
                 showHeader={false}
-                actions={[filesPanel.action, ...printActions]}
+                // Files panel (old file-gen worker flow) is UI-blocked while the
+                // print views take over; the panel stays mounted but unreachable.
+                actions={[{ ...filesPanel.action, disabled: true }, ...printActions]}
               >
                 <WorkOrderPrimaryFieldsSection
                   draft={controller.primarySection.localValue}
