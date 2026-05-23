@@ -1,0 +1,413 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+
+const {
+  withDatabaseTransactionMock,
+  listStagedInventoryForMaterializationMock,
+  materializeStagedRowsToInventoryMock,
+} = vi.hoisted(() => ({
+  withDatabaseTransactionMock: vi.fn(),
+  listStagedInventoryForMaterializationMock: vi.fn(),
+  materializeStagedRowsToInventoryMock: vi.fn(),
+}))
+
+vi.mock("@builders/db", () => ({
+  Prisma: {
+    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
+  },
+  withDatabaseTransaction: withDatabaseTransactionMock,
+  listStagedInventoryForMaterialization: listStagedInventoryForMaterializationMock,
+  materializeStagedRowsToInventory: materializeStagedRowsToInventoryMock,
+}))
+
+import { materializeImportedStagedRowsUseCase } from "../../../src/flooring/imports/staged-inventory-rows/materialize-imported-rows.js"
+import { StagedInventoryExecutionError } from "../../../src/flooring/imports/staged-inventory-rows/errors.js"
+import type { ImportMaterializeBatchPayload } from "@builders/domain"
+
+const IMPORT_ID = "11111111-1111-4111-8111-111111111111"
+const ROW_ID_A = "22222222-2222-4222-8222-222222222222"
+const ROW_ID_B = "22222222-2222-4222-8222-222222222223"
+
+function payload(stagedRowIds: string[] = [ROW_ID_A]): ImportMaterializeBatchPayload {
+  return {
+    version: "v1",
+    topic: "flooring.imports.materialize",
+    importEntryId: IMPORT_ID,
+    stagedRowIds,
+    requestedBy: {
+      userId: "33333333-3333-4333-8333-333333333333",
+      userEmail: "user@example.com",
+    },
+    requestedAt: "2026-05-22T12:00:00.000Z",
+  }
+}
+
+function loadedRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: ROW_ID_A,
+    importEntryId: IMPORT_ID,
+    filterRowId: "filter-1",
+    productId: "product-1",
+    warehouseId: "wh-staged-snapshot",
+    rollPrefix: "ROLL#",
+    rollNumber: "A-001",
+    dyeLot: "lot-1",
+    location: "Aisle 4",
+    startingStock: { toString: () => "12.50" },
+    note: "test note",
+    status: "QUEUED" as const,
+    isImported: true,
+    importEntry: {
+      id: IMPORT_ID,
+      importNumber: 42,
+      purchaseOrderNumber: "PO-2026-1",
+      warehouseId: "wh-import",
+    },
+    product: {
+      id: "product-1",
+      name: "Carpet — Style A — Beige",
+      stockUnitName: "Square Yard",
+      stockUnitAbbrev: "sy",
+      itemCoverageUnitName: "Square Foot",
+      itemCoverageUnitAbbrev: "sf",
+      sendUnitName: "Roll",
+      sendUnitAbbrev: "rl",
+      coveragePerUnit: { toString: () => "9.0000" },
+      category: {
+        id: "cat-1",
+        slug: "carpet",
+        name: "Carpet",
+      },
+    },
+    ...overrides,
+  }
+}
+
+beforeEach(() => {
+  withDatabaseTransactionMock.mockReset()
+  listStagedInventoryForMaterializationMock.mockReset()
+  materializeStagedRowsToInventoryMock.mockReset()
+
+  // Default: withDatabaseTransaction just runs the callback with a fake tx
+  // that has a $queryRaw method (the use case awaits the FOR UPDATE lock).
+  withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
+    cb({ $queryRaw: vi.fn().mockResolvedValue([]) }),
+  )
+
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date("2026-05-22T12:00:00.000Z"))
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+describe("materializeImportedStagedRowsUseCase", () => {
+  describe("happy path", () => {
+    it("returns { created, materializedStagedRowIds } from the data layer", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow()])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+
+      const result = await materializeImportedStagedRowsUseCase(payload())
+
+      expect(result).toEqual({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+    })
+
+    it("acquires a FOR UPDATE lock on the parent import before reading staged rows", async () => {
+      const queryRaw = vi.fn().mockResolvedValue([])
+      withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
+        cb({ $queryRaw: queryRaw }),
+      )
+      listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow()])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+
+      await materializeImportedStagedRowsUseCase(payload())
+
+      expect(queryRaw).toHaveBeenCalledTimes(1)
+      // Lock was acquired BEFORE the materialize read fired.
+      const lockCallOrder = queryRaw.mock.invocationCallOrder[0]!
+      const readCallOrder = listStagedInventoryForMaterializationMock.mock.invocationCallOrder[0]!
+      expect(lockCallOrder).toBeLessThan(readCallOrder)
+    })
+
+    it("forwards importEntryId and stagedRowIds to the materialize-list read", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([
+        loadedRow({ id: ROW_ID_A }),
+        loadedRow({ id: ROW_ID_B }),
+      ])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [
+          { id: "inv-1", inventoryNumber: "INV-00001" },
+          { id: "inv-2", inventoryNumber: "INV-00002" },
+        ],
+        materializedStagedRowIds: [ROW_ID_A, ROW_ID_B],
+      })
+
+      await materializeImportedStagedRowsUseCase(payload([ROW_ID_A, ROW_ID_B]))
+
+      expect(listStagedInventoryForMaterializationMock).toHaveBeenCalledWith(
+        expect.anything(),
+        { importEntryId: IMPORT_ID, ids: [ROW_ID_A, ROW_ID_B] },
+      )
+    })
+  })
+
+  describe("snapshot stamping (sourcing rules from materialize-imported-rows.ts)", () => {
+    it("stamps every denormalized column from the right source row", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow()])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+
+      await materializeImportedStagedRowsUseCase(payload())
+
+      const callArgs = materializeStagedRowsToInventoryMock.mock.calls[0]?.[1] as {
+        importEntryId: string
+        inventoryRowsToCreate: Array<Record<string, unknown>>
+      }
+      expect(callArgs.importEntryId).toBe(IMPORT_ID)
+      expect(callArgs.inventoryRowsToCreate).toHaveLength(1)
+
+      const created = callArgs.inventoryRowsToCreate[0]!
+      // From importEntry — importNumber stringified, purchaseOrderNumber passthrough.
+      expect(created.importNumber).toBe("42")
+      expect(created.purchaseOrderNumber).toBe("PO-2026-1")
+      expect(created.importEntryId).toBe(IMPORT_ID)
+      // From product — name passes through as-is (NOT recomposed).
+      expect(created.productId).toBe("product-1")
+      expect(created.productName).toBe("Carpet — Style A — Beige")
+      expect(created.categorySlug).toBe("carpet")
+      expect(created.categoryName).toBe("Carpet")
+      // 6 UoM snapshots from product.
+      expect(created.stockUnitName).toBe("Square Yard")
+      expect(created.stockUnitAbbrev).toBe("sy")
+      expect(created.itemCoverageUnitName).toBe("Square Foot")
+      expect(created.itemCoverageUnitAbbrev).toBe("sf")
+      expect(created.sendUnitName).toBe("Roll")
+      expect(created.sendUnitAbbrev).toBe("rl")
+      // Decimal → string for coveragePerUnit.
+      expect(created.coveragePerUnit).toBe("9.0000")
+      // User values copied verbatim from staged row.
+      expect(created.rollPrefix).toBe("ROLL#")
+      expect(created.rollNumber).toBe("A-001")
+      expect(created.dyeLot).toBe("lot-1")
+      expect(created.location).toBe("Aisle 4")
+      expect(created.note).toBe("test note")
+      // startingStock decimal-stringified.
+      expect(created.startingStock).toBe("12.50")
+      // internalNotes always null (user-only column, never seeded by worker).
+      expect(created.internalNotes).toBeNull()
+      // inventoryItem stays "" (data layer composes after sequence assignment).
+      expect(created.inventoryItem).toBe("")
+      // fifoReceivedAt is a Date (current time).
+      expect(created.fifoReceivedAt).toBeInstanceOf(Date)
+      // sourceStagedRowId points back to the staged row.
+      expect(created.sourceStagedRowId).toBe(ROW_ID_A)
+      // id is a UUID assigned by the use case.
+      expect(typeof created.id).toBe("string")
+      expect(created.id).not.toBe(ROW_ID_A)
+    })
+
+    it("PINS warehouseId.immutable: copies warehouseId from STAGED ROW, not from import entry", async () => {
+      // The staged row carries its own warehouseId snapshot (set at create
+      // time from the parent import). The worker must use THAT, not the
+      // import entry's current warehouseId, since the import's warehouse
+      // can be updated after staged rows are created.
+      listStagedInventoryForMaterializationMock.mockResolvedValue([
+        loadedRow({
+          warehouseId: "wh-staged-original",
+          importEntry: {
+            id: IMPORT_ID,
+            importNumber: 42,
+            purchaseOrderNumber: "PO",
+            warehouseId: "wh-import-changed-later",
+          },
+        }),
+      ])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+
+      await materializeImportedStagedRowsUseCase(payload())
+
+      const created = (materializeStagedRowsToInventoryMock.mock.calls[0]?.[1] as {
+        inventoryRowsToCreate: Array<Record<string, unknown>>
+      }).inventoryRowsToCreate[0]!
+      expect(created.warehouseId).toBe("wh-staged-original")
+    })
+
+    it("decimalToString: null coveragePerUnit → null inventory field", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([
+        loadedRow({
+          product: {
+            id: "product-1",
+            name: "Coverage-free product",
+            stockUnitName: "ea",
+            stockUnitAbbrev: "ea",
+            itemCoverageUnitName: null,
+            itemCoverageUnitAbbrev: null,
+            sendUnitName: "ea",
+            sendUnitAbbrev: "ea",
+            coveragePerUnit: null,
+            category: { id: "cat-1", slug: "misc", name: "Misc" },
+          },
+        }),
+      ])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+
+      await materializeImportedStagedRowsUseCase(payload())
+
+      const created = (materializeStagedRowsToInventoryMock.mock.calls[0]?.[1] as {
+        inventoryRowsToCreate: Array<Record<string, unknown>>
+      }).inventoryRowsToCreate[0]!
+      expect(created.coveragePerUnit).toBeNull()
+      expect(created.itemCoverageUnitName).toBeNull()
+      expect(created.itemCoverageUnitAbbrev).toBeNull()
+    })
+
+    it("purchaseOrderNumber falls back to null when import entry's value is null", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([
+        loadedRow({
+          importEntry: {
+            id: IMPORT_ID,
+            importNumber: 99,
+            purchaseOrderNumber: null,
+            warehouseId: "wh-staged-snapshot",
+          },
+        }),
+      ])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+
+      await materializeImportedStagedRowsUseCase(payload())
+
+      const created = (materializeStagedRowsToInventoryMock.mock.calls[0]?.[1] as {
+        inventoryRowsToCreate: Array<Record<string, unknown>>
+      }).inventoryRowsToCreate[0]!
+      expect(created.purchaseOrderNumber).toBeNull()
+      expect(created.importNumber).toBe("99")
+    })
+
+    it("assigns a unique id to each created inventory row in a batch", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([
+        loadedRow({ id: ROW_ID_A }),
+        loadedRow({ id: ROW_ID_B }),
+      ])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [
+          { id: "inv-1", inventoryNumber: "INV-00001" },
+          { id: "inv-2", inventoryNumber: "INV-00002" },
+        ],
+        materializedStagedRowIds: [ROW_ID_A, ROW_ID_B],
+      })
+
+      await materializeImportedStagedRowsUseCase(payload([ROW_ID_A, ROW_ID_B]))
+
+      const createdRows = (materializeStagedRowsToInventoryMock.mock.calls[0]?.[1] as {
+        inventoryRowsToCreate: Array<Record<string, unknown>>
+      }).inventoryRowsToCreate
+      expect(createdRows).toHaveLength(2)
+      expect(createdRows[0]!.id).not.toBe(createdRows[1]!.id)
+      expect(createdRows[0]!.sourceStagedRowId).toBe(ROW_ID_A)
+      expect(createdRows[1]!.sourceStagedRowId).toBe(ROW_ID_B)
+    })
+  })
+
+  describe("precondition failures (idempotency backstop)", () => {
+    it("throws STAGED_MATERIALIZE_PRECONDITION_FAILED when loaded < requested rows", async () => {
+      // Duplicate worker run: rows already flipped IMPORTED → status filter
+      // excludes them → loadedRows is shorter than payload.stagedRowIds.
+      listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow({ id: ROW_ID_A })])
+
+      await expect(
+        materializeImportedStagedRowsUseCase(payload([ROW_ID_A, ROW_ID_B])),
+      ).rejects.toMatchObject({
+        code: "STAGED_MATERIALIZE_PRECONDITION_FAILED",
+        status: 409,
+      })
+    })
+
+    it("attaches missingIds payload identifying the rows that didn't come back", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow({ id: ROW_ID_A })])
+
+      try {
+        await materializeImportedStagedRowsUseCase(payload([ROW_ID_A, ROW_ID_B]))
+        expect.fail("Expected throw")
+      } catch (error) {
+        if (!(error instanceof StagedInventoryExecutionError)) throw error
+        expect(error.code).toBe("STAGED_MATERIALIZE_PRECONDITION_FAILED")
+        expect(error.payload).toEqual({
+          expectedCount: 2,
+          actualCount: 1,
+          missingIds: [ROW_ID_B],
+        })
+      }
+    })
+
+    it("does NOT call materializeStagedRowsToInventory when precondition fails", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([])
+
+      await expect(
+        materializeImportedStagedRowsUseCase(payload([ROW_ID_A])),
+      ).rejects.toBeInstanceOf(StagedInventoryExecutionError)
+      expect(materializeStagedRowsToInventoryMock).not.toHaveBeenCalled()
+    })
+
+    it("idempotency: zero loaded rows on a single-id batch dead-letters cleanly (the duplicate-job case)", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([])
+
+      try {
+        await materializeImportedStagedRowsUseCase(payload([ROW_ID_A]))
+        expect.fail("Expected throw")
+      } catch (error) {
+        if (!(error instanceof StagedInventoryExecutionError)) throw error
+        expect(error.code).toBe("STAGED_MATERIALIZE_PRECONDITION_FAILED")
+        expect(error.payload).toMatchObject({
+          expectedCount: 1,
+          actualCount: 0,
+          missingIds: [ROW_ID_A],
+        })
+      }
+    })
+  })
+
+  describe("transaction wrapping", () => {
+    it("uses the caller-provided client when one is passed (no nested transaction)", async () => {
+      const providedClient = { $queryRaw: vi.fn().mockResolvedValue([]) }
+      // Make withDatabaseTransaction still invoke the callback, but with
+      // a DIFFERENT tx — to confirm the use case prefers the explicit one.
+      withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
+        cb({ $queryRaw: vi.fn().mockRejectedValue(new Error("wrong client used")) }),
+      )
+      listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow()])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+
+      // Cast — the signature wants Prisma.TransactionClient; we provide a
+      // duck-typed stand-in (the use case only calls $queryRaw on it).
+      await materializeImportedStagedRowsUseCase(
+        payload(),
+        providedClient as unknown as Parameters<typeof materializeImportedStagedRowsUseCase>[1],
+      )
+
+      expect(providedClient.$queryRaw).toHaveBeenCalledTimes(1)
+    })
+  })
+})
