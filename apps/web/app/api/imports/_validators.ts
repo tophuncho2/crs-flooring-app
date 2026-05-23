@@ -1,8 +1,8 @@
 import { z } from "zod"
 import {
   ImportExecutionError,
+  ImportStagedInventorySectionExecutionError,
   StagedInventoryExecutionError,
-  StagedInventoryFilterExecutionError,
   type ImportsListFilters,
   type ListInput,
 } from "@builders/application"
@@ -20,12 +20,17 @@ import {
 } from "@builders/domain"
 // no sort param — imports default to createdAt desc, hardcoded server-side
 import type {
+  ImportStagedInventorySectionDiff,
   StagedInventoryFilterForm,
   StagedInventoryFilterRowDelete,
   StagedInventoryFilterRowDraft,
   StagedInventoryFilterRowUpdate,
   StagedInventoryFiltersDiff,
   StagedInventoryForm,
+  StagedInventoryRowDelete,
+  StagedInventoryRowDraft,
+  StagedInventoryRowUpdate,
+  StagedInventoryRowsDiff,
 } from "@builders/domain"
 
 function requireString(value: unknown, field: string): string {
@@ -149,39 +154,6 @@ function shapeStagedForm(raw: unknown, path: string): StagedInventoryForm {
   }
 }
 
-export type ValidatedCreateStagedInventoryRowBody = {
-  filterRowId: string
-  form: StagedInventoryForm
-}
-
-export function validateCreateStagedInventoryRowBody(
-  body: Record<string, unknown>,
-): ValidatedCreateStagedInventoryRowBody {
-  return {
-    filterRowId: requireStagedString(body.filterRowId, "filterRowId"),
-    form: shapeStagedForm(body.form, "form"),
-  }
-}
-
-export type ValidatedUpdateStagedInventoryRowBody = {
-  form: StagedInventoryForm
-}
-
-export function validateUpdateStagedInventoryRowBody(
-  body: Record<string, unknown>,
-): ValidatedUpdateStagedInventoryRowBody {
-  return {
-    form: shapeStagedForm(body.form, "form"),
-  }
-}
-
-export function validateDeleteStagedInventoryRowBody(
-  _body: Record<string, unknown>,
-): Record<string, never> {
-  // Body-shape only — expectedUpdatedAt travels via the mutation envelope.
-  return {}
-}
-
 // --- Mark-for-import body shaper ---
 
 function failMarkForImport(message: string, field?: string): never {
@@ -209,8 +181,8 @@ export function validateMarkForImportBody(body: Record<string, unknown>): { stag
 // --- Filter-rows diff body shaper ---
 
 function failFilter(message: string, field?: string): never {
-  throw new StagedInventoryFilterExecutionError({
-    code: "FILTER_VALIDATION_FAILED",
+  throw new ImportStagedInventorySectionExecutionError({
+    code: "SECTION_FILTER_VALIDATION_FAILED",
     message,
     status: 400,
     ...(field ? { field } : {}),
@@ -272,23 +244,79 @@ function shapeFilterDelete(raw: unknown, idx: number): StagedInventoryFilterRowD
   }
 }
 
-/**
- * Shapes the raw JSON body into a `StagedInventoryFiltersDiff` (domain
- * type). Body-shape validation only — domain rules (duplicate product,
- * locked-with-children, delete-blocked, unknown product) are evaluated
- * by `validateStagedInventoryFiltersDiff` inside
- * `saveStagedInventoryFiltersSectionUseCase`.
- *
- * Mirrors the WOMI material-items diff body shape: top-level
- * added/modified/deleted, no `diff` wrapper.
- */
-export function validateStagedInventoryFiltersDiffBody(
-  body: Record<string, unknown>,
+function shapeFiltersSlice(
+  raw: unknown,
+  pathPrefix: string,
 ): StagedInventoryFiltersDiff {
-  const added = requireFilterArray(body.added, "added").map((entry, idx) => shapeFilterDraft(entry, idx))
-  const modified = requireFilterArray(body.modified, "modified").map((entry, idx) => shapeFilterUpdate(entry, idx))
-  const deleted = requireFilterArray(body.deleted, "deleted").map((entry, idx) => shapeFilterDelete(entry, idx))
+  const slice = requireFilterObject(raw, pathPrefix)
+  const added = requireFilterArray(slice.added, `${pathPrefix}.added`).map(
+    (entry, idx) => shapeFilterDraft(entry, idx),
+  )
+  const modified = requireFilterArray(slice.modified, `${pathPrefix}.modified`).map(
+    (entry, idx) => shapeFilterUpdate(entry, idx),
+  )
+  const deleted = requireFilterArray(slice.deleted, `${pathPrefix}.deleted`).map(
+    (entry, idx) => shapeFilterDelete(entry, idx),
+  )
   return { added, modified, deleted }
+}
+
+function shapeStagedRowDraft(raw: unknown, idx: number): StagedInventoryRowDraft {
+  const row = requireStagedObject(raw, `rows.added[${idx}]`)
+  return {
+    tempId: requireStagedString(row.tempId, `rows.added[${idx}].tempId`),
+    filterRowId: requireStagedString(row.filterRowId, `rows.added[${idx}].filterRowId`),
+    form: shapeStagedForm(row.form, `rows.added[${idx}].form`),
+  }
+}
+
+function shapeStagedRowUpdate(raw: unknown, idx: number): StagedInventoryRowUpdate {
+  const row = requireStagedObject(raw, `rows.modified[${idx}]`)
+  return {
+    id: requireStagedString(row.id, `rows.modified[${idx}].id`),
+    form: shapeStagedForm(row.form, `rows.modified[${idx}].form`),
+  }
+}
+
+function shapeStagedRowDelete(raw: unknown, idx: number): StagedInventoryRowDelete {
+  const row = requireStagedObject(raw, `rows.deleted[${idx}]`)
+  return {
+    id: requireStagedString(row.id, `rows.deleted[${idx}].id`),
+  }
+}
+
+function shapeRowsSlice(raw: unknown): StagedInventoryRowsDiff {
+  const slice = requireStagedObject(raw, "rows")
+  const added = requireStagedArray(slice.added, "rows.added").map((entry, idx) =>
+    shapeStagedRowDraft(entry, idx),
+  )
+  const modified = requireStagedArray(slice.modified, "rows.modified").map((entry, idx) =>
+    shapeStagedRowUpdate(entry, idx),
+  )
+  const deleted = requireStagedArray(slice.deleted, "rows.deleted").map((entry, idx) =>
+    shapeStagedRowDelete(entry, idx),
+  )
+  return { added, modified, deleted }
+}
+
+/**
+ * Shapes the raw JSON body into an `ImportStagedInventorySectionDiff`
+ * (domain type) — the combined filter-rows + staged-rows section diff
+ * that backs `PATCH /api/imports/[id]/staged-inventory/section`.
+ *
+ * Body-shape validation only — domain rules (duplicate product,
+ * locked-with-children, delete-blocked, unknown product, non-DRAFT
+ * edits, orphaned-parent rows, etc.) are evaluated by
+ * `validateStagedInventoryFiltersDiff` + `validateStagedInventoryRowsDiff`
+ * inside `saveImportStagedInventorySectionUseCase`.
+ */
+export function validateImportStagedInventorySectionDiffBody(
+  body: Record<string, unknown>,
+): ImportStagedInventorySectionDiff {
+  return {
+    filters: shapeFiltersSlice(body.filters, "filters"),
+    rows: shapeRowsSlice(body.rows),
+  }
 }
 
 // --- List query validator (Zod) ---

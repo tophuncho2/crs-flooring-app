@@ -9,30 +9,41 @@ import {
 } from "@/modules/shared/engines/record-view"
 import type {
   ImportDetail,
+  ImportStagedInventorySectionDiff,
   ProductOption,
   StagedInventoryFilterRow,
   StagedInventoryFilterRowDelete,
   StagedInventoryFilterRowDraft,
   StagedInventoryFilterRowUpdate,
-  StagedInventoryFiltersDiff,
   StagedInventoryRow,
+  StagedInventoryRowDelete,
+  StagedInventoryRowDraft,
+  StagedInventoryRowUpdate,
 } from "@builders/domain"
 import {
   createImportFilterRowDraft,
+  createImportStagedRowDraft,
+  duplicateImportStagedRowDraft,
   toImportFilterRowDrafts,
   validateImportFilterRowDrafts,
   type ImportFilterRowDraft,
+  type ImportStagedRowDraft,
 } from "@/modules/imports/controllers/record/drafts"
-import { useSaveFilterRowsMutation } from "./mutations/use-save-filter-rows-mutation"
-import { useDuplicateStagedRowMutation } from "./mutations/use-duplicate-staged-row-mutation"
-import { useInlineDeleteStagedRowMutation } from "./mutations/use-inline-delete-staged-row-mutation"
-import type { StagedInvRowPanelPatch } from "./types"
+import { useSaveImportStagedInventorySectionMutation } from "./mutations/use-save-import-staged-inventory-section-mutation"
 
-function createRevisionKey(record: ImportDetail, filterRows: StagedInventoryFilterRow[]) {
-  return `${record.updatedAt}:${filterRows.length}`
+type SectionServerValue = {
+  filterRows: StagedInventoryFilterRow[]
+  stagedRows: StagedInventoryRow[]
 }
 
-function toDraftForm(draft: ImportFilterRowDraft) {
+function createRevisionKey(record: ImportDetail, server: SectionServerValue) {
+  // Parent import's updatedAt is the OCC token; row counts tucked in so
+  // a count change (mark-for-import, etc.) flushes baselines without
+  // colliding with mid-edit drafts.
+  return `${record.updatedAt}:${server.filterRows.length}:${server.stagedRows.length}`
+}
+
+function toFilterDiffForm(draft: ImportFilterRowDraft) {
   return {
     categoryFilterId: draft.categoryFilterId,
     productId: draft.productId,
@@ -40,7 +51,20 @@ function toDraftForm(draft: ImportFilterRowDraft) {
   }
 }
 
-function formIsDirty(draft: ImportFilterRowDraft, server: StagedInventoryFilterRow): boolean {
+function toRowDiffForm(draft: ImportStagedRowDraft) {
+  return {
+    rollNumber: draft.rollNumber,
+    startingStock: draft.startingStock,
+    dyeLot: draft.dyeLot,
+    location: draft.location,
+    note: draft.note,
+  }
+}
+
+function filterFormIsDirty(
+  draft: ImportFilterRowDraft,
+  server: StagedInventoryFilterRow,
+): boolean {
   return (
     draft.categoryFilterId !== server.categoryFilterId ||
     draft.productId !== server.productId ||
@@ -48,45 +72,116 @@ function formIsDirty(draft: ImportFilterRowDraft, server: StagedInventoryFilterR
   )
 }
 
-function buildFiltersDiff(
+function rowFormIsDirty(
+  draft: ImportStagedRowDraft,
+  server: StagedInventoryRow,
+): boolean {
+  return (
+    draft.rollNumber !== server.rollNumber ||
+    draft.startingStock !== server.startingStock ||
+    draft.dyeLot !== server.dyeLot ||
+    draft.location !== server.location ||
+    draft.note !== server.note
+  )
+}
+
+function buildSectionDiff(
   drafts: ImportFilterRowDraft[],
-  serverRows: StagedInventoryFilterRow[],
-): StagedInventoryFiltersDiff {
-  const serverById = new Map(serverRows.map((row) => [row.id, row]))
-  const liveDraftIds = new Set(
+  serverValue: SectionServerValue,
+): ImportStagedInventorySectionDiff {
+  const filterServerById = new Map(serverValue.filterRows.map((row) => [row.id, row]))
+  const stagedServerById = new Map(serverValue.stagedRows.map((row) => [row.id, row]))
+
+  const liveFilterIds = new Set(
     drafts.filter((draft) => !isLocalOnlyRecordRow(draft.clientId)).map((d) => d.clientId),
   )
 
-  const added: StagedInventoryFilterRowDraft[] = []
-  const modified: StagedInventoryFilterRowUpdate[] = []
-  const deleted: StagedInventoryFilterRowDelete[] = []
+  const filtersAdded: StagedInventoryFilterRowDraft[] = []
+  const filtersModified: StagedInventoryFilterRowUpdate[] = []
+  const filtersDeleted: StagedInventoryFilterRowDelete[] = []
+  const rowsAdded: StagedInventoryRowDraft[] = []
+  const rowsModified: StagedInventoryRowUpdate[] = []
+  const rowsDeleted: StagedInventoryRowDelete[] = []
+  const liveStagedRowIds = new Set<string>()
 
   for (const draft of drafts) {
     if (isLocalOnlyRecordRow(draft.clientId)) {
-      added.push({ tempId: draft.clientId, form: toDraftForm(draft) })
+      // New filter draft — children aren't allowed (unsaved-parent rule),
+      // so its `stagedRows` list is always empty by the controller's
+      // add/duplicate guards. We still skip its rows defensively.
+      filtersAdded.push({ tempId: draft.clientId, form: toFilterDiffForm(draft) })
       continue
     }
-    const existing = serverById.get(draft.clientId)
-    if (!existing) {
-      added.push({ tempId: draft.clientId, form: toDraftForm(draft) })
+    const existingFilter = filterServerById.get(draft.clientId)
+    if (!existingFilter) {
+      // Server snapshot lost the filter row (shouldn't happen mid-session
+      // — engine rebases on revisionKey changes). Treat as added so the
+      // server reconciles.
+      filtersAdded.push({ tempId: draft.clientId, form: toFilterDiffForm(draft) })
       continue
     }
-    if (formIsDirty(draft, existing)) {
-      modified.push({ id: existing.id, form: toDraftForm(draft) })
+    if (filterFormIsDirty(draft, existingFilter)) {
+      filtersModified.push({ id: existingFilter.id, form: toFilterDiffForm(draft) })
+    }
+
+    // Walk this filter's staged drafts.
+    for (const stagedDraft of draft.stagedRows) {
+      if (isLocalOnlyRecordRow(stagedDraft.clientId)) {
+        rowsAdded.push({
+          tempId: stagedDraft.clientId,
+          filterRowId: existingFilter.id,
+          form: toRowDiffForm(stagedDraft),
+        })
+        continue
+      }
+      liveStagedRowIds.add(stagedDraft.clientId)
+      const existingRow = stagedServerById.get(stagedDraft.clientId)
+      if (!existingRow) {
+        // Defensive — same as filter case above.
+        rowsAdded.push({
+          tempId: stagedDraft.clientId,
+          filterRowId: existingFilter.id,
+          form: toRowDiffForm(stagedDraft),
+        })
+        continue
+      }
+      // Only DRAFT rows are editable — server enforces; we skip diff
+      // contributions for non-DRAFT rows.
+      if (existingRow.status !== "DRAFT") continue
+      if (rowFormIsDirty(stagedDraft, existingRow)) {
+        rowsModified.push({ id: existingRow.id, form: toRowDiffForm(stagedDraft) })
+      }
     }
   }
 
-  // Drafts iterate newest-first (prepend on add). Reverse so the server
-  // creates oldest → newest, giving the newest draft the latest createdAt.
-  added.reverse()
+  // Newest drafts iterate prepend-first; reverse for stable createdAt
+  // ordering on the server.
+  filtersAdded.reverse()
+  rowsAdded.reverse()
 
-  for (const serverRow of serverRows) {
-    if (!liveDraftIds.has(serverRow.id)) {
-      deleted.push({ id: serverRow.id })
+  // Filter rows present on the server but absent from drafts → delete.
+  for (const serverRow of serverValue.filterRows) {
+    if (!liveFilterIds.has(serverRow.id)) {
+      filtersDeleted.push({ id: serverRow.id })
     }
   }
 
-  return { added, modified, deleted }
+  // Staged rows present on the server but absent from any draft's
+  // stagedRows list → delete. Skip non-DRAFT rows (worker owns them).
+  for (const serverRow of serverValue.stagedRows) {
+    if (serverRow.status !== "DRAFT") continue
+    if (liveStagedRowIds.has(serverRow.id)) continue
+    // Also skip if the parent filter row itself is being deleted —
+    // the server's filter-delete handles the cascade via the
+    // accompanying row delete entries already collected above; the
+    // filter-diff validator and the combined apply both honor this.
+    rowsDeleted.push({ id: serverRow.id })
+  }
+
+  return {
+    filters: { added: filtersAdded, modified: filtersModified, deleted: filtersDeleted },
+    rows: { added: rowsAdded, modified: rowsModified, deleted: rowsDeleted },
+  }
 }
 
 function byCreatedAtDesc(
@@ -97,10 +192,10 @@ function byCreatedAtDesc(
 }
 
 /**
- * Filter-row slice: owns the engine's section controller for the filter-row
- * draft list, the bulk save-filter-rows mutation (via `onSave`), the inline
- * duplicate mutation, and the per-row patch path used by the side panel.
- * Pure orchestration + state — no UI assumptions.
+ * Combined section slice. Owns the engine's section controller for the
+ * nested filter+staged-row drafts, the combined diff save mutation (via
+ * `onSave`), and the local-only add/duplicate/remove ops for staged
+ * rows. Pure orchestration + state — no UI assumptions.
  */
 export function useImportFilterRows({
   record,
@@ -115,26 +210,33 @@ export function useImportFilterRows({
   publishFilterRows: (rows: StagedInventoryFilterRow[]) => void
   publishStagedRows: (rows: StagedInventoryRow[]) => void
 }) {
-  const saveFilterRowsMutation = useSaveFilterRowsMutation({ importId: record.id })
+  const saveSectionMutation = useSaveImportStagedInventorySectionMutation({
+    importId: record.id,
+  })
 
   const orderedFilterRows = useMemo(
     () => [...filterRows].sort(byCreatedAtDesc),
     [filterRows],
   )
 
+  const serverValue = useMemo<SectionServerValue>(
+    () => ({ filterRows: orderedFilterRows, stagedRows }),
+    [orderedFilterRows, stagedRows],
+  )
+
   const section = useRecordScopedSectionController<
-    StagedInventoryFilterRow[],
+    SectionServerValue,
     ImportFilterRowDraft[]
   >({
     recordId: record.id,
     sectionKey: "staged-inventory",
-    serverValue: orderedFilterRows,
-    serverRevisionKey: createRevisionKey(record, orderedFilterRows),
+    serverValue,
+    serverRevisionKey: createRevisionKey(record, serverValue),
     createLocalValue: toImportFilterRowDrafts,
     persistDraft: false,
     policy: {
       addRowPlacement: "top",
-      childRows: "none",
+      childRows: "inline",
     },
     onSave: async (localValue, currentServer) => {
       const validationError = validateImportFilterRowDrafts(localValue)
@@ -146,8 +248,15 @@ export function useImportFilterRows({
         })
       }
 
-      const diff = buildFiltersDiff(localValue, currentServer)
-      if (diff.added.length === 0 && diff.modified.length === 0 && diff.deleted.length === 0) {
+      const diff = buildSectionDiff(localValue, currentServer)
+      const noChanges =
+        diff.filters.added.length === 0 &&
+        diff.filters.modified.length === 0 &&
+        diff.filters.deleted.length === 0 &&
+        diff.rows.added.length === 0 &&
+        diff.rows.modified.length === 0 &&
+        diff.rows.deleted.length === 0
+      if (noChanges) {
         return {
           serverValue: currentServer,
           serverRevisionKey: createRevisionKey(record, currentServer),
@@ -155,17 +264,22 @@ export function useImportFilterRows({
         }
       }
 
-      const response = await saveFilterRowsMutation.mutateAsync({
+      const response = await saveSectionMutation.mutateAsync({
         diff,
         revisionKey: record.updatedAt,
       })
-      const sortedResponse = [...response.filterRows].sort(byCreatedAtDesc)
-      publishFilterRows(sortedResponse)
+      const sortedFilters = [...response.filterRows].sort(byCreatedAtDesc)
+      publishFilterRows(sortedFilters)
+      publishStagedRows(response.stagedRows)
 
+      const nextServer: SectionServerValue = {
+        filterRows: sortedFilters,
+        stagedRows: response.stagedRows,
+      }
       return {
-        serverValue: sortedResponse,
-        serverRevisionKey: createRevisionKey(response.import ?? record, sortedResponse),
-        noticeMessage: "Filter rows saved",
+        serverValue: nextServer,
+        serverRevisionKey: createRevisionKey(response.import ?? record, nextServer),
+        noticeMessage: "Staged inventory section saved",
       }
     },
   })
@@ -232,66 +346,90 @@ export function useImportFilterRows({
     [section],
   )
 
-  const applyStagedRowPatch = useCallback(
-    (patch: StagedInvRowPanelPatch) => {
-      // Splice the refreshed filter row into the server snapshot — the
-      // engine's revisionKey ignores totals changes, so the user's
-      // in-progress draft isn't rebased.
-      publishFilterRows(
-        orderedFilterRows.map((row) =>
-          row.id === patch.filterRow.id ? patch.filterRow : row,
-        ),
+  // --- Staged-row local ops (no API calls — all part of the section diff) ---
+
+  const addStagedRowDraft = useCallback(
+    (filterClientId: string) => {
+      // Unsaved-parent rule: refuse to add a child under a local-only
+      // filter draft. The component layer also gates this, but we
+      // keep a backstop here.
+      if (isLocalOnlyRecordRow(filterClientId)) return
+      section.setLocalValue((prev) =>
+        prev.map((row) => {
+          if (row.clientId !== filterClientId) return row
+          return {
+            ...row,
+            stagedRows: [...row.stagedRows, createImportStagedRowDraft(row)],
+          }
+        }),
       )
-
-      if (patch.kind === "upsert") {
-        const exists = stagedRows.some((row) => row.id === patch.row.id)
-        publishStagedRows(
-          exists
-            ? stagedRows.map((row) => (row.id === patch.row.id ? patch.row : row))
-            : [...stagedRows, patch.row],
-        )
-      } else {
-        publishStagedRows(stagedRows.filter((row) => row.id !== patch.rowId))
-      }
+      if (section.error) section.setError(null)
     },
-    [orderedFilterRows, stagedRows, publishFilterRows, publishStagedRows],
+    [section],
   )
 
-  const duplicateMutation = useDuplicateStagedRowMutation({
-    importId: record.id,
-    applyStagedRowPatch,
-  })
-
-  const duplicateStagedRow = useCallback(
-    (source: StagedInventoryRow) => {
-      if (source.status !== "DRAFT") return
-      duplicateMutation.mutate({ source })
+  const duplicateStagedRowDraft = useCallback(
+    (filterClientId: string, sourceClientId: string) => {
+      if (isLocalOnlyRecordRow(filterClientId)) return
+      section.setLocalValue((prev) =>
+        prev.map((row) => {
+          if (row.clientId !== filterClientId) return row
+          const source = row.stagedRows.find((s) => s.clientId === sourceClientId)
+          if (!source) return row
+          // Only DRAFT rows can seed a duplicate.
+          if (source.status !== "DRAFT") return row
+          return {
+            ...row,
+            stagedRows: [...row.stagedRows, duplicateImportStagedRowDraft(source)],
+          }
+        }),
+      )
+      if (section.error) section.setError(null)
     },
-    [duplicateMutation],
+    [section],
   )
 
-  const deleteMutation = useInlineDeleteStagedRowMutation({
-    importId: record.id,
-    applyStagedRowPatch,
-  })
-
-  const deleteStagedRow = useCallback(
-    (row: StagedInventoryRow) => {
-      if (row.status !== "DRAFT") return
-      deleteMutation.mutate({ row })
+  const removeStagedRowDraft = useCallback(
+    (filterClientId: string, rowClientId: string) => {
+      section.setLocalValue((prev) =>
+        prev.map((row) => {
+          if (row.clientId !== filterClientId) return row
+          return {
+            ...row,
+            stagedRows: row.stagedRows.filter((s) => s.clientId !== rowClientId),
+          }
+        }),
+      )
+      if (section.error) section.setError(null)
     },
-    [deleteMutation],
+    [section],
   )
 
-  const stagedRowsByFilterId = useMemo(() => {
-    const map = new Map<string, StagedInventoryRow[]>()
-    for (const row of stagedRows) {
-      const list = map.get(row.filterRowId) ?? []
-      list.push(row)
-      map.set(row.filterRowId, list)
-    }
-    return map
-  }, [stagedRows])
+  const setStagedRowField = useCallback(
+    <K extends keyof Pick<
+      ImportStagedRowDraft,
+      "rollNumber" | "startingStock" | "dyeLot" | "location" | "note"
+    >>(
+      filterClientId: string,
+      rowClientId: string,
+      field: K,
+      value: ImportStagedRowDraft[K],
+    ) => {
+      section.setLocalValue((prev) =>
+        prev.map((row) => {
+          if (row.clientId !== filterClientId) return row
+          return {
+            ...row,
+            stagedRows: row.stagedRows.map((s) =>
+              s.clientId === rowClientId ? { ...s, [field]: value } : s,
+            ),
+          }
+        }),
+      )
+      if (section.error) section.setError(null)
+    },
+    [section],
+  )
 
   return {
     section,
@@ -300,11 +438,9 @@ export function useImportFilterRows({
     setFilterField,
     setFilterCategoryFilter,
     setFilterProductSnapshot,
-    applyStagedRowPatch,
-    duplicateStagedRow,
-    isDuplicating: duplicateMutation.isPending,
-    deleteStagedRow,
-    isDeleting: deleteMutation.isPending,
-    stagedRowsByFilterId,
+    addStagedRowDraft,
+    duplicateStagedRowDraft,
+    removeStagedRowDraft,
+    setStagedRowField,
   }
 }

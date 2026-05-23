@@ -4,11 +4,13 @@ import { useMemo, type ReactNode } from "react"
 import type {
   FlooringStagedRowStatus,
   StagedInventoryFilterRow,
-  StagedInventoryRow,
 } from "@builders/domain"
 import { StatusBadge } from "@/components/badges"
 import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
 import { Grid, GridEmpty } from "@/components/grid"
+import { TextCell, UnitCell } from "@/components/cells"
+import { isLocalOnlyRecordRow } from "@/modules/shared/engines/record-view"
+import type { ImportStagedRowDraft } from "@/modules/imports/controllers/record/drafts"
 import { STAGED_INV_ROW_LAYOUT, type StagedInvGridRow } from "./staged-inv-row-layout"
 import {
   StagedRowDeleteButton,
@@ -41,65 +43,116 @@ function statusLabel(status: FlooringStagedRowStatus): string {
 
 export type StagedInvRowSubGridProps = {
   filterRow: StagedInventoryFilterRow
-  rows: ReadonlyArray<StagedInventoryRow>
+  drafts: ReadonlyArray<ImportStagedRowDraft>
   selectedIds: Set<string>
   canToggleSelection: boolean
   isSectionBusy: boolean
-  onOpenEdit: (row: StagedInventoryRow, filterRow: StagedInventoryFilterRow) => void
-  onCreateNew: (filterRow: StagedInventoryFilterRow) => void
-  onDuplicate: (row: StagedInventoryRow) => void
-  onDelete: (row: StagedInventoryRow) => void
+  /** Local-only state ops — no API calls. */
+  onAddRow: (filterClientId: string) => void
+  onDuplicate: (filterClientId: string, sourceClientId: string) => void
+  onDelete: (filterClientId: string, rowClientId: string) => void
+  onSetField: (
+    filterClientId: string,
+    rowClientId: string,
+    field: "rollNumber" | "startingStock" | "dyeLot" | "location" | "note",
+    value: string,
+  ) => void
   onToggleSelection: (rowId: string) => void
 }
 
 /**
- * Per-filter-row staged-inventory display sub-grid. Pure read-only —
- * every DRAFT row is a click target that opens the side panel for
- * edit. QUEUED + IMPORTED rows stay in the grid but are not
- * interactive (click no-ops, inline duplicate disabled). Selection
- * checkboxes are gated on filter-row clean state via
- * `canToggleSelection`.
+ * Per-filter-row staged-inventory sub-grid. DRAFT rows are inline
+ * editable (5 user fields); QUEUED/IMPORTED rows are read-only.
+ * Duplicate + delete are local-only ops that mutate the section's
+ * nested draft list — the combined section diff carries everything to
+ * the server in one PATCH on Save.
  *
- * Mirrors `WorkOrderCutLogRow`'s pattern: nested `<Grid>` inside the
- * parent's `<ExpandableRow>` children, with a footer "+ Add Row"
- * button.
+ * Selection (mark-for-import) uses real server ids only — local-only
+ * drafts hide the checkbox.
  */
 export function StagedInvRowSubGrid({
   filterRow,
-  rows,
+  drafts,
   selectedIds,
   canToggleSelection,
   isSectionBusy,
-  onOpenEdit,
-  onCreateNew,
+  onAddRow,
   onDuplicate,
   onDelete,
+  onSetField,
   onToggleSelection,
 }: StagedInvRowSubGridProps) {
+  const filterClientId = filterRow.id
+
   const gridRows: StagedInvGridRow[] = useMemo(
-    () => rows.map((row) => ({ id: row.id, row })),
-    [rows],
+    () => drafts.map((draft) => ({ id: draft.clientId, draft })),
+    [drafts],
   )
 
   function renderCell(column: { key: string }, gridRow: StagedInvGridRow): ReactNode {
-    const { row } = gridRow
+    const { draft } = gridRow
+    const editable = draft.status === "DRAFT" && !isSectionBusy
     switch (column.key) {
       case "status":
-        return <StatusBadge tone={statusTone(row.status)}>{statusLabel(row.status)}</StatusBadge>
+        return (
+          <StatusBadge tone={statusTone(draft.status)}>{statusLabel(draft.status)}</StatusBadge>
+        )
       case "product":
-        return row.productName || "—"
+        return draft.productName || "—"
       case "rollNumber":
-        return row.rollNumber ? `${row.rollPrefix}${row.rollNumber}` : "—"
+        return (
+          <TextCell
+            editable={editable}
+            value={
+              editable
+                ? draft.rollNumber
+                : draft.rollNumber
+                  ? `${draft.rollPrefix}${draft.rollNumber}`
+                  : ""
+            }
+            onChange={(next) => onSetField(filterClientId, draft.clientId, "rollNumber", next)}
+            ariaLabel="Roll number"
+          />
+        )
       case "startingStock":
-        return row.startingStock
-          ? `${row.startingStock}${row.stockUnitAbbrev ? ` ${row.stockUnitAbbrev}` : ""}`
-          : "—"
+        return (
+          <UnitCell
+            editable={editable}
+            value={draft.startingStock}
+            onChange={(next) =>
+              onSetField(filterClientId, draft.clientId, "startingStock", next)
+            }
+            unit={draft.stockUnitAbbrev || filterRow.stockUnitAbbrev || "unit"}
+            ariaLabel="Starting stock"
+          />
+        )
       case "dyeLot":
-        return row.dyeLot || "—"
+        return (
+          <TextCell
+            editable={editable}
+            value={draft.dyeLot}
+            onChange={(next) => onSetField(filterClientId, draft.clientId, "dyeLot", next)}
+            ariaLabel="Dye lot"
+          />
+        )
       case "location":
-        return row.location || "—"
+        return (
+          <TextCell
+            editable={editable}
+            value={draft.location}
+            onChange={(next) => onSetField(filterClientId, draft.clientId, "location", next)}
+            ariaLabel="Location"
+          />
+        )
       case "note":
-        return row.note || "—"
+        return (
+          <TextCell
+            editable={editable}
+            value={draft.note}
+            onChange={(next) => onSetField(filterClientId, draft.clientId, "note", next)}
+            ariaLabel="Note"
+          />
+        )
       default:
         return null
     }
@@ -109,15 +162,19 @@ export function StagedInvRowSubGrid({
     control: { key: string; kind: string },
     gridRow: StagedInvGridRow,
   ): ReactNode {
-    const { row } = gridRow
-    const isDraft = row.status === "DRAFT"
+    const { draft } = gridRow
+    const isDraft = draft.status === "DRAFT"
+    const isLocal = isLocalOnlyRecordRow(draft.clientId)
     if (control.kind === "selection") {
+      // Mark-for-import operates on saved rows only — hide the
+      // checkbox on local-only drafts.
+      if (isLocal) return null
       return (
         <StagedRowSelectCell
           editable={canToggleSelection && isDraft}
-          isSelected={selectedIds.has(row.id)}
-          onToggle={() => onToggleSelection(row.id)}
-          ariaLabel={`Select row ${row.rollNumber || row.id}`}
+          isSelected={selectedIds.has(draft.clientId)}
+          onToggle={() => onToggleSelection(draft.clientId)}
+          ariaLabel={`Select row ${draft.rollNumber || draft.clientId}`}
         />
       )
     }
@@ -127,12 +184,12 @@ export function StagedInvRowSubGrid({
           <StagedRowDuplicateButton
             isDraft={isDraft}
             isSectionBusy={isSectionBusy}
-            onClick={() => onDuplicate(row)}
+            onClick={() => onDuplicate(filterClientId, draft.clientId)}
           />
           <StagedRowDeleteButton
             isDraft={isDraft}
             isSectionBusy={isSectionBusy}
-            onClick={() => onDelete(row)}
+            onClick={() => onDelete(filterClientId, draft.clientId)}
           />
         </div>
       )
@@ -148,19 +205,12 @@ export function StagedInvRowSubGrid({
         empty={<GridEmpty>No staged inventory rows under this filter.</GridEmpty>}
         renderCell={renderCell}
         renderControl={renderControl}
-        onRowClick={(gridRow) => {
-          if (gridRow.row.status !== "DRAFT") return
-          onOpenEdit(gridRow.row, filterRow)
-        }}
-        getRowAriaLabel={(gridRow) =>
-          gridRow.row.status === "DRAFT" ? `Edit staged row ${gridRow.row.rollNumber || ""}` : ""
-        }
       />
 
       <StagedInvRowToolbar
         filterRow={filterRow}
         isSectionBusy={isSectionBusy}
-        onCreateNew={onCreateNew}
+        onCreateNew={(row) => onAddRow(row.id)}
       />
     </div>
   )

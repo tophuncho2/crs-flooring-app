@@ -1,6 +1,6 @@
 import {
   ImportExecutionError,
-  saveStagedInventoryFiltersSectionUseCase,
+  saveImportStagedInventorySectionUseCase,
 } from "@builders/application"
 import { getImportById, getImportDetailById } from "@builders/db"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
@@ -12,7 +12,7 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { validateStagedInventoryFiltersDiffBody } from "../../../_validators"
+import { validateImportStagedInventorySectionDiffBody } from "../../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -35,7 +35,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const body = (await request.json()) as Record<string, unknown>
     const { input: diff, mutation } = parseMutationEnvelope(
       body,
-      validateStagedInventoryFiltersDiffBody,
+      validateImportStagedInventorySectionDiffBody,
       { requireExpectedUpdatedAt: true },
     )
 
@@ -66,24 +66,25 @@ export async function PATCH(request: Request, context: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Import filter rows section replaced",
+        message: "Import staged-inventory section replaced",
         action: "imports.staged-inventory.section.replace",
         route: "/api/imports/[id]/staged-inventory/section",
         entityType: "flooringImportEntry",
         entityId: id,
       },
-      () => saveStagedInventoryFiltersSectionUseCase({ importEntryId: id, diff }),
+      () => saveImportStagedInventorySectionUseCase({ importEntryId: id, diff }),
     )
 
     // Refresh parent detail post-save so the controller can reconcile the
     // import's `updatedAt` (and any other denormalized fields) alongside
-    // the section's own results. The save use case already returns the
-    // post-state filter rows + tempIdMap, so we don't re-list here.
+    // the section's own results.
     const detail = await getImportDetailById(id)
     const responseBody = {
       import: detail,
-      filterRows: result.rows,
-      tempIdMap: result.tempIdMap,
+      filterRows: result.filterRows,
+      stagedRows: result.stagedRows,
+      filterTempIdMap: result.filterTempIdMap,
+      rowTempIdMap: result.rowTempIdMap,
     }
     await finalizeMutationReceipt({
       scope: "imports.staged-inventory.section.replace",

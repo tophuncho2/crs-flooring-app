@@ -1,21 +1,17 @@
 import type { GridLayout } from "@/components/grid"
-import type { StagedInventoryRow } from "@builders/domain"
+import type { ImportStagedRowDraft } from "@/modules/imports/controllers/record/drafts"
 
 export type StagedInvGridRow = {
   id: string
-  row: StagedInventoryRow
+  draft: ImportStagedRowDraft
 }
 
 /**
- * Read-only display layout for the per-filter-row staged-inventory
- * sub-grid. All editing happens in the side panel — clicking a DRAFT
- * row opens it. QUEUED / IMPORTED rows stay in the grid as
- * non-interactive display.
- *
- * Column order — status leftmost among data columns (user-mandated):
- * status → product → rollNumber → startingStock → dyeLot → location →
- * note. Leading controls hold the inline duplicate + delete row-action
- * buttons followed by the selection checkbox.
+ * Per-filter-row staged-inventory sub-grid layout. DRAFT rows render
+ * editable cells (rollNumber, dyeLot, location, startingStock, note);
+ * QUEUED / IMPORTED rows render the same columns read-only. The status
+ * column sits left of the data so a row's lifecycle phase is the first
+ * cue a user sees.
  */
 export const STAGED_INV_ROW_LAYOUT: GridLayout<StagedInvGridRow> = {
   leadingControls: [

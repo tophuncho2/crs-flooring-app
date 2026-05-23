@@ -8,16 +8,13 @@ import type {
 import { useImportFilterRows } from "./use-import-filter-rows"
 import { useImportStagedRowSelection } from "./use-import-staged-row-selection"
 
-export type { StagedInvRowPanelPatch } from "./types"
-
 /**
- * Top-level staged-inventory section controller. Composes the filter-row
- * slice (drafts + diff save + duplicate + patch path) with the staged-row
- * selection slice (mark-for-import batch). Threads section dirty/busy
- * flags from the engine into the selection gate.
+ * Top-level staged-inventory section controller. Composes the combined
+ * filter+staged-row diff slice with the staged-row selection slice
+ * (mark-for-import batch). Threads section dirty/busy flags from the
+ * engine into the selection gate.
  *
- * Return shape is the flat surface the section component consumes — no
- * public API change vs. the pre-split version.
+ * Return shape is the flat surface the section component consumes.
  */
 export function useImportStagedInventorySection({
   record,
@@ -61,12 +58,10 @@ export function useImportStagedInventorySection({
     setFilterField: filters.setFilterField,
     setFilterCategoryFilter: filters.setFilterCategoryFilter,
     setFilterProductSnapshot: filters.setFilterProductSnapshot,
-    applyStagedRowPatch: filters.applyStagedRowPatch,
-    duplicateStagedRow: filters.duplicateStagedRow,
-    isDuplicating: filters.isDuplicating,
-    deleteStagedRow: filters.deleteStagedRow,
-    isDeleting: filters.isDeleting,
-    stagedRowsByFilterId: filters.stagedRowsByFilterId,
+    addStagedRowDraft: filters.addStagedRowDraft,
+    duplicateStagedRowDraft: filters.duplicateStagedRowDraft,
+    removeStagedRowDraft: filters.removeStagedRowDraft,
+    setStagedRowField: filters.setStagedRowField,
     ...selection,
   }
 }

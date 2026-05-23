@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useCallback, useMemo } from "react"
+import { Fragment, useMemo } from "react"
 import type { ReactNode } from "react"
 import { UnitCell } from "@/components/cells"
 import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
@@ -14,15 +14,10 @@ import type {
   StagedInventoryFilterRow,
   StagedInventoryRow,
 } from "@builders/domain"
-import {
-  useImportStagedInventorySection,
-  type StagedInvRowPanelPatch,
-} from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
-import { useStagedInvRowEditPanel } from "@/modules/imports/controllers/record/staged-inventory/use-staged-inv-row-edit-panel"
+import { useImportStagedInventorySection } from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
 import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
 import { FILTER_ROW_LAYOUT } from "./filter-row-layout"
 import { StagedInvRowSubGrid } from "./staged-inv-row-sub-grid"
-import { StagedInvRowEditPanel } from "./staged-inv-row-edit-panel/staged-inv-row-edit-panel"
 import { StagedInventorySectionHeader } from "./staged-inventory-section-header"
 import { FilterRowRemoveButton } from "./row-controls"
 
@@ -52,16 +47,6 @@ export function ImportStagedInventorySection({
     publishMarkedForImport,
   })
 
-  const handlePanelPatch = useCallback(
-    (patch: StagedInvRowPanelPatch) => section.applyStagedRowPatch(patch),
-    [section],
-  )
-
-  const panel = useStagedInvRowEditPanel({
-    importId: record.id,
-    publish: handlePanelPatch,
-  })
-
   // --- Server-snapshot lookups (for read-only computed fields + locks) ---
   const serverFilterRowsById = useMemo(() => {
     const map = new Map<string, StagedInventoryFilterRow>()
@@ -82,11 +67,17 @@ export function ImportStagedInventorySection({
 
   function renderParentCell(column: { key: string }, draft: FilterDraftRow): ReactNode {
     const server = serverFilterRowsById.get(draft.clientId)
-    const hasChildren = (server?.childRowCount ?? 0) > 0
     const isNew = isLocalOnlyRecordRow(draft.clientId)
-    const productEditable = editable && !hasChildren
+    // Children come from the nested draft list, not the server snapshot.
+    // Once any child draft exists (local or saved), the parent's product
+    // can no longer change — matches FILTER_PRODUCT_LOCKED_WITH_CHILDREN
+    // server-side. The server also rejects a same-save product change
+    // when a non-deleted child exists.
+    const hasDraftChildren = draft.stagedRows.length > 0
+    const productEditable = editable && !hasDraftChildren
     // Category filter is immutable after the row is saved — symmetric to
-    // `FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE` in the domain validator.
+    // `FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE` in the domain
+    // validator.
     const categoryEditable = editable && isNew
     switch (column.key) {
       case "categoryFilter":
@@ -142,13 +133,15 @@ export function ImportStagedInventorySection({
     draft: FilterDraftRow,
   ): ReactNode {
     if (control.kind === "actions") {
-      const server = serverFilterRowsById.get(draft.clientId)
-      const hasChildren = (server?.childRowCount ?? 0) > 0
       const isNew = isLocalOnlyRecordRow(draft.clientId)
-      const removable = editable && (isNew || !hasChildren)
+      // Allow remove when: editable AND (it's a brand-new local draft
+      // OR the parent has no draft children — matching the server's
+      // post-diff delete rule).
+      const hasDraftChildren = draft.stagedRows.length > 0
+      const removable = editable && (isNew || !hasDraftChildren)
       const title = removable
         ? "Remove this filter row"
-        : hasChildren
+        : hasDraftChildren
           ? "Has staged rows — remove those first"
           : "Locked while section is busy"
       return (
@@ -193,7 +186,6 @@ export function ImportStagedInventorySection({
         empty={<GridEmpty>No filter rows yet. Add one to start staging inventory.</GridEmpty>}
         renderRow={(draft) => {
           const server = serverFilterRowsById.get(draft.clientId)
-          const childRows = server ? (section.stagedRowsByFilterId.get(server.id) ?? []) : []
           const isExpanded = allExpanded
           return (
             <Fragment>
@@ -209,29 +201,18 @@ export function ImportStagedInventorySection({
                   server ? (
                     <StagedInvRowSubGrid
                       filterRow={server}
-                      rows={childRows}
+                      drafts={draft.stagedRows}
                       selectedIds={section.selectedIds}
                       canToggleSelection={section.canToggleSelection}
                       isSectionBusy={
                         section.isSaving ||
                         section.isMarking ||
-                        section.isSelectionActive ||
-                        section.isDuplicating ||
-                        section.isDeleting
+                        section.isSelectionActive
                       }
-                      onOpenEdit={(row, filterRow) =>
-                        panel.openPanel({ mode: "edit", row, filterRow })
-                      }
-                      onCreateNew={(filterRow) =>
-                        panel.openPanel({
-                          mode: "create",
-                          filterRowId: filterRow.id,
-                          filterRowProductName: filterRow.productName,
-                          filterRowStockUnitAbbrev: filterRow.stockUnitAbbrev,
-                        })
-                      }
-                      onDuplicate={(row) => section.duplicateStagedRow(row)}
-                      onDelete={(row) => section.deleteStagedRow(row)}
+                      onAddRow={section.addStagedRowDraft}
+                      onDuplicate={section.duplicateStagedRowDraft}
+                      onDelete={section.removeStagedRowDraft}
+                      onSetField={section.setStagedRowField}
                       onToggleSelection={section.toggleSelection}
                     />
                   ) : (
@@ -245,8 +226,6 @@ export function ImportStagedInventorySection({
           )
         }}
       />
-
-      <StagedInvRowEditPanel controller={panel} />
     </div>
   )
 }

@@ -3,6 +3,10 @@ import type {
   StagedInventoryFilterDiffValidationIssue,
   StagedInventoryFiltersDiff,
 } from "./types.js"
+import type {
+  DiffExistingStagedInventoryRow,
+  StagedInventoryRowsDiff,
+} from "../../staged-inventory-rows/diff/types.js"
 
 type ProjectedRow = {
   origin: "existing" | "modified" | "added"
@@ -93,25 +97,6 @@ function findUnknownProducts(
   return issues
 }
 
-function findLockedProductChanges(
-  diff: StagedInventoryFiltersDiff,
-  existing: DiffExistingStagedInventoryFilterRow[],
-): StagedInventoryFilterDiffValidationIssue[] {
-  const issues: StagedInventoryFilterDiffValidationIssue[] = []
-  const existingById = new Map(existing.map((row) => [row.id, row]))
-  for (const update of diff.modified) {
-    const row = existingById.get(update.id)
-    if (!row) continue
-    if (row.hasChildren && update.form.productId !== row.productId) {
-      issues.push({
-        code: "FILTER_PRODUCT_LOCKED_WITH_CHILDREN",
-        rowId: update.id,
-      })
-    }
-  }
-  return issues
-}
-
 /**
  * The category filter is immutable once the row is saved. Unlike
  * `FILTER_PRODUCT_LOCKED_WITH_CHILDREN`, there's no `hasChildren`
@@ -141,12 +126,30 @@ function findLockedCategoryFilterChanges(
 function findDeletesBlockedByChildren(
   diff: StagedInventoryFiltersDiff,
   existing: DiffExistingStagedInventoryFilterRow[],
+  stagedRowsDiff: StagedInventoryRowsDiff,
+  existingStagedRows: DiffExistingStagedInventoryRow[],
 ): StagedInventoryFilterDiffValidationIssue[] {
   const issues: StagedInventoryFilterDiffValidationIssue[] = []
   const existingById = new Map(existing.map((row) => [row.id, row]))
+
+  // Build the post-diff child set per filter row: existing children
+  // minus those being deleted in the same save. A filter row's delete is
+  // unblocked iff its post-diff child set is empty.
+  const stagedDeletedIds = new Set(stagedRowsDiff.deleted.map((r) => r.id))
+  const postDiffChildCountByFilterId = new Map<string, number>()
+  for (const row of existingStagedRows) {
+    if (stagedDeletedIds.has(row.id)) continue
+    postDiffChildCountByFilterId.set(
+      row.filterRowId,
+      (postDiffChildCountByFilterId.get(row.filterRowId) ?? 0) + 1,
+    )
+  }
+
   for (const entry of diff.deleted) {
     const row = existingById.get(entry.id)
-    if (row?.hasChildren) {
+    if (!row?.hasChildren) continue
+    const postDiffChildren = postDiffChildCountByFilterId.get(entry.id) ?? 0
+    if (postDiffChildren > 0) {
       issues.push({
         code: "FILTER_DELETE_BLOCKED_BY_CHILDREN",
         rowId: entry.id,
@@ -156,9 +159,59 @@ function findDeletesBlockedByChildren(
   return issues
 }
 
+function findLockedProductChangesPostDiff(
+  diff: StagedInventoryFiltersDiff,
+  existing: DiffExistingStagedInventoryFilterRow[],
+  stagedRowsDiff: StagedInventoryRowsDiff,
+  existingStagedRows: DiffExistingStagedInventoryRow[],
+): StagedInventoryFilterDiffValidationIssue[] {
+  // The original `findLockedProductChanges` rejects changing
+  // `productId` on any modified filter row that has children. That
+  // remains correct iff the row will still have children after the
+  // staged-rows diff applies. If every existing child is in
+  // `stagedRowsDiff.deleted`, the change should be allowed (the row
+  // becomes effectively childless in the same transaction).
+  const issues: StagedInventoryFilterDiffValidationIssue[] = []
+  const existingById = new Map(existing.map((row) => [row.id, row]))
+  const stagedDeletedIds = new Set(stagedRowsDiff.deleted.map((r) => r.id))
+  const postDiffChildCountByFilterId = new Map<string, number>()
+  for (const row of existingStagedRows) {
+    if (stagedDeletedIds.has(row.id)) continue
+    postDiffChildCountByFilterId.set(
+      row.filterRowId,
+      (postDiffChildCountByFilterId.get(row.filterRowId) ?? 0) + 1,
+    )
+  }
+
+  for (const update of diff.modified) {
+    const row = existingById.get(update.id)
+    if (!row) continue
+    if (update.form.productId === row.productId) continue
+    const postDiffChildren = postDiffChildCountByFilterId.get(update.id) ?? 0
+    if (postDiffChildren > 0) {
+      issues.push({
+        code: "FILTER_PRODUCT_LOCKED_WITH_CHILDREN",
+        rowId: update.id,
+      })
+    }
+  }
+  return issues
+}
+
 export type StagedInventoryFilterDiffResolution = {
   existing: DiffExistingStagedInventoryFilterRow[]
   knownProductIds: string[]
+  /**
+   * Optional cross-slice context — when present, locked-with-children
+   * and delete-blocked-by-children rules become post-diff aware (a child
+   * being deleted in the same save no longer counts against its parent).
+   * Omitted by callers that validate the filter-rows slice in isolation
+   * (e.g. older single-section saves) — falls back to existing-only.
+   */
+  stagedRows?: {
+    diff: StagedInventoryRowsDiff
+    existing: DiffExistingStagedInventoryRow[]
+  }
 }
 
 export function validateStagedInventoryFiltersDiff(
@@ -167,11 +220,18 @@ export function validateStagedInventoryFiltersDiff(
 ): StagedInventoryFilterDiffValidationIssue[] {
   const knownProductIds = new Set(resolution.knownProductIds)
   const projected = projectPostDiffRows(diff, resolution.existing)
+  const stagedDiff: StagedInventoryRowsDiff = resolution.stagedRows?.diff ?? {
+    added: [],
+    modified: [],
+    deleted: [],
+  }
+  const stagedExisting: DiffExistingStagedInventoryRow[] =
+    resolution.stagedRows?.existing ?? []
   return [
     ...findDuplicateProducts(projected),
     ...findUnknownProducts(projected, knownProductIds),
-    ...findLockedProductChanges(diff, resolution.existing),
+    ...findLockedProductChangesPostDiff(diff, resolution.existing, stagedDiff, stagedExisting),
     ...findLockedCategoryFilterChanges(diff, resolution.existing),
-    ...findDeletesBlockedByChildren(diff, resolution.existing),
+    ...findDeletesBlockedByChildren(diff, resolution.existing, stagedDiff, stagedExisting),
   ]
 }
