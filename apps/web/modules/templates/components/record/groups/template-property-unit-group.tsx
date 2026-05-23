@@ -14,8 +14,6 @@ import {
   type PropertyHubSaveResult,
 } from "@/modules/properties/controllers/property-hub-side-panel"
 
-const GROUP_HEADER_BUTTON_CLASS =
-  "inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 focus:outline-none focus:ring-1 focus:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
 import {
   buildAddressBlock,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
@@ -25,7 +23,7 @@ import {
 } from "@builders/domain"
 import type { TemplatePrimaryDetail } from "../template-primary-fields-section"
 import { TemplateField } from "./template-field"
-import { TemplateGroup } from "./template-group"
+import { GROUP_HEADER_BUTTON_CLASS, TemplateGroup } from "./template-group"
 
 /**
  * Group 2: Property & Unit. Top sub-block is a two-column form

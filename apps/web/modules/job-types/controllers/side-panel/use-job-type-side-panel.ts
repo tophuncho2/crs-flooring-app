@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react"
 import {
   toJobTypeForm,
   validateJobTypeForm,
+  type JobType,
   type JobTypeForm,
   type JobTypeListRow,
 } from "@builders/domain"
@@ -31,8 +32,15 @@ import type { JobTypeSidePanelMode } from "./types"
  * Save never closes the panel. Delete closes it on success; the 409
  * blocked-by-in-use response surfaces in `error` and the row stays
  * intact (server-side rule in deleteJobTypeUseCase).
+ *
+ * `onCreated` (optional) fires once with the newly created job type
+ * right after a create succeeds — lets a host (e.g. the templates Job
+ * group) auto-select the new job type into its picker without a refetch.
  */
-export function useJobTypeSidePanel() {
+export function useJobTypeSidePanel(options?: {
+  onCreated?: (jobType: JobType) => void
+}) {
+  const onCreated = options?.onCreated
   const [mode, setMode] = useState<JobTypeSidePanelMode>({ kind: "closed" })
   const [form, setForm] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
   const [baseline, setBaseline] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
@@ -111,6 +119,7 @@ export function useJobTypeSidePanel() {
             setUpdatedAt(created.updatedAt)
             setError(null)
             setMode({ kind: "edit", id: created.id })
+            onCreated?.(created)
           },
           onError: (err: unknown) => {
             setError(err instanceof Error ? err.message : String(err))
@@ -137,7 +146,7 @@ export function useJobTypeSidePanel() {
         },
       )
     }
-  }, [canSave, mode, createMutation, updateMutation, form, updatedAt])
+  }, [canSave, mode, createMutation, updateMutation, form, updatedAt, onCreated])
 
   const discard = useCallback(() => {
     if (isSaving) return

@@ -7,6 +7,15 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
 }
 
 /**
+ * Shared style for the small action buttons rendered in a group's
+ * `headerRight` slot (e.g. "+ New property", "+ Add job type", the
+ * pencil-edit buttons). Lives here so every group's header buttons stay
+ * visually locked together.
+ */
+export const GROUP_HEADER_BUTTON_CLASS =
+  "inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 focus:outline-none focus:ring-1 focus:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+
+/**
  * Group container for the templates record view. Tab label on the
  * top-left, optional `headerRight` slot on the right, and a bordered
  * card body whose top-left corner butts into the tab so the two read
