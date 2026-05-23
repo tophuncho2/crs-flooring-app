@@ -86,14 +86,23 @@ export function useInventoryHubChrome(
     // The toolbar's built-in SidePanelEditStatusPill already shows
     // dirty/saving; no second status pill here. Finalize + Void are
     // cut-log-domain actions; they own their own visibility (PENDING /
-    // FINAL gates) so the buttons render or not based on status.
+    // FINAL gates) so the buttons render or not based on status. They
+    // disable alongside the rest of the toolbar during a picker takeover.
     return (
       <>
-        <CutLogEditFinalizeButton controller={cutLogPanel} mode="edit" />
-        <CutLogEditVoidButton controller={cutLogPanel} mode="edit" />
+        <CutLogEditFinalizeButton
+          controller={cutLogPanel}
+          mode="edit"
+          disabled={isCutLogPickerActive}
+        />
+        <CutLogEditVoidButton
+          controller={cutLogPanel}
+          mode="edit"
+          disabled={isCutLogPickerActive}
+        />
       </>
     )
-  }, [effectiveModeKind, cutLogPanel])
+  }, [effectiveModeKind, cutLogPanel, isCutLogPickerActive])
 
   const topToolbar = useMemo<ReactNode>(() => {
     if (effectiveModeKind === "section-edit-inventory") {

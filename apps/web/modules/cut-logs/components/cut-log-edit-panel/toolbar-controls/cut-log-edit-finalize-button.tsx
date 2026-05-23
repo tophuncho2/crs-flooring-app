@@ -16,13 +16,16 @@ const FINALIZE_BUTTON_CLASS_NAME = [
  * domain action unique to cut logs. Renders ONLY when the row is PENDING
  * — shares one toolbar slot with the void button, which takes over once
  * the row is finalized. Within PENDING, disabled while saving or dirty.
+ * `disabled` force-disables it (e.g. while a picker takeover owns the body).
  */
 export function CutLogEditFinalizeButton({
   controller,
   mode,
+  disabled = false,
 }: {
   controller: CutLogEditPanelController
   mode: "create" | "edit"
+  disabled?: boolean
 }) {
   if (mode !== "edit") return null
 
@@ -30,7 +33,7 @@ export function CutLogEditFinalizeButton({
   const status = (cutLog?.status ?? null) as FlooringCutLogStatus | null
   if (status !== "PENDING") return null
 
-  const isDisabled = controller.isSaving || controller.isDirty
+  const isDisabled = disabled || controller.isSaving || controller.isDirty
   const title = controller.isDirty ? "Save changes before finalizing" : undefined
 
   return (

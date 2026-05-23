@@ -16,14 +16,17 @@ const VOID_BUTTON_CLASS_NAME = [
  * Cut-log-specific void button. No shared primitive: void is a domain
  * action unique to cut logs (reverses a FINAL row). Renders ONLY when the
  * row is FINAL and not already voided — shares one toolbar slot with the
- * finalize button, which owns the PENDING state.
+ * finalize button, which owns the PENDING state. `disabled` force-disables
+ * it (e.g. while a picker takeover owns the body).
  */
 export function CutLogEditVoidButton({
   controller,
   mode,
+  disabled = false,
 }: {
   controller: CutLogEditPanelController
   mode: "create" | "edit"
+  disabled?: boolean
 }) {
   if (mode !== "edit") return null
 
@@ -35,7 +38,7 @@ export function CutLogEditVoidButton({
     <button
       type="button"
       onClick={controller.voidCutLog}
-      disabled={controller.isSaving}
+      disabled={disabled || controller.isSaving}
       className={VOID_BUTTON_CLASS_NAME}
     >
       Void
