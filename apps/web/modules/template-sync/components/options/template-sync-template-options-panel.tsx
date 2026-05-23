@@ -8,13 +8,16 @@ import {
   searchTemplateOptionsRequest,
 } from "@/modules/templates/data/template-options-request"
 import {
-  TemplateSyncOptionsPanel,
-  type TemplateSyncOptionRow,
-} from "@/modules/template-sync/components/template-sync-options-panel"
+  HubSidePanelPicker,
+  type HubSidePanelPickerOption,
+} from "@/components/hub-side-panel"
 
-function toOptionRow(option: TemplateOption): TemplateSyncOptionRow {
-  const subtitles = option.description ? [option.description] : []
-  return { id: option.id, title: option.unitType || "—", subtitles }
+function toOption(option: TemplateOption): HubSidePanelPickerOption {
+  return {
+    id: option.id,
+    title: option.unitType || "—",
+    subtitle: option.description || null,
+  }
 }
 
 export type TemplateSyncTemplateOptionsPanelProps = {
@@ -52,12 +55,13 @@ export function TemplateSyncTemplateOptionsPanel({
   })
 
   return (
-    <TemplateSyncOptionsPanel<TemplateOption>
+    <HubSidePanelPicker<TemplateOption>
       controller={controller}
-      toOptionRow={toOptionRow}
-      currentValue={currentValue}
-      currentLabel={currentLabel}
-      onSelect={onSelect}
+      toOption={toOption}
+      selectedId={currentValue}
+      selectedLabel={currentLabel}
+      onSelect={(_option, raw) => onSelect(raw)}
+      onClear={() => onSelect(null)}
       onCancel={onCancel}
       searchPlaceholder="Search templates"
     />

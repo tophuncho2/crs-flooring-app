@@ -8,13 +8,12 @@ import {
   searchPropertyOptionsRequest,
 } from "@/modules/properties/data/property-options-request"
 import {
-  TemplateSyncOptionsPanel,
-  type TemplateSyncOptionRow,
-} from "@/modules/template-sync/components/template-sync-options-panel"
+  HubSidePanelPicker,
+  type HubSidePanelPickerOption,
+} from "@/components/hub-side-panel"
 
-function toOptionRow(option: PropertyOption): TemplateSyncOptionRow {
-  const subtitles = option.address ? [option.address] : []
-  return { id: option.id, title: option.name, subtitles }
+function toOption(option: PropertyOption): HubSidePanelPickerOption {
+  return { id: option.id, title: option.name, subtitle: option.address || null }
 }
 
 export type TemplateSyncPropertyOptionsPanelProps = {
@@ -54,12 +53,13 @@ export function TemplateSyncPropertyOptionsPanel({
   })
 
   return (
-    <TemplateSyncOptionsPanel<PropertyOption>
+    <HubSidePanelPicker<PropertyOption>
       controller={controller}
-      toOptionRow={toOptionRow}
-      currentValue={currentValue}
-      currentLabel={currentLabel}
-      onSelect={onSelect}
+      toOption={toOption}
+      selectedId={currentValue}
+      selectedLabel={currentLabel}
+      onSelect={(_option, raw) => onSelect(raw)}
+      onClear={() => onSelect(null)}
       onCancel={onCancel}
       searchPlaceholder="Search properties"
     />

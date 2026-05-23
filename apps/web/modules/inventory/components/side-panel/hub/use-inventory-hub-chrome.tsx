@@ -112,9 +112,9 @@ export function useInventoryHubChrome(
     if (effectiveModeKind === "section-edit-cut-log") {
       // The WO + WOMI relink header lives in the sticky topToolbar so
       // it stays visible while a picker takeover swaps the body below.
-      // When a picker is active we drop the actions toolbar so the
-      // chrome doesn't clutter the picker view; the triggers themselves
-      // remain reachable above the picker body.
+      // The actions toolbar stays mounted but disabled during a picker
+      // takeover so the sticky header height (and the relink triggers'
+      // positions) don't shift, while the user can't act mid-pick.
       const onDelete = cutLog ? cutLogPanel.deleteCutLog : undefined
       const isPending = cutLog?.status === "PENDING"
       const deleteDisabled = !isPending
@@ -129,7 +129,7 @@ export function useInventoryHubChrome(
           hubController={controller}
         />
       ) : null
-      const actions = isCutLogPickerActive ? null : (
+      const actions = (
         <HubSidePanelEditToolbar
           isDirty={isDirty}
           isSaving={isSaving}
@@ -142,6 +142,7 @@ export function useInventoryHubChrome(
           onOpenHubView={exitToView}
           extraLeftActions={cutLogExtraLeftActions}
           errorMessage={error ?? cutLogPanel.error ?? null}
+          disabled={isCutLogPickerActive}
         />
       )
       if (!header && !actions) return null

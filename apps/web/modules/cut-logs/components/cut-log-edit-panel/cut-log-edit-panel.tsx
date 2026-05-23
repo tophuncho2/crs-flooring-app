@@ -35,8 +35,9 @@ export type CutLogEditPanelProps = {
  *     fills the body below (template-sync pattern).
  *   - Cells (cut / notes / waste) in the body.
  *
- * Toolbar collapses to `null` while a picker takeover is active — picker body
- * owns its own search input + cancel-on-Escape behavior.
+ * Toolbar stays mounted (so the sticky header height and picker-trigger
+ * positions don't shift) but is disabled while a picker takeover is active —
+ * picker body owns its own search input + cancel-on-Escape behavior.
  */
 export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
   const {
@@ -105,7 +106,7 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
   }, [create, pickerKind, controller, local, isSaving, warehouseId])
 
   const topToolbar = useMemo<ReactNode>(() => {
-    const actionsToolbar = isPickerActive ? null : (
+    const actionsToolbar = create ? (
       <HubSidePanelEditToolbar
         isDirty={isDirty}
         isSaving={isSaving}
@@ -115,15 +116,16 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
         saveLabel="Create"
         savingLabel="Creating…"
         errorMessage={error}
+        disabled={isPickerActive}
       />
-    )
+    ) : null
     if (!pickerTriggers && !actionsToolbar) return null
     return (
       <HubSidePanelEditLayout toolbar={actionsToolbar}>
         {pickerTriggers}
       </HubSidePanelEditLayout>
     )
-  }, [isPickerActive, isDirty, isSaving, save, discard, error, pickerTriggers])
+  }, [create, isPickerActive, isDirty, isSaving, save, discard, error, pickerTriggers])
 
   return (
     <HubSidePanelShell open={isOpen} onClose={close} title={title} topToolbar={topToolbar}>

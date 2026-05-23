@@ -54,6 +54,13 @@ export type HubSidePanelEditToolbarProps = {
   saveLabel?: string
   savingLabel?: string
   errorMessage?: string | null
+  /**
+   * Force-disable Save / Discard / Delete / Hub-view. Used to keep the
+   * toolbar mounted (so the sticky header height — and the picker triggers'
+   * position — stays put) while a picker takeover owns the body, without
+   * letting the user act on the form mid-pick.
+   */
+  disabled?: boolean
 }
 
 /**
@@ -80,6 +87,7 @@ export function HubSidePanelEditToolbar({
   saveLabel,
   savingLabel,
   errorMessage,
+  disabled = false,
 }: HubSidePanelEditToolbarProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -94,7 +102,7 @@ export function HubSidePanelEditToolbar({
             <button
               type="button"
               onClick={onOpenHubView}
-              disabled={isSaving}
+              disabled={isSaving || disabled}
               className={HUB_VIEW_BUTTON_CLASS_NAME}
               aria-label="Open hub view (discards changes)"
             >
@@ -108,7 +116,7 @@ export function HubSidePanelEditToolbar({
           {onDelete ? (
             <SidePanelEditDeleteButton
               isSaving={isSaving}
-              disabled={deleteDisabled}
+              disabled={disabled || deleteDisabled}
               onClick={onDelete}
               title={deleteTitle}
             />
@@ -116,12 +124,14 @@ export function HubSidePanelEditToolbar({
           <SidePanelEditDiscardButton
             isDirty={isDirty}
             isSaving={isSaving}
+            disabled={disabled || undefined}
             onClick={onDiscard}
           />
           <SidePanelEditSaveButton
             isDirty={isDirty}
             isSaving={isSaving}
             canSave={canSave}
+            disabled={disabled || undefined}
             onClick={onSave}
             label={saveLabel}
             savingLabel={savingLabel}

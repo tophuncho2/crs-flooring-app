@@ -118,18 +118,17 @@ export function PropertyHubSidePanel({
       return (
         <HubSidePanelEditLayout
           toolbar={
-            isPickerActive ? null : (
-              <HubSidePanelEditToolbar
-                isDirty={isDirty}
-                isSaving={isSaving}
-                canSave={canSave}
-                onSave={save}
-                onDiscard={discard}
-                saveLabel="Create"
-                savingLabel="Creating…"
-                errorMessage={errorMessage}
-              />
-            )
+            <HubSidePanelEditToolbar
+              isDirty={isDirty}
+              isSaving={isSaving}
+              canSave={canSave}
+              onSave={save}
+              onDiscard={discard}
+              saveLabel="Create"
+              savingLabel="Creating…"
+              errorMessage={errorMessage}
+              disabled={isPickerActive}
+            />
           }
         >
           <label className="flex flex-col gap-1.5">
@@ -164,18 +163,17 @@ export function PropertyHubSidePanel({
       return (
         <HubSidePanelEditLayout
           toolbar={
-            isPickerActive ? null : (
-              <HubSidePanelEditToolbar
-                isDirty={isDirty}
-                isSaving={isSaving}
-                canSave={canSave}
-                onSave={save}
-                onDiscard={discard}
-                onDelete={deleteProperty}
-                onOpenHubView={hasHubViewTarget ? exitToView : undefined}
-                errorMessage={errorMessage}
-              />
-            )
+            <HubSidePanelEditToolbar
+              isDirty={isDirty}
+              isSaving={isSaving}
+              canSave={canSave}
+              onSave={save}
+              onDiscard={discard}
+              onDelete={deleteProperty}
+              onOpenHubView={hasHubViewTarget ? exitToView : undefined}
+              errorMessage={errorMessage}
+              disabled={isPickerActive}
+            />
           }
         >
           <label className="flex flex-col gap-1.5">
