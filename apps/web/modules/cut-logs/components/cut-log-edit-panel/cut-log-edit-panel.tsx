@@ -2,6 +2,7 @@
 
 import { useMemo, type ReactNode } from "react"
 import {
+  HubSidePanelEditLayout,
   HubSidePanelEditToolbar,
   HubSidePanelPickerTrigger,
   HubSidePanelShell,
@@ -26,13 +27,15 @@ export type CutLogEditPanelProps = {
  * same controller — this component just doesn't render it.
  *
  * Body shape:
- *   - Location + Inventory `HubSidePanelPickerTrigger` buttons in the
- *     sticky topToolbar so they stay visible while a picker takeover
+ *   - `HubSidePanelEditToolbar` (Create / Discard) pinned on top of the
+ *     sticky topToolbar via `HubSidePanelEditLayout`, matching the read-only
+ *     hub view and the other hub edit panels.
+ *   - Location + Inventory `HubSidePanelPickerTrigger` buttons below it, still
+ *     in the sticky topToolbar so they stay visible while a picker takeover
  *     fills the body below (template-sync pattern).
  *   - Cells (cut / notes / waste) in the body.
  *
- * Toolbar: `HubSidePanelEditToolbar` with Create / Discard. Toolbar
- * collapses to `null` while a picker takeover is active — picker body
+ * Toolbar collapses to `null` while a picker takeover is active — picker body
  * owns its own search input + cancel-on-Escape behavior.
  */
 export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
@@ -116,10 +119,9 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
     )
     if (!pickerTriggers && !actionsToolbar) return null
     return (
-      <div className="flex flex-col gap-3">
+      <HubSidePanelEditLayout toolbar={actionsToolbar}>
         {pickerTriggers}
-        {actionsToolbar}
-      </div>
+      </HubSidePanelEditLayout>
     )
   }, [isPickerActive, isDirty, isSaving, save, discard, error, pickerTriggers])
 

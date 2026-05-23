@@ -1,5 +1,7 @@
 export { HubSidePanelShell } from "./hub-side-panel-shell"
 export type { HubSidePanelShellProps } from "./hub-side-panel-shell"
+export { HubSidePanelEditLayout } from "./hub-side-panel-edit-layout"
+export type { HubSidePanelEditLayoutProps } from "./hub-side-panel-edit-layout"
 export { HubSidePanelEditToolbar } from "./hub-side-panel-edit-toolbar"
 export type { HubSidePanelEditToolbarProps } from "./hub-side-panel-edit-toolbar"
 export { HubSidePanelViewSwitcher } from "./hub-side-panel-view-switcher"

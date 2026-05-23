@@ -1,6 +1,9 @@
 "use client"
 
-import { HubSidePanelPickerTrigger } from "@/components/hub-side-panel"
+import {
+  HubSidePanelEditLayout,
+  HubSidePanelPickerTrigger,
+} from "@/components/hub-side-panel"
 import {
   SidePanelPreviewNewButton,
   SidePanelPreviewOpenButton,
@@ -17,8 +20,10 @@ const PICKER_LABEL_CLASS =
 
 /**
  * Sticky top-toolbar for the template-sync side panel. Composes (top to
- * bottom): the three cascade picker triggers, the preview items sub-header
- * (when applicable), and the right-aligned action button row.
+ * bottom): the right-aligned action button row, then the three cascade
+ * picker triggers and the preview items sub-header (when applicable).
+ * `HubSidePanelEditLayout` pins the actions on top to match the read-only
+ * hub view and the other hub edit panels.
  */
 export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyncController }) {
   const {
@@ -49,7 +54,46 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
   } = controller
 
   return (
-    <div className="flex flex-col gap-3">
+    <HubSidePanelEditLayout
+      toolbar={
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <TemplateSyncClearButton
+              disabled={!hasSelections || isSyncing}
+              onClick={resetSelections}
+            />
+            <SidePanelPreviewNewButton
+              disabled={isSyncing}
+              onClick={handleCreateHub}
+              label="Create hub"
+            />
+            <SidePanelPreviewOpenButton
+              disabled={!canOpenHubView || isSyncing}
+              onClick={handleOpenHubView}
+              label="Open hub view"
+            />
+            <TemplateSyncNewButton
+              disabled={!canCreateForProperty || isSyncing}
+              onClick={handleCreate}
+            />
+            <TemplateSyncOpenButton
+              disabled={!canActOnTemplate || isSyncing}
+              onClick={handleOpen}
+            />
+            <TemplateSyncSyncButton
+              disabled={!canActOnTemplate || isSyncing}
+              isSyncing={isSyncing}
+              onClick={handleSync}
+            />
+          </div>
+          {errorMessage ? (
+            <p className="text-xs text-rose-400" role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
+        </div>
+      }
+    >
       <label className="flex flex-col gap-1.5">
         <span className={PICKER_LABEL_CLASS}>Management company</span>
         <HubSidePanelPickerTrigger
@@ -95,43 +139,6 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
           onToggleHeader={toggleHeaderCollapsed}
         />
       ) : null}
-
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <TemplateSyncClearButton
-            disabled={!hasSelections || isSyncing}
-            onClick={resetSelections}
-          />
-          <SidePanelPreviewNewButton
-            disabled={isSyncing}
-            onClick={handleCreateHub}
-            label="Create hub"
-          />
-          <SidePanelPreviewOpenButton
-            disabled={!canOpenHubView || isSyncing}
-            onClick={handleOpenHubView}
-            label="Open hub view"
-          />
-          <TemplateSyncNewButton
-            disabled={!canCreateForProperty || isSyncing}
-            onClick={handleCreate}
-          />
-          <TemplateSyncOpenButton
-            disabled={!canActOnTemplate || isSyncing}
-            onClick={handleOpen}
-          />
-          <TemplateSyncSyncButton
-            disabled={!canActOnTemplate || isSyncing}
-            isSyncing={isSyncing}
-            onClick={handleSync}
-          />
-        </div>
-        {errorMessage ? (
-          <p className="text-xs text-rose-400" role="alert">
-            {errorMessage}
-          </p>
-        ) : null}
-      </div>
-    </div>
+    </HubSidePanelEditLayout>
   )
 }

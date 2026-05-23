@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from "react"
 import type { TemplateListRow } from "@builders/domain"
 import {
+  HubSidePanelEditLayout,
   HubSidePanelEditToolbar,
   HubSidePanelPagination,
   HubSidePanelPickerTrigger,
@@ -115,7 +116,22 @@ export function PropertyHubSidePanel({
     if (effectiveMode.kind === "create") {
       const linkDisabled = mcMode === "create" || isSaving
       return (
-        <div className="flex flex-col gap-3">
+        <HubSidePanelEditLayout
+          toolbar={
+            isPickerActive ? null : (
+              <HubSidePanelEditToolbar
+                isDirty={isDirty}
+                isSaving={isSaving}
+                canSave={canSave}
+                onSave={save}
+                onDiscard={discard}
+                saveLabel="Create"
+                savingLabel="Creating…"
+                errorMessage={errorMessage}
+              />
+            )
+          }
+        >
           <label className="flex flex-col gap-1.5">
             <span className={PICKER_LABEL_CLASS}>Management company</span>
             <HubSidePanelPickerTrigger
@@ -127,19 +143,7 @@ export function PropertyHubSidePanel({
               ariaLabel="Link management company"
             />
           </label>
-          {isPickerActive ? null : (
-            <HubSidePanelEditToolbar
-              isDirty={isDirty}
-              isSaving={isSaving}
-              canSave={canSave}
-              onSave={save}
-              onDiscard={discard}
-              saveLabel="Create"
-              savingLabel="Creating…"
-              errorMessage={errorMessage}
-            />
-          )}
-        </div>
+        </HubSidePanelEditLayout>
       )
     }
     if (effectiveMode.kind === "section-edit-mc") {
@@ -158,7 +162,22 @@ export function PropertyHubSidePanel({
     }
     if (effectiveMode.kind === "section-edit-property") {
       return (
-        <div className="flex flex-col gap-3">
+        <HubSidePanelEditLayout
+          toolbar={
+            isPickerActive ? null : (
+              <HubSidePanelEditToolbar
+                isDirty={isDirty}
+                isSaving={isSaving}
+                canSave={canSave}
+                onSave={save}
+                onDiscard={discard}
+                onDelete={deleteProperty}
+                onOpenHubView={hasHubViewTarget ? exitToView : undefined}
+                errorMessage={errorMessage}
+              />
+            )
+          }
+        >
           <label className="flex flex-col gap-1.5">
             <span className={PICKER_LABEL_CLASS}>Management company</span>
             <HubSidePanelPickerTrigger
@@ -170,19 +189,7 @@ export function PropertyHubSidePanel({
               ariaLabel="Link management company"
             />
           </label>
-          {isPickerActive ? null : (
-            <HubSidePanelEditToolbar
-              isDirty={isDirty}
-              isSaving={isSaving}
-              canSave={canSave}
-              onSave={save}
-              onDiscard={discard}
-              onDelete={deleteProperty}
-              onOpenHubView={hasHubViewTarget ? exitToView : undefined}
-              errorMessage={errorMessage}
-            />
-          )}
-        </div>
+        </HubSidePanelEditLayout>
       )
     }
     if (effectiveMode.kind === "view") {

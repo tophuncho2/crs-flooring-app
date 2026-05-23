@@ -2,6 +2,7 @@
 
 import { useMemo, type ReactNode } from "react"
 import {
+  HubSidePanelEditLayout,
   HubSidePanelEditToolbar,
   HubSidePanelPagination,
 } from "@/components/hub-side-panel"
@@ -145,10 +146,9 @@ export function useInventoryHubChrome(
       )
       if (!header && !actions) return null
       return (
-        <div className="flex flex-col gap-3">
+        <HubSidePanelEditLayout toolbar={actions}>
           {header}
-          {actions}
-        </div>
+        </HubSidePanelEditLayout>
       )
     }
     if (effectiveModeKind === "view") {
