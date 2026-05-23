@@ -27,8 +27,12 @@ import { TemplateGroup } from "./template-group"
  * (Management Company + Property on the left, Unit Type on the right).
  * A thin divider separates that from the bottom block: read-only
  * property address + instructions + editable installer instructions,
- * full-width. Templates have no cascade rules — MC change does not
- * clear Property (different from WO).
+ * full-width.
+ *
+ * Cascade rule (UI / local state only) — mirrors WO's MC→Property
+ * cascade: MC change/clear clears propertyId (and the picked-property
+ * label snapshot), so a stale property tied to the prior MC doesn't
+ * linger in the draft after switching companies.
  */
 export function TemplatePropertyUnitGroup({
   editable,
@@ -36,6 +40,7 @@ export function TemplatePropertyUnitGroup({
   detail,
   propertyJoined,
   onFieldChange,
+  onFieldsChange,
   onPropertyOption,
 }: {
   editable: boolean
@@ -43,6 +48,8 @@ export function TemplatePropertyUnitGroup({
   detail: TemplatePrimaryDetail | null
   propertyJoined: PropertyJoinedFields | null
   onFieldChange: (field: keyof TemplateForm, value: string) => void
+  /** Multi-field setter — used for the MC→Property cascade. */
+  onFieldsChange: (patch: Partial<TemplateForm>) => void
   onPropertyOption: (option: PropertyOption | null) => void
 }) {
   const managementCompanyValue = draft.managementCompanyId || null
@@ -66,7 +73,7 @@ export function TemplatePropertyUnitGroup({
       const property = result.property
       if (!property) {
         if (result.managementCompany) {
-          onFieldChange("managementCompanyId", result.managementCompany.id)
+          onFieldsChange({ managementCompanyId: result.managementCompany.id })
           setPickedMcLabel(result.managementCompany.name)
         }
         return
@@ -77,8 +84,7 @@ export function TemplatePropertyUnitGroup({
       const mcName =
         result.managementCompany?.name ?? property.managementCompany?.name ?? null
 
-      onFieldChange("managementCompanyId", mcId)
-      onFieldChange("propertyId", property.id)
+      onFieldsChange({ managementCompanyId: mcId, propertyId: property.id })
 
       const syntheticOption: PropertyOption = {
         id: property.id,
@@ -97,7 +103,7 @@ export function TemplatePropertyUnitGroup({
       setPickedMcLabel(mcName)
       setPickedPropertyLabel(property.name)
     },
-    [onFieldChange, onPropertyOption],
+    [onFieldsChange, onPropertyOption],
   )
 
   const hubPanel = usePropertyHubSidePanel({ onCreated: handleHubCreated })
@@ -137,8 +143,17 @@ export function TemplatePropertyUnitGroup({
               {editable ? (
                 <ManagementCompanyPicker
                   value={managementCompanyValue}
-                  onChange={(id) => onFieldChange("managementCompanyId", id ?? "")}
-                  onOptionSelected={(option) => setPickedMcLabel(option?.name ?? null)}
+                  onChange={(id) =>
+                    onFieldsChange({
+                      managementCompanyId: id ?? "",
+                      propertyId: "",
+                    })
+                  }
+                  onOptionSelected={(option) => {
+                    setPickedMcLabel(option?.name ?? null)
+                    // Property cascade clears alongside MC change.
+                    setPickedPropertyLabel(null)
+                  }}
                   selectedLabel={managementCompanyLabel}
                   placeholder="No management company"
                   ariaLabel="Management company"

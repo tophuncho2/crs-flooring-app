@@ -58,6 +58,12 @@ function TemplateCreatePanel({
               [field]: value,
             }))
           }}
+          onFieldsChange={(patch) => {
+            controller.primarySection.setLocalValue((previous) => ({
+              ...previous,
+              ...patch,
+            }))
+          }}
         />
       </RecordSingleSectionPanel>
       <TemplateRecordFooter onClose={page.closePage} />

@@ -89,6 +89,12 @@ export function TemplateRecordPanel({
                       [field]: value,
                     }))
                   }}
+                  onFieldsChange={(patch) => {
+                    primary.primarySection.setLocalValue((previous: TemplateForm) => ({
+                      ...previous,
+                      ...patch,
+                    }))
+                  }}
                 />
               </RecordPrimarySectionInstance>
             ),

@@ -40,11 +40,14 @@ export function TemplatePrimaryFieldsSection({
   detail,
   disabled,
   onFieldChange,
+  onFieldsChange,
 }: {
   draft: TemplateForm
   detail: TemplatePrimaryDetail | null
   disabled: boolean
   onFieldChange: (field: keyof TemplateForm, value: string) => void
+  /** Multi-field setter — used by the property-unit group for the MC→Property cascade. */
+  onFieldsChange: (patch: Partial<TemplateForm>) => void
 }) {
   const editable = !disabled
   const { propertyJoined, handlePropertyOption } = usePropertyJoinedOverride(detail)
@@ -63,6 +66,7 @@ export function TemplatePrimaryFieldsSection({
         detail={detail}
         propertyJoined={draft.propertyId ? propertyJoined : null}
         onFieldChange={onFieldChange}
+        onFieldsChange={onFieldsChange}
         onPropertyOption={handlePropertyOption}
       />
       <TemplateNotesGroup
