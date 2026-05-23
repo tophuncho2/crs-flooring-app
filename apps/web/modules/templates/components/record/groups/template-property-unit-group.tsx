@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { Pencil } from "lucide-react"
 import { TextCell, TextareaCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
@@ -11,6 +12,9 @@ import {
   usePropertyHubSidePanel,
   type PropertyHubCreateResult,
 } from "@/modules/properties/controllers/property-hub-side-panel"
+
+const GROUP_HEADER_BUTTON_CLASS =
+  "inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 focus:outline-none focus:ring-1 focus:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
 import {
   buildAddressBlock,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
@@ -123,16 +127,46 @@ export function TemplatePropertyUnitGroup({
     <TemplateGroup
       title="Property & Unit"
       headerRight={
-        editable ? (
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            aria-label="New property"
-            onClick={hubPanel.open}
-            className="inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 focus:outline-none focus:ring-1 focus:ring-sky-500/40"
+            aria-label="Edit management company"
+            title="Edit management company"
+            onClick={() => {
+              if (managementCompanyValue) {
+                void hubPanel.openForMcEditById(managementCompanyValue)
+              }
+            }}
+            disabled={!managementCompanyValue}
+            className={GROUP_HEADER_BUTTON_CLASS}
           >
-            + New property
+            <Pencil size={12} className="mr-1" /> MC
           </button>
-        ) : null
+          <button
+            type="button"
+            aria-label="Edit property"
+            title="Edit property"
+            onClick={() => {
+              if (propertyValue) {
+                void hubPanel.openForPropertyEditById(propertyValue)
+              }
+            }}
+            disabled={!propertyValue}
+            className={GROUP_HEADER_BUTTON_CLASS}
+          >
+            <Pencil size={12} className="mr-1" /> Property
+          </button>
+          {editable ? (
+            <button
+              type="button"
+              aria-label="New property"
+              onClick={hubPanel.open}
+              className={GROUP_HEADER_BUTTON_CLASS}
+            >
+              + New property
+            </button>
+          ) : null}
+        </div>
       }
     >
       <PropertyHubSidePanel controller={hubPanel} />

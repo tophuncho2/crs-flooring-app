@@ -1,8 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { ExternalLink, Pencil } from "lucide-react"
 import { StaticFieldValue } from "@/components/fields"
 import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
+import { buildRecordDetailHref } from "@/hooks/navigation/routes"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
@@ -12,6 +15,9 @@ import {
   usePropertyHubSidePanel,
   type PropertyHubCreateResult,
 } from "@/modules/properties/controllers/property-hub-side-panel"
+
+const GROUP_HEADER_BUTTON_CLASS =
+  "inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 focus:outline-none focus:ring-1 focus:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
 import {
   buildAddressBlock,
   WO_CUSTOM_ADDRESS_MAX,
@@ -118,6 +124,7 @@ export function WorkOrderPropertyUnitGroup({
   )
 
   const hubPanel = usePropertyHubSidePanel({ onCreated: handleHubCreated })
+  const router = useRouter()
 
   const formattedAddress = propertyJoined
     ? buildAddressBlock({
@@ -134,16 +141,60 @@ export function WorkOrderPropertyUnitGroup({
     <WorkOrderGroup
       title="Property & Unit"
       headerRight={
-        editable ? (
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            aria-label="New property"
-            onClick={hubPanel.open}
-            className="inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 focus:outline-none focus:ring-1 focus:ring-sky-500/40"
+            aria-label="Edit management company"
+            title="Edit management company"
+            onClick={() => {
+              if (managementCompanyValue) {
+                void hubPanel.openForMcEditById(managementCompanyValue)
+              }
+            }}
+            disabled={!managementCompanyValue}
+            className={GROUP_HEADER_BUTTON_CLASS}
           >
-            + New property
+            <Pencil size={12} className="mr-1" /> MC
           </button>
-        ) : null
+          <button
+            type="button"
+            aria-label="Edit property"
+            title="Edit property"
+            onClick={() => {
+              if (propertyValue) {
+                void hubPanel.openForPropertyEditById(propertyValue)
+              }
+            }}
+            disabled={!propertyValue}
+            className={GROUP_HEADER_BUTTON_CLASS}
+          >
+            <Pencil size={12} className="mr-1" /> Property
+          </button>
+          <button
+            type="button"
+            aria-label="Open template record"
+            title="Open template record"
+            onClick={() => {
+              if (templateValue) {
+                router.push(buildRecordDetailHref("/dashboard/templates", templateValue))
+              }
+            }}
+            disabled={!templateValue}
+            className={GROUP_HEADER_BUTTON_CLASS}
+          >
+            <ExternalLink size={12} className="mr-1" /> Template
+          </button>
+          {editable ? (
+            <button
+              type="button"
+              aria-label="New property"
+              onClick={hubPanel.open}
+              className={GROUP_HEADER_BUTTON_CLASS}
+            >
+              + New property
+            </button>
+          ) : null}
+        </div>
       }
     >
       <PropertyHubSidePanel controller={hubPanel} />

@@ -22,8 +22,11 @@ import {
   listPropertiesRequest,
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
-import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
+import { HubSidePanelShell } from "@/components/hub-side-panel"
+import { useTemplateSyncController } from "@/modules/template-sync/controllers/use-template-sync-controller"
+import { TemplateSyncBody } from "@/modules/template-sync/components/template-sync-body"
+import { TemplateSyncTopToolbar } from "@/modules/template-sync/components/template-sync-top-toolbar"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
@@ -52,7 +55,8 @@ export default function PropertiesClient({
   initialSelectedManagementCompany = null,
 }: PropertiesClientProps) {
   const { message, pageError } = usePropertiesListController()
-  const hubPanel = usePropertyHubSidePanel()
+  const sync = useTemplateSyncController()
+  const hubPanel = sync.hubPanel
 
   const {
     rows,
@@ -206,7 +210,15 @@ export default function PropertiesClient({
           }
         />
       </div>
-      <PropertyHubSidePanel controller={hubPanel} />
+      <PropertyHubSidePanel controller={hubPanel} onOpenTemplate={sync.handleOpenTemplateRow} />
+      <HubSidePanelShell
+        open={sync.open}
+        onClose={sync.handleClose}
+        title="Hub & template sync"
+        topToolbar={<TemplateSyncTopToolbar controller={sync} />}
+      >
+        <TemplateSyncBody controller={sync} />
+      </HubSidePanelShell>
     </div>
   )
 }

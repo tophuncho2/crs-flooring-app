@@ -7,6 +7,8 @@ import {
   type ManagementCompanyListRow,
   type PropertyListRow,
 } from "@builders/domain"
+import { getManagementCompanyDetailRequest } from "@/modules/management-companies/data/management-company-detail-request"
+import { getPropertyDetailRequest } from "@/modules/properties/data/property-detail-request"
 import {
   deriveCanSave,
   deriveIsDirty,
@@ -212,6 +214,46 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     [propertyEdit],
   )
 
+  // ID-only entry points, used by picker-adjacent shortcut buttons that
+  // know only the selected id. Fetch the canonical detail, hydrate the
+  // slice from it (so baseline + updatedAt match the server), then enter
+  // edit mode in one shot.
+  const openForMcEditById = useCallback(
+    async (mcId: string) => {
+      try {
+        setError(null)
+        const detail = await getManagementCompanyDetailRequest(mcId)
+        mcEdit.hydrateFromRow(toManagementCompanyForm(detail), detail.updatedAt)
+        setMode({ kind: "section-edit-mc", mcId: detail.id })
+      } catch (err) {
+        setErrorMessage(err instanceof Error ? err.message : String(err))
+      }
+    },
+    [mcEdit, setErrorMessage],
+  )
+
+  const openForPropertyEditById = useCallback(
+    async (propertyId: string) => {
+      try {
+        setError(null)
+        const detail = await getPropertyDetailRequest(propertyId)
+        propertyEdit.hydrateFromRow(
+          toPropertyPrimaryForm(detail),
+          detail.updatedAt,
+          detail.managementCompany?.name ?? null,
+        )
+        setMode({
+          kind: "section-edit-property",
+          propertyId: detail.id,
+          mcId: detail.managementCompany?.id ?? null,
+        })
+      } catch (err) {
+        setErrorMessage(err instanceof Error ? err.message : String(err))
+      }
+    },
+    [propertyEdit, setErrorMessage],
+  )
+
   const close = useCallback(() => {
     if (isSaving) return
     setMode({ kind: "closed" })
@@ -399,6 +441,8 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     openForView,
     openForMcEdit,
     openForPropertyEdit,
+    openForMcEditById,
+    openForPropertyEditById,
     close,
 
     // ===== Transitions =====
