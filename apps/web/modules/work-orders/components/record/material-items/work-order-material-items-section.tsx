@@ -64,13 +64,6 @@ export function WorkOrderMaterialItemsSection({
     publishWorkOrder,
   })
 
-  const cutLogPanel = useCutLogEditPanel({
-    scope: { kind: "work-order", workOrderId: workOrder.id },
-    warehouseId: workOrder.warehouseId,
-    canCreate: true,
-    publish: publishCutLogPatch,
-  })
-
   // Inventory hub panel for the "Hub view" jump on the cut-log edit
   // panel. No initial inventory — the panel opens on demand for whatever
   // cut log the user clicked; the hub fetches `InventoryDetail` via its
@@ -79,6 +72,38 @@ export function WorkOrderMaterialItemsSection({
   const inventoryHubPanel = useInventoryHubSidePanel({
     initialInventory: null,
     publishCutLogPatch,
+  })
+
+  // Route a successful cut-log create from the WO panel directly into
+  // the inventory-hub cut-log edit panel — same surface the WO edit
+  // affordance uses (`handleOpenEdit`). The cut-log panel closes itself;
+  // the hub picks up the new row hydrated with WO/WOMI/warehouse labels
+  // so the read-only header summary matches the inv-side experience.
+  const handleCutLogCreated = useCallback(
+    (cutLog: CutLogRow, workOrderItemId: string) => {
+      const item = section.items.find((i) => i.id === workOrderItemId)
+      inventoryHubPanel.openForCutLogEdit({
+        ...cutLog,
+        workOrderItemId,
+        workOrderNumber: workOrder.workOrderNumber,
+        workOrderItemProductLabel: item?.productName || null,
+        warehouseName: workOrder.warehouseName,
+      })
+    },
+    [
+      inventoryHubPanel,
+      section.items,
+      workOrder.workOrderNumber,
+      workOrder.warehouseName,
+    ],
+  )
+
+  const cutLogPanel = useCutLogEditPanel({
+    scope: { kind: "work-order", workOrderId: workOrder.id },
+    warehouseId: workOrder.warehouseId,
+    canCreate: true,
+    publish: publishCutLogPatch,
+    onCreated: handleCutLogCreated,
   })
 
   const sectionBusy = section.isSaving

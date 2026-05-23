@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type {
+  CutLogRow,
   InventoryOption,
   WorkOrderMaterialItemOption,
   WorkOrderOption,
@@ -45,7 +46,9 @@ import type {
  *
  * Mutation success → `publish(patch)` so the parent updates its snapshot.
  * Behavior contract:
- *   - Save (create) → stay open, transition to edit on the new row
+ *   - Save (create) → default: stay open, transition to edit on the new
+ *                     row. When `onCreated` is provided, close instead
+ *                     and let the consumer route the new row elsewhere.
  *   - Save (edit)   → stay open, refresh form to server values
  *   - Finalize      → stay open on the now-FINAL row (input cells go
  *                     read-only via `isCutLogPendingEditable`)
@@ -61,12 +64,20 @@ export function useCutLogEditPanel({
   warehouseId,
   canCreate,
   publish,
+  onCreated,
 }: {
   scope: CutLogScopeUrl
   /** Required when `canCreate` is true — drives the inventory picker. */
   warehouseId?: string | null
   canCreate: boolean
   publish: (patch: CutLogPanelPatch) => void
+  /**
+   * Optional override for post-create routing. When provided, the panel
+   * closes after a successful create and the consumer routes the new
+   * row elsewhere (e.g. WO hands off to the inventory-hub edit panel).
+   * When omitted, the default in-place create→edit flip is preserved.
+   */
+  onCreated?: (cutLog: CutLogRow, workOrderItemId: string) => void
 }) {
   const [open, setOpen] = useState<CutLogEditPanelOpenSpec | null>(null)
   const [form, setForm] = useState<CutLogEditForm>(EMPTY_FORM)
@@ -228,6 +239,7 @@ export function useCutLogEditPanel({
     setBaseline,
     setOpen,
     setError,
+    onCreated,
   })
   const updateMutation = useUpdateCutLogMutation({
     scope,

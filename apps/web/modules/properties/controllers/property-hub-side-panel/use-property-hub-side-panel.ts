@@ -2,6 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react"
 import {
+  toManagementCompanyForm,
+  toPropertyPrimaryForm,
   type ManagementCompanyListRow,
   type PropertyListRow,
 } from "@builders/domain"
@@ -269,9 +271,44 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     if (mode.kind === "create") {
       createForm.commitCreate({
         onSuccess: (result) => {
-          setMode({ kind: "closed" })
-          resetAll()
+          setError(null)
           onCreated?.(result)
+          // Stay open: transition to section-edit for the new record so
+          // the operator can keep refining what they just authored.
+          // Mirrors the cut-log create→edit precedent. Reset other slices
+          // first so they're clean when re-activated; hydrate the target
+          // slice with the just-created record so its baseline matches
+          // the server state.
+          if (result.property) {
+            const property = result.property
+            const mcLabel =
+              result.managementCompany?.name ??
+              property.managementCompany?.name ??
+              null
+            const mcId =
+              result.managementCompany?.id ??
+              property.managementCompany?.id ??
+              null
+            resetAll()
+            propertyEdit.hydrateFromRow(
+              toPropertyPrimaryForm(property),
+              property.updatedAt,
+              mcLabel,
+            )
+            setMode({
+              kind: "section-edit-property",
+              propertyId: property.id,
+              mcId,
+            })
+          } else if (result.managementCompany) {
+            const mc = result.managementCompany
+            resetAll()
+            mcEdit.hydrateFromRow(toManagementCompanyForm(mc), mc.updatedAt)
+            setMode({ kind: "section-edit-mc", mcId: mc.id })
+          } else {
+            setMode({ kind: "closed" })
+            resetAll()
+          }
         },
         onError: setErrorMessage,
       })
@@ -279,28 +316,31 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
     }
     if (mode.kind === "section-edit-mc") {
       mcEdit.commitUpdate(mode.mcId, {
-        onSuccess: (detail) => {
+        onSuccess: () => {
           setError(null)
-          // Stay open: pop back to view for the same MC.
-          setMode({ kind: "view", mcId: detail.id, tab: "properties" })
+          // Stay open in section-edit-mc; the slice already applied the
+          // server snapshot to its form + baseline.
         },
         onError: setErrorMessage,
       })
       return
     }
     if (mode.kind === "section-edit-property") {
-      const fallbackMcId = mode.mcId
+      const currentMcId = mode.mcId
       propertyEdit.commitUpdate(mode.propertyId, {
         onSuccess: (detail) => {
           setError(null)
-          // Stay open: pop back to the hub view that owns this property,
-          // if known; otherwise close.
-          const mcId = detail.managementCompany?.id ?? fallbackMcId
-          if (mcId) {
-            setMode({ kind: "view", mcId, tab: "properties" })
-          } else {
-            setMode({ kind: "closed" })
-            resetAll()
+          // Stay open in section-edit-property; the slice already
+          // applied the server snapshot. Re-set mode only if the
+          // property was reparented to a different MC (rare; updates
+          // contextMcId so the parent-MC detail query refetches).
+          const nextMcId = detail.managementCompany?.id ?? currentMcId
+          if (nextMcId !== currentMcId) {
+            setMode({
+              kind: "section-edit-property",
+              propertyId: detail.id,
+              mcId: nextMcId,
+            })
           }
         },
         onError: setErrorMessage,

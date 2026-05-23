@@ -295,7 +295,8 @@ export function useInventoryHubSidePanel({
           setError(null)
           onInventoryUpdated?.(detail)
           invalidateInventoryDetail(detail.id)
-          setMode({ kind: "view", inventoryId: detail.id })
+          // Stay open in section-edit-inventory; the slice already
+          // applied the server snapshot to its form + baseline.
         },
         onError: setErrorMessage,
       })
