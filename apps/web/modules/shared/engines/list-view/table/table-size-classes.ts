@@ -1,6 +1,0 @@
-export const MATERIAL_ITEMS_TABLE_MIN_WIDTH_CLASS = "min-w-[1040px]"
-export const SERVICE_ITEMS_TABLE_MIN_WIDTH_CLASS = "min-w-[1120px]"
-export const SALES_REP_ITEMS_TABLE_MIN_WIDTH_CLASS = "min-w-[860px]"
-export const IMPORT_INVENTORY_TABLE_MIN_WIDTH_CLASS = "min-w-[1380px]"
-export const CUT_LOGS_TABLE_MIN_WIDTH_CLASS = "min-w-[720px]"
-export const CUT_LOGS_WITH_ACTIONS_TABLE_MIN_WIDTH_CLASS = "min-w-[840px]"
