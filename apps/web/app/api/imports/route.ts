@@ -1,5 +1,4 @@
 import { createImportUseCase, listImportsUseCase } from "@builders/application"
-import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import {
@@ -13,7 +12,7 @@ import { routeError, routeJson } from "@/server/http/route-helpers"
 import { validateCreateImportInput, validateListImportsQuery } from "./_validators"
 
 export async function GET(request: Request) {
-  const access = await authorizeWarehouseRoute(request)
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/imports")
@@ -31,7 +30,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
-    toolSlug: "warehouse",
     rateLimit: {
       ...CRUD_CREATE,
       scope: "imports.create",

@@ -16,7 +16,6 @@ type RouteContext = {
 
 export async function POST(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    toolSlug: "warehouse",
     rateLimit: {
       ...CRUD_CREATE,
       scope: "imports.staged-inventory-rows.mark-for-import",

@@ -1,6 +1,5 @@
 import { deleteWarehouseUseCase, WarehouseExecutionError } from "@builders/application"
 import { getWarehouseById } from "@builders/db"
-import { WAREHOUSE_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
@@ -17,8 +16,6 @@ type RouteContext = { params: Promise<{ id: string }> }
 
 export async function DELETE(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: WAREHOUSE_TOOL_SLUG,
     rateLimit: {
       ...CRUD_DELETE,
       scope: "warehouses.delete",

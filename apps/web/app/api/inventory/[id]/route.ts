@@ -1,6 +1,5 @@
 import { getInventoryById, getInventoryDetailById } from "@builders/db"
 import { InventoryExecutionError, deleteInventoryUseCase } from "@builders/application"
-import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
 import {
@@ -18,7 +17,7 @@ type RouteContext = {
 }
 
 export async function GET(request: Request, context: RouteContext) {
-  const access = await authorizeWarehouseRoute(request)
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/inventory/[id]")
@@ -34,7 +33,6 @@ export async function GET(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    toolSlug: "warehouse",
     rateLimit: {
       ...CRUD_DELETE,
       scope: "inventory.delete",

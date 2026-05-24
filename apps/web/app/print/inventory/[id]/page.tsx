@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireSessionUser } from "@/server/auth/session"
 import { InventoryPrintView } from "@/modules/inventory/components/record/print/inventory-print-view"
 import { getInventoryDetailPageData } from "@/modules/inventory/data/queries"
 
@@ -14,7 +14,7 @@ export default async function InventoryPrintPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  await requireToolAccess("warehouse")
+  await requireSessionUser()
 
   const { id } = await params
   const result = await getInventoryDetailPageData(id)

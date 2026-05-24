@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import type { PropertyJoinedFields } from "@/modules/shared/property-fields"
+import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
 import type { PropertyOption } from "@builders/domain"
 import type { TemplatePrimaryDetail } from "./template-primary-fields-section"
 

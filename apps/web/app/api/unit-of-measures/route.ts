@@ -6,10 +6,7 @@ import {
 } from "@/server/http/route-policy"
 
 export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: "products",
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/unit-of-measures")

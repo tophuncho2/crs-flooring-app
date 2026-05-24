@@ -1,6 +1,5 @@
 import { deleteWorkOrderUseCase } from "@builders/application"
 import { getWorkOrderDetailById } from "@builders/db"
-import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
@@ -19,9 +18,7 @@ type RouteContext = {
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/work-orders/[id]")
@@ -39,8 +36,6 @@ export async function GET(request: Request, { params }: RouteContext) {
 
 export async function DELETE(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
       ...CRUD_DELETE,
       scope: "work-orders.delete",

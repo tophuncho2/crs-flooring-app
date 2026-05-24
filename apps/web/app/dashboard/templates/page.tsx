@@ -9,7 +9,7 @@ import type {
   PropertyOption,
 } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireSessionUser } from "@/server/auth/session"
 import TemplatesClient from "@/modules/templates/components/list/templates-client"
 import {
   parseTemplatesListInputFromSearchParams,
@@ -33,7 +33,7 @@ export default async function TemplatesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("templates")
+  await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseTemplatesListInputFromSearchParams(resolvedSearchParams)

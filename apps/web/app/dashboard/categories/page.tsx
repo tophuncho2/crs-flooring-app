@@ -1,10 +1,10 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireCategoriesAccess } from "@/modules/shared/access/lookup-domains"
+import { requireSessionUser } from "@/server/auth/session"
 import CategoriesClient from "@/modules/categories/components/list/categories-client"
 import { getCategoriesPageData } from "@/modules/categories/data/queries"
 
 export default async function FlooringCategoriesPage() {
-  await requireCategoriesAccess()
+  await requireSessionUser()
   const pageData = await getCategoriesPageData()
 
   if (!pageData.ok) {

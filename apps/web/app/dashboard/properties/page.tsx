@@ -5,7 +5,7 @@ import {
 } from "@builders/application"
 import type { ManagementCompanyOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireSessionUser } from "@/server/auth/session"
 import PropertiesClient from "@/modules/properties/components/list/properties-client"
 import {
   PROPERTIES_LIST_QUERY_KEY,
@@ -19,7 +19,7 @@ export default async function FlooringPropertiesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parsePropertiesListInputFromSearchParams(resolvedSearchParams)

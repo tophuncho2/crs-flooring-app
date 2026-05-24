@@ -1,5 +1,4 @@
 import { createProductUseCase, listProductsUseCase } from "@builders/application"
-import { PRODUCTS_TOOL_SLUG } from "@/modules/shared/access/tool-slugs"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import {
@@ -13,10 +12,7 @@ import { routeError, routeJson } from "@/server/http/route-helpers"
 import { validateCreateProductInput, validateListProductsQuery } from "./_validators"
 
 export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: PRODUCTS_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/products")
@@ -34,8 +30,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: PRODUCTS_TOOL_SLUG,
     rateLimit: {
       ...CRUD_CREATE,
       scope: "products.create",

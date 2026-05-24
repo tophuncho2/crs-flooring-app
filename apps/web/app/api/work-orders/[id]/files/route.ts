@@ -1,6 +1,5 @@
 import { requestWorkOrderFileUseCase } from "@builders/application"
 import { listWorkOrderFiles } from "@builders/db"
-import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -17,9 +16,7 @@ type RouteContext = {
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(
@@ -53,8 +50,6 @@ export async function GET(request: Request, { params }: RouteContext) {
  */
 export async function POST(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
       scope: "work-orders.files.request",
       limit: 30,

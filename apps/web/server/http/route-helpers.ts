@@ -1,13 +1,9 @@
-import type { Capability } from "@/server/auth/access-control"
 import { authorizeRouteAccess, type AuthorizedRouteContext } from "@/server/auth/route-auth"
 import { normalizePrismaError } from "@/server/http/api-helpers"
 import { buildRateLimitResponse, consumeRateLimit } from "@/server/platform/rate-limit"
 import { jsonWithRequestId } from "@/server/platform/request-context"
-import type { ToolSlug } from "@/server/platform/tool-access"
 
 type RouteAccessOptions = {
-  capability?: Capability
-  toolSlug?: ToolSlug
   allowUnverified?: boolean
 }
 

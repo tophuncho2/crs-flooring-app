@@ -3,9 +3,7 @@ import { redirect } from "next/navigation"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import HeaderControls from "@/modules/app-shell/components/header-controls"
 import { getPrismaConnectivityIssue } from "@builders/db"
-import { hasSystemAccess } from "@/server/auth/access-control"
 import { requireSessionUser } from "@/server/auth/session"
-import { getUserToolContext } from "@/server/platform/tool-access"
 import { getDashboardLayoutUser } from "@/server/account/dashboard-layout"
 
 export const dynamic = "force-dynamic"
@@ -39,21 +37,10 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  if (!hasSystemAccess(user.role)) {
-    redirect("/login")
-  }
-
-  const toolContext = getUserToolContext(user.role)
-
   return (
     <div className="relative min-h-screen">
       <div className="fixed inset-x-0 top-3 z-50 px-3 sm:top-6 sm:px-6">
-        <HeaderControls
-          email={user.email}
-          role={user.role}
-          canUseTools={toolContext.canUseTools}
-          tools={toolContext.tools}
-        />
+        <HeaderControls email={user.email} role={user.role} />
       </div>
 
       {children}

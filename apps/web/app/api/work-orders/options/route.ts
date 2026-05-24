@@ -7,7 +7,6 @@ import {
   listTemplateOptions,
   listWarehouseOptions,
 } from "@builders/db"
-import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
 
@@ -26,10 +25,7 @@ import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-pol
  *    the product picker)
  */
 export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/work-orders/options")

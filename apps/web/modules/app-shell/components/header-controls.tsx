@@ -1,49 +1,27 @@
 "use client"
 
-import type { UserToolRow } from "@/server/platform/tool-access"
 import NavDrawerButton from "./nav-drawer-button"
 import UserMenu from "./user-menu"
 import { TemplateSyncButton } from "@/modules/template-sync/components/template-sync-button"
-import { useFlooringNavigationState } from "../hooks/use-navigation-state"
+import { FLOORING_NAV_ITEMS } from "@/modules/app-shell/navigation/definitions"
 
 type HeaderControlsProps = {
   email: string
   role: string
-  canUseTools: boolean
-  tools: UserToolRow[]
 }
 
 export type { HeaderControlsProps }
 
-export default function HeaderControls({
-  email,
-  role,
-  canUseTools,
-  tools,
-}: HeaderControlsProps) {
-  const navigation = useFlooringNavigationState({
-    canUseTools,
-    tools,
-  })
-
+export default function HeaderControls({ email, role }: HeaderControlsProps) {
   return (
     <div className="flex w-full max-w-full items-center justify-between gap-2 sm:gap-4">
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-        <NavDrawerButton
-          canUseTools={canUseTools}
-          orderedItems={navigation.orderedItems}
-          canOpenItem={navigation.canOpenItem}
-        />
+        <NavDrawerButton orderedItems={FLOORING_NAV_ITEMS} />
         <div id="record-back-button-slot" className="contents" />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
         <TemplateSyncButton />
-        <UserMenu
-          email={email}
-          role={role}
-          canUseTools={canUseTools}
-          unlockedToolSlugs={navigation.unlockedToolSlugs}
-        />
+        <UserMenu email={email} role={role} />
       </div>
     </div>
   )

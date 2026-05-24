@@ -1,12 +1,10 @@
 import { createHash } from "node:crypto"
 import { Prisma, getAppMutationReceipt, reserveAppMutationReceipt, finalizeAppMutationReceipt } from "@builders/db"
-import type { Capability } from "@/server/auth/access-control"
 import type { AuthorizedRouteContext } from "@/server/auth/route-auth"
 import { QUERY_DEFAULT } from "@/server/http/rate-limit-presets"
 import { enforceRouteRateLimit, requireRouteAccess } from "@/server/http/route-helpers"
 import { createAppError, parseRequiredString } from "@/server/http/api-helpers"
 import { jsonWithRequestId } from "@/server/platform/request-context"
-import type { ToolSlug } from "@/server/platform/tool-access"
 
 export type MutationMeta = {
   idempotencyKey: string
@@ -18,8 +16,6 @@ export type MutationRequest<T> = T & {
 }
 
 export type RoutePolicy = {
-  capability?: Capability
-  toolSlug?: ToolSlug
   allowUnverified?: boolean
   rateLimit?: {
     scope: string
@@ -100,8 +96,6 @@ export async function applyRoutePolicy(
   policy: RoutePolicy = {},
 ): Promise<AuthorizedRouteContext | Response> {
   const access = await requireRouteAccess(request, {
-    capability: policy.capability,
-    toolSlug: policy.toolSlug,
     allowUnverified: policy.allowUnverified,
   })
 

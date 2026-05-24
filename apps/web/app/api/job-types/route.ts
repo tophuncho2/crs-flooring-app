@@ -2,7 +2,6 @@ import {
   createJobTypeUseCase,
   listJobTypesUseCase,
 } from "@builders/application"
-import { JOB_TYPES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -19,9 +18,7 @@ import {
 } from "./_validators"
 
 export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: JOB_TYPES_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/job-types")
@@ -39,8 +36,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: JOB_TYPES_TOOL_SLUG,
     rateLimit: {
       ...CRUD_CREATE,
       scope: "jobTypes.create",

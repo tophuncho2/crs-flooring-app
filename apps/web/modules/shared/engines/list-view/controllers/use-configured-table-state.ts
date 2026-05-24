@@ -9,12 +9,10 @@ import {
   type TableFilterDefinition,
   type TableFilterState,
 } from "./table-filter-state"
-import { patchTablePreference } from "./table-preference-client"
 import type { TablePreferencePayload } from "./table-preferences"
 import {
   normalizeColumnOrder,
   normalizeColumnVisibility,
-  normalizeGroupedColumnKeys,
   toggleGroupedColumnKey,
   useTableColumns,
   type TableColumnDefinition,
@@ -37,13 +35,6 @@ type ServerBackedTableState = {
   groupByKeys: string[]
 }
 
-type PersistedStateContext = {
-  allowedColumnKeys: string[]
-  allowedSortKeys: string[]
-  allowedGroupKeys: string[]
-  allowedFilterValues: Record<string, string[]>
-}
-
 function areStringArraysEqual(left: string[], right: string[]) {
   if (left.length !== right.length) {
     return false
@@ -61,83 +52,6 @@ function areTableFilterStatesEqual(left: TableFilterState, right: TableFilterSta
   }
 
   return leftKeys.every((key) => areStringArraysEqual(left[key] ?? [], right[key] ?? []))
-}
-
-const tableStateSaveTimers = new Map<string, ReturnType<typeof setTimeout>>()
-const tableStatePersistedCache = new Map<string, string>()
-const tableStateInflightAbortControllers = new Map<string, AbortController>()
-
-function serializeTableState(value: TablePreferencePayload) {
-  return JSON.stringify({
-    sort: value.sort,
-    filters: Object.fromEntries(
-      Object.entries(value.filters)
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([key, values]) => [key, [...values]]),
-    ),
-    columnVisibility: Object.fromEntries(
-      Object.entries(value.columnVisibility).sort(([left], [right]) => left.localeCompare(right)),
-    ),
-    columnOrder: value.columnOrder,
-    grouping: value.grouping,
-  })
-}
-
-function queuePersistTableState({
-  tableKey,
-  state,
-  context,
-  onError,
-}: {
-  tableKey: string
-  state: TablePreferencePayload
-  context: PersistedStateContext
-  onError?: (message: string) => void
-}) {
-  const serializedState = serializeTableState(state)
-  if (tableStatePersistedCache.get(tableKey) === serializedState) {
-    return
-  }
-
-  const existingTimer = tableStateSaveTimers.get(tableKey)
-  if (existingTimer) {
-    clearTimeout(existingTimer)
-  }
-
-  const nextTimer = setTimeout(async () => {
-    const previousAbortController = tableStateInflightAbortControllers.get(tableKey)
-    if (previousAbortController) {
-      previousAbortController.abort()
-    }
-
-    const abortController = new AbortController()
-    tableStateInflightAbortControllers.set(tableKey, abortController)
-
-    try {
-      await patchTablePreference({
-        tableKey,
-        state,
-        allowedColumnKeys: context.allowedColumnKeys,
-        allowedSortKeys: context.allowedSortKeys,
-        allowedGroupKeys: context.allowedGroupKeys,
-        allowedFilterValues: context.allowedFilterValues,
-        signal: abortController.signal,
-      })
-      tableStatePersistedCache.set(tableKey, serializedState)
-    } catch (error) {
-      if (abortController.signal.aborted) {
-        return
-      }
-
-      onError?.(error instanceof Error ? error.message : "Failed to save table preferences")
-    } finally {
-      if (tableStateInflightAbortControllers.get(tableKey) === abortController) {
-        tableStateInflightAbortControllers.delete(tableKey)
-      }
-    }
-  }, 400)
-
-  tableStateSaveTimers.set(tableKey, nextTimer)
 }
 
 function buildQuerySearchParams({
@@ -230,7 +144,6 @@ export function useConfiguredTableState<T>({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const [preferenceError, setPreferenceError] = useState("")
   const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSearchQueryRef = useRef(initialSearchQuery)
 
@@ -291,28 +204,6 @@ export function useConfiguredTableState<T>({
     setFilters((current) => (areTableFilterStatesEqual(current, initialFilterState) ? current : initialFilterState))
   }, [initialFilterState])
 
-  useEffect(() => {
-    const initialState: TablePreferencePayload = {
-      sort: {
-        key: sortFieldKey,
-        direction: defaultAscending ? "asc" : "desc",
-      },
-      filters: initialFilterState,
-      columnVisibility: normalizeColumnVisibility(
-        allowedColumnKeys,
-        initialPreferences?.columnVisibility,
-        columns.filter((column) => column.defaultHidden).map((column) => column.key),
-      ),
-      columnOrder: normalizeColumnOrder(allowedColumnKeys, initialPreferences?.columnOrder ?? []),
-      grouping: {
-        enabled: defaultGrouped,
-        keys: normalizeGroupedColumnKeys(defaultGroupKeys ?? [], allowedGroupKeys),
-      },
-    }
-
-    tableStatePersistedCache.set(tableKey, serializeTableState(initialState))
-  }, [allowedColumnKeys, allowedGroupKeys, columns, defaultAscending, defaultGroupKeys, defaultGrouped, filterDefinitions, initialFilterState, initialPreferences, sortFieldKey, tableKey])
-
   const getCurrentSearchParams = useCallback(() => {
     if (typeof window !== "undefined") {
       return new URLSearchParams(window.location.search)
@@ -345,43 +236,6 @@ export function useConfiguredTableState<T>({
       window.history.replaceState(window.history.state, "", nextHref)
     }
   }, [filterDefinitions, getCurrentSearchParams, pathname, router, urlSyncMode])
-
-  const persistedState = useMemo<TablePreferencePayload>(() => ({
-    sort: {
-      key: sortFieldKey,
-      direction: tableControls.isAscendingSort ? "asc" : "desc",
-    },
-    filters,
-    columnVisibility: tableColumns.columnVisibility,
-    columnOrder: tableColumns.columnOrder,
-    grouping: {
-      enabled: tableControls.isGroupingEnabled,
-      keys: tableControls.isGroupingEnabled ? normalizeGroupedColumnKeys(tableControls.groupByKeys, allowedGroupKeys) : [],
-    },
-  }), [
-    allowedGroupKeys,
-    filters,
-    sortFieldKey,
-    tableColumns.columnOrder,
-    tableColumns.columnVisibility,
-    tableControls.groupByKeys,
-    tableControls.isAscendingSort,
-    tableControls.isGroupingEnabled,
-  ])
-
-  const persistState = useCallback((nextState: TablePreferencePayload) => {
-    queuePersistTableState({
-      tableKey,
-      state: nextState,
-      context: {
-        allowedColumnKeys,
-        allowedSortKeys: [sortFieldKey],
-        allowedGroupKeys,
-        allowedFilterValues,
-      },
-      onError: setPreferenceError,
-    })
-  }, [allowedColumnKeys, allowedFilterValues, allowedGroupKeys, sortFieldKey, tableKey])
 
   useEffect(() => {
     return () => {
@@ -425,7 +279,6 @@ export function useConfiguredTableState<T>({
   }, [filters, replaceUrl, tableControls.groupByKeys, tableControls.isAscendingSort, tableControls.isGroupingEnabled, tableControls.searchQuery])
 
   const onToggleSort = useCallback(() => {
-    setPreferenceError("")
     const nextIsAscendingSort = !tableControls.isAscendingSort
     tableControls.setIsAscendingSort(nextIsAscendingSort)
     replaceUrl(
@@ -437,17 +290,9 @@ export function useConfiguredTableState<T>({
       },
       filters,
     )
-    persistState({
-      ...persistedState,
-      sort: {
-        key: sortFieldKey,
-        direction: nextIsAscendingSort ? "asc" : "desc",
-      },
-    })
-  }, [filters, persistState, persistedState, replaceUrl, sortFieldKey, tableControls])
+  }, [filters, replaceUrl, tableControls])
 
   const onToggleGroupedColumn = useCallback((columnKey: string) => {
-    setPreferenceError("")
     const nextGroupByKeys = toggleGroupedColumnKey(
       tableControls.groupByKeys,
       columnKey,
@@ -466,20 +311,12 @@ export function useConfiguredTableState<T>({
       },
       filters,
     )
-    persistState({
-      ...persistedState,
-      grouping: {
-        enabled: nextIsGroupingEnabled,
-        keys: nextGroupByKeys,
-      },
-    })
-  }, [allowedGroupKeys, filters, persistState, persistedState, replaceUrl, tableControls])
+  }, [allowedGroupKeys, filters, replaceUrl, tableControls])
 
   const onToggleFilterValue = useCallback((key: string, value: string) => {
     const definition = filterDefinitions.find((entry) => entry.key === key)
     if (!definition) return
 
-    setPreferenceError("")
     setFilters((current) => {
       const nextValues = current[key]?.includes(value)
         ? current[key].filter((entry) => entry !== value)
@@ -498,17 +335,12 @@ export function useConfiguredTableState<T>({
         },
         nextFilters,
       )
-      persistState({
-        ...persistedState,
-        filters: nextFilters,
-      })
 
       return nextFilters
     })
-  }, [filterDefinitions, persistState, persistedState, replaceUrl, tableControls.groupByKeys, tableControls.isAscendingSort, tableControls.isGroupingEnabled, tableControls.searchQuery])
+  }, [filterDefinitions, replaceUrl, tableControls.groupByKeys, tableControls.isAscendingSort, tableControls.isGroupingEnabled, tableControls.searchQuery])
 
   const onClearFilter = useCallback((key: string) => {
-    setPreferenceError("")
     setFilters((current) => {
       if ((current[key] ?? []).length === 0) {
         return current
@@ -528,37 +360,21 @@ export function useConfiguredTableState<T>({
         },
         nextFilters,
       )
-      persistState({
-        ...persistedState,
-        filters: nextFilters,
-      })
 
       return nextFilters
     })
-  }, [persistState, persistedState, replaceUrl, tableControls.groupByKeys, tableControls.isAscendingSort, tableControls.isGroupingEnabled, tableControls.searchQuery])
+  }, [replaceUrl, tableControls.groupByKeys, tableControls.isAscendingSort, tableControls.isGroupingEnabled, tableControls.searchQuery])
 
   const onToggleColumnVisibility = useCallback((columnKey: string, isVisible: boolean) => {
-    setPreferenceError("")
     const visibleCount = allowedColumnKeys.filter((key) => tableColumns.columnVisibility[key] !== false).length
     if (!isVisible && visibleCount <= 1 && tableColumns.columnVisibility[columnKey] !== false) {
       return
     }
 
     tableColumns.toggleColumnVisibility(columnKey, isVisible)
-
-    const nextColumnVisibility = {
-      ...tableColumns.columnVisibility,
-      [columnKey]: isVisible,
-    }
-
-    persistState({
-      ...persistedState,
-      columnVisibility: nextColumnVisibility,
-    })
-  }, [allowedColumnKeys, persistState, persistedState, tableColumns])
+  }, [allowedColumnKeys, tableColumns])
 
   const onMoveColumn = useCallback((columnKey: string, direction: "up" | "down") => {
-    setPreferenceError("")
     const currentIndex = tableColumns.columnOrder.indexOf(columnKey)
     if (currentIndex === -1) {
       return
@@ -569,25 +385,13 @@ export function useConfiguredTableState<T>({
       return
     }
 
-    const nextColumnOrder = [...tableColumns.columnOrder]
-    const [movedColumn] = nextColumnOrder.splice(currentIndex, 1)
-    nextColumnOrder.splice(targetIndex, 0, movedColumn)
     tableColumns.moveColumn(columnKey, direction)
-    persistState({
-      ...persistedState,
-      columnOrder: nextColumnOrder,
-    })
-  }, [persistState, persistedState, tableColumns])
+  }, [tableColumns])
 
   const onSetColumnOrder = useCallback((nextOrder: string[]) => {
-    setPreferenceError("")
     const normalizedOrder = normalizeColumnOrder(allowedColumnKeys, nextOrder)
     tableColumns.setColumnOrder(normalizedOrder)
-    persistState({
-      ...persistedState,
-      columnOrder: normalizedOrder,
-    })
-  }, [allowedColumnKeys, persistState, persistedState, tableColumns])
+  }, [allowedColumnKeys, tableColumns])
 
   const filterGroups = useMemo(
     () =>
@@ -650,6 +454,5 @@ export function useConfiguredTableState<T>({
     toggleColumnVisibility: onToggleColumnVisibility,
     moveColumn: onMoveColumn,
     setColumnOrder: onSetColumnOrder,
-    preferenceError,
   }
 }

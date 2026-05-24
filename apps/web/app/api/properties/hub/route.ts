@@ -1,5 +1,4 @@
 import { createPropertyHubUseCase } from "@builders/application"
-import { PROPERTIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -13,8 +12,6 @@ import { validateCreatePropertyHubInput } from "./_validators"
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: PROPERTIES_TOOL_SLUG,
     rateLimit: {
       ...CRUD_CREATE,
       scope: "properties.hub.create",

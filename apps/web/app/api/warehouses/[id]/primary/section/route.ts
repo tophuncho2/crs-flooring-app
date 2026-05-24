@@ -2,7 +2,6 @@ import { withMutationTelemetry } from "@/modules/shared/engines/common/applicati
 import { updateWarehouseUseCase, WarehouseExecutionError } from "@builders/application"
 import { getWarehouseById } from "@builders/db"
 import { validateWarehouseInput } from "../../../_validators"
-import { WAREHOUSE_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -20,8 +19,6 @@ type RouteContext = {
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: WAREHOUSE_TOOL_SLUG,
     rateLimit: {
       ...CRUD_UPDATE_SECTION,
       scope: "warehouses.primary.section.replace",

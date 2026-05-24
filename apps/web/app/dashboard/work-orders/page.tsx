@@ -13,7 +13,7 @@ import type {
   WarehouseOption,
 } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireSessionUser } from "@/server/auth/session"
 import WorkOrdersClient from "@/modules/work-orders/components/list/work-orders-client"
 import {
   WORK_ORDERS_LIST_QUERY_KEY,
@@ -37,7 +37,7 @@ export default async function FlooringWorkOrdersPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const initialInput = parseWorkOrdersListInputFromSearchParams(resolvedSearchParams)
 

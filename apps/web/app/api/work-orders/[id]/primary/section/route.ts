@@ -1,6 +1,5 @@
 import { updateWorkOrderUseCase } from "@builders/application"
 import { getWorkOrderDetailById } from "@builders/db"
-import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
@@ -20,8 +19,6 @@ type RouteContext = {
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
       ...CRUD_UPDATE_SECTION,
       scope: "work-orders.primary.section.replace",

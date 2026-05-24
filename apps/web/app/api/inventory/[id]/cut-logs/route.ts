@@ -1,8 +1,7 @@
 import { listInventoryCutLogsUseCase } from "@builders/application"
-import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
-import { enforceQueryRateLimit } from "@/server/http/route-policy"
+import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
 import { validateInventoryCutLogsPageQuery } from "../../_validators"
 
 type RouteContext = {
@@ -17,7 +16,7 @@ type RouteContext = {
  * `{ page: InventoryCutLogPage }`.
  */
 export async function GET(request: Request, { params }: RouteContext) {
-  const access = await authorizeWarehouseRoute(request)
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(

@@ -1,5 +1,4 @@
 import { searchImportOptionsUseCase } from "@builders/application"
-import { WAREHOUSE_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -8,9 +7,7 @@ import {
 import { validateImportOptionsQuery } from "../_validators"
 
 export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: WAREHOUSE_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(

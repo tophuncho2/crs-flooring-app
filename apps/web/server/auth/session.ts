@@ -1,9 +1,7 @@
 import type { Role } from "@builders/db"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { hasSystemAccess } from "@/server/auth/access-control"
 import { getAuthOptions } from "@/server/auth/auth-options"
-import { isToolUnlocked, type ToolSlug } from "@/server/platform/tool-access"
 
 export type SessionUser = {
   id: string
@@ -35,22 +33,8 @@ export async function requireSessionUser(): Promise<SessionUser> {
     redirect("/login")
   }
 
-  if (!hasSystemAccess(user.role)) {
-    redirect("/login")
-  }
-
   if (!user.isVerified) {
     redirect("/login?restricted=1")
-  }
-
-  return user
-}
-
-export async function requireToolAccess(slug: ToolSlug): Promise<SessionUser> {
-  const user = await requireSessionUser()
-
-  if (!isToolUnlocked(user.role, slug)) {
-    redirect("/dashboard/inventory")
   }
 
   return user

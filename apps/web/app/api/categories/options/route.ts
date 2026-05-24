@@ -1,5 +1,4 @@
 import { searchCategoryOptionsUseCase } from "@builders/application"
-import { CATEGORIES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
@@ -8,10 +7,7 @@ import {
 import { validateCategoryOptionsQuery } from "../_validators"
 
 export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: CATEGORIES_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(

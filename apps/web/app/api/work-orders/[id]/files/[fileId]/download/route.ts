@@ -1,6 +1,5 @@
 import { getWorkOrderFileById } from "@builders/db"
 import { createBucketObjectPresignedUrl } from "@builders/lib"
-import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { getStorageEnvironment } from "@/server/platform/env"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -21,9 +20,7 @@ type RouteContext = {
  * still in QUEUED / WORKING / FAILED state have no `fileKey` to sign.
  */
 export async function GET(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(

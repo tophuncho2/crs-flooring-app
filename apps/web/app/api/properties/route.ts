@@ -1,5 +1,4 @@
 import { createPropertyUseCase, listPropertiesUseCase } from "@builders/application"
-import { PROPERTIES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -13,9 +12,7 @@ import {
 import { validateCreatePropertyInput, validateListPropertiesQuery } from "./_validators"
 
 export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: PROPERTIES_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/properties")
@@ -33,8 +30,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: PROPERTIES_TOOL_SLUG,
     rateLimit: {
       ...CRUD_CREATE,
       scope: "properties.create",

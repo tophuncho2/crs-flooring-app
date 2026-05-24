@@ -1,6 +1,6 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { notFound } from "next/navigation"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireSessionUser } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
 import { getImportDetailPageData } from "@/modules/imports/data/queries"
 import { ImportDetailClient } from "@/modules/imports/components/record/import-detail-client"
@@ -12,7 +12,7 @@ export default async function ImportDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  await requireSessionUser()
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined

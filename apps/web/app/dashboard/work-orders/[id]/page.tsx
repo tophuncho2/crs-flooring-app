@@ -1,6 +1,6 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { notFound } from "next/navigation"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireSessionUser } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { getWorkOrderDetailPageData } from "@/modules/work-orders/data/queries"
 import { WorkOrderDetailClient } from "@/modules/work-orders/components/record/work-order-detail-client"
@@ -12,7 +12,7 @@ export default async function WorkOrderDetailPage({
   params: Promise<{ id: string }>
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  await requireSessionUser()
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined

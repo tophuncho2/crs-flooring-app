@@ -11,7 +11,7 @@ import type {
   WarehouseOption,
 } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireSessionUser } from "@/server/auth/session"
 import InventoryClient from "@/modules/inventory/components/list/inventory-client"
 import {
   INVENTORY_LIST_QUERY_KEY,
@@ -35,7 +35,7 @@ export default async function FlooringInventoryPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("warehouse")
+  await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseInventoryListInputFromSearchParams(resolvedSearchParams)

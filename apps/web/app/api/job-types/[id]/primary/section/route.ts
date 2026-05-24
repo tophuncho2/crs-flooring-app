@@ -1,6 +1,5 @@
 import { updateJobTypeUseCase } from "@builders/application"
 import { getJobTypeById } from "@builders/db"
-import { JOB_TYPES_TOOL_SLUG } from "@/modules/shared/access/lookup-domains"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
@@ -20,8 +19,6 @@ type RouteContext = {
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: JOB_TYPES_TOOL_SLUG,
     rateLimit: {
       ...CRUD_UPDATE_SECTION,
       scope: "jobTypes.primary.section.replace",

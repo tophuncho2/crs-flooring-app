@@ -1,5 +1,4 @@
 import { createWorkOrderUseCase, listWorkOrdersUseCase } from "@builders/application"
-import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -13,9 +12,7 @@ import {
 import { validateCreateWorkOrderInput, validateListWorkOrdersQuery } from "./_validators"
 
 export async function GET(request: Request) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/work-orders")
@@ -33,8 +30,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
     rateLimit: {
       ...CRUD_CREATE,
       scope: "work-orders.create",

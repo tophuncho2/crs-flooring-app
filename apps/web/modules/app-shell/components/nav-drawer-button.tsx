@@ -14,15 +14,11 @@ import {
 } from "@/modules/app-shell/navigation/definitions"
 
 type NavDrawerButtonProps = {
-  canUseTools: boolean
   orderedItems: FlooringNavItem[]
-  canOpenItem: (item: FlooringNavItem) => boolean
 }
 
 export default function NavDrawerButton({
-  canUseTools,
   orderedItems,
-  canOpenItem,
 }: NavDrawerButtonProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
@@ -44,7 +40,7 @@ export default function NavDrawerButton({
     return () => document.removeEventListener("keydown", handleKey)
   }, [])
 
-  if (!pathname || !isFlooringRoute(pathname) || !canUseTools) {
+  if (!pathname || !isFlooringRoute(pathname)) {
     return null
   }
 
@@ -90,7 +86,6 @@ export default function NavDrawerButton({
                   {group.label}
                 </div>
                 {groupItems.map((item) => {
-                  const canOpen = canOpenItem(item)
                   const isActive = isActiveFlooringItem(pathname, item.href)
 
                   if (isActive) {
@@ -99,17 +94,6 @@ export default function NavDrawerButton({
                         key={item.slug}
                         aria-current="page"
                         className={`mx-2 my-1 inline-flex w-fit ${FLOORING_ACTIVE_NAV_TAB_CLASS_NAME}`}
-                      >
-                        {item.name}
-                      </span>
-                    )
-                  }
-
-                  if (!canOpen) {
-                    return (
-                      <span
-                        key={item.slug}
-                        className="mx-2 my-1 cursor-not-allowed rounded-full px-3 py-2 text-sm font-medium text-[var(--foreground)]/35"
                       >
                         {item.name}
                       </span>

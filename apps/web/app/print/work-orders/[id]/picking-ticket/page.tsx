@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { buildWorkOrderPickingTicketHtml } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireSessionUser } from "@/server/auth/session"
 import { WorkOrderPrintView } from "@/modules/work-orders/components/record/print/work-order-print-view"
 import { getWorkOrderForFileGenerationPageData } from "@/modules/work-orders/data/queries"
 
@@ -15,7 +15,7 @@ export default async function WorkOrderPickingTicketPrintPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  await requireToolAccess("warehouse")
+  await requireSessionUser()
 
   const { id } = await params
   const result = await getWorkOrderForFileGenerationPageData(id)

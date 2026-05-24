@@ -2,7 +2,6 @@ import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcrypt"
 import { prisma, type Role } from "@builders/db"
-import { hasSystemAccess } from "@/server/auth/access-control"
 import { getAuthEnvironment } from "@/server/platform/env"
 import { logEvent } from "@/server/platform/logger"
 import { consumeRateLimit } from "@/server/platform/rate-limit"
@@ -86,20 +85,6 @@ export function getAuthOptions(): NextAuthOptions {
             logEvent({
               level: "warn",
               message: "Login attempt failed because the password was invalid",
-              action: "auth.login.failed",
-              route: "/api/auth/[...nextauth]",
-              requestId,
-              userId: user.id,
-              userEmail: user.email,
-              clientIp,
-            })
-            throw new Error("INVALID_CREDENTIALS")
-          }
-
-          if (!hasSystemAccess(user.role)) {
-            logEvent({
-              level: "warn",
-              message: "Login attempt failed because the user does not have system access",
               action: "auth.login.failed",
               route: "/api/auth/[...nextauth]",
               requestId,

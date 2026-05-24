@@ -1,5 +1,4 @@
 import { getTemplatePreviewHeaderUseCase } from "@builders/application"
-import { TEMPLATES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
@@ -12,9 +11,7 @@ type RouteContext = {
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: TEMPLATES_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(request, access, "/api/templates/[id]/preview")

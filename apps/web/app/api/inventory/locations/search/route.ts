@@ -1,11 +1,10 @@
 import { searchInventoryLocationsForWarehouseUseCase } from "@builders/application"
-import { authorizeWarehouseRoute } from "@/modules/shared/access/domain-tools"
-import { enforceQueryRateLimit } from "@/server/http/route-policy"
+import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { validateInventoryLocationsSearchQuery } from "../../_validators"
 
 export async function GET(request: Request) {
-  const access = await authorizeWarehouseRoute(request)
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(

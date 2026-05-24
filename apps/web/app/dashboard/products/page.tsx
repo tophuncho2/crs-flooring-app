@@ -5,7 +5,7 @@ import {
 } from "@builders/application"
 import type { CategoryOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireToolAccess } from "@/server/auth/session"
+import { requireSessionUser } from "@/server/auth/session"
 import ProductsClient from "@/modules/products/components/list/products-client"
 import {
   PRODUCTS_LIST_QUERY_KEY,
@@ -19,7 +19,7 @@ export default async function FlooringProductsPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireToolAccess("products")
+  await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseProductsListInputFromSearchParams(resolvedSearchParams)

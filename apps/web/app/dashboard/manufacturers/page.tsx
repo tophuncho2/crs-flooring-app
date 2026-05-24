@@ -1,7 +1,7 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import { listManufacturersUseCase } from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireManufacturersAccess } from "@/modules/shared/access/lookup-domains"
+import { requireSessionUser } from "@/server/auth/session"
 import ManufacturersClient from "@/modules/manufacturers/components/list/manufacturers-client"
 import {
   MANUFACTURERS_LIST_QUERY_KEY,
@@ -13,7 +13,7 @@ export default async function ManufacturersPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireManufacturersAccess()
+  await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseManufacturersListInputFromSearchParams(resolvedSearchParams)

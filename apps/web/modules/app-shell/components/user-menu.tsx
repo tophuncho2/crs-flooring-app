@@ -1,29 +1,22 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
-import type { ToolSlug } from "@/server/platform/tool-access"
 import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
 
 type UserMenuProps = {
   email: string
   role: string
-  canUseTools?: boolean
-  unlockedToolSlugs?: ToolSlug[]
 }
 
-export default function UserMenu({ email, role, canUseTools: canUseToolsProp, unlockedToolSlugs = [] }: UserMenuProps) {
+export default function UserMenu({ email, role }: UserMenuProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const firstLetter = email.charAt(0).toUpperCase()
-  const isGovernanceUser = role === "ADMIN" || role === "OWNER"
-  const canUseTools = canUseToolsProp ?? (role === "BUILDER" || isGovernanceUser)
-  const unlockedToolSet = useMemo(() => new Set(unlockedToolSlugs), [unlockedToolSlugs])
-  const canOpenTool = useCallback((slug: ToolSlug) => canUseTools || unlockedToolSet.has(slug), [canUseTools, unlockedToolSet])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

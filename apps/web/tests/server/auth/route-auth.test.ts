@@ -1,17 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { getSessionUserMock, isToolUnlockedMock } = vi.hoisted(() => ({
+const { getSessionUserMock } = vi.hoisted(() => ({
   getSessionUserMock: vi.fn(),
-  isToolUnlockedMock: vi.fn(),
 }))
 
 vi.mock("@/server/auth/session", () => ({
   getSessionUser: getSessionUserMock,
-}))
-
-vi.mock("@/server/platform/tool-access", async (importOriginal) => ({
-  ...(await importOriginal()),
-  isToolUnlocked: isToolUnlockedMock,
 }))
 
 const { authorizeRouteAccess } = await import("@/server/auth/route-auth")
@@ -34,40 +28,50 @@ describe("authorizeRouteAccess", () => {
     }
   })
 
-  it("enforces capability and tool access for verified users", async () => {
+  it("returns a forbidden response when the user is not verified", async () => {
     getSessionUserMock.mockResolvedValue({
       id: "builder-1",
       email: "builder@test.com",
       role: "BUILDER",
-      isVerified: true,
+      isVerified: false,
     })
-    isToolUnlockedMock.mockReturnValue(false)
 
-    const response = await authorizeRouteAccess(new Request("http://localhost/test"), {
-      capability: "system.access",
-      toolSlug: "warehouse",
-    })
+    const response = await authorizeRouteAccess(new Request("http://localhost/test"))
 
     expect(response).toBeInstanceOf(Response)
     if (response instanceof Response) {
       expect(response.status).toBe(403)
-      await expect(response.json()).resolves.toEqual({ error: "Forbidden" })
+      await expect(response.json()).resolves.toEqual({ error: "Account not approved" })
     }
   })
 
-  it("returns the authorized user context when access is allowed", async () => {
+  it("allows an unverified user through when allowUnverified is set", async () => {
+    getSessionUserMock.mockResolvedValue({
+      id: "builder-2",
+      email: "pending@test.com",
+      role: "BUILDER",
+      isVerified: false,
+    })
+
+    const result = await authorizeRouteAccess(new Request("http://localhost/test"), {
+      allowUnverified: true,
+    })
+
+    expect(result).not.toBeInstanceOf(Response)
+    if (!(result instanceof Response)) {
+      expect(result.user.email).toBe("pending@test.com")
+    }
+  })
+
+  it("returns the authorized user context for a verified user", async () => {
     getSessionUserMock.mockResolvedValue({
       id: "admin-1",
       email: "admin@test.com",
       role: "ADMIN",
       isVerified: true,
     })
-    isToolUnlockedMock.mockReturnValue(true)
 
-    const result = await authorizeRouteAccess(new Request("http://localhost/test"), {
-      capability: "system.access",
-      toolSlug: "products",
-    })
+    const result = await authorizeRouteAccess(new Request("http://localhost/test"))
 
     expect(result).not.toBeInstanceOf(Response)
     if (!(result instanceof Response)) {

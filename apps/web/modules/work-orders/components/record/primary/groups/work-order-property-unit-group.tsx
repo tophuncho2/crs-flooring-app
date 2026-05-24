@@ -9,7 +9,7 @@ import { buildRecordDetailHref } from "@/hooks/navigation/routes"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
-import type { PropertyJoinedFields } from "@/modules/shared/property-fields"
+import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
 import {
   usePropertyHubSidePanel,

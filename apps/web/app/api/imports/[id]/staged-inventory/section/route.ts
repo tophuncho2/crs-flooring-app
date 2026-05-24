@@ -21,7 +21,6 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    toolSlug: "warehouse",
     rateLimit: {
       ...CRUD_UPDATE_SECTION,
       scope: "imports.staged-inventory.section.replace",

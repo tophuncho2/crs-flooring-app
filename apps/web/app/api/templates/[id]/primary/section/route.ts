@@ -1,6 +1,5 @@
 import { updateTemplateUseCase } from "@builders/application"
 import { getTemplateById } from "@builders/db"
-import { TEMPLATES_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
@@ -20,8 +19,6 @@ type RouteContext = {
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
-    capability: "system.access",
-    toolSlug: TEMPLATES_TOOL_SLUG,
     rateLimit: {
       ...CRUD_UPDATE_SECTION,
       scope: "templates.primary.section.replace",

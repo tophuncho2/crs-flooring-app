@@ -1,5 +1,4 @@
 import { searchWorkOrderMaterialItemOptionsUseCase } from "@builders/application"
-import { WORK_ORDERS_TOOL_SLUG } from "@/modules/shared/access/domain-tools"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
@@ -18,9 +17,7 @@ type RouteContext = {
  * cut log is allowed to relink to.
  */
 export async function GET(request: Request, { params }: RouteContext) {
-  const access = await applyRoutePolicy(request, {
-    toolSlug: WORK_ORDERS_TOOL_SLUG,
-  })
+  const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
   const rateLimited = await enforceQueryRateLimit(
