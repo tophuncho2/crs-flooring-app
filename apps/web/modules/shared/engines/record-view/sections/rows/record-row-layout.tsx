@@ -6,7 +6,7 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
-export type RecordGridCellKind =
+type RecordGridCellKind =
   | "text"
   | "select"
   | "number"
@@ -34,7 +34,7 @@ export type RecordRowColumnSpec = {
 
 export type RecordGridColumnSpec = RecordRowColumnSpec
 
-export type RecordGridControlSpec = {
+type RecordGridControlSpec = {
   key: string
   width: number
   label?: string

@@ -1,5 +1,1 @@
-export {
-  useRecordScopedSectionController,
-  type RecordScopedSectionControllerPolicy,
-  type RecordSectionSaveResult,
-} from "@/controllers/record/use-record-scoped-section-controller"
+export { useRecordScopedSectionController } from "@/controllers/record/use-record-scoped-section-controller"

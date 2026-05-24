@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-export type RecordRowStatusTone = "neutral" | "warning" | "error" | "success" | "processing"
+type RecordRowStatusTone = "neutral" | "warning" | "error" | "success" | "processing"
 
 export type RecordResolvedRowStatus = {
   key: string
