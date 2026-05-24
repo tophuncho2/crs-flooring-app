@@ -14,7 +14,6 @@ import {
   LIST_PRODUCTS_PAGE_SIZE,
   type CategoryOption,
   type ProductListRow,
-  type TablePreferencePayload,
 } from "@builders/domain"
 import {
   PRODUCTS_LIST_QUERY_KEY,
@@ -31,7 +30,6 @@ import { ProductsRowCount } from "./toolbar-controls/sub-controls/products-row-c
 const PRODUCTS_FILTERABLE_FIELDS = ["categoryId"] as const
 
 export type ProductsClientProps = {
-  initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
   initialPage: number
   initialFilters: ProductsListFilters
@@ -40,7 +38,6 @@ export type ProductsClientProps = {
 }
 
 export default function ProductsClient({
-  initialTablePreferences,
   initialSearchQuery,
   initialPage,
   initialFilters,
@@ -73,7 +70,6 @@ export default function ProductsClient({
     initialFilters,
     pageSize: LIST_PRODUCTS_PAGE_SIZE,
     tableKey: "products-main",
-    initialTablePreferences,
     filterableFields: PRODUCTS_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })

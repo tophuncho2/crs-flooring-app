@@ -1,10 +1,9 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
-  getResolvedUserTablePreference,
   listPropertiesUseCase,
   searchManagementCompanyOptionsUseCase,
 } from "@builders/application"
-import type { ManagementCompanyOption, TablePreferencePayload } from "@builders/domain"
+import type { ManagementCompanyOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import PropertiesClient from "@/modules/properties/components/list/properties-client"
@@ -13,14 +12,6 @@ import {
   parsePropertiesListInputFromSearchParams,
 } from "@/modules/properties/data/list-properties-request"
 
-const PROPERTIES_FALLBACK_PREFERENCES: TablePreferencePayload = {
-  sort: { key: "name", direction: "asc" },
-  filters: {},
-  columnVisibility: {},
-  columnOrder: [],
-  grouping: { enabled: false, keys: [] },
-}
-
 const INITIAL_OPTIONS_TAKE = 20
 
 export default async function FlooringPropertiesPage({
@@ -28,13 +19,8 @@ export default async function FlooringPropertiesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const user = await requireToolAccess("warehouse")
-  const userPreferences = await getResolvedUserTablePreference(user.id, "properties-main")
+  await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-
-  const effectivePreferences: TablePreferencePayload = userPreferences.hasSavedPreference
-    ? userPreferences
-    : PROPERTIES_FALLBACK_PREFERENCES
 
   const initialInput = parsePropertiesListInputFromSearchParams(resolvedSearchParams)
 
@@ -89,7 +75,6 @@ export default async function FlooringPropertiesPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <PropertiesClient
-        initialTablePreferences={effectivePreferences}
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}

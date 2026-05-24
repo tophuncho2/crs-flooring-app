@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { parseAsInteger, parseAsString, parseAsStringEnum, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { ListInput, ListSort } from "@builders/application"
-import type { TablePreferencePayload } from "@builders/domain"
 import type {
   ListControllerFetchInput,
   ListControllerInput,
@@ -15,102 +14,8 @@ import type {
   ListControllerOutput,
   ListFilterValueMap,
 } from "./contracts/list-controller-output"
-import { patchTablePreference } from "./table-preferences-client"
 
 const SEARCH_DEBOUNCE_MS = 300
-const PREFERENCE_DEBOUNCE_MS = 400
-
-const preferenceTimers = new Map<string, ReturnType<typeof setTimeout>>()
-const preferenceInflight = new Map<string, AbortController>()
-const preferenceLastSerialized = new Map<string, string>()
-
-function serializePreference(value: TablePreferencePayload) {
-  return JSON.stringify({
-    sort: value.sort,
-    filters: Object.fromEntries(
-      Object.entries(value.filters)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, vs]) => [k, [...vs]]),
-    ),
-    columnVisibility: Object.fromEntries(
-      Object.entries(value.columnVisibility).sort(([a], [b]) => a.localeCompare(b)),
-    ),
-    columnOrder: value.columnOrder,
-    grouping: value.grouping,
-  })
-}
-
-function queuePersistPreference({
-  tableKey,
-  state,
-  allowedSortKeys,
-  allowedGroupKeys,
-  onError,
-}: {
-  tableKey: string
-  state: TablePreferencePayload
-  allowedSortKeys?: string[]
-  allowedGroupKeys?: string[]
-  onError: (msg: string) => void
-}) {
-  const serialized = serializePreference(state)
-  if (preferenceLastSerialized.get(tableKey) === serialized) return
-
-  const existingTimer = preferenceTimers.get(tableKey)
-  if (existingTimer) clearTimeout(existingTimer)
-
-  const nextTimer = setTimeout(async () => {
-    const previousAbort = preferenceInflight.get(tableKey)
-    if (previousAbort) previousAbort.abort()
-
-    const ac = new AbortController()
-    preferenceInflight.set(tableKey, ac)
-    try {
-      await patchTablePreference({
-        tableKey,
-        state,
-        allowedSortKeys,
-        allowedGroupKeys,
-        signal: ac.signal,
-      })
-      preferenceLastSerialized.set(tableKey, serialized)
-    } catch (error) {
-      if (ac.signal.aborted) return
-      onError(error instanceof Error ? error.message : "Failed to save table preferences")
-    } finally {
-      if (preferenceInflight.get(tableKey) === ac) {
-        preferenceInflight.delete(tableKey)
-      }
-    }
-  }, PREFERENCE_DEBOUNCE_MS)
-
-  preferenceTimers.set(tableKey, nextTimer)
-}
-
-function buildPreferencePayload({
-  sortFieldKey,
-  isAscendingSort,
-  groupField,
-  filters,
-  basePrefs,
-}: {
-  sortFieldKey: string
-  isAscendingSort: boolean
-  groupField: string | null
-  filters: ListFilterValueMap
-  basePrefs: TablePreferencePayload | null | undefined
-}): TablePreferencePayload {
-  return {
-    sort: { key: sortFieldKey, direction: isAscendingSort ? "asc" : "desc" },
-    filters: { ...(basePrefs?.filters ?? {}), ...filters },
-    columnVisibility: basePrefs?.columnVisibility ?? {},
-    columnOrder: basePrefs?.columnOrder ?? [],
-    grouping: {
-      enabled: groupField !== null,
-      keys: groupField ? [groupField] : [],
-    },
-  }
-}
 
 function readFiltersFromSearchParams(
   searchParams: URLSearchParams | null,
@@ -225,11 +130,7 @@ function useSsrListController<TRow, TFilters>(
   const initialIsAscendingSort = initialSort ? initialSort.direction !== "desc" : true
   const initialGroupField = input.initialGroupField ?? null
   const sortFieldKey = initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
-  const allowedGroupFields = input.allowedGroupFields
-  const allowedSortFields = input.allowedSortFields
   const filterableFields = input.filterableFields
-  const tableKey = input.tableKey
-  const initialTablePreferences = input.initialTablePreferences ?? null
   const urlSyncMode = input.urlSyncMode ?? "history"
   const initialFiltersMap = useMemo(
     () => normalizeInitialFilters(input.initialFilters, filterableFields),
@@ -240,7 +141,6 @@ function useSsrListController<TRow, TFilters>(
   const [isAscendingSort, setIsAscendingSort] = useState(initialIsAscendingSort)
   const [groupField, setGroupField] = useState<string | null>(initialGroupField)
   const [filters, setFilters] = useState<ListFilterValueMap>(initialFiltersMap)
-  const [preferenceError, setPreferenceError] = useState("")
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSyncedSearchQueryRef = useRef(searchQuery)
@@ -279,33 +179,6 @@ function useSsrListController<TRow, TFilters>(
     [filterableFields, getCurrentParams, pathname, router, urlSyncMode],
   )
 
-  const persistPreferences = useCallback(
-    (next: {
-      isAscendingSort: boolean
-      groupField: string | null
-      filters: ListFilterValueMap
-    }) => {
-      if (!tableKey || !sortFieldKey) return
-
-      const payload = buildPreferencePayload({
-        sortFieldKey,
-        isAscendingSort: next.isAscendingSort,
-        groupField: next.groupField,
-        filters: next.filters,
-        basePrefs: initialTablePreferences,
-      })
-
-      queuePersistPreference({
-        tableKey,
-        state: payload,
-        allowedSortKeys: allowedSortFields ? [...allowedSortFields] : [sortFieldKey],
-        allowedGroupKeys: allowedGroupFields ? [...allowedGroupFields] : undefined,
-        onError: setPreferenceError,
-      })
-    },
-    [allowedGroupFields, allowedSortFields, initialTablePreferences, sortFieldKey, tableKey],
-  )
-
   useEffect(() => {
     if (lastSyncedSearchQueryRef.current === searchQuery) return
 
@@ -331,59 +204,49 @@ function useSsrListController<TRow, TFilters>(
   }, [])
 
   const onToggleSortDirection = useCallback(() => {
-    setPreferenceError("")
     setIsAscendingSort((prev) => {
       const next = !prev
       writeUrl({ searchQuery, isAscendingSort: next, groupField, filters })
-      persistPreferences({ isAscendingSort: next, groupField, filters })
       return next
     })
-  }, [filters, groupField, persistPreferences, searchQuery, writeUrl])
+  }, [filters, groupField, searchQuery, writeUrl])
 
   const onSortChange = useCallback(
     (next: ListSort | null) => {
       if (!next) return
-      setPreferenceError("")
       const nextAsc = next.direction === "asc"
       setIsAscendingSort(nextAsc)
       writeUrl({ searchQuery, isAscendingSort: nextAsc, groupField, filters })
-      persistPreferences({ isAscendingSort: nextAsc, groupField, filters })
     },
-    [filters, groupField, persistPreferences, searchQuery, writeUrl],
+    [filters, groupField, searchQuery, writeUrl],
   )
 
   const onGroupFieldChange = useCallback(
     (next: string | null) => {
-      setPreferenceError("")
       setGroupField(next)
       writeUrl({ searchQuery, isAscendingSort, groupField: next, filters })
-      persistPreferences({ isAscendingSort, groupField: next, filters })
     },
-    [filters, isAscendingSort, persistPreferences, searchQuery, writeUrl],
+    [filters, isAscendingSort, searchQuery, writeUrl],
   )
 
   const onFilterChange = useCallback(
     (key: string, values: string[]) => {
-      setPreferenceError("")
       setFilters((prev) => {
         const next: ListFilterValueMap = { ...prev, [key]: [...values] }
         writeUrl({ searchQuery, isAscendingSort, groupField, filters: next })
-        persistPreferences({ isAscendingSort, groupField, filters: next })
         return next
       })
     },
-    [groupField, isAscendingSort, persistPreferences, searchQuery, writeUrl],
+    [groupField, isAscendingSort, searchQuery, writeUrl],
   )
 
   const onClearAllFilters = useCallback(() => {
     if (!filterableFields || filterableFields.length === 0) return
-    setPreferenceError("")
     const next: ListFilterValueMap = {}
     for (const key of filterableFields) next[key] = []
     setFilters(next)
     writeUrl({ searchQuery, isAscendingSort, groupField, filters: next })
-    persistPreferences({ isAscendingSort, groupField, filters: next })
-  }, [filterableFields, groupField, isAscendingSort, persistPreferences, searchQuery, writeUrl])
+  }, [filterableFields, groupField, isAscendingSort, searchQuery, writeUrl])
 
   const pagination = input.pagination
   const initialPage = input.initialPage ?? 1
@@ -458,8 +321,6 @@ function useSsrListController<TRow, TFilters>(
     isFetching: false,
     error: null,
     refetch: () => {},
-
-    preferenceError,
   }
 }
 
@@ -474,11 +335,7 @@ function useFetchListController<TRow, TFilters>(
   const initialGroupedToggle: "0" | "1" = input.initialGroupField ? "1" : "0"
   const initialPageValue = input.initialPage ?? 1
   const sortFieldKey = input.initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
-  const allowedGroupFields = input.allowedGroupFields
-  const allowedSortFields = input.allowedSortFields
   const filterableFields = input.filterableFields
-  const tableKey = input.tableKey
-  const initialTablePreferences = input.initialTablePreferences ?? null
   const declaredPageSize = input.pageSize ?? 50
   const consumerQueryKey = input.queryKey
   const listFn = input.listFn
@@ -513,7 +370,6 @@ function useFetchListController<TRow, TFilters>(
     readFiltersFromSearchParams(searchParams, filterableFields, initialFiltersMap),
   )
   const [searchInputValue, setSearchInputValue] = useState(searchUrlValue)
-  const [preferenceError, setPreferenceError] = useState("")
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -540,36 +396,8 @@ function useFetchListController<TRow, TFilters>(
     [filterableFields],
   )
 
-  const persistPreferences = useCallback(
-    (next: {
-      isAscendingSort: boolean
-      groupField: string | null
-      filters: ListFilterValueMap
-    }) => {
-      if (!tableKey || !sortFieldKey) return
-
-      const payload = buildPreferencePayload({
-        sortFieldKey,
-        isAscendingSort: next.isAscendingSort,
-        groupField: next.groupField,
-        filters: next.filters,
-        basePrefs: initialTablePreferences,
-      })
-
-      queuePersistPreference({
-        tableKey,
-        state: payload,
-        allowedSortKeys: allowedSortFields ? [...allowedSortFields] : [sortFieldKey],
-        allowedGroupKeys: allowedGroupFields ? [...allowedGroupFields] : undefined,
-        onError: setPreferenceError,
-      })
-    },
-    [allowedGroupFields, allowedSortFields, initialTablePreferences, sortFieldKey, tableKey],
-  )
-
   const isGroupingEnabled = groupedToggle === "1"
   const groupFieldNormalized: string | null = isGroupingEnabled && groupFieldValue ? groupFieldValue : null
-  const isAscendingSort = sortDirection !== "desc"
 
   const listInput: ListInput<TFilters> = useMemo(
     () => ({
@@ -624,35 +452,22 @@ function useFetchListController<TRow, TFilters>(
   )
 
   const onToggleSortDirection = useCallback(() => {
-    setPreferenceError("")
     const nextDirection: "asc" | "desc" = sortDirection === "asc" ? "desc" : "asc"
     setSortDirection(nextDirection)
     if (pageValue !== 1) setPageValue(1)
-    persistPreferences({
-      isAscendingSort: nextDirection === "asc",
-      groupField: groupFieldNormalized,
-      filters,
-    })
-  }, [filters, groupFieldNormalized, pageValue, persistPreferences, setPageValue, setSortDirection, sortDirection])
+  }, [pageValue, setPageValue, setSortDirection, sortDirection])
 
   const onSortChange = useCallback(
     (next: ListSort | null) => {
       if (!next) return
-      setPreferenceError("")
       setSortDirection(next.direction)
       if (pageValue !== 1) setPageValue(1)
-      persistPreferences({
-        isAscendingSort: next.direction === "asc",
-        groupField: groupFieldNormalized,
-        filters,
-      })
     },
-    [filters, groupFieldNormalized, pageValue, persistPreferences, setPageValue, setSortDirection],
+    [pageValue, setPageValue, setSortDirection],
   )
 
   const onGroupFieldChange = useCallback(
     (next: string | null) => {
-      setPreferenceError("")
       if (next) {
         setGroupedToggle("1")
         setGroupFieldValue(next)
@@ -661,64 +476,32 @@ function useFetchListController<TRow, TFilters>(
         setGroupFieldValue(null)
       }
       if (pageValue !== 1) setPageValue(1)
-      persistPreferences({
-        isAscendingSort,
-        groupField: next ? next : null,
-        filters,
-      })
     },
-    [filters, isAscendingSort, pageValue, persistPreferences, setGroupFieldValue, setGroupedToggle, setPageValue],
+    [pageValue, setGroupFieldValue, setGroupedToggle, setPageValue],
   )
 
   const onFilterChange = useCallback(
     (key: string, values: string[]) => {
-      setPreferenceError("")
       setFilters((prev) => {
         const next: ListFilterValueMap = { ...prev, [key]: [...values] }
         writeFiltersUrl(next)
-        persistPreferences({
-          isAscendingSort,
-          groupField: groupFieldNormalized,
-          filters: next,
-        })
         return next
       })
       if (pageValue !== 1) setPageValue(1)
     },
-    [
-      groupFieldNormalized,
-      isAscendingSort,
-      pageValue,
-      persistPreferences,
-      setPageValue,
-      writeFiltersUrl,
-    ],
+    [pageValue, setPageValue, writeFiltersUrl],
   )
 
   const onClearAllFilters = useCallback(() => {
     if (!filterableFields || filterableFields.length === 0) return
-    setPreferenceError("")
     setFilters(() => {
       const next: ListFilterValueMap = {}
       for (const key of filterableFields) next[key] = []
       writeFiltersUrl(next)
-      persistPreferences({
-        isAscendingSort,
-        groupField: groupFieldNormalized,
-        filters: next,
-      })
       return next
     })
     if (pageValue !== 1) setPageValue(1)
-  }, [
-    filterableFields,
-    groupFieldNormalized,
-    isAscendingSort,
-    pageValue,
-    persistPreferences,
-    setPageValue,
-    writeFiltersUrl,
-  ])
+  }, [filterableFields, pageValue, setPageValue, writeFiltersUrl])
 
   const goToPage = useCallback(
     (next: number) => {
@@ -770,7 +553,5 @@ function useFetchListController<TRow, TFilters>(
     refetch: () => {
       queryResult.refetch()
     },
-
-    preferenceError,
   }
 }

@@ -1,13 +1,9 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
-  getResolvedUserTablePreference,
   listManagementCompaniesUseCase,
   searchManagementCompanyStatesUseCase,
 } from "@builders/application"
-import type {
-  ManagementCompanyStateOption,
-  TablePreferencePayload,
-} from "@builders/domain"
+import type { ManagementCompanyStateOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import ManagementCompaniesClient from "@/modules/management-companies/components/list/management-companies-client"
@@ -16,14 +12,6 @@ import {
   parseManagementCompaniesListInputFromSearchParams,
 } from "@/modules/management-companies/data/list-management-companies-request"
 
-const MANAGEMENT_COMPANIES_FALLBACK_PREFERENCES: TablePreferencePayload = {
-  sort: { key: "name", direction: "asc" },
-  filters: {},
-  columnVisibility: {},
-  columnOrder: [],
-  grouping: { enabled: false, keys: [] },
-}
-
 const INITIAL_STATE_OPTIONS_TAKE = 20
 
 export default async function ManagementCompaniesPage({
@@ -31,16 +19,8 @@ export default async function ManagementCompaniesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const user = await requireToolAccess("warehouse")
-  const userPreferences = await getResolvedUserTablePreference(
-    user.id,
-    "management-companies-main",
-  )
+  await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-
-  const effectivePreferences: TablePreferencePayload = userPreferences.hasSavedPreference
-    ? userPreferences
-    : MANAGEMENT_COMPANIES_FALLBACK_PREFERENCES
 
   const initialInput = parseManagementCompaniesListInputFromSearchParams(resolvedSearchParams)
 
@@ -74,7 +54,6 @@ export default async function ManagementCompaniesPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ManagementCompaniesClient
-        initialTablePreferences={effectivePreferences}
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}

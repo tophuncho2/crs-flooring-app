@@ -1,10 +1,9 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
-  getResolvedUserTablePreference,
   listProductsUseCase,
   searchCategoryOptionsUseCase,
 } from "@builders/application"
-import type { CategoryOption, TablePreferencePayload } from "@builders/domain"
+import type { CategoryOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireToolAccess } from "@/server/auth/session"
 import ProductsClient from "@/modules/products/components/list/products-client"
@@ -13,14 +12,6 @@ import {
   parseProductsListInputFromSearchParams,
 } from "@/modules/products/data/list-products-request"
 
-const PRODUCTS_FALLBACK_PREFERENCES: TablePreferencePayload = {
-  sort: { key: "category.slug", direction: "asc" },
-  filters: {},
-  columnVisibility: {},
-  columnOrder: [],
-  grouping: { enabled: false, keys: [] },
-}
-
 const INITIAL_OPTIONS_TAKE = 20
 
 export default async function FlooringProductsPage({
@@ -28,13 +19,8 @@ export default async function FlooringProductsPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const user = await requireToolAccess("products")
-  const userPreferences = await getResolvedUserTablePreference(user.id, "products-main")
+  await requireToolAccess("products")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-
-  const effectivePreferences: TablePreferencePayload = userPreferences.hasSavedPreference
-    ? userPreferences
-    : PRODUCTS_FALLBACK_PREFERENCES
 
   const initialInput = parseProductsListInputFromSearchParams(resolvedSearchParams)
 
@@ -84,7 +70,6 @@ export default async function FlooringProductsPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ProductsClient
-        initialTablePreferences={effectivePreferences}
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}

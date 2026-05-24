@@ -13,7 +13,6 @@ import type { JobTypesListFilters } from "@builders/application"
 import {
   LIST_JOB_TYPES_PAGE_SIZE,
   type JobTypeListRow,
-  type TablePreferencePayload,
 } from "@builders/domain"
 import {
   JOB_TYPES_LIST_QUERY_KEY,
@@ -31,14 +30,12 @@ import { JobTypesRowCount } from "./toolbar-controls/sub-controls/job-types-row-
 const JOB_TYPES_FILTERABLE_FIELDS = [] as const
 
 export type JobTypesClientProps = {
-  initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
   initialPage: number
   initialFilters: JobTypesListFilters
 }
 
 export default function JobTypesClient({
-  initialTablePreferences,
   initialSearchQuery,
   initialPage,
   initialFilters,
@@ -68,7 +65,6 @@ export default function JobTypesClient({
     initialFilters,
     pageSize: LIST_JOB_TYPES_PAGE_SIZE,
     tableKey: "job-types-main",
-    initialTablePreferences,
     filterableFields: JOB_TYPES_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })

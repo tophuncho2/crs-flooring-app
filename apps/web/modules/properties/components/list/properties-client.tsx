@@ -15,7 +15,6 @@ import {
   normalizeAddressState,
   type ManagementCompanyOption,
   type PropertyListRow,
-  type TablePreferencePayload,
 } from "@builders/domain"
 import {
   PROPERTIES_LIST_QUERY_KEY,
@@ -38,7 +37,6 @@ import { PropertiesRowCount } from "./toolbar-controls/sub-controls/properties-r
 const PROPERTIES_FILTERABLE_FIELDS = ["managementCompanyId", "state"] as const
 
 export type PropertiesClientProps = {
-  initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
   initialPage: number
   initialFilters: PropertiesListFilters
@@ -47,7 +45,6 @@ export type PropertiesClientProps = {
 }
 
 export default function PropertiesClient({
-  initialTablePreferences,
   initialSearchQuery,
   initialPage,
   initialFilters,
@@ -82,7 +79,6 @@ export default function PropertiesClient({
     initialFilters,
     pageSize: LIST_PROPERTIES_PAGE_SIZE,
     tableKey: "properties-main",
-    initialTablePreferences,
     filterableFields: PROPERTIES_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })

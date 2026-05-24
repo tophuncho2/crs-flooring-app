@@ -1,6 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
-  getResolvedUserTablePreference,
   listInventoryUseCase,
   searchCategoryOptionsUseCase,
   searchProductOptionsUseCase,
@@ -36,8 +35,7 @@ export default async function FlooringInventoryPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const user = await requireToolAccess("warehouse")
-  const userPreferences = await getResolvedUserTablePreference(user.id, "inventory-main")
+  await requireToolAccess("warehouse")
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseInventoryListInputFromSearchParams(resolvedSearchParams)
@@ -111,7 +109,6 @@ export default async function FlooringInventoryPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <InventoryClient
-        initialTablePreferences={userPreferences}
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}

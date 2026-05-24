@@ -15,7 +15,6 @@ import {
   normalizeAddressState,
   type ManagementCompanyListRow,
   type ManagementCompanyStateOption,
-  type TablePreferencePayload,
 } from "@builders/domain"
 import {
   MANAGEMENT_COMPANIES_LIST_QUERY_KEY,
@@ -34,7 +33,6 @@ import { ManagementCompaniesRowCount } from "./toolbar-controls/sub-controls/man
 const MANAGEMENT_COMPANIES_FILTERABLE_FIELDS = ["state"] as const
 
 export type ManagementCompaniesClientProps = {
-  initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
   initialPage: number
   initialFilters: ManagementCompaniesListFilters
@@ -42,7 +40,6 @@ export type ManagementCompaniesClientProps = {
 }
 
 export default function ManagementCompaniesClient({
-  initialTablePreferences,
   initialSearchQuery,
   initialPage,
   initialFilters,
@@ -75,7 +72,6 @@ export default function ManagementCompaniesClient({
     initialFilters,
     pageSize: LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
     tableKey: "management-companies-main",
-    initialTablePreferences,
     filterableFields: MANAGEMENT_COMPANIES_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })

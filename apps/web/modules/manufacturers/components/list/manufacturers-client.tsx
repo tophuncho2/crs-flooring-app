@@ -13,7 +13,6 @@ import type { ManufacturersListFilters } from "@builders/application"
 import {
   LIST_MANUFACTURERS_PAGE_SIZE,
   type ManufacturerListRow,
-  type TablePreferencePayload,
 } from "@builders/domain"
 import {
   MANUFACTURERS_LIST_QUERY_KEY,
@@ -28,13 +27,11 @@ import { ManufacturersClearAll } from "./toolbar-controls/sub-controls/manufactu
 import { ManufacturersRowCount } from "./toolbar-controls/sub-controls/manufacturers-row-count"
 
 export type ManufacturersClientProps = {
-  initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
   initialPage: number
 }
 
 export default function ManufacturersClient({
-  initialTablePreferences,
   initialSearchQuery,
   initialPage,
 }: ManufacturersClientProps) {
@@ -60,7 +57,6 @@ export default function ManufacturersClient({
     initialPage,
     pageSize: LIST_MANUFACTURERS_PAGE_SIZE,
     tableKey: "manufacturers-main",
-    initialTablePreferences,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 

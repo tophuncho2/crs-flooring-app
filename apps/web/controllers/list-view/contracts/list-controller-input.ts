@@ -1,14 +1,9 @@
 import type { ListGroup, ListInput, ListOutput, ListSort } from "@builders/application"
-import type { TablePreferencePayload } from "@builders/domain"
 
 export type ListControllerUrlSyncMode = "history" | "router"
 
-type ListControllerPreferencesInput = {
+type ListControllerInputBase<TFilters> = {
   tableKey?: string
-  initialTablePreferences?: TablePreferencePayload | null
-}
-
-type ListControllerInputBase<TFilters> = ListControllerPreferencesInput & {
   initialSearchQuery?: string
   initialSort?: ListSort
   initialFilters?: TFilters

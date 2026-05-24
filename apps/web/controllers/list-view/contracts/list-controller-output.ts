@@ -34,6 +34,4 @@ export type ListControllerOutput<TRow> = {
   isFetching: boolean
   error: unknown
   refetch: () => void
-
-  preferenceError: string
 }

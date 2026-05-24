@@ -100,7 +100,6 @@ export default function WorkOrdersClient({
     initialFilters,
     pageSize: WORK_ORDERS_LIST_PAGE_SIZE,
     tableKey: "work-orders-main",
-    initialTablePreferences: null,
     allowedSortFields: WORK_ORDERS_ALLOWED_SORT_FIELDS,
     allowedGroupFields: [],
     filterableFields: WORK_ORDERS_LIST_FILTERABLE_FIELDS,

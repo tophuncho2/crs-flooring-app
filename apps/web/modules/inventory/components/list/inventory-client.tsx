@@ -16,7 +16,6 @@ import {
   type CategoryOption,
   type InventoryRow,
   type ProductOption,
-  type TablePreferencePayload,
   type WarehouseOption,
 } from "@builders/domain"
 import {
@@ -89,7 +88,6 @@ function toAppFilters(engine: EngineInventoryFilters): InventoryListFilters {
 }
 
 export default function InventoryClient({
-  initialTablePreferences,
   initialSearchQuery,
   initialPage,
   initialFilters,
@@ -99,7 +97,6 @@ export default function InventoryClient({
   initialSelectedCategory = null,
   initialSelectedProduct = null,
 }: {
-  initialTablePreferences?: TablePreferencePayload | null
   initialSearchQuery: string
   initialPage: number
   initialFilters: InventoryListFilters
@@ -147,7 +144,6 @@ export default function InventoryClient({
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_INVENTORY_PAGE_SIZE,
     tableKey: "inventory-main",
-    initialTablePreferences,
     filterableFields: INVENTORY_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
