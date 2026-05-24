@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    "apps/web": {
+      "entry": [
+        "app/**/{page,layout,template,loading,error,not-found,route,default,global-error}.{ts,tsx}",
+        "app/**/{sitemap,robots,manifest,icon,apple-icon,opengraph-image,twitter-image}.{ts,tsx}",
+        "tests/**/*.{test,spec}.{ts,tsx}"
+      ]
+    }
+  }
+}

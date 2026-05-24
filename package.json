@@ -22,6 +22,7 @@
     "start:worker": "npm run start --workspace @builders/worker",
     "build": "npm run guard:prisma && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/db && npm run build --workspace @builders/pdf && npm run build --workspace @builders/application && npm run build --workspace @builders/web && npm run build --workspace @builders/relay && npm run build --workspace @builders/worker",
     "lint": "npm run lint --workspace @builders/web",
+    "knip": "knip --workspace apps/web",
     "test": "npm run test --workspace @builders/domain && npm run test --workspace @builders/application && npm run test --workspace @builders/web && npm run test --workspace @builders/relay && npm run test --workspace @builders/worker",
     "test:e2e": "npm run test:e2e --workspace @builders/web",
     "typecheck": "npm run guard:prisma && npm run typecheck --workspace @builders/domain && npm run typecheck --workspace @builders/lib && npm run typecheck --workspace @builders/db && npm run typecheck --workspace @builders/pdf && npm run typecheck --workspace @builders/application && npm run typecheck --workspace @builders/web && npm run typecheck --workspace @builders/relay && npm run typecheck --workspace @builders/worker",
@@ -45,13 +46,16 @@
     "dotenv": "^16.4.7"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.60.1",
+    "@img/sharp-libvips-linux-x64": "1.2.4",
+    "@img/sharp-linux-x64": "0.34.5",
+    "@msgpackr-extract/msgpackr-extract-linux-x64": "3.0.3",
     "@next/swc-linux-x64-gnu": "16.2.1",
-    "lightningcss-linux-x64-gnu": "1.31.1",
+    "@rollup/rollup-linux-x64-gnu": "^4.60.1",
     "@tailwindcss/oxide-linux-x64-gnu": "4.2.1",
     "@unrs/resolver-binding-linux-x64-gnu": "1.11.1",
-    "@img/sharp-linux-x64": "0.34.5",
-    "@img/sharp-libvips-linux-x64": "1.2.4",
-    "@msgpackr-extract/msgpackr-extract-linux-x64": "3.0.3"
+    "lightningcss-linux-x64-gnu": "1.31.1"
+  },
+  "devDependencies": {
+    "knip": "^6.14.2"
   }
 }
