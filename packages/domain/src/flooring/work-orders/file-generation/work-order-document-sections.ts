@@ -30,13 +30,15 @@ import type {
 
 export const WO_PRINT_STYLE_BLOCK = `
   @page { size: letter; margin: 0; }
-  .wo-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; padding: 0.35in; }
+  .wo-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; padding: 0.25in; }
   .wo-print-root h1 { font-size: 22px; margin: 0 0 6px 0; }
   .wo-print-root h2 { font-size: 14px; margin: 18px 0 6px 0; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
   .wo-print-root h3 { font-size: 12px; margin: 10px 0 4px 0; }
   .wo-print-root table { width: 100%; border-collapse: collapse; margin: 6px 0; }
   .wo-print-root .grid-table th, .wo-print-root .grid-table td { border: 1px solid #ddd; padding: 5px 8px; text-align: left; vertical-align: top; }
   .wo-print-root .grid-table th { font-weight: 600; }
+  .wo-print-root .wo-top-table th, .wo-print-root .wo-top-table td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
+  .wo-print-root .wo-top-table th { font-weight: 600; }
   .wo-print-root .property-info-table th { width: 14%; }
   .wo-print-root .property-info-table td { width: 26%; }
   .wo-print-root .property-info-address { width: 60%; }
@@ -52,13 +54,13 @@ export const WO_PRINT_STYLE_BLOCK = `
 `
 
 export function renderWorkOrderHeader(input: WorkOrderFileGenerationInput): string {
-  return `<h1>Work Order ${escapeHtml(input.workOrderNumber)}</h1>`
+  return `<h1>${escapeHtml(input.workOrderNumber)}</h1>`
 }
 
 export function renderWorkOrderPickingTicketHeader(input: WorkOrderFileGenerationInput): string {
   return `
 <div class="page-header">
-  <h1>Work Order ${escapeHtml(input.workOrderNumber)}</h1>
+  <h1>${escapeHtml(input.workOrderNumber)}</h1>
   <span class="page-tag">Picking Ticket</span>
 </div>
 `.trim()
@@ -70,7 +72,7 @@ export function renderWorkOrderTopTable(input: WorkOrderFileGenerationInput): st
     : `<span class="empty-cell">—</span>`
   return `
 <h2>${dateHeading}</h2>
-<table class="grid-table">
+<table class="wo-top-table">
   <colgroup>
     <col style="width: 14%;" />
     <col style="width: 24%;" />
