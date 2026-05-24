@@ -10,4 +10,13 @@ export type FormFieldProps = {
   error?: string
   /** Visually marks the label as required (asterisk). Pure UI; no validation. */
   required?: boolean
+  /**
+   * Current length of the control's value. When set together with `maxLength`,
+   * a `{currentLength}/{maxLength}` counter renders on the label row (rose at
+   * the limit). Pass `undefined` in read-only mode to hide the counter. Pure
+   * UI — does not enforce the limit; the control's own `maxLength` does that.
+   */
+  currentLength?: number
+  /** Max length paired with `currentLength` to render the label-row counter. */
+  maxLength?: number
 }

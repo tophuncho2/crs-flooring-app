@@ -130,7 +130,11 @@ export function CutLogEditFormFields({
           </FormField>
         </CellAt>
         <CellAt col={1} colSpan={8}>
-          <FormField label="Notes">
+          <FormField
+            label="Notes"
+            currentLength={fieldsEditable ? form.notes.length : undefined}
+            maxLength={CUT_LOG_NOTES_MAX}
+          >
             <TextCell
               editable={fieldsEditable}
               value={form.notes}

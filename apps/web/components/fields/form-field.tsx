@@ -16,6 +16,7 @@ export type FormFieldWrapperProps = FormFieldProps & {
  * Labelled-control wrapper. Place any cell from `cells/` inside as the
  * control. Adds:
  * - the label (with optional `*` when `required`)
+ * - optional `{currentLength}/{maxLength}` counter on the label row
  * - optional hint text under the label
  * - optional error message under the control
  *
@@ -28,14 +29,30 @@ export function FormField({
   hint,
   error,
   required,
+  currentLength,
+  maxLength,
   children,
   className,
 }: FormFieldWrapperProps) {
+  const showCounter = typeof currentLength === "number" && typeof maxLength === "number"
+  const atMax = showCounter && (currentLength as number) >= (maxLength as number)
   return (
     <label className={joinClassNames("flex min-w-0 flex-col gap-1 text-sm", className)}>
-      <span className="flex items-center gap-1 text-[var(--foreground)]/80">
-        {label}
-        {required ? <span aria-hidden="true" className="text-rose-600">*</span> : null}
+      <span className="flex items-center justify-between gap-2 text-[var(--foreground)]/80">
+        <span className="flex items-center gap-1">
+          {label}
+          {required ? <span aria-hidden="true" className="text-rose-600">*</span> : null}
+        </span>
+        {showCounter ? (
+          <span
+            className={joinClassNames(
+              "text-[10px] tabular-nums",
+              atMax ? "text-rose-700" : "text-[var(--foreground)]/55",
+            )}
+          >
+            {currentLength}/{maxLength}
+          </span>
+        ) : null}
       </span>
       {hint ? <span className="text-xs text-[var(--foreground)]/55">{hint}</span> : null}
       {children}
