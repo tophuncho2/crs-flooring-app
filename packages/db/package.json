@@ -37,7 +37,6 @@
     "db:upsert-owner": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/owner-recovery.js",
     "db:seed:uoms": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-unit-of-measures.js",
     "db:seed:categories": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-categories.js",
-    "db:seed:demo": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-demo-data.js",
     "db:seed:properties": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-properties-csv.js"
   },
   "dependencies": {
