@@ -34,13 +34,10 @@
     "postinstall": "DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma generate",
     "build": "npm run db:generate && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:backfill:product-names": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-product-names.js",
     "db:upsert-owner": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/owner-recovery.js",
     "db:seed:uoms": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-unit-of-measures.js",
     "db:seed:categories": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-categories.js",
-    "db:seed:demo": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-demo-data.js",
-    "db:seed:test-manufacturers": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-test-manufacturers.js",
-    "db:delete:test-manufacturers": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/delete-test-manufacturers.js"
+    "db:seed:demo": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-demo-data.js"
   },
   "dependencies": {
     "@builders/domain": "file:../domain",

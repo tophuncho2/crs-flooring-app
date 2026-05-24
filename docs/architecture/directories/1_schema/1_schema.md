@@ -50,8 +50,3 @@ TS sources live under `packages/db/src/seed/`; JS runners live under `packages/d
 ## Manual owner upsert
 
 - [ ] **`npm run db:upsert-owner -- @crsfloorcovering.com ""`** — manually add an owner (JS runner: `owner-recovery.js`)
-
-## Product backfill
-
-- [ ] **`npm run db:backfill:product-names -- --dry-run`** — preview which products need backfilling (no writes)
-- [ ] **`npm run db:backfill:product-names`** — run the backfill (JS runner: `backfill-product-names.js`)

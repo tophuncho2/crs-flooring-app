@@ -52,7 +52,7 @@ describe("package scripts", () => {
     expect(rootPackageJson.scripts["db:studio"]).toBe("npm run db:studio --workspace @builders/db --")
     expect(rootPackageJson.scripts["db:migrate"]).toBeUndefined()
     expect(rootPackageJson.scripts["deploy:prepare"]).toBeUndefined()
-    expect(rootPackageJson.scripts["db:backfill:product-names"]).toBe("npm run db:backfill:product-names --workspace @builders/db --")
+    expect(rootPackageJson.scripts["db:backfill:product-names"]).toBeUndefined()
     expect(dbPackageJson.scripts["db:generate"]).toBe("DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma generate")
     expect(dbPackageJson.scripts["db:migrate:dev"]).toBe("DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate dev")
     expect(dbPackageJson.scripts["db:deploy"]).toBe("DOTENV_CONFIG_PATH=../../.env XDG_CACHE_HOME=../../.cache prisma migrate deploy")
