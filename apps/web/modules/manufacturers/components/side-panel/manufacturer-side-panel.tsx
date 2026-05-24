@@ -1,11 +1,11 @@
 "use client"
 
-import { SidePanelPreview } from "@/components/side-panel-preview"
+import { useMemo, type ReactNode } from "react"
+import {
+  HubSidePanelEditToolbar,
+  HubSidePanelShell,
+} from "@/components/hub-side-panel"
 import type { ManufacturerSidePanelController } from "@/modules/manufacturers/controllers/use-manufacturer-side-panel"
-import { ManufacturerSidePanelDeleteButton } from "./toolbar-controls/manufacturer-side-panel-delete-button"
-import { ManufacturerSidePanelDiscardButton } from "./toolbar-controls/manufacturer-side-panel-discard-button"
-import { ManufacturerSidePanelSaveButton } from "./toolbar-controls/manufacturer-side-panel-save-button"
-import { ManufacturerSidePanelStatusPill } from "./toolbar-controls/manufacturer-side-panel-status-pill"
 import { ManufacturerSidePanelDetailSummary } from "./manufacturer-side-panel-detail-summary"
 import { ManufacturerSidePanelFormFields } from "./manufacturer-side-panel-form-fields"
 
@@ -13,8 +13,16 @@ export type ManufacturerSidePanelProps = {
   controller: ManufacturerSidePanelController
 }
 
+/**
+ * Right-anchored side panel that owns the manufacturer create + edit + delete
+ * flows. Built on the canonical hub-panel stack: `HubSidePanelShell` locks the
+ * shared width and pins a `HubSidePanelEditToolbar` (status pill + Save /
+ * Discard / Delete + inline error) in the sticky header. The scrolling body
+ * holds an optional read-only summary card (edit mode) above the form fields.
+ */
 export function ManufacturerSidePanel({ controller }: ManufacturerSidePanelProps) {
-  const { open } = controller
+  const { open, isDirty, isSaving, isValid, error, save, discard, close } =
+    controller
   const isOpen = open !== null
   const mode = open?.mode ?? "edit"
   const manufacturer = open?.mode === "edit" ? open.manufacturer : null
@@ -24,25 +32,40 @@ export function ManufacturerSidePanel({ controller }: ManufacturerSidePanelProps
       ? "New manufacturer"
       : (manufacturer?.companyName || manufacturer?.agentName || "Manufacturer")
 
+  const topToolbar = useMemo<ReactNode>(() => {
+    if (mode === "create") {
+      return (
+        <HubSidePanelEditToolbar
+          isDirty={isDirty}
+          isSaving={isSaving}
+          canSave={isValid}
+          onSave={save}
+          onDiscard={discard}
+          saveLabel="Create"
+          savingLabel="Creating…"
+          errorMessage={error}
+        />
+      )
+    }
+    return (
+      <HubSidePanelEditToolbar
+        isDirty={isDirty}
+        isSaving={isSaving}
+        canSave={isValid}
+        onSave={save}
+        onDiscard={discard}
+        onDelete={controller.deleteManufacturer}
+        errorMessage={error}
+      />
+    )
+  }, [mode, isDirty, isSaving, isValid, save, discard, error, controller.deleteManufacturer])
+
   return (
-    <SidePanelPreview
+    <HubSidePanelShell
       open={isOpen}
-      side="right"
-      onClose={controller.close}
+      onClose={close}
       title={title}
-      widthClassName="w-[34rem]"
-      footer={
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <ManufacturerSidePanelStatusPill controller={controller} />
-          </div>
-          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-            <ManufacturerSidePanelDeleteButton controller={controller} mode={mode} />
-            <ManufacturerSidePanelDiscardButton controller={controller} />
-            <ManufacturerSidePanelSaveButton controller={controller} mode={mode} />
-          </div>
-        </div>
-      }
+      topToolbar={topToolbar}
     >
       {open ? (
         <div className="flex flex-col gap-4">
@@ -50,13 +73,8 @@ export function ManufacturerSidePanel({ controller }: ManufacturerSidePanelProps
             <ManufacturerSidePanelDetailSummary manufacturer={manufacturer} />
           ) : null}
           <ManufacturerSidePanelFormFields controller={controller} />
-          {controller.error ? (
-            <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-              {controller.error}
-            </div>
-          ) : null}
         </div>
       ) : null}
-    </SidePanelPreview>
+    </HubSidePanelShell>
   )
 }
