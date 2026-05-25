@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   EMPTY_MANUFACTURER_FORM,
@@ -41,35 +41,39 @@ export function useManufacturerSidePanel() {
   const [baseline, setBaseline] = useState<ManufacturerForm>(EMPTY_MANUFACTURER_FORM)
   const [error, setError] = useState<RecordSectionError | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  // Set the moment a create succeeds so the create→edit transition (which
-  // re-runs the open effect) preserves the "created" notice instead of
-  // clearing it like a fresh navigation would.
-  const justCreatedRef = useRef(false)
+  // Set the moment a create succeeds so the create→edit transition preserves
+  // the "created" notice instead of clearing it like a fresh navigation would.
+  // State (not a ref) so the open-reset can read it safely during render.
+  const [justCreated, setJustCreated] = useState(false)
 
-  useEffect(() => {
+  // Reset form + clear error when the open spec changes — derived during render
+  // (`open` is local state, so its ref can't loop).
+  const [trackedOpen, setTrackedOpen] = useState(open)
+  if (trackedOpen !== open) {
+    setTrackedOpen(open)
     if (!open) {
       setForm(EMPTY_MANUFACTURER_FORM)
       setBaseline(EMPTY_MANUFACTURER_FORM)
       setError(null)
       setSuccessMessage(null)
-      justCreatedRef.current = false
-      return
-    }
-    if (open.mode === "edit") {
-      const next = toManufacturerForm(open.manufacturer)
-      setForm(next)
-      setBaseline(next)
+      setJustCreated(false)
     } else {
-      setForm(EMPTY_MANUFACTURER_FORM)
-      setBaseline(EMPTY_MANUFACTURER_FORM)
+      if (open.mode === "edit") {
+        const next = toManufacturerForm(open.manufacturer)
+        setForm(next)
+        setBaseline(next)
+      } else {
+        setForm(EMPTY_MANUFACTURER_FORM)
+        setBaseline(EMPTY_MANUFACTURER_FORM)
+      }
+      setError(null)
+      if (justCreated) {
+        setJustCreated(false)
+      } else {
+        setSuccessMessage(null)
+      }
     }
-    setError(null)
-    if (justCreatedRef.current) {
-      justCreatedRef.current = false
-    } else {
-      setSuccessMessage(null)
-    }
-  }, [open])
+  }
 
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
 
@@ -96,7 +100,7 @@ export function useManufacturerSidePanel() {
       const next = toManufacturerForm(manufacturer)
       setForm(next)
       setBaseline(next)
-      justCreatedRef.current = true
+      setJustCreated(true)
       setSuccessMessage("Manufacturer created")
       setOpen({ mode: "edit", manufacturer })
       void queryClient.invalidateQueries({ queryKey: [...MANUFACTURERS_LIST_QUERY_KEY] })

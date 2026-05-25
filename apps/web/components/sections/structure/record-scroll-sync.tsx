@@ -26,6 +26,26 @@ function createRegistry(): RecordScrollRegistry {
   return new Set<HTMLElement>()
 }
 
+// Imperative DOM sync kept in a plain module-scope function: writing
+// `element.scrollLeft` is a deliberate side-effect, not React state, and lives
+// outside the component body so the compiler doesn't treat the registered
+// elements as immutable values.
+function applyScrollLeft(
+  registry: RecordScrollRegistry,
+  source: HTMLElement,
+  nextScrollLeft: number,
+): void {
+  for (const element of registry) {
+    if (element === source) {
+      continue
+    }
+
+    if (element.scrollLeft !== nextScrollLeft) {
+      element.scrollLeft = nextScrollLeft
+    }
+  }
+}
+
 export function RecordScrollSyncProvider({ children }: { children: ReactNode }) {
   const registryRef = useRef<RecordScrollRegistry>(createRegistry())
   const isSyncingRef = useRef(false)
@@ -50,18 +70,7 @@ export function RecordScrollSyncProvider({ children }: { children: ReactNode }) 
     }
 
     isSyncingRef.current = true
-    const nextScrollLeft = source.scrollLeft
-
-    for (const element of registryRef.current) {
-      if (element === source) {
-        continue
-      }
-
-      if (element.scrollLeft !== nextScrollLeft) {
-        element.scrollLeft = nextScrollLeft
-      }
-    }
-
+    applyScrollLeft(registryRef.current, source, source.scrollLeft)
     isSyncingRef.current = false
   }, [])
 

@@ -411,6 +411,7 @@ describe("record view single-section engine", () => {
 
   it("multi-section panel sync stays idempotent when rerenders recreate summary and dirty inputs", async () => {
     const user = userEvent.setup()
+    let commitCount = 0
 
     function Harness() {
       const page = useRecordPageController({
@@ -418,15 +419,19 @@ describe("record view single-section engine", () => {
         dirtyMessage: "Unsaved changes",
       })
       const [tick, setTick] = React.useState(0)
-      const renderCount = React.useRef(0)
-      renderCount.current += 1
 
       return (
         <div>
           <button type="button" onClick={() => setTick((current) => current + 1)}>
             Rerender
           </button>
-          <RecordMultiSectionPanel
+          <React.Profiler
+            id="multi-section-sync"
+            onRender={() => {
+              commitCount += 1
+            }}
+          >
+            <RecordMultiSectionPanel
             page={page}
             summary={{
               metrics: [{ key: "rows", label: "Rows", value: "3" }],
@@ -451,7 +456,7 @@ describe("record view single-section engine", () => {
               },
             ]}
           />
-          <div data-testid="rerender-count">{String(renderCount.current)}</div>
+          </React.Profiler>
           <div data-testid="rerender-dirty">{page.dirtySections.join(",")}</div>
           <div data-testid="rerender-summary">
             {page.summary.metrics?.map((metric) => `${metric.label}:${metric.value}`).join("|")}
@@ -470,7 +475,7 @@ describe("record view single-section engine", () => {
     expect(screen.getByText("Items 1")).toBeTruthy()
     expect(screen.getByTestId("rerender-dirty").textContent).toBe("Items")
     expect(screen.getByTestId("rerender-summary").textContent).toBe("Rows:3")
-    expect(Number(screen.getByTestId("rerender-count").textContent ?? "0")).toBeLessThan(8)
+    expect(commitCount).toBeLessThan(8)
   })
 
   it("section shell reports open-state changes after toggle, not during render", async () => {

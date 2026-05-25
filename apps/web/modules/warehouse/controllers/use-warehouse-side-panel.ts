@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   EMPTY_WAREHOUSE_FORM,
@@ -52,35 +52,39 @@ export function useWarehouseSidePanel() {
   const [baseline, setBaseline] = useState<WarehouseForm>(EMPTY_WAREHOUSE_FORM)
   const [error, setError] = useState<RecordSectionError | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  // Set the moment a create succeeds so the create→edit transition (which
-  // re-runs the open effect) preserves the "created" notice instead of
-  // clearing it like a fresh navigation would.
-  const justCreatedRef = useRef(false)
+  // Set the moment a create succeeds so the create→edit transition preserves
+  // the "created" notice instead of clearing it like a fresh navigation would.
+  // State (not a ref) so the open-reset can read it safely during render.
+  const [justCreated, setJustCreated] = useState(false)
 
-  useEffect(() => {
+  // Reset form + clear error when the open spec changes — derived during render
+  // (`open` is local state, so its ref can't loop).
+  const [trackedOpen, setTrackedOpen] = useState(open)
+  if (trackedOpen !== open) {
+    setTrackedOpen(open)
     if (!open) {
       setForm(EMPTY_WAREHOUSE_FORM)
       setBaseline(EMPTY_WAREHOUSE_FORM)
       setError(null)
       setSuccessMessage(null)
-      justCreatedRef.current = false
-      return
-    }
-    if (open.mode === "edit") {
-      const next = toWarehouseForm(open.warehouse)
-      setForm(next)
-      setBaseline(next)
+      setJustCreated(false)
     } else {
-      setForm(EMPTY_WAREHOUSE_FORM)
-      setBaseline(EMPTY_WAREHOUSE_FORM)
+      if (open.mode === "edit") {
+        const next = toWarehouseForm(open.warehouse)
+        setForm(next)
+        setBaseline(next)
+      } else {
+        setForm(EMPTY_WAREHOUSE_FORM)
+        setBaseline(EMPTY_WAREHOUSE_FORM)
+      }
+      setError(null)
+      if (justCreated) {
+        setJustCreated(false)
+      } else {
+        setSuccessMessage(null)
+      }
     }
-    setError(null)
-    if (justCreatedRef.current) {
-      justCreatedRef.current = false
-    } else {
-      setSuccessMessage(null)
-    }
-  }, [open])
+  }
 
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
 
@@ -107,7 +111,7 @@ export function useWarehouseSidePanel() {
       const next = toWarehouseForm(warehouse)
       setForm(next)
       setBaseline(next)
-      justCreatedRef.current = true
+      setJustCreated(true)
       setSuccessMessage("Warehouse created")
       setOpen({ mode: "edit", warehouse })
       void queryClient.invalidateQueries({ queryKey: [...WAREHOUSE_LIST_QUERY_KEY] })

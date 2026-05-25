@@ -60,7 +60,6 @@ export function useRecordSectionWorkflow<TValue>({
   const [error, setErrorState] = useState<RecordSectionError | null>(null)
   const getSyncKeyRef = useRef(getSyncKey)
   const readStatusRef = useRef(readStatus)
-  const getPollingIntervalMsRef = useRef(getPollingIntervalMs)
   const syncKey = getSyncKey(seedValue)
 
   useEffect(() => {
@@ -72,15 +71,21 @@ export function useRecordSectionWorkflow<TValue>({
   }, [readStatus])
 
   useEffect(() => {
-    getPollingIntervalMsRef.current = getPollingIntervalMs
-  }, [getPollingIntervalMs])
-
-  useEffect(() => {
     setValue((current) => (getSyncKeyRef.current(current) === syncKey ? current : seedValue))
   }, [seedValue, syncKey])
 
-  const phase = useMemo(() => normalizeRecordSectionWorkflowPhase(readStatusRef.current(value)), [value])
-  const pollingIntervalMs = useMemo(() => getPollingIntervalMsRef.current?.(value), [value])
+  // Derive from the live callbacks (not refs) so these are computed cleanly
+  // during render. Both produce stable primitive results (a phase string / a
+  // number), so downstream polling doesn't thrash even if a caller passes an
+  // unmemoized callback.
+  const phase = useMemo(
+    () => normalizeRecordSectionWorkflowPhase(readStatus(value)),
+    [readStatus, value],
+  )
+  const pollingIntervalMs = useMemo(
+    () => getPollingIntervalMs?.(value),
+    [getPollingIntervalMs, value],
+  )
 
   const setError = useCallback((nextError: RecordSectionError | string | Error | null) => {
     setErrorState(nextError ? normalizeRecordSectionError(nextError, { defaultKind: "workflow" }) : null)

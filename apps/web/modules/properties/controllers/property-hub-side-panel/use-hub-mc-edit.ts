@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   toManagementCompanyForm,
@@ -113,20 +113,20 @@ export function useHubMcEdit({
     [],
   )
 
-  // Reconcile baseline + form from the server detail. Preserves user edits.
-  useEffect(() => {
-    if (!isActive) return
-    if (!detail) return
-    const fromServer = toManagementCompanyForm(detail)
-    setBaseline((previousBaseline) => {
-      setForm((currentForm) => {
-        if (mcFormIsDirty(currentForm, previousBaseline)) return currentForm
-        return fromServer
-      })
-      return fromServer
-    })
-    setUpdatedAt(detail.updatedAt)
-  }, [isActive, detail])
+  // Reconcile baseline + form from the server detail — derived during render.
+  // Preserves user edits; otherwise pulls the freshest values. (`detail` is a
+  // stable ref — the old effect's setBaseline(fromServer) would already loop
+  // otherwise.)
+  const [reconciled, setReconciled] = useState({ isActive, detail })
+  if (reconciled.isActive !== isActive || reconciled.detail !== detail) {
+    setReconciled({ isActive, detail })
+    if (isActive && detail) {
+      const fromServer = toManagementCompanyForm(detail)
+      if (!mcFormIsDirty(form, baseline)) setForm(fromServer)
+      setBaseline(fromServer)
+      setUpdatedAt(detail.updatedAt)
+    }
+  }
 
   const isDirty = useMemo(() => mcFormIsDirty(form, baseline), [form, baseline])
   const validation = useMemo(() => validateManagementCompanyForm(form), [form])

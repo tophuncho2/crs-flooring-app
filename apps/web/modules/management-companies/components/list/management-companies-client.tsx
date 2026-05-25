@@ -7,7 +7,7 @@ import {
   ListToolbarBottomRow,
   ListToolbarCell,
 } from "@/components/features/list-toolbar"
-import { useServerListController } from "@/controllers/list-view"
+import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ManagementCompaniesListFilters } from "@builders/application"
 import {
@@ -63,7 +63,7 @@ export default function ManagementCompaniesClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useServerListController<ManagementCompanyListRow, ManagementCompaniesListFilters>({
+  } = useFetchListController<ManagementCompanyListRow, ManagementCompaniesListFilters>({
     mode: "fetch",
     queryKey: [...MANAGEMENT_COMPANIES_LIST_QUERY_KEY],
     listFn: listManagementCompaniesRequest,

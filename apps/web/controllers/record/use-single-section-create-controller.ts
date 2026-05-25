@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view/client/scaffolds/record-detail-client-scaffold"
 import { useRecordScopedSectionController } from "./use-record-scoped-section-controller"
@@ -22,16 +22,14 @@ export function useSingleSectionCreateController<TLocal>({
   manageDirtySections?: boolean
 }) {
   const router = useRouter()
-  const initialValueRef = useRef<TLocal | null>(null)
-
-  if (initialValueRef.current === null) {
-    initialValueRef.current = createInitialValue()
-  }
+  // Compute the create-form seed once (lazy init); stable for the mount's
+  // lifetime, read safely during render without touching a ref.
+  const [initialValue] = useState<TLocal>(createInitialValue)
 
   const primarySection = useRecordScopedSectionController<TLocal, TLocal>({
     recordId: "create",
     sectionKey: "primary",
-    serverValue: initialValueRef.current,
+    serverValue: initialValue,
     serverRevisionKey: "create",
     createLocalValue: (serverValue) => serverValue,
     persistDraft: false,

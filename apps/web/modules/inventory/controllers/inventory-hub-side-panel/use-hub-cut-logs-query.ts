@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   INVENTORY_CUT_LOG_PAGE_SIZE,
@@ -38,10 +38,14 @@ const EMPTY_ROWS: ReadonlyArray<InventoryCutLogRow> = []
 export function useHubCutLogsQuery(inventoryId: string | null): HubCutLogsController {
   const [page, setPage] = useState(1)
 
-  // Reset to page 1 when the hub switches to a different inventory.
-  useEffect(() => {
+  // Reset to page 1 when the hub switches to a different inventory — derived
+  // during render (previous-value tracking) so the query never fires the new
+  // inventory id against the stale page.
+  const [trackedInventoryId, setTrackedInventoryId] = useState(inventoryId)
+  if (trackedInventoryId !== inventoryId) {
+    setTrackedInventoryId(inventoryId)
     setPage(1)
-  }, [inventoryId])
+  }
 
   const query = useQuery({
     enabled: inventoryId !== null,

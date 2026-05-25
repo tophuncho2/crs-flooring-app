@@ -63,7 +63,10 @@ export function renderCutLogReadOnlyCell(
   column: CutLogColumnLike,
   row: CutLogRow & { warehouseName?: string | null },
 ) => ReactNode {
-  return (column, row) => {
+  function renderReadOnlyCell(
+    column: CutLogColumnLike,
+    row: CutLogRow & { warehouseName?: string | null },
+  ): ReactNode {
     switch (column.key) {
       case "status":
         return <CutLogStatusBadge status={row.status as FlooringCutLogStatus} />
@@ -193,6 +196,8 @@ export function renderCutLogReadOnlyCell(
         return null
     }
   }
+
+  return renderReadOnlyCell
 }
 
 /**

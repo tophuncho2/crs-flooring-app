@@ -7,7 +7,7 @@ import {
   ListToolbarBottomRow,
   ListToolbarCell,
 } from "@/components/features/list-toolbar"
-import { useServerListController } from "@/controllers/list-view"
+import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ImportsListFilters } from "@builders/application"
 import {
@@ -59,7 +59,7 @@ export default function ImportsClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useServerListController<ImportRow, ImportsListFilters>({
+  } = useFetchListController<ImportRow, ImportsListFilters>({
     mode: "fetch",
     queryKey: [...IMPORTS_LIST_QUERY_KEY],
     listFn: listImportsRequest,

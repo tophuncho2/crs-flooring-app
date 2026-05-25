@@ -7,7 +7,7 @@ import {
   ListToolbarBottomRow,
   ListToolbarCell,
 } from "@/components/features/list-toolbar"
-import { useServerListController } from "@/controllers/list-view"
+import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { TemplatesListFilters } from "@builders/application"
 import {
@@ -63,7 +63,7 @@ export default function TemplatesClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useServerListController<TemplateListRow, TemplatesListFilters>({
+  } = useFetchListController<TemplateListRow, TemplatesListFilters>({
     mode: "fetch",
     queryKey: [...TEMPLATES_LIST_QUERY_KEY],
     listFn: listTemplatesRequest,

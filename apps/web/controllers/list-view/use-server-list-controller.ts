@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { ListInput, ListSort } from "@builders/application"
 import type {
   ListControllerFetchInput,
-  ListControllerInput,
   ListControllerSsrInput,
 } from "./contracts/list-controller-input"
 import type {
@@ -111,15 +110,13 @@ function normalizeInitialFilters<TFilters>(
   return result
 }
 
-export function useServerListController<TRow, TFilters = Record<string, never>>(
-  input: ListControllerInput<TRow, TFilters>,
-): ListControllerOutput<TRow> {
-  return input.mode === "fetch"
-    ? useFetchListController<TRow, TFilters>(input)
-    : useSsrListController<TRow, TFilters>(input)
-}
-
-function useSsrListController<TRow, TFilters>(
+// NOTE: the `useServerListController` dispatcher was removed (it branched on
+// input.mode between two hooks — a rules-of-hooks violation). Every consumer
+// runs `mode: "fetch"`, so they call `useFetchListController` directly.
+// `useSsrListController` is retained, exported, and currently unused — its full
+// removal (with `ListControllerSsrInput` + the `mode` discriminant) is a
+// follow-up beyond this lint sweep.
+export function useSsrListController<TRow, TFilters>(
   input: ListControllerSsrInput<TRow, TFilters>,
 ): ListControllerOutput<TRow> {
   const router = useRouter()
@@ -324,7 +321,7 @@ function useSsrListController<TRow, TFilters>(
   }
 }
 
-function useFetchListController<TRow, TFilters>(
+export function useFetchListController<TRow, TFilters>(
   input: ListControllerFetchInput<TRow, TFilters>,
 ): ListControllerOutput<TRow> {
   const searchParams = useSearchParams()

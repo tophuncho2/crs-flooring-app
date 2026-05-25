@@ -7,7 +7,7 @@ import {
   ListToolbarBottomRow,
   ListToolbarCell,
 } from "@/components/features/list-toolbar"
-import { useServerListController } from "@/controllers/list-view"
+import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { PropertiesListFilters } from "@builders/application"
 import {
@@ -70,7 +70,7 @@ export default function PropertiesClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useServerListController<PropertyListRow, PropertiesListFilters>({
+  } = useFetchListController<PropertyListRow, PropertiesListFilters>({
     mode: "fetch",
     queryKey: [...PROPERTIES_LIST_QUERY_KEY],
     listFn: listPropertiesRequest,

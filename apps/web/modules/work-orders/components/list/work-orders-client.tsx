@@ -8,7 +8,7 @@ import {
   ListToolbarCell,
   ListToolbarTallCard,
 } from "@/components/features/list-toolbar"
-import { useServerListController } from "@/controllers/list-view"
+import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { WorkOrdersListFilters } from "@builders/application"
 import type {
@@ -89,7 +89,7 @@ export default function WorkOrdersClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useServerListController<WorkOrderListRow, WorkOrdersListFilters>({
+  } = useFetchListController<WorkOrderListRow, WorkOrdersListFilters>({
     mode: "fetch",
     queryKey: [...WORK_ORDERS_LIST_QUERY_KEY],
     listFn: listWorkOrdersRequest,

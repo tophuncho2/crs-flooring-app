@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE,
@@ -33,9 +33,13 @@ export function useTemplateSyncItems(
 ): TemplateSyncItemsController {
   const [page, setPage] = useState(1)
 
-  useEffect(() => {
+  // Reset to page 1 when the previewed template changes — derived during
+  // render so the query never fires the new template against the stale page.
+  const [trackedTemplateId, setTrackedTemplateId] = useState(templateId)
+  if (trackedTemplateId !== templateId) {
+    setTrackedTemplateId(templateId)
     setPage(1)
-  }, [templateId])
+  }
 
   const query = useQuery({
     enabled: templateId !== null,

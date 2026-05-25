@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import type {
   CutLogRow,
   InventoryOption,
@@ -91,42 +91,46 @@ export function useCutLogEditPanel({
   // active. Resets to null on close, on open spec change, and on commit.
   const [pickerKind, setPickerKind] = useState<CutLogPanelPickerKind | null>(null)
 
-  // When the open spec changes, reset form + filters + clear error.
-  useEffect(() => {
+  // When the open spec changes, reset form + filters + clear error. Derived
+  // during render (previous-value tracking); `open` is local state so its ref
+  // only changes on open/close/mode-switch — it can't loop.
+  const [trackedOpen, setTrackedOpen] = useState(open)
+  if (trackedOpen !== open) {
+    setTrackedOpen(open)
     if (!open) {
       setForm(EMPTY_FORM)
       setBaseline(EMPTY_FORM)
       setLocal(EMPTY_LOCAL)
       setPickerKind(null)
       setError(null)
-      return
-    }
-    if (open.mode === "edit") {
-      const next = buildEditForm(open.cutLog)
-      setForm(next)
-      setBaseline(next)
-      setLocal(EMPTY_LOCAL)
     } else {
-      // Create mode: seed inventoryId from the preset (if any) so a
-      // "duplicate" flow opens with the source row's inventory pre-selected.
-      // Baseline matches the seeded form so isDirty starts false — closing
-      // an unmodified prefilled panel doesn't trigger a discard guard.
-      const preset = open.presetInventory
-      const seeded: CutLogEditForm = {
-        ...EMPTY_FORM,
-        inventoryId: preset?.id ?? "",
+      if (open.mode === "edit") {
+        const next = buildEditForm(open.cutLog)
+        setForm(next)
+        setBaseline(next)
+        setLocal(EMPTY_LOCAL)
+      } else {
+        // Create mode: seed inventoryId from the preset (if any) so a
+        // "duplicate" flow opens with the source row's inventory pre-selected.
+        // Baseline matches the seeded form so isDirty starts false — closing
+        // an unmodified prefilled panel doesn't trigger a discard guard.
+        const preset = open.presetInventory
+        const seeded: CutLogEditForm = {
+          ...EMPTY_FORM,
+          inventoryId: preset?.id ?? "",
+        }
+        setForm(seeded)
+        setBaseline(seeded)
+        setLocal({
+          ...EMPTY_LOCAL,
+          pickedInventoryLabel: preset?.label ?? "",
+          pickedInventoryStockUnitAbbrev: preset?.stockUnitAbbrev ?? "",
+        })
       }
-      setForm(seeded)
-      setBaseline(seeded)
-      setLocal({
-        ...EMPTY_LOCAL,
-        pickedInventoryLabel: preset?.label ?? "",
-        pickedInventoryStockUnitAbbrev: preset?.stockUnitAbbrev ?? "",
-      })
+      setPickerKind(null)
+      setError(null)
     }
-    setPickerKind(null)
-    setError(null)
-  }, [open])
+  }
 
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
 

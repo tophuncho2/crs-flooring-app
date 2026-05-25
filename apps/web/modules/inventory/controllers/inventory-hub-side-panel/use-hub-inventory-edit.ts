@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import {
   toInventoryForm,
   type InventoryDetail,
@@ -96,21 +96,20 @@ export function useHubInventoryEdit({
     [],
   )
 
-  // Reconcile baseline from the latest snapshot the caller hands us.
-  // Preserves an in-flight user edit; otherwise pulls the freshest values.
-  useEffect(() => {
-    if (!isActive) return
-    if (!inventory) return
-    const fromServer = toInventoryForm(inventory)
-    setBaseline((previousBaseline) => {
-      setForm((currentForm) => {
-        if (inventoryFormIsDirty(currentForm, previousBaseline)) return currentForm
-        return fromServer
-      })
-      return fromServer
-    })
-    setUpdatedAt(inventory.updatedAt)
-  }, [isActive, inventory])
+  // Reconcile baseline from the latest snapshot the caller hands us — derived
+  // during render so it lands before paint. Preserves an in-flight user edit;
+  // otherwise pulls the freshest values. (`inventory` is a stable ref per active
+  // row — the old effect's setBaseline(fromServer) would already loop otherwise.)
+  const [reconciled, setReconciled] = useState({ isActive, inventory })
+  if (reconciled.isActive !== isActive || reconciled.inventory !== inventory) {
+    setReconciled({ isActive, inventory })
+    if (isActive && inventory) {
+      const fromServer = toInventoryForm(inventory)
+      if (!inventoryFormIsDirty(form, baseline)) setForm(fromServer)
+      setBaseline(fromServer)
+      setUpdatedAt(inventory.updatedAt)
+    }
+  }
 
   const isDirty = useMemo(() => inventoryFormIsDirty(form, baseline), [form, baseline])
 

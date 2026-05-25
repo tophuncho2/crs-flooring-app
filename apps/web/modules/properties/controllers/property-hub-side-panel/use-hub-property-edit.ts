@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   toPropertyPrimaryForm,
@@ -147,29 +147,25 @@ export function useHubPropertyEdit({
     refetchOnWindowFocus: false,
   })
 
-  // Reconcile from server detail. Preserves user edits — including the
-  // MC label, which would otherwise revert a dirty pick back to the saved
-  // server name on any incidental refetch.
-  useEffect(() => {
-    const detail = detailQuery.data
-    if (!detail || editingPropertyId === null) return
-    const fromServer = toPropertyPrimaryForm(detail)
-    let wasDirty = false
-    setBaseline((previousBaseline) => {
-      setForm((currentForm) => {
-        if (propertyFormIsDirty(currentForm, previousBaseline)) {
-          wasDirty = true
-          return currentForm
-        }
-        return fromServer
-      })
-      return fromServer
-    })
-    setUpdatedAt(detail.updatedAt)
-    if (!wasDirty) {
-      setManagementCompanyLabel(detail.managementCompany?.name ?? null)
+  // Reconcile from server detail — derived during render. Preserves user edits,
+  // including the MC label, which would otherwise revert a dirty pick back to
+  // the saved server name on any incidental refetch. (detailQuery.data is a
+  // stable ref via react-query structural sharing.)
+  const detailData = detailQuery.data
+  const [reconciled, setReconciled] = useState({ data: detailData, editingPropertyId })
+  if (reconciled.data !== detailData || reconciled.editingPropertyId !== editingPropertyId) {
+    setReconciled({ data: detailData, editingPropertyId })
+    if (detailData && editingPropertyId !== null) {
+      const fromServer = toPropertyPrimaryForm(detailData)
+      const wasDirty = propertyFormIsDirty(form, baseline)
+      if (!wasDirty) setForm(fromServer)
+      setBaseline(fromServer)
+      setUpdatedAt(detailData.updatedAt)
+      if (!wasDirty) {
+        setManagementCompanyLabel(detailData.managementCompany?.name ?? null)
+      }
     }
-  }, [detailQuery.data, editingPropertyId])
+  }
 
   const isDirty = useMemo(() => propertyFormIsDirty(form, baseline), [form, baseline])
   const validation = useMemo(() => validatePropertyPrimaryForm(form), [form])

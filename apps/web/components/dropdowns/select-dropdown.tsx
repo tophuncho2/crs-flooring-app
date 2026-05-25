@@ -115,15 +115,26 @@ export function SelectDropdown({
     }
   }, [open])
 
-  useEffect(() => {
-    if (!open) return
-    if (keyedOptions.length === 0) {
-      setActiveIndex(-1)
-      return
+  // Reset active index when the dropdown opens or the option list / value
+  // changes; preserve the selected option's position when present. Derived
+  // during render (keyed on option ids so an unstable `options` prop can't loop it).
+  const optionsKey = keyedOptions.map((option) => option.id).join(",")
+  const [activeReset, setActiveReset] = useState({ open, optionsKey, value })
+  if (
+    activeReset.open !== open ||
+    activeReset.optionsKey !== optionsKey ||
+    activeReset.value !== value
+  ) {
+    setActiveReset({ open, optionsKey, value })
+    if (open) {
+      if (keyedOptions.length === 0) {
+        setActiveIndex(-1)
+      } else {
+        const currentIndex = keyedOptions.findIndex((option) => option.id === value)
+        setActiveIndex(currentIndex >= 0 ? currentIndex : 0)
+      }
     }
-    const currentIndex = keyedOptions.findIndex((option) => option.id === value)
-    setActiveIndex(currentIndex >= 0 ? currentIndex : 0)
-  }, [open, keyedOptions, value])
+  }
 
   useEffect(() => {
     if (!open || activeIndex < 0) return

@@ -8,7 +8,7 @@ import {
   ListToolbarCell,
   ListToolbarTallCard,
 } from "@/components/features/list-toolbar"
-import { useServerListController } from "@/controllers/list-view"
+import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
@@ -135,7 +135,7 @@ export default function InventoryClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useServerListController<InventoryRow, EngineInventoryFilters>({
+  } = useFetchListController<InventoryRow, EngineInventoryFilters>({
     mode: "fetch",
     queryKey: [...INVENTORY_LIST_QUERY_KEY],
     listFn: adaptedListFn,

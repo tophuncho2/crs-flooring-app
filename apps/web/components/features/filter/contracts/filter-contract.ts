@@ -1,5 +1,5 @@
 // Controlled-component contract for filter UI. The list controller
-// (`useServerListController`) owns the values map; standalone consumers
+// (`useFetchListController`) owns the values map; standalone consumers
 // can pass anything that matches this shape directly to a FilterControl.
 //
 // Each field declares its options + label; values are a multi-value map

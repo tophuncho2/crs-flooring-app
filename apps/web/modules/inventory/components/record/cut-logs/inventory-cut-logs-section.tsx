@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { ActionHeader } from "@/components/headers"
 import {
@@ -44,9 +44,13 @@ export function InventoryCutLogsSection({
 }: InventoryCutLogsSectionProps) {
   const [page, setPage] = useState(1)
 
-  useEffect(() => {
+  // Reset to page 1 when the inventory changes — derived during render so the
+  // query never fires the new inventory id against the stale page.
+  const [trackedInventoryId, setTrackedInventoryId] = useState(inventoryId)
+  if (trackedInventoryId !== inventoryId) {
+    setTrackedInventoryId(inventoryId)
     setPage(1)
-  }, [inventoryId])
+  }
 
   const query = useQuery({
     queryKey: [...INVENTORY_CUT_LOGS_QUERY_KEY, inventoryId, page],

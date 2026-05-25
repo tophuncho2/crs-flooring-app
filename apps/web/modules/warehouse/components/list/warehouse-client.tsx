@@ -7,7 +7,7 @@ import {
   ListToolbarCell,
 } from "@/components/features/list-toolbar"
 import { PaginateControls } from "@/components/features/paginate"
-import { useServerListController } from "@/controllers/list-view"
+import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { WarehousesListFilters } from "@builders/application"
 import {
@@ -49,7 +49,7 @@ export default function WarehouseClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
-  } = useServerListController<WarehouseListRow, WarehousesListFilters>({
+  } = useFetchListController<WarehouseListRow, WarehousesListFilters>({
     mode: "fetch",
     queryKey: [...WAREHOUSE_LIST_QUERY_KEY],
     listFn: listWarehousesRequest,

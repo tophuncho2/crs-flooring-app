@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import type { SegmentedDropdownOption } from "./contracts/segmented-dropdown-option"
 
 const CONTAINER_BASE_CLASS_NAME =
@@ -86,9 +86,13 @@ export function SegmentedDropdown({
     checkedIndex >= 0 ? checkedIndex : 0,
   )
 
-  useEffect(() => {
+  // Keep keyboard focus aligned with the checked segment when the selection
+  // changes — derived during render; checkedIndex is a primitive so it can't loop.
+  const [trackedCheckedIndex, setTrackedCheckedIndex] = useState(checkedIndex)
+  if (trackedCheckedIndex !== checkedIndex) {
+    setTrackedCheckedIndex(checkedIndex)
     if (checkedIndex >= 0) setFocusIndex(checkedIndex)
-  }, [checkedIndex])
+  }
 
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([])
 

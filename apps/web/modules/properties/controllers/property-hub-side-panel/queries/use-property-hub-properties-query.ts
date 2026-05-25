@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { LIST_PROPERTIES_PAGE_SIZE, type PropertyListRow } from "@builders/domain"
 import {
@@ -34,9 +34,13 @@ export function usePropertyHubPropertiesQuery(
 ): PropertyHubPropertiesController {
   const [page, setPage] = useState(1)
 
-  useEffect(() => {
+  // Reset to page 1 when the hub switches management company — derived during
+  // render so the query never fires the new MC against the stale page.
+  const [trackedMcId, setTrackedMcId] = useState(managementCompanyId)
+  if (trackedMcId !== managementCompanyId) {
+    setTrackedMcId(managementCompanyId)
     setPage(1)
-  }, [managementCompanyId])
+  }
 
   const query = useQuery({
     enabled: managementCompanyId !== null,

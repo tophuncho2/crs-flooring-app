@@ -82,15 +82,35 @@ export function useRecordDetailController<TRecord extends CachedRecord, TDraft>(
     return nextRecord
   }, [payloadKey, syncRecord, url])
 
-  useEffect(() => {
+  // Re-seed local state when the record identity changes — derived during
+  // render so the swap lands before paint instead of after a post-commit effect.
+  const [reseed, setReseed] = useState({
+    id,
+    recordId: initialRecord.id,
+    updatedAt: initialRecord.updatedAt,
+  })
+  if (
+    reseed.id !== id ||
+    reseed.recordId !== initialRecord.id ||
+    reseed.updatedAt !== initialRecord.updatedAt
+  ) {
+    setReseed({ id, recordId: initialRecord.id, updatedAt: initialRecord.updatedAt })
     const nextCachedRecord = getCachedRecordDetail<TRecord>(scope, id, initialRecord.updatedAt)
     const nextSeed = nextCachedRecord ?? initialRecord
     setRecord(nextSeed)
     setDraft(manageDraft && toDraft ? toDraft(nextSeed) : null)
     setLoading(false)
     setError("")
+  }
+
+  // Persist the active seed into the detail cache. External-store write (not
+  // React state, so it's allowed in an effect); runs on mount and whenever the
+  // record identity changes, mirroring the previous combined effect.
+  useEffect(() => {
+    const nextCachedRecord = getCachedRecordDetail<TRecord>(scope, id, initialRecord.updatedAt)
+    const nextSeed = nextCachedRecord ?? initialRecord
     setCachedRecordDetail(scope, nextSeed.id, nextSeed.updatedAt, nextSeed)
-  }, [id, initialRecord.id, initialRecord.updatedAt, manageDraft, scope, toDraft])
+  }, [id, initialRecord, scope])
 
   const clearRecordCache = useCallback(() => {
     clearCachedRecordDetail(scope, id)

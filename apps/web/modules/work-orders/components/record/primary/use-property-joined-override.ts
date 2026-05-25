@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
 import type { PropertyOption } from "@builders/domain"
 import { detailToPropertyJoined } from "./helpers"
@@ -17,9 +17,13 @@ import type { WorkOrderPrimaryDetail } from "./types"
 export function usePropertyJoinedOverride(detail: WorkOrderPrimaryDetail | null) {
   const [picked, setPicked] = useState<PropertyJoinedFields | null>(null)
 
-  useEffect(() => {
+  // Clear the override when the saved propertyId changes — during render so
+  // the next record's joined fields aren't briefly stomped by the prior pick.
+  const [trackedPropertyId, setTrackedPropertyId] = useState(detail?.propertyId)
+  if (trackedPropertyId !== detail?.propertyId) {
+    setTrackedPropertyId(detail?.propertyId)
     setPicked(null)
-  }, [detail?.propertyId])
+  }
 
   const handlePropertyOption = useCallback((option: PropertyOption | null) => {
     if (option === null) {

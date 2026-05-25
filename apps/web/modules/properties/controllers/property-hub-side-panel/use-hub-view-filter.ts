@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import type { HubActiveView } from "./types"
 
 export type UseHubViewFilterArgs = {
@@ -43,10 +43,13 @@ export function useHubViewFilter({ contextMcId }: UseHubViewFilterArgs): HubView
     setSelectedPropertyLabel(null)
   }, [])
 
-  // Reset when context MC changes — so filters from one hub don't leak to another.
-  useEffect(() => {
+  // Reset when context MC changes — so filters from one hub don't leak to
+  // another. Done during render (previous-value tracking) instead of an effect.
+  const [trackedContextMcId, setTrackedContextMcId] = useState(contextMcId)
+  if (trackedContextMcId !== contextMcId) {
+    setTrackedContextMcId(contextMcId)
     resetView()
-  }, [contextMcId, resetView])
+  }
 
   return {
     activeView,

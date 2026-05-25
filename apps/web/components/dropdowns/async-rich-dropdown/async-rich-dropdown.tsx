@@ -200,17 +200,26 @@ export function AsyncRichDropdown({
     }
   }, [open])
 
-  // Reset active index when the option list changes; preserve the selected
-  // row's index when it appears in the current page of results.
-  useEffect(() => {
-    if (!open) return
-    if (options.length === 0) {
-      setActiveIndex(-1)
-      return
+  // Reset active index when the dropdown opens or the option list / value
+  // changes; preserve the selected row's index when present. Derived during
+  // render (keyed on option ids so an unstable `options` prop can't loop it).
+  const optionsKey = options.map((option) => option.id).join(",")
+  const [activeReset, setActiveReset] = useState({ open, optionsKey, value })
+  if (
+    activeReset.open !== open ||
+    activeReset.optionsKey !== optionsKey ||
+    activeReset.value !== value
+  ) {
+    setActiveReset({ open, optionsKey, value })
+    if (open) {
+      if (options.length === 0) {
+        setActiveIndex(-1)
+      } else {
+        const currentIndex = options.findIndex((option) => option.id === value)
+        setActiveIndex(currentIndex >= 0 ? currentIndex : 0)
+      }
     }
-    const currentIndex = options.findIndex((option) => option.id === value)
-    setActiveIndex(currentIndex >= 0 ? currentIndex : 0)
-  }, [open, options, value])
+  }
 
   useEffect(() => {
     if (!open || activeIndex < 0) return

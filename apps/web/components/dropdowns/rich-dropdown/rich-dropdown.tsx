@@ -158,17 +158,26 @@ export function RichDropdown({
     }
   }, [open])
 
-  // Reset active index when the filtered list changes; preserve the currently
-  // selected option's position when present.
-  useEffect(() => {
-    if (!open) return
-    if (filteredOptions.length === 0) {
-      setActiveIndex(-1)
-      return
+  // Reset active index when the dropdown opens or the filtered list / value
+  // changes; preserve the selected option's position when present. Derived
+  // during render (keyed on option ids so an unstable list can't loop it).
+  const filteredKey = filteredOptions.map((option) => option.id).join(",")
+  const [activeReset, setActiveReset] = useState({ open, filteredKey, value })
+  if (
+    activeReset.open !== open ||
+    activeReset.filteredKey !== filteredKey ||
+    activeReset.value !== value
+  ) {
+    setActiveReset({ open, filteredKey, value })
+    if (open) {
+      if (filteredOptions.length === 0) {
+        setActiveIndex(-1)
+      } else {
+        const currentIndex = filteredOptions.findIndex((option) => option.id === value)
+        setActiveIndex(currentIndex >= 0 ? currentIndex : 0)
+      }
     }
-    const currentIndex = filteredOptions.findIndex((option) => option.id === value)
-    setActiveIndex(currentIndex >= 0 ? currentIndex : 0)
-  }, [open, filteredOptions, value])
+  }
 
   // Keep the active option in view as the user navigates with arrow keys.
   useEffect(() => {

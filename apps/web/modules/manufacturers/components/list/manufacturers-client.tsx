@@ -7,7 +7,7 @@ import {
   ListToolbarBottomRow,
   ListToolbarCell,
 } from "@/components/features/list-toolbar"
-import { useServerListController } from "@/controllers/list-view"
+import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ManufacturersListFilters } from "@builders/application"
 import {
@@ -49,7 +49,7 @@ export default function ManufacturersClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
-  } = useServerListController<ManufacturerListRow, ManufacturersListFilters>({
+  } = useFetchListController<ManufacturerListRow, ManufacturersListFilters>({
     mode: "fetch",
     queryKey: [...MANUFACTURERS_LIST_QUERY_KEY],
     listFn: listManufacturersRequest,

@@ -149,12 +149,21 @@ export function ActionsPanel({
     }
   }, [open])
 
-  // Focus the panel for keyboard handling on open; pre-select first navigable.
+  // Pre-select the first navigable action when the panel opens or the action
+  // set changes — derived during render (keyed on content so an unstable
+  // `actions` prop can't loop it).
+  const navigableKey = navigableIndices.join(",")
+  const [activeReset, setActiveReset] = useState({ open, navigableKey })
+  if (activeReset.open !== open || activeReset.navigableKey !== navigableKey) {
+    setActiveReset({ open, navigableKey })
+    if (open) setActiveIndex(navigableIndices[0] ?? -1)
+  }
+
+  // Focus the panel for keyboard handling on open.
   useEffect(() => {
     if (!open) return
     panelRef.current?.focus()
-    setActiveIndex(navigableIndices[0] ?? -1)
-  }, [open, navigableIndices])
+  }, [open])
 
   // Scroll the active row into view as the user navigates.
   useEffect(() => {

@@ -99,14 +99,27 @@ export function HubSidePanelPicker<TOption>({
     searchInputRef.current?.focus()
   }, [])
 
-  useEffect(() => {
+  // Point the active row at the selected option on mount and whenever the
+  // option list / selectedId changes. Derived during render (keyed on option
+  // ids so an unstable list can't loop it); the null sentinel makes it run on
+  // first render, matching the previous mount effect.
+  const optionsKey = options.map((entry) => entry.option.id).join(",")
+  const [activeReset, setActiveReset] = useState<
+    { optionsKey: string; selectedId: string | null } | null
+  >(null)
+  if (
+    activeReset === null ||
+    activeReset.optionsKey !== optionsKey ||
+    activeReset.selectedId !== selectedId
+  ) {
+    setActiveReset({ optionsKey, selectedId })
     if (options.length === 0) {
       setActiveIndex(-1)
-      return
+    } else {
+      const currentIndex = options.findIndex((entry) => entry.option.id === selectedId)
+      setActiveIndex(currentIndex >= 0 ? currentIndex : 0)
     }
-    const currentIndex = options.findIndex((entry) => entry.option.id === selectedId)
-    setActiveIndex(currentIndex >= 0 ? currentIndex : 0)
-  }, [options, selectedId])
+  }
 
   useEffect(() => {
     if (activeIndex < 0) return

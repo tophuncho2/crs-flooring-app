@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { LIST_TEMPLATES_PAGE_SIZE, type TemplateListRow } from "@builders/domain"
 import {
@@ -34,9 +34,15 @@ export function usePropertyHubTemplatesQuery(
 ): PropertyHubTemplatesController {
   const [page, setPage] = useState(1)
 
-  useEffect(() => {
+  // Reset to page 1 when the hub MC or selected property changes — derived
+  // during render so the query never fires the new filter against the stale page.
+  const [trackedMcId, setTrackedMcId] = useState(managementCompanyId)
+  const [trackedPropertyId, setTrackedPropertyId] = useState(selectedPropertyId)
+  if (trackedMcId !== managementCompanyId || trackedPropertyId !== selectedPropertyId) {
+    setTrackedMcId(managementCompanyId)
+    setTrackedPropertyId(selectedPropertyId)
     setPage(1)
-  }, [managementCompanyId, selectedPropertyId])
+  }
 
   const query = useQuery({
     enabled: managementCompanyId !== null,

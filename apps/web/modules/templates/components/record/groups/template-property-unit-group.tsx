@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import { Pencil } from "lucide-react"
 import { TextCell, TextareaCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
@@ -68,12 +68,19 @@ export function TemplatePropertyUnitGroup({
   const [pickedMcLabel, setPickedMcLabel] = useState<string | null>(null)
   const [pickedPropertyLabel, setPickedPropertyLabel] = useState<string | null>(null)
 
-  useEffect(() => {
+  // Clear the picked-label snapshots when the bound detail ids change — done
+  // during render (previous-value tracking) so the next record's saved names
+  // show immediately instead of after a post-commit effect.
+  const [trackedMcId, setTrackedMcId] = useState(detail?.managementCompanyId)
+  if (trackedMcId !== detail?.managementCompanyId) {
+    setTrackedMcId(detail?.managementCompanyId)
     setPickedMcLabel(null)
-  }, [detail?.managementCompanyId])
-  useEffect(() => {
+  }
+  const [trackedPropertyId, setTrackedPropertyId] = useState(detail?.propertyId)
+  if (trackedPropertyId !== detail?.propertyId) {
+    setTrackedPropertyId(detail?.propertyId)
     setPickedPropertyLabel(null)
-  }, [detail?.propertyId])
+  }
 
   const managementCompanyLabel = pickedMcLabel ?? detail?.managementCompanyName ?? null
   const propertyLabel = pickedPropertyLabel ?? detail?.propertyName ?? null
