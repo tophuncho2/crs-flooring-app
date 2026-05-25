@@ -2,7 +2,7 @@ import { listInventoryCutLogsUseCase } from "@builders/application"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
-import { validateInventoryCutLogsPageQuery } from "../../_validators"
+import { validateCutLogsPageQuery } from "@/app/api/cut-logs/_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -30,7 +30,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const inventoryId = parseUuidParam(rawId, "id")
     const url = new URL(request.url)
-    const { page, pageSize } = validateInventoryCutLogsPageQuery(url.searchParams)
+    const { page, pageSize } = validateCutLogsPageQuery(url.searchParams)
     const result = await listInventoryCutLogsUseCase({
       inventoryId,
       page,

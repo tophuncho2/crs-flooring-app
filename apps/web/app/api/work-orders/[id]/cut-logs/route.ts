@@ -8,7 +8,7 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateCreatePendingCutLogInput } from "../../_validators"
+import { validateCreatePendingCutLogInput } from "@/app/api/cut-logs/_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>

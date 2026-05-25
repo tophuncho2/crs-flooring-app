@@ -1,6 +1,5 @@
 import { z } from "zod"
 import {
-  CutLogExecutionError,
   WorkOrderExecutionError,
   WorkOrderMaterialItemExecutionError,
 } from "@builders/application"
@@ -12,7 +11,6 @@ import type {
   WorkOrdersListFilters,
 } from "@builders/application"
 import {
-  CUT_LOG_NOTES_MAX,
   WO_CUSTOM_ADDRESS_MAX,
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
@@ -37,15 +35,6 @@ function failWorkOrder(message: string, field?: string): never {
 function failMaterialItem(message: string, field?: string): never {
   throw new WorkOrderMaterialItemExecutionError({
     code: "WORK_ORDER_MATERIAL_ITEM_VALIDATION_FAILED",
-    message,
-    status: 400,
-    field,
-  })
-}
-
-function failCutLog(message: string, field?: string): never {
-  throw new CutLogExecutionError({
-    code: "CUT_LOG_VALIDATION_FAILED",
     message,
     status: 400,
     field,
@@ -247,124 +236,6 @@ export function validateWorkOrderMaterialItemsDiffInput(
 
   return { added, modified, deleted }
 }
-
-// ---------------------------------------------------------------------------
-// Per-row pending cut-log mutations (sync; one row per request)
-// ---------------------------------------------------------------------------
-//
-// Each validator returns the operational portion of the body — every
-// route adds the path-derived `workOrderId` (and `cutLogId` for
-// update/delete) before calling its use case. `expectedUpdatedAt` for
-// update + delete travels through the mutation envelope's
-// `expectedUpdatedAt` field (parsed by `parseMutationEnvelope` with
-// `requireExpectedUpdatedAt: true`), not the input body, so it is not
-// part of the validator's output.
-
-export type ValidatedCreatePendingCutLogInput = {
-  workOrderItemId: string
-  inventoryId: string
-  cut: string
-  isWaste: boolean
-  notes: string
-}
-
-export function validateCreatePendingCutLogInput(
-  body: Record<string, unknown>,
-): ValidatedCreatePendingCutLogInput {
-  const isWaste = typeof body.isWaste === "boolean" ? body.isWaste : false
-  return {
-    workOrderItemId: requireString(body.workOrderItemId, "workOrderItemId", failCutLog),
-    inventoryId: requireString(body.inventoryId, "inventoryId", failCutLog),
-    cut: requireString(body.cut, "cut", failCutLog),
-    isWaste,
-    notes: optionalBoundedText(body.notes, CUT_LOG_NOTES_MAX, "notes", failCutLog) ?? "",
-  }
-}
-
-export type ValidatedUpdatePendingCutLogLink = {
-  workOrderId: string | null
-  workOrderItemId: string | null
-}
-
-export type ValidatedUpdatePendingCutLogPatch = {
-  cut?: string
-  isWaste?: boolean
-  notes?: string
-  link?: ValidatedUpdatePendingCutLogLink
-}
-
-export type ValidatedUpdatePendingCutLogInput = {
-  patch: ValidatedUpdatePendingCutLogPatch
-}
-
-function validateUpdatePendingCutLogLink(
-  value: unknown,
-): ValidatedUpdatePendingCutLogLink {
-  const obj = requireObject(value, "patch.link", failCutLog)
-  const rawWO = obj.workOrderId
-  const rawWOMI = obj.workOrderItemId
-  if (rawWO !== null && typeof rawWO !== "string") {
-    failCutLog("patch.link.workOrderId must be a string or null", "patch.link.workOrderId")
-  }
-  if (rawWOMI !== null && typeof rawWOMI !== "string") {
-    failCutLog(
-      "patch.link.workOrderItemId must be a string or null",
-      "patch.link.workOrderItemId",
-    )
-  }
-  const workOrderId =
-    rawWO === null ? null : (rawWO as string).trim() || (failCutLog("patch.link.workOrderId is required when present", "patch.link.workOrderId") as never)
-  const workOrderItemId =
-    rawWOMI === null ? null : (rawWOMI as string).trim() || (failCutLog("patch.link.workOrderItemId is required when present", "patch.link.workOrderItemId") as never)
-  // Both-or-neither: surface the asymmetry here so the use case never
-  // has to handle a half-set link patch.
-  if ((workOrderId === null) !== (workOrderItemId === null)) {
-    failCutLog(
-      "patch.link must set both workOrderId and workOrderItemId or both to null",
-      "patch.link",
-    )
-  }
-  return { workOrderId, workOrderItemId }
-}
-
-export function validateUpdatePendingCutLogInput(
-  body: Record<string, unknown>,
-): ValidatedUpdatePendingCutLogInput {
-  const patchBody = requireObject(body.patch, "patch", failCutLog)
-  const patch: ValidatedUpdatePendingCutLogPatch = {}
-  if ("cut" in patchBody) {
-    patch.cut = requireString(patchBody.cut, "patch.cut", failCutLog)
-  }
-  if ("isWaste" in patchBody && typeof patchBody.isWaste === "boolean") {
-    patch.isWaste = patchBody.isWaste
-  }
-  if ("notes" in patchBody) {
-    const next = optionalBoundedText(patchBody.notes, CUT_LOG_NOTES_MAX, "patch.notes", failCutLog)
-    if (next !== null) patch.notes = next
-  }
-  if ("link" in patchBody) {
-    patch.link = validateUpdatePendingCutLogLink(patchBody.link)
-  }
-  if (Object.keys(patch).length === 0) {
-    failCutLog(
-      "Patch must contain at least one of cut, isWaste, notes, or link",
-      "patch",
-    )
-  }
-  return { patch }
-}
-
-export type ValidatedDeletePendingCutLogInput = Record<string, never>
-
-export function validateDeletePendingCutLogInput(
-  _body: Record<string, unknown>,
-): ValidatedDeletePendingCutLogInput {
-  return {}
-}
-
-// (Cut-log finalize is now resource-level: `/api/work-orders/[id]/cut-logs/[cutLogId]/finalize`.
-// The route reads cutLogId from the URL and takes an empty body, so no
-// validator is required.)
 
 // ---------------------------------------------------------------------------
 // Sync template → new work order

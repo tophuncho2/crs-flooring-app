@@ -12,9 +12,9 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import {
-  validateInvDeletePendingCutLogInput,
-  validateInvUpdatePendingCutLogInput,
-} from "../../../_validators"
+  validateDeletePendingCutLogInput,
+  validateUpdatePendingCutLogInput,
+} from "@/app/api/cut-logs/_validators"
 
 type RouteContext = {
   params: Promise<{ id: string; cutLogId: string }>
@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const body = (await request.json()) as Record<string, unknown>
     const { input, mutation } = parseMutationEnvelope(
       body,
-      validateInvUpdatePendingCutLogInput,
+      validateUpdatePendingCutLogInput,
       { requireExpectedUpdatedAt: true },
     )
 
@@ -123,7 +123,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     const body = (await request.json()) as Record<string, unknown>
     const { input: _input, mutation } = parseMutationEnvelope(
       body,
-      validateInvDeletePendingCutLogInput,
+      validateDeletePendingCutLogInput,
       { requireExpectedUpdatedAt: true },
     )
 

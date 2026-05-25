@@ -8,7 +8,7 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateInvFinalizeCutLogInput } from "../../../../_validators"
+import { validateFinalizeCutLogInput } from "@/app/api/cut-logs/_validators"
 
 type RouteContext = {
   params: Promise<{ id: string; cutLogId: string }>
@@ -48,7 +48,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     const body = (await request.json()) as Record<string, unknown>
     const { input: _input, mutation } = parseMutationEnvelope(
       body,
-      validateInvFinalizeCutLogInput,
+      validateFinalizeCutLogInput,
     )
 
     const receipt = await enforceMutationReceipt({

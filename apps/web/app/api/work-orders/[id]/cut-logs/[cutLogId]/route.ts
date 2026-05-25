@@ -14,7 +14,7 @@ import {
 import {
   validateDeletePendingCutLogInput,
   validateUpdatePendingCutLogInput,
-} from "../../../_validators"
+} from "@/app/api/cut-logs/_validators"
 
 type RouteContext = {
   params: Promise<{ id: string; cutLogId: string }>
