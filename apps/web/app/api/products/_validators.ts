@@ -65,15 +65,16 @@ export function validateCreateProductInput(body: Record<string, unknown>): Creat
 /**
  * Route-edge validator for PATCH /api/products/[id]/primary/section (update flow).
  *
- * Category is immutable post-create (mirrored at the type level — `ProductUpdateForm`
- * in @builders/domain and `UpdateProductInput` in @builders/db both omit it,
- * and `isProductCategoryChangeBlocked` in @builders/domain rejects any attempt
- * that bypasses the type system). This validator rejects `categoryId` in the
- * PATCH body with 400 so the wire boundary enforces the rule too.
+ * `categoryId` and `coveragePerUnit` are immutable post-create (mirrored at the
+ * type level — `ProductUpdateForm` in @builders/domain and `UpdateProductInput`
+ * in @builders/db both omit them; `isProductCategoryChangeBlocked` rejects any
+ * category change that bypasses the type system). This validator rejects
+ * `categoryId` outright and drops `coveragePerUnit` from the parsed update so
+ * the wire boundary enforces both rules too.
  */
 export function validateUpdateProductInput(
   body: Record<string, unknown>,
-): Omit<CreateProductInput, "categoryId"> {
+): Omit<CreateProductInput, "categoryId" | "coveragePerUnit"> {
   if (body.categoryId !== undefined) {
     throw new ProductExecutionError({
       code: "PRODUCT_CATEGORY_LOCKED",
@@ -83,7 +84,8 @@ export function validateUpdateProductInput(
     })
   }
 
-  return parseSharedFields(body)
+  const { coveragePerUnit: _coveragePerUnit, ...rest } = parseSharedFields(body)
+  return rest
 }
 
 // --- List query validator ---

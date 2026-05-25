@@ -13,10 +13,11 @@ export type CreateProductInput = {
   note: string | null
 }
 
-// Update form omits `categoryId` — category is immutable post-create. Mirrors
-// the domain `ProductUpdateForm`, the data layer `UpdateProductInput`, and the
-// API PATCH validator carve-out. Defense in depth: even if a caller bypasses
-// these gates, the data layer's `updateProduct` won't accept categoryId either.
-export type UpdateProductInput = Partial<Omit<CreateProductInput, "categoryId">>
+// Update form omits `categoryId` and `coveragePerUnit` — both immutable
+// post-create. Mirrors the domain `ProductUpdateForm`, the data layer
+// `UpdateProductInput`, and the API PATCH validator carve-out. Defense in
+// depth: even if a caller bypasses these gates, the data layer's
+// `updateProduct` won't accept either field.
+export type UpdateProductInput = Partial<Omit<CreateProductInput, "categoryId" | "coveragePerUnit">>
 
 export type ProductResult = ProductRecord

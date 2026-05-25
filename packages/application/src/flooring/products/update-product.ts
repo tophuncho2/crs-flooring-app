@@ -1,6 +1,5 @@
 import {
   Prisma,
-  countInventoriesByProductId,
   getManufacturerById,
   getProductById,
   productNameExists,
@@ -9,12 +8,7 @@ import {
 } from "@builders/db"
 import {
   ProductExecutionError,
-  buildCategoryCoveragePerUnitNotAllowedMessage,
-  buildCategoryCoveragePerUnitRequiredMessage,
-  buildProductCoveragePerUnitChangeBlockedMessage,
   buildStoredFlooringProductName,
-  categoryRequiresCoveragePerUnit,
-  isProductCoveragePerUnitChangeBlocked,
   resolveProductManufacturerName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
@@ -42,57 +36,15 @@ export async function updateProductUseCase(
     // the wire. The category, its name, slug, and unit-of-measure snapshots
     // stamped onto the product row at create time are all stable for this fetch.
     const categoryName = current.category.name
-    const categorySlug = current.category.slug
 
     const nextStyle = "style" in input ? input.style : current.style || null
     const nextColor = "color" in input ? input.color : current.color || null
     const nextNote = "note" in input ? input.note : current.note || null
     const nameAffected = "style" in input || "color" in input || "note" in input
 
-    const nextCoverageIsEmpty =
-      "coveragePerUnit" in input
-        ? input.coveragePerUnit === null
-        : !current.coveragePerUnit
-    if (categoryRequiresCoveragePerUnit(categorySlug) && nextCoverageIsEmpty) {
-      throw new ProductExecutionError({
-        code: "PRODUCT_COVERAGE_PER_UNIT_REQUIRED",
-        message: buildCategoryCoveragePerUnitRequiredMessage(categoryName),
-        status: 400,
-        field: "coveragePerUnit",
-      })
-    }
-
-    if (!categoryRequiresCoveragePerUnit(categorySlug) && !nextCoverageIsEmpty) {
-      throw new ProductExecutionError({
-        code: "PRODUCT_COVERAGE_PER_UNIT_NOT_ALLOWED",
-        message: buildCategoryCoveragePerUnitNotAllowedMessage(categoryName),
-        status: 400,
-        field: "coveragePerUnit",
-      })
-    }
-
-    if ("coveragePerUnit" in input) {
-      const currentCoverageStr = (current.coveragePerUnit ?? "").trim()
-      const rawNextCoverage = input.coveragePerUnit
-      const nextCoverageStr = rawNextCoverage == null ? "" : rawNextCoverage.toString()
-      if (nextCoverageStr !== currentCoverageStr) {
-        const inventoryCount = await countInventoriesByProductId(id, c)
-        if (
-          isProductCoveragePerUnitChangeBlocked(
-            { inventoryCount },
-            currentCoverageStr,
-            nextCoverageStr,
-          )
-        ) {
-          throw new ProductExecutionError({
-            code: "PRODUCT_COVERAGE_PER_UNIT_LOCKED",
-            message: buildProductCoveragePerUnitChangeBlockedMessage({ inventoryCount }),
-            status: 409,
-            field: "coveragePerUnit",
-          })
-        }
-      }
-    }
+    // `coveragePerUnit` is immutable post-create — it's omitted from
+    // `UpdateProductInput` at the type level and stripped by the PATCH
+    // validator, so there is nothing to validate or write here.
 
     let manufacturerName: string | null | undefined
     if ("manufacturerId" in input) {
@@ -121,7 +73,6 @@ export async function updateProductUseCase(
     if (manufacturerName !== undefined) patch.manufacturerName = manufacturerName
     if ("style" in input) patch.style = input.style
     if ("color" in input) patch.color = input.color
-    if ("coveragePerUnit" in input) patch.coveragePerUnit = input.coveragePerUnit
     if ("note" in input) patch.note = input.note
 
     if (nameAffected) {

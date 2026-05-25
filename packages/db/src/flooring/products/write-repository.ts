@@ -34,12 +34,15 @@ export type CreateProductInput = {
   itemCoverageUnitAbbrev: string | null
 }
 
-// `categoryId` and the six unit-snapshot fields are immutable post-create —
-// removed from the update shape at the type level so call sites can't pass
-// them. The tightened `isProductCategoryChangeBlocked` predicate in
-// @builders/domain catches anything that bypasses the type system.
+// `categoryId`, `coveragePerUnit`, and the six unit-snapshot fields are
+// immutable post-create — removed from the update shape at the type level so
+// call sites can't pass them. `coveragePerUnit` is snapshotted onto inventory
+// rows at materialize time; category drives the unit snapshots (the tightened
+// `isProductCategoryChangeBlocked` predicate in @builders/domain catches
+// anything that bypasses the type system).
 type ImmutableProductFields =
   | "categoryId"
+  | "coveragePerUnit"
   | "sendUnitName"
   | "sendUnitAbbrev"
   | "stockUnitName"
@@ -88,7 +91,6 @@ export async function updateProduct(
   if (input.manufacturerName !== undefined) data.manufacturerName = input.manufacturerName
   if (input.style !== undefined) data.style = input.style
   if (input.color !== undefined) data.color = input.color
-  if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
   if (input.note !== undefined) data.note = input.note
 
   const row = await client.flooringProduct.update({

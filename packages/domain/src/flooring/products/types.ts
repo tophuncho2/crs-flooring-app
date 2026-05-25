@@ -50,9 +50,11 @@ export type ProductCreateForm = {
   note: string
 }
 
-// Update form — categoryId is omitted. Category is immutable post-create
-// (enforced by type, validator, and `isProductCategoryChangeBlocked`).
-export type ProductUpdateForm = Omit<ProductCreateForm, "categoryId">
+// Update form — categoryId and coveragePerUnit are omitted. Both are immutable
+// post-create: category drives the unit snapshots, and coveragePerUnit is
+// snapshotted onto inventory rows at materialize time. Enforced by type,
+// validator, and (for category) `isProductCategoryChangeBlocked`.
+export type ProductUpdateForm = Omit<ProductCreateForm, "categoryId" | "coveragePerUnit">
 
 // Slim option shape for product pickers / dropdowns. Matches the DB-layer
 // `ProductOptionRecord` shape — kept in domain so picker requests + search
@@ -86,7 +88,6 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     manufacturerId: row.manufacturerId,
     style: row.style,
     color: row.color,
-    coveragePerUnit: row.coveragePerUnit,
     note: row.note,
   }
 }

@@ -14,13 +14,14 @@ import type { ProductRecord } from "@builders/db"
 import { useProductsListMutations } from "@/modules/products/controllers/list/use-products-list-mutations"
 
 // Synthesize a ProductCreateForm-shaped local value for the record-view section.
-// `categoryId` is sourced from the loaded record and never edited (the section
-// renders the category cell readonly and `updateProductRequest` strips
-// categoryId from the PATCH body), but the section component shares its draft
-// type with the create flow which DOES allow categoryId.
+// `categoryId` and `coveragePerUnit` are sourced from the loaded record and
+// never edited (the section renders both cells readonly, and the PATCH body
+// strips them), but the section component shares its draft type with the create
+// flow which DOES carry both. They're still needed here for read-only display.
 function toProductRecordViewForm(product: ProductRecord): ProductCreateForm {
   return {
     categoryId: product.categoryId,
+    coveragePerUnit: product.coveragePerUnit,
     ...toProductUpdateForm(product),
   }
 }

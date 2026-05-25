@@ -23,17 +23,14 @@ function toCreateRequestBody(input: ProductRequestInput): Record<string, unknown
   }
 }
 
-// Strips `categoryId` before sending. Category is immutable post-create — the
-// PATCH validator rejects the field with 400 (PRODUCT_CATEGORY_LOCKED). The
-// record-view section displays category as readonly but the controller's local
-// form value still carries categoryId for shape parity with the create flow,
-// so we drop it here at the wire boundary.
+// Strips `categoryId` and `coveragePerUnit` before sending — both are immutable
+// post-create. The PATCH validator rejects categoryId (PRODUCT_CATEGORY_LOCKED)
+// and ignores coveragePerUnit. The record-view section displays both as
+// readonly but the controller's local form value still carries them for shape
+// parity with the create flow, so we drop them here at the wire boundary.
 function toUpdateRequestBody(input: ProductRequestInput): Record<string, unknown> {
-  const { categoryId: _categoryId, ...rest } = input
-  return {
-    ...rest,
-    coveragePerUnit: rest.coveragePerUnit.trim(),
-  }
+  const { categoryId: _categoryId, coveragePerUnit: _coveragePerUnit, ...rest } = input
+  return rest
 }
 
 export async function createProductRequest(input: ProductRequestInput) {

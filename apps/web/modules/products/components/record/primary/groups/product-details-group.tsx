@@ -102,23 +102,42 @@ export function ProductDetailsGroup({
             maxLength={PRODUCT_NOTE_MAX}
           />
         </ProductField>
-        <ProductField label={coverageRequired ? "Coverage Per Unit *" : "Coverage Per Unit"}>
-          <div
-            className={`flex w-full overflow-hidden rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] transition focus-within:border-sky-500/60 focus-within:ring-1 focus-within:ring-sky-500/40 ${coverageRequired ? "" : "opacity-60"}`}
-          >
-            <input
-              value={draft.coveragePerUnit}
-              onChange={(event) => onFieldChange("coveragePerUnit", event.target.value)}
-              placeholder={coverageRequired ? "0.0000" : "Not applicable for this category"}
-              className="min-w-0 flex-1 bg-transparent px-2.5 py-1.5 text-sm text-[var(--foreground)] outline-none disabled:cursor-not-allowed"
-              disabled={disabled || !coverageRequired}
-              aria-required={coverageRequired}
-              required={coverageRequired}
-            />
-            <span className="inline-flex shrink-0 items-center border-l border-[var(--panel-border)] px-3 text-sm text-[var(--foreground)]/70">
-              {selectedCategory?.itemCoverageUnit ?? "Unit"}
-            </span>
-          </div>
+        <ProductField
+          label={
+            categoryReadOnly || !coverageRequired ? "Coverage Per Unit" : "Coverage Per Unit *"
+          }
+        >
+          {categoryReadOnly ? (
+            // Immutable post-create — coveragePerUnit is snapshotted onto
+            // inventory rows, so the record view renders it read-only.
+            <>
+              <StaticFieldValue>
+                {draft.coveragePerUnit
+                  ? `${draft.coveragePerUnit} ${selectedCategory?.itemCoverageUnit ?? "Unit"}`
+                  : "—"}
+              </StaticFieldValue>
+              <p className="mt-1 text-xs text-[var(--foreground)]/60">
+                This can&rsquo;t be changed after saving.
+              </p>
+            </>
+          ) : (
+            <div
+              className={`flex w-full overflow-hidden rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] transition focus-within:border-sky-500/60 focus-within:ring-1 focus-within:ring-sky-500/40 ${coverageRequired ? "" : "opacity-60"}`}
+            >
+              <input
+                value={draft.coveragePerUnit}
+                onChange={(event) => onFieldChange("coveragePerUnit", event.target.value)}
+                placeholder={coverageRequired ? "0.0000" : "Not applicable for this category"}
+                className="min-w-0 flex-1 bg-transparent px-2.5 py-1.5 text-sm text-[var(--foreground)] outline-none disabled:cursor-not-allowed"
+                disabled={disabled || !coverageRequired}
+                aria-required={coverageRequired}
+                required={coverageRequired}
+              />
+              <span className="inline-flex shrink-0 items-center border-l border-[var(--panel-border)] px-3 text-sm text-[var(--foreground)]/70">
+                {selectedCategory?.itemCoverageUnit ?? "Unit"}
+              </span>
+            </div>
+          )}
         </ProductField>
       </div>
     </ProductGroup>
