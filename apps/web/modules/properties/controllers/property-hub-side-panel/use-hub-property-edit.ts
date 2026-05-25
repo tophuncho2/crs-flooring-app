@@ -23,12 +23,12 @@ export type UseHubPropertyEditArgs = {
 
 export type CommitPropertyUpdateCallbacks = {
   onSuccess?: (detail: PropertyDetailRecord) => void
-  onError?: (message: string) => void
+  onError?: (error: unknown) => void
 }
 
 export type CommitPropertyDeleteCallbacks = {
   onSuccess?: () => void
-  onError?: (message: string) => void
+  onError?: (error: unknown) => void
 }
 
 export type HubPropertyEditSlice = {
@@ -194,8 +194,7 @@ export function useHubPropertyEdit({
             )
             onSuccess?.(detail)
           },
-          onError: (err) =>
-            onError?.(err instanceof Error ? err.message : String(err)),
+          onError: (err) => onError?.(err),
         },
       )
     },
@@ -209,8 +208,7 @@ export function useHubPropertyEdit({
         { id: propertyId, updatedAt },
         {
           onSuccess: () => onSuccess?.(),
-          onError: (err) =>
-            onError?.(err instanceof Error ? err.message : String(err)),
+          onError: (err) => onError?.(err),
         },
       )
     },

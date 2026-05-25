@@ -1,7 +1,7 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
-import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
+import { requestJson } from "@/transport/http"
+import { withMutationMeta } from "@/transport/mutation"
 import type { InventoryDetailRecord, InventoryRecord } from "@builders/db"
 import type { UpdateInventoryInput } from "@builders/application"
 

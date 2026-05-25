@@ -21,7 +21,7 @@ export type UseHubInventoryEditArgs = {
 
 export type CommitInventoryUpdateCallbacks = {
   onSuccess?: (inventory: InventoryDetail) => void
-  onError?: (message: string) => void
+  onError?: (error: unknown) => void
 }
 
 export type HubInventoryEditSlice = {
@@ -129,8 +129,7 @@ export function useHubInventoryEdit({
             applyServerSnapshot(detailForm, detail.updatedAt)
             onSuccess?.(detail as InventoryDetail)
           },
-          onError: (err) =>
-            onError?.(err instanceof Error ? err.message : String(err)),
+          onError: (err) => onError?.(err),
         },
       )
     },

@@ -30,6 +30,7 @@ import type {
   CutLogPanelLocal,
   CutLogPanelPatch,
 } from "./types"
+import type { RecordSectionError } from "@/types/record/section-error"
 
 /**
  * Owns the side-panel lifecycle for cut-log editing: open/close, current
@@ -83,7 +84,7 @@ export function useCutLogEditPanel({
   const [form, setForm] = useState<CutLogEditForm>(EMPTY_FORM)
   const [baseline, setBaseline] = useState<CutLogEditForm>(EMPTY_FORM)
   const [local, setLocal] = useState<CutLogPanelLocal>(EMPTY_LOCAL)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<RecordSectionError | null>(null)
   // Body-takeover picker state for the create-mode Location + Inventory
   // pickers. Mirrors the template-sync / property-hub picker takeover
   // pattern — the panel body swaps to the picker listbox while a kind is

@@ -1,6 +1,10 @@
 "use client"
 
 import type { Dispatch, SetStateAction } from "react"
+import {
+  normalizeRecordSectionError,
+  type RecordSectionError,
+} from "@/types/record/section-error"
 import { useMutation } from "@tanstack/react-query"
 import type { CutLogRow } from "@builders/domain"
 import {
@@ -20,7 +24,7 @@ type Deps = {
   setForm: Dispatch<SetStateAction<CutLogEditForm>>
   setBaseline: Dispatch<SetStateAction<CutLogEditForm>>
   setOpen: Dispatch<SetStateAction<CutLogEditPanelOpenSpec | null>>
-  setError: Dispatch<SetStateAction<string | null>>
+  setError: Dispatch<SetStateAction<RecordSectionError | null>>
 }
 
 /**
@@ -70,7 +74,7 @@ export function useFinalizeCutLogMutation({
       }))
     },
     onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to finalize cut log" }))
     },
   })
 }

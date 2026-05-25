@@ -17,6 +17,10 @@ import { useHubInventoryEdit } from "./use-hub-inventory-edit"
 import { useHubSectionTransitions } from "./use-hub-section-transitions"
 import { useInventoryDetailQuery } from "./use-inventory-detail-query"
 import type { HubMode } from "./types"
+import {
+  normalizeRecordSectionError,
+  type RecordSectionError,
+} from "@/types/record/section-error"
 
 export type UseInventoryHubSidePanelOptions = {
   /**
@@ -71,9 +75,13 @@ export function useInventoryHubSidePanel({
   onInventoryUpdated,
 }: UseInventoryHubSidePanelOptions) {
   const [mode, setMode] = useState<HubMode>({ kind: "closed" })
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<RecordSectionError | null>(null)
   const clearError = useCallback(() => setError(null), [])
-  const setErrorMessage = useCallback((message: string) => setError(message), [])
+  const setErrorMessage = useCallback(
+    (err: unknown) =>
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save inventory" })),
+    [],
+  )
 
   // Hub owns the current inventory-id state. Openers set this; it drives
   // the embedded panel's mutation scope + the cells query.

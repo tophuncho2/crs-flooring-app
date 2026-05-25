@@ -1,6 +1,10 @@
 "use client"
 
 import type { Dispatch, SetStateAction } from "react"
+import {
+  normalizeRecordSectionError,
+  type RecordSectionError,
+} from "@/types/record/section-error"
 import { useMutation } from "@tanstack/react-query"
 import type { CutLogRow } from "@builders/domain"
 import {
@@ -13,7 +17,7 @@ type Deps = {
   scope: CutLogScopeUrl
   publish: (patch: CutLogPanelPatch) => void
   setOpen: Dispatch<SetStateAction<CutLogEditPanelOpenSpec | null>>
-  setError: Dispatch<SetStateAction<string | null>>
+  setError: Dispatch<SetStateAction<RecordSectionError | null>>
 }
 
 /**
@@ -43,7 +47,7 @@ export function useDeleteCutLogMutation({
       setOpen(null)
     },
     onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to delete cut log" }))
     },
   })
 }

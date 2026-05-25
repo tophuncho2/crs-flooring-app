@@ -9,13 +9,14 @@ import {
 import type { HubMcEditSlice } from "./use-hub-mc-edit"
 import type { HubPropertyEditSlice } from "./use-hub-property-edit"
 import type { HubMode } from "./types"
+import type { RecordSectionError } from "@/types/record/section-error"
 
 export type UseHubSectionTransitionsArgs = {
   contextMcId: string | null
   /** Fetched MC detail for the current context (from the coordinator's detail query). */
   mcDetail: ManagementCompanyDetail | null | undefined
   setMode: Dispatch<SetStateAction<HubMode>>
-  setError: (message: string | null) => void
+  setError: (value: RecordSectionError | null) => void
   mcEdit: HubMcEditSlice
   propertyEdit: HubPropertyEditSlice
   resetAll: () => void

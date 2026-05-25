@@ -10,6 +10,10 @@ import {
 } from "@builders/domain"
 import { getJobTypeDetailRequest } from "@/modules/job-types/data/job-type-detail-request"
 import {
+  normalizeRecordSectionError,
+  type RecordSectionError,
+} from "@/types/record/section-error"
+import {
   buildJobTypeFormFromRow,
   EMPTY_JOB_TYPE_FORM,
   jobTypeFormIsDirty,
@@ -56,7 +60,8 @@ export function useJobTypeSidePanel(options?: {
   const [form, setForm] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
   const [baseline, setBaseline] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
   const [updatedAt, setUpdatedAt] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<RecordSectionError | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const createMutation = useCreateJobTypeMutation()
   const updateMutation = useUpdateJobTypeMutation()
@@ -90,6 +95,7 @@ export function useJobTypeSidePanel(options?: {
     setBaseline(EMPTY_JOB_TYPE_FORM)
     setUpdatedAt(null)
     setError(null)
+    setSuccessMessage(null)
     setMode({ kind: "create" })
   }, [])
 
@@ -99,6 +105,7 @@ export function useJobTypeSidePanel(options?: {
     setBaseline(next)
     setUpdatedAt(row.updatedAt)
     setError(null)
+    setSuccessMessage(null)
     setMode({ kind: "edit", id: row.id })
   }, [])
 
@@ -112,7 +119,7 @@ export function useJobTypeSidePanel(options?: {
         const jobType = await getJobTypeDetailRequest(id)
         openForEdit(jobType)
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
+        setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to load job type" }))
       }
     },
     [openForEdit],
@@ -125,11 +132,13 @@ export function useJobTypeSidePanel(options?: {
     setBaseline(EMPTY_JOB_TYPE_FORM)
     setUpdatedAt(null)
     setError(null)
+    setSuccessMessage(null)
   }, [isSaving])
 
   const setName = useCallback((value: string) => {
     setForm((prev) => ({ ...prev, name: value }))
     setError(null)
+    setSuccessMessage(null)
   }, [])
 
   const save = useCallback(() => {
@@ -145,11 +154,12 @@ export function useJobTypeSidePanel(options?: {
             setBaseline(next)
             setUpdatedAt(created.updatedAt)
             setError(null)
+            setSuccessMessage("Job type created")
             setMode({ kind: "edit", id: created.id })
             onCreated?.(created)
           },
           onError: (err: unknown) => {
-            setError(err instanceof Error ? err.message : String(err))
+            setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save job type" }))
           },
         },
       )
@@ -169,7 +179,7 @@ export function useJobTypeSidePanel(options?: {
             onUpdated?.(updated)
           },
           onError: (err: unknown) => {
-            setError(err instanceof Error ? err.message : String(err))
+            setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save job type" }))
           },
         },
       )
@@ -181,11 +191,13 @@ export function useJobTypeSidePanel(options?: {
     if (mode.kind === "create") {
       setForm(EMPTY_JOB_TYPE_FORM)
       setError(null)
+      setSuccessMessage(null)
       return
     }
     if (mode.kind === "edit") {
       setForm(baseline)
       setError(null)
+      setSuccessMessage(null)
     }
   }, [isSaving, mode.kind, baseline])
 
@@ -204,7 +216,7 @@ export function useJobTypeSidePanel(options?: {
           onDeleted?.(deletedId)
         },
         onError: (err: unknown) => {
-          setError(err instanceof Error ? err.message : String(err))
+          setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to delete job type" }))
         },
       },
     )
@@ -221,6 +233,7 @@ export function useJobTypeSidePanel(options?: {
     canSave,
     validationError,
     error,
+    successMessage,
     openForCreate,
     openForEdit,
     openForEditById,

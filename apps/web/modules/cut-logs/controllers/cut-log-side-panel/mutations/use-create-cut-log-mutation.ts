@@ -1,6 +1,10 @@
 "use client"
 
 import type { Dispatch, SetStateAction } from "react"
+import {
+  normalizeRecordSectionError,
+  type RecordSectionError,
+} from "@/types/record/section-error"
 import type { CutLogRow } from "@builders/domain"
 import { useMutation } from "@tanstack/react-query"
 import {
@@ -20,7 +24,7 @@ type Deps = {
   setForm: Dispatch<SetStateAction<CutLogEditForm>>
   setBaseline: Dispatch<SetStateAction<CutLogEditForm>>
   setOpen: Dispatch<SetStateAction<CutLogEditPanelOpenSpec | null>>
-  setError: Dispatch<SetStateAction<string | null>>
+  setError: Dispatch<SetStateAction<RecordSectionError | null>>
   /**
    * Optional override for post-create routing. When provided, the
    * mutation publishes the patch, fires `onCreated`, and closes the
@@ -100,7 +104,7 @@ export function useCreateCutLogMutation({
       }))
     },
     onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save cut log" }))
     },
   })
 }

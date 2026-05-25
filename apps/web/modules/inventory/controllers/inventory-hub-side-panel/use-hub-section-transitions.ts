@@ -6,6 +6,7 @@ import {
   type InventoryCutLogRow,
   type InventoryRow,
 } from "@builders/domain"
+import type { RecordSectionError } from "@/types/record/section-error"
 import type { CutLogEditPanelController } from "@/modules/cut-logs"
 import { toCutLogPanelRow } from "./to-cut-log-panel-row"
 import type { HubInventoryEditSlice } from "./use-hub-inventory-edit"
@@ -16,7 +17,7 @@ export type UseHubSectionTransitionsArgs = {
   /** Current inventory snapshot for hydration on entering inventory-edit. */
   inventory: InventoryRow | null
   setMode: Dispatch<SetStateAction<HubMode>>
-  setError: (message: string | null) => void
+  setError: (value: RecordSectionError | null) => void
   inventoryEdit: HubInventoryEditSlice
   cutLogPanel: CutLogEditPanelController
   resetAll: () => void

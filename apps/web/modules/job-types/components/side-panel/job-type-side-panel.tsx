@@ -31,6 +31,7 @@ export function JobTypeSidePanel({ controller }: JobTypeSidePanelProps) {
     canSave,
     validationError,
     error,
+    successMessage,
     save,
     discard,
     close,
@@ -59,6 +60,7 @@ export function JobTypeSidePanel({ controller }: JobTypeSidePanelProps) {
           saveLabel="Create"
           savingLabel="Creating…"
           errorMessage={errorMessage}
+          successMessage={successMessage}
         />
       )
     }
@@ -72,6 +74,7 @@ export function JobTypeSidePanel({ controller }: JobTypeSidePanelProps) {
           onDiscard={discard}
           onDelete={deleteJobType}
           errorMessage={errorMessage}
+          successMessage={successMessage}
         />
       )
     }
@@ -85,6 +88,7 @@ export function JobTypeSidePanel({ controller }: JobTypeSidePanelProps) {
     discard,
     deleteJobType,
     errorMessage,
+    successMessage,
   ])
 
   return (

@@ -21,7 +21,7 @@ import type { PropertyHubMcMode } from "./types"
 
 export type CommitCreateCallbacks = {
   onSuccess?: (result: PropertyHubCreateResult) => void
-  onError?: (message: string) => void
+  onError?: (error: unknown) => void
 }
 
 export type UseHubCreateFormArgs = {
@@ -130,8 +130,7 @@ export function useHubCreateForm({ clearError }: UseHubCreateFormArgs): HubCreat
     ({ onSuccess, onError }: CommitCreateCallbacks) => {
       createMutation.mutate(createPayload, {
         onSuccess: (result) => onSuccess?.(result),
-        onError: (err) =>
-          onError?.(err instanceof Error ? err.message : String(err)),
+        onError: (err) => onError?.(err),
       })
     },
     [createMutation, createPayload],

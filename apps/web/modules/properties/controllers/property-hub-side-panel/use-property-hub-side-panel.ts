@@ -32,6 +32,10 @@ import {
 } from "./queries"
 import type { PropertyHubCreateResult } from "./mutations"
 import type { HubMode } from "./types"
+import {
+  normalizeRecordSectionError,
+  type RecordSectionError,
+} from "@/types/record/section-error"
 
 export type { PropertyHubCreateResult } from "./mutations"
 export type { HubActiveView, HubMode, HubPickerKind, PropertyHubMcMode } from "./types"
@@ -67,9 +71,13 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
   const { onCreated, onSaved } = options
 
   const [mode, setMode] = useState<HubMode>({ kind: "closed" })
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<RecordSectionError | null>(null)
   const clearError = useCallback(() => setError(null), [])
-  const setErrorMessage = useCallback((message: string) => setError(message), [])
+  const setErrorMessage = useCallback(
+    (err: unknown) =>
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Something went wrong" })),
+    [],
+  )
 
   // ===== Mode-derived context =====
   const contextMcId: string | null = useMemo(() => {
@@ -239,7 +247,7 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
         mcEdit.hydrateFromRow(toManagementCompanyForm(detail), detail.updatedAt)
         setMode({ kind: "section-edit-mc", mcId: detail.id })
       } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : String(err))
+        setErrorMessage(err)
       }
     },
     [mcEdit, setErrorMessage],
@@ -261,7 +269,7 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
           mcId: detail.managementCompany?.id ?? null,
         })
       } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : String(err))
+        setErrorMessage(err)
       }
     },
     [propertyEdit, setErrorMessage],

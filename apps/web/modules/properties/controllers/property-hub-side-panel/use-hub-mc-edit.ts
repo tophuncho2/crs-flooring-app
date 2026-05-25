@@ -22,12 +22,12 @@ export type UseHubMcEditArgs = {
 
 export type CommitMcUpdateCallbacks = {
   onSuccess?: (detail: ManagementCompanyDetail) => void
-  onError?: (message: string) => void
+  onError?: (error: unknown) => void
 }
 
 export type CommitMcDeleteCallbacks = {
   onSuccess?: () => void
-  onError?: (message: string) => void
+  onError?: (error: unknown) => void
 }
 
 export type HubMcEditSlice = {
@@ -148,8 +148,7 @@ export function useHubMcEdit({
             applyServerSnapshot(toManagementCompanyForm(detail), detail.updatedAt)
             onSuccess?.(detail)
           },
-          onError: (err) =>
-            onError?.(err instanceof Error ? err.message : String(err)),
+          onError: (err) => onError?.(err),
         },
       )
     },
@@ -171,8 +170,7 @@ export function useHubMcEdit({
             })
             onSuccess?.()
           },
-          onError: (err) =>
-            onError?.(err instanceof Error ? err.message : String(err)),
+          onError: (err) => onError?.(err),
         },
       )
     },
