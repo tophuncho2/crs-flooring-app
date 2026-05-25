@@ -46,6 +46,14 @@ export function renderInventoryRowCell(
       ) : (
         <span className="text-[var(--text-muted)]">-</span>
       )
+    case "coveragePerUnit":
+      return row.coveragePerUnit ? (
+        <span className="tabular-nums">
+          {formatInventoryQuantity(row.coveragePerUnit, row.itemCoverageUnitAbbrev)}
+        </span>
+      ) : (
+        <span className="text-[var(--text-muted)]">-</span>
+      )
     case "totalCutSum":
       return (
         <span className="tabular-nums">

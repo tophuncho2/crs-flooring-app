@@ -74,6 +74,13 @@ export function InventoryStockGroup({
                 : "—"}
             </StaticFieldValue>
           </InventoryField>
+          <InventoryField label="Coverage Per Unit">
+            <StaticFieldValue>
+              {inventory.coveragePerUnit
+                ? formatInventoryQuantity(inventory.coveragePerUnit, inventory.itemCoverageUnitAbbrev)
+                : "—"}
+            </StaticFieldValue>
+          </InventoryField>
           <InventoryField label="Total Cut">
             <StaticFieldValue>
               {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}
