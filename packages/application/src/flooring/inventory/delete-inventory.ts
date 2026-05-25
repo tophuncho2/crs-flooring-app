@@ -1,6 +1,7 @@
 import {
   Prisma,
   deleteInventoryRecordById,
+  deleteStagedInventoryRecordById,
   getInventoryDeleteState,
   lockInventoryRow,
   withDatabaseTransaction,
@@ -41,7 +42,14 @@ export async function deleteInventoryUseCase(
       })
     }
 
+    // Delete inventory first — this clears the FK reference, so the staged row
+    // can then be removed without tripping the constraint. The link is 1:1 and
+    // forward-only; rows with no link (manual creates, pre-migration rows)
+    // simply skip the staged-row delete.
     await deleteInventoryRecordById(id, c)
+    if (state.sourceStagedRowId) {
+      await deleteStagedInventoryRecordById(state.sourceStagedRowId, c)
+    }
     return { ok: true }
   })
 }

@@ -251,6 +251,8 @@ model FlooringInventory {
   inventoryNumberInt     Int?                 @default(dbgenerated("(SUBSTRING(inventory_number FROM 5))::integer"))
   importEntryId          String?
   importEntry            FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
+  sourceStagedRowId      String?              @unique
+  sourceStagedRow        FlooringImportStagedInventoryRow? @relation(fields: [sourceStagedRowId], references: [id], onDelete: SetNull)
   importNumber           String?
   purchaseOrderNumber    String?
   productId              String
@@ -321,6 +323,7 @@ model FlooringImportStagedInventoryRow {
   note            String?                                @db.VarChar(30)
   createdAt       DateTime                               @default(now())
   updatedAt       DateTime                               @updatedAt
+  inventoryRow    FlooringInventory?
 
   @@index([importEntryId])
   @@index([filterRowId])

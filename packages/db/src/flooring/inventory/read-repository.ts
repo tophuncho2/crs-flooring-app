@@ -211,14 +211,22 @@ export async function countInventory(
 export async function getInventoryDeleteState(
   id: string,
   client: InventoryDbClient = db,
-): Promise<{ hasCutLogs: boolean; cutLogsCount: number } | null> {
+): Promise<{
+  hasCutLogs: boolean
+  cutLogsCount: number
+  sourceStagedRowId: string | null
+} | null> {
   const row = await client.flooringInventory.findUnique({
     where: { id },
-    select: { _count: { select: { cutLogs: true } } },
+    select: { sourceStagedRowId: true, _count: { select: { cutLogs: true } } },
   })
   if (!row) return null
   const cutLogsCount = row._count.cutLogs
-  return { hasCutLogs: cutLogsCount > 0, cutLogsCount }
+  return {
+    hasCutLogs: cutLogsCount > 0,
+    cutLogsCount,
+    sourceStagedRowId: row.sourceStagedRowId,
+  }
 }
 
 export async function countInventoriesByProductId(

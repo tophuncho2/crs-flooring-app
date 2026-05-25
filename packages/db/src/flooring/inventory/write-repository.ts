@@ -215,6 +215,7 @@ export async function materializeStagedRowsToInventory(
   const createData: Prisma.FlooringInventoryCreateManyInput[] = input.inventoryRowsToCreate.map(
     (row) => ({
       id: row.id,
+      sourceStagedRowId: row.sourceStagedRowId,
       importEntryId: row.importEntryId,
       importNumber: row.importNumber,
       purchaseOrderNumber: row.purchaseOrderNumber,
