@@ -64,6 +64,9 @@ export function ProductDetailsGroup({
               ariaLabel="Category"
             />
           )}
+          <p className="mt-1 text-xs text-[var(--foreground)]/60">
+            This can&rsquo;t be changed after saving.
+          </p>
         </ProductField>
         <ProductField label="Manufacturer">
           <ManufacturerPicker
@@ -110,16 +113,11 @@ export function ProductDetailsGroup({
           {categoryReadOnly ? (
             // Immutable post-create — coveragePerUnit is snapshotted onto
             // inventory rows, so the record view renders it read-only.
-            <>
-              <StaticFieldValue>
-                {draft.coveragePerUnit
-                  ? `${draft.coveragePerUnit} ${selectedCategory?.itemCoverageUnit ?? "Unit"}`
-                  : "—"}
-              </StaticFieldValue>
-              <p className="mt-1 text-xs text-[var(--foreground)]/60">
-                This can&rsquo;t be changed after saving.
-              </p>
-            </>
+            <StaticFieldValue>
+              {draft.coveragePerUnit
+                ? `${draft.coveragePerUnit} ${selectedCategory?.itemCoverageUnit ?? "Unit"}`
+                : "—"}
+            </StaticFieldValue>
           ) : (
             <div
               className={`flex w-full overflow-hidden rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] transition focus-within:border-sky-500/60 focus-within:ring-1 focus-within:ring-sky-500/40 ${coverageRequired ? "" : "opacity-60"}`}
@@ -138,6 +136,9 @@ export function ProductDetailsGroup({
               </span>
             </div>
           )}
+          <p className="mt-1 text-xs text-[var(--foreground)]/60">
+            This can&rsquo;t be changed after saving.
+          </p>
         </ProductField>
       </div>
     </ProductGroup>
