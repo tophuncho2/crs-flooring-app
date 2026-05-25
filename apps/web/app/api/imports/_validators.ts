@@ -8,15 +8,11 @@ import {
 } from "@builders/application"
 import type { CreateImportInput, UpdateImportInput } from "@builders/application"
 import {
-  IMPORT_INTERNAL_NOTES_MAX,
-  IMPORT_PURCHASE_ORDER_NUMBER_MAX,
+  IMPORT_OPTIONS_DEFAULT_TAKE,
+  IMPORT_OPTIONS_MAX_TAKE,
   LIST_IMPORTS_ALLOWED_GROUP_FIELDS,
   LIST_IMPORTS_MAX_PAGE_SIZE,
   LIST_IMPORTS_PAGE_SIZE,
-  STAGED_INVENTORY_ROW_DYE_LOT_MAX,
-  STAGED_INVENTORY_ROW_LOCATION_MAX,
-  STAGED_INVENTORY_ROW_NOTE_MAX,
-  STAGED_INVENTORY_ROW_ROLL_NUMBER_MAX,
 } from "@builders/domain"
 // no sort param — imports default to createdAt desc, hardcoded server-side
 import type {
@@ -58,27 +54,10 @@ function optionalString(value: unknown, field: string): string {
   return value
 }
 
-function optionalBoundedString(value: unknown, max: number, field: string): string {
-  const str = optionalString(value, field)
-  if (str.length > max) {
-    throw new ImportExecutionError({
-      code: "IMPORT_VALIDATION_FAILED",
-      message: `${field} must be ${max} characters or fewer`,
-      status: 400,
-      field,
-    })
-  }
-  return str
-}
-
 export function validateCreateImportInput(body: Record<string, unknown>): CreateImportInput {
   return {
-    purchaseOrderNumber: optionalBoundedString(
-      body.purchaseOrderNumber,
-      IMPORT_PURCHASE_ORDER_NUMBER_MAX,
-      "purchaseOrderNumber",
-    ),
-    internalNotes: optionalBoundedString(body.internalNotes, IMPORT_INTERNAL_NOTES_MAX, "internalNotes"),
+    purchaseOrderNumber: optionalString(body.purchaseOrderNumber, "purchaseOrderNumber"),
+    internalNotes: optionalString(body.internalNotes, "internalNotes"),
     warehouseId: requireString(body.warehouseId, "warehouseId"),
     manufacturerId: optionalString(body.manufacturerId, "manufacturerId"),
   }
@@ -87,13 +66,9 @@ export function validateCreateImportInput(body: Record<string, unknown>): Create
 export function validateUpdateImportInput(body: Record<string, unknown>): UpdateImportInput {
   const input: UpdateImportInput = {}
   if (body.purchaseOrderNumber !== undefined)
-    input.purchaseOrderNumber = optionalBoundedString(
-      body.purchaseOrderNumber,
-      IMPORT_PURCHASE_ORDER_NUMBER_MAX,
-      "purchaseOrderNumber",
-    )
+    input.purchaseOrderNumber = optionalString(body.purchaseOrderNumber, "purchaseOrderNumber")
   if (body.internalNotes !== undefined)
-    input.internalNotes = optionalBoundedString(body.internalNotes, IMPORT_INTERNAL_NOTES_MAX, "internalNotes")
+    input.internalNotes = optionalString(body.internalNotes, "internalNotes")
   if (body.warehouseId !== undefined) input.warehouseId = requireString(body.warehouseId, "warehouseId")
   if (body.manufacturerId !== undefined) input.manufacturerId = optionalString(body.manufacturerId, "manufacturerId")
   return input
@@ -121,12 +96,6 @@ function optionalStagedString(value: unknown, path: string): string {
   return value as string
 }
 
-function optionalStagedBoundedString(value: unknown, max: number, path: string): string {
-  const str = optionalStagedString(value, path)
-  if (str.length > max) failStaged(`${path} must be ${max} characters or fewer`, path)
-  return str
-}
-
 function requireStagedObject(value: unknown, path: string): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     failStaged(`${path} must be an object`, path)
@@ -142,15 +111,11 @@ function requireStagedArray(value: unknown, path: string): unknown[] {
 function shapeStagedForm(raw: unknown, path: string): StagedInventoryForm {
   const form = requireStagedObject(raw, path)
   return {
-    rollNumber: optionalStagedBoundedString(
-      form.rollNumber,
-      STAGED_INVENTORY_ROW_ROLL_NUMBER_MAX,
-      `${path}.rollNumber`,
-    ),
-    dyeLot: optionalStagedBoundedString(form.dyeLot, STAGED_INVENTORY_ROW_DYE_LOT_MAX, `${path}.dyeLot`),
-    location: optionalStagedBoundedString(form.location, STAGED_INVENTORY_ROW_LOCATION_MAX, `${path}.location`),
+    rollNumber: optionalStagedString(form.rollNumber, `${path}.rollNumber`),
+    dyeLot: optionalStagedString(form.dyeLot, `${path}.dyeLot`),
+    location: optionalStagedString(form.location, `${path}.location`),
     startingStock: requireStagedString(form.startingStock, `${path}.startingStock`),
-    note: optionalStagedBoundedString(form.note, STAGED_INVENTORY_ROW_NOTE_MAX, `${path}.note`),
+    note: optionalStagedString(form.note, `${path}.note`),
   }
 }
 
@@ -168,10 +133,9 @@ function failMarkForImport(message: string, field?: string): never {
 export function validateMarkForImportBody(body: Record<string, unknown>): { stagedRowIds: string[] } {
   const raw = body.stagedRowIds
   if (!Array.isArray(raw)) failMarkForImport("stagedRowIds must be an array", "stagedRowIds")
-  if (raw.length === 0) failMarkForImport("stagedRowIds must not be empty", "stagedRowIds")
   const stagedRowIds = raw.map((value, idx) => {
-    if (typeof value !== "string" || value.trim() === "") {
-      failMarkForImport(`stagedRowIds[${idx}] must be a non-empty string`, `stagedRowIds[${idx}]`)
+    if (typeof value !== "string") {
+      failMarkForImport(`stagedRowIds[${idx}] must be a string`, `stagedRowIds[${idx}]`)
     }
     return value as string
   })
@@ -387,9 +351,6 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
 
 // --- Options (picker) query validator ---
 
-const OPTIONS_DEFAULT_TAKE = 20
-const OPTIONS_MAX_TAKE = 50
-
 const importOptionsQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
   search: z.string().optional(),
@@ -398,8 +359,8 @@ const importOptionsQuerySchema = z.object({
     .number()
     .int()
     .min(1)
-    .max(OPTIONS_MAX_TAKE)
-    .default(OPTIONS_DEFAULT_TAKE),
+    .max(IMPORT_OPTIONS_MAX_TAKE)
+    .default(IMPORT_OPTIONS_DEFAULT_TAKE),
 })
 
 export type ValidatedImportOptionsQuery = {

@@ -9,7 +9,9 @@ import {
 import {
   IMPORT_MATERIALIZE_TOPIC,
   ImportMaterializeBatchPayloadSchema,
+  buildMarkForImportSelectionMessage,
   buildStagedImportBatchIneligibleMessage,
+  validateMarkForImportSelection,
   validateStagedImportBatch,
 } from "@builders/domain"
 import { StagedInventoryExecutionError } from "./errors.js"
@@ -23,6 +25,16 @@ export async function markStagedRowsForImportUseCase(
 ): Promise<MarkStagedRowsForImportResult> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
+
+    const selectionIssues = validateMarkForImportSelection(stagedRowIds)
+    if (selectionIssues.length > 0) {
+      throw new StagedInventoryExecutionError({
+        code: "STAGED_VALIDATION_FAILED",
+        message: buildMarkForImportSelectionMessage(selectionIssues),
+        status: 400,
+        payload: { issues: selectionIssues },
+      })
+    }
 
     await c.$queryRaw(
       Prisma.sql`SELECT "id" FROM "flooring_import_entry" WHERE "id" = ${importEntryId} FOR UPDATE`,

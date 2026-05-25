@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest"
 import {
   validateStagedImportBatch,
   buildStagedImportBatchIneligibleMessage,
+  validateMarkForImportSelection,
+  buildMarkForImportSelectionMessage,
 } from "../../../../src/flooring/imports/staged-inventory-rows/import-batch-rules.js"
 import type { StagedInventoryRow } from "../../../../src/flooring/imports/staged-inventory-rows/types.js"
 
@@ -161,5 +163,36 @@ describe("buildStagedImportBatchIneligibleMessage", () => {
       { rowId: "row-2", reason: "MISSING_WAREHOUSE" },
     ])
     expect(msg).toContain("2 rows are not ready")
+  })
+})
+
+describe("validateMarkForImportSelection", () => {
+  it("returns no issues for a non-empty selection of real ids", () => {
+    expect(validateMarkForImportSelection(["a", "b"])).toEqual([])
+  })
+
+  it("returns SELECTION_EMPTY for an empty selection", () => {
+    expect(validateMarkForImportSelection([])).toEqual([{ code: "SELECTION_EMPTY" }])
+  })
+
+  it("returns SELECTION_BLANK_ID (with index) for blank ids", () => {
+    expect(validateMarkForImportSelection(["a", "  ", "b", ""])).toEqual([
+      { code: "SELECTION_BLANK_ID", index: 1 },
+      { code: "SELECTION_BLANK_ID", index: 3 },
+    ])
+  })
+})
+
+describe("buildMarkForImportSelectionMessage", () => {
+  it("prioritizes the empty-selection message", () => {
+    expect(buildMarkForImportSelectionMessage([{ code: "SELECTION_EMPTY" }])).toMatch(
+      /at least one staged row/i,
+    )
+  })
+
+  it("describes a blank id", () => {
+    expect(
+      buildMarkForImportSelectionMessage([{ code: "SELECTION_BLANK_ID", index: 0 }]),
+    ).toMatch(/blank/i)
   })
 })
