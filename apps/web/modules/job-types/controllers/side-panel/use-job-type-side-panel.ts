@@ -62,6 +62,10 @@ export function useJobTypeSidePanel(options?: {
   const [updatedAt, setUpdatedAt] = useState<string | null>(null)
   const [error, setError] = useState<RecordSectionError | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  // Gates whether the required-field message is surfaced. Stays false until
+  // the user edits the name, so a fresh create panel doesn't nag before any
+  // input — `canSave` still keeps Save disabled in the meantime.
+  const [nameTouched, setNameTouched] = useState(false)
 
   const createMutation = useCreateJobTypeMutation()
   const updateMutation = useUpdateJobTypeMutation()
@@ -96,6 +100,7 @@ export function useJobTypeSidePanel(options?: {
     setUpdatedAt(null)
     setError(null)
     setSuccessMessage(null)
+    setNameTouched(false)
     setMode({ kind: "create" })
   }, [])
 
@@ -106,6 +111,7 @@ export function useJobTypeSidePanel(options?: {
     setUpdatedAt(row.updatedAt)
     setError(null)
     setSuccessMessage(null)
+    setNameTouched(false)
     setMode({ kind: "edit", id: row.id })
   }, [])
 
@@ -133,12 +139,14 @@ export function useJobTypeSidePanel(options?: {
     setUpdatedAt(null)
     setError(null)
     setSuccessMessage(null)
+    setNameTouched(false)
   }, [isSaving])
 
   const setName = useCallback((value: string) => {
     setForm((prev) => ({ ...prev, name: value }))
     setError(null)
     setSuccessMessage(null)
+    setNameTouched(true)
   }, [])
 
   const save = useCallback(() => {
@@ -192,12 +200,14 @@ export function useJobTypeSidePanel(options?: {
       setForm(EMPTY_JOB_TYPE_FORM)
       setError(null)
       setSuccessMessage(null)
+      setNameTouched(false)
       return
     }
     if (mode.kind === "edit") {
       setForm(baseline)
       setError(null)
       setSuccessMessage(null)
+      setNameTouched(false)
     }
   }, [isSaving, mode.kind, baseline])
 
@@ -231,7 +241,9 @@ export function useJobTypeSidePanel(options?: {
     isDirty,
     isSaving,
     canSave,
-    validationError,
+    // Only surface the required-field message once the user has engaged the
+    // field; `canSave` already gates Save with the ungated check above.
+    validationError: nameTouched ? validationError : null,
     error,
     successMessage,
     openForCreate,
