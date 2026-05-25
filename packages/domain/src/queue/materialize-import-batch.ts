@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { MAX_MARK_FOR_IMPORT_ROWS } from "../flooring/imports/staged-inventory-rows/import-batch-rules.js"
 
 /**
  * Outbox + queue contract for "user queued N staged rows for materialization."
@@ -25,7 +26,7 @@ export const ImportMaterializeBatchPayloadSchema = z.object({
   version: z.literal("v1"),
   topic: z.literal(IMPORT_MATERIALIZE_TOPIC),
   importEntryId: z.string().uuid(),
-  stagedRowIds: z.array(z.string().uuid()).min(1).max(500),
+  stagedRowIds: z.array(z.string().uuid()).min(1).max(MAX_MARK_FOR_IMPORT_ROWS),
   requestedBy: z.object({
     userId: z.string().uuid(),
     userEmail: z.string().email(),

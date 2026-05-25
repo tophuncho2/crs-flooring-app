@@ -1,6 +1,5 @@
 import type { RedisConnectionConfig } from "@builders/lib"
 import { buildMaterializeImportDispatcher } from "./build-materialize-import-dispatcher.js"
-import { buildWorkOrderFileGenerationDispatcher } from "./build-work-order-file-generation-dispatcher.js"
 import type { TopicDispatcher } from "./topic-dispatcher.js"
 
 /**
@@ -16,8 +15,5 @@ import type { TopicDispatcher } from "./topic-dispatcher.js"
 export type AnyTopicDispatcher = TopicDispatcher<any>
 
 export function buildDispatchers(connection: RedisConnectionConfig): AnyTopicDispatcher[] {
-  return [
-    buildMaterializeImportDispatcher(connection),
-    buildWorkOrderFileGenerationDispatcher(connection),
-  ]
+  return [buildMaterializeImportDispatcher(connection)]
 }

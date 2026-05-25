@@ -248,14 +248,16 @@ export async function countWorkOrderCutLogs(
 }
 
 /**
- * Joined read shape consumed by the file-generation worker. Returns the
- * data already projected to `WorkOrderFileGenerationInput` so the worker
- * can hand it straight to `buildWorkOrderPdfHtml` from the domain layer.
+ * Joined read shape consumed by the on-demand print views (Work Order
+ * Slip / Picking Ticket). Returns the data already projected to
+ * `WorkOrderFileGenerationInput` so the page loader can hand it straight
+ * to `buildWorkOrderSlipHtml` / `buildWorkOrderPickingTicketHtml` from
+ * the domain layer.
  *
  * Inventory identity + unit fields on each cut log are read from the
  * cut log row's snapshot columns rather than the joined inventory or
- * product row. The PDF artifact in the bucket IS the snapshot per
- * locked decision; this read runs at worker time.
+ * product row, so the printed document reflects the values captured at
+ * cut time. This read runs at request time when a print view is opened.
  */
 export async function getWorkOrderForFileGeneration(
   workOrderId: string,

@@ -1,15 +1,12 @@
 import { getDatabaseEnvironment } from "@builders/db"
 import {
-  GENERATE_WORK_ORDER_FILE_QUEUE,
   IMPORT_MATERIALIZE_QUEUE,
-  type GenerateWorkOrderFilePayload,
   type ImportMaterializeBatchPayload,
 } from "@builders/domain"
 import { logStructuredEvent } from "@builders/lib"
 import { QueueEvents, Worker } from "bullmq"
-import { getWorkerEnvironment, getWorkerStorageEnvironment } from "./env.js"
+import { getWorkerEnvironment } from "./env.js"
 import { createMaterializeImportBatchHandler } from "./processors/materialize-import-batch.js"
-import { createWorkOrderFileGenerationHandler } from "./processors/work-order-file-generation.js"
 import { createQueueConnection } from "./queues/connection.js"
 
 async function main() {
@@ -94,94 +91,11 @@ async function main() {
   })
 
   // ---------------------------------------------------------------------------
-  // Work order file generation (sweep 7)
-  // ---------------------------------------------------------------------------
-  // Storage env asserted here so a missing AWS_* var fails fast at boot
-  // with a precise error message, rather than silently per-job.
-  const workOrderFileStorageEnv = getWorkerStorageEnvironment(env)
-  const woFileGenHandler = createWorkOrderFileGenerationHandler({
-    storageEnv: workOrderFileStorageEnv,
-  })
-  const woFileGenWorker = new Worker<GenerateWorkOrderFilePayload>(
-    GENERATE_WORK_ORDER_FILE_QUEUE,
-    async (job) => woFileGenHandler(job),
-    {
-      connection,
-      concurrency: env.workOrderFileGenerationWorkerConcurrency,
-      lockDuration: env.workOrderFileGenerationWorkerLockDurationMs,
-      autorun: false,
-    },
-  )
-  const woFileGenEvents = new QueueEvents(GENERATE_WORK_ORDER_FILE_QUEUE, { connection })
-
-  woFileGenWorker.on("active", (job) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Work-order file generation job active",
-      action: "worker.work_orders.file_generation.active",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "PROCESSING",
-      details: {
-        workOrderId: job.data.workOrderId,
-        fileId: job.data.fileId,
-      },
-    })
-  })
-
-  woFileGenWorker.on("completed", (job, result) => {
-    logStructuredEvent({
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Work-order file generation job completed",
-      action: "worker.work_orders.file_generation.completed",
-      idempotencyKey: typeof job.id === "string" ? job.id : undefined,
-      queueJobId: typeof job.id === "string" ? job.id : undefined,
-      attempt: job.attemptsStarted,
-      status: "COMPLETED",
-      details: {
-        workOrderId: job.data.workOrderId,
-        fileId: job.data.fileId,
-        fileKey:
-          result && typeof result === "object" && "fileKey" in result &&
-          typeof (result as { fileKey: unknown }).fileKey === "string"
-            ? (result as { fileKey: string }).fileKey
-            : undefined,
-      },
-    })
-  })
-
-  woFileGenWorker.on("failed", (job, error) => {
-    logStructuredEvent({
-      level: "error",
-      service: env.serviceName,
-      environment: env.environmentName,
-      message: "Work-order file generation job failed",
-      action: "worker.work_orders.file_generation.failed",
-      idempotencyKey: typeof job?.id === "string" ? job.id : undefined,
-      queueJobId: typeof job?.id === "string" ? job.id : undefined,
-      attempt: job?.attemptsStarted,
-      status: "FAILED",
-      details: job
-        ? {
-            workOrderId: job.data.workOrderId,
-            fileId: job.data.fileId,
-          }
-        : undefined,
-      error,
-    })
-  })
-
-  // ---------------------------------------------------------------------------
   // Wait for everyone, log readiness, set up shutdown
   // ---------------------------------------------------------------------------
   await Promise.all([
     materializeWorker.waitUntilReady(),
     materializeEvents.waitUntilReady(),
-    woFileGenWorker.waitUntilReady(),
-    woFileGenEvents.waitUntilReady(),
   ])
 
   // Each Worker was constructed with `autorun: false` so it doesn't pull
@@ -195,7 +109,6 @@ async function main() {
   // resolve when each worker is closed (during shutdown); we deliberately
   // don't await them at the call site.
   void materializeWorker.run()
-  void woFileGenWorker.run()
 
   logStructuredEvent({
     service: env.serviceName,
@@ -204,14 +117,12 @@ async function main() {
     action: "worker.ready",
     status: "ready",
     details: {
-      queues: [IMPORT_MATERIALIZE_QUEUE, GENERATE_WORK_ORDER_FILE_QUEUE],
+      queues: [IMPORT_MATERIALIZE_QUEUE],
       concurrency: {
         materialize: env.materializeWorkerConcurrency,
-        workOrderFileGeneration: env.workOrderFileGenerationWorkerConcurrency,
       },
       lockDurationMs: {
         materialize: env.materializeWorkerLockDurationMs,
-        workOrderFileGeneration: env.workOrderFileGenerationWorkerLockDurationMs,
       },
     },
   })
@@ -223,8 +134,6 @@ async function main() {
       await Promise.all([
         materializeEvents.close(),
         materializeWorker.close(),
-        woFileGenEvents.close(),
-        woFileGenWorker.close(),
       ])
       resolve()
     }

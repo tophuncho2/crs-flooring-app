@@ -11,7 +11,6 @@ import type {
   WorkOrderMaterialItemRow,
   WorkOrderMaterialItemsDiff,
 } from "@builders/domain"
-import type { WorkOrderFileRow } from "@builders/db"
 
 export async function createWorkOrderRequest(input: CreateWorkOrderUseCaseInput) {
   return requestJson<{ workOrder: WorkOrderDetail }>("/api/work-orders", {
@@ -68,37 +67,6 @@ export async function saveWorkOrderMaterialItemsSectionRequest(
 // views). They were extracted in the cut-logs FE sweep; this file no
 // longer carries them.
 
-export async function requestWorkOrderFileRequest(workOrderId: string) {
-  return requestJson<{
-    file: { fileId: string; fileNumber: number; outboxEventId: string; wasDuplicate: boolean }
-  }>(`/api/work-orders/${workOrderId}/files`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(withMutationMeta({})),
-  })
-}
-
-export async function deleteWorkOrderFileRequest(workOrderId: string, fileId: string) {
-  return requestJson<{ ok: true }>(`/api/work-orders/${workOrderId}/files/${fileId}`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(withMutationMeta({})),
-  })
-}
-
-export async function getWorkOrderFileDownloadUrlRequest(args: {
-  workOrderId: string
-  fileId: string
-}) {
-  return requestJson<{ url: string }>(
-    `/api/work-orders/${args.workOrderId}/files/${args.fileId}/download`,
-    {
-      method: "GET",
-      headers: { Accept: "application/json" },
-    },
-  )
-}
-
 export async function listEligibleInventoryRequest(args: {
   workOrderId: string
   workOrderItemId: string
@@ -122,15 +90,4 @@ export async function listEligibleInventoryRequest(args: {
       headers: { Accept: "application/json" },
     },
   )
-}
-
-export async function listWorkOrderFilesRequest(
-  workOrderId: string,
-  signal?: AbortSignal,
-) {
-  return requestJson<{ files: WorkOrderFileRow[] }>(`/api/work-orders/${workOrderId}/files`, {
-    method: "GET",
-    headers: { Accept: "application/json" },
-    signal,
-  })
 }

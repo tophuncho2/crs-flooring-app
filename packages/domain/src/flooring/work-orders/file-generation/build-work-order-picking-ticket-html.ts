@@ -7,9 +7,8 @@ import {
 } from "./work-order-document-sections.js"
 
 /**
- * Page 2 of the work-order document ("Picking Ticket"), rendered as a
- * self-contained HTML fragment for the on-demand print view. Mirrors the
- * second page of `buildWorkOrderPdfHtml` exactly:
+ * The "Picking Ticket" document, rendered as a self-contained HTML
+ * fragment for the on-demand print view:
  *
  *   - H1 + "Picking Ticket" tag in the top-right
  *   - H2 scheduled date + the same top table as the slip
@@ -17,9 +16,8 @@ import {
  *     no description)
  *
  * Returns a `<style>` + `.wo-print-root` fragment to inject into the print
- * page; no `<html>`/`<body>` (those come from the Next root layout). The
- * PDF builder's `.page-break` wrapper is intentionally absent — this view
- * is its own single page.
+ * page; no `<html>`/`<body>` (those come from the Next root layout). This
+ * view is its own single page — no inter-page break wrapper.
  */
 export function buildWorkOrderPickingTicketHtml(input: WorkOrderFileGenerationInput): string {
   const sections = [

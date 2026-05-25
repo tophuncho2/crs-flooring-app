@@ -13,6 +13,7 @@ import {
   LIST_IMPORTS_ALLOWED_GROUP_FIELDS,
   LIST_IMPORTS_MAX_PAGE_SIZE,
   LIST_IMPORTS_PAGE_SIZE,
+  MAX_MARK_FOR_IMPORT_ROWS,
 } from "@builders/domain"
 // no sort param — imports default to createdAt desc, hardcoded server-side
 import type {
@@ -133,6 +134,12 @@ function failMarkForImport(message: string, field?: string): never {
 export function validateMarkForImportBody(body: Record<string, unknown>): { stagedRowIds: string[] } {
   const raw = body.stagedRowIds
   if (!Array.isArray(raw)) failMarkForImport("stagedRowIds must be an array", "stagedRowIds")
+  if (raw.length > MAX_MARK_FOR_IMPORT_ROWS) {
+    failMarkForImport(
+      `Too many rows selected (${raw.length}). A single import is limited to ${MAX_MARK_FOR_IMPORT_ROWS} rows — split the selection into smaller batches.`,
+      "stagedRowIds",
+    )
+  }
   const stagedRowIds = raw.map((value, idx) => {
     if (typeof value !== "string") {
       failMarkForImport(`stagedRowIds[${idx}] must be a string`, `stagedRowIds[${idx}]`)

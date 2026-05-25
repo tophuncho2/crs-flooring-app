@@ -6,7 +6,6 @@ import {
   listCutLogsForWorkOrderItemIds,
   listWorkOrderMaterialItems,
   type PrismaDetailPageResult,
-  type WorkOrderFileRow,
 } from "@builders/db"
 import type {
   CutLogRow,
@@ -14,13 +13,6 @@ import type {
   WorkOrderFileGenerationInput,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
-
-// Re-export Prisma payload types so module UI files don't have to
-// import `@builders/db` directly. Per `apps/web/modules/CLAUDE.md`,
-// db imports stay inside `data/`. `WorkOrderFileRow` is consumed by
-// the files side panel (mutations/queries) even though the row list
-// itself is no longer SSR-pre-fetched here.
-export type { WorkOrderFileRow }
 
 // All form-option fields are powered by async pickers
 // (PropertyPicker / ManagementCompanyPicker / TemplatePicker / ProductPicker /

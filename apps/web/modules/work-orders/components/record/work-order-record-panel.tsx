@@ -16,7 +16,6 @@ import type { PropertyHubSaveResult } from "@/modules/properties/controllers/pro
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
-import { useWorkOrderFilesPanelTrigger } from "./files/work-order-files-panel-trigger"
 import { WorkOrderRecordFooter } from "./footer"
 
 export function WorkOrderRecordPanel({
@@ -36,15 +35,12 @@ export function WorkOrderRecordPanel({
     initialCutLogsByWorkOrderItemId,
   )
 
-  const filesPanel = useWorkOrderFilesPanelTrigger(controller.record.id)
-
   const primaryActions = workOrderPrimarySectionActions({
     onSave: () => void controller.primarySection.save(),
     onDiscard: controller.primarySection.discard,
   })
 
-  // On-demand print views (live replacement for the file-gen worker output).
-  // The existing Files panel stays until these are confirmed.
+  // On-demand print views (replaced the retired file-generation worker).
   const workOrderId = controller.record.id
   const printActions: RecordSectionSubHeaderAction[] = [
     {
@@ -146,9 +142,7 @@ export function WorkOrderRecordPanel({
                 saveLabel={primaryActions.saveLabel}
                 savingLabel={primaryActions.savingLabel}
                 showHeader={false}
-                // Files panel (old file-gen worker flow) is UI-blocked while the
-                // print views take over; the panel stays mounted but unreachable.
-                actions={[{ ...filesPanel.action, disabled: true }, ...printActions]}
+                actions={printActions}
               >
                 <WorkOrderPrimaryFieldsSection
                   draft={controller.primarySection.localValue}
@@ -204,7 +198,6 @@ export function WorkOrderRecordPanel({
           },
         ]}
       />
-      {filesPanel.panel}
       <WorkOrderRecordFooter
         onClose={page.closePage}
         onDelete={controller.deleteRecord}

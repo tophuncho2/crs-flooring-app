@@ -542,7 +542,6 @@ model FlooringWorkOrder {
   updatedAt            DateTime                   @updatedAt
   items                FlooringWorkOrderItem[]
   cutLogs              FlooringCutLog[]
-  files                FlooringWorkOrderFile[]
 
   @@index([workOrderNumber])
   @@index([isComplete])
@@ -579,22 +578,6 @@ model FlooringWorkOrderItem {
   @@index([productId])
   @@index([sourceTemplateItemId])
   @@map("flooring_work_order_item")
-}
-
-model FlooringWorkOrderFile {
-  id           String                  @id @default(uuid())
-  workOrderId  String
-  workOrder    FlooringWorkOrder       @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  fileNumber   Int
-  status       FlooringWorkOrderStatus @default(QUEUED)
-  fileKey      String?
-  errorMessage String?
-  createdAt    DateTime                @default(now())
-  completedAt  DateTime?
-
-  @@unique([workOrderId, fileNumber])
-  @@index([workOrderId, createdAt])
-  @@map("flooring_work_order_file")
 }
 
 model QueueOutboxEvent {

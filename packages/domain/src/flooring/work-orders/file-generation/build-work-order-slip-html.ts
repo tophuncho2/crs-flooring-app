@@ -10,9 +10,9 @@ import {
 } from "./work-order-document-sections.js"
 
 /**
- * Page 1 of the work-order document ("Work Order Slip"), rendered as a
- * self-contained HTML fragment for the on-demand print view. Mirrors the
- * first page of `buildWorkOrderPdfHtml` exactly:
+ * The "Work Order Slip" document, rendered as a self-contained HTML
+ * fragment for the on-demand print view (the canonical work-order page
+ * since the file-generation worker was retired):
  *
  *   - H1: Work Order number
  *   - H2 scheduled date + warehouse / mgmt co / job type / property table
