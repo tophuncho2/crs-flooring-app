@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   EMPTY_MANUFACTURER_FORM,
@@ -14,6 +14,10 @@ import {
   updateManufacturerRequest,
 } from "@/modules/manufacturers/data/mutations"
 import { MANUFACTURERS_LIST_QUERY_KEY } from "@/modules/manufacturers/data/list-manufacturers-request"
+import {
+  normalizeRecordSectionError,
+  type RecordSectionError,
+} from "@/types/record/section-error"
 
 export type ManufacturerSidePanelOpenSpec =
   | { mode: "create" }
@@ -35,13 +39,20 @@ export function useManufacturerSidePanel() {
   const [open, setOpen] = useState<ManufacturerSidePanelOpenSpec | null>(null)
   const [form, setForm] = useState<ManufacturerForm>(EMPTY_MANUFACTURER_FORM)
   const [baseline, setBaseline] = useState<ManufacturerForm>(EMPTY_MANUFACTURER_FORM)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<RecordSectionError | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  // Set the moment a create succeeds so the create→edit transition (which
+  // re-runs the open effect) preserves the "created" notice instead of
+  // clearing it like a fresh navigation would.
+  const justCreatedRef = useRef(false)
 
   useEffect(() => {
     if (!open) {
       setForm(EMPTY_MANUFACTURER_FORM)
       setBaseline(EMPTY_MANUFACTURER_FORM)
       setError(null)
+      setSuccessMessage(null)
+      justCreatedRef.current = false
       return
     }
     if (open.mode === "edit") {
@@ -53,6 +64,11 @@ export function useManufacturerSidePanel() {
       setBaseline(EMPTY_MANUFACTURER_FORM)
     }
     setError(null)
+    if (justCreatedRef.current) {
+      justCreatedRef.current = false
+    } else {
+      setSuccessMessage(null)
+    }
   }, [open])
 
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
@@ -69,6 +85,7 @@ export function useManufacturerSidePanel() {
     <K extends keyof ManufacturerForm>(field: K, value: ManufacturerForm[K]) => {
       setForm((prev) => ({ ...prev, [field]: value }))
       setError(null)
+      setSuccessMessage(null)
     },
     [],
   )
@@ -79,11 +96,13 @@ export function useManufacturerSidePanel() {
       const next = toManufacturerForm(manufacturer)
       setForm(next)
       setBaseline(next)
+      justCreatedRef.current = true
+      setSuccessMessage("Manufacturer created")
       setOpen({ mode: "edit", manufacturer })
       void queryClient.invalidateQueries({ queryKey: [...MANUFACTURERS_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save manufacturer" }))
     },
   })
 
@@ -98,7 +117,7 @@ export function useManufacturerSidePanel() {
       void queryClient.invalidateQueries({ queryKey: [...MANUFACTURERS_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save manufacturer" }))
     },
   })
 
@@ -110,7 +129,7 @@ export function useManufacturerSidePanel() {
       void queryClient.invalidateQueries({ queryKey: [...MANUFACTURERS_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to delete manufacturer" }))
     },
   })
 
@@ -141,6 +160,7 @@ export function useManufacturerSidePanel() {
     if (isSaving) return
     setForm(baseline)
     setError(null)
+    setSuccessMessage(null)
   }, [isSaving, baseline])
 
   const close = useCallback(() => {
@@ -155,6 +175,7 @@ export function useManufacturerSidePanel() {
     isValid,
     isSaving,
     error,
+    successMessage,
     openCreate,
     openEdit,
     close,

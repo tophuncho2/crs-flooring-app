@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   EMPTY_WAREHOUSE_FORM,
@@ -14,6 +14,10 @@ import {
   updateWarehouseRequest,
 } from "@/modules/warehouse/data/mutations"
 import { WAREHOUSE_LIST_QUERY_KEY } from "@/modules/warehouse/data/list-warehouse-request"
+import {
+  normalizeRecordSectionError,
+  type RecordSectionError,
+} from "@/types/record/section-error"
 
 export type WarehouseSidePanelOpenSpec =
   | { mode: "create" }
@@ -46,13 +50,20 @@ export function useWarehouseSidePanel() {
   const [open, setOpen] = useState<WarehouseSidePanelOpenSpec | null>(null)
   const [form, setForm] = useState<WarehouseForm>(EMPTY_WAREHOUSE_FORM)
   const [baseline, setBaseline] = useState<WarehouseForm>(EMPTY_WAREHOUSE_FORM)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<RecordSectionError | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  // Set the moment a create succeeds so the create→edit transition (which
+  // re-runs the open effect) preserves the "created" notice instead of
+  // clearing it like a fresh navigation would.
+  const justCreatedRef = useRef(false)
 
   useEffect(() => {
     if (!open) {
       setForm(EMPTY_WAREHOUSE_FORM)
       setBaseline(EMPTY_WAREHOUSE_FORM)
       setError(null)
+      setSuccessMessage(null)
+      justCreatedRef.current = false
       return
     }
     if (open.mode === "edit") {
@@ -64,6 +75,11 @@ export function useWarehouseSidePanel() {
       setBaseline(EMPTY_WAREHOUSE_FORM)
     }
     setError(null)
+    if (justCreatedRef.current) {
+      justCreatedRef.current = false
+    } else {
+      setSuccessMessage(null)
+    }
   }, [open])
 
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
@@ -80,6 +96,7 @@ export function useWarehouseSidePanel() {
     <K extends keyof WarehouseForm>(field: K, value: WarehouseForm[K]) => {
       setForm((prev) => ({ ...prev, [field]: value }))
       setError(null)
+      setSuccessMessage(null)
     },
     [],
   )
@@ -90,11 +107,13 @@ export function useWarehouseSidePanel() {
       const next = toWarehouseForm(warehouse)
       setForm(next)
       setBaseline(next)
+      justCreatedRef.current = true
+      setSuccessMessage("Warehouse created")
       setOpen({ mode: "edit", warehouse })
       void queryClient.invalidateQueries({ queryKey: [...WAREHOUSE_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save warehouse" }))
     },
   })
 
@@ -109,7 +128,7 @@ export function useWarehouseSidePanel() {
       void queryClient.invalidateQueries({ queryKey: [...WAREHOUSE_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save warehouse" }))
     },
   })
 
@@ -121,7 +140,7 @@ export function useWarehouseSidePanel() {
       void queryClient.invalidateQueries({ queryKey: [...WAREHOUSE_LIST_QUERY_KEY] })
     },
     onError: (err: unknown) => {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to delete warehouse" }))
     },
   })
 
@@ -151,6 +170,7 @@ export function useWarehouseSidePanel() {
     if (isSaving) return
     setForm(baseline)
     setError(null)
+    setSuccessMessage(null)
   }, [isSaving, baseline])
 
   const close = useCallback(() => {
@@ -165,6 +185,7 @@ export function useWarehouseSidePanel() {
     isValid,
     isSaving,
     error,
+    successMessage,
     openCreate,
     openEdit,
     close,

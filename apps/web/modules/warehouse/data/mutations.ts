@@ -1,7 +1,7 @@
 "use client"
 
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
-import { withMutationMeta } from "@/modules/shared/engines/common/transport/mutation"
+import { requestJson } from "@/transport/http"
+import { withMutationMeta } from "@/transport/mutation"
 import type { WarehouseForm } from "@builders/domain"
 import type { WarehouseRecord } from "@builders/db"
 

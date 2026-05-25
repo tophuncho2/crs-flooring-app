@@ -8,6 +8,8 @@ import {
   SidePanelEditSaveButton,
   SidePanelEditStatusPill,
 } from "@/components/side-panel-edit/controls"
+import type { RecordSectionError } from "@/types/record/section-error"
+import { HubSidePanelNotice } from "./hub-side-panel-notice"
 
 const HUB_VIEW_BUTTON_CLASS_NAME = [
   "inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm transition-all duration-200",
@@ -53,7 +55,15 @@ export type HubSidePanelEditToolbarProps = {
   extraLeftActions?: ReactNode
   saveLabel?: string
   savingLabel?: string
-  errorMessage?: string | null
+  /**
+   * Failure feedback rendered below the action row. Pass a
+   * `RecordSectionError` (via `normalizeRecordSectionError`) for the rich,
+   * tone-coded panel (a 409 reads as a "Conflict" box); a plain string
+   * renders the compact rose notice.
+   */
+  errorMessage?: RecordSectionError | string | null
+  /** Confirmation feedback rendered below the action row (emerald notice). */
+  successMessage?: string | null
   /**
    * Force-disable Save / Discard / Delete / Hub-view. Used to keep the
    * toolbar mounted (so the sticky header height — and the picker triggers'
@@ -87,6 +97,7 @@ export function HubSidePanelEditToolbar({
   saveLabel,
   savingLabel,
   errorMessage,
+  successMessage,
   disabled = false,
 }: HubSidePanelEditToolbarProps) {
   return (
@@ -138,11 +149,7 @@ export function HubSidePanelEditToolbar({
           />
         </div>
       </div>
-      {errorMessage ? (
-        <p className="text-xs text-rose-500" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
+      <HubSidePanelNotice error={errorMessage} successMessage={successMessage} />
     </div>
   )
 }

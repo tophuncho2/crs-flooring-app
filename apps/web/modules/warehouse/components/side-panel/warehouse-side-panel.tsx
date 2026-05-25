@@ -25,7 +25,7 @@ export type WarehouseSidePanelProps = {
  * "+ Warehouse" → create mode. Both ride the same controller.
  */
 export function WarehouseSidePanel({ controller }: WarehouseSidePanelProps) {
-  const { open, isDirty, isSaving, isValid, error, save, discard, close } =
+  const { open, isDirty, isSaving, isValid, error, successMessage, save, discard, close } =
     controller
   const isOpen = open !== null
   const mode = open?.mode ?? "edit"
@@ -46,6 +46,7 @@ export function WarehouseSidePanel({ controller }: WarehouseSidePanelProps) {
           saveLabel="Create"
           savingLabel="Creating…"
           errorMessage={error}
+          successMessage={successMessage}
         />
       )
     }
@@ -58,9 +59,10 @@ export function WarehouseSidePanel({ controller }: WarehouseSidePanelProps) {
         onDiscard={discard}
         onDelete={controller.deleteWarehouse}
         errorMessage={error}
+        successMessage={successMessage}
       />
     )
-  }, [mode, isDirty, isSaving, isValid, save, discard, error, controller.deleteWarehouse])
+  }, [mode, isDirty, isSaving, isValid, save, discard, error, successMessage, controller.deleteWarehouse])
 
   return (
     <HubSidePanelShell

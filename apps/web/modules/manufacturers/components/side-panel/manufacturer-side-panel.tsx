@@ -21,7 +21,7 @@ export type ManufacturerSidePanelProps = {
  * holds an optional read-only summary card (edit mode) above the form fields.
  */
 export function ManufacturerSidePanel({ controller }: ManufacturerSidePanelProps) {
-  const { open, isDirty, isSaving, isValid, error, save, discard, close } =
+  const { open, isDirty, isSaving, isValid, error, successMessage, save, discard, close } =
     controller
   const isOpen = open !== null
   const mode = open?.mode ?? "edit"
@@ -44,6 +44,7 @@ export function ManufacturerSidePanel({ controller }: ManufacturerSidePanelProps
           saveLabel="Create"
           savingLabel="Creating…"
           errorMessage={error}
+          successMessage={successMessage}
         />
       )
     }
@@ -56,9 +57,10 @@ export function ManufacturerSidePanel({ controller }: ManufacturerSidePanelProps
         onDiscard={discard}
         onDelete={controller.deleteManufacturer}
         errorMessage={error}
+        successMessage={successMessage}
       />
     )
-  }, [mode, isDirty, isSaving, isValid, save, discard, error, controller.deleteManufacturer])
+  }, [mode, isDirty, isSaving, isValid, save, discard, error, successMessage, controller.deleteManufacturer])
 
   return (
     <HubSidePanelShell
