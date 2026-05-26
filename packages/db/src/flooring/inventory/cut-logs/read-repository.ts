@@ -240,15 +240,21 @@ export async function listCutLogsForWorkOrderItemIds(
  * Paginated read of inventory-side cut logs for a single parent record.
  * Powers the cut-log section on the inventory record view.
  *
- * Sort: `finalCutSequence DESC NULLS FIRST`, then `createdAt ASC`. This
- * yields two natural buckets without a CASE expression:
+ * Sort: `finalCutSequence DESC NULLS FIRST`, then `id DESC`. This is the
+ * single-inventory projection of the shared cut-logs order (inventory
+ * number → final-cut sequence → id); inv# is constant here because the
+ * query is scoped to one `inventoryId`, so it drops out. Two natural
+ * buckets fall out without a CASE expression:
  *
  *   1. Rows with `finalCutSequence = null` (pending — and the rare
  *      VOID-from-PENDING row that was voided before finalize ever ran)
- *      come first, ordered by createdAt ASC.
+ *      float to the top.
  *   2. Rows with `finalCutSequence` set (FINAL, plus VOID-after-FINAL —
  *      the sequence is preserved on void) come next, ordered DESC so
  *      the most recently finalized row leads.
+ *
+ * `id DESC` is a deterministic tiebreak only (UUIDs aren't chronological).
+ * Backed by the `@@unique([inventoryId, finalCutSequence])` index.
  *
  * Returns `{ rows, total }` so the consumer can render Prev/Next
  * controls without a second query.
@@ -265,8 +271,7 @@ export async function listInventoryCutLogsPage(
     select: inventoryCutLogRowSelect,
     orderBy: [
       { finalCutSequence: { sort: "desc", nulls: "first" } },
-      { createdAt: "asc" },
-      { id: "asc" },
+      { id: "desc" },
     ],
     skip: args.skip,
     take: args.take + 1,
@@ -285,8 +290,17 @@ export async function listInventoryCutLogsPage(
  *     (the only toolbar filter).
  *   - `search` — optional case-insensitive substring match on `inventoryItem`
  *     (backed by the `flooring_cut_log_inventoryItem_trgm_idx` GIN index).
- *   - Sort: `createdAt DESC, id DESC` — a stable newest-first ledger order
- *     (cutLogNumber is a "CUT-N" string and sorts unreliably).
+ *   - Sort: inventory number (DESC — highest inv# on top) → final-cut
+ *     sequence → id. Cut logs bundle with the other cuts from their
+ *     inventory item (ordered numerically via the parent's
+ *     `inventoryNumberInt` generated column through the `inventory`
+ *     relation — the snapshot `inventoryNumber` is a "INV-N" string that
+ *     sorts lexicographically). Within each inventory group,
+ *     `finalCutSequence DESC NULLS FIRST` puts pending rows on top and the
+ *     most recently finalized cut above older ones; `id DESC` is a
+ *     deterministic tiebreak. Not index-backed at the cut-log level (the
+ *     relation sort joins to `flooring_inventory`); fine at current ledger
+ *     scale.
  *
  * Reuses `inventoryCutLogRowSelect` + `normalizeInventoryCutLogRow` so the rows
  * carry the same server-resolved labels (workOrderNumber, product label,
@@ -314,7 +328,11 @@ export async function listCutLogsForListView(
     client.flooringCutLog.findMany({
       where,
       select: inventoryCutLogRowSelect,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy: [
+        { inventory: { inventoryNumberInt: "desc" } },
+        { finalCutSequence: { sort: "desc", nulls: "first" } },
+        { id: "desc" },
+      ],
       skip,
       take: args.pageSize,
     }),
