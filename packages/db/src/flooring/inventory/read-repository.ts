@@ -343,9 +343,8 @@ function buildListViewWhere(
 
 /**
  * Server-side paginated read for the inventory list view. Default sort is
- * `productName ASC, inventoryNumberInt ASC` — alphabetical by product (the
- * denormalized snapshot stamped at worker create time), then oldest INV#
- * first within each product cluster. The int sort key is the stored
+ * `inventoryNumberInt ASC` — a flat ascending inventory-number order across
+ * all products (no product grouping). The int sort key is the stored
  * generated column derived from `inventoryNumber`'s numeric tail, which
  * avoids the lex-vs-numeric trap of the unpadded string format (`INV-10` <
  * `INV-2` lexically). `id ASC` is the stable tiebreak. Users are responsible
@@ -363,7 +362,6 @@ export async function listInventoryForListView(
 ): Promise<InventoryListViewResult> {
   const where = buildListViewWhere(options)
   const orderBy: Prisma.FlooringInventoryOrderByWithRelationInput[] = [
-    { productName: "asc" },
     { inventoryNumberInt: "asc" },
     { id: "asc" },
   ]
@@ -428,10 +426,10 @@ type InventoryOptionRawRow = {
  * across `inventoryNumber`, `rollNumber`, `dyeLot`, `note`. Balance + coverage
  * are stamped via the same pure helpers used by the row normalizer (single
  * source of truth for the math) — coverage is null for non-coverage categories.
- * Results are ordered `productName ASC, inventoryNumberInt ASC` (alphabetical
- * by product, then oldest INV# first within each product via the stored
- * generated int column), matching the inventory list view's primary sort
- * and avoiding the lex-vs-numeric trap of the unpadded string format.
+ * Results are ordered `inventoryNumberInt ASC` (a flat ascending
+ * inventory-number order across all products, via the stored generated int
+ * column), matching the inventory list view's sort and avoiding the
+ * lex-vs-numeric trap of the unpadded string format.
  *
  * Built on `$queryRaw` so the column-to-column compare for the
  * positive-balance constraint can live in SQL — Prisma's typed `where` cannot
@@ -478,7 +476,7 @@ export async function searchInventoryOptions(
       "coveragePerUnit"
     FROM "flooring_inventory"
     WHERE ${whereClause}
-    ORDER BY "productName" ASC, "inventoryNumberInt" ASC, "id" ASC
+    ORDER BY "inventoryNumberInt" ASC, "id" ASC
     LIMIT ${args.take + 1} OFFSET ${skip}
   `)
 
