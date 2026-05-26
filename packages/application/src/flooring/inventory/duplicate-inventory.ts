@@ -20,10 +20,10 @@ import type { DuplicateInventoryInput, InventoryResult } from "./types.js"
  *   2. Read the source row — snapshot columns are pasted verbatim. No lock;
  *      the source is read-only here.
  *   3. Build the insert payload (`buildDuplicatedInventoryInsert`): pastes
- *      product / category / UoM / warehouse / dye lot, applies the 5 editable
- *      fields, drops all import provenance to null, starts the row un-cut
- *      (`totalCutSum: 0`) and active (`isArchived: false`). Cut logs do NOT
- *      follow.
+ *      product / category / UoM / warehouse / dye lot / PO #, applies the 5
+ *      editable fields, drops the import-entry + staged-row links and import #
+ *      to null, starts the row un-cut (`totalCutSum: 0`) and active
+ *      (`isArchived: false`). Cut logs do NOT follow.
  *   4. Insert with `fifoReceivedAt = now()` — the duplicate is a new receipt
  *      at the end of its product's FIFO line. `insertInventoryRow` composes
  *      the `inventoryItem` denorm once the sequence assigns `inventoryNumber`.

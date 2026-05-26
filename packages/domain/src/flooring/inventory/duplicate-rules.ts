@@ -37,6 +37,7 @@ export type DuplicateInventorySource = Pick<
   | "coveragePerUnit"
   | "rollPrefix"
   | "dyeLot"
+  | "purchaseOrderNumber"
   | "warehouseId"
 >
 
@@ -45,14 +46,15 @@ export type DuplicateInventorySource = Pick<
  * DB/data-managed columns: `id`, `inventoryNumber`, `inventoryNumberInt`,
  * `inventoryItem` (composed post-insert once the sequence assigns the
  * number), `fifoReceivedAt` (server stamps `now()`), `createdAt`,
- * `updatedAt`. Import provenance is explicitly dropped (all null) and the
- * row starts un-cut + un-archived.
+ * `updatedAt`. The import-entry / staged-row links and import # are dropped
+ * to null, but the PO # is pasted from the source; the row starts un-cut +
+ * un-archived.
  */
 export type DuplicatedInventoryInsertFields = {
   importEntryId: null
   sourceStagedRowId: null
   importNumber: null
-  purchaseOrderNumber: null
+  purchaseOrderNumber: string | null
   productId: string
   productName: string
   categorySlug: string
@@ -148,12 +150,13 @@ export function describeInventoryDuplicateIssues(issues: InventoryDuplicateIssue
 
 /**
  * Builds the insert payload for a duplicated inventory row. Pastes identity +
- * UoM + product/category snapshot + warehouse + dye lot from the source;
- * applies the user's editable fields (roll# / note / starting stock /
- * location / internal notes); drops all import provenance (null); and starts
- * the row un-cut (`totalCutSum: "0"`) and active (`isArchived: false`). Empty
- * short-text fields normalize to null per the nullable columns. Assumes
- * `edits` already passed `validateDuplicateInventoryEdits`.
+ * UoM + product/category snapshot + warehouse + dye lot + PO # from the
+ * source; applies the user's editable fields (roll# / note / starting stock /
+ * location / internal notes); drops the import-entry / staged-row links +
+ * import # (null); and starts the row un-cut (`totalCutSum: "0"`) and active
+ * (`isArchived: false`). Empty short-text fields normalize to null per the
+ * nullable columns. Assumes `edits` already passed
+ * `validateDuplicateInventoryEdits`.
  */
 export function buildDuplicatedInventoryInsert(
   source: DuplicateInventorySource,
@@ -163,7 +166,7 @@ export function buildDuplicatedInventoryInsert(
     importEntryId: null,
     sourceStagedRowId: null,
     importNumber: null,
-    purchaseOrderNumber: null,
+    purchaseOrderNumber: emptyToNull(source.purchaseOrderNumber),
     productId: source.productId,
     productName: source.productName,
     categorySlug: source.categorySlug,

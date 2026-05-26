@@ -32,6 +32,7 @@ function source(overrides: Partial<DuplicateInventorySource> = {}): DuplicateInv
     coveragePerUnit: "1.50",
     rollPrefix: "ROLL#",
     dyeLot: "DYE-9",
+    purchaseOrderNumber: "PO-123",
     warehouseId: "wh-1",
     ...overrides,
   }
@@ -76,16 +77,16 @@ describe("validateDuplicateInventoryEdits", () => {
 })
 
 describe("buildDuplicatedInventoryInsert", () => {
-  it("pastes source columns, applies edits, and drops import provenance", () => {
+  it("pastes source columns (incl. PO #), applies edits, and drops the import links + import #", () => {
     const fields = buildDuplicatedInventoryInsert(source(), edits())
 
-    // Import provenance dropped to null.
+    // Import-entry / staged-row links + import # dropped to null.
     expect(fields.importEntryId).toBeNull()
     expect(fields.sourceStagedRowId).toBeNull()
     expect(fields.importNumber).toBeNull()
-    expect(fields.purchaseOrderNumber).toBeNull()
 
-    // Pasted from source.
+    // Pasted from source — including the PO #.
+    expect(fields.purchaseOrderNumber).toBe("PO-123")
     expect(fields.productId).toBe("p-1")
     expect(fields.productName).toBe("Carpet A")
     expect(fields.categorySlug).toBe("carpet")

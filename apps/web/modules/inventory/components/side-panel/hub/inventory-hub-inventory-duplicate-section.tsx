@@ -24,8 +24,9 @@ const NOOP = () => {}
  *      the same cells as the hub view (`InventoryDetailsGroup`), so the
  *      operator can see what they're cloning while they type.
  *
- * Everything not editable here is pasted server-side; total cut, archive, and
- * import #/PO # do NOT carry (the new row starts un-cut, active, import-less).
+ * Everything not editable here is pasted server-side (incl. the PO #); total
+ * cut, archive, and import # do NOT carry (the new row starts un-cut, active,
+ * and unlinked from any import entry).
  */
 export function InventoryHubInventoryDuplicateSection({
   controller,
