@@ -40,16 +40,21 @@ export function InventoryDetailsGroup({
   draft,
   warehouseName,
   onFieldChange,
+  title = "Inventory",
+  tone = "blue",
 }: {
   editable: boolean
   inventory: InventoryRow
   draft: InventoryForm
   warehouseName: string | null
   onFieldChange: (field: keyof InventoryForm, value: string | boolean) => void
+  title?: string
+  tone?: "blue" | "red"
 }) {
   return (
     <InventoryGroup
-      title="Inventory"
+      title={title}
+      tone={tone}
       headerRight={
         <InventoryArchiveChip
           value={draft.isArchived}
