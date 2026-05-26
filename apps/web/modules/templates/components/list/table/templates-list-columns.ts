@@ -8,7 +8,6 @@ import type { TemplateListRow } from "@builders/domain"
  * `max(header label, widest cell)` and never wraps.
  */
 export const TEMPLATES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<TemplateListRow>> = [
-  { key: "templateNumber", label: "Template #" },
   { key: "unitType", label: "Unit Type" },
   { key: "property", label: "Property" },
   { key: "managementCompany", label: "Management Company" },

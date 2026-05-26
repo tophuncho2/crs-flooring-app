@@ -12,8 +12,6 @@ export function renderTemplateRowCell(
   row: TemplateListRow,
 ): ReactNode {
   switch (column.key) {
-    case "templateNumber":
-      return <span className="font-medium">{row.templateNumber}</span>
     case "unitType":
       return row.unitType || "-"
     case "property":
