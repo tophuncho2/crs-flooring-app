@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useCallback, useMemo } from "react"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import { LIST_PROPERTIES_PAGE_SIZE, type PropertyListRow } from "@builders/domain"
 import {
   PROPERTIES_LIST_QUERY_KEY,
@@ -9,80 +9,67 @@ import {
 } from "@/modules/properties/data/list-properties-request"
 
 export type PropertyHubPropertiesController = {
-  page: number
-  totalPages: number
   total: number
   rows: ReadonlyArray<PropertyListRow>
   isFetching: boolean
   isError: boolean
   hasData: boolean
-  canPrev: boolean
-  canNext: boolean
-  goPrev: () => void
-  goNext: () => void
+  hasMore: boolean
+  isFetchingMore: boolean
+  loadMore: () => void
 }
 
 const EMPTY_ROWS: ReadonlyArray<PropertyListRow> = []
 
 /**
- * Paginated properties under a management company hub. Mirrors the
- * superseded `usePropertyHubViewPropertiesQuery`; the unified hub side
- * panel now owns this query alongside its other modes.
+ * Infinite-scroll properties under a management company hub. Pages the
+ * existing list endpoint (`listPropertiesRequest`) by page number and
+ * flattens the result; the consumer loads more on scroll. The query key
+ * includes the management company id, so switching hubs starts a fresh
+ * list at page 1 without manual reset.
  */
 export function usePropertyHubPropertiesQuery(
   managementCompanyId: string | null,
 ): PropertyHubPropertiesController {
-  const [page, setPage] = useState(1)
-
-  // Reset to page 1 when the hub switches management company — derived during
-  // render so the query never fires the new MC against the stale page.
-  const [trackedMcId, setTrackedMcId] = useState(managementCompanyId)
-  if (trackedMcId !== managementCompanyId) {
-    setTrackedMcId(managementCompanyId)
-    setPage(1)
-  }
-
-  const query = useQuery({
+  const query = useInfiniteQuery({
     enabled: managementCompanyId !== null,
-    queryKey: [...PROPERTIES_LIST_QUERY_KEY, "hub-view", managementCompanyId, page],
-    queryFn: () =>
+    queryKey: [...PROPERTIES_LIST_QUERY_KEY, "hub-view", managementCompanyId],
+    queryFn: ({ pageParam }) =>
       listPropertiesRequest({
         filters: { managementCompanyId: [managementCompanyId as string] },
-        page,
+        page: pageParam,
         pageSize: LIST_PROPERTIES_PAGE_SIZE,
       }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      const loaded = allPages.reduce((acc, page) => acc + page.rows.length, 0)
+      return loaded < lastPage.total ? allPages.length + 1 : undefined
+    },
   })
 
-  const data = query.data
-  const total = data?.total ?? 0
-  const pageSize = LIST_PROPERTIES_PAGE_SIZE
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
-  const rows = (data?.rows ?? EMPTY_ROWS) as ReadonlyArray<PropertyListRow>
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = query
 
-  const goPrev = useCallback(() => {
-    setPage((value) => Math.max(1, value - 1))
-  }, [])
+  const rows = useMemo<ReadonlyArray<PropertyListRow>>(
+    () => (data ? data.pages.flatMap((page) => page.rows) : EMPTY_ROWS),
+    [data],
+  )
 
-  const goNext = useCallback(() => {
-    setPage((value) => Math.min(totalPages, value + 1))
-  }, [totalPages])
+  const loadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) return
+    void fetchNextPage()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  return useMemo<PropertyHubPropertiesController>(() => {
-    const hasData = data !== undefined
-    const canPrev = hasData && page > 1 && !query.isFetching
-    const canNext = hasData && page < totalPages && !query.isFetching
-    return {
-      page,
-      totalPages,
-      total,
+  return useMemo<PropertyHubPropertiesController>(
+    () => ({
+      total: data?.pages[0]?.total ?? 0,
       rows,
       isFetching: query.isFetching,
       isError: query.isError,
-      hasData,
-      canPrev,
-      canNext,
-      goPrev,
-      goNext,
-    }
-  }, [data, page, totalPages, total, rows, query.isFetching, query.isError, goPrev, goNext])
+      hasData: data !== undefined,
+      hasMore: !!hasNextPage,
+      isFetchingMore: isFetchingNextPage,
+      loadMore,
+    }),
+    [data, rows, query.isFetching, query.isError, hasNextPage, isFetchingNextPage, loadMore],
+  )
 }

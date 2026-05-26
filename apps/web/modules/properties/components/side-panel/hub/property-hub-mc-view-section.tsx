@@ -22,7 +22,8 @@ export function PropertyHubMcViewSection({
   controller: PropertyHubSidePanelController
   state?: "view" | "disabled"
 }) {
-  const { managementCompany, isLoadingDetail, isErrorDetail, enterMcEditFromContext } = controller
+  const { managementCompany, isLoadingDetail, isErrorDetail, enterMcEditFromContext, properties } =
+    controller
 
   if (isLoadingDetail) {
     return (
@@ -55,6 +56,7 @@ export function PropertyHubMcViewSection({
           value={managementCompany.fullAddress || EMPTY_VALUE}
           multiline
         />
+        <SidePanelPreviewReadonlyRow label="Properties" value={String(properties.total)} />
       </SidePanelPreviewReadonlySection>
     </HubSidePanelSection>
   )

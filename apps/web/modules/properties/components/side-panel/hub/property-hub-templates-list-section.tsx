@@ -2,8 +2,8 @@
 
 import type { TemplateListRow } from "@builders/domain"
 import {
-  HubSidePanelScopedList,
   HubSidePanelScopedRow,
+  HubSidePanelScrollList,
 } from "@/components/hub-side-panel"
 import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/property-hub-side-panel"
 
@@ -22,17 +22,21 @@ export function PropertyHubTemplatesListSection({
   onOpenTemplate: (row: TemplateListRow) => void
 }) {
   const { templates } = controller
-  const { hasData, isError, total, rows } = templates
+  const { hasData, isError, total, rows, hasMore, isFetchingMore, loadMore } = templates
 
   return (
-    <HubSidePanelScopedList
+    <HubSidePanelScrollList
       title="Templates"
-      total={total}
+      count={total}
       hasData={hasData}
+      isEmpty={total === 0}
       isError={isError}
       errorMessage="Could not load templates."
       loadingMessage="Loading templates…"
       emptyMessage={EMPTY_CELL}
+      hasMore={hasMore}
+      isFetchingMore={isFetchingMore}
+      onLoadMore={loadMore}
     >
       {rows.map((row) => {
         const unitType = row.unitType.trim().length > 0 ? row.unitType : EMPTY_CELL
@@ -52,6 +56,6 @@ export function PropertyHubTemplatesListSection({
           />
         )
       })}
-    </HubSidePanelScopedList>
+    </HubSidePanelScrollList>
   )
 }

@@ -2,8 +2,8 @@
 
 import { ArrowRight } from "lucide-react"
 import {
-  HubSidePanelScopedList,
   HubSidePanelScopedRow,
+  HubSidePanelScrollList,
 } from "@/components/hub-side-panel"
 import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/property-hub-side-panel"
 
@@ -28,17 +28,20 @@ export function PropertyHubPropertiesListSection({
   dimmed?: boolean
 }) {
   const { properties, enterPropertyEditFromContext, openTemplatesForProperty } = controller
-  const { hasData, isError, total, rows } = properties
+  const { hasData, isError, total, rows, hasMore, isFetchingMore, loadMore } = properties
 
   const list = (
-    <HubSidePanelScopedList
+    <HubSidePanelScrollList
       title="Properties"
-      total={total}
       hasData={hasData}
+      isEmpty={total === 0}
       isError={isError}
       errorMessage="Could not load properties."
       loadingMessage="Loading properties…"
       emptyMessage={EMPTY_CELL}
+      hasMore={hasMore}
+      isFetchingMore={isFetchingMore}
+      onLoadMore={loadMore}
     >
       {rows.map((row) => {
         const address = row.fullAddress.trim().length > 0 ? row.fullAddress : EMPTY_CELL
@@ -65,7 +68,7 @@ export function PropertyHubPropertiesListSection({
           />
         )
       })}
-    </HubSidePanelScopedList>
+    </HubSidePanelScrollList>
   )
 
   if (dimmed) {

@@ -21,6 +21,14 @@ export {
   type HubSidePanelScopedRowProps,
   type HubSidePanelScopedListProps,
 } from "./hub-side-panel-scoped-row"
+export {
+  HubSidePanelScrollList,
+  type HubSidePanelScrollListProps,
+} from "./hub-side-panel-scroll-list"
+export {
+  HubSidePanelAddButton,
+  type HubSidePanelAddButtonProps,
+} from "./hub-side-panel-add-button"
 export { HubSidePanelPickerTrigger } from "./hub-side-panel-picker-trigger"
 export type { HubSidePanelPickerTriggerProps } from "./hub-side-panel-picker-trigger"
 export {

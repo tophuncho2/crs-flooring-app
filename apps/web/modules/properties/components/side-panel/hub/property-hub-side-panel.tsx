@@ -3,9 +3,9 @@
 import { useMemo, type ReactNode } from "react"
 import type { TemplateListRow } from "@builders/domain"
 import {
+  HubSidePanelAddButton,
   HubSidePanelEditLayout,
   HubSidePanelEditToolbar,
-  HubSidePanelPagination,
   HubSidePanelPickerTrigger,
   HubSidePanelShell,
   HubSidePanelViewSwitcher,
@@ -64,8 +64,6 @@ export function PropertyHubSidePanel({
     propertyEditMcLabel,
     mcMode,
     mcLinkLabel,
-    properties,
-    templates,
     isDirty,
     isSaving,
     canSave,
@@ -81,6 +79,7 @@ export function PropertyHubSidePanel({
     goToTemplates,
     pickerKind,
     openPicker,
+    openForCreate,
   } = controller
 
   // Collapse picker-takeover onto its returnTo for chrome rendering — keeps
@@ -192,10 +191,6 @@ export function PropertyHubSidePanel({
     }
     if (effectiveMode.kind === "view") {
       const tab = effectiveMode.tab
-      const showPropertiesPagination =
-        !isPickerActive && tab === "properties" && properties.hasData
-      const showTemplatesPagination =
-        !isPickerActive && tab === "templates" && templates.hasData
       const isTemplates = tab === "templates"
       return (
         <div className="flex flex-col gap-2">
@@ -217,29 +212,8 @@ export function PropertyHubSidePanel({
               ariaLabel="Filter templates by property"
             />
           ) : null}
-          {showPropertiesPagination ? (
-            <HubSidePanelPagination
-              page={properties.page}
-              totalPages={properties.totalPages}
-              total={properties.total}
-              totalLabel="properties"
-              canPrev={properties.canPrev}
-              canNext={properties.canNext}
-              onGoPrev={properties.goPrev}
-              onGoNext={properties.goNext}
-            />
-          ) : null}
-          {showTemplatesPagination ? (
-            <HubSidePanelPagination
-              page={templates.page}
-              totalPages={templates.totalPages}
-              total={templates.total}
-              totalLabel="templates"
-              canPrev={templates.canPrev}
-              canNext={templates.canNext}
-              onGoPrev={templates.goPrev}
-              onGoNext={templates.goNext}
-            />
+          {!isPickerActive ? (
+            <HubSidePanelAddButton onClick={openForCreate} />
           ) : null}
         </div>
       )
@@ -259,8 +233,6 @@ export function PropertyHubSidePanel({
     exitToView,
     hasHubViewTarget,
     errorMessage,
-    properties,
-    templates,
     selectedPropertyLabel,
     propertyEditMcLabel,
     mcMode,
@@ -268,6 +240,7 @@ export function PropertyHubSidePanel({
     goToProperties,
     goToTemplates,
     openPicker,
+    openForCreate,
   ])
 
   const handleOpenTemplate = onOpenTemplate ?? (() => {})
@@ -291,15 +264,23 @@ export function PropertyHubSidePanel({
         </div>
       ) : mode.kind === "view" ? (
         mode.tab === "properties" ? (
-          <div className="flex flex-col gap-5">
-            <PropertyHubMcViewSection controller={controller} />
-            <PropertyHubPropertiesListSection controller={controller} />
+          <div className="flex h-full min-h-0 flex-col gap-5">
+            <div className="shrink-0">
+              <PropertyHubMcViewSection controller={controller} />
+            </div>
+            <div className="min-h-0 flex-1">
+              <PropertyHubPropertiesListSection controller={controller} />
+            </div>
           </div>
         ) : (
-          <PropertyHubTemplatesListSection
-            controller={controller}
-            onOpenTemplate={handleOpenTemplate}
-          />
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="min-h-0 flex-1">
+              <PropertyHubTemplatesListSection
+                controller={controller}
+                onOpenTemplate={handleOpenTemplate}
+              />
+            </div>
+          </div>
         )
       ) : mode.kind === "picker-takeover" ? (
         mode.pickerKind === "mc-link" ? (
