@@ -40,18 +40,23 @@ export function InventoryHubCutLogWorkOrderPicker({
   const cutLog =
     cutLogPanel.open?.mode === "edit" ? cutLogPanel.open.cutLog : null
   const warehouseId = cutLog?.warehouseId ?? null
+  // Scope the picker to work orders that carry the cut log's product, so the
+  // matching material item is always resolvable on select (and auto-linked).
+  const productId = cutLog?.productId ?? null
 
   const bucketKey = useMemo(
-    () => [...WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY, warehouseId ?? null] as const,
-    [warehouseId],
+    () =>
+      [...WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY, warehouseId ?? null, productId ?? null] as const,
+    [warehouseId, productId],
   )
 
   const searchFn = useCallback(
     (search: string, signal: AbortSignal | undefined) =>
       searchWorkOrderOptionsRequest(search, signal, {
         warehouseId: warehouseId ?? "",
+        ...(productId ? { productId } : {}),
       }),
-    [warehouseId],
+    [warehouseId, productId],
   )
 
   const dropdown = useAsyncRichDropdownController<WorkOrderOption>({

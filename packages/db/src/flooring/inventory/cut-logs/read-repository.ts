@@ -103,6 +103,7 @@ export function normalizeInventoryCutLogRow(
           color: product.color,
         })
       : null,
+    workOrderItemNotes: row.workOrderItem?.notes ?? null,
     warehouseName: row.warehouse.name,
   }
 }

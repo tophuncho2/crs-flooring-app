@@ -1,10 +1,7 @@
 "use client"
 
 import { useCallback, type Dispatch, type SetStateAction } from "react"
-import type {
-  WorkOrderMaterialItemOption,
-  WorkOrderOption,
-} from "@builders/domain"
+import type { WorkOrderOption } from "@builders/domain"
 import type { CutLogEditPanelController } from "@/modules/cut-logs"
 import type { CutLogPickerKind, HubMode } from "./types"
 
@@ -27,10 +24,12 @@ export type CutLogPickerTakeoverSlice = {
   openPicker: (kind: CutLogPickerKind) => void
   /** Pops back to `returnTo`. No-op outside picker-takeover. */
   closePicker: () => void
-  /** Commits a WO selection to the cut-log form + label, then pops the picker. */
+  /**
+   * Commits a WO selection: sets the cut-log form + label and auto-links the
+   * matching material item, then pops the picker. The material item is no
+   * longer user-picked (it's deterministic per WO + product).
+   */
   commitWorkOrderPick: (option: WorkOrderOption | null) => void
-  /** Commits a WOMI selection to the cut-log form + label, then pops the picker. */
-  commitWorkOrderItemPick: (option: WorkOrderMaterialItemOption | null) => void
 }
 
 /**
@@ -82,17 +81,7 @@ export function useCutLogPickerTakeover({
 
   const commitWorkOrderPick = useCallback(
     (option: WorkOrderOption | null) => {
-      cutLogPanel.setWorkOrderId(option?.id ?? null)
-      cutLogPanel.snapshotWorkOrderOption(option)
-      setMode((prev) => (prev.kind === "picker-takeover" ? prev.returnTo : prev))
-    },
-    [cutLogPanel, setMode],
-  )
-
-  const commitWorkOrderItemPick = useCallback(
-    (option: WorkOrderMaterialItemOption | null) => {
-      cutLogPanel.setWorkOrderItemId(option?.id ?? null)
-      cutLogPanel.snapshotWorkOrderItemOption(option)
+      void cutLogPanel.selectWorkOrderOption(option)
       setMode((prev) => (prev.kind === "picker-takeover" ? prev.returnTo : prev))
     },
     [cutLogPanel, setMode],
@@ -103,6 +92,5 @@ export function useCutLogPickerTakeover({
     openPicker,
     closePicker,
     commitWorkOrderPick,
-    commitWorkOrderItemPick,
   }
 }

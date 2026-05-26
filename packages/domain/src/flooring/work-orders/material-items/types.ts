@@ -39,6 +39,7 @@ export type WorkOrderMaterialItemOption = {
   productName: string
   quantity: string
   sendUnitAbbrev: string
+  notes: string
 }
 
 export const EMPTY_WORK_ORDER_MATERIAL_ITEM_CREATE_FORM: WorkOrderMaterialItemCreateForm = {

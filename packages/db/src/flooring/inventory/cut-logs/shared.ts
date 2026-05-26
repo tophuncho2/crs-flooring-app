@@ -58,6 +58,7 @@ export const inventoryCutLogRowSelect = {
   },
   workOrderItem: {
     select: {
+      notes: true,
       product: {
         select: {
           name: true,

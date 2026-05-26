@@ -110,6 +110,7 @@ export type CutLogLinkUpdate = {
 export type InventoryCutLogRow = CutLogRow & {
   workOrderNumber: string | null
   workOrderItemProductLabel: string | null
+  workOrderItemNotes: string | null
   warehouseName: string
 }
 

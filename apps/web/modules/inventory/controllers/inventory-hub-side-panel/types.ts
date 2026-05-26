@@ -7,7 +7,10 @@ export type {
   InventoryCutLogRow,
 } from "@builders/domain"
 
-export type CutLogPickerKind = "workOrder" | "workOrderItem"
+// Only the work-order relink picker remains. The material item is auto-linked
+// from the selected work order (deterministic per WO + product) and rendered
+// read-only, so there is no material-item picker takeover.
+export type CutLogPickerKind = "workOrder"
 
 /**
  * Mode state for the inventory hub side panel. The hub mirrors the property
@@ -25,9 +28,10 @@ export type CutLogPickerKind = "workOrder" | "workOrderItem"
  *   - section-edit-cut-log: cut-log edit fields (cut / isWaste / notes);
  *           no inventory picker — parent inventory is the hub context
  *           and is immutable after cut-log create on every cut-log edit
- *           surface. The sticky topToolbar carries the WO + WOMI relink
- *           triggers; clicking a trigger enters `picker-takeover`.
- *   - picker-takeover: body swap to a `HubSidePanelPicker` (WO or WOMI).
+ *           surface. The sticky topToolbar carries the WO relink trigger;
+ *           clicking it enters `picker-takeover`. The material item is a
+ *           read-only label auto-linked from the chosen WO.
+ *   - picker-takeover: body swap to the work-order `HubSidePanelPicker`.
  *           `returnTo` snapshots the previous mode so close / commit can
  *           pop back without re-deriving it. Only entered from
  *           `section-edit-cut-log` today, but `returnTo: HubMode` keeps

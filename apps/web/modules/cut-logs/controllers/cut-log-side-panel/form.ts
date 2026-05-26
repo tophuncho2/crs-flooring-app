@@ -16,6 +16,7 @@ export const EMPTY_LOCAL: CutLogPanelLocal = {
   pickedInventoryStockUnitAbbrev: "",
   pickedWorkOrderLabel: "",
   pickedWorkOrderItemLabel: "",
+  pickedWorkOrderItemNotes: "",
 }
 
 export function buildEditForm(cutLog: CutLogRow): CutLogEditForm {
@@ -45,5 +46,9 @@ export function isCreateValid(form: CutLogEditForm): boolean {
 }
 
 export function isEditValid(form: CutLogEditForm): boolean {
-  return form.cut.trim() !== ""
+  // Link symmetry mirrors the backend `assertCutLogLinkageSymmetry`: a WO and
+  // its material item are set together or not at all. Blocks saving the
+  // transient WO-set / WOMI-unresolved state during an auto-link.
+  const linkSymmetric = Boolean(form.workOrderId) === Boolean(form.workOrderItemId)
+  return form.cut.trim() !== "" && linkSymmetric
 }

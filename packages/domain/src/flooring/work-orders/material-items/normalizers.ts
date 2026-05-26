@@ -40,6 +40,7 @@ type WorkOrderMaterialItemOptionInput = {
   product: { name: string }
   quantity: { toString(): string } | null
   sendUnitAbbrev: string | null
+  notes: string | null
 }
 
 export function normalizeWorkOrderMaterialItemOption(
@@ -51,5 +52,6 @@ export function normalizeWorkOrderMaterialItemOption(
     productName: item.product.name,
     quantity: item.quantity == null ? "" : item.quantity.toString(),
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",
+    notes: item.notes ?? "",
   }
 }

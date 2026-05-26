@@ -34,6 +34,7 @@ export type CutLogPanelLocal = {
   pickedInventoryStockUnitAbbrev: string
   pickedWorkOrderLabel: string
   pickedWorkOrderItemLabel: string
+  pickedWorkOrderItemNotes: string
 }
 
 /**
@@ -63,6 +64,7 @@ export type CutLogEditPanelMode = "create" | "edit"
 export type CutLogPanelRow = CutLogRow & {
   workOrderNumber?: string | null
   workOrderItemProductLabel?: string | null
+  workOrderItemNotes?: string | null
   warehouseName?: string | null
 }
 

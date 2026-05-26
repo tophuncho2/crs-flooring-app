@@ -4,7 +4,6 @@ import { HubSidePanelShell } from "@/components/hub-side-panel"
 import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
 import { InventoryHubCutLogEditSection } from "./inventory-hub-cut-log-edit-section"
 import { InventoryHubCutLogsListSection } from "./inventory-hub-cut-logs-list-section"
-import { InventoryHubCutLogWorkOrderItemPicker } from "./inventory-hub-cut-log-work-order-item-picker"
 import { InventoryHubCutLogWorkOrderPicker } from "./inventory-hub-cut-log-work-order-picker"
 import { InventoryHubInventoryEditSection } from "./inventory-hub-inventory-edit-section"
 import { InventoryHubViewSection } from "./inventory-hub-view-section"
@@ -35,7 +34,6 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
   const {
     isOpen,
     mode,
-    cutLogPickerKind,
     inventory,
     close,
     isLoadingInventory,
@@ -57,11 +55,7 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
   return (
     <HubSidePanelShell open={isOpen} onClose={close} title={title} topToolbar={topToolbar}>
       {isCutLogPickerActive ? (
-        cutLogPickerKind === "workOrder" ? (
-          <InventoryHubCutLogWorkOrderPicker controller={controller} />
-        ) : cutLogPickerKind === "workOrderItem" ? (
-          <InventoryHubCutLogWorkOrderItemPicker controller={controller} />
-        ) : null
+        <InventoryHubCutLogWorkOrderPicker controller={controller} />
       ) : showLoadingPlaceholder ? (
         <p className="px-1 text-sm text-[var(--foreground)]/65">Loading inventory…</p>
       ) : showErrorPlaceholder ? (

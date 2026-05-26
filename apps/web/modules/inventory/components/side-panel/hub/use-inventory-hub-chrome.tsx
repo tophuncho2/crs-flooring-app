@@ -62,7 +62,6 @@ export function useInventoryHubChrome(
   const title = useMemo<ReactNode>(() => {
     if (isCutLogPickerActive) {
       if (cutLogPickerKind === "workOrder") return "Select work order"
-      if (cutLogPickerKind === "workOrderItem") return "Select material item"
     }
     switch (mode.kind) {
       case "section-edit-cut-log":

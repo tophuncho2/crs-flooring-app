@@ -46,6 +46,14 @@ export function InventoryHubCutLogEditHeader({
     cutLog.workOrderItemProductLabel ||
     cutLog.productName ||
     null
+  // Notes mirror the label's picked-vs-row precedence so an empty picked-notes
+  // (after re-linking to an item with no notes) doesn't fall back to the prior
+  // row's notes.
+  const materialItemNotes = local.pickedWorkOrderItemLabel
+    ? local.pickedWorkOrderItemNotes
+    : cutLog.workOrderItemNotes ?? ""
+  // While a relink resolves, the WO is set but the WOMI isn't yet.
+  const materialItemResolving = Boolean(cutLogPanel.form.workOrderId) && !cutLogPanel.form.workOrderItemId
 
   return (
     <div className="flex flex-col gap-3">
@@ -65,24 +73,35 @@ export function InventoryHubCutLogEditHeader({
           ariaLabel="Open work order picker"
         />
       </label>
-      <label className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5">
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">
           Material item
         </span>
-        <HubSidePanelPickerTrigger
-          expanded={cutLogPickerKind === "workOrderItem"}
-          onToggle={() => openCutLogPicker("workOrderItem")}
-          selectedLabel={workOrderItemTriggerLabel}
-          placeholder="Select material item"
-          disabled={triggersDisabled || !cutLogPanel.form.workOrderId}
-          disabledPlaceholder={
-            cutLogPanel.form.workOrderId
-              ? workOrderItemTriggerLabel ?? "Locked"
-              : "Select work order first"
-          }
-          ariaLabel="Open material item picker"
-        />
-      </label>
+        {/* Read-only: auto-linked from the selected work order (product is
+            fixed + unique per WO), so there is no picker — just the product
+            and its notes. */}
+        <div className="flex flex-col gap-1 rounded-md border border-[var(--panel-border)] bg-[var(--panel-border)]/10 px-3 py-2">
+          {!cutLogPanel.form.workOrderId ? (
+            <span className="text-sm text-[var(--foreground)]/55">
+              Select a work order to auto-link its material item
+            </span>
+          ) : materialItemResolving ? (
+            <span className="text-sm text-[var(--foreground)]/55">Resolving…</span>
+          ) : (
+            <>
+              <span className="text-sm text-[var(--foreground)]">
+                {workOrderItemTriggerLabel ?? "—"}
+              </span>
+              <span className="text-xs text-[var(--foreground)]/60">
+                {materialItemNotes.trim() ? materialItemNotes : "—"}
+              </span>
+              <span className="text-[10px] uppercase tracking-wide text-[var(--foreground)]/45">
+                Auto-linked from work order
+              </span>
+            </>
+          )}
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65">

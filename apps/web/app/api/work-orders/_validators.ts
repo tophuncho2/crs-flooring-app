@@ -353,6 +353,7 @@ const WO_OPTIONS_MAX_TAKE = 50
 const workOrderOptionsSearchQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
   search: z.string().optional(),
+  productId: z.string().optional(),
   take: z.coerce
     .number()
     .int()
@@ -364,6 +365,7 @@ const workOrderOptionsSearchQuerySchema = z.object({
 export type ValidatedWorkOrderOptionsSearchQuery = {
   warehouseId: string
   search?: string
+  productId?: string
   take: number
 }
 
@@ -384,9 +386,11 @@ export function validateWorkOrderOptionsSearchQuery(
   }
   const parsed = parseResult.data
   const trimSearch = parsed.search?.trim()
+  const trimProductId = parsed.productId?.trim()
   return {
     warehouseId: parsed.warehouseId.trim(),
     ...(trimSearch ? { search: trimSearch } : {}),
+    ...(trimProductId ? { productId: trimProductId } : {}),
     take: parsed.take,
   }
 }

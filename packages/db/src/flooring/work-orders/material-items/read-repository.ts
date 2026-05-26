@@ -53,6 +53,7 @@ const workOrderMaterialItemOptionSelect = {
   product: { select: { name: true } },
   quantity: true,
   sendUnitAbbrev: true,
+  notes: true,
 } as const
 
 export async function searchWorkOrderMaterialItemOptions(

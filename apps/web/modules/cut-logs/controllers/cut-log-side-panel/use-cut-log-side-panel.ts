@@ -4,11 +4,11 @@ import { useCallback, useMemo, useState } from "react"
 import type {
   CutLogRow,
   InventoryOption,
-  WorkOrderMaterialItemOption,
   WorkOrderOption,
 } from "@builders/domain"
 import type { CutLogScopeUrl } from "@/modules/cut-logs/data/mutations"
 import { formatWorkOrderOptionTitle } from "@/modules/work-orders/components/picker/work-order-picker"
+import { searchWorkOrderMaterialItemOptionsRequest } from "@/modules/work-orders/data/work-order-material-item-options-request"
 import {
   EMPTY_FORM,
   EMPTY_LOCAL,
@@ -30,7 +30,7 @@ import type {
   CutLogPanelLocal,
   CutLogPanelPatch,
 } from "./types"
-import type { RecordSectionError } from "@/types/record/section-error"
+import { createRecordSectionError, type RecordSectionError } from "@/types/record/section-error"
 
 /**
  * Owns the side-panel lifecycle for cut-log editing: open/close, current
@@ -199,42 +199,97 @@ export function useCutLogEditPanel({
     setError(null)
   }, [])
 
-  // Picking a new work order invalidates the current WOMI selection — the
-  // dependent picker re-fetches under the new WO scope, so we null the WOMI
-  // here to avoid carrying a stale id into the patch.
-  const setWorkOrderId = useCallback((id: string | null) => {
-    setForm((prev) =>
-      prev.workOrderId === id
-        ? prev
-        : { ...prev, workOrderId: id, workOrderItemId: null },
-    )
-    // Mirror the form-side cascade: clearing the WOMI id also clears its
-    // snapshot label so the dependent picker's trigger doesn't carry the
-    // stale label from the old WO into the new scope.
-    setLocal((prev) => ({ ...prev, pickedWorkOrderItemLabel: "" }))
-    setError(null)
-  }, [])
+  // Single atomic work-order commit for the relink flow. The material-item
+  // picker is gone: a cut log's product is fixed and WOMIs are unique per
+  // (workOrder, product), so selecting a WO deterministically resolves the one
+  // matching material item — we fetch it and link it here, moving the form +
+  // trigger labels together in one path (mirrors `selectInventoryOption`).
+  //
+  // Sets the WO + label immediately, nulls the WOMI, then resolves the match.
+  // A stale-guard drops a resolve whose WO was superseded by a newer pick. The
+  // no-match branch is defensive only — the picker is pre-filtered to WOs that
+  // carry this product, so it shouldn't fire.
+  const selectWorkOrderOption = useCallback(
+    async (option: WorkOrderOption | null) => {
+      if (!option) {
+        setForm((prev) => ({ ...prev, workOrderId: null, workOrderItemId: null }))
+        setLocal((prev) => ({
+          ...prev,
+          pickedWorkOrderLabel: "",
+          pickedWorkOrderItemLabel: "",
+          pickedWorkOrderItemNotes: "",
+        }))
+        setError(null)
+        return
+      }
 
-  const setWorkOrderItemId = useCallback((id: string | null) => {
-    setForm((prev) => ({ ...prev, workOrderItemId: id }))
-    setError(null)
-  }, [])
-
-  const snapshotWorkOrderOption = useCallback((option: WorkOrderOption | null) => {
-    setLocal((prev) => ({
-      ...prev,
-      pickedWorkOrderLabel: option ? formatWorkOrderOptionTitle(option) : "",
-    }))
-  }, [])
-
-  const snapshotWorkOrderItemOption = useCallback(
-    (option: WorkOrderMaterialItemOption | null) => {
+      const workOrderId = option.id
+      setForm((prev) => ({ ...prev, workOrderId, workOrderItemId: null }))
       setLocal((prev) => ({
         ...prev,
-        pickedWorkOrderItemLabel: option?.productName ?? "",
+        pickedWorkOrderLabel: formatWorkOrderOptionTitle(option),
+        pickedWorkOrderItemLabel: "",
+        pickedWorkOrderItemNotes: "",
       }))
+      setError(null)
+
+      const productId = open?.mode === "edit" ? open.cutLog.productId : null
+      if (!productId) return
+
+      try {
+        const matches = await searchWorkOrderMaterialItemOptionsRequest(
+          "",
+          undefined,
+          { workOrderId, productId, take: 1 },
+        )
+        const match = matches[0] ?? null
+        // Stale-guard: ignore a resolve whose WO was superseded by a newer pick.
+        setForm((prev) =>
+          prev.workOrderId === workOrderId
+            ? { ...prev, workOrderItemId: match?.id ?? null }
+            : prev,
+        )
+        if (match) {
+          setLocal((prev) => ({
+            ...prev,
+            pickedWorkOrderItemLabel: match.productName,
+            pickedWorkOrderItemNotes: match.notes,
+          }))
+        } else {
+          // Defensive — picker only lists WOs carrying this product. Revert the
+          // WO so the form stays link-symmetric and tell the user why.
+          const productName = open?.mode === "edit" ? open.cutLog.productName : "this product"
+          setForm((prev) =>
+            prev.workOrderId === workOrderId
+              ? { ...prev, workOrderId: null, workOrderItemId: null }
+              : prev,
+          )
+          setLocal((prev) => ({
+            ...prev,
+            pickedWorkOrderLabel: "",
+            pickedWorkOrderItemLabel: "",
+            pickedWorkOrderItemNotes: "",
+          }))
+          setError(
+            createRecordSectionError({
+              kind: "validation",
+              message: `This work order has no material item for ${productName}.`,
+              retryable: true,
+            }),
+          )
+        }
+      } catch (err) {
+        setError(
+          createRecordSectionError({
+            kind: "transport",
+            message: "Could not resolve the work order's material item.",
+            retryable: true,
+            details: { error: String(err) },
+          }),
+        )
+      }
     },
-    [],
+    [open],
   )
 
   const createMutation = useCreateCutLogMutation({
@@ -346,10 +401,7 @@ export function useCutLogEditPanel({
     selectInventoryOption,
     openPicker,
     closePicker,
-    setWorkOrderId,
-    setWorkOrderItemId,
-    snapshotWorkOrderOption,
-    snapshotWorkOrderItemOption,
+    selectWorkOrderOption,
     save,
     finalize,
     voidCutLog,

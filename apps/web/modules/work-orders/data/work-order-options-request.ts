@@ -13,6 +13,7 @@ export type WorkOrderOptionsResponse = {
 
 export type WorkOrderOptionsRequestArgs = {
   warehouseId: string
+  productId?: string
   take?: number
 }
 
@@ -24,6 +25,7 @@ export async function searchWorkOrderOptionsRequest(
   const params = new URLSearchParams()
   params.set("warehouseId", args.warehouseId)
   if (search) params.set("search", search)
+  if (args.productId) params.set("productId", args.productId)
   params.set("take", String(args.take ?? 20))
   const url = `/api/work-orders/options/search?${params.toString()}`
   const result = await requestJson<WorkOrderOptionsResponse>(url, {

@@ -167,6 +167,13 @@ export async function listWorkOrderOptions(
 export type SearchWorkOrderOptionsInput = {
   warehouseId: string
   search?: string
+  /**
+   * When set, only return work orders that already carry a material item for
+   * this product. Powers the cut-log relink picker: the cut log's product is
+   * fixed, and `@@unique([workOrderId, productId])` makes the matching WOMI
+   * deterministic, so the picker only offers WOs that can actually be linked.
+   */
+  productId?: string
   take?: number
 }
 
@@ -180,6 +187,9 @@ export async function searchWorkOrderOptions(
     where: {
       warehouseId: input.warehouseId,
       isComplete: false,
+      ...(input.productId
+        ? { items: { some: { productId: input.productId } } }
+        : {}),
       ...(search.length > 0
         ? {
             OR: [

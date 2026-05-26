@@ -353,7 +353,6 @@ export function useInventoryHubSidePanel({
     openCutLogPicker: cutLogPickerTakeover.openPicker,
     closeCutLogPicker: cutLogPickerTakeover.closePicker,
     commitWorkOrderPick: cutLogPickerTakeover.commitWorkOrderPick,
-    commitWorkOrderItemPick: cutLogPickerTakeover.commitWorkOrderItemPick,
 
     // ===== View-mode data =====
     inventory,
