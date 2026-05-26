@@ -290,17 +290,13 @@ export async function listInventoryCutLogsPage(
  *     (the only toolbar filter).
  *   - `search` — optional case-insensitive substring match on `inventoryItem`
  *     (backed by the `flooring_cut_log_inventoryItem_trgm_idx` GIN index).
- *   - Sort: inventory number (DESC — highest inv# on top) → final-cut
- *     sequence → id. Cut logs bundle with the other cuts from their
- *     inventory item (ordered numerically via the parent's
- *     `inventoryNumberInt` generated column through the `inventory`
- *     relation — the snapshot `inventoryNumber` is a "INV-N" string that
- *     sorts lexicographically). Within each inventory group,
- *     `finalCutSequence DESC NULLS FIRST` puts pending rows on top and the
- *     most recently finalized cut above older ones; `id DESC` is a
- *     deterministic tiebreak. Not index-backed at the cut-log level (the
- *     relation sort joins to `flooring_inventory`); fine at current ledger
- *     scale.
+ *   - Sort: `createdAt DESC, id DESC` — a stable newest-first ledger order
+ *     so freshly created (pending) cuts surface at the top rather than
+ *     being grouped deep under an inventory item. `cutLogNumber` is a
+ *     "CUT-N" string and sorts unreliably, so `createdAt` is the key (it
+ *     tracks the cut-log sequence at insert anyway). This deliberately
+ *     differs from the inventory hub panel, which groups by final-cut
+ *     sequence per the business sort choice.
  *
  * Reuses `inventoryCutLogRowSelect` + `normalizeInventoryCutLogRow` so the rows
  * carry the same server-resolved labels (workOrderNumber, product label,
@@ -328,11 +324,7 @@ export async function listCutLogsForListView(
     client.flooringCutLog.findMany({
       where,
       select: inventoryCutLogRowSelect,
-      orderBy: [
-        { inventory: { inventoryNumberInt: "desc" } },
-        { finalCutSequence: { sort: "desc", nulls: "first" } },
-        { id: "desc" },
-      ],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip,
       take: args.pageSize,
     }),
