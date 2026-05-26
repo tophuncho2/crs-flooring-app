@@ -51,7 +51,7 @@ export function TemplateSyncButton() {
         topToolbar={<TemplateSyncTopToolbar controller={controller} />}
         titleEnd={
           <>
-            <HubSidePanelAddButton label="+template" onClick={handleCreate} />
+            <HubSidePanelAddButton label="+Template" onClick={handleCreate} />
             <HubSidePanelAddButton onClick={handleCreateHub} />
           </>
         }

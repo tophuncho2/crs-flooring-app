@@ -214,7 +214,7 @@ export default function PropertiesClient({
         topToolbar={<TemplateSyncTopToolbar controller={sync} />}
         titleEnd={
           <>
-            <HubSidePanelAddButton label="+template" onClick={sync.handleCreate} />
+            <HubSidePanelAddButton label="+Template" onClick={sync.handleCreate} />
             <HubSidePanelAddButton onClick={sync.handleCreateHub} />
           </>
         }
