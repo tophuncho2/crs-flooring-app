@@ -1,6 +1,6 @@
 "use client"
 
-import { TextCell } from "@/components/cells"
+import { TextCell, UnitCell } from "@/components/cells"
 import {
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
@@ -51,11 +51,14 @@ export function InventoryHubInventoryDuplicateSection({
             />
           </InventoryField>
           <InventoryField label="Starting Stock">
-            <TextCell
+            <UnitCell
               editable={editable}
               value={form.startingStock}
               onChange={(value) => setField("startingStock", value)}
+              unit={inventory.stockUnitAbbrev}
+              align="start"
               placeholder="0.00"
+              ariaLabel="Starting stock"
             />
           </InventoryField>
 
