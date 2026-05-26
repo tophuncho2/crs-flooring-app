@@ -46,9 +46,16 @@ export function HubPanelProvider({ children }: { children: ReactNode }) {
     handleOpenTemplateRow,
     hubPanel,
   } = controller
-  const { openForCreate, openForPropertyEdit, openForMcEdit } = hubPanel
+  const { openForCreate, openForPropertyEdit, openForMcEdit, close: closeHub } = hubPanel
 
   const openCascade = useCallback(() => setOpen(true), [setOpen])
+
+  // "Back to sync": from the hub view, the left chevron closes the hub and
+  // opens the template-sync cascade (empty — selections don't carry over).
+  const handleBackToSync = useCallback(() => {
+    closeHub()
+    setOpen(true)
+  }, [closeHub, setOpen])
 
   const value = useMemo<HubPanelContextValue>(
     () => ({ openCascade, openForCreate, openForPropertyEdit, openForMcEdit }),
@@ -72,7 +79,11 @@ export function HubPanelProvider({ children }: { children: ReactNode }) {
       >
         <TemplateSyncBody controller={controller} />
       </HubSidePanelShell>
-      <PropertyHubSidePanel controller={hubPanel} onOpenTemplate={handleOpenTemplateRow} />
+      <PropertyHubSidePanel
+        controller={hubPanel}
+        onOpenTemplate={handleOpenTemplateRow}
+        onBackToSync={handleBackToSync}
+      />
     </HubPanelContext.Provider>
   )
 }

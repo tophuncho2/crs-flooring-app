@@ -39,6 +39,13 @@ export type PropertyHubSidePanelProps = {
    * templates rows are no-ops.
    */
   onOpenTemplate?: (row: TemplateListRow) => void
+  /**
+   * "Back out" handler for the view-mode left chevron on the Properties tab.
+   * When provided, the leftmost chevron leaves the hub (e.g. back to the
+   * template-sync cascade) instead of being disabled. Omit on surfaces with
+   * nowhere to go back to (record-page pickers).
+   */
+  onBackToSync?: () => void
 }
 
 /**
@@ -57,6 +64,7 @@ export type PropertyHubSidePanelProps = {
 export function PropertyHubSidePanel({
   controller,
   onOpenTemplate,
+  onBackToSync,
 }: PropertyHubSidePanelProps) {
   const {
     isOpen,
@@ -219,11 +227,15 @@ export function PropertyHubSidePanel({
         <div className="flex flex-col gap-2">
           <HubSidePanelViewSwitcher
             label={tab === "properties" ? "Properties" : "Templates"}
-            prevDisabled={tab === "properties"}
+            prevDisabled={tab === "properties" ? !onBackToSync : false}
             nextDisabled={tab === "templates"}
-            onGoPrev={goToProperties}
+            onGoPrev={
+              tab === "properties" ? (onBackToSync ?? goToProperties) : goToProperties
+            }
             onGoNext={goToTemplates}
-            prevAriaLabel="Show properties"
+            prevAriaLabel={
+              tab === "properties" ? "Back to template sync" : "Show properties"
+            }
             nextAriaLabel="Show templates"
           />
           {isTemplates ? (
@@ -261,6 +273,7 @@ export function PropertyHubSidePanel({
     goToProperties,
     goToTemplates,
     openPicker,
+    onBackToSync,
   ])
 
   const handleOpenTemplate = onOpenTemplate ?? (() => {})
