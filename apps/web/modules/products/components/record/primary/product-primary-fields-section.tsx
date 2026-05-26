@@ -20,6 +20,7 @@ export function ProductPrimaryFieldsSection({
   manufacturerName,
   disabled,
   categoryReadOnly = false,
+  fieldsReadOnly = false,
   onFieldChange,
 }: {
   product: ProductRecord
@@ -38,6 +39,10 @@ export function ProductPrimaryFieldsSection({
   // post-create and the lock is enforced at the type system, validator, and
   // domain-rule layers; the UI mirrors that here.
   categoryReadOnly?: boolean
+  // When true, the identity/spec cells (manufacturer, style, color, note)
+  // render read-only. Set on the record view — products are immutable
+  // post-create; the create flow leaves this false so the form is editable.
+  fieldsReadOnly?: boolean
   onFieldChange: (field: keyof ProductCreateForm, value: string) => void
 }) {
   const selectedCategory = useMemo(() => {
@@ -61,6 +66,7 @@ export function ProductPrimaryFieldsSection({
         coverageRequired={coverageRequired}
         disabled={disabled}
         categoryReadOnly={categoryReadOnly}
+        fieldsReadOnly={fieldsReadOnly}
         onFieldChange={onFieldChange}
       />
       <ProductUnitsGroup

@@ -56,6 +56,8 @@ export type RecordSectionSubHeaderProps = {
   discardLabel?: string
   deleteLabel?: string
   actions?: RecordSectionSubHeaderAction[]
+  /** Node rendered to the left of the action buttons (e.g. a lock notice). */
+  actionsLeading?: ReactNode
   statusExtra?: ReactNode
   canManage?: boolean
   showStatus?: boolean
@@ -77,6 +79,7 @@ export function RecordSectionSubHeader({
   discardLabel = "Discard",
   deleteLabel = "Delete",
   actions = [],
+  actionsLeading,
   statusExtra,
   canManage = true,
   showStatus = true,
@@ -102,7 +105,7 @@ export function RecordSectionSubHeader({
 
   const shouldRenderManagedActions = canManage && resolvedCapabilities.editable && resolvedCapabilities.supportsSaveDiscard
 
-  const managedActions = shouldRenderManagedActions ? (
+  const actionButtons = shouldRenderManagedActions ? (
     <>
       {configuredActions}
       {onDelete ? (
@@ -120,6 +123,14 @@ export function RecordSectionSubHeader({
   ) : configuredActions.length > 0 ? (
     <>{configuredActions}</>
   ) : null
+
+  const managedActions =
+    actionsLeading || actionButtons ? (
+      <>
+        {actionsLeading}
+        {actionButtons}
+      </>
+    ) : null
 
   const statusContent =
     showStatus && resolvedCapabilities.supportsSaveDiscard ? (

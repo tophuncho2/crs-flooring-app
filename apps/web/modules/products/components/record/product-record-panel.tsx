@@ -50,6 +50,11 @@ export function ProductRecordPanel({
                 saveLabel="Save Product"
                 savingLabel="Saving Product..."
                 showHeader={false}
+                actionsLeading={
+                  <span className="text-sm font-medium text-amber-600">
+                    Products are not editable after creation
+                  </span>
+                }
               >
                 <ProductPrimaryFieldsSection
                   product={controller.record}
@@ -58,6 +63,7 @@ export function ProductRecordPanel({
                   manufacturerName={controller.record.manufacturerName || null}
                   disabled={controller.primarySection.isSaving}
                   categoryReadOnly
+                  fieldsReadOnly
                   onFieldChange={(field, value) => {
                     controller.primarySection.setLocalValue((previous) => ({
                       ...previous,

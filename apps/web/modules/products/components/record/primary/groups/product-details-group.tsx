@@ -27,6 +27,7 @@ export function ProductDetailsGroup({
   coverageRequired,
   disabled,
   categoryReadOnly,
+  fieldsReadOnly,
   onFieldChange,
 }: {
   product: ProductRecord
@@ -37,9 +38,13 @@ export function ProductDetailsGroup({
   coverageRequired: boolean
   disabled: boolean
   categoryReadOnly: boolean
+  // When true, the remaining identity/spec cells (manufacturer, style, color,
+  // note) render read-only too. Set on the record view — a product row is
+  // immutable post-create (deletion only); the create flow leaves this false.
+  fieldsReadOnly: boolean
   onFieldChange: (field: keyof ProductCreateForm, value: string) => void
 }) {
-  const editable = !disabled
+  const editable = !disabled && !fieldsReadOnly
   return (
     <ProductGroup title="Details">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -64,33 +69,42 @@ export function ProductDetailsGroup({
               ariaLabel="Category"
             />
           )}
-          <p className="mt-1 text-xs text-[var(--foreground)]/60">
-            This can&rsquo;t be changed after saving.
-          </p>
         </ProductField>
         <ProductField label="Manufacturer">
-          <ManufacturerPicker
-            value={draft.manufacturerId || null}
-            onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
-            selectedLabel={manufacturerName || null}
-            disabled={disabled}
-            placeholder="Select Manufacturer"
-            ariaLabel="Manufacturer"
-          />
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
+          ) : (
+            <ManufacturerPicker
+              value={draft.manufacturerId || null}
+              onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
+              selectedLabel={manufacturerName || null}
+              disabled={disabled}
+              placeholder="Select Manufacturer"
+              ariaLabel="Manufacturer"
+            />
+          )}
         </ProductField>
         <ProductField label="Style">
-          <TextCell
-            editable={editable}
-            value={draft.style}
-            onChange={(value) => onFieldChange("style", value)}
-          />
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{draft.style || "—"}</StaticFieldValue>
+          ) : (
+            <TextCell
+              editable={editable}
+              value={draft.style}
+              onChange={(value) => onFieldChange("style", value)}
+            />
+          )}
         </ProductField>
         <ProductField label="Color">
-          <TextCell
-            editable={editable}
-            value={draft.color}
-            onChange={(value) => onFieldChange("color", value)}
-          />
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{draft.color || "—"}</StaticFieldValue>
+          ) : (
+            <TextCell
+              editable={editable}
+              value={draft.color}
+              onChange={(value) => onFieldChange("color", value)}
+            />
+          )}
         </ProductField>
         <ProductField
           label="Note"
@@ -98,12 +112,16 @@ export function ProductDetailsGroup({
           currentLength={draft.note.length}
           maxLength={PRODUCT_NOTE_MAX}
         >
-          <TextCell
-            editable={editable}
-            value={draft.note}
-            onChange={(value) => onFieldChange("note", value)}
-            maxLength={PRODUCT_NOTE_MAX}
-          />
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{draft.note || "—"}</StaticFieldValue>
+          ) : (
+            <TextCell
+              editable={editable}
+              value={draft.note}
+              onChange={(value) => onFieldChange("note", value)}
+              maxLength={PRODUCT_NOTE_MAX}
+            />
+          )}
         </ProductField>
         <ProductField
           label={
@@ -136,9 +154,6 @@ export function ProductDetailsGroup({
               </span>
             </div>
           )}
-          <p className="mt-1 text-xs text-[var(--foreground)]/60">
-            This can&rsquo;t be changed after saving.
-          </p>
         </ProductField>
       </div>
     </ProductGroup>

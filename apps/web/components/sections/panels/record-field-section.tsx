@@ -40,6 +40,7 @@ export type RecordFieldSectionProps = {
   capabilities?: RecordSectionCapabilities
   statusExtra?: ReactNode
   actions?: RecordSectionSubHeaderProps["actions"]
+  actionsLeading?: ReactNode
 }
 
 export function RecordFieldSection({
@@ -65,6 +66,7 @@ export function RecordFieldSection({
   capabilities,
   statusExtra,
   actions = [],
+  actionsLeading,
 }: RecordFieldSectionProps) {
   const resolvedCapabilities = resolveRecordSectionCapabilities("field", capabilities)
 
@@ -87,6 +89,7 @@ export function RecordFieldSection({
       deleteLabel={deleteLabel}
       statusExtra={statusExtra}
       actions={actions}
+      actionsLeading={actionsLeading}
     />
   )
 
