@@ -67,7 +67,10 @@ export function useHubInventoryDuplicate({
     const next: InventoryDuplicateForm = {
       rollNumber: row.rollNumber,
       note: row.note,
-      startingStock: row.startingStock,
+      // Starting stock is per-physical-roll — never prefilled; the user
+      // always enters the new roll's quantity. (Also gates "Create duplicate"
+      // via canSubmit until a value is typed.)
+      startingStock: "",
       location: "",
       internalNotes: "",
     }
