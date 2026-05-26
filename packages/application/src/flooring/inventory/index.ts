@@ -1,6 +1,7 @@
 export * from "./errors.js"
 export * from "./types.js"
 export * from "./update-inventory.js"
+export * from "./duplicate-inventory.js"
 export * from "./delete-inventory.js"
 export * from "./search-inventory-options.js"
 export * from "./search-inventory-locations-for-warehouse.js"

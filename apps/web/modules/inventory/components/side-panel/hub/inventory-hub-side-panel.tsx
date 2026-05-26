@@ -1,6 +1,10 @@
 "use client"
 
-import { HubSidePanelHubViewButton, HubSidePanelShell } from "@/components/hub-side-panel"
+import {
+  HubSidePanelDuplicateButton,
+  HubSidePanelHubViewButton,
+  HubSidePanelShell,
+} from "@/components/hub-side-panel"
 import type {
   HubMode,
   InventoryHubSidePanelController,
@@ -8,6 +12,7 @@ import type {
 import { InventoryHubCutLogEditSection } from "./inventory-hub-cut-log-edit-section"
 import { InventoryHubCutLogsListSection } from "./inventory-hub-cut-logs-list-section"
 import { InventoryHubCutLogWorkOrderPicker } from "./inventory-hub-cut-log-work-order-picker"
+import { InventoryHubInventoryDuplicateSection } from "./inventory-hub-inventory-duplicate-section"
 import { InventoryHubInventoryEditSection } from "./inventory-hub-inventory-edit-section"
 import { InventoryHubViewSection } from "./inventory-hub-view-section"
 import { useInventoryHubChrome } from "./use-inventory-hub-chrome"
@@ -53,6 +58,8 @@ export function InventoryHubSidePanel({
     isLoadingInventory,
     isErrorInventory,
     exitToView,
+    enterDuplicateFromView,
+    isSaving,
   } = controller
 
   const { title, topToolbar, isCutLogPickerActive } = useInventoryHubChrome(controller, {
@@ -67,7 +74,13 @@ export function InventoryHubSidePanel({
     mode.kind === "picker-takeover" ? mode.returnTo.kind : mode.kind
   const showHubViewButton =
     effectiveModeKind === "section-edit-inventory" ||
+    effectiveModeKind === "section-duplicate-inventory" ||
     effectiveModeKind === "section-edit-cut-log"
+
+  // "Duplicate inventory item" sits in the title row next to the close (X),
+  // shown only in view mode once a row is loaded. Clicking it seeds the
+  // duplicate draft and swaps to section-duplicate-inventory.
+  const showDuplicateButton = mode.kind === "view" && inventory !== null
 
   // Fetched callers (e.g. work-orders) may render before the inventory
   // detail query resolves. Show loading / error placeholders only where the
@@ -76,7 +89,8 @@ export function InventoryHubSidePanel({
   // the snapshot (the rows carry everything they need).
   const needsInventory =
     (mode.kind === "view" && viewTab === "inventory") ||
-    mode.kind === "section-edit-inventory"
+    mode.kind === "section-edit-inventory" ||
+    mode.kind === "section-duplicate-inventory"
   const showLoadingPlaceholder = needsInventory && !inventory && isLoadingInventory
   const showErrorPlaceholder = needsInventory && !inventory && isErrorInventory
 
@@ -87,9 +101,16 @@ export function InventoryHubSidePanel({
       title={title}
       topToolbar={topToolbar}
       titleEnd={
-        showHubViewButton ? (
-          <HubSidePanelHubViewButton onClick={exitToView} />
-        ) : null
+        <>
+          {showHubViewButton ? <HubSidePanelHubViewButton onClick={exitToView} /> : null}
+          {showDuplicateButton ? (
+            <HubSidePanelDuplicateButton
+              onClick={enterDuplicateFromView}
+              disabled={isSaving}
+              ariaLabel="Duplicate inventory item"
+            />
+          ) : null}
+        </>
       }
     >
       {isCutLogPickerActive ? (
@@ -110,6 +131,8 @@ export function InventoryHubSidePanel({
         )
       ) : mode.kind === "section-edit-inventory" ? (
         <InventoryHubInventoryEditSection controller={controller} />
+      ) : mode.kind === "section-duplicate-inventory" ? (
+        <InventoryHubInventoryDuplicateSection controller={controller} />
       ) : mode.kind === "section-edit-cut-log" ? (
         <InventoryHubCutLogEditSection controller={controller} />
       ) : null}

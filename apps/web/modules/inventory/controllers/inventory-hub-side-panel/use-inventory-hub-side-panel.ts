@@ -13,6 +13,7 @@ import { deriveCanSave, deriveIsDirty } from "./derive-hub-mode-flags"
 import { toCutLogPanelRow } from "./to-cut-log-panel-row"
 import { useCutLogPickerTakeover } from "./use-cut-log-picker-takeover"
 import { useHubCutLogsQuery } from "./use-hub-cut-logs-query"
+import { useHubInventoryDuplicate } from "./use-hub-inventory-duplicate"
 import { useHubInventoryEdit } from "./use-hub-inventory-edit"
 import { useHubSectionTransitions } from "./use-hub-section-transitions"
 import { useInventoryDetailQuery } from "./use-inventory-detail-query"
@@ -156,6 +157,7 @@ export function useInventoryHubSidePanel({
     switch (mode.kind) {
       case "view":
       case "section-edit-inventory":
+      case "section-duplicate-inventory":
       case "section-edit-cut-log":
         return mode.inventoryId
       case "picker-takeover": {
@@ -163,6 +165,7 @@ export function useInventoryHubSidePanel({
         if (
           r.kind === "view" ||
           r.kind === "section-edit-inventory" ||
+          r.kind === "section-duplicate-inventory" ||
           r.kind === "section-edit-cut-log"
         ) {
           return r.inventoryId
@@ -194,6 +197,10 @@ export function useInventoryHubSidePanel({
     clearError,
   })
 
+  // Duplicate-inventory section slice — owns its own draft + the
+  // create-from-source mutation. Independent of the edit slice.
+  const inventoryDuplicate = useHubInventoryDuplicate({ clearError })
+
   // ===== Cut-log picker takeover slice =====
   // Owns the picker-takeover mode transitions + commit handlers. Reads
   // `pickerKind` from the mode union (no orthogonal state).
@@ -207,18 +214,26 @@ export function useInventoryHubSidePanel({
   const cutLogs = useHubCutLogsQuery(contextInventoryId)
 
   // ===== Combined save-busy across all slices =====
-  const isSaving = inventoryEdit.isPending || cutLogPanel.isSaving
+  const isSaving =
+    inventoryEdit.isPending || cutLogPanel.isSaving || inventoryDuplicate.isPending
 
   const resetAll = useCallback(() => {
     inventoryEdit.reset()
+    inventoryDuplicate.reset()
     cutLogPanel.close()
     setError(null)
-  }, [inventoryEdit, cutLogPanel])
+  }, [inventoryEdit, inventoryDuplicate, cutLogPanel])
 
   // ===== Mode-dispatched derivations (pure fns in derive-hub-mode-flags) =====
   const isDirty = useMemo(
-    () => deriveIsDirty(mode.kind, inventoryEdit.isDirty, cutLogPanel.isDirty),
-    [mode.kind, inventoryEdit.isDirty, cutLogPanel.isDirty],
+    () =>
+      deriveIsDirty(
+        mode.kind,
+        inventoryEdit.isDirty,
+        cutLogPanel.isDirty,
+        inventoryDuplicate.isDirty,
+      ),
+    [mode.kind, inventoryEdit.isDirty, cutLogPanel.isDirty, inventoryDuplicate.isDirty],
   )
 
   const canSave = useMemo(
@@ -229,6 +244,7 @@ export function useInventoryHubSidePanel({
         inventoryEdit.isDirty,
         inventoryEdit.updatedAt,
         cutLogPanel.isDirty,
+        inventoryDuplicate.canSubmit,
       ),
     [
       isSaving,
@@ -236,6 +252,7 @@ export function useInventoryHubSidePanel({
       inventoryEdit.isDirty,
       inventoryEdit.updatedAt,
       cutLogPanel.isDirty,
+      inventoryDuplicate.canSubmit,
     ],
   )
 
@@ -300,9 +317,19 @@ export function useInventoryHubSidePanel({
     setMode,
     setError,
     inventoryEdit,
+    inventoryDuplicate,
     cutLogPanel,
     resetAll,
   })
+
+  // Enter the duplicate flow from view mode — seed the draft off the current
+  // snapshot (roll# / note / starting stock pre-filled) and swap modes.
+  const enterDuplicateFromView = useCallback(() => {
+    if (contextInventoryId === null || !inventory) return
+    inventoryDuplicate.seedFromRow(inventory)
+    setError(null)
+    setMode({ kind: "section-duplicate-inventory", inventoryId: contextInventoryId })
+  }, [contextInventoryId, inventory, inventoryDuplicate])
 
   // ===== Save / Discard dispatch =====
   const save = useCallback(() => {
@@ -324,22 +351,39 @@ export function useInventoryHubSidePanel({
       cutLogPanel.save()
       return
     }
+    if (mode.kind === "section-duplicate-inventory") {
+      if (!canSave) return
+      inventoryDuplicate.commitDuplicate(mode.inventoryId, {
+        onSuccess: (detail) => {
+          setError(null)
+          // Jump the hub to the brand-new row. openForView fetches it (the new
+          // id never matches the seed). The list query is invalidated by the
+          // mutation's onSuccess so the table picks up the new row too.
+          openForView(detail.id)
+        },
+        onError: setErrorMessage,
+      })
+      return
+    }
   }, [
     canSave,
     mode,
     inventoryEdit,
+    inventoryDuplicate,
     cutLogPanel,
     onInventoryUpdated,
     invalidateInventoryDetail,
+    openForView,
     setErrorMessage,
   ])
 
   const discard = useCallback(() => {
     if (isSaving) return
     if (mode.kind === "section-edit-inventory") inventoryEdit.resetToBaseline()
+    else if (mode.kind === "section-duplicate-inventory") inventoryDuplicate.resetToSeed()
     else if (mode.kind === "section-edit-cut-log") cutLogPanel.discard()
     setError(null)
-  }, [isSaving, mode.kind, inventoryEdit, cutLogPanel])
+  }, [isSaving, mode.kind, inventoryEdit, inventoryDuplicate, cutLogPanel])
 
   const isOpen = mode.kind !== "closed"
 
@@ -360,6 +404,7 @@ export function useInventoryHubSidePanel({
     // ===== Transitions =====
     enterInventoryEditFromContext,
     enterCutLogEditFromContext,
+    enterDuplicateFromView,
     exitToView,
 
     // ===== Cut-log picker takeover =====
@@ -376,6 +421,9 @@ export function useInventoryHubSidePanel({
 
     // ===== Inventory-edit slice =====
     inventoryEdit,
+
+    // ===== Inventory-duplicate slice =====
+    inventoryDuplicate,
 
     // ===== Embedded cut-log edit panel =====
     cutLogPanel,

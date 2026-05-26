@@ -25,6 +25,10 @@ export type CutLogPickerKind = "workOrder"
  *   - section-edit-inventory: editable inventory cells with the canonical
  *           three editable fields (archive / location / internalNotes);
  *           the other identity fields stay UI-blocked per the record view
+ *   - section-duplicate-inventory: clone the current row into a brand-new
+ *           one. Five editable cells (roll# / note / starting stock /
+ *           location / internal notes); the rest is pasted from the source
+ *           and shown read-only. Save creates the row + jumps to view it.
  *   - section-edit-cut-log: cut-log edit fields (cut / isWaste / notes);
  *           no inventory picker — parent inventory is the hub context
  *           and is immutable after cut-log create on every cut-log edit
@@ -45,6 +49,7 @@ export type HubMode =
   | { kind: "closed" }
   | { kind: "view"; inventoryId: string }
   | { kind: "section-edit-inventory"; inventoryId: string }
+  | { kind: "section-duplicate-inventory"; inventoryId: string }
   | {
       kind: "section-edit-cut-log"
       inventoryId: string

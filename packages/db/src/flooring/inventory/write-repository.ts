@@ -161,6 +161,111 @@ export async function deleteInventoryRecordById(
   await client.flooringInventory.delete({ where: { id } })
 }
 
+// --- Single-row insert primitive (inventory duplicate) ---
+
+/**
+ * Scalar column set for inserting a single inventory row directly (the
+ * "duplicate inventory item" use case — the only non-worker construction
+ * path). Excludes the DB-managed columns: `id`, `inventoryNumber` /
+ * `inventoryNumberInt` (sequence/computed), `inventoryItem` (composed here
+ * post-insert), `createdAt` / `updatedAt`. The caller (application use case)
+ * pastes the snapshot columns from the source row, drops import provenance
+ * to null, and stamps `fifoReceivedAt`.
+ */
+export type InsertInventoryRowInput = {
+  importEntryId: string | null
+  sourceStagedRowId: string | null
+  importNumber: string | null
+  purchaseOrderNumber: string | null
+  productId: string
+  productName: string
+  categorySlug: string
+  categoryName: string
+  stockUnitName: string | null
+  stockUnitAbbrev: string | null
+  itemCoverageUnitName: string | null
+  itemCoverageUnitAbbrev: string | null
+  sendUnitName: string | null
+  sendUnitAbbrev: string | null
+  coveragePerUnit: Prisma.Decimal | string | number | null
+  rollPrefix: string
+  rollNumber: string | null
+  dyeLot: string | null
+  note: string | null
+  internalNotes: string | null
+  warehouseId: string
+  location: string | null
+  startingStock: Prisma.Decimal | string | number
+  totalCutSum: Prisma.Decimal | string | number
+  isArchived: boolean
+  fifoReceivedAt: Date
+}
+
+/**
+ * Insert a single inventory row and return the normalized record. A single
+ * `create` returns the sequence-assigned `inventoryNumber`, so we compose the
+ * denormalized `inventoryItem` from the final values (same pure domain
+ * composer the worker materialize path uses) and write it back in the same
+ * transaction. The caller must provide a transaction client so the insert +
+ * compose-update commit atomically.
+ */
+export async function insertInventoryRow(
+  tx: Prisma.TransactionClient,
+  input: InsertInventoryRowInput,
+): Promise<InventoryRecord> {
+  const created = await tx.flooringInventory.create({
+    data: {
+      importEntryId: input.importEntryId,
+      sourceStagedRowId: input.sourceStagedRowId,
+      importNumber: input.importNumber,
+      purchaseOrderNumber: input.purchaseOrderNumber,
+      productId: input.productId,
+      productName: input.productName,
+      categorySlug: input.categorySlug,
+      categoryName: input.categoryName,
+      stockUnitName: input.stockUnitName,
+      stockUnitAbbrev: input.stockUnitAbbrev,
+      itemCoverageUnitName: input.itemCoverageUnitName,
+      itemCoverageUnitAbbrev: input.itemCoverageUnitAbbrev,
+      sendUnitName: input.sendUnitName,
+      sendUnitAbbrev: input.sendUnitAbbrev,
+      coveragePerUnit: input.coveragePerUnit,
+      rollPrefix: input.rollPrefix,
+      rollNumber: input.rollNumber,
+      dyeLot: input.dyeLot,
+      note: input.note,
+      internalNotes: input.internalNotes,
+      inventoryItem: "",
+      warehouseId: input.warehouseId,
+      location: input.location,
+      startingStock: input.startingStock,
+      totalCutSum: input.totalCutSum,
+      isArchived: input.isArchived,
+      fifoReceivedAt: input.fifoReceivedAt,
+    },
+    select: { id: true, inventoryNumber: true },
+  })
+
+  const inventoryItem = composeInventoryItem({
+    inventoryNumber: created.inventoryNumber,
+    rollPrefix: input.rollPrefix,
+    rollNumber: input.rollNumber ?? "",
+    dyeLot: input.dyeLot ?? "",
+    note: input.note ?? "",
+  })
+  await tx.flooringInventory.update({
+    where: { id: created.id },
+    data: { inventoryItem },
+    select: { id: true },
+  })
+
+  const record = await getInventoryById(created.id, tx)
+  if (!record) {
+    throw new Error(`insertInventoryRow: inventory ${created.id} not found after insert`)
+  }
+  return record
+}
+
 // --- Worker materialization primitive ---
 
 /**

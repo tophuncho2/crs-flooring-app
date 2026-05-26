@@ -34,6 +34,10 @@ export {
   type HubSidePanelHubViewButtonProps,
 } from "./hub-side-panel-hub-view-button"
 export {
+  HubSidePanelDuplicateButton,
+  type HubSidePanelDuplicateButtonProps,
+} from "./hub-side-panel-duplicate-button"
+export {
   HubSidePanelGroup,
   type HubSidePanelGroupProps,
 } from "./hub-side-panel-group"

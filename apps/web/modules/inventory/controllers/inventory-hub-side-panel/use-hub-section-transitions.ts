@@ -10,6 +10,7 @@ import type { RecordSectionError } from "@/types/record/section-error"
 import type { CutLogEditPanelController } from "@/modules/cut-logs"
 import { toCutLogPanelRow } from "./to-cut-log-panel-row"
 import type { HubInventoryEditSlice } from "./use-hub-inventory-edit"
+import type { HubInventoryDuplicateSlice } from "./use-hub-inventory-duplicate"
 import type { HubMode } from "./types"
 
 export type UseHubSectionTransitionsArgs = {
@@ -19,6 +20,7 @@ export type UseHubSectionTransitionsArgs = {
   setMode: Dispatch<SetStateAction<HubMode>>
   setError: (value: RecordSectionError | null) => void
   inventoryEdit: HubInventoryEditSlice
+  inventoryDuplicate: HubInventoryDuplicateSlice
   cutLogPanel: CutLogEditPanelController
   resetAll: () => void
 }
@@ -40,6 +42,7 @@ export function useHubSectionTransitions({
   setMode,
   setError,
   inventoryEdit,
+  inventoryDuplicate,
   cutLogPanel,
   resetAll,
 }: UseHubSectionTransitionsArgs): HubSectionTransitionsSlice {
@@ -82,10 +85,11 @@ export function useHubSectionTransitions({
       return
     }
     inventoryEdit.reset()
+    inventoryDuplicate.reset()
     cutLogPanel.close()
     setError(null)
     setMode({ kind: "view", inventoryId: contextInventoryId })
-  }, [contextInventoryId, inventoryEdit, cutLogPanel, resetAll, setError, setMode])
+  }, [contextInventoryId, inventoryEdit, inventoryDuplicate, cutLogPanel, resetAll, setError, setMode])
 
   return {
     enterInventoryEditFromContext,

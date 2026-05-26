@@ -82,6 +82,7 @@ export function useInventoryHubChrome(
       case "section-edit-cut-log":
         return cutLog?.cutLogNumber ?? "Cut log"
       case "section-edit-inventory":
+      case "section-duplicate-inventory":
       case "view":
         return inventory?.inventoryItem || "Inventory"
       default:
@@ -120,6 +121,22 @@ export function useInventoryHubChrome(
           canSave={canSave}
           onSave={save}
           onDiscard={discard}
+          errorMessage={error}
+        />
+      )
+    }
+    if (effectiveModeKind === "section-duplicate-inventory") {
+      // Create flow — same toolbar, relabelled. No delete button (nothing
+      // exists yet); Discard resets the draft to the seeded values.
+      return (
+        <HubSidePanelEditToolbar
+          isDirty={isDirty}
+          isSaving={isSaving}
+          canSave={canSave}
+          onSave={save}
+          onDiscard={discard}
+          saveLabel="Create duplicate"
+          savingLabel="Creating…"
           errorMessage={error}
         />
       )
