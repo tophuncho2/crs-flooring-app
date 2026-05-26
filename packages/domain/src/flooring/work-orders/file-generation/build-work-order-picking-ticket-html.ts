@@ -1,7 +1,6 @@
 import type { WorkOrderFileGenerationInput } from "./types.js"
 import {
   WO_PRINT_STYLE_BLOCK,
-  renderPageFooter,
   renderWorkOrderCutLogs,
   renderWorkOrderPickingTicketHeader,
   renderWorkOrderTopTable,
@@ -26,7 +25,6 @@ export function buildWorkOrderPickingTicketHtml(input: WorkOrderFileGenerationIn
     renderWorkOrderPickingTicketHeader(input),
     renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderCutLogs(input.materialItems),
-    renderPageFooter(input),
   ].join("\n")
 
   return `<style>${WO_PRINT_STYLE_BLOCK}</style>

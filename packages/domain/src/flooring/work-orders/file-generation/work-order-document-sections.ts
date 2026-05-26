@@ -48,7 +48,6 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
   .wo-print-root .page-brand { justify-self: start; }
   .wo-print-root .page-number { justify-self: end; }
-  .wo-print-root .page-footer { position: fixed; bottom: 0.25in; right: 0.25in; font-size: 10px; font-weight: 600; color: #111; background: #fff; padding-left: 6px; }
   .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
 `
@@ -72,14 +71,6 @@ export function renderWorkOrderHeader(input: WorkOrderFileGenerationInput): stri
 
 export function renderWorkOrderPickingTicketHeader(input: WorkOrderFileGenerationInput): string {
   return renderDocumentHeader(input, "Picking Ticket")
-}
-
-// Work-order number pinned to the bottom-right of every printed page.
-// position: fixed repeats on each page in Chromium print output, and being
-// our own element (not a @page margin box) it does not re-enable the
-// browser's default header/footer that @page { margin: 0 } suppresses.
-export function renderPageFooter(input: WorkOrderFileGenerationInput): string {
-  return `<div class="page-footer">${escapeHtml(input.workOrderNumber)}</div>`
 }
 
 export function renderWorkOrderTopTable(
