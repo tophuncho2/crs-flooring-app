@@ -57,9 +57,9 @@ describe("ImportMaterializeBatchPayloadSchema", () => {
     ).toThrow()
   })
 
-  it("rejects > 500 stagedRowIds (hard batch ceiling)", () => {
+  it("rejects > 1000 stagedRowIds (hard batch ceiling)", () => {
     const tooMany = Array.from(
-      { length: 501 },
+      { length: 1001 },
       (_, i) =>
         // Build UUID-shaped ids deterministically (test fixture only).
         `${i.toString(16).padStart(8, "0")}-1111-4111-8111-111111111111`,
@@ -69,14 +69,14 @@ describe("ImportMaterializeBatchPayloadSchema", () => {
     ).toThrow()
   })
 
-  it("accepts exactly 500 stagedRowIds (boundary)", () => {
-    const exactly500 = Array.from(
-      { length: 500 },
+  it("accepts exactly 1000 stagedRowIds (boundary)", () => {
+    const exactly1000 = Array.from(
+      { length: 1000 },
       (_, i) =>
         `${i.toString(16).padStart(8, "0")}-1111-4111-8111-111111111111`,
     )
     expect(() =>
-      ImportMaterializeBatchPayloadSchema.parse({ ...VALID_PAYLOAD, stagedRowIds: exactly500 }),
+      ImportMaterializeBatchPayloadSchema.parse({ ...VALID_PAYLOAD, stagedRowIds: exactly1000 }),
     ).not.toThrow()
   })
 

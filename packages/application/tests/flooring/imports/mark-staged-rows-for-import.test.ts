@@ -25,6 +25,7 @@ vi.mock("@builders/db", () => ({
   createQueueOutboxEvent: createQueueOutboxEventMock,
 }))
 
+import { sha256Hex } from "@builders/lib/hashing"
 import { markStagedRowsForImportUseCase } from "../../../src/flooring/imports/staged-inventory-rows/mark-staged-rows-for-import.js"
 import { StagedInventoryExecutionError } from "../../../src/flooring/imports/staged-inventory-rows/errors.js"
 
@@ -158,7 +159,7 @@ describe("markStagedRowsForImportUseCase", () => {
           topic: "flooring.imports.materialize",
           aggregateType: "FlooringImportEntry",
           aggregateId: IMPORT_ID,
-          idempotencyKey: `import-materialize:${IMPORT_ID}:${sortedIds.join(",")}`,
+          idempotencyKey: `import-materialize:${IMPORT_ID}:${sha256Hex(sortedIds.join(","))}`,
           payloadJson: expect.objectContaining({
             version: "v1",
             topic: "flooring.imports.materialize",
