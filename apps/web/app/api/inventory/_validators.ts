@@ -116,6 +116,7 @@ export function validateInventorySearchQuery(
 const inventoryLocationsSearchQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
   search: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce
     .number()
     .int()
@@ -127,6 +128,7 @@ const inventoryLocationsSearchQuerySchema = z.object({
 export type ValidatedInventoryLocationsSearchQuery = {
   warehouseId: string
   search?: string
+  skip: number
   take: number
 }
 
@@ -154,6 +156,7 @@ export function validateInventoryLocationsSearchQuery(
   return {
     warehouseId: parsed.warehouseId.trim(),
     ...(trimSearch ? { search: trimSearch } : {}),
+    skip: parsed.skip,
     take: parsed.take,
   }
 }

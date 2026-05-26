@@ -513,7 +513,14 @@ export type InventoryLocationsSearchArgs = {
   warehouseId: string
   /** Free-text identity search — `ILIKE %value%` on the location column. */
   search?: string
+  /** Page offset for infinite scroll. Defaults to 0. */
+  skip?: number
   take: number
+}
+
+export type InventoryLocationsSearchResult = {
+  items: InventoryLocationOption[]
+  hasMore: boolean
 }
 
 /**
@@ -524,7 +531,7 @@ export type InventoryLocationsSearchArgs = {
 export async function searchInventoryLocationsForWarehouse(
   args: InventoryLocationsSearchArgs,
   client: InventoryDbClient = db,
-): Promise<InventoryLocationOption[]> {
+): Promise<InventoryLocationsSearchResult> {
   const conditions: Prisma.Sql[] = [
     Prisma.sql`"warehouseId" = ${args.warehouseId}`,
     Prisma.sql`"isArchived" = false`,
@@ -537,15 +544,19 @@ export async function searchInventoryLocationsForWarehouse(
   }
   const whereClause = Prisma.join(conditions, " AND ")
 
+  // Fetch take+1 (offset by skip) to detect a next page without a count query.
+  const skip = Math.max(0, Math.floor(args.skip ?? 0))
   const rows = await client.$queryRaw<{ location: string }[]>(Prisma.sql`
     SELECT DISTINCT "location"
     FROM "flooring_inventory"
     WHERE ${whereClause}
     ORDER BY "location" ASC
-    LIMIT ${args.take}
+    LIMIT ${args.take + 1} OFFSET ${skip}
   `)
 
-  return rows.map((row) => ({ value: row.location }))
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return { items: page.map((row) => ({ value: row.location })), hasMore }
 }
 
 export async function listInventoryOptions(
