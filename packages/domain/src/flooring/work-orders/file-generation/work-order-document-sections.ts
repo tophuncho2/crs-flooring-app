@@ -199,21 +199,21 @@ export function renderWorkOrderCutLogs(
   <colgroup>
     <col style="width: 20%;" />
     <col style="width: 24%;" />
-    <col style="width: 14%;" />
     <col style="width: 10%;" />
     <col style="width: 10%;" />
     <col style="width: 10%;" />
     <col style="width: 12%;" />
+    <col style="width: 14%;" />
   </colgroup>
   <thead>
     <tr>
       <th>Product</th>
       <th>Inventory Item</th>
-      <th>Location</th>
       <th class="cl-num">Before</th>
       <th class="cl-num">Cut</th>
       <th class="cl-num">After</th>
       <th class="cl-num">Coverage</th>
+      <th>Location</th>
     </tr>
   </thead>
   <tbody>
@@ -248,11 +248,11 @@ function renderCutLogRow({
 <tr>
   <td>${escapeOrEmpty(productName)}</td>
   <td>${escapeOrEmpty(cl.inventoryItem)}</td>
-  <td>${escapeOrEmpty(cl.location)}</td>
   <td class="cl-num">${renderUnitValue(cl.before, cl.stockUnitAbbrev)}</td>
   <td class="cl-num">${renderUnitValue(cl.cut, cl.stockUnitAbbrev)}</td>
   <td class="cl-num">${renderUnitValue(cl.after, cl.stockUnitAbbrev)}</td>
   <td class="cl-num">${renderUnitValue(cl.coverageCut, cl.itemCoverageUnitAbbrev)}</td>
+  <td>${escapeOrEmpty(cl.location)}</td>
 </tr>
 `.trim()
 }
