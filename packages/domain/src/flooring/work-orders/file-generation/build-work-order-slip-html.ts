@@ -1,7 +1,6 @@
 import type { WorkOrderFileGenerationInput } from "./types.js"
 import {
   WO_PRINT_STYLE_BLOCK,
-  renderWorkOrderDescriptionBlock,
   renderWorkOrderHeader,
   renderWorkOrderInstallerInstructionsBlock,
   renderWorkOrderMaterialItems,
@@ -15,8 +14,9 @@ import {
  * since the file-generation worker was retired):
  *
  *   - H1: Work Order number
- *   - H2 scheduled date + warehouse / mgmt co / job type / property table
- *   - Description block (omitted when empty)
+ *   - H2 scheduled date + warehouse / mgmt co / job type / property table,
+ *     with the description as a borderless row beneath Job Type (omitted
+ *     when empty)
  *   - Property Info (address — customAddress overrides property address —
  *     property instructions always shown when present, vacancy/unit fields)
  *   - Installer Instructions block (omitted when empty)
@@ -28,8 +28,7 @@ import {
 export function buildWorkOrderSlipHtml(input: WorkOrderFileGenerationInput): string {
   const sections = [
     renderWorkOrderHeader(input),
-    renderWorkOrderTopTable(input),
-    renderWorkOrderDescriptionBlock(input),
+    renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderPropertyInfo(input),
     renderWorkOrderInstallerInstructionsBlock(input),
     renderWorkOrderMaterialItems(input.materialItems),

@@ -67,10 +67,23 @@ export function renderWorkOrderPickingTicketHeader(input: WorkOrderFileGeneratio
 `.trim()
 }
 
-export function renderWorkOrderTopTable(input: WorkOrderFileGenerationInput): string {
+export function renderWorkOrderTopTable(
+  input: WorkOrderFileGenerationInput,
+  options: { includeDescription?: boolean } = {},
+): string {
   const dateHeading = input.scheduledFor
     ? escapeHtml(input.scheduledFor)
     : `<span class="empty-cell">—</span>`
+  // Description rides as a borderless row in the top table (label under
+  // "Job Type", value extending rightward across the remaining columns).
+  // Slip-only — the picking ticket omits the description entirely.
+  const descriptionRow =
+    options.includeDescription && input.description
+      ? `
+    <tr>
+      <th>Description</th><td colspan="3" class="multiline">${escapeHtml(input.description)}</td>
+    </tr>`
+      : ""
   return `
 <h2>${dateHeading}</h2>
 <table class="wo-top-table">
@@ -88,21 +101,7 @@ export function renderWorkOrderTopTable(input: WorkOrderFileGenerationInput): st
     <tr>
       <th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td>
       <th>Property</th><td>${escapeOrEmpty(input.property.name)}</td>
-    </tr>
-  </tbody>
-</table>
-`.trim()
-}
-
-export function renderWorkOrderDescriptionBlock(input: WorkOrderFileGenerationInput): string {
-  if (!input.description) return ""
-  return `
-<table class="grid-table">
-  <thead>
-    <tr><th>Description</th></tr>
-  </thead>
-  <tbody>
-    <tr><td class="multiline">${escapeHtml(input.description)}</td></tr>
+    </tr>${descriptionRow}
   </tbody>
 </table>
 `.trim()
