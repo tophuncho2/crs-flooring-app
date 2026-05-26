@@ -489,12 +489,13 @@ model FlooringTemplateItem {
   template       FlooringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   productId      String
   product        FlooringProduct  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  quantity       Decimal          @db.Decimal(10, 2)
+  quantity       Decimal?         @db.Decimal(10, 2)
   sendUnitName   String?
   sendUnitAbbrev String?
   notes          String?
   createdAt      DateTime         @default(now())
 
+  @@unique([templateId, productId])
   @@index([templateId])
   @@index([templateId, createdAt])
   @@index([productId])
@@ -571,7 +572,7 @@ model FlooringWorkOrderItem {
   productId            String
   product              FlooringProduct             @relation(fields: [productId], references: [id], onDelete: Restrict)
   sourceTemplateItemId String?
-  quantity             Decimal                     @db.Decimal(10, 2)
+  quantity             Decimal?                    @db.Decimal(10, 2)
   sendUnitName         String?
   sendUnitAbbrev       String?
   notes                String?
@@ -580,6 +581,7 @@ model FlooringWorkOrderItem {
   updatedAt            DateTime                    @updatedAt
   cutLogs              FlooringCutLog[]
 
+  @@unique([workOrderId, productId])
   @@index([workOrderId])
   @@index([workOrderId, createdAt])
   @@index([productId])

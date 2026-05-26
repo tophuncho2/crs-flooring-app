@@ -2,10 +2,12 @@ import {
   Prisma,
   createTemplateMaterialItemRecord,
   getProductById,
+  listTemplateMaterialItems,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
   buildItemSendUnitSnapshotFromProduct,
+  buildTemplateMaterialItemDuplicateProductMessage,
   validateTemplateMaterialItemForm,
 } from "@builders/domain"
 import { TemplateMaterialItemExecutionError } from "./errors.js"
@@ -40,12 +42,38 @@ export async function createTemplateMaterialItemUseCase(
       })
     }
 
+    // One product per template. Pre-check for a precise error; the DB
+    // unique constraint + the P2002 catch below cover any concurrent insert.
+    const existing = await listTemplateMaterialItems(input.templateId, c)
+    if (existing.some((row) => row.productId === input.form.productId)) {
+      throw new TemplateMaterialItemExecutionError({
+        code: "TEMPLATE_MATERIAL_ITEM_DUPLICATE_PRODUCT",
+        message: buildTemplateMaterialItemDuplicateProductMessage(),
+        status: 409,
+        field: "productId",
+        payload: { productId: input.form.productId },
+      })
+    }
+
     const snapshot = buildItemSendUnitSnapshotFromProduct(product)
 
-    return createTemplateMaterialItemRecord(
-      input.templateId,
-      { ...input.form, ...snapshot },
-      c,
-    )
+    try {
+      return await createTemplateMaterialItemRecord(
+        input.templateId,
+        { ...input.form, ...snapshot },
+        c,
+      )
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new TemplateMaterialItemExecutionError({
+          code: "TEMPLATE_MATERIAL_ITEM_DUPLICATE_PRODUCT",
+          message: buildTemplateMaterialItemDuplicateProductMessage(),
+          status: 409,
+          field: "productId",
+          payload: { productId: input.form.productId },
+        })
+      }
+      throw error
+    }
   })
 }

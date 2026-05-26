@@ -95,7 +95,6 @@ export function useWorkOrderMaterialItemsRows({
     items: section.localValue.items,
     addItem: drafts.addItem,
     removeItem: drafts.removeItem,
-    duplicateItem: drafts.duplicateItem,
     changeField: drafts.changeField,
     changeCategoryFilter: drafts.changeCategoryFilter,
     setProductSnapshot: drafts.setProductSnapshot,

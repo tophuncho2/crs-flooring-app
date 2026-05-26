@@ -51,6 +51,13 @@ function optionalString(value: unknown): string | null {
   return trimmed ? trimmed : null
 }
 
+// Quantity is optional on a material item — a missing/blank value is carried
+// as an empty string ("unset") and persisted as NULL downstream. A provided
+// value is validated (> 0) by the domain rule, not here.
+function optionalQuantity(value: unknown): string {
+  return typeof value === "string" ? value : ""
+}
+
 function requireBoundedString(
   value: unknown,
   max: number,
@@ -150,7 +157,7 @@ function validateMaterialItemForm(value: unknown, path: string): TemplateMateria
   const obj = requireObject(value, path)
   return {
     productId: requireString(obj.productId, `${path}.productId`, failDiff),
-    quantity: requireString(obj.quantity, `${path}.quantity`, failDiff),
+    quantity: optionalQuantity(obj.quantity),
     notes: typeof obj.notes === "string" ? obj.notes : "",
   }
 }

@@ -1,6 +1,7 @@
 export type TemplateMaterialItemErrorCode =
   | "TEMPLATE_MATERIAL_ITEM_VALIDATION_FAILED"
   | "TEMPLATE_MATERIAL_ITEM_NOT_FOUND"
+  | "TEMPLATE_MATERIAL_ITEM_DUPLICATE_PRODUCT"
 
 export class TemplateMaterialItemExecutionError extends Error {
   readonly code: TemplateMaterialItemErrorCode

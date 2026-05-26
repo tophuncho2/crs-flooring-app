@@ -26,13 +26,10 @@ import { useInventoryHubSidePanel } from "@/modules/inventory/controllers/invent
 import { InventoryHubSidePanel } from "@/modules/inventory/components/side-panel/hub"
 import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
-import {
-  MaterialItemDuplicateButton,
-  MaterialItemRemoveButton,
-} from "./row-controls"
+import { MaterialItemRemoveButton } from "./row-controls"
 
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
-  leadingControls: [{ key: "remove", kind: "actions", width: 116 }],
+  leadingControls: [{ key: "remove", kind: "actions", width: 56 }],
   dataColumns: [
     { key: "categoryFilter", label: "Category", minWidth: 140, grow: 0 },
     { key: "product", label: "Product", minWidth: 220, grow: 2 },
@@ -259,10 +256,6 @@ export function WorkOrderMaterialItemsSection({
     if (control.kind === "actions") {
       return (
         <div className="flex items-center gap-1">
-          <MaterialItemDuplicateButton
-            editable={editable}
-            onClick={() => section.duplicateItem(item.id)}
-          />
           <MaterialItemRemoveButton
             editable={editable}
             onClick={() => section.removeItem(item.id)}

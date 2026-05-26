@@ -6,7 +6,6 @@ import {
   isLocalOnlyRecordRow,
   useRecordScopedSectionController,
 } from "@/modules/shared/engines/record-view"
-import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type {
   ProductOption,
   TemplateDetail,
@@ -183,43 +182,6 @@ export function useTemplateMaterialItemsSection({
     section.setError(null)
   }
 
-  function duplicateItem(sourceItemId: string) {
-    section.setLocalValue((previous) => {
-      const source = previous.items.find((row) => row.id === sourceItemId)
-      if (!source) return previous
-      // Copy productId + productName + sendUnitAbbrev + categoryFilterId so
-      // the new row's picker shows the same product (with label) and the
-      // unit-abbrev display is preserved. Quantity + notes start blank so
-      // the user confirms per-row values for the new line.
-      const duplicated: TemplateMaterialItemLocal = {
-        id: createLocalRecordRowId("template-material-item"),
-        ...buildDuplicatedRow(
-          {
-            productId: source.productId,
-            productName: source.productName,
-            sendUnitAbbrev: source.sendUnitAbbrev,
-            quantity: source.quantity,
-            notes: source.notes,
-            categoryFilterId: source.categoryFilterId,
-          },
-          {
-            copy: ["productId", "productName", "sendUnitAbbrev", "categoryFilterId"],
-            defaults: {
-              productId: "",
-              productName: "",
-              sendUnitAbbrev: "",
-              quantity: "",
-              notes: "",
-              categoryFilterId: null,
-            },
-          },
-        ),
-      }
-      return { items: [...previous.items, duplicated] }
-    })
-    section.setError(null)
-  }
-
   function changeField(
     itemId: string,
     field: keyof TemplateMaterialItemLocal,
@@ -266,7 +228,6 @@ export function useTemplateMaterialItemsSection({
     items: section.localValue.items,
     addItem,
     removeItem,
-    duplicateItem,
     changeField,
     changeCategoryFilter,
     setProductSnapshot,

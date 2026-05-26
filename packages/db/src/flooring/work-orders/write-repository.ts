@@ -80,8 +80,11 @@ export type CreateWorkOrderFromTemplateRecordResult = {
   items: WorkOrderMaterialItemRow[]
 }
 
-function toItemDecimal(value: string): Prisma.Decimal | string {
-  return value
+// Sync carries the template item's quantity through verbatim. Quantity is
+// optional, so a blank value (template item with no quantity) is stored as
+// NULL on the new work-order item rather than coerced to 0.
+function toItemDecimal(value: string): Prisma.Decimal | string | null {
+  return value.trim() ? value : null
 }
 
 export async function createWorkOrderFromTemplateRecord(

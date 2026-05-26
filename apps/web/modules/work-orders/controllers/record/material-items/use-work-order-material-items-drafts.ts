@@ -3,13 +3,9 @@
 import { useCallback } from "react"
 import type { Dispatch, SetStateAction } from "react"
 import { createLocalRecordRowId } from "@/controllers/record/utils/record-row-ids"
-import { buildDuplicatedRow } from "@/components/features/duplicate-row"
 import type { ProductOption } from "@builders/domain"
 import type { RecordSectionError } from "@/types/record/section-error"
-import {
-  BLANK_MATERIAL_ITEM_LOCAL_DEFAULTS,
-  createBlankMaterialItemLocal,
-} from "./drafts"
+import { createBlankMaterialItemLocal } from "./drafts"
 import type {
   WorkOrderMaterialItemLocal,
   WorkOrderMaterialItemsLocalState,
@@ -50,39 +46,6 @@ export function useWorkOrderMaterialItemsDrafts({ section }: { section: SectionR
       section.setLocalValue((previous) => ({
         items: previous.items.filter((row) => row.id !== itemId),
       }))
-      section.setError(null)
-    },
-    [section],
-  )
-
-  const duplicateItem = useCallback(
-    (sourceItemId: string) => {
-      section.setLocalValue((previous) => {
-        const source = previous.items.find((row) => row.id === sourceItemId)
-        if (!source) return previous
-        // Copy productId + productName + sendUnitAbbrev + categoryFilterId so
-        // the new row's picker shows the same product (with label) and the
-        // unit-abbrev display is preserved. Quantity + notes start blank so
-        // the user confirms per-row values for the new line.
-        const duplicated: WorkOrderMaterialItemLocal = {
-          id: createLocalRecordRowId("work-order-material-item"),
-          ...buildDuplicatedRow(
-            {
-              productId: source.productId,
-              productName: source.productName,
-              sendUnitAbbrev: source.sendUnitAbbrev,
-              quantity: source.quantity,
-              notes: source.notes,
-              categoryFilterId: source.categoryFilterId,
-            },
-            {
-              copy: ["productId", "productName", "sendUnitAbbrev", "categoryFilterId"],
-              defaults: BLANK_MATERIAL_ITEM_LOCAL_DEFAULTS,
-            },
-          ),
-        }
-        return { items: [duplicated, ...previous.items] }
-      })
       section.setError(null)
     },
     [section],
@@ -138,7 +101,6 @@ export function useWorkOrderMaterialItemsDrafts({ section }: { section: SectionR
   return {
     addItem,
     removeItem,
-    duplicateItem,
     changeField,
     changeCategoryFilter,
     setProductSnapshot,

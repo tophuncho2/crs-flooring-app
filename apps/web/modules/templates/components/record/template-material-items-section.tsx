@@ -3,7 +3,6 @@
 import { type ReactNode } from "react"
 import { ActionHeader } from "@/components/headers"
 import { NumberCell, RowActionButton, TextCell } from "@/components/cells"
-import { DuplicateRowButton } from "@/components/features/duplicate-row"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
@@ -17,7 +16,7 @@ const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
   ],
-  trailingControls: [{ key: "remove", kind: "actions", width: 116 }],
+  trailingControls: [{ key: "remove", kind: "actions", width: 56 }],
 }
 
 export function TemplateMaterialItemsSection({
@@ -31,7 +30,6 @@ export function TemplateMaterialItemsSection({
   onSave,
   onDiscard,
   onAddItem,
-  onDuplicateItem,
   onChangeField,
   onChangeCategoryFilter,
   onSetProductSnapshot,
@@ -47,7 +45,6 @@ export function TemplateMaterialItemsSection({
   onSave: () => void
   onDiscard: () => void
   onAddItem: () => void
-  onDuplicateItem: (itemId: string) => void
   onChangeField: (itemId: string, field: keyof TemplateMaterialItemLocal, value: string) => void
   onChangeCategoryFilter: (itemId: string, categoryId: string | null) => void
   onSetProductSnapshot: (itemId: string, option: ProductOption | null) => void
@@ -158,12 +155,6 @@ export function TemplateMaterialItemsSection({
           if (control.kind === "actions") {
             return (
               <div className="flex items-center gap-1">
-                <DuplicateRowButton
-                  ariaLabel="Duplicate material item"
-                  title={editable ? "Duplicate this material item" : "Saving..."}
-                  editable={editable}
-                  onClick={() => onDuplicateItem(item.id)}
-                />
                 <RowActionButton
                   label="✕"
                   ariaLabel="Remove material item"

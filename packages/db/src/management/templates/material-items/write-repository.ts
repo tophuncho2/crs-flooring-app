@@ -30,8 +30,11 @@ const templateMaterialItemSelect = {
   createdAt: true,
 } as const
 
-function toDecimal(value: string): Prisma.Decimal | string {
-  return value
+// Quantity is optional: a blank string means "unset" and is stored as
+// NULL. A non-blank string is handed straight to Prisma, which coerces it
+// to Decimal.
+function toDecimal(value: string): Prisma.Decimal | string | null {
+  return value.trim() ? value : null
 }
 
 export async function createTemplateMaterialItemRecord(

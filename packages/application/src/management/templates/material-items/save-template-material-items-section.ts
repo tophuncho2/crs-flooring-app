@@ -3,11 +3,14 @@ import {
   Prisma,
   applyTemplateMaterialItemsDiff,
   getProductById,
+  listTemplateMaterialItems,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
   assignDraftIds,
   buildItemSendUnitSnapshotFromProduct,
+  buildTemplateMaterialItemDuplicateProductMessage,
+  findDuplicateProductId,
   validateTemplateMaterialItemForm,
   type ItemSendUnitSnapshot,
 } from "@builders/domain"
@@ -16,6 +19,16 @@ import type {
   SaveTemplateMaterialItemsSectionUseCaseInput,
   SaveTemplateMaterialItemsSectionUseCaseResult,
 } from "./types.js"
+
+function throwDuplicateProduct(productId?: string): never {
+  throw new TemplateMaterialItemExecutionError({
+    code: "TEMPLATE_MATERIAL_ITEM_DUPLICATE_PRODUCT",
+    message: buildTemplateMaterialItemDuplicateProductMessage(),
+    status: 409,
+    field: "productId",
+    ...(productId ? { payload: { productId } } : {}),
+  })
+}
 
 export async function saveTemplateMaterialItemsSectionUseCase(
   input: SaveTemplateMaterialItemsSectionUseCaseInput,
@@ -47,6 +60,24 @@ export async function saveTemplateMaterialItemsSectionUseCase(
         })
       }
     }
+
+    // One product per template. Build the productId set that will exist
+    // after this diff applies — existing rows that survive deletion and
+    // are not being re-pointed, plus added rows and the (possibly new)
+    // product of each modified row — and reject the first repeat. Template
+    // items allow product change on update, so modified rows contribute
+    // their NEW product here. The DB @@unique is the canonical guard.
+    const existingRows = await listTemplateMaterialItems(input.templateId, c)
+    const deletedIds = new Set(input.diff.deleted.map((d) => d.id))
+    const modifiedIds = new Set(input.diff.modified.map((m) => m.id))
+    const duplicate = findDuplicateProductId([
+      ...existingRows
+        .filter((row) => !deletedIds.has(row.id) && !modifiedIds.has(row.id))
+        .map((row) => row.productId),
+      ...input.diff.added.map((d) => d.form.productId),
+      ...input.diff.modified.map((m) => m.form.productId),
+    ])
+    if (duplicate) throwDuplicateProduct(duplicate)
 
     // Batch-fetch every distinct product touched by the diff (added + modified).
     // Each entry needs the product's send-unit snapshot stamped on its row at
@@ -80,18 +111,28 @@ export async function saveTemplateMaterialItemsSectionUseCase(
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
 
-    return applyTemplateMaterialItemsDiff(c, {
-      templateId: input.templateId,
-      added: addedWithIds.map((draft) => ({
-        id: draft.id,
-        tempId: draft.tempId,
-        input: { ...draft.form, ...snapshotByProductId.get(draft.form.productId)! },
-      })),
-      modified: input.diff.modified.map((update) => ({
-        id: update.id,
-        input: { ...update.form, ...snapshotByProductId.get(update.form.productId)! },
-      })),
-      deleted: input.diff.deleted.map((d) => ({ id: d.id })),
-    })
+    try {
+      return await applyTemplateMaterialItemsDiff(c, {
+        templateId: input.templateId,
+        added: addedWithIds.map((draft) => ({
+          id: draft.id,
+          tempId: draft.tempId,
+          input: { ...draft.form, ...snapshotByProductId.get(draft.form.productId)! },
+        })),
+        modified: input.diff.modified.map((update) => ({
+          id: update.id,
+          input: { ...update.form, ...snapshotByProductId.get(update.form.productId)! },
+        })),
+        deleted: input.diff.deleted.map((d) => ({ id: d.id })),
+      })
+    } catch (error) {
+      // Race safety net: a concurrent save could slip a duplicate past the
+      // pre-check above. The unique index raises P2002 — map it to the same
+      // friendly conflict.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throwDuplicateProduct()
+      }
+      throw error
+    }
   })
 }

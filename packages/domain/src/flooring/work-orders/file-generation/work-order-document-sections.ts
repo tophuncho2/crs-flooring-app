@@ -177,9 +177,14 @@ function formatPropertyAddress(property: WorkOrderFileGenerationInput["property"
 }
 
 function renderMaterialItemGroup(item: WorkOrderFileMaterialItemProjection): string {
-  const quantityLabel = item.sendUnitAbbrev
-    ? `${escapeHtml(item.quantity)} ${escapeHtml(item.sendUnitAbbrev)}`
-    : escapeHtml(item.quantity)
+  // Quantity is optional. When blank, render nothing (no dangling unit
+  // abbrev); otherwise append the send-unit abbrev when present.
+  const quantity = item.quantity.trim()
+  const quantityLabel = !quantity
+    ? ""
+    : item.sendUnitAbbrev
+      ? `${escapeHtml(quantity)} ${escapeHtml(item.sendUnitAbbrev)}`
+      : escapeHtml(quantity)
 
   const cutLogs = renderCutLogRows(item.cutLogs)
 

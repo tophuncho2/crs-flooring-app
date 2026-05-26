@@ -330,7 +330,7 @@ export async function getWorkOrderForFileGeneration(
   const materialItems: WorkOrderFileMaterialItemProjection[] = workOrder.items.map((item) => ({
     id: item.id,
     productName: item.product.name,
-    quantity: item.quantity.toString(),
+    quantity: item.quantity == null ? "" : item.quantity.toString(),
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",
     notes: item.notes ?? "",
     cutLogs: item.cutLogs.map((cl) => ({

@@ -4,7 +4,7 @@ type TemplateMaterialItemInput = {
   id: string
   productId: string
   product: { name: string }
-  quantity: { toString(): string }
+  quantity: { toString(): string } | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
   notes: string | null
@@ -16,7 +16,7 @@ export function normalizeTemplateMaterialItem(item: TemplateMaterialItemInput): 
     id: item.id,
     productId: item.productId,
     productName: item.product.name,
-    quantity: item.quantity.toString(),
+    quantity: item.quantity == null ? "" : item.quantity.toString(),
     sendUnitName: item.sendUnitName ?? "",
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",
     notes: item.notes ?? "",

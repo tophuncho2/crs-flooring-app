@@ -36,7 +36,6 @@ export function useWorkOrderMaterialItemsSection({
     items: rows.items,
     addItem: rows.addItem,
     removeItem: rows.removeItem,
-    duplicateItem: rows.duplicateItem,
     changeField: rows.changeField,
     changeCategoryFilter: rows.changeCategoryFilter,
     setProductSnapshot: rows.setProductSnapshot,

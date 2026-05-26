@@ -8,7 +8,7 @@ type WorkOrderMaterialItemInput = {
   id: string
   productId: string
   product: { name: string }
-  quantity: { toString(): string }
+  quantity: { toString(): string } | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
   notes: string | null
@@ -24,7 +24,7 @@ export function normalizeWorkOrderMaterialItem(
     id: item.id,
     productId: item.productId,
     productName: item.product.name,
-    quantity: item.quantity.toString(),
+    quantity: item.quantity == null ? "" : item.quantity.toString(),
     sendUnitName: item.sendUnitName ?? "",
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",
     notes: item.notes ?? "",
@@ -38,7 +38,7 @@ type WorkOrderMaterialItemOptionInput = {
   id: string
   productId: string
   product: { name: string }
-  quantity: { toString(): string }
+  quantity: { toString(): string } | null
   sendUnitAbbrev: string | null
 }
 
@@ -49,7 +49,7 @@ export function normalizeWorkOrderMaterialItemOption(
     id: item.id,
     productId: item.productId,
     productName: item.product.name,
-    quantity: item.quantity.toString(),
+    quantity: item.quantity == null ? "" : item.quantity.toString(),
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",
   }
 }
