@@ -31,11 +31,21 @@ export function renderCutLogsRowCell(
       return composeRollNumberDisplay(row.rollPrefix ?? "", row.rollNumber ?? "") || "-"
     case "dyeLot":
       return row.dyeLot || "-"
+    case "inventoryNote":
+      return row.inventoryNote || "-"
     case "cut":
       return (
         <span className="tabular-nums">
           {formatInventoryQuantity(row.cut, row.stockUnitAbbrev ?? "")}
         </span>
+      )
+    case "coverageCut":
+      return row.coverageCut ? (
+        <span className="tabular-nums">
+          {formatInventoryQuantity(row.coverageCut, row.itemCoverageUnitAbbrev ?? "")}
+        </span>
+      ) : (
+        "-"
       )
     case "isWaste":
       return row.isWaste ? (
@@ -43,12 +53,22 @@ export function renderCutLogsRowCell(
       ) : (
         <span className="text-[var(--text-muted)]">-</span>
       )
+    case "finalCutSequence":
+      return row.finalCutSequence != null ? (
+        <span className="tabular-nums">{row.finalCutSequence}</span>
+      ) : (
+        "-"
+      )
+    case "notes":
+      return row.notes || "-"
     case "warehouseName":
       return row.warehouseName || "-"
     case "workOrderNumber":
       return row.workOrderNumber || "-"
     case "createdAt":
       return formatCutLogTimestamp(row.createdAt)
+    case "updatedAt":
+      return formatCutLogTimestamp(row.updatedAt)
     default:
       return "-"
   }
