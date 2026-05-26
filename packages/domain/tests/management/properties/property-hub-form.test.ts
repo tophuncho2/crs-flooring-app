@@ -6,6 +6,7 @@ import {
   type PropertyHubPropertyFields,
 } from "../../../src/management/properties/property-hub-form.js"
 import {
+  PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE,
   PROPERTY_HUB_NO_ACTIONS_MESSAGE,
   PROPERTY_NAME_REQUIRED_MESSAGE,
 } from "../../../src/management/properties/error-messages.js"
@@ -37,16 +38,12 @@ describe("validateCreatePropertyHubForm", () => {
     expect(validateCreatePropertyHubForm(form)).toBe(PROPERTY_HUB_NO_ACTIONS_MESSAGE)
   })
 
-  // Current behavior: a "link" MC selection is NOT a "create", so when the
-  // property is also "none" the no-actions guard fires first. The
-  // PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE branch is therefore unreachable
-  // under the present control flow (documented as a finding, not changed here).
-  it("reports link-without-property as no-actions (link branch is currently unreachable)", () => {
+  it("rejects linking a management company without also creating a property", () => {
     const form: CreatePropertyHubForm = {
       managementCompany: { mode: "link", id: "mc-1" },
       property: { mode: "none" },
     }
-    expect(validateCreatePropertyHubForm(form)).toBe(PROPERTY_HUB_NO_ACTIONS_MESSAGE)
+    expect(validateCreatePropertyHubForm(form)).toBe(PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE)
   })
 
   it("delegates to the management-company validator when creating one", () => {
