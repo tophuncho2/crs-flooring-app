@@ -31,7 +31,6 @@ import type {
 export const WO_PRINT_STYLE_BLOCK = `
   @page { size: letter; margin: 0; }
   .wo-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; padding: 0.25in; }
-  .wo-print-root h1 { font-size: 22px; margin: 0 0 6px 0; }
   .wo-print-root h2 { font-size: 14px; margin: 18px 0 6px 0; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
   .wo-print-root h3 { font-size: 12px; font-weight: 600; margin: 10px 0 4px 0; }
   .wo-print-root table { width: 100%; border-collapse: collapse; margin: 6px 0; }
@@ -46,19 +45,22 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
   .wo-print-root .flat-rows .cl-num { text-align: right; }
   .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; margin: 0 0 6px 0; }
-  .wo-print-root .page-header h1 { margin: 0; justify-self: start; }
-  .wo-print-root .page-tag { font-size: 16px; font-weight: 600; }
+  .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
+  .wo-print-root .page-brand { justify-self: start; }
+  .wo-print-root .page-number { justify-self: end; }
   .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
 `
 
-// Shared header: work-order number stays left-aligned; the document-type
-// tag sits in the centered middle column of the .page-header grid.
+// Shared header (.page-header grid, all three spans the same size):
+// "CRS Floor Covering" on the left, the document-type tag centered, and the
+// work-order number mirrored to the right.
 function renderDocumentHeader(input: WorkOrderFileGenerationInput, tag: string): string {
   return `
 <div class="page-header">
-  <h1>${escapeHtml(input.workOrderNumber)}</h1>
+  <span class="page-brand">CRS Floor Covering</span>
   <span class="page-tag">${escapeHtml(tag)}</span>
+  <span class="page-number">${escapeHtml(input.workOrderNumber)}</span>
 </div>
 `.trim()
 }

@@ -10,7 +10,8 @@ import {
  * The "Picking Ticket" document, rendered as a self-contained HTML
  * fragment for the on-demand print view:
  *
- *   - H1 (left) + centered "Picking Ticket" tag
+ *   - Header: "CRS Floor Covering" (left) · centered "Picking Ticket" tag ·
+ *     work-order number (right) — all the same size
  *   - H2 scheduled date + the same top table as the slip, including the
  *     description row beneath Job Type
  *   - The same flat cut-log table as the slip (no Property Info)

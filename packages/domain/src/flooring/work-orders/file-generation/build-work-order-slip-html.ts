@@ -13,7 +13,8 @@ import {
  * fragment for the on-demand print view (the canonical work-order page
  * since the file-generation worker was retired):
  *
- *   - H1: Work Order number (left) + centered "Work Order" tag
+ *   - Header: "CRS Floor Covering" (left) · centered "Work Order" tag ·
+ *     work-order number (right) — all the same size
  *   - H2 scheduled date + warehouse / mgmt co / job type / property table,
  *     with the description as a borderless row beneath Job Type (omitted
  *     when empty)
