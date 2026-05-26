@@ -4,10 +4,7 @@ import {
   HubSidePanelEditLayout,
   HubSidePanelPickerTrigger,
 } from "@/components/hub-side-panel"
-import {
-  SidePanelPreviewNewButton,
-  SidePanelPreviewOpenButton,
-} from "@/components/side-panel-preview"
+import { SidePanelPreviewOpenButton } from "@/components/side-panel-preview"
 import { TemplateSyncItemsSubHeader } from "@/modules/template-sync/components/header/template-sync-items-sub-header"
 import { TemplateSyncClearButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-clear-button"
 import { TemplateSyncNewButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-new-button"
@@ -46,7 +43,6 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
     canOpenHubView,
     errorMessage,
     resetSelections,
-    handleCreateHub,
     handleOpenHubView,
     handleCreate,
     handleOpen,
@@ -61,11 +57,6 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
             <TemplateSyncClearButton
               disabled={!hasSelections || isSyncing}
               onClick={resetSelections}
-            />
-            <SidePanelPreviewNewButton
-              disabled={isSyncing}
-              onClick={handleCreateHub}
-              label="Create hub"
             />
             <SidePanelPreviewOpenButton
               disabled={!canOpenHubView || isSyncing}

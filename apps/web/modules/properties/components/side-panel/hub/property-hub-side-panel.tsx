@@ -212,9 +212,6 @@ export function PropertyHubSidePanel({
               ariaLabel="Filter templates by property"
             />
           ) : null}
-          {!isPickerActive ? (
-            <HubSidePanelAddButton onClick={openForCreate} />
-          ) : null}
         </div>
       )
     }
@@ -240,13 +237,18 @@ export function PropertyHubSidePanel({
     goToProperties,
     goToTemplates,
     openPicker,
-    openForCreate,
   ])
 
   const handleOpenTemplate = onOpenTemplate ?? (() => {})
 
   return (
-    <HubSidePanelShell open={isOpen} onClose={close} title={title} topToolbar={topToolbar}>
+    <HubSidePanelShell
+      open={isOpen}
+      onClose={close}
+      title={title}
+      topToolbar={topToolbar}
+      titleEnd={<HubSidePanelAddButton onClick={openForCreate} />}
+    >
       {mode.kind === "create" ? (
         <div className="flex flex-col gap-5">
           <PropertyHubMcCreateSection controller={controller} />

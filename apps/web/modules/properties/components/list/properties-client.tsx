@@ -22,7 +22,7 @@ import {
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
-import { HubSidePanelShell } from "@/components/hub-side-panel"
+import { HubSidePanelAddButton, HubSidePanelShell } from "@/components/hub-side-panel"
 import { useTemplateSyncController } from "@/modules/template-sync/controllers/use-template-sync-controller"
 import { TemplateSyncBody } from "@/modules/template-sync/components/template-sync-body"
 import { TemplateSyncTopToolbar } from "@/modules/template-sync/components/template-sync-top-toolbar"
@@ -212,6 +212,7 @@ export default function PropertiesClient({
         onClose={sync.handleClose}
         title="Hub & template sync"
         topToolbar={<TemplateSyncTopToolbar controller={sync} />}
+        titleEnd={<HubSidePanelAddButton onClick={sync.handleCreateHub} />}
       >
         <TemplateSyncBody controller={sync} />
       </HubSidePanelShell>

@@ -14,6 +14,12 @@ export type HubSidePanelShellProps = {
    * bottom footer of SidePanelPreview is intentionally unused.
    */
   topToolbar?: ReactNode
+  /**
+   * Optional action rendered in the title row, immediately left of the close
+   * (X) button. Used for the always-available "+ Hub" affordance shared by
+   * every panel connected to the property hub.
+   */
+  titleEnd?: ReactNode
   children: ReactNode
 }
 
@@ -31,6 +37,7 @@ export function HubSidePanelShell({
   title,
   ariaLabel,
   topToolbar,
+  titleEnd,
   children,
 }: HubSidePanelShellProps) {
   return (
@@ -40,6 +47,7 @@ export function HubSidePanelShell({
       onClose={onClose}
       title={title}
       ariaLabel={ariaLabel}
+      titleEnd={titleEnd}
       widthClassName={HUB_PANEL_WIDTH_CLASS}
       stickyHeader={topToolbar}
     >
