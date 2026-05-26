@@ -192,7 +192,10 @@ async function seedPropertiesFromCsv({ prisma, csvPath = DEFAULT_CSV_PATH, dryRu
         continue
       }
 
-      if (!dryRun) await tx.property.create({ data: { name, ...data } })
+      // nameNormalized carries the UNIQUE constraint; derive it the same way the
+      // app does (domain normalizePropertyNameForUniqueness = name.trim().toLowerCase()).
+      if (!dryRun)
+        await tx.property.create({ data: { name, nameNormalized: name.trim().toLowerCase(), ...data } })
       created += 1
       seen.add(name.toLowerCase())
     }
