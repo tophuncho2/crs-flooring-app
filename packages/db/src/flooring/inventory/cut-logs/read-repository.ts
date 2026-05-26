@@ -1,6 +1,7 @@
 import type { Prisma } from "../../../generated/prisma/client.js"
 import {
   buildFlooringProductDisplayName,
+  type CutLogListFilters,
   type CutLogParentContext,
   type CutLogRow,
   type CutLogStatus,
@@ -267,6 +268,53 @@ export async function listInventoryCutLogsPage(
         { createdAt: "asc" },
         { id: "asc" },
       ],
+      skip,
+      take: args.pageSize,
+    }),
+    client.flooringCutLog.count({ where }),
+  ])
+
+  return { rows: rows.map(normalizeInventoryCutLogRow), total }
+}
+
+/**
+ * Global cut-logs ledger read powering the standalone `/dashboard/cut-logs`
+ * list view. Unlike `listInventoryCutLogsPage` this is NOT scoped to one
+ * inventory record:
+ *   - `filters.warehouseId` — optional IN match on the snapshot `warehouseId`
+ *     (the only toolbar filter).
+ *   - `search` — optional case-insensitive substring match on `inventoryItem`
+ *     (backed by the `flooring_cut_log_inventoryItem_trgm_idx` GIN index).
+ *   - Sort: `createdAt DESC, id DESC` — a stable newest-first ledger order
+ *     (cutLogNumber is a "CUT-N" string and sorts unreliably).
+ *
+ * Reuses `inventoryCutLogRowSelect` + `normalizeInventoryCutLogRow` so the rows
+ * carry the same server-resolved labels (workOrderNumber, product label,
+ * warehouseName) the inventory hub side panel expects.
+ */
+export async function listCutLogsForListView(
+  args: { search?: string; filters: CutLogListFilters; page: number; pageSize: number },
+  client: CutLogDbClient = db,
+): Promise<{ rows: InventoryCutLogRow[]; total: number }> {
+  const where: Prisma.FlooringCutLogWhereInput = {}
+
+  const warehouseIds = args.filters.warehouseId
+  if (warehouseIds && warehouseIds.length > 0) {
+    where.warehouseId = { in: [...warehouseIds] }
+  }
+
+  const search = args.search?.trim()
+  if (search) {
+    where.inventoryItem = { contains: search, mode: "insensitive" }
+  }
+
+  const skip = (args.page - 1) * args.pageSize
+
+  const [rows, total] = await Promise.all([
+    client.flooringCutLog.findMany({
+      where,
+      select: inventoryCutLogRowSelect,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip,
       take: args.pageSize,
     }),

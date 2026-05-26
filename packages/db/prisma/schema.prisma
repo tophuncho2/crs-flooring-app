@@ -430,6 +430,13 @@ model FlooringCutLog {
   @@index([inventoryId, status])
   @@index([inventoryId, isFinal])
   @@index([status, isFinal])
+  // Cut-logs ledger list view: warehouse-filtered + createdAt/id keyset sort,
+  // all-warehouses createdAt/id sort, and inventoryItem substring search
+  // (pg_trgm already enabled). inventoryItem is immutable post-create, so the
+  // GIN index is insert-only.
+  @@index([warehouseId, createdAt, id])
+  @@index([createdAt, id])
+  @@index([inventoryItem(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_cut_log_inventoryItem_trgm_idx")
   @@map("flooring_cut_log")
 }
 

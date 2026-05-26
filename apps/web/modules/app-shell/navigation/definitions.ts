@@ -29,6 +29,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     group: "management",
   },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/inventory", group: "operations" },
+  { slug: "flooring-cut-logs", name: "Cut Logs", href: "/dashboard/cut-logs", group: "operations" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/imports", group: "operations" },
   { slug: "products", name: "Products", href: "/dashboard/products", group: "operations" },
   { slug: "flooring-manufacturers", name: "Manufacturers", href: "/dashboard/manufacturers", group: "operations" },

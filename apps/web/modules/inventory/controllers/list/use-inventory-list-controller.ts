@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { useCanonicalDetailNavigation } from "@/modules/shared/engines/common/navigation/use-canonical-detail-navigation"
 
+// List-scoped notice/error state. Row clicks no longer navigate to a detail
+// page — the list client opens the inventory hub side panel in place — so this
+// controller no longer owns any navigation.
 export function useInventoryListController() {
-  const inventoryNavigation = useCanonicalDetailNavigation("/dashboard/inventory")
   const [message, setMessage] = useState("")
   const [pageError, setPageError] = useState("")
 
@@ -13,6 +14,5 @@ export function useInventoryListController() {
     setMessage,
     pageError,
     setPageError,
-    openInventory: inventoryNavigation.openRecord,
   }
 }

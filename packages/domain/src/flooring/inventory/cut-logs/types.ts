@@ -123,6 +123,14 @@ export type InventoryCutLogPage = {
   pageSize: number
 }
 
+// Filter shape for the standalone cut-logs ledger list view
+// (`/dashboard/cut-logs`). Warehouse is the only toolbar filter; the search
+// bar targets `inventoryItem` (see the list read). `status` / `isWaste` are
+// display columns on the ledger, not filters.
+export type CutLogListFilters = {
+  warehouseId?: ReadonlyArray<string>
+}
+
 /**
  * Parent-inventory context every cut-log mutation use case needs under the
  * per-inventory FOR UPDATE lock:

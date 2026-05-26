@@ -1,9 +1,13 @@
 import { z } from "zod"
 import { CutLogExecutionError } from "@builders/application"
+import type { ListInput } from "@builders/application"
 import {
   CUT_LOG_NOTES_MAX,
+  CUT_LOGS_LIST_MAX_PAGE_SIZE,
+  CUT_LOGS_LIST_PAGE_SIZE,
   INVENTORY_CUT_LOG_MAX_PAGE_SIZE,
   INVENTORY_CUT_LOG_PAGE_SIZE,
+  type CutLogListFilters,
 } from "@builders/domain"
 
 // Cut-log mutations are one scope-aware use-case set called from two route
@@ -192,4 +196,59 @@ export function validateCutLogsPageQuery(
   }
 
   return parseResult.data
+}
+
+// --- Standalone cut-logs ledger list query validator (GET /api/cut-logs) ---
+// Warehouse is the only filter (multi-value, parsed off the raw params); the
+// search term `q` targets `inventoryItem` in the data layer.
+
+const listCutLogsQuerySchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(CUT_LOGS_LIST_MAX_PAGE_SIZE)
+    .default(CUT_LOGS_LIST_PAGE_SIZE),
+})
+
+export function validateCutLogsListQuery(
+  searchParams: URLSearchParams,
+): ListInput<CutLogListFilters> {
+  // Strip the multi-value `warehouseId` before zod (it sees scalars only).
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    if (key === "warehouseId") return
+    raw[key] = value
+  })
+
+  const parseResult = listCutLogsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    failCutLog(
+      issue?.message ?? "Invalid cut-logs list query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+
+  const warehouseId = Array.from(
+    new Set(
+      searchParams
+        .getAll("warehouseId")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+
+  return {
+    search,
+    filters: warehouseId.length > 0 ? { warehouseId } : undefined,
+    page: parsed.page,
+    pageSize: parsed.pageSize,
+  }
 }
