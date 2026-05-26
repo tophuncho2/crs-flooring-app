@@ -29,6 +29,10 @@ export {
   HubSidePanelAddButton,
   type HubSidePanelAddButtonProps,
 } from "./hub-side-panel-add-button"
+export {
+  HubSidePanelHubViewButton,
+  type HubSidePanelHubViewButtonProps,
+} from "./hub-side-panel-hub-view-button"
 export { HubSidePanelPickerTrigger } from "./hub-side-panel-picker-trigger"
 export type { HubSidePanelPickerTriggerProps } from "./hub-side-panel-picker-trigger"
 export {

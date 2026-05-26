@@ -7,6 +7,7 @@ import {
   HubSidePanelAddButton,
   HubSidePanelEditLayout,
   HubSidePanelEditToolbar,
+  HubSidePanelHubViewButton,
   HubSidePanelPickerTrigger,
   HubSidePanelShell,
   HubSidePanelViewSwitcher,
@@ -95,6 +96,12 @@ export function PropertyHubSidePanel({
   const isPickerActive = mode.kind === "picker-takeover"
 
   const hasHubViewTarget = contextMcId !== null
+  // "Hub view" now lives in the title row, shown only in the two section-edit
+  // modes that have a parent hub to pop back to.
+  const showHubViewButton =
+    hasHubViewTarget &&
+    (effectiveMode.kind === "section-edit-mc" ||
+      effectiveMode.kind === "section-edit-property")
 
   const errorMessage = validationError ?? error ?? null
 
@@ -157,7 +164,6 @@ export function PropertyHubSidePanel({
           onSave={save}
           onDiscard={discard}
           onDelete={deleteMc}
-          onOpenHubView={hasHubViewTarget ? exitToView : undefined}
           errorMessage={errorMessage}
         />
       )
@@ -173,7 +179,6 @@ export function PropertyHubSidePanel({
               onSave={save}
               onDiscard={discard}
               onDelete={deleteProperty}
-              onOpenHubView={hasHubViewTarget ? exitToView : undefined}
               errorMessage={errorMessage}
               disabled={isPickerActive}
             />
@@ -231,8 +236,6 @@ export function PropertyHubSidePanel({
     discard,
     deleteMc,
     deleteProperty,
-    exitToView,
-    hasHubViewTarget,
     errorMessage,
     selectedPropertyLabel,
     propertyEditMcLabel,
@@ -253,6 +256,9 @@ export function PropertyHubSidePanel({
       topToolbar={topToolbar}
       titleEnd={
         <>
+          {showHubViewButton ? (
+            <HubSidePanelHubViewButton onClick={exitToView} />
+          ) : null}
           <HubSidePanelAddButton
             label="+Template"
             onClick={() => {
