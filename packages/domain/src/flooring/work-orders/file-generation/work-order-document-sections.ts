@@ -41,29 +41,34 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .property-info-table th { width: 14%; }
   .wo-print-root .property-info-table td { width: 26%; }
   .wo-print-root .property-info-address { width: 60%; }
-  .wo-print-root .womi-group { margin: 12px 0 14px 0; page-break-inside: avoid; }
-  .wo-print-root .flat-rows { width: 100%; border-collapse: collapse; margin: 2px 0 0 0; }
-  .wo-print-root .flat-rows th, .wo-print-root .flat-rows td { border: 0; padding: 3px 8px; font-size: 11px; text-align: left; vertical-align: top; }
+  .wo-print-root .flat-rows { width: 100%; border-collapse: collapse; margin: 12px 0 0 0; }
+  .wo-print-root .flat-rows th, .wo-print-root .flat-rows td { border: 0; padding: 3px 8px; font-size: 10px; text-align: left; vertical-align: top; }
   .wo-print-root .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
   .wo-print-root .flat-rows .cl-num { text-align: right; }
-  .wo-print-root .womi-rows { margin-bottom: 2px; }
-  .wo-print-root .page-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; margin: 0 0 6px 0; }
+  .wo-print-root .page-header h1 { margin: 0; justify-self: start; }
   .wo-print-root .page-tag { font-size: 16px; font-weight: 600; }
   .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
 `
 
-export function renderWorkOrderHeader(input: WorkOrderFileGenerationInput): string {
-  return `<h1>${escapeHtml(input.workOrderNumber)}</h1>`
-}
-
-export function renderWorkOrderPickingTicketHeader(input: WorkOrderFileGenerationInput): string {
+// Shared header: work-order number stays left-aligned; the document-type
+// tag sits in the centered middle column of the .page-header grid.
+function renderDocumentHeader(input: WorkOrderFileGenerationInput, tag: string): string {
   return `
 <div class="page-header">
   <h1>${escapeHtml(input.workOrderNumber)}</h1>
-  <span class="page-tag">Picking Ticket</span>
+  <span class="page-tag">${escapeHtml(tag)}</span>
 </div>
 `.trim()
+}
+
+export function renderWorkOrderHeader(input: WorkOrderFileGenerationInput): string {
+  return renderDocumentHeader(input, "Work Order")
+}
+
+export function renderWorkOrderPickingTicketHeader(input: WorkOrderFileGenerationInput): string {
+  return renderDocumentHeader(input, "Picking Ticket")
 }
 
 export function renderWorkOrderTopTable(
@@ -148,16 +153,45 @@ export function renderWorkOrderPropertyInfo(input: WorkOrderFileGenerationInput)
 `.trim()
 }
 
-export function renderWorkOrderMaterialItems(
+export function renderWorkOrderCutLogs(
   items: WorkOrderFileMaterialItemProjection[],
 ): string {
-  if (items.length === 0) {
-    return `<h2>Material Items</h2><div class="empty-cell">No material items.</div>`
+  // The material-item construct is intentionally not shown on the document —
+  // every cut log is flattened into one table and labeled with its parent
+  // product name (the leading column).
+  const rows = items.flatMap((item) =>
+    item.cutLogs.map((cl) => ({ cl, productName: item.productName })),
+  )
+  if (rows.length === 0) {
+    return `<div class="empty-cell">No cut logs.</div>`
   }
-  const groups = items.map((item) => renderMaterialItemGroup(item)).join("\n")
+  const renderedRows = rows.map(renderCutLogRow).join("\n")
   return `
-<h2>Material Items</h2>
-${groups}
+<table class="flat-rows">
+  <colgroup>
+    <col style="width: 20%;" />
+    <col style="width: 24%;" />
+    <col style="width: 14%;" />
+    <col style="width: 10%;" />
+    <col style="width: 10%;" />
+    <col style="width: 10%;" />
+    <col style="width: 12%;" />
+  </colgroup>
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Inventory Item</th>
+      <th>Location</th>
+      <th class="cl-num">Before</th>
+      <th class="cl-num">Cut</th>
+      <th class="cl-num">After</th>
+      <th class="cl-num">Coverage</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${renderedRows}
+  </tbody>
+</table>
 `.trim()
 }
 
@@ -175,83 +209,22 @@ function formatPropertyAddress(property: WorkOrderFileGenerationInput["property"
   return lines.join("\n")
 }
 
-function renderMaterialItemGroup(item: WorkOrderFileMaterialItemProjection): string {
-  // Quantity is optional. When blank, render nothing (no dangling unit
-  // abbrev); otherwise append the send-unit abbrev when present.
-  const quantity = item.quantity.trim()
-  const quantityLabel = !quantity
-    ? ""
-    : item.sendUnitAbbrev
-      ? `${escapeHtml(quantity)} ${escapeHtml(item.sendUnitAbbrev)}`
-      : escapeHtml(quantity)
-
-  const cutLogs = renderCutLogRows(item.cutLogs)
-
-  return `
-<div class="womi-group">
-  <table class="flat-rows womi-rows">
-    <thead>
-      <tr>
-        <th style="width: 45%;">Product</th>
-        <th style="width: 20%;">Quantity</th>
-        <th style="width: 35%;">Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>${escapeOrEmpty(item.productName)}</td>
-        <td>${quantityLabel}</td>
-        <td class="multiline">${escapeOrEmpty(item.notes)}</td>
-      </tr>
-    </tbody>
-  </table>
-  ${cutLogs}
-</div>
-`.trim()
-}
-
-function renderCutLogRows(cutLogs: WorkOrderFileCutLogProjection[]): string {
-  if (cutLogs.length === 0) return ""
-  const rows = cutLogs.map(renderCutLogRow).join("\n")
-  return `
-<table class="flat-rows">
-  <colgroup>
-    <col style="width: 26%;" />
-    <col style="width: 14%;" />
-    <col style="width: 8%;" />
-    <col style="width: 8%;" />
-    <col style="width: 8%;" />
-    <col style="width: 14%;" />
-    <col style="width: 22%;" />
-  </colgroup>
-  <thead>
-    <tr>
-      <th>Inventory Item</th>
-      <th>Location</th>
-      <th class="cl-num">Before</th>
-      <th class="cl-num">Cut</th>
-      <th class="cl-num">After</th>
-      <th class="cl-num">Coverage</th>
-      <th>Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${rows}
-  </tbody>
-</table>
-`.trim()
-}
-
-function renderCutLogRow(cl: WorkOrderFileCutLogProjection): string {
+function renderCutLogRow({
+  cl,
+  productName,
+}: {
+  cl: WorkOrderFileCutLogProjection
+  productName: string
+}): string {
   return `
 <tr>
+  <td>${escapeOrEmpty(productName)}</td>
   <td>${escapeOrEmpty(cl.inventoryItem)}</td>
   <td>${escapeOrEmpty(cl.location)}</td>
   <td class="cl-num">${renderUnitValue(cl.before, cl.stockUnitAbbrev)}</td>
   <td class="cl-num">${renderUnitValue(cl.cut, cl.stockUnitAbbrev)}</td>
   <td class="cl-num">${renderUnitValue(cl.after, cl.stockUnitAbbrev)}</td>
   <td class="cl-num">${renderUnitValue(cl.coverageCut, cl.itemCoverageUnitAbbrev)}</td>
-  <td class="multiline">${escapeOrEmpty(cl.notes)}</td>
 </tr>
 `.trim()
 }

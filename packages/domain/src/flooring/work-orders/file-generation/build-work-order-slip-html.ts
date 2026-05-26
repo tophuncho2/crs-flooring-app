@@ -1,9 +1,9 @@
 import type { WorkOrderFileGenerationInput } from "./types.js"
 import {
   WO_PRINT_STYLE_BLOCK,
+  renderWorkOrderCutLogs,
   renderWorkOrderHeader,
   renderWorkOrderInstallerInstructionsBlock,
-  renderWorkOrderMaterialItems,
   renderWorkOrderPropertyInfo,
   renderWorkOrderTopTable,
 } from "./work-order-document-sections.js"
@@ -13,14 +13,15 @@ import {
  * fragment for the on-demand print view (the canonical work-order page
  * since the file-generation worker was retired):
  *
- *   - H1: Work Order number
+ *   - H1: Work Order number (left) + centered "Work Order" tag
  *   - H2 scheduled date + warehouse / mgmt co / job type / property table,
  *     with the description as a borderless row beneath Job Type (omitted
  *     when empty)
  *   - Property Info (address — customAddress overrides property address —
  *     property instructions always shown when present, vacancy/unit fields)
  *   - Installer Instructions block (omitted when empty)
- *   - Material Items + cut logs
+ *   - Cut logs (one flat table, product name as the leading column; the
+ *     material-item grouping is not shown)
  *
  * Returns a `<style>` + `.wo-print-root` fragment to inject into the print
  * page; no `<html>`/`<body>` (those come from the Next root layout).
@@ -31,7 +32,7 @@ export function buildWorkOrderSlipHtml(input: WorkOrderFileGenerationInput): str
     renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderPropertyInfo(input),
     renderWorkOrderInstallerInstructionsBlock(input),
-    renderWorkOrderMaterialItems(input.materialItems),
+    renderWorkOrderCutLogs(input.materialItems),
   ]
     .filter(Boolean)
     .join("\n")

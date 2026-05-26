@@ -1,7 +1,7 @@
 import type { WorkOrderFileGenerationInput } from "./types.js"
 import {
   WO_PRINT_STYLE_BLOCK,
-  renderWorkOrderMaterialItems,
+  renderWorkOrderCutLogs,
   renderWorkOrderPickingTicketHeader,
   renderWorkOrderTopTable,
 } from "./work-order-document-sections.js"
@@ -10,10 +10,10 @@ import {
  * The "Picking Ticket" document, rendered as a self-contained HTML
  * fragment for the on-demand print view:
  *
- *   - H1 + "Picking Ticket" tag in the top-right
+ *   - H1 (left) + centered "Picking Ticket" tag
  *   - H2 scheduled date + the same top table as the slip, including the
  *     description row beneath Job Type
- *   - The same Material Items + cut logs as the slip (no Property Info)
+ *   - The same flat cut-log table as the slip (no Property Info)
  *
  * Returns a `<style>` + `.wo-print-root` fragment to inject into the print
  * page; no `<html>`/`<body>` (those come from the Next root layout). This
@@ -23,7 +23,7 @@ export function buildWorkOrderPickingTicketHtml(input: WorkOrderFileGenerationIn
   const sections = [
     renderWorkOrderPickingTicketHeader(input),
     renderWorkOrderTopTable(input, { includeDescription: true }),
-    renderWorkOrderMaterialItems(input.materialItems),
+    renderWorkOrderCutLogs(input.materialItems),
   ].join("\n")
 
   return `<style>${WO_PRINT_STYLE_BLOCK}</style>
