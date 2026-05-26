@@ -493,7 +493,7 @@ model FlooringTemplateItem {
   quantity       Decimal?         @db.Decimal(10, 2)
   sendUnitName   String?
   sendUnitAbbrev String?
-  notes          String?
+  notes          String?          @db.VarChar(30)
   createdAt      DateTime         @default(now())
 
   @@unique([templateId, productId])
@@ -576,7 +576,7 @@ model FlooringWorkOrderItem {
   quantity             Decimal?                    @db.Decimal(10, 2)
   sendUnitName         String?
   sendUnitAbbrev       String?
-  notes                String?
+  notes                String?                     @db.VarChar(30)
   status               FlooringWorkOrderItemStatus @default(IDLE)
   createdAt            DateTime                    @default(now())
   updatedAt            DateTime                    @updatedAt

@@ -12,6 +12,7 @@ import {
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
+  TEMPLATE_MATERIAL_ITEM_NOTES_MAX,
   TEMPLATE_PREVIEW_ITEMS_MAX_PAGE_SIZE,
   TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE,
   TEMPLATE_UNIT_TYPE_MAX,
@@ -158,7 +159,7 @@ function validateMaterialItemForm(value: unknown, path: string): TemplateMateria
   return {
     productId: requireString(obj.productId, `${path}.productId`, failDiff),
     quantity: optionalQuantity(obj.quantity),
-    notes: typeof obj.notes === "string" ? obj.notes : "",
+    notes: optionalBoundedText(obj.notes, TEMPLATE_MATERIAL_ITEM_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
   }
 }
 

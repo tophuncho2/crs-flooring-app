@@ -8,10 +8,11 @@ import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandabl
 import { isLocalOnlyRecordRow } from "@/controllers/record/utils/record-row-ids"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
-import type {
-  CutLogRow,
-  WorkOrderDetail,
-  WorkOrderMaterialItemRow,
+import {
+  type CutLogRow,
+  type WorkOrderDetail,
+  type WorkOrderMaterialItemRow,
+  WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
 } from "@builders/domain"
 import {
   useWorkOrderMaterialItemsSection,
@@ -242,6 +243,7 @@ export function WorkOrderMaterialItemsSection({
             onChange={(next) => section.changeField(item.id, "notes", next)}
             placeholder="Notes"
             ariaLabel="Material item notes"
+            maxLength={WORK_ORDER_MATERIAL_ITEM_NOTES_MAX}
           />
         )
       default:

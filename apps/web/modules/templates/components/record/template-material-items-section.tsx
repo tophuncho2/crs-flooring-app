@@ -6,7 +6,7 @@ import { NumberCell, RowActionButton, TextCell } from "@/components/cells"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
-import type { ProductOption } from "@builders/domain"
+import { type ProductOption, TEMPLATE_MATERIAL_ITEM_NOTES_MAX } from "@builders/domain"
 import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/record/use-template-material-items-section"
 
 const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
@@ -145,6 +145,7 @@ export function TemplateMaterialItemsSection({
                   onChange={(next) => onChangeField(item.id, "notes", next)}
                   placeholder="Notes"
                   ariaLabel="Material item notes"
+                  maxLength={TEMPLATE_MATERIAL_ITEM_NOTES_MAX}
                 />
               )
             default:

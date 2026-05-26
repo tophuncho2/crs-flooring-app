@@ -17,6 +17,7 @@ import {
   WO_INTERNAL_NOTES_MAX,
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
+  WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
   buildWorkOrderMaterialItemProductLockedMessage,
   type WorkOrderMaterialItemCreateForm,
   type WorkOrderMaterialItemUpdateForm,
@@ -187,7 +188,7 @@ function validateMaterialItemCreateForm(
   return {
     productId: requireString(obj.productId, `${path}.productId`, failMaterialItem),
     quantity: optionalQuantity(obj.quantity),
-    notes: typeof obj.notes === "string" ? obj.notes : "",
+    notes: optionalBoundedText(obj.notes, WORK_ORDER_MATERIAL_ITEM_NOTES_MAX, `${path}.notes`, failMaterialItem) ?? "",
   }
 }
 
@@ -212,7 +213,7 @@ function validateMaterialItemUpdateForm(
   }
   return {
     quantity: optionalQuantity(obj.quantity),
-    notes: typeof obj.notes === "string" ? obj.notes : "",
+    notes: optionalBoundedText(obj.notes, WORK_ORDER_MATERIAL_ITEM_NOTES_MAX, `${path}.notes`, failMaterialItem) ?? "",
   }
 }
 
