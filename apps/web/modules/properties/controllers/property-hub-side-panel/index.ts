@@ -13,3 +13,4 @@ export type {
   PropertyHubMcMode,
 } from "./types"
 export type { PropertyHubCreateResult } from "./mutations"
+export { NEW_TEMPLATE_ROUTE } from "./routes"

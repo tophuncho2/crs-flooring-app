@@ -14,6 +14,7 @@ import {
   type TemplateSyncItemsController,
 } from "@/modules/template-sync/controllers/use-template-sync-items"
 import {
+  NEW_TEMPLATE_ROUTE,
   usePropertyHubSidePanel,
   type PropertyHubSidePanelController,
 } from "@/modules/properties/controllers/property-hub-side-panel"
@@ -222,7 +223,7 @@ export function useTemplateSyncController(): TemplateSyncController {
   const handleCreate = useCallback(() => {
     setOpen(false)
     resetSelections()
-    router.push("/dashboard/templates/new")
+    router.push(NEW_TEMPLATE_ROUTE)
   }, [resetSelections, router])
 
   const handleCreateHub = useCallback(() => {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import type { TemplateListRow } from "@builders/domain"
 import {
   HubSidePanelAddButton,
@@ -10,9 +11,10 @@ import {
   HubSidePanelShell,
   HubSidePanelViewSwitcher,
 } from "@/components/hub-side-panel"
-import type {
-  HubMode,
-  PropertyHubSidePanelController,
+import {
+  NEW_TEMPLATE_ROUTE,
+  type HubMode,
+  type PropertyHubSidePanelController,
 } from "@/modules/properties/controllers/property-hub-side-panel"
 import { PropertyHubMcCreateSection } from "./property-hub-mc-create-section"
 import { PropertyHubMcEditSection } from "./property-hub-mc-edit-section"
@@ -81,6 +83,8 @@ export function PropertyHubSidePanel({
     openPicker,
     openForCreate,
   } = controller
+
+  const router = useRouter()
 
   // Collapse picker-takeover onto its returnTo for chrome rendering — keeps
   // the trigger sticky and visible while the picker fills the body below,
@@ -247,7 +251,18 @@ export function PropertyHubSidePanel({
       onClose={close}
       title={title}
       topToolbar={topToolbar}
-      titleEnd={<HubSidePanelAddButton onClick={openForCreate} />}
+      titleEnd={
+        <>
+          <HubSidePanelAddButton
+            label="+Template"
+            onClick={() => {
+              close()
+              router.push(NEW_TEMPLATE_ROUTE)
+            }}
+          />
+          <HubSidePanelAddButton onClick={openForCreate} />
+        </>
+      }
     >
       {mode.kind === "create" ? (
         <div className="flex flex-col gap-5">
