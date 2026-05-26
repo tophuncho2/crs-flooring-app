@@ -16,21 +16,19 @@ const ROW_ACTION_BUTTON_CLASS =
  * Paginated properties under the active hub. Each row is clickable: clicking
  * triggers a transition to `section-edit-property` mode (the panel body
  * replaces this list with the property's edit cells). A hover-revealed arrow
- * on the right jumps to the templates tab pre-filtered to that property. When
- * the panel is in MC edit mode this section renders dimmed (`disabled`) but
- * still readable, and the shortcut is omitted.
+ * on the right jumps to the templates tab pre-filtered to that property. The
+ * list renders and behaves identically in the read-only hub view and in
+ * MC-edit mode.
  */
 export function PropertyHubPropertiesListSection({
   controller,
-  dimmed = false,
 }: {
   controller: PropertyHubSidePanelController
-  dimmed?: boolean
 }) {
   const { properties, enterPropertyEditFromContext, openTemplatesForProperty } = controller
   const { hasData, isError, total, rows, hasMore, isFetchingMore, loadMore } = properties
 
-  const list = (
+  return (
     <HubSidePanelScrollList
       title="Properties"
       hasData={hasData}
@@ -53,26 +51,19 @@ export function PropertyHubPropertiesListSection({
             onClick={() => enterPropertyEditFromContext(row)}
             ariaLabel={`Edit property ${row.name}`}
             action={
-              dimmed ? undefined : (
-                <button
-                  type="button"
-                  aria-label={`View templates for ${row.name}`}
-                  title={`View templates for ${row.name}`}
-                  onClick={() => openTemplatesForProperty(row)}
-                  className={ROW_ACTION_BUTTON_CLASS}
-                >
-                  <ArrowRight size={14} />
-                </button>
-              )
+              <button
+                type="button"
+                aria-label={`View templates for ${row.name}`}
+                title={`View templates for ${row.name}`}
+                onClick={() => openTemplatesForProperty(row)}
+                className={ROW_ACTION_BUTTON_CLASS}
+              >
+                <ArrowRight size={14} />
+              </button>
             }
           />
         )
       })}
     </HubSidePanelScrollList>
   )
-
-  if (dimmed) {
-    return <div className="pointer-events-none opacity-50">{list}</div>
-  }
-  return list
 }

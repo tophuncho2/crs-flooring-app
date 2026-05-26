@@ -46,7 +46,7 @@ export type PropertyHubSidePanelProps = {
  * the hub now owns:
  *   - view: read-only MC + paginated properties or templates
  *   - create: combined "+ Hub" form (MC link/create + property create)
- *   - section-edit-mc: MC fields editable, properties list dimmed below
+ *   - section-edit-mc: MC fields editable, interactive properties list below
  *   - section-edit-property: property cells replace the list area
  *   - picker-takeover: inline-in-body picker (mc-link or property-filter)
  *
@@ -83,6 +83,8 @@ export function PropertyHubSidePanel({
     pickerKind,
     openPicker,
     openForCreate,
+    openForMcEditById,
+    propertyEditForm,
   } = controller
 
   const router = useRouter()
@@ -193,6 +195,12 @@ export function PropertyHubSidePanel({
               placeholder="No management company"
               disabled={isSaving}
               ariaLabel="Link management company"
+              onOpenLinked={() => {
+                const mcId = propertyEditForm.managementCompanyId
+                if (mcId) openForMcEditById(mcId)
+              }}
+              openLinkedAriaLabel="Open management company"
+              openLinkedDisabled={isSaving}
             />
           </label>
         </HubSidePanelEditLayout>
@@ -239,6 +247,8 @@ export function PropertyHubSidePanel({
     errorMessage,
     selectedPropertyLabel,
     propertyEditMcLabel,
+    propertyEditForm,
+    openForMcEditById,
     mcMode,
     mcLinkLabel,
     goToProperties,
@@ -276,9 +286,13 @@ export function PropertyHubSidePanel({
           <PropertyHubPropertyCreateSection controller={controller} />
         </div>
       ) : mode.kind === "section-edit-mc" ? (
-        <div className="flex flex-col gap-5">
-          <PropertyHubMcEditSection controller={controller} />
-          <PropertyHubPropertiesListSection controller={controller} dimmed />
+        <div className="flex h-full min-h-0 flex-col gap-5">
+          <div className="shrink-0">
+            <PropertyHubMcEditSection controller={controller} />
+          </div>
+          <div className="min-h-0 flex-1">
+            <PropertyHubPropertiesListSection controller={controller} />
+          </div>
         </div>
       ) : mode.kind === "section-edit-property" ? (
         <div className="flex flex-col gap-5">

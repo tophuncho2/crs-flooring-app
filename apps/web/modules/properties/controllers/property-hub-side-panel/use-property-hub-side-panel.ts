@@ -332,7 +332,16 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
   const openTemplatesForProperty = useCallback(
     (row: PropertyListRow) => {
       view.setPropertyFilter(row.id, row.name)
-      setMode((prev) => (prev.kind === "view" ? { ...prev, tab: "templates" } : prev))
+      setMode((prev) => {
+        if (prev.kind === "view") return { ...prev, tab: "templates" }
+        // The mc-edit properties list now mirrors the read-only view, so its
+        // per-row arrow must also work: leave the edit and land on the hub's
+        // templates tab filtered to the clicked property.
+        if (prev.kind === "section-edit-mc") {
+          return { kind: "view", mcId: prev.mcId, tab: "templates" }
+        }
+        return prev
+      })
     },
     [view],
   )
