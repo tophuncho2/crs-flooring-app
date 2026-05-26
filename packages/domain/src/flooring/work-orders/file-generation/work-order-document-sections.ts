@@ -41,8 +41,8 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .property-info-table th { width: 14%; }
   .wo-print-root .property-info-table td { width: 26%; }
   .wo-print-root .property-info-address { width: 60%; }
-  .wo-print-root .flat-rows { width: 100%; border-collapse: collapse; margin: 12px 0 0 0; }
-  .wo-print-root .flat-rows th, .wo-print-root .flat-rows td { border: 0; padding: 3px 8px; font-size: 10px; text-align: left; vertical-align: top; }
+  .wo-print-root .flat-rows { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 12px 0 0 0; }
+  .wo-print-root .flat-rows th, .wo-print-root .flat-rows td { border: 0; padding: 3px 8px; font-size: 10px; text-align: left; vertical-align: top; overflow-wrap: break-word; word-break: break-word; }
   .wo-print-root .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
   .wo-print-root .flat-rows .cl-num { text-align: right; }
   .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; margin: 0 0 6px 0; }
