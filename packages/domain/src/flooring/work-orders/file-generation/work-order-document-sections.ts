@@ -128,7 +128,7 @@ export function renderWorkOrderPropertyInfo(input: WorkOrderFileGenerationInput)
   const vacancyLabel = formatVacancy(input.vacancy)
   return `
 <h2>Property Info</h2>
-<table class="grid-table property-info-table">
+<table class="wo-top-table property-info-table">
   <tbody>
     <tr>
       <td class="property-info-address" rowspan="3">
