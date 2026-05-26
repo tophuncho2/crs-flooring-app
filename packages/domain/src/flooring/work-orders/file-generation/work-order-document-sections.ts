@@ -30,7 +30,7 @@ import type {
 
 export const WO_PRINT_STYLE_BLOCK = `
   @page { size: letter; margin: 0; }
-  .wo-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; padding: 0.25in; }
+  .wo-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; padding: 0 0.25in 0.25in 0.25in; }
   .wo-print-root h2 { font-size: 14px; margin: 18px 0 6px 0; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
   .wo-print-root h3 { font-size: 12px; font-weight: 600; margin: 10px 0 4px 0; }
   .wo-print-root table { width: 100%; border-collapse: collapse; margin: 6px 0; }
@@ -44,12 +44,16 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .flat-rows th, .wo-print-root .flat-rows td { border: 0; padding: 3px 8px; font-size: 10px; text-align: left; vertical-align: top; overflow-wrap: break-word; word-break: break-word; }
   .wo-print-root .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
   .wo-print-root .flat-rows .cl-num { text-align: right; }
-  .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; margin: 0 0 6px 0; }
+  .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; margin: 0; }
   .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
   .wo-print-root .page-brand { justify-self: start; }
   .wo-print-root .page-number { justify-self: end; }
   .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
+  .wo-print-root .page-frame { margin: 0; }
+  .wo-print-root .page-frame > thead { display: table-header-group; }
+  .wo-print-root .page-frame > thead > tr > td { border: 0; padding: 0.25in 0 0 0; }
+  .wo-print-root .page-frame > tbody > tr > td { border: 0; padding: 0; }
 `
 
 // Shared header (.page-header grid, all three spans the same size):
@@ -71,6 +75,28 @@ export function renderWorkOrderHeader(input: WorkOrderFileGenerationInput): stri
 
 export function renderWorkOrderPickingTicketHeader(input: WorkOrderFileGenerationInput): string {
   return renderDocumentHeader(input, "Picking Ticket")
+}
+
+// Wraps the document so the header repeats on every printed page. The header
+// goes in a <thead> (a table-header-group): Chromium re-renders it at the top
+// of each page AND reserves vertical space for it, so it never overlaps the
+// body — unlike a position: fixed element. The thead's own top padding
+// supplies the per-page top inset (the .wo-print-root top padding is dropped),
+// keeping @page { margin: 0 } so the browser's default header/footer stays
+// suppressed.
+export function renderPageFrame(header: string, body: string): string {
+  return `
+<table class="page-frame">
+  <thead>
+    <tr><td>${header}</td></tr>
+  </thead>
+  <tbody>
+    <tr><td>
+${body}
+    </td></tr>
+  </tbody>
+</table>
+`.trim()
 }
 
 export function renderWorkOrderTopTable(

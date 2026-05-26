@@ -1,6 +1,7 @@
 import type { WorkOrderFileGenerationInput } from "./types.js"
 import {
   WO_PRINT_STYLE_BLOCK,
+  renderPageFrame,
   renderWorkOrderCutLogs,
   renderWorkOrderHeader,
   renderWorkOrderInstallerInstructionsBlock,
@@ -28,8 +29,7 @@ import {
  * page; no `<html>`/`<body>` (those come from the Next root layout).
  */
 export function buildWorkOrderSlipHtml(input: WorkOrderFileGenerationInput): string {
-  const sections = [
-    renderWorkOrderHeader(input),
+  const body = [
     renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderPropertyInfo(input),
     renderWorkOrderInstallerInstructionsBlock(input),
@@ -40,6 +40,6 @@ export function buildWorkOrderSlipHtml(input: WorkOrderFileGenerationInput): str
 
   return `<style>${WO_PRINT_STYLE_BLOCK}</style>
 <div class="wo-print-root">
-${sections}
+${renderPageFrame(renderWorkOrderHeader(input), body)}
 </div>`
 }

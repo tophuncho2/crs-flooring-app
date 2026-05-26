@@ -1,6 +1,7 @@
 import type { WorkOrderFileGenerationInput } from "./types.js"
 import {
   WO_PRINT_STYLE_BLOCK,
+  renderPageFrame,
   renderWorkOrderCutLogs,
   renderWorkOrderPickingTicketHeader,
   renderWorkOrderTopTable,
@@ -21,14 +22,13 @@ import {
  * view is its own single page — no inter-page break wrapper.
  */
 export function buildWorkOrderPickingTicketHtml(input: WorkOrderFileGenerationInput): string {
-  const sections = [
-    renderWorkOrderPickingTicketHeader(input),
+  const body = [
     renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderCutLogs(input.materialItems),
   ].join("\n")
 
   return `<style>${WO_PRINT_STYLE_BLOCK}</style>
 <div class="wo-print-root">
-${sections}
+${renderPageFrame(renderWorkOrderPickingTicketHeader(input), body)}
 </div>`
 }
