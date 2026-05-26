@@ -37,6 +37,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root table { width: 100%; border-collapse: collapse; margin: 6px 0; }
   .wo-print-root .wo-top-table th, .wo-print-root .wo-top-table td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
   .wo-print-root .wo-top-table th { font-weight: 600; }
+  .wo-print-root .property-info-table { table-layout: fixed; }
   .wo-print-root .property-info-table th { width: 14%; }
   .wo-print-root .property-info-table td { width: 26%; }
   .wo-print-root .property-info-address { width: 60%; }
@@ -48,7 +49,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .womi-rows { margin-bottom: 2px; }
   .wo-print-root .page-header { display: flex; justify-content: space-between; align-items: baseline; }
   .wo-print-root .page-tag { font-size: 16px; font-weight: 600; }
-  .wo-print-root .multiline { white-space: pre-wrap; }
+  .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
 `
 
