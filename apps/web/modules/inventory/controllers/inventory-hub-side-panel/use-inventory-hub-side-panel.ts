@@ -322,11 +322,13 @@ export function useInventoryHubSidePanel({
     resetAll,
   })
 
-  // Enter the duplicate flow from view mode — seed the draft off the current
-  // snapshot (roll# / note / starting stock pre-filled) and swap modes.
+  // Enter the duplicate flow from view mode. The draft opens blank — nothing
+  // is pre-filled from the source; the source stays visible via the red
+  // "Reference inventory" card. `inventory` is still required so that card
+  // (and the body's needs-inventory gate) has data.
   const enterDuplicateFromView = useCallback(() => {
     if (contextInventoryId === null || !inventory) return
-    inventoryDuplicate.seedFromRow(inventory)
+    inventoryDuplicate.reset()
     setError(null)
     setMode({ kind: "section-duplicate-inventory", inventoryId: contextInventoryId })
   }, [contextInventoryId, inventory, inventoryDuplicate])

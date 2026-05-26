@@ -19,8 +19,7 @@ const NOOP = () => {}
  * Duplicate-inventory form, shown when the hub is in
  * `section-duplicate-inventory` mode. Two stacked groups:
  *   1. "Duplicate inventory item" — the five editable cells the user sets on
- *      the new row (roll# / note seeded from the source; starting stock /
- *      location / internal notes blank).
+ *      the new row, all starting blank.
  *   2. "Reference inventory" (red) — the source row rendered read-only with
  *      the same cells as the hub view (`InventoryDetailsGroup`), so the
  *      operator can see what they're cloning while they type.

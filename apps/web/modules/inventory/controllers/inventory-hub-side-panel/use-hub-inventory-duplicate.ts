@@ -1,15 +1,14 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import type { InventoryDetail, InventoryRow } from "@builders/domain"
+import type { InventoryDetail } from "@builders/domain"
 import type { InventoryDetailRecord } from "@builders/db"
 import { useInventoryListMutations } from "@/modules/inventory/controllers/list/use-inventory-list-mutations"
 
 /**
  * Editable draft for the duplicate-inventory flow — the five fields the user
- * can change. `rollNumber` / `note` are seeded from the source row;
- * `startingStock` / `location` / `internalNotes` start blank. Everything else
- * on the new row is pasted server-side from the source.
+ * can change. All five start blank when the form opens; everything else on the
+ * new row is pasted server-side from the source.
  */
 export type InventoryDuplicateForm = {
   rollNumber: string
@@ -41,7 +40,6 @@ export type HubInventoryDuplicateSlice = {
     field: K,
     value: InventoryDuplicateForm[K],
   ) => void
-  seedFromRow: (row: InventoryRow) => void
   reset: () => void
   resetToSeed: () => void
   isPending: boolean
@@ -52,8 +50,8 @@ export type HubInventoryDuplicateSlice = {
  * Duplicate-inventory section slice. Owns the editable draft and the
  * create-from-source mutation. Unlike the edit slice there's no
  * optimistic-lock token — a duplicate inserts a brand-new row rather than
- * mutating an existing one. `seedFromRow` pre-fills roll# / note / starting
- * stock from the source; `reset` clears everything on close.
+ * mutating an existing one. The draft opens blank (`reset`); nothing is
+ * pre-filled from the source.
  */
 export function useHubInventoryDuplicate({
   clearError,
@@ -62,21 +60,6 @@ export function useHubInventoryDuplicate({
 }): HubInventoryDuplicateSlice {
   const [form, setForm] = useState<InventoryDuplicateForm>(EMPTY_DUPLICATE_FORM)
   const [seed, setSeed] = useState<InventoryDuplicateForm>(EMPTY_DUPLICATE_FORM)
-
-  const seedFromRow = useCallback((row: InventoryRow) => {
-    const next: InventoryDuplicateForm = {
-      rollNumber: row.rollNumber,
-      note: row.note,
-      // Starting stock is per-physical-roll — never prefilled; the user
-      // always enters the new roll's quantity. (Also gates "Create duplicate"
-      // via canSubmit until a value is typed.)
-      startingStock: "",
-      location: "",
-      internalNotes: "",
-    }
-    setForm(next)
-    setSeed(next)
-  }, [])
 
   const reset = useCallback(() => {
     setForm(EMPTY_DUPLICATE_FORM)
@@ -129,7 +112,6 @@ export function useHubInventoryDuplicate({
     isDirty,
     canSubmit,
     setField,
-    seedFromRow,
     reset,
     resetToSeed,
     isPending,
