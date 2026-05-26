@@ -25,8 +25,8 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const input = validateWorkOrderOptionsSearchQuery(url.searchParams)
-    const options = await searchWorkOrderOptionsUseCase(input)
-    return routeJson(access, { options })
+    const result = await searchWorkOrderOptionsUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

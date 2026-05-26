@@ -3,11 +3,9 @@ import {
   searchWorkOrderOptions as searchWorkOrderOptionsRepo,
   type SearchWorkOrderMaterialItemOptionsInput,
   type SearchWorkOrderOptionsInput,
+  type WorkOrderOptionsSearchResult,
 } from "@builders/db"
-import type {
-  WorkOrderMaterialItemOption,
-  WorkOrderOption,
-} from "@builders/domain"
+import type { WorkOrderMaterialItemOption } from "@builders/domain"
 
 /**
  * Async-picker search use cases for the cut-log relink dropdowns. Thin
@@ -17,7 +15,7 @@ import type {
  */
 export async function searchWorkOrderOptionsUseCase(
   input: SearchWorkOrderOptionsInput,
-): Promise<WorkOrderOption[]> {
+): Promise<WorkOrderOptionsSearchResult> {
   return searchWorkOrderOptionsRepo(input)
 }
 

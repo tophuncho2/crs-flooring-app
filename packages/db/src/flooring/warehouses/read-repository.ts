@@ -64,23 +64,35 @@ export async function listWarehouseOptions(
 
 export type WarehouseOptionsSearchArgs = {
   search?: string
+  skip?: number
   take: number
+}
+
+export type WarehouseOptionsSearchResult = {
+  items: { id: string; name: string }[]
+  hasMore: boolean
 }
 
 export async function searchWarehouseOptions(
   args: WarehouseOptionsSearchArgs,
   client: WarehousesDbClient = db,
-): Promise<{ id: string; name: string }[]> {
+): Promise<WarehouseOptionsSearchResult> {
   const where = args.search
     ? { name: { contains: args.search, mode: "insensitive" as const } }
     : undefined
 
-  return client.flooringWarehouse.findMany({
+  // Fetch take+1 (offset by skip) to detect a next page without a count query.
+  const skip = Math.max(0, Math.floor(args.skip ?? 0))
+  const rows = await client.flooringWarehouse.findMany({
     where,
     orderBy: { name: "asc" },
-    take: args.take,
+    skip,
+    take: args.take + 1,
     select: { id: true, name: true },
   })
+
+  const hasMore = rows.length > args.take
+  return { items: hasMore ? rows.slice(0, args.take) : rows, hasMore }
 }
 
 export async function getWarehouseById(

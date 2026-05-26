@@ -59,7 +59,7 @@ export function WarehousePicker({
 }: WarehousePickerProps) {
   const controller = useAsyncRichDropdownController<WarehouseOption>({
     bucketKey: WAREHOUSE_OPTIONS_QUERY_KEY,
-    searchFn: searchWarehouseOptionsRequest,
+    pagedSearchFn: searchWarehouseOptionsRequest,
     initialOptions,
   })
 
@@ -104,6 +104,9 @@ export function WarehousePicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      hasMore={controller.hasMore}
+      isFetchingMore={controller.isFetchingMore}
+      onLoadMore={controller.loadMore}
     />
   )
 }

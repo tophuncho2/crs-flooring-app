@@ -39,7 +39,7 @@ export default async function CutLogsPage({
   try {
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
 
-    const [, warehouseOptions] = await Promise.all([
+    const [, warehousePage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...CUT_LOGS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listCutLogsUseCase(initialInput),
@@ -47,6 +47,7 @@ export default async function CutLogsPage({
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
+    const warehouseOptions = warehousePage.items
     initialWarehouseOptions = warehouseOptions
 
     if (selectedWarehouseId) {
@@ -54,7 +55,7 @@ export default async function CutLogsPage({
         selectedWarehouseId,
         warehouseOptions,
         async (id) => {
-          const [match] = await searchWarehouseOptionsUseCase({ search: id, take: 1 })
+          const [match] = (await searchWarehouseOptionsUseCase({ search: id, take: 1 })).items
           return match && match.id === id ? match : null
         },
       )

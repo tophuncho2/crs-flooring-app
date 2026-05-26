@@ -32,7 +32,7 @@ export default async function FlooringImportsPage({
   try {
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
 
-    const [, options] = await Promise.all([
+    const [, optionsPage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...IMPORTS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listImportsUseCase(initialInput),
@@ -40,6 +40,7 @@ export default async function FlooringImportsPage({
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
+    const options = optionsPage.items
     initialWarehouseOptions = options
 
     if (selectedWarehouseId) {
@@ -47,10 +48,12 @@ export default async function FlooringImportsPage({
       if (seeded) {
         initialSelectedWarehouse = seeded
       } else {
-        const [match] = await searchWarehouseOptionsUseCase({
-          search: selectedWarehouseId,
-          take: 1,
-        })
+        const [match] = (
+          await searchWarehouseOptionsUseCase({
+            search: selectedWarehouseId,
+            take: 1,
+          })
+        ).items
         if (match && match.id === selectedWarehouseId) {
           initialSelectedWarehouse = match
         }

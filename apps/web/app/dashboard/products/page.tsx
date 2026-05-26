@@ -32,7 +32,7 @@ export default async function FlooringProductsPage({
   try {
     const selectedCategoryId = initialInput.filters?.categoryId?.[0] ?? null
 
-    const [, options] = await Promise.all([
+    const [, optionsPage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...PRODUCTS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listProductsUseCase(initialInput),
@@ -40,6 +40,7 @@ export default async function FlooringProductsPage({
       searchCategoryOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
+    const options = optionsPage.items
     initialCategoryOptions = options
 
     if (selectedCategoryId) {
@@ -47,10 +48,12 @@ export default async function FlooringProductsPage({
       if (seeded) {
         initialSelectedCategory = seeded
       } else {
-        const [match] = await searchCategoryOptionsUseCase({
-          search: selectedCategoryId,
-          take: 1,
-        })
+        const [match] = (
+          await searchCategoryOptionsUseCase({
+            search: selectedCategoryId,
+            take: 1,
+          })
+        ).items
         if (match && match.id === selectedCategoryId) {
           initialSelectedCategory = match
         }

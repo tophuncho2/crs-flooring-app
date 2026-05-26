@@ -53,7 +53,7 @@ export default async function FlooringInventoryPage({
     const selectedCategoryId = initialInput.filters?.categoryId?.[0] ?? null
     const selectedProductId = initialInput.filters?.productId?.[0] ?? null
 
-    const [, warehouseOptions, categoryOptions] = await Promise.all([
+    const [, warehousePage, categoryPage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...INVENTORY_LIST_QUERY_KEY, initialInput],
         queryFn: () => listInventoryUseCase(initialInput),
@@ -62,6 +62,8 @@ export default async function FlooringInventoryPage({
       searchCategoryOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
+    const warehouseOptions = warehousePage.items
+    const categoryOptions = categoryPage.items
     initialWarehouseOptions = warehouseOptions
     initialCategoryOptions = categoryOptions
 
@@ -70,7 +72,7 @@ export default async function FlooringInventoryPage({
         selectedWarehouseId,
         warehouseOptions,
         async (id) => {
-          const [match] = await searchWarehouseOptionsUseCase({ search: id, take: 1 })
+          const [match] = (await searchWarehouseOptionsUseCase({ search: id, take: 1 })).items
           return match && match.id === id ? match : null
         },
       )
@@ -81,7 +83,7 @@ export default async function FlooringInventoryPage({
         selectedCategoryId,
         categoryOptions,
         async (id) => {
-          const [match] = await searchCategoryOptionsUseCase({ search: id, take: 1 })
+          const [match] = (await searchCategoryOptionsUseCase({ search: id, take: 1 })).items
           return match && match.id === id ? match : null
         },
       )

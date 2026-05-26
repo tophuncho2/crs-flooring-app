@@ -83,6 +83,7 @@ const OPTIONS_MAX_TAKE = 50
 
 const warehouseOptionsQuerySchema = z.object({
   search: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce
     .number()
     .int()
@@ -93,6 +94,7 @@ const warehouseOptionsQuerySchema = z.object({
 
 export type ValidatedWarehouseOptionsQuery = {
   search?: string
+  skip: number
   take: number
 }
 
@@ -119,6 +121,7 @@ export function validateWarehouseOptionsQuery(
   const trimmed = parsed.search?.trim()
   return {
     search: trimmed ? trimmed : undefined,
+    skip: parsed.skip,
     take: parsed.take,
   }
 }

@@ -5,6 +5,7 @@ const OPTIONS_MAX_TAKE = 50
 
 const categoryOptionsQuerySchema = z.object({
   search: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce
     .number()
     .int()
@@ -15,6 +16,7 @@ const categoryOptionsQuerySchema = z.object({
 
 export type ValidatedCategoryOptionsQuery = {
   search?: string
+  skip: number
   take: number
 }
 
@@ -50,6 +52,7 @@ export function validateCategoryOptionsQuery(
   const trimmed = parsed.search?.trim()
   return {
     search: trimmed ? trimmed : undefined,
+    skip: parsed.skip,
     take: parsed.take,
   }
 }

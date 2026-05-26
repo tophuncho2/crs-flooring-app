@@ -59,7 +59,7 @@ export function CategoryPicker({
 }: CategoryPickerProps) {
   const controller = useAsyncRichDropdownController<CategoryOption>({
     bucketKey: CATEGORY_OPTIONS_QUERY_KEY,
-    searchFn: searchCategoryOptionsRequest,
+    pagedSearchFn: searchCategoryOptionsRequest,
     initialOptions,
   })
 
@@ -104,6 +104,9 @@ export function CategoryPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      hasMore={controller.hasMore}
+      isFetchingMore={controller.isFetchingMore}
+      onLoadMore={controller.loadMore}
     />
   )
 }

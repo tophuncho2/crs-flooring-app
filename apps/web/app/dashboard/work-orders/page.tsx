@@ -58,7 +58,7 @@ export default async function FlooringWorkOrdersPage({
     const selectedTemplateId = initialInput.filters?.templateId?.[0] ?? null
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
 
-    const [, mgmtCoPage, propertyPage, warehouseOptions] = await Promise.all([
+    const [, mgmtCoPage, propertyPage, warehousePage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...WORK_ORDERS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listWorkOrdersUseCase(initialInput),
@@ -71,6 +71,7 @@ export default async function FlooringWorkOrdersPage({
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
+    const warehouseOptions = warehousePage.items
     initialMgmtCoOptions = mgmtCoPage.items
     initialPropertyOptions = propertyPage.items
     initialWarehouseOptions = warehouseOptions
@@ -132,7 +133,7 @@ export default async function FlooringWorkOrdersPage({
         selectedWarehouseId,
         warehouseOptions,
         async (id) => {
-          const [match] = await searchWarehouseOptionsUseCase({ search: id, take: 1 })
+          const [match] = (await searchWarehouseOptionsUseCase({ search: id, take: 1 })).items
           return match && match.id === id ? match : null
         },
       )

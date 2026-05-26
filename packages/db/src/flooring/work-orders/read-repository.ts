@@ -174,15 +174,23 @@ export type SearchWorkOrderOptionsInput = {
    * deterministic, so the picker only offers WOs that can actually be linked.
    */
   productId?: string
+  skip?: number
   take?: number
+}
+
+export type WorkOrderOptionsSearchResult = {
+  items: WorkOrderOption[]
+  hasMore: boolean
 }
 
 export async function searchWorkOrderOptions(
   input: SearchWorkOrderOptionsInput,
   client: WorkOrdersDbClient = db,
-): Promise<WorkOrderOption[]> {
+): Promise<WorkOrderOptionsSearchResult> {
   const search = input.search?.trim() ?? ""
   const take = input.take ?? 20
+  const skip = Math.max(0, Math.floor(input.skip ?? 0))
+  // Fetch take+1 to detect a next page without a separate count query.
   const workOrders = await client.flooringWorkOrder.findMany({
     where: {
       warehouseId: input.warehouseId,
@@ -201,10 +209,13 @@ export async function searchWorkOrderOptions(
     },
     orderBy: { createdAt: "desc" },
     select: workOrderOptionSelect,
-    take,
+    skip,
+    take: take + 1,
   })
 
-  return workOrders.map(normalizeWorkOrderOption)
+  const hasMore = workOrders.length > take
+  const page = hasMore ? workOrders.slice(0, take) : workOrders
+  return { items: page.map(normalizeWorkOrderOption), hasMore }
 }
 
 export async function getWorkOrderById(

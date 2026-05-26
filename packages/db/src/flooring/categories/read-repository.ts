@@ -97,23 +97,37 @@ export async function getCategoryById(
 
 export type CategoryOptionsSearchArgs = {
   search?: string
+  skip?: number
   take: number
+}
+
+export type CategoryOptionsSearchResult = {
+  items: CategoryOption[]
+  hasMore: boolean
 }
 
 export async function searchCategoryOptions(
   args: CategoryOptionsSearchArgs,
   client: CategoryDbClient = db,
-): Promise<CategoryOption[]> {
+): Promise<CategoryOptionsSearchResult> {
   const where = args.search
     ? { name: { contains: args.search, mode: "insensitive" as const } }
     : undefined
 
+  // Fetch take+1 (offset by skip) to detect a next page without a count query.
+  const skip = Math.max(0, Math.floor(args.skip ?? 0))
   const rows = await client.flooringCategory.findMany({
     where,
     orderBy: { name: "asc" },
-    take: args.take,
+    skip,
+    take: args.take + 1,
     select: { id: true, name: true, slug: true },
   })
 
-  return rows.map((row) => ({ id: row.id, name: row.name, slug: row.slug }))
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return {
+    items: page.map((row) => ({ id: row.id, name: row.name, slug: row.slug })),
+    hasMore,
+  }
 }

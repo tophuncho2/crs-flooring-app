@@ -20,8 +20,8 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const input = validateWarehouseOptionsQuery(url.searchParams)
-    const options = await searchWarehouseOptionsUseCase(input)
-    return routeJson(access, { options })
+    const result = await searchWarehouseOptionsUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

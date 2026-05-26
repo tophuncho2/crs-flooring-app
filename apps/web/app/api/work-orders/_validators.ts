@@ -354,6 +354,7 @@ const workOrderOptionsSearchQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
   search: z.string().optional(),
   productId: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce
     .number()
     .int()
@@ -366,6 +367,7 @@ export type ValidatedWorkOrderOptionsSearchQuery = {
   warehouseId: string
   search?: string
   productId?: string
+  skip: number
   take: number
 }
 
@@ -391,6 +393,7 @@ export function validateWorkOrderOptionsSearchQuery(
     warehouseId: parsed.warehouseId.trim(),
     ...(trimSearch ? { search: trimSearch } : {}),
     ...(trimProductId ? { productId: trimProductId } : {}),
+    skip: parsed.skip,
     take: parsed.take,
   }
 }

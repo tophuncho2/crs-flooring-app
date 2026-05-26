@@ -50,18 +50,19 @@ export function InventoryHubCutLogWorkOrderPicker({
     [warehouseId, productId],
   )
 
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchWorkOrderOptionsRequest(search, signal, {
         warehouseId: warehouseId ?? "",
         ...(productId ? { productId } : {}),
+        skip,
       }),
     [warehouseId, productId],
   )
 
   const dropdown = useAsyncRichDropdownController<WorkOrderOption>({
     bucketKey,
-    searchFn,
+    pagedSearchFn,
     enabled: warehouseId !== null,
   })
 

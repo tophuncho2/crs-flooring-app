@@ -95,17 +95,18 @@ export function WorkOrderPicker({
     [warehouseId],
   )
 
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchWorkOrderOptionsRequest(search, signal, {
         warehouseId: warehouseId ?? "",
+        skip,
       }),
     [warehouseId],
   )
 
   const controller = useAsyncRichDropdownController<WorkOrderOption>({
     bucketKey,
-    searchFn,
+    pagedSearchFn,
     initialOptions,
     enabled,
   })
@@ -154,6 +155,9 @@ export function WorkOrderPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      hasMore={controller.hasMore}
+      isFetchingMore={controller.isFetchingMore}
+      onLoadMore={controller.loadMore}
     />
   )
 }
