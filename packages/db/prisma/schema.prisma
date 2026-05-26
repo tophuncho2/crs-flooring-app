@@ -144,6 +144,7 @@ model Property {
   managementCompanyId String?
   managementCompany   FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
   name                String
+  nameNormalized      String                     @unique
   streetAddress       String?
   city                String?
   state               String?

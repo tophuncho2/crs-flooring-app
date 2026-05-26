@@ -1,5 +1,6 @@
 export type PropertyErrorCode =
   | "PROPERTY_VALIDATION_FAILED"
+  | "PROPERTY_NAME_CONFLICT"
   | "PROPERTY_NOT_FOUND"
   | "PROPERTY_IN_USE"
 

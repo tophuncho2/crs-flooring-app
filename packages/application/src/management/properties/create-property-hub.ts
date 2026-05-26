@@ -9,6 +9,8 @@ import {
 import {
   MANAGEMENT_COMPANY_NAME_CONFLICT_MESSAGE,
   MANAGEMENT_COMPANY_NOT_FOUND_MESSAGE,
+  PROPERTY_NAME_CONFLICT_MESSAGE,
+  normalizePropertyNameForUniqueness,
   validateCreatePropertyHubForm,
   type CreatePropertyHubForm,
   type ManagementCompanyDetail,
@@ -136,20 +138,33 @@ export async function createPropertyHubUseCase(
 
     let property: PropertyDetailRecord | null = null
     if (input.property.mode === "create") {
-      property = await createPropertyRecord(
-        {
-          managementCompanyId: managementCompany?.id ?? null,
-          name: input.property.fields.name,
-          streetAddress: input.property.fields.streetAddress,
-          city: input.property.fields.city,
-          state: input.property.fields.state,
-          postalCode: input.property.fields.postalCode,
-          phone: input.property.fields.phone,
-          email: input.property.fields.email,
-          instructions: input.property.fields.instructions,
-        },
-        c,
-      )
+      try {
+        property = await createPropertyRecord(
+          {
+            managementCompanyId: managementCompany?.id ?? null,
+            name: input.property.fields.name,
+            nameNormalized: normalizePropertyNameForUniqueness(input.property.fields.name),
+            streetAddress: input.property.fields.streetAddress,
+            city: input.property.fields.city,
+            state: input.property.fields.state,
+            postalCode: input.property.fields.postalCode,
+            phone: input.property.fields.phone,
+            email: input.property.fields.email,
+            instructions: input.property.fields.instructions,
+          },
+          c,
+        )
+      } catch (error) {
+        if (isP2002(error, "nameNormalized")) {
+          throw new PropertyExecutionError({
+            code: "PROPERTY_NAME_CONFLICT",
+            message: PROPERTY_NAME_CONFLICT_MESSAGE,
+            status: 409,
+            field: "name",
+          })
+        }
+        throw error
+      }
     }
 
     return { property, managementCompany }

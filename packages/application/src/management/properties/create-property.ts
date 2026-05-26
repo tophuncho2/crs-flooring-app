@@ -1,5 +1,11 @@
-import { Prisma, createPropertyRecord, withDatabaseTransaction } from "@builders/db"
-import { PROPERTY_NAME_REQUIRED_MESSAGE } from "@builders/domain"
+import { Prisma, createPropertyRecord, propertyNameExists, withDatabaseTransaction } from "@builders/db"
+import {
+  PROPERTY_NAME_CONFLICT_MESSAGE,
+  PROPERTY_NAME_REQUIRED_MESSAGE,
+  isPropertyNameConflict,
+  normalizePropertyNameForUniqueness,
+} from "@builders/domain"
+import { isP2002 } from "../../shared/prisma-errors.js"
 import { PropertyExecutionError } from "./errors.js"
 import type { CreatePropertyUseCaseInput, PropertyUseCaseResult } from "./types.js"
 
@@ -19,6 +25,29 @@ export async function createPropertyUseCase(
       })
     }
 
-    return createPropertyRecord(input, c)
+    const nameNormalized = normalizePropertyNameForUniqueness(input.name)
+
+    if (isPropertyNameConflict(await propertyNameExists(nameNormalized, undefined, c))) {
+      throw new PropertyExecutionError({
+        code: "PROPERTY_NAME_CONFLICT",
+        message: PROPERTY_NAME_CONFLICT_MESSAGE,
+        status: 409,
+        field: "name",
+      })
+    }
+
+    try {
+      return await createPropertyRecord({ ...input, nameNormalized }, c)
+    } catch (error) {
+      if (isP2002(error, "nameNormalized")) {
+        throw new PropertyExecutionError({
+          code: "PROPERTY_NAME_CONFLICT",
+          message: PROPERTY_NAME_CONFLICT_MESSAGE,
+          status: 409,
+          field: "name",
+        })
+      }
+      throw error
+    }
   })
 }
