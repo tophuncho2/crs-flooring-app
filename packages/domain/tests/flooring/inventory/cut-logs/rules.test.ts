@@ -3,19 +3,12 @@ import {
   assertBeforeCutAfterInvariant,
   assertCutLogDeleteAllowed,
   assertCutLogLinkageSymmetry,
-  buildVoidedCutLogPatch,
 } from "../../../../src/flooring/inventory/cut-logs/rules/cut-log-rules.js"
 import {
   assertCutLogExpectedUpdatedAtMatches,
   assertCutLogLinkMutationAllowed,
   assertCutLogPendingMutationAllowed,
 } from "../../../../src/flooring/inventory/cut-logs/rules/pending-mutation-rules.js"
-import {
-  buildCutLogVoidNotAllowedMessage,
-  getCutLogVoidBlocker,
-  isCutLogVoidable,
-  validateCutLogVoidRequest,
-} from "../../../../src/flooring/inventory/cut-logs/rules/void-rules.js"
 import {
   describeCutLogPendingFormIssues,
   validateCutLogPendingForm,
@@ -69,20 +62,6 @@ describe("assertCutLogDeleteAllowed", () => {
   })
 })
 
-describe("buildVoidedCutLogPatch", () => {
-  it("returns the canonical clear patch", () => {
-    expect(buildVoidedCutLogPatch()).toEqual({
-      cut: "0",
-      coverageCut: null,
-      void: true,
-      status: "VOID",
-      workOrderId: null,
-      workOrderItemId: null,
-      location: null,
-    })
-  })
-})
-
 describe("assertCutLogPendingMutationAllowed", () => {
   it("allows pending, rejects finalized", () => {
     expect(() => assertCutLogPendingMutationAllowed(row())).not.toThrow()
@@ -115,43 +94,6 @@ describe("assertCutLogExpectedUpdatedAtMatches", () => {
     expect(() =>
       assertCutLogExpectedUpdatedAtMatches({ rowUpdatedAt: "t2", expected: "t1" }),
     ).toThrow("CUT_LOG_STALE_UPDATED_AT")
-  })
-})
-
-describe("getCutLogVoidBlocker / isCutLogVoidable", () => {
-  it("returns null for voidable pending and final rows", () => {
-    expect(getCutLogVoidBlocker(row())).toBeNull()
-    expect(getCutLogVoidBlocker(row({ isFinal: true, status: "FINAL" }))).toBeNull()
-    expect(isCutLogVoidable(row())).toBe(true)
-  })
-
-  it("flags already-void, queued, and neither-pending-nor-final", () => {
-    expect(getCutLogVoidBlocker(row({ void: true }))).toBe("ALREADY_VOID")
-    expect(getCutLogVoidBlocker(row({ status: "QUEUED" }))).toBe("ALREADY_QUEUED")
-    // not pending, not final, not queued, not void
-    expect(getCutLogVoidBlocker(row({ status: "OTHER" }))).toBe("NOT_PENDING_OR_FINAL")
-  })
-})
-
-describe("validateCutLogVoidRequest", () => {
-  it("returns null on pass and an issue on fail", () => {
-    expect(validateCutLogVoidRequest(row())).toBeNull()
-    expect(validateCutLogVoidRequest(row({ id: "cl-9", void: true }))).toEqual({
-      cutLogId: "cl-9",
-      reason: "ALREADY_VOID",
-    })
-  })
-})
-
-describe("buildCutLogVoidNotAllowedMessage", () => {
-  it("maps each reason to copy", () => {
-    expect(buildCutLogVoidNotAllowedMessage("ALREADY_VOID")).toBe("Cut log is already voided.")
-    expect(buildCutLogVoidNotAllowedMessage("ALREADY_QUEUED")).toBe(
-      "Cut log has a worker job in flight; try again once it settles.",
-    )
-    expect(buildCutLogVoidNotAllowedMessage("NOT_PENDING_OR_FINAL")).toBe(
-      "Only pending or finalized cut logs can be voided.",
-    )
   })
 })
 

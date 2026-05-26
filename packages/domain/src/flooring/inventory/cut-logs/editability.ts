@@ -65,19 +65,6 @@ export function canDeleteCutLog(
 }
 
 /**
- * Void is allowed on PENDING-editable rows or on finalized rows, but never
- * while a worker job is in flight, and never twice. Voids are always
- * single-row (one at a time), enforced by the void payload schema.
- */
-export function canVoidCutLog(
-  row: Pick<CutLogRow, "status" | "isFinal" | "void">,
-): boolean {
-  if (row.void) return false
-  if (row.status === "QUEUED") return false
-  return row.isFinal || row.status === "PENDING"
-}
-
-/**
  * Re-link (change `workOrderId` / `workOrderItemId`) is allowed on PENDING
  * or FINAL rows. Voided rows are terminal; queued rows have a worker job in
  * flight. Independent from `isCutLogPendingEditable` — FINAL rows lock the
@@ -97,7 +84,7 @@ export function canRelinkCutLog(
 // ---------------------------------------------------------------------------
 
 /**
- * Human-readable copy for a `CUT_LOG_VOID_NOT_ALLOWED` /
+ * Human-readable copy for a `CUT_LOG_PENDING_INPUT_NOT_ALLOWED` /
  * `CUT_LOG_BATCH_INELIGIBLE` rejection. Co-located with the predicates that
  * produce the conditions.
  */

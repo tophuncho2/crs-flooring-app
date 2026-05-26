@@ -3,7 +3,6 @@ import {
   canDeleteCutLog,
   canFinalizeCutLog,
   canRelinkCutLog,
-  canVoidCutLog,
   getCutLogFinalizabilityBlocker,
   isCutLogPendingEditable,
 } from "../../../../src/flooring/inventory/cut-logs/editability.js"
@@ -29,18 +28,6 @@ describe("canDeleteCutLog", () => {
   it("mirrors pending-editability", () => {
     expect(canDeleteCutLog(row())).toBe(true)
     expect(canDeleteCutLog(row({ isFinal: true, status: "FINAL" }))).toBe(false)
-  })
-})
-
-describe("canVoidCutLog", () => {
-  it("allows pending or finalized rows", () => {
-    expect(canVoidCutLog(row())).toBe(true)
-    expect(canVoidCutLog(row({ isFinal: true, status: "FINAL" }))).toBe(true)
-  })
-
-  it("rejects queued or already-voided rows", () => {
-    expect(canVoidCutLog(row({ status: "QUEUED" }))).toBe(false)
-    expect(canVoidCutLog(row({ void: true, status: "VOID" }))).toBe(false)
   })
 })
 

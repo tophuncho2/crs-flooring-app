@@ -1,5 +1,4 @@
 export { useCreateCutLogMutation } from "./use-create-cut-log-mutation"
 export { useUpdateCutLogMutation } from "./use-update-cut-log-mutation"
 export { useDeleteCutLogMutation } from "./use-delete-cut-log-mutation"
-export { useVoidCutLogMutation } from "./use-void-cut-log-mutation"
 export { useFinalizeCutLogMutation } from "./use-finalize-cut-log-mutation"

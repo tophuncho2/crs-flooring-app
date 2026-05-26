@@ -6,10 +6,7 @@ import {
   HubSidePanelEditToolbar,
   HubSidePanelViewSwitcher,
 } from "@/components/hub-side-panel"
-import {
-  CutLogEditFinalizeButton,
-  CutLogEditVoidButton,
-} from "@/modules/cut-logs/components/cut-log-edit-panel/toolbar-controls"
+import { CutLogEditFinalizeButton } from "@/modules/cut-logs/components/cut-log-edit-panel/toolbar-controls"
 import type {
   HubMode,
   InventoryHubSidePanelController,
@@ -101,23 +98,16 @@ export function useInventoryHubChrome(
   const cutLogExtraLeftActions = useMemo<ReactNode>(() => {
     if (effectiveModeKind !== "section-edit-cut-log") return null
     // The toolbar's built-in SidePanelEditStatusPill already shows
-    // dirty/saving; no second status pill here. Finalize + Void are
-    // cut-log-domain actions; they own their own visibility (PENDING /
-    // FINAL gates) so the buttons render or not based on status. They
-    // disable alongside the rest of the toolbar during a picker takeover.
+    // dirty/saving; no second status pill here. Finalize is a
+    // cut-log-domain action; it owns its own visibility (PENDING gate)
+    // so the button renders or not based on status. It disables
+    // alongside the rest of the toolbar during a picker takeover.
     return (
-      <>
-        <CutLogEditFinalizeButton
-          controller={cutLogPanel}
-          mode="edit"
-          disabled={isCutLogPickerActive}
-        />
-        <CutLogEditVoidButton
-          controller={cutLogPanel}
-          mode="edit"
-          disabled={isCutLogPickerActive}
-        />
-      </>
+      <CutLogEditFinalizeButton
+        controller={cutLogPanel}
+        mode="edit"
+        disabled={isCutLogPickerActive}
+      />
     )
   }, [effectiveModeKind, cutLogPanel, isCutLogPickerActive])
 

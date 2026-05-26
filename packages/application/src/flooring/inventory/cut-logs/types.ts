@@ -2,7 +2,7 @@ import type { CutLogRecord } from "@builders/db"
 
 /**
  * Discriminated scope carried on every scope-aware cut-log mutation
- * (update / delete / void / finalize). The route handler stamps it from
+ * (update / delete / finalize). The route handler stamps it from
  * the URL — `params.id` becomes either `workOrderId` (WO routes) or
  * `inventoryId` (inv routes). The use case asserts the cut log row
  * actually belongs to the stamped scope before any side effects (see
@@ -58,11 +58,6 @@ export type DeletePendingCutLogInput = {
   expectedUpdatedAt: string
 }
 
-export type VoidCutLogInput = {
-  scope: CutLogMutationScope
-  cutLogId: string
-}
-
 export type FinalizeCutLogInput = {
   scope: CutLogMutationScope
   cutLogId: string
@@ -70,7 +65,7 @@ export type FinalizeCutLogInput = {
 
 /**
  * Shared response envelope for the mutation use cases that adjust the
- * inventory's `totalCutSum` (create / update / void). Delete returns
+ * inventory's `totalCutSum` (create / update). Delete returns
  * the same fields with `deletedId` carried alongside in
  * `DeleteCutLogResult`. Finalize does NOT mutate `totalCutSum` (it only
  * flips PENDING → FINAL and stamps `before` / `after`) and uses

@@ -12,14 +12,13 @@ import { Prisma } from "../../../generated/prisma/client.js"
  *   - updatePendingCutLogUseCase (scope-aware)
  *   - deletePendingCutLogUseCase (scope-aware)
  *   - finalizeCutLogUseCase      (scope-aware)
- *   - voidCutLogUseCase          (scope-aware)
  *
  * Cut-log mutations always touch exactly one inventory; concurrent
  * mutations against the same inventory serialize on this lock, and
  * concurrent mutations against different inventories run in parallel.
  *
  * Uses the standard single-id `Prisma.sql` pattern shared with every other
- * locker in the codebase (inventory-side pending-save / finalize / void,
+ * locker in the codebase (inventory-side pending-save / finalize,
  * `flooring_import_entry`, `flooring_work_order_file`).
  */
 export async function lockInventoryForCutLog(

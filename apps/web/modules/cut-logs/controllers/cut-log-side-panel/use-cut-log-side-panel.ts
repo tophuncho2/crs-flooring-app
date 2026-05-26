@@ -22,7 +22,6 @@ import {
   useDeleteCutLogMutation,
   useFinalizeCutLogMutation,
   useUpdateCutLogMutation,
-  useVoidCutLogMutation,
 } from "./mutations"
 import type {
   CutLogEditForm,
@@ -315,14 +314,6 @@ export function useCutLogEditPanel({
     setOpen,
     setError,
   })
-  const voidMutation = useVoidCutLogMutation({
-    scope,
-    publish,
-    setForm,
-    setBaseline,
-    setOpen,
-    setError,
-  })
   const finalizeMutation = useFinalizeCutLogMutation({
     scope,
     publish,
@@ -336,7 +327,6 @@ export function useCutLogEditPanel({
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending ||
-    voidMutation.isPending ||
     finalizeMutation.isPending
 
   const save = useCallback(() => {
@@ -358,11 +348,6 @@ export function useCutLogEditPanel({
     if (!open || open.mode !== "edit" || isSaving) return
     deleteMutation.mutate({ workOrderItemId: open.workOrderItemId, cutLog: open.cutLog })
   }, [open, isSaving, deleteMutation])
-
-  const voidCutLog = useCallback(() => {
-    if (!open || open.mode !== "edit" || isSaving) return
-    voidMutation.mutate({ workOrderItemId: open.workOrderItemId, cutLog: open.cutLog })
-  }, [open, isSaving, voidMutation])
 
   const finalize = useCallback(() => {
     if (!open || open.mode !== "edit" || isSaving || isDirty) return
@@ -404,7 +389,6 @@ export function useCutLogEditPanel({
     selectWorkOrderOption,
     save,
     finalize,
-    voidCutLog,
     deleteCutLog,
   }
 }

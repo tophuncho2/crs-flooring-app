@@ -28,7 +28,6 @@ export {
   createPendingCutLogRequest,
   updatePendingCutLogRequest,
   deletePendingCutLogRequest,
-  voidCutLogRequest,
   finalizeCutLogRequest,
   type CutLogScopeUrl,
   type PendingCutLogMutationResponse,

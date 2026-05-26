@@ -109,20 +109,6 @@ export async function deletePendingCutLogRequest(args: {
   )
 }
 
-export async function voidCutLogRequest(args: {
-  scope: CutLogScopeUrl
-  cutLogId: string
-}) {
-  return requestJson<PendingCutLogMutationResponse>(
-    `${basePath(args.scope)}/${args.cutLogId}/void`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(withMutationMeta({})),
-    },
-  )
-}
-
 /**
  * Finalize — resource-level URL on BOTH sides. The WO finalize URL was
  * normalized in this sweep (collection-level `/cut-logs/finalize`

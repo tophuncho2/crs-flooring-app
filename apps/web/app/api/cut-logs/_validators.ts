@@ -147,14 +147,6 @@ export function validateDeletePendingCutLogInput(
   return {}
 }
 
-export type ValidatedVoidCutLogInput = Record<string, never>
-
-export function validateVoidCutLogInput(
-  _body: Record<string, unknown>,
-): ValidatedVoidCutLogInput {
-  return {}
-}
-
 export type ValidatedFinalizeCutLogInput = Record<string, never>
 
 export function validateFinalizeCutLogInput(

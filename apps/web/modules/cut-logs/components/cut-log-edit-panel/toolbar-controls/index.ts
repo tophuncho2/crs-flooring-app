@@ -1,6 +1,5 @@
 export { CutLogEditSaveButton } from "./cut-log-edit-save-button"
 export { CutLogEditDiscardButton } from "./cut-log-edit-discard-button"
 export { CutLogEditFinalizeButton } from "./cut-log-edit-finalize-button"
-export { CutLogEditVoidButton } from "./cut-log-edit-void-button"
 export { CutLogEditDeleteButton } from "./cut-log-edit-delete-button"
 export { CutLogEditStatusPill } from "./cut-log-edit-status-pill"

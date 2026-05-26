@@ -42,8 +42,8 @@ export type CutLogStatus = FlooringCutLogStatus
 //
 // 2. Denormalized mirror — re-stamped on every state-changing write:
 //    - `location` is re-snapped from the parent inventory on create,
-//      update-pending, and finalize, and cleared on void (sits alongside
-//      the link-clear in `buildVoidedCutLogPatch`).
+//      update-pending, and finalize. Already-voided rows have it nulled
+//      (voiding is no longer a supported action).
 export type CutLogRow = {
   id: string
   cutLogNumber: string
