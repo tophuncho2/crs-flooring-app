@@ -46,6 +46,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .flat-rows { width: 100%; border-collapse: collapse; margin: 2px 0 0 0; }
   .wo-print-root .flat-rows th, .wo-print-root .flat-rows td { border: 0; padding: 3px 8px; font-size: 11px; text-align: left; vertical-align: top; }
   .wo-print-root .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
+  .wo-print-root .flat-rows .cl-num { text-align: right; }
   .wo-print-root .womi-rows { margin-bottom: 2px; }
   .wo-print-root .page-header { display: flex; justify-content: space-between; align-items: baseline; }
   .wo-print-root .page-tag { font-size: 16px; font-weight: 600; }
@@ -229,10 +230,10 @@ function renderCutLogRows(cutLogs: WorkOrderFileCutLogProjection[]): string {
     <tr>
       <th>Inventory Item</th>
       <th>Location</th>
-      <th>Before</th>
-      <th>Cut</th>
-      <th>After</th>
-      <th>Coverage</th>
+      <th class="cl-num">Before</th>
+      <th class="cl-num">Cut</th>
+      <th class="cl-num">After</th>
+      <th class="cl-num">Coverage</th>
       <th>Notes</th>
     </tr>
   </thead>
@@ -248,10 +249,10 @@ function renderCutLogRow(cl: WorkOrderFileCutLogProjection): string {
 <tr>
   <td>${escapeOrEmpty(cl.inventoryItem)}</td>
   <td>${escapeOrEmpty(cl.location)}</td>
-  <td>${renderUnitValue(cl.before, cl.stockUnitAbbrev)}</td>
-  <td>${renderUnitValue(cl.cut, cl.stockUnitAbbrev)}</td>
-  <td>${renderUnitValue(cl.after, cl.stockUnitAbbrev)}</td>
-  <td>${renderUnitValue(cl.coverageCut, cl.itemCoverageUnitAbbrev)}</td>
+  <td class="cl-num">${renderUnitValue(cl.before, cl.stockUnitAbbrev)}</td>
+  <td class="cl-num">${renderUnitValue(cl.cut, cl.stockUnitAbbrev)}</td>
+  <td class="cl-num">${renderUnitValue(cl.after, cl.stockUnitAbbrev)}</td>
+  <td class="cl-num">${renderUnitValue(cl.coverageCut, cl.itemCoverageUnitAbbrev)}</td>
   <td class="multiline">${escapeOrEmpty(cl.notes)}</td>
 </tr>
 `.trim()
