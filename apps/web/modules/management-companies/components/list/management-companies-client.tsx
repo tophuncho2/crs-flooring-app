@@ -21,8 +21,7 @@ import {
   listManagementCompaniesRequest,
 } from "@/modules/management-companies/data/list-management-companies-request"
 import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/list/use-management-companies-list-controller"
-import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
-import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
+import { useHubPanel } from "@/modules/app-shell/components/hub-panel-provider"
 import { ManagementCompaniesTable } from "./management-companies-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { ManagementCompaniesListSearch } from "./toolbar-controls/management-companies-list-search"
@@ -46,7 +45,7 @@ export default function ManagementCompaniesClient({
   initialStateOptions,
 }: ManagementCompaniesClientProps) {
   const { message, pageError } = useManagementCompaniesListController()
-  const hubPanel = usePropertyHubSidePanel()
+  const { openForCreate, openForMcEdit } = useHubPanel()
 
   const {
     rows,
@@ -150,14 +149,14 @@ export default function ManagementCompaniesClient({
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">
-              <AddHubButton onClick={() => hubPanel.openForCreate()} />
+              <AddHubButton onClick={openForCreate} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
 
         <ManagementCompaniesTable
           rows={rows}
-          onOpenCompany={(row) => hubPanel.openForMcEdit(row)}
+          onOpenCompany={openForMcEdit}
           pagination={
             <PaginateControls
               page={page}
@@ -172,7 +171,6 @@ export default function ManagementCompaniesClient({
           }
         />
       </div>
-      <PropertyHubSidePanel controller={hubPanel} />
     </div>
   )
 }

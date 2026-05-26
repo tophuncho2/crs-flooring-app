@@ -4,10 +4,8 @@ import {
   HubSidePanelEditLayout,
   HubSidePanelPickerTrigger,
 } from "@/components/hub-side-panel"
-import { SidePanelPreviewOpenButton } from "@/components/side-panel-preview"
 import { TemplateSyncItemsSubHeader } from "@/modules/template-sync/components/header/template-sync-items-sub-header"
 import { TemplateSyncClearButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-clear-button"
-import { TemplateSyncOpenButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-open-button"
 import { TemplateSyncSyncButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-sync-button"
 import type { TemplateSyncController } from "@/modules/template-sync/controllers/use-template-sync-controller"
 
@@ -26,10 +24,12 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
     isSyncing,
     expandedPicker,
     togglePicker,
+    managementCompanyId,
     selectedManagementCompanyLabel,
     selectedPropertyLabel,
     selectedTemplateLabel,
     propertyId,
+    templateId,
     managementCompanyTriggerRef,
     propertyTriggerRef,
     templateTriggerRef,
@@ -38,10 +38,9 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
     toggleHeaderCollapsed,
     hasSelections,
     canActOnTemplate,
-    canOpenHubView,
     errorMessage,
     resetSelections,
-    handleOpenHubView,
+    hubPanel,
     handleOpen,
     handleSync,
   } = controller
@@ -54,15 +53,6 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
             <TemplateSyncClearButton
               disabled={!hasSelections || isSyncing}
               onClick={resetSelections}
-            />
-            <SidePanelPreviewOpenButton
-              disabled={!canOpenHubView || isSyncing}
-              onClick={handleOpenHubView}
-              label="Open hub view"
-            />
-            <TemplateSyncOpenButton
-              disabled={!canActOnTemplate || isSyncing}
-              onClick={handleOpen}
             />
             <TemplateSyncSyncButton
               disabled={!canActOnTemplate || isSyncing}
@@ -87,6 +77,11 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
           selectedLabel={selectedManagementCompanyLabel}
           placeholder="Any management company (optional)"
           ariaLabel="Management company"
+          onOpenLinked={() => {
+            if (managementCompanyId) hubPanel.openForMcEditById(managementCompanyId)
+          }}
+          openLinkedAriaLabel="Open management company"
+          openLinkedDisabled={isSyncing}
         />
       </label>
 
@@ -99,6 +94,11 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
           selectedLabel={selectedPropertyLabel}
           placeholder="Select a property"
           ariaLabel="Property"
+          onOpenLinked={() => {
+            if (propertyId) hubPanel.openForPropertyEditById(propertyId)
+          }}
+          openLinkedAriaLabel="Open property"
+          openLinkedDisabled={isSyncing}
         />
       </label>
 
@@ -113,6 +113,11 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
           placeholder="Select a template"
           disabledPlaceholder="Select a property first"
           ariaLabel="Template"
+          onOpenLinked={() => {
+            if (templateId) handleOpen()
+          }}
+          openLinkedAriaLabel="Open template"
+          openLinkedDisabled={isSyncing}
         />
       </label>
 

@@ -21,11 +21,7 @@ import {
   listPropertiesRequest,
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
-import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
-import { HubSidePanelAddButton, HubSidePanelShell } from "@/components/hub-side-panel"
-import { useTemplateSyncController } from "@/modules/template-sync/controllers/use-template-sync-controller"
-import { TemplateSyncBody } from "@/modules/template-sync/components/template-sync-body"
-import { TemplateSyncTopToolbar } from "@/modules/template-sync/components/template-sync-top-toolbar"
+import { useHubPanel } from "@/modules/app-shell/components/hub-panel-provider"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
@@ -52,8 +48,7 @@ export default function PropertiesClient({
   initialSelectedManagementCompany = null,
 }: PropertiesClientProps) {
   const { message, pageError } = usePropertiesListController()
-  const sync = useTemplateSyncController()
-  const hubPanel = sync.hubPanel
+  const { openForCreate, openForPropertyEdit } = useHubPanel()
 
   const {
     rows,
@@ -184,14 +179,14 @@ export default function PropertiesClient({
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">
-              <AddHubButton onClick={() => hubPanel.openForCreate()} />
+              <AddHubButton onClick={openForCreate} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
 
         <PropertiesTable
           rows={rows}
-          onOpenProperty={(row) => hubPanel.openForPropertyEdit(row)}
+          onOpenProperty={openForPropertyEdit}
           pagination={
             <PaginateControls
               page={page}
@@ -206,21 +201,6 @@ export default function PropertiesClient({
           }
         />
       </div>
-      <PropertyHubSidePanel controller={hubPanel} onOpenTemplate={sync.handleOpenTemplateRow} />
-      <HubSidePanelShell
-        open={sync.open}
-        onClose={sync.handleClose}
-        title="Hub & template sync"
-        topToolbar={<TemplateSyncTopToolbar controller={sync} />}
-        titleEnd={
-          <>
-            <HubSidePanelAddButton label="+Template" onClick={sync.handleCreate} />
-            <HubSidePanelAddButton onClick={sync.handleCreateHub} />
-          </>
-        }
-      >
-        <TemplateSyncBody controller={sync} />
-      </HubSidePanelShell>
     </div>
   )
 }

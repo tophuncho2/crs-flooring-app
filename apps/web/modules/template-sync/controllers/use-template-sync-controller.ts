@@ -58,7 +58,6 @@ export type TemplateSyncController = {
   handleOpen: () => void
   handleCreate: () => void
   handleCreateHub: () => void
-  handleOpenHubView: () => void
   handleSync: () => Promise<void>
   toggleHeaderCollapsed: () => void
 
@@ -72,15 +71,14 @@ export type TemplateSyncController = {
   // ===== Derived flags =====
   canActOnTemplate: boolean
   hasSelections: boolean
-  canOpenHubView: boolean
 }
 
 /**
  * Single controller for the template-sync side panel. Owns the cascade
  * selection state (Management Company → Property → Template), drives the
  * inline picker expand/collapse, and runs every toolbar action — including
- * the arrow handoff back into the hub view and the row-click handoff coming
- * the other direction.
+ * the row-click handoff coming back from the hub view. Per-cell "open linked
+ * record" buttons (in the toolbar) reach into the hub via `hubPanel`.
  */
 export function useTemplateSyncController(): TemplateSyncController {
   const router = useRouter()
@@ -90,11 +88,6 @@ export function useTemplateSyncController(): TemplateSyncController {
     useState<string | null>(null)
   const [propertyId, setPropertyId] = useState<string | null>(null)
   const [selectedPropertyLabel, setSelectedPropertyLabel] = useState<string | null>(null)
-  // Carries the chosen property's mgmt-co id so the arrow handlers can open
-  // the hub view even when the user skipped the (optional) mgmt-co picker.
-  const [selectedPropertyOption, setSelectedPropertyOption] = useState<PropertyOption | null>(
-    null,
-  )
   const [templateId, setTemplateId] = useState<string | null>(null)
   const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string | null>(null)
   const [expandedPicker, setExpandedPicker] = useState<ExpandedPicker>(null)
@@ -125,7 +118,6 @@ export function useTemplateSyncController(): TemplateSyncController {
       setSelectedManagementCompanyLabel(option?.name ?? null)
       setPropertyId(null)
       setSelectedPropertyLabel(null)
-      setSelectedPropertyOption(null)
       setTemplateId(null)
       setSelectedTemplateLabel(null)
       setExpandedPicker(null)
@@ -137,7 +129,6 @@ export function useTemplateSyncController(): TemplateSyncController {
   const handlePropertySelect = useCallback((option: PropertyOption | null) => {
     setPropertyId(option?.id ?? null)
     setSelectedPropertyLabel(option?.name ?? null)
-    setSelectedPropertyOption(option)
     setTemplateId(null)
     setSelectedTemplateLabel(null)
     setExpandedPicker(null)
@@ -156,7 +147,6 @@ export function useTemplateSyncController(): TemplateSyncController {
     setSelectedManagementCompanyLabel(null)
     setPropertyId(null)
     setSelectedPropertyLabel(null)
-    setSelectedPropertyOption(null)
     setTemplateId(null)
     setSelectedTemplateLabel(null)
     setExpandedPicker(null)
@@ -170,7 +160,6 @@ export function useTemplateSyncController(): TemplateSyncController {
     setSelectedManagementCompanyLabel(row.managementCompanyName)
     setPropertyId(row.propertyId)
     setSelectedPropertyLabel(row.propertyName)
-    setSelectedPropertyOption(null)
     setTemplateId(row.id)
     const unit = row.unitType.trim()
     setSelectedTemplateLabel(unit.length > 0 ? unit : "—")
@@ -205,11 +194,6 @@ export function useTemplateSyncController(): TemplateSyncController {
   const canActOnTemplate = templateId !== null
   const hasSelections =
     managementCompanyId !== null || propertyId !== null || templateId !== null
-  const resolvedHubMcId =
-    managementCompanyId ?? selectedPropertyOption?.managementCompanyId ?? null
-  // "Open hub view" is enabled whenever we know which MC's hub to open —
-  // either an explicit mgmt-co pick or one carried by the selected property.
-  const canOpenHubView = resolvedHubMcId !== null
 
   const handleOpen = useCallback(() => {
     if (!templateId) return
@@ -231,16 +215,6 @@ export function useTemplateSyncController(): TemplateSyncController {
     resetSelections()
     hubPanel.openForCreate()
   }, [resetSelections, hubPanel])
-
-  // Open the unified hub view at the resolved mgmt-co's Properties tab.
-  // Replaces the (briefly-tried) two-arrow design with one button — enabled
-  // whenever a mgmt-co is resolvable from the current selections.
-  const handleOpenHubView = useCallback(() => {
-    if (!resolvedHubMcId) return
-    setOpen(false)
-    resetSelections()
-    hubPanel.openForView(resolvedHubMcId)
-  }, [resolvedHubMcId, resetSelections, hubPanel])
 
   const handleSync = useCallback(async () => {
     if (!templateId || isSyncing) return
@@ -297,7 +271,6 @@ export function useTemplateSyncController(): TemplateSyncController {
     handleOpen,
     handleCreate,
     handleCreateHub,
-    handleOpenHubView,
     handleSync,
     toggleHeaderCollapsed,
     hubPanel,
@@ -305,6 +278,5 @@ export function useTemplateSyncController(): TemplateSyncController {
     itemsController,
     canActOnTemplate,
     hasSelections,
-    canOpenHubView,
   }
 }
