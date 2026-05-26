@@ -115,13 +115,11 @@ export type InventoryCutLogRow = CutLogRow & {
 }
 
 // Page envelope returned by the inventory cut-logs list endpoint. `rows`
-// is the bounded slice for the current page; `total` is the full count of
-// cut logs on the parent inventory record.
+// is the bounded slice for the current skip/take window; `hasMore` signals
+// another page is available (drives the hub's infinite-scroll list).
 export type InventoryCutLogPage = {
   rows: InventoryCutLogRow[]
-  total: number
-  page: number
-  pageSize: number
+  hasMore: boolean
 }
 
 // Filter shape for the standalone cut-logs ledger list view

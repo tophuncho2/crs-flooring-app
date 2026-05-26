@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import type { WarehouseOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
@@ -13,6 +13,12 @@ import {
 export type WarehousePickerProps = {
   value: string | null
   onChange: (id: string | null) => void
+  /**
+   * Optional notification fired alongside `onChange` carrying the full picked
+   * option (or null on clear). Lets callers capture the selected name without
+   * a seed lookup — used by the inventory-hub starting cascade.
+   */
+  onOptionSelected?: (option: WarehouseOption | null) => void
   /**
    * Pre-resolved label for the current `value`. Lets the trigger render the
    * selected warehouse's name even when it isn't in the latest server result.
@@ -38,6 +44,7 @@ function toDropdownOption(option: WarehouseOption): AsyncRichDropdownOption {
 export function WarehousePicker({
   value,
   onChange,
+  onOptionSelected,
   selectedLabel = null,
   placeholder = "Filter by warehouse",
   searchPlaceholder = "Search warehouses",
@@ -56,6 +63,17 @@ export function WarehousePicker({
     initialOptions,
   })
 
+  const handleChange = useCallback(
+    (id: string | null) => {
+      onChange(id)
+      if (onOptionSelected) {
+        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
+        onOptionSelected(option)
+      }
+    },
+    [onChange, onOptionSelected, controller.options],
+  )
+
   const options = useMemo<AsyncRichDropdownOption[]>(
     () => controller.options.map(toDropdownOption),
     [controller.options],
@@ -70,7 +88,7 @@ export function WarehousePicker({
   return (
     <AsyncRichDropdown
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       options={options}
       selectedOption={selectedOption}
       query={controller.query}

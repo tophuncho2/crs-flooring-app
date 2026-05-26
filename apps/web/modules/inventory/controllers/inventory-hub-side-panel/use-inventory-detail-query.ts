@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import type { InventoryDetail } from "@builders/domain"
+import { FRESH_ON_OPEN } from "@/query-policies"
 import {
   INVENTORY_DETAIL_QUERY_KEY,
   inventoryDetailRequest,
@@ -28,5 +29,8 @@ export function useInventoryDetailQuery(
     queryKey: [...INVENTORY_DETAIL_QUERY_KEY, inventoryId],
     queryFn: ({ signal }) => inventoryDetailRequest(inventoryId as string, signal),
     refetchOnWindowFocus: false,
+    // Refetch on every open so the cells card reflects concurrent edits when
+    // the hub is reused across surfaces (property-hub parity).
+    ...FRESH_ON_OPEN,
   })
 }

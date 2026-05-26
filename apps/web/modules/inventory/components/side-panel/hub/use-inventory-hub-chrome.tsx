@@ -4,7 +4,7 @@ import { useMemo, type ReactNode } from "react"
 import {
   HubSidePanelEditLayout,
   HubSidePanelEditToolbar,
-  HubSidePanelPagination,
+  HubSidePanelViewSwitcher,
 } from "@/components/hub-side-panel"
 import {
   CutLogEditFinalizeButton,
@@ -22,6 +22,17 @@ export type InventoryHubChrome = {
   isCutLogPickerActive: boolean
 }
 
+export type UseInventoryHubChromeOptions = {
+  /**
+   * "Back out" handler for the view-mode left chevron. When provided (the
+   * app-wide provider passes it), the chevron leaves the hub view and re-opens
+   * the inventory-hub starting-spot cascade. Omit on surfaces with nowhere to
+   * go back to (the work-orders record-page instance), where it renders
+   * disabled — mirrors the property hub's `onBackToSync`.
+   */
+  onBackToStarting?: () => void
+}
+
 /**
  * Composes the inventory hub's sticky chrome — panel title + topToolbar
  * (the per-mode header / actions stack) — off the controller's current
@@ -33,15 +44,20 @@ export type InventoryHubChrome = {
  * `effectiveModeKind` collapses `picker-takeover` onto its `returnTo` so
  * the cut-log relink header stays sticky while a picker fills the body
  * below (template-sync pattern, preserved from commit a8d5d31a).
+ *
+ * The "Hub view" back button no longer lives in the edit toolbars — it moved
+ * to the shell `titleEnd` (property-hub parity). View mode renders a
+ * `HubSidePanelViewSwitcher` whose left chevron returns to the starting spot.
  */
 export function useInventoryHubChrome(
   controller: InventoryHubSidePanelController,
+  options: UseInventoryHubChromeOptions = {},
 ): InventoryHubChrome {
+  const { onBackToStarting } = options
   const {
     mode,
     cutLogPickerKind,
     inventory,
-    cutLogs,
     cutLogPanel,
     isDirty,
     isSaving,
@@ -49,7 +65,6 @@ export function useInventoryHubChrome(
     error,
     save,
     discard,
-    exitToView,
   } = controller
 
   const isCutLogPickerActive = mode.kind === "picker-takeover"
@@ -112,7 +127,6 @@ export function useInventoryHubChrome(
           canSave={canSave}
           onSave={save}
           onDiscard={discard}
-          onOpenHubView={exitToView}
           errorMessage={error}
         />
       )
@@ -147,7 +161,6 @@ export function useInventoryHubChrome(
           onDelete={onDelete}
           deleteDisabled={deleteDisabled}
           deleteTitle={deleteTitle}
-          onOpenHubView={exitToView}
           extraLeftActions={cutLogExtraLeftActions}
           errorMessage={error ?? cutLogPanel.error ?? null}
           disabled={isCutLogPickerActive}
@@ -161,18 +174,18 @@ export function useInventoryHubChrome(
       )
     }
     if (effectiveModeKind === "view") {
-      const showPagination = cutLogs.hasData && cutLogs.total > cutLogs.pageSize
-      if (!showPagination) return null
+      // Property-hub parity: a centered view switcher whose left chevron pops
+      // back to the starting-spot cascade. There is no sibling view yet, so
+      // the right chevron stays disabled (reserved).
       return (
-        <HubSidePanelPagination
-          page={cutLogs.page}
-          totalPages={cutLogs.totalPages}
-          total={cutLogs.total}
-          totalLabel="cut logs"
-          canPrev={cutLogs.canPrev}
-          canNext={cutLogs.canNext}
-          onGoPrev={cutLogs.goPrev}
-          onGoNext={cutLogs.goNext}
+        <HubSidePanelViewSwitcher
+          label="Inventory"
+          prevDisabled={!onBackToStarting}
+          nextDisabled
+          onGoPrev={onBackToStarting ?? (() => {})}
+          onGoNext={() => {}}
+          prevAriaLabel="Back to inventory hub filters"
+          nextAriaLabel="No further view"
         />
       )
     }
@@ -184,14 +197,13 @@ export function useInventoryHubChrome(
     canSave,
     save,
     discard,
-    exitToView,
     error,
     cutLog,
     cutLogPanel,
     cutLogExtraLeftActions,
-    cutLogs,
     isCutLogPickerActive,
     controller,
+    onBackToStarting,
   ])
 
   return { title, topToolbar, isCutLogPickerActive }

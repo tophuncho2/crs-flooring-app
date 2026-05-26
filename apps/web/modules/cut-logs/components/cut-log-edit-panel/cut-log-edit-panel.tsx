@@ -17,6 +17,13 @@ const PICKER_LABEL_CLASS =
 
 export type CutLogEditPanelProps = {
   controller: CutLogEditPanelController
+  /**
+   * Optional "open the picked inventory" handler. When provided, the inventory
+   * trigger renders a trailing arrow that opens the selected inventory (the
+   * work-orders host wires this to its inventory-hub `openForView`). There is
+   * no inventory record page, so the hub view is the inventory surface.
+   */
+  onOpenInventory?: (inventoryId: string) => void
 }
 
 /**
@@ -39,7 +46,7 @@ export type CutLogEditPanelProps = {
  * positions don't shift) but is disabled while a picker takeover is active —
  * picker body owns its own search input + cancel-on-Escape behavior.
  */
-export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
+export function CutLogEditPanel({ controller, onOpenInventory }: CutLogEditPanelProps) {
   const {
     open,
     pickerKind,
@@ -51,6 +58,7 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
     close,
     warehouseId,
     local,
+    form,
   } = controller
 
   const create = open?.mode === "create" ? open : null
@@ -99,11 +107,18 @@ export function CutLogEditPanel({ controller }: CutLogEditPanelProps) {
               warehouseId === null ? "Select warehouse first" : undefined
             }
             ariaLabel="Open inventory picker"
+            onOpenLinked={
+              onOpenInventory && form.inventoryId
+                ? () => onOpenInventory(form.inventoryId)
+                : undefined
+            }
+            openLinkedAriaLabel="Open inventory"
+            openLinkedDisabled={isSaving}
           />
         </label>
       </div>
     )
-  }, [create, pickerKind, controller, local, isSaving, warehouseId])
+  }, [create, pickerKind, controller, local, form.inventoryId, isSaving, warehouseId, onOpenInventory])
 
   const topToolbar = useMemo<ReactNode>(() => {
     const actionsToolbar = create ? (

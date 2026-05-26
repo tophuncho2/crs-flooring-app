@@ -59,19 +59,20 @@ export function CutLogInventoryPickerTakeover({
     [warehouseId, productId, location],
   )
 
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchInventoryOptionsRequest(search, signal, {
         warehouseId: warehouseId ?? "",
         ...(productId ? { productId } : {}),
         ...(location ? { location } : {}),
+        skip,
       }),
     [warehouseId, productId, location],
   )
 
   const dropdown = useAsyncRichDropdownController<InventoryOption>({
     bucketKey,
-    searchFn,
+    pagedSearchFn,
     enabled: warehouseId !== null,
   })
 

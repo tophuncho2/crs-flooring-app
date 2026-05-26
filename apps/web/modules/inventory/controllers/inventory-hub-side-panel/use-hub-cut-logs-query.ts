@@ -1,110 +1,90 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useCallback, useMemo } from "react"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import {
   INVENTORY_CUT_LOG_PAGE_SIZE,
   type InventoryCutLogRow,
 } from "@builders/domain"
+import { FRESH_ON_OPEN } from "@/query-policies"
 import {
   INVENTORY_CUT_LOGS_QUERY_KEY,
   inventoryCutLogsPageRequest,
 } from "@/modules/inventory/data/inventory-cut-logs-request"
 
 export type HubCutLogsController = {
-  page: number
-  totalPages: number
-  total: number
-  pageSize: number
   rows: ReadonlyArray<InventoryCutLogRow>
-  isFetching: boolean
   isLoading: boolean
   isError: boolean
+  /** False until the first page resolves — drives the loading/error stub. */
   hasData: boolean
-  canPrev: boolean
-  canNext: boolean
-  goPrev: () => void
-  goNext: () => void
+  /** True once resolved with zero rows. */
+  isEmpty: boolean
+  /** Server reported another page is available. */
+  hasMore: boolean
+  isFetchingMore: boolean
+  loadMore: () => void
 }
 
 const EMPTY_ROWS: ReadonlyArray<InventoryCutLogRow> = []
 
 /**
- * Paginated cut-logs for a single inventory inside the hub. Reuses the
- * same query key + fetcher as the inline `InventoryCutLogsSection` so a
- * mutation that invalidates the cache refreshes both surfaces with no
- * duplicate request.
+ * Infinite-scroll cut-logs for a single inventory inside the hub. Reuses the
+ * same query-key prefix the inline `InventoryCutLogsSection` does so a mutation
+ * that invalidates the cache refreshes both surfaces with no duplicate request.
+ * The query key includes `inventoryId`, so switching the hub to a different
+ * inventory starts a fresh page-0 fetch. `FRESH_ON_OPEN` refetches on every
+ * open so the list reflects concurrent cuts.
  */
 export function useHubCutLogsQuery(inventoryId: string | null): HubCutLogsController {
-  const [page, setPage] = useState(1)
-
-  // Reset to page 1 when the hub switches to a different inventory — derived
-  // during render (previous-value tracking) so the query never fires the new
-  // inventory id against the stale page.
-  const [trackedInventoryId, setTrackedInventoryId] = useState(inventoryId)
-  if (trackedInventoryId !== inventoryId) {
-    setTrackedInventoryId(inventoryId)
-    setPage(1)
-  }
-
-  const query = useQuery({
+  const query = useInfiniteQuery({
     enabled: inventoryId !== null,
-    queryKey: [...INVENTORY_CUT_LOGS_QUERY_KEY, inventoryId, page],
-    queryFn: ({ signal }) =>
+    queryKey: [...INVENTORY_CUT_LOGS_QUERY_KEY, inventoryId],
+    queryFn: ({ pageParam, signal }) =>
       inventoryCutLogsPageRequest(
         inventoryId as string,
-        page,
+        pageParam,
         INVENTORY_CUT_LOG_PAGE_SIZE,
         signal,
       ),
-    staleTime: 0,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.hasMore
+        ? allPages.reduce((acc, page) => acc + page.rows.length, 0)
+        : undefined,
     gcTime: 0,
+    ...FRESH_ON_OPEN,
   })
 
-  const data = query.data
-  const total = data?.total ?? 0
-  const pageSize = data?.pageSize ?? INVENTORY_CUT_LOG_PAGE_SIZE
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
-  const rows = (data?.rows ?? EMPTY_ROWS) as ReadonlyArray<InventoryCutLogRow>
+  const rows = useMemo<ReadonlyArray<InventoryCutLogRow>>(
+    () => query.data?.pages.flatMap((page) => page.rows) ?? EMPTY_ROWS,
+    [query.data],
+  )
 
-  const goPrev = useCallback(() => {
-    setPage((value) => Math.max(1, value - 1))
-  }, [])
-
-  const goNext = useCallback(() => {
-    setPage((value) => Math.min(totalPages, value + 1))
-  }, [totalPages])
+  const loadMore = useCallback(() => {
+    if (!query.hasNextPage || query.isFetchingNextPage) return
+    void query.fetchNextPage()
+  }, [query])
 
   return useMemo<HubCutLogsController>(() => {
-    const hasData = data !== undefined
-    const canPrev = hasData && page > 1 && !query.isFetching
-    const canNext = hasData && page < totalPages && !query.isFetching
+    const hasData = query.data !== undefined
     return {
-      page,
-      totalPages,
-      total,
-      pageSize,
       rows,
-      isFetching: query.isFetching,
       isLoading: query.isLoading,
       isError: query.isError,
       hasData,
-      canPrev,
-      canNext,
-      goPrev,
-      goNext,
+      isEmpty: hasData && rows.length === 0,
+      hasMore: !!query.hasNextPage,
+      isFetchingMore: query.isFetchingNextPage,
+      loadMore,
     }
   }, [
-    data,
-    page,
-    totalPages,
-    total,
-    pageSize,
     rows,
-    query.isFetching,
+    query.data,
     query.isLoading,
     query.isError,
-    goPrev,
-    goNext,
+    query.hasNextPage,
+    query.isFetchingNextPage,
+    loadMore,
   ])
 }

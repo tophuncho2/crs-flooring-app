@@ -11,14 +11,13 @@ type InventoryCutLogsPageResponse = {
 
 export async function inventoryCutLogsPageRequest(
   inventoryId: string,
-  page: number,
-  pageSize: number,
+  skip: number,
+  take: number,
   signal: AbortSignal | undefined,
 ): Promise<InventoryCutLogPage> {
-  const params = new URLSearchParams({
-    page: String(page),
-    pageSize: String(pageSize),
-  })
+  const params = new URLSearchParams()
+  if (skip > 0) params.set("skip", String(skip))
+  params.set("take", String(take))
   const result = await requestJson<InventoryCutLogsPageResponse>(
     `/api/inventory/${inventoryId}/cut-logs?${params.toString()}`,
     {

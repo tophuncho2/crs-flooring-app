@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import { PaginateControls } from "@/components/features/paginate"
 import {
   ListRowCount,
@@ -21,8 +20,7 @@ import {
   type WarehouseOption,
 } from "@builders/domain"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
-import { useInventoryHubSidePanel } from "@/modules/inventory/controllers/inventory-hub-side-panel"
-import { InventoryHubSidePanel } from "@/modules/inventory/components/side-panel/hub"
+import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
 import {
   CUT_LOGS_LIST_QUERY_KEY,
   listCutLogsRequest,
@@ -42,19 +40,11 @@ export default function CutLogsClient({
   initialWarehouseOptions: WarehouseOption[]
   initialSelectedWarehouse?: WarehouseOption | null
 }) {
-  const queryClient = useQueryClient()
-  const invalidateList = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: [...CUT_LOGS_LIST_QUERY_KEY] })
-  }, [queryClient])
-
-  // Row click opens the inventory hub focused on the clicked cut log. Fetched
-  // mode (no seed) — `openForCutLogEdit(row)` derives the parent inventory from
-  // `row.inventoryId` and loads it. Cut-log mutations in the hub invalidate the
-  // ledger so it refreshes.
-  const hubPanel = useInventoryHubSidePanel({
-    initialInventory: null,
-    publishCutLogPatch: invalidateList,
-  })
+  // Row click opens the app-wide inventory hub focused on the clicked cut log.
+  // `openForCutLogEdit(row)` derives the parent inventory from `row.inventoryId`
+  // and loads it. The provider invalidates the ledger after any hub mutation so
+  // it refreshes.
+  const { openForCutLogEdit } = useInventoryHub()
 
   const {
     rows,
@@ -159,7 +149,7 @@ export default function CutLogsClient({
 
         <CutLogsTable
           rows={rows}
-          onOpenCutLog={(row) => hubPanel.openForCutLogEdit(row)}
+          onOpenCutLog={(row) => openForCutLogEdit(row)}
           pagination={
             <PaginateControls
               page={page}
@@ -174,7 +164,6 @@ export default function CutLogsClient({
           }
         />
       </div>
-      <InventoryHubSidePanel controller={hubPanel} />
     </div>
   )
 }

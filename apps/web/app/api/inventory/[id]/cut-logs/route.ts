@@ -30,11 +30,11 @@ export async function GET(request: Request, { params }: RouteContext) {
     const { id: rawId } = await params
     const inventoryId = parseUuidParam(rawId, "id")
     const url = new URL(request.url)
-    const { page, pageSize } = validateCutLogsPageQuery(url.searchParams)
+    const { skip, take } = validateCutLogsPageQuery(url.searchParams)
     const result = await listInventoryCutLogsUseCase({
       inventoryId,
-      page,
-      pageSize,
+      skip,
+      take,
     })
     return routeJson(access, { page: result })
   } catch (error) {

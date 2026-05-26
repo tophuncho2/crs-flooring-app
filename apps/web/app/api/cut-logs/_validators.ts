@@ -164,8 +164,8 @@ export function validateFinalizeCutLogInput(
 }
 
 const cutLogsPageQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce
+  skip: z.coerce.number().int().min(0).default(0),
+  take: z.coerce
     .number()
     .int()
     .min(1)
@@ -174,8 +174,8 @@ const cutLogsPageQuerySchema = z.object({
 })
 
 export type ValidatedCutLogsPageQuery = {
-  page: number
-  pageSize: number
+  skip: number
+  take: number
 }
 
 export function validateCutLogsPageQuery(

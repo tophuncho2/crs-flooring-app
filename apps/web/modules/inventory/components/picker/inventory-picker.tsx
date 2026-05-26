@@ -110,19 +110,20 @@ export function InventoryPicker({
     [warehouseId, productId, location],
   )
 
-  const searchFn = useCallback(
-    (search: string, signal: AbortSignal | undefined) =>
+  const pagedSearchFn = useCallback(
+    (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchInventoryOptionsRequest(search, signal, {
         warehouseId: warehouseId ?? "",
         ...(productId ? { productId } : {}),
         ...(location ? { location } : {}),
+        skip,
       }),
     [warehouseId, productId, location],
   )
 
   const controller = useAsyncRichDropdownController<InventoryOption>({
     bucketKey,
-    searchFn,
+    pagedSearchFn,
     initialOptions,
     enabled,
   })
@@ -184,6 +185,9 @@ export function InventoryPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
+      hasMore={controller.hasMore}
+      isFetchingMore={controller.isFetchingMore}
+      onLoadMore={controller.loadMore}
       // Stock balance + coverage balance render in the option subtitles and
       // mutate as other operators cut against the same inventory rows.
       // Refetch on every open so the user sees the freshest balances.

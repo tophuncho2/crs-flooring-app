@@ -7,8 +7,8 @@ import { CutLogExecutionError } from "./errors.js"
 
 export type ListInventoryCutLogsInput = {
   inventoryId: string
-  page: number
-  pageSize: number
+  skip: number
+  take: number
 }
 
 function failValidation(message: string, field: string): never {
@@ -23,30 +23,23 @@ function failValidation(message: string, field: string): never {
 export async function listInventoryCutLogsUseCase(
   input: ListInventoryCutLogsInput,
 ): Promise<InventoryCutLogPage> {
-  if (!Number.isInteger(input.page) || input.page < 1) {
-    failValidation("page must be a positive integer", "page")
+  if (!Number.isInteger(input.skip) || input.skip < 0) {
+    failValidation("skip must be a non-negative integer", "skip")
   }
   if (
-    !Number.isInteger(input.pageSize) ||
-    input.pageSize < 1 ||
-    input.pageSize > INVENTORY_CUT_LOG_MAX_PAGE_SIZE
+    !Number.isInteger(input.take) ||
+    input.take < 1 ||
+    input.take > INVENTORY_CUT_LOG_MAX_PAGE_SIZE
   ) {
     failValidation(
-      `pageSize must be between 1 and ${INVENTORY_CUT_LOG_MAX_PAGE_SIZE}`,
-      "pageSize",
+      `take must be between 1 and ${INVENTORY_CUT_LOG_MAX_PAGE_SIZE}`,
+      "take",
     )
   }
 
-  const { rows, total } = await listInventoryCutLogsPage({
+  return listInventoryCutLogsPage({
     inventoryId: input.inventoryId,
-    page: input.page,
-    pageSize: input.pageSize,
+    skip: input.skip,
+    take: input.take,
   })
-
-  return {
-    rows,
-    total,
-    page: input.page,
-    pageSize: input.pageSize,
-  }
 }

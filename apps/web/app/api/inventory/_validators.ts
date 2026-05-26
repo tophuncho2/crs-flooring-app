@@ -60,6 +60,7 @@ const inventorySearchQuerySchema = z.object({
   productId: z.string().optional(),
   location: z.string().optional(),
   search: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce
     .number()
     .int()
@@ -73,6 +74,7 @@ export type ValidatedInventorySearchQuery = {
   productId?: string
   location?: string
   search?: string
+  skip: number
   take: number
 }
 
@@ -104,6 +106,7 @@ export function validateInventorySearchQuery(
     ...(trimProduct ? { productId: trimProduct } : {}),
     ...(trimLocation ? { location: trimLocation } : {}),
     ...(trimSearch ? { search: trimSearch } : {}),
+    skip: parsed.skip,
     take: parsed.take,
   }
 }

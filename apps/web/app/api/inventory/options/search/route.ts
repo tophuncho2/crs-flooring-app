@@ -17,8 +17,8 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const input = validateInventorySearchQuery(url.searchParams)
-    const options = await searchInventoryOptionsUseCase(input)
-    return routeJson(access, { options })
+    const result = await searchInventoryOptionsUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

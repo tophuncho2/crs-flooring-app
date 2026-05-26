@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import { PaginateControls } from "@/components/features/paginate"
 import {
   ListToolbar,
@@ -24,8 +23,7 @@ import {
   listInventoryRequest,
 } from "@/modules/inventory/data/list-inventory-request"
 import { useInventoryListController } from "@/modules/inventory/controllers/list/use-inventory-list-controller"
-import { useInventoryHubSidePanel } from "@/modules/inventory/controllers/inventory-hub-side-panel"
-import { InventoryHubSidePanel } from "../side-panel/hub"
+import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
@@ -111,19 +109,10 @@ export default function InventoryClient({
 }) {
   const { message, pageError } = useInventoryListController()
 
-  // Row clicks open the inventory hub side panel in place (fetched mode — no
-  // seed; `openForView(id)` fetches the detail). Inventory + cut-log edits in
-  // the hub change the Stock/Coverage columns, so both callbacks invalidate the
-  // list query to refresh the visible rows.
-  const queryClient = useQueryClient()
-  const invalidateList = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: [...INVENTORY_LIST_QUERY_KEY] })
-  }, [queryClient])
-  const hubPanel = useInventoryHubSidePanel({
-    initialInventory: null,
-    publishCutLogPatch: invalidateList,
-    onInventoryUpdated: invalidateList,
-  })
+  // Row clicks open the app-wide inventory hub (fetched mode — `openForView(id)`
+  // fetches the detail). The provider invalidates the inventory list query after
+  // any hub mutation, so the Stock/Coverage columns refresh in place.
+  const { openForView } = useInventoryHub()
 
   // The engine's filter map carries `string[]` only — translate to typed
   // InventoryListFilters at the listFn boundary so the application layer
@@ -378,7 +367,7 @@ export default function InventoryClient({
 
         <InventoryTable
           rows={rows}
-          onOpenInventory={(id) => hubPanel.openForView(id)}
+          onOpenInventory={(id) => openForView(id)}
           pagination={
             <PaginateControls
               page={page}
@@ -393,7 +382,6 @@ export default function InventoryClient({
           }
         />
       </div>
-      <InventoryHubSidePanel controller={hubPanel} />
     </div>
   )
 }

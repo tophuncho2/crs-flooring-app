@@ -254,28 +254,27 @@ export async function listCutLogsForWorkOrderItemIds(
  * controls without a second query.
  */
 export async function listInventoryCutLogsPage(
-  args: { inventoryId: string; page: number; pageSize: number },
+  args: { inventoryId: string; skip: number; take: number },
   client: CutLogDbClient = db,
-): Promise<{ rows: InventoryCutLogRow[]; total: number }> {
+): Promise<{ rows: InventoryCutLogRow[]; hasMore: boolean }> {
   const where: Prisma.FlooringCutLogWhereInput = { inventoryId: args.inventoryId }
-  const skip = (args.page - 1) * args.pageSize
 
-  const [rows, total] = await Promise.all([
-    client.flooringCutLog.findMany({
-      where,
-      select: inventoryCutLogRowSelect,
-      orderBy: [
-        { finalCutSequence: { sort: "desc", nulls: "first" } },
-        { createdAt: "asc" },
-        { id: "asc" },
-      ],
-      skip,
-      take: args.pageSize,
-    }),
-    client.flooringCutLog.count({ where }),
-  ])
+  // Fetch take+1 to detect a next page without a separate count query.
+  const rows = await client.flooringCutLog.findMany({
+    where,
+    select: inventoryCutLogRowSelect,
+    orderBy: [
+      { finalCutSequence: { sort: "desc", nulls: "first" } },
+      { createdAt: "asc" },
+      { id: "asc" },
+    ],
+    skip: args.skip,
+    take: args.take + 1,
+  })
 
-  return { rows: rows.map(normalizeInventoryCutLogRow), total }
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return { rows: page.map(normalizeInventoryCutLogRow), hasMore }
 }
 
 /**

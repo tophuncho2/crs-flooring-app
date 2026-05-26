@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { canRelinkCutLog } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { HubSidePanelPickerTrigger } from "@/components/hub-side-panel"
@@ -32,11 +33,13 @@ export function InventoryHubCutLogEditHeader({
   cutLogPanel,
   hubController,
 }: InventoryHubCutLogEditHeaderProps) {
+  const router = useRouter()
   const { local, isSaving } = cutLogPanel
   const { openCutLogPicker, cutLogPickerKind } = hubController
 
   const relinkAllowed = canRelinkCutLog(cutLog)
   const triggersDisabled = isSaving || !relinkAllowed
+  const linkedWorkOrderId = cutLogPanel.form.workOrderId ?? cutLog.workOrderId
 
   const workOrderTriggerLabel =
     local.pickedWorkOrderLabel ||
@@ -71,6 +74,13 @@ export function InventoryHubCutLogEditHeader({
             cutLog.workOrderId ? formatWorkOrderTriggerFallback(cutLog) : "Locked"
           }
           ariaLabel="Open work order picker"
+          onOpenLinked={
+            linkedWorkOrderId
+              ? () => router.push(`/dashboard/work-orders/${linkedWorkOrderId}`)
+              : undefined
+          }
+          openLinkedAriaLabel="Open work order"
+          openLinkedDisabled={isSaving}
         />
       </label>
       <div className="flex flex-col gap-1.5">

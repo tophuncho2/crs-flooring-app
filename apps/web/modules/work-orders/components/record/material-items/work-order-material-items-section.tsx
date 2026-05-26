@@ -324,7 +324,10 @@ export function WorkOrderMaterialItemsSection({
         }}
       />
 
-      <CutLogEditPanel controller={cutLogPanel} />
+      <CutLogEditPanel
+        controller={cutLogPanel}
+        onOpenInventory={(id) => inventoryHubPanel.openForView(id)}
+      />
       <InventoryHubSidePanel controller={inventoryHubPanel} />
     </div>
   )

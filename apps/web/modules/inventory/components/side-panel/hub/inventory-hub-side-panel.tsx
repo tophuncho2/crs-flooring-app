@@ -1,7 +1,10 @@
 "use client"
 
-import { HubSidePanelShell } from "@/components/hub-side-panel"
-import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
+import { HubSidePanelHubViewButton, HubSidePanelShell } from "@/components/hub-side-panel"
+import type {
+  HubMode,
+  InventoryHubSidePanelController,
+} from "@/modules/inventory/controllers/inventory-hub-side-panel"
 import { InventoryHubCutLogEditSection } from "./inventory-hub-cut-log-edit-section"
 import { InventoryHubCutLogsListSection } from "./inventory-hub-cut-logs-list-section"
 import { InventoryHubCutLogWorkOrderPicker } from "./inventory-hub-cut-log-work-order-picker"
@@ -11,26 +14,36 @@ import { useInventoryHubChrome } from "./use-inventory-hub-chrome"
 
 export type InventoryHubSidePanelProps = {
   controller: InventoryHubSidePanelController
+  /**
+   * "Back out" handler for the view-mode left chevron. The app-wide provider
+   * passes a handler that closes the hub view and re-opens the inventory-hub
+   * starting-spot cascade. Omit on the record-page instance (work orders),
+   * where the chevron renders disabled.
+   */
+  onBackToStarting?: () => void
 }
 
 /**
  * Right-anchored inventory hub side panel. Mirrors the property hub
  * pattern at `modules/properties/components/side-panel/hub/`:
  *
- *   - view: read-only cells card on top, paginated cut-logs list below
+ *   - view: read-only cells card on top, infinite-scroll cut-logs list below
  *   - section-edit-inventory: editable cells with archive / location /
  *           internalNotes mutations; roll# / dye lot / note stay
  *           UI-blocked
  *   - section-edit-cut-log: cut-log readonly summary + cut / notes /
  *           waste editable cells; toolbar exposes Save / Discard /
- *           Finalize / Void / Delete + back-arrow
+ *           Finalize / Void / Delete
  *   - picker-takeover: body swaps to a HubSidePanelPicker; the cut-log
  *           relink header stays sticky above via `useInventoryHubChrome`
  *
  * Per-mode chrome (title + topToolbar) lives in `useInventoryHubChrome`
- * — this file is the body dispatch only.
+ * — this file is the body dispatch + the title-row "Hub view" button.
  */
-export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps) {
+export function InventoryHubSidePanel({
+  controller,
+  onBackToStarting,
+}: InventoryHubSidePanelProps) {
   const {
     isOpen,
     mode,
@@ -38,9 +51,22 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
     close,
     isLoadingInventory,
     isErrorInventory,
+    exitToView,
   } = controller
 
-  const { title, topToolbar, isCutLogPickerActive } = useInventoryHubChrome(controller)
+  const { title, topToolbar, isCutLogPickerActive } = useInventoryHubChrome(controller, {
+    onBackToStarting,
+  })
+
+  // "Hub view" lives in the title row, shown only in the section-edit modes
+  // that have a parent hub view to pop back to (property-hub parity). Collapse
+  // picker-takeover onto its returnTo so the button stays put while a picker
+  // fills the body.
+  const effectiveModeKind: HubMode["kind"] =
+    mode.kind === "picker-takeover" ? mode.returnTo.kind : mode.kind
+  const showHubViewButton =
+    effectiveModeKind === "section-edit-inventory" ||
+    effectiveModeKind === "section-edit-cut-log"
 
   // Fetched callers (e.g. work-orders) may render before the inventory
   // detail query resolves. Show loading / error placeholders for view +
@@ -53,7 +79,17 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
   const showErrorPlaceholder = needsInventory && !inventory && isErrorInventory
 
   return (
-    <HubSidePanelShell open={isOpen} onClose={close} title={title} topToolbar={topToolbar}>
+    <HubSidePanelShell
+      open={isOpen}
+      onClose={close}
+      title={title}
+      topToolbar={topToolbar}
+      titleEnd={
+        showHubViewButton ? (
+          <HubSidePanelHubViewButton onClick={exitToView} />
+        ) : null
+      }
+    >
       {isCutLogPickerActive ? (
         <InventoryHubCutLogWorkOrderPicker controller={controller} />
       ) : showLoadingPlaceholder ? (
@@ -61,9 +97,13 @@ export function InventoryHubSidePanel({ controller }: InventoryHubSidePanelProps
       ) : showErrorPlaceholder ? (
         <p className="px-1 text-sm text-rose-700">Could not load inventory.</p>
       ) : mode.kind === "view" ? (
-        <div className="flex flex-col gap-5">
-          <InventoryHubViewSection controller={controller} />
-          <InventoryHubCutLogsListSection controller={controller} />
+        <div className="flex h-full min-h-0 flex-col gap-5">
+          <div className="shrink-0">
+            <InventoryHubViewSection controller={controller} />
+          </div>
+          <div className="min-h-0 flex-1">
+            <InventoryHubCutLogsListSection controller={controller} />
+          </div>
         </div>
       ) : mode.kind === "section-edit-inventory" ? (
         <InventoryHubInventoryEditSection controller={controller} />

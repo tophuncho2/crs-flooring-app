@@ -398,7 +398,14 @@ export type InventoryOptionsSearchArgs = {
    * separate `location` arg above owns that concern.
    */
   search?: string
+  /** Page offset for infinite scroll. Defaults to 0. */
+  skip?: number
   take: number
+}
+
+export type InventoryOptionsSearchResult = {
+  items: InventoryOption[]
+  hasMore: boolean
 }
 
 type InventoryOptionRawRow = {
@@ -433,7 +440,7 @@ type InventoryOptionRawRow = {
 export async function searchInventoryOptions(
   args: InventoryOptionsSearchArgs,
   client: InventoryDbClient = db,
-): Promise<InventoryOption[]> {
+): Promise<InventoryOptionsSearchResult> {
   const conditions: Prisma.Sql[] = [
     Prisma.sql`"warehouseId" = ${args.warehouseId}`,
     Prisma.sql`"isArchived" = false`,
@@ -455,6 +462,8 @@ export async function searchInventoryOptions(
   }
   const whereClause = Prisma.join(conditions, " AND ")
 
+  // Fetch take+1 (offset by skip) to detect a next page without a count query.
+  const skip = Math.max(0, Math.floor(args.skip ?? 0))
   const rows = await client.$queryRaw<InventoryOptionRawRow[]>(Prisma.sql`
     SELECT
       "id",
@@ -470,10 +479,12 @@ export async function searchInventoryOptions(
     FROM "flooring_inventory"
     WHERE ${whereClause}
     ORDER BY "productName" ASC, "inventoryNumberInt" ASC, "id" ASC
-    LIMIT ${args.take}
+    LIMIT ${args.take + 1} OFFSET ${skip}
   `)
 
-  return rows.map((row) => {
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  const items = page.map((row) => {
     const balanceNum = computeInventoryBalance({
       startingStock: row.startingStock.toString(),
       totalCutSum: row.totalCutSum.toString(),
@@ -494,6 +505,8 @@ export async function searchInventoryOptions(
       itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? "",
     }
   })
+
+  return { items, hasMore }
 }
 
 export type InventoryLocationsSearchArgs = {
