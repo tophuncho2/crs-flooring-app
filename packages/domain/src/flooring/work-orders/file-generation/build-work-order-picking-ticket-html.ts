@@ -11,9 +11,9 @@ import {
  * fragment for the on-demand print view:
  *
  *   - H1 + "Picking Ticket" tag in the top-right
- *   - H2 scheduled date + the same top table as the slip
- *   - The same Material Items + cut logs as the slip (no Property Info,
- *     no description)
+ *   - H2 scheduled date + the same top table as the slip, including the
+ *     description row beneath Job Type
+ *   - The same Material Items + cut logs as the slip (no Property Info)
  *
  * Returns a `<style>` + `.wo-print-root` fragment to inject into the print
  * page; no `<html>`/`<body>` (those come from the Next root layout). This
@@ -22,7 +22,7 @@ import {
 export function buildWorkOrderPickingTicketHtml(input: WorkOrderFileGenerationInput): string {
   const sections = [
     renderWorkOrderPickingTicketHeader(input),
-    renderWorkOrderTopTable(input),
+    renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderMaterialItems(input.materialItems),
   ].join("\n")
 
