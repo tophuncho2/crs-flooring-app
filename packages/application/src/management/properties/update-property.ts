@@ -3,6 +3,7 @@ import {
   PROPERTY_NAME_CONFLICT_MESSAGE,
   PROPERTY_NAME_REQUIRED_MESSAGE,
   PROPERTY_NOT_FOUND_MESSAGE,
+  isBlankName,
   isPropertyNameConflict,
   normalizePropertyNameForUniqueness,
 } from "@builders/domain"
@@ -18,7 +19,7 @@ export async function updatePropertyUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    if (input.name !== undefined && !input.name.trim()) {
+    if (input.name !== undefined && isBlankName(input.name)) {
       throw new PropertyExecutionError({
         code: "PROPERTY_VALIDATION_FAILED",
         message: PROPERTY_NAME_REQUIRED_MESSAGE,

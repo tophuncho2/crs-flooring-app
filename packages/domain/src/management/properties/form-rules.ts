@@ -1,3 +1,4 @@
+import { isBlankName } from "../../shared/name-rules.js"
 import type { PropertyDetailRecord, PropertyPrimaryForm } from "./types.js"
 
 export function toPropertyPrimaryForm(property: PropertyDetailRecord): PropertyPrimaryForm {
@@ -15,7 +16,7 @@ export function toPropertyPrimaryForm(property: PropertyDetailRecord): PropertyP
 }
 
 export function validatePropertyPrimaryForm(input: PropertyPrimaryForm) {
-  if (!input.name.trim()) {
+  if (isBlankName(input.name)) {
     return "Property name is required"
   }
 

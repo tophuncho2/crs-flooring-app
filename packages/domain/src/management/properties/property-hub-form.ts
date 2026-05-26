@@ -1,5 +1,6 @@
 import type { ManagementCompanyForm } from "../management-companies/types.js"
 import { validateManagementCompanyForm } from "../management-companies/form-rules.js"
+import { isBlankName } from "../../shared/name-rules.js"
 import {
   PROPERTY_HUB_NO_ACTIONS_MESSAGE,
   PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE,
@@ -59,7 +60,7 @@ export function validateCreatePropertyHubForm(form: CreatePropertyHubForm): stri
     if (mcError) return mcError
   }
 
-  if (form.property.mode === "create" && !form.property.fields.name.trim()) {
+  if (form.property.mode === "create" && isBlankName(form.property.fields.name)) {
     return PROPERTY_NAME_REQUIRED_MESSAGE
   }
 

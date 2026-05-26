@@ -2,6 +2,7 @@ import { Prisma, createPropertyRecord, propertyNameExists, withDatabaseTransacti
 import {
   PROPERTY_NAME_CONFLICT_MESSAGE,
   PROPERTY_NAME_REQUIRED_MESSAGE,
+  isBlankName,
   isPropertyNameConflict,
   normalizePropertyNameForUniqueness,
 } from "@builders/domain"
@@ -16,7 +17,7 @@ export async function createPropertyUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    if (!input.name || !input.name.trim()) {
+    if (isBlankName(input.name)) {
       throw new PropertyExecutionError({
         code: "PROPERTY_VALIDATION_FAILED",
         message: PROPERTY_NAME_REQUIRED_MESSAGE,

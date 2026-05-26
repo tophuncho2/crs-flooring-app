@@ -2,6 +2,7 @@ import { Prisma, createManagementCompanyRecord, withDatabaseTransaction } from "
 import {
   MANAGEMENT_COMPANY_NAME_CONFLICT_MESSAGE,
   MANAGEMENT_COMPANY_NAME_REQUIRED_MESSAGE,
+  isBlankName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
 import { ManagementCompanyExecutionError } from "./errors.js"
@@ -17,7 +18,7 @@ export async function createManagementCompanyUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    if (!input.name || !input.name.trim()) {
+    if (isBlankName(input.name)) {
       throw new ManagementCompanyExecutionError({
         code: "MANAGEMENT_COMPANY_VALIDATION_FAILED",
         message: MANAGEMENT_COMPANY_NAME_REQUIRED_MESSAGE,

@@ -1,6 +1,7 @@
 import {
   LIST_MANAGEMENT_COMPANIES_MAX_PAGE_SIZE,
   LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
+  normalizeStateCodeFilter,
   type ManagementCompanyListRow,
   type ManagementCompanyOption,
 } from "@builders/domain"
@@ -14,20 +15,6 @@ export type ManagementCompaniesListFilters = {
   state?: ReadonlyArray<string>
 }
 
-function normalizeStateCodes(
-  raw: ReadonlyArray<string> | undefined,
-): ReadonlyArray<string> | undefined {
-  if (!raw || raw.length === 0) return undefined
-  const cleaned = Array.from(
-    new Set(
-      raw
-        .map((entry) => entry.trim().toUpperCase())
-        .filter((entry) => /^[A-Z]{2}$/.test(entry)),
-    ),
-  )
-  return cleaned.length > 0 ? cleaned : undefined
-}
-
 export async function listManagementCompaniesUseCase(
   input: ListInput<ManagementCompaniesListFilters>,
 ): Promise<ListOutput<ManagementCompanyListRow>> {
@@ -39,7 +26,7 @@ export async function listManagementCompaniesUseCase(
   )
 
   const search = input.search?.trim() || undefined
-  const state = normalizeStateCodes(input.filters?.state)
+  const state = normalizeStateCodeFilter(input.filters?.state)
 
   const { rows, total } = await listManagementCompaniesForListView({
     search,

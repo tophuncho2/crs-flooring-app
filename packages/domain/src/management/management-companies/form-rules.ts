@@ -1,3 +1,4 @@
+import { isBlankName } from "../../shared/name-rules.js"
 import type { ManagementCompanyDetail, ManagementCompanyForm } from "./types.js"
 
 export function toManagementCompanyForm(company: ManagementCompanyDetail): ManagementCompanyForm {
@@ -13,7 +14,7 @@ export function toManagementCompanyForm(company: ManagementCompanyDetail): Manag
 }
 
 export function validateManagementCompanyForm(input: ManagementCompanyForm) {
-  if (!input.name.trim()) {
+  if (isBlankName(input.name)) {
     return "Company name is required"
   }
 

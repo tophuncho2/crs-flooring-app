@@ -3,6 +3,7 @@ import {
   MANAGEMENT_COMPANY_NAME_CONFLICT_MESSAGE,
   MANAGEMENT_COMPANY_NAME_REQUIRED_MESSAGE,
   MANAGEMENT_COMPANY_NOT_FOUND_MESSAGE,
+  isBlankName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
 import { ManagementCompanyExecutionError } from "./errors.js"
@@ -19,7 +20,7 @@ export async function updateManagementCompanyUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    if (input.name !== undefined && !input.name.trim()) {
+    if (input.name !== undefined && isBlankName(input.name)) {
       throw new ManagementCompanyExecutionError({
         code: "MANAGEMENT_COMPANY_VALIDATION_FAILED",
         message: MANAGEMENT_COMPANY_NAME_REQUIRED_MESSAGE,

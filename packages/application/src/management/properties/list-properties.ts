@@ -1,6 +1,7 @@
 import {
   LIST_PROPERTIES_MAX_PAGE_SIZE,
   LIST_PROPERTIES_PAGE_SIZE,
+  normalizeStateCodeFilter,
   type PropertyListRow,
 } from "@builders/domain"
 import { listPropertiesForListView } from "@builders/db"
@@ -21,20 +22,6 @@ function normalizeManagementCompanyIds(
   return cleaned.length > 0 ? cleaned : undefined
 }
 
-function normalizeStateCodes(
-  raw: ReadonlyArray<string> | undefined,
-): ReadonlyArray<string> | undefined {
-  if (!raw || raw.length === 0) return undefined
-  const cleaned = Array.from(
-    new Set(
-      raw
-        .map((entry) => entry.trim().toUpperCase())
-        .filter((entry) => /^[A-Z]{2}$/.test(entry)),
-    ),
-  )
-  return cleaned.length > 0 ? cleaned : undefined
-}
-
 export async function listPropertiesUseCase(
   input: ListInput<PropertiesListFilters>,
 ): Promise<ListOutput<PropertyListRow>> {
@@ -44,7 +31,7 @@ export async function listPropertiesUseCase(
 
   const search = input.search?.trim() || undefined
   const managementCompanyId = normalizeManagementCompanyIds(input.filters?.managementCompanyId)
-  const state = normalizeStateCodes(input.filters?.state)
+  const state = normalizeStateCodeFilter(input.filters?.state)
 
   const filters =
     managementCompanyId || state
