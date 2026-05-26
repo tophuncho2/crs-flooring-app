@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import type {
   CategoryOption,
@@ -50,6 +50,9 @@ export type InventoryHubStartingController = {
   selectProduct: (option: ProductOption | null) => void
   location: string | null
   selectLocation: (value: string | null) => void
+  /** Free-text search over the matched rows (debounced into the list query). */
+  search: string
+  onSearchChange: (next: string) => void
   resetSelections: () => void
   /** True once warehouse + category + product are all chosen. Gates the list. */
   listReady: boolean
@@ -93,30 +96,59 @@ export function useInventoryHubStartingController(
   const [productId, setProductId] = useState<string | null>(null)
   const [productLabel, setProductLabel] = useState<string | null>(null)
   const [location, setLocation] = useState<string | null>(null)
+  // Free-text search over the matched inventory rows — same identity columns
+  // (inv#/roll#/dye lot/note) the URL list view searches. Debounced into the
+  // query key so each keystroke doesn't refetch (mirrors the list view's 300ms).
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
 
-  const selectWarehouse = useCallback((option: WarehouseOption | null) => {
-    setWarehouseId(option?.id ?? null)
-    setWarehouseLabel(option?.name ?? null)
-    // Warehouse scopes location + the inventory set; cascade-clear downstream.
-    setCategoryId(null)
-    setCategoryLabel(null)
-    setProductId(null)
-    setProductLabel(null)
-    setLocation(null)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  // Reset both the live input and its debounced mirror in one shot so a stale
+  // term never lingers against a freshly-scoped list.
+  const clearSearch = useCallback(() => {
+    setSearch("")
+    setDebouncedSearch("")
   }, [])
 
-  const selectCategory = useCallback((option: CategoryOption | null) => {
-    setCategoryId(option?.id ?? null)
-    setCategoryLabel(option?.name ?? null)
-    // Product is category-scoped; clear it when the category changes.
-    setProductId(null)
-    setProductLabel(null)
-  }, [])
+  const selectWarehouse = useCallback(
+    (option: WarehouseOption | null) => {
+      setWarehouseId(option?.id ?? null)
+      setWarehouseLabel(option?.name ?? null)
+      // Warehouse scopes location + the inventory set; cascade-clear downstream.
+      setCategoryId(null)
+      setCategoryLabel(null)
+      setProductId(null)
+      setProductLabel(null)
+      setLocation(null)
+      clearSearch()
+    },
+    [clearSearch],
+  )
 
-  const selectProduct = useCallback((option: ProductOption | null) => {
-    setProductId(option?.id ?? null)
-    setProductLabel(option?.name ?? null)
-  }, [])
+  const selectCategory = useCallback(
+    (option: CategoryOption | null) => {
+      setCategoryId(option?.id ?? null)
+      setCategoryLabel(option?.name ?? null)
+      // Product is category-scoped; clear it when the category changes.
+      setProductId(null)
+      setProductLabel(null)
+      clearSearch()
+    },
+    [clearSearch],
+  )
+
+  const selectProduct = useCallback(
+    (option: ProductOption | null) => {
+      setProductId(option?.id ?? null)
+      setProductLabel(option?.name ?? null)
+      clearSearch()
+    },
+    [clearSearch],
+  )
 
   const selectLocation = useCallback((value: string | null) => {
     const trimmed = value?.trim() ?? ""
@@ -131,7 +163,8 @@ export function useInventoryHubStartingController(
     setProductId(null)
     setProductLabel(null)
     setLocation(null)
-  }, [])
+    clearSearch()
+  }, [clearSearch])
 
   const listReady =
     warehouseId !== null && categoryId !== null && productId !== null
@@ -144,9 +177,10 @@ export function useInventoryHubStartingController(
       warehouseId,
       productId,
       location,
+      debouncedSearch,
     ],
     queryFn: ({ pageParam, signal }) =>
-      searchInventoryOptionsRequest("", signal, {
+      searchInventoryOptionsRequest(debouncedSearch, signal, {
         warehouseId: warehouseId as string,
         ...(productId ? { productId } : {}),
         ...(location ? { location } : {}),
@@ -227,6 +261,8 @@ export function useInventoryHubStartingController(
     selectProduct,
     location,
     selectLocation,
+    search,
+    onSearchChange: setSearch,
     resetSelections,
     listReady,
     list,

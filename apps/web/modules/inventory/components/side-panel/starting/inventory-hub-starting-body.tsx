@@ -5,6 +5,7 @@ import {
   HubSidePanelScopedRow,
   HubSidePanelScrollList,
 } from "@/components/hub-side-panel"
+import { SearchControl } from "@/components/features/search"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
@@ -49,6 +50,8 @@ export function InventoryHubStartingBody({
     selectProduct,
     location,
     selectLocation,
+    search,
+    onSearchChange,
     listReady,
     list,
     openInventoryView,
@@ -110,29 +113,38 @@ export function InventoryHubStartingBody({
       </div>
 
       {listReady ? (
-        <div className="min-h-0 flex-1">
-          <HubSidePanelScrollList
-            title="Inventory"
-            hasData={hasData}
-            isEmpty={isEmpty}
-            isError={isError}
-            errorMessage="Could not load inventory."
-            loadingMessage="Loading inventory…"
-            emptyMessage="No inventory matches these filters."
-            hasMore={hasMore}
-            isFetchingMore={isFetchingMore}
-            onLoadMore={loadMore}
-          >
-            {rows.map((row) => (
-              <HubSidePanelScopedRow
-                key={row.id}
-                primary={row.inventoryItem}
-                secondary={rowSecondary(row.location, row.stockBalance, row.stockUnitAbbrev)}
-                onClick={() => openInventoryView(row.id)}
-                ariaLabel={`Open inventory ${row.inventoryItem}`}
-              />
-            ))}
-          </HubSidePanelScrollList>
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
+          <div className="shrink-0">
+            <SearchControl
+              query={search}
+              onQueryChange={onSearchChange}
+              placeholder="Search inventory item"
+            />
+          </div>
+          <div className="min-h-0 flex-1">
+            <HubSidePanelScrollList
+              title="Inventory"
+              hasData={hasData}
+              isEmpty={isEmpty}
+              isError={isError}
+              errorMessage="Could not load inventory."
+              loadingMessage="Loading inventory…"
+              emptyMessage="No inventory matches these filters."
+              hasMore={hasMore}
+              isFetchingMore={isFetchingMore}
+              onLoadMore={loadMore}
+            >
+              {rows.map((row) => (
+                <HubSidePanelScopedRow
+                  key={row.id}
+                  primary={row.inventoryItem}
+                  secondary={rowSecondary(row.location, row.stockBalance, row.stockUnitAbbrev)}
+                  onClick={() => openInventoryView(row.id)}
+                  ariaLabel={`Open inventory ${row.inventoryItem}`}
+                />
+              ))}
+            </HubSidePanelScrollList>
+          </div>
         </div>
       ) : (
         <p className="px-1 text-sm text-[var(--foreground)]/55">
