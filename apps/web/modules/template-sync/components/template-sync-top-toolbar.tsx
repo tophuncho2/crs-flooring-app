@@ -7,7 +7,6 @@ import {
 import { SidePanelPreviewOpenButton } from "@/components/side-panel-preview"
 import { TemplateSyncItemsSubHeader } from "@/modules/template-sync/components/header/template-sync-items-sub-header"
 import { TemplateSyncClearButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-clear-button"
-import { TemplateSyncNewButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-new-button"
 import { TemplateSyncOpenButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-open-button"
 import { TemplateSyncSyncButton } from "@/modules/template-sync/components/toolbar-controls/template-sync-sync-button"
 import type { TemplateSyncController } from "@/modules/template-sync/controllers/use-template-sync-controller"
@@ -38,13 +37,11 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
     headerCollapsed,
     toggleHeaderCollapsed,
     hasSelections,
-    canCreateForProperty,
     canActOnTemplate,
     canOpenHubView,
     errorMessage,
     resetSelections,
     handleOpenHubView,
-    handleCreate,
     handleOpen,
     handleSync,
   } = controller
@@ -62,10 +59,6 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
               disabled={!canOpenHubView || isSyncing}
               onClick={handleOpenHubView}
               label="Open hub view"
-            />
-            <TemplateSyncNewButton
-              disabled={!canCreateForProperty || isSyncing}
-              onClick={handleCreate}
             />
             <TemplateSyncOpenButton
               disabled={!canActOnTemplate || isSyncing}

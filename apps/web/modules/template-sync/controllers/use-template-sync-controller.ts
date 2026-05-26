@@ -70,7 +70,6 @@ export type TemplateSyncController = {
 
   // ===== Derived flags =====
   canActOnTemplate: boolean
-  canCreateForProperty: boolean
   hasSelections: boolean
   canOpenHubView: boolean
 }
@@ -203,7 +202,6 @@ export function useTemplateSyncController(): TemplateSyncController {
   }, [isSyncing])
 
   const canActOnTemplate = templateId !== null
-  const canCreateForProperty = propertyId !== null
   const hasSelections =
     managementCompanyId !== null || propertyId !== null || templateId !== null
   const resolvedHubMcId =
@@ -219,14 +217,13 @@ export function useTemplateSyncController(): TemplateSyncController {
     router.push(`/dashboard/templates/${templateId}`)
   }, [templateId, resetSelections, router])
 
+  // Always available: opens a raw new-template form with no property/MC
+  // pre-linkage. Closing the panel discards the cascade selections.
   const handleCreate = useCallback(() => {
-    if (!propertyId) return
-    const params = new URLSearchParams({ propertyId })
-    if (managementCompanyId) params.set("managementCompanyId", managementCompanyId)
     setOpen(false)
     resetSelections()
-    router.push(`/dashboard/templates/new?${params.toString()}`)
-  }, [propertyId, managementCompanyId, resetSelections, router])
+    router.push("/dashboard/templates/new")
+  }, [resetSelections, router])
 
   const handleCreateHub = useCallback(() => {
     setOpen(false)
@@ -306,7 +303,6 @@ export function useTemplateSyncController(): TemplateSyncController {
     handleOpenTemplateRow,
     itemsController,
     canActOnTemplate,
-    canCreateForProperty,
     hasSelections,
     canOpenHubView,
   }

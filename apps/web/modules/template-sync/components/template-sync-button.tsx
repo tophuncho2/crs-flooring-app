@@ -1,7 +1,7 @@
 "use client"
 
 import { RefreshCw } from "lucide-react"
-import { HubSidePanelShell } from "@/components/hub-side-panel"
+import { HubSidePanelAddButton, HubSidePanelShell } from "@/components/hub-side-panel"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
 import { useTemplateSyncController } from "@/modules/template-sync/controllers/use-template-sync-controller"
 import { TemplateSyncBody } from "./template-sync-body"
@@ -15,7 +15,15 @@ import { TemplateSyncTopToolbar } from "./template-sync-top-toolbar"
 
 export function TemplateSyncButton() {
   const controller = useTemplateSyncController()
-  const { open, setOpen, handleClose, hubPanel, handleOpenTemplateRow } = controller
+  const {
+    open,
+    setOpen,
+    handleClose,
+    hubPanel,
+    handleOpenTemplateRow,
+    handleCreate,
+    handleCreateHub,
+  } = controller
 
   return (
     <>
@@ -41,6 +49,12 @@ export function TemplateSyncButton() {
         onClose={handleClose}
         title="Hub & template sync"
         topToolbar={<TemplateSyncTopToolbar controller={controller} />}
+        titleEnd={
+          <>
+            <HubSidePanelAddButton label="+template" onClick={handleCreate} />
+            <HubSidePanelAddButton onClick={handleCreateHub} />
+          </>
+        }
       >
         <TemplateSyncBody controller={controller} />
       </HubSidePanelShell>
