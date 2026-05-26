@@ -1,9 +1,11 @@
 "use client"
 
-import { normalizeAddressState, type ManagementCompanyForm } from "@builders/domain"
+import type { ManagementCompanyForm } from "@builders/domain"
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField } from "@/components/fields"
 import { TextCell } from "@/components/cells"
+import { HubSidePanelGroup } from "@/components/hub-side-panel"
+import { AddressEditCell } from "@/components/composites/address-fields/address-edit-cell"
 import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/property-hub-side-panel"
 
 /**
@@ -26,84 +28,52 @@ export function PropertyHubMcEditSection({
     }
 
   return (
-    <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Company Name" required>
-          <TextCell
-            editable={editable}
-            value={mcEditForm.name}
-            onChange={onText("name")}
-            placeholder="Company name"
-            ariaLabel="Company name"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Phone">
-          <TextCell
-            editable={editable}
-            value={mcEditForm.phone}
-            onChange={onText("phone")}
-            placeholder="Phone"
-            ariaLabel="Phone"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={4}>
-        <FormField label="Email">
-          <TextCell
-            editable={editable}
-            value={mcEditForm.email}
-            onChange={onText("email")}
-            placeholder="Email"
-            ariaLabel="Email"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Street Address">
-          <TextCell
-            editable={editable}
-            value={mcEditForm.streetAddress}
-            onChange={onText("streetAddress")}
-            placeholder="Street address"
-            ariaLabel="Street address"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
-        <FormField label="City">
-          <TextCell
-            editable={editable}
-            value={mcEditForm.city}
-            onChange={onText("city")}
-            placeholder="City"
-            ariaLabel="City"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={2}>
-        <FormField label="State">
-          <TextCell
-            editable={editable}
-            value={mcEditForm.state}
-            onChange={(value) => setMcEditField("state", normalizeAddressState(value))}
-            placeholder="ST"
-            ariaLabel="State"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={7} colSpan={2}>
-        <FormField label="Zip">
-          <TextCell
-            editable={editable}
-            value={mcEditForm.zip}
-            onChange={onText("zip")}
-            placeholder="Zip"
-            ariaLabel="Zip"
-          />
-        </FormField>
-      </CellAt>
-    </FieldSection>
+    <HubSidePanelGroup title="Management company">
+      <FieldSection gap="0.75rem">
+        <CellAt col={1} colSpan={8}>
+          <FormField label="Company Name" required>
+            <TextCell
+              editable={editable}
+              value={mcEditForm.name}
+              onChange={onText("name")}
+              placeholder="Company name"
+              ariaLabel="Company name"
+            />
+          </FormField>
+        </CellAt>
+        <CellAt col={1} colSpan={4}>
+          <FormField label="Phone">
+            <TextCell
+              editable={editable}
+              value={mcEditForm.phone}
+              onChange={onText("phone")}
+              placeholder="Phone"
+              ariaLabel="Phone"
+            />
+          </FormField>
+        </CellAt>
+        <CellAt col={5} colSpan={4}>
+          <FormField label="Email">
+            <TextCell
+              editable={editable}
+              value={mcEditForm.email}
+              onChange={onText("email")}
+              placeholder="Email"
+              ariaLabel="Email"
+            />
+          </FormField>
+        </CellAt>
+        <AddressEditCell
+          editable={editable}
+          value={{
+            streetAddress: mcEditForm.streetAddress,
+            city: mcEditForm.city,
+            state: mcEditForm.state,
+            zip: mcEditForm.zip,
+          }}
+          onChange={(field, value) => setMcEditField(field, value)}
+        />
+      </FieldSection>
+    </HubSidePanelGroup>
   )
 }

@@ -2,6 +2,7 @@
 
 import type { TemplateListRow } from "@builders/domain"
 import {
+  HubSidePanelRowOpenButton,
   HubSidePanelScopedRow,
   HubSidePanelScrollList,
 } from "@/components/hub-side-panel"
@@ -11,15 +12,18 @@ const EMPTY_CELL = "—"
 
 /**
  * Paginated templates under the active hub, optionally filtered by a single
- * property. Row clicks are routed to the consumer (the hub panel
- * orchestrator) so the row → navigation behavior stays the panel's concern.
+ * property. Clicking a row routes to the consumer (→ the sync panel); the
+ * trailing arrow opens the template record directly. Both behaviors are the
+ * panel's concern, passed in as handlers.
  */
 export function PropertyHubTemplatesListSection({
   controller,
   onOpenTemplate,
+  onOpenTemplateRecord,
 }: {
   controller: PropertyHubSidePanelController
   onOpenTemplate: (row: TemplateListRow) => void
+  onOpenTemplateRecord: (row: TemplateListRow) => void
 }) {
   const { templates } = controller
   const { hasData, isError, total, rows, hasMore, isFetchingMore, loadMore } = templates
@@ -44,15 +48,19 @@ export function PropertyHubTemplatesListSection({
         const jobType = (row.jobTypeName ?? "").trim()
         const secondary = [propertyName, jobType].filter((value) => value.length > 0).join(" · ")
         const description = row.description.trim()
-        const meta = `${row.itemsCount} ${row.itemsCount === 1 ? "item" : "items"}`
         return (
           <HubSidePanelScopedRow
             key={row.id}
             primary={unitType}
             secondary={secondary || description || null}
-            meta={meta}
             onClick={() => onOpenTemplate(row)}
             ariaLabel={`Open template ${unitType}`}
+            action={
+              <HubSidePanelRowOpenButton
+                onClick={() => onOpenTemplateRecord(row)}
+                ariaLabel={`Open template record ${unitType}`}
+              />
+            }
           />
         )
       })}

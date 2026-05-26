@@ -2,6 +2,7 @@
 
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { FRESH_ON_OPEN } from "@/query-policies"
 
 const DEFAULT_DEBOUNCE_MS = 250
 
@@ -150,7 +151,10 @@ export function useAsyncRichDropdownController<TOption>(
     enabled: queryEnabled,
     placeholderData: keepPreviousData,
     initialData: seededInitialData,
-    staleTime: 30_000,
+    // Fresh on every open: pickers re-fetch when re-opened so newly
+    // created/edited records show up instead of a cached snapshot. The
+    // seeded/previous data still paints instantly while the refetch runs.
+    ...FRESH_ON_OPEN,
   })
 
   const flatOptions = useMemo(() => {

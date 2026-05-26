@@ -67,6 +67,7 @@ export function PropertyHubSidePanel({
     propertyEditMcLabel,
     mcMode,
     mcLinkLabel,
+    mcLinkId,
     isDirty,
     isSaving,
     canSave,
@@ -152,6 +153,11 @@ export function PropertyHubSidePanel({
               placeholder="Link existing company"
               disabled={linkDisabled}
               ariaLabel="Link management company"
+              onOpenLinked={() => {
+                if (mcLinkId) openForMcEditById(mcLinkId)
+              }}
+              openLinkedAriaLabel="Open management company"
+              openLinkedDisabled={isSaving}
             />
           </label>
         </HubSidePanelEditLayout>
@@ -251,6 +257,7 @@ export function PropertyHubSidePanel({
     openForMcEditById,
     mcMode,
     mcLinkLabel,
+    mcLinkId,
     goToProperties,
     goToTemplates,
     openPicker,
@@ -315,6 +322,9 @@ export function PropertyHubSidePanel({
               <PropertyHubTemplatesListSection
                 controller={controller}
                 onOpenTemplate={handleOpenTemplate}
+                onOpenTemplateRecord={(row) =>
+                  router.push(`/dashboard/templates/${row.id}`)
+                }
               />
             </div>
           </div>

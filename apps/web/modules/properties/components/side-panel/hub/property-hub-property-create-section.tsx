@@ -1,13 +1,12 @@
 "use client"
 
-import { normalizeAddressState, type PropertyHubPropertyFields } from "@builders/domain"
+import type { PropertyHubPropertyFields } from "@builders/domain"
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField } from "@/components/fields"
 import { TextCell, TextareaCell } from "@/components/cells"
+import { HubSidePanelGroup } from "@/components/hub-side-panel"
+import { AddressEditCell } from "@/components/composites/address-fields/address-edit-cell"
 import type { PropertyHubSidePanelController } from "@/modules/properties/controllers/property-hub-side-panel"
-
-const SECTION_HEADER_CLASS =
-  "text-xs font-semibold uppercase tracking-wide text-[var(--panel-foreground-muted,_var(--foreground))]/65"
 
 /**
  * Create-mode property half of the unified hub side panel. Standard 8-col
@@ -30,8 +29,7 @@ export function PropertyHubPropertyCreateSection({
     }
 
   return (
-    <section className="flex flex-col gap-2">
-      <div className={SECTION_HEADER_CLASS}>Property</div>
+    <HubSidePanelGroup title="Property">
       <FieldSection gap="0.75rem">
         <CellAt col={1} colSpan={8}>
           <FormField label="Property Name">
@@ -66,50 +64,17 @@ export function PropertyHubPropertyCreateSection({
             />
           </FormField>
         </CellAt>
-        <CellAt col={1} colSpan={8}>
-          <FormField label="Street Address">
-            <TextCell
-              editable={!propertyDisabled}
-              value={propertyForm.streetAddress}
-              onChange={onPropertyText("streetAddress")}
-              placeholder="Street address"
-              ariaLabel="Property street address"
-            />
-          </FormField>
-        </CellAt>
-        <CellAt col={1} colSpan={4}>
-          <FormField label="City">
-            <TextCell
-              editable={!propertyDisabled}
-              value={propertyForm.city}
-              onChange={onPropertyText("city")}
-              placeholder="City"
-              ariaLabel="Property city"
-            />
-          </FormField>
-        </CellAt>
-        <CellAt col={5} colSpan={2}>
-          <FormField label="State">
-            <TextCell
-              editable={!propertyDisabled}
-              value={propertyForm.state}
-              onChange={(value) => setPropertyField("state", normalizeAddressState(value))}
-              placeholder="ST"
-              ariaLabel="Property state"
-            />
-          </FormField>
-        </CellAt>
-        <CellAt col={7} colSpan={2}>
-          <FormField label="Zip">
-            <TextCell
-              editable={!propertyDisabled}
-              value={propertyForm.zip}
-              onChange={onPropertyText("zip")}
-              placeholder="Zip"
-              ariaLabel="Property zip"
-            />
-          </FormField>
-        </CellAt>
+        <AddressEditCell
+          editable={!propertyDisabled}
+          ariaPrefix="Property"
+          value={{
+            streetAddress: propertyForm.streetAddress,
+            city: propertyForm.city,
+            state: propertyForm.state,
+            zip: propertyForm.zip,
+          }}
+          onChange={(field, value) => setPropertyField(field, value)}
+        />
         <CellAt col={1} colSpan={8}>
           <FormField label="Instructions">
             <TextareaCell
@@ -123,6 +88,6 @@ export function PropertyHubPropertyCreateSection({
           </FormField>
         </CellAt>
       </FieldSection>
-    </section>
+    </HubSidePanelGroup>
   )
 }

@@ -12,6 +12,7 @@ import {
   PROPERTY_DETAIL_QUERY_KEY,
   getPropertyDetailRequest,
 } from "@/modules/properties/data/property-detail-request"
+import { FRESH_ON_OPEN } from "@/query-policies"
 import { EMPTY_PROPERTY_PRIMARY_FORM, propertyFormIsDirty } from "./form"
 import { useDeletePropertyMutation, useUpdatePropertyMutation } from "./mutations"
 
@@ -145,6 +146,7 @@ export function useHubPropertyEdit({
     queryFn: () => getPropertyDetailRequest(editingPropertyId as string),
     enabled: editingPropertyId !== null,
     refetchOnWindowFocus: false,
+    ...FRESH_ON_OPEN,
   })
 
   // Reconcile from server detail — derived during render. Preserves user edits,

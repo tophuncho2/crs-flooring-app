@@ -6,6 +6,7 @@ import {
   MANAGEMENT_COMPANY_DETAIL_QUERY_KEY,
   getManagementCompanyDetailRequest,
 } from "@/modules/management-companies/data/management-company-detail-request"
+import { FRESH_ON_OPEN } from "@/query-policies"
 
 export function usePropertyHubDetailQuery(managementCompanyId: string | null) {
   return useQuery<ManagementCompanyDetail>({
@@ -13,5 +14,6 @@ export function usePropertyHubDetailQuery(managementCompanyId: string | null) {
     queryFn: () => getManagementCompanyDetailRequest(managementCompanyId as string),
     enabled: managementCompanyId !== null,
     refetchOnWindowFocus: false,
+    ...FRESH_ON_OPEN,
   })
 }

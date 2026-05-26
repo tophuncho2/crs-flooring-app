@@ -7,6 +7,7 @@ import {
   PROPERTIES_LIST_QUERY_KEY,
   listPropertiesRequest,
 } from "@/modules/properties/data/list-properties-request"
+import { FRESH_ON_OPEN } from "@/query-policies"
 
 export type PropertyHubPropertiesController = {
   total: number
@@ -32,6 +33,7 @@ export function usePropertyHubPropertiesQuery(
   managementCompanyId: string | null,
 ): PropertyHubPropertiesController {
   const query = useInfiniteQuery({
+    ...FRESH_ON_OPEN,
     enabled: managementCompanyId !== null,
     queryKey: [...PROPERTIES_LIST_QUERY_KEY, "hub-view", managementCompanyId],
     queryFn: ({ pageParam }) =>

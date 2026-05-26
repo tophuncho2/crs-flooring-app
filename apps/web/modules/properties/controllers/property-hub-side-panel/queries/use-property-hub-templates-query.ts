@@ -7,6 +7,7 @@ import {
   TEMPLATES_LIST_QUERY_KEY,
   listTemplatesRequest,
 } from "@/modules/templates/data/list-templates-request"
+import { FRESH_ON_OPEN } from "@/query-policies"
 
 export type PropertyHubTemplatesController = {
   total: number
@@ -33,6 +34,7 @@ export function usePropertyHubTemplatesQuery(
   selectedPropertyId: string | null,
 ): PropertyHubTemplatesController {
   const query = useInfiniteQuery({
+    ...FRESH_ON_OPEN,
     enabled: managementCompanyId !== null,
     queryKey: [
       ...TEMPLATES_LIST_QUERY_KEY,

@@ -33,6 +33,14 @@ export {
   HubSidePanelHubViewButton,
   type HubSidePanelHubViewButtonProps,
 } from "./hub-side-panel-hub-view-button"
+export {
+  HubSidePanelGroup,
+  type HubSidePanelGroupProps,
+} from "./hub-side-panel-group"
+export {
+  HubSidePanelRowOpenButton,
+  type HubSidePanelRowOpenButtonProps,
+} from "./hub-side-panel-row-open-button"
 export { HubSidePanelPickerTrigger } from "./hub-side-panel-picker-trigger"
 export type { HubSidePanelPickerTriggerProps } from "./hub-side-panel-picker-trigger"
 export {
