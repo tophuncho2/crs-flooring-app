@@ -75,6 +75,12 @@ export function useInventoryHubSidePanel({
   onInventoryUpdated,
 }: UseInventoryHubSidePanelOptions) {
   const [mode, setMode] = useState<HubMode>({ kind: "closed" })
+  // View-mode sub-tab: the cells card ("inventory") vs the cut-logs list
+  // ("cutLogs"), flipped by the view switcher's chevrons. Cut logs live on
+  // their own tab so the list gets the full panel body height (the stacked
+  // layout starved it). Persists across a section-edit round-trip so backing
+  // out of a cut-log edit returns to the Cut Logs tab; resets on a fresh open.
+  const [viewTab, setViewTab] = useState<"inventory" | "cutLogs">("inventory")
   const [error, setError] = useState<RecordSectionError | null>(null)
   const clearError = useCallback(() => setError(null), [])
   const setErrorMessage = useCallback(
@@ -242,10 +248,14 @@ export function useInventoryHubSidePanel({
       if (targetId === null) return
       resetAll()
       setOpenId(targetId)
+      setViewTab("inventory")
       setMode({ kind: "view", inventoryId: targetId })
     },
     [initialInventory?.id, resetAll],
   )
+
+  const goToInventoryView = useCallback(() => setViewTab("inventory"), [])
+  const goToCutLogsView = useCallback(() => setViewTab("cutLogs"), [])
 
   // External opener that lands directly in cut-log edit. Accepts the
   // broader `CutLogPanelRow` shape so both call sites can hand off
@@ -337,6 +347,9 @@ export function useInventoryHubSidePanel({
     // ===== Modal state =====
     isOpen,
     mode,
+    viewTab,
+    goToInventoryView,
+    goToCutLogsView,
     cutLogPickerKind: cutLogPickerTakeover.pickerKind,
 
     // ===== Openers =====

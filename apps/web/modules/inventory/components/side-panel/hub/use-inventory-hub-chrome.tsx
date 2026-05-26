@@ -56,6 +56,9 @@ export function useInventoryHubChrome(
   const { onBackToStarting } = options
   const {
     mode,
+    viewTab,
+    goToInventoryView,
+    goToCutLogsView,
     cutLogPickerKind,
     inventory,
     cutLogPanel,
@@ -174,24 +177,31 @@ export function useInventoryHubChrome(
       )
     }
     if (effectiveModeKind === "view") {
-      // Property-hub parity: a centered view switcher whose left chevron pops
-      // back to the starting-spot cascade. There is no sibling view yet, so
-      // the right chevron stays disabled (reserved).
+      // Two-tab view switcher: Inventory (cells) ⟷ Cut Logs (list). On the
+      // Inventory tab the left chevron pops back to the starting-spot cascade;
+      // on the Cut Logs tab it returns to the Inventory cells. Mirrors the
+      // property hub's Properties ⟷ Templates switch.
+      const isCutLogs = viewTab === "cutLogs"
       return (
         <HubSidePanelViewSwitcher
-          label="Inventory"
-          prevDisabled={!onBackToStarting}
-          nextDisabled
-          onGoPrev={onBackToStarting ?? (() => {})}
-          onGoNext={() => {}}
-          prevAriaLabel="Back to inventory hub filters"
-          nextAriaLabel="No further view"
+          label={isCutLogs ? "Cut Logs" : "Inventory"}
+          prevDisabled={isCutLogs ? false : !onBackToStarting}
+          nextDisabled={isCutLogs}
+          onGoPrev={
+            isCutLogs ? goToInventoryView : (onBackToStarting ?? (() => {}))
+          }
+          onGoNext={isCutLogs ? () => {} : goToCutLogsView}
+          prevAriaLabel={isCutLogs ? "Show inventory" : "Back to inventory hub filters"}
+          nextAriaLabel={isCutLogs ? "No further view" : "Show cut logs"}
         />
       )
     }
     return null
   }, [
     effectiveModeKind,
+    viewTab,
+    goToInventoryView,
+    goToCutLogsView,
     isDirty,
     isSaving,
     canSave,

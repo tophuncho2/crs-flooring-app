@@ -47,6 +47,7 @@ export function InventoryHubSidePanel({
   const {
     isOpen,
     mode,
+    viewTab,
     inventory,
     close,
     isLoadingInventory,
@@ -69,12 +70,13 @@ export function InventoryHubSidePanel({
     effectiveModeKind === "section-edit-cut-log"
 
   // Fetched callers (e.g. work-orders) may render before the inventory
-  // detail query resolves. Show loading / error placeholders for view +
-  // inventory-edit modes; cut-log edit mode does not depend on the
-  // inventory snapshot (the row carries everything it needs) so it
-  // renders normally even while the cells query is in flight.
+  // detail query resolves. Show loading / error placeholders only where the
+  // inventory snapshot is actually required: the Inventory cells tab and
+  // section-edit-inventory. The Cut Logs tab + cut-log edit don't depend on
+  // the snapshot (the rows carry everything they need).
   const needsInventory =
-    mode.kind === "view" || mode.kind === "section-edit-inventory"
+    (mode.kind === "view" && viewTab === "inventory") ||
+    mode.kind === "section-edit-inventory"
   const showLoadingPlaceholder = needsInventory && !inventory && isLoadingInventory
   const showErrorPlaceholder = needsInventory && !inventory && isErrorInventory
 
@@ -97,14 +99,15 @@ export function InventoryHubSidePanel({
       ) : showErrorPlaceholder ? (
         <p className="px-1 text-sm text-rose-700">Could not load inventory.</p>
       ) : mode.kind === "view" ? (
-        <div className="flex h-full min-h-0 flex-col gap-5">
-          <div className="shrink-0">
-            <InventoryHubViewSection controller={controller} />
+        viewTab === "cutLogs" ? (
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="min-h-0 flex-1">
+              <InventoryHubCutLogsListSection controller={controller} />
+            </div>
           </div>
-          <div className="min-h-0 flex-1">
-            <InventoryHubCutLogsListSection controller={controller} />
-          </div>
-        </div>
+        ) : (
+          <InventoryHubViewSection controller={controller} />
+        )
       ) : mode.kind === "section-edit-inventory" ? (
         <InventoryHubInventoryEditSection controller={controller} />
       ) : mode.kind === "section-edit-cut-log" ? (

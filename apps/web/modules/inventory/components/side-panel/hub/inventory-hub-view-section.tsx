@@ -3,9 +3,7 @@
 import { useMemo, type KeyboardEvent } from "react"
 import { toInventoryForm } from "@builders/domain"
 import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
-import { InventoryInternalGroup } from "../../record/primary/groups/inventory-internal-group"
-import { InventoryProductGroup } from "../../record/primary/groups/inventory-product-group"
-import { InventoryStockGroup } from "../../record/primary/groups/inventory-stock-group"
+import { InventoryDetailsGroup } from "../../record/primary/groups/inventory-details-group"
 
 const NOOP = () => {}
 
@@ -50,22 +48,13 @@ export function InventoryHubViewSection({
       aria-label="Edit inventory"
       className="cursor-pointer rounded-md border border-transparent p-2 transition hover:border-blue-500/40 hover:bg-blue-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
     >
-      <div className="flex flex-col gap-4">
-        <InventoryStockGroup
-          editable={false}
-          inventory={inventory}
-          draft={draft}
-          warehouseName={warehouseName}
-          onFieldChange={NOOP}
-        />
-        <InventoryProductGroup inventory={inventory} />
-        <InventoryInternalGroup
-          editable={false}
-          inventory={inventory}
-          draft={draft}
-          onFieldChange={NOOP}
-        />
-      </div>
+      <InventoryDetailsGroup
+        editable={false}
+        inventory={inventory}
+        draft={draft}
+        warehouseName={warehouseName}
+        onFieldChange={NOOP}
+      />
     </div>
   )
 }
