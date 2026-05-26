@@ -7,9 +7,9 @@ import { useInventoryListMutations } from "@/modules/inventory/controllers/list/
 
 /**
  * Editable draft for the duplicate-inventory flow — the five fields the user
- * can change. `rollNumber` / `note` / `startingStock` are seeded from the
- * source row; `location` / `internalNotes` start blank. Everything else on the
- * new row is pasted server-side from the source.
+ * can change. `rollNumber` / `note` are seeded from the source row;
+ * `startingStock` / `location` / `internalNotes` start blank. Everything else
+ * on the new row is pasted server-side from the source.
  */
 export type InventoryDuplicateForm = {
   rollNumber: string
