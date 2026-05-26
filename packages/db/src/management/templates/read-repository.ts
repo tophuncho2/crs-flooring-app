@@ -146,6 +146,18 @@ export async function listTemplates(
   return templates.map(normalizeTemplateListRow)
 }
 
+// Picker/dropdown option projection. Carries jobType name + material-item
+// count so every template dropdown can render the canonical card
+// (unitType / jobType / description / "N items"). Mirrors the list select's
+// jobType + _count shape.
+const templateOptionSelect = {
+  id: true,
+  unitType: true,
+  description: true,
+  jobType: { select: { name: true } },
+  _count: { select: { items: true } },
+} as const
+
 export async function listTemplateOptions(
   client: TemplatesDbClient = db,
 ): Promise<TemplateOption[]> {
@@ -156,7 +168,7 @@ export async function listTemplateOptions(
       { createdAt: "asc" },
       { id: "asc" },
     ],
-    select: { id: true, unitType: true, description: true },
+    select: templateOptionSelect,
   })
 
   return templates.map(normalizeTemplateOption)
@@ -196,7 +208,7 @@ export async function searchTemplateOptions(
     orderBy: [{ unitType: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     skip: args.skip ?? 0,
     take: args.take + 1,
-    select: { id: true, unitType: true, description: true },
+    select: templateOptionSelect,
   })
 
   const hasMore = rows.length > args.take

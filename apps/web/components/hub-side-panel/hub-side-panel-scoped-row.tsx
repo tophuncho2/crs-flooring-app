@@ -5,6 +5,12 @@ import type { ReactNode } from "react"
 export type HubSidePanelScopedRowProps = {
   primary: ReactNode
   secondary?: ReactNode
+  /**
+   * Multiple stacked sub-lines (each its own truncated line). Takes
+   * precedence over `secondary` when non-empty — e.g. a template row's job
+   * type + description.
+   */
+  secondaryLines?: ReactNode[]
   meta?: ReactNode
   onClick: () => void
   ariaLabel?: string
@@ -38,6 +44,7 @@ const BUTTON_ACTION_RESERVE = "pr-12"
 export function HubSidePanelScopedRow({
   primary,
   secondary,
+  secondaryLines,
   meta,
   onClick,
   ariaLabel,
@@ -53,7 +60,16 @@ export function HubSidePanelScopedRow({
       >
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="truncate text-sm text-[var(--foreground)]/85">{primary}</span>
-          {secondary ? (
+          {secondaryLines && secondaryLines.length > 0 ? (
+            secondaryLines.map((line, lineIndex) => (
+              <span
+                key={lineIndex}
+                className="truncate text-xs text-[var(--foreground)]/55"
+              >
+                {line}
+              </span>
+            ))
+          ) : secondary ? (
             <span className="truncate text-xs text-[var(--foreground)]/55">{secondary}</span>
           ) : null}
         </div>

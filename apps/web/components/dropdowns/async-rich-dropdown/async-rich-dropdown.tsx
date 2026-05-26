@@ -80,6 +80,12 @@ export type AsyncRichDropdownProps = {
   hasMore?: boolean
   isFetchingMore?: boolean
   onLoadMore?: () => void
+  /**
+   * Render each subtitle on its own line instead of joining them with " · ".
+   * Opt-in so dropdowns that pack multiple parts into one line (inventory,
+   * cut logs) stay unchanged; template pickers use it for a stacked card.
+   */
+  stackSubtitles?: boolean
 }
 
 /**
@@ -117,6 +123,7 @@ export function AsyncRichDropdown({
   hasMore = false,
   isFetchingMore = false,
   onLoadMore,
+  stackSubtitles = false,
 }: AsyncRichDropdownProps) {
   const listboxId = useId()
   const [open, setOpen] = useState(false)
@@ -420,6 +427,11 @@ export function AsyncRichDropdown({
                             <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
                               {option.title}
                             </span>
+                            {option.meta ? (
+                              <span className="shrink-0 text-xs tabular-nums text-[var(--foreground)]/55">
+                                {option.meta}
+                              </span>
+                            ) : null}
                             {isSelected ? (
                               <span aria-hidden="true" className="text-xs text-sky-600">
                                 ✓
@@ -427,9 +439,20 @@ export function AsyncRichDropdown({
                             ) : null}
                           </div>
                           {option.subtitles && option.subtitles.length > 0 ? (
-                            <div className="mt-0.5 truncate text-xs text-[var(--foreground)]/55">
-                              {option.subtitles.join(" · ")}
-                            </div>
+                            stackSubtitles ? (
+                              option.subtitles.map((line, lineIndex) => (
+                                <div
+                                  key={`${lineIndex}:${line}`}
+                                  className="mt-0.5 truncate text-xs text-[var(--foreground)]/55"
+                                >
+                                  {line}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="mt-0.5 truncate text-xs text-[var(--foreground)]/55">
+                                {option.subtitles.join(" · ")}
+                              </div>
+                            )
                           ) : null}
                         </div>
                       )

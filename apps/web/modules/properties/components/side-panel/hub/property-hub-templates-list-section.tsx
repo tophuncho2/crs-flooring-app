@@ -1,6 +1,6 @@
 "use client"
 
-import type { TemplateListRow } from "@builders/domain"
+import { formatTemplateItemsCount, type TemplateListRow } from "@builders/domain"
 import {
   HubSidePanelRowOpenButton,
   HubSidePanelScopedRow,
@@ -44,15 +44,15 @@ export function PropertyHubTemplatesListSection({
     >
       {rows.map((row) => {
         const unitType = row.unitType.trim().length > 0 ? row.unitType : EMPTY_CELL
-        const propertyName = row.propertyName.trim()
-        const jobType = (row.jobTypeName ?? "").trim()
-        const secondary = [propertyName, jobType].filter((value) => value.length > 0).join(" · ")
-        const description = row.description.trim()
+        const secondaryLines = [row.jobTypeName, row.description].filter(
+          (value): value is string => Boolean(value && value.trim().length > 0),
+        )
         return (
           <HubSidePanelScopedRow
             key={row.id}
             primary={unitType}
-            secondary={secondary || description || null}
+            secondaryLines={secondaryLines}
+            meta={formatTemplateItemsCount(row.itemsCount)}
             onClick={() => onOpenTemplate(row)}
             ariaLabel={`Open template ${unitType}`}
             action={

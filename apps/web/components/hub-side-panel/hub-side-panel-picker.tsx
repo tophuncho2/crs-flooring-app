@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import type { AsyncRichDropdownControllerOutput } from "@/controllers/dropdown-search"
 
 const SEARCH_INPUT_CLASS_NAME =
@@ -16,6 +16,14 @@ export type HubSidePanelPickerOption = {
   id: string
   title: string
   subtitle?: string | null
+  /**
+   * Multiple stacked sub-lines, one per row. Takes precedence over
+   * `subtitle` when non-empty. Use for richer option cards (e.g. a template's
+   * job type + description).
+   */
+  subtitles?: string[]
+  /** Small trailing detail rendered by the title (e.g. an item count). */
+  meta?: ReactNode
 }
 
 export type HubSidePanelPickerProps<TOption> = {
@@ -246,13 +254,27 @@ export function HubSidePanelPicker<TOption>({
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
                       {option.title}
                     </span>
+                    {option.meta ? (
+                      <span className="shrink-0 text-xs tabular-nums text-[var(--foreground)]/55">
+                        {option.meta}
+                      </span>
+                    ) : null}
                     {isSelected ? (
                       <span aria-hidden="true" className="text-xs text-sky-500">
                         ✓
                       </span>
                     ) : null}
                   </div>
-                  {option.subtitle ? (
+                  {option.subtitles && option.subtitles.length > 0 ? (
+                    option.subtitles.map((line, lineIndex) => (
+                      <div
+                        key={`${lineIndex}:${line}`}
+                        className="mt-0.5 truncate text-xs text-[var(--foreground)]/55"
+                      >
+                        {line}
+                      </div>
+                    ))
+                  ) : option.subtitle ? (
                     <div className="mt-0.5 truncate text-xs text-[var(--foreground)]/55">
                       {option.subtitle}
                     </div>

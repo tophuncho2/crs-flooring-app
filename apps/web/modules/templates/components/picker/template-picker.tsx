@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import type { TemplateOption } from "@builders/domain"
+import { formatTemplateItemsCount, type TemplateOption } from "@builders/domain"
 import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
 import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
 import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
@@ -43,8 +43,15 @@ export type TemplatePickerProps = {
 }
 
 function toDropdownOption(option: TemplateOption): AsyncRichDropdownOption {
-  const subtitles = option.description ? [option.description] : []
-  return { id: option.id, title: option.unitType || "—", subtitles }
+  const subtitles = [option.jobTypeName, option.description].filter(
+    (value): value is string => Boolean(value && value.trim().length > 0),
+  )
+  return {
+    id: option.id,
+    title: option.unitType || "—",
+    subtitles,
+    meta: formatTemplateItemsCount(option.itemsCount),
+  }
 }
 
 export function TemplatePicker({
@@ -133,6 +140,7 @@ export function TemplatePicker({
       hasMore={controller.hasMore}
       isFetchingMore={controller.isFetchingMore}
       onLoadMore={controller.loadMore}
+      stackSubtitles
     />
   )
 }

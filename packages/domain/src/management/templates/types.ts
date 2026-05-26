@@ -32,7 +32,9 @@ export type TemplateDetail = TemplateListRow & {
 export type TemplateOption = {
   id: string
   unitType: string
+  jobTypeName: string | null
   description: string | null
+  itemsCount: number
 }
 
 // Side-panel preview header: the stable per-template snapshot rendered above

@@ -7,5 +7,7 @@ export type AsyncRichDropdownOption = {
   id: string
   title: string
   subtitles?: string[]
+  /** Small trailing detail rendered by the title (e.g. an item count). */
+  meta?: string
   disabled?: boolean
 }

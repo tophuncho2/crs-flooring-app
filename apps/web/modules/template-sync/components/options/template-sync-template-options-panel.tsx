@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import type { TemplateOption } from "@builders/domain"
+import { formatTemplateItemsCount, type TemplateOption } from "@builders/domain"
 import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
 import {
   TEMPLATE_OPTIONS_QUERY_KEY,
@@ -16,7 +16,10 @@ function toOption(option: TemplateOption): HubSidePanelPickerOption {
   return {
     id: option.id,
     title: option.unitType || "—",
-    subtitle: option.description || null,
+    subtitles: [option.jobTypeName, option.description].filter(
+      (value): value is string => Boolean(value && value.trim().length > 0),
+    ),
+    meta: formatTemplateItemsCount(option.itemsCount),
   }
 }
 

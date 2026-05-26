@@ -132,10 +132,14 @@ export function normalizeTemplateOption(template: {
   id: string
   unitType: string
   description: string | null
+  jobType: { name: string } | null
+  _count: { items: number }
 }): TemplateOption {
   return {
     id: template.id,
     unitType: template.unitType,
+    jobTypeName: template.jobType?.name ?? null,
     description: template.description,
+    itemsCount: template._count.items,
   }
 }
