@@ -1,3 +1,5 @@
+import { formatEasternDateTime } from "../../shared/date-format.js"
+
 export function parseInventoryDecimal(value: string): number {
   const numeric = Number(value)
   return Number.isFinite(numeric) ? numeric : 0
@@ -67,22 +69,12 @@ export function composeInventoryItem(input: ComposeInventoryItemInput): string {
   return parts.filter((part) => part.length > 0).join(INVENTORY_ITEM_SEPARATOR)
 }
 
-const FIFO_EASTERN_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-})
-
 /**
  * Formats a `fifoReceivedAt` timestamp (UTC-stored TIMESTAMPTZ) as Eastern
- * Time wall-clock for list/record displays. Format: `MM/DD/YYYY, HH:MM`.
+ * Time wall-clock for list/record displays. Format: `Mon D, YYYY, h:mm AM/PM ET`
+ * (e.g. `May 27, 2026, 3:45 PM EDT`). Delegates to the shared time-column
+ * primitive so it stays in lockstep with other timestamp displays.
  */
 export function formatFifoReceivedAtEastern(value: Date | string): string {
-  const date = typeof value === "string" ? new Date(value) : value
-  if (Number.isNaN(date.getTime())) return ""
-  return FIFO_EASTERN_FORMATTER.format(date)
+  return formatEasternDateTime(value)
 }

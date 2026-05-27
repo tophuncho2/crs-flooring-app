@@ -34,6 +34,34 @@ export function formatStableDateTime(value: string | Date) {
   return stableDateTimeFormatter.format(toStableDate(value))
 }
 
+// Eastern wall-clock display for operational timestamps (received-at, cut times,
+// record created/updated). Pinned to America/New_York so every viewer sees the
+// same warehouse-local time and SSR == CSR. timeZoneName "short" => EDT / EST.
+const easternDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+  timeZoneName: "short",
+})
+
+/**
+ * Formats an operational timestamp as Eastern wall-clock for display, e.g.
+ * `May 27, 2026, 3:45 PM EDT`. Single source of truth for time columns so they
+ * read identically for every viewer regardless of browser timezone. Returns ""
+ * for null / undefined / empty / unparseable input; callers add their own empty
+ * placeholder (e.g. "—") if desired.
+ */
+export function formatEasternDateTime(value: string | Date | null | undefined): string {
+  if (value === null || value === undefined || value === "") return ""
+  const date = toStableDate(value)
+  if (Number.isNaN(date.getTime())) return ""
+  return easternDateTimeFormatter.format(date)
+}
+
 /**
  * Projects an ISO timestamp / Date / null into the `YYYY-MM-DD` shape an
  * `<input type="date">` element accepts. Returns `""` for null, undefined,
