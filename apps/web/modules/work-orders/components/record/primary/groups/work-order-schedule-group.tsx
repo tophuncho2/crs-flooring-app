@@ -13,9 +13,10 @@ import { WorkOrderGroup } from "./work-order-group"
 
 /**
  * Group 1: Schedule. Left column stacks Warehouse → Scheduled For →
- * Job Type → Description. Right column is intentionally empty (visual
- * breathing room). The complete-status chip sits in the group header
- * next to the "Schedule" tab.
+ * Job Type → Description. Right column holds Status, sitting beside
+ * Warehouse — shown only after the WO exists (empty in the create flow).
+ * The complete-status chip sits in the group header next to the
+ * "Schedule" tab.
  */
 export function WorkOrderScheduleGroup({
   editable,
@@ -74,6 +75,21 @@ export function WorkOrderScheduleGroup({
               <StaticFieldValue>{detail?.jobTypeName ?? "—"}</StaticFieldValue>
             )}
           </WorkOrderField>
+          <WorkOrderField
+            label="Description"
+            editable={editable}
+            currentLength={draft.description.length}
+            maxLength={WO_DESCRIPTION_MAX}
+          >
+            <TextCell
+              editable={editable}
+              value={draft.description}
+              onChange={(value) => onFieldChange("description", value)}
+              maxLength={WO_DESCRIPTION_MAX}
+            />
+          </WorkOrderField>
+        </div>
+        <div className="flex flex-col gap-3">
           {/* Status is set only after the WO exists — hidden in the create
               flow (detail === null), where it defaults to none. */}
           {detail ? (
@@ -91,21 +107,7 @@ export function WorkOrderScheduleGroup({
               )}
             </WorkOrderField>
           ) : null}
-          <WorkOrderField
-            label="Description"
-            editable={editable}
-            currentLength={draft.description.length}
-            maxLength={WO_DESCRIPTION_MAX}
-          >
-            <TextCell
-              editable={editable}
-              value={draft.description}
-              onChange={(value) => onFieldChange("description", value)}
-              maxLength={WO_DESCRIPTION_MAX}
-            />
-          </WorkOrderField>
         </div>
-        <div />
       </div>
     </WorkOrderGroup>
   )
