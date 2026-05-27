@@ -107,7 +107,7 @@ function buildWorkOrdersOrderBy(
     scheduledFor: { scheduledFor: direction },
     unitNumber: { unitNumber: direction },
     unitType: { unitType: direction },
-    status: { status: direction },
+    status: { status: { name: direction } },
     isComplete: { isComplete: direction },
   }
 

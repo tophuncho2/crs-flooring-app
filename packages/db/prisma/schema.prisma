@@ -89,11 +89,6 @@ enum FlooringVacancyStatus {
   OCCUPIED
 }
 
-enum FlooringChangeOrderStatus {
-  SHORTAGE
-  SUFFICIENT
-}
-
 enum FlooringStagedRowStatus {
   DRAFT
   QUEUED
@@ -105,14 +100,6 @@ enum FlooringCutLogStatus {
   QUEUED
   FINAL
   VOID
-}
-
-enum FlooringWorkOrderStatus {
-  IDLE
-  QUEUED
-  WORKING
-  COMPLETED
-  FAILED
 }
 
 enum FlooringWorkOrderItemStatus {
@@ -538,7 +525,8 @@ model FlooringWorkOrder {
   warehouseId          String?
   warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   isComplete           Boolean                    @default(false) @map("is_complete")
-  status               FlooringWorkOrderStatus    @default(IDLE)
+  statusId             String?                    @map("status_id")
+  status               FlooringWorkOrderStatus?   @relation(fields: [statusId], references: [id], onDelete: SetNull)
   vacancy              FlooringVacancyStatus?
   scheduledFor         DateTime?                  @db.Date
   unitNumber           String?                    @db.VarChar(30)
@@ -554,7 +542,7 @@ model FlooringWorkOrder {
 
   @@index([workOrderNumber])
   @@index([isComplete])
-  @@index([status])
+  @@index([statusId])
   @@index([propertyId])
   @@index([templateId])
   @@index([managementCompanyId])
@@ -564,6 +552,18 @@ model FlooringWorkOrder {
   @@index([createdAt])
   @@index([updatedAt])
   @@map("flooring_work_order")
+}
+
+model FlooringWorkOrderStatus {
+  id         String              @id @default(uuid())
+  slug       String              @unique
+  name       String              @unique
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  workOrders FlooringWorkOrder[]
+
+  @@index([name])
+  @@map("flooring_work_order_status")
 }
 
 model FlooringWorkOrderItem {

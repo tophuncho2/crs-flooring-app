@@ -2,7 +2,6 @@ import type {
   WorkOrderDetail,
   WorkOrderListRow,
   WorkOrderOption,
-  WorkOrderStatus,
 } from "./types.js"
 
 type WorkOrderListInput = {
@@ -20,7 +19,8 @@ type WorkOrderListInput = {
   unitNumber: string | null
   unitType: string | null
   isComplete: boolean
-  status: WorkOrderStatus
+  statusId: string | null
+  status: { id: string; name: string } | null
   vacancy: "VACANT" | "OCCUPIED" | null
   scheduledFor: Date | string | null
   description: string | null
@@ -64,7 +64,8 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     unitNumber: workOrder.unitNumber ?? "",
     unitType: workOrder.unitType ?? "",
     isComplete: workOrder.isComplete,
-    status: workOrder.status,
+    statusId: workOrder.statusId,
+    statusName: workOrder.status?.name ?? null,
     vacancy: workOrder.vacancy,
     scheduledFor: toIsoDate(workOrder.scheduledFor),
     description: workOrder.description ?? "",

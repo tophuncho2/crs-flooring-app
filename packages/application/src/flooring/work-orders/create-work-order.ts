@@ -1,4 +1,9 @@
-import { Prisma, createWorkOrderRecord, withDatabaseTransaction } from "@builders/db"
+import {
+  Prisma,
+  createWorkOrderRecord,
+  getWorkOrderStatusIdBySlug,
+  withDatabaseTransaction,
+} from "@builders/db"
 import {
   WORK_ORDER_PROPERTY_REQUIRED_MESSAGE,
   WORK_ORDER_WAREHOUSE_REQUIRED_MESSAGE,
@@ -31,6 +36,10 @@ export async function createWorkOrderUseCase(
       })
     }
 
-    return createWorkOrderRecord(input, c)
+    // Every work order carries an explicit status; default new ones to
+    // "None" unless the caller picked one.
+    const statusId = input.statusId ?? (await getWorkOrderStatusIdBySlug("none", c))
+
+    return createWorkOrderRecord({ ...input, statusId }, c)
   })
 }

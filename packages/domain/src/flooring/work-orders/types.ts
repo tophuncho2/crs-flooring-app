@@ -1,5 +1,3 @@
-export type WorkOrderStatus = "IDLE" | "QUEUED" | "WORKING" | "COMPLETED" | "FAILED"
-
 export type WorkOrderListRow = {
   id: string
   workOrderNumber: string
@@ -15,7 +13,8 @@ export type WorkOrderListRow = {
   unitNumber: string
   unitType: string
   isComplete: boolean
-  status: WorkOrderStatus
+  statusId: string | null
+  statusName: string | null
   vacancy: "VACANT" | "OCCUPIED" | null
   scheduledFor: string
   description: string
@@ -57,6 +56,7 @@ export type WorkOrderForm = {
   installerInstructions: string
   scheduledFor: string
   isComplete: boolean
+  statusId: string
   vacancy: "VACANT" | "OCCUPIED" | ""
 }
 
@@ -74,5 +74,6 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   installerInstructions: "",
   scheduledFor: "",
   isComplete: false,
+  statusId: "",
   vacancy: "",
 }

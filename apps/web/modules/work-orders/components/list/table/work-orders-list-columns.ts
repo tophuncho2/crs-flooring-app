@@ -18,5 +18,6 @@ export const WORK_ORDERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WorkOrderLi
   { key: "vacancy", label: "Vacancy" },
   { key: "unitNumber", label: "Unit #" },
   { key: "unitType", label: "Unit Type" },
+  { key: "status", label: "Status" },
   { key: "isComplete", label: "Complete" },
 ]

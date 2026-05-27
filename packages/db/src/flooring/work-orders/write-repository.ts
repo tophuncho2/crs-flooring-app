@@ -14,6 +14,7 @@ export type CreateWorkOrderRecordInput = {
   managementCompanyId: string | null
   jobTypeId: string | null
   warehouseId: string | null
+  statusId?: string | null
   unitNumber?: string | null
   unitType?: string | null
   customAddress?: string | null

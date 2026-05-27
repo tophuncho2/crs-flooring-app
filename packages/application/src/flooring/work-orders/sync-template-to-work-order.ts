@@ -2,6 +2,7 @@ import {
   Prisma,
   createWorkOrderFromTemplateRecord,
   getTemplateById,
+  getWorkOrderStatusIdBySlug,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
@@ -66,6 +67,9 @@ export async function syncTemplateToWorkOrderUseCase(
       })
     }
 
+    // Template-created work orders also default to the "None" status.
+    const statusId = await getWorkOrderStatusIdBySlug("none", c)
+
     return createWorkOrderFromTemplateRecord(
       {
         workOrder: {
@@ -74,6 +78,7 @@ export async function syncTemplateToWorkOrderUseCase(
           managementCompanyId: template.managementCompanyId,
           jobTypeId: template.jobTypeId,
           warehouseId: template.warehouseId,
+          statusId,
           unitType: template.unitType ? template.unitType : null,
           description: template.description ? template.description : null,
           // installerInstructions are installer-facing copy that survives

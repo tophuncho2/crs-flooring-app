@@ -160,6 +160,8 @@ export function WorkOrderRecordPanel({
                     templateUnitType: controller.record.unitType,
                     jobTypeId: controller.record.jobTypeId,
                     jobTypeName: controller.record.jobTypeName,
+                    statusId: controller.record.statusId,
+                    statusName: controller.record.statusName,
                     warehouseId: controller.record.warehouseId,
                     warehouseName: controller.record.warehouseName,
                   }}

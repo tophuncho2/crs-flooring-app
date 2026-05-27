@@ -18,6 +18,8 @@ export type WorkOrderPrimaryDetail = {
   templateUnitType: string
   jobTypeId: string | null
   jobTypeName: string | null
+  statusId: string | null
+  statusName: string | null
   warehouseId: string | null
   warehouseName: string
 }
