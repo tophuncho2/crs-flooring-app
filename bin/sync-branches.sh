@@ -43,8 +43,10 @@ fail()   { printf "\033[1;31m✗ %s\033[0m\n" "$*" >&2; }
 # Prints the path, or nothing if the branch is not checked out in any worktree.
 worktree_path_for() {
   local branch="$1"
+  # NB: a worktree path may contain spaces (e.g. ".../Code Projects/..."), so
+  # take everything after the "worktree " prefix rather than the 2nd field.
   git worktree list --porcelain | awk -v ref="refs/heads/$branch" '
-    $1 == "worktree" { path = $2 }
+    /^worktree / { path = substr($0, 10) }
     $1 == "branch" && $2 == ref { print path; exit }
   '
 }
