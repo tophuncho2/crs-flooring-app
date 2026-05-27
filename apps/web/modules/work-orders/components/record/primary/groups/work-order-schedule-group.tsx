@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { DateCell, TextCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
@@ -26,6 +27,36 @@ export function WorkOrderScheduleGroup({
   detail: WorkOrderPrimaryDetail | null
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
 }) {
+  // Local label snapshots so the picker triggers show the just-picked name
+  // immediately, before the section save reconciles a fresh `detail`. Each
+  // resets at render time when its bound detail id changes (previous-value
+  // tracking) so the next record's saved name shows without a post-commit
+  // effect — mirrors the MC/Property pickers in WorkOrderPropertyUnitGroup.
+  const [pickedWarehouseLabel, setPickedWarehouseLabel] = useState<string | null>(null)
+  const [trackedWarehouseId, setTrackedWarehouseId] = useState(detail?.warehouseId)
+  if (trackedWarehouseId !== detail?.warehouseId) {
+    setTrackedWarehouseId(detail?.warehouseId)
+    setPickedWarehouseLabel(null)
+  }
+
+  const [pickedJobTypeLabel, setPickedJobTypeLabel] = useState<string | null>(null)
+  const [trackedJobTypeId, setTrackedJobTypeId] = useState(detail?.jobTypeId)
+  if (trackedJobTypeId !== detail?.jobTypeId) {
+    setTrackedJobTypeId(detail?.jobTypeId)
+    setPickedJobTypeLabel(null)
+  }
+
+  const [pickedStatusLabel, setPickedStatusLabel] = useState<string | null>(null)
+  const [trackedStatusId, setTrackedStatusId] = useState(detail?.statusId)
+  if (trackedStatusId !== detail?.statusId) {
+    setTrackedStatusId(detail?.statusId)
+    setPickedStatusLabel(null)
+  }
+
+  const warehouseLabel = pickedWarehouseLabel ?? detail?.warehouseName ?? null
+  const jobTypeLabel = pickedJobTypeLabel ?? detail?.jobTypeName ?? null
+  const statusLabel = pickedStatusLabel ?? detail?.statusName ?? null
+
   return (
     <WorkOrderGroup title="Schedule">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -35,12 +66,13 @@ export function WorkOrderScheduleGroup({
               <WarehousePicker
                 value={draft.warehouseId || null}
                 onChange={(id) => onFieldChange("warehouseId", id ?? "")}
-                selectedLabel={detail?.warehouseName || null}
+                onOptionSelected={(option) => setPickedWarehouseLabel(option?.name ?? null)}
+                selectedLabel={warehouseLabel}
                 placeholder="Select warehouse"
                 ariaLabel="Warehouse"
               />
             ) : (
-              <StaticFieldValue>{detail?.warehouseName || "—"}</StaticFieldValue>
+              <StaticFieldValue>{warehouseLabel || "—"}</StaticFieldValue>
             )}
           </WorkOrderField>
           <WorkOrderField label="Scheduled For">
@@ -55,12 +87,13 @@ export function WorkOrderScheduleGroup({
               <JobTypePicker
                 value={draft.jobTypeId || null}
                 onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
-                selectedLabel={detail?.jobTypeName ?? null}
+                onOptionSelected={(option) => setPickedJobTypeLabel(option?.name ?? null)}
+                selectedLabel={jobTypeLabel}
                 placeholder="—"
                 ariaLabel="Job type"
               />
             ) : (
-              <StaticFieldValue>{detail?.jobTypeName ?? "—"}</StaticFieldValue>
+              <StaticFieldValue>{jobTypeLabel ?? "—"}</StaticFieldValue>
             )}
           </WorkOrderField>
           <WorkOrderField
@@ -86,12 +119,13 @@ export function WorkOrderScheduleGroup({
                 <WorkOrderStatusPicker
                   value={draft.statusId || null}
                   onChange={(id) => onFieldChange("statusId", id ?? "")}
-                  selectedLabel={detail.statusName ?? null}
+                  onOptionSelected={(option) => setPickedStatusLabel(option?.name ?? null)}
+                  selectedLabel={statusLabel}
                   placeholder="—"
                   ariaLabel="Status"
                 />
               ) : (
-                <StaticFieldValue>{detail.statusName ?? "—"}</StaticFieldValue>
+                <StaticFieldValue>{statusLabel ?? "—"}</StaticFieldValue>
               )}
             </WorkOrderField>
           ) : null}

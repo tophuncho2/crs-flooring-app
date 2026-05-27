@@ -77,6 +77,7 @@ export function WorkOrderPropertyUnitGroup({
 
   const [pickedMcLabel, setPickedMcLabel] = useState<string | null>(null)
   const [pickedPropertyLabel, setPickedPropertyLabel] = useState<string | null>(null)
+  const [pickedTemplateLabel, setPickedTemplateLabel] = useState<string | null>(null)
 
   // Clear the picked-label snapshots when the bound detail ids change — done
   // during render (previous-value tracking) so the next record's saved names
@@ -91,10 +92,15 @@ export function WorkOrderPropertyUnitGroup({
     setTrackedPropertyId(detail?.propertyId)
     setPickedPropertyLabel(null)
   }
+  const [trackedTemplateId, setTrackedTemplateId] = useState(detail?.templateId)
+  if (trackedTemplateId !== detail?.templateId) {
+    setTrackedTemplateId(detail?.templateId)
+    setPickedTemplateLabel(null)
+  }
 
   const managementCompanyLabel = pickedMcLabel ?? detail?.managementCompanyName ?? null
   const propertyLabel = pickedPropertyLabel ?? detail?.propertyName ?? null
-  const templateLabel = detail?.templateUnitType ? detail.templateUnitType : null
+  const templateLabel = pickedTemplateLabel ?? (detail?.templateUnitType || null)
 
   const handleHubCreated = useCallback(
     (result: PropertyHubCreateResult) => {
@@ -264,6 +270,8 @@ export function WorkOrderPropertyUnitGroup({
                   }
                   onOptionSelected={(option) => {
                     setPickedPropertyLabel(option?.name ?? null)
+                    // Property change clears templateId — drop the stale snapshot.
+                    setPickedTemplateLabel(null)
                     onPropertyOption(option)
                   }}
                   managementCompanyId={managementCompanyValue}
@@ -294,6 +302,7 @@ export function WorkOrderPropertyUnitGroup({
                   value={templateValue}
                   onChange={(id) => onFieldChange("templateId", id ?? "")}
                   onOptionSelected={(option) => {
+                    setPickedTemplateLabel(option?.unitType ?? null)
                     if (option) onFieldChange("unitType", option.unitType)
                   }}
                   propertyId={propertyValue}
