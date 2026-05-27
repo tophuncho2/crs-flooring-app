@@ -2,9 +2,14 @@
 #
 # Sync staging into the branch worktrees: a-branch → b-branch → c-branch.
 #
-# For each branch, in its own worktree, this does the equivalent of:
-#   git fetch && git merge origin/staging && git push
+# For each branch, in its own worktree, this fast-forwards the branch up to
+# staging and pushes — the equivalent of:
+#   git fetch && git merge --ff-only origin/staging && git push
 # so you don't have to repeat it three times by hand.
+#
+# It is strictly a fast-forward tool: a branch that has diverged (carries its
+# own commits staging doesn't have) is skipped, not merged, so you can rebase
+# it onto staging yourself. No merge commits are ever created here.
 #
 # Why worktrees (not checkout): a-branch/b-branch/c-branch are each checked
 # out in their own worktree (see `git worktree list`), so they cannot be
@@ -15,14 +20,14 @@
 #   1. Fetch origin once (shared object store updates origin/staging for all)
 #   2. For each branch, in order a → b → c:
 #        - skip if its worktree has uncommitted changes
-#        - merge origin/staging (--no-edit); on conflict, abort and record fail
+#        - skip if the branch has commits staging doesn't have (rebase first)
+#        - fast-forward to origin/staging (never a merge commit)
 #        - push origin <branch> on success
 #   3. Print a per-branch summary
 #
 # Safety:
 #   - set -euo pipefail
-#   - merges are guarded so one conflict doesn't kill the whole run;
-#     a conflicted merge is aborted to leave that worktree clean
+#   - fast-forward only: a diverged branch is skipped, never merged or stomped
 #   - dirty worktrees are skipped, never stomped
 #   - no force pushes, no resets
 #   - exits non-zero if any branch failed or was skipped
@@ -79,12 +84,22 @@ for i in "${!BRANCHES[@]}"; do
     continue
   fi
 
-  if git -C "$path" merge --no-edit "$SOURCE_REF"; then
-    ok "$branch merged"
+  # This script only fast-forwards a branch up to staging. If the branch has
+  # its own commits that staging doesn't have, it has diverged — skip it so you
+  # can rebase it onto staging by hand. A sub-branch must never carry a commit
+  # staging lacks, and we never create a merge commit here.
+  ahead="$(git -C "$path" rev-list --count "$SOURCE_REF..HEAD")"
+  if [ "$ahead" -ne 0 ]; then
+    warn "$branch has $ahead commit(s) staging doesn't have — skipping (rebase onto staging first)"
+    RESULTS[$i]="SKIPPED (ahead of staging — rebase first)"
+    continue
+  fi
+
+  if git -C "$path" merge --ff-only "$SOURCE_REF"; then
+    ok "$branch fast-forwarded to staging"
   else
-    fail "$branch merge hit conflicts — aborting merge, leaving worktree clean"
-    git -C "$path" merge --abort
-    RESULTS[$i]="FAILED (merge conflict)"
+    fail "$branch could not fast-forward — skipping"
+    RESULTS[$i]="FAILED (not fast-forward)"
     continue
   fi
 
