@@ -3,6 +3,7 @@
 import { TextCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import {
+  formatEasternDateTime,
   formatFifoReceivedAtEastern,
   formatInventoryQuantity,
   INVENTORY_INTERNAL_NOTES_MAX,
@@ -28,6 +29,7 @@ import { InventoryGroup } from "./inventory-group"
  *   Note                | Total Cut
  *   Import #            | Starting Stock
  *   PO #                | FIFO Received
+ *   Updated             | —
  *
  * Only Location + Internal Notes (and the archive chip in the header) are
  * editable; everything else is identity / derived data rendered static. The
@@ -154,6 +156,12 @@ export function InventoryDetailsGroup({
         <InventoryField label="FIFO Received">
           <StaticFieldValue>
             {inventory.fifoReceivedAt ? formatFifoReceivedAtEastern(inventory.fifoReceivedAt) : "—"}
+          </StaticFieldValue>
+        </InventoryField>
+
+        <InventoryField label="Updated">
+          <StaticFieldValue>
+            {inventory.updatedAt ? formatEasternDateTime(inventory.updatedAt) : "—"}
           </StaticFieldValue>
         </InventoryField>
       </div>

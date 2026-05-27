@@ -2,9 +2,9 @@ import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/components/data-table"
 import {
   composeRollNumberDisplay,
+  formatEasternDateTime,
   formatFifoReceivedAtEastern,
   formatInventoryQuantity,
-  formatStableDate,
   type InventoryRow,
 } from "@builders/domain"
 
@@ -63,7 +63,7 @@ export function renderInventoryRowCell(
     case "fifoReceivedAt":
       return formatFifoReceivedAtEastern(row.fifoReceivedAt)
     case "updatedAt":
-      return formatStableDate(row.updatedAt)
+      return formatEasternDateTime(row.updatedAt) || "—"
     default:
       return "-"
   }
