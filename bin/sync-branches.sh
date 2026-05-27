@@ -49,7 +49,9 @@ worktree_path_for() {
   '
 }
 
-declare -A RESULT
+# Results kept in an indexed array parallel to BRANCHES (works on bash 3.2,
+# which macOS still ships — no associative arrays).
+RESULTS=()
 
 # 1. Fetch once.
 header "Fetching latest refs from origin"
@@ -57,20 +59,21 @@ git fetch origin
 ok "fetch complete"
 
 # 2. Merge + push per branch.
-for branch in "${BRANCHES[@]}"; do
+for i in "${!BRANCHES[@]}"; do
+  branch="${BRANCHES[$i]}"
   header "Syncing $SOURCE_REF → $branch"
 
   path="$(worktree_path_for "$branch")"
   if [ -z "$path" ]; then
     fail "$branch is not checked out in any worktree — skipping"
-    RESULT[$branch]="SKIPPED (no worktree)"
+    RESULTS[$i]="SKIPPED (no worktree)"
     continue
   fi
   printf "  worktree: %s\n" "$path"
 
   if [ -n "$(git -C "$path" status --porcelain)" ]; then
     warn "$branch worktree has uncommitted changes — skipping (commit or stash first)"
-    RESULT[$branch]="SKIPPED (dirty worktree)"
+    RESULTS[$i]="SKIPPED (dirty worktree)"
     continue
   fi
 
@@ -79,24 +82,25 @@ for branch in "${BRANCHES[@]}"; do
   else
     fail "$branch merge hit conflicts — aborting merge, leaving worktree clean"
     git -C "$path" merge --abort
-    RESULT[$branch]="FAILED (merge conflict)"
+    RESULTS[$i]="FAILED (merge conflict)"
     continue
   fi
 
   if git -C "$path" push origin "$branch"; then
     ok "$branch pushed"
-    RESULT[$branch]="OK"
+    RESULTS[$i]="OK"
   else
     fail "$branch push failed"
-    RESULT[$branch]="FAILED (push)"
+    RESULTS[$i]="FAILED (push)"
   fi
 done
 
 # 3. Summary.
 header "Summary"
 exit_code=0
-for branch in "${BRANCHES[@]}"; do
-  status="${RESULT[$branch]:-UNKNOWN}"
+for i in "${!BRANCHES[@]}"; do
+  branch="${BRANCHES[$i]}"
+  status="${RESULTS[$i]:-UNKNOWN}"
   if [ "$status" = "OK" ]; then
     ok "$branch — $status"
   else
