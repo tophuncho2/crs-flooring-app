@@ -4,6 +4,7 @@ import { DateCell, TextCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
+import { WorkOrderStatusPicker } from "@/modules/work-order-statuses/components/picker/work-order-status-picker"
 import { WO_DESCRIPTION_MAX, type WorkOrderForm } from "@builders/domain"
 import { WorkOrderCompleteChip } from "../controls/work-order-complete-chip"
 import type { WorkOrderPrimaryDetail } from "../types"
@@ -71,6 +72,19 @@ export function WorkOrderScheduleGroup({
               />
             ) : (
               <StaticFieldValue>{detail?.jobTypeName ?? "—"}</StaticFieldValue>
+            )}
+          </WorkOrderField>
+          <WorkOrderField label="Status">
+            {editable ? (
+              <WorkOrderStatusPicker
+                value={draft.statusId || null}
+                onChange={(id) => onFieldChange("statusId", id ?? "")}
+                selectedLabel={detail?.statusName ?? null}
+                placeholder="—"
+                ariaLabel="Status"
+              />
+            ) : (
+              <StaticFieldValue>{detail?.statusName ?? "—"}</StaticFieldValue>
             )}
           </WorkOrderField>
           <WorkOrderField

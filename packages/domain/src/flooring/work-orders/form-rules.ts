@@ -25,6 +25,7 @@ export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
     installerInstructions: workOrder.installerInstructions,
     scheduledFor: toDateInputValue(workOrder.scheduledFor),
     isComplete: workOrder.isComplete,
+    statusId: workOrder.statusId ?? "",
     vacancy: workOrder.vacancy ?? "",
   }
 }
