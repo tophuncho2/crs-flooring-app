@@ -74,19 +74,23 @@ export function WorkOrderScheduleGroup({
               <StaticFieldValue>{detail?.jobTypeName ?? "—"}</StaticFieldValue>
             )}
           </WorkOrderField>
-          <WorkOrderField label="Status">
-            {editable ? (
-              <WorkOrderStatusPicker
-                value={draft.statusId || null}
-                onChange={(id) => onFieldChange("statusId", id ?? "")}
-                selectedLabel={detail?.statusName ?? null}
-                placeholder="—"
-                ariaLabel="Status"
-              />
-            ) : (
-              <StaticFieldValue>{detail?.statusName ?? "—"}</StaticFieldValue>
-            )}
-          </WorkOrderField>
+          {/* Status is set only after the WO exists — hidden in the create
+              flow (detail === null), where it defaults to none. */}
+          {detail ? (
+            <WorkOrderField label="Status">
+              {editable ? (
+                <WorkOrderStatusPicker
+                  value={draft.statusId || null}
+                  onChange={(id) => onFieldChange("statusId", id ?? "")}
+                  selectedLabel={detail.statusName ?? null}
+                  placeholder="—"
+                  ariaLabel="Status"
+                />
+              ) : (
+                <StaticFieldValue>{detail.statusName ?? "—"}</StaticFieldValue>
+              )}
+            </WorkOrderField>
+          ) : null}
           <WorkOrderField
             label="Description"
             editable={editable}
