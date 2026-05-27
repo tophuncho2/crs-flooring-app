@@ -9,4 +9,5 @@ export const IMPORTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ImportRow>> = [
   { key: "stagedInventoryRowsCount", label: "Staged", align: "end" },
   { key: "liveInventoryRowsCount", label: "Live", align: "end" },
   { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
 ]

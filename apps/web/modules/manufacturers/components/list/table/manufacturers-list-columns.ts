@@ -8,4 +8,6 @@ export const MANUFACTURERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<Manufactu
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
   { key: "productsCount", label: "Products", align: "end" },
+  { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
 ]

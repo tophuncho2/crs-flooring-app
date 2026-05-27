@@ -6,6 +6,7 @@ import { TextCell, TextareaCell } from "@/components/cells"
 import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
+  formatEasternDateTime,
   IMPORT_INTERNAL_NOTES_MAX,
   IMPORT_PURCHASE_ORDER_NUMBER_MAX,
   type ImportPrimaryForm,
@@ -16,12 +17,18 @@ export function ImportPrimaryFieldsSection({
   draft,
   warehouseName,
   manufacturerName,
+  createdAt,
+  updatedAt,
   disabled,
   onFieldChange,
 }: {
   draft: ImportPrimaryForm
   warehouseName: string | null
   manufacturerName: string | null
+  // Present on the record view (existing import); omitted on the create flow,
+  // where there's no persisted row yet — the timestamp cells stay hidden.
+  createdAt?: string
+  updatedAt?: string
   disabled: boolean
   onFieldChange: (field: keyof ImportPrimaryForm, value: string) => void
 }) {
@@ -75,6 +82,20 @@ export function ImportPrimaryFieldsSection({
               )}
             </FormField>
           </CellAt>
+          {createdAt ? (
+            <CellAt col={1} colSpan={2}>
+              <FormField label="Created">
+                <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          ) : null}
+          {updatedAt ? (
+            <CellAt col={3} colSpan={2}>
+              <FormField label="Updated">
+                <StaticFieldValue>{formatEasternDateTime(updatedAt) || "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          ) : null}
         </FieldSection>
       </ImportGroup>
 

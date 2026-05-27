@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/components/data-table"
-import { formatStableDate, type ImportRow } from "@builders/domain"
+import { formatEasternDateTime, type ImportRow } from "@builders/domain"
 
 function formatImportNumber(value: number): string {
   return `IMP-${value}`
@@ -28,7 +28,13 @@ export function renderImportsRowCell(
     case "liveInventoryRowsCount":
       return <span className="tabular-nums">{row.liveInventoryRowsCount}</span>
     case "createdAt":
-      return formatStableDate(row.createdAt)
+      return (
+        <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
+      )
+    case "updatedAt":
+      return (
+        <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
+      )
     default:
       return "-"
   }

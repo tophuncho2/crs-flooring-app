@@ -8,6 +8,11 @@ import {
 import { CellAt } from "@/components/layout-grid"
 import { FieldSection, FormField } from "@/components/fields"
 import { TextCell } from "@/components/cells"
+import {
+  SidePanelPreviewReadonlyRow,
+  SidePanelPreviewReadonlySection,
+} from "@/components/side-panel-preview"
+import { formatEasternDateTime } from "@builders/domain"
 import type { JobTypeSidePanelController } from "@/modules/job-types/controllers/side-panel"
 
 export type JobTypeSidePanelProps = {
@@ -26,6 +31,8 @@ export function JobTypeSidePanel({ controller }: JobTypeSidePanelProps) {
     isOpen,
     mode,
     form,
+    createdAt,
+    updatedAt,
     isDirty,
     isSaving,
     canSave,
@@ -98,19 +105,33 @@ export function JobTypeSidePanel({ controller }: JobTypeSidePanelProps) {
       title={title}
       topToolbar={topToolbar}
     >
-      <FieldSection gap="0.75rem">
-        <CellAt col={1} colSpan={8}>
-          <FormField label="Name" required>
-            <TextCell
-              editable={editable}
-              value={form.name}
-              onChange={setName}
-              placeholder="Job type name"
-              ariaLabel="Job type name"
+      <div className="flex flex-col gap-4">
+        {mode.kind === "edit" ? (
+          <SidePanelPreviewReadonlySection>
+            <SidePanelPreviewReadonlyRow
+              label="Created"
+              value={formatEasternDateTime(createdAt) || "—"}
             />
-          </FormField>
-        </CellAt>
-      </FieldSection>
+            <SidePanelPreviewReadonlyRow
+              label="Updated"
+              value={formatEasternDateTime(updatedAt) || "—"}
+            />
+          </SidePanelPreviewReadonlySection>
+        ) : null}
+        <FieldSection gap="0.75rem">
+          <CellAt col={1} colSpan={8}>
+            <FormField label="Name" required>
+              <TextCell
+                editable={editable}
+                value={form.name}
+                onChange={setName}
+                placeholder="Job type name"
+                ariaLabel="Job type name"
+              />
+            </FormField>
+          </CellAt>
+        </FieldSection>
+      </div>
     </HubSidePanelShell>
   )
 }

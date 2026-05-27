@@ -9,4 +9,6 @@ export const PRODUCTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ProductListRow
   { key: "note", label: "Note" },
   { key: "coverage", label: "Coverage", align: "end" },
   { key: "manufacturer", label: "Manufacturer" },
+  { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
 ]

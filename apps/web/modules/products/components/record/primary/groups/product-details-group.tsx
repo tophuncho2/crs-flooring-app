@@ -5,7 +5,11 @@ import { StaticFieldValue } from "@/components/fields"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
-import { categoryRequiresCoveragePerUnit, type ProductCreateForm } from "@builders/domain"
+import {
+  categoryRequiresCoveragePerUnit,
+  formatEasternDateTime,
+  type ProductCreateForm,
+} from "@builders/domain"
 import { ProductField } from "./product-field"
 import { ProductGroup } from "./product-group"
 
@@ -155,6 +159,20 @@ export function ProductDetailsGroup({
             </div>
           )}
         </ProductField>
+        {product.createdAt ? (
+          <ProductField label="Created">
+            <StaticFieldValue>
+              {formatEasternDateTime(product.createdAt) || "—"}
+            </StaticFieldValue>
+          </ProductField>
+        ) : null}
+        {product.updatedAt ? (
+          <ProductField label="Updated">
+            <StaticFieldValue>
+              {formatEasternDateTime(product.updatedAt) || "—"}
+            </StaticFieldValue>
+          </ProductField>
+        ) : null}
       </div>
     </ProductGroup>
   )

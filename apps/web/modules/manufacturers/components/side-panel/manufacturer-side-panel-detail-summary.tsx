@@ -4,14 +4,7 @@ import {
   SidePanelPreviewReadonlyRow,
   SidePanelPreviewReadonlySection,
 } from "@/components/side-panel-preview"
-import type { ManufacturerRow } from "@builders/domain"
-
-function formatDate(value: string) {
-  if (!value) return "—"
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toISOString().slice(0, 10)
-}
+import { formatEasternDateTime, type ManufacturerRow } from "@builders/domain"
 
 export function ManufacturerSidePanelDetailSummary({
   manufacturer,
@@ -21,8 +14,14 @@ export function ManufacturerSidePanelDetailSummary({
   return (
     <SidePanelPreviewReadonlySection>
       <SidePanelPreviewReadonlyRow label="Products" value={manufacturer.productsCount} />
-      <SidePanelPreviewReadonlyRow label="Created" value={formatDate(manufacturer.createdAt)} />
-      <SidePanelPreviewReadonlyRow label="Updated" value={formatDate(manufacturer.updatedAt)} />
+      <SidePanelPreviewReadonlyRow
+        label="Created"
+        value={formatEasternDateTime(manufacturer.createdAt) || "—"}
+      />
+      <SidePanelPreviewReadonlyRow
+        label="Updated"
+        value={formatEasternDateTime(manufacturer.updatedAt) || "—"}
+      />
     </SidePanelPreviewReadonlySection>
   )
 }

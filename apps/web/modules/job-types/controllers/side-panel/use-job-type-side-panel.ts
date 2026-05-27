@@ -60,6 +60,7 @@ export function useJobTypeSidePanel(options?: {
   const [form, setForm] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
   const [baseline, setBaseline] = useState<JobTypeForm>(EMPTY_JOB_TYPE_FORM)
   const [updatedAt, setUpdatedAt] = useState<string | null>(null)
+  const [createdAt, setCreatedAt] = useState<string | null>(null)
   const [error, setError] = useState<RecordSectionError | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   // Gates whether the required-field message is surfaced. Stays false until
@@ -98,6 +99,7 @@ export function useJobTypeSidePanel(options?: {
     setForm(EMPTY_JOB_TYPE_FORM)
     setBaseline(EMPTY_JOB_TYPE_FORM)
     setUpdatedAt(null)
+    setCreatedAt(null)
     setError(null)
     setSuccessMessage(null)
     setNameTouched(false)
@@ -109,6 +111,7 @@ export function useJobTypeSidePanel(options?: {
     setForm(next)
     setBaseline(next)
     setUpdatedAt(row.updatedAt)
+    setCreatedAt(row.createdAt)
     setError(null)
     setSuccessMessage(null)
     setNameTouched(false)
@@ -137,6 +140,7 @@ export function useJobTypeSidePanel(options?: {
     setForm(EMPTY_JOB_TYPE_FORM)
     setBaseline(EMPTY_JOB_TYPE_FORM)
     setUpdatedAt(null)
+    setCreatedAt(null)
     setError(null)
     setSuccessMessage(null)
     setNameTouched(false)
@@ -161,6 +165,7 @@ export function useJobTypeSidePanel(options?: {
             setForm(next)
             setBaseline(next)
             setUpdatedAt(created.updatedAt)
+            setCreatedAt(created.createdAt)
             setError(null)
             setSuccessMessage("Job type created")
             setMode({ kind: "edit", id: created.id })
@@ -222,6 +227,7 @@ export function useJobTypeSidePanel(options?: {
           setForm(EMPTY_JOB_TYPE_FORM)
           setBaseline(EMPTY_JOB_TYPE_FORM)
           setUpdatedAt(null)
+          setCreatedAt(null)
           setError(null)
           onDeleted?.(deletedId)
         },
@@ -238,6 +244,7 @@ export function useJobTypeSidePanel(options?: {
     form,
     baseline,
     updatedAt,
+    createdAt,
     isDirty,
     isSaving,
     canSave,
