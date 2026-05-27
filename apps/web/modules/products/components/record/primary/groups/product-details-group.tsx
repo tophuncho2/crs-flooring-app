@@ -166,13 +166,6 @@ export function ProductDetailsGroup({
             </StaticFieldValue>
           </ProductField>
         ) : null}
-        {product.updatedAt ? (
-          <ProductField label="Updated">
-            <StaticFieldValue>
-              {formatEasternDateTime(product.updatedAt) || "—"}
-            </StaticFieldValue>
-          </ProductField>
-        ) : null}
       </div>
     </ProductGroup>
   )

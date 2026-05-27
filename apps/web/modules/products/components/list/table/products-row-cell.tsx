@@ -31,10 +31,6 @@ export function renderProductRowCell(
       return (
         <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
       )
-    case "updatedAt":
-      return (
-        <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
-      )
     default:
       return "-"
   }
