@@ -6,8 +6,7 @@ import { WorkOrderField } from "./work-order-field"
 import { WorkOrderGroup } from "./work-order-group"
 
 /**
- * Group 3: Notes. Holds the internal-notes textarea. The complete-status
- * chip lives in the Schedule group header, not here.
+ * Group 3: Notes. Holds the internal-notes textarea.
  */
 export function WorkOrderNotesGroup({
   editable,

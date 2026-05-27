@@ -8,16 +8,13 @@ const MAX_PAGE_SIZE = 200
 /**
  * Filter shape for the work-orders list. Each ID filter is a multi-value
  * array (single-element today, but the URL/repo contract is multi-value
- * so the upgrade path stays simple). `isComplete` is a single-element
- * enum: absent | `["hide"]` → hide completed (default), `["only"]` →
- * completed only, `["all"]` → no filter. The repo applies the default.
+ * so the upgrade path stays simple).
  */
 export type WorkOrdersListFilters = {
   managementCompanyId?: string[]
   propertyId?: string[]
   templateId?: string[]
   warehouseId?: string[]
-  isComplete?: string[]
 }
 
 export async function listWorkOrdersUseCase(

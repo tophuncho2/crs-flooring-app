@@ -34,8 +34,6 @@ export function renderWorkOrderRowCell(
       return row.unitType || "-"
     case "status":
       return row.statusName ?? "—"
-    case "isComplete":
-      return row.isComplete ? "Complete" : "—"
     default:
       return "-"
   }

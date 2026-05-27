@@ -121,7 +121,6 @@ export function toUpdateWorkOrderInput(form: WorkOrderForm): UpdateWorkOrderUseC
     internalNotes: form.internalNotes,
     installerInstructions: form.installerInstructions,
     scheduledFor,
-    isComplete: form.isComplete,
     vacancy: form.vacancy === "" ? null : form.vacancy,
   }
 }

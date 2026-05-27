@@ -75,11 +75,6 @@ function optionalBoundedText(
   return value
 }
 
-function optionalBoolean(value: unknown): boolean | undefined {
-  if (typeof value !== "boolean") return undefined
-  return value
-}
-
 function optionalVacancy(value: unknown): "VACANT" | "OCCUPIED" | null {
   if (value === undefined || value === null) return null
   if (value === "VACANT" || value === "OCCUPIED") return value
@@ -121,7 +116,6 @@ export function validateCreateWorkOrderInput(
       failWorkOrder,
     ),
     scheduledFor: optionalDate(body.scheduledFor, "scheduledFor"),
-    isComplete: optionalBoolean(body.isComplete),
     vacancy: optionalVacancy(body.vacancy),
   }
 }
@@ -157,10 +151,6 @@ export function validateUpdateWorkOrderInput(
     )
   }
   if ("scheduledFor" in body) input.scheduledFor = optionalDate(body.scheduledFor, "scheduledFor")
-  if ("isComplete" in body) {
-    const isComplete = optionalBoolean(body.isComplete)
-    if (isComplete !== undefined) input.isComplete = isComplete
-  }
   if ("vacancy" in body) input.vacancy = optionalVacancy(body.vacancy)
 
   return input
@@ -275,8 +265,6 @@ const ID_FILTER_KEYS = [
 
 type IdFilterKey = (typeof ID_FILTER_KEYS)[number]
 
-const IS_COMPLETE_VALUES = ["hide", "only", "all"] as const
-
 const listWorkOrdersQuerySchema = z.object({
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -304,7 +292,7 @@ export function validateListWorkOrdersQuery(
 ): ListInput<WorkOrdersListFilters> {
   // Strip multi-value keys before zod sees them.
   const raw: Record<string, string> = {}
-  const reservedMultiValueKeys = new Set<string>([...ID_FILTER_KEYS, "isComplete"])
+  const reservedMultiValueKeys = new Set<string>([...ID_FILTER_KEYS])
   searchParams.forEach((value, key) => {
     if (reservedMultiValueKeys.has(key)) return
     raw[key] = value
@@ -327,12 +315,6 @@ export function validateListWorkOrdersQuery(
   for (const key of ID_FILTER_KEYS) {
     const values = readMultiValue(searchParams, key)
     if (values.length > 0) filterRecord[key as IdFilterKey] = values
-  }
-  const completeValues = readMultiValue(searchParams, "isComplete").filter((value) =>
-    (IS_COMPLETE_VALUES as readonly string[]).includes(value),
-  )
-  if (completeValues.length > 0) {
-    filterRecord.isComplete = [completeValues[0]]
   }
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0

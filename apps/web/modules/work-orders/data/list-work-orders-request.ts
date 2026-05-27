@@ -13,15 +13,12 @@ export const WORK_ORDERS_LIST_PAGE_SIZE = 50
  * Filterable field keys recognised by the work-orders list. Each ID
  * filter is a multi-value URL param (`?managementCompanyId=a&managementCompanyId=b`);
  * the UI currently exposes single-select chips but the contract is multi-value.
- * `isComplete` is a single-element enum: `hide` (default; omitted from URL),
- * `only`, or `all`.
  */
 export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [
   "managementCompanyId",
   "propertyId",
   "templateId",
   "warehouseId",
-  "isComplete",
 ] as const satisfies readonly string[]
 
 function readSearchParam(

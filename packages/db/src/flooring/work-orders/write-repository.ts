@@ -22,7 +22,6 @@ export type CreateWorkOrderRecordInput = {
   internalNotes?: string | null
   installerInstructions?: string | null
   scheduledFor?: Date | null
-  isComplete?: boolean
   vacancy?: "VACANT" | "OCCUPIED" | null
 }
 

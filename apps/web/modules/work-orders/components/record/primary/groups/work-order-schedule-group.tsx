@@ -6,7 +6,6 @@ import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-pi
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { WorkOrderStatusPicker } from "@/modules/work-order-statuses/components/picker/work-order-status-picker"
 import { WO_DESCRIPTION_MAX, type WorkOrderForm } from "@builders/domain"
-import { WorkOrderCompleteChip } from "../controls/work-order-complete-chip"
 import type { WorkOrderPrimaryDetail } from "../types"
 import { WorkOrderField } from "./work-order-field"
 import { WorkOrderGroup } from "./work-order-group"
@@ -15,8 +14,6 @@ import { WorkOrderGroup } from "./work-order-group"
  * Group 1: Schedule. Left column stacks Warehouse → Scheduled For →
  * Job Type → Description. Right column holds Status, sitting beside
  * Warehouse — shown only after the WO exists (empty in the create flow).
- * The complete-status chip sits in the group header next to the
- * "Schedule" tab.
  */
 export function WorkOrderScheduleGroup({
   editable,
@@ -30,16 +27,7 @@ export function WorkOrderScheduleGroup({
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
 }) {
   return (
-    <WorkOrderGroup
-      title="Schedule"
-      headerRight={
-        <WorkOrderCompleteChip
-          value={draft.isComplete}
-          onChange={(next) => onFieldChange("isComplete", next)}
-          disabled={!editable}
-        />
-      }
-    >
+    <WorkOrderGroup title="Schedule">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-3">
           <WorkOrderField label="Warehouse">

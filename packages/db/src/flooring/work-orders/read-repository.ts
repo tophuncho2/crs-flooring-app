@@ -25,16 +25,13 @@ export type WorkOrdersListSort = {
 /**
  * Multi-value filter map keyed by domain field. Each ID filter is a
  * multi-value array (currently single-element in the UI; multi-value
- * preserves the upgrade path). `isComplete` is a single-element enum:
- * absent | `["hide"]` → `isComplete: false`, `["only"]` →
- * `isComplete: true`, `["all"]` → omit the clause.
+ * preserves the upgrade path).
  */
 export type WorkOrdersListFilterMap = {
   managementCompanyId?: string[]
   propertyId?: string[]
   templateId?: string[]
   warehouseId?: string[]
-  isComplete?: string[]
 }
 
 export type WorkOrdersListArgs = {
@@ -74,13 +71,6 @@ function buildWorkOrdersWhere(
     andClauses.push({ warehouseId: { in: filters.warehouseId } })
   }
 
-  const completeMode = filters?.isComplete?.[0]
-  if (completeMode === "only") {
-    andClauses.push({ isComplete: true })
-  } else if (completeMode !== "all") {
-    andClauses.push({ isComplete: false })
-  }
-
   if (andClauses.length === 0) return undefined
   if (andClauses.length === 1) return andClauses[0]
   return { AND: andClauses }
@@ -108,7 +98,6 @@ function buildWorkOrdersOrderBy(
     unitNumber: { unitNumber: direction },
     unitType: { unitType: direction },
     status: { status: { name: direction } },
-    isComplete: { isComplete: direction },
   }
 
   if (sort?.isGroupingEnabled) {
@@ -159,10 +148,10 @@ export async function listWorkOrderOptions(
 
 /**
  * Async-picker search: warehouse-scoped work-order options for the cut-log
- * relink dropdown. Filters by `warehouseId` (required), hides completed
- * work orders, and matches `unitType` or `description` via ILIKE on the
- * optional search term. Takes a bounded count to keep the dropdown
- * responsive.
+ * relink dropdown. Filters by `warehouseId` (required), excludes work orders
+ * with the "complete" status, and matches `unitType` or `description` via
+ * ILIKE on the optional search term. Takes a bounded count to keep the
+ * dropdown responsive.
  */
 export type SearchWorkOrderOptionsInput = {
   warehouseId: string
@@ -194,7 +183,7 @@ export async function searchWorkOrderOptions(
   const workOrders = await client.flooringWorkOrder.findMany({
     where: {
       warehouseId: input.warehouseId,
-      isComplete: false,
+      status: { isNot: { slug: "complete" } },
       ...(input.productId
         ? { items: { some: { productId: input.productId } } }
         : {}),

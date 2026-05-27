@@ -41,7 +41,6 @@ function WorkOrderCreatePanel({
         internalNotes: updateInput.internalNotes,
         installerInstructions: updateInput.installerInstructions,
         scheduledFor: updateInput.scheduledFor,
-        isComplete: updateInput.isComplete,
         vacancy: updateInput.vacancy ?? null,
       })
       return {

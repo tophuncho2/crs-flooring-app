@@ -18,7 +18,6 @@ type WorkOrderListInput = {
   warehouse: { name: string } | null
   unitNumber: string | null
   unitType: string | null
-  isComplete: boolean
   statusId: string | null
   status: { id: string; name: string } | null
   vacancy: "VACANT" | "OCCUPIED" | null
@@ -63,7 +62,6 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     warehouseName: workOrder.warehouse?.name ?? "",
     unitNumber: workOrder.unitNumber ?? "",
     unitType: workOrder.unitType ?? "",
-    isComplete: workOrder.isComplete,
     statusId: workOrder.statusId,
     statusName: workOrder.status?.name ?? null,
     vacancy: workOrder.vacancy,

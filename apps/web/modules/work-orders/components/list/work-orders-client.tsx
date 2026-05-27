@@ -6,7 +6,6 @@ import {
   ListToolbar,
   ListToolbarBottomRow,
   ListToolbarCell,
-  ListToolbarTallCard,
 } from "@/components/features/list-toolbar"
 import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
@@ -31,21 +30,11 @@ import { MgmtCoFilterChip } from "./toolbar-controls/mgmt-co-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
-import {
-  COMPLETE_SEGMENTED_DEFAULT,
-  CompleteSegmentedControl,
-  type CompleteSegmentedControlValue,
-} from "./toolbar-controls/complete-segmented-control"
 import { WorkOrdersListSearch } from "./toolbar-controls/work-orders-list-search"
 import { WorkOrdersClearAll } from "./toolbar-controls/sub-controls/work-orders-clear-all"
 import { WorkOrdersRowCount } from "./toolbar-controls/sub-controls/work-orders-row-count"
 
 const WORK_ORDERS_ALLOWED_SORT_FIELDS = ["createdAt"] as const
-
-function asCompleteValue(raw: string | undefined): CompleteSegmentedControlValue {
-  if (raw === "only" || raw === "all" || raw === "hide") return raw
-  return COMPLETE_SEGMENTED_DEFAULT
-}
 
 export default function WorkOrdersClient({
   initialSearchQuery,
@@ -111,7 +100,6 @@ export default function WorkOrdersClient({
   const selectedPropertyId = filters.propertyId?.[0] ?? null
   const selectedTemplateId = filters.templateId?.[0] ?? null
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
-  const completeValue = asCompleteValue(filters.isComplete?.[0])
 
   // --- Selected-label snapshots (initial-seed + fallback to current options) ---
   const mgmtCoLabel = useMemo(() => {
@@ -176,20 +164,11 @@ export default function WorkOrdersClient({
     [onFilterChange],
   )
 
-  const handleCompleteChange = useCallback(
-    (next: CompleteSegmentedControlValue) => {
-      // Default "hide" is encoded as URL-absent; explicit non-default values are written.
-      onFilterChange("isComplete", next === COMPLETE_SEGMENTED_DEFAULT ? [] : [next])
-    },
-    [onFilterChange],
-  )
-
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (selectedMgmtCoId || selectedPropertyId || selectedTemplateId || selectedWarehouseId) {
       return true
     }
-    if (completeValue !== COMPLETE_SEGMENTED_DEFAULT) return true
     return false
   }, [
     searchQuery,
@@ -197,7 +176,6 @@ export default function WorkOrdersClient({
     selectedPropertyId,
     selectedTemplateId,
     selectedWarehouseId,
-    completeValue,
   ])
 
   const handleClearAll = useCallback(() => {
@@ -282,16 +260,6 @@ export default function WorkOrdersClient({
                 onChange={handleTemplateChange}
                 initialOptions={initialTemplateOptions}
               />
-            </ListToolbarCell>
-
-            {/* Status: 2-row-tall card holding the complete segmented control. */}
-            <ListToolbarCell>
-              <ListToolbarTallCard label="Status">
-                <CompleteSegmentedControl
-                  value={completeValue}
-                  onChange={handleCompleteChange}
-                />
-              </ListToolbarTallCard>
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">

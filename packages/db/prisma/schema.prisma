@@ -524,6 +524,9 @@ model FlooringWorkOrder {
   jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
   warehouseId          String?
   warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  // DEPRECATED: superseded by the "complete" work-order status (slug). No code
+  // references it anymore; drop this column + @@index([isComplete]) in a future
+  // migration sweep.
   isComplete           Boolean                    @default(false) @map("is_complete")
   statusId             String?                    @map("status_id")
   status               FlooringWorkOrderStatus?   @relation(fields: [statusId], references: [id], onDelete: SetNull)
