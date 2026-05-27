@@ -524,10 +524,6 @@ model FlooringWorkOrder {
   jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
   warehouseId          String?
   warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  // DEPRECATED: superseded by the "complete" work-order status (slug). No code
-  // references it anymore; drop this column + @@index([isComplete]) in a future
-  // migration sweep.
-  isComplete           Boolean                    @default(false) @map("is_complete")
   statusId             String?                    @map("status_id")
   status               FlooringWorkOrderStatus?   @relation(fields: [statusId], references: [id], onDelete: SetNull)
   vacancy              FlooringVacancyStatus?
@@ -544,7 +540,6 @@ model FlooringWorkOrder {
   cutLogs              FlooringCutLog[]
 
   @@index([workOrderNumber])
-  @@index([isComplete])
   @@index([statusId])
   @@index([propertyId])
   @@index([templateId])
@@ -561,6 +556,7 @@ model FlooringWorkOrderStatus {
   id         String              @id @default(uuid())
   slug       String              @unique
   name       String              @unique
+  sortOrder  Int                 @default(0)
   createdAt  DateTime            @default(now())
   updatedAt  DateTime            @updatedAt
   workOrders FlooringWorkOrder[]

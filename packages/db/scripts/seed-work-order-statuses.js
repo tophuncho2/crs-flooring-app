@@ -6,24 +6,24 @@ const { resolve } = require("node:path")
  * Keep in sync with packages/db/src/seed/work-order-statuses.ts (the TypeScript source of truth).
  */
 const SEEDED_WORK_ORDER_STATUSES = [
-  { slug: "none", name: "None" },
-  { slug: "assigned", name: "Assigned" },
-  { slug: "delivered", name: "Delivered" },
-  { slug: "complete", name: "Complete" },
+  { slug: "none", name: "None", sortOrder: 1 },
+  { slug: "assigned", name: "Assigned", sortOrder: 2 },
+  { slug: "delivered", name: "Delivered", sortOrder: 3 },
+  { slug: "complete", name: "Complete", sortOrder: 4 },
 ]
 
 function verifySyncWithTypeScriptSource() {
   const tsPath = resolve(__dirname, "../src/seed/work-order-statuses.ts")
   const tsSource = readFileSync(tsPath, "utf8")
 
-  const entryPattern = /\{\s*slug:\s*"([^"]+)",\s*name:\s*"([^"]+)"\s*\}/g
+  const entryPattern = /\{\s*slug:\s*"([^"]+)",\s*name:\s*"([^"]+)",\s*sortOrder:\s*(\d+)\s*\}/g
   const tsEntries = []
   let match
   while ((match = entryPattern.exec(tsSource)) !== null) {
-    tsEntries.push({ slug: match[1], name: match[2] })
+    tsEntries.push({ slug: match[1], name: match[2], sortOrder: Number(match[3]) })
   }
 
-  const key = (entry) => `${entry.slug}|${entry.name}`
+  const key = (entry) => `${entry.slug}|${entry.name}|${entry.sortOrder}`
   const jsKeys = SEEDED_WORK_ORDER_STATUSES.map(key)
   const tsKeys = tsEntries.map(key)
 
@@ -61,12 +61,12 @@ async function seedWorkOrderStatuses({ prisma, logger = console }) {
       if (existing) {
         await tx.flooringWorkOrderStatus.update({
           where: { slug: status.slug },
-          data: { name: status.name },
+          data: { name: status.name, sortOrder: status.sortOrder },
         })
         existed += 1
       } else {
         await tx.flooringWorkOrderStatus.create({
-          data: { slug: status.slug, name: status.name },
+          data: { slug: status.slug, name: status.name, sortOrder: status.sortOrder },
         })
         created += 1
       }

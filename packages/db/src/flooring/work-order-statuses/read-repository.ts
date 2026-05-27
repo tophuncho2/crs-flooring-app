@@ -22,7 +22,7 @@ export async function searchWorkOrderStatusOptions(
 
   const statuses = await client.flooringWorkOrderStatus.findMany({
     where,
-    orderBy: { name: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     take: args.take,
     select: { id: true, name: true },
   })
