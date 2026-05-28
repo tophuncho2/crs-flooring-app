@@ -331,7 +331,7 @@ export function useFetchListController<TRow, TFilters>(
   const initialGroupValue = input.initialGroupField ?? ""
   const initialGroupedToggle: "0" | "1" = input.initialGroupField ? "1" : "0"
   const initialPageValue = input.initialPage ?? 1
-  const sortFieldKey = input.initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
+  const initialFieldKey = input.initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
   const filterableFields = input.filterableFields
   const declaredPageSize = input.pageSize ?? 50
   const consumerQueryKey = input.queryKey
@@ -350,6 +350,16 @@ export function useFetchListController<TRow, TFilters>(
     "sort",
     parseAsStringEnum<"asc" | "desc">(["asc", "desc"]).withDefault(initialDirection),
   )
+  // URL-bound sort field. Consumers that don't pass a multi-field
+  // `allowedSortFields` always fall back to `initialFieldKey`, so the param is
+  // inert for them (never read off the default, never written).
+  const [sortFieldValue, setSortFieldValue] = useQueryState(
+    "sortField",
+    parseAsString.withDefault(initialFieldKey),
+  )
+  const sortFieldKey = input.allowedSortFields?.includes(sortFieldValue)
+    ? sortFieldValue
+    : initialFieldKey
   const [groupedToggle, setGroupedToggle] = useQueryState(
     "grouped",
     parseAsStringEnum<"0" | "1">(["0", "1"]).withDefault(initialGroupedToggle),
@@ -457,10 +467,14 @@ export function useFetchListController<TRow, TFilters>(
   const onSortChange = useCallback(
     (next: ListSort | null) => {
       if (!next) return
+      if (next.field && input.allowedSortFields?.includes(next.field)) {
+        // Clear the param when it returns to the default field.
+        setSortFieldValue(next.field === initialFieldKey ? null : next.field)
+      }
       setSortDirection(next.direction)
       if (pageValue !== 1) setPageValue(1)
     },
-    [pageValue, setPageValue, setSortDirection],
+    [initialFieldKey, input.allowedSortFields, pageValue, setPageValue, setSortDirection, setSortFieldValue],
   )
 
   const onGroupFieldChange = useCallback(

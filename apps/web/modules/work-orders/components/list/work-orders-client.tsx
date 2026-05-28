@@ -29,13 +29,14 @@ import { AddWorkOrderButton } from "./toolbar-controls/add-work-order-button"
 import { MgmtCoFilterChip } from "./toolbar-controls/mgmt-co-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { ScheduledForFilterChip } from "./toolbar-controls/scheduled-for-filter-chip"
+import { SortPickerChip, type SortPickerField } from "./toolbar-controls/sort-picker-chip"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 import { WorkOrdersListSearch } from "./toolbar-controls/work-orders-list-search"
 import { WorkOrdersClearAll } from "./toolbar-controls/sub-controls/work-orders-clear-all"
 import { WorkOrdersRowCount } from "./toolbar-controls/sub-controls/work-orders-row-count"
 
-const WORK_ORDERS_ALLOWED_SORT_FIELDS = ["createdAt"] as const
+const WORK_ORDERS_ALLOWED_SORT_FIELDS = ["createdAt", "scheduledFor"] as const
 
 export default function WorkOrdersClient({
   initialSearchQuery,
@@ -69,6 +70,7 @@ export default function WorkOrdersClient({
     total,
     searchQuery,
     filters,
+    sort,
     page,
     pageSize,
     totalPages,
@@ -77,6 +79,7 @@ export default function WorkOrdersClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
+    onSortChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<WorkOrderListRow, WorkOrdersListFilters>({
@@ -288,6 +291,15 @@ export default function WorkOrdersClient({
                 start={selectedScheduledStart}
                 end={selectedScheduledEnd}
                 onChange={handleScheduledForChange}
+              />
+            </ListToolbarCell>
+
+            {/* Sort picker — Created date or Scheduled date, each asc/desc. */}
+            <ListToolbarCell>
+              <SortPickerChip
+                field={(sort?.field as SortPickerField) ?? "createdAt"}
+                direction={sort?.direction ?? "desc"}
+                onChange={onSortChange}
               />
             </ListToolbarCell>
 

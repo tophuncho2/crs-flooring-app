@@ -58,9 +58,12 @@ export function parseWorkOrdersListInputFromSearchParams(
   const search = (readSearchParam(searchParams, "q") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
+  const direction = readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc"
+  const field =
+    readSearchParam(searchParams, "sortField") === "scheduledFor" ? "scheduledFor" : "createdAt"
   return {
     search: search || undefined,
-    sort: { field: "createdAt", direction: "desc" },
+    sort: { field, direction },
     filters: readFiltersFromSearchParams(searchParams),
     page,
     pageSize: WORK_ORDERS_LIST_PAGE_SIZE,
@@ -70,6 +73,8 @@ export function parseWorkOrdersListInputFromSearchParams(
 function buildSearchString(input: WorkOrdersListInput): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
+  if (input.sort?.direction) params.set("sort", input.sort.direction)
+  if (input.sort?.field) params.set("sortField", input.sort.field)
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   if (input.filters) {

@@ -31,6 +31,7 @@ export async function listWorkOrdersUseCase(
   const search = input.search?.trim() || undefined
   const sort = input.sort
     ? {
+        field: input.sort.field,
         direction: input.sort.direction,
         groupByKeys: input.group ? [input.group.field] : [],
         isGroupingEnabled: Boolean(input.group),

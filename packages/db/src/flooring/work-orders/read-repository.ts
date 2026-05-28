@@ -17,6 +17,9 @@ import {
 } from "./shared.js"
 
 export type WorkOrdersListSort = {
+  /** Primary sort column. `createdAt` (the default) falls through to the
+   * tiebreaker; `scheduledFor` is ordered explicitly with nulls last. */
+  field?: string
   direction: "asc" | "desc"
   groupByKeys: string[]
   isGroupingEnabled: boolean
@@ -126,6 +129,13 @@ function buildWorkOrdersOrderBy(
     for (const groupKey of sort.groupByKeys) {
       appendUniqueOrderBy(orderBy, fieldMap[groupKey])
     }
+  }
+
+  // Primary user-selected sort field. `createdAt` is the default and is covered
+  // by the tiebreaker append below; `scheduledFor` is nullable, so order it
+  // explicitly with nulls last in both directions.
+  if (sort?.field === "scheduledFor") {
+    appendUniqueOrderBy(orderBy, { scheduledFor: { sort: direction, nulls: "last" } })
   }
 
   appendUniqueOrderBy(orderBy, { createdAt: direction })

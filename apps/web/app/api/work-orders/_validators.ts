@@ -272,6 +272,8 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 const listWorkOrdersQuerySchema = z.object({
   q: z.string().optional(),
+  sort: z.enum(["asc", "desc"]).default("desc"),
+  sortField: z.enum(["createdAt", "scheduledFor"]).default("createdAt"),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -334,7 +336,7 @@ export function validateListWorkOrdersQuery(
 
   return {
     search,
-    sort: { field: "createdAt", direction: "desc" },
+    sort: { field: parsed.sortField, direction: parsed.sort },
     ...(hasAnyFilter ? { filters: filterRecord } : {}),
     page: parsed.page,
     pageSize: parsed.pageSize,
