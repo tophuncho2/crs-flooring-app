@@ -13,7 +13,7 @@ import type {
 } from "@builders/domain"
 import { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
-import { normalizeInventoryCutLogRow } from "./cut-logs/read-repository.js"
+import { normalizeEnrichedInventoryAdjustmentRow } from "./adjustments/read-repository.js"
 import {
   inventoryDetailSelect,
   inventoryRowSelect,
@@ -58,7 +58,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
   const categorySlug = payload.categorySlug
   const balanceNum = computeInventoryBalance({
     startingStock: payload.startingStock.toString(),
-    totalCutSum: payload.totalCutSum.toString(),
+    netDeducted: payload.netDeducted.toString(),
   })
   const coverageNum = computeInventoryCoverage({
     balance: balanceNum,
@@ -92,7 +92,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     warehouseNumber: String(payload.warehouse.number),
     location: payload.location ?? "",
     startingStock: toDecimalString(payload.startingStock),
-    totalCutSum: toDecimalString(payload.totalCutSum),
+    netDeducted: toDecimalString(payload.netDeducted),
     coveragePerUnit: toDecimalString(payload.coveragePerUnit),
     stockBalance: toInventoryFixedString(balanceNum),
     coverageBalance: coverageNum === null ? "" : toInventoryFixedString(coverageNum),
@@ -111,7 +111,9 @@ export function normalizeInventoryDetail(
 ): InventoryDetailRecord {
   return {
     ...normalizeInventoryRow(payload),
-    cutLogs: payload.cutLogs.map(normalizeInventoryCutLogRow),
+    inventoryAdjustments: payload.inventoryAdjustments.map(
+      normalizeEnrichedInventoryAdjustmentRow,
+    ),
   }
 }
 
@@ -162,12 +164,12 @@ export async function getInventoryDetailById(
 
 export type InventoryBalances = Pick<
   InventoryRow,
-  "stockBalance" | "totalCutSum" | "coverageBalance"
+  "stockBalance" | "netDeducted" | "coverageBalance"
 >
 
 // Narrow projection used by the inventory record view to reconcile the three
-// derived "balance" cells (stock balance, total cut, coverage balance) after a
-// cut-log mutation without refetching the full detail row.
+// derived "balance" cells (stock balance, net deducted, coverage balance)
+// after an inventory adjustment without refetching the full detail row.
 export async function getInventoryBalancesById(
   id: string,
   client: InventoryDbClient = db,
@@ -176,7 +178,7 @@ export async function getInventoryBalancesById(
     where: { id },
     select: {
       startingStock: true,
-      totalCutSum: true,
+      netDeducted: true,
       coveragePerUnit: true,
       categorySlug: true,
     },
@@ -185,7 +187,7 @@ export async function getInventoryBalancesById(
 
   const balanceNum = computeInventoryBalance({
     startingStock: row.startingStock.toString(),
-    totalCutSum: row.totalCutSum.toString(),
+    netDeducted: row.netDeducted.toString(),
   })
   const coverageNum = computeInventoryCoverage({
     balance: balanceNum,
@@ -195,7 +197,7 @@ export async function getInventoryBalancesById(
   })
 
   return {
-    totalCutSum: toDecimalString(row.totalCutSum),
+    netDeducted: toDecimalString(row.netDeducted),
     stockBalance: toInventoryFixedString(balanceNum),
     coverageBalance: coverageNum === null ? "" : toInventoryFixedString(coverageNum),
   }
@@ -212,19 +214,22 @@ export async function getInventoryDeleteState(
   id: string,
   client: InventoryDbClient = db,
 ): Promise<{
-  hasCutLogs: boolean
-  cutLogsCount: number
+  hasInventoryAdjustments: boolean
+  inventoryAdjustmentsCount: number
   sourceStagedRowId: string | null
 } | null> {
   const row = await client.flooringInventory.findUnique({
     where: { id },
-    select: { sourceStagedRowId: true, _count: { select: { cutLogs: true } } },
+    select: {
+      sourceStagedRowId: true,
+      _count: { select: { inventoryAdjustments: true } },
+    },
   })
   if (!row) return null
-  const cutLogsCount = row._count.cutLogs
+  const inventoryAdjustmentsCount = row._count.inventoryAdjustments
   return {
-    hasCutLogs: cutLogsCount > 0,
-    cutLogsCount,
+    hasInventoryAdjustments: inventoryAdjustmentsCount > 0,
+    inventoryAdjustmentsCount,
     sourceStagedRowId: row.sourceStagedRowId,
   }
 }
@@ -415,13 +420,13 @@ type InventoryOptionRawRow = {
   stockUnitAbbrev: string | null
   itemCoverageUnitAbbrev: string | null
   startingStock: Prisma.Decimal
-  totalCutSum: Prisma.Decimal
+  netDeducted: Prisma.Decimal
   coveragePerUnit: Prisma.Decimal | null
 }
 
 /**
  * Picker / options search for inventory rows. Filters are AND'd: warehouse +
- * archived=false + computed-balance>0 (`startingStock > totalCutSum`) +
+ * archived=false + computed-balance>0 (`startingStock > netDeducted`) +
  * (optional) product + (optional) location text contains, then identity-OR
  * across `inventoryNumber`, `rollNumber`, `dyeLot`, `note`. Balance + coverage
  * are stamped via the same pure helpers used by the row normalizer (single
@@ -442,7 +447,7 @@ export async function searchInventoryOptions(
   const conditions: Prisma.Sql[] = [
     Prisma.sql`"warehouseId" = ${args.warehouseId}`,
     Prisma.sql`"isArchived" = false`,
-    Prisma.sql`"startingStock" > "totalCutSum"`,
+    Prisma.sql`"startingStock" > "netDeducted"`,
   ]
   if (args.productId !== undefined) {
     conditions.push(Prisma.sql`"productId" = ${args.productId}`)
@@ -472,7 +477,7 @@ export async function searchInventoryOptions(
       "stockUnitAbbrev",
       "itemCoverageUnitAbbrev",
       "startingStock",
-      "totalCutSum",
+      "netDeducted",
       "coveragePerUnit"
     FROM "flooring_inventory"
     WHERE ${whereClause}
@@ -485,7 +490,7 @@ export async function searchInventoryOptions(
   const items = page.map((row) => {
     const balanceNum = computeInventoryBalance({
       startingStock: row.startingStock.toString(),
-      totalCutSum: row.totalCutSum.toString(),
+      netDeducted: row.netDeducted.toString(),
     })
     const coverageNum = computeInventoryCoverage({
       balance: balanceNum,

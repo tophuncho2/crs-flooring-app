@@ -1,22 +1,23 @@
 import type { Prisma } from "../../../generated/prisma/client.js"
 import {
   buildFlooringProductDisplayName,
-  type CutLogListFilters,
-  type CutLogParentContext,
-  type CutLogRow,
-  type CutLogStatus,
-  type InventoryCutLogRow,
+  type EnrichedInventoryAdjustmentRow,
+  type FlooringInventoryAdjustmentType,
+  type InventoryAdjustmentListFilters,
+  type InventoryAdjustmentParentContext,
+  type InventoryAdjustmentRow,
+  type InventoryAdjustmentStatus,
 } from "@builders/domain"
 import { db } from "../../../client.js"
 import {
-  cutLogRowSelect,
-  inventoryCutLogRowSelect,
-  type CutLogDbClient,
-  type CutLogRowPayload,
-  type InventoryCutLogRowPayload,
+  adjustmentRowSelect,
+  enrichedInventoryAdjustmentRowSelect,
+  type EnrichedInventoryAdjustmentRowPayload,
+  type InventoryAdjustmentDbClient,
+  type InventoryAdjustmentRowPayload,
 } from "./shared.js"
 
-export type CutLogRecord = CutLogRow
+export type InventoryAdjustmentRecord = InventoryAdjustmentRow
 
 function toDecimalString(value: { toString(): string }): string {
   return value.toString()
@@ -30,24 +31,25 @@ function toDecimalStringOrNull(
 }
 
 /**
- * Normalize a cut-log payload into the domain read shape. Decimal columns
- * surface as strings; nullable columns preserve null instead of coercing
- * to "".
+ * Normalize an adjustment payload into the domain read shape. Decimal
+ * columns surface as strings; nullable columns preserve null instead of
+ * coercing to "".
  *
- * Two snapshot families on the cut-log row:
+ * Two snapshot families on the adjustment row:
  *  - Frozen-at-create: `inventoryItem`, `categorySlug`, `inventoryNumber`,
  *    `rollPrefix`, `rollNumber`, `dyeLot`, `inventoryNote`, and the four
  *    unit-of-measure labels. Stamped once at insert, never mutated.
  *  - Denormalized mirror: `location` — re-stamped on create / update /
- *    finalize, cleared on void.
- *
- * Pre-migration rows surface nulls on the new snapshot columns.
+ *    finalize.
  */
-export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
-  const status: CutLogStatus = row.status
+export function normalizeAdjustmentRow(
+  row: InventoryAdjustmentRowPayload,
+): InventoryAdjustmentRecord {
+  const status: InventoryAdjustmentStatus = row.status
+  const adjustmentType: FlooringInventoryAdjustmentType = row.adjustmentType
   return {
     id: row.id,
-    cutLogNumber: row.cutLogNumber,
+    adjustmentNumber: row.adjustmentNumber,
     inventoryId: row.inventoryId,
     inventoryItem: row.inventoryItem,
     inventoryNumber: row.inventoryNumber ?? null,
@@ -63,18 +65,18 @@ export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
     workOrderId: row.workOrderId ?? null,
     workOrderItemId: row.workOrderItemId ?? null,
     before: toDecimalStringOrNull(row.before),
-    cut: toDecimalString(row.cut),
+    quantity: toDecimalString(row.quantity),
     after: toDecimalStringOrNull(row.after),
-    coverageCut: toDecimalStringOrNull(row.coverageCut),
+    coverage: toDecimalStringOrNull(row.coverage),
     stockUnitName: row.stockUnitName ?? null,
     stockUnitAbbrev: row.stockUnitAbbrev ?? null,
     itemCoverageUnitName: row.itemCoverageUnitName ?? null,
     itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? null,
+    adjustmentType,
     status,
     isFinal: row.isFinal,
-    finalCutSequence: row.finalCutSequence,
+    finalSequence: row.finalSequence,
     isWaste: row.isWaste,
-    void: row.void,
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -82,19 +84,19 @@ export function normalizeCutLogRow(row: CutLogRowPayload): CutLogRecord {
 }
 
 /**
- * Inventory-side cut-log normalizer. Calls `normalizeCutLogRow` for the
- * canonical fields and stamps the two server-resolved labels needed by
+ * Inventory-side adjustment normalizer. Calls `normalizeAdjustmentRow` for
+ * the canonical fields and stamps the two server-resolved labels needed by
  * the inventory record-view side panel: `workOrderNumber` from the linked
  * work order, `workOrderItemProductLabel` from the linked work-order
  * item's product (via the pure `buildFlooringProductDisplayName` helper,
  * per the data-layer carve-out in `packages/db/CLAUDE.md`).
  */
-export function normalizeInventoryCutLogRow(
-  row: InventoryCutLogRowPayload,
-): InventoryCutLogRow {
+export function normalizeEnrichedInventoryAdjustmentRow(
+  row: EnrichedInventoryAdjustmentRowPayload,
+): EnrichedInventoryAdjustmentRow {
   const product = row.workOrderItem?.product ?? null
   return {
-    ...normalizeCutLogRow(row),
+    ...normalizeAdjustmentRow(row),
     workOrderNumber: row.workOrder?.workOrderNumber ?? null,
     workOrderItemProductLabel: product
       ? buildFlooringProductDisplayName({
@@ -108,40 +110,40 @@ export function normalizeInventoryCutLogRow(
   }
 }
 
-export async function getCutLogById(
+export async function getAdjustmentById(
   id: string,
-  client: CutLogDbClient = db,
-): Promise<CutLogRecord | null> {
-  const row = await client.flooringCutLog.findUnique({
+  client: InventoryAdjustmentDbClient = db,
+): Promise<InventoryAdjustmentRecord | null> {
+  const row = await client.flooringInventoryAdjustment.findUnique({
     where: { id },
-    select: cutLogRowSelect,
+    select: adjustmentRowSelect,
   })
-  return row ? normalizeCutLogRow(row) : null
+  return row ? normalizeAdjustmentRow(row) : null
 }
 
 /**
- * Returns the parent inventory context every cut-log mutation path needs
+ * Returns the parent inventory context every adjustment mutation path needs
  * under the FOR UPDATE lock:
- *   - `startingStock` + `currentTotalCutSum` for the
- *     `totalCutSum ≤ startingStock` invariant.
- *   - `coveragePerUnit` + `categorySlug` for `computeCutCoverage`.
- *   - Unit-of-measure labels — stamped on the cut log at create
+ *   - `startingStock` + `currentNetDeducted` for the
+ *     `netDeducted ≤ startingStock` invariant.
+ *   - `coveragePerUnit` + `categorySlug` for `computeAdjustmentCoverage`.
+ *   - Unit-of-measure labels — stamped on the adjustment at create
  *     (frozen thereafter).
  *   - The 5 inventory-identity primitives + the composed `inventoryItem`
- *     — stamped on the cut log at create (frozen thereafter).
- *   - `productId` / `productName` / `warehouseId` — stamped on the cut log
+ *     — stamped on the adjustment at create (frozen thereafter).
+ *   - `productId` / `productName` / `warehouseId` — stamped on the adjustment
  *     at create (frozen thereafter); `productName` surfaces to the UI as
  *     a label, `productId` / `warehouseId` are FKs used for joins and to
- *     filter the cut-log edit panel's link pickers.
- *   - `location` — re-snapped on every state-changing write; cleared on
- *     void. Carries the parent's current value at call time.
+ *     filter the adjustment edit panel's link pickers.
+ *   - `location` — re-snapped on every state-changing write. Carries the
+ *     parent's current value at call time.
  *
  * Caller has already locked the inventory FOR UPDATE.
  */
-export async function getInventoryParentContextForCutLogs(
+export async function getInventoryParentContextForAdjustments(
   tx: Prisma.TransactionClient,
   inventoryId: string,
-): Promise<CutLogParentContext | null> {
+): Promise<InventoryAdjustmentParentContext | null> {
   const row = await tx.flooringInventory.findUnique({
     where: { id: inventoryId },
     select: {
@@ -154,7 +156,7 @@ export async function getInventoryParentContextForCutLogs(
       note: true,
       location: true,
       startingStock: true,
-      totalCutSum: true,
+      netDeducted: true,
       coveragePerUnit: true,
       categorySlug: true,
       stockUnitName: true,
@@ -171,7 +173,7 @@ export async function getInventoryParentContextForCutLogs(
     inventoryId: row.id,
     inventoryItem: row.inventoryItem,
     startingStock: row.startingStock.toString(),
-    currentTotalCutSum: row.totalCutSum.toString(),
+    currentNetDeducted: row.netDeducted.toString(),
     coveragePerUnit:
       row.coveragePerUnit === null ? null : row.coveragePerUnit.toString(),
     categorySlug: row.categorySlug,
@@ -192,85 +194,83 @@ export async function getInventoryParentContextForCutLogs(
 }
 
 // ---------------------------------------------------------------------------
-// WOMI-keyed reads (consumed by the WO record view loader; cut logs are
-// the entity, WOMI is the filter dimension — hence colocated with the
-// rest of the cut-log read primitives).
+// WOMI-keyed reads (consumed by the WO record view loader). Only DEDUCTION
+// rows can have a WO link, so these queries naturally exclude INCREASE rows;
+// the explicit `adjustmentType: "DEDUCTION"` filter is a belt-and-braces
+// guarantee that survives any future schema relaxation.
 // ---------------------------------------------------------------------------
 
-export async function listCutLogsForWorkOrderItem(
+export async function listAdjustmentsForWorkOrderItem(
   workOrderItemId: string,
-  client: CutLogDbClient = db,
-): Promise<CutLogRecord[]> {
-  const rows = await client.flooringCutLog.findMany({
-    where: { workOrderItemId },
-    select: cutLogRowSelect,
+  client: InventoryAdjustmentDbClient = db,
+): Promise<InventoryAdjustmentRecord[]> {
+  const rows = await client.flooringInventoryAdjustment.findMany({
+    where: { workOrderItemId, adjustmentType: "DEDUCTION" },
+    select: adjustmentRowSelect,
     orderBy: [
       { isFinal: "asc" },
-      { finalCutSequence: "asc" },
+      { finalSequence: "asc" },
       { createdAt: "asc" },
     ],
   })
-  return rows.map(normalizeCutLogRow)
+  return rows.map(normalizeAdjustmentRow)
 }
 
 /**
- * Bulk variant of `listCutLogsForWorkOrderItem` — returns the flat row
+ * Bulk variant of `listAdjustmentsForWorkOrderItem` — returns the flat row
  * set across many WOMI ids in one query, ordered identically. The SSR
- * loader for the WO record page calls this once and groups client-side
- * so every expandable cut-log row hydrates from initial data.
+ * loader for the WO record page calls this once and groups client-side so
+ * every expandable adjustment row hydrates from initial data.
  */
-export async function listCutLogsForWorkOrderItemIds(
+export async function listAdjustmentsForWorkOrderItemIds(
   workOrderItemIds: string[],
-  client: CutLogDbClient = db,
-): Promise<CutLogRecord[]> {
+  client: InventoryAdjustmentDbClient = db,
+): Promise<InventoryAdjustmentRecord[]> {
   if (workOrderItemIds.length === 0) return []
-  const rows = await client.flooringCutLog.findMany({
-    where: { workOrderItemId: { in: workOrderItemIds } },
-    select: cutLogRowSelect,
+  const rows = await client.flooringInventoryAdjustment.findMany({
+    where: { workOrderItemId: { in: workOrderItemIds }, adjustmentType: "DEDUCTION" },
+    select: adjustmentRowSelect,
     orderBy: [
       { isFinal: "asc" },
-      { finalCutSequence: "asc" },
+      { finalSequence: "asc" },
       { createdAt: "asc" },
     ],
   })
-  return rows.map(normalizeCutLogRow)
+  return rows.map(normalizeAdjustmentRow)
 }
 
 /**
- * Paginated read of inventory-side cut logs for a single parent record.
- * Powers the cut-log section on the inventory record view.
+ * Paginated read of inventory-side adjustments for a single parent record.
+ * Powers the adjustments section on the inventory record view. Returns
+ * both DEDUCTION and INCREASE rows interleaved.
  *
- * Sort: `finalCutSequence DESC NULLS FIRST`, then `id DESC`. This is the
- * single-inventory projection of the shared cut-logs order (inventory
- * number → final-cut sequence → id); inv# is constant here because the
- * query is scoped to one `inventoryId`, so it drops out. Two natural
+ * Sort: `finalSequence DESC NULLS FIRST`, then `id DESC`. This is the
+ * single-inventory projection of the shared adjustments order
+ * (inventory number → final sequence → id); inv# is constant here because
+ * the query is scoped to one `inventoryId`, so it drops out. Two natural
  * buckets fall out without a CASE expression:
  *
- *   1. Rows with `finalCutSequence = null` (pending — and the rare
- *      VOID-from-PENDING row that was voided before finalize ever ran)
- *      float to the top.
- *   2. Rows with `finalCutSequence` set (FINAL, plus VOID-after-FINAL —
- *      the sequence is preserved on void) come next, ordered DESC so
+ *   1. Rows with `finalSequence = null` (pending) float to the top.
+ *   2. Rows with `finalSequence` set (FINAL) come next, ordered DESC so
  *      the most recently finalized row leads.
  *
  * `id DESC` is a deterministic tiebreak only (UUIDs aren't chronological).
- * Backed by the `@@unique([inventoryId, finalCutSequence])` index.
- *
- * Returns `{ rows, total }` so the consumer can render Prev/Next
- * controls without a second query.
+ * Backed by the `@@unique([inventoryId, finalSequence])` index.
  */
-export async function listInventoryCutLogsPage(
+export async function listInventoryAdjustmentsPage(
   args: { inventoryId: string; skip: number; take: number },
-  client: CutLogDbClient = db,
-): Promise<{ rows: InventoryCutLogRow[]; hasMore: boolean }> {
-  const where: Prisma.FlooringCutLogWhereInput = { inventoryId: args.inventoryId }
+  client: InventoryAdjustmentDbClient = db,
+): Promise<{ rows: EnrichedInventoryAdjustmentRow[]; hasMore: boolean }> {
+  const where: Prisma.FlooringInventoryAdjustmentWhereInput = {
+    inventoryId: args.inventoryId,
+  }
 
   // Fetch take+1 to detect a next page without a separate count query.
-  const rows = await client.flooringCutLog.findMany({
+  const rows = await client.flooringInventoryAdjustment.findMany({
     where,
-    select: inventoryCutLogRowSelect,
+    select: enrichedInventoryAdjustmentRowSelect,
     orderBy: [
-      { finalCutSequence: { sort: "desc", nulls: "first" } },
+      { finalSequence: { sort: "desc", nulls: "first" } },
       { id: "desc" },
     ],
     skip: args.skip,
@@ -279,34 +279,34 @@ export async function listInventoryCutLogsPage(
 
   const hasMore = rows.length > args.take
   const page = hasMore ? rows.slice(0, args.take) : rows
-  return { rows: page.map(normalizeInventoryCutLogRow), hasMore }
+  return { rows: page.map(normalizeEnrichedInventoryAdjustmentRow), hasMore }
 }
 
 /**
- * Global cut-logs ledger read powering the standalone `/dashboard/cut-logs`
- * list view. Unlike `listInventoryCutLogsPage` this is NOT scoped to one
- * inventory record:
+ * Global adjustments ledger read powering the standalone list view. Unlike
+ * `listInventoryAdjustmentsPage` this is NOT scoped to one inventory:
  *   - `filters.warehouseId` — optional IN match on the snapshot `warehouseId`
  *     (the only toolbar filter).
  *   - `search` — optional case-insensitive substring match on `inventoryItem`
- *     (backed by the `flooring_cut_log_inventoryItem_trgm_idx` GIN index).
+ *     (backed by `flooring_inventory_adjustment_inventoryItem_trgm_idx`).
  *   - Sort: `createdAt DESC, id DESC` — a stable newest-first ledger order
- *     so freshly created (pending) cuts surface at the top rather than
- *     being grouped deep under an inventory item. `cutLogNumber` is a
- *     "CUT-N" string and sorts unreliably, so `createdAt` is the key (it
- *     tracks the cut-log sequence at insert anyway). This deliberately
- *     differs from the inventory hub panel, which groups by final-cut
- *     sequence per the business sort choice.
+ *     so freshly created (pending) rows surface at the top rather than
+ *     being grouped deep under an inventory item.
  *
- * Reuses `inventoryCutLogRowSelect` + `normalizeInventoryCutLogRow` so the rows
- * carry the same server-resolved labels (workOrderNumber, product label,
- * warehouseName) the inventory hub side panel expects.
+ * Reuses `enrichedInventoryAdjustmentRowSelect` + the matching normalizer
+ * so the rows carry the same server-resolved labels (workOrderNumber,
+ * product label, warehouseName) the inventory hub side panel expects.
  */
-export async function listCutLogsForListView(
-  args: { search?: string; filters: CutLogListFilters; page: number; pageSize: number },
-  client: CutLogDbClient = db,
-): Promise<{ rows: InventoryCutLogRow[]; total: number }> {
-  const where: Prisma.FlooringCutLogWhereInput = {}
+export async function listAdjustmentsForListView(
+  args: {
+    search?: string
+    filters: InventoryAdjustmentListFilters
+    page: number
+    pageSize: number
+  },
+  client: InventoryAdjustmentDbClient = db,
+): Promise<{ rows: EnrichedInventoryAdjustmentRow[]; total: number }> {
+  const where: Prisma.FlooringInventoryAdjustmentWhereInput = {}
 
   const warehouseIds = args.filters.warehouseId
   if (warehouseIds && warehouseIds.length > 0) {
@@ -321,63 +321,70 @@ export async function listCutLogsForListView(
   const skip = (args.page - 1) * args.pageSize
 
   const [rows, total] = await Promise.all([
-    client.flooringCutLog.findMany({
+    client.flooringInventoryAdjustment.findMany({
       where,
-      select: inventoryCutLogRowSelect,
+      select: enrichedInventoryAdjustmentRowSelect,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip,
       take: args.pageSize,
     }),
-    client.flooringCutLog.count({ where }),
+    client.flooringInventoryAdjustment.count({ where }),
   ])
 
-  return { rows: rows.map(normalizeInventoryCutLogRow), total }
+  return { rows: rows.map(normalizeEnrichedInventoryAdjustmentRow), total }
 }
 
 /**
- * Minimal-shape read of every cut log on each inventory id, used by
- * `recomputeAndPersistTotalCutSums` to project the post-mutation
- * `totalCutSum`. Returns just the fields `computeTotalCutSum` operates on.
+ * Minimal-shape read of every adjustment on each inventory id, used by
+ * `recomputeAndPersistNetDeducted` to project the post-mutation `netDeducted`.
+ * Returns just the fields `computeNetDeducted` operates on (signed math
+ * keys off the `adjustmentType` discriminator).
  */
-export async function listCutLogsForInventoryIds(
+export async function listAdjustmentsForInventoryIds(
   inventoryIds: string[],
-  client: CutLogDbClient = db,
-): Promise<Array<{ inventoryId: string; cut: string; void: boolean }>> {
+  client: InventoryAdjustmentDbClient = db,
+): Promise<
+  Array<{
+    inventoryId: string
+    quantity: string
+    adjustmentType: FlooringInventoryAdjustmentType
+  }>
+> {
   if (inventoryIds.length === 0) return []
-  const rows = await client.flooringCutLog.findMany({
+  const rows = await client.flooringInventoryAdjustment.findMany({
     where: { inventoryId: { in: inventoryIds } },
-    select: { inventoryId: true, cut: true, void: true },
+    select: { inventoryId: true, quantity: true, adjustmentType: true },
   })
   return rows.map((r) => ({
     inventoryId: r.inventoryId,
-    cut: r.cut.toString(),
-    void: r.void,
+    quantity: r.quantity.toString(),
+    adjustmentType: r.adjustmentType,
   }))
 }
 
-export type PendingCutLogWithInventoryForMutation = {
-  cutLog: CutLogRecord
-  inventory: CutLogParentContext
+export type PendingAdjustmentWithInventoryForMutation = {
+  adjustment: InventoryAdjustmentRecord
+  inventory: InventoryAdjustmentParentContext
 }
 
 /**
  * Single-query read powering the per-row update + delete sync use cases.
- * Returns the cut log (full normalized record) plus the parent inventory's
- * `CutLogParentContext` shape — the use case asserts WOMI linkage /
- * pending-status / OCC against the cut log, then locks the inventory row
- * FOR UPDATE and applies the patch.
+ * Returns the adjustment (full normalized record) plus the parent
+ * inventory's `InventoryAdjustmentParentContext` shape — the use case
+ * asserts linkage / pending-status / OCC against the adjustment, then locks
+ * the inventory row FOR UPDATE and applies the patch.
  *
  * Transaction client is required (no `db` default) so the read participates
  * in the same TX that takes the lock.
  */
-export async function getPendingCutLogWithInventoryForMutation(
+export async function getPendingAdjustmentWithInventoryForMutation(
   tx: Prisma.TransactionClient,
-  cutLogId: string,
-): Promise<PendingCutLogWithInventoryForMutation | null> {
-  const row = await tx.flooringCutLog.findUnique({
-    where: { id: cutLogId },
+  adjustmentId: string,
+): Promise<PendingAdjustmentWithInventoryForMutation | null> {
+  const row = await tx.flooringInventoryAdjustment.findUnique({
+    where: { id: adjustmentId },
     select: {
-      ...cutLogRowSelect,
+      ...adjustmentRowSelect,
       inventory: {
         select: {
           id: true,
@@ -389,7 +396,7 @@ export async function getPendingCutLogWithInventoryForMutation(
           note: true,
           location: true,
           startingStock: true,
-          totalCutSum: true,
+          netDeducted: true,
           coveragePerUnit: true,
           categorySlug: true,
           stockUnitName: true,
@@ -404,14 +411,14 @@ export async function getPendingCutLogWithInventoryForMutation(
     },
   })
   if (!row) return null
-  const { inventory: inv, ...cutLogPayload } = row
+  const { inventory: inv, ...adjustmentPayload } = row
   return {
-    cutLog: normalizeCutLogRow(cutLogPayload),
+    adjustment: normalizeAdjustmentRow(adjustmentPayload),
     inventory: {
       inventoryId: inv.id,
       inventoryItem: inv.inventoryItem,
       startingStock: inv.startingStock.toString(),
-      currentTotalCutSum: inv.totalCutSum.toString(),
+      currentNetDeducted: inv.netDeducted.toString(),
       coveragePerUnit:
         inv.coveragePerUnit === null ? null : inv.coveragePerUnit.toString(),
       categorySlug: inv.categorySlug,

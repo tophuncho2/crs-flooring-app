@@ -6,11 +6,10 @@ import { getInventoryById, type InventoryRecord } from "./read-repository.js"
 
 /**
  * Acquire a row-level lock on a single inventory row for the duration of the
- * caller's transaction. Mirrors `lockInventoryForCutLog` in
- * `packages/db/src/flooring/work-orders/cut-logs/write-repository.ts` — same
- * SQL pattern, exposed under a non-cut-log-specific name so the inventory
- * update + delete use cases can share the lock primitive without the cut-log
- * naming smell.
+ * caller's transaction. Mirrors `lockInventoryForAdjustment` in
+ * `packages/db/src/flooring/inventory/adjustments/locks.ts` — same SQL
+ * pattern, exposed under a non-adjustment-specific name so the inventory
+ * update + delete use cases can share the lock primitive.
  *
  * Concurrent updates against the same inventory id serialize on this lock;
  * concurrent updates against different inventory ids run in parallel.
@@ -91,12 +90,12 @@ export type UpdateInventoryRecordInput = {
 }
 
 /**
- * Transactional helper — only called inside cut-log write transactions so the
- * `totalCutSum` running total stays in sync with the cut-log rows. Regular
- * user / worker code should never touch this directly.
+ * Transactional helper — only called inside adjustment write transactions
+ * so the `netDeducted` running total stays in sync with the adjustment
+ * rows. Regular user / worker code should never touch this directly.
  */
-export type UpdateInventoryTotalCutSumInput = {
-  totalCutSum: Prisma.Decimal | string | number
+export type UpdateInventoryNetDeductedInput = {
+  netDeducted: Prisma.Decimal | string | number
 }
 
 function buildUpdateData(
@@ -132,24 +131,24 @@ export async function updateInventoryRecord(
 }
 
 /**
- * Adjusts the inventory row's totalCutSum atomically. Called by cut-log
- * application use cases (a future sweep) inside the same transaction as the
- * cut-log mutation. Currently has no callers; reserved for the cut-log
- * application layer.
+ * Adjusts the inventory row's `netDeducted` atomically. Called by adjustment
+ * application use cases inside the same transaction as the adjustment
+ * mutation. Currently has no direct callers — the recompute primitive
+ * (`recomputeAndPersistNetDeducted`) issues the update inline.
  */
-export async function updateInventoryTotalCutSum(
+export async function updateInventoryNetDeducted(
   id: string,
-  input: UpdateInventoryTotalCutSumInput,
+  input: UpdateInventoryNetDeductedInput,
   client: InventoryDbClient = db,
 ): Promise<InventoryRecord> {
   await client.flooringInventory.update({
     where: { id },
-    data: { totalCutSum: input.totalCutSum },
+    data: { netDeducted: input.netDeducted },
     select: { id: true },
   })
   const record = await getInventoryById(id, client)
   if (!record) {
-    throw new Error(`updateInventoryTotalCutSum: inventory ${id} not found after update`)
+    throw new Error(`updateInventoryNetDeducted: inventory ${id} not found after update`)
   }
   return record
 }
@@ -196,7 +195,7 @@ export type InsertInventoryRowInput = {
   warehouseId: string
   location: string | null
   startingStock: Prisma.Decimal | string | number
-  totalCutSum: Prisma.Decimal | string | number
+  netDeducted: Prisma.Decimal | string | number
   isArchived: boolean
   fifoReceivedAt: Date
 }
@@ -239,7 +238,7 @@ export async function insertInventoryRow(
       warehouseId: input.warehouseId,
       location: input.location,
       startingStock: input.startingStock,
-      totalCutSum: input.totalCutSum,
+      netDeducted: input.netDeducted,
       isArchived: input.isArchived,
       fifoReceivedAt: input.fifoReceivedAt,
     },

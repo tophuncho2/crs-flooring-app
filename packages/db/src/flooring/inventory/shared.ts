@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { inventoryCutLogRowSelect } from "./cut-logs/shared.js"
+import { enrichedInventoryAdjustmentRowSelect } from "./adjustments/shared.js"
 
 export type InventoryDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -42,22 +42,22 @@ export const inventoryRowSelect = {
   warehouse: { select: { id: true, name: true, number: true } },
   location: true,
   startingStock: true,
-  totalCutSum: true,
+  netDeducted: true,
   coveragePerUnit: true,
   isArchived: true,
   note: true,
   internalNotes: true,
   inventoryItem: true,
   fifoReceivedAt: true,
-  _count: { select: { cutLogs: true } },
+  _count: { select: { inventoryAdjustments: true } },
   createdAt: true,
   updatedAt: true,
 } as const satisfies Prisma.FlooringInventorySelect
 
 export const inventoryDetailSelect = {
   ...inventoryRowSelect,
-  cutLogs: {
-    select: inventoryCutLogRowSelect,
+  inventoryAdjustments: {
+    select: enrichedInventoryAdjustmentRowSelect,
     orderBy: [{ createdAt: "asc" }],
   },
 } as const satisfies Prisma.FlooringInventorySelect

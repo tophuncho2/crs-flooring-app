@@ -277,19 +277,17 @@ export async function countWorkOrders(
 }
 
 /**
- * Counts non-void cut logs linked to this work order. Used by the
+ * Counts inventory adjustments linked to this work order. Used by the
  * application-layer warehouse-change-lock predicate
- * (`assertWorkOrderWarehouseChangeAllowed`).
+ * (`assertWorkOrderWarehouseChangeAllowed`). Only DEDUCTION adjustments
+ * can carry a WO link.
  */
-export async function countWorkOrderCutLogs(
+export async function countWorkOrderAdjustments(
   workOrderId: string,
   client: WorkOrdersDbClient = db,
 ): Promise<number> {
-  return client.flooringCutLog.count({
-    where: {
-      workOrderId,
-      void: false,
-    },
+  return client.flooringInventoryAdjustment.count({
+    where: { workOrderId },
   })
 }
 
@@ -300,10 +298,11 @@ export async function countWorkOrderCutLogs(
  * to `buildWorkOrderSlipHtml` / `buildWorkOrderPickingTicketHtml` from
  * the domain layer.
  *
- * Inventory identity + unit fields on each cut log are read from the
- * cut log row's snapshot columns rather than the joined inventory or
+ * Inventory identity + unit fields on each adjustment are read from the
+ * adjustment row's snapshot columns rather than the joined inventory or
  * product row, so the printed document reflects the values captured at
- * cut time. This read runs at request time when a print view is opened.
+ * adjustment time. This read runs at request time when a print view is
+ * opened.
  */
 export async function getWorkOrderForFileGeneration(
   workOrderId: string,
@@ -345,21 +344,25 @@ export async function getWorkOrderForFileGeneration(
               name: true,
             },
           },
-          cutLogs: {
-            // isFinal + finalCutSequence drive the order but are not in the
+          inventoryAdjustments: {
+            // Print views show only WO-linked DEDUCTION adjustments; INCREASE
+            // rows never have a WO link, so they're naturally excluded. The
+            // explicit filter is belt-and-braces.
+            where: { adjustmentType: "DEDUCTION" as const },
+            // isFinal + finalSequence drive the order but are not in the
             // projection; Prisma supports orderBy on non-selected columns.
             orderBy: [
               { isFinal: "asc" as const },
-              { finalCutSequence: "asc" as const },
+              { finalSequence: "asc" as const },
               { createdAt: "asc" as const },
             ],
             select: {
               id: true,
-              cutLogNumber: true,
+              adjustmentNumber: true,
               before: true,
-              cut: true,
+              quantity: true,
               after: true,
-              coverageCut: true,
+              coverage: true,
               isWaste: true,
               notes: true,
               inventoryItem: true,
@@ -379,19 +382,19 @@ export async function getWorkOrderForFileGeneration(
     quantity: item.quantity == null ? "" : item.quantity.toString(),
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",
     notes: item.notes ?? "",
-    cutLogs: item.cutLogs.map((cl) => ({
-      id: cl.id,
-      cutLogNumber: cl.cutLogNumber,
-      before: cl.before === null ? "" : cl.before.toString(),
-      cut: cl.cut.toString(),
-      after: cl.after === null ? "" : cl.after.toString(),
-      coverageCut: cl.coverageCut === null ? "" : cl.coverageCut.toString(),
-      isWaste: cl.isWaste,
-      notes: cl.notes ?? "",
-      inventoryItem: cl.inventoryItem,
-      location: cl.location ?? "",
-      stockUnitAbbrev: cl.stockUnitAbbrev ?? "",
-      itemCoverageUnitAbbrev: cl.itemCoverageUnitAbbrev ?? "",
+    inventoryAdjustments: item.inventoryAdjustments.map((adj) => ({
+      id: adj.id,
+      adjustmentNumber: adj.adjustmentNumber,
+      before: adj.before === null ? "" : adj.before.toString(),
+      quantity: adj.quantity.toString(),
+      after: adj.after === null ? "" : adj.after.toString(),
+      coverage: adj.coverage === null ? "" : adj.coverage.toString(),
+      isWaste: adj.isWaste,
+      notes: adj.notes ?? "",
+      inventoryItem: adj.inventoryItem,
+      location: adj.location ?? "",
+      stockUnitAbbrev: adj.stockUnitAbbrev ?? "",
+      itemCoverageUnitAbbrev: adj.itemCoverageUnitAbbrev ?? "",
     })),
   }))
 

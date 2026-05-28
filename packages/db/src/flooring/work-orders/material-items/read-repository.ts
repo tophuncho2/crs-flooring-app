@@ -32,15 +32,15 @@ export async function listWorkOrderMaterialItems(
     orderBy: { createdAt: "asc" },
   })
 
-  // hasCutLogs gates product editability — an item with linked (non-void) cut
-  // logs locks its product. Reuse the non-void count helper.
-  const cutLogCounts = await countCutLogsByWorkOrderItemIds(
+  // hasInventoryAdjustments gates product editability — an item with linked
+  // adjustments locks its product.
+  const adjustmentCounts = await countAdjustmentsByWorkOrderItemIds(
     items.map((item) => item.id),
     client,
   )
 
   return items.map((item) =>
-    normalizeWorkOrderMaterialItem(item, (cutLogCounts.get(item.id) ?? 0) > 0),
+    normalizeWorkOrderMaterialItem(item, (adjustmentCounts.get(item.id) ?? 0) > 0),
   )
 }
 
@@ -83,23 +83,23 @@ export async function searchWorkOrderMaterialItemOptions(
 }
 
 /**
- * Counts non-void cut logs per WOMI id. Used by the UI to show a cut-log
- * badge per row + by the application layer when surfacing whether a
- * deletion will unlink existing cut logs (purely informational since
- * deletion is no longer blocked — the data write nulls the link columns
- * inside the diff TX).
+ * Counts inventory adjustments per WOMI id. Only DEDUCTION adjustments can
+ * carry a WO link, so this is implicitly a WO-linked-cut count. Used by the
+ * UI to show a badge per row + by the application layer when surfacing
+ * whether a deletion will unlink existing adjustments (purely informational
+ * since deletion is no longer blocked — the data write nulls the link
+ * columns inside the diff TX).
  */
-export async function countCutLogsByWorkOrderItemIds(
+export async function countAdjustmentsByWorkOrderItemIds(
   workOrderItemIds: string[],
   client: WorkOrdersDbClient = db,
 ): Promise<Map<string, number>> {
   if (workOrderItemIds.length === 0) return new Map()
 
-  const groups = await client.flooringCutLog.groupBy({
+  const groups = await client.flooringInventoryAdjustment.groupBy({
     by: ["workOrderItemId"],
     where: {
       workOrderItemId: { in: workOrderItemIds },
-      void: false,
     },
     _count: { _all: true },
   })
@@ -116,16 +116,16 @@ export type EligibleInventoryRow = {
   id: string
   inventoryItem: string
   startingStock: string
-  totalCutSum: string
+  netDeducted: string
   remainingStock: string
   stockUnitAbbrev: string
 }
 
 /**
- * Returns inventory rows eligible for a new pending cut on this WOMI:
- * same warehouse as the parent WO, same product as the WOMI, and at
- * least some remaining stock (`startingStock - totalCutSum > 0`). Drives
- * the inventory dropdown in the cut-log expandable row UI.
+ * Returns inventory rows eligible for a new pending adjustment on this WOMI:
+ * same warehouse as the parent WO, same product as the WOMI, and at least
+ * some remaining stock (`startingStock - netDeducted > 0`). Drives the
+ * inventory dropdown in the adjustment expandable row UI.
  */
 export async function listEligibleInventoryForWorkOrderItem(
   args: { workOrderId: string; workOrderItemId: string },
@@ -151,7 +151,7 @@ export async function listEligibleInventoryForWorkOrderItem(
       id: true,
       inventoryItem: true,
       startingStock: true,
-      totalCutSum: true,
+      netDeducted: true,
       stockUnitAbbrev: true,
     },
     orderBy: { fifoReceivedAt: "asc" },
@@ -160,13 +160,13 @@ export async function listEligibleInventoryForWorkOrderItem(
   return inventories
     .map((inv) => {
       const startingStock = Number(inv.startingStock)
-      const totalCutSum = Number(inv.totalCutSum)
-      const remaining = startingStock - totalCutSum
+      const netDeducted = Number(inv.netDeducted)
+      const remaining = startingStock - netDeducted
       return {
         id: inv.id,
         inventoryItem: inv.inventoryItem,
         startingStock: inv.startingStock.toString(),
-        totalCutSum: inv.totalCutSum.toString(),
+        netDeducted: inv.netDeducted.toString(),
         remainingStock: remaining.toFixed(2),
         stockUnitAbbrev: inv.stockUnitAbbrev ?? "",
         _remaining: remaining,

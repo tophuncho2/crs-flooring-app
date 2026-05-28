@@ -95,18 +95,18 @@ export async function updateWorkOrderMaterialItemRecord(
 }
 
 /**
- * Standalone delete. Nulls both link columns on any cut log that
- * referenced this WOMI, IN THE SAME transaction client, BEFORE the
+ * Standalone delete. Nulls both link columns on any inventory adjustment
+ * that referenced this WOMI, IN THE SAME transaction client, BEFORE the
  * WOMI delete fires. Schema's `onDelete: SetNull` would null
  * `workOrderItemId` automatically — but `workOrderId` would survive,
- * breaking `assertCutLogLinkageSymmetry`. We null both together to keep
+ * breaking `assertAdjustmentLinkageRules`. We null both together to keep
  * the linkage invariant.
  */
 export async function deleteWorkOrderMaterialItemRecordById(
   id: string,
   client: WorkOrdersDbClient = db,
 ): Promise<void> {
-  await client.flooringCutLog.updateMany({
+  await client.flooringInventoryAdjustment.updateMany({
     where: { workOrderItemId: id },
     data: { workOrderId: null, workOrderItemId: null },
   })
@@ -127,11 +127,11 @@ export type ApplyWorkOrderMaterialItemsDiffResult = {
 
 /**
  * Section-save diff applier. Mirrors templates' `applyTemplateMaterialItemsDiff`
- * with one addition: every WOMI in `deleted` has its linked cut logs'
- * link columns nulled together (workOrderId AND workOrderItemId) BEFORE
- * the WOMI rows are deleted. This keeps `assertCutLogLinkageSymmetry`
- * satisfied — the schema's `onDelete: SetNull` would null only one of
- * the two link columns.
+ * with one addition: every WOMI in `deleted` has its linked inventory
+ * adjustments' link columns nulled together (workOrderId AND
+ * workOrderItemId) BEFORE the WOMI rows are deleted. This keeps
+ * `assertAdjustmentLinkageRules` satisfied — the schema's
+ * `onDelete: SetNull` would null only one of the two link columns.
  */
 export async function applyWorkOrderMaterialItemsDiff(
   tx: Prisma.TransactionClient,
@@ -139,7 +139,7 @@ export async function applyWorkOrderMaterialItemsDiff(
 ): Promise<ApplyWorkOrderMaterialItemsDiffResult> {
   if (input.deleted.length > 0) {
     const deletedIds = input.deleted.map((d) => d.id)
-    await tx.flooringCutLog.updateMany({
+    await tx.flooringInventoryAdjustment.updateMany({
       where: { workOrderItemId: { in: deletedIds } },
       data: { workOrderId: null, workOrderItemId: null },
     })

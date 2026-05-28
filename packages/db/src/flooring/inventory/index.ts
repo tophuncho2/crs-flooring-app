@@ -1,4 +1,4 @@
 export * from "./shared.js"
 export * from "./read-repository.js"
 export * from "./write-repository.js"
-export * from "./cut-logs/index.js"
+export * from "./adjustments/index.js"
