@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import {
   Prisma,
   listStagedInventoryForMaterialization,
+  lockImportRow,
   materializeStagedRowsToInventory,
   withDatabaseTransaction,
   type MaterializeInventoryRowFields,
@@ -24,9 +25,7 @@ export async function materializeImportedStagedRowsUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    await c.$queryRaw(
-      Prisma.sql`SELECT "id" FROM "flooring_import_entry" WHERE "id" = ${payload.importEntryId} FOR UPDATE`,
-    )
+    await lockImportRow(c, payload.importEntryId)
 
     const loadedRows = await listStagedInventoryForMaterialization(c, {
       importEntryId: payload.importEntryId,

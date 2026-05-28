@@ -3,6 +3,7 @@ import {
   getImportById,
   getImportLinkState,
   getWarehouseById,
+  lockImportRow,
   updateImportRecord,
   withDatabaseTransaction,
   type UpdateImportRecordInput as DbUpdateImportInput,
@@ -38,9 +39,7 @@ export async function updateImportUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    await c.$queryRaw(
-      Prisma.sql`SELECT "id" FROM "flooring_import_entry" WHERE "id" = ${id} FOR UPDATE`,
-    )
+    await lockImportRow(c, id)
 
     const current = await getImportById(id, c)
     if (!current) {

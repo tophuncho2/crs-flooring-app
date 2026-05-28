@@ -3,6 +3,7 @@ import {
   createQueueOutboxEvent,
   getImportById,
   listStagedInventoryByImport,
+  lockImportRow,
   markStagedRowsForImport,
   withDatabaseTransaction,
 } from "@builders/db"
@@ -37,9 +38,7 @@ export async function markStagedRowsForImportUseCase(
       })
     }
 
-    await c.$queryRaw(
-      Prisma.sql`SELECT "id" FROM "flooring_import_entry" WHERE "id" = ${importEntryId} FOR UPDATE`,
-    )
+    await lockImportRow(c, importEntryId)
 
     const parent = await getImportById(importEntryId, c)
     if (!parent) {

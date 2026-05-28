@@ -1,7 +1,16 @@
-import type { Prisma } from "../../generated/prisma/client.js"
+import { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
 import { type ImportsDbClient } from "./shared.js"
 import { getImportById, type ImportRecord } from "./read-repository.js"
+
+export async function lockImportRow(
+  tx: Prisma.TransactionClient,
+  importEntryId: string,
+): Promise<void> {
+  await tx.$queryRaw(
+    Prisma.sql`SELECT "id" FROM "flooring_import_entry" WHERE "id" = ${importEntryId} FOR UPDATE`,
+  )
+}
 
 /**
  * Create input — the worker / import-creation use case pre-resolves every FK

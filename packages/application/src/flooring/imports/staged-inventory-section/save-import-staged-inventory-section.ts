@@ -6,6 +6,7 @@ import {
   getProductById,
   listFilterRowDiffSummariesByImport,
   listStagedInventoryRowDiffSummariesByImport,
+  lockImportRow,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
@@ -37,9 +38,7 @@ export async function saveImportStagedInventorySectionUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    await c.$queryRaw(
-      Prisma.sql`SELECT "id" FROM "flooring_import_entry" WHERE "id" = ${input.importEntryId} FOR UPDATE`,
-    )
+    await lockImportRow(c, input.importEntryId)
 
     const parent = await getImportById(input.importEntryId, c)
     if (!parent) {

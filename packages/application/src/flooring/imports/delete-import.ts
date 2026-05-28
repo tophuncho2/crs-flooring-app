@@ -2,6 +2,7 @@ import {
   Prisma,
   deleteImportRecordById,
   getImportLinkState,
+  lockImportRow,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
@@ -17,9 +18,7 @@ export async function deleteImportUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    await c.$queryRaw(
-      Prisma.sql`SELECT "id" FROM "flooring_import_entry" WHERE "id" = ${id} FOR UPDATE`,
-    )
+    await lockImportRow(c, id)
 
     const state = await getImportLinkState(id, c)
     if (!state) {
