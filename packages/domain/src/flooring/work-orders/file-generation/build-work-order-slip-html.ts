@@ -2,7 +2,7 @@ import type { WorkOrderFileGenerationInput } from "./types.js"
 import {
   WO_PRINT_STYLE_BLOCK,
   renderPageFrame,
-  renderWorkOrderCutLogs,
+  renderWorkOrderAdjustments,
   renderWorkOrderHeader,
   renderWorkOrderInstallerInstructionsBlock,
   renderWorkOrderPropertyInfo,
@@ -33,7 +33,7 @@ export function buildWorkOrderSlipHtml(input: WorkOrderFileGenerationInput): str
     renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderPropertyInfo(input),
     renderWorkOrderInstallerInstructionsBlock(input),
-    renderWorkOrderCutLogs(input.materialItems),
+    renderWorkOrderAdjustments(input.materialItems),
   ]
     .filter(Boolean)
     .join("\n")

@@ -3,16 +3,16 @@ import { WorkOrderDomainError } from "./errors.js"
 export function isWorkOrderWarehouseChangeBlocked(input: {
   currentWarehouseId: string | null
   nextWarehouseId: string | null
-  hasLinkedCutLogs: boolean
+  hasLinkedInventoryAdjustments: boolean
 }): boolean {
   if (input.currentWarehouseId === input.nextWarehouseId) return false
-  return input.hasLinkedCutLogs
+  return input.hasLinkedInventoryAdjustments
 }
 
 export function assertWorkOrderWarehouseChangeAllowed(input: {
   currentWarehouseId: string | null
   nextWarehouseId: string | null
-  hasLinkedCutLogs: boolean
+  hasLinkedInventoryAdjustments: boolean
 }): void {
   if (isWorkOrderWarehouseChangeBlocked(input)) {
     throw new WorkOrderDomainError("WORK_ORDER_WAREHOUSE_LOCKED", {

@@ -1,6 +1,6 @@
 export type WorkOrderDomainErrorCode =
   | "WORK_ORDER_WAREHOUSE_LOCKED"
-  | "WORK_ORDER_CUT_LOG_WRITE_FAILED"
+  | "WORK_ORDER_INVENTORY_ADJUSTMENT_WRITE_FAILED"
   | "WORK_ORDER_FILE_GENERATION_FAILED"
 
 export class WorkOrderDomainError extends Error {

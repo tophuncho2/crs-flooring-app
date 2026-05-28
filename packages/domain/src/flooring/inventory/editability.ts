@@ -27,7 +27,7 @@ export const INVENTORY_EDITABLE_FIELDS = [
   "isArchived",
 ] as const
 
-export const INVENTORY_TRANSACTIONAL_FIELDS = ["totalCutSum"] as const
+export const INVENTORY_TRANSACTIONAL_FIELDS = ["netDeducted"] as const
 
 export type InventoryImmutableField = (typeof INVENTORY_IMMUTABLE_FIELDS)[number]
 export type InventoryEditableField = (typeof INVENTORY_EDITABLE_FIELDS)[number]

@@ -101,7 +101,7 @@ describe("buildDuplicatedInventoryInsert", () => {
     expect(fields.startingStock).toBe("100")
 
     // Resets.
-    expect(fields.totalCutSum).toBe("0")
+    expect(fields.netDeducted).toBe("0")
     expect(fields.isArchived).toBe(false)
   })
 

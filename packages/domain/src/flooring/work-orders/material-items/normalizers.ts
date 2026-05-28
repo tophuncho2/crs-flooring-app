@@ -19,7 +19,7 @@ type WorkOrderMaterialItemInput = {
 
 export function normalizeWorkOrderMaterialItem(
   item: WorkOrderMaterialItemInput,
-  hasCutLogs = false,
+  hasInventoryAdjustments = false,
 ): WorkOrderMaterialItemRow {
   return {
     id: item.id,
@@ -31,7 +31,7 @@ export function normalizeWorkOrderMaterialItem(
     notes: item.notes ?? "",
     status: item.status,
     sourceTemplateItemId: item.sourceTemplateItemId,
-    hasCutLogs,
+    hasInventoryAdjustments,
     createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : item.createdAt,
   }
 }

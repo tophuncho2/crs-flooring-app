@@ -30,29 +30,29 @@ export function validateWorkOrderMaterialItemUpdateForm(
 }
 
 /**
- * The product stays editable until the item has linked (non-void) cut logs.
- * Once a cut log exists, the product is locked — the WOMI carries
- * product-derived snapshots (`productName`, `sendUnitName`, `sendUnitAbbrev`)
- * and its cut logs scope their inventory search by `workOrderItem.productId`
- * (see `listEligibleInventoryForWorkOrderItem`). Changing the product then
- * would drift the snapshots and sever every cut-log → inventory linkage; the
+ * The product stays editable until the item has linked inventory adjustments.
+ * Once one exists, the product is locked — the WOMI carries product-derived
+ * snapshots (`productName`, `sendUnitName`, `sendUnitAbbrev`) and its
+ * adjustments scope their inventory search by `workOrderItem.productId` (see
+ * `listEligibleInventoryForWorkOrderItem`). Changing the product then would
+ * drift the snapshots and sever every adjustment → inventory linkage; the
  * row can only be deleted instead.
  *
  * Returns true when the caller is changing the product on an item that has
- * cut logs. Ids are compared trimmed so whitespace noise can't trigger a
- * false positive. The caller supplies `hasCutLogs` from a non-void cut-log
- * count (the application layer counts them before the write).
+ * inventory adjustments. Ids are compared trimmed so whitespace noise can't
+ * trigger a false positive. The caller supplies `hasInventoryAdjustments`
+ * from an adjustment count (the application layer counts them before the write).
  */
 export function isWorkOrderMaterialItemProductChangeBlocked(
-  hasCutLogs: boolean,
+  hasInventoryAdjustments: boolean,
   currentProductId: string,
   nextProductId: string,
 ): boolean {
-  return hasCutLogs && currentProductId.trim() !== nextProductId.trim()
+  return hasInventoryAdjustments && currentProductId.trim() !== nextProductId.trim()
 }
 
 export function buildWorkOrderMaterialItemProductLockedMessage(): string {
-  return `Product cannot change once the item has linked cut logs.`
+  return `Product cannot change once the item has linked inventory adjustments.`
 }
 
 // A product may be linked at most once per work order (enforced canonically

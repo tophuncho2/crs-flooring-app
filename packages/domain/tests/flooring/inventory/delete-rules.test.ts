@@ -5,32 +5,32 @@ import {
 } from "../../../src/flooring/inventory/delete-rules.js"
 
 describe("isInventoryDeleteBlocked", () => {
-  it("is not blocked with zero cut logs", () => {
-    expect(isInventoryDeleteBlocked({ cutLogsCount: 0 })).toBe(false)
+  it("is not blocked with zero inventory adjustments", () => {
+    expect(isInventoryDeleteBlocked({ inventoryAdjustmentsCount: 0 })).toBe(false)
   })
 
-  it("is blocked with one or more cut logs", () => {
-    expect(isInventoryDeleteBlocked({ cutLogsCount: 1 })).toBe(true)
-    expect(isInventoryDeleteBlocked({ cutLogsCount: 9 })).toBe(true)
+  it("is blocked with one or more inventory adjustments", () => {
+    expect(isInventoryDeleteBlocked({ inventoryAdjustmentsCount: 1 })).toBe(true)
+    expect(isInventoryDeleteBlocked({ inventoryAdjustmentsCount: 9 })).toBe(true)
   })
 })
 
 describe("buildInventoryDeleteBlockedMessage", () => {
   it("reports the no-link case", () => {
-    expect(buildInventoryDeleteBlockedMessage({ cutLogsCount: 0 })).toBe(
-      "Inventory row has no linked cut logs",
+    expect(buildInventoryDeleteBlockedMessage({ inventoryAdjustmentsCount: 0 })).toBe(
+      "Inventory row has no linked inventory adjustments",
     )
   })
 
-  it("uses singular grammar for one cut log", () => {
-    expect(buildInventoryDeleteBlockedMessage({ cutLogsCount: 1 })).toBe(
-      "Inventory cannot be deleted while 1 cut log references it",
+  it("uses singular grammar for one adjustment", () => {
+    expect(buildInventoryDeleteBlockedMessage({ inventoryAdjustmentsCount: 1 })).toBe(
+      "Inventory cannot be deleted while 1 inventory adjustment references it",
     )
   })
 
-  it("uses plural grammar for many cut logs", () => {
-    expect(buildInventoryDeleteBlockedMessage({ cutLogsCount: 3 })).toBe(
-      "Inventory cannot be deleted while 3 cut logs reference it",
+  it("uses plural grammar for many adjustments", () => {
+    expect(buildInventoryDeleteBlockedMessage({ inventoryAdjustmentsCount: 3 })).toBe(
+      "Inventory cannot be deleted while 3 inventory adjustments reference it",
     )
   })
 })

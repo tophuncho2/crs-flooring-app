@@ -1,10 +1,10 @@
 export {
-  type CutLogRow,
-  type CutLogStatus,
-  type InventoryCutLogRow,
-} from "./cut-logs/types.js"
+  type InventoryAdjustmentRow,
+  type InventoryAdjustmentStatus,
+  type EnrichedInventoryAdjustmentRow,
+} from "./adjustments/types.js"
 
-import type { InventoryCutLogRow } from "./cut-logs/types.js"
+import type { EnrichedInventoryAdjustmentRow } from "./adjustments/types.js"
 
 export type InventoryRow = {
   id: string
@@ -31,7 +31,7 @@ export type InventoryRow = {
   warehouseNumber: string
   location: string
   startingStock: string
-  totalCutSum: string
+  netDeducted: string
   coveragePerUnit: string
   stockBalance: string
   coverageBalance: string
@@ -45,7 +45,7 @@ export type InventoryRow = {
 }
 
 export type InventoryDetail = InventoryRow & {
-  cutLogs: InventoryCutLogRow[]
+  inventoryAdjustments: EnrichedInventoryAdjustmentRow[]
 }
 
 export type InventoryForm = {

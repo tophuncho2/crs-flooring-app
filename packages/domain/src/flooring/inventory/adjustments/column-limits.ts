@@ -1,0 +1,1 @@
+export const INVENTORY_ADJUSTMENT_NOTES_MAX = 30

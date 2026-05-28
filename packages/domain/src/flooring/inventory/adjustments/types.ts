@@ -1,10 +1,12 @@
-export type FlooringCutLogStatus = "PENDING" | "QUEUED" | "FINAL" | "VOID"
+export type FlooringInventoryAdjustmentStatus = "PENDING" | "QUEUED" | "FINAL"
 
-export type CutLogStatus = FlooringCutLogStatus
+export type InventoryAdjustmentStatus = FlooringInventoryAdjustmentStatus
 
-export type CutLogRow = {
+export type FlooringInventoryAdjustmentType = "INCREASE" | "DEDUCTION"
+
+export type InventoryAdjustmentRow = {
   id: string
-  cutLogNumber: string
+  adjustmentNumber: string
   inventoryId: string
   inventoryItem: string
   inventoryNumber: string | null
@@ -20,55 +22,56 @@ export type CutLogRow = {
   workOrderId: string | null
   workOrderItemId: string | null
   before: string | null
-  cut: string
+  quantity: string
   after: string | null
-  coverageCut: string | null
+  coverage: string | null
   stockUnitName: string | null
   stockUnitAbbrev: string | null
   itemCoverageUnitName: string | null
   itemCoverageUnitAbbrev: string | null
-  status: FlooringCutLogStatus
+  adjustmentType: FlooringInventoryAdjustmentType
+  status: FlooringInventoryAdjustmentStatus
   isFinal: boolean
-  finalCutSequence: number | null
+  finalSequence: number | null
   isWaste: boolean
-  void: boolean
   notes: string
   createdAt: string
   updatedAt: string
 }
 
-export type CutLogPendingForm = {
-  cut: string
+export type InventoryAdjustmentPendingForm = {
+  adjustmentType: FlooringInventoryAdjustmentType
+  quantity: string
   isWaste: boolean
   notes: string
 }
 
-export type CutLogLinkUpdate = {
+export type InventoryAdjustmentLinkUpdate = {
   workOrderId: string | null
   workOrderItemId: string | null
 }
 
-export type InventoryCutLogRow = CutLogRow & {
+export type EnrichedInventoryAdjustmentRow = InventoryAdjustmentRow & {
   workOrderNumber: string | null
   workOrderItemProductLabel: string | null
   workOrderItemNotes: string | null
   warehouseName: string
 }
 
-export type InventoryCutLogPage = {
-  rows: InventoryCutLogRow[]
+export type EnrichedInventoryAdjustmentPage = {
+  rows: EnrichedInventoryAdjustmentRow[]
   hasMore: boolean
 }
 
-export type CutLogListFilters = {
+export type InventoryAdjustmentListFilters = {
   warehouseId?: ReadonlyArray<string>
 }
 
-export type CutLogParentContext = {
+export type InventoryAdjustmentParentContext = {
   inventoryId: string
   inventoryItem: string
   startingStock: string
-  currentTotalCutSum: string
+  currentNetDeducted: string
   coveragePerUnit: string | null
   categorySlug: string
   stockUnitName: string | null

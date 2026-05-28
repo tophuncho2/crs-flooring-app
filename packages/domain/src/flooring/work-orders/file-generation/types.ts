@@ -1,36 +1,38 @@
 /**
- * Joined read shape consumed by the PDF HTML builder. The data layer
- * assembles this in `getWorkOrderForFileGeneration` at the moment the
- * worker runs — no separate snapshot table; the rendered PDF in the
- * bucket IS the snapshot per locked decision #4.
+ * Joined read shape consumed by the work-order HTML print builders. The
+ * data layer assembles this in `getWorkOrderForFileGeneration` at the
+ * moment a print view loads.
  *
  * Property fields appear as live joined values (`property.streetAddress`,
- * `property.instructions`, etc.). Cut log inventory identity + unit
- * fields are read from the cut log row's own snapshot columns, not the
- * joined inventory or product row.
+ * `property.instructions`, etc.). Inventory-adjustment identity + unit
+ * fields are read from the adjustment row's own snapshot columns, not
+ * the joined inventory or product row.
+ *
+ * Only DEDUCTION adjustments with a WO link surface here — INCREASE rows
+ * are never WO-linked and the join scopes by `workOrderId`.
  */
 
-export type WorkOrderFileCutLogProjection = {
+export type WorkOrderFileAdjustmentProjection = {
   id: string
-  cutLogNumber: string
+  adjustmentNumber: string
   before: string
-  cut: string
+  quantity: string
   after: string
-  // Empty string when the cut log carries no coverage value. The PDF
-  // always renders a "Coverage Cut" column — empty rows just render
+  // Empty string when the adjustment carries no coverage value. The print
+  // view always renders a "Coverage" column — empty rows just render
   // the standard "—" placeholder.
-  coverageCut: string
+  coverage: string
   isWaste: boolean
   notes: string
-  // Inventory identity sourced from the cut log row's snapshot
+  // Inventory identity sourced from the adjustment row's snapshot
   // (NOT the joined inventory row). The denormalized `inventoryItem` column
   // already encodes `inv# · roll# · dyeLot · note` — render directly.
   inventoryItem: string
-  // Inventory location snapshot from the cut log row. Empty string when the
-  // parent inventory has no location set at the moment of the cut.
+  // Inventory location snapshot from the adjustment row. Empty string when
+  // the parent inventory had no location at the moment of the adjustment.
   location: string
-  // Unit snapshots from the cut log row — used as the per-cell suffix in
-  // the cut log sub-table. Empty string when the snapshot is null.
+  // Unit snapshots from the adjustment row — used as the per-cell suffix in
+  // the print sub-table. Empty string when the snapshot is null.
   stockUnitAbbrev: string
   itemCoverageUnitAbbrev: string
 }
@@ -43,7 +45,7 @@ export type WorkOrderFileMaterialItemProjection = {
   // quantity cell).
   sendUnitAbbrev: string
   notes: string
-  cutLogs: WorkOrderFileCutLogProjection[]
+  inventoryAdjustments: WorkOrderFileAdjustmentProjection[]
 }
 
 export type WorkOrderFileGenerationInput = {

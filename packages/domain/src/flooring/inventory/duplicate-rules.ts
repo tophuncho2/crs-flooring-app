@@ -57,7 +57,7 @@ export type DuplicatedInventoryInsertFields = {
   warehouseId: string
   location: string | null
   startingStock: string
-  totalCutSum: "0"
+  netDeducted: "0"
   isArchived: false
 }
 
@@ -152,7 +152,7 @@ export function buildDuplicatedInventoryInsert(
     warehouseId: source.warehouseId,
     location: emptyToNull(edits.location),
     startingStock: edits.startingStock.trim(),
-    totalCutSum: "0",
+    netDeducted: "0",
     isArchived: false,
   }
 }

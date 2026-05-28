@@ -1,4 +1,4 @@
-export type PendingCutLogInventorySnapshot = {
+export type PendingAdjustmentInventorySnapshot = {
   inventoryItem: string
   categorySlug: string
   inventoryNumber: string | null
@@ -11,9 +11,9 @@ export type PendingCutLogInventorySnapshot = {
   warehouseId: string
 }
 
-export function buildPendingCutLogInventorySnapshot(
-  inv: PendingCutLogInventorySnapshot,
-): PendingCutLogInventorySnapshot {
+export function buildPendingAdjustmentInventorySnapshot(
+  inv: PendingAdjustmentInventorySnapshot,
+): PendingAdjustmentInventorySnapshot {
   return {
     inventoryItem: inv.inventoryItem,
     categorySlug: inv.categorySlug,

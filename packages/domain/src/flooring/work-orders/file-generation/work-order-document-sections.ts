@@ -1,5 +1,5 @@
 import type {
-  WorkOrderFileCutLogProjection,
+  WorkOrderFileAdjustmentProjection,
   WorkOrderFileGenerationInput,
   WorkOrderFileMaterialItemProjection,
 } from "./types.js"
@@ -181,19 +181,19 @@ export function renderWorkOrderPropertyInfo(input: WorkOrderFileGenerationInput)
 `.trim()
 }
 
-export function renderWorkOrderCutLogs(
+export function renderWorkOrderAdjustments(
   items: WorkOrderFileMaterialItemProjection[],
 ): string {
   // The material-item construct is intentionally not shown on the document —
-  // every cut log is flattened into one table and labeled with its parent
+  // every adjustment is flattened into one table and labeled with its parent
   // product name (the leading column).
   const rows = items.flatMap((item) =>
-    item.cutLogs.map((cl) => ({ cl, productName: item.productName })),
+    item.inventoryAdjustments.map((adj) => ({ adj, productName: item.productName })),
   )
   if (rows.length === 0) {
-    return `<div class="empty-cell">No cut logs.</div>`
+    return `<div class="empty-cell">No inventory adjustments.</div>`
   }
-  const renderedRows = rows.map(renderCutLogRow).join("\n")
+  const renderedRows = rows.map(renderAdjustmentRow).join("\n")
   return `
 <table class="flat-rows">
   <colgroup>
@@ -237,22 +237,22 @@ function formatPropertyAddress(property: WorkOrderFileGenerationInput["property"
   return lines.join("\n")
 }
 
-function renderCutLogRow({
-  cl,
+function renderAdjustmentRow({
+  adj,
   productName,
 }: {
-  cl: WorkOrderFileCutLogProjection
+  adj: WorkOrderFileAdjustmentProjection
   productName: string
 }): string {
   return `
 <tr>
   <td>${escapeOrEmpty(productName)}</td>
-  <td>${escapeOrEmpty(cl.inventoryItem)}</td>
-  <td class="cl-num">${renderUnitValue(cl.before, cl.stockUnitAbbrev)}</td>
-  <td class="cl-num">${renderUnitValue(cl.cut, cl.stockUnitAbbrev)}</td>
-  <td class="cl-num">${renderUnitValue(cl.after, cl.stockUnitAbbrev)}</td>
-  <td class="cl-num">${renderUnitValue(cl.coverageCut, cl.itemCoverageUnitAbbrev)}</td>
-  <td>${escapeOrEmpty(cl.location)}</td>
+  <td>${escapeOrEmpty(adj.inventoryItem)}</td>
+  <td class="cl-num">${renderUnitValue(adj.before, adj.stockUnitAbbrev)}</td>
+  <td class="cl-num">${renderUnitValue(adj.quantity, adj.stockUnitAbbrev)}</td>
+  <td class="cl-num">${renderUnitValue(adj.after, adj.stockUnitAbbrev)}</td>
+  <td class="cl-num">${renderUnitValue(adj.coverage, adj.itemCoverageUnitAbbrev)}</td>
+  <td>${escapeOrEmpty(adj.location)}</td>
 </tr>
 `.trim()
 }
