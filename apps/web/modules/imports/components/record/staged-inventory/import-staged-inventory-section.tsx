@@ -6,8 +6,7 @@ import { UnitCell } from "@/components/cells"
 import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
 import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandable-rows"
 import { Grid, GridEmpty } from "@/components/grid"
-import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
-import { ProductPicker } from "@/modules/products/components/picker/product-picker"
+import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { isLocalOnlyRecordRow } from "@/modules/shared/engines/record-view"
 import type {
   ImportDetail,
@@ -80,27 +79,22 @@ export function ImportStagedInventorySection({
     // validator.
     const categoryEditable = editable && isNew
     switch (column.key) {
-      case "categoryFilter":
-        return (
-          <CategoryPicker
-            value={draft.categoryFilterId}
-            onChange={(next) => section.setFilterCategoryFilter(draft.clientId, next)}
-            selectedLabel={server?.categoryFilterName ?? null}
-            disabled={!categoryEditable}
-            placeholder="All categories"
-            ariaLabel="Filter row category"
-          />
-        )
       case "product":
         return (
-          <ProductPicker
-            value={draft.productId || null}
-            onChange={(next) => section.setFilterField(draft.clientId, "productId", next ?? "")}
-            onOptionSelected={(option) => section.setFilterProductSnapshot(draft.clientId, option)}
+          <ProductCategoryPicker
+            productId={draft.productId || null}
+            productLabel={draft.productName || null}
+            onProductChange={(next) =>
+              section.setFilterField(draft.clientId, "productId", next ?? "")
+            }
+            onProductOptionSelected={(option) =>
+              section.setFilterProductSnapshot(draft.clientId, option)
+            }
             categoryId={draft.categoryFilterId}
-            selectedLabel={draft.productName || null}
-            disabled={!productEditable}
-            placeholder="Select product"
+            categoryLabel={server?.categoryFilterName ?? null}
+            onCategoryChange={(next) => section.setFilterCategoryFilter(draft.clientId, next)}
+            productEditable={productEditable}
+            categoryEditable={categoryEditable}
             ariaLabel="Filter row product"
           />
         )

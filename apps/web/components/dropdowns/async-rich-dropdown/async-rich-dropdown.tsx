@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+import { computePopoverPlacement } from "@/components/dropdowns/positioning/compute-popover-placement"
 import type { AsyncRichDropdownOption } from "./contracts/async-rich-dropdown-option"
 
 const TRIGGER_BASE_CLASS_NAME =
@@ -15,34 +16,10 @@ const POPOVER_CLASS_NAME =
 const SEARCH_INPUT_CLASS_NAME =
   "w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2.5 py-1.5 text-sm text-[var(--foreground)] outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40"
 
-const VIEWPORT_MARGIN_PX = 8
-const POPOVER_GAP_PX = 6
-const POPOVER_MAX_HEIGHT_PX = 320
 const LOAD_MORE_SCROLL_THRESHOLD_PX = 80
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
-}
-
-// Decide whether the popover renders below or above the trigger. Flips up when
-// there isn't room below for the full max-height AND there's more room above.
-// Caps `maxHeight` to whatever space is available so the popover never extends
-// past the viewport on either side.
-function computePopoverPlacement(triggerRect: DOMRect): React.CSSProperties {
-  const spaceBelow = window.innerHeight - triggerRect.bottom - VIEWPORT_MARGIN_PX
-  const spaceAbove = triggerRect.top - VIEWPORT_MARGIN_PX
-  const openUp =
-    spaceBelow < POPOVER_MAX_HEIGHT_PX + POPOVER_GAP_PX && spaceAbove > spaceBelow
-  if (openUp) {
-    return {
-      bottom: window.innerHeight - triggerRect.top + POPOVER_GAP_PX,
-      maxHeight: Math.max(0, Math.min(POPOVER_MAX_HEIGHT_PX, spaceAbove - POPOVER_GAP_PX)),
-    }
-  }
-  return {
-    top: triggerRect.bottom + POPOVER_GAP_PX,
-    maxHeight: Math.max(0, Math.min(POPOVER_MAX_HEIGHT_PX, spaceBelow - POPOVER_GAP_PX)),
-  }
 }
 
 export type AsyncRichDropdownProps = {

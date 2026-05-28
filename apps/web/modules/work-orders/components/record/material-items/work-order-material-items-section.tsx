@@ -6,8 +6,7 @@ import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandable-rows"
 import { isLocalOnlyRecordRow } from "@/controllers/record/utils/record-row-ids"
-import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
-import { ProductPicker } from "@/modules/products/components/picker/product-picker"
+import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import {
   type CutLogRow,
   type WorkOrderDetail,
@@ -32,7 +31,6 @@ import { MaterialItemRemoveButton } from "./row-controls"
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
   leadingControls: [{ key: "remove", kind: "actions", width: 56 }],
   dataColumns: [
-    { key: "categoryFilter", label: "Category", minWidth: 140, grow: 0 },
     { key: "product", label: "Product", minWidth: 220, grow: 2 },
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 180, grow: 0.5, align: "end" },
     { key: "notes", label: "Notes", minWidth: 200, grow: 1.5 },
@@ -181,31 +179,21 @@ export function WorkOrderMaterialItemsSection({
     item: WorkOrderMaterialItemLocal,
   ) {
     switch (column.key) {
-      case "categoryFilter":
-        return (
-          <CategoryPicker
-            value={item.categoryFilterId}
-            onChange={(next) => section.changeCategoryFilter(item.id, next)}
-            selectedLabel={null}
-            disabled={!editable}
-            placeholder="All categories"
-            ariaLabel="Material item category filter"
-          />
-        )
       case "product":
         // Product is locked once the WOMI is saved (server enforces it
         // too — see WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED). Render the
         // picker only while the row is still a local-only draft;
         // saved rows show the snapshotted product name as static text.
         return isLocalOnlyRecordRow(item.id) ? (
-          <ProductPicker
-            value={item.productId || null}
-            onChange={(next) => section.changeField(item.id, "productId", next ?? "")}
-            onOptionSelected={(option) => section.setProductSnapshot(item.id, option)}
+          <ProductCategoryPicker
+            productId={item.productId || null}
+            productLabel={item.productName || null}
+            onProductChange={(next) => section.changeField(item.id, "productId", next ?? "")}
+            onProductOptionSelected={(option) => section.setProductSnapshot(item.id, option)}
             categoryId={item.categoryFilterId}
-            selectedLabel={item.productName || null}
-            disabled={!editable}
-            placeholder="Select product"
+            onCategoryChange={(next) => section.changeCategoryFilter(item.id, next)}
+            productEditable={editable}
+            categoryEditable={editable}
             ariaLabel="Material item product"
           />
         ) : (
