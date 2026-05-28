@@ -179,12 +179,19 @@ export function WorkOrderMaterialItemsSection({
     item: WorkOrderMaterialItemLocal,
   ) {
     switch (column.key) {
-      case "product":
+      case "product": {
         // Product is editable until the item has linked cut logs (server
         // enforces it too — see WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED).
         // Once it has cut logs the row only shows the product name as static
         // text and can only be deleted. New local rows never have cut logs.
-        return isLocalOnlyRecordRow(item.id) || !item.hasCutLogs ? (
+        //
+        // Derive the lock from the LIVE cut-log map (mirrors the imports
+        // "lock once it has children" pattern) rather than the server-baked
+        // `item.hasCutLogs`, so the cell flips the instant a cut is saved —
+        // without a page refresh. `.some(!void)` matches the server's
+        // non-void rule (countCutLogsByWorkOrderItemIds, void: false).
+        const hasCutLogs = (cutLogsByWorkOrderItemId[item.id] ?? []).some((r) => !r.void)
+        return isLocalOnlyRecordRow(item.id) || !hasCutLogs ? (
           <ProductCategoryPicker
             productId={item.productId || null}
             productLabel={item.productName || null}
@@ -205,6 +212,7 @@ export function WorkOrderMaterialItemsSection({
             {item.productName || "—"}
           </div>
         )
+      }
       case "quantity": {
         const unitAbbrev = item.sendUnitAbbrev
         return (
