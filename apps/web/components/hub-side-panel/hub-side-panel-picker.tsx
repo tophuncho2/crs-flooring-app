@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 import type { AsyncRichDropdownControllerOutput } from "@/controllers/dropdown-search"
 
 const SEARCH_INPUT_CLASS_NAME =
@@ -43,6 +44,13 @@ export type HubSidePanelPickerProps<TOption> = {
   emptyMessage?: string
   loadingMessage?: string
   clearLabel?: string
+  /**
+   * When provided, the search input renders into this element (via a portal)
+   * instead of inline above the option list. Lets a consumer pin the search in
+   * a sticky header above the scrolling list. Query wiring, focus, and keyboard
+   * navigation are unchanged. Defaults to inline.
+   */
+  searchPortalTarget?: HTMLElement | null
 }
 
 /**
@@ -65,6 +73,7 @@ export function HubSidePanelPicker<TOption>({
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
   clearLabel = "Clear selection",
+  searchPortalTarget,
 }: HubSidePanelPickerProps<TOption>) {
   const listboxId = useId()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
@@ -178,23 +187,27 @@ export function HubSidePanelPicker<TOption>({
 
   const hasSelection = selectedId !== null && selectedLabel !== null
 
+  const searchNode = (
+    <div className={joinClassNames("shrink-0", searchPortalTarget ? null : "pb-2")}>
+      <input
+        ref={searchInputRef}
+        type="search"
+        value={controller.query}
+        onChange={(event) => controller.onQueryChange(event.target.value)}
+        onKeyDown={handleSearchKeyDown}
+        placeholder={searchPlaceholder}
+        aria-controls={listboxId}
+        aria-activedescendant={
+          activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
+        }
+        className={SEARCH_INPUT_CLASS_NAME}
+      />
+    </div>
+  )
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 pb-2">
-        <input
-          ref={searchInputRef}
-          type="search"
-          value={controller.query}
-          onChange={(event) => controller.onQueryChange(event.target.value)}
-          onKeyDown={handleSearchKeyDown}
-          placeholder={searchPlaceholder}
-          aria-controls={listboxId}
-          aria-activedescendant={
-            activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
-          }
-          className={SEARCH_INPUT_CLASS_NAME}
-        />
-      </div>
+      {searchPortalTarget ? createPortal(searchNode, searchPortalTarget) : searchNode}
 
       {hasSelection ? (
         <button

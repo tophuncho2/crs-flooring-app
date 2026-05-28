@@ -87,6 +87,9 @@ export function ProductCategoryPicker({
 }: ProductCategoryPickerProps) {
   const [open, setOpen] = useState(false)
   const [activePicker, setActivePicker] = useState<ActivePicker>("product")
+  // The active picker portals its search input into this header slot so the
+  // search bar stays pinned above the scrolling option list.
+  const [searchSlot, setSearchSlot] = useState<HTMLDivElement | null>(null)
 
   const categoryController = useAsyncRichDropdownController<CategoryOption>({
     bucketKey: CATEGORY_OPTIONS_QUERY_KEY,
@@ -161,6 +164,7 @@ export function ProductCategoryPicker({
         disabled={!productEditable}
         ariaLabel="Product"
       />
+      <div ref={setSearchSlot} />
     </div>
   )
 
@@ -177,7 +181,9 @@ export function ProductCategoryPicker({
 
   return (
     <AnchoredPanel trigger={trigger} open={open} onClose={closePanel} stickyHeader={stickyHeader}>
-      {activePicker === "category" ? (
+      {/* Mount the list only once the header search slot exists, so the search
+          input portals straight into the sticky header (never flashing inline). */}
+      {searchSlot === null ? null : activePicker === "category" ? (
         <HubSidePanelPicker<CategoryOption>
           controller={categoryController}
           toOption={toCategoryOption}
@@ -187,6 +193,7 @@ export function ProductCategoryPicker({
           onClear={handleCategoryClear}
           onCancel={closePanel}
           searchPlaceholder="Search categories"
+          searchPortalTarget={searchSlot}
         />
       ) : (
         <HubSidePanelPicker<ProductOption>
@@ -198,6 +205,7 @@ export function ProductCategoryPicker({
           onClear={handleProductClear}
           onCancel={closePanel}
           searchPlaceholder="Search products"
+          searchPortalTarget={searchSlot}
         />
       )}
     </AnchoredPanel>
