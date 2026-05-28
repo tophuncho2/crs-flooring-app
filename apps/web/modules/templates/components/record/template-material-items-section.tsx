@@ -103,6 +103,8 @@ export function TemplateMaterialItemsSection({
                   onCategoryChange={(next) => onChangeCategoryFilter(item.id, next)}
                   productEditable={editable}
                   categoryEditable={editable}
+                  showProductCategory
+                  categoryLabel={item.categoryFilterName}
                   ariaLabel="Material item product"
                 />
               )

@@ -3,7 +3,7 @@ import type { TemplateMaterialItemRow } from "./types.js"
 type TemplateMaterialItemInput = {
   id: string
   productId: string
-  product: { name: string }
+  product: { name: string; category?: { name: string } | null }
   quantity: { toString(): string } | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
@@ -16,6 +16,7 @@ export function normalizeTemplateMaterialItem(item: TemplateMaterialItemInput): 
     id: item.id,
     productId: item.productId,
     productName: item.product.name,
+    categoryName: item.product.category?.name ?? "",
     quantity: item.quantity == null ? "" : item.quantity.toString(),
     sendUnitName: item.sendUnitName ?? "",
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",

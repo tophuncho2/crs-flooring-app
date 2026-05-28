@@ -30,6 +30,9 @@ export type TemplateMaterialItemLocal = {
   // Client-only ergonomic for narrowing the row's product picker. NOT
   // persisted to the server — excluded from the diff sent on save.
   categoryFilterId: string | null
+  // Display-only name of the product's category, seeded from the saved row so
+  // the combined picker can show it before the user touches the row.
+  categoryFilterName: string | null
 }
 
 type TemplateMaterialItemsLocalState = {
@@ -45,6 +48,7 @@ function toLocalItem(row: TemplateMaterialItemRow): TemplateMaterialItemLocal {
     quantity: row.quantity,
     notes: row.notes,
     categoryFilterId: null,
+    categoryFilterName: row.categoryName || null,
   }
 }
 
@@ -169,6 +173,7 @@ export function useTemplateMaterialItemsSection({
           quantity: "",
           notes: "",
           categoryFilterId: null,
+          categoryFilterName: null,
         },
       ],
     }))

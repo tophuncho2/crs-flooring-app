@@ -68,6 +68,8 @@ export type ProductOption = {
   id: string
   name: string
   categoryId: string
+  /** The product's category name, for pickers that surface the derived category. */
+  categoryName: string
   sendUnitName: string
   sendUnitAbbrev: string
   stockUnitName: string

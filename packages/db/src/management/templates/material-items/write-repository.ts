@@ -22,7 +22,7 @@ export type WriteTemplateMaterialItemInput = TemplateMaterialItemForm & ItemSend
 const templateMaterialItemSelect = {
   id: true,
   productId: true,
-  product: { select: { name: true } },
+  product: { select: { name: true, category: { select: { name: true } } } },
   quantity: true,
   sendUnitName: true,
   sendUnitAbbrev: true,

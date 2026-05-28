@@ -41,6 +41,13 @@ export type ProductCategoryPickerProps = {
   productEditable?: boolean
   /** Defaults true. When false the category trigger is disabled. */
   categoryEditable?: boolean
+  /**
+   * When true, picking a product reflects that product's category in the
+   * category trigger (the category is derived from the product — work orders,
+   * templates). When false the trigger only ever shows the explicitly chosen
+   * filter category (imports' persisted, lock-after-create filter).
+   */
+  showProductCategory?: boolean
   productPlaceholder?: string
   ariaLabel?: string
 }
@@ -82,6 +89,7 @@ export function ProductCategoryPicker({
   onCategoryChange,
   productEditable = true,
   categoryEditable = true,
+  showProductCategory = false,
   productPlaceholder = "Select product",
   ariaLabel = "Product",
 }: ProductCategoryPickerProps) {
@@ -90,6 +98,13 @@ export function ProductCategoryPicker({
   // The active picker portals its search input into this header slot so the
   // search bar stays pinned above the scrolling option list.
   const [searchSlot, setSearchSlot] = useState<HTMLDivElement | null>(null)
+  // Name shown on the category trigger after an in-panel interaction. The
+  // category trigger only carries a label (no options-list fallback), so we
+  // remember the picked category's name — or, when the category is derived from
+  // the product, the picked product's category name. Falls back to the
+  // `categoryLabel` prop (server-resolved name for already-saved rows).
+  const [pickedCategoryName, setPickedCategoryName] = useState<string | null>(null)
+  const categoryDisplayLabel = pickedCategoryName ?? categoryLabel
 
   const categoryController = useAsyncRichDropdownController<CategoryOption>({
     bucketKey: CATEGORY_OPTIONS_QUERY_KEY,
@@ -124,12 +139,14 @@ export function ProductCategoryPicker({
   const handleCategorySelect = useCallback(
     (option: HubSidePanelPickerOption) => {
       onCategoryChange(option.id)
+      setPickedCategoryName(option.title)
       setActivePicker("product")
     },
     [onCategoryChange],
   )
   const handleCategoryClear = useCallback(() => {
     onCategoryChange(null)
+    setPickedCategoryName(null)
     setActivePicker("product")
   }, [onCategoryChange])
 
@@ -137,21 +154,23 @@ export function ProductCategoryPicker({
     (_option: HubSidePanelPickerOption, raw: ProductOption) => {
       onProductChange(raw.id)
       onProductOptionSelected?.(raw)
+      if (showProductCategory) setPickedCategoryName(raw.categoryName)
       setOpen(false)
     },
-    [onProductChange, onProductOptionSelected],
+    [onProductChange, onProductOptionSelected, showProductCategory],
   )
   const handleProductClear = useCallback(() => {
     onProductChange(null)
     onProductOptionSelected?.(null)
-  }, [onProductChange, onProductOptionSelected])
+    if (showProductCategory) setPickedCategoryName(null)
+  }, [onProductChange, onProductOptionSelected, showProductCategory])
 
   const stickyHeader = (
     <div className="flex flex-col gap-2">
       <HubSidePanelPickerTrigger
         expanded={activePicker === "category"}
         onToggle={() => setActivePicker("category")}
-        selectedLabel={categoryLabel}
+        selectedLabel={categoryDisplayLabel}
         placeholder="All categories"
         disabled={!categoryEditable}
         ariaLabel="Category filter"
@@ -188,7 +207,7 @@ export function ProductCategoryPicker({
           controller={categoryController}
           toOption={toCategoryOption}
           selectedId={categoryId}
-          selectedLabel={categoryLabel}
+          selectedLabel={categoryDisplayLabel}
           onSelect={handleCategorySelect}
           onClear={handleCategoryClear}
           onCancel={closePanel}

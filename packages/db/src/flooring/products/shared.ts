@@ -58,6 +58,7 @@ export const productOptionSelect = {
   id: true,
   name: true,
   categoryId: true,
+  category: { select: { name: true } },
   style: true,
   color: true,
   sendUnitName: true,

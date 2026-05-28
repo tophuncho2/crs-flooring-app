@@ -194,6 +194,7 @@ export function WorkOrderMaterialItemsSection({
             onCategoryChange={(next) => section.changeCategoryFilter(item.id, next)}
             productEditable={editable}
             categoryEditable={editable}
+            showProductCategory
             ariaLabel="Material item product"
           />
         ) : (
