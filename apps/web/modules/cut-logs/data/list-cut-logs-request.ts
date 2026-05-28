@@ -1,8 +1,8 @@
 import type { ListInput, ListOutput } from "@builders/application"
 import {
-  CUT_LOGS_LIST_PAGE_SIZE,
-  type CutLogListFilters,
-  type InventoryCutLogRow,
+  INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
+  type InventoryAdjustmentListFilters,
+  type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
 import { requestJson } from "@/transport/http"
 
@@ -31,26 +31,26 @@ function readSearchParamArray(
 
 export function parseCutLogsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
-): ListInput<CutLogListFilters> {
+): ListInput<InventoryAdjustmentListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
   const warehouseId = Array.from(new Set(readSearchParamArray(searchParams, "warehouseId")))
-  const filters: Partial<CutLogListFilters> = {}
+  const filters: Partial<InventoryAdjustmentListFilters> = {}
   if (warehouseId.length > 0) filters.warehouseId = warehouseId
 
   const hasAnyFilter = Object.keys(filters).length > 0
 
   return {
     search: searchRaw || undefined,
-    filters: hasAnyFilter ? (filters as CutLogListFilters) : undefined,
+    filters: hasAnyFilter ? (filters as InventoryAdjustmentListFilters) : undefined,
     page,
-    pageSize: CUT_LOGS_LIST_PAGE_SIZE,
+    pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   }
 }
 
-function buildCutLogsListSearchString(input: ListInput<CutLogListFilters>): string {
+function buildCutLogsListSearchString(input: ListInput<InventoryAdjustmentListFilters>): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
   const values = (input.filters?.warehouseId ?? []) as ReadonlyArray<string>
@@ -61,11 +61,11 @@ function buildCutLogsListSearchString(input: ListInput<CutLogListFilters>): stri
 }
 
 export async function listCutLogsRequest(
-  input: ListInput<CutLogListFilters>,
-): Promise<ListOutput<InventoryCutLogRow>> {
+  input: ListInput<InventoryAdjustmentListFilters>,
+): Promise<ListOutput<EnrichedInventoryAdjustmentRow>> {
   const queryString = buildCutLogsListSearchString(input)
   const url = queryString ? `/api/cut-logs?${queryString}` : "/api/cut-logs"
-  return requestJson<ListOutput<InventoryCutLogRow>>(url, {
+  return requestJson<ListOutput<EnrichedInventoryAdjustmentRow>>(url, {
     method: "GET",
     headers: { Accept: "application/json" },
   })

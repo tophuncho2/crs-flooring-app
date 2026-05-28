@@ -1,12 +1,12 @@
 import type { DataTableColumn } from "@/components/data-table"
-import type { InventoryCutLogRow } from "@builders/domain"
+import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 
 /**
  * Column definitions for the cut-logs ledger `DataTable`. Order is the visual
  * left-to-right order. Status + Waste are shown as data columns (the ledger
  * surfaces them) but are not filterable — warehouse is the only toolbar filter.
  */
-export const CUT_LOGS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryCutLogRow>> = [
+export const CUT_LOGS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInventoryAdjustmentRow>> = [
   { key: "cutLogNumber", label: "Cut Log #" },
   { key: "status", label: "Status" },
   { key: "productName", label: "Product" },
@@ -14,10 +14,10 @@ export const CUT_LOGS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryCutLo
   { key: "rollNumber", label: "Roll #" },
   { key: "dyeLot", label: "Dye Lot" },
   { key: "inventoryNote", label: "Note" },
-  { key: "cut", label: "Cut", align: "end" },
-  { key: "coverageCut", label: "Coverage Cut", align: "end" },
+  { key: "quantity", label: "Cut", align: "end" },
+  { key: "coverage", label: "Coverage Cut", align: "end" },
   { key: "isWaste", label: "Waste" },
-  { key: "finalCutSequence", label: "Final Seq #", align: "end" },
+  { key: "finalSequence", label: "Final Seq #", align: "end" },
   { key: "notes", label: "Notes" },
   { key: "warehouseName", label: "Warehouse" },
   { key: "workOrderNumber", label: "WO #" },

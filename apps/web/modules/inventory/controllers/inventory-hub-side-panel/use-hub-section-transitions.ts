@@ -3,7 +3,7 @@
 import { useCallback, type Dispatch, type SetStateAction } from "react"
 import {
   toInventoryForm,
-  type InventoryCutLogRow,
+  type EnrichedInventoryAdjustmentRow,
   type InventoryRow,
 } from "@builders/domain"
 import type { RecordSectionError } from "@/types/record/section-error"
@@ -27,7 +27,7 @@ export type UseHubSectionTransitionsArgs = {
 
 export type HubSectionTransitionsSlice = {
   enterInventoryEditFromContext: () => void
-  enterCutLogEditFromContext: (row: InventoryCutLogRow) => void
+  enterCutLogEditFromContext: (row: EnrichedInventoryAdjustmentRow) => void
   exitToView: () => void
 }
 
@@ -58,7 +58,7 @@ export function useHubSectionTransitions({
   }, [contextInventoryId, inventory, inventoryEdit, setError, setMode])
 
   const enterCutLogEditFromContext = useCallback(
-    (row: InventoryCutLogRow) => {
+    (row: EnrichedInventoryAdjustmentRow) => {
       if (contextInventoryId === null) return
       // Hand the row to the embedded cut-log panel controller. It owns
       // form/baseline/mutations; the hub just picks the mode and lets the

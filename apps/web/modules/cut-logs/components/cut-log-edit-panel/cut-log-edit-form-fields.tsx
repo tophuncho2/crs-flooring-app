@@ -1,6 +1,6 @@
 "use client"
 
-import { CUT_LOG_NOTES_MAX, isCutLogPendingEditable } from "@builders/domain"
+import { INVENTORY_ADJUSTMENT_NOTES_MAX, isAdjustmentPendingEditable } from "@builders/domain"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
@@ -68,7 +68,7 @@ export function CutLogEditFormFields({
   // Locked once the row leaves the PENDING-editable state. Mirrors the server
   // guard (assertCutLogPendingMutationAllowed) so finalized/voided rows can't
   // accept input — the PATCH route would 409 anyway.
-  const isReadOnly = mode === "edit" && cutLog != null && !isCutLogPendingEditable(cutLog)
+  const isReadOnly = mode === "edit" && cutLog != null && !isAdjustmentPendingEditable(cutLog)
   const fieldsEditable = !isSaving && !isReadOnly
 
   return (
@@ -109,7 +109,7 @@ export function CutLogEditFormFields({
           />
           <SidePanelPreviewReadonlyRow
             label="Coverage"
-            value={formatMeasurement(cutLog.coverageCut, coverageUnit)}
+            value={formatMeasurement(cutLog.coverage, coverageUnit)}
           />
         </SidePanelPreviewReadonlySection>
       ) : null}
@@ -121,8 +121,8 @@ export function CutLogEditFormFields({
           <FormField label="Cut" required>
             <UnitCell
               editable={fieldsEditable}
-              value={form.cut}
-              onChange={(next) => controller.setField("cut", next)}
+              value={form.quantity}
+              onChange={(next) => controller.setField("quantity", next)}
               unit={stockUnit}
               placeholder="0"
               ariaLabel="Cut amount"
@@ -133,7 +133,7 @@ export function CutLogEditFormFields({
           <FormField
             label="Notes"
             currentLength={fieldsEditable ? form.notes.length : undefined}
-            maxLength={CUT_LOG_NOTES_MAX}
+            maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
           >
             <TextCell
               editable={fieldsEditable}
@@ -141,7 +141,7 @@ export function CutLogEditFormFields({
               onChange={(next) => controller.setField("notes", next)}
               placeholder="Notes"
               ariaLabel="Cut log notes"
-              maxLength={CUT_LOG_NOTES_MAX}
+              maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
             />
           </FormField>
         </CellAt>

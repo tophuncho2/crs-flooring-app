@@ -80,7 +80,7 @@ export function useInventoryHubChrome(
     }
     switch (mode.kind) {
       case "section-edit-cut-log":
-        return cutLog?.cutLogNumber ?? "Cut log"
+        return cutLog?.adjustmentNumber ?? "Cut log"
       case "section-edit-inventory":
       case "section-duplicate-inventory":
       case "view":

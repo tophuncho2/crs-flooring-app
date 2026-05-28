@@ -2,7 +2,7 @@
 
 import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
-import type { CutLogRow } from "@builders/domain"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 
 /**
  * URL-deriving scope discriminator. Mirrors the application-layer
@@ -23,19 +23,19 @@ function basePath(scope: CutLogScopeUrl): string {
 }
 
 export type PendingCutLogMutationResponse = {
-  cutLog: CutLogRow
+  cutLog: InventoryAdjustmentRow
   inventoryId: string
-  totalCutSum: string
+  netDeducted: string
 }
 
 export type DeletePendingCutLogResponse = {
   deletedId: string
   inventoryId: string
-  totalCutSum: string
+  netDeducted: string
 }
 
 export type FinalizeCutLogResponse = {
-  cutLog: CutLogRow
+  cutLog: InventoryAdjustmentRow
 }
 
 /**
@@ -47,14 +47,14 @@ export async function createPendingCutLogRequest(args: {
   workOrderId: string
   workOrderItemId: string
   inventoryId: string
-  cut: string
+  quantity: string
   isWaste: boolean
   notes: string
 }) {
   const body = withMutationMeta({
     workOrderItemId: args.workOrderItemId,
     inventoryId: args.inventoryId,
-    cut: args.cut,
+    quantity: args.quantity,
     isWaste: args.isWaste,
     notes: args.notes,
   } as Record<string, unknown>)
@@ -73,7 +73,7 @@ export async function updatePendingCutLogRequest(args: {
   cutLogId: string
   expectedUpdatedAt: string
   patch: {
-    cut?: string
+    quantity?: string
     isWaste?: boolean
     notes?: string
     link?: { workOrderId: string | null; workOrderItemId: string | null }

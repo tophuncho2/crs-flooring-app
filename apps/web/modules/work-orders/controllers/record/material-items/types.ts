@@ -14,7 +14,7 @@ export type WorkOrderMaterialItemLocal = {
   categoryFilterId: string | null
   // True once the item has linked (non-void) cut logs. Locks the product cell
   // (the row can only be deleted then). New local rows are always false.
-  hasCutLogs: boolean
+  hasInventoryAdjustments: boolean
 }
 
 export type WorkOrderMaterialItemsLocalState = {

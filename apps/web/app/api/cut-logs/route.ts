@@ -1,4 +1,4 @@
-import { listCutLogsUseCase } from "@builders/application"
+import { listAdjustmentsUseCase } from "@builders/application"
 import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { validateCutLogsListQuery } from "./_validators"
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const input = validateCutLogsListQuery(url.searchParams)
-    const result = await listCutLogsUseCase(input)
+    const result = await listAdjustmentsUseCase(input)
     return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)

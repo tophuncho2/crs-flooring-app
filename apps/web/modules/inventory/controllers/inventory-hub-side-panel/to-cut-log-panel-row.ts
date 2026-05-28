@@ -1,4 +1,4 @@
-import type { InventoryCutLogRow } from "@builders/domain"
+import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import type { CutLogPanelRow } from "@/modules/cut-logs"
 
 /**
@@ -15,7 +15,7 @@ import type { CutLogPanelRow } from "@/modules/cut-logs"
  * optional-to-null field touches one place.
  */
 export function toCutLogPanelRow(
-  row: CutLogPanelRow | InventoryCutLogRow,
+  row: CutLogPanelRow | EnrichedInventoryAdjustmentRow,
 ): CutLogPanelRow {
   return {
     ...row,

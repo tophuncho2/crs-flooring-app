@@ -57,7 +57,7 @@ export function renderInventoryRowCell(
     case "totalCutSum":
       return (
         <span className="tabular-nums">
-          {formatInventoryQuantity(row.totalCutSum, row.stockUnitAbbrev)}
+          {formatInventoryQuantity(row.netDeducted, row.stockUnitAbbrev)}
         </span>
       )
     case "fifoReceivedAt":

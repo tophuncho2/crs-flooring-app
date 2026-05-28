@@ -14,9 +14,9 @@ import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ListInput } from "@builders/application"
 import {
-  CUT_LOGS_LIST_PAGE_SIZE,
-  type CutLogListFilters,
-  type InventoryCutLogRow,
+  INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
+  type InventoryAdjustmentListFilters,
+  type EnrichedInventoryAdjustmentRow,
   type WarehouseOption,
 } from "@builders/domain"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
@@ -36,7 +36,7 @@ export default function CutLogsClient({
 }: {
   initialSearchQuery: string
   initialPage: number
-  initialFilters: CutLogListFilters
+  initialFilters: InventoryAdjustmentListFilters
   initialWarehouseOptions: WarehouseOption[]
   initialSelectedWarehouse?: WarehouseOption | null
 }) {
@@ -61,16 +61,16 @@ export default function CutLogsClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useFetchListController<InventoryCutLogRow, CutLogListFilters>({
+  } = useFetchListController<EnrichedInventoryAdjustmentRow, InventoryAdjustmentListFilters>({
     mode: "fetch",
     queryKey: [...CUT_LOGS_LIST_QUERY_KEY],
-    listFn: (input: ListInput<CutLogListFilters>) => listCutLogsRequest(input),
+    listFn: (input: ListInput<InventoryAdjustmentListFilters>) => listCutLogsRequest(input),
     initialSearchQuery,
     initialPage,
     initialFilters: initialFilters.warehouseId?.length
       ? { warehouseId: initialFilters.warehouseId }
       : {},
-    pageSize: CUT_LOGS_LIST_PAGE_SIZE,
+    pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
     tableKey: "cut-logs-main",
     filterableFields: ["warehouseId"],
     freshness: LIST_FRESHNESS_STANDARD,

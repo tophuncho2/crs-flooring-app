@@ -8,7 +8,7 @@ import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandabl
 import { isLocalOnlyRecordRow } from "@/controllers/record/utils/record-row-ids"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import {
-  type CutLogRow,
+  type InventoryAdjustmentRow,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
@@ -47,7 +47,7 @@ export function WorkOrderMaterialItemsSection({
 }: {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
-  cutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
+  cutLogsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
   publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
   publishWorkOrder: (record: WorkOrderDetail) => void
   /** Apply a single-row patch to the parent's cut-log snapshot after a panel mutation. */
@@ -76,7 +76,7 @@ export function WorkOrderMaterialItemsSection({
   // the hub picks up the new row hydrated with WO/WOMI/warehouse labels
   // so the read-only header summary matches the inv-side experience.
   const handleCutLogCreated = useCallback(
-    (cutLog: CutLogRow, workOrderItemId: string) => {
+    (cutLog: InventoryAdjustmentRow, workOrderItemId: string) => {
       const item = section.items.find((i) => i.id === workOrderItemId)
       inventoryHubPanel.openForCutLogEdit({
         ...cutLog,
@@ -109,11 +109,11 @@ export function WorkOrderMaterialItemsSection({
   const editable = !sectionBusy
 
   const handleOpenEdit = useCallback(
-    (workOrderItemId: string, cutLog: CutLogRow) => {
+    (workOrderItemId: string, cutLog: InventoryAdjustmentRow) => {
       // Editing is hub-driven (mirrors the inventory record view's row
       // click) — opens the InventoryHubSidePanel directly at
       // section-edit-cut-log mode for this cut log. The WO-side data
-      // layer returns plain CutLogRow; hydrate WO/WOMI/warehouse labels
+      // layer returns plain InventoryAdjustmentRow; hydrate WO/WOMI/warehouse labels
       // from in-scope state so the hub's read-only summary stays
       // populated symmetrically with the inv side.
       const item = section.items.find((i) => i.id === workOrderItemId)
@@ -151,7 +151,7 @@ export function WorkOrderMaterialItemsSection({
   )
 
   const handleDuplicate = useCallback(
-    (workOrderItemId: string, cutLog: CutLogRow) => {
+    (workOrderItemId: string, cutLog: InventoryAdjustmentRow) => {
       // UI-only "duplicate": open the create panel with the source row's
       // inventory item pre-selected. No use case fires — the operator must
       // still save the new cut log to materialize it (and only then does
@@ -180,18 +180,18 @@ export function WorkOrderMaterialItemsSection({
   ) {
     switch (column.key) {
       case "product": {
-        // Product is editable until the item has linked cut logs (server
-        // enforces it too — see WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED).
-        // Once it has cut logs the row only shows the product name as static
-        // text and can only be deleted. New local rows never have cut logs.
+        // Product is editable until the item has linked inventory adjustments
+        // (server enforces it too — see WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED).
+        // Once it has adjustments the row only shows the product name as
+        // static text and can only be deleted. New local rows never have any.
         //
-        // Derive the lock from the LIVE cut-log map (mirrors the imports
+        // Derive the lock from the LIVE adjustment map (mirrors the imports
         // "lock once it has children" pattern) rather than the server-baked
-        // `item.hasCutLogs`, so the cell flips the instant a cut is saved —
-        // without a page refresh. `.some(!void)` matches the server's
-        // non-void rule (countCutLogsByWorkOrderItemIds, void: false).
-        const hasCutLogs = (cutLogsByWorkOrderItemId[item.id] ?? []).some((r) => !r.void)
-        return isLocalOnlyRecordRow(item.id) || !hasCutLogs ? (
+        // `item.hasInventoryAdjustments`, so the cell flips the instant a row
+        // is saved — without a page refresh.
+        const hasInventoryAdjustments =
+          (cutLogsByWorkOrderItemId[item.id] ?? []).length > 0
+        return isLocalOnlyRecordRow(item.id) || !hasInventoryAdjustments ? (
           <ProductCategoryPicker
             productId={item.productId || null}
             productLabel={item.productName || null}

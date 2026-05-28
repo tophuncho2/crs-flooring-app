@@ -1,6 +1,6 @@
 "use client"
 
-import type { FlooringCutLogStatus } from "@builders/domain"
+import type { FlooringInventoryAdjustmentStatus } from "@builders/domain"
 import { SidePanelEditDeleteButton } from "@/components/side-panel-edit"
 import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
@@ -19,7 +19,7 @@ export function CutLogEditDeleteButton({
   if (mode !== "edit") return null
 
   const cutLog = controller.open?.mode === "edit" ? controller.open.cutLog : null
-  const status = (cutLog?.status ?? null) as FlooringCutLogStatus | null
+  const status = (cutLog?.status ?? null) as FlooringInventoryAdjustmentStatus | null
   const isPending = status === "PENDING"
   const isDisabled = controller.isSaving || !isPending
   const title =

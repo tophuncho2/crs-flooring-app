@@ -3,12 +3,12 @@ import {
   getWorkOrderDetailById,
   getWorkOrderForFileGeneration,
   isPrismaNotFoundError,
-  listCutLogsForWorkOrderItemIds,
+  listAdjustmentsForWorkOrderItemIds,
   listWorkOrderMaterialItems,
   type PrismaDetailPageResult,
 } from "@builders/db"
 import type {
-  CutLogRow,
+  InventoryAdjustmentRow,
   WorkOrderDetail,
   WorkOrderFileGenerationInput,
   WorkOrderMaterialItemRow,
@@ -23,7 +23,7 @@ import type {
 export type WorkOrderDetailPageData = {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
-  cutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
+  cutLogsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
 }
 
 export async function getWorkOrderDetailPageData(
@@ -39,8 +39,8 @@ export async function getWorkOrderDetailPageData(
       return { ok: false, notFound: true }
     }
 
-    const cutLogRows = await listCutLogsForWorkOrderItemIds(materialItems.map((mi) => mi.id))
-    const cutLogsByWorkOrderItemId: Record<string, CutLogRow[]> = {}
+    const cutLogRows = await listAdjustmentsForWorkOrderItemIds(materialItems.map((mi) => mi.id))
+    const cutLogsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]> = {}
     for (const mi of materialItems) cutLogsByWorkOrderItemId[mi.id] = []
     for (const row of cutLogRows) {
       if (row.workOrderItemId === null) continue

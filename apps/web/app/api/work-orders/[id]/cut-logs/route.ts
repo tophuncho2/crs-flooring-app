@@ -1,4 +1,4 @@
-import { createPendingCutLogUseCase } from "@builders/application"
+import { createPendingAdjustmentUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -18,7 +18,7 @@ type RouteContext = {
  * POST /api/work-orders/[id]/cut-logs
  *
  * Synchronous create for a single pending cut log under one WOMI.
- * Calls `createPendingCutLogUseCase`, which opens its own TX, asserts
+ * Calls `createPendingAdjustmentUseCase`, which opens its own TX, asserts
  * WOMI ownership + IDLE status, takes the parent inventory FOR UPDATE
  * lock, stamps the four unit-snapshot fields from the inventory,
  * inserts the row, recomputes `totalCutSum`, and asserts the
@@ -61,11 +61,12 @@ export async function POST(request: Request, { params }: RouteContext) {
         entityId: input.workOrderItemId,
       },
       () =>
-        createPendingCutLogUseCase({
+        createPendingAdjustmentUseCase({
+          variant: "cut",
           workOrderId,
           workOrderItemId: input.workOrderItemId,
           inventoryId: input.inventoryId,
-          cut: input.cut,
+          quantity: input.quantity,
           isWaste: input.isWaste,
           notes: input.notes,
         }),

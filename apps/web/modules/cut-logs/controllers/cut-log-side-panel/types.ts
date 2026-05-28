@@ -1,4 +1,4 @@
-import type { CutLogRow } from "@builders/domain"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 
 /**
  * Editable form values for the cut-log side panel. `inventoryId` is editable
@@ -9,7 +9,7 @@ import type { CutLogRow } from "@builders/domain"
  */
 export type CutLogEditForm = {
   inventoryId: string
-  cut: string
+  quantity: string
   isWaste: boolean
   notes: string
   workOrderId: string | null
@@ -48,20 +48,20 @@ export type CutLogPanelLocal = {
  * snapshot is keyed by cut-log id).
  */
 export type CutLogPanelPatch =
-  | { kind: "upsert"; workOrderItemId: string | null; cutLog: CutLogRow }
+  | { kind: "upsert"; workOrderItemId: string | null; cutLog: InventoryAdjustmentRow }
   | { kind: "delete"; workOrderItemId: string | null; cutLogId: string }
 
 export type CutLogEditPanelMode = "create" | "edit"
 
 /**
- * Row shape the panel renders in edit mode. Widens `CutLogRow` with the
+ * Row shape the panel renders in edit mode. Widens `InventoryAdjustmentRow` with the
  * server-resolved labels the inventory record view already surfaces on
- * `InventoryCutLogRow` (`workOrderNumber`, `workOrderItemProductLabel`,
+ * `EnrichedInventoryAdjustmentRow` (`workOrderNumber`, `workOrderItemProductLabel`,
  * `warehouseName`). Optional because mutation responses come back as plain
- * `CutLogRow` — callers (and the update-mutation handler) carry labels
+ * `InventoryAdjustmentRow` — callers (and the update-mutation handler) carry labels
  * forward from the prior snapshot.
  */
-export type CutLogPanelRow = CutLogRow & {
+export type CutLogPanelRow = InventoryAdjustmentRow & {
   workOrderNumber?: string | null
   workOrderItemProductLabel?: string | null
   workOrderItemNotes?: string | null
@@ -89,7 +89,7 @@ export type CutLogEditPanelOpenSpec =
       /**
        * Parent WO/warehouse labels carried through create so the panel can
        * hoist them onto the new row after a successful save (the create
-       * response is a plain `CutLogRow` with no joined labels). The
+       * response is a plain `InventoryAdjustmentRow` with no joined labels). The
        * subsequent re-open path hydrates these via `handleOpenEdit`.
        */
       workOrderNumber?: string | null

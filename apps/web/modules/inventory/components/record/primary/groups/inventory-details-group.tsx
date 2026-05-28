@@ -137,7 +137,7 @@ export function InventoryDetailsGroup({
         </InventoryField>
         <InventoryField label="Total Cut">
           <StaticFieldValue>
-            {formatInventoryQuantity(inventory.totalCutSum, inventory.stockUnitAbbrev)}
+            {formatInventoryQuantity(inventory.netDeducted, inventory.stockUnitAbbrev)}
           </StaticFieldValue>
         </InventoryField>
 

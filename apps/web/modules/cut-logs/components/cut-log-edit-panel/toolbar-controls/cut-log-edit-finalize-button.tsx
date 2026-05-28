@@ -1,6 +1,6 @@
 "use client"
 
-import type { FlooringCutLogStatus } from "@builders/domain"
+import type { FlooringInventoryAdjustmentStatus } from "@builders/domain"
 import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
 const FINALIZE_BUTTON_CLASS_NAME = [
@@ -30,7 +30,7 @@ export function CutLogEditFinalizeButton({
   if (mode !== "edit") return null
 
   const cutLog = controller.open?.mode === "edit" ? controller.open.cutLog : null
-  const status = (cutLog?.status ?? null) as FlooringCutLogStatus | null
+  const status = (cutLog?.status ?? null) as FlooringInventoryAdjustmentStatus | null
   if (status !== "PENDING") return null
 
   const isDisabled = disabled || controller.isSaving || controller.isDirty

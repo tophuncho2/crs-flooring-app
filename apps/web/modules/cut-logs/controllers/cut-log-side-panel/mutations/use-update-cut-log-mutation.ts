@@ -6,7 +6,7 @@ import {
   type RecordSectionError,
 } from "@/types/record/section-error"
 import { useMutation } from "@tanstack/react-query"
-import { isCutLogPendingEditable, type CutLogRow } from "@builders/domain"
+import { isAdjustmentPendingEditable, type InventoryAdjustmentRow } from "@builders/domain"
 import {
   updatePendingCutLogRequest,
   type CutLogScopeUrl,
@@ -30,7 +30,7 @@ type Deps = {
 /**
  * Update-pending mutation. Stays open on success and refreshes the form +
  * baseline to the server-fresh row. Mutation responses come back as plain
- * `CutLogRow` — the WO/WOMI labels (`workOrderNumber`,
+ * `InventoryAdjustmentRow` — the WO/WOMI labels (`workOrderNumber`,
  * `workOrderItemProductLabel`) and the warehouse label (`warehouseName`)
  * are carried forward from the prior snapshot so the panel's read-only
  * cells stay populated. A pending-edit can't change the WO link or the
@@ -47,14 +47,14 @@ export function useUpdateCutLogMutation({
   return useMutation({
     mutationFn: (input: {
       workOrderItemId: string | null
-      cutLog: CutLogRow
+      cutLog: InventoryAdjustmentRow
       form: CutLogEditForm
     }) => {
       // FINAL rows lock `cut` / `notes` / `isWaste`; only the link is
       // mutable. Send those fields only when the row is still
       // PENDING-editable so the server gate (which separates field
       // patches from link patches) doesn't 409.
-      const fieldsEditable = isCutLogPendingEditable(input.cutLog)
+      const fieldsEditable = isAdjustmentPendingEditable(input.cutLog)
       const linkChanged =
         input.form.workOrderId !== input.cutLog.workOrderId ||
         input.form.workOrderItemId !== input.cutLog.workOrderItemId
@@ -65,7 +65,7 @@ export function useUpdateCutLogMutation({
         patch: {
           ...(fieldsEditable
             ? {
-                cut: input.form.cut,
+                quantity: input.form.quantity,
                 isWaste: input.form.isWaste,
                 notes: input.form.notes,
               }

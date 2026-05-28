@@ -1,6 +1,6 @@
 import {
-  deletePendingCutLogUseCase,
-  updatePendingCutLogUseCase,
+  deletePendingAdjustmentUseCase,
+  updatePendingAdjustmentUseCase,
 } from "@builders/application"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -24,7 +24,7 @@ type RouteContext = {
  * PATCH /api/inventory/[id]/cut-logs/[cutLogId]
  *
  * Synchronous update for a single pending cut log under the inventory
- * scope. Calls `updatePendingCutLogUseCase` with
+ * scope. Calls `updatePendingAdjustmentUseCase` with
  * `{ scope: { kind: "inventory", inventoryId } }`. The use case loads
  * the row, asserts scope membership, runs the PENDING + OCC gates,
  * applies any link patch (with WOMI re-link validity check), locks the
@@ -74,9 +74,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityId: cutLogId,
       },
       () =>
-        updatePendingCutLogUseCase({
+        updatePendingAdjustmentUseCase({
           scope: { kind: "inventory", inventoryId },
-          cutLogId,
+          adjustmentId: cutLogId,
           expectedUpdatedAt: mutation.expectedUpdatedAt!,
           patch: input.patch,
         }),
@@ -146,9 +146,9 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         entityId: cutLogId,
       },
       () =>
-        deletePendingCutLogUseCase({
+        deletePendingAdjustmentUseCase({
           scope: { kind: "inventory", inventoryId },
-          cutLogId,
+          adjustmentId: cutLogId,
           expectedUpdatedAt: mutation.expectedUpdatedAt!,
         }),
     )

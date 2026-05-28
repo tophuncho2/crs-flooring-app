@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, type ReactNode } from "react"
-import type { CutLogRow } from "@builders/domain"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 import { renderCutLogReadOnlyCell } from "@/modules/cut-logs"
 import { Grid, GridEmpty } from "@/components/grid"
 import { CutLogRowToolbar } from "./toolbar-controls"
@@ -10,10 +10,10 @@ import { WORK_ORDER_CUT_LOG_LAYOUT } from "./work-order-cut-log-row-layout"
 
 export type WorkOrderCutLogRowProps = {
   workOrderItemId: string
-  serverRows: ReadonlyArray<CutLogRow>
+  serverRows: ReadonlyArray<InventoryAdjustmentRow>
   /**
    * Parent WO's warehouse name. The WO-side cut-log read returns plain
-   * `CutLogRow` with no joined warehouse name, so we hydrate each row
+   * `InventoryAdjustmentRow` with no joined warehouse name, so we hydrate each row
    * here before handing the array to `Grid`. Every cut log on a WO
    * shares the WO's warehouse by construction (the snapshot column
    * matches the parent WO's warehouse), so this is the snapshot value
@@ -21,7 +21,7 @@ export type WorkOrderCutLogRowProps = {
    */
   warehouseName: string
   /** Open the edit panel for a saved cut log. */
-  onOpenEdit: (workOrderItemId: string, cutLog: CutLogRow) => void
+  onOpenEdit: (workOrderItemId: string, cutLog: InventoryAdjustmentRow) => void
   /** Open the edit panel in create mode for this WOMI. */
   onCreateNew: (workOrderItemId: string) => void
   /**
@@ -29,7 +29,7 @@ export type WorkOrderCutLogRowProps = {
    * UI-only affordance — does not invoke a duplicate use case, so no
    * inventory-balance recalculation runs until the operator saves.
    */
-  onDuplicate: (workOrderItemId: string, cutLog: CutLogRow) => void
+  onDuplicate: (workOrderItemId: string, cutLog: InventoryAdjustmentRow) => void
   /**
    * True when the parent material-items section is mid-save. Used to dim
    * the rows + disable the "+ Add Cut Log" button so the user can't open
@@ -53,7 +53,7 @@ export function WorkOrderCutLogRow({
   onDuplicate,
   isSectionBusy,
 }: WorkOrderCutLogRowProps) {
-  const rows = useMemo<CutLogRow[]>(
+  const rows = useMemo<InventoryAdjustmentRow[]>(
     () => serverRows.map((row) => ({ ...row, warehouseName })),
     [serverRows, warehouseName],
   )
@@ -62,7 +62,7 @@ export function WorkOrderCutLogRow({
 
   function renderControl(
     control: { key: string; kind: string },
-    row: CutLogRow,
+    row: InventoryAdjustmentRow,
   ): ReactNode {
     if (control.kind === "actions") {
       return (
@@ -78,14 +78,14 @@ export function WorkOrderCutLogRow({
 
   return (
     <div className="space-y-3 border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
-      <Grid<CutLogRow>
+      <Grid<InventoryAdjustmentRow>
         rows={rows}
         layout={WORK_ORDER_CUT_LOG_LAYOUT}
         empty={<GridEmpty>No cut logs yet.</GridEmpty>}
         renderCell={renderCell}
         renderControl={renderControl}
         onRowClick={(row) => onOpenEdit(workOrderItemId, row)}
-        getRowAriaLabel={(row) => `Edit cut log ${row.cutLogNumber}`}
+        getRowAriaLabel={(row) => `Edit cut log ${row.adjustmentNumber}`}
       />
 
       <CutLogRowToolbar

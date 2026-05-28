@@ -1,6 +1,6 @@
 import {
-  deletePendingCutLogUseCase,
-  updatePendingCutLogUseCase,
+  deletePendingAdjustmentUseCase,
+  updatePendingAdjustmentUseCase,
 } from "@builders/application"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -24,7 +24,7 @@ type RouteContext = {
  * PATCH /api/work-orders/[id]/cut-logs/[cutLogId]
  *
  * Synchronous update for a single pending cut log. Calls
- * `updatePendingCutLogUseCase`, which opens its own TX, asserts WOMI
+ * `updatePendingAdjustmentUseCase`, which opens its own TX, asserts WOMI
  * ownership + IDLE status, asserts the row is still PENDING (final
  * cuts cannot be edited via this path), enforces optimistic
  * concurrency against `mutation.expectedUpdatedAt`, locks the parent
@@ -74,9 +74,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityId: cutLogId,
       },
       () =>
-        updatePendingCutLogUseCase({
+        updatePendingAdjustmentUseCase({
           scope: { kind: "work-order", workOrderId },
-          cutLogId,
+          adjustmentId: cutLogId,
           expectedUpdatedAt: mutation.expectedUpdatedAt!,
           patch: input.patch,
         }),
@@ -100,7 +100,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
  * DELETE /api/work-orders/[id]/cut-logs/[cutLogId]
  *
  * Synchronous delete for a single pending cut log. Calls
- * `deletePendingCutLogUseCase`, which asserts WOMI ownership + IDLE
+ * `deletePendingAdjustmentUseCase`, which asserts WOMI ownership + IDLE
  * status, asserts the row is PENDING (final cuts cannot be deleted —
  * void them at /void instead), enforces OCC, locks the parent
  * inventory FOR UPDATE, deletes the row, and recomputes
@@ -148,9 +148,9 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         entityId: cutLogId,
       },
       () =>
-        deletePendingCutLogUseCase({
+        deletePendingAdjustmentUseCase({
           scope: { kind: "work-order", workOrderId },
-          cutLogId,
+          adjustmentId: cutLogId,
           expectedUpdatedAt: mutation.expectedUpdatedAt!,
         }),
     )

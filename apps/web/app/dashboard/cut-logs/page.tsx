@@ -1,5 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
-import { listCutLogsUseCase, searchWarehouseOptionsUseCase } from "@builders/application"
+import { listAdjustmentsUseCase, searchWarehouseOptionsUseCase } from "@builders/application"
 import type { WarehouseOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
@@ -42,7 +42,7 @@ export default async function CutLogsPage({
     const [, warehousePage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...CUT_LOGS_LIST_QUERY_KEY, initialInput],
-        queryFn: () => listCutLogsUseCase(initialInput),
+        queryFn: () => listAdjustmentsUseCase(initialInput),
       }),
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])

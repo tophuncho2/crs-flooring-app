@@ -4,7 +4,7 @@ export type {
   InventoryDetail,
   InventoryForm,
   InventoryRow,
-  InventoryCutLogRow,
+  EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
 
 // Only the work-order relink picker remains. The material item is auto-linked

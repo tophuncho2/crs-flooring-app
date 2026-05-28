@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { CutLogRow, FlooringCutLogStatus } from "@builders/domain"
+import type { InventoryAdjustmentRow, FlooringInventoryAdjustmentStatus } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { CheckboxCell } from "@/components/cells/checkbox-cell"
 import { TextCell } from "@/components/cells/text-cell"
@@ -13,7 +13,7 @@ import { formatCutLogTimestamp } from "./format-cut-log-timestamp"
  * Slim column descriptor accepted by the renderer. The renderer only
  * inspects `column.key`, so consumers can pass any column shape — typically
  * a `GridColumn<TRow>` from their grid layout — without forcing a type
- * dependency between the grid row shape and `CutLogRow`.
+ * dependency between the grid row shape and `InventoryAdjustmentRow`.
  */
 type CutLogColumnLike = { key: string }
 
@@ -31,11 +31,11 @@ export type CutLogReadOnlyRenderOptions = {
   coverageUnitFallback?: string
 }
 
-function pickStockUnit(row: CutLogRow, options: CutLogReadOnlyRenderOptions): string {
+function pickStockUnit(row: InventoryAdjustmentRow, options: CutLogReadOnlyRenderOptions): string {
   return row.stockUnitAbbrev ?? options.stockUnitFallback ?? ""
 }
 
-function pickCoverageUnit(row: CutLogRow, options: CutLogReadOnlyRenderOptions): string {
+function pickCoverageUnit(row: InventoryAdjustmentRow, options: CutLogReadOnlyRenderOptions): string {
   return row.itemCoverageUnitAbbrev ?? options.coverageUnitFallback ?? ""
 }
 
@@ -61,21 +61,21 @@ export function renderCutLogReadOnlyCell(
   options: CutLogReadOnlyRenderOptions = {},
 ): (
   column: CutLogColumnLike,
-  row: CutLogRow & { warehouseName?: string | null },
+  row: InventoryAdjustmentRow & { warehouseName?: string | null },
 ) => ReactNode {
   function renderReadOnlyCell(
     column: CutLogColumnLike,
-    row: CutLogRow & { warehouseName?: string | null },
+    row: InventoryAdjustmentRow & { warehouseName?: string | null },
   ): ReactNode {
     switch (column.key) {
       case "status":
-        return <CutLogStatusBadge status={row.status as FlooringCutLogStatus} />
+        return <CutLogStatusBadge status={row.status as FlooringInventoryAdjustmentStatus} />
       case "inventoryItem":
         return (
           <TextCell
             editable={false}
             value={row.inventoryItem || "—"}
-            ariaLabel={`${row.cutLogNumber} inventory item`}
+            ariaLabel={`${row.adjustmentNumber} inventory item`}
           />
         )
       case "location":
@@ -83,15 +83,15 @@ export function renderCutLogReadOnlyCell(
           <TextCell
             editable={false}
             value={row.location || "—"}
-            ariaLabel={`${row.cutLogNumber} location`}
+            ariaLabel={`${row.adjustmentNumber} location`}
           />
         )
       case "cutLogNumber":
         return (
           <TextCell
             editable={false}
-            value={row.cutLogNumber ?? "—"}
-            ariaLabel={`${row.cutLogNumber} number`}
+            value={row.adjustmentNumber ?? "—"}
+            ariaLabel={`${row.adjustmentNumber} number`}
           />
         )
       case "warehouse":
@@ -99,25 +99,25 @@ export function renderCutLogReadOnlyCell(
           <TextCell
             editable={false}
             value={row.warehouseName || "—"}
-            ariaLabel={`${row.cutLogNumber} warehouse`}
+            ariaLabel={`${row.adjustmentNumber} warehouse`}
           />
         )
-      case "cut":
+      case "quantity":
         return (
           <UnitCell
             editable={false}
-            value={row.cut}
+            value={row.quantity}
             unit={pickStockUnit(row, options)}
-            ariaLabel={`${row.cutLogNumber} cut`}
+            ariaLabel={`${row.adjustmentNumber} cut`}
           />
         )
-      case "coverageCut":
+      case "coverage":
         return (
           <UnitCell
             editable={false}
-            value={row.coverageCut ?? ""}
+            value={row.coverage ?? ""}
             unit={pickCoverageUnit(row, options)}
-            ariaLabel={`${row.cutLogNumber} coverage cut`}
+            ariaLabel={`${row.adjustmentNumber} coverage cut`}
           />
         )
       case "isWaste":
@@ -125,7 +125,7 @@ export function renderCutLogReadOnlyCell(
           <CheckboxCell
             editable={false}
             value={row.isWaste}
-            ariaLabel={`${row.cutLogNumber} waste`}
+            ariaLabel={`${row.adjustmentNumber} waste`}
           />
         )
       case "before":
@@ -133,7 +133,7 @@ export function renderCutLogReadOnlyCell(
           <TextCell
             editable={false}
             value={row.before ?? "—"}
-            ariaLabel={`${row.cutLogNumber} before`}
+            ariaLabel={`${row.adjustmentNumber} before`}
           />
         )
       case "after":
@@ -141,15 +141,15 @@ export function renderCutLogReadOnlyCell(
           <TextCell
             editable={false}
             value={row.after ?? "—"}
-            ariaLabel={`${row.cutLogNumber} after`}
+            ariaLabel={`${row.adjustmentNumber} after`}
           />
         )
       case "finalSeq":
         return (
           <TextCell
             editable={false}
-            value={row.finalCutSequence != null ? String(row.finalCutSequence) : "—"}
-            ariaLabel={`${row.cutLogNumber} final sequence`}
+            value={row.finalSequence != null ? String(row.finalSequence) : "—"}
+            ariaLabel={`${row.adjustmentNumber} final sequence`}
           />
         )
       case "workOrder":
@@ -157,7 +157,7 @@ export function renderCutLogReadOnlyCell(
           <TextCell
             editable={false}
             value={row.workOrderId ?? "—"}
-            ariaLabel={`${row.cutLogNumber} work order`}
+            ariaLabel={`${row.adjustmentNumber} work order`}
           />
         )
       case "workOrderItem":
@@ -165,7 +165,7 @@ export function renderCutLogReadOnlyCell(
           <TextCell
             editable={false}
             value={row.workOrderItemId ?? "—"}
-            ariaLabel={`${row.cutLogNumber} material item`}
+            ariaLabel={`${row.adjustmentNumber} material item`}
           />
         )
       case "createdAt":
@@ -173,7 +173,7 @@ export function renderCutLogReadOnlyCell(
           <TextCell
             editable={false}
             value={formatCutLogTimestamp(row.createdAt)}
-            ariaLabel={`${row.cutLogNumber} created at`}
+            ariaLabel={`${row.adjustmentNumber} created at`}
           />
         )
       case "updatedAt":
@@ -181,7 +181,7 @@ export function renderCutLogReadOnlyCell(
           <TextCell
             editable={false}
             value={formatCutLogTimestamp(row.updatedAt)}
-            ariaLabel={`${row.cutLogNumber} updated at`}
+            ariaLabel={`${row.adjustmentNumber} updated at`}
           />
         )
       case "notes":
@@ -189,7 +189,7 @@ export function renderCutLogReadOnlyCell(
           <TextCell
             editable={false}
             value={row.notes || "—"}
-            ariaLabel={`${row.cutLogNumber} notes`}
+            ariaLabel={`${row.adjustmentNumber} notes`}
           />
         )
       default:
@@ -208,8 +208,8 @@ export function renderCutLogReadOnlyCell(
  */
 export function renderCutLogStatusControl(
   control: GridControlColumn,
-  row: CutLogRow,
+  row: InventoryAdjustmentRow,
 ): ReactNode {
   if (control.kind !== "status-indicator") return null
-  return <CutLogStatusBadge status={row.status as FlooringCutLogStatus} />
+  return <CutLogStatusBadge status={row.status as FlooringInventoryAdjustmentStatus} />
 }

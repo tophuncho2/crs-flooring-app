@@ -1,4 +1,4 @@
-import { listInventoryCutLogsUseCase } from "@builders/application"
+import { listInventoryAdjustmentsUseCase } from "@builders/application"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
@@ -13,7 +13,7 @@ type RouteContext = {
  *
  * Paginated read of cut logs on a single inventory record. Powers the
  * inventory record view's cut-log section. Returns
- * `{ page: InventoryCutLogPage }`.
+ * `{ page: EnrichedInventoryAdjustmentPage }`.
  */
 export async function GET(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request)
@@ -31,7 +31,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     const inventoryId = parseUuidParam(rawId, "id")
     const url = new URL(request.url)
     const { skip, take } = validateCutLogsPageQuery(url.searchParams)
-    const result = await listInventoryCutLogsUseCase({
+    const result = await listInventoryAdjustmentsUseCase({
       inventoryId,
       skip,
       take,

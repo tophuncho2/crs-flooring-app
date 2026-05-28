@@ -3,8 +3,8 @@
 import { useCallback, useMemo } from "react"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import {
-  INVENTORY_CUT_LOG_PAGE_SIZE,
-  type InventoryCutLogRow,
+  INVENTORY_ADJUSTMENT_PAGE_SIZE,
+  type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
 import { FRESH_ON_OPEN } from "@/query-policies"
 import {
@@ -13,7 +13,7 @@ import {
 } from "@/modules/inventory/data/inventory-cut-logs-request"
 
 export type HubCutLogsController = {
-  rows: ReadonlyArray<InventoryCutLogRow>
+  rows: ReadonlyArray<EnrichedInventoryAdjustmentRow>
   isLoading: boolean
   isError: boolean
   /** False until the first page resolves — drives the loading/error stub. */
@@ -26,7 +26,7 @@ export type HubCutLogsController = {
   loadMore: () => void
 }
 
-const EMPTY_ROWS: ReadonlyArray<InventoryCutLogRow> = []
+const EMPTY_ROWS: ReadonlyArray<EnrichedInventoryAdjustmentRow> = []
 
 /**
  * Infinite-scroll cut-logs for a single inventory inside the hub. Reuses the
@@ -44,7 +44,7 @@ export function useHubCutLogsQuery(inventoryId: string | null): HubCutLogsContro
       inventoryCutLogsPageRequest(
         inventoryId as string,
         pageParam,
-        INVENTORY_CUT_LOG_PAGE_SIZE,
+        INVENTORY_ADJUSTMENT_PAGE_SIZE,
         signal,
       ),
     initialPageParam: 0,
@@ -56,7 +56,7 @@ export function useHubCutLogsQuery(inventoryId: string | null): HubCutLogsContro
     ...FRESH_ON_OPEN,
   })
 
-  const rows = useMemo<ReadonlyArray<InventoryCutLogRow>>(
+  const rows = useMemo<ReadonlyArray<EnrichedInventoryAdjustmentRow>>(
     () => query.data?.pages.flatMap((page) => page.rows) ?? EMPTY_ROWS,
     [query.data],
   )

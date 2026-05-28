@@ -1,13 +1,13 @@
 import { z } from "zod"
-import { CutLogExecutionError } from "@builders/application"
+import { InventoryAdjustmentExecutionError } from "@builders/application"
 import type { ListInput } from "@builders/application"
 import {
-  CUT_LOG_NOTES_MAX,
-  CUT_LOGS_LIST_MAX_PAGE_SIZE,
-  CUT_LOGS_LIST_PAGE_SIZE,
-  INVENTORY_CUT_LOG_MAX_PAGE_SIZE,
-  INVENTORY_CUT_LOG_PAGE_SIZE,
-  type CutLogListFilters,
+  INVENTORY_ADJUSTMENT_NOTES_MAX,
+  INVENTORY_ADJUSTMENTS_LIST_MAX_PAGE_SIZE,
+  INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
+  INVENTORY_ADJUSTMENT_MAX_PAGE_SIZE,
+  INVENTORY_ADJUSTMENT_PAGE_SIZE,
+  type InventoryAdjustmentListFilters,
 } from "@builders/domain"
 
 // Cut-log mutations are one scope-aware use-case set called from two route
@@ -17,8 +17,8 @@ import {
 // only. Each route stamps its own scope/path identifiers before the use case.
 
 function failCutLog(message: string, field?: string): never {
-  throw new CutLogExecutionError({
-    code: "CUT_LOG_VALIDATION_FAILED",
+  throw new InventoryAdjustmentExecutionError({
+    code: "INVENTORY_ADJUSTMENT_VALIDATION_FAILED",
     message,
     status: 400,
     field,
@@ -49,7 +49,7 @@ function requireCutLogObject(value: unknown, path: string): Record<string, unkno
 export type ValidatedCreatePendingCutLogInput = {
   workOrderItemId: string
   inventoryId: string
-  cut: string
+  quantity: string
   isWaste: boolean
   notes: string
 }
@@ -61,9 +61,9 @@ export function validateCreatePendingCutLogInput(
   return {
     workOrderItemId: requireCutLogString(body.workOrderItemId, "workOrderItemId"),
     inventoryId: requireCutLogString(body.inventoryId, "inventoryId"),
-    cut: requireCutLogString(body.cut, "cut"),
+    quantity: requireCutLogString(body.quantity, "quantity"),
     isWaste,
-    notes: optionalBoundedCutLogText(body.notes, CUT_LOG_NOTES_MAX, "notes") ?? "",
+    notes: optionalBoundedCutLogText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
   }
 }
 
@@ -73,7 +73,7 @@ export type ValidatedUpdatePendingCutLogLink = {
 }
 
 export type ValidatedUpdatePendingCutLogPatch = {
-  cut?: string
+  quantity?: string
   isWaste?: boolean
   notes?: string
   link?: ValidatedUpdatePendingCutLogLink
@@ -120,21 +120,21 @@ export function validateUpdatePendingCutLogInput(
 ): ValidatedUpdatePendingCutLogInput {
   const patchBody = requireCutLogObject(body.patch, "patch")
   const patch: ValidatedUpdatePendingCutLogPatch = {}
-  if ("cut" in patchBody) {
-    patch.cut = requireCutLogString(patchBody.cut, "patch.cut")
+  if ("quantity" in patchBody) {
+    patch.quantity = requireCutLogString(patchBody.quantity, "patch.quantity")
   }
   if ("isWaste" in patchBody && typeof patchBody.isWaste === "boolean") {
     patch.isWaste = patchBody.isWaste
   }
   if ("notes" in patchBody) {
-    const next = optionalBoundedCutLogText(patchBody.notes, CUT_LOG_NOTES_MAX, "patch.notes")
+    const next = optionalBoundedCutLogText(patchBody.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "patch.notes")
     if (next !== null) patch.notes = next
   }
   if ("link" in patchBody) {
     patch.link = validateUpdatePendingCutLogLink(patchBody.link)
   }
   if (Object.keys(patch).length === 0) {
-    failCutLog("Patch must contain at least one of cut, isWaste, notes, or link", "patch")
+    failCutLog("Patch must contain at least one of quantity, isWaste, notes, or link", "patch")
   }
   return { patch }
 }
@@ -161,8 +161,8 @@ const cutLogsPageQuerySchema = z.object({
     .number()
     .int()
     .min(1)
-    .max(INVENTORY_CUT_LOG_MAX_PAGE_SIZE)
-    .default(INVENTORY_CUT_LOG_PAGE_SIZE),
+    .max(INVENTORY_ADJUSTMENT_MAX_PAGE_SIZE)
+    .default(INVENTORY_ADJUSTMENT_PAGE_SIZE),
 })
 
 export type ValidatedCutLogsPageQuery = {
@@ -201,13 +201,13 @@ const listCutLogsQuerySchema = z.object({
     .number()
     .int()
     .min(1)
-    .max(CUT_LOGS_LIST_MAX_PAGE_SIZE)
-    .default(CUT_LOGS_LIST_PAGE_SIZE),
+    .max(INVENTORY_ADJUSTMENTS_LIST_MAX_PAGE_SIZE)
+    .default(INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE),
 })
 
 export function validateCutLogsListQuery(
   searchParams: URLSearchParams,
-): ListInput<CutLogListFilters> {
+): ListInput<InventoryAdjustmentListFilters> {
   // Strip the multi-value `warehouseId` before zod (it sees scalars only).
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {

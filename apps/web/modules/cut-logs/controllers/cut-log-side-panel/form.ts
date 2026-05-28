@@ -1,9 +1,9 @@
-import type { CutLogRow } from "@builders/domain"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 import type { CutLogEditForm, CutLogPanelLocal } from "./types"
 
 export const EMPTY_FORM: CutLogEditForm = {
   inventoryId: "",
-  cut: "",
+  quantity: "",
   isWaste: false,
   notes: "",
   workOrderId: null,
@@ -19,10 +19,10 @@ export const EMPTY_LOCAL: CutLogPanelLocal = {
   pickedWorkOrderItemNotes: "",
 }
 
-export function buildEditForm(cutLog: CutLogRow): CutLogEditForm {
+export function buildEditForm(cutLog: InventoryAdjustmentRow): CutLogEditForm {
   return {
     inventoryId: cutLog.inventoryId,
-    cut: cutLog.cut,
+    quantity: cutLog.quantity,
     isWaste: cutLog.isWaste,
     notes: cutLog.notes,
     workOrderId: cutLog.workOrderId,
@@ -33,7 +33,7 @@ export function buildEditForm(cutLog: CutLogRow): CutLogEditForm {
 export function formIsDirty(current: CutLogEditForm, baseline: CutLogEditForm): boolean {
   return (
     current.inventoryId !== baseline.inventoryId ||
-    current.cut !== baseline.cut ||
+    current.quantity !== baseline.quantity ||
     current.isWaste !== baseline.isWaste ||
     current.notes !== baseline.notes ||
     current.workOrderId !== baseline.workOrderId ||
@@ -42,7 +42,7 @@ export function formIsDirty(current: CutLogEditForm, baseline: CutLogEditForm): 
 }
 
 export function isCreateValid(form: CutLogEditForm): boolean {
-  return form.inventoryId !== "" && form.cut.trim() !== ""
+  return form.inventoryId !== "" && form.quantity.trim() !== ""
 }
 
 export function isEditValid(form: CutLogEditForm): boolean {
@@ -50,5 +50,5 @@ export function isEditValid(form: CutLogEditForm): boolean {
   // its material item are set together or not at all. Blocks saving the
   // transient WO-set / WOMI-unresolved state during an auto-link.
   const linkSymmetric = Boolean(form.workOrderId) === Boolean(form.workOrderItemId)
-  return form.cut.trim() !== "" && linkSymmetric
+  return form.quantity.trim() !== "" && linkSymmetric
 }

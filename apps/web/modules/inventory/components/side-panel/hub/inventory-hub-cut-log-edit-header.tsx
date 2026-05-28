@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { canRelinkCutLog } from "@builders/domain"
+import { canRelinkAdjustment } from "@builders/domain"
 import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import { HubSidePanelPickerTrigger } from "@/components/hub-side-panel"
 import type {
@@ -37,7 +37,7 @@ export function InventoryHubCutLogEditHeader({
   const { local, isSaving } = cutLogPanel
   const { openCutLogPicker, cutLogPickerKind } = hubController
 
-  const relinkAllowed = canRelinkCutLog(cutLog)
+  const relinkAllowed = canRelinkAdjustment(cutLog)
   const triggersDisabled = isSaving || !relinkAllowed
   const linkedWorkOrderId = cutLogPanel.form.workOrderId ?? cutLog.workOrderId
 
@@ -126,7 +126,7 @@ export function InventoryHubCutLogEditHeader({
             Final sequence
           </span>
           <div className="flex h-9 items-center text-sm text-[var(--foreground)]/85">
-            {cutLog.finalCutSequence != null ? String(cutLog.finalCutSequence) : "—"}
+            {cutLog.finalSequence != null ? String(cutLog.finalSequence) : "—"}
           </div>
         </div>
       </div>

@@ -6,7 +6,7 @@ import {
   type RecordSectionError,
 } from "@/types/record/section-error"
 import { useMutation } from "@tanstack/react-query"
-import type { CutLogRow } from "@builders/domain"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 import {
   deletePendingCutLogRequest,
   type CutLogScopeUrl,
@@ -32,7 +32,7 @@ export function useDeleteCutLogMutation({
   setError,
 }: Deps) {
   return useMutation({
-    mutationFn: (input: { workOrderItemId: string | null; cutLog: CutLogRow }) =>
+    mutationFn: (input: { workOrderItemId: string | null; cutLog: InventoryAdjustmentRow }) =>
       deletePendingCutLogRequest({
         scope,
         cutLogId: input.cutLog.id,

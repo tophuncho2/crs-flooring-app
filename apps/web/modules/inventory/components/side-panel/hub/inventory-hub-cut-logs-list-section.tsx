@@ -28,20 +28,20 @@ function formatCutWithUnit(value: string, unit: string): string {
  * is intentionally omitted from the display (kept on the aria-label only).
  */
 function buildCutLogTitle(row: {
-  cut: string
-  coverageCut: string | null
-  finalCutSequence: number | null
+  quantity: string
+  coverage: string | null
+  finalSequence: number | null
   stockUnitAbbrev: string | null
   itemCoverageUnitAbbrev: string | null
 }): string {
   const segments: string[] = []
-  if (row.finalCutSequence !== null) segments.push(`#${row.finalCutSequence}`)
+  if (row.finalSequence !== null) segments.push(`#${row.finalSequence}`)
 
-  const cut = formatCutWithUnit(row.cut, row.stockUnitAbbrev ?? "")
-  if (cut !== EMPTY_CELL) segments.push(cut)
+  const quantity = formatCutWithUnit(row.quantity, row.stockUnitAbbrev ?? "")
+  if (quantity !== EMPTY_CELL) segments.push(quantity)
 
-  if (row.coverageCut !== null && row.coverageCut.trim().length > 0) {
-    segments.push(formatCutWithUnit(row.coverageCut, row.itemCoverageUnitAbbrev ?? ""))
+  if (row.coverage !== null && row.coverage.trim().length > 0) {
+    segments.push(formatCutWithUnit(row.coverage, row.itemCoverageUnitAbbrev ?? ""))
   }
 
   return segments.join(" · ")
@@ -128,7 +128,7 @@ export function InventoryHubCutLogsListSection({
           secondaryLines={buildCutLogSubtitleLines(row)}
           meta={<CutLogStatusBadge status={row.status} />}
           onClick={() => enterCutLogEditFromContext(row)}
-          ariaLabel={`Edit cut log ${row.cutLogNumber}`}
+          ariaLabel={`Edit cut log ${row.adjustmentNumber}`}
         />
       ))}
     </HubSidePanelScrollList>

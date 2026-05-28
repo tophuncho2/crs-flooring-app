@@ -6,7 +6,7 @@ import { RecordPrimarySectionInstance } from "@/components/sections/panels/recor
 import type { RecordSectionSubHeaderAction } from "@/components/sections/structure/record-section-sub-header"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import type {
-  CutLogRow,
+  InventoryAdjustmentRow,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -27,7 +27,7 @@ export function WorkOrderRecordPanel({
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
-  initialCutLogsByWorkOrderItemId: Record<string, CutLogRow[]>
+  initialCutLogsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)

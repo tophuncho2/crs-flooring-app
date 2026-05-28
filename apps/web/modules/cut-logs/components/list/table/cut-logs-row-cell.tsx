@@ -4,7 +4,7 @@ import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
 import {
   composeRollNumberDisplay,
   formatInventoryQuantity,
-  type InventoryCutLogRow,
+  type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
 import { formatCutLogTimestamp } from "@/modules/cut-logs/components/row/format-cut-log-timestamp"
 
@@ -15,12 +15,12 @@ import { formatCutLogTimestamp } from "@/modules/cut-logs/components/row/format-
  * fields fall back to "-".
  */
 export function renderCutLogsRowCell(
-  column: DataTableColumn<InventoryCutLogRow>,
-  row: InventoryCutLogRow,
+  column: DataTableColumn<EnrichedInventoryAdjustmentRow>,
+  row: EnrichedInventoryAdjustmentRow,
 ): ReactNode {
   switch (column.key) {
     case "cutLogNumber":
-      return <span className="font-medium">{row.cutLogNumber}</span>
+      return <span className="font-medium">{row.adjustmentNumber}</span>
     case "status":
       return <CutLogStatusBadge status={row.status} />
     case "productName":
@@ -33,16 +33,16 @@ export function renderCutLogsRowCell(
       return row.dyeLot || "-"
     case "inventoryNote":
       return row.inventoryNote || "-"
-    case "cut":
+    case "quantity":
       return (
         <span className="tabular-nums">
-          {formatInventoryQuantity(row.cut, row.stockUnitAbbrev ?? "")}
+          {formatInventoryQuantity(row.quantity, row.stockUnitAbbrev ?? "")}
         </span>
       )
-    case "coverageCut":
-      return row.coverageCut ? (
+    case "coverage":
+      return row.coverage ? (
         <span className="tabular-nums">
-          {formatInventoryQuantity(row.coverageCut, row.itemCoverageUnitAbbrev ?? "")}
+          {formatInventoryQuantity(row.coverage, row.itemCoverageUnitAbbrev ?? "")}
         </span>
       ) : (
         "-"
@@ -53,9 +53,9 @@ export function renderCutLogsRowCell(
       ) : (
         <span className="text-[var(--text-muted)]">-</span>
       )
-    case "finalCutSequence":
-      return row.finalCutSequence != null ? (
-        <span className="tabular-nums">{row.finalCutSequence}</span>
+    case "finalSequence":
+      return row.finalSequence != null ? (
+        <span className="tabular-nums">{row.finalSequence}</span>
       ) : (
         "-"
       )

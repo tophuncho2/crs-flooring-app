@@ -1,6 +1,6 @@
 "use client"
 
-import { canRelinkCutLog, type FlooringCutLogStatus } from "@builders/domain"
+import { canRelinkAdjustment } from "@builders/domain"
 import { SidePanelEditSaveButton } from "@/components/side-panel-edit"
 import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
 
@@ -21,7 +21,6 @@ export function CutLogEditSaveButton({
 }) {
   const isCreate = mode === "create"
   const cutLog = controller.open?.mode === "edit" ? controller.open.cutLog : null
-  const status = (cutLog?.status ?? null) as FlooringCutLogStatus | null
 
   // Link symmetry: either both null (unlinked) or both set. Save needs to
   // be disabled when only one side is picked — otherwise the server 400s
@@ -32,14 +31,12 @@ export function CutLogEditSaveButton({
       (controller.form.workOrderItemId === null)
 
   const canSave = isCreate
-    ? controller.form.inventoryId !== "" && controller.form.cut.trim() !== ""
-    : controller.form.cut.trim() !== "" && !linkAsymmetric
+    ? controller.form.inventoryId !== "" && controller.form.quantity.trim() !== ""
+    : controller.form.quantity.trim() !== "" && !linkAsymmetric
 
-  const isLocked = !isCreate && cutLog != null && !canRelinkCutLog(cutLog)
+  const isLocked = !isCreate && cutLog != null && !canRelinkAdjustment(cutLog)
   const title = isLocked
-    ? status === "VOID"
-      ? "This cut log is voided. No further changes are permitted."
-      : "A worker job is in flight on this cut log. Try again once it settles."
+    ? "A worker job is in flight on this cut log. Try again once it settles."
     : undefined
 
   const isDirty = isCreate ? true : controller.isDirty

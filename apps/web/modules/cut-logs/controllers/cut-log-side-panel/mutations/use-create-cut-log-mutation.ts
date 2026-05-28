@@ -5,7 +5,7 @@ import {
   normalizeRecordSectionError,
   type RecordSectionError,
 } from "@/types/record/section-error"
-import type { CutLogRow } from "@builders/domain"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 import { useMutation } from "@tanstack/react-query"
 import {
   createPendingCutLogRequest,
@@ -32,7 +32,7 @@ type Deps = {
    * The WO material-items section uses this to hand the new row off to
    * the inventory hub's cut-log edit panel.
    */
-  onCreated?: (cutLog: CutLogRow, workOrderItemId: string) => void
+  onCreated?: (cutLog: InventoryAdjustmentRow, workOrderItemId: string) => void
 }
 
 /**
@@ -72,7 +72,7 @@ export function useCreateCutLogMutation({
         workOrderId: scope.workOrderId,
         workOrderItemId: input.workOrderItemId,
         inventoryId: input.form.inventoryId,
-        cut: input.form.cut,
+        quantity: input.form.quantity,
         isWaste: input.form.isWaste,
         notes: input.form.notes,
       })

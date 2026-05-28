@@ -6,7 +6,7 @@
 
 import type { GridColumn } from "@/components/grid/contracts/grid-column"
 import type { GridLayout } from "@/components/grid/contracts/grid-layout"
-import type { CutLogRow } from "@builders/domain"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 
 /**
  * Column metadata, keyed by stable column id. Consumers project the keys
@@ -17,14 +17,14 @@ export const CUT_LOG_COLUMN_DEFINITIONS = {
   inventoryItem: { key: "inventoryItem", label: "Inventory Item", minWidth: 220, grow: 1.2 },
   location: { key: "location", label: "Location", minWidth: 140, grow: 0.5 },
   before: { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
-  cut: { key: "cut", label: "Cut", minWidth: 144, grow: 0, align: "center" },
+  quantity: { key: "quantity", label: "Cut", minWidth: 144, grow: 0, align: "center" },
   after: { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },
-  coverageCut: { key: "coverageCut", label: "Coverage Cut", minWidth: 144, grow: 0, align: "center" },
+  coverage: { key: "coverage", label: "Coverage Cut", minWidth: 144, grow: 0, align: "center" },
   isWaste: { key: "isWaste", label: "Waste", minWidth: 88, grow: 0, align: "center" },
   notes: { key: "notes", label: "Notes", minWidth: 200, grow: 1 },
-  cutLogNumber: { key: "cutLogNumber", label: "Cut Log #", minWidth: 132, grow: 0 },
+  adjustmentNumber: { key: "cutLogNumber", label: "Cut Log #", minWidth: 132, grow: 0 },
   warehouse: { key: "warehouse", label: "Warehouse", minWidth: 160, grow: 0 },
-} as const satisfies Record<string, GridColumn<CutLogRow>>
+} as const satisfies Record<string, GridColumn<InventoryAdjustmentRow>>
 
 /**
  * Canonical 11-column shape used by BOTH the inventory record view's cut-log
@@ -40,23 +40,23 @@ export const CUT_LOG_COLUMN_DEFINITIONS = {
  * the operator-editable fields from the cut-log side panel, surfaced as
  * read-only columns here so operators can scan without opening the panel.
  * `warehouse` reads `warehouseName` straight off the row. On the inv side
- * it's the joined snapshot label on `InventoryCutLogRow`. On the WO side
- * the row shape is plain `CutLogRow`, so the consuming section hydrates
+ * it's the joined snapshot label on `EnrichedInventoryAdjustmentRow`. On the WO side
+ * the row shape is plain `InventoryAdjustmentRow`, so the consuming section hydrates
  * each row with the WO's warehouse name before handing the array to the
  * grid (every cut log on a WO shares the WO's warehouse by construction).
  */
-export const INVENTORY_CUT_LOG_LAYOUT: GridLayout<CutLogRow> = {
+export const INVENTORY_CUT_LOG_LAYOUT: GridLayout<InventoryAdjustmentRow> = {
   dataColumns: [
     CUT_LOG_COLUMN_DEFINITIONS.status,
     CUT_LOG_COLUMN_DEFINITIONS.inventoryItem,
     CUT_LOG_COLUMN_DEFINITIONS.location,
     CUT_LOG_COLUMN_DEFINITIONS.before,
-    CUT_LOG_COLUMN_DEFINITIONS.cut,
+    CUT_LOG_COLUMN_DEFINITIONS.quantity,
     CUT_LOG_COLUMN_DEFINITIONS.after,
-    CUT_LOG_COLUMN_DEFINITIONS.coverageCut,
+    CUT_LOG_COLUMN_DEFINITIONS.coverage,
     CUT_LOG_COLUMN_DEFINITIONS.isWaste,
     CUT_LOG_COLUMN_DEFINITIONS.notes,
-    CUT_LOG_COLUMN_DEFINITIONS.cutLogNumber,
+    CUT_LOG_COLUMN_DEFINITIONS.adjustmentNumber,
     CUT_LOG_COLUMN_DEFINITIONS.warehouse,
   ],
 }

@@ -1,4 +1,4 @@
-import { finalizeCutLogUseCase } from "@builders/application"
+import { finalizeAdjustmentUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -18,7 +18,7 @@ type RouteContext = {
  * POST /api/inventory/[id]/cut-logs/[cutLogId]/finalize
  *
  * Synchronous single-row finalize under the inventory scope. Calls
- * `finalizeCutLogUseCase` with
+ * `finalizeAdjustmentUseCase` with
  * `{ scope: { kind: "inventory", inventoryId } }`. The use case
  * scope-asserts row → inventory membership, locks the parent inventory
  * FOR UPDATE, runs the finalizability gate, stamps `before` / `after` /
@@ -70,9 +70,9 @@ export async function POST(request: Request, { params }: RouteContext) {
         entityId: cutLogId,
       },
       () =>
-        finalizeCutLogUseCase({
+        finalizeAdjustmentUseCase({
           scope: { kind: "inventory", inventoryId },
-          cutLogId,
+          adjustmentId: cutLogId,
         }),
     )
 

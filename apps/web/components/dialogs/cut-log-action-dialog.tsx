@@ -1,14 +1,14 @@
 "use client"
 
-import type { FlooringCutLogStatus } from "@builders/domain"
+import type { FlooringInventoryAdjustmentStatus } from "@builders/domain"
 import { ConfirmDialog } from "./confirm-dialog"
 
 export type CutLogActionDialogProps = {
   open: boolean
   /** Status of the cut log the action targets — drives the dialog copy. */
-  status: FlooringCutLogStatus
+  status: FlooringInventoryAdjustmentStatus
   /** Cut log number (the user-visible "CUT-N" identifier). */
-  cutLogNumber: string
+  adjustmentNumber: string
   /** Fired when the user confirms. The consumer is responsible for closing. */
   onConfirm: () => void
   /** Fired when the user cancels (button, backdrop, Escape). */
@@ -53,7 +53,7 @@ const FINAL_COPY: DialogCopy = {
 export function CutLogActionDialog({
   open,
   status,
-  cutLogNumber,
+  adjustmentNumber,
   onConfirm,
   onCancel,
   pending = false,
@@ -65,7 +65,7 @@ export function CutLogActionDialog({
       title={copy.title}
       message={
         <span>
-          <span className="font-mono text-xs text-[var(--foreground)]/85">{cutLogNumber}</span>
+          <span className="font-mono text-xs text-[var(--foreground)]/85">{adjustmentNumber}</span>
           <span className="ml-1">— {copy.message}</span>
         </span>
       }

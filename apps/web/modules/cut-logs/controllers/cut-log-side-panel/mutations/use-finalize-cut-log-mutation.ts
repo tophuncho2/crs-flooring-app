@@ -6,7 +6,7 @@ import {
   type RecordSectionError,
 } from "@/types/record/section-error"
 import { useMutation } from "@tanstack/react-query"
-import type { CutLogRow } from "@builders/domain"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 import {
   finalizeCutLogRequest,
   type CutLogScopeUrl,
@@ -32,10 +32,10 @@ type Deps = {
  * the prior PENDING row in the panel state and the form/baseline reset
  * to the server-fresh values. The cut log is no longer pending-editable
  * after this, so the panel's input cells go read-only via
- * `isCutLogPendingEditable`. The standard `publish` patch upserts the
+ * `isAdjustmentPendingEditable`. The standard `publish` patch upserts the
  * new row into the parent snapshot. The WO/WOMI + warehouse labels are
  * carried forward from the prior open spec so the read-only cells stay
- * populated (the response is a plain `CutLogRow` with no joined labels).
+ * populated (the response is a plain `InventoryAdjustmentRow` with no joined labels).
  */
 export function useFinalizeCutLogMutation({
   scope,
@@ -46,7 +46,7 @@ export function useFinalizeCutLogMutation({
   setError,
 }: Deps) {
   return useMutation({
-    mutationFn: (input: { workOrderItemId: string | null; cutLog: CutLogRow }) =>
+    mutationFn: (input: { workOrderItemId: string | null; cutLog: InventoryAdjustmentRow }) =>
       finalizeCutLogRequest({ scope, cutLogId: input.cutLog.id }),
     onSuccess: (response, variables) => {
       publish({

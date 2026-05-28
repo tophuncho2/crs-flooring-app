@@ -79,7 +79,7 @@ export async function listEligibleInventoryRequest(args: {
       dyeLot: string
       notes: string
       startingStock: string
-      totalCutSum: string
+      netDeducted: string
       remainingStock: string
       stockUnitAbbrev: string
     }>

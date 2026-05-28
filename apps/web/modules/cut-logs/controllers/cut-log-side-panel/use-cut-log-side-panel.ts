@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react"
 import type {
-  CutLogRow,
+  InventoryAdjustmentRow,
   InventoryOption,
   WorkOrderOption,
 } from "@builders/domain"
@@ -51,7 +51,7 @@ import { createRecordSectionError, type RecordSectionError } from "@/types/recor
  *                     and let the consumer route the new row elsewhere.
  *   - Save (edit)   → stay open, refresh form to server values
  *   - Finalize      → stay open on the now-FINAL row (input cells go
- *                     read-only via `isCutLogPendingEditable`)
+ *                     read-only via `isAdjustmentPendingEditable`)
  *   - Void          → stay open on the now-VOID row (input cells go
  *                     read-only)
  *   - Delete        → close (row no longer exists)
@@ -77,7 +77,7 @@ export function useCutLogEditPanel({
    * row elsewhere (e.g. WO hands off to the inventory-hub edit panel).
    * When omitted, the default in-place create→edit flip is preserved.
    */
-  onCreated?: (cutLog: CutLogRow, workOrderItemId: string) => void
+  onCreated?: (cutLog: InventoryAdjustmentRow, workOrderItemId: string) => void
 }) {
   const [open, setOpen] = useState<CutLogEditPanelOpenSpec | null>(null)
   const [form, setForm] = useState<CutLogEditForm>(EMPTY_FORM)

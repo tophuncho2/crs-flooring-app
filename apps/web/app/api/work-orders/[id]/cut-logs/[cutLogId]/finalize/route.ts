@@ -1,4 +1,4 @@
-import { finalizeCutLogUseCase } from "@builders/application"
+import { finalizeAdjustmentUseCase } from "@builders/application"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { routeError, routeJson } from "@/server/http/route-helpers"
@@ -17,7 +17,7 @@ type RouteContext = {
  * POST /api/work-orders/[id]/cut-logs/[cutLogId]/finalize
  *
  * Synchronous single-row finalize under the work-order scope. Calls
- * `finalizeCutLogUseCase` with `{ scope: { kind: "work-order",
+ * `finalizeAdjustmentUseCase` with `{ scope: { kind: "work-order",
  * workOrderId } }`. The use case scope-asserts row → WO membership,
  * locks the parent inventory FOR UPDATE, runs the finalizability gate,
  * stamps `before` / `after` / `finalCutSequence`, flips status to FINAL,
@@ -67,9 +67,9 @@ export async function POST(request: Request, { params }: RouteContext) {
         entityId: cutLogId,
       },
       () =>
-        finalizeCutLogUseCase({
+        finalizeAdjustmentUseCase({
           scope: { kind: "work-order", workOrderId },
-          cutLogId,
+          adjustmentId: cutLogId,
         }),
     )
 

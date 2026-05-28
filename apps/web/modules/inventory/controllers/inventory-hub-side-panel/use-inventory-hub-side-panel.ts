@@ -277,9 +277,9 @@ export function useInventoryHubSidePanel({
   // External opener that lands directly in cut-log edit. Accepts the
   // broader `CutLogPanelRow` shape so both call sites can hand off
   // whatever row they have in scope: the inventory record view passes
-  // `InventoryCutLogRow` (server-resolved labels required), and the
+  // `EnrichedInventoryAdjustmentRow` (server-resolved labels required), and the
   // work-orders side passes a `CutLogPanelRow` hydrated from in-scope
-  // workOrder + WOMI state (since WO-side reads return plain CutLogRow).
+  // workOrder + WOMI state (since WO-side reads return plain InventoryAdjustmentRow).
   // Derives the parent inventoryId from the row.
   const openForCutLogEdit = useCallback(
     (row: CutLogPanelRow) => {
