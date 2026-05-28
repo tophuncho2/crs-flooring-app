@@ -78,16 +78,18 @@ export function RecordSectionActionPanel({
               {summary}
             </div>
           ) : null}
-          {error ? (
-            typeof error === "object" && error !== null && "kind" in error ? (
+        </div>
+        {error ? (
+          <div className="lg:flex-1 lg:min-w-0 lg:mx-3 lg:text-center">
+            {typeof error === "object" && error !== null && "kind" in error ? (
               <RecordSectionErrorPanel error={error as RecordSectionError} />
             ) : (
-              <div className="rounded-xl border border-rose-500/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-800 lg:text-right">
+              <div className="rounded-xl border border-rose-500/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
                 {error}
               </div>
-            )
-          ) : null}
-        </div>
+            )}
+          </div>
+        ) : null}
         {actions ? <div className="flex flex-wrap items-center gap-2 lg:justify-start">{actions}</div> : null}
       </div>
     </div>
