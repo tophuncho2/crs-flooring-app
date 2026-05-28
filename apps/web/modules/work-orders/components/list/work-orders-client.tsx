@@ -16,6 +16,7 @@ import type {
   TemplateOption,
   WarehouseOption,
   WorkOrderListRow,
+  WorkOrderStatusOption,
 } from "@builders/domain"
 import {
   WORK_ORDERS_LIST_FILTERABLE_FIELDS,
@@ -30,6 +31,7 @@ import { MgmtCoFilterChip } from "./toolbar-controls/mgmt-co-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { ScheduledForFilterChip } from "./toolbar-controls/scheduled-for-filter-chip"
 import { SortPickerChip, type SortPickerField } from "./toolbar-controls/sort-picker-chip"
+import { StatusFilterChip } from "./toolbar-controls/status-filter-chip"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 import { WorkOrdersListSearch } from "./toolbar-controls/work-orders-list-search"
@@ -50,6 +52,7 @@ export default function WorkOrdersClient({
   initialSelectedTemplate = null,
   initialWarehouseOptions,
   initialSelectedWarehouse = null,
+  initialStatusOptions,
 }: {
   initialSearchQuery: string
   initialPage: number
@@ -62,6 +65,7 @@ export default function WorkOrdersClient({
   initialSelectedTemplate?: TemplateOption | null
   initialWarehouseOptions: WarehouseOption[]
   initialSelectedWarehouse?: WarehouseOption | null
+  initialStatusOptions: WorkOrderStatusOption[]
 }) {
   const { message, pageError, openCreate, openWorkOrder } = useWorkOrdersListController()
 
@@ -106,6 +110,7 @@ export default function WorkOrdersClient({
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
   const selectedScheduledStart = filters.scheduledForStart?.[0] ?? null
   const selectedScheduledEnd = filters.scheduledForEnd?.[0] ?? null
+  const selectedStatusIds = useMemo(() => filters.statusId ?? [], [filters.statusId])
 
   // --- Selected-label snapshots (initial-seed + fallback to current options) ---
   const mgmtCoLabel = useMemo(() => {
@@ -178,6 +183,13 @@ export default function WorkOrdersClient({
     [onFilterChange],
   )
 
+  const handleStatusChange = useCallback(
+    (ids: string[]) => {
+      onFilterChange("statusId", ids)
+    },
+    [onFilterChange],
+  )
+
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (
@@ -186,7 +198,8 @@ export default function WorkOrdersClient({
       selectedTemplateId ||
       selectedWarehouseId ||
       selectedScheduledStart ||
-      selectedScheduledEnd
+      selectedScheduledEnd ||
+      selectedStatusIds.length > 0
     ) {
       return true
     }
@@ -199,6 +212,7 @@ export default function WorkOrdersClient({
     selectedWarehouseId,
     selectedScheduledStart,
     selectedScheduledEnd,
+    selectedStatusIds,
   ])
 
   const handleClearAll = useCallback(() => {
@@ -282,6 +296,16 @@ export default function WorkOrdersClient({
                 propertyId={selectedPropertyId}
                 onChange={handleTemplateChange}
                 initialOptions={initialTemplateOptions}
+              />
+            </ListToolbarCell>
+
+            {/* Status (multi-select). Options come from the seeded status
+                lookup table, ordered none→complete; new seeds appear here. */}
+            <ListToolbarCell>
+              <StatusFilterChip
+                options={initialStatusOptions}
+                selectedIds={selectedStatusIds}
+                onChange={handleStatusChange}
               />
             </ListToolbarCell>
 

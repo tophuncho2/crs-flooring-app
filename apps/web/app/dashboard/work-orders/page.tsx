@@ -5,12 +5,14 @@ import {
   searchPropertyOptionsUseCase,
   searchTemplateOptionsUseCase,
   searchWarehouseOptionsUseCase,
+  searchWorkOrderStatusOptionsUseCase,
 } from "@builders/application"
 import type {
   ManagementCompanyOption,
   PropertyOption,
   TemplateOption,
   WarehouseOption,
+  WorkOrderStatusOption,
 } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
@@ -51,6 +53,7 @@ export default async function FlooringWorkOrdersPage({
   let initialSelectedTemplate: TemplateOption | null = null
   let initialWarehouseOptions: WarehouseOption[] = []
   let initialSelectedWarehouse: WarehouseOption | null = null
+  let initialStatusOptions: WorkOrderStatusOption[] = []
 
   try {
     const selectedMgmtCoId = initialInput.filters?.managementCompanyId?.[0] ?? null
@@ -58,7 +61,7 @@ export default async function FlooringWorkOrdersPage({
     const selectedTemplateId = initialInput.filters?.templateId?.[0] ?? null
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
 
-    const [, mgmtCoPage, propertyPage, warehousePage] = await Promise.all([
+    const [, mgmtCoPage, propertyPage, warehousePage, statusOptions] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...WORK_ORDERS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listWorkOrdersUseCase(initialInput),
@@ -69,12 +72,15 @@ export default async function FlooringWorkOrdersPage({
         ...(selectedMgmtCoId ? { managementCompanyId: selectedMgmtCoId } : {}),
       }),
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
+      // Bounded seeded set — fetch the full ordered list (none→complete) once.
+      searchWorkOrderStatusOptionsUseCase({ take: 50 }),
     ])
 
     const warehouseOptions = warehousePage.items
     initialMgmtCoOptions = mgmtCoPage.items
     initialPropertyOptions = propertyPage.items
     initialWarehouseOptions = warehouseOptions
+    initialStatusOptions = statusOptions
 
     // Templates are property-scoped — only prefetch when a property is picked.
     if (selectedPropertyId) {
@@ -163,6 +169,7 @@ export default async function FlooringWorkOrdersPage({
         initialSelectedTemplate={initialSelectedTemplate}
         initialWarehouseOptions={initialWarehouseOptions}
         initialSelectedWarehouse={initialSelectedWarehouse}
+        initialStatusOptions={initialStatusOptions}
       />
     </HydrationBoundary>
   )

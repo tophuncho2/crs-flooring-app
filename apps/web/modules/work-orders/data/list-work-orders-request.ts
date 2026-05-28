@@ -19,6 +19,7 @@ export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [
   "propertyId",
   "templateId",
   "warehouseId",
+  "statusId",
   "scheduledForStart",
   "scheduledForEnd",
 ] as const satisfies readonly string[]

@@ -261,6 +261,7 @@ const ID_FILTER_KEYS = [
   "propertyId",
   "templateId",
   "warehouseId",
+  "statusId",
 ] as const
 
 type IdFilterKey = (typeof ID_FILTER_KEYS)[number]

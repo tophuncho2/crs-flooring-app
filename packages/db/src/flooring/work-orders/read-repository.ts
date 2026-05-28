@@ -42,6 +42,7 @@ export type WorkOrdersListFilterMap = {
    */
   scheduledForStart?: string[]
   scheduledForEnd?: string[]
+  statusId?: string[]
 }
 
 export type WorkOrdersListArgs = {
@@ -79,6 +80,9 @@ function buildWorkOrdersWhere(
   }
   if (filters?.warehouseId?.length) {
     andClauses.push({ warehouseId: { in: filters.warehouseId } })
+  }
+  if (filters?.statusId?.length) {
+    andClauses.push({ statusId: { in: filters.statusId } })
   }
 
   // scheduledFor date range. `@db.Date` values are stored UTC-midnight, so the
