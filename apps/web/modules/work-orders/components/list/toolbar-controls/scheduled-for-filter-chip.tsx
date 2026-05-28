@@ -32,6 +32,10 @@ const DATE_INPUT_CLASS_NAME =
 const PRESET_CLASS_NAME =
   "rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2.5 py-1 text-xs text-[var(--foreground)] transition hover:border-[var(--panel-border-strong)]"
 
+// Matches the picker dropdown triggers (rich-dropdown) so toolbar chips align.
+const TRIGGER_CLASS_NAME =
+  "flex w-full items-center justify-between gap-2 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-left text-sm text-[var(--foreground)] outline-none transition focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40"
+
 /**
  * Work-order list-view chip — narrows the table by `scheduledFor`. A popover
  * holds From / To date inputs plus quick presets (Today / This week / This
@@ -72,14 +76,12 @@ export function ScheduledForFilterChip({ start, end, onChange }: ScheduledForFil
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={`Filter work orders by scheduled date: ${summarize(start, end)}`}
-        className={[
-          "rounded-md border px-3 py-1.5 text-sm transition",
-          isActive
-            ? "border-amber-500/50 bg-amber-500/10 text-amber-700"
-            : "border-[var(--panel-border)] bg-[var(--panel-background)] text-[var(--foreground)] hover:border-[var(--panel-border-strong)]",
-        ].join(" ")}
+        className={TRIGGER_CLASS_NAME}
       >
-        Scheduled: {summarize(start, end)}
+        <span className="min-w-0 flex-1 truncate">Scheduled: {summarize(start, end)}</span>
+        <span aria-hidden="true" className="shrink-0 text-[var(--foreground)]/60">
+          ▾
+        </span>
       </button>
       {open ? (
         <div

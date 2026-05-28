@@ -299,16 +299,6 @@ export default function WorkOrdersClient({
               />
             </ListToolbarCell>
 
-            {/* Status (multi-select). Options come from the seeded status
-                lookup table, ordered none→complete; new seeds appear here. */}
-            <ListToolbarCell>
-              <StatusFilterChip
-                options={initialStatusOptions}
-                selectedIds={selectedStatusIds}
-                onChange={handleStatusChange}
-              />
-            </ListToolbarCell>
-
             {/* Scheduled-for date filter (top) + sort picker (under it).
                 Sort picker: Created date or Scheduled date, each asc/desc. */}
             <ListToolbarCell>
@@ -321,6 +311,16 @@ export default function WorkOrdersClient({
                 field={(sort?.field as SortPickerField) ?? "createdAt"}
                 direction={sort?.direction ?? "desc"}
                 onChange={onSortChange}
+              />
+            </ListToolbarCell>
+
+            {/* Status (multi-select). Options come from the seeded status
+                lookup table, ordered none→complete; new seeds appear here. */}
+            <ListToolbarCell>
+              <StatusFilterChip
+                options={initialStatusOptions}
+                selectedIds={selectedStatusIds}
+                onChange={handleStatusChange}
               />
             </ListToolbarCell>
 

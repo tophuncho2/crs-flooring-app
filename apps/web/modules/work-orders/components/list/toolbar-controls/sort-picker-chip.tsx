@@ -29,6 +29,10 @@ const DIRECTION_LABELS: Record<SortPickerField, { asc: string; desc: string }> =
 
 const FIELDS: SortPickerField[] = ["createdAt", "scheduledFor"]
 
+// Matches the picker dropdown triggers (rich-dropdown) so toolbar chips align.
+const TRIGGER_CLASS_NAME =
+  "flex w-full items-center justify-between gap-2 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-left text-sm text-[var(--foreground)] outline-none transition focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40"
+
 /**
  * Work-order list-view chip — picks the sort column (Created date or Scheduled
  * date, one at a time) and direction. Composes the shared `SortToggle` for the
@@ -70,9 +74,12 @@ export function SortPickerChip({ field, direction, onChange }: SortPickerChipPro
         aria-label={`Sort work orders by ${FIELD_LABEL[field]}, ${
           direction === "asc" ? labels.asc : labels.desc
         }`}
-        className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-sm text-[var(--foreground)] transition hover:border-[var(--panel-border-strong)]"
+        className={TRIGGER_CLASS_NAME}
       >
-        Sort: {summary}
+        <span className="min-w-0 flex-1 truncate">Sort: {summary}</span>
+        <span aria-hidden="true" className="shrink-0 text-[var(--foreground)]/60">
+          ▾
+        </span>
       </button>
       {open ? (
         <div
