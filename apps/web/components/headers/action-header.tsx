@@ -67,9 +67,14 @@ export function ActionHeader({ title, summary, status, actions, leadingControl, 
       )}
     >
       <div className="min-w-0 space-y-2">
-        {title ? (
+        {title || summary ? (
           <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-base font-semibold text-[var(--foreground)]">{title}</span>
+            {summary ? (
+              <span className="text-sm text-[var(--foreground)]/75">{summary}</span>
+            ) : null}
+            {title ? (
+              <span className="truncate text-base font-semibold text-[var(--foreground)]">{title}</span>
+            ) : null}
           </div>
         ) : null}
         {status ? (
@@ -80,9 +85,6 @@ export function ActionHeader({ title, summary, status, actions, leadingControl, 
             ) : null}
           </div>
         ) : null}
-        {summary ? (
-          <div className="text-sm text-[var(--foreground)]/75">{summary}</div>
-        ) : null}
         {message ? (
           typeof message === "string" ? (
             <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
@@ -92,16 +94,18 @@ export function ActionHeader({ title, summary, status, actions, leadingControl, 
             message
           )
         ) : null}
-        {error ? (
-          typeof error === "string" ? (
+      </div>
+      {error ? (
+        <div className="lg:flex-1 lg:min-w-0 lg:mx-3 lg:text-center">
+          {typeof error === "string" ? (
             <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
               {error}
             </div>
           ) : (
             error
-          )
-        ) : null}
-      </div>
+          )}
+        </div>
+      ) : null}
       {leadingControl || extraActions || (actions && actions.length > 0) ? (
         <div className="flex shrink-0 items-center gap-2">
           {leadingControl}
