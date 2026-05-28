@@ -64,13 +64,13 @@ export function RecordSectionActionPanel({
         className,
       )}
     >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row-reverse lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-3">
-          {status ? <div className="flex flex-wrap items-center gap-2">{status}</div> : null}
+          {status ? <div className="flex flex-wrap items-center gap-2 lg:justify-end">{status}</div> : null}
           {summary ? (
             <div
               className={joinRecordSectionClasses(
-                "rounded-xl border px-3 py-2 text-sm text-[var(--foreground)]/75",
+                "rounded-xl border px-3 py-2 text-sm text-[var(--foreground)]/75 lg:text-right",
                 RECORD_SECTION_BORDER_CLASS_NAME,
                 RECORD_SECTION_ITEM_SURFACE_CLASS_NAME,
               )}
@@ -82,13 +82,13 @@ export function RecordSectionActionPanel({
             typeof error === "object" && error !== null && "kind" in error ? (
               <RecordSectionErrorPanel error={error as RecordSectionError} />
             ) : (
-              <div className="rounded-xl border border-rose-500/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+              <div className="rounded-xl border border-rose-500/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-800 lg:text-right">
                 {error}
               </div>
             )
           ) : null}
         </div>
-        {actions ? <div className="flex flex-wrap items-center gap-2 lg:justify-end">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap items-center gap-2 lg:justify-start">{actions}</div> : null}
       </div>
     </div>
   )

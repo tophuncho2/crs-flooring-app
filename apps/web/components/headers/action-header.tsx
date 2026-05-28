@@ -61,7 +61,7 @@ export function ActionHeader({ title, summary, status, actions, leadingControl, 
   return (
     <div
       className={joinClassNames(
-        "flex flex-col gap-3 border-b border-[var(--panel-border)] px-4 py-3 lg:flex-row lg:items-start lg:justify-between",
+        "flex flex-col gap-3 border-b border-[var(--panel-border)] px-4 py-3 lg:flex-row-reverse lg:items-start lg:justify-between",
         className,
       )}
     >
