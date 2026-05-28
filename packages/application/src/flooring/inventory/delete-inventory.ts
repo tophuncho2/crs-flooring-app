@@ -35,7 +35,7 @@ export async function deleteInventoryUseCase(
         code: "INVENTORY_IN_USE",
         message: buildInventoryDeleteBlockedMessage(state),
         status: 409,
-        payload: { cutLogsCount: state.cutLogsCount },
+        payload: { inventoryAdjustmentsCount: state.inventoryAdjustmentsCount },
       })
     }
 

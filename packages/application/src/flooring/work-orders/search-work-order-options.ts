@@ -8,10 +8,10 @@ import {
 import type { WorkOrderMaterialItemOption } from "@builders/domain"
 
 /**
- * Async-picker search use cases for the cut-log relink dropdowns. Thin
- * wrappers over the read-repo: the repo enforces filter shape; the use
- * case is the canonical entry point so routes never reach into `@builders/db`
- * directly.
+ * Async-picker search use cases for the inventory-adjustment relink
+ * dropdowns. Thin wrappers over the read-repo: the repo enforces filter
+ * shape; the use case is the canonical entry point so routes never reach
+ * into `@builders/db` directly.
  */
 export async function searchWorkOrderOptionsUseCase(
   input: SearchWorkOrderOptionsInput,

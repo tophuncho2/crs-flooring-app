@@ -1,6 +1,6 @@
 import {
   Prisma,
-  countWorkOrderCutLogs,
+  countWorkOrderAdjustments,
   getWorkOrderById,
   updateWorkOrderRecord,
   withDatabaseTransaction,
@@ -19,13 +19,13 @@ import type { UpdateWorkOrderUseCaseInput, WorkOrderUseCaseResult } from "./type
 /**
  * Updates a work order. Validates the user-supplied fields, enforces
  * the warehouse-change-lock when the patch changes `warehouseId` AND
- * the WO has linked cut logs, then delegates the write.
+ * the WO has linked inventory adjustments, then delegates the write.
  *
  * The warehouse-change-lock predicate lives in the domain
  * (`assertWorkOrderWarehouseChangeAllowed`); this use case provides the
- * runtime context (current warehouseId, hasLinkedCutLogs from
- * `countWorkOrderCutLogs`) and converts the thrown
- * `WorkOrderDomainError` into an `WorkOrderExecutionError` carrying
+ * runtime context (current warehouseId, hasLinkedInventoryAdjustments
+ * from `countWorkOrderAdjustments`) and converts the thrown
+ * `WorkOrderDomainError` into a `WorkOrderExecutionError` carrying
  * HTTP status 409.
  */
 export async function updateWorkOrderUseCase(
@@ -56,12 +56,13 @@ export async function updateWorkOrderUseCase(
 
     if (input.warehouseId !== undefined) {
       const current = await loadWorkOrderOrThrow(id, c)
-      const hasLinkedCutLogs = (await countWorkOrderCutLogs(id, c)) > 0
+      const hasLinkedInventoryAdjustments =
+        (await countWorkOrderAdjustments(id, c)) > 0
       try {
         assertWorkOrderWarehouseChangeAllowed({
           currentWarehouseId: current.warehouseId,
           nextWarehouseId: input.warehouseId,
-          hasLinkedCutLogs,
+          hasLinkedInventoryAdjustments,
         })
       } catch (error) {
         if (error instanceof WorkOrderDomainError && error.code === "WORK_ORDER_WAREHOUSE_LOCKED") {

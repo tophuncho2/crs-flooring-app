@@ -4,14 +4,14 @@ import { WorkOrderExecutionError } from "./errors.js"
 
 /**
  * Deletes a work order. The WO row's `onDelete: Cascade` cascades to all
- * its WOMIs; each WOMI's `onDelete: SetNull` on the cut-log relation
+ * its WOMIs; each WOMI's `onDelete: SetNull` on the adjustment relation
  * nulls `workOrderItemId`, and the WO's own SetNull cascade nulls
  * `workOrderId`. So both link columns end up null together on every
- * previously-linked cut log — `assertCutLogLinkageSymmetry` is satisfied
- * without any app-side null updates.
+ * previously-linked inventory adjustment — `assertAdjustmentLinkageRules`
+ * is satisfied without any app-side null updates.
  *
- * Per locked decision (sweep plan): WO delete is unblocked even when
- * cut logs exist; the SetNull cascade is the unlink mechanism.
+ * Per locked decision: WO delete is unblocked even when adjustments
+ * exist; the SetNull cascade is the unlink mechanism.
  */
 export async function deleteWorkOrderUseCase(
   id: string,

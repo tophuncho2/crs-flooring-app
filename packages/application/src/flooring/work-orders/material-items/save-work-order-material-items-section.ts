@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import {
   Prisma,
   applyWorkOrderMaterialItemsDiff,
-  countCutLogsByWorkOrderItemIds,
+  countAdjustmentsByWorkOrderItemIds,
   getProductById,
   listWorkOrderMaterialItems,
   withDatabaseTransaction,
@@ -37,15 +37,16 @@ function throwDuplicateProduct(productId?: string): never {
 /**
  * Diff-save use case mirroring the templates' MI section save:
  *  1. Validate every draft (create form) + update (update form).
- *  2. Reject a product change on any modified row that already has cut logs
- *     (product is editable only until the item is linked to a cut log).
+ *  2. Reject a product change on any modified row that already has
+ *     inventory adjustments (product is editable only until the item is
+ *     linked to one).
  *  3. Batch-fetch every distinct product the `added` drafts AND the
  *     product-changed `modified` rows touch, and stamp the send-unit snapshot
  *     via `buildItemSendUnitSnapshotFromProduct`. Modified rows whose product
  *     is unchanged keep their stored snapshot.
  *  4. Assign UUIDs to drafts via `assignDraftIds`.
  *  5. Hand off to `applyWorkOrderMaterialItemsDiff`. The data layer
- *     nulls cut-log links on any deleted WOMI inside the same TX
+ *     nulls adjustment links on any deleted WOMI inside the same TX
  *     before deleting — preserves linkage symmetry.
  *
  * Returns updated items + tempIdMap for the UI to reconcile draft state.
@@ -85,23 +86,23 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
     const existingById = new Map(existingRows.map((row) => [row.id, row]))
     const deletedIds = new Set(input.diff.deleted.map((d) => d.id))
 
-    // Product is editable until the item has cut logs. Reject a product change
-    // on any modified row that already has (non-void) cut logs.
+    // Product is editable until the item has inventory adjustments. Reject a
+    // product change on any modified row that already has them.
     const productChangedUpdates = input.diff.modified.filter((update) => {
       const existing = existingById.get(update.id)
       return existing !== undefined && update.form.productId.trim() !== existing.productId.trim()
     })
     if (productChangedUpdates.length > 0) {
-      const cutLogCounts = await countCutLogsByWorkOrderItemIds(
+      const adjustmentCounts = await countAdjustmentsByWorkOrderItemIds(
         productChangedUpdates.map((u) => u.id),
         c,
       )
       for (const update of productChangedUpdates) {
         const existing = existingById.get(update.id)!
-        const hasCutLogs = (cutLogCounts.get(update.id) ?? 0) > 0
+        const hasInventoryAdjustments = (adjustmentCounts.get(update.id) ?? 0) > 0
         if (
           isWorkOrderMaterialItemProductChangeBlocked(
-            hasCutLogs,
+            hasInventoryAdjustments,
             existing.productId,
             update.form.productId,
           )

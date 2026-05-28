@@ -59,8 +59,8 @@ describe("deleteInventoryUseCase", () => {
   describe("happy path — linked staged row", () => {
     it("deletes the inventory row, then the linked staged row, in the same transaction", async () => {
       getInventoryDeleteStateMock.mockResolvedValue({
-        hasCutLogs: false,
-        cutLogsCount: 0,
+        hasInventoryAdjustments: false,
+        inventoryAdjustmentsCount: 0,
         sourceStagedRowId: STAGED_ROW_ID,
       })
 
@@ -80,8 +80,8 @@ describe("deleteInventoryUseCase", () => {
 
     it("acquires the FOR UPDATE lock before reading delete state", async () => {
       getInventoryDeleteStateMock.mockResolvedValue({
-        hasCutLogs: false,
-        cutLogsCount: 0,
+        hasInventoryAdjustments: false,
+        inventoryAdjustmentsCount: 0,
         sourceStagedRowId: STAGED_ROW_ID,
       })
 
@@ -96,8 +96,8 @@ describe("deleteInventoryUseCase", () => {
   describe("happy path — no linked staged row", () => {
     it("deletes the inventory row and does NOT touch staged rows when link is null", async () => {
       getInventoryDeleteStateMock.mockResolvedValue({
-        hasCutLogs: false,
-        cutLogsCount: 0,
+        hasInventoryAdjustments: false,
+        inventoryAdjustmentsCount: 0,
         sourceStagedRowId: null,
       })
 
@@ -121,10 +121,10 @@ describe("deleteInventoryUseCase", () => {
       expect(deleteStagedInventoryRecordByIdMock).not.toHaveBeenCalled()
     })
 
-    it("throws INVENTORY_IN_USE (409) and deletes nothing when cut logs block the delete", async () => {
+    it("throws INVENTORY_IN_USE (409) and deletes nothing when inventory adjustments block the delete", async () => {
       getInventoryDeleteStateMock.mockResolvedValue({
-        hasCutLogs: true,
-        cutLogsCount: 3,
+        hasInventoryAdjustments: true,
+        inventoryAdjustmentsCount: 3,
         sourceStagedRowId: STAGED_ROW_ID,
       })
       isInventoryDeleteBlockedMock.mockReturnValue(true)
@@ -136,7 +136,7 @@ describe("deleteInventoryUseCase", () => {
         if (!(error instanceof InventoryExecutionError)) throw error
         expect(error.code).toBe("INVENTORY_IN_USE")
         expect(error.status).toBe(409)
-        expect(error.payload).toEqual({ cutLogsCount: 3 })
+        expect(error.payload).toEqual({ inventoryAdjustmentsCount: 3 })
       }
       expect(deleteInventoryRecordByIdMock).not.toHaveBeenCalled()
       expect(deleteStagedInventoryRecordByIdMock).not.toHaveBeenCalled()
