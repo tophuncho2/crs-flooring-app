@@ -3,6 +3,7 @@ export type ImportErrorCode =
   | "IMPORT_NOT_FOUND"
   | "IMPORT_WAREHOUSE_NOT_FOUND"
   | "IMPORT_DELETE_BLOCKED_BY_INVENTORY"
+  | "IMPORT_WAREHOUSE_CHANGE_BLOCKED_BY_INVENTORY"
 
 export class ImportExecutionError extends Error {
   readonly code: ImportErrorCode

@@ -17,6 +17,10 @@ export async function deleteImportUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
+    await c.$queryRaw(
+      Prisma.sql`SELECT "id" FROM "flooring_import_entry" WHERE "id" = ${id} FOR UPDATE`,
+    )
+
     const state = await getImportLinkState(id, c)
     if (!state) {
       throw new ImportExecutionError({

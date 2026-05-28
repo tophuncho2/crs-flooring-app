@@ -1,12 +1,15 @@
 import {
   Prisma,
   getImportById,
+  getImportLinkState,
   getWarehouseById,
   updateImportRecord,
   withDatabaseTransaction,
   type UpdateImportRecordInput as DbUpdateImportInput,
 } from "@builders/db"
 import {
+  buildImportWarehouseChangeBlockedMessage,
+  isImportWarehouseChangeBlocked,
   validateImportPrimaryForm,
   type ImportPrimaryForm,
 } from "@builders/domain"
@@ -34,6 +37,10 @@ export async function updateImportUseCase(
 ): Promise<ImportResult> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
+
+    await c.$queryRaw(
+      Prisma.sql`SELECT "id" FROM "flooring_import_entry" WHERE "id" = ${id} FOR UPDATE`,
+    )
 
     const current = await getImportById(id, c)
     if (!current) {
@@ -71,6 +78,20 @@ export async function updateImportUseCase(
           message: "Selected warehouse does not exist.",
           status: 404,
           field: "warehouseId",
+        })
+      }
+
+      const linkState = await getImportLinkState(id, c)
+      if (linkState && isImportWarehouseChangeBlocked(linkState)) {
+        throw new ImportExecutionError({
+          code: "IMPORT_WAREHOUSE_CHANGE_BLOCKED_BY_INVENTORY",
+          message: buildImportWarehouseChangeBlockedMessage(linkState),
+          status: 409,
+          field: "warehouseId",
+          payload: {
+            stagedInventoryRowCount: linkState.stagedInventoryRowCount,
+            liveInventoryRowCount: linkState.liveInventoryRowCount,
+          },
         })
       }
     }
