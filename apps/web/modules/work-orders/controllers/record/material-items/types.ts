@@ -12,6 +12,9 @@ export type WorkOrderMaterialItemLocal = {
   // Client-only — narrows the row's product picker to a chosen category.
   // Excluded from the diff sent on save.
   categoryFilterId: string | null
+  // True once the item has linked (non-void) cut logs. Locks the product cell
+  // (the row can only be deleted then). New local rows are always false.
+  hasCutLogs: boolean
 }
 
 export type WorkOrderMaterialItemsLocalState = {

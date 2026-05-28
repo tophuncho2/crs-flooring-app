@@ -201,9 +201,9 @@ export function useTemplateMaterialItemsSection({
   }
 
   // Client-only ergonomic — does NOT mark the section dirty (excluded from
-  // the diff in `toDiffForm` / `itemsDiffer`). Filter-only cascade — narrowing
-  // the product picker's results never clears the saved product. User picks
-  // a different product explicitly if they want to change it.
+  // the diff in `toDiffForm` / `itemsDiffer`). Only the filter id moves here;
+  // ProductCategoryPicker clears the selected product when the category
+  // changes, so a mismatched product can't linger.
   function changeCategoryFilter(itemId: string, categoryId: string | null) {
     section.setLocalValue((previous) => ({
       items: previous.items.map((row) =>

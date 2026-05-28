@@ -18,7 +18,6 @@ import {
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
-  buildWorkOrderMaterialItemProductLockedMessage,
   type WorkOrderMaterialItemCreateForm,
   type WorkOrderMaterialItemUpdateForm,
   type WorkOrderMaterialItemsDiff,
@@ -184,26 +183,16 @@ function validateMaterialItemCreateForm(
   }
 }
 
-// Update form is locked to quantity + notes — `productId` is immutable
-// post-create. Any caller that passes it gets a 400 with
-// WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED. Mirrors the products module's
-// categoryId carve-out in `apps/web/app/api/products/_validators.ts`.
+// Update form carries `productId` — the product is editable until the item
+// has linked cut logs. The "locked once it has cut logs" rule is enforced in
+// the save use case (it needs the cut-log count), not here on the wire.
 function validateMaterialItemUpdateForm(
   value: unknown,
   path: string,
-  ref: string,
 ): WorkOrderMaterialItemUpdateForm {
   const obj = requireObject(value, path, failMaterialItem)
-  if (obj.productId !== undefined) {
-    throw new WorkOrderMaterialItemExecutionError({
-      code: "WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED",
-      message: buildWorkOrderMaterialItemProductLockedMessage(),
-      status: 400,
-      field: `${path}.productId`,
-      payload: { refKind: "id", ref },
-    })
-  }
   return {
+    productId: requireString(obj.productId, `${path}.productId`, failMaterialItem),
     quantity: optionalQuantity(obj.quantity),
     notes: optionalBoundedText(obj.notes, WORK_ORDER_MATERIAL_ITEM_NOTES_MAX, `${path}.notes`, failMaterialItem) ?? "",
   }
@@ -225,7 +214,7 @@ export function validateWorkOrderMaterialItemsDiffInput(
     const id = requireString(obj.id, `modified[${idx}].id`, failMaterialItem)
     return {
       id,
-      form: validateMaterialItemUpdateForm(obj.form, `modified[${idx}].form`, id),
+      form: validateMaterialItemUpdateForm(obj.form, `modified[${idx}].form`),
     }
   })
 

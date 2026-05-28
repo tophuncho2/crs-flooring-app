@@ -180,11 +180,11 @@ export function WorkOrderMaterialItemsSection({
   ) {
     switch (column.key) {
       case "product":
-        // Product is locked once the WOMI is saved (server enforces it
-        // too — see WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED). Render the
-        // picker only while the row is still a local-only draft;
-        // saved rows show the snapshotted product name as static text.
-        return isLocalOnlyRecordRow(item.id) ? (
+        // Product is editable until the item has linked cut logs (server
+        // enforces it too — see WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED).
+        // Once it has cut logs the row only shows the product name as static
+        // text and can only be deleted. New local rows never have cut logs.
+        return isLocalOnlyRecordRow(item.id) || !item.hasCutLogs ? (
           <ProductCategoryPicker
             productId={item.productId || null}
             productLabel={item.productName || null}

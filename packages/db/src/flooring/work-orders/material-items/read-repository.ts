@@ -32,7 +32,16 @@ export async function listWorkOrderMaterialItems(
     orderBy: { createdAt: "asc" },
   })
 
-  return items.map(normalizeWorkOrderMaterialItem)
+  // hasCutLogs gates product editability — an item with linked (non-void) cut
+  // logs locks its product. Reuse the non-void count helper.
+  const cutLogCounts = await countCutLogsByWorkOrderItemIds(
+    items.map((item) => item.id),
+    client,
+  )
+
+  return items.map((item) =>
+    normalizeWorkOrderMaterialItem(item, (cutLogCounts.get(item.id) ?? 0) > 0),
+  )
 }
 
 /**

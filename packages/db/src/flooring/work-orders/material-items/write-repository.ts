@@ -5,7 +5,6 @@ import {
   type ItemSendUnitSnapshot,
   type WorkOrderMaterialItemCreateForm,
   type WorkOrderMaterialItemRow,
-  type WorkOrderMaterialItemUpdateForm,
 } from "@builders/domain"
 import { listWorkOrderMaterialItems } from "./read-repository.js"
 
@@ -20,12 +19,16 @@ export type WriteWorkOrderMaterialItemCreateInput =
   WorkOrderMaterialItemCreateForm & ItemSendUnitSnapshot
 
 /**
- * Wire-input shape for material-item updates. Carries only the mutable
- * fields — productId is locked post-create (see
- * `isWorkOrderMaterialItemProductChangeBlocked`), and the send-unit
- * snapshot stays stable because the product can't change.
+ * Wire-input shape for material-item updates. Always carries the mutable
+ * quantity/notes. `product` is present only when the product changed (allowed
+ * while the item has no cut logs); it carries the re-snapshotted send units
+ * for the new product so the snapshot stays consistent with `productId`.
  */
-export type WriteWorkOrderMaterialItemUpdateInput = WorkOrderMaterialItemUpdateForm
+export type WriteWorkOrderMaterialItemUpdateInput = {
+  quantity: string
+  notes: string
+  product?: { productId: string } & ItemSendUnitSnapshot
+}
 
 const workOrderMaterialItemSelect = {
   id: true,
@@ -77,6 +80,13 @@ export async function updateWorkOrderMaterialItemRecord(
     data: {
       quantity: toDecimal(input.quantity),
       notes: input.notes ? input.notes : null,
+      ...(input.product
+        ? {
+            product: { connect: { id: input.product.productId } },
+            sendUnitName: input.product.sendUnitName,
+            sendUnitAbbrev: input.product.sendUnitAbbrev,
+          }
+        : {}),
     },
     select: workOrderMaterialItemSelect,
   })
@@ -163,6 +173,13 @@ export async function applyWorkOrderMaterialItemsDiff(
       data: {
         quantity: toDecimal(update.input.quantity),
         notes: update.input.notes ? update.input.notes : null,
+        ...(update.input.product
+          ? {
+              product: { connect: { id: update.input.product.productId } },
+              sendUnitName: update.input.product.sendUnitName,
+              sendUnitAbbrev: update.input.product.sendUnitAbbrev,
+            }
+          : {}),
       },
     })
   }

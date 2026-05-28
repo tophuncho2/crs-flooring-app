@@ -10,23 +10,28 @@ export type WorkOrderMaterialItemRow = {
   notes: string
   status: WorkOrderItemStatus
   sourceTemplateItemId: string | null
+  // True when the item has at least one non-void cut log. Once true the
+  // product is locked (the row can only be deleted); see
+  // `isWorkOrderMaterialItemProductChangeBlocked`.
+  hasCutLogs: boolean
   createdAt: string
 }
 
 // Create form carries `productId` — the user picks a product when they add a
-// new material item. Update form omits it: product is immutable post-create
-// (defense in depth — type system, API validator carve-out, and the
-// `isWorkOrderMaterialItemProductChangeBlocked` predicate all agree).
+// new material item. The update form carries it too: the product stays
+// editable until the item has linked cut logs, after which the change is
+// rejected (see `isWorkOrderMaterialItemProductChangeBlocked`).
 export type WorkOrderMaterialItemCreateForm = {
   productId: string
   quantity: string
   notes: string
 }
 
-export type WorkOrderMaterialItemUpdateForm = Omit<
-  WorkOrderMaterialItemCreateForm,
-  "productId"
->
+export type WorkOrderMaterialItemUpdateForm = {
+  productId: string
+  quantity: string
+  notes: string
+}
 
 /**
  * Option-row shape for the async WOMI picker (cut-log relink dropdown).

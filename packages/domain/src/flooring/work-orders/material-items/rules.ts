@@ -25,35 +25,34 @@ export function validateWorkOrderMaterialItemCreateForm(
 export function validateWorkOrderMaterialItemUpdateForm(
   input: WorkOrderMaterialItemUpdateForm,
 ): string {
+  if (!input.productId) return "Product is required"
   return validateQuantity(input.quantity)
 }
 
 /**
- * Product is immutable post-create — full stop. The WOMI carries
- * product-derived snapshots (`productName`, `sendUnitName`,
- * `sendUnitAbbrev`) AND linked cut logs scope their inventory search by
- * `workOrderItem.productId` (see `listEligibleInventoryForWorkOrderItem`
- * in the data layer). Letting product change post-create would drift
- * the snapshots and silently sever every cut-log linkage to inventory.
+ * The product stays editable until the item has linked (non-void) cut logs.
+ * Once a cut log exists, the product is locked — the WOMI carries
+ * product-derived snapshots (`productName`, `sendUnitName`, `sendUnitAbbrev`)
+ * and its cut logs scope their inventory search by `workOrderItem.productId`
+ * (see `listEligibleInventoryForWorkOrderItem`). Changing the product then
+ * would drift the snapshots and sever every cut-log → inventory linkage; the
+ * row can only be deleted instead.
  *
- * Returns true when the caller is attempting to change the product,
- * false otherwise. Both ids are compared trimmed so whitespace noise
- * doesn't trigger a false positive.
- *
- * Defense in depth: `WorkOrderMaterialItemUpdateForm` omits `productId`
- * and the API PATCH validator rejects the field on the wire. This
- * predicate exists for tests + out-of-band callers (admin scripts) that
- * bypass the type system.
+ * Returns true when the caller is changing the product on an item that has
+ * cut logs. Ids are compared trimmed so whitespace noise can't trigger a
+ * false positive. The caller supplies `hasCutLogs` from a non-void cut-log
+ * count (the application layer counts them before the write).
  */
 export function isWorkOrderMaterialItemProductChangeBlocked(
+  hasCutLogs: boolean,
   currentProductId: string,
   nextProductId: string,
 ): boolean {
-  return currentProductId.trim() !== nextProductId.trim()
+  return hasCutLogs && currentProductId.trim() !== nextProductId.trim()
 }
 
 export function buildWorkOrderMaterialItemProductLockedMessage(): string {
-  return `Product cannot change after a material item is created.`
+  return `Product cannot change once the item has linked cut logs.`
 }
 
 // A product may be linked at most once per work order (enforced canonically

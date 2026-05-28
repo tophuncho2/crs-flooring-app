@@ -138,11 +138,19 @@ export function ProductCategoryPicker({
 
   const handleCategorySelect = useCallback(
     (option: HubSidePanelPickerOption) => {
+      // Changing to a different category clears the selected product — a
+      // product from the old category can't stay selected once the row is
+      // scoped to a new one. (Clearing the filter to "All" keeps it, since
+      // every product matches "All".)
+      if (option.id !== categoryId) {
+        onProductChange(null)
+        onProductOptionSelected?.(null)
+      }
       onCategoryChange(option.id)
       setPickedCategoryName(option.title)
       setActivePicker("product")
     },
-    [onCategoryChange],
+    [categoryId, onCategoryChange, onProductChange, onProductOptionSelected],
   )
   const handleCategoryClear = useCallback(() => {
     onCategoryChange(null)

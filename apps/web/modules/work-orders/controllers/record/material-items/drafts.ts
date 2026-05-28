@@ -26,6 +26,7 @@ export const BLANK_MATERIAL_ITEM_LOCAL_DEFAULTS: Omit<
   quantity: "",
   notes: "",
   categoryFilterId: null,
+  hasCutLogs: false,
 }
 
 export function createBlankMaterialItemLocal(id: string): WorkOrderMaterialItemLocal {
@@ -41,6 +42,7 @@ export function toLocalItem(row: WorkOrderMaterialItemRow): WorkOrderMaterialIte
     quantity: row.quantity,
     notes: row.notes,
     categoryFilterId: null,
+    hasCutLogs: row.hasCutLogs,
   }
 }
 
@@ -73,12 +75,15 @@ function serverItemById(rows: WorkOrderMaterialItemRow[]) {
   return map
 }
 
-// productId is locked post-create — diff identity for modified rows is
-// (quantity, notes). A productId mismatch on a saved row would mean a UI
-// bug; the API would reject it anyway via
-// WORK_ORDER_MATERIAL_ITEM_PRODUCT_LOCKED.
+// Product is editable until the item has cut logs, so productId joins
+// (quantity, notes) in the modified-row diff identity. The server re-checks
+// the cut-log lock before persisting a product change.
 function itemsDiffer(local: WorkOrderMaterialItemLocal, server: WorkOrderMaterialItemRow) {
-  return local.quantity !== server.quantity || local.notes !== server.notes
+  return (
+    local.productId !== server.productId ||
+    local.quantity !== server.quantity ||
+    local.notes !== server.notes
+  )
 }
 
 export function toCreateForm(
@@ -95,6 +100,7 @@ export function toUpdateForm(
   local: WorkOrderMaterialItemLocal,
 ): WorkOrderMaterialItemUpdateForm {
   return {
+    productId: local.productId,
     quantity: local.quantity,
     notes: local.notes,
   }

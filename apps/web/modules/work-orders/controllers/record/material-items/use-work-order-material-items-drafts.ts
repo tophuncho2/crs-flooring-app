@@ -69,9 +69,9 @@ export function useWorkOrderMaterialItemsDrafts({ section }: { section: SectionR
         items: previous.items.map((row) => {
           if (row.id !== itemId) return row
           if (row.categoryFilterId === categoryId) return row
-          // Filter-only cascade — narrowing the product picker's results
-          // never clears the saved product. User picks a different product
-          // explicitly if they want to change it.
+          // Only the filter id moves here; ProductCategoryPicker clears the
+          // selected product (via onProductChange/onProductOptionSelected)
+          // when the category changes, so a mismatched product can't linger.
           return { ...row, categoryFilterId: categoryId }
         }),
       }))
