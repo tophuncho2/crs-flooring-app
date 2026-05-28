@@ -107,18 +107,18 @@ export function RecordSectionSubHeader({
 
   const actionButtons = shouldRenderManagedActions ? (
     <>
+      <RecordFooterPrimaryButton onClick={() => void onSave?.()} disabled={!isDirty || isSaving || !onSave}>
+        {isSaving ? savingLabel : saveLabel}
+      </RecordFooterPrimaryButton>
+      <RecordFooterNeutralButton onClick={onDiscard} disabled={!isDirty || isSaving || !onDiscard}>
+        {discardLabel}
+      </RecordFooterNeutralButton>
       {configuredActions}
       {onDelete ? (
         <RecordFooterDestructiveButton onClick={() => void onDelete()} disabled={isSaving}>
           {deleteLabel}
         </RecordFooterDestructiveButton>
       ) : null}
-      <RecordFooterNeutralButton onClick={onDiscard} disabled={!isDirty || isSaving || !onDiscard}>
-        {discardLabel}
-      </RecordFooterNeutralButton>
-      <RecordFooterPrimaryButton onClick={() => void onSave?.()} disabled={!isDirty || isSaving || !onSave}>
-        {isSaving ? savingLabel : saveLabel}
-      </RecordFooterPrimaryButton>
     </>
   ) : configuredActions.length > 0 ? (
     <>{configuredActions}</>
@@ -127,8 +127,8 @@ export function RecordSectionSubHeader({
   const managedActions =
     actionsLeading || actionButtons ? (
       <>
-        {actionsLeading}
         {actionButtons}
+        {actionsLeading}
       </>
     ) : null
 

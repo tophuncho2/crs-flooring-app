@@ -23,11 +23,12 @@ export function stagedInventorySectionActions({
 }: StagedInventorySectionActionsInput): ReadonlyArray<HeaderAction> {
   return [
     {
-      key: "add",
-      label: "Add Filter Row",
-      onClick: onAddFilterRow,
-      kind: "secondary",
-      disabled: isSaving || isMarking || isSelectionActive,
+      key: "save",
+      label: isSaving ? "Saving Rows..." : "Save Rows",
+      onClick: onSave,
+      kind: "primary",
+      disabled:
+        !isDirty || isSaving || hasConflict || isMarking || isSelectionActive,
     },
     {
       key: "discard",
@@ -37,12 +38,11 @@ export function stagedInventorySectionActions({
       disabled: !isDirty || isSaving || isMarking || isSelectionActive,
     },
     {
-      key: "save",
-      label: isSaving ? "Saving Rows..." : "Save Rows",
-      onClick: onSave,
-      kind: "primary",
-      disabled:
-        !isDirty || isSaving || hasConflict || isMarking || isSelectionActive,
+      key: "add",
+      label: "Add Filter Row",
+      onClick: onAddFilterRow,
+      kind: "secondary",
+      disabled: isSaving || isMarking || isSelectionActive,
     },
   ]
 }

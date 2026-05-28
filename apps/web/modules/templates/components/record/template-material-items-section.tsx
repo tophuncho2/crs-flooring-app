@@ -61,11 +61,11 @@ export function TemplateMaterialItemsSection({
         }
         actions={[
           {
-            key: "add",
-            label: "+ Add Material Item",
-            onClick: onAddItem,
-            kind: "secondary",
-            disabled: isSaving,
+            key: "save",
+            label: isSaving ? "Saving Material Items..." : "Save Material Items",
+            onClick: onSave,
+            kind: "primary",
+            disabled: !isDirty || isSaving || hasConflict,
           },
           {
             key: "discard",
@@ -75,11 +75,11 @@ export function TemplateMaterialItemsSection({
             disabled: !isDirty || isSaving,
           },
           {
-            key: "save",
-            label: isSaving ? "Saving Material Items..." : "Save Material Items",
-            onClick: onSave,
-            kind: "primary",
-            disabled: !isDirty || isSaving || hasConflict,
+            key: "add",
+            label: "+ Add Material Item",
+            onClick: onAddItem,
+            kind: "secondary",
+            disabled: isSaving,
           },
         ]}
         message={noticeMessage}

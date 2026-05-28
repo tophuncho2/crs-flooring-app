@@ -25,9 +25,10 @@ export type ActionHeaderProps = {
   status?: HeaderStatus
   actions?: ReadonlyArray<HeaderAction>
   /**
-   * Optional control rendered flush-left on the title row, before the
-   * title text. Use for a single icon-button affordance tied to the
-   * section as a whole (e.g. an expand-all toggle).
+   * Optional control rendered at the far-left of the actions cluster,
+   * before any descriptor-driven buttons or `extraActions`. Use for a
+   * single icon-button affordance tied to the section as a whole (e.g.
+   * an expand-all toggle).
    */
   leadingControl?: ReactNode
   /**
@@ -66,12 +67,9 @@ export function ActionHeader({ title, summary, status, actions, leadingControl, 
       )}
     >
       <div className="min-w-0 space-y-2">
-        {title || leadingControl ? (
+        {title ? (
           <div className="flex min-w-0 items-center gap-2">
-            {leadingControl}
-            {title ? (
-              <span className="truncate text-base font-semibold text-[var(--foreground)]">{title}</span>
-            ) : null}
+            <span className="truncate text-base font-semibold text-[var(--foreground)]">{title}</span>
           </div>
         ) : null}
         {status ? (
@@ -104,9 +102,9 @@ export function ActionHeader({ title, summary, status, actions, leadingControl, 
           )
         ) : null}
       </div>
-      {extraActions || (actions && actions.length > 0) ? (
+      {leadingControl || extraActions || (actions && actions.length > 0) ? (
         <div className="flex shrink-0 items-center gap-2">
-          {extraActions}
+          {leadingControl}
           {actions?.map((action) => (
             <button
               key={action.key}
@@ -119,6 +117,7 @@ export function ActionHeader({ title, summary, status, actions, leadingControl, 
               {action.label}
             </button>
           ))}
+          {extraActions}
         </div>
       ) : null}
     </div>
