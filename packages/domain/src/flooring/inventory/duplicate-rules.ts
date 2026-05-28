@@ -6,13 +6,6 @@ import {
 } from "./column-limits.js"
 import type { InventoryRow } from "./types.js"
 
-/**
- * Editable fields the user supplies when duplicating an inventory item.
- * `rollNumber` / `note` / `startingStock` are pre-filled from the source row
- * (then editable); `location` / `internalNotes` start blank. Everything else
- * on the row is pasted verbatim, server-set, or DB-generated — see
- * `buildDuplicatedInventoryInsert`.
- */
 export type DuplicateInventoryEdits = {
   rollNumber: string
   note: string
@@ -21,7 +14,6 @@ export type DuplicateInventoryEdits = {
   internalNotes: string
 }
 
-/** Source columns pasted verbatim from the row being duplicated. */
 export type DuplicateInventorySource = Pick<
   InventoryRow,
   | "productId"
@@ -41,15 +33,6 @@ export type DuplicateInventorySource = Pick<
   | "warehouseId"
 >
 
-/**
- * Column values for inserting a duplicated inventory row. Excludes the
- * DB/data-managed columns: `id`, `inventoryNumber`, `inventoryNumberInt`,
- * `inventoryItem` (composed post-insert once the sequence assigns the
- * number), `fifoReceivedAt` (server stamps `now()`), `createdAt`,
- * `updatedAt`. The import-entry / staged-row links and import # are dropped
- * to null, but the PO # is pasted from the source; the row starts un-cut +
- * un-archived.
- */
 export type DuplicatedInventoryInsertFields = {
   importEntryId: null
   sourceStagedRowId: null
@@ -94,13 +77,6 @@ function emptyToNull(value: string): string | null {
   return trimmed.length === 0 ? null : trimmed
 }
 
-/**
- * Validates the user-supplied editable fields for an inventory duplicate.
- * `startingStock` is required and must parse to a positive number; the short
- * free-text fields must fit their `@db.VarChar` limits (the schema caps, not
- * the looser UI-cell maxes). `dyeLot` is pasted (not editable) so it isn't
- * validated here. Returns an empty array when the edits are valid.
- */
 export function validateDuplicateInventoryEdits(
   edits: DuplicateInventoryEdits,
 ): InventoryDuplicateIssue[] {
@@ -148,16 +124,6 @@ export function describeInventoryDuplicateIssues(issues: InventoryDuplicateIssue
   return issues.map((issue) => INVENTORY_DUPLICATE_ISSUE_COPY[issue.code]).join(" ")
 }
 
-/**
- * Builds the insert payload for a duplicated inventory row. Pastes identity +
- * UoM + product/category snapshot + warehouse + dye lot + PO # from the
- * source; applies the user's editable fields (roll# / note / starting stock /
- * location / internal notes); drops the import-entry / staged-row links +
- * import # (null); and starts the row un-cut (`totalCutSum: "0"`) and active
- * (`isArchived: false`). Empty short-text fields normalize to null per the
- * nullable columns. Assumes `edits` already passed
- * `validateDuplicateInventoryEdits`.
- */
 export function buildDuplicatedInventoryInsert(
   source: DuplicateInventorySource,
   edits: DuplicateInventoryEdits,

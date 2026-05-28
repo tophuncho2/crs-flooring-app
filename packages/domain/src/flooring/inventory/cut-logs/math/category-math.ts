@@ -13,23 +13,6 @@ export function computeCutCoverage(input: {
   })
 }
 
-/**
- * String-formatting wrapper around `computeCutCoverage`, matching the
- * `Decimal(12,2)` precision the cut-log schema column uses. Pure: takes
- * the same inputs the data layer surfaces (decimals as strings, slug
- * non-null), returns `string | null` ready to write.
- *
- * Returns null when:
- *   - `cut` is not a finite number (defensive — domain form validation
- *     should have rejected this upstream, but the helper is still
- *     null-safe).
- *   - `coveragePerUnit` is null (the parent inventory has no coverage
- *     setting).
- *   - The category does not support coverage (delegated to
- *     `computeCutCoverage` → `convertStockToCoverage`).
- *
- * Otherwise returns the coverage amount formatted to two decimals.
- */
 export function deriveCutLogCoverageCutString(input: {
   cut: string
   coveragePerUnit: string | null

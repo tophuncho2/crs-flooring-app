@@ -18,29 +18,6 @@ import {
 import { CutLogExecutionError } from "./errors.js"
 import type { CreatePendingCutLogInput, CutLogMutationResult } from "./types.js"
 
-/**
- * Synchronous create for a pending cut log scoped to one WOMI. Cut logs
- * are only ever created on the WO side (grouped under WOMI rows in the
- * UI), so this use case has no scope discriminator. Single TX:
- *   1. Per-row form validation (`validateCutLogPendingForm`).
- *   2. WOMI ownership check (cut log links to the right WO).
- *   3. Linkage symmetry assertion.
- *   4. Lock the parent inventory FOR UPDATE.
- *   5. Read the inventory parent context (startingStock, categorySlug,
- *      coveragePerUnit, the four unit-snapshot fields, the 5 inventory-
- *      identity snapshot primitives, the `productId` / `productName` /
- *      `warehouseId` snapshot fields, and `location`).
- *   6. Derive `coverageCut` via the domain helper.
- *   7. Insert the row, stamping the unit snapshot, the identity snapshot
- *      (including `productId` / `productName` / `warehouseId`), and the
- *      `location` mirror from the inventory.
- *   8. Recompute the inventory's `totalCutSum`.
- *   9. Assert `totalCutSum ≤ startingStock` (translated to a 400
- *      `CUT_LOG_EXCEEDS_INVENTORY` execution error on failure).
- *
- * WOMI status is not consulted — the parent inventory's row lock is the
- * sole concurrency mechanism.
- */
 export async function createPendingCutLogUseCase(
   input: CreatePendingCutLogInput,
   client?: Prisma.TransactionClient,
@@ -48,7 +25,6 @@ export async function createPendingCutLogUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    // 1. Per-row form validation.
     const formIssues = validateCutLogPendingForm({
       cut: input.cut,
       isWaste: input.isWaste,
@@ -63,7 +39,6 @@ export async function createPendingCutLogUseCase(
       })
     }
 
-    // 2. Read WOMI; assert ownership.
     const womi = await c.flooringWorkOrderItem.findUnique({
       where: { id: input.workOrderItemId },
       select: { id: true, workOrderId: true },
@@ -87,16 +62,13 @@ export async function createPendingCutLogUseCase(
       })
     }
 
-    // 3. Linkage symmetry.
     assertCutLogLinkageSymmetry({
       workOrderId: input.workOrderId,
       workOrderItemId: input.workOrderItemId,
     })
 
-    // 4. Lock the parent inventory.
     await lockInventoryForCutLog(c, input.inventoryId)
 
-    // 5. Read inventory context (post-lock).
     const inventory = await getInventoryParentContextForCutLogs(c, input.inventoryId)
     if (!inventory) {
       throw new CutLogExecutionError({
@@ -107,18 +79,12 @@ export async function createPendingCutLogUseCase(
       })
     }
 
-    // 6. Derive coverageCut.
     const coverageCut = deriveCutLogCoverageCutString({
       cut: input.cut,
       coveragePerUnit: inventory.coveragePerUnit,
       categorySlug: inventory.categorySlug,
     })
 
-    // 7. Insert the row, stamping the unit + identity snapshots and the
-    // `location` mirror from the inventory. Snapshots are frozen at
-    // create (finalize/void do NOT re-stamp the identity primitives);
-    // `location` is a denormalized mirror that re-snaps on update +
-    // finalize and clears on void.
     const cutLog = await insertPendingCutLogRow(c, {
       workOrderId: input.workOrderId,
       workOrderItemId: input.workOrderItemId,
@@ -148,7 +114,6 @@ export async function createPendingCutLogUseCase(
       location: inventory.location,
     })
 
-    // 8. Recompute totalCutSum.
     const recomputed = await recomputeAndPersistTotalCutSums(c, [input.inventoryId])
     const result = recomputed[0]
     if (!result) {
@@ -158,10 +123,6 @@ export async function createPendingCutLogUseCase(
       })
     }
 
-    // 9. Invariant assertion. Translate the domain "exceeds starting
-    // stock" error into a 400 execution error so the route handler
-    // surfaces it as a user-friendly message instead of falling through
-    // to the catch-all "Unexpected server error" 500.
     try {
       assertCutSumWithinStartingStock({
         totalCutSum: result.totalCutSum,

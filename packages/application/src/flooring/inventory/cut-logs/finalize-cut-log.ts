@@ -14,24 +14,6 @@ import { CutLogExecutionError } from "./errors.js"
 import { assertCutLogScope } from "./scope.js"
 import type { FinalizeCutLogInput, FinalizeCutLogResult } from "./types.js"
 
-/**
- * Synchronous single-row finalize. Callable from both the WO and
- * inventory side panels via the `scope` discriminator. Single TX:
- *   1. Read the row's identity (inventoryId, workOrderId).
- *   2. Lock the parent inventory FOR UPDATE.
- *   3. Re-read the row under the lock; scope-assert + run the
- *      finalizability predicate.
- *   4. Stamp `before` / `after` / `finalCutSequence` and flip status
- *      to FINAL via `applyFinalizeCutLog` (which also re-snaps
- *      `location`).
- *   5. Defensively re-assert `before − cut === after`.
- *   6. Re-read the normalized row so the response carries the canonical
- *      `CutLogRow` shape (matching create/update return).
- *
- * No outbox, no worker, no replay tolerance. Errors are terminal HTTP
- * responses; a double-click after the row is FINAL gets a deterministic
- * 409 from `canFinalizeCutLog`. WOMI status is not consulted or mutated.
- */
 export async function finalizeCutLogUseCase(
   input: FinalizeCutLogInput,
   client?: Prisma.TransactionClient,

@@ -6,8 +6,6 @@ export type StagedInventoryDomainErrorCode =
   | "STAGED_NOT_IMPORTABLE_ZERO_STOCK"
   | "STAGED_NOT_IMPORTABLE_MISSING_PRODUCT"
   | "STAGED_NOT_IMPORTABLE_MISSING_WAREHOUSE"
-  // Status-aware codes — per-row update / delete + import-batch use
-  // cases throw these.
   | "STAGED_ROW_NOT_DRAFT"
   | "STAGED_ROW_ALREADY_QUEUED"
   | "STAGED_ROW_BATCH_INELIGIBLE"

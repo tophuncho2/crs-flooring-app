@@ -1,7 +1,3 @@
-// Imports domain — read + form shapes for the post-alteration schema.
-// No status / transportType concepts (dropped in the imports_staged_inventory_alteration
-// migration). Manufacturer is optional.
-
 export type ImportRow = {
   id: string
   importNumber: number
@@ -17,13 +13,6 @@ export type ImportRow = {
   updatedAt: string
 }
 
-/**
- * Detail shape used by the import record view. Consumers will see both the
- * staged rows (the draft inventory workers prep) and the live inventory rows
- * (the real inventory the worker materialized from staged). Row types are
- * declared in their own domain folders; this file only references the shapes
- * structurally so the types can resolve without a cross-module import.
- */
 export type ImportDetail = ImportRow & {
   stagedInventoryRows: ReadonlyArray<{ id: string }>
   inventories: ReadonlyArray<{ id: string }>
@@ -52,16 +41,6 @@ export function toImportPrimaryForm(record: ImportRow): ImportPrimaryForm {
   }
 }
 
-/**
- * Picker option row for the imports async dropdowns (Import # / PO # filter
- * chips on the inventory list view). `importNumber` is the stringified `Int`
- * from `FlooringImportEntry` so the value matches the denormalized snapshot
- * stored on `FlooringInventory.importNumber` (worker stamps
- * `String(importEntry.importNumber)` at materialize time). That alignment is
- * what lets the chip push the picked string straight through to the inventory
- * list filter as-is. `purchaseOrderNumber` is the canonical column on the
- * import entry, also written verbatim to the inventory snapshot.
- */
 export type ImportOption = {
   id: string
   importNumber: string
@@ -69,4 +48,3 @@ export type ImportOption = {
   warehouseName: string
   createdAt: string
 }
-

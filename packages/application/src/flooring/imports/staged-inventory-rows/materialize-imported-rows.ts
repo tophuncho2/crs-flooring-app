@@ -17,42 +17,6 @@ function decimalToString(
   return value.toString()
 }
 
-/**
- * Worker-side materialize: drains a batch of QUEUED staged rows into real
- * inventory rows. Snapshot-heavy by design — every denormalized column on
- * `flooring_inventory` (productName, categoryName, importNumber,
- * purchaseOrderNumber, UoM × 6, coveragePerUnit) is stamped here from the
- * joined product + import entry context.
- *
- * Field sourcing rules:
- *   - `productName`: `product.name` directly (the stored display name —
- *     "category style color note" composed at product create time).
- *   - `categorySlug`, `categoryName`: from `product.category`.
- *   - 6 UoM columns: from `product.{stockUnit*, itemCoverageUnit*, sendUnit*}`
- *     (the product table carries denormalized UoM snapshots — no need to
- *     hop to category).
- *   - `coveragePerUnit`: from `product.coveragePerUnit`.
- *   - `importNumber`: raw stringified `Int` from `importEntry.importNumber`
- *     (UI re-formats via `formatInventoryImportNumber`).
- *   - `purchaseOrderNumber`: from `importEntry.purchaseOrderNumber`.
- *   - `internalNotes`: always `null` — user-only column, never seeded by
- *     the worker.
- *   - `rollPrefix` + `rollNumber`: both copied verbatim from the staged
- *     row. The staged row stores the prefix in its own column (default
- *     `"ROLL#"`) and the user-typed bare suffix in `rollNumber`; the
- *     resulting inventory row inherits both directly. No server-side
- *     prefix composition happens here or in the staged save use case.
- *   - `inventoryItem`: written as `""` here; the data-layer primitive
- *     composes the canonical value after `inventoryNumber` is
- *     sequence-assigned (see `materializeStagedRowsToInventory` step 2.5).
- *   - `fifoReceivedAt`: `new Date()` — UTC; the column is TIMESTAMPTZ and
- *     the UI formats in Eastern Time on read.
- *
- * Locking: the import-entry row is locked FOR UPDATE for the duration of
- * the transaction. Inventory rows being created don't need a lock — they
- * don't exist yet, and concurrent cut-log mutations against them can only
- * start after this transaction commits.
- */
 export async function materializeImportedStagedRowsUseCase(
   payload: ImportMaterializeBatchPayload,
   client?: Prisma.TransactionClient,

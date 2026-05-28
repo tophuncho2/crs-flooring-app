@@ -30,32 +30,6 @@ type StockUnitSnapshot = {
   stockUnitAbbrev: string | null
 }
 
-/**
- * Combined diff-save use case for the imports record-view's
- * "staged inventory" section. Supersedes
- * `saveStagedInventoryFiltersSectionUseCase` — the section now bundles
- * both filter-row and staged-row CRUD into a single atomic save.
- *
- * Flow:
- *  1. Lock parent import FOR UPDATE.
- *  2. Validate every filter-row form (added + modified).
- *  3. Validate every staged-row form (added + modified).
- *  4. Batch-fetch products for filter-row diffs; build stockUnit
- *     snapshot map.
- *  5. Pre-read existing filter-row + staged-row summaries.
- *  6. Run cross-slice diff validators (filters honor post-diff
- *     children; staged-rows reject orphaned-parent + non-DRAFT cases).
- *  7. Assign UUIDs to drafts on both slices.
- *  8. Resolve each staged-row added's snapshot fields from its parent
- *     filter row's POST-DIFF productId + stockUnit (using the same
- *     batch-fetched product map). The unsaved-parent rule means
- *     `filterRowId` always points to a real existing filter row.
- *  9. Hand off to `applyImportStagedInventorySectionDiff`. Data layer
- *     applies in dependency order (delete rows → delete filters →
- *     create filters → update filters → create rows → update rows →
- *     reload) and returns the post-state for both slices + both
- *     tempId maps.
- */
 export async function saveImportStagedInventorySectionUseCase(
   input: SaveImportStagedInventorySectionInput,
   client?: Prisma.TransactionClient,
@@ -76,7 +50,6 @@ export async function saveImportStagedInventorySectionUseCase(
       })
     }
 
-    // Step 2 — filter-row form validation.
     for (const draft of input.diff.filters.added) {
       const issues = validateStagedInventoryFilterForm(draft.form)
       if (issues.length > 0) {
@@ -100,7 +73,6 @@ export async function saveImportStagedInventorySectionUseCase(
       }
     }
 
-    // Step 3 — staged-row form validation.
     for (const draft of input.diff.rows.added) {
       const issues = validateStagedInventoryForm(draft.form)
       if (issues.length > 0) {
@@ -124,8 +96,6 @@ export async function saveImportStagedInventorySectionUseCase(
       }
     }
 
-    // Step 4 — batch-fetch products referenced by filter-row diffs +
-    // build snapshot map.
     const distinctProductIds = Array.from(
       new Set([
         ...input.diff.filters.added.map((d) => d.form.productId),
@@ -155,13 +125,11 @@ export async function saveImportStagedInventorySectionUseCase(
       })
     }
 
-    // Step 5 — pre-read existing summaries for both slices.
     const [existingFilters, existingStagedRows] = await Promise.all([
       listFilterRowDiffSummariesByImport(input.importEntryId, c),
       listStagedInventoryRowDiffSummariesByImport(input.importEntryId, c),
     ])
 
-    // Step 6 — cross-slice diff validators.
     const filterIssues = validateStagedInventoryFiltersDiff(input.diff.filters, {
       existing: existingFilters,
       knownProductIds: distinctProductIds,
@@ -189,13 +157,9 @@ export async function saveImportStagedInventorySectionUseCase(
       })
     }
 
-    // Step 7 — pre-assign UUIDs to drafts.
     const filtersAddedWithIds = assignDraftIds(input.diff.filters.added, randomUUID)
     const rowsAddedWithIds = assignDraftIds(input.diff.rows.added, randomUUID)
 
-    // Step 8 — resolve staged-row added snapshots from parent filter
-    // POST-DIFF state. Build a lookup that returns the productId for
-    // any filterRowId, preferring `filters.modified` over `existing`.
     const modifiedFiltersById = new Map(
       input.diff.filters.modified.map((m) => [m.id, m]),
     )
@@ -209,9 +173,6 @@ export async function saveImportStagedInventorySectionUseCase(
     const stagedRowAddedInputs = rowsAddedWithIds.map((draft) => {
       const productId = resolveFilterProductId(draft.filterRowId)
       if (!productId) {
-        // Cleared earlier by the staged-rows diff validator
-        // (STAGED_ROW_PARENT_NOT_FOUND); the throw here is just a
-        // defensive backstop.
         throw new ImportStagedInventorySectionExecutionError({
           code: "SECTION_ROW_DIFF_VALIDATION_FAILED",
           message: "Staged row's parent filter row could not be resolved.",
@@ -220,11 +181,6 @@ export async function saveImportStagedInventorySectionUseCase(
         })
       }
       const snapshot = snapshotByProductId.get(productId)
-      // If the parent filter row is `existing` (not modified), its
-      // snapshot is already in the DB but wasn't in our batch-fetch.
-      // Fall back to the existing summary's product — but
-      // listFilterRowDiffSummariesByImport doesn't carry stockUnit, so
-      // we re-derive from the existing snapshot via the DB read below.
       return {
         id: draft.id,
         tempId: draft.tempId,
@@ -232,10 +188,6 @@ export async function saveImportStagedInventorySectionUseCase(
           filterRowId: draft.filterRowId,
           productId,
           warehouseId: parent.warehouseId,
-          // Snapshot may be missing if the parent filter row isn't in
-          // the batch-fetched set (i.e. the parent is `existing`, not
-          // being added/modified). We handle that by enriching after
-          // the loop with a targeted re-read.
           stockUnitName: snapshot?.stockUnitName ?? null,
           stockUnitAbbrev: snapshot?.stockUnitAbbrev ?? null,
           rollNumber: draft.form.rollNumber || null,
@@ -244,17 +196,11 @@ export async function saveImportStagedInventorySectionUseCase(
           startingStock: draft.form.startingStock,
           note: draft.form.note || null,
         },
-        // Stash for the enrichment pass.
         _needsExistingFilterSnapshot: !snapshot,
         _filterRowIdForEnrichment: draft.filterRowId,
       }
     })
 
-    // For staged-row drafts whose parent filter row isn't being
-    // added/modified in this diff, snapshot the parent's persisted
-    // productId → re-fetch products only for the missing ones. Keeps
-    // the typical path (adding a row under an already-saved unchanged
-    // filter) to one batch-fetch.
     const missingFilterRowIds = Array.from(
       new Set(
         stagedRowAddedInputs
@@ -263,9 +209,6 @@ export async function saveImportStagedInventorySectionUseCase(
       ),
     )
     if (missingFilterRowIds.length > 0) {
-      // The diff summaries list carries productId already; use it as
-      // the source of truth for which product to snapshot. The
-      // stockUnit fields come from the FlooringProduct row.
       const productIdByFilterRowId = new Map<string, string>()
       for (const summary of existingFilters) {
         if (missingFilterRowIds.includes(summary.id)) {

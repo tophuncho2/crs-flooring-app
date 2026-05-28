@@ -4,11 +4,6 @@ import { searchInventoryOptions } from "@builders/db"
 export type SearchInventoryOptionsInput = {
   warehouseId: string
   productId?: string
-  /**
-   * Free-text location filter chip. Server-side ILIKE on `inventory.location`.
-   * Used by the cut-log side panel inventory picker (work-orders module);
-   * independent from the search bar (which targets `inventoryItem`).
-   */
   location?: string
   search?: string
   skip?: number

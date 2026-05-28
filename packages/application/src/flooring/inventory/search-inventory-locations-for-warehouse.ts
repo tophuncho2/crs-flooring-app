@@ -16,12 +16,6 @@ export type SearchInventoryLocationsForWarehouseResult = {
 const DEFAULT_TAKE = 20
 const MAX_TAKE = 50
 
-/**
- * Distinct, warehouse-scoped location values for the cut-log create form's
- * LocationPicker. Mirrors the shape of `searchInventoryOptionsUseCase`: trims
- * inputs, clamps `take` to [1, MAX_TAKE], delegates to the read repo. Locations
- * are not a separate entity — values are derived from the inventory table.
- */
 export async function searchInventoryLocationsForWarehouseUseCase(
   input: SearchInventoryLocationsForWarehouseInput,
 ): Promise<SearchInventoryLocationsForWarehouseResult> {

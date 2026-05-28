@@ -10,25 +10,9 @@ export type InventoryListFilters = {
   warehouseId?: ReadonlyArray<string>
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
-  /**
-   * Import-number snapshot match (`flooring_inventory.importNumber`).
-   * Values are the stringified `Int` from `FlooringImportEntry.importNumber`
-   * — the same form the materialize worker stamps into the snapshot column,
-   * so the picker can push its selection through verbatim.
-   */
   importNumber?: ReadonlyArray<string>
-  /** Purchase-order-number snapshot match. */
   purchaseOrderNumber?: ReadonlyArray<string>
-  /**
-   * Free-text location filter chip. Server-side ILIKE on `inventory.location`.
-   * Independent from the search bar (which targets `inventoryItem`).
-   */
   location?: string
-  /**
-   * `true` = show only archived, `false` = hide archived (default behavior in
-   * the data layer when undefined). Modules-sweep filter chip wires this
-   * straight through.
-   */
   isArchived?: boolean
 }
 

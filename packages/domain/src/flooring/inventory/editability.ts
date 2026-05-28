@@ -1,14 +1,3 @@
-/**
- * Canonical split of inventory row columns by who's allowed to change them.
- * Keeps this invariant in one spot so the record form, the diff validator,
- * and the data-layer patch shape all agree.
- *
- * - IMMUTABLE: worker-seeded at import time; never re-edited.
- *              Includes every "numbers the cuts math depends on" column.
- * - EDITABLE:  the user can change these on the inventory record view.
- * - TRANSACTIONAL: only mutated inside a cut-log save transaction — the
- *                  cut-log use case (later sweep) writes `totalCutSum` atomically.
- */
 export const INVENTORY_IMMUTABLE_FIELDS = [
   "startingStock",
   "coveragePerUnit",
@@ -29,10 +18,6 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "warehouseId",
 ] as const
 
-// `inventoryItem` is recomputed by the inventory update use case in the same
-// transaction as any patch that touches its source fields (rollNumber, dyeLot,
-// location, note). It is NOT in this list — it's server-managed, not
-// user-editable.
 export const INVENTORY_EDITABLE_FIELDS = [
   "rollNumber",
   "dyeLot",
@@ -62,22 +47,10 @@ export function isInventoryFieldTransactional(field: string): field is Inventory
 
 import { categoryRequiresCoveragePerUnit } from "../categories/rules.js"
 
-/**
- * True when the given category slug supports coverage-balance computation
- * (i.e. the category has a coverage-per-unit concept). Thin delegation to
- * `categoryRequiresCoveragePerUnit` so the inventory module exposes the
- * coverage-support check under a domain-local name without duplicating the
- * slug list — the four supported slugs live in `categories/rules.ts` as the
- * keys of `CATEGORY_UNIT_RULES`.
- */
 export function categorySupportsCoverageComputation(categorySlug: string): boolean {
   return categoryRequiresCoveragePerUnit(categorySlug)
 }
 
-/**
- * Human-readable copy for an attempt to edit a non-editable inventory field.
- * Co-located with the predicate that gates the rejection.
- */
 export function buildInventoryFieldNotEditableMessage(field: string): string {
   return `Inventory field "${field}" is not user-editable.`
 }

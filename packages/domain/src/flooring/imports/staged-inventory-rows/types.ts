@@ -1,18 +1,4 @@
-// Mirror of the `FlooringStagedRowStatus` enum at
-// `packages/db/prisma/schema.prisma`. Defined here as a string-literal
-// union so the domain stays free of any data-layer imports (the
-// prisma-guard rule keeps generated client types confined to
-// `packages/db/`). Keep the value list in lockstep with the schema
-// enum; the data layer's generated union is structurally identical, so
-// values pass through without a runtime conversion.
 export type FlooringStagedRowStatus = "DRAFT" | "QUEUED" | "IMPORTED"
-
-// Staged inventory row — read + form shapes. Each staged row belongs to
-// exactly one filter row (and transitively one import). productId,
-// stockUnitName, and stockUnitAbbrev are create-time snapshots from the
-// parent filter row so the materialize worker can read everything off
-// the staged row without joining through the filter. Warehouse is still
-// snapshotted from the parent import.
 
 export type StagedInventoryRow = {
   id: string
@@ -41,10 +27,6 @@ export type StagedInventoryRow = {
   updatedAt: string
 }
 
-// User-editable surface on a staged inventory row. productId,
-// stockUnitName, stockUnitAbbrev, warehouseId, and rollPrefix are all
-// parent-owned snapshots (filter row / import) — they don't appear
-// here.
 export type StagedInventoryForm = {
   rollNumber: string
   dyeLot: string

@@ -1,11 +1,3 @@
-// Diff-save shapes for the staged-inventory-rows slice of the imports
-// record-view section. Mirrors the filter-rows diff shape — added carries
-// tempId + parent filterRowId + form, modified carries id + form, deleted
-// carries id. Staged-row drafts always reference an already-saved filter
-// row (the UI's unsaved-parent rule); no cross-slice tempId resolution.
-// Section-level conflict detection rides on the parent import's
-// revisionKey alongside the filter-rows diff.
-
 import type { FlooringStagedRowStatus } from "../types.js"
 import type { StagedInventoryForm } from "../types.js"
 import type { StagedInventoryFiltersDiff } from "../../staged-inventory-filter-rows/diff/types.js"
@@ -89,7 +81,4 @@ export function describeStagedInventoryRowDiffIssues(
   return issues.map(describeStagedInventoryRowDiffIssue).join(" ")
 }
 
-// Re-export of the cross-slice diff type the rules validator needs as
-// context. Keeps the rules file from importing across slice boundaries
-// itself.
 export type StagedInventoryRowsDiffContextFilterDiff = StagedInventoryFiltersDiff

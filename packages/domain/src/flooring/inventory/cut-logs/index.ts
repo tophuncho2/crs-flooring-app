@@ -1,6 +1,3 @@
-// Cut-log domain barrel — pure business logic only. Predicates, validators,
-// types live here. No I/O.
-
 export * from "./types.js"
 export * from "./column-limits.js"
 export * from "./errors.js"

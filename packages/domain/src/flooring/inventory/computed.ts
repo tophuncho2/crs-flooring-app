@@ -1,13 +1,6 @@
 import { categoryRequiresCoveragePerUnit } from "../categories/rules.js"
 import { parseInventoryDecimal } from "./formatters.js"
 
-/**
- * Balance = startingStock − totalCutSum. Always defined; returns 0 if either
- * input is a malformed number string (per `parseInventoryDecimal` semantics).
- * Negative results are clamped to 0 defensively — an inventory row should
- * never go below zero once cut logs are applied, so a negative value would
- * indicate upstream math drift and isn't worth surfacing as "negative balance."
- */
 export function computeInventoryBalance(input: {
   startingStock: string
   totalCutSum: string
@@ -18,14 +11,6 @@ export function computeInventoryBalance(input: {
   return balance < 0 ? 0 : balance
 }
 
-/**
- * Coverage = balance × coveragePerUnit, **only** when the row's category is
- * in the coverage-per-unit set. Returns `null` for non-coverage categories —
- * same null semantics used on the product + inventory columns: "no coverage
- * concept for this category." Null also propagates when `coveragePerUnit`
- * is missing (nullable on the column; worker only populates it for special
- * categories).
- */
 export function computeInventoryCoverage(input: {
   balance: number
   coveragePerUnit: string | null
@@ -38,12 +23,6 @@ export function computeInventoryCoverage(input: {
   return input.balance * perUnit
 }
 
-/**
- * Human-readable copy for the `INVENTORY_OVERSOLD` rejection — used by the
- * cut-log save use case (sweep 2) when a requested cut would push the balance
- * below zero. Co-located with the balance math so the message format and the
- * formula stay in lock-step.
- */
 export function buildInventoryOversoldMessage(input: {
   requestedCut: string
   availableBalance: string
@@ -52,4 +31,3 @@ export function buildInventoryOversoldMessage(input: {
   const unit = input.stockUnitAbbrev && input.stockUnitAbbrev.length > 0 ? ` ${input.stockUnitAbbrev}` : ""
   return `Cannot cut ${input.requestedCut}${unit}: only ${input.availableBalance}${unit} available.`
 }
-

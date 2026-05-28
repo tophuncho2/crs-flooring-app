@@ -6,7 +6,6 @@ import {
 import { searchImportOptions } from "@builders/db"
 
 export type SearchImportOptionsInput = {
-  /** Required scope — picker is warehouse-gated. */
   warehouseId: string
   search?: string
   skip?: number

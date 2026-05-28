@@ -87,11 +87,6 @@ export async function markStagedRowsForImportUseCase(
       requestedAt,
     })
 
-    // Hash the row-id list to a fixed-length digest. The raw join grows
-    // ~37 bytes/row and blows past Postgres' 2704-byte btree limit on the
-    // idempotencyKey unique index around ~73 rows; the hash keeps the key a
-    // constant ~120 chars at any batch size while preserving dedup semantics
-    // (same row set → same key → wasDuplicate path still fires).
     const idempotencyKey = `import-materialize:${importEntryId}:${sha256Hex(sortedRowIds.join(","))}`
 
     const { event, wasDuplicate } = await createQueueOutboxEvent(

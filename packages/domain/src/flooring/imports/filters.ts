@@ -1,6 +1,3 @@
-// Imports list/page filters. Status dropped in the alteration sweep (there's no
-// status column any more); warehouse + manufacturer remain as filter axes.
-
 export type ImportPageFilterState = {
   warehouseId: string[]
   manufacturerId: string[]

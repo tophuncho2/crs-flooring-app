@@ -1,13 +1,3 @@
-// Filter row — read + form shapes. A filter row sits between the
-// parent FlooringImportEntry and its child staged inventory rows. It
-// owns the product selection, optional category-filter pre-filter, and
-// the `stockOrdered` budget the child rows draw down against.
-//
-// Snapshots: stockUnitName + stockUnitAbbrev are stamped from
-// FlooringProduct at filter-row create time (same pattern WOMI uses for
-// sendUnitName / sendUnitAbbrev). Child staged inv rows then snapshot
-// those two columns from this filter row at create time.
-
 export type StagedInventoryFilterRow = {
   id: string
   importEntryId: string
@@ -29,9 +19,6 @@ export type StagedInventoryFilterRow = {
   updatedAt: string
 }
 
-// User-editable surface. stockUnitName / stockUnitAbbrev are
-// parent-owned snapshots (sourced from FlooringProduct on create) and
-// never appear on the form.
 export type StagedInventoryFilterForm = {
   categoryFilterId: string | null
   productId: string
@@ -54,15 +41,6 @@ export function toStagedInventoryFilterForm(
   }
 }
 
-/**
- * Remaining stock under this filter row =
- *   stockOrdered − sum(child.startingStock).
- *
- * Negative values are returned as-is so the UI can render
- * over-allocations distinctly. Inputs are strings to match the
- * read-shape convention (data layer normalizes Decimal → string).
- * Returns "" when either input fails Number parsing.
- */
 export function computeFilterRemainingStock(input: {
   stockOrdered: string
   childStartingStockSum: string

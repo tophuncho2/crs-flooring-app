@@ -26,37 +26,10 @@ import type {
   UpdatePendingCutLogInput,
 } from "./types.js"
 
-/**
- * Synchronous update for a single pending cut log. Callable from both
- * the WO and inventory side panels via the `scope` discriminator.
- * Single TX:
- *   1. Read cut log + parent inventory in one round trip.
- *   2. Scope assertion (cut log belongs to the scope passed by the route).
- *   3. Pending-status gate (final / void rows reject here).
- *   4. OCC against `expectedUpdatedAt`.
- *   5. If `patch.link` is present: assert symmetry + WOMI ownership of
- *      the re-link target.
- *   6. Per-row form validation against the merged post-patch state.
- *   7. Lock the parent inventory FOR UPDATE.
- *   8. Build the row patch (re-derive `coverageCut` only when `cut`
- *      changed; always re-snap `location` from the parent inventory —
- *      denormalized-mirror semantics).
- *   9. Apply the patch.
- *  10. Recompute `totalCutSum` + invariant.
- *
- * WOMI status is not consulted — the inventory row lock is the sole
- * concurrency mechanism.
- */
 export async function updatePendingCutLogUseCase(
   input: UpdatePendingCutLogInput,
   client?: Prisma.TransactionClient,
 ): Promise<CutLogMutationResult> {
-  // Pre-TX: link-symmetry + relink-target lookup. The WOMI read is
-  // read-only validation against immutable snapshots (WO.warehouseId and
-  // WOMI.productId never change post-create), so doing it outside the
-  // interactive transaction keeps the in-TX work below Prisma's 5s
-  // default budget. The TX below re-confirms the cut log's snapshot
-  // matches what we resolved here.
   let resolvedWomiTarget: {
     workOrderId: string
     workOrderItemId: string
@@ -95,9 +68,6 @@ export async function updatePendingCutLogUseCase(
           },
         })
       }
-      // FlooringWorkOrder.warehouseId is nullable in the schema, but cut
-      // logs require a non-null warehouse snapshot — a WO without a
-      // warehouse cannot be a relink target.
       if (womi.workOrder.warehouseId === null) {
         throw new CutLogExecutionError({
           code: "CUT_LOG_LINK_SCOPE_MISMATCH",
@@ -118,7 +88,6 @@ export async function updatePendingCutLogUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    // 1. Read cut log + parent inventory in one round trip.
     const found = await getPendingCutLogWithInventoryForMutation(c, input.cutLogId)
     if (!found) {
       throw new CutLogExecutionError({
@@ -129,18 +98,11 @@ export async function updatePendingCutLogUseCase(
     }
     const { cutLog: existing, inventory } = found
 
-    // 2. Scope assertion.
     assertCutLogScope(input.scope, {
       workOrderId: existing.workOrderId,
       inventoryId: existing.inventoryId,
     })
 
-    // 3. Mutation gate — split by patch kind:
-    //    - Field patches (cut / isWaste / notes) require PENDING-editable.
-    //    - Link patches (workOrderId / workOrderItemId) allow PENDING or
-    //      FINAL — voided / queued rows still reject. This is how a
-    //      finalized cut log gets re-linked to a different WO/WOMI without
-    //      ever leaving FINAL.
     const hasLinkPatch = input.patch.link !== undefined
     const hasFieldPatch =
       input.patch.cut !== undefined ||
@@ -195,7 +157,6 @@ export async function updatePendingCutLogUseCase(
       }
     }
 
-    // 4. Optimistic concurrency check.
     try {
       assertCutLogExpectedUpdatedAtMatches({
         rowUpdatedAt: existing.updatedAt,
@@ -218,10 +179,6 @@ export async function updatePendingCutLogUseCase(
       throw error
     }
 
-    // 5. Link patch — defense-in-depth scope guards. WOMI symmetry +
-    //    target-WO ownership were validated pre-TX; here we compare the
-    //    pre-resolved target against the cut log's frozen snapshot
-    //    (warehouseId + productId) which we just read inside the TX.
     if (resolvedWomiTarget !== null) {
       if (resolvedWomiTarget.workOrderWarehouseId !== existing.warehouseId) {
         throw new CutLogExecutionError({
@@ -249,7 +206,6 @@ export async function updatePendingCutLogUseCase(
       }
     }
 
-    // 6. Per-row form validation against the merged post-patch state.
     const mergedCut = input.patch.cut !== undefined ? input.patch.cut : existing.cut
     const mergedIsWaste =
       input.patch.isWaste !== undefined ? input.patch.isWaste : existing.isWaste
@@ -268,10 +224,8 @@ export async function updatePendingCutLogUseCase(
       })
     }
 
-    // 7. Lock the parent inventory.
     await lockInventoryForCutLog(c, existing.inventoryId)
 
-    // 8. Build the row patch.
     const patch: UpdatePendingCutLogRowPatch = {}
     if (input.patch.cut !== undefined) {
       patch.cut = input.patch.cut
@@ -287,15 +241,10 @@ export async function updatePendingCutLogUseCase(
       patch.workOrderId = input.patch.link.workOrderId
       patch.workOrderItemId = input.patch.link.workOrderItemId
     }
-    // `location` is a denormalized mirror — always re-snap from the
-    // parent inventory on update, regardless of which fields are in the
-    // user-facing patch.
     patch.location = inventory.location
 
-    // 9. Apply the patch.
     const cutLog = await updatePendingCutLogRow(c, { id: existing.id, patch })
 
-    // 10. Recompute + invariant.
     const recomputed = await recomputeAndPersistTotalCutSums(c, [existing.inventoryId])
     const result = recomputed[0]
     if (!result) {
@@ -304,9 +253,6 @@ export async function updatePendingCutLogUseCase(
         inventoryId: existing.inventoryId,
       })
     }
-    // Translate the domain "exceeds starting stock" error into a 400
-    // execution error so the route handler surfaces it as a user-
-    // friendly message instead of "Unexpected server error".
     try {
       assertCutSumWithinStartingStock({
         totalCutSum: result.totalCutSum,

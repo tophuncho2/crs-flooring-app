@@ -4,10 +4,6 @@ import type { CutLogRow, FlooringCutLogStatus } from "../types.js"
 
 const ARITHMETIC_TOLERANCE = 0.005
 
-/**
- * Human label for the cut-log status enum. UI consumes this directly; the
- * underlying enum (PENDING / QUEUED / FINAL / VOID) is the canonical value.
- */
 export function formatCutLogStatus(
   status: FlooringCutLogStatus,
 ): "Pending Cut" | "Queued" | "Final Cut" | "Voided" {
@@ -17,12 +13,6 @@ export function formatCutLogStatus(
   return "Pending Cut"
 }
 
-/**
- * Invariant: `before − cut === after` (within a small floating-point
- * tolerance). The finalize worker computes `before` / `after` from the
- * inventory's running balance at finalize time; this rule lets every layer
- * sanity-check the result.
- */
 export function assertBeforeCutAfterInvariant(input: {
   before: string
   cut: string
@@ -48,11 +38,6 @@ export function assertBeforeCutAfterInvariant(input: {
   }
 }
 
-/**
- * Pending cut logs can be deleted in any order (no most-recent-first
- * constraint). Finalized cut logs cannot be deleted at all (they can only
- * be voided). Throws when delete isn't permitted; otherwise no-op.
- */
 export function assertCutLogDeleteAllowed(
   row: Pick<CutLogRow, "status" | "isFinal" | "void">,
 ): void {
@@ -65,14 +50,6 @@ export function assertCutLogDeleteAllowed(
   }
 }
 
-// --- Linkage symmetry ---
-
-/**
- * A cut log may be unlinked (both ids null) OR fully linked to a work order
- * + its material item (both ids set). Mixed state is not permitted because
- * the cut log is conceptually child-scoped to a material item, which itself
- * is scoped to a work order. Domain-rule only — no DB CHECK constraint.
- */
 export function assertCutLogLinkageSymmetry(input: {
   workOrderId: string | null
   workOrderItemId: string | null
@@ -86,4 +63,3 @@ export function assertCutLogLinkageSymmetry(input: {
     })
   }
 }
-

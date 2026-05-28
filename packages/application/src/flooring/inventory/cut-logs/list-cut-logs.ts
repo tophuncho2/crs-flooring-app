@@ -17,11 +17,6 @@ function normalizeIds(
   return cleaned.length > 0 ? cleaned : undefined
 }
 
-/**
- * Standalone cut-logs ledger list use case (`GET /api/cut-logs`). Warehouse is
- * the only filter; the search term targets `inventoryItem`. Rows come back
- * newest-first from the data layer (`createdAt DESC, id DESC`).
- */
 export async function listCutLogsUseCase(
   input: ListInput<CutLogListFilters>,
 ): Promise<ListOutput<InventoryCutLogRow>> {

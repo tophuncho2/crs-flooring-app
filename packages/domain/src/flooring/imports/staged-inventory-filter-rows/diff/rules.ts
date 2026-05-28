@@ -97,13 +97,6 @@ function findUnknownProducts(
   return issues
 }
 
-/**
- * The category filter is immutable once the row is saved. Unlike
- * `FILTER_PRODUCT_LOCKED_WITH_CHILDREN`, there's no `hasChildren`
- * carve-out — any change on a `modified` row is a rule violation.
- * Local-only `added` rows are unaffected (they have no existing
- * server snapshot to compare against).
- */
 function findLockedCategoryFilterChanges(
   diff: StagedInventoryFiltersDiff,
   existing: DiffExistingStagedInventoryFilterRow[],
@@ -132,9 +125,6 @@ function findDeletesBlockedByChildren(
   const issues: StagedInventoryFilterDiffValidationIssue[] = []
   const existingById = new Map(existing.map((row) => [row.id, row]))
 
-  // Build the post-diff child set per filter row: existing children
-  // minus those being deleted in the same save. A filter row's delete is
-  // unblocked iff its post-diff child set is empty.
   const stagedDeletedIds = new Set(stagedRowsDiff.deleted.map((r) => r.id))
   const postDiffChildCountByFilterId = new Map<string, number>()
   for (const row of existingStagedRows) {
@@ -165,12 +155,6 @@ function findLockedProductChangesPostDiff(
   stagedRowsDiff: StagedInventoryRowsDiff,
   existingStagedRows: DiffExistingStagedInventoryRow[],
 ): StagedInventoryFilterDiffValidationIssue[] {
-  // The original `findLockedProductChanges` rejects changing
-  // `productId` on any modified filter row that has children. That
-  // remains correct iff the row will still have children after the
-  // staged-rows diff applies. If every existing child is in
-  // `stagedRowsDiff.deleted`, the change should be allowed (the row
-  // becomes effectively childless in the same transaction).
   const issues: StagedInventoryFilterDiffValidationIssue[] = []
   const existingById = new Map(existing.map((row) => [row.id, row]))
   const stagedDeletedIds = new Set(stagedRowsDiff.deleted.map((r) => r.id))
@@ -201,13 +185,6 @@ function findLockedProductChangesPostDiff(
 export type StagedInventoryFilterDiffResolution = {
   existing: DiffExistingStagedInventoryFilterRow[]
   knownProductIds: string[]
-  /**
-   * Optional cross-slice context — when present, locked-with-children
-   * and delete-blocked-by-children rules become post-diff aware (a child
-   * being deleted in the same save no longer counts against its parent).
-   * Omitted by callers that validate the filter-rows slice in isolation
-   * (e.g. older single-section saves) — falls back to existing-only.
-   */
   stagedRows?: {
     diff: StagedInventoryRowsDiff
     existing: DiffExistingStagedInventoryRow[]

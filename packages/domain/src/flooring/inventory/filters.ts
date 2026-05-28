@@ -1,7 +1,3 @@
-// Inventory list/page filters. Pending/final status is gone (staged rows own
-// that concept now; live inventory is always live). Archive is the only
-// lifecycle axis on real inventory — added as a filter.
-
 export type InventoryFilterState = {
   warehouseId: string[]
   isArchived: boolean | null
@@ -52,13 +48,6 @@ export function parseInventoryArchivedFilter(value: unknown): boolean | null {
   return null
 }
 
-/**
- * Free-text location filter. Trims and falls back to empty string (= no filter).
- * Server-side `ILIKE %value%` semantics — applied in the data layer's where
- * clause, never against the search bar (the search bar targets `inventoryItem`
- * which already encodes location). Use case: filter chip in the inventory list
- * view + the cut-log side panel inventory picker.
- */
 export function parseInventoryLocationFilter(value: unknown): string {
   if (typeof value !== "string") return ""
   return value.trim()

@@ -5,11 +5,6 @@ export type StagedInventoryFilterValidationIssue =
   | { code: "FILTER_STOCK_ORDERED_INVALID"; value: string }
   | { code: "FILTER_STOCK_ORDERED_NEGATIVE"; value: string }
 
-/**
- * Per-row form validator for a filter row draft / update. The
- * diff-level validator (see diff/rules.ts) calls this per projected
- * row.
- */
 export function validateStagedInventoryFilterForm(
   input: StagedInventoryFilterForm,
 ): StagedInventoryFilterValidationIssue[] {

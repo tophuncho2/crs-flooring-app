@@ -1,9 +1,3 @@
-// Diff-save shapes for the filter-rows section. Mirrors the WOMI
-// material-items diff pattern: added carries tempId + form, modified
-// carries id + form, deleted carries id. No expectedUpdatedAt
-// optimistic-lock token — section-level conflict detection rides on
-// the parent import's revisionKey, identical to WOMI.
-
 import type { StagedInventoryFilterForm } from "../types.js"
 
 export type StagedInventoryFilterRowDraft = {

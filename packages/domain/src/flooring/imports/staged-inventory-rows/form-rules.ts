@@ -14,11 +14,6 @@ export type StagedInventoryValidationIssue =
   | { code: "STAGED_LOCATION_TOO_LONG"; value: string }
   | { code: "STAGED_NOTE_TOO_LONG"; value: string }
 
-/**
- * Per-row form validator for a staged inventory row. The form covers
- * only user-editable fields — product/warehouse/stockUnit are
- * parent-owned snapshots stamped on create and never appear here.
- */
 export function validateStagedInventoryForm(
   input: StagedInventoryForm,
 ): StagedInventoryValidationIssue[] {

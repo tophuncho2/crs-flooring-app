@@ -19,9 +19,6 @@ export async function deleteInventoryUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    // Row lock first — serialize against any concurrent update / cut-log
-    // mutation that might add a blocking dependency between the delete-state
-    // check and the delete itself.
     await lockInventoryRow(c, id)
 
     const state = await getInventoryDeleteState(id, c)
@@ -42,10 +39,6 @@ export async function deleteInventoryUseCase(
       })
     }
 
-    // Delete inventory first — this clears the FK reference, so the staged row
-    // can then be removed without tripping the constraint. The link is 1:1 and
-    // forward-only; rows with no link (manual creates, pre-migration rows)
-    // simply skip the staged-row delete.
     await deleteInventoryRecordById(id, c)
     if (state.sourceStagedRowId) {
       await deleteStagedInventoryRecordById(state.sourceStagedRowId, c)

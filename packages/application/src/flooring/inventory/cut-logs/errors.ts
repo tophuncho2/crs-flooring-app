@@ -10,12 +10,6 @@ export type CutLogExecutionErrorCode =
   | "CUT_LOG_LINK_NOT_ALLOWED"
   | "CUT_LOG_LINK_SCOPE_MISMATCH"
 
-/**
- * HTTP-shaped execution error thrown by every cut-log use case. Scope-
- * neutral — the same class serves WO routes and inv routes, with
- * `CUT_LOG_SCOPE_MISMATCH` covering the cross-scope guard the WO-only
- * world previously expressed as `WORK_ORDER_CUT_LOG_LINKAGE_MISMATCH`.
- */
 export class CutLogExecutionError extends Error {
   readonly code: CutLogExecutionErrorCode
   readonly status: number

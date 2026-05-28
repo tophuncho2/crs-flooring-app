@@ -8,19 +8,7 @@ import type { StagedInventoryFiltersDiff } from "../../staged-inventory-filter-r
 
 export type StagedInventoryRowsDiffResolution = {
   existing: DiffExistingStagedInventoryRow[]
-  /**
-   * The companion filter-rows diff in the same save. The validator needs
-   * to know which filter rows are being deleted so an `added` staged row
-   * can't reference a parent that's about to go away in the same
-   * transaction. The combined section use case validates filters first;
-   * this slice trusts that pass already happened.
-   */
   filterDiff: StagedInventoryFiltersDiff
-  /**
-   * The id set of filter rows that exist on the server right now. An
-   * `added` staged row's `filterRowId` must be in this set — unsaved
-   * filter drafts can't host children (UI rule preserved at the API).
-   */
   existingFilterRowIds: string[]
 }
 
@@ -35,8 +23,6 @@ export function validateStagedInventoryRowsDiff(
     resolution.filterDiff.deleted.map((entry) => entry.id),
   )
 
-  // added: parent must exist on the server (no unsaved-parent children)
-  // AND must not be in the same-save filters.deleted set.
   for (const draft of diff.added) {
     if (!existingFilterRowIds.has(draft.filterRowId)) {
       issues.push({
@@ -57,8 +43,6 @@ export function validateStagedInventoryRowsDiff(
     }
   }
 
-  // modified: row must exist, be DRAFT-editable, and its parent must not
-  // be in the same-save filters.deleted set.
   for (const update of diff.modified) {
     const existing = existingById.get(update.id)
     if (!existing) {
@@ -83,7 +67,6 @@ export function validateStagedInventoryRowsDiff(
     }
   }
 
-  // deleted: row must exist + be DRAFT-deletable.
   for (const entry of diff.deleted) {
     const existing = existingById.get(entry.id)
     if (!existing) {
