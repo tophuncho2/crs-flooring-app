@@ -7,6 +7,7 @@ const {
   listFilterRowDiffSummariesByImportMock,
   listStagedInventoryRowDiffSummariesByImportMock,
   applyImportStagedInventorySectionDiffMock,
+  lockImportRowMock,
 } = vi.hoisted(() => ({
   withDatabaseTransactionMock: vi.fn(),
   getImportByIdMock: vi.fn(),
@@ -14,6 +15,7 @@ const {
   listFilterRowDiffSummariesByImportMock: vi.fn(),
   listStagedInventoryRowDiffSummariesByImportMock: vi.fn(),
   applyImportStagedInventorySectionDiffMock: vi.fn(),
+  lockImportRowMock: vi.fn(),
 }))
 
 vi.mock("@builders/db", () => ({
@@ -26,6 +28,7 @@ vi.mock("@builders/db", () => ({
   listFilterRowDiffSummariesByImport: listFilterRowDiffSummariesByImportMock,
   listStagedInventoryRowDiffSummariesByImport: listStagedInventoryRowDiffSummariesByImportMock,
   applyImportStagedInventorySectionDiff: applyImportStagedInventorySectionDiffMock,
+  lockImportRow: lockImportRowMock,
 }))
 
 import { saveImportStagedInventorySectionUseCase } from "../../../src/flooring/imports/staged-inventory-section/save-import-staged-inventory-section.js"
@@ -113,6 +116,7 @@ beforeEach(() => {
   listFilterRowDiffSummariesByImportMock.mockReset()
   listStagedInventoryRowDiffSummariesByImportMock.mockReset()
   applyImportStagedInventorySectionDiffMock.mockReset()
+  lockImportRowMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
     cb({ $queryRaw: vi.fn().mockResolvedValue([]) }),
@@ -144,12 +148,9 @@ describe("saveImportStagedInventorySectionUseCase — parent locking", () => {
   })
 
   it("acquires FOR UPDATE lock before reading the import", async () => {
-    const queryRaw = vi.fn().mockResolvedValue([])
-    withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
-      cb({ $queryRaw: queryRaw }),
-    )
     await saveImportStagedInventorySectionUseCase(emptyInput())
-    expect(queryRaw.mock.invocationCallOrder[0]!).toBeLessThan(
+    expect(lockImportRowMock).toHaveBeenCalledTimes(1)
+    expect(lockImportRowMock.mock.invocationCallOrder[0]!).toBeLessThan(
       getImportByIdMock.mock.invocationCallOrder[0]!,
     )
   })

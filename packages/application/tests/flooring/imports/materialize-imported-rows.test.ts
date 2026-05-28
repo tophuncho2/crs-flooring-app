@@ -4,10 +4,12 @@ const {
   withDatabaseTransactionMock,
   listStagedInventoryForMaterializationMock,
   materializeStagedRowsToInventoryMock,
+  lockImportRowMock,
 } = vi.hoisted(() => ({
   withDatabaseTransactionMock: vi.fn(),
   listStagedInventoryForMaterializationMock: vi.fn(),
   materializeStagedRowsToInventoryMock: vi.fn(),
+  lockImportRowMock: vi.fn(),
 }))
 
 vi.mock("@builders/db", () => ({
@@ -17,6 +19,7 @@ vi.mock("@builders/db", () => ({
   withDatabaseTransaction: withDatabaseTransactionMock,
   listStagedInventoryForMaterialization: listStagedInventoryForMaterializationMock,
   materializeStagedRowsToInventory: materializeStagedRowsToInventoryMock,
+  lockImportRow: lockImportRowMock,
 }))
 
 import { materializeImportedStagedRowsUseCase } from "../../../src/flooring/imports/staged-inventory-rows/materialize-imported-rows.js"
@@ -86,12 +89,12 @@ beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   listStagedInventoryForMaterializationMock.mockReset()
   materializeStagedRowsToInventoryMock.mockReset()
+  lockImportRowMock.mockReset()
 
-  // Default: withDatabaseTransaction just runs the callback with a fake tx
-  // that has a $queryRaw method (the use case awaits the FOR UPDATE lock).
-  withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
-    cb({ $queryRaw: vi.fn().mockResolvedValue([]) }),
-  )
+  // Default: withDatabaseTransaction just runs the callback with a bare fake tx.
+  // The FOR UPDATE lock now goes through the mocked lockImportRow helper, not
+  // tx.$queryRaw directly.
+  withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
 
   vi.useFakeTimers()
   vi.setSystemTime(new Date("2026-05-22T12:00:00.000Z"))
@@ -119,10 +122,6 @@ describe("materializeImportedStagedRowsUseCase", () => {
     })
 
     it("acquires a FOR UPDATE lock on the parent import before reading staged rows", async () => {
-      const queryRaw = vi.fn().mockResolvedValue([])
-      withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
-        cb({ $queryRaw: queryRaw }),
-      )
       listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow()])
       materializeStagedRowsToInventoryMock.mockResolvedValue({
         created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
@@ -131,9 +130,9 @@ describe("materializeImportedStagedRowsUseCase", () => {
 
       await materializeImportedStagedRowsUseCase(payload())
 
-      expect(queryRaw).toHaveBeenCalledTimes(1)
+      expect(lockImportRowMock).toHaveBeenCalledTimes(1)
       // Lock was acquired BEFORE the materialize read fired.
-      const lockCallOrder = queryRaw.mock.invocationCallOrder[0]!
+      const lockCallOrder = lockImportRowMock.mock.invocationCallOrder[0]!
       const readCallOrder = listStagedInventoryForMaterializationMock.mock.invocationCallOrder[0]!
       expect(lockCallOrder).toBeLessThan(readCallOrder)
     })
@@ -388,11 +387,12 @@ describe("materializeImportedStagedRowsUseCase", () => {
 
   describe("transaction wrapping", () => {
     it("uses the caller-provided client when one is passed (no nested transaction)", async () => {
-      const providedClient = { $queryRaw: vi.fn().mockResolvedValue([]) }
-      // Make withDatabaseTransaction still invoke the callback, but with
-      // a DIFFERENT tx — to confirm the use case prefers the explicit one.
+      const providedClient = {}
+      const innerTx = {}
+      // Make withDatabaseTransaction still invoke the callback with a DIFFERENT
+      // tx — the lockImportRow assertion below confirms the explicit client wins.
       withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
-        cb({ $queryRaw: vi.fn().mockRejectedValue(new Error("wrong client used")) }),
+        cb(innerTx),
       )
       listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow()])
       materializeStagedRowsToInventoryMock.mockResolvedValue({
@@ -400,14 +400,15 @@ describe("materializeImportedStagedRowsUseCase", () => {
         materializedStagedRowIds: [ROW_ID_A],
       })
 
-      // Cast — the signature wants Prisma.TransactionClient; we provide a
-      // duck-typed stand-in (the use case only calls $queryRaw on it).
+      // Cast — signature wants Prisma.TransactionClient; we duck-type since
+      // the use case only forwards the client into mocked data-layer calls.
       await materializeImportedStagedRowsUseCase(
         payload(),
         providedClient as unknown as Parameters<typeof materializeImportedStagedRowsUseCase>[1],
       )
 
-      expect(providedClient.$queryRaw).toHaveBeenCalledTimes(1)
+      expect(lockImportRowMock).toHaveBeenCalledTimes(1)
+      expect(lockImportRowMock.mock.calls[0]![0]).toBe(providedClient)
     })
   })
 })

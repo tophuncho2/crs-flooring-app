@@ -6,12 +6,14 @@ const {
   listStagedInventoryByImportMock,
   markStagedRowsForImportMock,
   createQueueOutboxEventMock,
+  lockImportRowMock,
 } = vi.hoisted(() => ({
   withDatabaseTransactionMock: vi.fn(),
   getImportByIdMock: vi.fn(),
   listStagedInventoryByImportMock: vi.fn(),
   markStagedRowsForImportMock: vi.fn(),
   createQueueOutboxEventMock: vi.fn(),
+  lockImportRowMock: vi.fn(),
 }))
 
 vi.mock("@builders/db", () => ({
@@ -23,6 +25,7 @@ vi.mock("@builders/db", () => ({
   listStagedInventoryByImport: listStagedInventoryByImportMock,
   markStagedRowsForImport: markStagedRowsForImportMock,
   createQueueOutboxEvent: createQueueOutboxEventMock,
+  lockImportRow: lockImportRowMock,
 }))
 
 import { sha256Hex } from "@builders/lib/hashing"
@@ -93,6 +96,7 @@ beforeEach(() => {
   listStagedInventoryByImportMock.mockReset()
   markStagedRowsForImportMock.mockReset()
   createQueueOutboxEventMock.mockReset()
+  lockImportRowMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
     cb({ $queryRaw: vi.fn().mockResolvedValue([]) }),
@@ -185,14 +189,10 @@ describe("markStagedRowsForImportUseCase", () => {
     })
 
     it("acquires FOR UPDATE lock before reading the import", async () => {
-      const queryRaw = vi.fn().mockResolvedValue([])
-      withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
-        cb({ $queryRaw: queryRaw }),
-      )
-
       await markStagedRowsForImportUseCase(IMPORT_ID, [ROW_ID_A, ROW_ID_B], REQUESTED_BY)
 
-      const lockOrder = queryRaw.mock.invocationCallOrder[0]!
+      expect(lockImportRowMock).toHaveBeenCalledTimes(1)
+      const lockOrder = lockImportRowMock.mock.invocationCallOrder[0]!
       const fetchOrder = getImportByIdMock.mock.invocationCallOrder[0]!
       expect(lockOrder).toBeLessThan(fetchOrder)
     })
