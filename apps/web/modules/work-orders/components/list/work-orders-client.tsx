@@ -285,17 +285,14 @@ export default function WorkOrdersClient({
               />
             </ListToolbarCell>
 
-            {/* Scheduled-for date filter (independent) — single day or range. */}
+            {/* Scheduled-for date filter (top) + sort picker (under it).
+                Sort picker: Created date or Scheduled date, each asc/desc. */}
             <ListToolbarCell>
               <ScheduledForFilterChip
                 start={selectedScheduledStart}
                 end={selectedScheduledEnd}
                 onChange={handleScheduledForChange}
               />
-            </ListToolbarCell>
-
-            {/* Sort picker — Created date or Scheduled date, each asc/desc. */}
-            <ListToolbarCell>
               <SortPickerChip
                 field={(sort?.field as SortPickerField) ?? "createdAt"}
                 direction={sort?.direction ?? "desc"}
