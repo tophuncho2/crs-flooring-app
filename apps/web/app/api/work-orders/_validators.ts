@@ -265,6 +265,11 @@ const ID_FILTER_KEYS = [
 
 type IdFilterKey = (typeof ID_FILTER_KEYS)[number]
 
+// scheduledFor range bounds — single-value `YYYY-MM-DD` filters.
+const DATE_FILTER_KEYS = ["scheduledForStart", "scheduledForEnd"] as const
+type DateFilterKey = (typeof DATE_FILTER_KEYS)[number]
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
 const listWorkOrdersQuerySchema = z.object({
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -292,7 +297,7 @@ export function validateListWorkOrdersQuery(
 ): ListInput<WorkOrdersListFilters> {
   // Strip multi-value keys before zod sees them.
   const raw: Record<string, string> = {}
-  const reservedMultiValueKeys = new Set<string>([...ID_FILTER_KEYS])
+  const reservedMultiValueKeys = new Set<string>([...ID_FILTER_KEYS, ...DATE_FILTER_KEYS])
   searchParams.forEach((value, key) => {
     if (reservedMultiValueKeys.has(key)) return
     raw[key] = value
@@ -315,6 +320,14 @@ export function validateListWorkOrdersQuery(
   for (const key of ID_FILTER_KEYS) {
     const values = readMultiValue(searchParams, key)
     if (values.length > 0) filterRecord[key as IdFilterKey] = values
+  }
+  for (const key of DATE_FILTER_KEYS) {
+    const value = readMultiValue(searchParams, key)[0]
+    if (!value) continue
+    if (!DATE_ONLY_PATTERN.test(value)) {
+      failWorkOrder(`${key} must be a YYYY-MM-DD date`, key)
+    }
+    filterRecord[key as DateFilterKey] = [value]
   }
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0

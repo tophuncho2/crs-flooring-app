@@ -28,6 +28,7 @@ import { WorkOrdersTable } from "./work-orders-table"
 import { AddWorkOrderButton } from "./toolbar-controls/add-work-order-button"
 import { MgmtCoFilterChip } from "./toolbar-controls/mgmt-co-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
+import { ScheduledForFilterChip } from "./toolbar-controls/scheduled-for-filter-chip"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 import { WorkOrdersListSearch } from "./toolbar-controls/work-orders-list-search"
@@ -100,6 +101,8 @@ export default function WorkOrdersClient({
   const selectedPropertyId = filters.propertyId?.[0] ?? null
   const selectedTemplateId = filters.templateId?.[0] ?? null
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
+  const selectedScheduledStart = filters.scheduledForStart?.[0] ?? null
+  const selectedScheduledEnd = filters.scheduledForEnd?.[0] ?? null
 
   // --- Selected-label snapshots (initial-seed + fallback to current options) ---
   const mgmtCoLabel = useMemo(() => {
@@ -164,9 +167,24 @@ export default function WorkOrdersClient({
     [onFilterChange],
   )
 
+  const handleScheduledForChange = useCallback(
+    (start: string | null, end: string | null) => {
+      onFilterChange("scheduledForStart", start ? [start] : [])
+      onFilterChange("scheduledForEnd", end ? [end] : [])
+    },
+    [onFilterChange],
+  )
+
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
-    if (selectedMgmtCoId || selectedPropertyId || selectedTemplateId || selectedWarehouseId) {
+    if (
+      selectedMgmtCoId ||
+      selectedPropertyId ||
+      selectedTemplateId ||
+      selectedWarehouseId ||
+      selectedScheduledStart ||
+      selectedScheduledEnd
+    ) {
       return true
     }
     return false
@@ -176,6 +194,8 @@ export default function WorkOrdersClient({
     selectedPropertyId,
     selectedTemplateId,
     selectedWarehouseId,
+    selectedScheduledStart,
+    selectedScheduledEnd,
   ])
 
   const handleClearAll = useCallback(() => {
@@ -259,6 +279,15 @@ export default function WorkOrdersClient({
                 propertyId={selectedPropertyId}
                 onChange={handleTemplateChange}
                 initialOptions={initialTemplateOptions}
+              />
+            </ListToolbarCell>
+
+            {/* Scheduled-for date filter (independent) — single day or range. */}
+            <ListToolbarCell>
+              <ScheduledForFilterChip
+                start={selectedScheduledStart}
+                end={selectedScheduledEnd}
+                onChange={handleScheduledForChange}
               />
             </ListToolbarCell>
 

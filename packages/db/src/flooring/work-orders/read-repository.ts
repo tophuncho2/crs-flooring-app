@@ -32,6 +32,13 @@ export type WorkOrdersListFilterMap = {
   propertyId?: string[]
   templateId?: string[]
   warehouseId?: string[]
+  /**
+   * Inclusive `scheduledFor` lower / upper bound as `YYYY-MM-DD` (single-element
+   * array, matching the multi-value filter contract). Compared UTC-pinned to
+   * match how the date-only `@db.Date` column is stored and displayed.
+   */
+  scheduledForStart?: string[]
+  scheduledForEnd?: string[]
 }
 
 export type WorkOrdersListArgs = {
@@ -69,6 +76,21 @@ function buildWorkOrdersWhere(
   }
   if (filters?.warehouseId?.length) {
     andClauses.push({ warehouseId: { in: filters.warehouseId } })
+  }
+
+  // scheduledFor date range. `@db.Date` values are stored UTC-midnight, so the
+  // picked `YYYY-MM-DD` bounds are pinned to UTC midnight too: an inclusive
+  // `lte` on the end day matches without end-of-day math, and a null
+  // scheduledFor naturally drops out when any bound is set.
+  const scheduledStart = filters?.scheduledForStart?.[0]
+  const scheduledEnd = filters?.scheduledForEnd?.[0]
+  if (scheduledStart || scheduledEnd) {
+    const range: Prisma.DateTimeNullableFilter = {}
+    const start = scheduledStart ? new Date(`${scheduledStart}T00:00:00.000Z`) : null
+    const end = scheduledEnd ? new Date(`${scheduledEnd}T00:00:00.000Z`) : null
+    if (start && !Number.isNaN(start.getTime())) range.gte = start
+    if (end && !Number.isNaN(end.getTime())) range.lte = end
+    if (range.gte || range.lte) andClauses.push({ scheduledFor: range })
   }
 
   if (andClauses.length === 0) return undefined
