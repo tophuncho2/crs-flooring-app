@@ -93,12 +93,26 @@ export function useAdjustmentEditPanel({
   const [pickerKind, setPickerKind] = useState<AdjustmentPanelPickerKind | null>(null)
 
   // When the open spec changes, reset form + filters + clear error. Derived
-  // during render (previous-value tracking); `open` is local state so its ref
-  // only changes on open/close/mode-switch — it can't loop.
+  // during render (previous-value tracking).
   const [trackedOpen, setTrackedOpen] = useState(open)
   if (trackedOpen !== open) {
+    // A mutation's onSuccess re-sets `open` to refresh the row snapshot (same
+    // adjustment id, edit→edit). That is NOT a genuine open change: the
+    // mutation already reconciled `form` + `baseline`, and `local` holds the
+    // picker-trigger labels the user just picked. Rebuilding from
+    // `open.adjustment` here would clobber those labels with its carried-
+    // forward (stale-after-relink) enriched fields — reverting the work-order
+    // trigger to the previously-linked WO until a fresh reopen. So on a
+    // same-row refresh, only clear the transient picker/error state.
+    const isSameRowRefresh =
+      trackedOpen?.mode === "edit" &&
+      open?.mode === "edit" &&
+      trackedOpen.adjustment.id === open.adjustment.id
     setTrackedOpen(open)
-    if (!open) {
+    if (isSameRowRefresh) {
+      setPickerKind(null)
+      setError(null)
+    } else if (!open) {
       setForm(EMPTY_FORM)
       setBaseline(EMPTY_FORM)
       setLocal(EMPTY_LOCAL)
