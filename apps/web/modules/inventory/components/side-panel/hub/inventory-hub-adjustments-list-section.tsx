@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { formatSignedAdjustmentCoverage } from "@builders/domain"
 import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
 import {
   HubSidePanelScopedRow,
@@ -46,8 +47,14 @@ function buildAdjustmentTitle(row: {
     segments.push(`${sign}${quantity}`)
   }
 
-  if (row.coverage !== null && row.coverage.trim().length > 0) {
-    segments.push(formatCutWithUnit(row.coverage, row.itemCoverageUnitAbbrev ?? ""))
+  // Coverage carries the same direction sign as the quantity above it.
+  const coverage = formatSignedAdjustmentCoverage(
+    row.coverage,
+    row.adjustmentType,
+    row.itemCoverageUnitAbbrev ?? "",
+  )
+  if (coverage !== null) {
+    segments.push(coverage)
   }
 
   // Running-balance transition, units on both sides — only once the cut is

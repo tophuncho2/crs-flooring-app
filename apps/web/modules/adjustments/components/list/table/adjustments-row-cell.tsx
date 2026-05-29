@@ -4,7 +4,7 @@ import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-bad
 import {
   composeRollNumberDisplay,
   formatAdjustmentTransition,
-  formatInventoryQuantity,
+  formatSignedAdjustmentCoverage,
   formatSignedAdjustmentQuantity,
   type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
@@ -49,14 +49,18 @@ export function renderAdjustmentsRowCell(
       const transition = formatAdjustmentTransition(row.before, row.after, row.stockUnitAbbrev ?? "")
       return transition != null ? <span className="tabular-nums">{transition}</span> : "-"
     }
-    case "coverage":
-      return row.coverage ? (
-        <span className="tabular-nums">
-          {formatInventoryQuantity(row.coverage, row.itemCoverageUnitAbbrev ?? "")}
-        </span>
+    case "coverage": {
+      const signedCoverage = formatSignedAdjustmentCoverage(
+        row.coverage,
+        row.adjustmentType,
+        row.itemCoverageUnitAbbrev ?? "",
+      )
+      return signedCoverage != null ? (
+        <span className="tabular-nums">{signedCoverage}</span>
       ) : (
         "-"
       )
+    }
     case "isWaste":
       return row.isWaste ? (
         <span className="tabular-nums">Waste</span>

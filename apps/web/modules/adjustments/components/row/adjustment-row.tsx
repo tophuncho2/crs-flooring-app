@@ -170,7 +170,7 @@ export function renderAdjustmentReadOnlyCell(
         return (
           <UnitCell
             editable={false}
-            value={row.coverage ?? ""}
+            value={row.coverage ? `${adjustmentSign(row.adjustmentType)}${row.coverage}` : ""}
             unit={pickCoverageUnit(row, options)}
             ariaLabel={`${row.adjustmentNumber} coverage`}
           />
