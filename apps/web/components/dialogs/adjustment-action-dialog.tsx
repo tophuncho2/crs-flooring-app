@@ -7,7 +7,7 @@ export type AdjustmentActionDialogProps = {
   open: boolean
   /** Status of the adjustment the action targets — drives the dialog copy. */
   status: FlooringInventoryAdjustmentStatus
-  /** Adjustment number (the user-visible "CUT-N" identifier). */
+  /** Adjustment number (the user-visible "ADJ-N" identifier). */
   adjustmentNumber: string
   /** Fired when the user confirms. The consumer is responsible for closing. */
   onConfirm: () => void
