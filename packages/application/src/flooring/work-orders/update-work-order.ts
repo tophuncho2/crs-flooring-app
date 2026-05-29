@@ -9,7 +9,6 @@ import {
   WORK_ORDER_NOT_FOUND_MESSAGE,
   WORK_ORDER_PROPERTY_REQUIRED_MESSAGE,
   WORK_ORDER_WAREHOUSE_LOCKED_MESSAGE,
-  WORK_ORDER_WAREHOUSE_REQUIRED_MESSAGE,
   WorkOrderDomainError,
   assertWorkOrderWarehouseChangeAllowed,
 } from "@builders/domain"
@@ -45,15 +44,9 @@ export async function updateWorkOrderUseCase(
       })
     }
 
-    if (input.warehouseId !== undefined && (input.warehouseId === null || !input.warehouseId.trim())) {
-      throw new WorkOrderExecutionError({
-        code: "WORK_ORDER_VALIDATION_FAILED",
-        message: WORK_ORDER_WAREHOUSE_REQUIRED_MESSAGE,
-        status: 400,
-        field: "warehouseId",
-      })
-    }
-
+    // A work order's warehouse is optional and may be cleared. The
+    // warehouse-change-lock below still guards changing it once linked
+    // adjustments exist.
     if (input.warehouseId !== undefined) {
       const current = await loadWorkOrderOrThrow(id, c)
       const hasLinkedInventoryAdjustments =

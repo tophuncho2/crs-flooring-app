@@ -33,7 +33,6 @@ export async function updatePendingAdjustmentUseCase(
   let resolvedWomiTarget: {
     workOrderId: string
     workOrderItemId: string
-    workOrderWarehouseId: string
     productId: string
   } | null = null
   if (input.patch.link !== undefined && input.patch.link.workOrderId !== null) {
@@ -43,7 +42,6 @@ export async function updatePendingAdjustmentUseCase(
         id: true,
         workOrderId: true,
         productId: true,
-        workOrder: { select: { warehouseId: true } },
       },
     })
     if (!womi) {
@@ -66,18 +64,12 @@ export async function updatePendingAdjustmentUseCase(
         },
       })
     }
-    if (womi.workOrder.warehouseId === null) {
-      throw new InventoryAdjustmentExecutionError({
-        code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH",
-        message: "Re-link target work order has no warehouse assigned",
-        status: 400,
-        payload: { targetWorkOrderId: womi.workOrderId },
-      })
-    }
+    // The target work order's warehouse is intentionally NOT checked: an
+    // adjustment's warehouse follows its inventory, not the linked WO, so a
+    // WO with no warehouse (or a different one) is a valid relink target.
     resolvedWomiTarget = {
       workOrderId: womi.workOrderId,
       workOrderItemId: womi.id,
-      workOrderWarehouseId: womi.workOrder.warehouseId,
       productId: womi.productId,
     }
   }
@@ -136,14 +128,6 @@ export async function updatePendingAdjustmentUseCase(
         })
       } catch (error) {
         if (error instanceof InventoryAdjustmentDomainError) {
-          if (error.code === "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER") {
-            throw new InventoryAdjustmentExecutionError({
-              code: "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER",
-              message: "An INCREASE adjustment cannot be linked to a work order.",
-              status: 400,
-              payload: { adjustmentId: existing.id },
-            })
-          }
           throw new InventoryAdjustmentExecutionError({
             code: "INVENTORY_ADJUSTMENT_LINK_NOT_ALLOWED",
             message: "Adjustment link cannot be changed in its current state.",
@@ -189,18 +173,10 @@ export async function updatePendingAdjustmentUseCase(
     }
 
     if (resolvedWomiTarget !== null) {
-      if (resolvedWomiTarget.workOrderWarehouseId !== existing.warehouseId) {
-        throw new InventoryAdjustmentExecutionError({
-          code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH",
-          message:
-            "Re-link target work order is in a different warehouse than the adjustment",
-          status: 400,
-          payload: {
-            adjustmentWarehouseId: existing.warehouseId,
-            targetWarehouseId: resolvedWomiTarget.workOrderWarehouseId,
-          },
-        })
-      }
+      // Warehouse is intentionally NOT compared here — see the relink-target
+      // resolution above. Only the product must still match: an adjustment
+      // references inventory of a fixed product, so its WO link must point at
+      // a material item for that same product.
       if (resolvedWomiTarget.productId !== existing.productId) {
         throw new InventoryAdjustmentExecutionError({
           code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH",

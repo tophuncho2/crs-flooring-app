@@ -3,7 +3,6 @@ import type { WorkOrderDetail, WorkOrderForm } from "./types.js"
 
 export function validateWorkOrderForm(input: WorkOrderForm) {
   if (!input.propertyId) return "Property is required"
-  if (!input.warehouseId) return "Warehouse is required"
   if (input.vacancy !== "" && input.vacancy !== "VACANT" && input.vacancy !== "OCCUPIED") {
     return "Vacancy status must be VACANT or OCCUPIED"
   }

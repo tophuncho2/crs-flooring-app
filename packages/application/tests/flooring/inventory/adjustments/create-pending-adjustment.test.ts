@@ -9,6 +9,7 @@ const {
   validateAdjustmentPendingFormMock,
   describeAdjustmentPendingFormIssuesMock,
   assertAdjustmentLinkageRulesMock,
+  assertAdjustmentWarehouseMatchesInventoryMock,
   deriveAdjustmentCoverageStringMock,
   buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStockMock,
@@ -33,6 +34,7 @@ const {
     validateAdjustmentPendingFormMock: vi.fn(),
     describeAdjustmentPendingFormIssuesMock: vi.fn(),
     assertAdjustmentLinkageRulesMock: vi.fn(),
+    assertAdjustmentWarehouseMatchesInventoryMock: vi.fn(),
     deriveAdjustmentCoverageStringMock: vi.fn(),
     buildPendingAdjustmentInventorySnapshotMock: vi.fn(),
     assertNetDeductedWithinStartingStockMock: vi.fn(),
@@ -54,6 +56,7 @@ vi.mock("@builders/domain", () => ({
   validateAdjustmentPendingForm: validateAdjustmentPendingFormMock,
   describeAdjustmentPendingFormIssues: describeAdjustmentPendingFormIssuesMock,
   assertAdjustmentLinkageRules: assertAdjustmentLinkageRulesMock,
+  assertAdjustmentWarehouseMatchesInventory: assertAdjustmentWarehouseMatchesInventoryMock,
   deriveAdjustmentCoverageString: deriveAdjustmentCoverageStringMock,
   buildPendingAdjustmentInventorySnapshot: buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
@@ -129,6 +132,7 @@ beforeEach(() => {
   validateAdjustmentPendingFormMock.mockReset()
   describeAdjustmentPendingFormIssuesMock.mockReset()
   assertAdjustmentLinkageRulesMock.mockReset()
+  assertAdjustmentWarehouseMatchesInventoryMock.mockReset()
   deriveAdjustmentCoverageStringMock.mockReset()
   buildPendingAdjustmentInventorySnapshotMock.mockReset()
   assertNetDeductedWithinStartingStockMock.mockReset()
@@ -140,6 +144,7 @@ beforeEach(() => {
   validateAdjustmentPendingFormMock.mockReturnValue([])
   describeAdjustmentPendingFormIssuesMock.mockReturnValue("form issue")
   assertAdjustmentLinkageRulesMock.mockReturnValue(undefined)
+  assertAdjustmentWarehouseMatchesInventoryMock.mockReturnValue(undefined)
   getInventoryParentContextForAdjustmentsMock.mockResolvedValue(inventoryContext())
   deriveAdjustmentCoverageStringMock.mockReturnValue("12.50")
   buildPendingAdjustmentInventorySnapshotMock.mockReturnValue(SNAPSHOT)
@@ -322,18 +327,46 @@ describe("createPendingAdjustmentUseCase — variant: manual", () => {
     )
   })
 
-  it("rejects an INCREASE with a WO link via assertAdjustmentLinkageRules", async () => {
-    // The variant: "cut" payload always implies DEDUCTION + WO-linked, so the
-    // ill-formed shape comes via the domain rule mock; simulate the throw.
-    assertAdjustmentLinkageRulesMock.mockImplementation(() => {
+  it("inserts a WO-linked manual INCREASE (return-to-stock against a work order)", async () => {
+    await createPendingAdjustmentUseCase(
+      manualVariantInput({
+        adjustmentType: "INCREASE",
+        workOrderId: WO_ID,
+        workOrderItemId: WOMI_ID,
+      }),
+    )
+    // The WOMI scope is validated, then the row is inserted with both link columns.
+    expect(tx.flooringWorkOrderItem.findUnique).toHaveBeenCalled()
+    expect(insertPendingAdjustmentRowMock).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({
+        adjustmentType: "INCREASE",
+        workOrderId: WO_ID,
+        workOrderItemId: WOMI_ID,
+      }),
+    )
+  })
+
+  it("asserts the warehouse invariant when the form passes a selected warehouse", async () => {
+    await createPendingAdjustmentUseCase(manualVariantInput({ warehouseId: "wh-1" }))
+    expect(assertAdjustmentWarehouseMatchesInventoryMock).toHaveBeenCalledWith({
+      adjustmentWarehouseId: "wh-1",
+      inventoryWarehouseId: "wh-1",
+    })
+  })
+
+  it("throws INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH (400) when the selected warehouse differs from the inventory's", async () => {
+    assertAdjustmentWarehouseMatchesInventoryMock.mockImplementation(() => {
       throw new InventoryAdjustmentDomainErrorClass(
-        "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER",
+        "INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH",
         {},
       )
     })
 
-    await expect(createPendingAdjustmentUseCase(manualVariantInput())).rejects.toMatchObject({
-      code: "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER",
+    await expect(
+      createPendingAdjustmentUseCase(manualVariantInput({ warehouseId: "wh-other" })),
+    ).rejects.toMatchObject({
+      code: "INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH",
       status: 400,
     })
     expect(insertPendingAdjustmentRowMock).not.toHaveBeenCalled()

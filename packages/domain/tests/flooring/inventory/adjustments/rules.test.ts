@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   assertAdjustmentDeleteAllowed,
   assertAdjustmentLinkageRules,
+  assertAdjustmentWarehouseMatchesInventory,
   assertBeforeAfterInvariant,
 } from "../../../../src/flooring/inventory/adjustments/rules/adjustment-rules.js"
 import {
@@ -91,14 +92,24 @@ describe("assertAdjustmentLinkageRules — INCREASE", () => {
     ).not.toThrow()
   })
 
-  it("rejects an INCREASE row with a WO link", () => {
+  it("accepts an INCREASE row with a WO link (return-to-stock against a WO)", () => {
     expect(() =>
       assertAdjustmentLinkageRules({
         adjustmentType: "INCREASE",
         workOrderId: "wo",
         workOrderItemId: "womi",
       }),
-    ).toThrow("INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER")
+    ).not.toThrow()
+  })
+
+  it("rejects a mixed INCREASE pair (asymmetric link)", () => {
+    expect(() =>
+      assertAdjustmentLinkageRules({
+        adjustmentType: "INCREASE",
+        workOrderId: "wo",
+        workOrderItemId: null,
+      }),
+    ).toThrow("INVENTORY_ADJUSTMENT_LINKAGE_ASYMMETRY")
   })
 
   it("accepts an INCREASE row flagged as waste (waste is orthogonal to direction)", () => {
@@ -137,16 +148,36 @@ describe("assertAdjustmentLinkMutationAllowed", () => {
     expect(() => assertAdjustmentLinkMutationAllowed(row({ status: "FINAL" }))).not.toThrow()
   })
 
-  it("rejects link edits on INCREASE rows", () => {
+  it("allows link edits on INCREASE rows (an INCREASE may link a work order)", () => {
     expect(() =>
       assertAdjustmentLinkMutationAllowed(row({ adjustmentType: "INCREASE" })),
-    ).toThrow("INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER")
+    ).not.toThrow()
   })
 
   it("rejects link edits on QUEUED rows", () => {
     expect(() => assertAdjustmentLinkMutationAllowed(row({ status: "QUEUED" }))).toThrow(
       "INVENTORY_ADJUSTMENT_LINK_NOT_ALLOWED",
     )
+  })
+})
+
+describe("assertAdjustmentWarehouseMatchesInventory", () => {
+  it("passes when the warehouses match", () => {
+    expect(() =>
+      assertAdjustmentWarehouseMatchesInventory({
+        adjustmentWarehouseId: "wh-1",
+        inventoryWarehouseId: "wh-1",
+      }),
+    ).not.toThrow()
+  })
+
+  it("throws when the adjustment and inventory warehouses differ", () => {
+    expect(() =>
+      assertAdjustmentWarehouseMatchesInventory({
+        adjustmentWarehouseId: "wh-1",
+        inventoryWarehouseId: "wh-2",
+      }),
+    ).toThrow("INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH")
   })
 })
 

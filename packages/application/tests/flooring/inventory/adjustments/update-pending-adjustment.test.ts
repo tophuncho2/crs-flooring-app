@@ -254,27 +254,25 @@ describe("updatePendingAdjustmentUseCase", () => {
       expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
     })
 
-    it("rejects a link patch on an INCREASE row with INCREASE_REQUIRES_NO_WORK_ORDER (400)", async () => {
+    it("allows a link patch on an INCREASE row (an INCREASE may link a work order)", async () => {
       getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
         found({ adjustment: { adjustmentType: "INCREASE", workOrderId: null } }),
       )
-      assertAdjustmentLinkMutationAllowedMock.mockImplementation(() => {
-        throw new InventoryAdjustmentDomainErrorClass(
-          "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER",
-        )
+
+      await updatePendingAdjustmentUseCase({
+        scope: { kind: "inventory" as const, inventoryId: INVENTORY_ID },
+        adjustmentId: ADJUSTMENT_ID,
+        expectedUpdatedAt: UPDATED_AT,
+        patch: { link: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI } },
       })
 
-      await expect(
-        updatePendingAdjustmentUseCase({
-          scope: { kind: "inventory" as const, inventoryId: INVENTORY_ID },
-          adjustmentId: ADJUSTMENT_ID,
-          expectedUpdatedAt: UPDATED_AT,
-          patch: { link: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI } },
+      expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
+        { tx: true },
+        expect.objectContaining({
+          id: ADJUSTMENT_ID,
+          patch: expect.objectContaining({ workOrderId: NEW_WO, workOrderItemId: NEW_WOMI }),
         }),
-      ).rejects.toMatchObject({
-        code: "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER",
-        status: 400,
-      })
+      )
     })
 
     it("applies isWaste=true on an INCREASE row (waste allowed on either direction)", async () => {
@@ -323,20 +321,23 @@ describe("updatePendingAdjustmentUseCase", () => {
   })
 
   describe("re-link scope guards", () => {
-    it("throws INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH (400) when the target WO is in another warehouse", async () => {
+    it("allows a relink when the target WO is in another warehouse (warehouse follows inventory, not the WO)", async () => {
       dbWomiFindUniqueMock.mockResolvedValue({
         id: NEW_WOMI,
         workOrderId: NEW_WO,
         productId: PRODUCT_ID,
-        workOrder: { warehouseId: "wh-other" },
       })
 
-      await expect(
-        updatePendingAdjustmentUseCase(
-          input({ patch: { link: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI } } }),
-        ),
-      ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH", status: 400 })
-      expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
+      await updatePendingAdjustmentUseCase(
+        input({ patch: { link: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI } } }),
+      )
+
+      expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
+        { tx: true },
+        expect.objectContaining({
+          patch: expect.objectContaining({ workOrderId: NEW_WO, workOrderItemId: NEW_WOMI }),
+        }),
+      )
     })
 
     it("throws INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH (400) when the target WOMI is for another product", async () => {
@@ -380,19 +381,23 @@ describe("updatePendingAdjustmentUseCase", () => {
       ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_SCOPE_MISMATCH", status: 400 })
     })
 
-    it("throws INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH (400) when the target WO has no warehouse", async () => {
+    it("allows a relink when the target WO has no warehouse (a WO no longer requires a warehouse)", async () => {
       dbWomiFindUniqueMock.mockResolvedValue({
         id: NEW_WOMI,
         workOrderId: NEW_WO,
         productId: PRODUCT_ID,
-        workOrder: { warehouseId: null },
       })
 
-      await expect(
-        updatePendingAdjustmentUseCase(
-          input({ patch: { link: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI } } }),
-        ),
-      ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH", status: 400 })
+      await updatePendingAdjustmentUseCase(
+        input({ patch: { link: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI } } }),
+      )
+
+      expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
+        { tx: true },
+        expect.objectContaining({
+          patch: expect.objectContaining({ workOrderId: NEW_WO, workOrderItemId: NEW_WOMI }),
+        }),
+      )
     })
   })
 

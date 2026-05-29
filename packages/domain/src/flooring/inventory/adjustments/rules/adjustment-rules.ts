@@ -53,12 +53,11 @@ export function assertAdjustmentDeleteAllowed(
 }
 
 /**
- * Linkage + structural rules for an adjustment row.
- *  - DEDUCTION: workOrderId / workOrderItemId either both null or both set.
- *  - INCREASE:  both must be null. (Return-to-stock — INCREASE with a WO link
- *               — is intentionally not supported in this pass.) `isWaste` is a
- *               reporting flag orthogonal to direction and is allowed on either
- *               type.
+ * Linkage + structural rules for an adjustment row. Applies to BOTH directions:
+ * workOrderId / workOrderItemId are either both null or both set. An INCREASE
+ * may now carry a work-order link (return-to-stock against a WO is supported);
+ * direction no longer constrains linkage. `isWaste` is a reporting flag
+ * orthogonal to direction and is allowed on either type.
  */
 export function assertAdjustmentLinkageRules(input: {
   adjustmentType: FlooringInventoryAdjustmentType
@@ -69,20 +68,29 @@ export function assertAdjustmentLinkageRules(input: {
   const orderSet = input.workOrderId !== null && input.workOrderId !== ""
   const itemSet = input.workOrderItemId !== null && input.workOrderItemId !== ""
 
-  if (input.adjustmentType === "INCREASE") {
-    if (orderSet || itemSet) {
-      throw new InventoryAdjustmentDomainError(
-        "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER",
-        { workOrderId: input.workOrderId, workOrderItemId: input.workOrderItemId },
-      )
-    }
-    return
-  }
-
   if (orderSet !== itemSet) {
     throw new InventoryAdjustmentDomainError("INVENTORY_ADJUSTMENT_LINKAGE_ASYMMETRY", {
       workOrderId: input.workOrderId,
       workOrderItemId: input.workOrderItemId,
+    })
+  }
+}
+
+/**
+ * Invariant: an adjustment's warehouse is always its parent inventory's
+ * warehouse — the two can never differ. The persisted `adjustment.warehouseId`
+ * is derived from the inventory at create time; this guard asserts that
+ * derivation held. The warehouse picker in the form is only a filter; the
+ * source of truth is the chosen inventory.
+ */
+export function assertAdjustmentWarehouseMatchesInventory(input: {
+  adjustmentWarehouseId: string
+  inventoryWarehouseId: string
+}): void {
+  if (input.adjustmentWarehouseId !== input.inventoryWarehouseId) {
+    throw new InventoryAdjustmentDomainError("INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH", {
+      adjustmentWarehouseId: input.adjustmentWarehouseId,
+      inventoryWarehouseId: input.inventoryWarehouseId,
     })
   }
 }

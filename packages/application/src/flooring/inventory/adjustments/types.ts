@@ -11,9 +11,15 @@ export type AdjustmentMutationScope =
  *    `/api/work-orders/[id]/adjustments` produces this shape; the use case
  *    enforces the WOMI scope and stamps `adjustmentType: "DEDUCTION"` +
  *    WO-link columns onto the row.
- *  - `variant: "manual"` — a free-form INCREASE or DEDUCTION with no WO
- *    link, created from the inventory hub. `isWaste` is a caller-supplied
- *    reporting flag, allowed on either direction.
+ *  - `variant: "manual"` — a free-form INCREASE or DEDUCTION created from the
+ *    inventory hub. May OPTIONALLY carry a WO link (both `workOrderId` +
+ *    `workOrderItemId` set, or both absent) — an INCREASE may now link a work
+ *    order. `isWaste` is a caller-supplied reporting flag, allowed on either
+ *    direction.
+ *
+ * `warehouseId` (both variants, optional) is the warehouse selected in the
+ * form as an inventory filter. When present it is asserted to equal the chosen
+ * inventory's warehouse (the persisted warehouse is always the inventory's).
  */
 export type CreatePendingAdjustmentInput =
   | {
@@ -21,6 +27,7 @@ export type CreatePendingAdjustmentInput =
       workOrderId: string
       workOrderItemId: string
       inventoryId: string
+      warehouseId?: string | null
       quantity: string
       isWaste: boolean
       notes: string
@@ -29,6 +36,9 @@ export type CreatePendingAdjustmentInput =
       variant: "manual"
       adjustmentType: FlooringInventoryAdjustmentType
       inventoryId: string
+      warehouseId?: string | null
+      workOrderId?: string | null
+      workOrderItemId?: string | null
       quantity: string
       isWaste: boolean
       notes: string
@@ -40,7 +50,7 @@ export type UpdatePendingAdjustmentPatch = {
   /** Reporting flag; editable on either direction. */
   isWaste?: boolean
   notes?: string
-  /** Editable only on DEDUCTION rows; rejected on INCREASE. */
+  /** WO link, editable on either direction (both ids set, or both null). */
   link?: { workOrderId: string | null; workOrderItemId: string | null }
 }
 

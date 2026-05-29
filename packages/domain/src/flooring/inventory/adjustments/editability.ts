@@ -23,7 +23,7 @@ export function canDeleteAdjustment(
 export function canRelinkAdjustment(
   row: Pick<InventoryAdjustmentRow, "status" | "adjustmentType">,
 ): boolean {
-  if (row.adjustmentType === "INCREASE") return false
+  // Either direction may be relinked (an INCREASE may link a work order).
   if (row.status === "QUEUED") return false
   return true
 }

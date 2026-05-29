@@ -12,12 +12,6 @@ export function assertAdjustmentPendingMutationAllowed(
 export function assertAdjustmentLinkMutationAllowed(
   row: Pick<InventoryAdjustmentRow, "status" | "adjustmentType">,
 ): void {
-  if (row.adjustmentType === "INCREASE") {
-    throw new InventoryAdjustmentDomainError(
-      "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER",
-      { status: row.status, adjustmentType: row.adjustmentType },
-    )
-  }
   if (!canRelinkAdjustment(row)) {
     throw new InventoryAdjustmentDomainError("INVENTORY_ADJUSTMENT_LINK_NOT_ALLOWED", {
       status: row.status,

@@ -36,13 +36,16 @@ describe("canDeleteAdjustment", () => {
 })
 
 describe("canRelinkAdjustment", () => {
-  it("allows DEDUCTION pending and finalized rows, rejects QUEUED, and rejects every INCREASE row", () => {
+  it("allows pending and finalized rows of either direction, rejects only QUEUED", () => {
     expect(canRelinkAdjustment(row())).toBe(true)
     expect(canRelinkAdjustment(row({ isFinal: true, status: "FINAL" }))).toBe(true)
     expect(canRelinkAdjustment(row({ status: "QUEUED" }))).toBe(false)
-    expect(canRelinkAdjustment(row({ adjustmentType: "INCREASE" }))).toBe(false)
+    expect(canRelinkAdjustment(row({ adjustmentType: "INCREASE" }))).toBe(true)
     expect(
       canRelinkAdjustment(row({ adjustmentType: "INCREASE", isFinal: true, status: "FINAL" })),
+    ).toBe(true)
+    expect(
+      canRelinkAdjustment(row({ adjustmentType: "INCREASE", status: "QUEUED" })),
     ).toBe(false)
   })
 })

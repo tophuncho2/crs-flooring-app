@@ -72,14 +72,19 @@ export type ValidatedCreateManualAdjustmentInput = {
   quantity: string
   isWaste: boolean
   notes: string
+  workOrderId: string | null
+  workOrderItemId: string | null
+  warehouseId: string | null
 }
 
 /**
- * Manual (non-WO) adjustment create. Used by `POST /api/inventory/[id]/adjustments`.
- * The parent inventory id rides on the route path, so the body carries only the
- * direction + amount + waste flag + notes. WO-link fields are rejected — a manual
- * adjustment is never WO-linked (enforced again in the domain). `isWaste` is a
- * reporting flag allowed on either direction.
+ * Manual adjustment create from the inventory hub. Used by
+ * `POST /api/inventory/[id]/adjustments`. The parent inventory id rides on the
+ * route path. The body carries direction + amount + waste + notes, and MAY
+ * carry an optional WO link (`workOrderId` + `workOrderItemId`, both-or-neither)
+ * — an INCREASE may now link a work order. `warehouseId` is the form's selected
+ * warehouse filter; the use case asserts it matches the inventory's warehouse.
+ * `isWaste` is a reporting flag allowed on either direction.
  */
 export function validateCreateManualAdjustmentInput(
   body: Record<string, unknown>,
@@ -88,15 +93,43 @@ export function validateCreateManualAdjustmentInput(
   if (rawType !== "INCREASE" && rawType !== "DEDUCTION") {
     failAdjustment("adjustmentType must be INCREASE or DEDUCTION", "adjustmentType")
   }
-  if ("workOrderId" in body || "workOrderItemId" in body) {
-    failAdjustment("A manual adjustment cannot be linked to a work order", "workOrderId")
-  }
+  const link = parseOptionalAdjustmentLink(body.workOrderId, body.workOrderItemId)
+  const warehouseId =
+    body.warehouseId === undefined || body.warehouseId === null
+      ? null
+      : requireAdjustmentString(body.warehouseId, "warehouseId")
   const isWaste = typeof body.isWaste === "boolean" ? body.isWaste : false
   return {
     adjustmentType: rawType,
     quantity: requireAdjustmentString(body.quantity, "quantity"),
     isWaste,
     notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
+    workOrderId: link.workOrderId,
+    workOrderItemId: link.workOrderItemId,
+    warehouseId,
+  }
+}
+
+/**
+ * Shared parser for an optional WO link: both ids set, or both absent/null.
+ * An asymmetric pair is a 400. Returns `{ null, null }` when the link is omitted.
+ */
+function parseOptionalAdjustmentLink(
+  rawWorkOrderId: unknown,
+  rawWorkOrderItemId: unknown,
+): { workOrderId: string | null; workOrderItemId: string | null } {
+  const hasWO = rawWorkOrderId !== undefined && rawWorkOrderId !== null
+  const hasWOMI = rawWorkOrderItemId !== undefined && rawWorkOrderItemId !== null
+  if (!hasWO && !hasWOMI) return { workOrderId: null, workOrderItemId: null }
+  if (hasWO !== hasWOMI) {
+    failAdjustment(
+      "workOrderId and workOrderItemId must both be set or both omitted",
+      "workOrderId",
+    )
+  }
+  return {
+    workOrderId: requireAdjustmentString(rawWorkOrderId, "workOrderId"),
+    workOrderItemId: requireAdjustmentString(rawWorkOrderItemId, "workOrderItemId"),
   }
 }
 

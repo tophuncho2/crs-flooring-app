@@ -4,10 +4,7 @@ import {
   getWorkOrderStatusIdBySlug,
   withDatabaseTransaction,
 } from "@builders/db"
-import {
-  WORK_ORDER_PROPERTY_REQUIRED_MESSAGE,
-  WORK_ORDER_WAREHOUSE_REQUIRED_MESSAGE,
-} from "@builders/domain"
+import { WORK_ORDER_PROPERTY_REQUIRED_MESSAGE } from "@builders/domain"
 import { WorkOrderExecutionError } from "./errors.js"
 import type { CreateWorkOrderUseCaseInput, WorkOrderUseCaseResult } from "./types.js"
 
@@ -27,14 +24,9 @@ export async function createWorkOrderUseCase(
       })
     }
 
-    if (!input.warehouseId || !input.warehouseId.trim()) {
-      throw new WorkOrderExecutionError({
-        code: "WORK_ORDER_VALIDATION_FAILED",
-        message: WORK_ORDER_WAREHOUSE_REQUIRED_MESSAGE,
-        status: 400,
-        field: "warehouseId",
-      })
-    }
+    // A work order may be created without a warehouse. Adjustments source
+    // their warehouse from the chosen inventory, not the WO, so a warehouse
+    // is no longer required here.
 
     // Every work order carries an explicit status; default new ones to
     // "None" unless the caller picked one.

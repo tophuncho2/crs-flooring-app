@@ -98,7 +98,8 @@ export function validateCreateWorkOrderInput(
 ): CreateWorkOrderUseCaseInput {
   return {
     propertyId: requireString(body.propertyId, "propertyId", failWorkOrder),
-    warehouseId: requireString(body.warehouseId, "warehouseId", failWorkOrder),
+    // Warehouse is optional — a work order may be created without one.
+    warehouseId: optionalString(body.warehouseId),
     templateId: optionalString(body.templateId),
     managementCompanyId: optionalString(body.managementCompanyId),
     jobTypeId: optionalString(body.jobTypeId),
@@ -128,7 +129,8 @@ export function validateUpdateWorkOrderInput(
     input.propertyId = requireString(body.propertyId, "propertyId", failWorkOrder)
   }
   if ("warehouseId" in body) {
-    input.warehouseId = requireString(body.warehouseId, "warehouseId", failWorkOrder)
+    // Warehouse is optional and may be cleared (null).
+    input.warehouseId = optionalString(body.warehouseId)
   }
   if ("templateId" in body) input.templateId = optionalString(body.templateId)
   if ("managementCompanyId" in body) input.managementCompanyId = optionalString(body.managementCompanyId)

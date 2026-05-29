@@ -8,6 +8,7 @@ import {
 } from "@builders/db"
 import {
   assertAdjustmentLinkageRules,
+  assertAdjustmentWarehouseMatchesInventory,
   assertNetDeductedWithinStartingStock,
   buildPendingAdjustmentInventorySnapshot,
   deriveAdjustmentCoverageString,
@@ -45,8 +46,12 @@ export async function createPendingAdjustmentUseCase(
     const notes = input.notes
     const adjustmentType: FlooringInventoryAdjustmentType =
       input.variant === "cut" ? "DEDUCTION" : input.adjustmentType
-    const workOrderId = input.variant === "cut" ? input.workOrderId : null
-    const workOrderItemId = input.variant === "cut" ? input.workOrderItemId : null
+    // Either variant may carry a WO link. `cut` always does; `manual` may
+    // optionally (an INCREASE is now allowed to link a work order). The
+    // linkage symmetry rule below enforces both-or-neither.
+    const workOrderId = input.variant === "cut" ? input.workOrderId : input.workOrderId ?? null
+    const workOrderItemId =
+      input.variant === "cut" ? input.workOrderItemId : input.workOrderItemId ?? null
     const isWaste = input.isWaste
 
     const formIssues = validateAdjustmentPendingForm({
@@ -64,9 +69,11 @@ export async function createPendingAdjustmentUseCase(
       })
     }
 
-    if (input.variant === "cut") {
+    // Validate the WOMI scope whenever a link is present (always for `cut`,
+    // optionally for a WO-linked `manual` create).
+    if (workOrderItemId !== null && workOrderId !== null) {
       const womi = await c.flooringWorkOrderItem.findUnique({
-        where: { id: input.workOrderItemId },
+        where: { id: workOrderItemId },
         select: { id: true, workOrderId: true },
       })
       if (!womi) {
@@ -76,39 +83,26 @@ export async function createPendingAdjustmentUseCase(
           status: 404,
         })
       }
-      if (womi.workOrderId !== input.workOrderId) {
+      if (womi.workOrderId !== workOrderId) {
         throw new InventoryAdjustmentExecutionError({
           code: "INVENTORY_ADJUSTMENT_SCOPE_MISMATCH",
           message: "Material item does not belong to this work order",
           status: 400,
           payload: {
-            providedWorkOrderId: input.workOrderId,
+            providedWorkOrderId: workOrderId,
             actualWorkOrderId: womi.workOrderId,
           },
         })
       }
     }
 
-    try {
-      assertAdjustmentLinkageRules({
-        adjustmentType,
-        workOrderId,
-        workOrderItemId,
-        isWaste,
-      })
-    } catch (error) {
-      if (error instanceof InventoryAdjustmentDomainError) {
-        if (error.code === "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER") {
-          throw new InventoryAdjustmentExecutionError({
-            code: "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER",
-            message: "An INCREASE adjustment cannot be linked to a work order.",
-            status: 400,
-            payload: error.detail,
-          })
-        }
-      }
-      throw error
-    }
+    // Linkage symmetry: both link columns set or both null (either direction).
+    assertAdjustmentLinkageRules({
+      adjustmentType,
+      workOrderId,
+      workOrderItemId,
+      isWaste,
+    })
 
     await lockInventoryForAdjustment(c, input.inventoryId)
 
@@ -120,6 +114,31 @@ export async function createPendingAdjustmentUseCase(
         status: 404,
         payload: { inventoryId: input.inventoryId },
       })
+    }
+
+    // Invariant: the persisted warehouse is always the inventory's. When the
+    // form passed its selected warehouse filter, assert it matches the chosen
+    // inventory's warehouse (guards a client that picked mismatched options).
+    if (input.warehouseId != null && input.warehouseId !== "") {
+      try {
+        assertAdjustmentWarehouseMatchesInventory({
+          adjustmentWarehouseId: input.warehouseId,
+          inventoryWarehouseId: inventory.warehouseId,
+        })
+      } catch (error) {
+        if (
+          error instanceof InventoryAdjustmentDomainError &&
+          error.code === "INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH"
+        ) {
+          throw new InventoryAdjustmentExecutionError({
+            code: "INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH",
+            message: "Selected warehouse does not match the chosen inventory's warehouse.",
+            status: 400,
+            payload: error.detail,
+          })
+        }
+        throw error
+      }
     }
 
     const coverage = deriveAdjustmentCoverageString({

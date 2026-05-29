@@ -59,11 +59,12 @@ export async function GET(request: Request, { params }: RouteContext) {
  * POST /api/inventory/[id]/adjustments
  *
  * Synchronous create for a single pending **manual** adjustment (INCREASE or
- * DEDUCTION) on this inventory record, created from the inventory hub. Never
- * WO-linked, never waste. Calls `createPendingAdjustmentUseCase` with
- * `variant: "manual"`, which opens its own TX, takes the parent inventory
- * FOR UPDATE lock, inserts the row, recomputes `netDeducted`, and asserts the
- * `<= startingStock` invariant. Returns 200 with the inserted row.
+ * DEDUCTION) on this inventory record, created from the inventory hub. May
+ * optionally carry a WO link (an INCREASE is now allowed to link a work order).
+ * Calls `createPendingAdjustmentUseCase` with `variant: "manual"`, which opens
+ * its own TX, takes the parent inventory FOR UPDATE lock, inserts the row,
+ * recomputes `netDeducted`, and asserts the `<= startingStock` invariant.
+ * Returns 200 with the inserted row.
  */
 export async function POST(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
@@ -106,6 +107,9 @@ export async function POST(request: Request, { params }: RouteContext) {
           variant: "manual",
           adjustmentType: input.adjustmentType,
           inventoryId,
+          warehouseId: input.warehouseId,
+          workOrderId: input.workOrderId,
+          workOrderItemId: input.workOrderItemId,
           quantity: input.quantity,
           isWaste: input.isWaste,
           notes: input.notes,
