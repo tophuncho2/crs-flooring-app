@@ -46,27 +46,6 @@ function requireAdjustmentObject(value: unknown, path: string): Record<string, u
   return value as Record<string, unknown>
 }
 
-export type ValidatedCreatePendingAdjustmentInput = {
-  workOrderItemId: string
-  inventoryId: string
-  quantity: string
-  isWaste: boolean
-  notes: string
-}
-
-export function validateCreatePendingAdjustmentInput(
-  body: Record<string, unknown>,
-): ValidatedCreatePendingAdjustmentInput {
-  const isWaste = typeof body.isWaste === "boolean" ? body.isWaste : false
-  return {
-    workOrderItemId: requireAdjustmentString(body.workOrderItemId, "workOrderItemId"),
-    inventoryId: requireAdjustmentString(body.inventoryId, "inventoryId"),
-    quantity: requireAdjustmentString(body.quantity, "quantity"),
-    isWaste,
-    notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
-  }
-}
-
 export type ValidatedCreateManualAdjustmentInput = {
   adjustmentType: "INCREASE" | "DEDUCTION"
   quantity: string
