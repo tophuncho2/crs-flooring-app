@@ -9,7 +9,7 @@ import type { InventoryRow } from "@builders/domain"
  */
 export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>> = [
   { key: "stockBalance", label: "Stock", align: "start" },
-  { key: "totalCutSum", label: "Cut", align: "end" },
+  { key: "netDeducted", label: "Deducted", align: "end" },
   { key: "productName", label: "Product" },
   { key: "inventoryNumber", label: "Inv #" },
   { key: "rollNumber", label: "Roll #" },

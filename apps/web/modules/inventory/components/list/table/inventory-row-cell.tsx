@@ -54,7 +54,7 @@ export function renderInventoryRowCell(
       ) : (
         <span className="text-[var(--text-muted)]">-</span>
       )
-    case "totalCutSum":
+    case "netDeducted":
       return (
         <span className="tabular-nums">
           {formatInventoryQuantity(row.netDeducted, row.stockUnitAbbrev)}
