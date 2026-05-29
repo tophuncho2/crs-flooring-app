@@ -109,8 +109,8 @@ export default function ImportsClient({
   )
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
             {message ? (
@@ -134,7 +134,7 @@ export default function ImportsClient({
           </div>
           {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
               the encased card's top edge (rounded-tl-none seam). */}
-          <ListToolbar className="pt-0">
+          <ListToolbar className="pt-0" showDivider={false}>
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <ImportsListSearch
@@ -162,24 +162,24 @@ export default function ImportsClient({
             </ListToolbarCell>
           </ListToolbar>
         </div>
-
-        <ImportsTable
-          rows={rows}
-          onOpenImport={openImport}
-          pagination={
-            <PaginateControls
-              page={page}
-              pageSize={pageSize}
-              totalItems={total}
-              totalPages={totalPages}
-              hasPreviousPage={hasPreviousPage}
-              hasNextPage={hasNextPage}
-              onPreviousPage={goToPreviousPage}
-              onNextPage={goToNextPage}
-            />
-          }
-        />
       </div>
+
+      <ImportsTable
+        rows={rows}
+        onOpenImport={openImport}
+        pagination={
+          <PaginateControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={total}
+            totalPages={totalPages}
+            hasPreviousPage={hasPreviousPage}
+            hasNextPage={hasNextPage}
+            onPreviousPage={goToPreviousPage}
+            onNextPage={goToNextPage}
+          />
+        }
+      />
     </div>
   )
 }
