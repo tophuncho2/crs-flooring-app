@@ -9,7 +9,7 @@ import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInventoryAdjustmentRow>> = [
   { key: "status", label: "Status" },
   { key: "adjustmentType", label: "Type" },
-  { key: "quantity", label: "Amount", align: "end" },
+  { key: "quantity", label: "Quantity", align: "end" },
   { key: "before", label: "Before", align: "end" },
   { key: "after", label: "After", align: "end" },
   { key: "productName", label: "Product" },

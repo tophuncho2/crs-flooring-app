@@ -161,7 +161,7 @@ export function renderAdjustmentReadOnlyCell(
             editable={false}
             value={row.quantity}
             unit={pickStockUnit(row, options)}
-            ariaLabel={`${row.adjustmentNumber} cut`}
+            ariaLabel={`${row.adjustmentNumber} quantity`}
           />
         )
       case "coverage":
@@ -170,7 +170,7 @@ export function renderAdjustmentReadOnlyCell(
             editable={false}
             value={row.coverage ?? ""}
             unit={pickCoverageUnit(row, options)}
-            ariaLabel={`${row.adjustmentNumber} coverage cut`}
+            ariaLabel={`${row.adjustmentNumber} coverage`}
           />
         )
       case "isWaste":

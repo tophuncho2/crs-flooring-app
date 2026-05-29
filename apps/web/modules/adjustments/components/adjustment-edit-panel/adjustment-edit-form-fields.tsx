@@ -125,14 +125,14 @@ export function AdjustmentEditFormFields({
           </CellAt>
         ) : null}
         <CellAt col={1} colSpan={4}>
-          <FormField label={mode === "create" ? "Amount" : "Cut"} required>
+          <FormField label="Quantity" required>
             <UnitCell
               editable={fieldsEditable}
               value={form.quantity}
               onChange={(next) => controller.setField("quantity", next)}
               unit={stockUnit}
               placeholder="0"
-              ariaLabel="Adjustment amount"
+              ariaLabel="Adjustment quantity"
             />
           </FormField>
         </CellAt>

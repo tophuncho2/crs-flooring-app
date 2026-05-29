@@ -210,7 +210,7 @@ export function renderWorkOrderAdjustments(
       <th>Product</th>
       <th>Inventory Item</th>
       <th class="cl-num">Before</th>
-      <th class="cl-num">Cut</th>
+      <th class="cl-num">Quantity</th>
       <th class="cl-num">After</th>
       <th class="cl-num">Coverage</th>
       <th>Location</th>
