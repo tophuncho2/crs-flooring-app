@@ -200,8 +200,7 @@ export function renderWorkOrderAdjustments(
     <col style="width: 20%;" />
     <col style="width: 24%;" />
     <col style="width: 10%;" />
-    <col style="width: 10%;" />
-    <col style="width: 10%;" />
+    <col style="width: 20%;" />
     <col style="width: 12%;" />
     <col style="width: 14%;" />
   </colgroup>
@@ -209,9 +208,8 @@ export function renderWorkOrderAdjustments(
     <tr>
       <th>Product</th>
       <th>Inventory Item</th>
-      <th class="cl-num">Before</th>
       <th class="cl-num">Quantity</th>
-      <th class="cl-num">After</th>
+      <th class="cl-num">Adjustment</th>
       <th class="cl-num">Coverage</th>
       <th>Location</th>
     </tr>
@@ -248,9 +246,8 @@ function renderAdjustmentRow({
 <tr>
   <td>${escapeOrEmpty(productName)}</td>
   <td>${escapeOrEmpty(adj.inventoryItem)}</td>
-  <td class="cl-num">${renderUnitValue(adj.before, adj.stockUnitAbbrev)}</td>
   <td class="cl-num">${renderUnitValue(adj.quantity, adj.stockUnitAbbrev)}</td>
-  <td class="cl-num">${renderUnitValue(adj.after, adj.stockUnitAbbrev)}</td>
+  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.stockUnitAbbrev)}</td>
   <td class="cl-num">${renderUnitValue(adj.coverage, adj.itemCoverageUnitAbbrev)}</td>
   <td>${escapeOrEmpty(adj.location)}</td>
 </tr>
@@ -261,6 +258,12 @@ function renderUnitValue(value: string, unitAbbrev: string): string {
   if (value === "") return `<span class="empty-cell">—</span>`
   if (unitAbbrev === "") return escapeHtml(value)
   return `${escapeHtml(value)} ${escapeHtml(unitAbbrev)}`
+}
+
+/** Before → After balance transition (arrow U+2192). Shows a single em-dash until both sides exist. */
+function renderTransition(before: string, after: string, unitAbbrev: string): string {
+  if (before === "" || after === "") return `<span class="empty-cell">—</span>`
+  return `${renderUnitValue(before, unitAbbrev)} → ${renderUnitValue(after, unitAbbrev)}`
 }
 
 function escapeOrEmpty(value: string): string {

@@ -2,7 +2,9 @@
 
 import type { ReactNode } from "react"
 import {
+  adjustmentSign,
   composeRollNumberDisplay,
+  formatAdjustmentTransition,
   type InventoryAdjustmentRow,
   type FlooringInventoryAdjustmentStatus,
 } from "@builders/domain"
@@ -23,13 +25,13 @@ type AdjustmentColumnLike = { key: string }
 
 export type AdjustmentReadOnlyRenderOptions = {
   /**
-   * Fallback unit label for the `cut` / `before` / `after` columns when the
-   * row's snapshot fields are null (pre-snapshot rows). Post-snapshot rows
-   * always use their own `stockUnitAbbrev`.
+   * Fallback unit label for the `quantity` and `adjustment` (before → after)
+   * columns when the row's snapshot fields are null (pre-snapshot rows).
+   * Post-snapshot rows always use their own `stockUnitAbbrev`.
    */
   stockUnitFallback?: string
   /**
-   * Fallback unit label for the `coverageCut` column. Post-snapshot rows
+   * Fallback unit label for the `coverage` column. Post-snapshot rows
    * always use their own `itemCoverageUnitAbbrev`.
    */
   coverageUnitFallback?: string
@@ -159,7 +161,7 @@ export function renderAdjustmentReadOnlyCell(
         return (
           <UnitCell
             editable={false}
-            value={row.quantity}
+            value={`${adjustmentSign(row.adjustmentType)}${row.quantity}`}
             unit={pickStockUnit(row, options)}
             ariaLabel={`${row.adjustmentNumber} quantity`}
           />
@@ -181,20 +183,12 @@ export function renderAdjustmentReadOnlyCell(
             ariaLabel={`${row.adjustmentNumber} waste`}
           />
         )
-      case "before":
+      case "adjustment":
         return (
           <TextCell
             editable={false}
-            value={row.before ?? "—"}
-            ariaLabel={`${row.adjustmentNumber} before`}
-          />
-        )
-      case "after":
-        return (
-          <TextCell
-            editable={false}
-            value={row.after ?? "—"}
-            ariaLabel={`${row.adjustmentNumber} after`}
+            value={formatAdjustmentTransition(row.before, row.after, pickStockUnit(row, options)) ?? "—"}
+            ariaLabel={`${row.adjustmentNumber} adjustment`}
           />
         )
       case "finalSeq":

@@ -71,11 +71,9 @@ function buildAdjustmentSubtitleLines(row: {
     const unit = (row.stockUnitAbbrev ?? "").trim()
     lines.push(
       <span>
-        <span className={LABEL_CLASS}>Before </span>
-        <span className={VALUE_CLASS}>{row.before}</span>
-        <span className={LABEL_CLASS}> → After </span>
-        <span className={VALUE_CLASS}>{row.after}</span>
-        {unit.length > 0 ? <span className={LABEL_CLASS}>{` ${unit}`}</span> : null}
+        <span className={VALUE_CLASS}>{formatCutWithUnit(row.before, unit)}</span>
+        <span className={LABEL_CLASS}> → </span>
+        <span className={VALUE_CLASS}>{formatCutWithUnit(row.after, unit)}</span>
       </span>,
     )
   }

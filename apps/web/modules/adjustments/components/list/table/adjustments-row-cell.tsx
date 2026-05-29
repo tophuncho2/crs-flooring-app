@@ -3,7 +3,9 @@ import type { DataTableColumn } from "@/components/data-table"
 import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
 import {
   composeRollNumberDisplay,
+  formatAdjustmentTransition,
   formatInventoryQuantity,
+  formatSignedAdjustmentQuantity,
   type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
@@ -37,28 +39,16 @@ export function renderAdjustmentsRowCell(
       return row.inventoryNote || "-"
     case "location":
       return row.location || "-"
-    case "before":
-      return row.before != null ? (
-        <span className="tabular-nums">
-          {formatInventoryQuantity(row.before, row.stockUnitAbbrev ?? "")}
-        </span>
-      ) : (
-        "-"
-      )
     case "quantity":
       return (
         <span className="tabular-nums">
-          {formatInventoryQuantity(row.quantity, row.stockUnitAbbrev ?? "")}
+          {formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.stockUnitAbbrev ?? "")}
         </span>
       )
-    case "after":
-      return row.after != null ? (
-        <span className="tabular-nums">
-          {formatInventoryQuantity(row.after, row.stockUnitAbbrev ?? "")}
-        </span>
-      ) : (
-        "-"
-      )
+    case "adjustment": {
+      const transition = formatAdjustmentTransition(row.before, row.after, row.stockUnitAbbrev ?? "")
+      return transition != null ? <span className="tabular-nums">{transition}</span> : "-"
+    }
     case "coverage":
       return row.coverage ? (
         <span className="tabular-nums">

@@ -22,9 +22,8 @@ export const ADJUSTMENT_COLUMN_DEFINITIONS = {
   dyeLot: { key: "dyeLot", label: "Dye Lot", minWidth: 120, grow: 0 },
   inventoryNote: { key: "inventoryNote", label: "Note", minWidth: 140, grow: 0.5 },
   location: { key: "location", label: "Location", minWidth: 140, grow: 0.5 },
-  before: { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
   quantity: { key: "quantity", label: "Quantity", minWidth: 144, grow: 0, align: "center" },
-  after: { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },
+  adjustment: { key: "adjustment", label: "Adjustment", minWidth: 200, grow: 0.6, align: "center" },
   coverage: { key: "coverage", label: "Coverage", minWidth: 144, grow: 0, align: "center" },
   isWaste: { key: "isWaste", label: "Waste", minWidth: 88, grow: 0, align: "center" },
   finalSequence: { key: "finalSequence", label: "Final Seq #", minWidth: 120, grow: 0, align: "center" },
@@ -38,10 +37,12 @@ export const ADJUSTMENT_COLUMN_DEFINITIONS = {
 } as const satisfies Record<string, GridColumn<InventoryAdjustmentRow>>
 
 /**
- * Canonical 11-column shape used by BOTH the inventory record view's adjustment
+ * Canonical column shape used by BOTH the inventory record view's adjustment
  * section AND the work-orders material items section's adjustment grid. Order:
- * status → inventoryItem → location → before → cut → after → coverageCut →
- * isWaste → notes → adjustmentNumber → warehouse.
+ * status → inventoryItem → location → quantity → adjustment → coverage →
+ * isWaste → notes → adjustmentNumber → warehouse. The `adjustment` column is a
+ * collapsed `before → after` balance transition; `quantity` carries the signed
+ * delta.
  *
  * `inventoryItem` cell renders the adjustment's frozen-at-create snapshot of
  * the parent inventory's identity (inv# / roll# / dyeLot / note). `location`
@@ -61,9 +62,8 @@ export const INVENTORY_ADJUSTMENT_LAYOUT: GridLayout<InventoryAdjustmentRow> = {
     ADJUSTMENT_COLUMN_DEFINITIONS.status,
     ADJUSTMENT_COLUMN_DEFINITIONS.inventoryItem,
     ADJUSTMENT_COLUMN_DEFINITIONS.location,
-    ADJUSTMENT_COLUMN_DEFINITIONS.before,
     ADJUSTMENT_COLUMN_DEFINITIONS.quantity,
-    ADJUSTMENT_COLUMN_DEFINITIONS.after,
+    ADJUSTMENT_COLUMN_DEFINITIONS.adjustment,
     ADJUSTMENT_COLUMN_DEFINITIONS.coverage,
     ADJUSTMENT_COLUMN_DEFINITIONS.isWaste,
     ADJUSTMENT_COLUMN_DEFINITIONS.notes,

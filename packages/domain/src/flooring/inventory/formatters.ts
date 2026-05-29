@@ -1,4 +1,5 @@
 import { formatEasternDateTime } from "../../shared/date-format.js"
+import type { FlooringInventoryAdjustmentType } from "./adjustments/types.js"
 
 export function parseInventoryDecimal(value: string): number {
   const numeric = Number(value)
@@ -15,6 +16,34 @@ export function formatInventoryImportNumber(value: string): string {
 
 export function formatInventoryQuantity(value: string, unitLabel: string): string {
   return `${value} ${unitLabel}`.trim()
+}
+
+/** Display sign for an adjustment's quantity: `+` for INCREASE, `−` (U+2212) for DEDUCTION. */
+export function adjustmentSign(adjustmentType: FlooringInventoryAdjustmentType): "+" | "−" {
+  return adjustmentType === "INCREASE" ? "+" : "−"
+}
+
+/** Quantity with its direction sign prefixed, e.g. `+100 sq ft` / `−75 sq ft`. */
+export function formatSignedAdjustmentQuantity(
+  quantity: string,
+  adjustmentType: FlooringInventoryAdjustmentType,
+  unitLabel: string,
+): string {
+  return `${adjustmentSign(adjustmentType)}${formatInventoryQuantity(quantity, unitLabel)}`
+}
+
+/**
+ * Before → After balance transition, units on both sides, e.g. `100 sq ft → 75 sq ft`
+ * (arrow U+2192). Returns `null` when either side is absent (pending/unfinalized rows)
+ * so callers can render their own placeholder.
+ */
+export function formatAdjustmentTransition(
+  before: string | null,
+  after: string | null,
+  unitLabel: string,
+): string | null {
+  if (before == null || before === "" || after == null || after === "") return null
+  return `${formatInventoryQuantity(before, unitLabel)} → ${formatInventoryQuantity(after, unitLabel)}`
 }
 
 export type ComposeInventoryItemInput = {
