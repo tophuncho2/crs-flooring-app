@@ -10,6 +10,8 @@ export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInv
   { key: "status", label: "Status" },
   { key: "adjustmentType", label: "Type" },
   { key: "quantity", label: "Amount", align: "end" },
+  { key: "before", label: "Before", align: "end" },
+  { key: "after", label: "After", align: "end" },
   { key: "productName", label: "Product" },
   { key: "inventoryNumber", label: "Inv #" },
   { key: "rollNumber", label: "Roll #" },

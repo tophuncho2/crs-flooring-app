@@ -35,11 +35,27 @@ export function renderAdjustmentsRowCell(
       return row.dyeLot || "-"
     case "inventoryNote":
       return row.inventoryNote || "-"
+    case "before":
+      return row.before != null ? (
+        <span className="tabular-nums">
+          {formatInventoryQuantity(row.before, row.stockUnitAbbrev ?? "")}
+        </span>
+      ) : (
+        "-"
+      )
     case "quantity":
       return (
         <span className="tabular-nums">
           {formatInventoryQuantity(row.quantity, row.stockUnitAbbrev ?? "")}
         </span>
+      )
+    case "after":
+      return row.after != null ? (
+        <span className="tabular-nums">
+          {formatInventoryQuantity(row.after, row.stockUnitAbbrev ?? "")}
+        </span>
+      ) : (
+        "-"
       )
     case "coverage":
       return row.coverage ? (
