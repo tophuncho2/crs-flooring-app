@@ -1,17 +1,15 @@
 "use client"
 
-import { useMemo, type ReactNode } from "react"
+import { useCallback, useMemo, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import {
   HubSidePanelEditLayout,
   HubSidePanelEditToolbar,
   HubSidePanelViewSwitcher,
 } from "@/components/hub-side-panel"
 import { AdjustmentEditFinalizeButton } from "@/modules/adjustments/components/adjustment-edit-panel/toolbar-controls"
-import type {
-  HubMode,
-  InventoryHubSidePanelController,
-} from "@/modules/inventory/controllers/inventory-hub-side-panel"
-import { InventoryHubAdjustmentEditHeader } from "./inventory-hub-adjustment-edit-header"
+import { AdjustmentPickerStack } from "@/modules/adjustments"
+import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
 
 export type InventoryHubChrome = {
   title: ReactNode
@@ -31,32 +29,23 @@ export type UseInventoryHubChromeOptions = {
 }
 
 /**
- * Composes the inventory hub's sticky chrome — panel title + topToolbar
- * (the per-mode header / actions stack) — off the controller's current
- * mode. Lives next to the component files that the chrome composes
- * (`InventoryHubAdjustmentEditHeader`, the toolbar primitives) so the
- * `InventoryHubSidePanel` component file stays focused on the body
- * render.
- *
- * `effectiveModeKind` collapses `picker-takeover` onto its `returnTo` so
- * the adjustment relink header stays sticky while a picker fills the body
- * below (template-sync pattern, preserved from commit a8d5d31a).
- *
- * The "Hub view" back button no longer lives in the edit toolbars — it moved
- * to the shell `titleEnd` (property-hub parity). View mode renders a
- * `HubSidePanelViewSwitcher` whose left chevron returns to the starting spot.
+ * Composes the inventory hub's sticky chrome — panel title + topToolbar — off
+ * the controller's current mode. The adjustment create/edit modes render the
+ * shared `AdjustmentPickerStack` in the sticky header; a body-takeover picker
+ * is active whenever the embedded adjustment controller's `pickerKind` is set,
+ * so the chrome reads that (no separate hub picker mode).
  */
 export function useInventoryHubChrome(
   controller: InventoryHubSidePanelController,
   options: UseInventoryHubChromeOptions = {},
 ): InventoryHubChrome {
   const { onBackToStarting } = options
+  const router = useRouter()
   const {
     mode,
     viewTab,
     goToInventoryView,
     goToAdjustmentsView,
-    adjustmentPickerKind,
     inventory,
     adjustmentPanel,
     isDirty,
@@ -67,17 +56,17 @@ export function useInventoryHubChrome(
     discard,
   } = controller
 
-  const isAdjustmentPickerActive = mode.kind === "picker-takeover"
-  const effectiveModeKind: HubMode["kind"] =
-    mode.kind === "picker-takeover" ? mode.returnTo.kind : mode.kind
+  const isAdjustmentPickerActive = adjustmentPanel.pickerKind !== null
 
   const adjustment =
     adjustmentPanel.open?.mode === "edit" ? adjustmentPanel.open.adjustment : null
 
   const title = useMemo<ReactNode>(() => {
-    if (isAdjustmentPickerActive) {
-      if (adjustmentPickerKind === "workOrder") return "Select work order"
-    }
+    const pk = adjustmentPanel.pickerKind
+    if (pk === "warehouse") return "Select warehouse"
+    if (pk === "inventory") return "Select inventory"
+    if (pk === "location") return "Select location"
+    if (pk === "workOrder") return "Select work order"
     switch (mode.kind) {
       case "section-edit-adjustment":
         return adjustment?.adjustmentNumber ?? "Adjustment"
@@ -90,21 +79,10 @@ export function useInventoryHubChrome(
       default:
         return "Inventory"
     }
-  }, [
-    mode.kind,
-    adjustment,
-    inventory?.inventoryItem,
-    isAdjustmentPickerActive,
-    adjustmentPickerKind,
-  ])
+  }, [mode.kind, adjustment, inventory?.inventoryItem, adjustmentPanel.pickerKind])
 
   const adjustmentExtraLeftActions = useMemo<ReactNode>(() => {
-    if (effectiveModeKind !== "section-edit-adjustment") return null
-    // The toolbar's built-in SidePanelEditStatusPill already shows
-    // dirty/saving; no second status pill here. Finalize is a
-    // adjustment-domain action; it owns its own visibility (PENDING gate)
-    // so the button renders or not based on status. It disables
-    // alongside the rest of the toolbar during a picker takeover.
+    if (mode.kind !== "section-edit-adjustment") return null
     return (
       <AdjustmentEditFinalizeButton
         controller={adjustmentPanel}
@@ -112,10 +90,15 @@ export function useInventoryHubChrome(
         disabled={isAdjustmentPickerActive}
       />
     )
-  }, [effectiveModeKind, adjustmentPanel, isAdjustmentPickerActive])
+  }, [mode.kind, adjustmentPanel, isAdjustmentPickerActive])
+
+  const onOpenWorkOrder = useCallback(
+    (id: string) => router.push(`/dashboard/work-orders/${id}`),
+    [router],
+  )
 
   const topToolbar = useMemo<ReactNode>(() => {
-    if (effectiveModeKind === "section-edit-inventory") {
+    if (mode.kind === "section-edit-inventory") {
       return (
         <HubSidePanelEditToolbar
           isDirty={isDirty}
@@ -127,9 +110,7 @@ export function useInventoryHubChrome(
         />
       )
     }
-    if (effectiveModeKind === "section-duplicate-inventory") {
-      // Create flow — same toolbar, relabelled. No delete button (nothing
-      // exists yet); Discard resets the draft to the seeded values.
+    if (mode.kind === "section-duplicate-inventory") {
       return (
         <HubSidePanelEditToolbar
           isDirty={isDirty}
@@ -143,43 +124,13 @@ export function useInventoryHubChrome(
         />
       )
     }
-    if (effectiveModeKind === "section-create-adjustment") {
-      // Manual adjustment create — same toolbar, relabelled. No delete (nothing
-      // exists yet); Discard resets the draft. Create errors surface on the
-      // embedded panel, so fall back to its error.
-      return (
-        <HubSidePanelEditToolbar
-          isDirty={isDirty}
-          isSaving={isSaving}
-          canSave={canSave}
-          onSave={save}
-          onDiscard={discard}
-          saveLabel="Add adjustment"
-          savingLabel="Adding…"
-          errorMessage={error ?? adjustmentPanel.error ?? null}
-        />
-      )
-    }
-    if (effectiveModeKind === "section-edit-adjustment") {
-      // The WO + WOMI relink header lives in the sticky topToolbar so
-      // it stays visible while a picker takeover swaps the body below.
-      // The actions toolbar stays mounted but disabled during a picker
-      // takeover so the sticky header height (and the relink triggers'
-      // positions) don't shift, while the user can't act mid-pick.
-      const onDelete = adjustment ? adjustmentPanel.deleteAdjustment : undefined
+    if (mode.kind === "section-create-adjustment" || mode.kind === "section-edit-adjustment") {
+      // Both adjustment modes share the picker stack in the sticky header; only
+      // the toolbar labels + edit-only actions (delete / finalize) differ. The
+      // toolbar stays mounted but disabled during a picker takeover so the
+      // header height + trigger positions don't shift.
+      const isEdit = mode.kind === "section-edit-adjustment"
       const isPending = adjustment?.status === "PENDING"
-      const deleteDisabled = !isPending
-      const deleteTitle =
-        deleteDisabled && !adjustmentPanel.isSaving
-          ? "Only pending adjustments can be deleted"
-          : undefined
-      const header = adjustment ? (
-        <InventoryHubAdjustmentEditHeader
-          adjustment={adjustment}
-          adjustmentPanel={adjustmentPanel}
-          hubController={controller}
-        />
-      ) : null
       const actions = (
         <HubSidePanelEditToolbar
           isDirty={isDirty}
@@ -187,35 +138,34 @@ export function useInventoryHubChrome(
           canSave={canSave}
           onSave={save}
           onDiscard={discard}
-          onDelete={onDelete}
-          deleteDisabled={deleteDisabled}
-          deleteTitle={deleteTitle}
-          extraLeftActions={adjustmentExtraLeftActions}
+          saveLabel={isEdit ? undefined : "Add adjustment"}
+          savingLabel={isEdit ? undefined : "Adding…"}
+          onDelete={isEdit && adjustment ? adjustmentPanel.deleteAdjustment : undefined}
+          deleteDisabled={isEdit ? !isPending : undefined}
+          deleteTitle={
+            isEdit && !isPending && !adjustmentPanel.isSaving
+              ? "Only pending adjustments can be deleted"
+              : undefined
+          }
+          extraLeftActions={isEdit ? adjustmentExtraLeftActions : undefined}
           errorMessage={error ?? adjustmentPanel.error ?? null}
           disabled={isAdjustmentPickerActive}
         />
       )
-      if (!header && !actions) return null
       return (
         <HubSidePanelEditLayout toolbar={actions}>
-          {header}
+          <AdjustmentPickerStack controller={adjustmentPanel} onOpenWorkOrder={onOpenWorkOrder} />
         </HubSidePanelEditLayout>
       )
     }
-    if (effectiveModeKind === "view") {
-      // Two-tab view switcher: Inventory (cells) ⟷ Adjustments (list). On the
-      // Inventory tab the left chevron pops back to the starting-spot cascade;
-      // on the Adjustments tab it returns to the Inventory cells. Mirrors the
-      // property hub's Properties ⟷ Templates switch.
+    if (mode.kind === "view") {
       const isAdjustments = viewTab === "adjustments"
       return (
         <HubSidePanelViewSwitcher
           label={isAdjustments ? "Adjustments" : "Inventory"}
           prevDisabled={isAdjustments ? false : !onBackToStarting}
           nextDisabled={isAdjustments}
-          onGoPrev={
-            isAdjustments ? goToInventoryView : (onBackToStarting ?? (() => {}))
-          }
+          onGoPrev={isAdjustments ? goToInventoryView : (onBackToStarting ?? (() => {}))}
           onGoNext={isAdjustments ? () => {} : goToAdjustmentsView}
           prevAriaLabel={isAdjustments ? "Show inventory" : "Back to inventory hub filters"}
           nextAriaLabel={isAdjustments ? "No further view" : "Show adjustments"}
@@ -224,7 +174,7 @@ export function useInventoryHubChrome(
     }
     return null
   }, [
-    effectiveModeKind,
+    mode.kind,
     viewTab,
     goToInventoryView,
     goToAdjustmentsView,
@@ -238,8 +188,8 @@ export function useInventoryHubChrome(
     adjustmentPanel,
     adjustmentExtraLeftActions,
     isAdjustmentPickerActive,
-    controller,
     onBackToStarting,
+    onOpenWorkOrder,
   ])
 
   return { title, topToolbar, isAdjustmentPickerActive }

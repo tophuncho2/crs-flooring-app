@@ -7,12 +7,8 @@ import {
 } from "@/types/record/section-error"
 import type { InventoryAdjustmentRow } from "@builders/domain"
 import { useMutation } from "@tanstack/react-query"
-import {
-  createManualAdjustmentRequest,
-  createPendingAdjustmentRequest,
-  type AdjustmentScopeUrl,
-} from "@/modules/adjustments/data/mutations"
-import { buildEditForm } from "../form"
+import { createAdjustmentRequest } from "@/modules/adjustments/data/mutations"
+import { buildEditForm, EDIT_PICKER_CONFIG } from "../form"
 import type {
   AdjustmentEditForm,
   AdjustmentEditPanelOpenSpec,
@@ -20,7 +16,6 @@ import type {
 } from "../types"
 
 type Deps = {
-  scope: AdjustmentScopeUrl
   publish: (patch: AdjustmentPanelPatch) => void
   setForm: Dispatch<SetStateAction<AdjustmentEditForm>>
   setBaseline: Dispatch<SetStateAction<AdjustmentEditForm>>
@@ -32,40 +27,30 @@ type Deps = {
    * create panel — instead of the default in-place create→edit flip.
    * The WO material-items section uses this to hand the new row off to
    * the inventory hub's adjustment edit panel; the inventory hub uses it
-   * to pop back to the adjustments list. `workOrderItemId` is null for the
-   * manual (inventory-hub) variant.
+   * to pop back to the adjustments list. `workOrderItemId` is null when the
+   * created adjustment carries no WO link.
    */
   onCreated?: (adjustment: InventoryAdjustmentRow, workOrderItemId: string | null) => void
 }
 
 /**
- * Discriminated create input:
- *  - `variant: "cut"` — WO-linked DEDUCTION created under a WOMI (work-orders
- *    record view). Requires a work-order scope.
- *  - `variant: "manual"` — free-form INCREASE/DEDUCTION created from the
- *    inventory hub. Requires an inventory scope; never WO-linked, never waste.
+ * Single create input — the form carries everything (inventory + optional WO
+ * link + warehouse filter + direction + amount). The request always posts to
+ * the inventory route.
  */
-export type CreateAdjustmentInput =
-  | { variant: "cut"; workOrderItemId: string; form: AdjustmentEditForm }
-  | { variant: "manual"; inventoryId: string; form: AdjustmentEditForm }
+export type CreateAdjustmentInput = { form: AdjustmentEditForm }
 
 /**
- * Create-pending mutation, scope-aware over the two create variants.
+ * Create-pending mutation. The form is the single source of input; the request
+ * always targets the inventory route (the form knows the chosen inventory id).
  *
- * Default success behavior: transition the panel from create → edit on
- * the newly-created row so the operator can finalize or tweak without
- * reopening. The parent WO label (`workOrderNumber`) and warehouse label
- * (`warehouseName`) are carried forward from the WO create-mode open spec
- * so the panel's read-only cells stay populated without a reopen.
- * `productName` rides along on the response (snapshot column), so it
- * doesn't need a carry-forward.
- *
- * Override behavior: when `onCreated` is provided, the mutation skips
- * the in-place flip, fires `onCreated`, and closes this panel — leaving
- * the consumer to route the newly-created row wherever it likes.
+ * Default success behavior: flip the panel create → edit on the new row.
+ * Override behavior: when `onCreated` is provided (both surfaces do), the
+ * mutation publishes the patch, fires `onCreated`, and closes — leaving the
+ * consumer to route the new row (the WO section hands off to the hub; the hub
+ * pops back to its adjustments list).
  */
 export function useCreateAdjustmentMutation({
-  scope,
   publish,
   setForm,
   setBaseline,
@@ -74,39 +59,19 @@ export function useCreateAdjustmentMutation({
   onCreated,
 }: Deps) {
   return useMutation({
-    mutationFn: (input: CreateAdjustmentInput) => {
-      if (input.variant === "manual") {
-        // Runtime guard surfaces misuse as a clear error.
-        if (scope.kind !== "inventory") {
-          throw new Error(
-            "createManualAdjustmentRequest requires an inventory scope.",
-          )
-        }
-        return createManualAdjustmentRequest({
-          inventoryId: input.inventoryId,
-          adjustmentType: input.form.adjustmentType,
-          quantity: input.form.quantity,
-          isWaste: input.form.isWaste,
-          notes: input.form.notes,
-        })
-      }
-      if (scope.kind !== "work-order") {
-        throw new Error(
-          "createPendingAdjustmentRequest requires a work-order scope; canCreate must only be true on WO callers.",
-        )
-      }
-      return createPendingAdjustmentRequest({
-        workOrderId: scope.workOrderId,
-        workOrderItemId: input.workOrderItemId,
+    mutationFn: (input: CreateAdjustmentInput) =>
+      createAdjustmentRequest({
         inventoryId: input.form.inventoryId,
+        adjustmentType: input.form.adjustmentType,
         quantity: input.form.quantity,
         isWaste: input.form.isWaste,
         notes: input.form.notes,
-      })
-    },
+        warehouseId: input.form.warehouseId,
+        workOrderId: input.form.workOrderId,
+        workOrderItemId: input.form.workOrderItemId,
+      }),
     onSuccess: (response, variables) => {
-      const workOrderItemId =
-        variables.variant === "cut" ? variables.workOrderItemId : null
+      const workOrderItemId = variables.form.workOrderItemId
       publish({
         kind: "upsert",
         workOrderItemId,
@@ -120,21 +85,12 @@ export function useCreateAdjustmentMutation({
       const next = buildEditForm(response.adjustment)
       setForm(next)
       setBaseline(next)
-      setOpen((prev) => ({
+      setOpen({
         mode: "edit",
+        pickerConfig: EDIT_PICKER_CONFIG,
         workOrderItemId,
-        adjustment: {
-          ...response.adjustment,
-          workOrderNumber:
-            prev?.mode === "create" && prev.variant === "cut"
-              ? (prev.workOrderNumber ?? null)
-              : null,
-          warehouseName:
-            prev?.mode === "create" && prev.variant === "cut"
-              ? (prev.warehouseName ?? null)
-              : null,
-        },
-      }))
+        adjustment: response.adjustment,
+      })
     },
     onError: (err: unknown) => {
       setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save adjustment" }))

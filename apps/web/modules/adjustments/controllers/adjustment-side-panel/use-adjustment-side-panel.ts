@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react"
 import type {
   InventoryAdjustmentRow,
   InventoryOption,
+  WarehouseOption,
   WorkOrderOption,
 } from "@builders/domain"
 import type { AdjustmentScopeUrl } from "@/modules/adjustments/data/mutations"
@@ -12,12 +13,15 @@ import { searchWorkOrderMaterialItemOptionsRequest } from "@/modules/work-orders
 import {
   EMPTY_FORM,
   EMPTY_LOCAL,
+  buildCreateForm,
+  buildCreateLocal,
   buildEditForm,
+  buildEditLocal,
   formIsDirty,
   isCreateValid,
   isEditValid,
-  isManualCreateValid,
 } from "./form"
+import type { AdjustmentPickerConfig } from "./types"
 import {
   useCreateAdjustmentMutation,
   useDeleteAdjustmentMutation,
@@ -58,18 +62,15 @@ import { createRecordSectionError, type RecordSectionError } from "@/types/recor
  *   - Delete        → close (row no longer exists)
  *   - Backdrop / ESC / X → close, discard unsaved
  */
-export type AdjustmentPanelPickerKind = "location" | "inventory"
+export type AdjustmentPanelPickerKind = "location" | "inventory" | "warehouse" | "workOrder"
 
 export function useAdjustmentEditPanel({
   scope,
-  warehouseId,
   canCreate,
   publish,
   onCreated,
 }: {
   scope: AdjustmentScopeUrl
-  /** Required when `canCreate` is true — drives the inventory picker. */
-  warehouseId?: string | null
   canCreate: boolean
   publish: (patch: AdjustmentPanelPatch) => void
   /**
@@ -105,38 +106,21 @@ export function useAdjustmentEditPanel({
       setError(null)
     } else {
       if (open.mode === "edit") {
+        // Edit: form + locked-picker labels come off the row's frozen snapshot.
         const next = buildEditForm(open.adjustment)
         setForm(next)
         setBaseline(next)
-        setLocal(EMPTY_LOCAL)
-      } else if (open.variant === "manual") {
-        // Manual create (inventory hub): the parent inventory is fixed on the
-        // spec; the form carries only direction + amount + notes. Defaults to
-        // INCREASE via EMPTY_FORM. Baseline matches so isDirty starts false.
-        const seeded: AdjustmentEditForm = {
-          ...EMPTY_FORM,
-          inventoryId: open.inventoryId,
-        }
-        setForm(seeded)
-        setBaseline(seeded)
-        setLocal(EMPTY_LOCAL)
+        setLocal(buildEditLocal(open.adjustment))
       } else {
-        // WO "cut" create: seed inventoryId from the preset (if any) so a
-        // "duplicate" flow opens with the source row's inventory pre-selected.
-        // Baseline matches the seeded form so isDirty starts false — closing
-        // an unmodified prefilled panel doesn't trigger a discard guard.
-        const preset = open.presetInventory
-        const seeded: AdjustmentEditForm = {
-          ...EMPTY_FORM,
-          inventoryId: preset?.id ?? "",
-        }
-        setForm(seeded)
-        setBaseline(seeded)
-        setLocal({
-          ...EMPTY_LOCAL,
-          pickedInventoryLabel: preset?.label ?? "",
-          pickedInventoryStockUnitAbbrev: preset?.stockUnitAbbrev ?? "",
-        })
+        // Create: form + picker-trigger labels come from the host's seed
+        // (WO-create prefills WO/warehouse/material-item; hub-create prefills
+        // the locked warehouse/inventory/location). Baseline matches the seed
+        // so isDirty starts false — closing an unmodified prefilled panel
+        // doesn't trigger a discard guard.
+        const next = buildCreateForm(open.seed)
+        setForm(next)
+        setBaseline(next)
+        setLocal(buildCreateLocal(open.seed))
       }
       setPickerKind(null)
       setError(null)
@@ -144,6 +128,17 @@ export function useAdjustmentEditPanel({
   }
 
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
+
+  // Derived from the open spec: per-picker editable/locked/hidden state, and
+  // the fixed product id (inventory is single-product per open) used to scope
+  // the WO-relink picker + WOMI auto-resolve.
+  const pickerConfig: AdjustmentPickerConfig | null = open?.pickerConfig ?? null
+  const productId =
+    open?.mode === "edit"
+      ? open.adjustment.productId
+      : open?.mode === "create"
+        ? (open.seed.productId ?? null)
+        : null
 
   const openPanel = useCallback(
     (spec: AdjustmentEditPanelOpenSpec) => {
@@ -172,11 +167,16 @@ export function useAdjustmentEditPanel({
   // close the takeover and update form state in one render.
   //
   // `openPicker` toggles — clicking the active trigger closes the picker
-  // (matches the template-sync top-toolbar pattern). The trigger fires
-  // it unconditionally and the function decides open vs. close.
-  const openPicker = useCallback((kind: AdjustmentPanelPickerKind) => {
-    setPickerKind((current) => (current === kind ? null : kind))
-  }, [])
+  // (matches the template-sync top-toolbar pattern). It no-ops for any picker
+  // the current context marks non-editable (locked/hidden), so locked triggers
+  // are inert.
+  const openPicker = useCallback(
+    (kind: AdjustmentPanelPickerKind) => {
+      if (pickerConfig?.[kind] !== "editable") return
+      setPickerKind((current) => (current === kind ? null : kind))
+    },
+    [pickerConfig],
+  )
 
   const closePicker = useCallback(() => {
     setPickerKind(null)
@@ -196,6 +196,23 @@ export function useAdjustmentEditPanel({
       ...prev,
       pickedInventoryLabel: option?.inventoryItem ?? "",
       pickedInventoryStockUnitAbbrev: option?.stockUnitAbbrev ?? "",
+    }))
+    setPickerKind(null)
+    setError(null)
+  }, [])
+
+  // Warehouse is an inventory filter: changing it invalidates the chosen
+  // inventory + location below it, so clear those (and their labels) in the
+  // same render. The persisted adjustment warehouse is always the chosen
+  // inventory's; this value only narrows the inventory + location pickers.
+  const selectWarehouseOption = useCallback((option: WarehouseOption | null) => {
+    setForm((prev) => ({ ...prev, warehouseId: option?.id ?? null, inventoryId: "" }))
+    setLocal((prev) => ({
+      ...prev,
+      pickedWarehouseLabel: option?.name ?? "",
+      pickedInventoryLabel: "",
+      pickedInventoryStockUnitAbbrev: "",
+      locationFilter: "",
     }))
     setPickerKind(null)
     setError(null)
@@ -244,7 +261,8 @@ export function useAdjustmentEditPanel({
       }))
       setError(null)
 
-      const productId = open?.mode === "edit" ? open.adjustment.productId : null
+      // Product is fixed per open (edit: the row's product; create: the seed's).
+      // Resolves the one matching WOMI on the chosen WO, in both modes.
       if (!productId) return
 
       try {
@@ -300,11 +318,10 @@ export function useAdjustmentEditPanel({
         )
       }
     },
-    [open],
+    [open, productId],
   )
 
   const createMutation = useCreateAdjustmentMutation({
-    scope,
     publish,
     setForm,
     setBaseline,
@@ -344,13 +361,11 @@ export function useAdjustmentEditPanel({
   const save = useCallback(() => {
     if (!open || isSaving) return
     if (open.mode === "create") {
-      if (open.variant === "manual") {
-        if (!isManualCreateValid(form)) return
-        createMutation.mutate({ variant: "manual", inventoryId: open.inventoryId, form })
-        return
-      }
       if (!isCreateValid(form)) return
-      createMutation.mutate({ variant: "cut", workOrderItemId: open.workOrderItemId, form })
+      // Unified create path: the form always carries the chosen inventory +
+      // (optional) WO link + warehouse filter; the mutation posts to the
+      // inventory route regardless of which surface opened the panel.
+      createMutation.mutate({ form })
     } else {
       if (!isEditValid(form) || !isDirty) return
       updateMutation.mutate({
@@ -388,7 +403,9 @@ export function useAdjustmentEditPanel({
     open,
     form,
     local,
-    warehouseId: warehouseId ?? null,
+    warehouseId: form.warehouseId,
+    productId,
+    pickerConfig,
     isDirty,
     isSaving,
     error,
@@ -401,6 +418,7 @@ export function useAdjustmentEditPanel({
     setLocationFilter,
     selectLocationFilter,
     selectInventoryOption,
+    selectWarehouseOption,
     openPicker,
     closePicker,
     selectWorkOrderOption,

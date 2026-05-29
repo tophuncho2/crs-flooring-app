@@ -11,7 +11,7 @@ import {
   updatePendingAdjustmentRequest,
   type AdjustmentScopeUrl,
 } from "@/modules/adjustments/data/mutations"
-import { buildEditForm } from "../form"
+import { buildEditForm, EDIT_PICKER_CONFIG } from "../form"
 import type {
   AdjustmentEditForm,
   AdjustmentEditPanelOpenSpec,
@@ -106,6 +106,7 @@ export function useUpdateAdjustmentMutation({
       setBaseline(next)
       setOpen((prev) => ({
         mode: "edit",
+        pickerConfig: prev?.pickerConfig ?? EDIT_PICKER_CONFIG,
         workOrderItemId: newWomiId,
         adjustment: {
           ...response.adjustment,

@@ -7,7 +7,11 @@ import {
   type InventoryRow,
 } from "@builders/domain"
 import type { RecordSectionError } from "@/types/record/section-error"
-import type { AdjustmentEditPanelController } from "@/modules/adjustments"
+import {
+  EDIT_PICKER_CONFIG,
+  HUB_CREATE_PICKER_CONFIG,
+  type AdjustmentEditPanelController,
+} from "@/modules/adjustments"
 import { toAdjustmentPanelRow } from "./to-adjustment-panel-row"
 import type { HubInventoryEditSlice } from "./use-hub-inventory-edit"
 import type { HubInventoryDuplicateSlice } from "./use-hub-inventory-duplicate"
@@ -66,6 +70,7 @@ export function useHubSectionTransitions({
       // panel handle the data flow.
       adjustmentPanel.openPanel({
         mode: "edit",
+        pickerConfig: EDIT_PICKER_CONFIG,
         workOrderItemId: row.workOrderItemId,
         adjustment: toAdjustmentPanelRow(row),
       })
@@ -80,17 +85,27 @@ export function useHubSectionTransitions({
   )
 
   const enterAdjustmentCreate = useCallback(() => {
-    if (contextInventoryId === null) return
-    // Open the embedded panel in manual-create mode. The parent inventory is
-    // the hub context; the panel form carries only direction + amount + notes.
+    if (contextInventoryId === null || !inventory) return
+    // Hub create: the parent inventory (and therefore its warehouse + location)
+    // is fixed by the hub context, so warehouse / inventory / location are
+    // locked pickers seeded from the snapshot. The WO picker stays editable —
+    // an adjustment may optionally link a work order (incl. an INCREASE).
     adjustmentPanel.openPanel({
       mode: "create",
-      variant: "manual",
-      inventoryId: contextInventoryId,
+      pickerConfig: HUB_CREATE_PICKER_CONFIG,
+      seed: {
+        inventoryId: inventory.id,
+        warehouseId: inventory.warehouseId,
+        warehouseLabel: inventory.warehouseName,
+        inventoryLabel: inventory.inventoryItem,
+        locationLabel: inventory.location,
+        productId: inventory.productId,
+        stockUnitAbbrev: inventory.stockUnitAbbrev,
+      },
     })
     setError(null)
     setMode({ kind: "section-create-adjustment", inventoryId: contextInventoryId })
-  }, [contextInventoryId, adjustmentPanel, setError, setMode])
+  }, [contextInventoryId, inventory, adjustmentPanel, setError, setMode])
 
   const exitToView = useCallback(() => {
     if (contextInventoryId === null) {

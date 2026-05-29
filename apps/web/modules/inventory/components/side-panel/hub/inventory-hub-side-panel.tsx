@@ -6,14 +6,11 @@ import {
   HubSidePanelHubViewButton,
   HubSidePanelShell,
 } from "@/components/hub-side-panel"
-import type {
-  HubMode,
-  InventoryHubSidePanelController,
-} from "@/modules/inventory/controllers/inventory-hub-side-panel"
+import { AdjustmentPickerTakeoverBody } from "@/modules/adjustments"
+import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
 import { InventoryHubAdjustmentCreateSection } from "./inventory-hub-adjustment-create-section"
 import { InventoryHubAdjustmentEditSection } from "./inventory-hub-adjustment-edit-section"
 import { InventoryHubAdjustmentsListSection } from "./inventory-hub-adjustments-list-section"
-import { InventoryHubAdjustmentWorkOrderPicker } from "./inventory-hub-adjustment-work-order-picker"
 import { InventoryHubInventoryDuplicateSection } from "./inventory-hub-inventory-duplicate-section"
 import { InventoryHubInventoryEditSection } from "./inventory-hub-inventory-edit-section"
 import { InventoryHubViewSection } from "./inventory-hub-view-section"
@@ -56,6 +53,7 @@ export function InventoryHubSidePanel({
     mode,
     viewTab,
     inventory,
+    adjustmentPanel,
     close,
     isLoadingInventory,
     isErrorInventory,
@@ -70,15 +68,11 @@ export function InventoryHubSidePanel({
   })
 
   // "Hub view" lives in the title row, shown only in the section-edit modes
-  // that have a parent hub view to pop back to (property-hub parity). Collapse
-  // picker-takeover onto its returnTo so the button stays put while a picker
-  // fills the body.
-  const effectiveModeKind: HubMode["kind"] =
-    mode.kind === "picker-takeover" ? mode.returnTo.kind : mode.kind
+  // that have a parent hub view to pop back to (property-hub parity).
   const showHubViewButton =
-    effectiveModeKind === "section-edit-inventory" ||
-    effectiveModeKind === "section-duplicate-inventory" ||
-    effectiveModeKind === "section-edit-adjustment"
+    mode.kind === "section-edit-inventory" ||
+    mode.kind === "section-duplicate-inventory" ||
+    mode.kind === "section-edit-adjustment"
 
   // "Duplicate inventory item" sits in the title row next to the close (X),
   // shown only in view mode once a row is loaded. Clicking it seeds the
@@ -128,7 +122,7 @@ export function InventoryHubSidePanel({
       }
     >
       {isAdjustmentPickerActive ? (
-        <InventoryHubAdjustmentWorkOrderPicker controller={controller} />
+        <AdjustmentPickerTakeoverBody controller={adjustmentPanel} />
       ) : showLoadingPlaceholder ? (
         <p className="px-1 text-sm text-[var(--foreground)]/65">Loading inventory…</p>
       ) : showErrorPlaceholder ? (

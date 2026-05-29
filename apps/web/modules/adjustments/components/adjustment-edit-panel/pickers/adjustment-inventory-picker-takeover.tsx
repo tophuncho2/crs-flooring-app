@@ -42,11 +42,9 @@ export function AdjustmentInventoryPickerTakeover({
 }: {
   controller: AdjustmentEditPanelController
 }) {
-  const { warehouseId, form, local, open, closePicker, selectInventoryOption } =
+  const { warehouseId, productId, form, local, closePicker, selectInventoryOption } =
     controller
 
-  const productId =
-    open?.mode === "create" && open.variant === "cut" ? open.productId || null : null
   const location = local.locationFilter || null
 
   const bucketKey = useMemo(

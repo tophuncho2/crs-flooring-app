@@ -9,7 +9,7 @@ import {
   searchWorkOrderOptionsRequest,
 } from "@/modules/work-orders/data/work-order-options-request"
 import { formatWorkOrderOptionTitle } from "@/modules/work-orders/components/picker/work-order-picker"
-import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
+import type { AdjustmentEditPanelController } from "@/modules/adjustments/controllers/adjustment-side-panel"
 
 function joinNonEmpty(...parts: Array<string | null | undefined>): string {
   return parts.filter((p): p is string => !!p && p.trim().length > 0).join(" · ")
@@ -25,28 +25,23 @@ function toPickerOption(option: WorkOrderOption): HubSidePanelPickerOption {
 }
 
 /**
- * Body-takeover picker for the adjustment relink work-order field. Scoped
- * to the parent adjustment's warehouse. Commits the full `WorkOrderOption`
- * to the hub controller so the adjustment panel's form + trigger label
- * move in one render.
+ * Body-takeover work-order picker for the adjustment relink field. Scoped to
+ * the form's warehouse + the fixed product (the options API requires a
+ * warehouse, so the picker is gated until one is chosen). Selecting a WO
+ * deterministically auto-links its matching material item via
+ * `selectWorkOrderOption`. Used by both surfaces (WO record view + inventory
+ * hub) through the shared adjustment controller.
  */
-export function InventoryHubAdjustmentWorkOrderPicker({
+export function AdjustmentWorkOrderPickerTakeover({
   controller,
 }: {
-  controller: InventoryHubSidePanelController
+  controller: AdjustmentEditPanelController
 }) {
-  const { adjustmentPanel, commitWorkOrderPick, closeAdjustmentPicker } = controller
-
-  const adjustment =
-    adjustmentPanel.open?.mode === "edit" ? adjustmentPanel.open.adjustment : null
-  const warehouseId = adjustment?.warehouseId ?? null
-  // Scope the picker to work orders that carry the adjustment's product, so the
-  // matching material item is always resolvable on select (and auto-linked).
-  const productId = adjustment?.productId ?? null
+  const { warehouseId, productId, form, local, closePicker, selectWorkOrderOption } =
+    controller
 
   const bucketKey = useMemo(
-    () =>
-      [...WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY, warehouseId ?? null, productId ?? null] as const,
+    () => [...WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY, warehouseId ?? null, productId ?? null] as const,
     [warehouseId, productId],
   )
 
@@ -70,30 +65,26 @@ export function InventoryHubAdjustmentWorkOrderPicker({
 
   const handleSelect = useCallback(
     (_option: HubSidePanelPickerOption, raw: WorkOrderOption) => {
-      commitWorkOrderPick(raw)
+      void selectWorkOrderOption(raw)
     },
-    [commitWorkOrderPick],
+    [selectWorkOrderOption],
   )
 
   const handleClear = useCallback(() => {
-    commitWorkOrderPick(null)
-  }, [commitWorkOrderPick])
-
-  const selectedId = adjustmentPanel.form.workOrderId
-  const selectedLabel = adjustmentPanel.local.pickedWorkOrderLabel ||
-    (adjustment?.workOrderNumber ? `#${adjustment.workOrderNumber}` : null)
+    void selectWorkOrderOption(null)
+  }, [selectWorkOrderOption])
 
   return (
     <HubSidePanelPicker
       controller={dropdown}
       toOption={toOption}
-      selectedId={selectedId}
-      selectedLabel={selectedLabel}
+      selectedId={form.workOrderId}
+      selectedLabel={local.pickedWorkOrderLabel || null}
       onSelect={handleSelect}
       onClear={handleClear}
-      onCancel={closeAdjustmentPicker}
+      onCancel={closePicker}
       searchPlaceholder="Search description or unit type"
-      emptyMessage="No matches"
+      emptyMessage={warehouseId ? "No matches" : "Select warehouse first"}
       loadingMessage="Searching…"
       clearLabel="Clear selection"
     />

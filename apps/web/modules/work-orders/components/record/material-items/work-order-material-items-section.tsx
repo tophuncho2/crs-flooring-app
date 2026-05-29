@@ -21,6 +21,7 @@ import {
 import {
   AdjustmentEditPanel,
   useAdjustmentEditPanel,
+  WO_CREATE_PICKER_CONFIG,
   type AdjustmentPanelPatch,
 } from "@/modules/adjustments"
 import { useInventoryHubSidePanel } from "@/modules/inventory/controllers/inventory-hub-side-panel"
@@ -100,7 +101,6 @@ export function WorkOrderMaterialItemsSection({
 
   const adjustmentPanel = useAdjustmentEditPanel({
     scope: { kind: "work-order", workOrderId: workOrder.id },
-    warehouseId: workOrder.warehouseId,
     canCreate: true,
     publish: publishAdjustmentPatch,
     onCreated: handleAdjustmentCreated,
@@ -125,45 +125,55 @@ export function WorkOrderMaterialItemsSection({
 
   const handleCreateNew = useCallback(
     (workOrderItemId: string) => {
-      // Adjustments scope inventory search to the parent material item's product —
-      // a adjustment can only reference inventory of the same product.
-      const productId =
-        section.items.find((item) => item.id === workOrderItemId)?.productId ?? ""
+      // WO-create: the WO + material item are prefilled (relinkable), the
+      // warehouse prefills from the WO (editable, for cross-warehouse
+      // sourcing), and inventory is product-filtered by the WOMI's product.
+      const item = section.items.find((i) => i.id === workOrderItemId)
       adjustmentPanel.openPanel({
         mode: "create",
-        variant: "cut",
-        workOrderItemId,
-        productId,
-        workOrderNumber: workOrder.workOrderNumber,
-        warehouseName: workOrder.warehouseName,
+        pickerConfig: WO_CREATE_PICKER_CONFIG,
+        seed: {
+          workOrderId: workOrder.id,
+          workOrderItemId,
+          productId: item?.productId ?? "",
+          warehouseId: workOrder.warehouseId,
+          warehouseLabel: workOrder.warehouseName ?? "",
+          workOrderLabel: `#${workOrder.workOrderNumber}`,
+          materialItemLabel: item?.productName ?? "",
+          materialItemNotes: item?.notes ?? "",
+        },
       })
     },
-    [adjustmentPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
+    [adjustmentPanel, section.items, workOrder.id, workOrder.warehouseId, workOrder.warehouseName, workOrder.workOrderNumber],
   )
 
   const handleDuplicate = useCallback(
     (workOrderItemId: string, adjustment: EnrichedInventoryAdjustmentRow) => {
-      // UI-only "duplicate": open the create panel with the source row's
-      // inventory item pre-selected. No use case fires — the operator must
-      // still save the new adjustment to materialize it (and only then does
-      // inventory-balance recalculation run, via the normal create path).
-      const productId =
-        section.items.find((item) => item.id === workOrderItemId)?.productId ?? ""
+      // UI-only "duplicate": open create with the source row's inventory (and
+      // its warehouse) pre-selected. No use case fires — the operator must
+      // still save to materialize it (and only then does inventory-balance
+      // recalculation run, via the normal create path).
+      const item = section.items.find((i) => i.id === workOrderItemId)
       adjustmentPanel.openPanel({
         mode: "create",
-        variant: "cut",
-        workOrderItemId,
-        productId,
-        workOrderNumber: workOrder.workOrderNumber,
-        warehouseName: workOrder.warehouseName,
-        presetInventory: {
-          id: adjustment.inventoryId,
-          label: adjustment.inventoryItem,
+        pickerConfig: WO_CREATE_PICKER_CONFIG,
+        seed: {
+          workOrderId: workOrder.id,
+          workOrderItemId,
+          productId: item?.productId ?? "",
+          warehouseId: adjustment.warehouseId,
+          warehouseLabel: adjustment.warehouseName,
+          workOrderLabel: `#${workOrder.workOrderNumber}`,
+          materialItemLabel: item?.productName ?? "",
+          materialItemNotes: item?.notes ?? "",
+          inventoryId: adjustment.inventoryId,
+          inventoryLabel: adjustment.inventoryItem,
           stockUnitAbbrev: adjustment.stockUnitAbbrev,
+          locationLabel: adjustment.location ?? "",
         },
       })
     },
-    [adjustmentPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
+    [adjustmentPanel, section.items, workOrder.id, workOrder.warehouseName, workOrder.workOrderNumber],
   )
 
   function renderParentCell(

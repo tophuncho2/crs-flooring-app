@@ -11,9 +11,9 @@ import type {
  * URL-deriving scope discriminator. Mirrors the application-layer
  * `AdjustmentMutationScope` (in `@builders/application`): work-order routes
  * hang off `/api/work-orders/[id]/adjustments/…` and inventory routes off
- * `/api/inventory/[id]/adjustments/…`. Update / delete / void / finalize
- * accept either; create stays WO-only (adjustments are always created
- * under a WOMI in the UI) and takes a narrower input.
+ * `/api/inventory/[id]/adjustments/…`. Update / delete / finalize accept
+ * either scope; create always targets the inventory route (the form knows the
+ * chosen inventory id) via `createAdjustmentRequest`.
  */
 export type AdjustmentScopeUrl =
   | { kind: "work-order"; workOrderId: string }
@@ -42,54 +42,35 @@ export type FinalizeAdjustmentResponse = {
 }
 
 /**
- * Create — WO-only. Caller passes the WO + WOMI + inventory triple; the
- * server verifies WOMI ownership of the WO before locking the parent
- * inventory and inserting.
+ * Single create path. The form always knows the chosen inventory id, so every
+ * create — whether opened from the work-orders record view or the inventory
+ * hub — posts to the inventory route. The body carries direction + amount +
+ * waste + notes, plus the optional WO link (`workOrderId` + `workOrderItemId`,
+ * both-or-neither; an INCREASE may link a WO) and the selected `warehouseId`
+ * filter (the server asserts it matches the chosen inventory's warehouse).
  */
-export async function createPendingAdjustmentRequest(args: {
-  workOrderId: string
-  workOrderItemId: string
-  inventoryId: string
-  quantity: string
-  isWaste: boolean
-  notes: string
-}) {
-  const body = withMutationMeta({
-    workOrderItemId: args.workOrderItemId,
-    inventoryId: args.inventoryId,
-    quantity: args.quantity,
-    isWaste: args.isWaste,
-    notes: args.notes,
-  } as Record<string, unknown>)
-  return requestJson<PendingAdjustmentMutationResponse>(
-    `/api/work-orders/${args.workOrderId}/adjustments`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  )
-}
-
-/**
- * Create a manual (non-WO) adjustment on one inventory record. Inventory-only:
- * the parent inventory id rides on the route path, so the body carries the
- * direction + amount + waste flag + notes. Never WO-linked; `isWaste` is a
- * reporting flag allowed on either direction.
- */
-export async function createManualAdjustmentRequest(args: {
+export async function createAdjustmentRequest(args: {
   inventoryId: string
   adjustmentType: FlooringInventoryAdjustmentType
   quantity: string
   isWaste: boolean
   notes: string
+  warehouseId?: string | null
+  workOrderId?: string | null
+  workOrderItemId?: string | null
 }) {
-  const body = withMutationMeta({
+  const payload: Record<string, unknown> = {
     adjustmentType: args.adjustmentType,
     quantity: args.quantity,
     isWaste: args.isWaste,
     notes: args.notes,
-  } as Record<string, unknown>)
+  }
+  if (args.warehouseId) payload.warehouseId = args.warehouseId
+  if (args.workOrderId && args.workOrderItemId) {
+    payload.workOrderId = args.workOrderId
+    payload.workOrderItemId = args.workOrderItemId
+  }
+  const body = withMutationMeta(payload)
   return requestJson<PendingAdjustmentMutationResponse>(
     `/api/inventory/${args.inventoryId}/adjustments`,
     {

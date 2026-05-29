@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import type { InventoryDetail } from "@builders/domain"
 import {
   useAdjustmentEditPanel,
+  EDIT_PICKER_CONFIG,
   type AdjustmentPanelPatch,
   type AdjustmentPanelRow,
 } from "@/modules/adjustments"
@@ -12,7 +13,6 @@ import { INVENTORY_DETAIL_QUERY_KEY } from "@/modules/inventory/data/inventory-d
 import { INVENTORY_ADJUSTMENTS_QUERY_KEY } from "@/modules/inventory/data/inventory-adjustments-request"
 import { deriveCanSave, deriveIsDirty } from "./derive-hub-mode-flags"
 import { toAdjustmentPanelRow } from "./to-adjustment-panel-row"
-import { useAdjustmentPickerTakeover } from "./use-adjustment-picker-takeover"
 import { useHubAdjustmentsQuery } from "./use-hub-adjustments-query"
 import { useHubInventoryDuplicate } from "./use-hub-inventory-duplicate"
 import { useHubInventoryEdit } from "./use-hub-inventory-edit"
@@ -136,18 +136,11 @@ export function useInventoryHubSidePanel({
       publishAdjustmentPatch(patch)
       if (openId !== null) invalidateInventoryDetail(openId)
       if (patch.kind === "delete") {
-        setMode((current) => {
-          if (current.kind === "section-edit-adjustment") {
-            return { kind: "view", inventoryId: current.inventoryId }
-          }
-          if (
-            current.kind === "picker-takeover" &&
-            current.returnTo.kind === "section-edit-adjustment"
-          ) {
-            return { kind: "view", inventoryId: current.returnTo.inventoryId }
-          }
-          return current
-        })
+        setMode((current) =>
+          current.kind === "section-edit-adjustment"
+            ? { kind: "view", inventoryId: current.inventoryId }
+            : current,
+        )
         setError(null)
       }
     },
@@ -162,18 +155,6 @@ export function useInventoryHubSidePanel({
       case "section-edit-adjustment":
       case "section-create-adjustment":
         return mode.inventoryId
-      case "picker-takeover": {
-        const r = mode.returnTo
-        if (
-          r.kind === "view" ||
-          r.kind === "section-edit-inventory" ||
-          r.kind === "section-duplicate-inventory" ||
-          r.kind === "section-edit-adjustment"
-        ) {
-          return r.inventoryId
-        }
-        return null
-      }
       default:
         return null
     }
@@ -218,15 +199,6 @@ export function useInventoryHubSidePanel({
   // Duplicate-inventory section slice — owns its own draft + the
   // create-from-source mutation. Independent of the edit slice.
   const inventoryDuplicate = useHubInventoryDuplicate({ clearError })
-
-  // ===== Adjustment picker takeover slice =====
-  // Owns the picker-takeover mode transitions + commit handlers. Reads
-  // `pickerKind` from the mode union (no orthogonal state).
-  const adjustmentPickerTakeover = useAdjustmentPickerTakeover({
-    mode,
-    setMode,
-    adjustmentPanel,
-  })
 
   // ===== Paginated adjustments list (view mode) =====
   const adjustments = useHubAdjustmentsQuery(contextInventoryId)
@@ -305,6 +277,7 @@ export function useInventoryHubSidePanel({
       setOpenId(row.inventoryId)
       adjustmentPanel.openPanel({
         mode: "edit",
+        pickerConfig: EDIT_PICKER_CONFIG,
         workOrderItemId: row.workOrderItemId,
         adjustment: toAdjustmentPanelRow(row),
       })
@@ -419,7 +392,6 @@ export function useInventoryHubSidePanel({
     viewTab,
     goToInventoryView,
     goToAdjustmentsView,
-    adjustmentPickerKind: adjustmentPickerTakeover.pickerKind,
 
     // ===== Openers =====
     openForView,
@@ -432,11 +404,6 @@ export function useInventoryHubSidePanel({
     enterAdjustmentCreate,
     enterDuplicateFromView,
     exitToView,
-
-    // ===== Adjustment picker takeover =====
-    openAdjustmentPicker: adjustmentPickerTakeover.openPicker,
-    closeAdjustmentPicker: adjustmentPickerTakeover.closePicker,
-    commitWorkOrderPick: adjustmentPickerTakeover.commitWorkOrderPick,
 
     // ===== View-mode data =====
     inventory,

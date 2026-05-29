@@ -7,15 +7,9 @@ export type {
   EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
 
-// Only the work-order relink picker remains. The material item is auto-linked
-// from the selected work order (deterministic per WO + product) and rendered
-// read-only, so there is no material-item picker takeover.
-export type AdjustmentPickerKind = "workOrder"
-
 /**
  * Mode state for the inventory hub side panel. The hub mirrors the property
- * hub's section-edit / view / picker-takeover pattern, parameterized for
- * inventory:
+ * hub's section-edit / view pattern, parameterized for inventory:
  *
  *   - closed: panel not visible
  *   - view: read-only inventory cells card on top, paginated adjustments list
@@ -29,21 +23,14 @@ export type AdjustmentPickerKind = "workOrder"
  *           one. Five editable cells (roll# / note / starting stock /
  *           location / internal notes); the rest is pasted from the source
  *           and shown read-only. Save creates the row + jumps to view it.
- *   - section-edit-adjustment: adjustment edit fields (cut / isWaste / notes);
- *           no inventory picker — parent inventory is the hub context
- *           and is immutable after adjustment create on every adjustment edit
- *           surface. The sticky topToolbar carries the WO relink trigger;
- *           clicking it enters `picker-takeover`. The material item is a
- *           read-only label auto-linked from the chosen WO.
- *   - picker-takeover: body swap to the work-order `HubSidePanelPicker`.
- *           `returnTo` snapshots the previous mode so close / commit can
- *           pop back without re-deriving it. Only entered from
- *           `section-edit-adjustment` today, but `returnTo: HubMode` keeps
- *           the union open to future surfaces.
+ *   - section-edit-adjustment / section-create-adjustment: the shared
+ *           adjustment panel (picker stack in the sticky header + editable
+ *           cells in the body). Picker takeovers are owned by the embedded
+ *           adjustment controller (`adjustmentPanel.pickerKind`), not a hub
+ *           mode — the hub body swaps to the takeover when that is non-null.
  *
- * The owning inventoryId is carried on every non-closed non-picker mode
- * so query caches reset cleanly when the hub re-opens for a different
- * inventory. Picker-takeover reads its inventoryId from `returnTo`.
+ * The owning inventoryId is carried on every non-closed mode so query caches
+ * reset cleanly when the hub re-opens for a different inventory.
  */
 export type HubMode =
   | { kind: "closed" }
@@ -58,11 +45,6 @@ export type HubMode =
   | {
       kind: "section-create-adjustment"
       inventoryId: string
-    }
-  | {
-      kind: "picker-takeover"
-      returnTo: HubMode
-      pickerKind: AdjustmentPickerKind
     }
 
 export type InventoryEditState = {

@@ -7,6 +7,8 @@
 // WOMI in the UI); the shared panel's `canCreate` flag gates that path.
 export { AdjustmentEditPanel } from "./components/adjustment-edit-panel"
 export type { AdjustmentEditPanelProps } from "./components/adjustment-edit-panel"
+export { AdjustmentPickerStack } from "./components/adjustment-edit-panel/adjustment-picker-stack"
+export { AdjustmentPickerTakeoverBody } from "./components/adjustment-edit-panel/adjustment-picker-takeover-body"
 export {
   ADJUSTMENT_COLUMN_DEFINITIONS,
   INVENTORY_ADJUSTMENT_LAYOUT,
@@ -17,15 +19,20 @@ export {
 } from "./components/row"
 export {
   useAdjustmentEditPanel,
-  type AdjustmentCreatePresetInventory,
+  WO_CREATE_PICKER_CONFIG,
+  HUB_CREATE_PICKER_CONFIG,
+  EDIT_PICKER_CONFIG,
   type AdjustmentEditPanelController,
   type AdjustmentEditPanelOpenSpec,
   type AdjustmentEditPanelMode,
   type AdjustmentPanelPatch,
+  type AdjustmentPanelPickerKind,
   type AdjustmentPanelRow,
+  type AdjustmentPickerConfig,
+  type AdjustmentCreateSeed,
 } from "./controllers/adjustment-side-panel"
 export {
-  createPendingAdjustmentRequest,
+  createAdjustmentRequest,
   updatePendingAdjustmentRequest,
   deletePendingAdjustmentRequest,
   finalizeAdjustmentRequest,

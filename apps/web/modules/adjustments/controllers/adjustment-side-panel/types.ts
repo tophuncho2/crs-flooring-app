@@ -16,6 +16,12 @@ import type {
  */
 export type AdjustmentEditForm = {
   inventoryId: string
+  /**
+   * The warehouse selected in the form as an inventory filter. The persisted
+   * adjustment warehouse is always the chosen inventory's; this drives the
+   * inventory + location pickers and the WO-relink scope. Immutable on edit.
+   */
+  warehouseId: string | null
   adjustmentType: FlooringInventoryAdjustmentType
   quantity: string
   isWaste: boolean
@@ -38,11 +44,49 @@ export type AdjustmentEditForm = {
  */
 export type AdjustmentPanelLocal = {
   locationFilter: string
+  pickedWarehouseLabel: string
   pickedInventoryLabel: string
   pickedInventoryStockUnitAbbrev: string
   pickedWorkOrderLabel: string
   pickedWorkOrderItemLabel: string
   pickedWorkOrderItemNotes: string
+}
+
+/**
+ * Per-context picker visibility/lock state for the shared sticky-header picker
+ * stack. `hidden` skips the trigger; `locked` renders a disabled trigger
+ * showing its seeded value; `editable` opens a body-takeover picker. The
+ * material-item display is derived (read-only whenever a WO is linked), so it
+ * has no entry here.
+ */
+export type PickerState = "hidden" | "locked" | "editable"
+export type AdjustmentPickerConfig = {
+  workOrder: PickerState
+  warehouse: PickerState
+  inventory: PickerState
+  location: PickerState
+}
+
+/**
+ * Seed values for a create open-spec. Every field is optional; the controller
+ * builds the initial form + picker-trigger labels from whatever the host
+ * provides. `productId` fixes the inventory product (the inventory picker is
+ * product-filtered, so all selectable inventory shares it) and scopes the
+ * WO-relink picker + WOMI auto-resolve.
+ */
+export type AdjustmentCreateSeed = {
+  inventoryId?: string
+  warehouseId?: string | null
+  workOrderId?: string | null
+  workOrderItemId?: string | null
+  productId?: string
+  inventoryLabel?: string
+  warehouseLabel?: string
+  locationLabel?: string
+  workOrderLabel?: string
+  materialItemLabel?: string
+  materialItemNotes?: string
+  stockUnitAbbrev?: string | null
 }
 
 /**
@@ -77,46 +121,21 @@ export type AdjustmentPanelRow = InventoryAdjustmentRow & {
 }
 
 /**
- * Optional prefill carried through create mode. Used by the work-orders
- * adjustment "duplicate" affordance to open the create panel with an inventory
- * item already selected (matching the source row). Carries the id + the two
- * picker-trigger labels so the `InventoryPicker` renders with the selection
- * visible immediately, before the user types into search.
+ * Open spec for the shared adjustment panel. One `create` shape (the host
+ * supplies a `pickerConfig` describing which pickers are editable/locked and a
+ * `seed` of prefill values) and one `edit` shape. Both surfaces — the WO record
+ * view and the inventory hub — open the panel with the same union; only the
+ * config + seed differ per context.
  */
-export type AdjustmentCreatePresetInventory = {
-  id: string
-  label: string
-  stockUnitAbbrev: string | null
-}
-
 export type AdjustmentEditPanelOpenSpec =
   | {
       mode: "create"
-      /**
-       * WO-linked DEDUCTION ("cut") created under a WOMI from the work-orders
-       * record view. The parent inventory is chosen via the inventory picker.
-       */
-      variant: "cut"
-      workOrderItemId: string
-      productId: string
-      /**
-       * Parent WO/warehouse labels carried through create so the panel can
-       * hoist them onto the new row after a successful save (the create
-       * response is a plain `InventoryAdjustmentRow` with no joined labels). The
-       * subsequent re-open path hydrates these via `handleOpenEdit`.
-       */
-      workOrderNumber?: string | null
-      warehouseName?: string | null
-      presetInventory?: AdjustmentCreatePresetInventory
+      pickerConfig: AdjustmentPickerConfig
+      seed: AdjustmentCreateSeed
     }
   | {
-      mode: "create"
-      /**
-       * Free-form INCREASE or DEDUCTION created from the inventory hub. Never
-       * WO-linked, never waste. The parent inventory is the hub context, so
-       * `inventoryId` is fixed on the spec (no picker).
-       */
-      variant: "manual"
-      inventoryId: string
+      mode: "edit"
+      pickerConfig: AdjustmentPickerConfig
+      workOrderItemId: string | null
+      adjustment: AdjustmentPanelRow
     }
-  | { mode: "edit"; workOrderItemId: string | null; adjustment: AdjustmentPanelRow }
