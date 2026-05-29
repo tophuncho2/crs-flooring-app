@@ -21,22 +21,20 @@ function formatCutWithUnit(value: string, unit: string): string {
 }
 
 /**
- * Title line: `#{finalCutSequence} · {cut} {stockUnit} · {coverageCut}
- * {coverageUnit}`. The sequence leads so the row's finalize rank survives
- * truncation (the list sorts by finalCutSequence DESC); pending rows have no
- * sequence and no-coverage categories drop the coverage segment. Adjustment #
- * is intentionally omitted from the display (kept on the aria-label only).
+ * Title line: `{±quantity} {stockUnit} · {coverageCut} {coverageUnit}`. The
+ * amount leads with its direction sign; no-coverage categories drop the
+ * coverage segment. The final-cut sequence and adjustment # are not in the
+ * title — the sequence renders in the meta slot beside the status pill, and
+ * the adjustment # is kept on the aria-label only.
  */
 function buildAdjustmentTitle(row: {
   adjustmentType: "INCREASE" | "DEDUCTION"
   quantity: string
   coverage: string | null
-  finalSequence: number | null
   stockUnitAbbrev: string | null
   itemCoverageUnitAbbrev: string | null
 }): string {
   const segments: string[] = []
-  if (row.finalSequence !== null) segments.push(`#${row.finalSequence}`)
 
   const quantity = formatCutWithUnit(row.quantity, row.stockUnitAbbrev ?? "")
   // Lead the amount with its direction so INCREASE rows read distinctly from
@@ -95,10 +93,10 @@ function buildAdjustmentSubtitleLines(row: {
  * hub's properties-list section: each row is clickable; click transitions the
  * panel into `section-edit-adjustment` mode for that row.
  *
- * Row anatomy: the title packs cut / coverage cut / final-cut sequence (each
- * with its own snapshot unit) with the status badge trailing in the meta slot;
- * the subtitle stacks a labelled before/after line and the note. Units come
- * from the row's own snapshot (each cut froze its UoM at creation), not the
+ * Row anatomy: the title packs the signed quantity + coverage cut (each with
+ * its own snapshot unit); the meta slot trails the final-cut sequence next to
+ * the status badge; the subtitle stacks a before/after line and the note. Units
+ * come from the row's own snapshot (each cut froze its UoM at creation), not the
  * parent inventory's current unit.
  *
  * Reuses the same query key the inline `InventoryAdjustmentsSection` does, so
@@ -130,7 +128,12 @@ export function InventoryHubAdjustmentsListSection({
           key={row.id}
           primary={buildAdjustmentTitle(row)}
           secondaryLines={buildAdjustmentSubtitleLines(row)}
-          meta={<AdjustmentStatusBadge status={row.status} />}
+          meta={
+            <span className="flex items-center gap-2">
+              {row.finalSequence !== null ? <span>#{row.finalSequence}</span> : null}
+              <AdjustmentStatusBadge status={row.status} />
+            </span>
+          }
           onClick={() => enterAdjustmentEditFromContext(row)}
           ariaLabel={`Edit adjustment ${row.adjustmentNumber}`}
         />
