@@ -12,18 +12,18 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import {
-  validateDeletePendingCutLogInput,
-  validateUpdatePendingCutLogInput,
-} from "@/app/api/cut-logs/_validators"
+  validateDeletePendingAdjustmentInput,
+  validateUpdatePendingAdjustmentInput,
+} from "@/app/api/adjustments/_validators"
 
 type RouteContext = {
-  params: Promise<{ id: string; cutLogId: string }>
+  params: Promise<{ id: string; adjustmentId: string }>
 }
 
 /**
- * PATCH /api/inventory/[id]/cut-logs/[cutLogId]
+ * PATCH /api/inventory/[id]/adjustments/[adjustmentId]
  *
- * Synchronous update for a single pending cut log under the inventory
+ * Synchronous update for a single pending adjustment under the inventory
  * scope. Calls `updatePendingAdjustmentUseCase` with
  * `{ scope: { kind: "inventory", inventoryId } }`. The use case loads
  * the row, asserts scope membership, runs the PENDING + OCC gates,
@@ -35,28 +35,28 @@ type RouteContext = {
 export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     rateLimit: {
-      scope: "inventory.cut-logs.pending.update",
+      scope: "inventory.adjustments.pending.update",
       limit: 1200,
       windowMs: 10 * 60 * 1000,
-      route: "/api/inventory/[id]/cut-logs/[cutLogId]",
+      route: "/api/inventory/[id]/adjustments/[adjustmentId]",
     },
   })
   if (access instanceof Response) return access
 
   try {
-    const { id: rawId, cutLogId: rawCutLogId } = await params
+    const { id: rawId, adjustmentId: rawAdjustmentId } = await params
     const inventoryId = parseUuidParam(rawId, "id")
-    const cutLogId = parseUuidParam(rawCutLogId, "cutLogId")
+    const adjustmentId = parseUuidParam(rawAdjustmentId, "adjustmentId")
 
     const body = (await request.json()) as Record<string, unknown>
     const { input, mutation } = parseMutationEnvelope(
       body,
-      validateUpdatePendingCutLogInput,
+      validateUpdatePendingAdjustmentInput,
       { requireExpectedUpdatedAt: true },
     )
 
     const receipt = await enforceMutationReceipt({
-      scope: "inventory.cut-logs.pending.update",
+      scope: "inventory.adjustments.pending.update",
       request,
       access,
       mutation,
@@ -67,16 +67,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Pending cut log updated (inv-side)",
-        action: "inventory.cut-logs.pending.update",
-        route: "/api/inventory/[id]/cut-logs/[cutLogId]",
-        entityType: "flooringCutLog",
-        entityId: cutLogId,
+        message: "Pending adjustment updated (inv-side)",
+        action: "inventory.adjustments.pending.update",
+        route: "/api/inventory/[id]/adjustments/[adjustmentId]",
+        entityType: "flooringAdjustment",
+        entityId: adjustmentId,
       },
       () =>
         updatePendingAdjustmentUseCase({
           scope: { kind: "inventory", inventoryId },
-          adjustmentId: cutLogId,
+          adjustmentId: adjustmentId,
           expectedUpdatedAt: mutation.expectedUpdatedAt!,
           patch: input.patch,
         }),
@@ -84,7 +84,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     const responseBody = result
     await finalizeMutationReceipt({
-      scope: "inventory.cut-logs.pending.update",
+      scope: "inventory.adjustments.pending.update",
       access,
       mutation,
       responseStatus: 200,
@@ -97,9 +97,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 /**
- * DELETE /api/inventory/[id]/cut-logs/[cutLogId]
+ * DELETE /api/inventory/[id]/adjustments/[adjustmentId]
  *
- * Synchronous delete for a single pending cut log under the inventory
+ * Synchronous delete for a single pending adjustment under the inventory
  * scope. Same gates as the WO-side delete (PENDING-only + OCC); final
  * cuts are voided via /void instead. Returns 200 with the parent
  * inventory's recomputed `totalCutSum`.
@@ -107,28 +107,28 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 export async function DELETE(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     rateLimit: {
-      scope: "inventory.cut-logs.pending.delete",
+      scope: "inventory.adjustments.pending.delete",
       limit: 600,
       windowMs: 10 * 60 * 1000,
-      route: "/api/inventory/[id]/cut-logs/[cutLogId]",
+      route: "/api/inventory/[id]/adjustments/[adjustmentId]",
     },
   })
   if (access instanceof Response) return access
 
   try {
-    const { id: rawId, cutLogId: rawCutLogId } = await params
+    const { id: rawId, adjustmentId: rawAdjustmentId } = await params
     const inventoryId = parseUuidParam(rawId, "id")
-    const cutLogId = parseUuidParam(rawCutLogId, "cutLogId")
+    const adjustmentId = parseUuidParam(rawAdjustmentId, "adjustmentId")
 
     const body = (await request.json()) as Record<string, unknown>
     const { input: _input, mutation } = parseMutationEnvelope(
       body,
-      validateDeletePendingCutLogInput,
+      validateDeletePendingAdjustmentInput,
       { requireExpectedUpdatedAt: true },
     )
 
     const receipt = await enforceMutationReceipt({
-      scope: "inventory.cut-logs.pending.delete",
+      scope: "inventory.adjustments.pending.delete",
       request,
       access,
       mutation,
@@ -139,23 +139,23 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Pending cut log deleted (inv-side)",
-        action: "inventory.cut-logs.pending.delete",
-        route: "/api/inventory/[id]/cut-logs/[cutLogId]",
-        entityType: "flooringCutLog",
-        entityId: cutLogId,
+        message: "Pending adjustment deleted (inv-side)",
+        action: "inventory.adjustments.pending.delete",
+        route: "/api/inventory/[id]/adjustments/[adjustmentId]",
+        entityType: "flooringAdjustment",
+        entityId: adjustmentId,
       },
       () =>
         deletePendingAdjustmentUseCase({
           scope: { kind: "inventory", inventoryId },
-          adjustmentId: cutLogId,
+          adjustmentId: adjustmentId,
           expectedUpdatedAt: mutation.expectedUpdatedAt!,
         }),
     )
 
     const responseBody = result
     await finalizeMutationReceipt({
-      scope: "inventory.cut-logs.pending.delete",
+      scope: "inventory.adjustments.pending.delete",
       access,
       mutation,
       responseStatus: 200,

@@ -75,9 +75,9 @@ function serverItemById(rows: WorkOrderMaterialItemRow[]) {
   return map
 }
 
-// Product is editable until the item has cut logs, so productId joins
+// Product is editable until the item has adjustments, so productId joins
 // (quantity, notes) in the modified-row diff identity. The server re-checks
-// the cut-log lock before persisting a product change.
+// the adjustment lock before persisting a product change.
 function itemsDiffer(local: WorkOrderMaterialItemLocal, server: WorkOrderMaterialItemRow) {
   return (
     local.productId !== server.productId ||

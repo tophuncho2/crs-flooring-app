@@ -4,4 +4,4 @@ export {
   type UseInventoryHubSidePanelOptions,
 } from "./use-inventory-hub-side-panel"
 export type { HubMode } from "./types"
-export type { HubCutLogsController } from "./use-hub-cut-logs-query"
+export type { HubAdjustmentsController } from "./use-hub-adjustments-query"

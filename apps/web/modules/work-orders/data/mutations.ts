@@ -62,9 +62,9 @@ export async function saveWorkOrderMaterialItemsSectionRequest(
   )
 }
 
-// Cut-log mutations live at `@/modules/cut-logs/data/mutations` (the
+// Adjustment mutations live at `@/modules/adjustments/data/mutations` (the
 // shared peer module consumed by both work-orders and inventory record
-// views). They were extracted in the cut-logs FE sweep; this file no
+// views). They were extracted in the adjustments FE sweep; this file no
 // longer carries them.
 
 export async function listEligibleInventoryRequest(args: {

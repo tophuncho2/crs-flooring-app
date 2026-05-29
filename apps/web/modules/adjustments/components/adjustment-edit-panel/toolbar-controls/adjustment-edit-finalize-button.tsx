@@ -1,7 +1,7 @@
 "use client"
 
 import type { FlooringInventoryAdjustmentStatus } from "@builders/domain"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
+import type { AdjustmentEditPanelController } from "@/modules/adjustments/controllers/adjustment-side-panel"
 
 const FINALIZE_BUTTON_CLASS_NAME = [
   "rounded-lg px-4 py-2 text-sm font-semibold transition disabled:opacity-60",
@@ -12,25 +12,25 @@ const FINALIZE_BUTTON_CLASS_NAME = [
 ].join(" ")
 
 /**
- * Cut-log-specific finalize button. No shared primitive: finalize is a
- * domain action unique to cut logs. Renders ONLY when the row is PENDING
+ * Adjustment-specific finalize button. No shared primitive: finalize is a
+ * domain action unique to adjustments. Renders ONLY when the row is PENDING
  * — shares one toolbar slot with the void button, which takes over once
  * the row is finalized. Within PENDING, disabled while saving or dirty.
  * `disabled` force-disables it (e.g. while a picker takeover owns the body).
  */
-export function CutLogEditFinalizeButton({
+export function AdjustmentEditFinalizeButton({
   controller,
   mode,
   disabled = false,
 }: {
-  controller: CutLogEditPanelController
+  controller: AdjustmentEditPanelController
   mode: "create" | "edit"
   disabled?: boolean
 }) {
   if (mode !== "edit") return null
 
-  const cutLog = controller.open?.mode === "edit" ? controller.open.cutLog : null
-  const status = (cutLog?.status ?? null) as FlooringInventoryAdjustmentStatus | null
+  const adjustment = controller.open?.mode === "edit" ? controller.open.adjustment : null
+  const status = (adjustment?.status ?? null) as FlooringInventoryAdjustmentStatus | null
   if (status !== "PENDING") return null
 
   const isDisabled = disabled || controller.isSaving || controller.isDirty

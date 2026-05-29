@@ -6,7 +6,7 @@ import {
 } from "@builders/domain"
 import { requestJson } from "@/transport/http"
 
-export const CUT_LOGS_LIST_QUERY_KEY = ["cut-logs", "list"] as const
+export const ADJUSTMENTS_LIST_QUERY_KEY = ["adjustments", "list"] as const
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -29,7 +29,7 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
-export function parseCutLogsListInputFromSearchParams(
+export function parseAdjustmentsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<InventoryAdjustmentListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
@@ -50,7 +50,7 @@ export function parseCutLogsListInputFromSearchParams(
   }
 }
 
-function buildCutLogsListSearchString(input: ListInput<InventoryAdjustmentListFilters>): string {
+function buildAdjustmentsListSearchString(input: ListInput<InventoryAdjustmentListFilters>): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
   const values = (input.filters?.warehouseId ?? []) as ReadonlyArray<string>
@@ -60,11 +60,11 @@ function buildCutLogsListSearchString(input: ListInput<InventoryAdjustmentListFi
   return params.toString()
 }
 
-export async function listCutLogsRequest(
+export async function listAdjustmentsRequest(
   input: ListInput<InventoryAdjustmentListFilters>,
 ): Promise<ListOutput<EnrichedInventoryAdjustmentRow>> {
-  const queryString = buildCutLogsListSearchString(input)
-  const url = queryString ? `/api/cut-logs?${queryString}` : "/api/cut-logs"
+  const queryString = buildAdjustmentsListSearchString(input)
+  const url = queryString ? `/api/adjustments?${queryString}` : "/api/adjustments"
   return requestJson<ListOutput<EnrichedInventoryAdjustmentRow>>(url, {
     method: "GET",
     headers: { Accept: "application/json" },

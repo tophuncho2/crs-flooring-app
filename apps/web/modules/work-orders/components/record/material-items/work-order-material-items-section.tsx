@@ -18,13 +18,13 @@ import {
   type WorkOrderMaterialItemLocal,
 } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import {
-  CutLogEditPanel,
-  useCutLogEditPanel,
-  type CutLogPanelPatch,
-} from "@/modules/cut-logs"
+  AdjustmentEditPanel,
+  useAdjustmentEditPanel,
+  type AdjustmentPanelPatch,
+} from "@/modules/adjustments"
 import { useInventoryHubSidePanel } from "@/modules/inventory/controllers/inventory-hub-side-panel"
 import { InventoryHubSidePanel } from "@/modules/inventory/components/side-panel/hub"
-import { WorkOrderCutLogRow } from "./work-order-cut-log-row"
+import { WorkOrderAdjustmentRow } from "./work-order-adjustment-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import { MaterialItemRemoveButton } from "./row-controls"
 
@@ -40,18 +40,18 @@ const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> =
 export function WorkOrderMaterialItemsSection({
   workOrder,
   materialItems,
-  cutLogsByWorkOrderItemId,
+  adjustmentsByWorkOrderItemId,
   publishMaterialItems,
   publishWorkOrder,
-  publishCutLogPatch,
+  publishAdjustmentPatch,
 }: {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
-  cutLogsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
+  adjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
   publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
   publishWorkOrder: (record: WorkOrderDetail) => void
-  /** Apply a single-row patch to the parent's cut-log snapshot after a panel mutation. */
-  publishCutLogPatch: (patch: CutLogPanelPatch) => void
+  /** Apply a single-row patch to the parent's adjustment snapshot after a panel mutation. */
+  publishAdjustmentPatch: (patch: AdjustmentPanelPatch) => void
 }) {
   const section = useWorkOrderMaterialItemsSection({
     workOrder,
@@ -60,26 +60,29 @@ export function WorkOrderMaterialItemsSection({
     publishWorkOrder,
   })
 
-  // Inventory hub panel for the "Hub view" jump on the cut-log edit
+  // Inventory hub panel for the "Hub view" jump on the adjustment edit
   // panel. No initial inventory — the panel opens on demand for whatever
-  // cut log the user clicked; the hub fetches `InventoryDetail` via its
-  // own query path. publishCutLogPatch is shared so a hub-driven cut-log
+  // adjustment the user clicked; the hub fetches `InventoryDetail` via its
+  // own query path. publishAdjustmentPatch is shared so a hub-driven adjustment
   // mutation also refreshes the WO-side snapshot through this panel.
   const inventoryHubPanel = useInventoryHubSidePanel({
     initialInventory: null,
-    publishCutLogPatch,
+    publishAdjustmentPatch,
   })
 
-  // Route a successful cut-log create from the WO panel directly into
-  // the inventory-hub cut-log edit panel — same surface the WO edit
-  // affordance uses (`handleOpenEdit`). The cut-log panel closes itself;
+  // Route a successful adjustment create from the WO panel directly into
+  // the inventory-hub adjustment edit panel — same surface the WO edit
+  // affordance uses (`handleOpenEdit`). The adjustment panel closes itself;
   // the hub picks up the new row hydrated with WO/WOMI/warehouse labels
   // so the read-only header summary matches the inv-side experience.
-  const handleCutLogCreated = useCallback(
-    (cutLog: InventoryAdjustmentRow, workOrderItemId: string) => {
+  const handleAdjustmentCreated = useCallback(
+    (adjustment: InventoryAdjustmentRow, workOrderItemId: string | null) => {
+      // WO-side create always carries a WOMI id; the null case is the manual
+      // (inventory-hub) variant, which never routes through this section.
+      if (!workOrderItemId) return
       const item = section.items.find((i) => i.id === workOrderItemId)
-      inventoryHubPanel.openForCutLogEdit({
-        ...cutLog,
+      inventoryHubPanel.openForAdjustmentEdit({
+        ...adjustment,
         workOrderItemId,
         workOrderNumber: workOrder.workOrderNumber,
         workOrderItemProductLabel: item?.productName || null,
@@ -94,12 +97,12 @@ export function WorkOrderMaterialItemsSection({
     ],
   )
 
-  const cutLogPanel = useCutLogEditPanel({
+  const adjustmentPanel = useAdjustmentEditPanel({
     scope: { kind: "work-order", workOrderId: workOrder.id },
     warehouseId: workOrder.warehouseId,
     canCreate: true,
-    publish: publishCutLogPatch,
-    onCreated: handleCutLogCreated,
+    publish: publishAdjustmentPatch,
+    onCreated: handleAdjustmentCreated,
   })
 
   const sectionBusy = section.isSaving
@@ -109,16 +112,16 @@ export function WorkOrderMaterialItemsSection({
   const editable = !sectionBusy
 
   const handleOpenEdit = useCallback(
-    (workOrderItemId: string, cutLog: InventoryAdjustmentRow) => {
+    (workOrderItemId: string, adjustment: InventoryAdjustmentRow) => {
       // Editing is hub-driven (mirrors the inventory record view's row
       // click) — opens the InventoryHubSidePanel directly at
-      // section-edit-cut-log mode for this cut log. The WO-side data
+      // section-edit-adjustment mode for this adjustment. The WO-side data
       // layer returns plain InventoryAdjustmentRow; hydrate WO/WOMI/warehouse labels
       // from in-scope state so the hub's read-only summary stays
       // populated symmetrically with the inv side.
       const item = section.items.find((i) => i.id === workOrderItemId)
-      inventoryHubPanel.openForCutLogEdit({
-        ...cutLog,
+      inventoryHubPanel.openForAdjustmentEdit({
+        ...adjustment,
         workOrderItemId,
         workOrderNumber: workOrder.workOrderNumber,
         workOrderItemProductLabel: item?.productName || null,
@@ -135,43 +138,45 @@ export function WorkOrderMaterialItemsSection({
 
   const handleCreateNew = useCallback(
     (workOrderItemId: string) => {
-      // Cut logs scope inventory search to the parent material item's product —
-      // a cut log can only reference inventory of the same product.
+      // Adjustments scope inventory search to the parent material item's product —
+      // a adjustment can only reference inventory of the same product.
       const productId =
         section.items.find((item) => item.id === workOrderItemId)?.productId ?? ""
-      cutLogPanel.openPanel({
+      adjustmentPanel.openPanel({
         mode: "create",
+        variant: "cut",
         workOrderItemId,
         productId,
         workOrderNumber: workOrder.workOrderNumber,
         warehouseName: workOrder.warehouseName,
       })
     },
-    [cutLogPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
+    [adjustmentPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
   )
 
   const handleDuplicate = useCallback(
-    (workOrderItemId: string, cutLog: InventoryAdjustmentRow) => {
+    (workOrderItemId: string, adjustment: InventoryAdjustmentRow) => {
       // UI-only "duplicate": open the create panel with the source row's
       // inventory item pre-selected. No use case fires — the operator must
-      // still save the new cut log to materialize it (and only then does
+      // still save the new adjustment to materialize it (and only then does
       // inventory-balance recalculation run, via the normal create path).
       const productId =
         section.items.find((item) => item.id === workOrderItemId)?.productId ?? ""
-      cutLogPanel.openPanel({
+      adjustmentPanel.openPanel({
         mode: "create",
+        variant: "cut",
         workOrderItemId,
         productId,
         workOrderNumber: workOrder.workOrderNumber,
         warehouseName: workOrder.warehouseName,
         presetInventory: {
-          id: cutLog.inventoryId,
-          label: cutLog.inventoryItem,
-          stockUnitAbbrev: cutLog.stockUnitAbbrev,
+          id: adjustment.inventoryId,
+          label: adjustment.inventoryItem,
+          stockUnitAbbrev: adjustment.stockUnitAbbrev,
         },
       })
     },
-    [cutLogPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
+    [adjustmentPanel, section.items, workOrder.workOrderNumber, workOrder.warehouseName],
   )
 
   function renderParentCell(
@@ -190,7 +195,7 @@ export function WorkOrderMaterialItemsSection({
         // `item.hasInventoryAdjustments`, so the cell flips the instant a row
         // is saved — without a page refresh.
         const hasInventoryAdjustments =
-          (cutLogsByWorkOrderItemId[item.id] ?? []).length > 0
+          (adjustmentsByWorkOrderItemId[item.id] ?? []).length > 0
         return isLocalOnlyRecordRow(item.id) || !hasInventoryAdjustments ? (
           <ProductCategoryPicker
             productId={item.productId || null}
@@ -289,7 +294,7 @@ export function WorkOrderMaterialItemsSection({
         empty={<GridEmpty>No material items yet.</GridEmpty>}
         renderRow={(row) => {
           const isExpanded = allExpanded
-          const cutLogs = cutLogsByWorkOrderItemId[row.id] ?? []
+          const adjustments = adjustmentsByWorkOrderItemId[row.id] ?? []
           return (
             <Fragment>
               <ExpandableRow<WorkOrderMaterialItemLocal>
@@ -303,12 +308,12 @@ export function WorkOrderMaterialItemsSection({
                 {isExpanded ? (
                   isLocalOnlyRecordRow(row.id) ? (
                     <UnsavedParentMessage>
-                      Save this material item to add cut logs.
+                      Save this material item to add adjustments.
                     </UnsavedParentMessage>
                   ) : (
-                    <WorkOrderCutLogRow
+                    <WorkOrderAdjustmentRow
                       workOrderItemId={row.id}
-                      serverRows={cutLogs}
+                      serverRows={adjustments}
                       warehouseName={workOrder.warehouseName}
                       onOpenEdit={handleOpenEdit}
                       onCreateNew={handleCreateNew}
@@ -323,8 +328,8 @@ export function WorkOrderMaterialItemsSection({
         }}
       />
 
-      <CutLogEditPanel
-        controller={cutLogPanel}
+      <AdjustmentEditPanel
+        controller={adjustmentPanel}
         onOpenInventory={(id) => inventoryHubPanel.openForView(id)}
       />
       <InventoryHubSidePanel controller={inventoryHubPanel} />

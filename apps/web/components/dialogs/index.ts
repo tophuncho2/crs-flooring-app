@@ -1,2 +1,2 @@
 export * from "./confirm-dialog"
-export * from "./cut-log-action-dialog"
+export * from "./adjustment-action-dialog"

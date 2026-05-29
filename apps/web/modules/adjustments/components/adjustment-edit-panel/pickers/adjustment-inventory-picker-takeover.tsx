@@ -11,7 +11,7 @@ import {
   INVENTORY_OPTIONS_SEARCH_QUERY_KEY,
   searchInventoryOptionsRequest,
 } from "@/modules/inventory/data/inventory-options-request"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
+import type { AdjustmentEditPanelController } from "@/modules/adjustments/controllers/adjustment-side-panel"
 
 function toPickerOption(option: InventoryOption): HubSidePanelPickerOption {
   // Subtitles disambiguate same-product rows on one warehouse: location
@@ -31,21 +31,22 @@ function toPickerOption(option: InventoryOption): HubSidePanelPickerOption {
 }
 
 /**
- * Body-takeover inventory picker for the cut-log create form. Scoped to
+ * Body-takeover inventory picker for the adjustment create form. Scoped to
  * the parent WO's warehouse + the parent WOMI's product, narrowed
  * further by the panel's free-text location filter. Commit hands the
  * full option to the controller so form id + trigger label move in one
  * render — same atomic write the popover picker fix introduced.
  */
-export function CutLogInventoryPickerTakeover({
+export function AdjustmentInventoryPickerTakeover({
   controller,
 }: {
-  controller: CutLogEditPanelController
+  controller: AdjustmentEditPanelController
 }) {
   const { warehouseId, form, local, open, closePicker, selectInventoryOption } =
     controller
 
-  const productId = open?.mode === "create" ? open.productId || null : null
+  const productId =
+    open?.mode === "create" && open.variant === "cut" ? open.productId || null : null
   const location = local.locationFilter || null
 
   const bucketKey = useMemo(

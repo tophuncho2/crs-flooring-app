@@ -358,7 +358,7 @@ export function usePropertyHubSidePanel(options: UsePropertyHubSidePanelOptions 
           onCreated?.(result)
           // Stay open: transition to section-edit for the new record so
           // the operator can keep refining what they just authored.
-          // Mirrors the cut-log create→edit precedent. Reset other slices
+          // Mirrors the adjustment create→edit precedent. Reset other slices
           // first so they're clean when re-activated; hydrate the target
           // slice with the just-created record so its baseline matches
           // the server state.

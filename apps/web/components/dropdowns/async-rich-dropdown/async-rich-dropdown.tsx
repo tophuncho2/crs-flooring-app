@@ -60,7 +60,7 @@ export type AsyncRichDropdownProps = {
   /**
    * Render each subtitle on its own line instead of joining them with " · ".
    * Opt-in so dropdowns that pack multiple parts into one line (inventory,
-   * cut logs) stay unchanged; template pickers use it for a stacked card.
+   * adjustments) stay unchanged; template pickers use it for a stacked card.
    */
   stackSubtitles?: boolean
 }

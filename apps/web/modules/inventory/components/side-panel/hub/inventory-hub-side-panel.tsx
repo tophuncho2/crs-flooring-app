@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  HubSidePanelAddButton,
   HubSidePanelDuplicateButton,
   HubSidePanelHubViewButton,
   HubSidePanelShell,
@@ -9,9 +10,10 @@ import type {
   HubMode,
   InventoryHubSidePanelController,
 } from "@/modules/inventory/controllers/inventory-hub-side-panel"
-import { InventoryHubCutLogEditSection } from "./inventory-hub-cut-log-edit-section"
-import { InventoryHubCutLogsListSection } from "./inventory-hub-cut-logs-list-section"
-import { InventoryHubCutLogWorkOrderPicker } from "./inventory-hub-cut-log-work-order-picker"
+import { InventoryHubAdjustmentCreateSection } from "./inventory-hub-adjustment-create-section"
+import { InventoryHubAdjustmentEditSection } from "./inventory-hub-adjustment-edit-section"
+import { InventoryHubAdjustmentsListSection } from "./inventory-hub-adjustments-list-section"
+import { InventoryHubAdjustmentWorkOrderPicker } from "./inventory-hub-adjustment-work-order-picker"
 import { InventoryHubInventoryDuplicateSection } from "./inventory-hub-inventory-duplicate-section"
 import { InventoryHubInventoryEditSection } from "./inventory-hub-inventory-edit-section"
 import { InventoryHubViewSection } from "./inventory-hub-view-section"
@@ -32,14 +34,14 @@ export type InventoryHubSidePanelProps = {
  * Right-anchored inventory hub side panel. Mirrors the property hub
  * pattern at `modules/properties/components/side-panel/hub/`:
  *
- *   - view: read-only cells card on top, infinite-scroll cut-logs list below
+ *   - view: read-only cells card on top, infinite-scroll adjustments list below
  *   - section-edit-inventory: editable cells with archive / location /
  *           internalNotes mutations; roll# / dye lot / note stay
  *           UI-blocked
- *   - section-edit-cut-log: cut-log readonly summary + cut / notes /
+ *   - section-edit-adjustment: adjustment readonly summary + cut / notes /
  *           waste editable cells; toolbar exposes Save / Discard /
  *           Finalize / Void / Delete
- *   - picker-takeover: body swaps to a HubSidePanelPicker; the cut-log
+ *   - picker-takeover: body swaps to a HubSidePanelPicker; the adjustment
  *           relink header stays sticky above via `useInventoryHubChrome`
  *
  * Per-mode chrome (title + topToolbar) lives in `useInventoryHubChrome`
@@ -59,10 +61,11 @@ export function InventoryHubSidePanel({
     isErrorInventory,
     exitToView,
     enterDuplicateFromView,
+    enterAdjustmentCreate,
     isSaving,
   } = controller
 
-  const { title, topToolbar, isCutLogPickerActive } = useInventoryHubChrome(controller, {
+  const { title, topToolbar, isAdjustmentPickerActive } = useInventoryHubChrome(controller, {
     onBackToStarting,
   })
 
@@ -75,17 +78,21 @@ export function InventoryHubSidePanel({
   const showHubViewButton =
     effectiveModeKind === "section-edit-inventory" ||
     effectiveModeKind === "section-duplicate-inventory" ||
-    effectiveModeKind === "section-edit-cut-log"
+    effectiveModeKind === "section-edit-adjustment"
 
   // "Duplicate inventory item" sits in the title row next to the close (X),
   // shown only in view mode once a row is loaded. Clicking it seeds the
   // duplicate draft and swaps to section-duplicate-inventory.
   const showDuplicateButton = mode.kind === "view" && inventory !== null
 
+  // "Add adjustment" sits in the title row too, shown in view mode once a row
+  // is loaded. Opens the manual (non-WO) INCREASE/DEDUCTION create form.
+  const showAddAdjustmentButton = mode.kind === "view" && inventory !== null
+
   // Fetched callers (e.g. work-orders) may render before the inventory
   // detail query resolves. Show loading / error placeholders only where the
   // inventory snapshot is actually required: the Inventory cells tab and
-  // section-edit-inventory. The Cut Logs tab + cut-log edit don't depend on
+  // section-edit-inventory. The Adjustments tab + adjustment edit don't depend on
   // the snapshot (the rows carry everything they need).
   const needsInventory =
     (mode.kind === "view" && viewTab === "inventory") ||
@@ -103,6 +110,13 @@ export function InventoryHubSidePanel({
       titleEnd={
         <>
           {showHubViewButton ? <HubSidePanelHubViewButton onClick={exitToView} /> : null}
+          {showAddAdjustmentButton ? (
+            <HubSidePanelAddButton
+              onClick={enterAdjustmentCreate}
+              disabled={isSaving}
+              label="+ Adjustment"
+            />
+          ) : null}
           {showDuplicateButton ? (
             <HubSidePanelDuplicateButton
               onClick={enterDuplicateFromView}
@@ -113,17 +127,17 @@ export function InventoryHubSidePanel({
         </>
       }
     >
-      {isCutLogPickerActive ? (
-        <InventoryHubCutLogWorkOrderPicker controller={controller} />
+      {isAdjustmentPickerActive ? (
+        <InventoryHubAdjustmentWorkOrderPicker controller={controller} />
       ) : showLoadingPlaceholder ? (
         <p className="px-1 text-sm text-[var(--foreground)]/65">Loading inventory…</p>
       ) : showErrorPlaceholder ? (
         <p className="px-1 text-sm text-rose-700">Could not load inventory.</p>
       ) : mode.kind === "view" ? (
-        viewTab === "cutLogs" ? (
+        viewTab === "adjustments" ? (
           <div className="flex h-full min-h-0 flex-col">
             <div className="min-h-0 flex-1">
-              <InventoryHubCutLogsListSection controller={controller} />
+              <InventoryHubAdjustmentsListSection controller={controller} />
             </div>
           </div>
         ) : (
@@ -133,8 +147,10 @@ export function InventoryHubSidePanel({
         <InventoryHubInventoryEditSection controller={controller} />
       ) : mode.kind === "section-duplicate-inventory" ? (
         <InventoryHubInventoryDuplicateSection controller={controller} />
-      ) : mode.kind === "section-edit-cut-log" ? (
-        <InventoryHubCutLogEditSection controller={controller} />
+      ) : mode.kind === "section-edit-adjustment" ? (
+        <InventoryHubAdjustmentEditSection controller={controller} />
+      ) : mode.kind === "section-create-adjustment" ? (
+        <InventoryHubAdjustmentCreateSection controller={controller} />
       ) : null}
     </HubSidePanelShell>
   )

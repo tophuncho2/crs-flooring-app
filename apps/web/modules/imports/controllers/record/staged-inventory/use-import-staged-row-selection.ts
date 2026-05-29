@@ -11,7 +11,7 @@ import { useMarkForImportMutation } from "./mutations/use-mark-for-import-mutati
  * batch fire, gated by section dirty/busy state.
  *
  * Shape mirrors the future shared `useBatchSelectionSection` — when
- * WOMI/cut-logs adopts batch selection, `useMarkForImportMutation` becomes
+ * WOMI/adjustments adopts batch selection, `useMarkForImportMutation` becomes
  * one of N action mutations supplied to a generic version of this hook.
  */
 export function useImportStagedRowSelection({

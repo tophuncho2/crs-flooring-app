@@ -9,7 +9,7 @@ export type MaterialItemsExpandToggleProps = {
 }
 
 // Section-header expand/collapse-all toggle. Reveals each material item's
-// cut-log sub-grid when expanded. Renders nothing when the section is empty.
+// adjustment sub-grid when expanded. Renders nothing when the section is empty.
 export function MaterialItemsExpandToggle({
   itemsCount,
   allExpanded,

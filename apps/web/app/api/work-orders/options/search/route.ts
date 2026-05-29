@@ -6,8 +6,8 @@ import { validateWorkOrderOptionsSearchQuery } from "../../_validators"
 /**
  * GET /api/work-orders/options/search
  *
- * Warehouse-scoped async picker for the cut-log relink "Work order" dropdown.
- * Required `warehouseId` filter mirrors the cut log's frozen warehouse
+ * Warehouse-scoped async picker for the adjustment relink "Work order" dropdown.
+ * Required `warehouseId` filter mirrors the adjustment's frozen warehouse
  * snapshot so users can't pick a WO in a different warehouse than the cut
  * log was stamped against.
  */

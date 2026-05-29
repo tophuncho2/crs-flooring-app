@@ -60,8 +60,8 @@ export async function POST(request: Request, context: RouteContext) {
       () => duplicateInventoryUseCase(id, input),
     )
 
-    // Return the full detail (row + cutLogs) so the hub can re-seed its view on
-    // the brand-new row. A fresh duplicate always has zero cut logs.
+    // Return the full detail (row + adjustments) so the hub can re-seed its view on
+    // the brand-new row. A fresh duplicate always has zero adjustments.
     const detail = (await getInventoryDetailById(result.id)) ?? result
     const responseBody = { inventory: detail }
     await finalizeMutationReceipt({

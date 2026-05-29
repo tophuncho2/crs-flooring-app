@@ -2,26 +2,26 @@
 
 import { useMemo, type ReactNode } from "react"
 import type { InventoryAdjustmentRow } from "@builders/domain"
-import { renderCutLogReadOnlyCell } from "@/modules/cut-logs"
+import { renderAdjustmentReadOnlyCell } from "@/modules/adjustments"
 import { Grid, GridEmpty } from "@/components/grid"
-import { CutLogRowToolbar } from "./toolbar-controls"
-import { CutLogDuplicateButton } from "./row-controls/sub-controls"
-import { WORK_ORDER_CUT_LOG_LAYOUT } from "./work-order-cut-log-row-layout"
+import { AdjustmentRowToolbar } from "./toolbar-controls"
+import { AdjustmentDuplicateButton } from "./row-controls/sub-controls"
+import { WORK_ORDER_ADJUSTMENT_LAYOUT } from "./work-order-adjustment-row-layout"
 
-export type WorkOrderCutLogRowProps = {
+export type WorkOrderAdjustmentRowProps = {
   workOrderItemId: string
   serverRows: ReadonlyArray<InventoryAdjustmentRow>
   /**
-   * Parent WO's warehouse name. The WO-side cut-log read returns plain
+   * Parent WO's warehouse name. The WO-side adjustment read returns plain
    * `InventoryAdjustmentRow` with no joined warehouse name, so we hydrate each row
-   * here before handing the array to `Grid`. Every cut log on a WO
+   * here before handing the array to `Grid`. Every adjustment on a WO
    * shares the WO's warehouse by construction (the snapshot column
    * matches the parent WO's warehouse), so this is the snapshot value
    * the `warehouse` column should render.
    */
   warehouseName: string
-  /** Open the edit panel for a saved cut log. */
-  onOpenEdit: (workOrderItemId: string, cutLog: InventoryAdjustmentRow) => void
+  /** Open the edit panel for a saved adjustment. */
+  onOpenEdit: (workOrderItemId: string, adjustment: InventoryAdjustmentRow) => void
   /** Open the edit panel in create mode for this WOMI. */
   onCreateNew: (workOrderItemId: string) => void
   /**
@@ -29,22 +29,22 @@ export type WorkOrderCutLogRowProps = {
    * UI-only affordance — does not invoke a duplicate use case, so no
    * inventory-balance recalculation runs until the operator saves.
    */
-  onDuplicate: (workOrderItemId: string, cutLog: InventoryAdjustmentRow) => void
+  onDuplicate: (workOrderItemId: string, adjustment: InventoryAdjustmentRow) => void
   /**
    * True when the parent material-items section is mid-save. Used to dim
-   * the rows + disable the "+ Add Cut Log" button so the user can't open
+   * the rows + disable the "+ Add Adjustment" button so the user can't open
    * the panel while a section save is in flight.
    */
   isSectionBusy: boolean
 }
 
 /**
- * Per-WOMI cut-log display. Pure read-only — every row is a click target
+ * Per-WOMI adjustment display. Pure read-only — every row is a click target
  * that opens the canonical right-anchored edit panel. The panel owns the
  * full control stack (edit, save, finalize, void, delete); this component
  * is just the list view.
  */
-export function WorkOrderCutLogRow({
+export function WorkOrderAdjustmentRow({
   workOrderItemId,
   serverRows,
   warehouseName,
@@ -52,13 +52,13 @@ export function WorkOrderCutLogRow({
   onCreateNew,
   onDuplicate,
   isSectionBusy,
-}: WorkOrderCutLogRowProps) {
+}: WorkOrderAdjustmentRowProps) {
   const rows = useMemo<InventoryAdjustmentRow[]>(
     () => serverRows.map((row) => ({ ...row, warehouseName })),
     [serverRows, warehouseName],
   )
 
-  const renderCell = useMemo(() => renderCutLogReadOnlyCell({}), [])
+  const renderCell = useMemo(() => renderAdjustmentReadOnlyCell({}), [])
 
   function renderControl(
     control: { key: string; kind: string },
@@ -66,7 +66,7 @@ export function WorkOrderCutLogRow({
   ): ReactNode {
     if (control.kind === "actions") {
       return (
-        <CutLogDuplicateButton
+        <AdjustmentDuplicateButton
           isPending={row.status === "PENDING"}
           isSectionBusy={isSectionBusy}
           onClick={() => onDuplicate(workOrderItemId, row)}
@@ -80,15 +80,15 @@ export function WorkOrderCutLogRow({
     <div className="space-y-3 border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
       <Grid<InventoryAdjustmentRow>
         rows={rows}
-        layout={WORK_ORDER_CUT_LOG_LAYOUT}
-        empty={<GridEmpty>No cut logs yet.</GridEmpty>}
+        layout={WORK_ORDER_ADJUSTMENT_LAYOUT}
+        empty={<GridEmpty>No adjustments yet.</GridEmpty>}
         renderCell={renderCell}
         renderControl={renderControl}
         onRowClick={(row) => onOpenEdit(workOrderItemId, row)}
-        getRowAriaLabel={(row) => `Edit cut log ${row.adjustmentNumber}`}
+        getRowAriaLabel={(row) => `Edit adjustment ${row.adjustmentNumber}`}
       />
 
-      <CutLogRowToolbar
+      <AdjustmentRowToolbar
         workOrderItemId={workOrderItemId}
         isSectionBusy={isSectionBusy}
         onCreateNew={onCreateNew}

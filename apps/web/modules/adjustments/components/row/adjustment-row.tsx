@@ -2,12 +2,12 @@
 
 import type { ReactNode } from "react"
 import type { InventoryAdjustmentRow, FlooringInventoryAdjustmentStatus } from "@builders/domain"
-import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
+import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
 import { CheckboxCell } from "@/components/cells/checkbox-cell"
 import { TextCell } from "@/components/cells/text-cell"
 import { UnitCell } from "@/components/cells/unit-cell"
 import type { GridControlColumn } from "@/components/grid/contracts/grid-control-column"
-import { formatCutLogTimestamp } from "./format-cut-log-timestamp"
+import { formatAdjustmentTimestamp } from "./format-adjustment-timestamp"
 
 /**
  * Slim column descriptor accepted by the renderer. The renderer only
@@ -15,9 +15,9 @@ import { formatCutLogTimestamp } from "./format-cut-log-timestamp"
  * a `GridColumn<TRow>` from their grid layout — without forcing a type
  * dependency between the grid row shape and `InventoryAdjustmentRow`.
  */
-type CutLogColumnLike = { key: string }
+type AdjustmentColumnLike = { key: string }
 
-export type CutLogReadOnlyRenderOptions = {
+export type AdjustmentReadOnlyRenderOptions = {
   /**
    * Fallback unit label for the `cut` / `before` / `after` columns when the
    * row's snapshot fields are null (pre-snapshot rows). Post-snapshot rows
@@ -31,21 +31,21 @@ export type CutLogReadOnlyRenderOptions = {
   coverageUnitFallback?: string
 }
 
-function pickStockUnit(row: InventoryAdjustmentRow, options: CutLogReadOnlyRenderOptions): string {
+function pickStockUnit(row: InventoryAdjustmentRow, options: AdjustmentReadOnlyRenderOptions): string {
   return row.stockUnitAbbrev ?? options.stockUnitFallback ?? ""
 }
 
-function pickCoverageUnit(row: InventoryAdjustmentRow, options: CutLogReadOnlyRenderOptions): string {
+function pickCoverageUnit(row: InventoryAdjustmentRow, options: AdjustmentReadOnlyRenderOptions): string {
   return row.itemCoverageUnitAbbrev ?? options.coverageUnitFallback ?? ""
 }
 
 /**
- * Read-only cell renderer for cut-log grids. Single source of truth for the
- * cell-rendering logic that was duplicated across the inventory cut-log
+ * Read-only cell renderer for adjustment grids. Single source of truth for the
+ * cell-rendering logic that was duplicated across the inventory adjustment
  * section and the inventory historical section, and (going forward) the
- * work-order cut-log section's non-editable rows.
+ * work-order adjustment section's non-editable rows.
  *
- * Consumers pass this directly to `<Grid renderCell={renderCutLogReadOnlyCell(options)}>`.
+ * Consumers pass this directly to `<Grid renderCell={renderAdjustmentReadOnlyCell(options)}>`.
  * For editable contexts (work-order edit mode), consumers wrap this with
  * their own per-column branches and delegate to this renderer for any cell
  * that isn't currently being edited.
@@ -57,19 +57,19 @@ function pickCoverageUnit(row: InventoryAdjustmentRow, options: CutLogReadOnlyRe
  * ensuring post-snapshot rows display their frozen-at-create-time unit
  * labels even if the parent inventory's UoM was later edited.
  */
-export function renderCutLogReadOnlyCell(
-  options: CutLogReadOnlyRenderOptions = {},
+export function renderAdjustmentReadOnlyCell(
+  options: AdjustmentReadOnlyRenderOptions = {},
 ): (
-  column: CutLogColumnLike,
+  column: AdjustmentColumnLike,
   row: InventoryAdjustmentRow & { warehouseName?: string | null },
 ) => ReactNode {
   function renderReadOnlyCell(
-    column: CutLogColumnLike,
+    column: AdjustmentColumnLike,
     row: InventoryAdjustmentRow & { warehouseName?: string | null },
   ): ReactNode {
     switch (column.key) {
       case "status":
-        return <CutLogStatusBadge status={row.status as FlooringInventoryAdjustmentStatus} />
+        return <AdjustmentStatusBadge status={row.status as FlooringInventoryAdjustmentStatus} />
       case "inventoryItem":
         return (
           <TextCell
@@ -86,7 +86,7 @@ export function renderCutLogReadOnlyCell(
             ariaLabel={`${row.adjustmentNumber} location`}
           />
         )
-      case "cutLogNumber":
+      case "adjustmentNumber":
         return (
           <TextCell
             editable={false}
@@ -172,7 +172,7 @@ export function renderCutLogReadOnlyCell(
         return (
           <TextCell
             editable={false}
-            value={formatCutLogTimestamp(row.createdAt)}
+            value={formatAdjustmentTimestamp(row.createdAt)}
             ariaLabel={`${row.adjustmentNumber} created at`}
           />
         )
@@ -180,7 +180,7 @@ export function renderCutLogReadOnlyCell(
         return (
           <TextCell
             editable={false}
-            value={formatCutLogTimestamp(row.updatedAt)}
+            value={formatAdjustmentTimestamp(row.updatedAt)}
             ariaLabel={`${row.adjustmentNumber} updated at`}
           />
         )
@@ -206,10 +206,10 @@ export function renderCutLogReadOnlyCell(
  * tone+label mapping previously lived inline as `statusTone()` /
  * `rowStatusTone()` / `rowStatusLabel()` in three places.
  */
-export function renderCutLogStatusControl(
+export function renderAdjustmentStatusControl(
   control: GridControlColumn,
   row: InventoryAdjustmentRow,
 ): ReactNode {
   if (control.kind !== "status-indicator") return null
-  return <CutLogStatusBadge status={row.status as FlooringInventoryAdjustmentStatus} />
+  return <AdjustmentStatusBadge status={row.status as FlooringInventoryAdjustmentStatus} />
 }

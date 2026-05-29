@@ -73,18 +73,18 @@ export type InventoryHubStartingController = {
  * which owns the property hub's single instance the same way.
  *
  * The inventory list reuses `searchInventoryOptionsRequest` (the same endpoint
- * the cut-log inventory picker uses) — warehouse + product + location are the
+ * the adjustment inventory picker uses) — warehouse + product + location are the
  * server filters; category scopes the product picker client-side.
  */
 export function useInventoryHubStartingController(
   options: Pick<
     UseInventoryHubSidePanelOptions,
-    "publishCutLogPatch" | "onInventoryUpdated"
+    "publishAdjustmentPatch" | "onInventoryUpdated"
   >,
 ): InventoryHubStartingController {
   const hubPanel = useInventoryHubSidePanel({
     initialInventory: null,
-    publishCutLogPatch: options.publishCutLogPatch,
+    publishAdjustmentPatch: options.publishAdjustmentPatch,
     onInventoryUpdated: options.onInventoryUpdated,
   })
 

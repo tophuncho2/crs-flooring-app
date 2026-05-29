@@ -11,10 +11,10 @@ type RouteContext = {
 /**
  * GET /api/work-orders/[id]/material-items/options
  *
- * Async picker for the cut-log relink "Material item" dropdown. Scoped to
+ * Async picker for the adjustment relink "Material item" dropdown. Scoped to
  * the path-derived work order and the query-derived `productId` (the cut
  * log's frozen product snapshot) so the picker only surfaces WOMIs the
- * cut log is allowed to relink to.
+ * adjustment is allowed to relink to.
  */
 export async function GET(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request)

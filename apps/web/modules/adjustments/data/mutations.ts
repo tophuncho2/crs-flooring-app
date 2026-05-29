@@ -2,40 +2,43 @@
 
 import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
-import type { InventoryAdjustmentRow } from "@builders/domain"
+import type {
+  FlooringInventoryAdjustmentType,
+  InventoryAdjustmentRow,
+} from "@builders/domain"
 
 /**
  * URL-deriving scope discriminator. Mirrors the application-layer
- * `CutLogMutationScope` (in `@builders/application`): work-order routes
- * hang off `/api/work-orders/[id]/cut-logs/…` and inventory routes off
- * `/api/inventory/[id]/cut-logs/…`. Update / delete / void / finalize
- * accept either; create stays WO-only (cut logs are always created
+ * `AdjustmentMutationScope` (in `@builders/application`): work-order routes
+ * hang off `/api/work-orders/[id]/adjustments/…` and inventory routes off
+ * `/api/inventory/[id]/adjustments/…`. Update / delete / void / finalize
+ * accept either; create stays WO-only (adjustments are always created
  * under a WOMI in the UI) and takes a narrower input.
  */
-export type CutLogScopeUrl =
+export type AdjustmentScopeUrl =
   | { kind: "work-order"; workOrderId: string }
   | { kind: "inventory"; inventoryId: string }
 
-function basePath(scope: CutLogScopeUrl): string {
+function basePath(scope: AdjustmentScopeUrl): string {
   return scope.kind === "work-order"
-    ? `/api/work-orders/${scope.workOrderId}/cut-logs`
-    : `/api/inventory/${scope.inventoryId}/cut-logs`
+    ? `/api/work-orders/${scope.workOrderId}/adjustments`
+    : `/api/inventory/${scope.inventoryId}/adjustments`
 }
 
-export type PendingCutLogMutationResponse = {
-  cutLog: InventoryAdjustmentRow
+export type PendingAdjustmentMutationResponse = {
+  adjustment: InventoryAdjustmentRow
   inventoryId: string
   netDeducted: string
 }
 
-export type DeletePendingCutLogResponse = {
+export type DeletePendingAdjustmentResponse = {
   deletedId: string
   inventoryId: string
   netDeducted: string
 }
 
-export type FinalizeCutLogResponse = {
-  cutLog: InventoryAdjustmentRow
+export type FinalizeAdjustmentResponse = {
+  adjustment: InventoryAdjustmentRow
 }
 
 /**
@@ -43,7 +46,7 @@ export type FinalizeCutLogResponse = {
  * server verifies WOMI ownership of the WO before locking the parent
  * inventory and inserting.
  */
-export async function createPendingCutLogRequest(args: {
+export async function createPendingAdjustmentRequest(args: {
   workOrderId: string
   workOrderItemId: string
   inventoryId: string
@@ -58,8 +61,8 @@ export async function createPendingCutLogRequest(args: {
     isWaste: args.isWaste,
     notes: args.notes,
   } as Record<string, unknown>)
-  return requestJson<PendingCutLogMutationResponse>(
-    `/api/work-orders/${args.workOrderId}/cut-logs`,
+  return requestJson<PendingAdjustmentMutationResponse>(
+    `/api/work-orders/${args.workOrderId}/adjustments`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -68,9 +71,35 @@ export async function createPendingCutLogRequest(args: {
   )
 }
 
-export async function updatePendingCutLogRequest(args: {
-  scope: CutLogScopeUrl
-  cutLogId: string
+/**
+ * Create a manual (non-WO) adjustment on one inventory record. Inventory-only:
+ * the parent inventory id rides on the route path, so the body carries just the
+ * direction + amount + notes. Never WO-linked, never waste.
+ */
+export async function createManualAdjustmentRequest(args: {
+  inventoryId: string
+  adjustmentType: FlooringInventoryAdjustmentType
+  quantity: string
+  notes: string
+}) {
+  const body = withMutationMeta({
+    adjustmentType: args.adjustmentType,
+    quantity: args.quantity,
+    notes: args.notes,
+  } as Record<string, unknown>)
+  return requestJson<PendingAdjustmentMutationResponse>(
+    `/api/inventory/${args.inventoryId}/adjustments`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  )
+}
+
+export async function updatePendingAdjustmentRequest(args: {
+  scope: AdjustmentScopeUrl
+  adjustmentId: string
   expectedUpdatedAt: string
   patch: {
     quantity?: string
@@ -83,8 +112,8 @@ export async function updatePendingCutLogRequest(args: {
     { patch: args.patch } as Record<string, unknown>,
     args.expectedUpdatedAt,
   )
-  return requestJson<PendingCutLogMutationResponse>(
-    `${basePath(args.scope)}/${args.cutLogId}`,
+  return requestJson<PendingAdjustmentMutationResponse>(
+    `${basePath(args.scope)}/${args.adjustmentId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -93,14 +122,14 @@ export async function updatePendingCutLogRequest(args: {
   )
 }
 
-export async function deletePendingCutLogRequest(args: {
-  scope: CutLogScopeUrl
-  cutLogId: string
+export async function deletePendingAdjustmentRequest(args: {
+  scope: AdjustmentScopeUrl
+  adjustmentId: string
   expectedUpdatedAt: string
 }) {
   const body = withMutationMeta({} as Record<string, unknown>, args.expectedUpdatedAt)
-  return requestJson<DeletePendingCutLogResponse>(
-    `${basePath(args.scope)}/${args.cutLogId}`,
+  return requestJson<DeletePendingAdjustmentResponse>(
+    `${basePath(args.scope)}/${args.adjustmentId}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -111,15 +140,15 @@ export async function deletePendingCutLogRequest(args: {
 
 /**
  * Finalize — resource-level URL on BOTH sides. The WO finalize URL was
- * normalized in this sweep (collection-level `/cut-logs/finalize`
+ * normalized in this sweep (collection-level `/adjustments/finalize`
  * deleted) so the request shape is symmetric across WO + inv.
  */
-export async function finalizeCutLogRequest(args: {
-  scope: CutLogScopeUrl
-  cutLogId: string
+export async function finalizeAdjustmentRequest(args: {
+  scope: AdjustmentScopeUrl
+  adjustmentId: string
 }) {
-  return requestJson<FinalizeCutLogResponse>(
-    `${basePath(args.scope)}/${args.cutLogId}/finalize`,
+  return requestJson<FinalizeAdjustmentResponse>(
+    `${basePath(args.scope)}/${args.adjustmentId}/finalize`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

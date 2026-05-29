@@ -12,7 +12,7 @@ export type SidePanelEditPickerRowProps = {
   placeholder: string
   /** Trigger handler. Wired to a no-op stub today; future passes open a real menu. */
   onOpen?: () => void
-  /** Disables the trigger (e.g. cut log not pending, save in flight). */
+  /** Disables the trigger (e.g. adjustment not pending, save in flight). */
   disabled?: boolean
   /** Accessible label for the trigger button. Defaults to `label` when it's a string. */
   ariaLabel?: string

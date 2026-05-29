@@ -1,12 +1,12 @@
 export {
-  useCutLogEditPanel,
-  type CutLogEditPanelController,
-} from "./use-cut-log-side-panel"
+  useAdjustmentEditPanel,
+  type AdjustmentEditPanelController,
+} from "./use-adjustment-side-panel"
 export type {
-  CutLogCreatePresetInventory,
-  CutLogEditForm,
-  CutLogEditPanelMode,
-  CutLogEditPanelOpenSpec,
-  CutLogPanelPatch,
-  CutLogPanelRow,
+  AdjustmentCreatePresetInventory,
+  AdjustmentEditForm,
+  AdjustmentEditPanelMode,
+  AdjustmentEditPanelOpenSpec,
+  AdjustmentPanelPatch,
+  AdjustmentPanelRow,
 } from "./types"

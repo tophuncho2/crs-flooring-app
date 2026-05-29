@@ -4,15 +4,16 @@ import { useCallback, useMemo, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import type { InventoryDetail } from "@builders/domain"
 import {
-  useCutLogEditPanel,
-  type CutLogPanelPatch,
-  type CutLogPanelRow,
-} from "@/modules/cut-logs"
+  useAdjustmentEditPanel,
+  type AdjustmentPanelPatch,
+  type AdjustmentPanelRow,
+} from "@/modules/adjustments"
 import { INVENTORY_DETAIL_QUERY_KEY } from "@/modules/inventory/data/inventory-detail-request"
+import { INVENTORY_ADJUSTMENTS_QUERY_KEY } from "@/modules/inventory/data/inventory-adjustments-request"
 import { deriveCanSave, deriveIsDirty } from "./derive-hub-mode-flags"
-import { toCutLogPanelRow } from "./to-cut-log-panel-row"
-import { useCutLogPickerTakeover } from "./use-cut-log-picker-takeover"
-import { useHubCutLogsQuery } from "./use-hub-cut-logs-query"
+import { toAdjustmentPanelRow } from "./to-adjustment-panel-row"
+import { useAdjustmentPickerTakeover } from "./use-adjustment-picker-takeover"
+import { useHubAdjustmentsQuery } from "./use-hub-adjustments-query"
 import { useHubInventoryDuplicate } from "./use-hub-inventory-duplicate"
 import { useHubInventoryEdit } from "./use-hub-inventory-edit"
 import { useHubSectionTransitions } from "./use-hub-section-transitions"
@@ -28,18 +29,18 @@ export type UseInventoryHubSidePanelOptions = {
    * Optional snapshot the caller already has in hand. The inventory
    * record view passes its live record here so the hub avoids a
    * round-trip and stays in sync with the parent page's edits. Callers
-   * that only have an `inventoryId` (e.g. a cut-log panel in the
+   * that only have an `inventoryId` (e.g. a adjustment panel in the
    * work-orders flow) omit this and the hub fetches on demand via
    * `useInventoryDetailQuery`.
    */
   initialInventory?: InventoryDetail | null
   /**
-   * Invalidate the cut-logs + balances caches after a cut-log mutation.
-   * Record-view callers share their existing `publishCutLogPatch` so a
-   * hub-driven cut-log mutation refreshes the inline cut-logs section
+   * Invalidate the adjustments + balances caches after a adjustment mutation.
+   * Record-view callers share their existing `publishAdjustmentPatch` so a
+   * hub-driven adjustment mutation refreshes the inline adjustments section
    * too. Work-orders callers pass a no-op (or their WO snapshot updater).
    */
-  publishCutLogPatch: (patch: CutLogPanelPatch) => void
+  publishAdjustmentPatch: (patch: AdjustmentPanelPatch) => void
   /**
    * Fires after a successful hub-driven inventory save. Record view uses
    * it to patch its own snapshot in place; other callers can omit it.
@@ -50,21 +51,21 @@ export type UseInventoryHubSidePanelOptions = {
 /**
  * Coordinator for the inventory hub side panel. Owns the mode state
  * machine, the current `openId` (inventory under inspection), the
- * inventory-edit slice, the embedded cut-log edit panel controller, the
- * picker-takeover slice, and the paginated cut-logs query.
+ * inventory-edit slice, the embedded adjustment edit panel controller, the
+ * picker-takeover slice, and the paginated adjustments query.
  *
  * Two opening modes:
  *   - Seeded — caller passes `initialInventory` (record view). No fetch;
  *     the hub uses the live snapshot. `openForView()` / row clicks act on
  *     the seed's id.
  *   - Fetched — caller passes only `initialInventory: null` and opens
- *     via `openForView(inventoryId)` or `openForCutLogEdit(row)`. The
+ *     via `openForView(inventoryId)` or `openForAdjustmentEdit(row)`. The
  *     hub fetches `InventoryDetail` from `GET /api/inventory/[id]` via
  *     `useInventoryDetailQuery`.
  *
  * Save / discard / delete dispatch off `mode.kind`. Inventory-edit saves
- * pop back to view; cut-log saves / finalize / void stay in place so the
- * operator sees the result before back-arrowing. Cut-log delete pops
+ * pop back to view; adjustment saves / finalize / void stay in place so the
+ * operator sees the result before back-arrowing. Adjustment delete pops
  * back to view via the publish-callback wrapper.
  *
  * Mirrors `properties/.../property-hub-side-panel/`. The picker-takeover
@@ -72,16 +73,16 @@ export type UseInventoryHubSidePanelOptions = {
  */
 export function useInventoryHubSidePanel({
   initialInventory,
-  publishCutLogPatch,
+  publishAdjustmentPatch,
   onInventoryUpdated,
 }: UseInventoryHubSidePanelOptions) {
   const [mode, setMode] = useState<HubMode>({ kind: "closed" })
-  // View-mode sub-tab: the cells card ("inventory") vs the cut-logs list
-  // ("cutLogs"), flipped by the view switcher's chevrons. Cut logs live on
+  // View-mode sub-tab: the cells card ("inventory") vs the adjustments list
+  // ("adjustments"), flipped by the view switcher's chevrons. Adjustments live on
   // their own tab so the list gets the full panel body height (the stacked
   // layout starved it). Persists across a section-edit round-trip so backing
-  // out of a cut-log edit returns to the Cut Logs tab; resets on a fresh open.
-  const [viewTab, setViewTab] = useState<"inventory" | "cutLogs">("inventory")
+  // out of a adjustment edit returns to the Adjustments tab; resets on a fresh open.
+  const [viewTab, setViewTab] = useState<"inventory" | "adjustments">("inventory")
   const [error, setError] = useState<RecordSectionError | null>(null)
   const clearError = useCallback(() => setError(null), [])
   const setErrorMessage = useCallback(
@@ -123,25 +124,25 @@ export function useInventoryHubSidePanel({
     [queryClient],
   )
 
-  // The embedded cut-log panel's mutations notify success via `publish`.
+  // The embedded adjustment panel's mutations notify success via `publish`.
   // A `delete` patch means the row is gone and the embedded panel has
   // already cleared its open spec — pop back to view so the hub doesn't
-  // sit on an empty cut-log edit body. Also invalidate the inventory
+  // sit on an empty adjustment edit body. Also invalidate the inventory
   // detail query so the cells card reflects post-mutation totals when
   // the hub is fetch-backed (record-view callers already update via
   // patchRecord; this is a harmless no-op on that path).
   const publishWithModePop = useCallback(
-    (patch: CutLogPanelPatch) => {
-      publishCutLogPatch(patch)
+    (patch: AdjustmentPanelPatch) => {
+      publishAdjustmentPatch(patch)
       if (openId !== null) invalidateInventoryDetail(openId)
       if (patch.kind === "delete") {
         setMode((current) => {
-          if (current.kind === "section-edit-cut-log") {
+          if (current.kind === "section-edit-adjustment") {
             return { kind: "view", inventoryId: current.inventoryId }
           }
           if (
             current.kind === "picker-takeover" &&
-            current.returnTo.kind === "section-edit-cut-log"
+            current.returnTo.kind === "section-edit-adjustment"
           ) {
             return { kind: "view", inventoryId: current.returnTo.inventoryId }
           }
@@ -150,7 +151,7 @@ export function useInventoryHubSidePanel({
         setError(null)
       }
     },
-    [publishCutLogPatch, openId, invalidateInventoryDetail],
+    [publishAdjustmentPatch, openId, invalidateInventoryDetail],
   )
 
   const contextInventoryId: string | null = useMemo(() => {
@@ -158,7 +159,8 @@ export function useInventoryHubSidePanel({
       case "view":
       case "section-edit-inventory":
       case "section-duplicate-inventory":
-      case "section-edit-cut-log":
+      case "section-edit-adjustment":
+      case "section-create-adjustment":
         return mode.inventoryId
       case "picker-takeover": {
         const r = mode.returnTo
@@ -166,7 +168,7 @@ export function useInventoryHubSidePanel({
           r.kind === "view" ||
           r.kind === "section-edit-inventory" ||
           r.kind === "section-duplicate-inventory" ||
-          r.kind === "section-edit-cut-log"
+          r.kind === "section-edit-adjustment"
         ) {
           return r.inventoryId
         }
@@ -179,15 +181,31 @@ export function useInventoryHubSidePanel({
 
   const isInventoryEditActive = mode.kind === "section-edit-inventory"
 
-  // ===== Embedded cut-log edit panel controller =====
-  // Reuses the standalone panel's controller for all cut-log state +
+  // After a manual adjustment is created, refresh the hub adjustments list so
+  // the new row appears, then pop back to the Adjustments tab. The mutation
+  // closes the panel's open spec; the hub owns the mode transition.
+  const handleManualAdjustmentCreated = useCallback(() => {
+    if (openId !== null) {
+      void queryClient.invalidateQueries({
+        queryKey: [...INVENTORY_ADJUSTMENTS_QUERY_KEY, openId],
+      })
+      setViewTab("adjustments")
+      setMode({ kind: "view", inventoryId: openId })
+    }
+    setError(null)
+  }, [openId, queryClient])
+
+  // ===== Embedded adjustment edit panel controller =====
+  // Reuses the standalone panel's controller for all adjustment state +
   // mutations. The hub renders the fields inline inside the hub shell
-  // instead of mounting the standalone shell. canCreate is false —
-  // cut-log creation stays gated behind the work-orders record view.
-  const cutLogPanel = useCutLogEditPanel({
+  // instead of mounting the standalone shell. canCreate is true — the
+  // inventory hub hosts the manual (non-WO) INCREASE/DEDUCTION create flow;
+  // WO-linked cuts are still created from the work-orders record view.
+  const adjustmentPanel = useAdjustmentEditPanel({
     scope: { kind: "inventory", inventoryId: openId ?? "" },
-    canCreate: false,
+    canCreate: true,
     publish: publishWithModePop,
+    onCreated: handleManualAdjustmentCreated,
   })
 
   // ===== Section-state slices =====
@@ -201,28 +219,28 @@ export function useInventoryHubSidePanel({
   // create-from-source mutation. Independent of the edit slice.
   const inventoryDuplicate = useHubInventoryDuplicate({ clearError })
 
-  // ===== Cut-log picker takeover slice =====
+  // ===== Adjustment picker takeover slice =====
   // Owns the picker-takeover mode transitions + commit handlers. Reads
   // `pickerKind` from the mode union (no orthogonal state).
-  const cutLogPickerTakeover = useCutLogPickerTakeover({
+  const adjustmentPickerTakeover = useAdjustmentPickerTakeover({
     mode,
     setMode,
-    cutLogPanel,
+    adjustmentPanel,
   })
 
-  // ===== Paginated cut-logs list (view mode) =====
-  const cutLogs = useHubCutLogsQuery(contextInventoryId)
+  // ===== Paginated adjustments list (view mode) =====
+  const adjustments = useHubAdjustmentsQuery(contextInventoryId)
 
   // ===== Combined save-busy across all slices =====
   const isSaving =
-    inventoryEdit.isPending || cutLogPanel.isSaving || inventoryDuplicate.isPending
+    inventoryEdit.isPending || adjustmentPanel.isSaving || inventoryDuplicate.isPending
 
   const resetAll = useCallback(() => {
     inventoryEdit.reset()
     inventoryDuplicate.reset()
-    cutLogPanel.close()
+    adjustmentPanel.close()
     setError(null)
-  }, [inventoryEdit, inventoryDuplicate, cutLogPanel])
+  }, [inventoryEdit, inventoryDuplicate, adjustmentPanel])
 
   // ===== Mode-dispatched derivations (pure fns in derive-hub-mode-flags) =====
   const isDirty = useMemo(
@@ -230,10 +248,10 @@ export function useInventoryHubSidePanel({
       deriveIsDirty(
         mode.kind,
         inventoryEdit.isDirty,
-        cutLogPanel.isDirty,
+        adjustmentPanel.isDirty,
         inventoryDuplicate.isDirty,
       ),
-    [mode.kind, inventoryEdit.isDirty, cutLogPanel.isDirty, inventoryDuplicate.isDirty],
+    [mode.kind, inventoryEdit.isDirty, adjustmentPanel.isDirty, inventoryDuplicate.isDirty],
   )
 
   const canSave = useMemo(
@@ -243,7 +261,7 @@ export function useInventoryHubSidePanel({
         mode.kind,
         inventoryEdit.isDirty,
         inventoryEdit.updatedAt,
-        cutLogPanel.isDirty,
+        adjustmentPanel.isDirty,
         inventoryDuplicate.canSubmit,
       ),
     [
@@ -251,7 +269,7 @@ export function useInventoryHubSidePanel({
       mode.kind,
       inventoryEdit.isDirty,
       inventoryEdit.updatedAt,
-      cutLogPanel.isDirty,
+      adjustmentPanel.isDirty,
       inventoryDuplicate.canSubmit,
     ],
   )
@@ -272,32 +290,32 @@ export function useInventoryHubSidePanel({
   )
 
   const goToInventoryView = useCallback(() => setViewTab("inventory"), [])
-  const goToCutLogsView = useCallback(() => setViewTab("cutLogs"), [])
+  const goToAdjustmentsView = useCallback(() => setViewTab("adjustments"), [])
 
-  // External opener that lands directly in cut-log edit. Accepts the
-  // broader `CutLogPanelRow` shape so both call sites can hand off
+  // External opener that lands directly in adjustment edit. Accepts the
+  // broader `AdjustmentPanelRow` shape so both call sites can hand off
   // whatever row they have in scope: the inventory record view passes
   // `EnrichedInventoryAdjustmentRow` (server-resolved labels required), and the
-  // work-orders side passes a `CutLogPanelRow` hydrated from in-scope
+  // work-orders side passes a `AdjustmentPanelRow` hydrated from in-scope
   // workOrder + WOMI state (since WO-side reads return plain InventoryAdjustmentRow).
   // Derives the parent inventoryId from the row.
-  const openForCutLogEdit = useCallback(
-    (row: CutLogPanelRow) => {
+  const openForAdjustmentEdit = useCallback(
+    (row: AdjustmentPanelRow) => {
       resetAll()
       setOpenId(row.inventoryId)
-      cutLogPanel.openPanel({
+      adjustmentPanel.openPanel({
         mode: "edit",
         workOrderItemId: row.workOrderItemId,
-        cutLog: toCutLogPanelRow(row),
+        adjustment: toAdjustmentPanelRow(row),
       })
       setError(null)
       setMode({
-        kind: "section-edit-cut-log",
+        kind: "section-edit-adjustment",
         inventoryId: row.inventoryId,
-        cutLogId: row.id,
+        adjustmentId: row.id,
       })
     },
-    [cutLogPanel, resetAll],
+    [adjustmentPanel, resetAll],
   )
 
   const close = useCallback(() => {
@@ -309,7 +327,8 @@ export function useInventoryHubSidePanel({
   // ===== Section transitions =====
   const {
     enterInventoryEditFromContext,
-    enterCutLogEditFromContext,
+    enterAdjustmentEditFromContext,
+    enterAdjustmentCreate,
     exitToView,
   } = useHubSectionTransitions({
     contextInventoryId,
@@ -318,7 +337,7 @@ export function useInventoryHubSidePanel({
     setError,
     inventoryEdit,
     inventoryDuplicate,
-    cutLogPanel,
+    adjustmentPanel,
     resetAll,
   })
 
@@ -349,8 +368,8 @@ export function useInventoryHubSidePanel({
       })
       return
     }
-    if (mode.kind === "section-edit-cut-log") {
-      cutLogPanel.save()
+    if (mode.kind === "section-edit-adjustment" || mode.kind === "section-create-adjustment") {
+      adjustmentPanel.save()
       return
     }
     if (mode.kind === "section-duplicate-inventory") {
@@ -372,7 +391,7 @@ export function useInventoryHubSidePanel({
     mode,
     inventoryEdit,
     inventoryDuplicate,
-    cutLogPanel,
+    adjustmentPanel,
     onInventoryUpdated,
     invalidateInventoryDetail,
     openForView,
@@ -383,9 +402,13 @@ export function useInventoryHubSidePanel({
     if (isSaving) return
     if (mode.kind === "section-edit-inventory") inventoryEdit.resetToBaseline()
     else if (mode.kind === "section-duplicate-inventory") inventoryDuplicate.resetToSeed()
-    else if (mode.kind === "section-edit-cut-log") cutLogPanel.discard()
+    else if (
+      mode.kind === "section-edit-adjustment" ||
+      mode.kind === "section-create-adjustment"
+    )
+      adjustmentPanel.discard()
     setError(null)
-  }, [isSaving, mode.kind, inventoryEdit, inventoryDuplicate, cutLogPanel])
+  }, [isSaving, mode.kind, inventoryEdit, inventoryDuplicate, adjustmentPanel])
 
   const isOpen = mode.kind !== "closed"
 
@@ -395,29 +418,30 @@ export function useInventoryHubSidePanel({
     mode,
     viewTab,
     goToInventoryView,
-    goToCutLogsView,
-    cutLogPickerKind: cutLogPickerTakeover.pickerKind,
+    goToAdjustmentsView,
+    adjustmentPickerKind: adjustmentPickerTakeover.pickerKind,
 
     // ===== Openers =====
     openForView,
-    openForCutLogEdit,
+    openForAdjustmentEdit,
     close,
 
     // ===== Transitions =====
     enterInventoryEditFromContext,
-    enterCutLogEditFromContext,
+    enterAdjustmentEditFromContext,
+    enterAdjustmentCreate,
     enterDuplicateFromView,
     exitToView,
 
-    // ===== Cut-log picker takeover =====
-    openCutLogPicker: cutLogPickerTakeover.openPicker,
-    closeCutLogPicker: cutLogPickerTakeover.closePicker,
-    commitWorkOrderPick: cutLogPickerTakeover.commitWorkOrderPick,
+    // ===== Adjustment picker takeover =====
+    openAdjustmentPicker: adjustmentPickerTakeover.openPicker,
+    closeAdjustmentPicker: adjustmentPickerTakeover.closePicker,
+    commitWorkOrderPick: adjustmentPickerTakeover.commitWorkOrderPick,
 
     // ===== View-mode data =====
     inventory,
     warehouseName: inventory?.warehouseName ?? null,
-    cutLogs,
+    adjustments,
     isLoadingInventory,
     isErrorInventory,
 
@@ -427,8 +451,8 @@ export function useInventoryHubSidePanel({
     // ===== Inventory-duplicate slice =====
     inventoryDuplicate,
 
-    // ===== Embedded cut-log edit panel =====
-    cutLogPanel,
+    // ===== Embedded adjustment edit panel =====
+    adjustmentPanel,
 
     // ===== Combined controls =====
     isSaving,

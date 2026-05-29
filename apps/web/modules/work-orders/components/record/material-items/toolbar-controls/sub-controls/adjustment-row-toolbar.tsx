@@ -1,18 +1,18 @@
 "use client"
 
-export type CutLogRowToolbarProps = {
+export type AdjustmentRowToolbarProps = {
   workOrderItemId: string
   isSectionBusy: boolean
   onCreateNew: (workOrderItemId: string) => void
 }
 
-// Left-aligned control cluster shown under each material item's cut-log
+// Left-aligned control cluster shown under each material item's adjustment
 // sub-grid: just the create-new button.
-export function CutLogRowToolbar({
+export function AdjustmentRowToolbar({
   workOrderItemId,
   isSectionBusy,
   onCreateNew,
-}: CutLogRowToolbarProps) {
+}: AdjustmentRowToolbarProps) {
   return (
     <div className="flex items-center justify-start gap-2 text-xs">
       <button
@@ -21,7 +21,7 @@ export function CutLogRowToolbar({
         onClick={() => onCreateNew(workOrderItemId)}
         disabled={isSectionBusy}
       >
-        + Add Cut Log
+        + Add Adjustment
       </button>
     </div>
   )

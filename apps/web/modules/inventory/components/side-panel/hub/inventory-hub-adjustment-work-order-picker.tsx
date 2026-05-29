@@ -25,24 +25,24 @@ function toPickerOption(option: WorkOrderOption): HubSidePanelPickerOption {
 }
 
 /**
- * Body-takeover picker for the cut-log relink work-order field. Scoped
- * to the parent cut log's warehouse. Commits the full `WorkOrderOption`
- * to the hub controller so the cut-log panel's form + trigger label
+ * Body-takeover picker for the adjustment relink work-order field. Scoped
+ * to the parent adjustment's warehouse. Commits the full `WorkOrderOption`
+ * to the hub controller so the adjustment panel's form + trigger label
  * move in one render.
  */
-export function InventoryHubCutLogWorkOrderPicker({
+export function InventoryHubAdjustmentWorkOrderPicker({
   controller,
 }: {
   controller: InventoryHubSidePanelController
 }) {
-  const { cutLogPanel, commitWorkOrderPick, closeCutLogPicker } = controller
+  const { adjustmentPanel, commitWorkOrderPick, closeAdjustmentPicker } = controller
 
-  const cutLog =
-    cutLogPanel.open?.mode === "edit" ? cutLogPanel.open.cutLog : null
-  const warehouseId = cutLog?.warehouseId ?? null
-  // Scope the picker to work orders that carry the cut log's product, so the
+  const adjustment =
+    adjustmentPanel.open?.mode === "edit" ? adjustmentPanel.open.adjustment : null
+  const warehouseId = adjustment?.warehouseId ?? null
+  // Scope the picker to work orders that carry the adjustment's product, so the
   // matching material item is always resolvable on select (and auto-linked).
-  const productId = cutLog?.productId ?? null
+  const productId = adjustment?.productId ?? null
 
   const bucketKey = useMemo(
     () =>
@@ -79,9 +79,9 @@ export function InventoryHubCutLogWorkOrderPicker({
     commitWorkOrderPick(null)
   }, [commitWorkOrderPick])
 
-  const selectedId = cutLogPanel.form.workOrderId
-  const selectedLabel = cutLogPanel.local.pickedWorkOrderLabel ||
-    (cutLog?.workOrderNumber ? `#${cutLog.workOrderNumber}` : null)
+  const selectedId = adjustmentPanel.form.workOrderId
+  const selectedLabel = adjustmentPanel.local.pickedWorkOrderLabel ||
+    (adjustment?.workOrderNumber ? `#${adjustment.workOrderNumber}` : null)
 
   return (
     <HubSidePanelPicker
@@ -91,7 +91,7 @@ export function InventoryHubCutLogWorkOrderPicker({
       selectedLabel={selectedLabel}
       onSelect={handleSelect}
       onClear={handleClear}
-      onCancel={closeCutLogPicker}
+      onCancel={closeAdjustmentPicker}
       searchPlaceholder="Search description or unit type"
       emptyMessage="No matches"
       loadingMessage="Searching…"

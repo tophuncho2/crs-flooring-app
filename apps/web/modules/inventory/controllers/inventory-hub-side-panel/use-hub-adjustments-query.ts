@@ -8,11 +8,11 @@ import {
 } from "@builders/domain"
 import { FRESH_ON_OPEN } from "@/query-policies"
 import {
-  INVENTORY_CUT_LOGS_QUERY_KEY,
-  inventoryCutLogsPageRequest,
-} from "@/modules/inventory/data/inventory-cut-logs-request"
+  INVENTORY_ADJUSTMENTS_QUERY_KEY,
+  inventoryAdjustmentsPageRequest,
+} from "@/modules/inventory/data/inventory-adjustments-request"
 
-export type HubCutLogsController = {
+export type HubAdjustmentsController = {
   rows: ReadonlyArray<EnrichedInventoryAdjustmentRow>
   isLoading: boolean
   isError: boolean
@@ -29,19 +29,19 @@ export type HubCutLogsController = {
 const EMPTY_ROWS: ReadonlyArray<EnrichedInventoryAdjustmentRow> = []
 
 /**
- * Infinite-scroll cut-logs for a single inventory inside the hub. Reuses the
- * same query-key prefix the inline `InventoryCutLogsSection` does so a mutation
+ * Infinite-scroll adjustments for a single inventory inside the hub. Reuses the
+ * same query-key prefix the inline `InventoryAdjustmentsSection` does so a mutation
  * that invalidates the cache refreshes both surfaces with no duplicate request.
  * The query key includes `inventoryId`, so switching the hub to a different
  * inventory starts a fresh page-0 fetch. `FRESH_ON_OPEN` refetches on every
  * open so the list reflects concurrent cuts.
  */
-export function useHubCutLogsQuery(inventoryId: string | null): HubCutLogsController {
+export function useHubAdjustmentsQuery(inventoryId: string | null): HubAdjustmentsController {
   const query = useInfiniteQuery({
     enabled: inventoryId !== null,
-    queryKey: [...INVENTORY_CUT_LOGS_QUERY_KEY, inventoryId],
+    queryKey: [...INVENTORY_ADJUSTMENTS_QUERY_KEY, inventoryId],
     queryFn: ({ pageParam, signal }) =>
-      inventoryCutLogsPageRequest(
+      inventoryAdjustmentsPageRequest(
         inventoryId as string,
         pageParam,
         INVENTORY_ADJUSTMENT_PAGE_SIZE,
@@ -66,7 +66,7 @@ export function useHubCutLogsQuery(inventoryId: string | null): HubCutLogsContro
     void query.fetchNextPage()
   }, [query])
 
-  return useMemo<HubCutLogsController>(() => {
+  return useMemo<HubAdjustmentsController>(() => {
     const hasData = query.data !== undefined
     return {
       rows,

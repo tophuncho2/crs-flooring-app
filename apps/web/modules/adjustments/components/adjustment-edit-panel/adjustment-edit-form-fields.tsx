@@ -2,17 +2,18 @@
 
 import { INVENTORY_ADJUSTMENT_NOTES_MAX, isAdjustmentPendingEditable } from "@builders/domain"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
+import { SegmentedDropdown } from "@/components/dropdowns/segmented-dropdown/segmented-dropdown"
 import { FieldSection, FormField } from "@/components/fields"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import {
   SidePanelPreviewReadonlyRow,
   SidePanelPreviewReadonlySection,
 } from "@/components/side-panel-preview"
-import { formatCutLogTimestamp } from "@/modules/cut-logs/components/row/format-cut-log-timestamp"
+import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
 import type {
-  CutLogEditPanelController,
-  CutLogPanelRow,
-} from "@/modules/cut-logs/controllers/cut-log-side-panel"
+  AdjustmentEditPanelController,
+  AdjustmentPanelRow,
+} from "@/modules/adjustments/controllers/adjustment-side-panel"
 
 const EMPTY_CELL = "—"
 
@@ -30,14 +31,25 @@ function valueOrDash(value: string | null | undefined): string {
   return trimmed.length > 0 ? trimmed : EMPTY_CELL
 }
 
-export type CutLogEditFormFieldsProps = {
-  mode: "create" | "edit"
-  cutLog: CutLogPanelRow | null
-  controller: CutLogEditPanelController
+export type AdjustmentEditFormFieldsProps = {
+  mode: "create" | "edit" | "manual-create"
+  adjustment: AdjustmentPanelRow | null
+  controller: AdjustmentEditPanelController
+  /**
+   * Stock-unit abbrev for the amount cell in `manual-create` mode. The parent
+   * inventory is the hub context (no picker), so the unit can't be derived from
+   * a picked option — the hub passes it from the inventory snapshot.
+   */
+  stockUnit?: string
 }
 
+const ADJUSTMENT_TYPE_OPTIONS = [
+  { value: "INCREASE", label: "Increase" },
+  { value: "DEDUCTION", label: "Deduction" },
+] as const
+
 /**
- * The form body of the cut-log edit panel — the cells only. Picker
+ * The form body of the adjustment edit panel — the cells only. Picker
  * triggers (Location + Inventory in create mode; WO + WOMI in edit) live
  * in the panel's sticky `topToolbar` so they stay visible while the body
  * swaps to a picker takeover (template-sync pattern).
@@ -46,70 +58,125 @@ export type CutLogEditFormFieldsProps = {
  * preview header chrome) over the three editable cells (cut, notes, waste).
  *
  * Create mode: just the three editable cells — there is no read-only
- * summary because the cut log doesn't exist yet (no timestamps / before
+ * summary because the adjustment doesn't exist yet (no timestamps / before
  * / after / coverage to show).
  */
-export function CutLogEditFormFields({
+export function AdjustmentEditFormFields({
   mode,
-  cutLog,
+  adjustment,
   controller,
-}: CutLogEditFormFieldsProps) {
+  stockUnit: stockUnitProp,
+}: AdjustmentEditFormFieldsProps) {
   const { form, local, isSaving } = controller
 
+  // Manual create (inventory hub): direction picker + amount + notes. No
+  // read-only summary (the row doesn't exist yet), no waste, no pickers —
+  // the parent inventory is fixed by the hub context.
+  if (mode === "manual-create") {
+    const manualUnit = stockUnitProp ?? ""
+    return (
+      <FieldSection gap="0.75rem">
+        <CellAt col={1} colSpan={8}>
+          <FormField label="Type" required>
+            <SegmentedDropdown
+              value={form.adjustmentType}
+              onChange={(next) => {
+                if (next === "INCREASE" || next === "DEDUCTION") {
+                  controller.setField("adjustmentType", next)
+                }
+              }}
+              options={ADJUSTMENT_TYPE_OPTIONS}
+              ariaLabel="Adjustment type"
+              disabled={isSaving}
+            />
+          </FormField>
+        </CellAt>
+        <CellAt col={1} colSpan={4}>
+          <FormField label="Amount" required>
+            <UnitCell
+              editable={!isSaving}
+              value={form.quantity}
+              onChange={(next) => controller.setField("quantity", next)}
+              unit={manualUnit}
+              placeholder="0"
+              ariaLabel="Adjustment amount"
+            />
+          </FormField>
+        </CellAt>
+        <CellAt col={1} colSpan={8}>
+          <FormField
+            label="Notes"
+            currentLength={form.notes.length}
+            maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
+          >
+            <TextCell
+              editable={!isSaving}
+              value={form.notes}
+              onChange={(next) => controller.setField("notes", next)}
+              placeholder="Notes"
+              ariaLabel="Adjustment notes"
+              maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
+            />
+          </FormField>
+        </CellAt>
+      </FieldSection>
+    )
+  }
+
   // Stock unit source:
-  //   - edit mode: the cut log's frozen `stockUnitAbbrev` snapshot (stamped
+  //   - edit mode: the adjustment's frozen `stockUnitAbbrev` snapshot (stamped
   //     from the inventory at create time, never mutated afterward)
   //   - create mode: derived from the currently-picked inventory option's
-  //     `stockUnitAbbrev` snapshot kept in `local` — what the cut log will
+  //     `stockUnitAbbrev` snapshot kept in `local` — what the adjustment will
   //     inherit on save
-  const stockUnit = cutLog?.stockUnitAbbrev ?? local.pickedInventoryStockUnitAbbrev
-  const coverageUnit = cutLog?.itemCoverageUnitAbbrev ?? ""
+  const stockUnit = adjustment?.stockUnitAbbrev ?? local.pickedInventoryStockUnitAbbrev
+  const coverageUnit = adjustment?.itemCoverageUnitAbbrev ?? ""
 
   // Locked once the row leaves the PENDING-editable state. Mirrors the server
-  // guard (assertCutLogPendingMutationAllowed) so finalized/voided rows can't
+  // guard (assertAdjustmentPendingMutationAllowed) so finalized/voided rows can't
   // accept input — the PATCH route would 409 anyway.
-  const isReadOnly = mode === "edit" && cutLog != null && !isAdjustmentPendingEditable(cutLog)
+  const isReadOnly = mode === "edit" && adjustment != null && !isAdjustmentPendingEditable(adjustment)
   const fieldsEditable = !isSaving && !isReadOnly
 
   return (
     <div className="flex flex-col gap-4">
-      {mode === "edit" && cutLog ? (
+      {mode === "edit" && adjustment ? (
         <SidePanelPreviewReadonlySection>
           <SidePanelPreviewReadonlyRow
             label="Warehouse"
-            value={valueOrDash(cutLog.warehouseName)}
+            value={valueOrDash(adjustment.warehouseName)}
           />
           <SidePanelPreviewReadonlyRow
             label="Product"
-            value={valueOrDash(cutLog.productName)}
+            value={valueOrDash(adjustment.productName)}
           />
           <SidePanelPreviewReadonlyRow
             label="Created"
-            value={formatCutLogTimestamp(cutLog.createdAt)}
+            value={formatAdjustmentTimestamp(adjustment.createdAt)}
           />
           <SidePanelPreviewReadonlyRow
             label="Updated"
-            value={formatCutLogTimestamp(cutLog.updatedAt)}
+            value={formatAdjustmentTimestamp(adjustment.updatedAt)}
           />
           <SidePanelPreviewReadonlyRow
             label="Inventory item"
-            value={valueOrDash(cutLog.inventoryItem)}
+            value={valueOrDash(adjustment.inventoryItem)}
           />
           <SidePanelPreviewReadonlyRow
             label="Location"
-            value={valueOrDash(cutLog.location)}
+            value={valueOrDash(adjustment.location)}
           />
           <SidePanelPreviewReadonlyRow
             label="Before"
-            value={formatMeasurement(cutLog.before, stockUnit)}
+            value={formatMeasurement(adjustment.before, stockUnit)}
           />
           <SidePanelPreviewReadonlyRow
             label="After"
-            value={formatMeasurement(cutLog.after, stockUnit)}
+            value={formatMeasurement(adjustment.after, stockUnit)}
           />
           <SidePanelPreviewReadonlyRow
             label="Coverage"
-            value={formatMeasurement(cutLog.coverage, coverageUnit)}
+            value={formatMeasurement(adjustment.coverage, coverageUnit)}
           />
         </SidePanelPreviewReadonlySection>
       ) : null}
@@ -140,7 +207,7 @@ export function CutLogEditFormFields({
               value={form.notes}
               onChange={(next) => controller.setField("notes", next)}
               placeholder="Notes"
-              ariaLabel="Cut log notes"
+              ariaLabel="Adjustment notes"
               maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
             />
           </FormField>

@@ -2,30 +2,30 @@
 
 import { useCallback, type Dispatch, type SetStateAction } from "react"
 import type { WorkOrderOption } from "@builders/domain"
-import type { CutLogEditPanelController } from "@/modules/cut-logs"
-import type { CutLogPickerKind, HubMode } from "./types"
+import type { AdjustmentEditPanelController } from "@/modules/adjustments"
+import type { AdjustmentPickerKind, HubMode } from "./types"
 
-export type UseCutLogPickerTakeoverArgs = {
+export type UseAdjustmentPickerTakeoverArgs = {
   mode: HubMode
   setMode: Dispatch<SetStateAction<HubMode>>
-  /** Embedded cut-log panel controller — receives form + label writes on commit. */
-  cutLogPanel: CutLogEditPanelController
+  /** Embedded adjustment panel controller — receives form + label writes on commit. */
+  adjustmentPanel: AdjustmentEditPanelController
 }
 
-export type CutLogPickerTakeoverSlice = {
+export type AdjustmentPickerTakeoverSlice = {
   /** Active picker kind, or null when not in picker-takeover. */
-  pickerKind: CutLogPickerKind | null
+  pickerKind: AdjustmentPickerKind | null
   /**
-   * Trigger handler. Enters `picker-takeover` from `section-edit-cut-log`,
+   * Trigger handler. Enters `picker-takeover` from `section-edit-adjustment`,
    * swaps `pickerKind` while already in takeover, and toggles closed when
    * the active trigger fires again — preserves the trigger-toggle UX from
-   * the cut-log relink header.
+   * the adjustment relink header.
    */
-  openPicker: (kind: CutLogPickerKind) => void
+  openPicker: (kind: AdjustmentPickerKind) => void
   /** Pops back to `returnTo`. No-op outside picker-takeover. */
   closePicker: () => void
   /**
-   * Commits a WO selection: sets the cut-log form + label and auto-links the
+   * Commits a WO selection: sets the adjustment form + label and auto-links the
    * matching material item, then pops the picker. The material item is no
    * longer user-picked (it's deterministic per WO + product).
    */
@@ -33,26 +33,26 @@ export type CutLogPickerTakeoverSlice = {
 }
 
 /**
- * Picker-takeover slice for the cut-log edit body. When the user clicks a
- * relink trigger (WO or WOMI) inside `section-edit-cut-log`, mode flips
- * to `picker-takeover` with a `returnTo` snapshot of the cut-log edit
+ * Picker-takeover slice for the adjustment edit body. When the user clicks a
+ * relink trigger (WO or WOMI) inside `section-edit-adjustment`, mode flips
+ * to `picker-takeover` with a `returnTo` snapshot of the adjustment edit
  * mode. The hub body renders the picker; `closePicker` (and the commit
  * helpers) pop back to `returnTo`.
  *
- * Mirrors `properties/.../use-hub-picker-takeover.ts`. The cut-log
- * variant only has one `returnTo` shape today (`section-edit-cut-log`),
+ * Mirrors `properties/.../use-hub-picker-takeover.ts`. The adjustment
+ * variant only has one `returnTo` shape today (`section-edit-adjustment`),
  * but the mode union keeps `returnTo: HubMode` open for future surfaces.
  */
-export function useCutLogPickerTakeover({
+export function useAdjustmentPickerTakeover({
   mode,
   setMode,
-  cutLogPanel,
-}: UseCutLogPickerTakeoverArgs): CutLogPickerTakeoverSlice {
-  const pickerKind: CutLogPickerKind | null =
+  adjustmentPanel,
+}: UseAdjustmentPickerTakeoverArgs): AdjustmentPickerTakeoverSlice {
+  const pickerKind: AdjustmentPickerKind | null =
     mode.kind === "picker-takeover" ? mode.pickerKind : null
 
   const openPicker = useCallback(
-    (kind: CutLogPickerKind) => {
+    (kind: AdjustmentPickerKind) => {
       setMode((prev) => {
         // Same trigger fired again — close the picker.
         if (prev.kind === "picker-takeover" && prev.pickerKind === kind) {
@@ -60,13 +60,13 @@ export function useCutLogPickerTakeover({
         }
         // Different trigger fired while a picker is open — swap kinds,
         // preserve the original returnTo so we still pop back to the
-        // section-edit-cut-log we entered from.
+        // section-edit-adjustment we entered from.
         if (prev.kind === "picker-takeover") {
           return { ...prev, pickerKind: kind }
         }
-        // Enter takeover from cut-log edit; ignore from any other mode
+        // Enter takeover from adjustment edit; ignore from any other mode
         // (no triggers reach those surfaces today).
-        if (prev.kind === "section-edit-cut-log") {
+        if (prev.kind === "section-edit-adjustment") {
           return { kind: "picker-takeover", returnTo: prev, pickerKind: kind }
         }
         return prev
@@ -81,10 +81,10 @@ export function useCutLogPickerTakeover({
 
   const commitWorkOrderPick = useCallback(
     (option: WorkOrderOption | null) => {
-      void cutLogPanel.selectWorkOrderOption(option)
+      void adjustmentPanel.selectWorkOrderOption(option)
       setMode((prev) => (prev.kind === "picker-takeover" ? prev.returnTo : prev))
     },
-    [cutLogPanel, setMode],
+    [adjustmentPanel, setMode],
   )
 
   return {

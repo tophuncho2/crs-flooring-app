@@ -1,28 +1,30 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/components/data-table"
-import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
+import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
 import {
   composeRollNumberDisplay,
   formatInventoryQuantity,
   type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
-import { formatCutLogTimestamp } from "@/modules/cut-logs/components/row/format-cut-log-timestamp"
+import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
 
 /**
- * Per-cell renderer for the cut-logs ledger `DataTable`. Plain-span rendering
+ * Per-cell renderer for the adjustments ledger `DataTable`. Plain-span rendering
  * to match the sibling inventory list, reusing the shared status badge +
- * inventory quantity / roll-number formatters. Nullable cut-log snapshot
+ * inventory quantity / roll-number formatters. Nullable adjustment snapshot
  * fields fall back to "-".
  */
-export function renderCutLogsRowCell(
+export function renderAdjustmentsRowCell(
   column: DataTableColumn<EnrichedInventoryAdjustmentRow>,
   row: EnrichedInventoryAdjustmentRow,
 ): ReactNode {
   switch (column.key) {
-    case "cutLogNumber":
+    case "adjustmentNumber":
       return <span className="font-medium">{row.adjustmentNumber}</span>
     case "status":
-      return <CutLogStatusBadge status={row.status} />
+      return <AdjustmentStatusBadge status={row.status} />
+    case "adjustmentType":
+      return row.adjustmentType === "INCREASE" ? "Increase" : "Deduction"
     case "productName":
       return row.productName || "-"
     case "inventoryNumber":
@@ -66,9 +68,9 @@ export function renderCutLogsRowCell(
     case "workOrderNumber":
       return row.workOrderNumber || "-"
     case "createdAt":
-      return formatCutLogTimestamp(row.createdAt)
+      return formatAdjustmentTimestamp(row.createdAt)
     case "updatedAt":
-      return formatCutLogTimestamp(row.updatedAt)
+      return formatAdjustmentTimestamp(row.updatedAt)
     default:
       return "-"
   }

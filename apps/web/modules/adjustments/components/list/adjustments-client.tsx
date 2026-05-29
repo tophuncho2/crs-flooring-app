@@ -22,12 +22,12 @@ import {
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
 import {
-  CUT_LOGS_LIST_QUERY_KEY,
-  listCutLogsRequest,
-} from "@/modules/cut-logs/data/list-cut-logs-request"
-import { CutLogsTable } from "./cut-logs-table"
+  ADJUSTMENTS_LIST_QUERY_KEY,
+  listAdjustmentsRequest,
+} from "@/modules/adjustments/data/list-adjustments-request"
+import { AdjustmentsTable } from "./adjustments-table"
 
-export default function CutLogsClient({
+export default function AdjustmentsClient({
   initialSearchQuery,
   initialPage,
   initialFilters,
@@ -40,11 +40,11 @@ export default function CutLogsClient({
   initialWarehouseOptions: WarehouseOption[]
   initialSelectedWarehouse?: WarehouseOption | null
 }) {
-  // Row click opens the app-wide inventory hub focused on the clicked cut log.
-  // `openForCutLogEdit(row)` derives the parent inventory from `row.inventoryId`
+  // Row click opens the app-wide inventory hub focused on the clicked adjustment.
+  // `openForAdjustmentEdit(row)` derives the parent inventory from `row.inventoryId`
   // and loads it. The provider invalidates the ledger after any hub mutation so
   // it refreshes.
-  const { openForCutLogEdit } = useInventoryHub()
+  const { openForAdjustmentEdit } = useInventoryHub()
 
   const {
     rows,
@@ -63,15 +63,15 @@ export default function CutLogsClient({
     onClearAllFilters,
   } = useFetchListController<EnrichedInventoryAdjustmentRow, InventoryAdjustmentListFilters>({
     mode: "fetch",
-    queryKey: [...CUT_LOGS_LIST_QUERY_KEY],
-    listFn: (input: ListInput<InventoryAdjustmentListFilters>) => listCutLogsRequest(input),
+    queryKey: [...ADJUSTMENTS_LIST_QUERY_KEY],
+    listFn: (input: ListInput<InventoryAdjustmentListFilters>) => listAdjustmentsRequest(input),
     initialSearchQuery,
     initialPage,
     initialFilters: initialFilters.warehouseId?.length
       ? { warehouseId: initialFilters.warehouseId }
       : {},
     pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
-    tableKey: "cut-logs-main",
+    tableKey: "adjustments-main",
     filterableFields: ["warehouseId"],
     freshness: LIST_FRESHNESS_STANDARD,
   })
@@ -109,7 +109,7 @@ export default function CutLogsClient({
         <div>
           <div className="px-4 pt-3">
             <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Cut Logs
+              Adjustments
             </span>
           </div>
           <ListToolbar className="pt-0">
@@ -124,7 +124,7 @@ export default function CutLogsClient({
                   left={
                     <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
                   }
-                  right={<ListRowCount count={rows.length} total={total} label="cut logs" />}
+                  right={<ListRowCount count={rows.length} total={total} label="adjustments" />}
                 />
               </div>
             </ListToolbarCell>
@@ -140,16 +140,16 @@ export default function CutLogsClient({
                   searchPlaceholder="Search warehouses"
                   emptyMessage="No warehouses match"
                   clearLabel="Clear filter"
-                  ariaLabel="Filter cut logs by warehouse"
+                  ariaLabel="Filter adjustments by warehouse"
                 />
               </div>
             </ListToolbarCell>
           </ListToolbar>
         </div>
 
-        <CutLogsTable
+        <AdjustmentsTable
           rows={rows}
-          onOpenCutLog={(row) => openForCutLogEdit(row)}
+          onOpenAdjustment={(row) => openForAdjustmentEdit(row)}
           pagination={
             <PaginateControls
               page={page}

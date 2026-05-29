@@ -3,11 +3,11 @@ import { listAdjustmentsUseCase, searchWarehouseOptionsUseCase } from "@builders
 import type { WarehouseOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
-import CutLogsClient from "@/modules/cut-logs/components/list/cut-logs-client"
+import AdjustmentsClient from "@/modules/adjustments/components/list/adjustments-client"
 import {
-  CUT_LOGS_LIST_QUERY_KEY,
-  parseCutLogsListInputFromSearchParams,
-} from "@/modules/cut-logs/data/list-cut-logs-request"
+  ADJUSTMENTS_LIST_QUERY_KEY,
+  parseAdjustmentsListInputFromSearchParams,
+} from "@/modules/adjustments/data/list-adjustments-request"
 
 const INITIAL_OPTIONS_TAKE = 20
 
@@ -21,7 +21,7 @@ async function resolveSelectedById<TOption extends { id: string }>(
   return fetchById(id)
 }
 
-export default async function CutLogsPage({
+export default async function AdjustmentsPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
@@ -29,7 +29,7 @@ export default async function CutLogsPage({
   await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
-  const initialInput = parseCutLogsListInputFromSearchParams(resolvedSearchParams)
+  const initialInput = parseAdjustmentsListInputFromSearchParams(resolvedSearchParams)
 
   const queryClient = new QueryClient()
 
@@ -41,7 +41,7 @@ export default async function CutLogsPage({
 
     const [, warehousePage] = await Promise.all([
       queryClient.prefetchQuery({
-        queryKey: [...CUT_LOGS_LIST_QUERY_KEY, initialInput],
+        queryKey: [...ADJUSTMENTS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listAdjustmentsUseCase(initialInput),
       }),
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
@@ -63,17 +63,17 @@ export default async function CutLogsPage({
   } catch (error) {
     return (
       <DashboardErrorState
-        title="Cut Logs Unavailable"
-        message="The app could not load the cut logs list."
+        title="Adjustments Unavailable"
+        message="The app could not load the adjustments list."
         detail={error instanceof Error ? error.message : "Unknown error"}
-        errorCode="CUT_LOGS_LIST_LOAD_FAILED"
+        errorCode="ADJUSTMENTS_LIST_LOAD_FAILED"
       />
     )
   }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <CutLogsClient
+      <AdjustmentsClient
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}

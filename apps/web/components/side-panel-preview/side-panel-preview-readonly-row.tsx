@@ -15,7 +15,7 @@ export type SidePanelPreviewReadonlyRowProps = {
  * Label / value row for read-only summary content inside a
  * {@link SidePanelPreviewReadonlySection}. Two-column grid:
  * fixed-width label, flexible value. Mirrors the template-sync preview
- * header's row treatment so consumers (cut-logs, future record-preview
+ * header's row treatment so consumers (adjustments, future record-preview
  * panels) stay visually aligned.
  */
 export function SidePanelPreviewReadonlyRow({

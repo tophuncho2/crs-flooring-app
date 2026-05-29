@@ -8,7 +8,7 @@ Pure UI primitives. Modules and routes consume these; nothing in here knows abou
 
 | Primitive | Placement model | Chrome default | Use case |
 |---|---|---|---|
-| `Grid<TRow>` (in `grid/`) | Streaming rows by array order | Visible borders, header, scroll | List view tables, record-view sub-grids (staged inventory rows, materials, cut logs) |
+| `Grid<TRow>` (in `grid/`) | Streaming rows by array order | Visible borders, header, scroll | List view tables, record-view sub-grids (staged inventory rows, materials, adjustments) |
 | `LayoutGrid` (in `layout-grid/`) | Positioned cells via `(col, row)` coordinates | Invisible by default; opt into visible chrome | Field/main sections, dashboard layouts, future chart-spanning compositions |
 | `FormField` + `StaticFieldValue` + `FieldSection` (in `fields/`) | Wrappers, no placement of their own | N/A | Labelled controls + read-only displays + section shell, dropped into `LayoutGrid` cells |
 

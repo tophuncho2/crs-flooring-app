@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { CutLogStatusBadge } from "@/components/badges/cut-log-status-badge"
+import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
 import {
   HubSidePanelScopedRow,
   HubSidePanelScrollList,
@@ -24,10 +24,11 @@ function formatCutWithUnit(value: string, unit: string): string {
  * Title line: `#{finalCutSequence} · {cut} {stockUnit} · {coverageCut}
  * {coverageUnit}`. The sequence leads so the row's finalize rank survives
  * truncation (the list sorts by finalCutSequence DESC); pending rows have no
- * sequence and no-coverage categories drop the coverage segment. Cut log #
+ * sequence and no-coverage categories drop the coverage segment. Adjustment #
  * is intentionally omitted from the display (kept on the aria-label only).
  */
-function buildCutLogTitle(row: {
+function buildAdjustmentTitle(row: {
+  adjustmentType: "INCREASE" | "DEDUCTION"
   quantity: string
   coverage: string | null
   finalSequence: number | null
@@ -38,7 +39,12 @@ function buildCutLogTitle(row: {
   if (row.finalSequence !== null) segments.push(`#${row.finalSequence}`)
 
   const quantity = formatCutWithUnit(row.quantity, row.stockUnitAbbrev ?? "")
-  if (quantity !== EMPTY_CELL) segments.push(quantity)
+  // Lead the amount with its direction so INCREASE rows read distinctly from
+  // deduction cuts (the list mixes both now).
+  if (quantity !== EMPTY_CELL) {
+    const sign = row.adjustmentType === "INCREASE" ? "+" : "−"
+    segments.push(`${sign}${quantity}`)
+  }
 
   if (row.coverage !== null && row.coverage.trim().length > 0) {
     segments.push(formatCutWithUnit(row.coverage, row.itemCoverageUnitAbbrev ?? ""))
@@ -53,7 +59,7 @@ function buildCutLogTitle(row: {
  * Each is omitted when its data is absent — a fresh pending cut shows just its
  * note, or nothing.
  */
-function buildCutLogSubtitleLines(row: {
+function buildAdjustmentSubtitleLines(row: {
   before: string | null
   after: string | null
   notes: string
@@ -87,9 +93,9 @@ function buildCutLogSubtitleLines(row: {
 }
 
 /**
- * Infinite-scroll cut-logs list inside the inventory hub. Mirrors the property
+ * Infinite-scroll adjustments list inside the inventory hub. Mirrors the property
  * hub's properties-list section: each row is clickable; click transitions the
- * panel into `section-edit-cut-log` mode for that row.
+ * panel into `section-edit-adjustment` mode for that row.
  *
  * Row anatomy: the title packs cut / coverage cut / final-cut sequence (each
  * with its own snapshot unit) with the status badge trailing in the meta slot;
@@ -97,26 +103,26 @@ function buildCutLogSubtitleLines(row: {
  * from the row's own snapshot (each cut froze its UoM at creation), not the
  * parent inventory's current unit.
  *
- * Reuses the same query key the inline `InventoryCutLogsSection` does, so
+ * Reuses the same query key the inline `InventoryAdjustmentsSection` does, so
  * mutations refresh both surfaces with one cache invalidation.
  */
-export function InventoryHubCutLogsListSection({
+export function InventoryHubAdjustmentsListSection({
   controller,
 }: {
   controller: InventoryHubSidePanelController
 }) {
-  const { cutLogs, enterCutLogEditFromContext } = controller
-  const { rows, hasData, isEmpty, isError, hasMore, isFetchingMore, loadMore } = cutLogs
+  const { adjustments, enterAdjustmentEditFromContext } = controller
+  const { rows, hasData, isEmpty, isError, hasMore, isFetchingMore, loadMore } = adjustments
 
   return (
     <HubSidePanelScrollList
-      title="Cut Logs"
+      title="Adjustments"
       hasData={hasData}
       isEmpty={isEmpty}
       isError={isError}
-      errorMessage="Could not load cut logs."
-      loadingMessage="Loading cut logs…"
-      emptyMessage="No cut logs on this inventory."
+      errorMessage="Could not load adjustments."
+      loadingMessage="Loading adjustments…"
+      emptyMessage="No adjustments on this inventory."
       hasMore={hasMore}
       isFetchingMore={isFetchingMore}
       onLoadMore={loadMore}
@@ -124,11 +130,11 @@ export function InventoryHubCutLogsListSection({
       {rows.map((row) => (
         <HubSidePanelScopedRow
           key={row.id}
-          primary={buildCutLogTitle(row)}
-          secondaryLines={buildCutLogSubtitleLines(row)}
-          meta={<CutLogStatusBadge status={row.status} />}
-          onClick={() => enterCutLogEditFromContext(row)}
-          ariaLabel={`Edit cut log ${row.adjustmentNumber}`}
+          primary={buildAdjustmentTitle(row)}
+          secondaryLines={buildAdjustmentSubtitleLines(row)}
+          meta={<AdjustmentStatusBadge status={row.status} />}
+          onClick={() => enterAdjustmentEditFromContext(row)}
+          ariaLabel={`Edit adjustment ${row.adjustmentNumber}`}
         />
       ))}
     </HubSidePanelScrollList>

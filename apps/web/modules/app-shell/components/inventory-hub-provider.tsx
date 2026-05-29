@@ -13,16 +13,16 @@ import { InventoryHubSidePanel } from "@/modules/inventory/components/side-panel
 import { InventoryHubStartingBody } from "@/modules/inventory/components/side-panel/starting/inventory-hub-starting-body"
 import { useInventoryHubStartingController } from "@/modules/inventory/controllers/inventory-hub-starting/use-inventory-hub-starting-controller"
 import { INVENTORY_LIST_QUERY_KEY } from "@/modules/inventory/data/list-inventory-request"
-import { CUT_LOGS_LIST_QUERY_KEY } from "@/modules/cut-logs/data/list-cut-logs-request"
-import type { CutLogPanelRow } from "@/modules/cut-logs"
+import { ADJUSTMENTS_LIST_QUERY_KEY } from "@/modules/adjustments/data/list-adjustments-request"
+import type { AdjustmentPanelRow } from "@/modules/adjustments"
 
 export type InventoryHubContextValue = {
   /** Open the inventory-hub starting-spot cascade (header button). */
   openInventoryHub: () => void
   /** Open the hub straight into an inventory's view (list-view row click). */
   openForView: (inventoryId: string) => void
-  /** Open the hub straight into a cut log's edit panel (cut-logs ledger row). */
-  openForCutLogEdit: (row: CutLogPanelRow) => void
+  /** Open the hub straight into a adjustment's edit panel (adjustments ledger row). */
+  openForAdjustmentEdit: (row: AdjustmentPanelRow) => void
 }
 
 const InventoryHubContext = createContext<InventoryHubContextValue | null>(null)
@@ -31,7 +31,7 @@ const InventoryHubContext = createContext<InventoryHubContextValue | null>(null)
  * Mounts the single, app-wide inventory hub + starting-spot cascade once and
  * shares its openers via context — the inventory-hub parallel of
  * `HubPanelProvider`. Every dashboard surface (the header button, the
- * inventory list, the cut-logs ledger) drives this one instance, so there is
+ * inventory list, the adjustments ledger) drives this one instance, so there is
  * exactly one inventory hub in the DOM and one piece of state. Record-page
  * instances (the work-orders material-items section) intentionally keep their
  * own scoped instance and do not go through here.
@@ -41,23 +41,23 @@ export function InventoryHubProvider({ children }: { children: ReactNode }) {
 
   // Any hub-driven mutation refreshes the external list views so a record
   // edited through the shared hub never leaves a stale row behind. The hub's
-  // own controller already invalidates the inventory detail + cut-logs caches.
+  // own controller already invalidates the inventory detail + adjustments caches.
   const invalidateLists = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: [...INVENTORY_LIST_QUERY_KEY] })
-    void queryClient.invalidateQueries({ queryKey: [...CUT_LOGS_LIST_QUERY_KEY] })
+    void queryClient.invalidateQueries({ queryKey: [...ADJUSTMENTS_LIST_QUERY_KEY] })
   }, [queryClient])
 
   const controller = useInventoryHubStartingController({
-    publishCutLogPatch: invalidateLists,
+    publishAdjustmentPatch: invalidateLists,
     onInventoryUpdated: invalidateLists,
   })
 
   const { open, handleClose, hubPanel, openStarting, openInventoryView } = controller
 
-  const openForCutLogEdit = useCallback(
-    (row: CutLogPanelRow) => {
+  const openForAdjustmentEdit = useCallback(
+    (row: AdjustmentPanelRow) => {
       controller.setOpen(false)
-      hubPanel.openForCutLogEdit(row)
+      hubPanel.openForAdjustmentEdit(row)
     },
     [controller, hubPanel],
   )
@@ -66,9 +66,9 @@ export function InventoryHubProvider({ children }: { children: ReactNode }) {
     () => ({
       openInventoryHub: openStarting,
       openForView: openInventoryView,
-      openForCutLogEdit,
+      openForAdjustmentEdit,
     }),
-    [openStarting, openInventoryView, openForCutLogEdit],
+    [openStarting, openInventoryView, openForAdjustmentEdit],
   )
 
   return (

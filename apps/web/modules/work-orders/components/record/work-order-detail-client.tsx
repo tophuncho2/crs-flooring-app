@@ -14,12 +14,12 @@ import { WorkOrderRecordPanel } from "./work-order-record-panel"
 export function WorkOrderDetailClient({
   initialWorkOrder,
   initialMaterialItems,
-  initialCutLogsByWorkOrderItemId,
+  initialAdjustmentsByWorkOrderItemId,
   backHref,
 }: {
   initialWorkOrder: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
-  initialCutLogsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
+  initialAdjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
   backHref: string
 }) {
   return (
@@ -34,7 +34,7 @@ export function WorkOrderDetailClient({
           page={page}
           entry={initialWorkOrder}
           initialMaterialItems={initialMaterialItems}
-          initialCutLogsByWorkOrderItemId={initialCutLogsByWorkOrderItemId}
+          initialAdjustmentsByWorkOrderItemId={initialAdjustmentsByWorkOrderItemId}
         />
       )}
     </RecordDetailClientScaffold>

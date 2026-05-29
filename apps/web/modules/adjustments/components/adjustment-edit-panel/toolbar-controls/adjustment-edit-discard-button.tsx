@@ -1,16 +1,16 @@
 "use client"
 
 import { SidePanelEditDiscardButton } from "@/components/side-panel-edit"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
+import type { AdjustmentEditPanelController } from "@/modules/adjustments/controllers/adjustment-side-panel"
 
 /**
- * Cut-log side-panel adapter for the shared discard button. Reverts the
+ * Adjustment side-panel adapter for the shared discard button. Reverts the
  * form to its saved baseline without closing the panel.
  */
-export function CutLogEditDiscardButton({
+export function AdjustmentEditDiscardButton({
   controller,
 }: {
-  controller: CutLogEditPanelController
+  controller: AdjustmentEditPanelController
 }) {
   return (
     <SidePanelEditDiscardButton

@@ -18,7 +18,7 @@ export type HubPickerTakeoverSlice = {
   /**
    * Trigger handler. Enters `picker-takeover` from any non-closed mode,
    * swaps `pickerKind` while already in takeover, and toggles closed when
-   * the active trigger fires again — matches the cut-log / template-sync
+   * the active trigger fires again — matches the adjustment / template-sync
    * click-to-toggle UX.
    */
   openPicker: (pickerKind: HubPickerKind) => void

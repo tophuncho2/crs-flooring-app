@@ -1,8 +1,9 @@
 import type { InventoryAdjustmentRow } from "@builders/domain"
-import type { CutLogEditForm, CutLogPanelLocal } from "./types"
+import type { AdjustmentEditForm, AdjustmentPanelLocal } from "./types"
 
-export const EMPTY_FORM: CutLogEditForm = {
+export const EMPTY_FORM: AdjustmentEditForm = {
   inventoryId: "",
+  adjustmentType: "INCREASE",
   quantity: "",
   isWaste: false,
   notes: "",
@@ -10,7 +11,7 @@ export const EMPTY_FORM: CutLogEditForm = {
   workOrderItemId: null,
 }
 
-export const EMPTY_LOCAL: CutLogPanelLocal = {
+export const EMPTY_LOCAL: AdjustmentPanelLocal = {
   locationFilter: "",
   pickedInventoryLabel: "",
   pickedInventoryStockUnitAbbrev: "",
@@ -19,20 +20,22 @@ export const EMPTY_LOCAL: CutLogPanelLocal = {
   pickedWorkOrderItemNotes: "",
 }
 
-export function buildEditForm(cutLog: InventoryAdjustmentRow): CutLogEditForm {
+export function buildEditForm(adjustment: InventoryAdjustmentRow): AdjustmentEditForm {
   return {
-    inventoryId: cutLog.inventoryId,
-    quantity: cutLog.quantity,
-    isWaste: cutLog.isWaste,
-    notes: cutLog.notes,
-    workOrderId: cutLog.workOrderId,
-    workOrderItemId: cutLog.workOrderItemId,
+    inventoryId: adjustment.inventoryId,
+    adjustmentType: adjustment.adjustmentType,
+    quantity: adjustment.quantity,
+    isWaste: adjustment.isWaste,
+    notes: adjustment.notes,
+    workOrderId: adjustment.workOrderId,
+    workOrderItemId: adjustment.workOrderItemId,
   }
 }
 
-export function formIsDirty(current: CutLogEditForm, baseline: CutLogEditForm): boolean {
+export function formIsDirty(current: AdjustmentEditForm, baseline: AdjustmentEditForm): boolean {
   return (
     current.inventoryId !== baseline.inventoryId ||
+    current.adjustmentType !== baseline.adjustmentType ||
     current.quantity !== baseline.quantity ||
     current.isWaste !== baseline.isWaste ||
     current.notes !== baseline.notes ||
@@ -41,12 +44,21 @@ export function formIsDirty(current: CutLogEditForm, baseline: CutLogEditForm): 
   )
 }
 
-export function isCreateValid(form: CutLogEditForm): boolean {
+export function isCreateValid(form: AdjustmentEditForm): boolean {
   return form.inventoryId !== "" && form.quantity.trim() !== ""
 }
 
-export function isEditValid(form: CutLogEditForm): boolean {
-  // Link symmetry mirrors the backend `assertCutLogLinkageSymmetry`: a WO and
+/**
+ * Manual create validity. The parent inventory rides on the open spec (not the
+ * form), so validity is just a chosen direction + a non-empty quantity.
+ * Direction always has a value (`EMPTY_FORM` defaults to INCREASE).
+ */
+export function isManualCreateValid(form: AdjustmentEditForm): boolean {
+  return form.quantity.trim() !== ""
+}
+
+export function isEditValid(form: AdjustmentEditForm): boolean {
+  // Link symmetry mirrors the backend `assertAdjustmentLinkageSymmetry`: a WO and
   // its material item are set together or not at all. Blocks saving the
   // transient WO-set / WOMI-unresolved state during an auto-link.
   const linkSymmetric = Boolean(form.workOrderId) === Boolean(form.workOrderItemId)

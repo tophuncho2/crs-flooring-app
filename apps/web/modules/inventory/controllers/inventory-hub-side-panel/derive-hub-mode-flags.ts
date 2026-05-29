@@ -18,11 +18,12 @@ export type HubModeKind = HubMode["kind"]
 export function deriveIsDirty(
   modeKind: HubModeKind,
   inventoryEditIsDirty: boolean,
-  cutLogPanelIsDirty: boolean,
+  adjustmentPanelIsDirty: boolean,
   inventoryDuplicateIsDirty: boolean,
 ): boolean {
   if (modeKind === "section-edit-inventory") return inventoryEditIsDirty
-  if (modeKind === "section-edit-cut-log") return cutLogPanelIsDirty
+  if (modeKind === "section-edit-adjustment" || modeKind === "section-create-adjustment")
+    return adjustmentPanelIsDirty
   if (modeKind === "section-duplicate-inventory") return inventoryDuplicateIsDirty
   return false
 }
@@ -32,15 +33,15 @@ export function deriveCanSave(
   modeKind: HubModeKind,
   inventoryEditIsDirty: boolean,
   inventoryEditUpdatedAt: string | null,
-  cutLogPanelIsDirty: boolean,
+  adjustmentPanelIsDirty: boolean,
   inventoryDuplicateCanSubmit: boolean,
 ): boolean {
   if (isSaving) return false
   if (modeKind === "section-edit-inventory") {
     return inventoryEditIsDirty && inventoryEditUpdatedAt !== null
   }
-  if (modeKind === "section-edit-cut-log") {
-    return cutLogPanelIsDirty
+  if (modeKind === "section-edit-adjustment" || modeKind === "section-create-adjustment") {
+    return adjustmentPanelIsDirty
   }
   if (modeKind === "section-duplicate-inventory") {
     // Create flow — no row revision; the only client gate is a non-empty

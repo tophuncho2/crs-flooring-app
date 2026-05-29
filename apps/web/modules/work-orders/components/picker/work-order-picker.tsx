@@ -16,7 +16,7 @@ export type WorkOrderPickerProps = {
   /**
    * Optional notification fired alongside `onChange` carrying the full
    * picked option. Lets callers snapshot the picked WO's label so the
-   * trigger reflects the new selection on the cut-log relink flow,
+   * trigger reflects the new selection on the adjustment relink flow,
    * where `selectedLabel` would otherwise stay pinned to the original.
    */
   onOptionSelected?: (option: WorkOrderOption | null) => void
@@ -51,7 +51,7 @@ function joinNonEmpty(...parts: Array<string | null | undefined>): string {
  * Canonical title for a `WorkOrderOption` — used by the picker's option
  * list, by the picker's selected-option trigger, and by callers that
  * snapshot the picked option's label so the trigger stays in sync after
- * close/reopen (cut-log relink flow).
+ * close/reopen (adjustment relink flow).
  */
 export function formatWorkOrderOptionTitle(option: WorkOrderOption): string {
   return joinNonEmpty(`#${option.workOrderNumber}`, option.propertyName, option.unitType)

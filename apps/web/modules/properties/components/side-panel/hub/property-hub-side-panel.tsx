@@ -101,7 +101,7 @@ export function PropertyHubSidePanel({
   // Collapse picker-takeover onto its returnTo for chrome rendering — keeps
   // the trigger sticky and visible while the picker fills the body below,
   // and lets the trigger toggle the picker closed when fired again
-  // (matches the inventory-hub cut-log relink header pattern).
+  // (matches the inventory-hub adjustment relink header pattern).
   const effectiveMode: HubMode =
     mode.kind === "picker-takeover" ? mode.returnTo : mode
   const isPickerActive = mode.kind === "picker-takeover"

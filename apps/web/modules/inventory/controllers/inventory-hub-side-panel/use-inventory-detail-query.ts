@@ -16,8 +16,8 @@ export type UseInventoryDetailQueryOptions = {
 /**
  * Fetches `InventoryDetail` for the given id via `GET /api/inventory/[id]`.
  * Used by the hub when opened from a context that does not already have
- * the inventory loaded (e.g. a cut-log panel in the work-orders flow that
- * only has `cutLog.inventoryId`).
+ * the inventory loaded (e.g. a adjustment panel in the work-orders flow that
+ * only has `adjustment.inventoryId`).
  */
 export function useInventoryDetailQuery(
   inventoryId: string | null,

@@ -10,13 +10,13 @@ import {
   type InventoryAdjustmentListFilters,
 } from "@builders/domain"
 
-// Cut-log mutations are one scope-aware use-case set called from two route
-// trees — `api/inventory/[id]/cut-logs/...` and
-// `api/work-orders/[id]/cut-logs/...`. Their body validators are identical, so
+// Adjustment mutations are one scope-aware use-case set called from two route
+// trees — `api/inventory/[id]/adjustments/...` and
+// `api/work-orders/[id]/adjustments/...`. Their body validators are identical, so
 // they live here once. This folder has no `route.ts`; it is a validator module
 // only. Each route stamps its own scope/path identifiers before the use case.
 
-function failCutLog(message: string, field?: string): never {
+function failAdjustment(message: string, field?: string): never {
   throw new InventoryAdjustmentExecutionError({
     code: "INVENTORY_ADJUSTMENT_VALIDATION_FAILED",
     message,
@@ -25,28 +25,28 @@ function failCutLog(message: string, field?: string): never {
   })
 }
 
-function requireCutLogString(value: unknown, field: string): string {
-  if (typeof value !== "string") failCutLog(`${field} is required`, field)
+function requireAdjustmentString(value: unknown, field: string): string {
+  if (typeof value !== "string") failAdjustment(`${field} is required`, field)
   const trimmed = (value as string).trim()
-  if (!trimmed) failCutLog(`${field} is required`, field)
+  if (!trimmed) failAdjustment(`${field} is required`, field)
   return trimmed
 }
 
-function optionalBoundedCutLogText(value: unknown, max: number, field: string): string | null {
+function optionalBoundedAdjustmentText(value: unknown, max: number, field: string): string | null {
   if (value === undefined || value === null) return null
   if (typeof value !== "string") return null
-  if (value.length > max) failCutLog(`${field} must be ${max} characters or fewer`, field)
+  if (value.length > max) failAdjustment(`${field} must be ${max} characters or fewer`, field)
   return value
 }
 
-function requireCutLogObject(value: unknown, path: string): Record<string, unknown> {
+function requireAdjustmentObject(value: unknown, path: string): Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    failCutLog(`${path} must be an object`, path)
+    failAdjustment(`${path} must be an object`, path)
   }
   return value as Record<string, unknown>
 }
 
-export type ValidatedCreatePendingCutLogInput = {
+export type ValidatedCreatePendingAdjustmentInput = {
   workOrderItemId: string
   inventoryId: string
   quantity: string
@@ -54,60 +54,92 @@ export type ValidatedCreatePendingCutLogInput = {
   notes: string
 }
 
-export function validateCreatePendingCutLogInput(
+export function validateCreatePendingAdjustmentInput(
   body: Record<string, unknown>,
-): ValidatedCreatePendingCutLogInput {
+): ValidatedCreatePendingAdjustmentInput {
   const isWaste = typeof body.isWaste === "boolean" ? body.isWaste : false
   return {
-    workOrderItemId: requireCutLogString(body.workOrderItemId, "workOrderItemId"),
-    inventoryId: requireCutLogString(body.inventoryId, "inventoryId"),
-    quantity: requireCutLogString(body.quantity, "quantity"),
+    workOrderItemId: requireAdjustmentString(body.workOrderItemId, "workOrderItemId"),
+    inventoryId: requireAdjustmentString(body.inventoryId, "inventoryId"),
+    quantity: requireAdjustmentString(body.quantity, "quantity"),
     isWaste,
-    notes: optionalBoundedCutLogText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
+    notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
   }
 }
 
-export type ValidatedUpdatePendingCutLogLink = {
+export type ValidatedCreateManualAdjustmentInput = {
+  adjustmentType: "INCREASE" | "DEDUCTION"
+  quantity: string
+  notes: string
+}
+
+/**
+ * Manual (non-WO) adjustment create. Used by `POST /api/inventory/[id]/adjustments`.
+ * The parent inventory id rides on the route path, so the body carries only the
+ * direction + amount + notes. WO-link / waste fields are rejected — a manual
+ * adjustment is never WO-linked and never waste (enforced again in the domain).
+ */
+export function validateCreateManualAdjustmentInput(
+  body: Record<string, unknown>,
+): ValidatedCreateManualAdjustmentInput {
+  const rawType = body.adjustmentType
+  if (rawType !== "INCREASE" && rawType !== "DEDUCTION") {
+    failAdjustment("adjustmentType must be INCREASE or DEDUCTION", "adjustmentType")
+  }
+  if ("workOrderId" in body || "workOrderItemId" in body) {
+    failAdjustment("A manual adjustment cannot be linked to a work order", "workOrderId")
+  }
+  if ("isWaste" in body) {
+    failAdjustment("A manual adjustment cannot be flagged as waste", "isWaste")
+  }
+  return {
+    adjustmentType: rawType,
+    quantity: requireAdjustmentString(body.quantity, "quantity"),
+    notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
+  }
+}
+
+export type ValidatedUpdatePendingAdjustmentLink = {
   workOrderId: string | null
   workOrderItemId: string | null
 }
 
-export type ValidatedUpdatePendingCutLogPatch = {
+export type ValidatedUpdatePendingAdjustmentPatch = {
   quantity?: string
   isWaste?: boolean
   notes?: string
-  link?: ValidatedUpdatePendingCutLogLink
+  link?: ValidatedUpdatePendingAdjustmentLink
 }
 
-export type ValidatedUpdatePendingCutLogInput = {
-  patch: ValidatedUpdatePendingCutLogPatch
+export type ValidatedUpdatePendingAdjustmentInput = {
+  patch: ValidatedUpdatePendingAdjustmentPatch
 }
 
-function validateUpdatePendingCutLogLink(value: unknown): ValidatedUpdatePendingCutLogLink {
-  const obj = requireCutLogObject(value, "patch.link")
+function validateUpdatePendingAdjustmentLink(value: unknown): ValidatedUpdatePendingAdjustmentLink {
+  const obj = requireAdjustmentObject(value, "patch.link")
   const rawWO = obj.workOrderId
   const rawWOMI = obj.workOrderItemId
   if (rawWO !== null && typeof rawWO !== "string") {
-    failCutLog("patch.link.workOrderId must be a string or null", "patch.link.workOrderId")
+    failAdjustment("patch.link.workOrderId must be a string or null", "patch.link.workOrderId")
   }
   if (rawWOMI !== null && typeof rawWOMI !== "string") {
-    failCutLog("patch.link.workOrderItemId must be a string or null", "patch.link.workOrderItemId")
+    failAdjustment("patch.link.workOrderItemId must be a string or null", "patch.link.workOrderItemId")
   }
   const workOrderId =
     rawWO === null
       ? null
       : (rawWO as string).trim() ||
-        (failCutLog("patch.link.workOrderId is required when present", "patch.link.workOrderId") as never)
+        (failAdjustment("patch.link.workOrderId is required when present", "patch.link.workOrderId") as never)
   const workOrderItemId =
     rawWOMI === null
       ? null
       : (rawWOMI as string).trim() ||
-        (failCutLog(
+        (failAdjustment(
           "patch.link.workOrderItemId is required when present",
           "patch.link.workOrderItemId",
         ) as never)
   if ((workOrderId === null) !== (workOrderItemId === null)) {
-    failCutLog(
+    failAdjustment(
       "patch.link must set both workOrderId and workOrderItemId or both to null",
       "patch.link",
     )
@@ -115,47 +147,47 @@ function validateUpdatePendingCutLogLink(value: unknown): ValidatedUpdatePending
   return { workOrderId, workOrderItemId }
 }
 
-export function validateUpdatePendingCutLogInput(
+export function validateUpdatePendingAdjustmentInput(
   body: Record<string, unknown>,
-): ValidatedUpdatePendingCutLogInput {
-  const patchBody = requireCutLogObject(body.patch, "patch")
-  const patch: ValidatedUpdatePendingCutLogPatch = {}
+): ValidatedUpdatePendingAdjustmentInput {
+  const patchBody = requireAdjustmentObject(body.patch, "patch")
+  const patch: ValidatedUpdatePendingAdjustmentPatch = {}
   if ("quantity" in patchBody) {
-    patch.quantity = requireCutLogString(patchBody.quantity, "patch.quantity")
+    patch.quantity = requireAdjustmentString(patchBody.quantity, "patch.quantity")
   }
   if ("isWaste" in patchBody && typeof patchBody.isWaste === "boolean") {
     patch.isWaste = patchBody.isWaste
   }
   if ("notes" in patchBody) {
-    const next = optionalBoundedCutLogText(patchBody.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "patch.notes")
+    const next = optionalBoundedAdjustmentText(patchBody.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "patch.notes")
     if (next !== null) patch.notes = next
   }
   if ("link" in patchBody) {
-    patch.link = validateUpdatePendingCutLogLink(patchBody.link)
+    patch.link = validateUpdatePendingAdjustmentLink(patchBody.link)
   }
   if (Object.keys(patch).length === 0) {
-    failCutLog("Patch must contain at least one of quantity, isWaste, notes, or link", "patch")
+    failAdjustment("Patch must contain at least one of quantity, isWaste, notes, or link", "patch")
   }
   return { patch }
 }
 
-export type ValidatedDeletePendingCutLogInput = Record<string, never>
+export type ValidatedDeletePendingAdjustmentInput = Record<string, never>
 
-export function validateDeletePendingCutLogInput(
+export function validateDeletePendingAdjustmentInput(
   _body: Record<string, unknown>,
-): ValidatedDeletePendingCutLogInput {
+): ValidatedDeletePendingAdjustmentInput {
   return {}
 }
 
-export type ValidatedFinalizeCutLogInput = Record<string, never>
+export type ValidatedFinalizeAdjustmentInput = Record<string, never>
 
-export function validateFinalizeCutLogInput(
+export function validateFinalizeAdjustmentInput(
   _body: Record<string, unknown>,
-): ValidatedFinalizeCutLogInput {
+): ValidatedFinalizeAdjustmentInput {
   return {}
 }
 
-const cutLogsPageQuerySchema = z.object({
+const adjustmentsPageQuerySchema = z.object({
   skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce
     .number()
@@ -165,24 +197,24 @@ const cutLogsPageQuerySchema = z.object({
     .default(INVENTORY_ADJUSTMENT_PAGE_SIZE),
 })
 
-export type ValidatedCutLogsPageQuery = {
+export type ValidatedAdjustmentsPageQuery = {
   skip: number
   take: number
 }
 
-export function validateCutLogsPageQuery(
+export function validateAdjustmentsPageQuery(
   searchParams: URLSearchParams,
-): ValidatedCutLogsPageQuery {
+): ValidatedAdjustmentsPageQuery {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
     raw[key] = value
   })
 
-  const parseResult = cutLogsPageQuerySchema.safeParse(raw)
+  const parseResult = adjustmentsPageQuerySchema.safeParse(raw)
   if (!parseResult.success) {
     const issue = parseResult.error.issues[0]
-    failCutLog(
-      issue?.message ?? "Invalid cut-logs list query",
+    failAdjustment(
+      issue?.message ?? "Invalid adjustments list query",
       issue?.path[0] ? String(issue.path[0]) : undefined,
     )
   }
@@ -190,11 +222,11 @@ export function validateCutLogsPageQuery(
   return parseResult.data
 }
 
-// --- Standalone cut-logs ledger list query validator (GET /api/cut-logs) ---
+// --- Standalone adjustments ledger list query validator (GET /api/adjustments) ---
 // Warehouse is the only filter (multi-value, parsed off the raw params); the
 // search term `q` targets `inventoryItem` in the data layer.
 
-const listCutLogsQuerySchema = z.object({
+const listAdjustmentsQuerySchema = z.object({
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
@@ -205,7 +237,7 @@ const listCutLogsQuerySchema = z.object({
     .default(INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE),
 })
 
-export function validateCutLogsListQuery(
+export function validateAdjustmentsListQuery(
   searchParams: URLSearchParams,
 ): ListInput<InventoryAdjustmentListFilters> {
   // Strip the multi-value `warehouseId` before zod (it sees scalars only).
@@ -215,11 +247,11 @@ export function validateCutLogsListQuery(
     raw[key] = value
   })
 
-  const parseResult = listCutLogsQuerySchema.safeParse(raw)
+  const parseResult = listAdjustmentsQuerySchema.safeParse(raw)
   if (!parseResult.success) {
     const issue = parseResult.error.issues[0]
-    failCutLog(
-      issue?.message ?? "Invalid cut-logs list query",
+    failAdjustment(
+      issue?.message ?? "Invalid adjustments list query",
       issue?.path[0] ? String(issue.path[0]) : undefined,
     )
   }

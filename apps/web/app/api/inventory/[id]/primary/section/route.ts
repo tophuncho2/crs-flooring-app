@@ -69,8 +69,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       () => updateInventoryUseCase(id, input),
     )
 
-    // Client controller expects InventoryDetailRecord (row + cutLogs) so the
-    // record view reconciler can re-render the cut-logs section after save.
+    // Client controller expects InventoryDetailRecord (row + adjustments) so the
+    // record view reconciler can re-render the adjustments section after save.
     // Use case returns the flat row; compose the detail at the route boundary.
     const detail = (await getInventoryDetailById(result.id)) ?? result
     const responseBody = { inventory: detail }

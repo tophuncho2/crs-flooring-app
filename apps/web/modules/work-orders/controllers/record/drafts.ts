@@ -141,9 +141,9 @@ export function validateWorkOrderMaterialItemDrafts(
 }
 
 /**
- * Local draft for a pending cut log under a single WOMI.
+ * Local draft for a pending adjustment under a single WOMI.
  */
-export type PendingCutLogDraft = {
+export type PendingAdjustmentDraft = {
   clientId: string
   serverId: string | null
   tempId: string | null
@@ -157,7 +157,7 @@ export type PendingCutLogDraft = {
   locationFilterCode: string
 }
 
-export function createPendingCutLogDraft(): PendingCutLogDraft {
+export function createPendingAdjustmentDraft(): PendingAdjustmentDraft {
   return {
     clientId: crypto.randomUUID(),
     serverId: null,

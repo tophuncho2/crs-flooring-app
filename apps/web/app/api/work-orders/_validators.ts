@@ -184,8 +184,8 @@ function validateMaterialItemCreateForm(
 }
 
 // Update form carries `productId` — the product is editable until the item
-// has linked cut logs. The "locked once it has cut logs" rule is enforced in
-// the save use case (it needs the cut-log count), not here on the wire.
+// has linked adjustments. The "locked once it has adjustments" rule is enforced in
+// the save use case (it needs the adjustment count), not here on the wire.
 function validateMaterialItemUpdateForm(
   value: unknown,
   path: string,
@@ -334,7 +334,7 @@ export function validateListWorkOrdersQuery(
 }
 
 // ---------------------------------------------------------------------------
-// Picker / options search validators (cut-log relink dropdowns)
+// Picker / options search validators (adjustment relink dropdowns)
 // ---------------------------------------------------------------------------
 
 const WO_OPTIONS_DEFAULT_TAKE = 20

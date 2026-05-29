@@ -32,7 +32,7 @@ export type CircularCommitButtonProps = EditabilityContract & {
   onClick: () => void
   /**
    * Required for accessibility. Describes the row's commit action so screen
-   * readers can disambiguate from other rows ("Save cut log #3").
+   * readers can disambiguate from other rows ("Save adjustment #3").
    */
   ariaLabel: string
   /** Optional title attribute for hover tooltip (e.g. "No changes to save"). */
@@ -41,7 +41,7 @@ export type CircularCommitButtonProps = EditabilityContract & {
 }
 
 /**
- * Round commit button rendered as the trailing control on each cut-log row.
+ * Round commit button rendered as the trailing control on each adjustment row.
  * Distinct from the square `CheckboxCell` used for batch finalize selection —
  * the round shape signals "commit this row" while the square shape signals
  * "select this row for batch action."

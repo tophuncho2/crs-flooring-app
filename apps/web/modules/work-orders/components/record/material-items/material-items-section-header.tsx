@@ -12,7 +12,7 @@ export type MaterialItemsSectionHeaderProps = {
   isSaving: boolean
   isDirty: boolean
   hasConflict: boolean
-  /** True when every material item's cut-log sub-grid is expanded. */
+  /** True when every material item's adjustment sub-grid is expanded. */
   allExpanded: boolean
   /** Toggle all rows together: collapse-all when allExpanded, else expand-all. */
   onToggleAll: () => void

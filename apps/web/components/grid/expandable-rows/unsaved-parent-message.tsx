@@ -6,7 +6,7 @@ import type { ReactNode } from "react"
  * Guidance pane rendered inside an `<ExpandableRow>` when the parent row
  * has not yet been saved server-side — i.e. its id is still a local-only
  * `temp:*` client ID (per `isLocalOnlyRecordRow`). Replaces the children
- * area so child-creation affordances ("+ Add Row", "+ Add Cut Log") are
+ * area so child-creation affordances ("+ Add Row", "+ Add Adjustment") are
  * not reachable until the parent exists on the server.
  *
  * Consumers gate via:

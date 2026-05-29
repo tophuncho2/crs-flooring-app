@@ -23,7 +23,7 @@ import type {
 export type WorkOrderDetailPageData = {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
-  cutLogsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
+  adjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
 }
 
 export async function getWorkOrderDetailPageData(
@@ -39,19 +39,19 @@ export async function getWorkOrderDetailPageData(
       return { ok: false, notFound: true }
     }
 
-    const cutLogRows = await listAdjustmentsForWorkOrderItemIds(materialItems.map((mi) => mi.id))
-    const cutLogsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]> = {}
-    for (const mi of materialItems) cutLogsByWorkOrderItemId[mi.id] = []
-    for (const row of cutLogRows) {
+    const adjustmentRows = await listAdjustmentsForWorkOrderItemIds(materialItems.map((mi) => mi.id))
+    const adjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]> = {}
+    for (const mi of materialItems) adjustmentsByWorkOrderItemId[mi.id] = []
+    for (const row of adjustmentRows) {
       if (row.workOrderItemId === null) continue
-      const bucket = cutLogsByWorkOrderItemId[row.workOrderItemId]
+      const bucket = adjustmentsByWorkOrderItemId[row.workOrderItemId]
       if (bucket === undefined) continue
       bucket.push(row)
     }
 
     return {
       ok: true,
-      data: { workOrder, materialItems, cutLogsByWorkOrderItemId },
+      data: { workOrder, materialItems, adjustmentsByWorkOrderItemId },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {

@@ -2,7 +2,7 @@
 
 import { DuplicateRowButton } from "@/components/features/duplicate-row"
 
-export type CutLogDuplicateButtonProps = {
+export type AdjustmentDuplicateButtonProps = {
   /** True when the source row's status is "PENDING" — the only status eligible for duplicate. */
   isPending: boolean
   /** True when the surrounding material-items section is mid-save. */
@@ -11,26 +11,26 @@ export type CutLogDuplicateButtonProps = {
 }
 
 /**
- * Cut-log "duplicate" affordance for the work-orders side. Unlike the
+ * Adjustment "duplicate" affordance for the work-orders side. Unlike the
  * staged-inventory equivalent this does NOT invoke a duplicate use case —
- * clicking simply opens the cut-log side panel in create mode with the
+ * clicking simply opens the adjustment side panel in create mode with the
  * source row's inventory pre-selected. Avoids re-running inventory-balance
  * recalculation that a real duplicate would trigger.
  *
- * Enabled only for `PENDING` cut logs; QUEUED / FINAL / VOID are disabled
+ * Enabled only for `PENDING` adjustments; QUEUED / FINAL / VOID are disabled
  * with an explanatory tooltip.
  */
-export function CutLogDuplicateButton({
+export function AdjustmentDuplicateButton({
   isPending,
   isSectionBusy,
   onClick,
-}: CutLogDuplicateButtonProps) {
+}: AdjustmentDuplicateButtonProps) {
   const title = isPending
-    ? "Duplicate this cut log (opens a new form with the same inventory item)"
-    : "Only pending cut logs can be duplicated"
+    ? "Duplicate this adjustment (opens a new form with the same inventory item)"
+    : "Only pending adjustments can be duplicated"
   return (
     <DuplicateRowButton
-      ariaLabel="Duplicate cut log"
+      ariaLabel="Duplicate adjustment"
       title={title}
       editable={isPending && !isSectionBusy}
       onClick={onClick}

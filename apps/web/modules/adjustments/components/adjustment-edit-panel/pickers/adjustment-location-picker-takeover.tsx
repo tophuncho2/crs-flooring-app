@@ -8,23 +8,23 @@ import {
   INVENTORY_LOCATIONS_SEARCH_QUERY_KEY,
   searchInventoryLocationsRequest,
 } from "@/modules/inventory/data/inventory-location-options-request"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
+import type { AdjustmentEditPanelController } from "@/modules/adjustments/controllers/adjustment-side-panel"
 
 function toPickerOption(option: InventoryLocationOption): HubSidePanelPickerOption {
   return { id: option.value, title: option.value }
 }
 
 /**
- * Body-takeover location-filter picker for the cut-log create form.
+ * Body-takeover location-filter picker for the adjustment create form.
  * Warehouse-scoped (locations are derived via SELECT DISTINCT on
  * inventory). Commit writes the raw string into the form's
  * `locationFilter` and closes the takeover; the downstream inventory
  * picker re-fetches under the new filter on next open.
  */
-export function CutLogLocationPickerTakeover({
+export function AdjustmentLocationPickerTakeover({
   controller,
 }: {
-  controller: CutLogEditPanelController
+  controller: AdjustmentEditPanelController
 }) {
   const { warehouseId, local, closePicker, selectLocationFilter } = controller
 

@@ -11,7 +11,7 @@ import type {
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
-import type { CutLogPanelPatch } from "@/modules/cut-logs"
+import type { AdjustmentPanelPatch } from "@/modules/adjustments"
 import type { PropertyHubSaveResult } from "@/modules/properties/controllers/property-hub-side-panel"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
@@ -22,17 +22,17 @@ export function WorkOrderRecordPanel({
   page,
   entry,
   initialMaterialItems,
-  initialCutLogsByWorkOrderItemId,
+  initialAdjustmentsByWorkOrderItemId,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
-  initialCutLogsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
+  initialAdjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
-  const [cutLogsByWorkOrderItemId, setCutLogsByWorkOrderItemId] = useState(
-    initialCutLogsByWorkOrderItemId,
+  const [adjustmentsByWorkOrderItemId, setAdjustmentsByWorkOrderItemId] = useState(
+    initialAdjustmentsByWorkOrderItemId,
   )
 
   const primaryActions = workOrderPrimarySectionActions({
@@ -94,24 +94,24 @@ export function WorkOrderRecordPanel({
     [controller],
   )
 
-  const publishCutLogPatch = useCallback((patch: CutLogPanelPatch) => {
+  const publishAdjustmentPatch = useCallback((patch: AdjustmentPanelPatch) => {
     // WO-side patches always carry the WOMI id (callers open the panel
     // from within a WOMI row, and the controller threads it through to
     // every mutation). If somehow null arrives (e.g. an inv-side patch
-    // routed here in error), skip — the cut log is no longer linked to
+    // routed here in error), skip — the adjustment is no longer linked to
     // a WOMI on this WO so there's nothing to bucket.
     if (patch.workOrderItemId === null) return
     const womiId = patch.workOrderItemId
-    setCutLogsByWorkOrderItemId((current) => {
+    setAdjustmentsByWorkOrderItemId((current) => {
       const existing = current[womiId] ?? []
       if (patch.kind === "delete") {
-        const next = existing.filter((row) => row.id !== patch.cutLogId)
+        const next = existing.filter((row) => row.id !== patch.adjustmentId)
         return { ...current, [womiId]: next }
       }
-      const idx = existing.findIndex((row) => row.id === patch.cutLog.id)
+      const idx = existing.findIndex((row) => row.id === patch.adjustment.id)
       const next = idx >= 0
-        ? existing.map((row, i) => (i === idx ? patch.cutLog : row))
-        : [...existing, patch.cutLog]
+        ? existing.map((row, i) => (i === idx ? patch.adjustment : row))
+        : [...existing, patch.adjustment]
       return { ...current, [womiId]: next }
     })
   }, [])
@@ -191,10 +191,10 @@ export function WorkOrderRecordPanel({
               <WorkOrderMaterialItemsSection
                 workOrder={controller.record}
                 materialItems={materialItems}
-                cutLogsByWorkOrderItemId={cutLogsByWorkOrderItemId}
+                adjustmentsByWorkOrderItemId={adjustmentsByWorkOrderItemId}
                 publishMaterialItems={setMaterialItems}
                 publishWorkOrder={controller.publishRecord}
-                publishCutLogPatch={publishCutLogPatch}
+                publishAdjustmentPatch={publishAdjustmentPatch}
               />
             ),
           },

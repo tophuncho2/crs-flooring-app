@@ -16,7 +16,7 @@ export type WorkOrderMaterialItemPickerProps = {
   /**
    * Optional notification fired alongside `onChange` carrying the full
    * picked option. Lets callers snapshot the picked WOMI's label so the
-   * trigger reflects the new selection on the cut-log relink flow.
+   * trigger reflects the new selection on the adjustment relink flow.
    */
   onOptionSelected?: (option: WorkOrderMaterialItemOption | null) => void
   /**
@@ -25,8 +25,8 @@ export type WorkOrderMaterialItemPickerProps = {
    */
   workOrderId: string | null
   /**
-   * Required filter — cut logs are product-locked, so the picker only ever
-   * surfaces WOMIs whose product matches the cut log's snapshot. Disabled
+   * Required filter — adjustments are product-locked, so the picker only ever
+   * surfaces WOMIs whose product matches the adjustment's snapshot. Disabled
    * when null.
    */
   productId: string | null

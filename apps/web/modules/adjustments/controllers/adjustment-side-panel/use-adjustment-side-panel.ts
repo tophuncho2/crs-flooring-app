@@ -6,7 +6,7 @@ import type {
   InventoryOption,
   WorkOrderOption,
 } from "@builders/domain"
-import type { CutLogScopeUrl } from "@/modules/cut-logs/data/mutations"
+import type { AdjustmentScopeUrl } from "@/modules/adjustments/data/mutations"
 import { formatWorkOrderOptionTitle } from "@/modules/work-orders/components/picker/work-order-picker"
 import { searchWorkOrderMaterialItemOptionsRequest } from "@/modules/work-orders/data/work-order-material-item-options-request"
 import {
@@ -16,32 +16,33 @@ import {
   formIsDirty,
   isCreateValid,
   isEditValid,
+  isManualCreateValid,
 } from "./form"
 import {
-  useCreateCutLogMutation,
-  useDeleteCutLogMutation,
-  useFinalizeCutLogMutation,
-  useUpdateCutLogMutation,
+  useCreateAdjustmentMutation,
+  useDeleteAdjustmentMutation,
+  useFinalizeAdjustmentMutation,
+  useUpdateAdjustmentMutation,
 } from "./mutations"
 import type {
-  CutLogEditForm,
-  CutLogEditPanelOpenSpec,
-  CutLogPanelLocal,
-  CutLogPanelPatch,
+  AdjustmentEditForm,
+  AdjustmentEditPanelOpenSpec,
+  AdjustmentPanelLocal,
+  AdjustmentPanelPatch,
 } from "./types"
 import { createRecordSectionError, type RecordSectionError } from "@/types/record/section-error"
 
 /**
- * Owns the side-panel lifecycle for cut-log editing: open/close, current
+ * Owns the side-panel lifecycle for adjustment editing: open/close, current
  * row, editable form, dirty tracking, free-text location filter for create
- * mode, and composes all five cut-log mutation hooks (create / update /
+ * mode, and composes all five adjustment mutation hooks (create / update /
  * delete / void / finalize).
  *
  * Scope-aware: `scope` drives the request URLs. WO callers pass
  * `{ kind: "work-order", workOrderId }`; inv callers pass
  * `{ kind: "inventory", inventoryId }`. `canCreate` gates whether the
  * create flow is reachable — WO callers pass true (with `warehouseId`
- * for the inventory picker); inv callers pass false (cut logs are only
+ * for the inventory picker); inv callers pass false (adjustments are only
  * created from WOMI rows in the UI).
  *
  * Mutation success → `publish(patch)` so the parent updates its snapshot.
@@ -57,38 +58,38 @@ import { createRecordSectionError, type RecordSectionError } from "@/types/recor
  *   - Delete        → close (row no longer exists)
  *   - Backdrop / ESC / X → close, discard unsaved
  */
-export type CutLogPanelPickerKind = "location" | "inventory"
+export type AdjustmentPanelPickerKind = "location" | "inventory"
 
-export function useCutLogEditPanel({
+export function useAdjustmentEditPanel({
   scope,
   warehouseId,
   canCreate,
   publish,
   onCreated,
 }: {
-  scope: CutLogScopeUrl
+  scope: AdjustmentScopeUrl
   /** Required when `canCreate` is true — drives the inventory picker. */
   warehouseId?: string | null
   canCreate: boolean
-  publish: (patch: CutLogPanelPatch) => void
+  publish: (patch: AdjustmentPanelPatch) => void
   /**
    * Optional override for post-create routing. When provided, the panel
    * closes after a successful create and the consumer routes the new
    * row elsewhere (e.g. WO hands off to the inventory-hub edit panel).
    * When omitted, the default in-place create→edit flip is preserved.
    */
-  onCreated?: (cutLog: InventoryAdjustmentRow, workOrderItemId: string) => void
+  onCreated?: (adjustment: InventoryAdjustmentRow, workOrderItemId: string | null) => void
 }) {
-  const [open, setOpen] = useState<CutLogEditPanelOpenSpec | null>(null)
-  const [form, setForm] = useState<CutLogEditForm>(EMPTY_FORM)
-  const [baseline, setBaseline] = useState<CutLogEditForm>(EMPTY_FORM)
-  const [local, setLocal] = useState<CutLogPanelLocal>(EMPTY_LOCAL)
+  const [open, setOpen] = useState<AdjustmentEditPanelOpenSpec | null>(null)
+  const [form, setForm] = useState<AdjustmentEditForm>(EMPTY_FORM)
+  const [baseline, setBaseline] = useState<AdjustmentEditForm>(EMPTY_FORM)
+  const [local, setLocal] = useState<AdjustmentPanelLocal>(EMPTY_LOCAL)
   const [error, setError] = useState<RecordSectionError | null>(null)
   // Body-takeover picker state for the create-mode Location + Inventory
   // pickers. Mirrors the template-sync / property-hub picker takeover
   // pattern — the panel body swaps to the picker listbox while a kind is
   // active. Resets to null on close, on open spec change, and on commit.
-  const [pickerKind, setPickerKind] = useState<CutLogPanelPickerKind | null>(null)
+  const [pickerKind, setPickerKind] = useState<AdjustmentPanelPickerKind | null>(null)
 
   // When the open spec changes, reset form + filters + clear error. Derived
   // during render (previous-value tracking); `open` is local state so its ref
@@ -104,17 +105,28 @@ export function useCutLogEditPanel({
       setError(null)
     } else {
       if (open.mode === "edit") {
-        const next = buildEditForm(open.cutLog)
+        const next = buildEditForm(open.adjustment)
         setForm(next)
         setBaseline(next)
         setLocal(EMPTY_LOCAL)
+      } else if (open.variant === "manual") {
+        // Manual create (inventory hub): the parent inventory is fixed on the
+        // spec; the form carries only direction + amount + notes. Defaults to
+        // INCREASE via EMPTY_FORM. Baseline matches so isDirty starts false.
+        const seeded: AdjustmentEditForm = {
+          ...EMPTY_FORM,
+          inventoryId: open.inventoryId,
+        }
+        setForm(seeded)
+        setBaseline(seeded)
+        setLocal(EMPTY_LOCAL)
       } else {
-        // Create mode: seed inventoryId from the preset (if any) so a
+        // WO "cut" create: seed inventoryId from the preset (if any) so a
         // "duplicate" flow opens with the source row's inventory pre-selected.
         // Baseline matches the seeded form so isDirty starts false — closing
         // an unmodified prefilled panel doesn't trigger a discard guard.
         const preset = open.presetInventory
-        const seeded: CutLogEditForm = {
+        const seeded: AdjustmentEditForm = {
           ...EMPTY_FORM,
           inventoryId: preset?.id ?? "",
         }
@@ -134,7 +146,7 @@ export function useCutLogEditPanel({
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
 
   const openPanel = useCallback(
-    (spec: CutLogEditPanelOpenSpec) => {
+    (spec: AdjustmentEditPanelOpenSpec) => {
       // Defensive: callers without create capability should never pass
       // mode: "create". Silently no-op to keep the UI honest.
       if (spec.mode === "create" && !canCreate) return
@@ -144,7 +156,7 @@ export function useCutLogEditPanel({
   )
 
   const setField = useCallback(
-    <K extends keyof CutLogEditForm>(field: K, value: CutLogEditForm[K]) => {
+    <K extends keyof AdjustmentEditForm>(field: K, value: AdjustmentEditForm[K]) => {
       setForm((prev) => ({ ...prev, [field]: value }))
       setError(null)
     },
@@ -162,7 +174,7 @@ export function useCutLogEditPanel({
   // `openPicker` toggles — clicking the active trigger closes the picker
   // (matches the template-sync top-toolbar pattern). The trigger fires
   // it unconditionally and the function decides open vs. close.
-  const openPicker = useCallback((kind: CutLogPanelPickerKind) => {
+  const openPicker = useCallback((kind: AdjustmentPanelPickerKind) => {
     setPickerKind((current) => (current === kind ? null : kind))
   }, [])
 
@@ -199,7 +211,7 @@ export function useCutLogEditPanel({
   }, [])
 
   // Single atomic work-order commit for the relink flow. The material-item
-  // picker is gone: a cut log's product is fixed and WOMIs are unique per
+  // picker is gone: a adjustment's product is fixed and WOMIs are unique per
   // (workOrder, product), so selecting a WO deterministically resolves the one
   // matching material item — we fetch it and link it here, moving the form +
   // trigger labels together in one path (mirrors `selectInventoryOption`).
@@ -232,7 +244,7 @@ export function useCutLogEditPanel({
       }))
       setError(null)
 
-      const productId = open?.mode === "edit" ? open.cutLog.productId : null
+      const productId = open?.mode === "edit" ? open.adjustment.productId : null
       if (!productId) return
 
       try {
@@ -257,7 +269,7 @@ export function useCutLogEditPanel({
         } else {
           // Defensive — picker only lists WOs carrying this product. Revert the
           // WO so the form stays link-symmetric and tell the user why.
-          const productName = open?.mode === "edit" ? open.cutLog.productName : "this product"
+          const productName = open?.mode === "edit" ? open.adjustment.productName : "this product"
           setForm((prev) =>
             prev.workOrderId === workOrderId
               ? { ...prev, workOrderId: null, workOrderItemId: null }
@@ -291,7 +303,7 @@ export function useCutLogEditPanel({
     [open],
   )
 
-  const createMutation = useCreateCutLogMutation({
+  const createMutation = useCreateAdjustmentMutation({
     scope,
     publish,
     setForm,
@@ -300,7 +312,7 @@ export function useCutLogEditPanel({
     setError,
     onCreated,
   })
-  const updateMutation = useUpdateCutLogMutation({
+  const updateMutation = useUpdateAdjustmentMutation({
     scope,
     publish,
     setForm,
@@ -308,13 +320,13 @@ export function useCutLogEditPanel({
     setOpen,
     setError,
   })
-  const deleteMutation = useDeleteCutLogMutation({
+  const deleteMutation = useDeleteAdjustmentMutation({
     scope,
     publish,
     setOpen,
     setError,
   })
-  const finalizeMutation = useFinalizeCutLogMutation({
+  const finalizeMutation = useFinalizeAdjustmentMutation({
     scope,
     publish,
     setForm,
@@ -332,28 +344,33 @@ export function useCutLogEditPanel({
   const save = useCallback(() => {
     if (!open || isSaving) return
     if (open.mode === "create") {
+      if (open.variant === "manual") {
+        if (!isManualCreateValid(form)) return
+        createMutation.mutate({ variant: "manual", inventoryId: open.inventoryId, form })
+        return
+      }
       if (!isCreateValid(form)) return
-      createMutation.mutate({ workOrderItemId: open.workOrderItemId, form })
+      createMutation.mutate({ variant: "cut", workOrderItemId: open.workOrderItemId, form })
     } else {
       if (!isEditValid(form) || !isDirty) return
       updateMutation.mutate({
         workOrderItemId: open.workOrderItemId,
-        cutLog: open.cutLog,
+        adjustment: open.adjustment,
         form,
       })
     }
   }, [open, form, isDirty, isSaving, createMutation, updateMutation])
 
-  const deleteCutLog = useCallback(() => {
+  const deleteAdjustment = useCallback(() => {
     if (!open || open.mode !== "edit" || isSaving) return
-    deleteMutation.mutate({ workOrderItemId: open.workOrderItemId, cutLog: open.cutLog })
+    deleteMutation.mutate({ workOrderItemId: open.workOrderItemId, adjustment: open.adjustment })
   }, [open, isSaving, deleteMutation])
 
   const finalize = useCallback(() => {
     if (!open || open.mode !== "edit" || isSaving || isDirty) return
     finalizeMutation.mutate({
       workOrderItemId: open.workOrderItemId,
-      cutLog: open.cutLog,
+      adjustment: open.adjustment,
     })
   }, [open, isDirty, isSaving, finalizeMutation])
 
@@ -389,8 +406,8 @@ export function useCutLogEditPanel({
     selectWorkOrderOption,
     save,
     finalize,
-    deleteCutLog,
+    deleteAdjustment,
   }
 }
 
-export type CutLogEditPanelController = ReturnType<typeof useCutLogEditPanel>
+export type AdjustmentEditPanelController = ReturnType<typeof useAdjustmentEditPanel>

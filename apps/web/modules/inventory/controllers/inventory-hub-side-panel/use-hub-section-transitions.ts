@@ -7,8 +7,8 @@ import {
   type InventoryRow,
 } from "@builders/domain"
 import type { RecordSectionError } from "@/types/record/section-error"
-import type { CutLogEditPanelController } from "@/modules/cut-logs"
-import { toCutLogPanelRow } from "./to-cut-log-panel-row"
+import type { AdjustmentEditPanelController } from "@/modules/adjustments"
+import { toAdjustmentPanelRow } from "./to-adjustment-panel-row"
 import type { HubInventoryEditSlice } from "./use-hub-inventory-edit"
 import type { HubInventoryDuplicateSlice } from "./use-hub-inventory-duplicate"
 import type { HubMode } from "./types"
@@ -21,13 +21,14 @@ export type UseHubSectionTransitionsArgs = {
   setError: (value: RecordSectionError | null) => void
   inventoryEdit: HubInventoryEditSlice
   inventoryDuplicate: HubInventoryDuplicateSlice
-  cutLogPanel: CutLogEditPanelController
+  adjustmentPanel: AdjustmentEditPanelController
   resetAll: () => void
 }
 
 export type HubSectionTransitionsSlice = {
   enterInventoryEditFromContext: () => void
-  enterCutLogEditFromContext: (row: EnrichedInventoryAdjustmentRow) => void
+  enterAdjustmentEditFromContext: (row: EnrichedInventoryAdjustmentRow) => void
+  enterAdjustmentCreate: () => void
   exitToView: () => void
 }
 
@@ -43,7 +44,7 @@ export function useHubSectionTransitions({
   setError,
   inventoryEdit,
   inventoryDuplicate,
-  cutLogPanel,
+  adjustmentPanel,
   resetAll,
 }: UseHubSectionTransitionsArgs): HubSectionTransitionsSlice {
   const enterInventoryEditFromContext = useCallback(() => {
@@ -57,26 +58,39 @@ export function useHubSectionTransitions({
     setMode({ kind: "section-edit-inventory", inventoryId: contextInventoryId })
   }, [contextInventoryId, inventory, inventoryEdit, setError, setMode])
 
-  const enterCutLogEditFromContext = useCallback(
+  const enterAdjustmentEditFromContext = useCallback(
     (row: EnrichedInventoryAdjustmentRow) => {
       if (contextInventoryId === null) return
-      // Hand the row to the embedded cut-log panel controller. It owns
+      // Hand the row to the embedded adjustment panel controller. It owns
       // form/baseline/mutations; the hub just picks the mode and lets the
       // panel handle the data flow.
-      cutLogPanel.openPanel({
+      adjustmentPanel.openPanel({
         mode: "edit",
         workOrderItemId: row.workOrderItemId,
-        cutLog: toCutLogPanelRow(row),
+        adjustment: toAdjustmentPanelRow(row),
       })
       setError(null)
       setMode({
-        kind: "section-edit-cut-log",
+        kind: "section-edit-adjustment",
         inventoryId: contextInventoryId,
-        cutLogId: row.id,
+        adjustmentId: row.id,
       })
     },
-    [contextInventoryId, cutLogPanel, setError, setMode],
+    [contextInventoryId, adjustmentPanel, setError, setMode],
   )
+
+  const enterAdjustmentCreate = useCallback(() => {
+    if (contextInventoryId === null) return
+    // Open the embedded panel in manual-create mode. The parent inventory is
+    // the hub context; the panel form carries only direction + amount + notes.
+    adjustmentPanel.openPanel({
+      mode: "create",
+      variant: "manual",
+      inventoryId: contextInventoryId,
+    })
+    setError(null)
+    setMode({ kind: "section-create-adjustment", inventoryId: contextInventoryId })
+  }, [contextInventoryId, adjustmentPanel, setError, setMode])
 
   const exitToView = useCallback(() => {
     if (contextInventoryId === null) {
@@ -86,14 +100,15 @@ export function useHubSectionTransitions({
     }
     inventoryEdit.reset()
     inventoryDuplicate.reset()
-    cutLogPanel.close()
+    adjustmentPanel.close()
     setError(null)
     setMode({ kind: "view", inventoryId: contextInventoryId })
-  }, [contextInventoryId, inventoryEdit, inventoryDuplicate, cutLogPanel, resetAll, setError, setMode])
+  }, [contextInventoryId, inventoryEdit, inventoryDuplicate, adjustmentPanel, resetAll, setError, setMode])
 
   return {
     enterInventoryEditFromContext,
-    enterCutLogEditFromContext,
+    enterAdjustmentEditFromContext,
+    enterAdjustmentCreate,
     exitToView,
   }
 }

@@ -8,16 +8,16 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateCreatePendingCutLogInput } from "@/app/api/cut-logs/_validators"
+import { validateCreatePendingAdjustmentInput } from "@/app/api/adjustments/_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
 /**
- * POST /api/work-orders/[id]/cut-logs
+ * POST /api/work-orders/[id]/adjustments
  *
- * Synchronous create for a single pending cut log under one WOMI.
+ * Synchronous create for a single pending adjustment under one WOMI.
  * Calls `createPendingAdjustmentUseCase`, which opens its own TX, asserts
  * WOMI ownership + IDLE status, takes the parent inventory FOR UPDATE
  * lock, stamps the four unit-snapshot fields from the inventory,
@@ -27,10 +27,10 @@ type RouteContext = {
 export async function POST(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     rateLimit: {
-      scope: "work-orders.cut-logs.pending.create",
+      scope: "work-orders.adjustments.pending.create",
       limit: 600,
       windowMs: 10 * 60 * 1000,
-      route: "/api/work-orders/[id]/cut-logs",
+      route: "/api/work-orders/[id]/adjustments",
     },
   })
   if (access instanceof Response) return access
@@ -40,10 +40,10 @@ export async function POST(request: Request, { params }: RouteContext) {
     const workOrderId = parseUuidParam(rawId, "id")
 
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateCreatePendingCutLogInput)
+    const { input, mutation } = parseMutationEnvelope(body, validateCreatePendingAdjustmentInput)
 
     const receipt = await enforceMutationReceipt({
-      scope: "work-orders.cut-logs.pending.create",
+      scope: "work-orders.adjustments.pending.create",
       request,
       access,
       mutation,
@@ -54,9 +54,9 @@ export async function POST(request: Request, { params }: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Pending cut log created",
-        action: "work-orders.cut-logs.pending.create",
-        route: "/api/work-orders/[id]/cut-logs",
+        message: "Pending adjustment created",
+        action: "work-orders.adjustments.pending.create",
+        route: "/api/work-orders/[id]/adjustments",
         entityType: "flooringWorkOrderItem",
         entityId: input.workOrderItemId,
       },
@@ -74,7 +74,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     const responseBody = result
     await finalizeMutationReceipt({
-      scope: "work-orders.cut-logs.pending.create",
+      scope: "work-orders.adjustments.pending.create",
       access,
       mutation,
       responseStatus: 200,

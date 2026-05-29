@@ -8,22 +8,22 @@ import {
 import { useMutation } from "@tanstack/react-query"
 import { isAdjustmentPendingEditable, type InventoryAdjustmentRow } from "@builders/domain"
 import {
-  updatePendingCutLogRequest,
-  type CutLogScopeUrl,
-} from "@/modules/cut-logs/data/mutations"
+  updatePendingAdjustmentRequest,
+  type AdjustmentScopeUrl,
+} from "@/modules/adjustments/data/mutations"
 import { buildEditForm } from "../form"
 import type {
-  CutLogEditForm,
-  CutLogEditPanelOpenSpec,
-  CutLogPanelPatch,
+  AdjustmentEditForm,
+  AdjustmentEditPanelOpenSpec,
+  AdjustmentPanelPatch,
 } from "../types"
 
 type Deps = {
-  scope: CutLogScopeUrl
-  publish: (patch: CutLogPanelPatch) => void
-  setForm: Dispatch<SetStateAction<CutLogEditForm>>
-  setBaseline: Dispatch<SetStateAction<CutLogEditForm>>
-  setOpen: Dispatch<SetStateAction<CutLogEditPanelOpenSpec | null>>
+  scope: AdjustmentScopeUrl
+  publish: (patch: AdjustmentPanelPatch) => void
+  setForm: Dispatch<SetStateAction<AdjustmentEditForm>>
+  setBaseline: Dispatch<SetStateAction<AdjustmentEditForm>>
+  setOpen: Dispatch<SetStateAction<AdjustmentEditPanelOpenSpec | null>>
   setError: Dispatch<SetStateAction<RecordSectionError | null>>
 }
 
@@ -36,7 +36,7 @@ type Deps = {
  * cells stay populated. A pending-edit can't change the WO link or the
  * warehouse snapshot, so those labels remain accurate.
  */
-export function useUpdateCutLogMutation({
+export function useUpdateAdjustmentMutation({
   scope,
   publish,
   setForm,
@@ -47,21 +47,21 @@ export function useUpdateCutLogMutation({
   return useMutation({
     mutationFn: (input: {
       workOrderItemId: string | null
-      cutLog: InventoryAdjustmentRow
-      form: CutLogEditForm
+      adjustment: InventoryAdjustmentRow
+      form: AdjustmentEditForm
     }) => {
       // FINAL rows lock `cut` / `notes` / `isWaste`; only the link is
       // mutable. Send those fields only when the row is still
       // PENDING-editable so the server gate (which separates field
       // patches from link patches) doesn't 409.
-      const fieldsEditable = isAdjustmentPendingEditable(input.cutLog)
+      const fieldsEditable = isAdjustmentPendingEditable(input.adjustment)
       const linkChanged =
-        input.form.workOrderId !== input.cutLog.workOrderId ||
-        input.form.workOrderItemId !== input.cutLog.workOrderItemId
-      return updatePendingCutLogRequest({
+        input.form.workOrderId !== input.adjustment.workOrderId ||
+        input.form.workOrderItemId !== input.adjustment.workOrderItemId
+      return updatePendingAdjustmentRequest({
         scope,
-        cutLogId: input.cutLog.id,
-        expectedUpdatedAt: input.cutLog.updatedAt,
+        adjustmentId: input.adjustment.id,
+        expectedUpdatedAt: input.adjustment.updatedAt,
         patch: {
           ...(fieldsEditable
             ? {
@@ -82,46 +82,46 @@ export function useUpdateCutLogMutation({
       })
     },
     onSuccess: (response, variables) => {
-      // Bucket move: on the WO side, cut logs are grouped by WOMI id. A
+      // Bucket move: on the WO side, adjustments are grouped by WOMI id. A
       // relink (`workOrderItemId` changed) needs to remove the row from
       // the old bucket and add it to the new one. The inv-side publish is
       // a cache-invalidation shim that ignores `workOrderItemId`, so the
       // extra delete is a harmless no-op there.
       const oldWomiId = variables.workOrderItemId
-      const newWomiId = response.cutLog.workOrderItemId
+      const newWomiId = response.adjustment.workOrderItemId
       if (oldWomiId !== newWomiId) {
         publish({
           kind: "delete",
           workOrderItemId: oldWomiId,
-          cutLogId: response.cutLog.id,
+          adjustmentId: response.adjustment.id,
         })
       }
       publish({
         kind: "upsert",
         workOrderItemId: newWomiId,
-        cutLog: response.cutLog,
+        adjustment: response.adjustment,
       })
-      const next = buildEditForm(response.cutLog)
+      const next = buildEditForm(response.adjustment)
       setForm(next)
       setBaseline(next)
       setOpen((prev) => ({
         mode: "edit",
         workOrderItemId: newWomiId,
-        cutLog: {
-          ...response.cutLog,
+        adjustment: {
+          ...response.adjustment,
           workOrderNumber:
-            prev?.mode === "edit" ? (prev.cutLog.workOrderNumber ?? null) : null,
+            prev?.mode === "edit" ? (prev.adjustment.workOrderNumber ?? null) : null,
           workOrderItemProductLabel:
             prev?.mode === "edit"
-              ? (prev.cutLog.workOrderItemProductLabel ?? null)
+              ? (prev.adjustment.workOrderItemProductLabel ?? null)
               : null,
           warehouseName:
-            prev?.mode === "edit" ? (prev.cutLog.warehouseName ?? null) : null,
+            prev?.mode === "edit" ? (prev.adjustment.warehouseName ?? null) : null,
         },
       }))
     },
     onError: (err: unknown) => {
-      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save cut log" }))
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to save adjustment" }))
     },
   })
 }

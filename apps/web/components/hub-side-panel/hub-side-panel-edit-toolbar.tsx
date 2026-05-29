@@ -31,7 +31,7 @@ export type HubSidePanelEditToolbarProps = {
   /**
    * Render the delete button in a disabled state. Use when the action is
    * surface-relevant (so the affordance stays visible) but the row is in
-   * a state the server will reject — e.g. cut logs are deletable only
+   * a state the server will reject — e.g. adjustments are deletable only
    * while PENDING; FINAL / VOID rows must be reversed first.
    */
   deleteDisabled?: boolean
@@ -50,7 +50,7 @@ export type HubSidePanelEditToolbarProps = {
   /**
    * Optional extra controls rendered in the left cluster, after the
    * status pill and back-arrow. Used by hubs that need domain-specific
-   * actions alongside save/discard/delete (e.g. cut-log finalize / void).
+   * actions alongside save/discard/delete (e.g. adjustment finalize / void).
    */
   extraLeftActions?: ReactNode
   saveLabel?: string

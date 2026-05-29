@@ -7,16 +7,16 @@ import {
   HubSidePanelPickerTrigger,
   HubSidePanelShell,
 } from "@/components/hub-side-panel"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
-import { CutLogEditFormFields } from "./cut-log-edit-form-fields"
-import { CutLogInventoryPickerTakeover } from "./pickers/cut-log-inventory-picker-takeover"
-import { CutLogLocationPickerTakeover } from "./pickers/cut-log-location-picker-takeover"
+import type { AdjustmentEditPanelController } from "@/modules/adjustments/controllers/adjustment-side-panel"
+import { AdjustmentEditFormFields } from "./adjustment-edit-form-fields"
+import { AdjustmentInventoryPickerTakeover } from "./pickers/adjustment-inventory-picker-takeover"
+import { AdjustmentLocationPickerTakeover } from "./pickers/adjustment-location-picker-takeover"
 
 const PICKER_LABEL_CLASS =
   "text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65"
 
-export type CutLogEditPanelProps = {
-  controller: CutLogEditPanelController
+export type AdjustmentEditPanelProps = {
+  controller: AdjustmentEditPanelController
   /**
    * Optional "open the picked inventory" handler. When provided, the inventory
    * trigger renders a trailing arrow that opens the selected inventory (the
@@ -27,8 +27,8 @@ export type CutLogEditPanelProps = {
 }
 
 /**
- * Create-only cut-log side panel. Mounted by the work-orders record view
- * for the "+ Add Cut Log" and "Duplicate" affordances. Edit flows go
+ * Create-only adjustment side panel. Mounted by the work-orders record view
+ * for the "+ Add Adjustment" and "Duplicate" affordances. Edit flows go
  * through `InventoryHubSidePanel` (see `modules/inventory/.../hub/`); the
  * controller still supports `mode: "edit"` because the hub embeds the
  * same controller — this component just doesn't render it.
@@ -46,7 +46,7 @@ export type CutLogEditPanelProps = {
  * positions don't shift) but is disabled while a picker takeover is active —
  * picker body owns its own search input + cancel-on-Escape behavior.
  */
-export function CutLogEditPanel({ controller, onOpenInventory }: CutLogEditPanelProps) {
+export function AdjustmentEditPanel({ controller, onOpenInventory }: AdjustmentEditPanelProps) {
   const {
     open,
     pickerKind,
@@ -61,7 +61,7 @@ export function CutLogEditPanel({ controller, onOpenInventory }: CutLogEditPanel
     form,
   } = controller
 
-  const create = open?.mode === "create" ? open : null
+  const create = open?.mode === "create" && open.variant === "cut" ? open : null
   const isOpen = create !== null
   const isPickerActive = pickerKind !== null
 
@@ -70,7 +70,7 @@ export function CutLogEditPanel({ controller, onOpenInventory }: CutLogEditPanel
       if (pickerKind === "location") return "Select location"
       if (pickerKind === "inventory") return "Select inventory"
     }
-    return "New cut log"
+    return "New adjustment"
   }, [isPickerActive, pickerKind])
 
   // Picker triggers live in the sticky topToolbar so they stay visible
@@ -146,12 +146,12 @@ export function CutLogEditPanel({ controller, onOpenInventory }: CutLogEditPanel
     <HubSidePanelShell open={isOpen} onClose={close} title={title} topToolbar={topToolbar}>
       {isPickerActive ? (
         pickerKind === "location" ? (
-          <CutLogLocationPickerTakeover controller={controller} />
+          <AdjustmentLocationPickerTakeover controller={controller} />
         ) : pickerKind === "inventory" ? (
-          <CutLogInventoryPickerTakeover controller={controller} />
+          <AdjustmentInventoryPickerTakeover controller={controller} />
         ) : null
       ) : create ? (
-        <CutLogEditFormFields mode="create" cutLog={null} controller={controller} />
+        <AdjustmentEditFormFields mode="create" adjustment={null} controller={controller} />
       ) : null}
     </HubSidePanelShell>
   )

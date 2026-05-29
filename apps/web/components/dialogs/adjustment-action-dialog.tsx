@@ -3,11 +3,11 @@
 import type { FlooringInventoryAdjustmentStatus } from "@builders/domain"
 import { ConfirmDialog } from "./confirm-dialog"
 
-export type CutLogActionDialogProps = {
+export type AdjustmentActionDialogProps = {
   open: boolean
-  /** Status of the cut log the action targets — drives the dialog copy. */
+  /** Status of the adjustment the action targets — drives the dialog copy. */
   status: FlooringInventoryAdjustmentStatus
-  /** Cut log number (the user-visible "CUT-N" identifier). */
+  /** Adjustment number (the user-visible "CUT-N" identifier). */
   adjustmentNumber: string
   /** Fired when the user confirms. The consumer is responsible for closing. */
   onConfirm: () => void
@@ -25,23 +25,23 @@ type DialogCopy = {
 }
 
 const PENDING_COPY: DialogCopy = {
-  title: "Delete cut log?",
+  title: "Delete adjustment?",
   message:
-    "This pending cut log will be removed. Cut logs that have been finalized cannot be deleted — they can only be voided.",
+    "This pending adjustment will be removed. Adjustments that have been finalized cannot be deleted — they can only be voided.",
   confirmLabel: "Delete",
   pendingLabel: "Deleting…",
 }
 
 const FINAL_COPY: DialogCopy = {
-  title: "Void cut log?",
+  title: "Void adjustment?",
   message:
-    "Voiding marks this finalized cut log as no longer counted; the row stays in the history with its original sequence number.",
+    "Voiding marks this finalized adjustment as no longer counted; the row stays in the history with its original sequence number.",
   confirmLabel: "Void",
   pendingLabel: "Voiding…",
 }
 
 /**
- * Status-aware destructive-action dialog for cut logs. The consumer opens it
+ * Status-aware destructive-action dialog for adjustments. The consumer opens it
  * by clicking the row's destructive action button; the dialog shows the
  * right copy depending on whether the row is PENDING (delete) or FINAL
  * (void). The button is expected to be disabled in the row when the status
@@ -50,14 +50,14 @@ const FINAL_COPY: DialogCopy = {
  * Pure UI wrapper over `ConfirmDialog`. The consumer is responsible for
  * dispatching the actual mutation in `onConfirm` and toggling `open`.
  */
-export function CutLogActionDialog({
+export function AdjustmentActionDialog({
   open,
   status,
   adjustmentNumber,
   onConfirm,
   onCancel,
   pending = false,
-}: CutLogActionDialogProps) {
+}: AdjustmentActionDialogProps) {
   const copy = status === "FINAL" ? FINAL_COPY : PENDING_COPY
   return (
     <ConfirmDialog

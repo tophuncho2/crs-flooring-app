@@ -1,16 +1,16 @@
 "use client"
 
 import { SidePanelEditStatusPill } from "@/components/side-panel-edit"
-import type { CutLogEditPanelController } from "@/modules/cut-logs/controllers/cut-log-side-panel"
+import type { AdjustmentEditPanelController } from "@/modules/adjustments/controllers/adjustment-side-panel"
 
 /**
- * Cut-log side-panel adapter for the shared status pill. Surfaces dirty /
+ * Adjustment side-panel adapter for the shared status pill. Surfaces dirty /
  * saving state in the footer; no optimistic-lock conflict tracking yet.
  */
-export function CutLogEditStatusPill({
+export function AdjustmentEditStatusPill({
   controller,
 }: {
-  controller: CutLogEditPanelController
+  controller: AdjustmentEditPanelController
 }) {
   return (
     <SidePanelEditStatusPill

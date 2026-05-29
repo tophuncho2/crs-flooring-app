@@ -10,46 +10,46 @@ import {
 } from "@/server/http/route-policy"
 
 type RouteContext = {
-  params: Promise<{ id: string; cutLogId: string }>
+  params: Promise<{ id: string; adjustmentId: string }>
 }
 
 /**
- * POST /api/work-orders/[id]/cut-logs/[cutLogId]/finalize
+ * POST /api/work-orders/[id]/adjustments/[adjustmentId]/finalize
  *
  * Synchronous single-row finalize under the work-order scope. Calls
  * `finalizeAdjustmentUseCase` with `{ scope: { kind: "work-order",
  * workOrderId } }`. The use case scope-asserts row → WO membership,
  * locks the parent inventory FOR UPDATE, runs the finalizability gate,
  * stamps `before` / `after` / `finalCutSequence`, flips status to FINAL,
- * and re-snaps `location` via `applyFinalizeCutLog`. Returns 200 with
- * the stamped cut log.
+ * and re-snaps `location` via `applyFinalizeAdjustment`. Returns 200 with
+ * the stamped adjustment.
  *
- * Resource-level URL (per [cutLogId]) — symmetric with the inv-side
- * `/api/inventory/[id]/cut-logs/[cutLogId]/finalize`. The legacy
- * collection-level `/api/work-orders/[id]/cut-logs/finalize` was
- * removed in the cut-logs FE sweep.
+ * Resource-level URL (per [adjustmentId]) — symmetric with the inv-side
+ * `/api/inventory/[id]/adjustments/[adjustmentId]/finalize`. The legacy
+ * collection-level `/api/work-orders/[id]/adjustments/finalize` was
+ * removed in the adjustments FE sweep.
  */
 export async function POST(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     rateLimit: {
-      scope: "work-orders.cut-logs.finalize",
+      scope: "work-orders.adjustments.finalize",
       limit: 600,
       windowMs: 10 * 60 * 1000,
-      route: "/api/work-orders/[id]/cut-logs/[cutLogId]/finalize",
+      route: "/api/work-orders/[id]/adjustments/[adjustmentId]/finalize",
     },
   })
   if (access instanceof Response) return access
 
   try {
-    const { id: rawId, cutLogId: rawCutLogId } = await params
+    const { id: rawId, adjustmentId: rawAdjustmentId } = await params
     const workOrderId = parseUuidParam(rawId, "id")
-    const cutLogId = parseUuidParam(rawCutLogId, "cutLogId")
+    const adjustmentId = parseUuidParam(rawAdjustmentId, "adjustmentId")
 
     const body = (await request.json()) as Record<string, unknown>
     const { input: _input, mutation } = parseMutationEnvelope(body, (value) => value)
 
     const receipt = await enforceMutationReceipt({
-      scope: "work-orders.cut-logs.finalize",
+      scope: "work-orders.adjustments.finalize",
       request,
       access,
       mutation,
@@ -60,22 +60,22 @@ export async function POST(request: Request, { params }: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Work-order cut log finalized",
-        action: "work-orders.cut-logs.finalize",
-        route: "/api/work-orders/[id]/cut-logs/[cutLogId]/finalize",
-        entityType: "flooringCutLog",
-        entityId: cutLogId,
+        message: "Work-order adjustment finalized",
+        action: "work-orders.adjustments.finalize",
+        route: "/api/work-orders/[id]/adjustments/[adjustmentId]/finalize",
+        entityType: "flooringAdjustment",
+        entityId: adjustmentId,
       },
       () =>
         finalizeAdjustmentUseCase({
           scope: { kind: "work-order", workOrderId },
-          adjustmentId: cutLogId,
+          adjustmentId: adjustmentId,
         }),
     )
 
     const responseBody = result
     await finalizeMutationReceipt({
-      scope: "work-orders.cut-logs.finalize",
+      scope: "work-orders.adjustments.finalize",
       access,
       mutation,
       responseStatus: 200,

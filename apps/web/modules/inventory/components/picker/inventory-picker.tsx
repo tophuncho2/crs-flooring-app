@@ -16,7 +16,7 @@ export type InventoryPickerProps = {
   /**
    * Optional notification fired alongside `onChange` carrying the full
    * picked option. Lets callers reflect the picked inventory in adjacent UI
-   * (e.g. the cut log's stock unit cell) before save.
+   * (e.g. the adjustment's stock unit cell) before save.
    */
   onOptionSelected?: (option: InventoryOption | null) => void
   /**
@@ -26,14 +26,14 @@ export type InventoryPickerProps = {
   warehouseId: string | null
   /**
    * Optional product narrowing — when set, only inventory rows for that
-   * product are returned. Cut-log usages always pass this (a cut log can
+   * product are returned. Adjustment usages always pass this (a adjustment can
    * only reference inventory of the parent material item's product).
    */
   productId?: string | null
   /**
    * Optional free-text location filter — server-side ILIKE on
    * `inventory.location`. Picker re-fetches when this changes. Use case: the
-   * cut-log create form's location filter chip narrows the picker scope.
+   * adjustment create form's location filter chip narrows the picker scope.
    */
   location?: string | null
   /**

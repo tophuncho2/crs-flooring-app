@@ -1,22 +1,22 @@
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
-import type { CutLogPanelRow } from "@/modules/cut-logs"
+import type { AdjustmentPanelRow } from "@/modules/adjustments"
 
 /**
- * Normalize an inventory-side cut-log row (or anything structurally
- * close to a `CutLogPanelRow`) into the exact `CutLogPanelRow` shape the
- * embedded cut-log panel expects. The shared cut-log panel treats the
+ * Normalize an inventory-side adjustment row (or anything structurally
+ * close to a `AdjustmentPanelRow`) into the exact `AdjustmentPanelRow` shape the
+ * embedded adjustment panel expects. The shared adjustment panel treats the
  * three optional snapshot labels (`workOrderNumber`,
  * `workOrderItemProductLabel`, `warehouseName`) as `string | null` —
  * inventory-side reads can hand back `undefined`, so this collapses both
  * to `null` to keep the panel's read-only summary stable.
  *
- * Used by both `openForCutLogEdit` (external opener) and
- * `enterCutLogEditFromContext` (internal transition) so adding a new
+ * Used by both `openForAdjustmentEdit` (external opener) and
+ * `enterAdjustmentEditFromContext` (internal transition) so adding a new
  * optional-to-null field touches one place.
  */
-export function toCutLogPanelRow(
-  row: CutLogPanelRow | EnrichedInventoryAdjustmentRow,
-): CutLogPanelRow {
+export function toAdjustmentPanelRow(
+  row: AdjustmentPanelRow | EnrichedInventoryAdjustmentRow,
+): AdjustmentPanelRow {
   return {
     ...row,
     workOrderNumber: row.workOrderNumber ?? null,
