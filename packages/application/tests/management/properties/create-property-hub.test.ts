@@ -27,8 +27,6 @@ const {
 
 vi.mock("@builders/db", () => ({
   Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
-  isP2002: (err: { code?: string; meta?: { target?: string[] } }, field: string) =>
-    err?.code === "P2002" && (err?.meta?.target?.includes?.(field) ?? false),
   withDatabaseTransaction: withDatabaseTransactionMock,
   getManagementCompanyById: getManagementCompanyByIdMock,
   createManagementCompanyRecord: createManagementCompanyRecordMock,
@@ -98,30 +96,6 @@ describe("createPropertyHubUseCase", () => {
     ).rejects.toMatchObject({ code: "MANAGEMENT_COMPANY_NOT_FOUND", status: 404 })
   })
 
-  it("maps a management-company name conflict to a 409", async () => {
-    createManagementCompanyRecordMock.mockRejectedValue(
-      new PrismaKnownError("dup", { code: "P2002", meta: { target: ["name"] } }),
-    )
-    await expect(
-      createPropertyHubUseCase({
-        managementCompany: { mode: "create", fields: mcFields() },
-        property: { mode: "create", fields: propFields() },
-      } as never),
-    ).rejects.toMatchObject({ code: "MANAGEMENT_COMPANY_NAME_CONFLICT", status: 409 })
-  })
-
-  it("maps a property name conflict to a 409", async () => {
-    createPropertyRecordMock.mockRejectedValue(
-      new PrismaKnownError("dup", { code: "P2002", meta: { target: ["nameNormalized"] } }),
-    )
-    await expect(
-      createPropertyHubUseCase({
-        managementCompany: { mode: "none" },
-        property: { mode: "create", fields: propFields() },
-      } as never),
-    ).rejects.toMatchObject({ code: "PROPERTY_NAME_CONFLICT", status: 409 })
-  })
-
   it("creates both records and threads the new MC id into the property", async () => {
     createManagementCompanyRecordMock.mockResolvedValue({ id: "mc-9", name: "Acme" })
     createPropertyRecordMock.mockResolvedValue({ id: "prop-9", name: "Maple Court" })
@@ -136,7 +110,7 @@ describe("createPropertyHubUseCase", () => {
       property: { id: "prop-9", name: "Maple Court" },
     })
     expect(createPropertyRecordMock).toHaveBeenCalledWith(
-      expect.objectContaining({ managementCompanyId: "mc-9", nameNormalized: "maple court" }),
+      expect.objectContaining({ managementCompanyId: "mc-9", name: "Maple Court" }),
       expect.anything(),
     )
   })

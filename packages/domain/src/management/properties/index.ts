@@ -1,6 +1,5 @@
 export * from "./types.js"
 export * from "./form-rules.js"
-export * from "./property-rules.js"
 export * from "./delete-rules.js"
 export * from "./error-messages.js"
 export * from "./normalizers.js"

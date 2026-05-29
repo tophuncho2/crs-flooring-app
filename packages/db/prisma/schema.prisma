@@ -110,7 +110,7 @@ enum FlooringWorkOrderItemStatus {
 
 model FlooringManagementCompany {
   id            String              @id @default(uuid())
-  name          String              @unique
+  name          String
   streetAddress String?
   city          String?
   state         String?
@@ -131,7 +131,6 @@ model Property {
   managementCompanyId String?
   managementCompany   FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
   name                String
-  nameNormalized      String                     @unique
   streetAddress       String?
   city                String?
   state               String?

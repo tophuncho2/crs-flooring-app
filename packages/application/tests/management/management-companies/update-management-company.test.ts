@@ -21,8 +21,6 @@ const { withDatabaseTransactionMock, updateManagementCompanyRecordMock, PrismaKn
 
 vi.mock("@builders/db", () => ({
   Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
-  isP2002: (err: { code?: string; meta?: { target?: string[] } }, field: string) =>
-    err?.code === "P2002" && (err?.meta?.target?.includes?.(field) ?? false),
   withDatabaseTransaction: withDatabaseTransactionMock,
   updateManagementCompanyRecord: updateManagementCompanyRecordMock,
 }))
@@ -57,16 +55,6 @@ describe("updateManagementCompanyUseCase", () => {
     const updated = { id: ID, name: "Renamed" }
     updateManagementCompanyRecordMock.mockResolvedValue(updated)
     expect(await updateManagementCompanyUseCase(ID, { name: "Renamed" } as never)).toBe(updated)
-  })
-
-  it("maps a P2002 name violation to a 409 conflict", async () => {
-    updateManagementCompanyRecordMock.mockRejectedValue(
-      new PrismaKnownError("dup", { code: "P2002", meta: { target: ["name"] } }),
-    )
-    await expect(updateManagementCompanyUseCase(ID, { name: "Taken" } as never)).rejects.toMatchObject({
-      code: "MANAGEMENT_COMPANY_NAME_CONFLICT",
-      status: 409,
-    })
   })
 
   it("maps a P2025 to a 404 not-found", async () => {

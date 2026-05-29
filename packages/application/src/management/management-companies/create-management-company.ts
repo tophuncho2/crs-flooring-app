@@ -1,10 +1,8 @@
 import { Prisma, createManagementCompanyRecord, withDatabaseTransaction } from "@builders/db"
 import {
-  MANAGEMENT_COMPANY_NAME_CONFLICT_MESSAGE,
   MANAGEMENT_COMPANY_NAME_REQUIRED_MESSAGE,
   isBlankName,
 } from "@builders/domain"
-import { isP2002 } from "../../shared/prisma-errors.js"
 import { ManagementCompanyExecutionError } from "./errors.js"
 import type {
   CreateManagementCompanyUseCaseInput,
@@ -27,18 +25,6 @@ export async function createManagementCompanyUseCase(
       })
     }
 
-    try {
-      return await createManagementCompanyRecord(input, c)
-    } catch (error) {
-      if (isP2002(error, "name")) {
-        throw new ManagementCompanyExecutionError({
-          code: "MANAGEMENT_COMPANY_NAME_CONFLICT",
-          message: MANAGEMENT_COMPANY_NAME_CONFLICT_MESSAGE,
-          status: 409,
-          field: "name",
-        })
-      }
-      throw error
-    }
+    return await createManagementCompanyRecord(input, c)
   })
 }

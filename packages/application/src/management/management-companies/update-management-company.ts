@@ -1,11 +1,9 @@
 import { Prisma, updateManagementCompanyRecord, withDatabaseTransaction } from "@builders/db"
 import {
-  MANAGEMENT_COMPANY_NAME_CONFLICT_MESSAGE,
   MANAGEMENT_COMPANY_NAME_REQUIRED_MESSAGE,
   MANAGEMENT_COMPANY_NOT_FOUND_MESSAGE,
   isBlankName,
 } from "@builders/domain"
-import { isP2002 } from "../../shared/prisma-errors.js"
 import { ManagementCompanyExecutionError } from "./errors.js"
 import type {
   ManagementCompanyUseCaseResult,
@@ -32,14 +30,6 @@ export async function updateManagementCompanyUseCase(
     try {
       return await updateManagementCompanyRecord(id, input, c)
     } catch (error) {
-      if (isP2002(error, "name")) {
-        throw new ManagementCompanyExecutionError({
-          code: "MANAGEMENT_COMPANY_NAME_CONFLICT",
-          message: MANAGEMENT_COMPANY_NAME_CONFLICT_MESSAGE,
-          status: 409,
-          field: "name",
-        })
-      }
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         throw new ManagementCompanyExecutionError({
           code: "MANAGEMENT_COMPANY_NOT_FOUND",

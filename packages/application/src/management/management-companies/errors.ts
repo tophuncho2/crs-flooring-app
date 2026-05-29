@@ -1,7 +1,6 @@
 export type ManagementCompanyErrorCode =
   | "MANAGEMENT_COMPANY_VALIDATION_FAILED"
   | "MANAGEMENT_COMPANY_NOT_FOUND"
-  | "MANAGEMENT_COMPANY_NAME_CONFLICT"
   | "MANAGEMENT_COMPANY_IN_USE"
 
 export class ManagementCompanyExecutionError extends Error {

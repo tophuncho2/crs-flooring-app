@@ -82,22 +82,6 @@ export async function getPropertyById(
   return normalizeProperty(property)
 }
 
-export async function propertyNameExists(
-  normalizedName: string,
-  currentId?: string,
-  client: PropertiesDbClient = db,
-): Promise<boolean> {
-  const existing = await client.property.findFirst({
-    where: {
-      nameNormalized: normalizedName,
-      ...(currentId ? { NOT: { id: currentId } } : {}),
-    },
-    select: { id: true },
-  })
-
-  return Boolean(existing)
-}
-
 export async function countTemplatesByPropertyId(
   propertyId: string,
   client: PropertiesDbClient = db,

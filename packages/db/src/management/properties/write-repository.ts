@@ -7,7 +7,6 @@ type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
 export type CreatePropertyRecordInput = {
   managementCompanyId: string | null
   name: string
-  nameNormalized: string
   streetAddress: string | null
   city: string | null
   state: string | null

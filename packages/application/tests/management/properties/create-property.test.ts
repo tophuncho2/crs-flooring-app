@@ -1,31 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, createPropertyRecordMock, propertyNameExistsMock, PrismaKnownError } =
-  vi.hoisted(() => {
-    class PrismaKnownError extends Error {
-      code: string
-      meta?: { target?: string[] }
-      constructor(message: string, opts: { code: string; meta?: { target?: string[] } }) {
-        super(message)
-        this.code = opts.code
-        this.meta = opts.meta
-      }
-    }
-    return {
-      withDatabaseTransactionMock: vi.fn(),
-      createPropertyRecordMock: vi.fn(),
-      propertyNameExistsMock: vi.fn(),
-      PrismaKnownError,
-    }
-  })
+const { withDatabaseTransactionMock, createPropertyRecordMock } = vi.hoisted(() => {
+  return {
+    withDatabaseTransactionMock: vi.fn(),
+    createPropertyRecordMock: vi.fn(),
+  }
+})
 
 vi.mock("@builders/db", () => ({
-  Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
-  isP2002: (err: { code?: string; meta?: { target?: string[] } }, field: string) =>
-    err?.code === "P2002" && (err?.meta?.target?.includes?.(field) ?? false),
+  Prisma: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
   createPropertyRecord: createPropertyRecordMock,
-  propertyNameExists: propertyNameExistsMock,
 }))
 
 import { createPropertyUseCase } from "../../../src/management/properties/create-property.js"
@@ -67,10 +52,8 @@ function detail(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   createPropertyRecordMock.mockReset()
-  propertyNameExistsMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  propertyNameExistsMock.mockResolvedValue(false)
   createPropertyRecordMock.mockResolvedValue(detail())
 })
 
@@ -81,25 +64,10 @@ describe("createPropertyUseCase", () => {
       status: 400,
       field: "name",
     })
-    expect(propertyNameExistsMock).not.toHaveBeenCalled()
     expect(createPropertyRecordMock).not.toHaveBeenCalled()
   })
 
-  it("rejects a duplicate normalized name with 409 before inserting", async () => {
-    propertyNameExistsMock.mockResolvedValue(true)
-    await expect(createPropertyUseCase(input() as never)).rejects.toMatchObject({
-      code: "PROPERTY_NAME_CONFLICT",
-      status: 409,
-    })
-    expect(createPropertyRecordMock).not.toHaveBeenCalled()
-  })
-
-  it("checks uniqueness against the normalized (trimmed, lower-cased) name", async () => {
-    await createPropertyUseCase(input({ name: "  Maple Court  " }) as never)
-    expect(propertyNameExistsMock).toHaveBeenCalledWith("maple court", undefined, expect.anything())
-  })
-
-  it("persists the record with the derived nameNormalized and returns it", async () => {
+  it("persists the record and returns it", async () => {
     const created = detail({ id: "prop-9" })
     createPropertyRecordMock.mockResolvedValue(created)
 
@@ -107,22 +75,12 @@ describe("createPropertyUseCase", () => {
 
     expect(result).toBe(created)
     expect(createPropertyRecordMock).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "Maple Court", nameNormalized: "maple court" }),
+      expect.objectContaining({ name: "Maple Court" }),
       expect.anything(),
     )
   })
 
-  it("maps a P2002 nameNormalized violation to a 409 conflict", async () => {
-    createPropertyRecordMock.mockRejectedValue(
-      new PrismaKnownError("dup", { code: "P2002", meta: { target: ["nameNormalized"] } }),
-    )
-    await expect(createPropertyUseCase(input() as never)).rejects.toMatchObject({
-      code: "PROPERTY_NAME_CONFLICT",
-      status: 409,
-    })
-  })
-
-  it("re-throws unexpected (non-P2002) database errors unchanged", async () => {
+  it("re-throws unexpected database errors unchanged", async () => {
     createPropertyRecordMock.mockRejectedValue(new Error("boom"))
     await expect(createPropertyUseCase(input() as never)).rejects.toThrowError("boom")
     await expect(createPropertyUseCase(input() as never)).rejects.not.toBeInstanceOf(
