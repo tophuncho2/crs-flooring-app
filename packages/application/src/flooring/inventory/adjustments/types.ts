@@ -6,43 +6,25 @@ export type AdjustmentMutationScope =
   | { kind: "inventory"; inventoryId: string }
 
 /**
- * Discriminated union over the two create flows:
- *  - `variant: "cut"` — a WO-linked DEDUCTION. The route under
- *    `/api/work-orders/[id]/adjustments` produces this shape; the use case
- *    enforces the WOMI scope and stamps `adjustmentType: "DEDUCTION"` +
- *    WO-link columns onto the row.
- *  - `variant: "manual"` — a free-form INCREASE or DEDUCTION created from the
- *    inventory hub. May OPTIONALLY carry a WO link (both `workOrderId` +
- *    `workOrderItemId` set, or both absent) — an INCREASE may now link a work
- *    order. `isWaste` is a caller-supplied reporting flag, allowed on either
- *    direction.
- *
- * `warehouseId` (both variants, optional) is the warehouse selected in the
- * form as an inventory filter. When present it is asserted to equal the chosen
+ * Single create flow. All adjustments are created through the inventory route
+ * (`/api/inventory/[id]/adjustments`); the form knows the chosen inventory once
+ * an inventory is picked. An adjustment may OPTIONALLY carry a WO link (both
+ * `workOrderId` + `workOrderItemId` set, or both absent — an INCREASE may link
+ * a work order). `warehouseId` (optional) is the warehouse selected in the form
+ * as an inventory filter; when present it is asserted to equal the chosen
  * inventory's warehouse (the persisted warehouse is always the inventory's).
+ * `isWaste` is a reporting flag allowed on either direction.
  */
-export type CreatePendingAdjustmentInput =
-  | {
-      variant: "cut"
-      workOrderId: string
-      workOrderItemId: string
-      inventoryId: string
-      warehouseId?: string | null
-      quantity: string
-      isWaste: boolean
-      notes: string
-    }
-  | {
-      variant: "manual"
-      adjustmentType: FlooringInventoryAdjustmentType
-      inventoryId: string
-      warehouseId?: string | null
-      workOrderId?: string | null
-      workOrderItemId?: string | null
-      quantity: string
-      isWaste: boolean
-      notes: string
-    }
+export type CreatePendingAdjustmentInput = {
+  adjustmentType: FlooringInventoryAdjustmentType
+  inventoryId: string
+  warehouseId?: string | null
+  workOrderId?: string | null
+  workOrderItemId?: string | null
+  quantity: string
+  isWaste: boolean
+  notes: string
+}
 
 export type UpdatePendingAdjustmentPatch = {
   /** Always positive (validator enforces); direction is immutable post-create. */

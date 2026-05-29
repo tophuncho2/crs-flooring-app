@@ -24,16 +24,11 @@ import type {
 } from "./types.js"
 
 /**
- * Create a pending inventory adjustment.
- *
- *  - `variant: "cut"` — WO-linked DEDUCTION. Validates the WOMI exists +
- *    belongs to the provided work order, then writes a DEDUCTION row with
- *    both link columns set (and `isWaste` honored).
- *  - `variant: "manual"` — free-form adjustment. INCREASE or DEDUCTION
- *    direction; never WO-linked; `isWaste` honored on either direction.
- *
- * Either variant locks the parent inventory row, recomputes `netDeducted`,
- * and asserts the ceiling invariant after the insert.
+ * Create a pending inventory adjustment. INCREASE or DEDUCTION; may optionally
+ * carry a WO link (both link columns set or both null — an INCREASE may link a
+ * work order). When a link is present the WOMI is validated against the work
+ * order. Locks the parent inventory row, recomputes `netDeducted`, and asserts
+ * the ceiling invariant after the insert.
  */
 export async function createPendingAdjustmentUseCase(
   input: CreatePendingAdjustmentInput,
@@ -44,14 +39,11 @@ export async function createPendingAdjustmentUseCase(
 
     const quantity = input.quantity
     const notes = input.notes
-    const adjustmentType: FlooringInventoryAdjustmentType =
-      input.variant === "cut" ? "DEDUCTION" : input.adjustmentType
-    // Either variant may carry a WO link. `cut` always does; `manual` may
-    // optionally (an INCREASE is now allowed to link a work order). The
-    // linkage symmetry rule below enforces both-or-neither.
-    const workOrderId = input.variant === "cut" ? input.workOrderId : input.workOrderId ?? null
-    const workOrderItemId =
-      input.variant === "cut" ? input.workOrderItemId : input.workOrderItemId ?? null
+    const adjustmentType: FlooringInventoryAdjustmentType = input.adjustmentType
+    // A WO link is optional and both-or-neither (the linkage symmetry rule
+    // below enforces it). An INCREASE may link a work order.
+    const workOrderId = input.workOrderId ?? null
+    const workOrderItemId = input.workOrderItemId ?? null
     const isWaste = input.isWaste
 
     const formIssues = validateAdjustmentPendingForm({

@@ -70,9 +70,10 @@ const WOMI_ID = "20000000-0000-4000-8000-000000000002"
 const INVENTORY_ID = "30000000-0000-4000-8000-000000000003"
 const ADJUSTMENT_ID = "40000000-0000-4000-8000-000000000004"
 
+// A WO-linked DEDUCTION create (the shape the work-orders record view sends).
 function cutVariantInput(overrides: Record<string, unknown> = {}) {
   return {
-    variant: "cut" as const,
+    adjustmentType: "DEDUCTION" as const,
     workOrderId: WO_ID,
     workOrderItemId: WOMI_ID,
     inventoryId: INVENTORY_ID,
@@ -83,9 +84,9 @@ function cutVariantInput(overrides: Record<string, unknown> = {}) {
   }
 }
 
+// A plain inventory create with no WO link (the inventory-hub shape).
 function manualVariantInput(overrides: Record<string, unknown> = {}) {
   return {
-    variant: "manual" as const,
     adjustmentType: "INCREASE" as const,
     inventoryId: INVENTORY_ID,
     quantity: "10",
@@ -155,7 +156,7 @@ beforeEach(() => {
   assertNetDeductedWithinStartingStockMock.mockReturnValue(undefined)
 })
 
-describe("createPendingAdjustmentUseCase — variant: cut", () => {
+describe("createPendingAdjustmentUseCase — WO-linked create", () => {
   describe("happy path", () => {
     it("inserts a DEDUCTION with derived coverage + snapshot, recomputes netDeducted, returns the result", async () => {
       const result = await createPendingAdjustmentUseCase(cutVariantInput())
@@ -271,7 +272,7 @@ describe("createPendingAdjustmentUseCase — variant: cut", () => {
   })
 })
 
-describe("createPendingAdjustmentUseCase — variant: manual", () => {
+describe("createPendingAdjustmentUseCase — inventory create", () => {
   it("inserts a manual INCREASE with no WO link and isWaste=false", async () => {
     insertPendingAdjustmentRowMock.mockResolvedValue({ id: ADJUSTMENT_ID, quantity: "10.00" })
     recomputeAndPersistNetDeductedMock.mockResolvedValue([
