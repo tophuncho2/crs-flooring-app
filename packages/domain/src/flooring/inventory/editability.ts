@@ -3,7 +3,6 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "coveragePerUnit",
   "importEntryId",
   "productId",
-  "productName",
   "categorySlug",
   "categoryName",
   "importNumber",
