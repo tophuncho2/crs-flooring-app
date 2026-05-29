@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 #
-# Fast-forward a feature branch into staging, then verify the tree from clean.
+# Fast-forward staging-baby into staging, then verify the tree from clean.
 #
 # Equivalent to running, from the staging worktree:
 #   git fetch
-#   <prompt: which branch? a-branch | b-branch | c-branch>
-#   git merge --ff-only <chosen-branch>
+#   git merge --ff-only staging-baby
 #   rm -rf apps/web/.next apps/web/tsconfig.tsbuildinfo
 #   npm run build
 #   npm run test
 #   npm run lint
 #
-# The branch is NOT hardcoded — after fetching, the terminal prompts for which
-# feature branch you're merging in (a-branch / b-branch / c-branch), and every
-# step after that runs against the branch you pick.
+# Hardcoded to staging-baby — currently the only feature branch sitting under
+# staging. If more feature branches are added later, this script will need to
+# pick the merge target (or be invoked once per branch).
 #
 # Why "clean": stale build artifacts (.next, tsbuildinfo) and a stale generated
 # Prisma client are a common source of confusing failures after a merge. The rm
@@ -31,7 +30,7 @@
 
 set -euo pipefail
 
-FEATURE_BRANCHES=(a-branch b-branch c-branch)
+MERGE_BRANCH="staging-baby"
 REQUIRED_BRANCH="staging"
 
 header() { printf "\n\033[1;36m▸ %s\033[0m\n" "$*"; }
@@ -55,22 +54,6 @@ fi
 header "Fetching latest refs from origin"
 git fetch
 ok "fetch complete"
-
-header "Which branch are you merging into $REQUIRED_BRANCH?"
-MERGE_BRANCH=""
-PS3="Branch # (1-${#FEATURE_BRANCHES[@]}): "
-select choice in "${FEATURE_BRANCHES[@]}"; do
-  if [ -n "${choice:-}" ]; then
-    MERGE_BRANCH="$choice"
-    break
-  fi
-  fail "invalid selection — pick a number from the list"
-done
-if [ -z "$MERGE_BRANCH" ]; then
-  fail "no branch selected — aborting"
-  exit 1
-fi
-ok "selected $MERGE_BRANCH"
 
 header "Fast-forwarding $MERGE_BRANCH → $REQUIRED_BRANCH"
 git merge --ff-only "$MERGE_BRANCH"

@@ -1,42 +1,41 @@
 #!/usr/bin/env bash
 #
-# Sync staging into the branch worktrees: a-branch → b-branch → c-branch.
+# Sync staging into the staging-baby worktree.
 #
-# For each branch, in its own worktree, this fast-forwards the branch up to
-# staging and pushes — the equivalent of:
+# Fast-forwards staging-baby up to origin/staging and pushes — the equivalent of:
 #   git fetch && git merge --ff-only origin/staging && git push
-# so you don't have to repeat it three times by hand.
+# run inside the staging-baby worktree.
 #
 # It is strictly a fast-forward tool: a branch that has diverged (carries its
 # own commits staging doesn't have) is skipped, not merged, so you can rebase
 # it onto staging yourself. No merge commits are ever created here.
 #
-# Why worktrees (not checkout): a-branch/b-branch/c-branch are each checked
-# out in their own worktree (see `git worktree list`), so they cannot be
-# checked out here. We operate on each via `git -C <worktree-path>` instead,
-# which leaves your current staging worktree untouched.
+# Why worktrees (not checkout): staging-baby is checked out in its own worktree
+# (see `git worktree list`), so it cannot be checked out here. We operate on it
+# via `git -C <worktree-path>` instead, which leaves your current staging
+# worktree untouched.
 #
 # Steps:
-#   1. Fetch origin once (shared object store updates origin/staging for all)
-#   2. For each branch, in order a → b → c:
+#   1. Fetch origin once (updates origin/staging in the shared object store)
+#   2. For staging-baby:
 #        - skip if its worktree has uncommitted changes
-#        - skip if the branch has commits staging doesn't have (rebase first)
+#        - skip if it has commits staging doesn't have (rebase first)
 #        - fast-forward to origin/staging (never a merge commit)
-#        - push origin <branch> on success
-#   3. Print a per-branch summary
+#        - push origin staging-baby on success
+#   3. Print a result line
 #
 # Safety:
 #   - set -euo pipefail
 #   - fast-forward only: a diverged branch is skipped, never merged or stomped
-#   - dirty worktrees are skipped, never stomped
+#   - a dirty worktree is skipped, never stomped
 #   - no force pushes, no resets
-#   - exits non-zero if any branch failed or was skipped
+#   - exits non-zero if the branch failed or was skipped
 #
 # Run from anywhere:  bash bin/sync-branches.sh
 
 set -euo pipefail
 
-BRANCHES=(a-branch b-branch c-branch)
+BRANCHES=(staging-baby)
 SOURCE_REF="origin/staging"
 
 header() { printf "\n\033[1;36m▸ %s\033[0m\n" "$*"; }
