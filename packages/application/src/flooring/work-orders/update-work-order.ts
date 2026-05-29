@@ -1,31 +1,20 @@
 import {
   Prisma,
-  countWorkOrderAdjustments,
-  getWorkOrderById,
   updateWorkOrderRecord,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
   WORK_ORDER_NOT_FOUND_MESSAGE,
   WORK_ORDER_PROPERTY_REQUIRED_MESSAGE,
-  WORK_ORDER_WAREHOUSE_LOCKED_MESSAGE,
-  WorkOrderDomainError,
-  assertWorkOrderWarehouseChangeAllowed,
 } from "@builders/domain"
 import { WorkOrderExecutionError } from "./errors.js"
 import type { UpdateWorkOrderUseCaseInput, WorkOrderUseCaseResult } from "./types.js"
 
 /**
- * Updates a work order. Validates the user-supplied fields, enforces
- * the warehouse-change-lock when the patch changes `warehouseId` AND
- * the WO has linked inventory adjustments, then delegates the write.
- *
- * The warehouse-change-lock predicate lives in the domain
- * (`assertWorkOrderWarehouseChangeAllowed`); this use case provides the
- * runtime context (current warehouseId, hasLinkedInventoryAdjustments
- * from `countWorkOrderAdjustments`) and converts the thrown
- * `WorkOrderDomainError` into a `WorkOrderExecutionError` carrying
- * HTTP status 409.
+ * Updates a work order. Validates the user-supplied fields, then delegates
+ * the write. The warehouse is optional and freely changeable — adjustments
+ * source their warehouse from the chosen inventory, not the work order, so
+ * there is no warehouse-change-lock.
  */
 export async function updateWorkOrderUseCase(
   id: string,
@@ -44,33 +33,6 @@ export async function updateWorkOrderUseCase(
       })
     }
 
-    // A work order's warehouse is optional and may be cleared. The
-    // warehouse-change-lock below still guards changing it once linked
-    // adjustments exist.
-    if (input.warehouseId !== undefined) {
-      const current = await loadWorkOrderOrThrow(id, c)
-      const hasLinkedInventoryAdjustments =
-        (await countWorkOrderAdjustments(id, c)) > 0
-      try {
-        assertWorkOrderWarehouseChangeAllowed({
-          currentWarehouseId: current.warehouseId,
-          nextWarehouseId: input.warehouseId,
-          hasLinkedInventoryAdjustments,
-        })
-      } catch (error) {
-        if (error instanceof WorkOrderDomainError && error.code === "WORK_ORDER_WAREHOUSE_LOCKED") {
-          throw new WorkOrderExecutionError({
-            code: "WORK_ORDER_WAREHOUSE_LOCKED",
-            message: WORK_ORDER_WAREHOUSE_LOCKED_MESSAGE,
-            status: 409,
-            field: "warehouseId",
-            payload: error.detail,
-          })
-        }
-        throw error
-      }
-    }
-
     try {
       return await updateWorkOrderRecord(id, input, c)
     } catch (error) {
@@ -84,19 +46,4 @@ export async function updateWorkOrderUseCase(
       throw error
     }
   })
-}
-
-async function loadWorkOrderOrThrow(id: string, client: Prisma.TransactionClient) {
-  try {
-    return await getWorkOrderById(id, client)
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
-      throw new WorkOrderExecutionError({
-        code: "WORK_ORDER_NOT_FOUND",
-        message: WORK_ORDER_NOT_FOUND_MESSAGE,
-        status: 404,
-      })
-    }
-    throw error
-  }
 }

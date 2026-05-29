@@ -277,21 +277,6 @@ export async function countWorkOrders(
 }
 
 /**
- * Counts inventory adjustments linked to this work order. Used by the
- * application-layer warehouse-change-lock predicate
- * (`assertWorkOrderWarehouseChangeAllowed`). Only DEDUCTION adjustments
- * can carry a WO link.
- */
-export async function countWorkOrderAdjustments(
-  workOrderId: string,
-  client: WorkOrdersDbClient = db,
-): Promise<number> {
-  return client.flooringInventoryAdjustment.count({
-    where: { workOrderId },
-  })
-}
-
-/**
  * Joined read shape consumed by the on-demand print views (Work Order
  * Slip / Picking Ticket). Returns the data already projected to
  * `WorkOrderFileGenerationInput` so the page loader can hand it straight
