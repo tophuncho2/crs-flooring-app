@@ -71,8 +71,8 @@ export default function ManufacturersClient({
   )
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         <div>
           <div className="px-4 pt-3">
             <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
@@ -81,7 +81,7 @@ export default function ManufacturersClient({
           </div>
           {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
               the encased card's top edge (rounded-tl-none seam). */}
-          <ListToolbar className="pt-0">
+          <ListToolbar className="pt-0" showDivider={false}>
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <ManufacturersListSearch
@@ -100,24 +100,24 @@ export default function ManufacturersClient({
             </ListToolbarCell>
           </ListToolbar>
         </div>
-
-        <ManufacturersTable
-          rows={rows}
-          onOpen={sidePanel.openEdit}
-          pagination={
-            <PaginateControls
-              page={page}
-              pageSize={pageSize}
-              totalItems={total}
-              totalPages={totalPages}
-              hasPreviousPage={hasPreviousPage}
-              hasNextPage={hasNextPage}
-              onPreviousPage={goToPreviousPage}
-              onNextPage={goToNextPage}
-            />
-          }
-        />
       </div>
+
+      <ManufacturersTable
+        rows={rows}
+        onOpen={sidePanel.openEdit}
+        pagination={
+          <PaginateControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={total}
+            totalPages={totalPages}
+            hasPreviousPage={hasPreviousPage}
+            hasNextPage={hasNextPage}
+            onPreviousPage={goToPreviousPage}
+            onNextPage={goToNextPage}
+          />
+        }
+      />
 
       <ManufacturerSidePanel controller={sidePanel} />
     </div>
