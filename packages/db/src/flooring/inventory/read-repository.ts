@@ -45,10 +45,11 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
  * carve-out, this is a data-layer normalizer reusing pure domain
  * formatters/computations; it MUST NOT call domain rules that throw.
  *
- * Snapshot columns (`productName`, `categoryName`, `importNumber`,
- * `purchaseOrderNumber`, `inventoryItem`) are surfaced as-is; the worker
- * writes them at materialize time and the inventory update use case
- * recomputes `inventoryItem` whenever a source field changes.
+ * Snapshot columns (`categoryName`, `importNumber`, `purchaseOrderNumber`,
+ * `inventoryItem`) are surfaced as-is; the worker writes them at materialize
+ * time and the inventory update use case recomputes `inventoryItem` whenever a
+ * source field changes. `productName` is the exception — it is now derived from
+ * the live `product` join (not the snapshot column) so product edits propagate.
  */
 export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRecord {
   // Read the categorySlug snapshot column, not the joined product.category.slug.
@@ -74,7 +75,15 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     importNumber: payload.importNumber ?? "",
     purchaseOrderNumber: payload.purchaseOrderNumber ?? "",
     productId: payload.productId,
-    productName: payload.productName,
+    // Live product label via the joined product (style/color fall back to the
+    // composed name). Replaces the frozen `payload.productName` snapshot so a
+    // product edit flows through to every inventory surface. The snapshot
+    // column is still written at create but is display-dead pending its drop.
+    productName: buildFlooringProductDisplayName({
+      name: payload.product.name,
+      style: payload.product.style,
+      color: payload.product.color,
+    }),
     categoryId: payload.product.category.id,
     categoryName: payload.categoryName,
     categorySlug,

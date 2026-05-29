@@ -60,7 +60,15 @@ export function normalizeAdjustmentRow(
     location: row.location ?? null,
     categorySlug: row.categorySlug,
     productId: row.productId,
-    productName: row.productName,
+    // Live product label via the joined product, replacing the frozen
+    // `row.productName` snapshot so product edits propagate to every adjustment
+    // surface. The snapshot column is still written at create (write path) and
+    // is display-dead pending its drop.
+    productName: buildFlooringProductDisplayName({
+      name: row.product.name,
+      style: row.product.style,
+      color: row.product.color,
+    }),
     warehouseId: row.warehouseId,
     workOrderId: row.workOrderId ?? null,
     workOrderItemId: row.workOrderItemId ?? null,
