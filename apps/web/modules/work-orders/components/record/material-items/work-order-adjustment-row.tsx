@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, type ReactNode } from "react"
-import type { InventoryAdjustmentRow } from "@builders/domain"
+import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { renderAdjustmentReadOnlyCell } from "@/modules/adjustments"
 import { Grid, GridEmpty } from "@/components/grid"
 import { AdjustmentRowToolbar } from "./toolbar-controls"
@@ -10,18 +10,14 @@ import { WORK_ORDER_ADJUSTMENT_LAYOUT } from "./work-order-adjustment-row-layout
 
 export type WorkOrderAdjustmentRowProps = {
   workOrderItemId: string
-  serverRows: ReadonlyArray<InventoryAdjustmentRow>
   /**
-   * Parent WO's warehouse name. The WO-side adjustment read returns plain
-   * `InventoryAdjustmentRow` with no joined warehouse name, so we hydrate each row
-   * here before handing the array to `Grid`. Every adjustment on a WO
-   * shares the WO's warehouse by construction (the snapshot column
-   * matches the parent WO's warehouse), so this is the snapshot value
-   * the `warehouse` column should render.
+   * Enriched WO-linked adjustments (each carries its own warehouse name + WO
+   * number per row, correct under cross-warehouse sourcing). Rendered with the
+   * full ledger column set.
    */
-  warehouseName: string
+  serverRows: ReadonlyArray<EnrichedInventoryAdjustmentRow>
   /** Open the edit panel for a saved adjustment. */
-  onOpenEdit: (workOrderItemId: string, adjustment: InventoryAdjustmentRow) => void
+  onOpenEdit: (workOrderItemId: string, adjustment: EnrichedInventoryAdjustmentRow) => void
   /** Open the edit panel in create mode for this WOMI. */
   onCreateNew: (workOrderItemId: string) => void
   /**
@@ -29,7 +25,7 @@ export type WorkOrderAdjustmentRowProps = {
    * UI-only affordance — does not invoke a duplicate use case, so no
    * inventory-balance recalculation runs until the operator saves.
    */
-  onDuplicate: (workOrderItemId: string, adjustment: InventoryAdjustmentRow) => void
+  onDuplicate: (workOrderItemId: string, adjustment: EnrichedInventoryAdjustmentRow) => void
   /**
    * True when the parent material-items section is mid-save. Used to dim
    * the rows + disable the "+ Add Adjustment" button so the user can't open
@@ -47,22 +43,20 @@ export type WorkOrderAdjustmentRowProps = {
 export function WorkOrderAdjustmentRow({
   workOrderItemId,
   serverRows,
-  warehouseName,
   onOpenEdit,
   onCreateNew,
   onDuplicate,
   isSectionBusy,
 }: WorkOrderAdjustmentRowProps) {
-  const rows = useMemo<InventoryAdjustmentRow[]>(
-    () => serverRows.map((row) => ({ ...row, warehouseName })),
-    [serverRows, warehouseName],
-  )
+  // Rows arrive enriched (own warehouse name + WO number per row) — no
+  // hydration needed; pass straight to the grid.
+  const rows = useMemo<EnrichedInventoryAdjustmentRow[]>(() => [...serverRows], [serverRows])
 
   const renderCell = useMemo(() => renderAdjustmentReadOnlyCell({}), [])
 
   function renderControl(
     control: { key: string; kind: string },
-    row: InventoryAdjustmentRow,
+    row: EnrichedInventoryAdjustmentRow,
   ): ReactNode {
     if (control.kind === "actions") {
       return (
@@ -78,7 +72,7 @@ export function WorkOrderAdjustmentRow({
 
   return (
     <div className="space-y-3 border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
-      <Grid<InventoryAdjustmentRow>
+      <Grid<EnrichedInventoryAdjustmentRow>
         rows={rows}
         layout={WORK_ORDER_ADJUSTMENT_LAYOUT}
         empty={<GridEmpty>No adjustments yet.</GridEmpty>}

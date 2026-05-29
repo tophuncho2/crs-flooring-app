@@ -35,6 +35,8 @@ export function renderAdjustmentsRowCell(
       return row.dyeLot || "-"
     case "inventoryNote":
       return row.inventoryNote || "-"
+    case "location":
+      return row.location || "-"
     case "before":
       return row.before != null ? (
         <span className="tabular-nums">

@@ -17,6 +17,7 @@ export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInv
   { key: "rollNumber", label: "Roll #" },
   { key: "dyeLot", label: "Dye Lot" },
   { key: "inventoryNote", label: "Note" },
+  { key: "location", label: "Location" },
   { key: "coverage", label: "Coverage", align: "end" },
   { key: "isWaste", label: "Waste" },
   { key: "finalSequence", label: "Final Seq #", align: "end" },

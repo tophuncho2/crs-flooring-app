@@ -14,16 +14,27 @@ import type { InventoryAdjustmentRow } from "@builders/domain"
  */
 export const ADJUSTMENT_COLUMN_DEFINITIONS = {
   status: { key: "status", label: "Status", minWidth: 140, grow: 0, align: "center" },
+  adjustmentType: { key: "adjustmentType", label: "Type", minWidth: 120, grow: 0, align: "center" },
   inventoryItem: { key: "inventoryItem", label: "Inventory Item", minWidth: 220, grow: 1.2 },
+  productName: { key: "productName", label: "Product", minWidth: 200, grow: 1 },
+  inventoryNumber: { key: "inventoryNumber", label: "Inv #", minWidth: 120, grow: 0 },
+  rollNumber: { key: "rollNumber", label: "Roll #", minWidth: 120, grow: 0 },
+  dyeLot: { key: "dyeLot", label: "Dye Lot", minWidth: 120, grow: 0 },
+  inventoryNote: { key: "inventoryNote", label: "Note", minWidth: 140, grow: 0.5 },
   location: { key: "location", label: "Location", minWidth: 140, grow: 0.5 },
   before: { key: "before", label: "Before", minWidth: 120, grow: 0, align: "center" },
   quantity: { key: "quantity", label: "Cut", minWidth: 144, grow: 0, align: "center" },
   after: { key: "after", label: "After", minWidth: 120, grow: 0, align: "center" },
   coverage: { key: "coverage", label: "Coverage Cut", minWidth: 144, grow: 0, align: "center" },
   isWaste: { key: "isWaste", label: "Waste", minWidth: 88, grow: 0, align: "center" },
+  finalSequence: { key: "finalSequence", label: "Final Seq #", minWidth: 120, grow: 0, align: "center" },
   notes: { key: "notes", label: "Notes", minWidth: 200, grow: 1 },
   adjustmentNumber: { key: "adjustmentNumber", label: "Adjustment #", minWidth: 132, grow: 0 },
   warehouse: { key: "warehouse", label: "Warehouse", minWidth: 160, grow: 0 },
+  warehouseName: { key: "warehouseName", label: "Warehouse", minWidth: 160, grow: 0 },
+  workOrderNumber: { key: "workOrderNumber", label: "WO #", minWidth: 120, grow: 0 },
+  createdAt: { key: "createdAt", label: "Created", minWidth: 168, grow: 0 },
+  updatedAt: { key: "updatedAt", label: "Updated", minWidth: 168, grow: 0 },
 } as const satisfies Record<string, GridColumn<InventoryAdjustmentRow>>
 
 /**

@@ -203,40 +203,43 @@ export async function getInventoryParentContextForAdjustments(
 export async function listAdjustmentsForWorkOrderItem(
   workOrderItemId: string,
   client: InventoryAdjustmentDbClient = db,
-): Promise<InventoryAdjustmentRecord[]> {
+): Promise<EnrichedInventoryAdjustmentRow[]> {
   const rows = await client.flooringInventoryAdjustment.findMany({
-    where: { workOrderItemId, adjustmentType: "DEDUCTION" },
-    select: adjustmentRowSelect,
+    where: { workOrderItemId },
+    select: enrichedInventoryAdjustmentRowSelect,
     orderBy: [
       { isFinal: "asc" },
       { finalSequence: "asc" },
       { createdAt: "asc" },
     ],
   })
-  return rows.map(normalizeAdjustmentRow)
+  return rows.map(normalizeEnrichedInventoryAdjustmentRow)
 }
 
 /**
  * Bulk variant of `listAdjustmentsForWorkOrderItem` — returns the flat row
  * set across many WOMI ids in one query, ordered identically. The SSR
  * loader for the WO record page calls this once and groups client-side so
- * every expandable adjustment row hydrates from initial data.
+ * every expandable adjustment row hydrates from initial data. Rows are
+ * enriched (own warehouse name + WO number) so the grid renders the same
+ * columns as the ledger; both DEDUCTION and INCREASE WO-linked rows are
+ * returned (an INCREASE may now link a work order).
  */
 export async function listAdjustmentsForWorkOrderItemIds(
   workOrderItemIds: string[],
   client: InventoryAdjustmentDbClient = db,
-): Promise<InventoryAdjustmentRecord[]> {
+): Promise<EnrichedInventoryAdjustmentRow[]> {
   if (workOrderItemIds.length === 0) return []
   const rows = await client.flooringInventoryAdjustment.findMany({
-    where: { workOrderItemId: { in: workOrderItemIds }, adjustmentType: "DEDUCTION" },
-    select: adjustmentRowSelect,
+    where: { workOrderItemId: { in: workOrderItemIds } },
+    select: enrichedInventoryAdjustmentRowSelect,
     orderBy: [
       { isFinal: "asc" },
       { finalSequence: "asc" },
       { createdAt: "asc" },
     ],
   })
-  return rows.map(normalizeAdjustmentRow)
+  return rows.map(normalizeEnrichedInventoryAdjustmentRow)
 }
 
 /**

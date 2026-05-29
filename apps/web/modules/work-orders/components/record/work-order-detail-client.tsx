@@ -5,7 +5,7 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/scaffolds/record-detail-client-scaffold"
 import type {
-  InventoryAdjustmentRow,
+  EnrichedInventoryAdjustmentRow,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -19,7 +19,7 @@ export function WorkOrderDetailClient({
 }: {
   initialWorkOrder: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
-  initialAdjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
+  initialAdjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]>
   backHref: string
 }) {
   return (

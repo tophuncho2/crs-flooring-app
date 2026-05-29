@@ -8,6 +8,7 @@ import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandabl
 import { isLocalOnlyRecordRow } from "@/controllers/record/utils/record-row-ids"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import {
+  type EnrichedInventoryAdjustmentRow,
   type InventoryAdjustmentRow,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
@@ -47,7 +48,7 @@ export function WorkOrderMaterialItemsSection({
 }: {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
-  adjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
+  adjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]>
   publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
   publishWorkOrder: (record: WorkOrderDetail) => void
   /** Apply a single-row patch to the parent's adjustment snapshot after a panel mutation. */
@@ -112,28 +113,14 @@ export function WorkOrderMaterialItemsSection({
   const editable = !sectionBusy
 
   const handleOpenEdit = useCallback(
-    (workOrderItemId: string, adjustment: InventoryAdjustmentRow) => {
+    (_workOrderItemId: string, adjustment: EnrichedInventoryAdjustmentRow) => {
       // Editing is hub-driven (mirrors the inventory record view's row
       // click) — opens the InventoryHubSidePanel directly at
-      // section-edit-adjustment mode for this adjustment. The WO-side data
-      // layer returns plain InventoryAdjustmentRow; hydrate WO/WOMI/warehouse labels
-      // from in-scope state so the hub's read-only summary stays
-      // populated symmetrically with the inv side.
-      const item = section.items.find((i) => i.id === workOrderItemId)
-      inventoryHubPanel.openForAdjustmentEdit({
-        ...adjustment,
-        workOrderItemId,
-        workOrderNumber: workOrder.workOrderNumber,
-        workOrderItemProductLabel: item?.productName || null,
-        warehouseName: workOrder.warehouseName,
-      })
+      // section-edit-adjustment mode. The WO-side read is now enriched, so the
+      // row already carries WO/WOMI/warehouse labels for the hub's header.
+      inventoryHubPanel.openForAdjustmentEdit(adjustment)
     },
-    [
-      inventoryHubPanel,
-      section.items,
-      workOrder.workOrderNumber,
-      workOrder.warehouseName,
-    ],
+    [inventoryHubPanel],
   )
 
   const handleCreateNew = useCallback(
@@ -155,7 +142,7 @@ export function WorkOrderMaterialItemsSection({
   )
 
   const handleDuplicate = useCallback(
-    (workOrderItemId: string, adjustment: InventoryAdjustmentRow) => {
+    (workOrderItemId: string, adjustment: EnrichedInventoryAdjustmentRow) => {
       // UI-only "duplicate": open the create panel with the source row's
       // inventory item pre-selected. No use case fires — the operator must
       // still save the new adjustment to materialize it (and only then does
@@ -314,7 +301,6 @@ export function WorkOrderMaterialItemsSection({
                     <WorkOrderAdjustmentRow
                       workOrderItemId={row.id}
                       serverRows={adjustments}
-                      warehouseName={workOrder.warehouseName}
                       onOpenEdit={handleOpenEdit}
                       onCreateNew={handleCreateNew}
                       onDuplicate={handleDuplicate}

@@ -1,7 +1,11 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { InventoryAdjustmentRow, FlooringInventoryAdjustmentStatus } from "@builders/domain"
+import {
+  composeRollNumberDisplay,
+  type InventoryAdjustmentRow,
+  type FlooringInventoryAdjustmentStatus,
+} from "@builders/domain"
 import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
 import { CheckboxCell } from "@/components/cells/checkbox-cell"
 import { TextCell } from "@/components/cells/text-cell"
@@ -61,11 +65,11 @@ export function renderAdjustmentReadOnlyCell(
   options: AdjustmentReadOnlyRenderOptions = {},
 ): (
   column: AdjustmentColumnLike,
-  row: InventoryAdjustmentRow & { warehouseName?: string | null },
+  row: InventoryAdjustmentRow & { warehouseName?: string | null; workOrderNumber?: string | null },
 ) => ReactNode {
   function renderReadOnlyCell(
     column: AdjustmentColumnLike,
-    row: InventoryAdjustmentRow & { warehouseName?: string | null },
+    row: InventoryAdjustmentRow & { warehouseName?: string | null; workOrderNumber?: string | null },
   ): ReactNode {
     switch (column.key) {
       case "status":
@@ -95,11 +99,60 @@ export function renderAdjustmentReadOnlyCell(
           />
         )
       case "warehouse":
+      case "warehouseName":
         return (
           <TextCell
             editable={false}
             value={row.warehouseName || "—"}
             ariaLabel={`${row.adjustmentNumber} warehouse`}
+          />
+        )
+      case "adjustmentType":
+        return (
+          <TextCell
+            editable={false}
+            value={row.adjustmentType === "INCREASE" ? "Increase" : "Deduction"}
+            ariaLabel={`${row.adjustmentNumber} type`}
+          />
+        )
+      case "productName":
+        return (
+          <TextCell
+            editable={false}
+            value={row.productName || "—"}
+            ariaLabel={`${row.adjustmentNumber} product`}
+          />
+        )
+      case "inventoryNumber":
+        return (
+          <TextCell
+            editable={false}
+            value={row.inventoryNumber || "—"}
+            ariaLabel={`${row.adjustmentNumber} inventory number`}
+          />
+        )
+      case "rollNumber":
+        return (
+          <TextCell
+            editable={false}
+            value={composeRollNumberDisplay(row.rollPrefix ?? "", row.rollNumber ?? "") || "—"}
+            ariaLabel={`${row.adjustmentNumber} roll number`}
+          />
+        )
+      case "dyeLot":
+        return (
+          <TextCell
+            editable={false}
+            value={row.dyeLot || "—"}
+            ariaLabel={`${row.adjustmentNumber} dye lot`}
+          />
+        )
+      case "inventoryNote":
+        return (
+          <TextCell
+            editable={false}
+            value={row.inventoryNote || "—"}
+            ariaLabel={`${row.adjustmentNumber} inventory note`}
           />
         )
       case "quantity":
@@ -145,6 +198,7 @@ export function renderAdjustmentReadOnlyCell(
           />
         )
       case "finalSeq":
+      case "finalSequence":
         return (
           <TextCell
             editable={false}
@@ -158,6 +212,14 @@ export function renderAdjustmentReadOnlyCell(
             editable={false}
             value={row.workOrderId ?? "—"}
             ariaLabel={`${row.adjustmentNumber} work order`}
+          />
+        )
+      case "workOrderNumber":
+        return (
+          <TextCell
+            editable={false}
+            value={row.workOrderNumber || "—"}
+            ariaLabel={`${row.adjustmentNumber} work order number`}
           />
         )
       case "workOrderItem":

@@ -8,7 +8,7 @@ import {
   type PrismaDetailPageResult,
 } from "@builders/db"
 import type {
-  InventoryAdjustmentRow,
+  EnrichedInventoryAdjustmentRow,
   WorkOrderDetail,
   WorkOrderFileGenerationInput,
   WorkOrderMaterialItemRow,
@@ -23,7 +23,7 @@ import type {
 export type WorkOrderDetailPageData = {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
-  adjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
+  adjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]>
 }
 
 export async function getWorkOrderDetailPageData(
@@ -40,7 +40,7 @@ export async function getWorkOrderDetailPageData(
     }
 
     const adjustmentRows = await listAdjustmentsForWorkOrderItemIds(materialItems.map((mi) => mi.id))
-    const adjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]> = {}
+    const adjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]> = {}
     for (const mi of materialItems) adjustmentsByWorkOrderItemId[mi.id] = []
     for (const row of adjustmentRows) {
       if (row.workOrderItemId === null) continue

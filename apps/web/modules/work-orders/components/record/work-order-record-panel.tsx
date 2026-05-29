@@ -6,7 +6,7 @@ import { RecordPrimarySectionInstance } from "@/components/sections/panels/recor
 import type { RecordSectionSubHeaderAction } from "@/components/sections/structure/record-section-sub-header"
 import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
 import type {
-  InventoryAdjustmentRow,
+  EnrichedInventoryAdjustmentRow,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -27,7 +27,7 @@ export function WorkOrderRecordPanel({
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
-  initialAdjustmentsByWorkOrderItemId: Record<string, InventoryAdjustmentRow[]>
+  initialAdjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]>
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
@@ -108,13 +108,26 @@ export function WorkOrderRecordPanel({
         const next = existing.filter((row) => row.id !== patch.adjustmentId)
         return { ...current, [womiId]: next }
       }
+      // Mutation responses are plain `InventoryAdjustmentRow`; the grid stores
+      // enriched rows. Preserve the enriched-only fields (warehouseName /
+      // workOrderNumber / WOMI labels) from the existing row on update, and
+      // synthesize them from in-scope WO + WOMI data for a freshly-created row.
       const idx = existing.findIndex((row) => row.id === patch.adjustment.id)
-      const next = idx >= 0
-        ? existing.map((row, i) => (i === idx ? patch.adjustment : row))
-        : [...existing, patch.adjustment]
-      return { ...current, [womiId]: next }
+      if (idx >= 0) {
+        const merged: EnrichedInventoryAdjustmentRow = { ...existing[idx], ...patch.adjustment }
+        return { ...current, [womiId]: existing.map((row, i) => (i === idx ? merged : row)) }
+      }
+      const womi = materialItems.find((mi) => mi.id === womiId)
+      const created: EnrichedInventoryAdjustmentRow = {
+        ...patch.adjustment,
+        workOrderNumber: controller.record.workOrderNumber,
+        workOrderItemProductLabel: womi?.productName ?? null,
+        workOrderItemNotes: womi?.notes ?? null,
+        warehouseName: controller.record.warehouseName ?? "",
+      }
+      return { ...current, [womiId]: [...existing, created] }
     })
-  }, [])
+  }, [materialItems, controller.record])
 
   return (
     <>
