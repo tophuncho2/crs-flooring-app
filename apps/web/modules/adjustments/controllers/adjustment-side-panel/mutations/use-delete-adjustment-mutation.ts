@@ -41,6 +41,7 @@ export function useDeleteAdjustmentMutation({
     onSuccess: (_response, variables) => {
       publish({
         kind: "delete",
+        reason: "removed",
         workOrderItemId: variables.workOrderItemId,
         adjustmentId: variables.adjustment.id,
       })

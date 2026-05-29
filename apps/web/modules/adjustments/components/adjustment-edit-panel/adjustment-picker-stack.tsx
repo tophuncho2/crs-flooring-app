@@ -54,57 +54,6 @@ export function AdjustmentPickerStack({
 
   return (
     <div className="flex flex-col gap-3">
-      {showWorkOrder ? (
-        <>
-          <label className="flex flex-col gap-1.5">
-            <span className={LABEL_CLASS}>Work order</span>
-            <HubSidePanelPickerTrigger
-              {...trigger("workOrder")}
-              selectedLabel={local.pickedWorkOrderLabel || null}
-              placeholder="Select work order"
-              disabled={isSaving || !woEditable || (woEditable && noWarehouse)}
-              disabledPlaceholder={
-                woEditable && noWarehouse ? "Select warehouse first" : undefined
-              }
-              ariaLabel="Open work order picker"
-              onOpenLinked={
-                onOpenWorkOrder && form.workOrderId
-                  ? () => onOpenWorkOrder(form.workOrderId!)
-                  : undefined
-              }
-              openLinkedAriaLabel="Open work order"
-              openLinkedDisabled={isSaving}
-            />
-          </label>
-          <div className="flex flex-col gap-1.5">
-            <span className={LABEL_CLASS}>Material item</span>
-            {/* Read-only: auto-linked from the selected work order (product is
-                fixed + unique per WO), so there is no picker. */}
-            <div className="flex flex-col gap-1 rounded-md border border-[var(--panel-border)] bg-[var(--panel-border)]/10 px-3 py-2">
-              {!form.workOrderId ? (
-                <span className="text-sm text-[var(--foreground)]/55">
-                  Select a work order to auto-link its material item
-                </span>
-              ) : materialItemResolving ? (
-                <span className="text-sm text-[var(--foreground)]/55">Resolving…</span>
-              ) : (
-                <>
-                  <span className="text-sm text-[var(--foreground)]">
-                    {workOrderItemLabel || "—"}
-                  </span>
-                  <span className="text-xs text-[var(--foreground)]/60">
-                    {local.pickedWorkOrderItemNotes.trim() ? local.pickedWorkOrderItemNotes : "—"}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-wide text-[var(--foreground)]/45">
-                    Auto-linked from work order
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </>
-      ) : null}
-
       {showWarehouse ? (
         <label className="flex flex-col gap-1.5">
           <span className={LABEL_CLASS}>Warehouse</span>
@@ -155,6 +104,57 @@ export function AdjustmentPickerStack({
             ariaLabel="Open location filter picker"
           />
         </label>
+      ) : null}
+
+      {showWorkOrder ? (
+        <>
+          <label className="flex flex-col gap-1.5">
+            <span className={LABEL_CLASS}>Work order</span>
+            <HubSidePanelPickerTrigger
+              {...trigger("workOrder")}
+              selectedLabel={local.pickedWorkOrderLabel || null}
+              placeholder="Select work order"
+              disabled={isSaving || !woEditable || (woEditable && noWarehouse)}
+              disabledPlaceholder={
+                woEditable && noWarehouse ? "Select warehouse first" : undefined
+              }
+              ariaLabel="Open work order picker"
+              onOpenLinked={
+                onOpenWorkOrder && form.workOrderId
+                  ? () => onOpenWorkOrder(form.workOrderId!)
+                  : undefined
+              }
+              openLinkedAriaLabel="Open work order"
+              openLinkedDisabled={isSaving}
+            />
+          </label>
+          <div className="flex flex-col gap-1.5">
+            <span className={LABEL_CLASS}>Material item</span>
+            {/* Read-only: auto-linked from the selected work order (product is
+                fixed + unique per WO), so there is no picker. */}
+            <div className="flex flex-col gap-1 rounded-md border border-[var(--panel-border)] bg-[var(--panel-border)]/10 px-3 py-2">
+              {!form.workOrderId ? (
+                <span className="text-sm text-[var(--foreground)]/55">
+                  Select a work order to auto-link its material item
+                </span>
+              ) : materialItemResolving ? (
+                <span className="text-sm text-[var(--foreground)]/55">Resolving…</span>
+              ) : (
+                <>
+                  <span className="text-sm text-[var(--foreground)]">
+                    {workOrderItemLabel || "—"}
+                  </span>
+                  <span className="text-xs text-[var(--foreground)]/60">
+                    {local.pickedWorkOrderItemNotes.trim() ? local.pickedWorkOrderItemNotes : "—"}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wide text-[var(--foreground)]/45">
+                    Auto-linked from work order
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </>
       ) : null}
     </div>
   )

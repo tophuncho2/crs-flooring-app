@@ -98,10 +98,21 @@ export type AdjustmentCreateSeed = {
  * `workOrderItemId` is carried so the WO-side parent can route the patch
  * into the right WOMI bucket. The inv-side parent ignores it (its
  * snapshot is keyed by adjustment id).
+ *
+ * A `delete` carries a `reason`: `"removed"` is a genuine row deletion;
+ * `"relink-move"` is the bucket-move half of a relink (delete-from-old +
+ * upsert-into-new) and only matters to the WO-side per-WOMI snapshot. The
+ * inv-side keeps the row (its `inventoryId` is unchanged), so it pops the
+ * panel only on `"removed"`.
  */
 export type AdjustmentPanelPatch =
   | { kind: "upsert"; workOrderItemId: string | null; adjustment: InventoryAdjustmentRow }
-  | { kind: "delete"; workOrderItemId: string | null; adjustmentId: string }
+  | {
+      kind: "delete"
+      reason: "removed" | "relink-move"
+      workOrderItemId: string | null
+      adjustmentId: string
+    }
 
 export type AdjustmentEditPanelMode = "create" | "edit"
 

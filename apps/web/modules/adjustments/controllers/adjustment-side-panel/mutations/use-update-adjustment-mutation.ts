@@ -92,6 +92,7 @@ export function useUpdateAdjustmentMutation({
       if (oldWomiId !== newWomiId) {
         publish({
           kind: "delete",
+          reason: "relink-move",
           workOrderItemId: oldWomiId,
           adjustmentId: response.adjustment.id,
         })

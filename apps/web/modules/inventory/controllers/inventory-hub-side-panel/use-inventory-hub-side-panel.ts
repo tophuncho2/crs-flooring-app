@@ -125,17 +125,20 @@ export function useInventoryHubSidePanel({
   )
 
   // The embedded adjustment panel's mutations notify success via `publish`.
-  // A `delete` patch means the row is gone and the embedded panel has
-  // already cleared its open spec — pop back to view so the hub doesn't
-  // sit on an empty adjustment edit body. Also invalidate the inventory
-  // detail query so the cells card reflects post-mutation totals when
-  // the hub is fetch-backed (record-view callers already update via
-  // patchRecord; this is a harmless no-op on that path).
+  // A `delete` with `reason: "removed"` means the row is gone and the panel
+  // has already cleared its open spec — pop back to view so the hub doesn't
+  // sit on an empty adjustment edit body. A `reason: "relink-move"` delete is
+  // only the bucket-move half of a relink (the WO-side snapshot cares; the
+  // inv-side keeps the row since its `inventoryId` is unchanged), so it must
+  // NOT pop — otherwise editing the work-order link bounces the user out of
+  // the still-open panel. Also invalidate the inventory detail query so the
+  // cells card reflects post-mutation totals when the hub is fetch-backed
+  // (record-view callers already update via patchRecord; harmless there).
   const publishWithModePop = useCallback(
     (patch: AdjustmentPanelPatch) => {
       publishAdjustmentPatch(patch)
       if (openId !== null) invalidateInventoryDetail(openId)
-      if (patch.kind === "delete") {
+      if (patch.kind === "delete" && patch.reason === "removed") {
         setMode((current) =>
           current.kind === "section-edit-adjustment"
             ? { kind: "view", inventoryId: current.inventoryId }
