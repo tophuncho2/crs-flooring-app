@@ -1,19 +1,18 @@
 "use client"
 
 import {
+  adjustmentSign,
   formatAdjustmentTransition,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   isAdjustmentPendingEditable,
 } from "@builders/domain"
 import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
-import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
+import { StatusBadge } from "@/components/badges/status-badge"
+import { TextCell, ToggleCell, UnitCell } from "@/components/cells"
 import { SegmentedDropdown } from "@/components/dropdowns/segmented-dropdown/segmented-dropdown"
 import { FieldSection, FormField } from "@/components/fields"
+import { SectionCard, type SectionCardTone } from "@/components/headers"
 import { CellAt } from "@/components/layout-grid/cell-at"
-import {
-  SidePanelPreviewReadonlyRow,
-  SidePanelPreviewReadonlySection,
-} from "@/components/side-panel-preview"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
 import type {
   AdjustmentEditPanelController,
@@ -22,12 +21,13 @@ import type {
 
 const EMPTY_CELL = "—"
 
-function formatMeasurement(value: string | null | undefined, unit: string): string {
-  if (value === null || value === undefined) return EMPTY_CELL
-  const trimmed = value.trim()
-  if (trimmed.length === 0) return EMPTY_CELL
-  const unitTrim = unit.trim()
-  return unitTrim.length > 0 ? `${trimmed} ${unitTrim}` : trimmed
+const LABEL_CLASS = "text-[10px] uppercase tracking-wide text-[var(--foreground)]/55"
+
+/** Card accent carries the row's lifecycle: pending=amber, queued=blue, final=emerald. */
+function cardToneForStatus(status: string): SectionCardTone {
+  if (status === "FINAL") return "emerald"
+  if (status === "QUEUED") return "blue"
+  return "amber"
 }
 
 export type AdjustmentEditFormFieldsProps = {
@@ -42,18 +42,18 @@ const ADJUSTMENT_TYPE_OPTIONS = [
 ] as const
 
 /**
- * The form body of the adjustment edit panel — the editable cells, plus (in
- * edit mode) a read-only summary of the non-editable, non-picker facts. The
- * picker stack (Work order / Material item / Warehouse / Inventory / Location)
- * lives in the panel's sticky header (`AdjustmentPickerStack`), so this body no
- * longer repeats warehouse / inventory / location — they show as locked header
- * pickers.
+ * The form body of the adjustment edit panel, rendered as a single bordered
+ * {@link SectionCard}. The picker stack (Work order / Material item / Warehouse
+ * / Inventory / Location) lives in the panel's sticky header
+ * (`AdjustmentPickerStack`), so this body holds only the adjustment's own facts.
  *
- * Create mode: type selector (INCREASE / DEDUCTION) + amount + waste + notes.
- * Edit mode: read-only summary (product / status pill / type / timestamps /
- * collapsed before→after "Adjustment" / coverage / final-sequence), then the
- * editable quantity / notes / waste cells (locked once the row leaves the
- * PENDING-editable state).
+ * Create mode: a neutral card — type selector, quantity, notes, and a waste
+ * lever in the footer.
+ * Edit mode: a status-toned card whose header carries the product name + type /
+ * status pills; the body pairs quantity + coverage, then the before→after
+ * transition, then notes, then created / updated; the footer carries the final
+ * sequence and the waste lever. Inputs lock once the row leaves the
+ * PENDING-editable state.
  */
 export function AdjustmentEditFormFields({
   mode,
@@ -72,49 +72,31 @@ export function AdjustmentEditFormFields({
   const isReadOnly = mode === "edit" && adjustment != null && !isAdjustmentPendingEditable(adjustment)
   const fieldsEditable = !isSaving && !isReadOnly
 
-  return (
-    <div className="flex flex-col gap-4">
-      {mode === "edit" && adjustment ? (
-        <SidePanelPreviewReadonlySection>
-          <SidePanelPreviewReadonlyRow label="Product" value={adjustment.productName || EMPTY_CELL} />
-          <SidePanelPreviewReadonlyRow
-            label="Status"
-            value={<AdjustmentStatusBadge status={adjustment.status} />}
-          />
-          <SidePanelPreviewReadonlyRow
-            label="Type"
-            value={adjustment.adjustmentType === "INCREASE" ? "Increase" : "Deduction"}
-          />
-          <SidePanelPreviewReadonlyRow
-            label="Created"
-            value={formatAdjustmentTimestamp(adjustment.createdAt)}
-          />
-          <SidePanelPreviewReadonlyRow
-            label="Updated"
-            value={formatAdjustmentTimestamp(adjustment.updatedAt)}
-          />
-          <SidePanelPreviewReadonlyRow
-            label="Adjustment"
-            value={formatAdjustmentTransition(adjustment.before, adjustment.after, stockUnit) ?? EMPTY_CELL}
-          />
-          <SidePanelPreviewReadonlyRow
-            label="Coverage"
-            value={formatMeasurement(adjustment.coverage, coverageUnit)}
-          />
-          <SidePanelPreviewReadonlyRow
-            label="Final sequence"
-            value={adjustment.finalSequence != null ? String(adjustment.finalSequence) : EMPTY_CELL}
-          />
-        </SidePanelPreviewReadonlySection>
-      ) : null}
+  const wasteToggle = (
+    <span className="flex items-center gap-2">
+      <span className={LABEL_CLASS}>Waste</span>
+      <ToggleCell
+        editable={fieldsEditable}
+        value={form.isWaste}
+        onChange={(next) => controller.setField("isWaste", next)}
+        ariaLabel="Waste flag"
+      />
+    </span>
+  )
 
-      <FieldSection gap="0.75rem">
-        {mode === "create" ? (
+  if (mode === "create" || !adjustment) {
+    return (
+      <SectionCard
+        title="New adjustment"
+        tone="neutral"
+        footer={<div className="flex items-center justify-end">{wasteToggle}</div>}
+      >
+        <FieldSection gap="0.75rem">
           <CellAt col={1} colSpan={8}>
             <FormField label="Type" required>
               <SegmentedDropdown
                 value={form.adjustmentType}
-                onChange={(next) => {
+                onChange={(next: string | null) => {
                   if (next === "INCREASE" || next === "DEDUCTION") {
                     controller.setField("adjustmentType", next)
                   }
@@ -125,7 +107,69 @@ export function AdjustmentEditFormFields({
               />
             </FormField>
           </CellAt>
-        ) : null}
+          <CellAt col={1} colSpan={4}>
+            <FormField label="Quantity" required>
+              <UnitCell
+                editable={fieldsEditable}
+                value={form.quantity}
+                onChange={(next) => controller.setField("quantity", next)}
+                unit={stockUnit}
+                placeholder="0"
+                ariaLabel="Adjustment quantity"
+              />
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={8}>
+            <FormField
+              label="Notes"
+              currentLength={fieldsEditable ? form.notes.length : undefined}
+              maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
+            >
+              <TextCell
+                editable={fieldsEditable}
+                value={form.notes}
+                onChange={(next) => controller.setField("notes", next)}
+                placeholder="Notes"
+                ariaLabel="Adjustment notes"
+                maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
+              />
+            </FormField>
+          </CellAt>
+        </FieldSection>
+      </SectionCard>
+    )
+  }
+
+  const transition = formatAdjustmentTransition(adjustment.before, adjustment.after, stockUnit) ?? EMPTY_CELL
+  const coverageValue = adjustment.coverage
+    ? `${adjustmentSign(adjustment.adjustmentType)}${adjustment.coverage}`
+    : ""
+
+  return (
+    <SectionCard
+      title={adjustment.productName || EMPTY_CELL}
+      tone={cardToneForStatus(adjustment.status)}
+      headerRight={
+        <>
+          <StatusBadge tone={adjustment.adjustmentType === "INCREASE" ? "success" : "error"}>
+            {adjustment.adjustmentType === "INCREASE" ? "Increase" : "Deduction"}
+          </StatusBadge>
+          <AdjustmentStatusBadge status={adjustment.status} />
+        </>
+      }
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2">
+            <span className={LABEL_CLASS}>Final sequence</span>
+            <span className="text-sm tabular-nums text-[var(--foreground)]/85">
+              {adjustment.finalSequence != null ? adjustment.finalSequence : EMPTY_CELL}
+            </span>
+          </span>
+          {wasteToggle}
+        </div>
+      }
+    >
+      <FieldSection gap="0.75rem">
         <CellAt col={1} colSpan={4}>
           <FormField label="Quantity" required>
             <UnitCell
@@ -139,13 +183,13 @@ export function AdjustmentEditFormFields({
           </FormField>
         </CellAt>
         <CellAt col={5} colSpan={4}>
-          <FormField label="Waste">
-            <CheckboxCell
-              editable={fieldsEditable}
-              value={form.isWaste}
-              onChange={(next) => controller.setField("isWaste", next)}
-              ariaLabel="Waste flag"
-            />
+          <FormField label="Coverage">
+            <UnitCell editable={false} value={coverageValue} unit={coverageUnit} ariaLabel="Coverage" />
+          </FormField>
+        </CellAt>
+        <CellAt col={1} colSpan={8}>
+          <FormField label="Adjustment">
+            <span className="text-sm tabular-nums text-[var(--foreground)]/80">{transition}</span>
           </FormField>
         </CellAt>
         <CellAt col={1} colSpan={8}>
@@ -164,7 +208,21 @@ export function AdjustmentEditFormFields({
             />
           </FormField>
         </CellAt>
+        <CellAt col={1} colSpan={4}>
+          <FormField label="Created">
+            <span className="text-sm text-[var(--foreground)]/80">
+              {formatAdjustmentTimestamp(adjustment.createdAt)}
+            </span>
+          </FormField>
+        </CellAt>
+        <CellAt col={5} colSpan={4}>
+          <FormField label="Updated">
+            <span className="text-sm text-[var(--foreground)]/80">
+              {formatAdjustmentTimestamp(adjustment.updatedAt)}
+            </span>
+          </FormField>
+        </CellAt>
       </FieldSection>
-    </div>
+    </SectionCard>
   )
 }

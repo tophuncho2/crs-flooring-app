@@ -2,7 +2,20 @@ import { describe, expect, it } from "vitest"
 import {
   composeInventoryItem,
   composeRollNumberDisplay,
+  formatSignedAdjustmentCoverage,
 } from "../../../src/flooring/inventory/formatters.js"
+
+describe("formatSignedAdjustmentCoverage", () => {
+  it("prefixes the adjustment sign onto the coverage + unit", () => {
+    expect(formatSignedAdjustmentCoverage("118.85", "INCREASE", "sqft")).toBe("+118.85 sqft")
+    expect(formatSignedAdjustmentCoverage("118.85", "DEDUCTION", "sqft")).toBe("−118.85 sqft")
+  })
+
+  it("returns null when coverage is absent or blank", () => {
+    expect(formatSignedAdjustmentCoverage(null, "DEDUCTION", "sqft")).toBeNull()
+    expect(formatSignedAdjustmentCoverage("  ", "DEDUCTION", "sqft")).toBeNull()
+  })
+})
 
 describe("composeRollNumberDisplay", () => {
   it("prefixes a non-empty trimmed suffix", () => {
