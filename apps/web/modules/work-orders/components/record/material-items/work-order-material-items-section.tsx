@@ -173,7 +173,7 @@ export function WorkOrderMaterialItemsSection({
         },
       })
     },
-    [adjustmentPanel, section.items, workOrder.id, workOrder.warehouseName, workOrder.workOrderNumber],
+    [adjustmentPanel, section.items, workOrder.id, workOrder.workOrderNumber],
   )
 
   function renderParentCell(
