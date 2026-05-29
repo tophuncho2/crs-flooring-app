@@ -2,6 +2,12 @@ import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/components/data-table"
 import { formatEasternDateTime, type ProductListRow } from "@builders/domain"
 
+// Unit snapshot cell: "Name (abbrev)" when both present, else the name, else "-".
+function formatUnit(name: string, abbrev: string): string {
+  if (!name) return "-"
+  return abbrev ? `${name} (${abbrev})` : name
+}
+
 export function renderProductRowCell(
   column: DataTableColumn<ProductListRow>,
   row: ProductListRow,
@@ -27,6 +33,12 @@ export function renderProductRowCell(
       ) : (
         "-"
       )
+    case "stockUnit":
+      return formatUnit(row.stockUnitName, row.stockUnitAbbrev)
+    case "sendUnit":
+      return formatUnit(row.sendUnitName, row.sendUnitAbbrev)
+    case "itemCoverageUnit":
+      return formatUnit(row.itemCoverageUnitName, row.itemCoverageUnitAbbrev)
     case "createdAt":
       return (
         <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
