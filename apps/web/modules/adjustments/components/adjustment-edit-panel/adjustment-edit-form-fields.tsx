@@ -1,10 +1,11 @@
 "use client"
 
 import {
-  formatAdjustmentStatus,
+  formatAdjustmentTransition,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   isAdjustmentPendingEditable,
 } from "@builders/domain"
+import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
 import { CheckboxCell, TextCell, UnitCell } from "@/components/cells"
 import { SegmentedDropdown } from "@/components/dropdowns/segmented-dropdown/segmented-dropdown"
 import { FieldSection, FormField } from "@/components/fields"
@@ -49,9 +50,10 @@ const ADJUSTMENT_TYPE_OPTIONS = [
  * pickers.
  *
  * Create mode: type selector (INCREASE / DEDUCTION) + amount + waste + notes.
- * Edit mode: read-only product / timestamps / before-after-coverage / status /
- * final-sequence summary, then the editable cut / notes / waste cells (locked
- * once the row leaves the PENDING-editable state).
+ * Edit mode: read-only summary (product / status pill / type / timestamps /
+ * collapsed before→after "Adjustment" / coverage / final-sequence), then the
+ * editable quantity / notes / waste cells (locked once the row leaves the
+ * PENDING-editable state).
  */
 export function AdjustmentEditFormFields({
   mode,
@@ -77,7 +79,11 @@ export function AdjustmentEditFormFields({
           <SidePanelPreviewReadonlyRow label="Product" value={adjustment.productName || EMPTY_CELL} />
           <SidePanelPreviewReadonlyRow
             label="Status"
-            value={formatAdjustmentStatus(adjustment.status)}
+            value={<AdjustmentStatusBadge status={adjustment.status} />}
+          />
+          <SidePanelPreviewReadonlyRow
+            label="Type"
+            value={adjustment.adjustmentType === "INCREASE" ? "Increase" : "Deduction"}
           />
           <SidePanelPreviewReadonlyRow
             label="Created"
@@ -88,12 +94,8 @@ export function AdjustmentEditFormFields({
             value={formatAdjustmentTimestamp(adjustment.updatedAt)}
           />
           <SidePanelPreviewReadonlyRow
-            label="Before"
-            value={formatMeasurement(adjustment.before, stockUnit)}
-          />
-          <SidePanelPreviewReadonlyRow
-            label="After"
-            value={formatMeasurement(adjustment.after, stockUnit)}
+            label="Adjustment"
+            value={formatAdjustmentTransition(adjustment.before, adjustment.after, stockUnit) ?? EMPTY_CELL}
           />
           <SidePanelPreviewReadonlyRow
             label="Coverage"
