@@ -8,7 +8,6 @@ import {
 import {
   TEMPLATE_SYNC_TEMPLATE_NOT_FOUND_MESSAGE,
   TEMPLATE_SYNC_TEMPLATE_PROPERTY_REQUIRED_MESSAGE,
-  TEMPLATE_SYNC_TEMPLATE_WAREHOUSE_REQUIRED_MESSAGE,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -58,14 +57,8 @@ export async function syncTemplateToWorkOrderUseCase(
       })
     }
 
-    if (!template.warehouseId) {
-      throw new WorkOrderExecutionError({
-        code: "TEMPLATE_SYNC_TEMPLATE_INVALID",
-        message: TEMPLATE_SYNC_TEMPLATE_WAREHOUSE_REQUIRED_MESSAGE,
-        status: 400,
-        field: "warehouseId",
-      })
-    }
+    // A template no longer needs a warehouse to be synced. A null template
+    // warehouse flows straight through to the work order's nullable warehouseId.
 
     // Template-created work orders also default to the "None" status.
     const statusId = await getWorkOrderStatusIdBySlug("none", c)

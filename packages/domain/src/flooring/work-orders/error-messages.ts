@@ -7,5 +7,3 @@ export const WORK_ORDER_FILE_GENERATION_FAILED_MESSAGE = "Work order file genera
 export const TEMPLATE_SYNC_TEMPLATE_NOT_FOUND_MESSAGE = "Template not found"
 export const TEMPLATE_SYNC_TEMPLATE_PROPERTY_REQUIRED_MESSAGE =
   "Template is missing a property and cannot be synced"
-export const TEMPLATE_SYNC_TEMPLATE_WAREHOUSE_REQUIRED_MESSAGE =
-  "Template is missing a warehouse and cannot be synced"
