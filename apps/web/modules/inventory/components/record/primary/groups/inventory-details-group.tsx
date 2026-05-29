@@ -26,7 +26,7 @@ import { InventoryGroup } from "./inventory-group"
  *   Inv #               | Stock Balance
  *   Roll #              | Coverage Balance
  *   Dye Lot             | Coverage Per Unit
- *   Note                | Total Cut
+ *   Note                | Deducted
  *   Import #            | Starting Stock
  *   PO #                | FIFO Received
  *   Updated             | —
@@ -135,7 +135,7 @@ export function InventoryDetailsGroup({
         <InventoryField label="Note">
           <StaticFieldValue>{inventory.note || "—"}</StaticFieldValue>
         </InventoryField>
-        <InventoryField label="Total Cut">
+        <InventoryField label="Deducted">
           <StaticFieldValue>
             {formatInventoryQuantity(inventory.netDeducted, inventory.stockUnitAbbrev)}
           </StaticFieldValue>
