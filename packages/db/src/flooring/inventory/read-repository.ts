@@ -76,9 +76,9 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     purchaseOrderNumber: payload.purchaseOrderNumber ?? "",
     productId: payload.productId,
     // Live product label via the joined product (style/color fall back to the
-    // composed name). Replaces the frozen `payload.productName` snapshot so a
-    // product edit flows through to every inventory surface. The snapshot
-    // column is still written at create but is display-dead pending its drop.
+    // composed name). The `productName` snapshot column has been dropped; the
+    // label is derived here so a product edit flows through to every inventory
+    // surface.
     productName: buildFlooringProductDisplayName({
       name: payload.product.name,
       style: payload.product.style,

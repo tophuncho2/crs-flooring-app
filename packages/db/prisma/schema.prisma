@@ -248,7 +248,6 @@ model FlooringInventory {
   purchaseOrderNumber    String?
   productId              String
   product                FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
-  productName            String               @default("")
   categorySlug           String
   categoryName           String               @default("")
   stockUnitName          String?
@@ -386,7 +385,6 @@ model FlooringInventoryAdjustment {
   categorySlug      String
   productId         String
   product           FlooringProduct                   @relation(fields: [productId], references: [id], onDelete: Restrict)
-  productName       String                            @default("")
   warehouseId       String
   warehouse         FlooringWarehouse                 @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   workOrderId       String?

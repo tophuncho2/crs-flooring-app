@@ -112,7 +112,6 @@ function inventoryContext(overrides: Record<string, unknown> = {}) {
     dyeLot: "D-1",
     inventoryNote: "note",
     productId: "prod-1",
-    productName: "Plank A",
     warehouseId: "wh-1",
     location: "A1",
     ...overrides,

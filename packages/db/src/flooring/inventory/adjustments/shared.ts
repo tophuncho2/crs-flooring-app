@@ -15,12 +15,9 @@ export const adjustmentRowSelect = {
   location: true,
   categorySlug: true,
   productId: true,
-  productName: true,
   // Live product join — the normalizer derives the displayed product label
-  // from this (via buildFlooringProductDisplayName) instead of the frozen
-  // `productName` snapshot, so product edits propagate to adjustment rows.
-  // `productId` is non-nullable (onDelete: Restrict) so the relation is always
-  // present. `productName` snapshot is still selected for the write-path copy.
+  // from this (via buildFlooringProductDisplayName). `productId` is non-nullable
+  // (onDelete: Restrict) so the relation is always present.
   product: { select: { name: true, style: true, color: true } },
   warehouseId: true,
   workOrderId: true,

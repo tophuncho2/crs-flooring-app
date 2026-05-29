@@ -60,10 +60,9 @@ export function normalizeAdjustmentRow(
     location: row.location ?? null,
     categorySlug: row.categorySlug,
     productId: row.productId,
-    // Live product label via the joined product, replacing the frozen
-    // `row.productName` snapshot so product edits propagate to every adjustment
-    // surface. The snapshot column is still written at create (write path) and
-    // is display-dead pending its drop.
+    // Live product label via the joined product. The `productName` snapshot
+    // column has been dropped; the label is derived here so product edits
+    // propagate to every adjustment surface.
     productName: buildFlooringProductDisplayName({
       name: row.product.name,
       style: row.product.style,
@@ -139,10 +138,10 @@ export async function getAdjustmentById(
  *     (frozen thereafter).
  *   - The 5 inventory-identity primitives + the composed `inventoryItem`
  *     — stamped on the adjustment at create (frozen thereafter).
- *   - `productId` / `productName` / `warehouseId` — stamped on the adjustment
- *     at create (frozen thereafter); `productName` surfaces to the UI as
- *     a label, `productId` / `warehouseId` are FKs used for joins and to
- *     filter the adjustment edit panel's link pickers.
+ *   - `productId` / `warehouseId` — stamped on the adjustment at create
+ *     (frozen thereafter); FKs used for joins and to filter the adjustment
+ *     edit panel's link pickers. The product label is derived from the
+ *     `product` join at read time, not stored.
  *   - `location` — re-snapped on every state-changing write. Carries the
  *     parent's current value at call time.
  *
@@ -172,7 +171,6 @@ export async function getInventoryParentContextForAdjustments(
       itemCoverageUnitName: true,
       itemCoverageUnitAbbrev: true,
       productId: true,
-      productName: true,
       warehouseId: true,
     },
   })
@@ -196,7 +194,6 @@ export async function getInventoryParentContextForAdjustments(
     inventoryNote: row.note ?? null,
     location: row.location ?? null,
     productId: row.productId,
-    productName: row.productName,
     warehouseId: row.warehouseId,
   }
 }
@@ -415,7 +412,6 @@ export async function getPendingAdjustmentWithInventoryForMutation(
           itemCoverageUnitName: true,
           itemCoverageUnitAbbrev: true,
           productId: true,
-          productName: true,
           warehouseId: true,
         },
       },
@@ -444,7 +440,6 @@ export async function getPendingAdjustmentWithInventoryForMutation(
       inventoryNote: inv.note ?? null,
       location: inv.location ?? null,
       productId: inv.productId,
-      productName: inv.productName,
       warehouseId: inv.warehouseId,
     },
   }

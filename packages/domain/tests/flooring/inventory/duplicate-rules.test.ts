@@ -20,7 +20,6 @@ function edits(overrides: Partial<DuplicateInventoryEdits> = {}): DuplicateInven
 function source(overrides: Partial<DuplicateInventorySource> = {}): DuplicateInventorySource {
   return {
     productId: "p-1",
-    productName: "Carpet A",
     categorySlug: "carpet",
     categoryName: "Carpet",
     stockUnitName: "Square Feet",
@@ -88,7 +87,6 @@ describe("buildDuplicatedInventoryInsert", () => {
     // Pasted from source — including the PO #.
     expect(fields.purchaseOrderNumber).toBe("PO-123")
     expect(fields.productId).toBe("p-1")
-    expect(fields.productName).toBe("Carpet A")
     expect(fields.categorySlug).toBe("carpet")
     expect(fields.coveragePerUnit).toBe("1.50")
     expect(fields.rollPrefix).toBe("ROLL#")

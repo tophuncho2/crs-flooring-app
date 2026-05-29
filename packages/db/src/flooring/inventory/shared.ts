@@ -26,7 +26,6 @@ export const inventoryRowSelect = {
       },
     },
   },
-  productName: true,
   categorySlug: true,
   categoryName: true,
   stockUnitName: true,

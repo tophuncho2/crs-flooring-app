@@ -59,7 +59,6 @@ export async function materializeImportedStagedRowsUseCase(
       importNumber: String(row.importEntry.importNumber),
       purchaseOrderNumber: row.importEntry.purchaseOrderNumber ?? null,
       productId: row.productId,
-      productName: row.product.name,
       categorySlug: row.product.category.slug,
       categoryName: row.product.category.name,
       stockUnitName: row.product.stockUnitName,

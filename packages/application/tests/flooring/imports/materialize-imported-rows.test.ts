@@ -181,9 +181,10 @@ describe("materializeImportedStagedRowsUseCase", () => {
       expect(created.importNumber).toBe("42")
       expect(created.purchaseOrderNumber).toBe("PO-2026-1")
       expect(created.importEntryId).toBe(IMPORT_ID)
-      // From product — name passes through as-is (NOT recomposed).
+      // From product — only the FK is stamped; the product name is no longer
+      // snapshotted (rendered from the live `product` join at read time).
       expect(created.productId).toBe("product-1")
-      expect(created.productName).toBe("Carpet — Style A — Beige")
+      expect(created.productName).toBeUndefined()
       expect(created.categorySlug).toBe("carpet")
       expect(created.categoryName).toBe("Carpet")
       // 6 UoM snapshots from product.

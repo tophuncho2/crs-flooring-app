@@ -163,7 +163,6 @@ export async function createPendingAdjustmentUseCase(
         dyeLot: inventory.dyeLot,
         inventoryNote: inventory.inventoryNote,
         productId: inventory.productId,
-        productName: inventory.productName,
         warehouseId: inventory.warehouseId,
       }),
       location: inventory.location,

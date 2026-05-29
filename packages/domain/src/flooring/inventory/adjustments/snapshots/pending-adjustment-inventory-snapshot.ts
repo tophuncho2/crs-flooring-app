@@ -7,7 +7,6 @@ export type PendingAdjustmentInventorySnapshot = {
   dyeLot: string | null
   inventoryNote: string | null
   productId: string
-  productName: string
   warehouseId: string
 }
 
@@ -23,7 +22,6 @@ export function buildPendingAdjustmentInventorySnapshot(
     dyeLot: inv.dyeLot,
     inventoryNote: inv.inventoryNote,
     productId: inv.productId,
-    productName: inv.productName,
     warehouseId: inv.warehouseId,
   }
 }

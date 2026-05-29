@@ -184,10 +184,9 @@ export type InsertPendingAdjustmentRowInput = {
  * persistence call — no business rules, no invariant checks (those run in
  * the use case before/after via the domain).
  *
- * Stamps the four unit-snapshot fields, the ten identity-snapshot fields
+ * Stamps the four unit-snapshot fields, the nine identity-snapshot fields
  * (`inventoryItem`, `categorySlug`, the 5 identity primitives, plus
- * `productId` / `productName` / `warehouseId`), and the `location` mirror
- * from the input.
+ * `productId` / `warehouseId`), and the `location` mirror from the input.
  *
  * Worker-only fields stay at their schema defaults / null:
  *   - `before` / `after` / `finalSequence`: null (finalize stamps them).
@@ -221,7 +220,6 @@ export async function insertPendingAdjustmentRow(
       dyeLot: input.inventorySnapshot.dyeLot,
       inventoryNote: input.inventorySnapshot.inventoryNote,
       productId: input.inventorySnapshot.productId,
-      productName: input.inventorySnapshot.productName,
       warehouseId: input.inventorySnapshot.warehouseId,
       location: input.location,
     },

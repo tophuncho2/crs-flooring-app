@@ -17,7 +17,6 @@ export type DuplicateInventoryEdits = {
 export type DuplicateInventorySource = Pick<
   InventoryRow,
   | "productId"
-  | "productName"
   | "categorySlug"
   | "categoryName"
   | "stockUnitName"
@@ -39,7 +38,6 @@ export type DuplicatedInventoryInsertFields = {
   importNumber: null
   purchaseOrderNumber: string | null
   productId: string
-  productName: string
   categorySlug: string
   categoryName: string
   stockUnitName: string | null
@@ -134,7 +132,6 @@ export function buildDuplicatedInventoryInsert(
     importNumber: null,
     purchaseOrderNumber: emptyToNull(source.purchaseOrderNumber),
     productId: source.productId,
-    productName: source.productName,
     categorySlug: source.categorySlug,
     categoryName: source.categoryName,
     stockUnitName: emptyToNull(source.stockUnitName),

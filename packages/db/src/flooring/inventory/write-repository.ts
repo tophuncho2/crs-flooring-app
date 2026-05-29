@@ -28,7 +28,7 @@ export async function lockInventoryRow(
  * user-creatable — the materialize import worker is the sole construction
  * path, consumed exclusively via `materializeStagedRowsToInventory` and
  * `MaterializeStagedRowsToInventoryInput` below. The snapshot columns
- * (`productName`, `categoryName`, `categorySlug`, the 6 unit fields,
+ * (`categoryName`, `categorySlug`, the 6 unit fields,
  * `importNumber`, `purchaseOrderNumber`, `inventoryItem`) are stamped at
  * materialize time from the linked product + import entry and are
  * immutable post-create; product-level locks
@@ -41,7 +41,6 @@ export type MaterializeInventoryRowFields = {
   importNumber: string | null
   purchaseOrderNumber: string | null
   productId: string
-  productName: string
   categorySlug: string
   categoryName: string
   stockUnitName: string | null
@@ -74,8 +73,8 @@ export type MaterializeInventoryRowFields = {
  * INVENTORY_EDITABLE_FIELDS plus `inventoryItem` (server-recomputed by the
  * application's update use case via `composeInventoryItem` in the same
  * transaction whenever a source field — rollNumber, dyeLot, location,
- * note — changes). Snapshot columns (productName, categoryName,
- * importNumber, purchaseOrderNumber) and the warehouse FK are not in this
+ * note — changes). Snapshot columns (categoryName, importNumber,
+ * purchaseOrderNumber) and the warehouse FK are not in this
  * shape — `warehouseId` is set-on-insert by the materialize worker and
  * never patched afterward.
  */
@@ -177,7 +176,6 @@ export type InsertInventoryRowInput = {
   importNumber: string | null
   purchaseOrderNumber: string | null
   productId: string
-  productName: string
   categorySlug: string
   categoryName: string
   stockUnitName: string | null
@@ -219,7 +217,6 @@ export async function insertInventoryRow(
       importNumber: input.importNumber,
       purchaseOrderNumber: input.purchaseOrderNumber,
       productId: input.productId,
-      productName: input.productName,
       categorySlug: input.categorySlug,
       categoryName: input.categoryName,
       stockUnitName: input.stockUnitName,
@@ -277,7 +274,7 @@ export async function insertInventoryRow(
  *    necessary because Prisma's `createMany` does not return inserted IDs on
  *    Postgres). Pre-assignment also lets the caller correlate inserts with
  *    their source staged rows for the secondary `updateMany`.
- *  - Caller computed every per-row field (productName, categoryName, unit
+ *  - Caller computed every per-row field (categoryName, unit
  *    snapshots, importNumber, purchaseOrderNumber, inventoryItem,
  *    fifoReceivedAt, etc.) — this primitive does no field math. Coverage-rule
  *    branching belongs in the application layer via
@@ -324,7 +321,6 @@ export async function materializeStagedRowsToInventory(
       importNumber: row.importNumber,
       purchaseOrderNumber: row.purchaseOrderNumber,
       productId: row.productId,
-      productName: row.productName,
       categorySlug: row.categorySlug,
       categoryName: row.categoryName,
       stockUnitName: row.stockUnitName,

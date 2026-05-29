@@ -85,6 +85,5 @@ export type InventoryAdjustmentParentContext = {
   inventoryNote: string | null
   location: string | null
   productId: string
-  productName: string
   warehouseId: string
 }
