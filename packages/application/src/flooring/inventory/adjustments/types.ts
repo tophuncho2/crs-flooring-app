@@ -8,12 +8,12 @@ export type AdjustmentMutationScope =
 /**
  * Discriminated union over the two create flows:
  *  - `variant: "cut"` — a WO-linked DEDUCTION. The route under
- *    `/api/work-orders/[id]/cut-logs` produces this shape; the use case
+ *    `/api/work-orders/[id]/adjustments` produces this shape; the use case
  *    enforces the WOMI scope and stamps `adjustmentType: "DEDUCTION"` +
  *    WO-link columns onto the row.
  *  - `variant: "manual"` — a free-form INCREASE or DEDUCTION with no WO
- *    link, created from the inventory hub. `isWaste` is implicitly `false`
- *    (the row carries no waste semantics outside cuts).
+ *    link, created from the inventory hub. `isWaste` is a caller-supplied
+ *    reporting flag, allowed on either direction.
  */
 export type CreatePendingAdjustmentInput =
   | {
@@ -30,13 +30,14 @@ export type CreatePendingAdjustmentInput =
       adjustmentType: FlooringInventoryAdjustmentType
       inventoryId: string
       quantity: string
+      isWaste: boolean
       notes: string
     }
 
 export type UpdatePendingAdjustmentPatch = {
   /** Always positive (validator enforces); direction is immutable post-create. */
   quantity?: string
-  /** Editable only on DEDUCTION rows; rejected on INCREASE. */
+  /** Reporting flag; editable on either direction. */
   isWaste?: boolean
   notes?: string
   /** Editable only on DEDUCTION rows; rejected on INCREASE. */

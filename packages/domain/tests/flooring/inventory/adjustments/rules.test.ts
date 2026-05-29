@@ -101,7 +101,7 @@ describe("assertAdjustmentLinkageRules — INCREASE", () => {
     ).toThrow("INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER")
   })
 
-  it("rejects an INCREASE row flagged as waste", () => {
+  it("accepts an INCREASE row flagged as waste (waste is orthogonal to direction)", () => {
     expect(() =>
       assertAdjustmentLinkageRules({
         adjustmentType: "INCREASE",
@@ -109,7 +109,7 @@ describe("assertAdjustmentLinkageRules — INCREASE", () => {
         workOrderItemId: null,
         isWaste: true,
       }),
-    ).toThrow("INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WASTE")
+    ).not.toThrow()
   })
 })
 

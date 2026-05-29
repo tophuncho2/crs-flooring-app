@@ -277,22 +277,25 @@ describe("updatePendingAdjustmentUseCase", () => {
       })
     })
 
-    it("rejects isWaste=true on an INCREASE row with INCREASE_REQUIRES_NO_WASTE (400)", async () => {
+    it("applies isWaste=true on an INCREASE row (waste allowed on either direction)", async () => {
       getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
         found({ adjustment: { adjustmentType: "INCREASE", workOrderId: null } }),
       )
 
-      await expect(
-        updatePendingAdjustmentUseCase({
-          scope: { kind: "inventory" as const, inventoryId: INVENTORY_ID },
-          adjustmentId: ADJUSTMENT_ID,
-          expectedUpdatedAt: UPDATED_AT,
-          patch: { isWaste: true },
-        }),
-      ).rejects.toMatchObject({
-        code: "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WASTE",
-        status: 400,
+      await updatePendingAdjustmentUseCase({
+        scope: { kind: "inventory" as const, inventoryId: INVENTORY_ID },
+        adjustmentId: ADJUSTMENT_ID,
+        expectedUpdatedAt: UPDATED_AT,
+        patch: { isWaste: true },
       })
+
+      expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
+        { tx: true },
+        expect.objectContaining({
+          id: ADJUSTMENT_ID,
+          patch: expect.objectContaining({ isWaste: true }),
+        }),
+      )
     })
 
     it("throws INVENTORY_ADJUSTMENT_STALE (409) when the OCC token does not match", async () => {

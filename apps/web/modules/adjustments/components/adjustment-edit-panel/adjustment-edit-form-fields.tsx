@@ -44,8 +44,8 @@ export type AdjustmentEditFormFieldsProps = {
 }
 
 const ADJUSTMENT_TYPE_OPTIONS = [
-  { value: "INCREASE", label: "Increase" },
   { value: "DEDUCTION", label: "Deduction" },
+  { value: "INCREASE", label: "Increase" },
 ] as const
 
 /**
@@ -100,6 +100,16 @@ export function AdjustmentEditFormFields({
               unit={manualUnit}
               placeholder="0"
               ariaLabel="Adjustment amount"
+            />
+          </FormField>
+        </CellAt>
+        <CellAt col={5} colSpan={4}>
+          <FormField label="Waste">
+            <CheckboxCell
+              editable={!isSaving}
+              value={form.isWaste}
+              onChange={(next) => controller.setField("isWaste", next)}
+              ariaLabel="Waste flag"
             />
           </FormField>
         </CellAt>

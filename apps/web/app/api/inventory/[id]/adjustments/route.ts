@@ -107,6 +107,7 @@ export async function POST(request: Request, { params }: RouteContext) {
           adjustmentType: input.adjustmentType,
           inventoryId,
           quantity: input.quantity,
+          isWaste: input.isWaste,
           notes: input.notes,
         }),
     )

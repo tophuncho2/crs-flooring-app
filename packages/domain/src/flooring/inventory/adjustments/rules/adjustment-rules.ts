@@ -55,9 +55,10 @@ export function assertAdjustmentDeleteAllowed(
 /**
  * Linkage + structural rules for an adjustment row.
  *  - DEDUCTION: workOrderId / workOrderItemId either both null or both set.
- *  - INCREASE:  both must be null AND isWaste must be false.
- *               (Return-to-stock — INCREASE with a WO link — is intentionally
- *               not supported in this pass.)
+ *  - INCREASE:  both must be null. (Return-to-stock — INCREASE with a WO link
+ *               — is intentionally not supported in this pass.) `isWaste` is a
+ *               reporting flag orthogonal to direction and is allowed on either
+ *               type.
  */
 export function assertAdjustmentLinkageRules(input: {
   adjustmentType: FlooringInventoryAdjustmentType
@@ -74,9 +75,6 @@ export function assertAdjustmentLinkageRules(input: {
         "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER",
         { workOrderId: input.workOrderId, workOrderItemId: input.workOrderItemId },
       )
-    }
-    if (input.isWaste === true) {
-      throw new InventoryAdjustmentDomainError("INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WASTE")
     }
     return
   }

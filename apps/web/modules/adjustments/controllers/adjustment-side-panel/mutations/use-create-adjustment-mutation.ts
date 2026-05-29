@@ -86,6 +86,7 @@ export function useCreateAdjustmentMutation({
           inventoryId: input.inventoryId,
           adjustmentType: input.form.adjustmentType,
           quantity: input.form.quantity,
+          isWaste: input.form.isWaste,
           notes: input.form.notes,
         })
       }

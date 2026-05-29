@@ -86,6 +86,7 @@ function manualVariantInput(overrides: Record<string, unknown> = {}) {
     adjustmentType: "INCREASE" as const,
     inventoryId: INVENTORY_ID,
     quantity: "10",
+    isWaste: false,
     notes: "",
     ...overrides,
   }
@@ -286,6 +287,25 @@ describe("createPendingAdjustmentUseCase — variant: manual", () => {
       }),
     )
     expect(tx.flooringWorkOrderItem.findUnique).not.toHaveBeenCalled()
+  })
+
+  it("inserts a manual INCREASE flagged as waste (isWaste honored on either direction)", async () => {
+    insertPendingAdjustmentRowMock.mockResolvedValue({ id: ADJUSTMENT_ID, quantity: "10.00" })
+    recomputeAndPersistNetDeductedMock.mockResolvedValue([
+      { inventoryId: INVENTORY_ID, netDeducted: "-10.00" },
+    ])
+
+    await createPendingAdjustmentUseCase(manualVariantInput({ isWaste: true }))
+
+    expect(insertPendingAdjustmentRowMock).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({
+        adjustmentType: "INCREASE",
+        workOrderId: null,
+        workOrderItemId: null,
+        isWaste: true,
+      }),
+    )
   })
 
   it("inserts a manual DEDUCTION (recount-down) with no WO link", async () => {

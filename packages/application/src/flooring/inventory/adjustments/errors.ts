@@ -10,7 +10,6 @@ export type InventoryAdjustmentExecutionErrorCode =
   | "INVENTORY_ADJUSTMENT_LINK_NOT_ALLOWED"
   | "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH"
   | "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WORK_ORDER"
-  | "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WASTE"
 
 export class InventoryAdjustmentExecutionError extends Error {
   readonly code: InventoryAdjustmentExecutionErrorCode

@@ -166,19 +166,6 @@ export async function updatePendingAdjustmentUseCase(
       })
     }
 
-    // INCREASE rows can never carry isWaste = true. Catch a patch that tries.
-    if (
-      existing.adjustmentType === "INCREASE" &&
-      input.patch.isWaste === true
-    ) {
-      throw new InventoryAdjustmentExecutionError({
-        code: "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WASTE",
-        message: "An INCREASE adjustment cannot be flagged as waste.",
-        status: 400,
-        payload: { adjustmentId: existing.id },
-      })
-    }
-
     try {
       assertAdjustmentExpectedUpdatedAtMatches({
         rowUpdatedAt: existing.updatedAt,

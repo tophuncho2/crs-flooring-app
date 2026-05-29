@@ -29,7 +29,7 @@ import type {
  *    belongs to the provided work order, then writes a DEDUCTION row with
  *    both link columns set (and `isWaste` honored).
  *  - `variant: "manual"` — free-form adjustment. INCREASE or DEDUCTION
- *    direction; never WO-linked; never waste.
+ *    direction; never WO-linked; `isWaste` honored on either direction.
  *
  * Either variant locks the parent inventory row, recomputes `netDeducted`,
  * and asserts the ceiling invariant after the insert.
@@ -47,7 +47,7 @@ export async function createPendingAdjustmentUseCase(
       input.variant === "cut" ? "DEDUCTION" : input.adjustmentType
     const workOrderId = input.variant === "cut" ? input.workOrderId : null
     const workOrderItemId = input.variant === "cut" ? input.workOrderItemId : null
-    const isWaste = input.variant === "cut" ? input.isWaste : false
+    const isWaste = input.isWaste
 
     const formIssues = validateAdjustmentPendingForm({
       adjustmentType,
@@ -104,13 +104,6 @@ export async function createPendingAdjustmentUseCase(
             message: "An INCREASE adjustment cannot be linked to a work order.",
             status: 400,
             payload: error.detail,
-          })
-        }
-        if (error.code === "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WASTE") {
-          throw new InventoryAdjustmentExecutionError({
-            code: "INVENTORY_ADJUSTMENT_INCREASE_REQUIRES_NO_WASTE",
-            message: "An INCREASE adjustment cannot be flagged as waste.",
-            status: 400,
           })
         }
       }

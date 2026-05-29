@@ -70,14 +70,16 @@ export function validateCreatePendingAdjustmentInput(
 export type ValidatedCreateManualAdjustmentInput = {
   adjustmentType: "INCREASE" | "DEDUCTION"
   quantity: string
+  isWaste: boolean
   notes: string
 }
 
 /**
  * Manual (non-WO) adjustment create. Used by `POST /api/inventory/[id]/adjustments`.
  * The parent inventory id rides on the route path, so the body carries only the
- * direction + amount + notes. WO-link / waste fields are rejected — a manual
- * adjustment is never WO-linked and never waste (enforced again in the domain).
+ * direction + amount + waste flag + notes. WO-link fields are rejected — a manual
+ * adjustment is never WO-linked (enforced again in the domain). `isWaste` is a
+ * reporting flag allowed on either direction.
  */
 export function validateCreateManualAdjustmentInput(
   body: Record<string, unknown>,
@@ -89,12 +91,11 @@ export function validateCreateManualAdjustmentInput(
   if ("workOrderId" in body || "workOrderItemId" in body) {
     failAdjustment("A manual adjustment cannot be linked to a work order", "workOrderId")
   }
-  if ("isWaste" in body) {
-    failAdjustment("A manual adjustment cannot be flagged as waste", "isWaste")
-  }
+  const isWaste = typeof body.isWaste === "boolean" ? body.isWaste : false
   return {
     adjustmentType: rawType,
     quantity: requireAdjustmentString(body.quantity, "quantity"),
+    isWaste,
     notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
   }
 }

@@ -3,7 +3,7 @@ import type { AdjustmentEditForm, AdjustmentPanelLocal } from "./types"
 
 export const EMPTY_FORM: AdjustmentEditForm = {
   inventoryId: "",
-  adjustmentType: "INCREASE",
+  adjustmentType: "DEDUCTION",
   quantity: "",
   isWaste: false,
   notes: "",

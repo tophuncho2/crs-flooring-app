@@ -73,18 +73,21 @@ export async function createPendingAdjustmentRequest(args: {
 
 /**
  * Create a manual (non-WO) adjustment on one inventory record. Inventory-only:
- * the parent inventory id rides on the route path, so the body carries just the
- * direction + amount + notes. Never WO-linked, never waste.
+ * the parent inventory id rides on the route path, so the body carries the
+ * direction + amount + waste flag + notes. Never WO-linked; `isWaste` is a
+ * reporting flag allowed on either direction.
  */
 export async function createManualAdjustmentRequest(args: {
   inventoryId: string
   adjustmentType: FlooringInventoryAdjustmentType
   quantity: string
+  isWaste: boolean
   notes: string
 }) {
   const body = withMutationMeta({
     adjustmentType: args.adjustmentType,
     quantity: args.quantity,
+    isWaste: args.isWaste,
     notes: args.notes,
   } as Record<string, unknown>)
   return requestJson<PendingAdjustmentMutationResponse>(
