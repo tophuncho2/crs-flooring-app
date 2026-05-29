@@ -17,7 +17,7 @@ export function createPrismaClient() {
   const { DATABASE_URL } = getDatabaseEnvironment()
   const adapter = new PrismaPg({
     connectionString: DATABASE_URL,
-    application_name: process.env.RAILWAY_SERVICE_NAME ?? "tsx-flooring-local",
+    application_name: process.env.RAILWAY_SERVICE_NAME ?? "crs-flooring-local",
     max: getPoolMax(),
     idleTimeoutMillis: 10_000,
   })

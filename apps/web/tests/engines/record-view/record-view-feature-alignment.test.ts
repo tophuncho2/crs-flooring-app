@@ -1,7 +1,7 @@
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 
-const ROOT = "/Users/j.otto/Code Projects/CRS/builderswebapp"
+const ROOT = path.join(process.cwd(), "..", "..")
 
 describe("record view feature alignment", () => {
   it("manufacturers and management-companies have no @/modules/shared/engines imports", async () => {
