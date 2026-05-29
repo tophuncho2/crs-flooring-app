@@ -247,6 +247,7 @@ export function useAdjustmentEditPanel({
           pickedWorkOrderItemLabel: "",
           pickedWorkOrderItemNotes: "",
         }))
+        setPickerKind(null)
         setError(null)
         return
       }
@@ -259,6 +260,7 @@ export function useAdjustmentEditPanel({
         pickedWorkOrderItemLabel: "",
         pickedWorkOrderItemNotes: "",
       }))
+      setPickerKind(null)
       setError(null)
 
       // Product is fixed per open (edit: the row's product; create: the seed's).
