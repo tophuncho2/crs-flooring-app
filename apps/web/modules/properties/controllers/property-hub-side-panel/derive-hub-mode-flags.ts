@@ -1,4 +1,7 @@
-import { PROPERTY_HUB_NO_ACTIONS_MESSAGE } from "@builders/domain"
+import {
+  PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE,
+  PROPERTY_HUB_NO_ACTIONS_MESSAGE,
+} from "@builders/domain"
 import type { HubMode } from "./types"
 
 /**
@@ -63,9 +66,14 @@ export function deriveValidationError(
   propertyEditValidation: string,
 ): string | null {
   if (modeKind === "create") {
+    // NO_ACTIONS and LINK_REQUIRES_PROPERTY are incomplete-form guards, not
+    // errors — they already disable the create button (deriveCanSave), so
+    // surfacing them as a live notice is noise. Only real validation failures
+    // (blank required field, etc.) show in the banner.
     if (
       !hasAnyCreateInteraction ||
-      createValidationRaw === PROPERTY_HUB_NO_ACTIONS_MESSAGE
+      createValidationRaw === PROPERTY_HUB_NO_ACTIONS_MESSAGE ||
+      createValidationRaw === PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE
     ) {
       return null
     }
