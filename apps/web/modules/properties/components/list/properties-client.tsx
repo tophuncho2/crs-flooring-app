@@ -128,8 +128,8 @@ export default function PropertiesClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
             {message ? (
@@ -151,7 +151,7 @@ export default function PropertiesClient({
               Properties
             </span>
           </div>
-          <ListToolbar className="pt-0">
+          <ListToolbar className="pt-0" showDivider={false}>
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <PropertiesListSearch
@@ -183,24 +183,24 @@ export default function PropertiesClient({
             </ListToolbarCell>
           </ListToolbar>
         </div>
-
-        <PropertiesTable
-          rows={rows}
-          onOpenProperty={openForPropertyEdit}
-          pagination={
-            <PaginateControls
-              page={page}
-              pageSize={pageSize}
-              totalItems={total}
-              totalPages={totalPages}
-              hasPreviousPage={hasPreviousPage}
-              hasNextPage={hasNextPage}
-              onPreviousPage={goToPreviousPage}
-              onNextPage={goToNextPage}
-            />
-          }
-        />
       </div>
+
+      <PropertiesTable
+        rows={rows}
+        onOpenProperty={openForPropertyEdit}
+        pagination={
+          <PaginateControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={total}
+            totalPages={totalPages}
+            hasPreviousPage={hasPreviousPage}
+            hasNextPage={hasNextPage}
+            onPreviousPage={goToPreviousPage}
+            onNextPage={goToNextPage}
+          />
+        }
+      />
     </div>
   )
 }
