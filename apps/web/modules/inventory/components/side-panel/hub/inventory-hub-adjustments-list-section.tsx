@@ -11,7 +11,6 @@ import type { InventoryHubSidePanelController } from "@/modules/inventory/contro
 const EMPTY_CELL = "—"
 
 const LABEL_CLASS = "text-[var(--foreground)]/45"
-const VALUE_CLASS = "text-[var(--foreground)]/80 tabular-nums"
 
 function formatCutWithUnit(value: string, unit: string): string {
   const trimmed = value.trim()
@@ -21,16 +20,19 @@ function formatCutWithUnit(value: string, unit: string): string {
 }
 
 /**
- * Title line: `{±quantity} {stockUnit} · {coverageCut} {coverageUnit}`. The
- * amount leads with its direction sign; no-coverage categories drop the
- * coverage segment. The final-cut sequence and adjustment # are not in the
- * title — the sequence renders in the meta slot beside the status pill, and
- * the adjustment # is kept on the aria-label only.
+ * Title line: `{±quantity} {stockUnit} · {coverageCut} {coverageUnit} · {before} → {after}`.
+ * The amount leads with its direction sign; no-coverage categories drop the
+ * coverage segment; pending rows (no running balance yet) drop the before→after
+ * segment. The final-cut sequence and adjustment # are not in the title — the
+ * sequence renders in the meta slot beside the status pill, and the adjustment #
+ * is kept on the aria-label only.
  */
 function buildAdjustmentTitle(row: {
   adjustmentType: "INCREASE" | "DEDUCTION"
   quantity: string
   coverage: string | null
+  before: string | null
+  after: string | null
   stockUnitAbbrev: string | null
   itemCoverageUnitAbbrev: string | null
 }): string {
@@ -48,33 +50,25 @@ function buildAdjustmentTitle(row: {
     segments.push(formatCutWithUnit(row.coverage, row.itemCoverageUnitAbbrev ?? ""))
   }
 
+  // Running-balance transition, units on both sides — only once the cut is
+  // finalized and the before/after balance is stamped.
+  if (row.before !== null && row.after !== null) {
+    const unit = (row.stockUnitAbbrev ?? "").trim()
+    segments.push(`${formatCutWithUnit(row.before, unit)} → ${formatCutWithUnit(row.after, unit)}`)
+  }
+
   return segments.join(" · ")
 }
 
 /**
- * Subtitle lines: a labelled `Before … → After …` line (only once the cut is
- * finalized and the running balance is stamped) followed by a `Note: …` line.
- * Each is omitted when its data is absent — a fresh pending cut shows just its
- * note, or nothing.
+ * Subtitle lines: a single `Note: …` line, omitted when the cut has no note.
+ * The running balance now rides in the title's before→after segment, so a cut
+ * with no note shows no subtitle at all.
  */
 function buildAdjustmentSubtitleLines(row: {
-  before: string | null
-  after: string | null
   notes: string
-  stockUnitAbbrev: string | null
 }): ReactNode[] {
   const lines: ReactNode[] = []
-
-  if (row.before !== null && row.after !== null) {
-    const unit = (row.stockUnitAbbrev ?? "").trim()
-    lines.push(
-      <span>
-        <span className={VALUE_CLASS}>{formatCutWithUnit(row.before, unit)}</span>
-        <span className={LABEL_CLASS}> → </span>
-        <span className={VALUE_CLASS}>{formatCutWithUnit(row.after, unit)}</span>
-      </span>,
-    )
-  }
 
   if (row.notes.trim().length > 0) {
     lines.push(
@@ -93,11 +87,11 @@ function buildAdjustmentSubtitleLines(row: {
  * hub's properties-list section: each row is clickable; click transitions the
  * panel into `section-edit-adjustment` mode for that row.
  *
- * Row anatomy: the title packs the signed quantity + coverage cut (each with
- * its own snapshot unit); the meta slot trails the final-cut sequence next to
- * the status badge; the subtitle stacks a before/after line and the note. Units
- * come from the row's own snapshot (each cut froze its UoM at creation), not the
- * parent inventory's current unit.
+ * Row anatomy: the title packs the signed quantity + coverage cut + before→after
+ * running balance (each with its own snapshot unit); the meta slot trails the
+ * final-cut sequence next to the status badge; the subtitle carries only the
+ * note. Units come from the row's own snapshot (each cut froze its UoM at
+ * creation), not the parent inventory's current unit.
  *
  * Reuses the same query key the inline `InventoryAdjustmentsSection` does, so
  * mutations refresh both surfaces with one cache invalidation.
