@@ -104,15 +104,15 @@ export default function AdjustmentsClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         <div>
           <div className="px-4 pt-3">
             <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
               Adjustments
             </span>
           </div>
-          <ListToolbar className="pt-0">
+          <ListToolbar className="pt-0" showDivider={false}>
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <SearchControl
@@ -146,24 +146,24 @@ export default function AdjustmentsClient({
             </ListToolbarCell>
           </ListToolbar>
         </div>
-
-        <AdjustmentsTable
-          rows={rows}
-          onOpenAdjustment={(row) => openForAdjustmentEdit(row)}
-          pagination={
-            <PaginateControls
-              page={page}
-              pageSize={pageSize}
-              totalItems={total}
-              totalPages={totalPages}
-              hasPreviousPage={hasPreviousPage}
-              hasNextPage={hasNextPage}
-              onPreviousPage={goToPreviousPage}
-              onNextPage={goToNextPage}
-            />
-          }
-        />
       </div>
+
+      <AdjustmentsTable
+        rows={rows}
+        onOpenAdjustment={(row) => openForAdjustmentEdit(row)}
+        pagination={
+          <PaginateControls
+            page={page}
+            pageSize={pageSize}
+            totalItems={total}
+            totalPages={totalPages}
+            hasPreviousPage={hasPreviousPage}
+            hasNextPage={hasNextPage}
+            onPreviousPage={goToPreviousPage}
+            onNextPage={goToNextPage}
+          />
+        }
+      />
     </div>
   )
 }
