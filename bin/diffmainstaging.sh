@@ -81,7 +81,7 @@ check_db() {
     return
   fi
   local out
-  out="$(cd packages/db && DATABASE_URL="$url" npx prisma migrate status 2>&1)"
+  out="$(DATABASE_URL="$url" npm run --silent db:migrate:status --workspace @builders/db 2>&1)"
   if printf '%s' "$out" | grep -q "Database schema is up to date"; then
     ok "$label DB — migrations up to date"
   else
