@@ -14,11 +14,14 @@ jobs:
     steps:
       - name: Install PostgreSQL 17 client
         run: |
+          set -euo pipefail
           sudo install -d /usr/share/postgresql-common/pgdg
+          # Write the ASCII-armored key directly; apt reads .asc via signed-by.
+          # Avoids `gpg --dearmor`, which fails in CI ('cannot open /dev/tty').
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-            | sudo gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc > /dev/null
           . /etc/os-release
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client-17
