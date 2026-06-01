@@ -21,30 +21,9 @@ model User {
   password               String?
   role                   Role                  @default(CUSTOMER)
   isVerified             Boolean               @default(false)
-  hiddenFlooringNavSlugs String[]              @default([])
-  flooringNavOrderSlugs  String[]              @default([])
   createdAt              DateTime              @default(now())
   activities             UserLoginActivity[]
-  tablePreferences       UserTablePreference[]
   mutationReceipts       AppMutationReceipt[]
-}
-
-model UserTablePreference {
-  id                String   @id @default(uuid())
-  userId            String
-  tableKey          String
-  hiddenColumnKeys  String[] @default([])
-  columnOrderKeys   String[] @default([])
-  isAscendingSort   Boolean  @default(true)
-  isGroupingEnabled Boolean  @default(false)
-  groupByKeys       String[] @default([])
-  filtersJson       Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, tableKey])
-  @@index([userId])
 }
 
 model UserLoginActivity {
