@@ -1,0 +1,87 @@
+name: Prune transient DB tables
+
+# Weekly housekeeping. Prunes three high-churn, low-value tables across all
+# three databases. Age-based — never a full wipe — and never touches outbox
+# events that are still in flight.
+#
+#   UserLoginActivity   -> delete rows older than 21 days (loggedInAt)
+#   app_mutation_receipt-> delete rows past their idempotency window (expiresAt < now)
+#   queue_outbox_event  -> delete only DISPATCHED events older than 21 days
+#                          (dispatchedAt). PENDING / PROCESSING / EXHAUSTED are
+#                          left alone: in-flight work and failed-event forensics.
+#
+# Runs Sunday 06:00 UTC = 2am EDT (summer) / 1am EST (winter). The cron is fixed
+# UTC, so the local hour shifts by one across DST — this is expected.
+#
+# Each DB is an independent matrix leg (fail-fast: false), so one DB's failure
+# does not cancel the others. Deletes per DB run in a single transaction.
+
+on:
+  schedule:
+    - cron: "0 6 * * 0"
+  workflow_dispatch: {}
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: main
+            secret: RAILWAY_DATABASE_URL
+          - name: staging
+            secret: RAILWAY_STAGING_DATABASE_URL
+          - name: dev
+            secret: RAILWAY_DEV_DATABASE_URL
+
+    steps:
+      - name: Prune ${{ matrix.name }}
+        env:
+          # ubuntu-latest ships a postgresql-client (psql); plain DELETEs need
+          # no specific server-major, so we skip the PG17-client install the
+          # pg_dump-based workflows require.
+          DATABASE_URL: ${{ secrets[matrix.secret] }}
+          TARGET: ${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::No DATABASE_URL for target '$TARGET' (missing secret ${{ matrix.secret }})"
+            exit 1
+          fi
+
+          # CTE + RETURNING gives a labeled deleted-row count per table in the
+          # psql output. ON_ERROR_STOP + explicit transaction => all-or-nothing.
+          OUT="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X <<'SQL'
+          BEGIN;
+          WITH d AS (
+            DELETE FROM "UserLoginActivity"
+            WHERE "loggedInAt" < now() - interval '21 days'
+            RETURNING 1
+          ) SELECT 'UserLoginActivity' AS "table", count(*) AS deleted FROM d;
+
+          WITH d AS (
+            DELETE FROM "app_mutation_receipt"
+            WHERE "expiresAt" < now()
+            RETURNING 1
+          ) SELECT 'app_mutation_receipt' AS "table", count(*) AS deleted FROM d;
+
+          WITH d AS (
+            DELETE FROM "queue_outbox_event"
+            WHERE status = 'DISPATCHED'
+              AND "dispatchedAt" < now() - interval '21 days'
+            RETURNING 1
+          ) SELECT 'queue_outbox_event' AS "table", count(*) AS deleted FROM d;
+          COMMIT;
+          SQL
+          )"
+
+          echo "$OUT"
+          {
+            echo "### Prune: $TARGET"
+            echo ""
+            echo '```'
+            echo "$OUT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
