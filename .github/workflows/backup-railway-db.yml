@@ -25,7 +25,10 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client-17
-          pg_dump --version
+          # The runner preinstalls PG16, whose /usr/bin/pg_dump shadows 17.
+          # Put the versioned 17 bin dir first on PATH for all later steps.
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/17/bin/pg_dump --version
 
       - name: Dump Railway database
         env:
