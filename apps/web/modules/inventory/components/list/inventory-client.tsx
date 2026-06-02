@@ -6,6 +6,7 @@ import {
   ListToolbar,
   ListToolbarBottomRow,
   ListToolbarCell,
+  ListToolbarTallCard,
 } from "@/components/features/list-toolbar"
 import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
@@ -369,9 +370,10 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* Warehouse-scoped chips: Warehouse stacked over Location, with the
-                Status (archive) control beneath, all inside one encased card
-                mirroring the search-bar encasing minus the tab/label. The
+            {/* Warehouse-scoped chips: Warehouse stacked over Location inside
+                one encased card mirroring the search-bar encasing minus the
+                tab/label, with the Status (archive) control in its own labeled
+                card directly beneath — same cell column, separate encasing. The
                 warehouse pick gates Location (the picker renders disabled until
                 a warehouse is picked); a warehouse change cascades a clear into
                 Location via handleWarehouseChange. */}
@@ -391,11 +393,13 @@ export default function InventoryClient({
                   disabledPlaceholder="Select warehouse first"
                   ariaLabel="Filter inventory by location"
                 />
+              </div>
+              <ListToolbarTallCard label="Status">
                 <ArchiveSegmentedControl
                   value={isArchivedValue}
                   onChange={handleArchivedChange}
                 />
-              </div>
+              </ListToolbarTallCard>
             </ListToolbarCell>
 
             {/* Category → Product: product is category-scoped (category change
