@@ -23,31 +23,31 @@ export default function LoginForm({ restricted }: { restricted: boolean }) {
     setIsSubmitting(true)
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password: "",
-        redirect: false,
+      const response = await fetch("/api/auth/account-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       })
 
-      if (result?.ok) {
-        router.replace("/dashboard/inventory")
-        router.refresh()
+      if (response.status === 429) {
+        setError("Too many attempts. Please try again later.")
         return
       }
 
-      const errorCode = result?.error ?? ""
+      if (!response.ok) {
+        setError("Unable to sign in. Contact your administrator.")
+        return
+      }
 
-      if (errorCode === "PASSWORD_SETUP_REQUIRED") {
+      const payload = (await response.json().catch(() => ({}))) as {
+        status?: "needs-password" | "needs-setup"
+      }
+
+      if (payload.status === "needs-setup") {
         setStep("set-password")
         setNotice("Welcome! Please set your password to get started.")
-      } else if (errorCode === "INVALID_CREDENTIALS") {
-        setStep("password")
-      } else if (errorCode === "ACCOUNT_RESTRICTED") {
-        setError("Your account is restricted. Contact an admin to verify access.")
-      } else if (errorCode === "RATE_LIMITED") {
-        setError("Too many attempts. Please try again later.")
       } else {
-        setError("Unable to sign in. Contact your administrator.")
+        setStep("password")
       }
     } finally {
       setIsSubmitting(false)

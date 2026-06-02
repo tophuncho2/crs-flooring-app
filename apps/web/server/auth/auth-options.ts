@@ -7,6 +7,17 @@ import { logEvent } from "@/server/platform/logger"
 import { consumeRateLimit } from "@/server/platform/rate-limit"
 import { getClientIp, getRequestId } from "@/server/platform/request-context"
 
+// Typed errors thrown by `authorize()` are control-flow signals (read by the
+// login form), not faults — `authorize()` already records each as a structured
+// warn. NextAuth would otherwise re-log them as CREDENTIALS_SIGNIN_ERROR with a
+// stack trace on every failed/probed login, so we suppress that duplicate.
+const EXPECTED_CREDENTIAL_ERRORS = new Set([
+  "INVALID_CREDENTIALS",
+  "RATE_LIMITED",
+  "PASSWORD_SETUP_REQUIRED",
+  "ACCOUNT_RESTRICTED",
+])
+
 export function getAuthOptions(): NextAuthOptions {
   const authEnvironment = getAuthEnvironment()
 
@@ -137,6 +148,38 @@ export function getAuthOptions(): NextAuthOptions {
     ],
     session: { strategy: "jwt" },
     secret: authEnvironment.NEXTAUTH_SECRET,
+
+    logger: {
+      error(code, metadata) {
+        const error = metadata instanceof Error ? metadata : (metadata as { error?: unknown })?.error
+        const message = error instanceof Error ? error.message : undefined
+
+        if (code === "CREDENTIALS_SIGNIN_ERROR" && message && EXPECTED_CREDENTIAL_ERRORS.has(message)) {
+          return
+        }
+
+        logEvent({
+          level: "error",
+          message: `NextAuth error: ${code}`,
+          action: "auth.nextauth.error",
+          route: "/api/auth/[...nextauth]",
+          details: { code },
+          error,
+        })
+      },
+      warn(code) {
+        logEvent({
+          level: "warn",
+          message: `NextAuth warning: ${code}`,
+          action: "auth.nextauth.warn",
+          route: "/api/auth/[...nextauth]",
+          details: { code },
+        })
+      },
+      debug() {
+        // Suppress verbose NextAuth debug output.
+      },
+    },
 
     callbacks: {
       async jwt({ token, user }) {
