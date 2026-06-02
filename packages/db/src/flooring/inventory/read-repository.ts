@@ -9,6 +9,7 @@ import type {
   InventoryFormOptions,
   InventoryLocationOption,
   InventoryOption,
+  InventoryPurchaseOrderOption,
   InventoryRow,
 } from "@builders/domain"
 import { Prisma } from "../../generated/prisma/client.js"
@@ -584,6 +585,55 @@ export async function searchInventoryLocationsForWarehouse(
   const hasMore = rows.length > args.take
   const page = hasMore ? rows.slice(0, args.take) : rows
   return { items: page.map((row) => ({ value: row.location })), hasMore }
+}
+
+export type InventoryPurchaseOrderSearchArgs = {
+  /** Free-text identity search — `ILIKE %value%` on the PO-number column. */
+  search?: string
+  /** Page offset for infinite scroll. Defaults to 0. */
+  skip?: number
+  take: number
+}
+
+export type InventoryPurchaseOrderSearchResult = {
+  items: InventoryPurchaseOrderOption[]
+  hasMore: boolean
+}
+
+/**
+ * Distinct import PO# snapshot values for the inventory list-view PO# filter
+ * chip. Global (not warehouse-scoped) and archive-agnostic — every distinct
+ * `purchaseOrderNumber` is selectable regardless of the Status chip. Excludes
+ * NULL/whitespace-only values. Optional ILIKE on the search term. Sorted ASC,
+ * deduped at the SQL layer.
+ */
+export async function searchInventoryPurchaseOrderNumbers(
+  args: InventoryPurchaseOrderSearchArgs,
+  client: InventoryDbClient = db,
+): Promise<InventoryPurchaseOrderSearchResult> {
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"purchaseOrderNumber" IS NOT NULL`,
+    Prisma.sql`length(trim("purchaseOrderNumber")) > 0`,
+  ]
+  const trimmed = args.search?.trim() ?? ""
+  if (trimmed.length > 0) {
+    conditions.push(Prisma.sql`"purchaseOrderNumber" ILIKE ${`%${trimmed}%`}`)
+  }
+  const whereClause = Prisma.join(conditions, " AND ")
+
+  // Fetch take+1 (offset by skip) to detect a next page without a count query.
+  const skip = Math.max(0, Math.floor(args.skip ?? 0))
+  const rows = await client.$queryRaw<{ purchaseOrderNumber: string }[]>(Prisma.sql`
+    SELECT DISTINCT "purchaseOrderNumber"
+    FROM "flooring_inventory"
+    WHERE ${whereClause}
+    ORDER BY "purchaseOrderNumber" ASC
+    LIMIT ${args.take + 1} OFFSET ${skip}
+  `)
+
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return { items: page.map((row) => ({ value: row.purchaseOrderNumber })), hasMore }
 }
 
 export async function listInventoryOptions(

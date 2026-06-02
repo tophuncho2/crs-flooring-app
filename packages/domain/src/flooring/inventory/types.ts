@@ -112,3 +112,7 @@ export type InventoryOption = {
 export type InventoryLocationOption = {
   value: string
 }
+
+export type InventoryPurchaseOrderOption = {
+  value: string
+}

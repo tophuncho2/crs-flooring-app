@@ -165,6 +165,53 @@ export function validateInventoryLocationsSearchQuery(
   }
 }
 
+// --- Import PO# picker (global, distinct) validator ---
+
+const inventoryPurchaseOrderSearchQuerySchema = z.object({
+  search: z.string().optional(),
+  skip: z.coerce.number().int().min(0).default(0),
+  take: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(OPTIONS_MAX_TAKE)
+    .default(OPTIONS_DEFAULT_TAKE),
+})
+
+export type ValidatedInventoryPurchaseOrderSearchQuery = {
+  search?: string
+  skip: number
+  take: number
+}
+
+export function validateInventoryPurchaseOrderSearchQuery(
+  searchParams: URLSearchParams,
+): ValidatedInventoryPurchaseOrderSearchQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = inventoryPurchaseOrderSearchQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    throw new InventoryExecutionError({
+      code: "INVENTORY_VALIDATION_FAILED",
+      message: issue?.message ?? "Invalid inventory purchase order query",
+      status: 400,
+      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
+    })
+  }
+
+  const parsed = parseResult.data
+  const trimSearch = parsed.search?.trim()
+  return {
+    ...(trimSearch ? { search: trimSearch } : {}),
+    skip: parsed.skip,
+    take: parsed.take,
+  }
+}
+
 // --- List view query validator (search + filters + pagination) ---
 
 // Multi-value filter keys parsed off the raw URLSearchParams via

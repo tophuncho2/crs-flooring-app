@@ -26,6 +26,7 @@ import { useInventoryListController } from "@/modules/inventory/controllers/list
 import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
+import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
 import { DebouncedSearchControl } from "@/components/features/search"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
@@ -176,6 +177,7 @@ export default function InventoryClient({
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
   const selectedCategoryId = filters.categoryId?.[0] ?? null
   const selectedProductId = filters.productId?.[0] ?? null
+  const selectedPurchaseOrderNumber = filters.purchaseOrderNumber?.[0] ?? null
   const locationValue = filters.location?.[0] ?? ""
   const archivedRaw = filters.isArchived?.[0]
   const isArchivedValue =
@@ -256,6 +258,13 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
+  const handlePurchaseOrderChange = useCallback(
+    (next: string | null) => {
+      onFilterChange("purchaseOrderNumber", next ? [next] : [])
+    },
+    [onFilterChange],
+  )
+
   const handleArchivedChange = useCallback(
     (next: boolean | undefined) => {
       onFilterChange(
@@ -281,6 +290,7 @@ export default function InventoryClient({
       selectedWarehouseId ||
       selectedCategoryId ||
       selectedProductId ||
+      selectedPurchaseOrderNumber ||
       locationValue ||
       invNumberValue ||
       rollNumberValue ||
@@ -295,6 +305,7 @@ export default function InventoryClient({
     selectedWarehouseId,
     selectedCategoryId,
     selectedProductId,
+    selectedPurchaseOrderNumber,
     locationValue,
     invNumberValue,
     rollNumberValue,
@@ -413,6 +424,14 @@ export default function InventoryClient({
                 <ArchiveSegmentedControl
                   value={isArchivedValue}
                   onChange={handleArchivedChange}
+                />
+              </ListToolbarTallCard>
+              <ListToolbarTallCard label="Import PO#">
+                <PurchaseOrderPicker
+                  value={selectedPurchaseOrderNumber}
+                  onChange={handlePurchaseOrderChange}
+                  placeholder="Import PO#"
+                  ariaLabel="Filter inventory by import PO number"
                 />
               </ListToolbarTallCard>
             </ListToolbarCell>
