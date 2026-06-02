@@ -6,7 +6,6 @@ import {
   ListToolbar,
   ListToolbarBottomRow,
   ListToolbarCell,
-  ListToolbarTallCard,
 } from "@/components/features/list-toolbar"
 import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
@@ -370,12 +369,12 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* Warehouse-scoped chips: Warehouse stacked over Location inside
-                one encased card mirroring the search-bar encasing minus the
-                tab/label. The warehouse pick gates Location (the picker
-                renders disabled until a warehouse is picked); a warehouse
-                change cascades a clear into Location via
-                handleWarehouseChange. */}
+            {/* Warehouse-scoped chips: Warehouse stacked over Location, with the
+                Status (archive) control beneath, all inside one encased card
+                mirroring the search-bar encasing minus the tab/label. The
+                warehouse pick gates Location (the picker renders disabled until
+                a warehouse is picked); a warehouse change cascades a clear into
+                Location via handleWarehouseChange. */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <WarehouseFilterChip
@@ -391,6 +390,10 @@ export default function InventoryClient({
                   placeholder="Location"
                   disabledPlaceholder="Select warehouse first"
                   ariaLabel="Filter inventory by location"
+                />
+                <ArchiveSegmentedControl
+                  value={isArchivedValue}
+                  onChange={handleArchivedChange}
                 />
               </div>
             </ListToolbarCell>
@@ -412,16 +415,6 @@ export default function InventoryClient({
                   onChange={handleProductChange}
                 />
               </div>
-            </ListToolbarCell>
-
-            {/* Status: 2-row-tall card holding the archive segmented control. */}
-            <ListToolbarCell>
-              <ListToolbarTallCard label="Status">
-                <ArchiveSegmentedControl
-                  value={isArchivedValue}
-                  onChange={handleArchivedChange}
-                />
-              </ListToolbarTallCard>
             </ListToolbarCell>
           </ListToolbar>
         </div>
