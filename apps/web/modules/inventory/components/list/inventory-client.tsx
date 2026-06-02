@@ -27,6 +27,7 @@ import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-pr
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
+import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
 import { DebouncedSearchControl } from "@/components/features/search"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
@@ -178,6 +179,7 @@ export default function InventoryClient({
   const selectedCategoryId = filters.categoryId?.[0] ?? null
   const selectedProductId = filters.productId?.[0] ?? null
   const selectedPurchaseOrderNumber = filters.purchaseOrderNumber?.[0] ?? null
+  const selectedImportNumber = filters.importNumber?.[0] ?? null
   const locationValue = filters.location?.[0] ?? ""
   const archivedRaw = filters.isArchived?.[0]
   const isArchivedValue =
@@ -258,9 +260,21 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
+  // Import PO# and Import # are mutually exclusive — only one import-identity
+  // filter is active at a time. Selecting one clears the other (no-op clear
+  // when deselecting, so clearing one doesn't disturb the other).
   const handlePurchaseOrderChange = useCallback(
     (next: string | null) => {
       onFilterChange("purchaseOrderNumber", next ? [next] : [])
+      if (next) onFilterChange("importNumber", [])
+    },
+    [onFilterChange],
+  )
+
+  const handleImportNumberChange = useCallback(
+    (next: string | null) => {
+      onFilterChange("importNumber", next ? [next] : [])
+      if (next) onFilterChange("purchaseOrderNumber", [])
     },
     [onFilterChange],
   )
@@ -291,6 +305,7 @@ export default function InventoryClient({
       selectedCategoryId ||
       selectedProductId ||
       selectedPurchaseOrderNumber ||
+      selectedImportNumber ||
       locationValue ||
       invNumberValue ||
       rollNumberValue ||
@@ -306,6 +321,7 @@ export default function InventoryClient({
     selectedCategoryId,
     selectedProductId,
     selectedPurchaseOrderNumber,
+    selectedImportNumber,
     locationValue,
     invNumberValue,
     rollNumberValue,
@@ -432,6 +448,14 @@ export default function InventoryClient({
                   onChange={handlePurchaseOrderChange}
                   placeholder="Import PO#"
                   ariaLabel="Filter inventory by import PO number"
+                />
+              </ListToolbarTallCard>
+              <ListToolbarTallCard label="Import #">
+                <ImportNumberPicker
+                  value={selectedImportNumber}
+                  onChange={handleImportNumberChange}
+                  placeholder="Import #"
+                  ariaLabel="Filter inventory by import number"
                 />
               </ListToolbarTallCard>
             </ListToolbarCell>

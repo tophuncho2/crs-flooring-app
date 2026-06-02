@@ -7,6 +7,7 @@ import {
 import type {
   InventoryDetail,
   InventoryFormOptions,
+  InventoryImportNumberOption,
   InventoryLocationOption,
   InventoryOption,
   InventoryPurchaseOrderOption,
@@ -634,6 +635,62 @@ export async function searchInventoryPurchaseOrderNumbers(
   const hasMore = rows.length > args.take
   const page = hasMore ? rows.slice(0, args.take) : rows
   return { items: page.map((row) => ({ value: row.purchaseOrderNumber })), hasMore }
+}
+
+export type InventoryImportNumberSearchArgs = {
+  /** Free-text identity search — `ILIKE %value%` on the import-number column. */
+  search?: string
+  /** Page offset for infinite scroll. Defaults to 0. */
+  skip?: number
+  take: number
+}
+
+export type InventoryImportNumberSearchResult = {
+  items: InventoryImportNumberOption[]
+  hasMore: boolean
+}
+
+/**
+ * Distinct import # snapshot values for the inventory list-view Import # filter
+ * chip. Global (not warehouse-scoped) and archive-agnostic — every distinct
+ * `importNumber` is selectable regardless of the Status chip. Excludes
+ * NULL/whitespace-only values. Optional ILIKE on the search term. Ordered
+ * numerically (the column is a stringified autoincrement Int snapshot, so a
+ * lexical sort would render 1, 10, 2…). Deduped at the SQL layer.
+ */
+export async function searchInventoryImportNumbers(
+  args: InventoryImportNumberSearchArgs,
+  client: InventoryDbClient = db,
+): Promise<InventoryImportNumberSearchResult> {
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"importNumber" IS NOT NULL`,
+    Prisma.sql`length(trim("importNumber")) > 0`,
+  ]
+  const trimmed = args.search?.trim() ?? ""
+  if (trimmed.length > 0) {
+    conditions.push(Prisma.sql`"importNumber" ILIKE ${`%${trimmed}%`}`)
+  }
+  const whereClause = Prisma.join(conditions, " AND ")
+
+  // Fetch take+1 (offset by skip) to detect a next page without a count query.
+  // Distinct is wrapped in a subquery so the numeric (`::int`) ORDER BY is
+  // valid — Postgres requires SELECT DISTINCT ordering expressions to appear in
+  // the select list, which a derived cast can't.
+  const skip = Math.max(0, Math.floor(args.skip ?? 0))
+  const rows = await client.$queryRaw<{ importNumber: string }[]>(Prisma.sql`
+    SELECT "importNumber"
+    FROM (
+      SELECT DISTINCT "importNumber"
+      FROM "flooring_inventory"
+      WHERE ${whereClause}
+    ) AS sub
+    ORDER BY "importNumber"::int ASC
+    LIMIT ${args.take + 1} OFFSET ${skip}
+  `)
+
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return { items: page.map((row) => ({ value: row.importNumber })), hasMore }
 }
 
 export async function listInventoryOptions(
