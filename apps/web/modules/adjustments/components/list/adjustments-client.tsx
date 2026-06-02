@@ -15,11 +15,15 @@ import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
+  type CategoryOption,
   type InventoryAdjustmentListFilters,
   type EnrichedInventoryAdjustmentRow,
+  type ProductOption,
   type WarehouseOption,
 } from "@builders/domain"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
+import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
+import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
 import {
   ADJUSTMENTS_LIST_QUERY_KEY,
@@ -29,6 +33,8 @@ import { AdjustmentsTable } from "./adjustments-table"
 
 const ADJUSTMENTS_FILTERABLE_FIELDS = [
   "warehouseId",
+  "categoryId",
+  "productId",
   "invNumber",
   "rollNumber",
   "dyeLot",
@@ -43,6 +49,8 @@ const ADJUSTMENTS_FILTERABLE_FIELDS = [
  */
 type EngineAdjustmentFilters = {
   warehouseId?: ReadonlyArray<string>
+  categoryId?: ReadonlyArray<string>
+  productId?: ReadonlyArray<string>
   invNumber?: ReadonlyArray<string>
   rollNumber?: ReadonlyArray<string>
   dyeLot?: ReadonlyArray<string>
@@ -52,6 +60,8 @@ type EngineAdjustmentFilters = {
 function toEngineFilters(app: InventoryAdjustmentListFilters): EngineAdjustmentFilters {
   const out: EngineAdjustmentFilters = {}
   if (app.warehouseId?.length) out.warehouseId = app.warehouseId
+  if (app.categoryId?.length) out.categoryId = app.categoryId
+  if (app.productId?.length) out.productId = app.productId
   if (app.invNumber && app.invNumber.length > 0) out.invNumber = [app.invNumber]
   if (app.rollNumber && app.rollNumber.length > 0) out.rollNumber = [app.rollNumber]
   if (app.dyeLot && app.dyeLot.length > 0) out.dyeLot = [app.dyeLot]
@@ -62,6 +72,8 @@ function toEngineFilters(app: InventoryAdjustmentListFilters): EngineAdjustmentF
 function toAppFilters(engine: EngineAdjustmentFilters): InventoryAdjustmentListFilters {
   const out: InventoryAdjustmentListFilters = {}
   if (engine.warehouseId?.length) out.warehouseId = engine.warehouseId
+  if (engine.categoryId?.length) out.categoryId = engine.categoryId
+  if (engine.productId?.length) out.productId = engine.productId
   const invNumber = engine.invNumber?.[0]?.trim()
   if (invNumber) out.invNumber = invNumber
   const rollNumber = engine.rollNumber?.[0]?.trim()
@@ -79,12 +91,18 @@ export default function AdjustmentsClient({
   initialFilters,
   initialWarehouseOptions,
   initialSelectedWarehouse = null,
+  initialCategoryOptions,
+  initialSelectedCategory = null,
+  initialSelectedProduct = null,
 }: {
   initialSearchQuery: string
   initialPage: number
   initialFilters: InventoryAdjustmentListFilters
   initialWarehouseOptions: WarehouseOption[]
   initialSelectedWarehouse?: WarehouseOption | null
+  initialCategoryOptions: CategoryOption[]
+  initialSelectedCategory?: CategoryOption | null
+  initialSelectedProduct?: ProductOption | null
 }) {
   // Row click opens the app-wide inventory hub focused on the clicked adjustment.
   // `openForAdjustmentEdit(row)` derives the parent inventory from `row.inventoryId`
@@ -130,6 +148,8 @@ export default function AdjustmentsClient({
   })
 
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
+  const selectedCategoryId = filters.categoryId?.[0] ?? null
+  const selectedProductId = filters.productId?.[0] ?? null
   const invNumberValue = filters.invNumber?.[0] ?? ""
   const rollNumberValue = filters.rollNumber?.[0] ?? ""
   const dyeLotValue = filters.dyeLot?.[0] ?? ""
@@ -143,9 +163,41 @@ export default function AdjustmentsClient({
     return initialWarehouseOptions.find((o) => o.id === selectedWarehouseId)?.name ?? null
   }, [selectedWarehouseId, initialSelectedWarehouse, initialWarehouseOptions])
 
+  const categoryLabel = useMemo(() => {
+    if (!selectedCategoryId) return null
+    if (initialSelectedCategory?.id === selectedCategoryId) {
+      return initialSelectedCategory.name
+    }
+    return initialCategoryOptions.find((o) => o.id === selectedCategoryId)?.name ?? null
+  }, [selectedCategoryId, initialSelectedCategory, initialCategoryOptions])
+
+  const productLabel = useMemo(() => {
+    if (!selectedProductId) return null
+    return initialSelectedProduct?.id === selectedProductId
+      ? initialSelectedProduct.name
+      : null
+  }, [selectedProductId, initialSelectedProduct])
+
   const handleWarehouseChange = useCallback(
     (id: string | null) => {
       onFilterChange("warehouseId", id ? [id] : [])
+    },
+    [onFilterChange],
+  )
+
+  // Category gates Product scope; changing category cascade-clears the product
+  // selection. Mirrors the inventory list chips.
+  const handleCategoryChange = useCallback(
+    (id: string | null) => {
+      onFilterChange("categoryId", id ? [id] : [])
+      onFilterChange("productId", [])
+    },
+    [onFilterChange],
+  )
+
+  const handleProductChange = useCallback(
+    (id: string | null) => {
+      onFilterChange("productId", id ? [id] : [])
     },
     [onFilterChange],
   )
@@ -163,11 +215,21 @@ export default function AdjustmentsClient({
   const hasActiveFilters = useMemo(
     () =>
       Boolean(selectedWarehouseId) ||
+      Boolean(selectedCategoryId) ||
+      Boolean(selectedProductId) ||
       Boolean(invNumberValue) ||
       Boolean(rollNumberValue) ||
       Boolean(dyeLotValue) ||
       Boolean(noteValue),
-    [selectedWarehouseId, invNumberValue, rollNumberValue, dyeLotValue, noteValue],
+    [
+      selectedWarehouseId,
+      selectedCategoryId,
+      selectedProductId,
+      invNumberValue,
+      rollNumberValue,
+      dyeLotValue,
+      noteValue,
+    ],
   )
 
   const handleClearAll = useCallback(() => {
@@ -231,6 +293,35 @@ export default function AdjustmentsClient({
                   emptyMessage="No warehouses match"
                   clearLabel="Clear filter"
                   ariaLabel="Filter adjustments by warehouse"
+                />
+              </div>
+            </ListToolbarCell>
+
+            {/* Category → Product: product is category-scoped (category change
+                cascades the product chip clear via handleCategoryChange). */}
+            <ListToolbarCell>
+              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
+                <CategoryPicker
+                  value={selectedCategoryId}
+                  selectedLabel={categoryLabel}
+                  onChange={handleCategoryChange}
+                  initialOptions={initialCategoryOptions}
+                  placeholder="Category"
+                  searchPlaceholder="Search categories"
+                  emptyMessage="No categories match"
+                  clearLabel="Clear filter"
+                  ariaLabel="Filter adjustments by category"
+                />
+                <ProductPicker
+                  value={selectedProductId}
+                  selectedLabel={productLabel}
+                  onChange={handleProductChange}
+                  categoryId={selectedCategoryId}
+                  placeholder="Product"
+                  searchPlaceholder="Search products"
+                  emptyMessage="No products match"
+                  clearLabel="Clear filter"
+                  ariaLabel="Filter adjustments by product"
                 />
               </div>
             </ListToolbarCell>

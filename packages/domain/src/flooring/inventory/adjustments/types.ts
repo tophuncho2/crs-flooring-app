@@ -65,6 +65,10 @@ export type EnrichedInventoryAdjustmentPage = {
 
 export type InventoryAdjustmentListFilters = {
   warehouseId?: ReadonlyArray<string>
+  // Category narrows via the live `product.categoryId` relation; product is a
+  // direct `productId` match. Mirrors the inventory list chips.
+  categoryId?: ReadonlyArray<string>
+  productId?: ReadonlyArray<string>
   // Per-field identity search — the four list-view search bars. Each is a
   // free-text ILIKE against its own frozen snapshot column
   // (`inventoryNumber`/`rollNumber`/`dyeLot`/`inventoryNote`); multiple set

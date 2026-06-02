@@ -29,6 +29,8 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
+// Multi-value (repeated) filter params — entity-id chips. Shared by parse + build.
+const MULTI_VALUE_FILTER_KEYS = ["warehouseId", "categoryId", "productId"] as const
 // Scalar free-text filter params — the four identity search bars. Shared by
 // parse + build so the URL contract stays in one place.
 const TEXT_FILTER_KEYS = ["invNumber", "rollNumber", "dyeLot", "note"] as const
@@ -39,9 +41,11 @@ export function parseAdjustmentsListInputFromSearchParams(
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
-  const warehouseId = Array.from(new Set(readSearchParamArray(searchParams, "warehouseId")))
   const filters: Partial<InventoryAdjustmentListFilters> = {}
-  if (warehouseId.length > 0) filters.warehouseId = warehouseId
+  for (const key of MULTI_VALUE_FILTER_KEYS) {
+    const values = Array.from(new Set(readSearchParamArray(searchParams, key)))
+    if (values.length > 0) filters[key] = values
+  }
   for (const key of TEXT_FILTER_KEYS) {
     const value = (readSearchParam(searchParams, key) ?? "").trim()
     if (value.length > 0) filters[key] = value
@@ -58,8 +62,10 @@ export function parseAdjustmentsListInputFromSearchParams(
 
 function buildAdjustmentsListSearchString(input: ListInput<InventoryAdjustmentListFilters>): string {
   const params = new URLSearchParams()
-  const values = (input.filters?.warehouseId ?? []) as ReadonlyArray<string>
-  for (const id of values) params.append("warehouseId", id)
+  for (const key of MULTI_VALUE_FILTER_KEYS) {
+    const values = (input.filters?.[key] ?? []) as ReadonlyArray<string>
+    for (const id of values) params.append(key, id)
+  }
   for (const key of TEXT_FILTER_KEYS) {
     const value = input.filters?.[key]?.trim()
     if (value && value.length > 0) params.set(key, value)

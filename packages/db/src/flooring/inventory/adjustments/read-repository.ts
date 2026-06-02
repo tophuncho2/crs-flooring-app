@@ -293,8 +293,10 @@ export async function listInventoryAdjustmentsPage(
 /**
  * Global adjustments ledger read powering the standalone list view. Unlike
  * `listInventoryAdjustmentsPage` this is NOT scoped to one inventory:
- *   - `filters.warehouseId` — optional IN match on the snapshot `warehouseId`
- *     (the only chip filter).
+ *   - `filters.warehouseId` — optional IN match on the snapshot `warehouseId`.
+ *   - `filters.categoryId` — optional IN match via the live `product.categoryId`
+ *     relation; `filters.productId` — optional IN match on the `productId`
+ *     snapshot. Both mirror the inventory list chips.
  *   - `filters.invNumber`/`rollNumber`/`dyeLot`/`note` — per-field identity
  *     search bars. Each is an independent case-insensitive substring (ILIKE)
  *     match on its own frozen snapshot column (`inventoryNumber`/`rollNumber`/
@@ -321,6 +323,17 @@ export async function listAdjustmentsForListView(
   const warehouseIds = args.filters.warehouseId
   if (warehouseIds && warehouseIds.length > 0) {
     where.warehouseId = { in: [...warehouseIds] }
+  }
+
+  // Category narrows via the live product relation; product is a direct match.
+  const categoryIds = args.filters.categoryId
+  if (categoryIds && categoryIds.length > 0) {
+    where.product = { is: { categoryId: { in: [...categoryIds] } } }
+  }
+
+  const productIds = args.filters.productId
+  if (productIds && productIds.length > 0) {
+    where.productId = { in: [...productIds] }
   }
 
   // Per-field identity search — one independent ILIKE per filled search bar,

@@ -236,9 +236,27 @@ export function validateAdjustmentsPageQuery(
 }
 
 // --- Standalone adjustments ledger list query validator (GET /api/adjustments) ---
-// Warehouse is the only chip filter (multi-value, parsed off the raw params).
-// The four identity search bars (`invNumber`/`rollNumber`/`dyeLot`/`note`) each
-// ILIKE their own frozen snapshot column in the data layer.
+// Warehouse, category, and product are multi-value chip filters (parsed off the
+// raw params via getAll). The four identity search bars (`invNumber`/`rollNumber`/
+// `dyeLot`/`note`) each ILIKE their own frozen snapshot column in the data layer.
+
+const ADJUSTMENTS_MULTI_VALUE_FILTER_KEYS = [
+  "warehouseId",
+  "categoryId",
+  "productId",
+] as const
+type AdjustmentsMultiValueFilterKey = (typeof ADJUSTMENTS_MULTI_VALUE_FILTER_KEYS)[number]
+
+function readAdjustmentsMultiValue(searchParams: URLSearchParams, key: string): string[] {
+  return Array.from(
+    new Set(
+      searchParams
+        .getAll(key)
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+}
 
 const listAdjustmentsQuerySchema = z.object({
   invNumber: z.string().optional(),
@@ -257,10 +275,10 @@ const listAdjustmentsQuerySchema = z.object({
 export function validateAdjustmentsListQuery(
   searchParams: URLSearchParams,
 ): ListInput<InventoryAdjustmentListFilters> {
-  // Strip the multi-value `warehouseId` before zod (it sees scalars only).
+  // Strip the multi-value keys before zod (it sees scalars only).
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
-    if (key === "warehouseId") return
+    if ((ADJUSTMENTS_MULTI_VALUE_FILTER_KEYS as readonly string[]).includes(key)) return
     raw[key] = value
   })
 
@@ -283,17 +301,16 @@ export function validateAdjustmentsListQuery(
   const dyeLot = trim(parsed.dyeLot)
   const note = trim(parsed.note)
 
-  const warehouseId = Array.from(
-    new Set(
-      searchParams
-        .getAll("warehouseId")
-        .map((entry) => entry.trim())
-        .filter((entry) => entry.length > 0),
-    ),
-  )
+  const multiValueEntries: Array<[AdjustmentsMultiValueFilterKey, string[]]> =
+    ADJUSTMENTS_MULTI_VALUE_FILTER_KEYS.map((key) => [
+      key,
+      readAdjustmentsMultiValue(searchParams, key),
+    ])
 
   const filters: Partial<InventoryAdjustmentListFilters> = {}
-  if (warehouseId.length > 0) filters.warehouseId = warehouseId
+  for (const [key, values] of multiValueEntries) {
+    if (values.length > 0) filters[key] = values
+  }
   if (invNumber) filters.invNumber = invNumber
   if (rollNumber) filters.rollNumber = rollNumber
   if (dyeLot) filters.dyeLot = dyeLot

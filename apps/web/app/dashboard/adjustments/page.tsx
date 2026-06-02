@@ -1,6 +1,11 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
-import { listAdjustmentsUseCase, searchWarehouseOptionsUseCase } from "@builders/application"
-import type { WarehouseOption } from "@builders/domain"
+import {
+  listAdjustmentsUseCase,
+  searchCategoryOptionsUseCase,
+  searchProductOptionsUseCase,
+  searchWarehouseOptionsUseCase,
+} from "@builders/application"
+import type { CategoryOption, ProductOption, WarehouseOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
 import AdjustmentsClient from "@/modules/adjustments/components/list/adjustments-client"
@@ -35,20 +40,27 @@ export default async function AdjustmentsPage({
 
   let initialWarehouseOptions: WarehouseOption[] = []
   let initialSelectedWarehouse: WarehouseOption | null = null
+  let initialCategoryOptions: CategoryOption[] = []
+  let initialSelectedCategory: CategoryOption | null = null
+  let initialSelectedProduct: ProductOption | null = null
 
   try {
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
+    const selectedCategoryId = initialInput.filters?.categoryId?.[0] ?? null
+    const selectedProductId = initialInput.filters?.productId?.[0] ?? null
 
-    const [, warehousePage] = await Promise.all([
+    const [, warehousePage, categoryPage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...ADJUSTMENTS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listAdjustmentsUseCase(initialInput),
       }),
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
+      searchCategoryOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
     const warehouseOptions = warehousePage.items
     initialWarehouseOptions = warehouseOptions
+    initialCategoryOptions = categoryPage.items
 
     if (selectedWarehouseId) {
       initialSelectedWarehouse = await resolveSelectedById(
@@ -59,6 +71,26 @@ export default async function AdjustmentsPage({
           return match && match.id === id ? match : null
         },
       )
+    }
+
+    if (selectedCategoryId) {
+      initialSelectedCategory = await resolveSelectedById(
+        selectedCategoryId,
+        initialCategoryOptions,
+        async (id) => {
+          const [match] = (await searchCategoryOptionsUseCase({ search: id, take: 1 })).items
+          return match && match.id === id ? match : null
+        },
+      )
+    }
+
+    if (selectedProductId) {
+      const productsPage = await searchProductOptionsUseCase({
+        ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
+        take: INITIAL_OPTIONS_TAKE,
+      })
+      initialSelectedProduct =
+        productsPage.items.find((p) => p.id === selectedProductId) ?? null
     }
   } catch (error) {
     return (
@@ -79,6 +111,9 @@ export default async function AdjustmentsPage({
         initialFilters={initialInput.filters ?? {}}
         initialWarehouseOptions={initialWarehouseOptions}
         initialSelectedWarehouse={initialSelectedWarehouse}
+        initialCategoryOptions={initialCategoryOptions}
+        initialSelectedCategory={initialSelectedCategory}
+        initialSelectedProduct={initialSelectedProduct}
       />
     </HydrationBoundary>
   )
