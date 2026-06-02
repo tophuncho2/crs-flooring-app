@@ -23,6 +23,19 @@ export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [
   "scheduledForEnd",
 ] as const satisfies readonly string[]
 
+/**
+ * Sort fields recognised by the work-orders list. Mirrors the API validator enum
+ * and the toolbar sort chip; `createdAt` is the default. Any other value falls back
+ * to `createdAt`.
+ */
+const WORK_ORDERS_LIST_SORT_FIELDS = [
+  "createdAt",
+  "scheduledFor",
+  "property",
+  "managementCompany",
+  "workOrderNumber",
+] as const satisfies readonly string[]
+
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
   key: string,
@@ -59,8 +72,12 @@ export function parseWorkOrdersListInputFromSearchParams(
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
   const direction = readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc"
-  const field =
-    readSearchParam(searchParams, "sortField") === "scheduledFor" ? "scheduledFor" : "createdAt"
+  const sortFieldRaw = readSearchParam(searchParams, "sortField")
+  const field = WORK_ORDERS_LIST_SORT_FIELDS.includes(
+    sortFieldRaw as (typeof WORK_ORDERS_LIST_SORT_FIELDS)[number],
+  )
+    ? (sortFieldRaw as string)
+    : "createdAt"
   return {
     search: search || undefined,
     sort: { field, direction },

@@ -137,9 +137,13 @@ function buildWorkOrdersOrderBy(
 
   // Primary user-selected sort field. `createdAt` is the default and is covered
   // by the tiebreaker append below; `scheduledFor` is nullable, so order it
-  // explicitly with nulls last in both directions.
+  // explicitly with nulls last in both directions. The remaining relation/scalar
+  // fields (workOrderNumber, property, managementCompany) reuse `fieldMap` so the
+  // ordering shape stays a single source of truth.
   if (sort?.field === "scheduledFor") {
     appendUniqueOrderBy(orderBy, { scheduledFor: { sort: direction, nulls: "last" } })
+  } else if (sort?.field && fieldMap[sort.field]) {
+    appendUniqueOrderBy(orderBy, fieldMap[sort.field])
   }
 
   appendUniqueOrderBy(orderBy, { createdAt: direction })

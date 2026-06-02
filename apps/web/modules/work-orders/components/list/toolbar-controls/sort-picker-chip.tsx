@@ -3,7 +3,12 @@
 import { useEffect, useRef, useState } from "react"
 import { SortToggle } from "@/components/features/sort"
 
-export type SortPickerField = "createdAt" | "scheduledFor"
+export type SortPickerField =
+  | "createdAt"
+  | "scheduledFor"
+  | "property"
+  | "managementCompany"
+  | "workOrderNumber"
 
 export type SortPickerChipProps = {
   field: SortPickerField
@@ -14,20 +19,35 @@ export type SortPickerChipProps = {
 const FIELD_LABEL: Record<SortPickerField, string> = {
   createdAt: "Created date",
   scheduledFor: "Scheduled date",
+  property: "Property",
+  managementCompany: "Management company",
+  workOrderNumber: "WO #",
 }
 
 const FIELD_SHORT: Record<SortPickerField, string> = {
   createdAt: "Created",
   scheduledFor: "Scheduled",
+  property: "Property",
+  managementCompany: "Mgmt co",
+  workOrderNumber: "WO #",
 }
 
 // Direction labels read naturally per field (desc = ascendingLabel's opposite).
 const DIRECTION_LABELS: Record<SortPickerField, { asc: string; desc: string }> = {
   createdAt: { asc: "Oldest", desc: "Newest" },
   scheduledFor: { asc: "Earliest", desc: "Latest" },
+  property: { asc: "A–Z", desc: "Z–A" },
+  managementCompany: { asc: "A–Z", desc: "Z–A" },
+  workOrderNumber: { asc: "Asc", desc: "Desc" },
 }
 
-const FIELDS: SortPickerField[] = ["createdAt", "scheduledFor"]
+const FIELDS: SortPickerField[] = [
+  "createdAt",
+  "scheduledFor",
+  "property",
+  "managementCompany",
+  "workOrderNumber",
+]
 
 // Matches the picker dropdown triggers (rich-dropdown) so toolbar chips align.
 const TRIGGER_CLASS_NAME =

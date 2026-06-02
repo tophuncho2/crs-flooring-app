@@ -265,7 +265,9 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const listWorkOrdersQuerySchema = z.object({
   q: z.string().optional(),
   sort: z.enum(["asc", "desc"]).default("desc"),
-  sortField: z.enum(["createdAt", "scheduledFor"]).default("createdAt"),
+  sortField: z
+    .enum(["createdAt", "scheduledFor", "property", "managementCompany", "workOrderNumber"])
+    .default("createdAt"),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()

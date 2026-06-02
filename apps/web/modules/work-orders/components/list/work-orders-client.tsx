@@ -36,7 +36,13 @@ import { WorkOrdersListSearch } from "./toolbar-controls/work-orders-list-search
 import { WorkOrdersClearAll } from "./toolbar-controls/sub-controls/work-orders-clear-all"
 import { WorkOrdersRowCount } from "./toolbar-controls/sub-controls/work-orders-row-count"
 
-const WORK_ORDERS_ALLOWED_SORT_FIELDS = ["createdAt", "scheduledFor"] as const
+const WORK_ORDERS_ALLOWED_SORT_FIELDS = [
+  "createdAt",
+  "scheduledFor",
+  "property",
+  "managementCompany",
+  "workOrderNumber",
+] as const
 
 export default function WorkOrdersClient({
   initialSearchQuery,
