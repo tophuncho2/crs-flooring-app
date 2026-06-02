@@ -14,6 +14,13 @@ export type InventoryListFilters = {
   purchaseOrderNumber?: ReadonlyArray<string>
   location?: string
   isArchived?: boolean
+  // Per-field identity search — the four list-view search bars. Each is a
+  // free-text ILIKE against its own column (`inventoryNumber`/`rollNumber`/
+  // `dyeLot`/`note`); multiple set fields AND together to narrow.
+  invNumber?: string
+  rollNumber?: string
+  dyeLot?: string
+  note?: string
 }
 
 function normalizeIds(
@@ -33,8 +40,6 @@ export async function listInventoryUseCase(
   const requestedPageSize = Math.floor(input.pageSize || LIST_INVENTORY_PAGE_SIZE)
   const pageSize = Math.max(1, Math.min(LIST_INVENTORY_MAX_PAGE_SIZE, requestedPageSize))
 
-  const search = input.search?.trim() || undefined
-
   const warehouseId = normalizeIds(input.filters?.warehouseId)
   const categoryId = normalizeIds(input.filters?.categoryId)
   const productId = normalizeIds(input.filters?.productId)
@@ -42,6 +47,10 @@ export async function listInventoryUseCase(
   const purchaseOrderNumber = normalizeIds(input.filters?.purchaseOrderNumber)
   const location = input.filters?.location?.trim() || undefined
   const isArchived = input.filters?.isArchived
+  const invNumber = input.filters?.invNumber?.trim() || undefined
+  const rollNumber = input.filters?.rollNumber?.trim() || undefined
+  const dyeLot = input.filters?.dyeLot?.trim() || undefined
+  const note = input.filters?.note?.trim() || undefined
 
   const filters =
     warehouseId ||
@@ -50,7 +59,11 @@ export async function listInventoryUseCase(
     importNumber ||
     purchaseOrderNumber ||
     location ||
-    isArchived !== undefined
+    isArchived !== undefined ||
+    invNumber ||
+    rollNumber ||
+    dyeLot ||
+    note
       ? {
           ...(warehouseId ? { warehouseId } : {}),
           ...(categoryId ? { categoryId } : {}),
@@ -59,11 +72,14 @@ export async function listInventoryUseCase(
           ...(purchaseOrderNumber ? { purchaseOrderNumber } : {}),
           ...(location ? { location } : {}),
           ...(isArchived !== undefined ? { isArchived } : {}),
+          ...(invNumber ? { invNumber } : {}),
+          ...(rollNumber ? { rollNumber } : {}),
+          ...(dyeLot ? { dyeLot } : {}),
+          ...(note ? { note } : {}),
         }
       : undefined
 
   const { rows, total } = await listInventoryForListView({
-    search,
     filters,
     skip: (page - 1) * pageSize,
     take: pageSize,

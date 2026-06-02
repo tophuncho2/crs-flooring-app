@@ -29,21 +29,27 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
+// Scalar free-text filter params — the four identity search bars. Shared by
+// parse + build so the URL contract stays in one place.
+const TEXT_FILTER_KEYS = ["invNumber", "rollNumber", "dyeLot", "note"] as const
+
 export function parseAdjustmentsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<InventoryAdjustmentListFilters> {
-  const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
   const warehouseId = Array.from(new Set(readSearchParamArray(searchParams, "warehouseId")))
   const filters: Partial<InventoryAdjustmentListFilters> = {}
   if (warehouseId.length > 0) filters.warehouseId = warehouseId
+  for (const key of TEXT_FILTER_KEYS) {
+    const value = (readSearchParam(searchParams, key) ?? "").trim()
+    if (value.length > 0) filters[key] = value
+  }
 
   const hasAnyFilter = Object.keys(filters).length > 0
 
   return {
-    search: searchRaw || undefined,
     filters: hasAnyFilter ? (filters as InventoryAdjustmentListFilters) : undefined,
     page,
     pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -52,9 +58,12 @@ export function parseAdjustmentsListInputFromSearchParams(
 
 function buildAdjustmentsListSearchString(input: ListInput<InventoryAdjustmentListFilters>): string {
   const params = new URLSearchParams()
-  if (input.search) params.set("q", input.search)
   const values = (input.filters?.warehouseId ?? []) as ReadonlyArray<string>
   for (const id of values) params.append("warehouseId", id)
+  for (const key of TEXT_FILTER_KEYS) {
+    const value = input.filters?.[key]?.trim()
+    if (value && value.length > 0) params.set(key, value)
+  }
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   return params.toString()

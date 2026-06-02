@@ -65,6 +65,14 @@ export type EnrichedInventoryAdjustmentPage = {
 
 export type InventoryAdjustmentListFilters = {
   warehouseId?: ReadonlyArray<string>
+  // Per-field identity search — the four list-view search bars. Each is a
+  // free-text ILIKE against its own frozen snapshot column
+  // (`inventoryNumber`/`rollNumber`/`dyeLot`/`inventoryNote`); multiple set
+  // fields AND together to narrow.
+  invNumber?: string
+  rollNumber?: string
+  dyeLot?: string
+  note?: string
 }
 
 export type InventoryAdjustmentParentContext = {

@@ -294,9 +294,12 @@ export async function listInventoryAdjustmentsPage(
  * Global adjustments ledger read powering the standalone list view. Unlike
  * `listInventoryAdjustmentsPage` this is NOT scoped to one inventory:
  *   - `filters.warehouseId` — optional IN match on the snapshot `warehouseId`
- *     (the only toolbar filter).
- *   - `search` — optional case-insensitive substring match on `inventoryItem`
- *     (backed by `flooring_inventory_adjustment_inventoryItem_trgm_idx`).
+ *     (the only chip filter).
+ *   - `filters.invNumber`/`rollNumber`/`dyeLot`/`note` — per-field identity
+ *     search bars. Each is an independent case-insensitive substring (ILIKE)
+ *     match on its own frozen snapshot column (`inventoryNumber`/`rollNumber`/
+ *     `dyeLot`/`inventoryNote`), AND'd together. Backed by the per-column
+ *     trigram indexes on `flooring_inventory_adjustment`.
  *   - Sort: `createdAt DESC, id DESC` — a stable newest-first ledger order
  *     so freshly created (pending) rows surface at the top rather than
  *     being grouped deep under an inventory item.
@@ -307,7 +310,6 @@ export async function listInventoryAdjustmentsPage(
  */
 export async function listAdjustmentsForListView(
   args: {
-    search?: string
     filters: InventoryAdjustmentListFilters
     page: number
     pageSize: number
@@ -321,9 +323,23 @@ export async function listAdjustmentsForListView(
     where.warehouseId = { in: [...warehouseIds] }
   }
 
-  const search = args.search?.trim()
-  if (search) {
-    where.inventoryItem = { contains: search, mode: "insensitive" }
+  // Per-field identity search — one independent ILIKE per filled search bar,
+  // each against its own frozen snapshot column (note maps to `inventoryNote`).
+  const invNumber = args.filters.invNumber?.trim()
+  if (invNumber) {
+    where.inventoryNumber = { contains: invNumber, mode: "insensitive" }
+  }
+  const rollNumber = args.filters.rollNumber?.trim()
+  if (rollNumber) {
+    where.rollNumber = { contains: rollNumber, mode: "insensitive" }
+  }
+  const dyeLot = args.filters.dyeLot?.trim()
+  if (dyeLot) {
+    where.dyeLot = { contains: dyeLot, mode: "insensitive" }
+  }
+  const note = args.filters.note?.trim()
+  if (note) {
+    where.inventoryNote = { contains: note, mode: "insensitive" }
   }
 
   const skip = (args.page - 1) * args.pageSize

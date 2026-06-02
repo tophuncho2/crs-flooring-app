@@ -26,9 +26,9 @@ import { useInventoryListController } from "@/modules/inventory/controllers/list
 import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
+import { DebouncedSearchControl } from "@/components/features/search"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
-import { InventoryListSearch } from "./toolbar-controls/inventory-list-search"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
 import { InventoryClearAll } from "./toolbar-controls/sub-controls/inventory-clear-all"
 import { InventoryRowCount } from "./toolbar-controls/sub-controls/inventory-row-count"
@@ -42,6 +42,10 @@ const INVENTORY_FILTERABLE_FIELDS = [
   "purchaseOrderNumber",
   "location",
   "isArchived",
+  "invNumber",
+  "rollNumber",
+  "dyeLot",
+  "note",
 ] as const
 
 /**
@@ -59,6 +63,10 @@ type EngineInventoryFilters = {
   purchaseOrderNumber?: ReadonlyArray<string>
   location?: ReadonlyArray<string>
   isArchived?: ReadonlyArray<string>
+  invNumber?: ReadonlyArray<string>
+  rollNumber?: ReadonlyArray<string>
+  dyeLot?: ReadonlyArray<string>
+  note?: ReadonlyArray<string>
 }
 
 function toEngineFilters(app: InventoryListFilters): EngineInventoryFilters {
@@ -70,6 +78,10 @@ function toEngineFilters(app: InventoryListFilters): EngineInventoryFilters {
   if (app.purchaseOrderNumber?.length) out.purchaseOrderNumber = app.purchaseOrderNumber
   if (app.location && app.location.length > 0) out.location = [app.location]
   if (app.isArchived !== undefined) out.isArchived = [app.isArchived ? "true" : "false"]
+  if (app.invNumber && app.invNumber.length > 0) out.invNumber = [app.invNumber]
+  if (app.rollNumber && app.rollNumber.length > 0) out.rollNumber = [app.rollNumber]
+  if (app.dyeLot && app.dyeLot.length > 0) out.dyeLot = [app.dyeLot]
+  if (app.note && app.note.length > 0) out.note = [app.note]
   return out
 }
 
@@ -85,6 +97,14 @@ function toAppFilters(engine: EngineInventoryFilters): InventoryListFilters {
   const arch = engine.isArchived?.[0]
   if (arch === "true") out.isArchived = true
   else if (arch === "false") out.isArchived = false
+  const invNumber = engine.invNumber?.[0]?.trim()
+  if (invNumber) out.invNumber = invNumber
+  const rollNumber = engine.rollNumber?.[0]?.trim()
+  if (rollNumber) out.rollNumber = rollNumber
+  const dyeLot = engine.dyeLot?.[0]?.trim()
+  if (dyeLot) out.dyeLot = dyeLot
+  const note = engine.note?.[0]?.trim()
+  if (note) out.note = note
   return out
 }
 
@@ -129,7 +149,6 @@ export default function InventoryClient({
   const {
     rows,
     total,
-    searchQuery,
     filters,
     page,
     pageSize,
@@ -138,7 +157,6 @@ export default function InventoryClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<InventoryRow, EngineInventoryFilters>({
@@ -162,6 +180,12 @@ export default function InventoryClient({
   const archivedRaw = filters.isArchived?.[0]
   const isArchivedValue =
     archivedRaw === "true" ? true : archivedRaw === "false" ? false : undefined
+
+  // --- Per-field identity search bars ---
+  const invNumberValue = filters.invNumber?.[0] ?? ""
+  const rollNumberValue = filters.rollNumber?.[0] ?? ""
+  const dyeLotValue = filters.dyeLot?.[0] ?? ""
+  const noteValue = filters.note?.[0] ?? ""
 
   // --- Selected-label snapshots ---
   // Each chip needs a label so its trigger renders the picked entity name on
@@ -242,31 +266,46 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
+  // One handler for all four identity search bars — encodes the free-text value
+  // as a 1-element array (or empty to clear) like the location filter.
+  const handleTextFilterChange = useCallback(
+    (key: "invNumber" | "rollNumber" | "dyeLot" | "note", next: string) => {
+      const trimmed = next.trim()
+      onFilterChange(key, trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
   const hasActiveFilters = useMemo(() => {
-    if (searchQuery.trim().length > 0) return true
     if (
       selectedWarehouseId ||
       selectedCategoryId ||
       selectedProductId ||
-      locationValue
+      locationValue ||
+      invNumberValue ||
+      rollNumberValue ||
+      dyeLotValue ||
+      noteValue
     ) {
       return true
     }
     if (isArchivedValue !== undefined) return true
     return false
   }, [
-    searchQuery,
     selectedWarehouseId,
     selectedCategoryId,
     selectedProductId,
     locationValue,
+    invNumberValue,
+    rollNumberValue,
+    dyeLotValue,
+    noteValue,
     isArchivedValue,
   ])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
-    onSearchQueryChange("")
-  }, [onClearAllFilters, onSearchQueryChange])
+  }, [onClearAllFilters])
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -295,12 +334,34 @@ export default function InventoryClient({
           {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
               the encased card's top edge (rounded-tl-none seam). */}
           <ListToolbar className="pt-0" showDivider={false}>
-            {/* Search + (Clear all | row count) — encased card attached to the tab above */}
+            {/* Per-field search bars + (Clear all | row count) — encased card
+                attached to the tab above. Each bar ILIKEs its own column;
+                filling more than one narrows (AND). */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <InventoryListSearch
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
+                <DebouncedSearchControl
+                  value={rollNumberValue}
+                  onCommit={(next) => handleTextFilterChange("rollNumber", next)}
+                  placeholder="Roll #"
+                  ariaLabel="Search inventory by roll number"
+                />
+                <DebouncedSearchControl
+                  value={invNumberValue}
+                  onCommit={(next) => handleTextFilterChange("invNumber", next)}
+                  placeholder="Inv #"
+                  ariaLabel="Search inventory by inventory number"
+                />
+                <DebouncedSearchControl
+                  value={dyeLotValue}
+                  onCommit={(next) => handleTextFilterChange("dyeLot", next)}
+                  placeholder="Dye lot"
+                  ariaLabel="Search inventory by dye lot"
+                />
+                <DebouncedSearchControl
+                  value={noteValue}
+                  onCommit={(next) => handleTextFilterChange("note", next)}
+                  placeholder="Note"
+                  ariaLabel="Search inventory by note"
                 />
                 <ListToolbarBottomRow
                   left={<InventoryClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}

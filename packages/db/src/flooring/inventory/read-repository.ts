@@ -253,12 +253,21 @@ export async function countInventoriesByProductId(
 // --- List view read (paginated, server-side filtered) ---
 
 export type InventoryListViewOptions = {
-  search?: string
   filters?: {
     warehouseId?: ReadonlyArray<string>
     location?: string
     categoryId?: ReadonlyArray<string>
     productId?: ReadonlyArray<string>
+    /**
+     * Per-field identity search — the four list-view search bars. Each is an
+     * independent case-insensitive substring (ILIKE) match against its own
+     * column; multiple set fields AND together to narrow. Backed by the
+     * per-column trigram indexes on `flooring_inventory`.
+     */
+    invNumber?: string
+    rollNumber?: string
+    dyeLot?: string
+    note?: string
     /**
      * Import-number snapshot match (`flooring_inventory.importNumber` = the
      * stringified `Int` stamped at materialize time). Filters rows whose
@@ -284,7 +293,7 @@ export type InventoryListViewResult = {
 }
 
 function buildListViewWhere(
-  options: Pick<InventoryListViewOptions, "search" | "filters">,
+  options: Pick<InventoryListViewOptions, "filters">,
 ): Prisma.FlooringInventoryWhereInput | undefined {
   const archivedFilter = options.filters?.isArchived
   const clauses: Prisma.FlooringInventoryWhereInput[] = []
@@ -298,22 +307,27 @@ function buildListViewWhere(
     clauses.push({ isArchived: false })
   }
 
-  // Server-side search targets identity columns only — `inventoryNumber`,
-  // `rollNumber`, `dyeLot`, `note`. Location is intentionally excluded; it
-  // has its own dedicated filter chip on the list view. Searching against
-  // the raw columns (instead of the denormalized `inventoryItem` blob)
-  // keeps the "where is it" concern out of the "what is it" search.
-  const trimmed = options.search?.trim() ?? ""
-  if (trimmed.length > 0) {
-    const ilike = { contains: trimmed, mode: "insensitive" as const }
-    clauses.push({
-      OR: [
-        { inventoryNumber: ilike },
-        { rollNumber: ilike },
-        { dyeLot: ilike },
-        { note: ilike },
-      ],
-    })
+  // Per-field identity search — one independent ILIKE per filled search bar
+  // (`inventoryNumber`/`rollNumber`/`dyeLot`/`note`). Each pushes its own AND
+  // clause so filling more than one bar narrows the result set. Location is
+  // intentionally excluded; it has its own dedicated filter chip. Matching the
+  // raw columns (instead of the denormalized `inventoryItem` blob) keeps the
+  // "where is it" concern out of the "what is it" search.
+  const invNumber = options.filters?.invNumber?.trim() ?? ""
+  if (invNumber.length > 0) {
+    clauses.push({ inventoryNumber: { contains: invNumber, mode: "insensitive" } })
+  }
+  const rollNumber = options.filters?.rollNumber?.trim() ?? ""
+  if (rollNumber.length > 0) {
+    clauses.push({ rollNumber: { contains: rollNumber, mode: "insensitive" } })
+  }
+  const dyeLot = options.filters?.dyeLot?.trim() ?? ""
+  if (dyeLot.length > 0) {
+    clauses.push({ dyeLot: { contains: dyeLot, mode: "insensitive" } })
+  }
+  const note = options.filters?.note?.trim() ?? ""
+  if (note.length > 0) {
+    clauses.push({ note: { contains: note, mode: "insensitive" } })
   }
 
   const warehouseIds = options.filters?.warehouseId
@@ -363,9 +377,10 @@ function buildListViewWhere(
  * avoids the lex-vs-numeric trap of the unpadded string format (`INV-10` <
  * `INV-2` lexically). `id ASC` is the stable tiebreak. Users are responsible
  * for archiving spent rows so the list stays scoped to live inventory.
- * Filters AND together; search ILIKEs across the identity columns
- * (`inventoryNumber`, `rollNumber`, `dyeLot`, `note`) only — location lives
- * on its own filter chip. Archived rows hidden by default.
+ * Filters AND together — including the per-field identity search bars, each an
+ * independent ILIKE on its own column (`inventoryNumber`, `rollNumber`,
+ * `dyeLot`, `note`). Location lives on its own filter chip. Archived rows
+ * hidden by default.
  *
  * Lives alongside `listInventory(filter?)` which is still used by the imports
  * record view's "live rows" section to fetch all rows for a given import.

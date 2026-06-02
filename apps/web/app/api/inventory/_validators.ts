@@ -183,7 +183,10 @@ const MULTI_VALUE_FILTER_KEYS = [
 type MultiValueFilterKey = (typeof MULTI_VALUE_FILTER_KEYS)[number]
 
 const listInventoryQuerySchema = z.object({
-  q: z.string().optional(),
+  invNumber: z.string().optional(),
+  rollNumber: z.string().optional(),
+  dyeLot: z.string().optional(),
+  note: z.string().optional(),
   location: z.string().optional(),
   archived: z.enum(["true", "false"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -228,12 +231,18 @@ export function validateListInventoryQuery(
   }
 
   const parsed = parseResult.data
-  const trimmedSearch = parsed.q?.trim()
-  const search = trimmedSearch ? trimmedSearch : undefined
   const trimmedLocation = parsed.location?.trim()
   const location = trimmedLocation && trimmedLocation.length > 0 ? trimmedLocation : undefined
   const archived =
     parsed.archived === "true" ? true : parsed.archived === "false" ? false : undefined
+  const trim = (value: string | undefined): string | undefined => {
+    const t = value?.trim()
+    return t && t.length > 0 ? t : undefined
+  }
+  const invNumber = trim(parsed.invNumber)
+  const rollNumber = trim(parsed.rollNumber)
+  const dyeLot = trim(parsed.dyeLot)
+  const note = trim(parsed.note)
 
   const multiValueEntries: Array<[MultiValueFilterKey, string[]]> =
     MULTI_VALUE_FILTER_KEYS.map((key) => [key, readMultiValue(searchParams, key)])
@@ -243,11 +252,14 @@ export function validateListInventoryQuery(
   }
   if (location) filterRecord.location = location
   if (archived !== undefined) filterRecord.isArchived = archived
+  if (invNumber) filterRecord.invNumber = invNumber
+  if (rollNumber) filterRecord.rollNumber = rollNumber
+  if (dyeLot) filterRecord.dyeLot = dyeLot
+  if (note) filterRecord.note = note
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
   return {
-    search,
     filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,

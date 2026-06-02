@@ -8,7 +8,7 @@ import {
   ListToolbarBottomRow,
   ListToolbarCell,
 } from "@/components/features/list-toolbar"
-import { SearchControl } from "@/components/features/search"
+import { DebouncedSearchControl } from "@/components/features/search"
 import { ClearAllFiltersButton } from "@/components/features/filter"
 import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
@@ -26,6 +26,52 @@ import {
   listAdjustmentsRequest,
 } from "@/modules/adjustments/data/list-adjustments-request"
 import { AdjustmentsTable } from "./adjustments-table"
+
+const ADJUSTMENTS_FILTERABLE_FIELDS = [
+  "warehouseId",
+  "invNumber",
+  "rollNumber",
+  "dyeLot",
+  "note",
+] as const
+
+/**
+ * Engine-side filter shape: the list-view engine's filter map carries `string[]`
+ * only. The four identity search bars are free-text scalars, so we encode them
+ * as 1-element arrays here and translate back to the typed
+ * `InventoryAdjustmentListFilters` at the listFn boundary.
+ */
+type EngineAdjustmentFilters = {
+  warehouseId?: ReadonlyArray<string>
+  invNumber?: ReadonlyArray<string>
+  rollNumber?: ReadonlyArray<string>
+  dyeLot?: ReadonlyArray<string>
+  note?: ReadonlyArray<string>
+}
+
+function toEngineFilters(app: InventoryAdjustmentListFilters): EngineAdjustmentFilters {
+  const out: EngineAdjustmentFilters = {}
+  if (app.warehouseId?.length) out.warehouseId = app.warehouseId
+  if (app.invNumber && app.invNumber.length > 0) out.invNumber = [app.invNumber]
+  if (app.rollNumber && app.rollNumber.length > 0) out.rollNumber = [app.rollNumber]
+  if (app.dyeLot && app.dyeLot.length > 0) out.dyeLot = [app.dyeLot]
+  if (app.note && app.note.length > 0) out.note = [app.note]
+  return out
+}
+
+function toAppFilters(engine: EngineAdjustmentFilters): InventoryAdjustmentListFilters {
+  const out: InventoryAdjustmentListFilters = {}
+  if (engine.warehouseId?.length) out.warehouseId = engine.warehouseId
+  const invNumber = engine.invNumber?.[0]?.trim()
+  if (invNumber) out.invNumber = invNumber
+  const rollNumber = engine.rollNumber?.[0]?.trim()
+  if (rollNumber) out.rollNumber = rollNumber
+  const dyeLot = engine.dyeLot?.[0]?.trim()
+  if (dyeLot) out.dyeLot = dyeLot
+  const note = engine.note?.[0]?.trim()
+  if (note) out.note = note
+  return out
+}
 
 export default function AdjustmentsClient({
   initialSearchQuery,
@@ -46,10 +92,20 @@ export default function AdjustmentsClient({
   // it refreshes.
   const { openForAdjustmentEdit } = useInventoryHub()
 
+  // The engine's filter map carries `string[]` only — translate to typed
+  // InventoryAdjustmentListFilters at the listFn boundary.
+  const adaptedListFn = useCallback(
+    (input: ListInput<EngineAdjustmentFilters>) =>
+      listAdjustmentsRequest({
+        ...input,
+        filters: input.filters ? toAppFilters(input.filters) : undefined,
+      }),
+    [],
+  )
+
   const {
     rows,
     total,
-    searchQuery,
     filters,
     page,
     pageSize,
@@ -58,25 +114,26 @@ export default function AdjustmentsClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useFetchListController<EnrichedInventoryAdjustmentRow, InventoryAdjustmentListFilters>({
+  } = useFetchListController<EnrichedInventoryAdjustmentRow, EngineAdjustmentFilters>({
     mode: "fetch",
     queryKey: [...ADJUSTMENTS_LIST_QUERY_KEY],
-    listFn: (input: ListInput<InventoryAdjustmentListFilters>) => listAdjustmentsRequest(input),
+    listFn: adaptedListFn,
     initialSearchQuery,
     initialPage,
-    initialFilters: initialFilters.warehouseId?.length
-      ? { warehouseId: initialFilters.warehouseId }
-      : {},
+    initialFilters: toEngineFilters(initialFilters),
     pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
     tableKey: "adjustments-main",
-    filterableFields: ["warehouseId"],
+    filterableFields: ADJUSTMENTS_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
+  const invNumberValue = filters.invNumber?.[0] ?? ""
+  const rollNumberValue = filters.rollNumber?.[0] ?? ""
+  const dyeLotValue = filters.dyeLot?.[0] ?? ""
+  const noteValue = filters.note?.[0] ?? ""
 
   const warehouseLabel = useMemo(() => {
     if (!selectedWarehouseId) return null
@@ -93,15 +150,29 @@ export default function AdjustmentsClient({
     [onFilterChange],
   )
 
+  // One handler for all four identity search bars — encodes the free-text value
+  // as a 1-element array (or empty to clear).
+  const handleTextFilterChange = useCallback(
+    (key: "invNumber" | "rollNumber" | "dyeLot" | "note", next: string) => {
+      const trimmed = next.trim()
+      onFilterChange(key, trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
   const hasActiveFilters = useMemo(
-    () => searchQuery.trim().length > 0 || Boolean(selectedWarehouseId),
-    [searchQuery, selectedWarehouseId],
+    () =>
+      Boolean(selectedWarehouseId) ||
+      Boolean(invNumberValue) ||
+      Boolean(rollNumberValue) ||
+      Boolean(dyeLotValue) ||
+      Boolean(noteValue),
+    [selectedWarehouseId, invNumberValue, rollNumberValue, dyeLotValue, noteValue],
   )
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
-    onSearchQueryChange("")
-  }, [onClearAllFilters, onSearchQueryChange])
+  }, [onClearAllFilters])
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -115,10 +186,29 @@ export default function AdjustmentsClient({
           <ListToolbar className="pt-0" showDivider={false}>
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <SearchControl
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
-                  placeholder="Search inventory item"
+                <DebouncedSearchControl
+                  value={rollNumberValue}
+                  onCommit={(next) => handleTextFilterChange("rollNumber", next)}
+                  placeholder="Roll #"
+                  ariaLabel="Search adjustments by roll number"
+                />
+                <DebouncedSearchControl
+                  value={invNumberValue}
+                  onCommit={(next) => handleTextFilterChange("invNumber", next)}
+                  placeholder="Inv #"
+                  ariaLabel="Search adjustments by inventory number"
+                />
+                <DebouncedSearchControl
+                  value={dyeLotValue}
+                  onCommit={(next) => handleTextFilterChange("dyeLot", next)}
+                  placeholder="Dye lot"
+                  ariaLabel="Search adjustments by dye lot"
+                />
+                <DebouncedSearchControl
+                  value={noteValue}
+                  onCommit={(next) => handleTextFilterChange("note", next)}
+                  placeholder="Note"
+                  ariaLabel="Search adjustments by note"
                 />
                 <ListToolbarBottomRow
                   left={

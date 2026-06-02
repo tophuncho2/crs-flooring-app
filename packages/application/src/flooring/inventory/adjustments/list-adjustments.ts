@@ -27,12 +27,20 @@ export async function listAdjustmentsUseCase(
     Math.min(INVENTORY_ADJUSTMENTS_LIST_MAX_PAGE_SIZE, requestedPageSize),
   )
 
-  const search = input.search?.trim() || undefined
   const warehouseId = normalizeIds(input.filters?.warehouseId)
+  const invNumber = input.filters?.invNumber?.trim() || undefined
+  const rollNumber = input.filters?.rollNumber?.trim() || undefined
+  const dyeLot = input.filters?.dyeLot?.trim() || undefined
+  const note = input.filters?.note?.trim() || undefined
 
   const { rows, total } = await listAdjustmentsForListView({
-    search,
-    filters: warehouseId ? { warehouseId } : {},
+    filters: {
+      ...(warehouseId ? { warehouseId } : {}),
+      ...(invNumber ? { invNumber } : {}),
+      ...(rollNumber ? { rollNumber } : {}),
+      ...(dyeLot ? { dyeLot } : {}),
+      ...(note ? { note } : {}),
+    },
     page,
     pageSize,
   })

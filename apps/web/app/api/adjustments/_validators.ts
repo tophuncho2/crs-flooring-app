@@ -236,11 +236,15 @@ export function validateAdjustmentsPageQuery(
 }
 
 // --- Standalone adjustments ledger list query validator (GET /api/adjustments) ---
-// Warehouse is the only filter (multi-value, parsed off the raw params); the
-// search term `q` targets `inventoryItem` in the data layer.
+// Warehouse is the only chip filter (multi-value, parsed off the raw params).
+// The four identity search bars (`invNumber`/`rollNumber`/`dyeLot`/`note`) each
+// ILIKE their own frozen snapshot column in the data layer.
 
 const listAdjustmentsQuerySchema = z.object({
-  q: z.string().optional(),
+  invNumber: z.string().optional(),
+  rollNumber: z.string().optional(),
+  dyeLot: z.string().optional(),
+  note: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -270,8 +274,14 @@ export function validateAdjustmentsListQuery(
   }
 
   const parsed = parseResult.data
-  const trimmedSearch = parsed.q?.trim()
-  const search = trimmedSearch ? trimmedSearch : undefined
+  const trim = (value: string | undefined): string | undefined => {
+    const t = value?.trim()
+    return t && t.length > 0 ? t : undefined
+  }
+  const invNumber = trim(parsed.invNumber)
+  const rollNumber = trim(parsed.rollNumber)
+  const dyeLot = trim(parsed.dyeLot)
+  const note = trim(parsed.note)
 
   const warehouseId = Array.from(
     new Set(
@@ -282,9 +292,17 @@ export function validateAdjustmentsListQuery(
     ),
   )
 
+  const filters: Partial<InventoryAdjustmentListFilters> = {}
+  if (warehouseId.length > 0) filters.warehouseId = warehouseId
+  if (invNumber) filters.invNumber = invNumber
+  if (rollNumber) filters.rollNumber = rollNumber
+  if (dyeLot) filters.dyeLot = dyeLot
+  if (note) filters.note = note
+
+  const hasAnyFilter = Object.keys(filters).length > 0
+
   return {
-    search,
-    filters: warehouseId.length > 0 ? { warehouseId } : undefined,
+    filters: hasAnyFilter ? (filters as InventoryAdjustmentListFilters) : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,
   }

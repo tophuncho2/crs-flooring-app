@@ -40,10 +40,13 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
+// Scalar free-text filter params — the four identity search bars. Shared by
+// parse + build so the URL contract stays in one place.
+const TEXT_FILTER_KEYS = ["invNumber", "rollNumber", "dyeLot", "note"] as const
+
 export function parseInventoryListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<InventoryListFilters> {
-  const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
@@ -59,11 +62,14 @@ export function parseInventoryListInputFromSearchParams(
   }
   if (locationRaw.length > 0) filterRecord.location = locationRaw
   if (archived !== undefined) filterRecord.isArchived = archived
+  for (const key of TEXT_FILTER_KEYS) {
+    const value = (readSearchParam(searchParams, key) ?? "").trim()
+    if (value.length > 0) filterRecord[key] = value
+  }
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
   return {
-    search: searchRaw || undefined,
     filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
     page,
     pageSize: LIST_INVENTORY_PAGE_SIZE,
@@ -74,10 +80,13 @@ export function buildInventoryListSearchString(
   input: ListInput<InventoryListFilters>,
 ): string {
   const params = new URLSearchParams()
-  if (input.search) params.set("q", input.search)
   for (const key of MULTI_VALUE_FILTER_KEYS) {
     const values = (input.filters?.[key] ?? []) as ReadonlyArray<string>
     for (const id of values) params.append(key, id)
+  }
+  for (const key of TEXT_FILTER_KEYS) {
+    const value = input.filters?.[key]?.trim()
+    if (value && value.length > 0) params.set(key, value)
   }
   const location = input.filters?.location?.trim()
   if (location && location.length > 0) params.set("location", location)
