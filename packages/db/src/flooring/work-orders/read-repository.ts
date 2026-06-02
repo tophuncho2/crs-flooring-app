@@ -334,12 +334,11 @@ export async function getWorkOrderForFileGeneration(
             // rows never have a WO link, so they're naturally excluded. The
             // explicit filter is belt-and-braces.
             where: { adjustmentType: "DEDUCTION" as const },
-            // isFinal + finalSequence drive the order but are not in the
-            // projection; Prisma supports orderBy on non-selected columns.
+            // Within each product (parent item) the rows run quantity-ascending,
+            // with id as a deterministic tiebreaker. Both keys are in the select.
             orderBy: [
-              { isFinal: "asc" as const },
-              { finalSequence: "asc" as const },
-              { createdAt: "asc" as const },
+              { quantity: "asc" as const },
+              { id: "asc" as const },
             ],
             select: {
               id: true,

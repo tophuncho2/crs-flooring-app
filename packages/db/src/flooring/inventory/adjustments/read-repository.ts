@@ -213,9 +213,8 @@ export async function listAdjustmentsForWorkOrderItem(
     where: { workOrderItemId },
     select: enrichedInventoryAdjustmentRowSelect,
     orderBy: [
-      { isFinal: "asc" },
-      { finalSequence: "asc" },
-      { createdAt: "asc" },
+      { quantity: "asc" },
+      { id: "asc" },
     ],
   })
   return rows.map(normalizeEnrichedInventoryAdjustmentRow)
@@ -239,9 +238,8 @@ export async function listAdjustmentsForWorkOrderItemIds(
     where: { workOrderItemId: { in: workOrderItemIds } },
     select: enrichedInventoryAdjustmentRowSelect,
     orderBy: [
-      { isFinal: "asc" },
-      { finalSequence: "asc" },
-      { createdAt: "asc" },
+      { quantity: "asc" },
+      { id: "asc" },
     ],
   })
   return rows.map(normalizeEnrichedInventoryAdjustmentRow)

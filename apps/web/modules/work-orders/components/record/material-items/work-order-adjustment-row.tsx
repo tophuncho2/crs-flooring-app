@@ -8,6 +8,20 @@ import { AdjustmentRowToolbar } from "./toolbar-controls"
 import { AdjustmentDuplicateButton } from "./row-controls/sub-controls"
 import { WORK_ORDER_ADJUSTMENT_LAYOUT } from "./work-order-adjustment-row-layout"
 
+// Mirrors the server order in listAdjustmentsForWorkOrderItemIds
+// (packages/db/.../inventory/adjustments/read-repository.ts): quantity
+// ascending, id as the deterministic tiebreaker. Sorting here — not only on
+// the server load — keeps the grid correctly ordered after an in-place edit
+// that changes a row's quantity (otherwise it only re-sorts on page refresh).
+function compareAdjustmentsForDisplay(
+  a: EnrichedInventoryAdjustmentRow,
+  b: EnrichedInventoryAdjustmentRow,
+): number {
+  const byQuantity = Number(a.quantity) - Number(b.quantity)
+  if (byQuantity !== 0) return byQuantity
+  return a.id.localeCompare(b.id)
+}
+
 export type WorkOrderAdjustmentRowProps = {
   workOrderItemId: string
   /**
@@ -49,8 +63,12 @@ export function WorkOrderAdjustmentRow({
   isSectionBusy,
 }: WorkOrderAdjustmentRowProps) {
   // Rows arrive enriched (own warehouse name + WO number per row) — no
-  // hydration needed; pass straight to the grid.
-  const rows = useMemo<EnrichedInventoryAdjustmentRow[]>(() => [...serverRows], [serverRows])
+  // hydration needed. Re-sort by quantity (id tiebreak) so the grid matches
+  // the DB order even after an in-place mutation merge that changed a quantity.
+  const rows = useMemo<EnrichedInventoryAdjustmentRow[]>(
+    () => [...serverRows].sort(compareAdjustmentsForDisplay),
+    [serverRows],
+  )
 
   const renderCell = useMemo(() => renderAdjustmentReadOnlyCell({}), [])
 
