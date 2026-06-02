@@ -281,9 +281,9 @@ export default function AdjustmentsClient({
               </div>
             </ListToolbarCell>
 
-            {/* One column: Warehouse in an encased card, with the Category →
-                Product encased card stacked directly beneath. Product is
-                category-scoped (category change cascades the product clear). */}
+            {/* One encased card: Warehouse, Category, Product stacked together.
+                Product is category-scoped (category change cascades the product
+                clear via handleCategoryChange). */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <WarehousePicker
@@ -297,8 +297,6 @@ export default function AdjustmentsClient({
                   clearLabel="Clear filter"
                   ariaLabel="Filter adjustments by warehouse"
                 />
-              </div>
-              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <CategoryPicker
                   value={selectedCategoryId}
                   selectedLabel={categoryLabel}

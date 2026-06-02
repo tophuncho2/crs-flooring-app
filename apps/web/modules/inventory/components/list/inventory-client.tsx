@@ -370,12 +370,11 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* One column: Warehouse over Location in an encased card, with the
-                Category → Product encased card stacked directly beneath. The
-                warehouse pick gates Location (the picker renders disabled until
-                a warehouse is picked); a warehouse change cascades a clear into
-                Location via handleWarehouseChange. Product is category-scoped
-                (category change cascades the product clear). */}
+            {/* One encased card: Warehouse, Location, Category, Product stacked
+                together. The warehouse pick gates Location (the picker renders
+                disabled until a warehouse is picked); a warehouse change
+                cascades a clear into Location via handleWarehouseChange. Product
+                is category-scoped (category change cascades the product clear). */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <WarehouseFilterChip
@@ -392,8 +391,6 @@ export default function InventoryClient({
                   disabledPlaceholder="Select warehouse first"
                   ariaLabel="Filter inventory by location"
                 />
-              </div>
-              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <CategoryFilterChip
                   value={selectedCategoryId}
                   selectedLabel={categoryLabel}
@@ -409,9 +406,9 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* Status: own labeled card to the right of the warehouse/location
-                + category/product column. */}
-            <ListToolbarCell>
+            {/* Status: own labeled card to the right, hugging its natural 2-row
+                height (self-start) rather than stretching to the tall column. */}
+            <ListToolbarCell className="self-start">
               <ListToolbarTallCard label="Status">
                 <ArchiveSegmentedControl
                   value={isArchivedValue}
