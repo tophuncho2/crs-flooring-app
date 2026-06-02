@@ -397,6 +397,35 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
+            {/* Status: own labeled card, hugging its natural 2-row height
+                (self-start) rather than stretching to the tall column. */}
+            <ListToolbarCell className="self-start">
+              <ListToolbarTallCard label="Status">
+                <ArchiveSegmentedControl
+                  value={isArchivedValue}
+                  onChange={handleArchivedChange}
+                />
+              </ListToolbarTallCard>
+              {/* Import: PO# and Import # share one encased card. They're
+                  mutually exclusive (selecting one clears the other). */}
+              <ListToolbarTallCard label="Import">
+                <div className="flex w-full flex-col gap-2">
+                  <PurchaseOrderPicker
+                    value={selectedPurchaseOrderNumber}
+                    onChange={handlePurchaseOrderChange}
+                    placeholder="PO#"
+                    ariaLabel="Filter inventory by import PO number"
+                  />
+                  <ImportNumberPicker
+                    value={selectedImportNumber}
+                    onChange={handleImportNumberChange}
+                    placeholder="IMP#"
+                    ariaLabel="Filter inventory by import number"
+                  />
+                </div>
+              </ListToolbarTallCard>
+            </ListToolbarCell>
+
             {/* One encased card: Warehouse, Location, Category, Product stacked
                 together. The warehouse pick gates Location (the picker renders
                 disabled until a warehouse is picked); a warehouse change
@@ -431,35 +460,6 @@ export default function InventoryClient({
                   onChange={handleProductChange}
                 />
               </div>
-            </ListToolbarCell>
-
-            {/* Status: own labeled card to the right, hugging its natural 2-row
-                height (self-start) rather than stretching to the tall column. */}
-            <ListToolbarCell className="self-start">
-              <ListToolbarTallCard label="Status">
-                <ArchiveSegmentedControl
-                  value={isArchivedValue}
-                  onChange={handleArchivedChange}
-                />
-              </ListToolbarTallCard>
-              {/* Import: PO# and Import # share one encased card. They're
-                  mutually exclusive (selecting one clears the other). */}
-              <ListToolbarTallCard label="Import">
-                <div className="flex w-full flex-col gap-2">
-                  <PurchaseOrderPicker
-                    value={selectedPurchaseOrderNumber}
-                    onChange={handlePurchaseOrderChange}
-                    placeholder="PO#"
-                    ariaLabel="Filter inventory by import PO number"
-                  />
-                  <ImportNumberPicker
-                    value={selectedImportNumber}
-                    onChange={handleImportNumberChange}
-                    placeholder="IMP#"
-                    ariaLabel="Filter inventory by import number"
-                  />
-                </div>
-              </ListToolbarTallCard>
             </ListToolbarCell>
           </ListToolbar>
         </div>
