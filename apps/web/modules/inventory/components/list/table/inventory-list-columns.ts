@@ -19,6 +19,8 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
   { key: "coveragePerUnit", label: "Per Unit", align: "end" },
   { key: "location", label: "Location" },
   { key: "warehouse", label: "Warehouse" },
+  { key: "purchaseOrderNumber", label: "PO #" },
+  { key: "importNumber", label: "Import #" },
   { key: "fifoReceivedAt", label: "FIFO Received" },
   { key: "updatedAt", label: "Updated" },
 ]

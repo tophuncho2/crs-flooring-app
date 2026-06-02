@@ -60,6 +60,10 @@ export function renderInventoryRowCell(
           {formatInventoryQuantity(row.netDeducted, row.stockUnitAbbrev)}
         </span>
       )
+    case "purchaseOrderNumber":
+      return row.purchaseOrderNumber || "-"
+    case "importNumber":
+      return row.importNumber || "-"
     case "fifoReceivedAt":
       return formatFifoReceivedAtEastern(row.fifoReceivedAt)
     case "updatedAt":
