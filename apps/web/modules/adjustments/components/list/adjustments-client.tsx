@@ -354,17 +354,10 @@ export default function AdjustmentsClient({
               </div>
             </ListToolbarCell>
 
-            {/* Status (adjustment lifecycle), Archived (parent inventory), and
-                Import (PO#/IMP# pickers) — the import-identity + archive chips all
-                target the parent inventory row. PO# and IMP# are mutually
-                exclusive. */}
+            {/* Archived (parent inventory) + Import (PO#/IMP# pickers) — the
+                import-identity + archive chips all target the parent inventory
+                row. PO# and IMP# are mutually exclusive. */}
             <ListToolbarCell className="self-start">
-              <ListToolbarTallCard label="Status">
-                <AdjustmentStatusSegmentedControl
-                  value={statusValue}
-                  onChange={handleStatusChange}
-                />
-              </ListToolbarTallCard>
               <ListToolbarTallCard label="Archived">
                 <ArchiveSegmentedControl
                   value={isArchivedValue}
@@ -428,6 +421,17 @@ export default function AdjustmentsClient({
                   ariaLabel="Filter adjustments by product"
                 />
               </div>
+            </ListToolbarCell>
+
+            {/* Adjustment lifecycle status — sits to the right of the
+                warehouse/category/product stack. */}
+            <ListToolbarCell className="self-start">
+              <ListToolbarTallCard label="Status">
+                <AdjustmentStatusSegmentedControl
+                  value={statusValue}
+                  onChange={handleStatusChange}
+                />
+              </ListToolbarTallCard>
             </ListToolbarCell>
           </ListToolbar>
         </div>
