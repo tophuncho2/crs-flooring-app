@@ -48,6 +48,29 @@ describe("platform environment", () => {
     })
   })
 
+  it("rejects a localhost NEXTAUTH_URL on a deployed Railway environment", () => {
+    expect(() =>
+      validateAuthEnvironment({
+        NEXTAUTH_SECRET: "super-secret-value-123",
+        NEXTAUTH_URL: "http://localhost:3000",
+        RAILWAY_ENVIRONMENT_NAME: "main",
+      }),
+    ).toThrow(/NEXTAUTH_URL must be a public https URL/)
+  })
+
+  it("accepts a public https NEXTAUTH_URL on a deployed Railway environment", () => {
+    expect(
+      validateAuthEnvironment({
+        NEXTAUTH_SECRET: "super-secret-value-123",
+        NEXTAUTH_URL: "https://builderswebapp-production.up.railway.app",
+        RAILWAY_ENVIRONMENT_NAME: "main",
+      }),
+    ).toEqual({
+      NEXTAUTH_SECRET: "super-secret-value-123",
+      NEXTAUTH_URL: "https://builderswebapp-production.up.railway.app",
+    })
+  })
+
   it("validates storage configuration only when storage is used", () => {
     expect(() =>
       validateStorageEnvironment({

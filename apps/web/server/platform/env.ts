@@ -125,8 +125,38 @@ export function getWebCoreEnvironment(): WebCoreEnvironment {
   return cachedWebCoreEnvironment
 }
 
+function assertProductionAuthUrl(nextAuthUrl: string) {
+  let hostname: string | null = null
+  try {
+    hostname = new URL(nextAuthUrl).hostname
+  } catch {
+    hostname = null
+  }
+
+  const isLocalHost =
+    !hostname ||
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.endsWith(".local")
+
+  if (isLocalHost || !nextAuthUrl.startsWith("https://")) {
+    throw new Error(
+      "Invalid auth environment: NEXTAUTH_URL must be a public https URL in production (not localhost). " +
+        "A misconfigured value sends post-logout redirects to an unprovisioned host.",
+    )
+  }
+}
+
 export function validateAuthEnvironment(source: NodeJS.ProcessEnv = process.env): AuthEnvironment {
-  return parseEnvironment("auth", authEnvironmentSchema, readAuthEnvironment(source))
+  const parsed = parseEnvironment("auth", authEnvironmentSchema, readAuthEnvironment(source))
+
+  // Only enforce on deployed Railway services (which set RAILWAY_ENVIRONMENT_NAME);
+  // local builds/`next start` legitimately use a localhost NEXTAUTH_URL.
+  if (optionalTrimmed(source.RAILWAY_ENVIRONMENT_NAME)) {
+    assertProductionAuthUrl(parsed.NEXTAUTH_URL)
+  }
+
+  return parsed
 }
 
 export function getAuthEnvironment(): AuthEnvironment {

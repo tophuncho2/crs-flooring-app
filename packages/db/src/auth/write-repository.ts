@@ -3,18 +3,14 @@ import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 
 type AuthDbClient = PrismaClient | Prisma.TransactionClient
 
-export async function setUserPassword(
-  id: string,
-  hashedPassword: string,
+export async function recordUserLoginActivity(
+  input: { userId: string; userEmail: string },
   client: AuthDbClient = db,
-): Promise<{ id: string }> {
-  await client.user.update({
-    where: { id },
+): Promise<void> {
+  await client.userLoginActivity.create({
     data: {
-      password: hashedPassword,
-      isVerified: true,
+      userId: input.userId,
+      userEmail: input.userEmail,
     },
   })
-
-  return { id }
 }

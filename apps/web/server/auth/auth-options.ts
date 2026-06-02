@@ -1,7 +1,7 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcrypt"
-import { prisma, type Role } from "@builders/db"
+import { authenticateCredentialsUseCase } from "@builders/application"
+import { type Role } from "@builders/db"
 import { getAuthEnvironment } from "@/server/platform/env"
 import { logEvent } from "@/server/platform/logger"
 import { consumeRateLimit } from "@/server/platform/rate-limit"
@@ -14,7 +14,6 @@ import { getClientIp, getRequestId } from "@/server/platform/request-context"
 const EXPECTED_CREDENTIAL_ERRORS = new Set([
   "INVALID_CREDENTIALS",
   "RATE_LIMITED",
-  "PASSWORD_SETUP_REQUIRED",
   "ACCOUNT_RESTRICTED",
 ])
 
@@ -34,10 +33,10 @@ export function getAuthOptions(): NextAuthOptions {
           const requestId = getRequestId(request)
           const clientIp = getClientIp(request)
 
-          if (!credentials?.email) {
+          if (!normalizedEmail || !credentials?.password) {
             logEvent({
               level: "warn",
-              message: "Login attempt rejected because email was missing",
+              message: "Login attempt rejected because credentials were missing",
               action: "auth.login.rejected",
               route: "/api/auth/[...nextauth]",
               requestId,
@@ -46,10 +45,12 @@ export function getAuthOptions(): NextAuthOptions {
             throw new Error("INVALID_CREDENTIALS")
           }
 
+          // Keyed by IP + email so a single attacker IP cannot lock a victim's
+          // account out from elsewhere, while still throttling brute force.
           const rateLimit = await consumeRateLimit({
             request,
             scope: "auth.login",
-            identifier: normalizedEmail,
+            identifier: `${clientIp}:${normalizedEmail}`,
             limit: 10,
             windowMs: 10 * 60 * 1000,
             route: "/api/auth/[...nextauth]",
@@ -60,14 +61,15 @@ export function getAuthOptions(): NextAuthOptions {
             throw new Error("RATE_LIMITED")
           }
 
-          const user = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
+          const result = await authenticateCredentialsUseCase({
+            email: normalizedEmail,
+            password: credentials.password,
           })
 
-          if (!user) {
+          if (result.outcome === "invalid-credentials") {
             logEvent({
               level: "warn",
-              message: "Login attempt failed because the account does not exist",
+              message: "Login attempt failed",
               action: "auth.login.failed",
               route: "/api/auth/[...nextauth]",
               requestId,
@@ -77,76 +79,40 @@ export function getAuthOptions(): NextAuthOptions {
             throw new Error("INVALID_CREDENTIALS")
           }
 
-          if (!user.password) {
-            logEvent({
-              level: "warn",
-              message: "Login attempt failed because the user has not set a password",
-              action: "auth.login.passwordSetupRequired",
-              route: "/api/auth/[...nextauth]",
-              requestId,
-              userId: user.id,
-              userEmail: user.email,
-              clientIp,
-            })
-            throw new Error("PASSWORD_SETUP_REQUIRED")
-          }
-
-          const valid = await bcrypt.compare(credentials.password, user.password)
-          if (!valid) {
-            logEvent({
-              level: "warn",
-              message: "Login attempt failed because the password was invalid",
-              action: "auth.login.failed",
-              route: "/api/auth/[...nextauth]",
-              requestId,
-              userId: user.id,
-              userEmail: user.email,
-              clientIp,
-            })
-            throw new Error("INVALID_CREDENTIALS")
-          }
-
-          if (!user.isVerified) {
+          if (result.outcome === "account-restricted") {
             logEvent({
               level: "warn",
               message: "Login attempt failed because the account is pending approval",
               action: "auth.login.pendingApproval",
               route: "/api/auth/[...nextauth]",
               requestId,
-              userId: user.id,
-              userEmail: user.email,
+              userId: result.userId,
+              userEmail: result.userEmail,
               clientIp,
             })
             throw new Error("ACCOUNT_RESTRICTED")
           }
-
-          await prisma.userLoginActivity.create({
-            data: {
-              userId: user.id,
-              userEmail: user.email,
-            },
-          })
 
           logEvent({
             message: "Login succeeded",
             action: "auth.login.success",
             route: "/api/auth/[...nextauth]",
             requestId,
-            userId: user.id,
-            userEmail: user.email,
+            userId: result.user.id,
+            userEmail: result.user.email,
             clientIp,
           })
 
           return {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            isVerified: user.isVerified,
+            id: result.user.id,
+            email: result.user.email,
+            role: result.user.role as Role,
+            isVerified: result.user.isVerified,
           }
         },
       }),
     ],
-    session: { strategy: "jwt" },
+    session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
     secret: authEnvironment.NEXTAUTH_SECRET,
 
     logger: {
