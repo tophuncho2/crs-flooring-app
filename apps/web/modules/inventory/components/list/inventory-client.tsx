@@ -370,13 +370,12 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* Warehouse-scoped chips: Warehouse stacked over Location inside
-                one encased card mirroring the search-bar encasing minus the
-                tab/label, with the Status (archive) control in its own labeled
-                card directly beneath — same cell column, separate encasing. The
+            {/* One column: Warehouse over Location in an encased card, with the
+                Category → Product encased card stacked directly beneath. The
                 warehouse pick gates Location (the picker renders disabled until
                 a warehouse is picked); a warehouse change cascades a clear into
-                Location via handleWarehouseChange. */}
+                Location via handleWarehouseChange. Product is category-scoped
+                (category change cascades the product clear). */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <WarehouseFilterChip
@@ -394,17 +393,6 @@ export default function InventoryClient({
                   ariaLabel="Filter inventory by location"
                 />
               </div>
-              <ListToolbarTallCard label="Status">
-                <ArchiveSegmentedControl
-                  value={isArchivedValue}
-                  onChange={handleArchivedChange}
-                />
-              </ListToolbarTallCard>
-            </ListToolbarCell>
-
-            {/* Category → Product: product is category-scoped (category change
-                cascades the product chip clear via handleCategoryChange). */}
-            <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <CategoryFilterChip
                   value={selectedCategoryId}
@@ -419,6 +407,17 @@ export default function InventoryClient({
                   onChange={handleProductChange}
                 />
               </div>
+            </ListToolbarCell>
+
+            {/* Status: own labeled card to the right of the warehouse/location
+                + category/product column. */}
+            <ListToolbarCell>
+              <ListToolbarTallCard label="Status">
+                <ArchiveSegmentedControl
+                  value={isArchivedValue}
+                  onChange={handleArchivedChange}
+                />
+              </ListToolbarTallCard>
             </ListToolbarCell>
           </ListToolbar>
         </div>
