@@ -442,21 +442,23 @@ export default function InventoryClient({
                   onChange={handleArchivedChange}
                 />
               </ListToolbarTallCard>
-              <ListToolbarTallCard label="Import PO#">
-                <PurchaseOrderPicker
-                  value={selectedPurchaseOrderNumber}
-                  onChange={handlePurchaseOrderChange}
-                  placeholder="Import PO#"
-                  ariaLabel="Filter inventory by import PO number"
-                />
-              </ListToolbarTallCard>
-              <ListToolbarTallCard label="Import #">
-                <ImportNumberPicker
-                  value={selectedImportNumber}
-                  onChange={handleImportNumberChange}
-                  placeholder="Import #"
-                  ariaLabel="Filter inventory by import number"
-                />
+              {/* Import: PO# and Import # share one encased card. They're
+                  mutually exclusive (selecting one clears the other). */}
+              <ListToolbarTallCard label="Import">
+                <div className="flex w-full flex-col gap-2">
+                  <PurchaseOrderPicker
+                    value={selectedPurchaseOrderNumber}
+                    onChange={handlePurchaseOrderChange}
+                    placeholder="PO#"
+                    ariaLabel="Filter inventory by import PO number"
+                  />
+                  <ImportNumberPicker
+                    value={selectedImportNumber}
+                    onChange={handleImportNumberChange}
+                    placeholder="IMP#"
+                    ariaLabel="Filter inventory by import number"
+                  />
+                </div>
               </ListToolbarTallCard>
             </ListToolbarCell>
           </ListToolbar>
