@@ -7,6 +7,7 @@ import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   INVENTORY_ADJUSTMENT_MAX_PAGE_SIZE,
   INVENTORY_ADJUSTMENT_PAGE_SIZE,
+  type FlooringInventoryAdjustmentStatus,
   type InventoryAdjustmentListFilters,
 } from "@builders/domain"
 
@@ -244,8 +245,21 @@ const ADJUSTMENTS_MULTI_VALUE_FILTER_KEYS = [
   "warehouseId",
   "categoryId",
   "productId",
+  // Import-identity chips — repeated params, matched against the parent
+  // inventory row in the data layer (the adjustment carries no PO#/import#).
+  "importNumber",
+  "purchaseOrderNumber",
 ] as const
 type AdjustmentsMultiValueFilterKey = (typeof ADJUSTMENTS_MULTI_VALUE_FILTER_KEYS)[number]
+
+// Adjustment lifecycle status — repeated `status` params, validated against the
+// enum set (invalid entries dropped). Read separately so the typed array lands
+// on `filters.status` without a cast leaking into the generic multi-value loop.
+const ADJUSTMENT_STATUS_VALUES: ReadonlyArray<FlooringInventoryAdjustmentStatus> = [
+  "PENDING",
+  "QUEUED",
+  "FINAL",
+]
 
 function readAdjustmentsMultiValue(searchParams: URLSearchParams, key: string): string[] {
   return Array.from(
@@ -263,6 +277,7 @@ const listAdjustmentsQuerySchema = z.object({
   rollNumber: z.string().optional(),
   dyeLot: z.string().optional(),
   note: z.string().optional(),
+  archived: z.enum(["true", "false"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -315,6 +330,18 @@ export function validateAdjustmentsListQuery(
   if (rollNumber) filters.rollNumber = rollNumber
   if (dyeLot) filters.dyeLot = dyeLot
   if (note) filters.note = note
+
+  // Adjustment status — keep only recognised enum values.
+  const statusValues = readAdjustmentsMultiValue(searchParams, "status").filter(
+    (entry): entry is FlooringInventoryAdjustmentStatus =>
+      (ADJUSTMENT_STATUS_VALUES as readonly string[]).includes(entry),
+  )
+  if (statusValues.length > 0) filters.status = statusValues
+
+  // Parent-inventory archive state.
+  const archived =
+    parsed.archived === "true" ? true : parsed.archived === "false" ? false : undefined
+  if (archived !== undefined) filters.isArchived = archived
 
   const hasAnyFilter = Object.keys(filters).length > 0
 

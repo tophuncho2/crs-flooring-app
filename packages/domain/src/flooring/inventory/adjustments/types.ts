@@ -69,6 +69,16 @@ export type InventoryAdjustmentListFilters = {
   // direct `productId` match. Mirrors the inventory list chips.
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
+  // Import-identity chips — these target the parent inventory row through the
+  // `inventory` relation (the adjustment row carries no PO#/import# snapshot of
+  // its own). "Show all adjustments of inventory rows from this PO#/import#."
+  importNumber?: ReadonlyArray<string>
+  purchaseOrderNumber?: ReadonlyArray<string>
+  // Adjustment lifecycle status — a direct match on the adjustment's own enum.
+  status?: ReadonlyArray<FlooringInventoryAdjustmentStatus>
+  // Parent-inventory archive state, reached through the `inventory` relation
+  // (`true` = archived only, `false` = active only, undefined = all).
+  isArchived?: boolean
   // Per-field identity search — the four list-view search bars. Each is a
   // free-text ILIKE against its own frozen snapshot column
   // (`inventoryNumber`/`rollNumber`/`dyeLot`/`inventoryNote`); multiple set

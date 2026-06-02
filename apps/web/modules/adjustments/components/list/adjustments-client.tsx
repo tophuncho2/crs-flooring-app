@@ -7,6 +7,7 @@ import {
   ListToolbar,
   ListToolbarBottomRow,
   ListToolbarCell,
+  ListToolbarTallCard,
 } from "@/components/features/list-toolbar"
 import { DebouncedSearchControl } from "@/components/features/search"
 import { ClearAllFiltersButton } from "@/components/features/filter"
@@ -16,6 +17,7 @@ import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   type CategoryOption,
+  type FlooringInventoryAdjustmentStatus,
   type InventoryAdjustmentListFilters,
   type EnrichedInventoryAdjustmentRow,
   type ProductOption,
@@ -24,17 +26,25 @@ import {
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
+import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
+import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
+import { ArchiveSegmentedControl } from "@/modules/inventory/components/list/toolbar-controls/archive-segmented-control"
 import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
 import {
   ADJUSTMENTS_LIST_QUERY_KEY,
   listAdjustmentsRequest,
 } from "@/modules/adjustments/data/list-adjustments-request"
 import { AdjustmentsTable } from "./adjustments-table"
+import { AdjustmentStatusSegmentedControl } from "./toolbar-controls/adjustment-status-segmented-control"
 
 const ADJUSTMENTS_FILTERABLE_FIELDS = [
   "warehouseId",
   "categoryId",
   "productId",
+  "importNumber",
+  "purchaseOrderNumber",
+  "status",
+  "isArchived",
   "invNumber",
   "rollNumber",
   "dyeLot",
@@ -51,6 +61,10 @@ type EngineAdjustmentFilters = {
   warehouseId?: ReadonlyArray<string>
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
+  importNumber?: ReadonlyArray<string>
+  purchaseOrderNumber?: ReadonlyArray<string>
+  status?: ReadonlyArray<string>
+  isArchived?: ReadonlyArray<string>
   invNumber?: ReadonlyArray<string>
   rollNumber?: ReadonlyArray<string>
   dyeLot?: ReadonlyArray<string>
@@ -62,6 +76,10 @@ function toEngineFilters(app: InventoryAdjustmentListFilters): EngineAdjustmentF
   if (app.warehouseId?.length) out.warehouseId = app.warehouseId
   if (app.categoryId?.length) out.categoryId = app.categoryId
   if (app.productId?.length) out.productId = app.productId
+  if (app.importNumber?.length) out.importNumber = app.importNumber
+  if (app.purchaseOrderNumber?.length) out.purchaseOrderNumber = app.purchaseOrderNumber
+  if (app.status?.length) out.status = app.status
+  if (app.isArchived !== undefined) out.isArchived = [app.isArchived ? "true" : "false"]
   if (app.invNumber && app.invNumber.length > 0) out.invNumber = [app.invNumber]
   if (app.rollNumber && app.rollNumber.length > 0) out.rollNumber = [app.rollNumber]
   if (app.dyeLot && app.dyeLot.length > 0) out.dyeLot = [app.dyeLot]
@@ -74,6 +92,14 @@ function toAppFilters(engine: EngineAdjustmentFilters): InventoryAdjustmentListF
   if (engine.warehouseId?.length) out.warehouseId = engine.warehouseId
   if (engine.categoryId?.length) out.categoryId = engine.categoryId
   if (engine.productId?.length) out.productId = engine.productId
+  if (engine.importNumber?.length) out.importNumber = engine.importNumber
+  if (engine.purchaseOrderNumber?.length) out.purchaseOrderNumber = engine.purchaseOrderNumber
+  if (engine.status?.length) {
+    out.status = engine.status as InventoryAdjustmentListFilters["status"]
+  }
+  const arch = engine.isArchived?.[0]
+  if (arch === "true") out.isArchived = true
+  else if (arch === "false") out.isArchived = false
   const invNumber = engine.invNumber?.[0]?.trim()
   if (invNumber) out.invNumber = invNumber
   const rollNumber = engine.rollNumber?.[0]?.trim()
@@ -150,6 +176,13 @@ export default function AdjustmentsClient({
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
   const selectedCategoryId = filters.categoryId?.[0] ?? null
   const selectedProductId = filters.productId?.[0] ?? null
+  const selectedPurchaseOrderNumber = filters.purchaseOrderNumber?.[0] ?? null
+  const selectedImportNumber = filters.importNumber?.[0] ?? null
+  const statusValue =
+    (filters.status?.[0] as FlooringInventoryAdjustmentStatus | undefined) ?? undefined
+  const archivedRaw = filters.isArchived?.[0]
+  const isArchivedValue =
+    archivedRaw === "true" ? true : archivedRaw === "false" ? false : undefined
   const invNumberValue = filters.invNumber?.[0] ?? ""
   const rollNumberValue = filters.rollNumber?.[0] ?? ""
   const dyeLotValue = filters.dyeLot?.[0] ?? ""
@@ -202,6 +235,38 @@ export default function AdjustmentsClient({
     [onFilterChange],
   )
 
+  // PO# and Import# are mutually exclusive — selecting one clears the other.
+  // Both reach the parent inventory row through the `inventory` relation.
+  const handlePurchaseOrderChange = useCallback(
+    (next: string | null) => {
+      onFilterChange("purchaseOrderNumber", next ? [next] : [])
+      if (next) onFilterChange("importNumber", [])
+    },
+    [onFilterChange],
+  )
+
+  const handleImportNumberChange = useCallback(
+    (next: string | null) => {
+      onFilterChange("importNumber", next ? [next] : [])
+      if (next) onFilterChange("purchaseOrderNumber", [])
+    },
+    [onFilterChange],
+  )
+
+  const handleStatusChange = useCallback(
+    (next: FlooringInventoryAdjustmentStatus | undefined) => {
+      onFilterChange("status", next ? [next] : [])
+    },
+    [onFilterChange],
+  )
+
+  const handleArchivedChange = useCallback(
+    (next: boolean | undefined) => {
+      onFilterChange("isArchived", next === undefined ? [] : [next ? "true" : "false"])
+    },
+    [onFilterChange],
+  )
+
   // One handler for all four identity search bars — encodes the free-text value
   // as a 1-element array (or empty to clear).
   const handleTextFilterChange = useCallback(
@@ -217,6 +282,10 @@ export default function AdjustmentsClient({
       Boolean(selectedWarehouseId) ||
       Boolean(selectedCategoryId) ||
       Boolean(selectedProductId) ||
+      Boolean(selectedPurchaseOrderNumber) ||
+      Boolean(selectedImportNumber) ||
+      statusValue !== undefined ||
+      isArchivedValue !== undefined ||
       Boolean(invNumberValue) ||
       Boolean(rollNumberValue) ||
       Boolean(dyeLotValue) ||
@@ -225,6 +294,10 @@ export default function AdjustmentsClient({
       selectedWarehouseId,
       selectedCategoryId,
       selectedProductId,
+      selectedPurchaseOrderNumber,
+      selectedImportNumber,
+      statusValue,
+      isArchivedValue,
       invNumberValue,
       rollNumberValue,
       dyeLotValue,
@@ -279,6 +352,41 @@ export default function AdjustmentsClient({
                   right={<ListRowCount count={rows.length} total={total} label="adjustments" />}
                 />
               </div>
+            </ListToolbarCell>
+
+            {/* Status (adjustment lifecycle), Archived (parent inventory), and
+                Import (PO#/IMP# pickers) — the import-identity + archive chips all
+                target the parent inventory row. PO# and IMP# are mutually
+                exclusive. */}
+            <ListToolbarCell className="self-start">
+              <ListToolbarTallCard label="Status">
+                <AdjustmentStatusSegmentedControl
+                  value={statusValue}
+                  onChange={handleStatusChange}
+                />
+              </ListToolbarTallCard>
+              <ListToolbarTallCard label="Archived">
+                <ArchiveSegmentedControl
+                  value={isArchivedValue}
+                  onChange={handleArchivedChange}
+                />
+              </ListToolbarTallCard>
+              <ListToolbarTallCard label="Import">
+                <div className="flex w-full flex-col gap-2">
+                  <PurchaseOrderPicker
+                    value={selectedPurchaseOrderNumber}
+                    onChange={handlePurchaseOrderChange}
+                    placeholder="PO#"
+                    ariaLabel="Filter adjustments by parent inventory PO number"
+                  />
+                  <ImportNumberPicker
+                    value={selectedImportNumber}
+                    onChange={handleImportNumberChange}
+                    placeholder="IMP#"
+                    ariaLabel="Filter adjustments by parent inventory import number"
+                  />
+                </div>
+              </ListToolbarTallCard>
             </ListToolbarCell>
 
             {/* One encased card: Warehouse, Category, Product stacked together.

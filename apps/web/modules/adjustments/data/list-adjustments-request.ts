@@ -29,8 +29,17 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
-// Multi-value (repeated) filter params — entity-id chips. Shared by parse + build.
-const MULTI_VALUE_FILTER_KEYS = ["warehouseId", "categoryId", "productId"] as const
+// Multi-value (repeated) filter params — entity-id chips + import-identity
+// chips (PO#/import#, matched against the parent inventory). Shared by parse +
+// build. `status` (typed enum array) and `archived` (boolean) are handled
+// separately below since their value types aren't plain `string[]`.
+const MULTI_VALUE_FILTER_KEYS = [
+  "warehouseId",
+  "categoryId",
+  "productId",
+  "importNumber",
+  "purchaseOrderNumber",
+] as const
 // Scalar free-text filter params — the four identity search bars. Shared by
 // parse + build so the URL contract stays in one place.
 const TEXT_FILTER_KEYS = ["invNumber", "rollNumber", "dyeLot", "note"] as const
@@ -51,6 +60,15 @@ export function parseAdjustmentsListInputFromSearchParams(
     if (value.length > 0) filters[key] = value
   }
 
+  const statusValues = Array.from(new Set(readSearchParamArray(searchParams, "status")))
+  if (statusValues.length > 0) {
+    filters.status = statusValues as InventoryAdjustmentListFilters["status"]
+  }
+
+  const archivedRaw = readSearchParam(searchParams, "archived")
+  if (archivedRaw === "true") filters.isArchived = true
+  else if (archivedRaw === "false") filters.isArchived = false
+
   const hasAnyFilter = Object.keys(filters).length > 0
 
   return {
@@ -70,6 +88,9 @@ function buildAdjustmentsListSearchString(input: ListInput<InventoryAdjustmentLi
     const value = input.filters?.[key]?.trim()
     if (value && value.length > 0) params.set(key, value)
   }
+  for (const status of input.filters?.status ?? []) params.append("status", status)
+  if (input.filters?.isArchived === true) params.set("archived", "true")
+  else if (input.filters?.isArchived === false) params.set("archived", "false")
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   return params.toString()

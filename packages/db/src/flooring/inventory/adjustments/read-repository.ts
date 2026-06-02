@@ -353,6 +353,32 @@ export async function listAdjustmentsForListView(
     where.inventoryNote = { contains: note, mode: "insensitive" }
   }
 
+  // Import-identity + archive chips target the parent inventory row (the
+  // adjustment carries no PO#/import#/archived of its own). Accumulate into one
+  // nested relation filter — mirrors the `where.product = { is: {...} }`
+  // category pattern above.
+  const inventoryWhere: Prisma.FlooringInventoryWhereInput = {}
+  const importNumbers = args.filters.importNumber
+  if (importNumbers && importNumbers.length > 0) {
+    inventoryWhere.importNumber = { in: [...importNumbers] }
+  }
+  const purchaseOrderNumbers = args.filters.purchaseOrderNumber
+  if (purchaseOrderNumbers && purchaseOrderNumbers.length > 0) {
+    inventoryWhere.purchaseOrderNumber = { in: [...purchaseOrderNumbers] }
+  }
+  if (args.filters.isArchived !== undefined) {
+    inventoryWhere.isArchived = args.filters.isArchived
+  }
+  if (Object.keys(inventoryWhere).length > 0) {
+    where.inventory = { is: inventoryWhere }
+  }
+
+  // Adjustment lifecycle status — direct match on the adjustment row's enum.
+  const statuses = args.filters.status
+  if (statuses && statuses.length > 0) {
+    where.status = { in: [...statuses] }
+  }
+
   const skip = (args.page - 1) * args.pageSize
 
   const [rows, total] = await Promise.all([
