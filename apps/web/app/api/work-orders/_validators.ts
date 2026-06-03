@@ -252,6 +252,7 @@ const ID_FILTER_KEYS = [
   "propertyId",
   "templateId",
   "warehouseId",
+  "jobTypeId",
   "statusId",
 ] as const
 

@@ -15,6 +15,7 @@ export type WorkOrdersListFilters = {
   propertyId?: string[]
   templateId?: string[]
   warehouseId?: string[]
+  jobTypeId?: string[]
   // Inclusive `scheduledFor` lower / upper bound as `YYYY-MM-DD` (single-element
   // arrays). From-only ⇒ on/after; To-only ⇒ on/before; same date ⇒ that day.
   scheduledForStart?: string[]

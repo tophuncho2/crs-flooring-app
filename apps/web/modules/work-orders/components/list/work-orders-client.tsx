@@ -11,6 +11,7 @@ import { useFetchListController } from "@/controllers/list-view"
 import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
 import type { WorkOrdersListFilters } from "@builders/application"
 import type {
+  JobTypeOption,
   ManagementCompanyOption,
   PropertyOption,
   TemplateOption,
@@ -26,6 +27,7 @@ import {
 import { useWorkOrdersListController } from "@/modules/work-orders/controllers/list/use-work-orders-list-controller"
 import { WorkOrdersTable } from "./work-orders-table"
 import { AddWorkOrderButton } from "./toolbar-controls/add-work-order-button"
+import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
 import { MgmtCoFilterChip } from "./toolbar-controls/mgmt-co-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { ScheduledForFilterChip } from "./toolbar-controls/scheduled-for-filter-chip"
@@ -56,6 +58,8 @@ export default function WorkOrdersClient({
   initialSelectedTemplate = null,
   initialWarehouseOptions,
   initialSelectedWarehouse = null,
+  initialJobTypeOptions,
+  initialSelectedJobType = null,
 }: {
   initialSearchQuery: string
   initialPage: number
@@ -68,6 +72,8 @@ export default function WorkOrdersClient({
   initialSelectedTemplate?: TemplateOption | null
   initialWarehouseOptions: WarehouseOption[]
   initialSelectedWarehouse?: WarehouseOption | null
+  initialJobTypeOptions: JobTypeOption[]
+  initialSelectedJobType?: JobTypeOption | null
 }) {
   const { message, pageError, openCreate, openWorkOrder } = useWorkOrdersListController()
 
@@ -110,6 +116,7 @@ export default function WorkOrdersClient({
   const selectedPropertyId = filters.propertyId?.[0] ?? null
   const selectedTemplateId = filters.templateId?.[0] ?? null
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
+  const selectedJobTypeId = filters.jobTypeId?.[0] ?? null
   const selectedScheduledStart = filters.scheduledForStart?.[0] ?? null
   const selectedScheduledEnd = filters.scheduledForEnd?.[0] ?? null
 
@@ -140,6 +147,12 @@ export default function WorkOrdersClient({
     if (initialSelectedWarehouse?.id === selectedWarehouseId) return initialSelectedWarehouse.name
     return initialWarehouseOptions.find((o) => o.id === selectedWarehouseId)?.name ?? null
   }, [selectedWarehouseId, initialSelectedWarehouse, initialWarehouseOptions])
+
+  const jobTypeLabel = useMemo(() => {
+    if (!selectedJobTypeId) return null
+    if (initialSelectedJobType?.id === selectedJobTypeId) return initialSelectedJobType.name
+    return initialJobTypeOptions.find((o) => o.id === selectedJobTypeId)?.name ?? null
+  }, [selectedJobTypeId, initialSelectedJobType, initialJobTypeOptions])
 
   // --- Cascade-clear handlers ---
   // Mgmt Co change → clear Property + Template (property-scoped chain).
@@ -176,6 +189,13 @@ export default function WorkOrdersClient({
     [onFilterChange],
   )
 
+  const handleJobTypeChange = useCallback(
+    (id: string | null) => {
+      onFilterChange("jobTypeId", id ? [id] : [])
+    },
+    [onFilterChange],
+  )
+
   const handleScheduledForChange = useCallback(
     (start: string | null, end: string | null) => {
       onFilterChange("scheduledForStart", start ? [start] : [])
@@ -191,6 +211,7 @@ export default function WorkOrdersClient({
       selectedPropertyId ||
       selectedTemplateId ||
       selectedWarehouseId ||
+      selectedJobTypeId ||
       selectedScheduledStart ||
       selectedScheduledEnd
     ) {
@@ -203,6 +224,7 @@ export default function WorkOrdersClient({
     selectedPropertyId,
     selectedTemplateId,
     selectedWarehouseId,
+    selectedJobTypeId,
     selectedScheduledStart,
     selectedScheduledEnd,
   ])
@@ -288,6 +310,16 @@ export default function WorkOrdersClient({
                 propertyId={selectedPropertyId}
                 onChange={handleTemplateChange}
                 initialOptions={initialTemplateOptions}
+              />
+            </ListToolbarCell>
+
+            {/* Job type (independent, non-cascading single-select). */}
+            <ListToolbarCell>
+              <JobTypeFilterChip
+                value={selectedJobTypeId}
+                selectedLabel={jobTypeLabel}
+                onChange={handleJobTypeChange}
+                initialOptions={initialJobTypeOptions}
               />
             </ListToolbarCell>
 

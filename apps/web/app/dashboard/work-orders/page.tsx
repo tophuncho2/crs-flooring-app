@@ -1,12 +1,14 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
   listWorkOrdersUseCase,
+  searchJobTypeOptionsUseCase,
   searchManagementCompanyOptionsUseCase,
   searchPropertyOptionsUseCase,
   searchTemplateOptionsUseCase,
   searchWarehouseOptionsUseCase,
 } from "@builders/application"
 import type {
+  JobTypeOption,
   ManagementCompanyOption,
   PropertyOption,
   TemplateOption,
@@ -51,14 +53,17 @@ export default async function FlooringWorkOrdersPage({
   let initialSelectedTemplate: TemplateOption | null = null
   let initialWarehouseOptions: WarehouseOption[] = []
   let initialSelectedWarehouse: WarehouseOption | null = null
+  let initialJobTypeOptions: JobTypeOption[] = []
+  let initialSelectedJobType: JobTypeOption | null = null
 
   try {
     const selectedMgmtCoId = initialInput.filters?.managementCompanyId?.[0] ?? null
     const selectedPropertyId = initialInput.filters?.propertyId?.[0] ?? null
     const selectedTemplateId = initialInput.filters?.templateId?.[0] ?? null
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
+    const selectedJobTypeId = initialInput.filters?.jobTypeId?.[0] ?? null
 
-    const [, mgmtCoPage, propertyPage, warehousePage] = await Promise.all([
+    const [, mgmtCoPage, propertyPage, warehousePage, jobTypeOptions] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...WORK_ORDERS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listWorkOrdersUseCase(initialInput),
@@ -69,12 +74,14 @@ export default async function FlooringWorkOrdersPage({
         ...(selectedMgmtCoId ? { managementCompanyId: selectedMgmtCoId } : {}),
       }),
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
+      searchJobTypeOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
     const warehouseOptions = warehousePage.items
     initialMgmtCoOptions = mgmtCoPage.items
     initialPropertyOptions = propertyPage.items
     initialWarehouseOptions = warehouseOptions
+    initialJobTypeOptions = jobTypeOptions
 
     // Templates are property-scoped — only prefetch when a property is picked.
     if (selectedPropertyId) {
@@ -138,6 +145,17 @@ export default async function FlooringWorkOrdersPage({
         },
       )
     }
+
+    if (selectedJobTypeId) {
+      initialSelectedJobType = await resolveSelectedById(
+        selectedJobTypeId,
+        jobTypeOptions,
+        async (id) => {
+          const [match] = await searchJobTypeOptionsUseCase({ search: id, take: 1 })
+          return match && match.id === id ? match : null
+        },
+      )
+    }
   } catch (error) {
     return (
       <DashboardErrorState
@@ -163,6 +181,8 @@ export default async function FlooringWorkOrdersPage({
         initialSelectedTemplate={initialSelectedTemplate}
         initialWarehouseOptions={initialWarehouseOptions}
         initialSelectedWarehouse={initialSelectedWarehouse}
+        initialJobTypeOptions={initialJobTypeOptions}
+        initialSelectedJobType={initialSelectedJobType}
       />
     </HydrationBoundary>
   )

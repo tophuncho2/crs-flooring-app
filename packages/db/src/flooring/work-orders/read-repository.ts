@@ -35,6 +35,7 @@ export type WorkOrdersListFilterMap = {
   propertyId?: string[]
   templateId?: string[]
   warehouseId?: string[]
+  jobTypeId?: string[]
   /**
    * Inclusive `scheduledFor` lower / upper bound as `YYYY-MM-DD` (single-element
    * array, matching the multi-value filter contract). Compared UTC-pinned to
@@ -80,6 +81,9 @@ function buildWorkOrdersWhere(
   }
   if (filters?.warehouseId?.length) {
     andClauses.push({ warehouseId: { in: filters.warehouseId } })
+  }
+  if (filters?.jobTypeId?.length) {
+    andClauses.push({ jobTypeId: { in: filters.jobTypeId } })
   }
   if (filters?.statusId?.length) {
     andClauses.push({ statusId: { in: filters.statusId } })
