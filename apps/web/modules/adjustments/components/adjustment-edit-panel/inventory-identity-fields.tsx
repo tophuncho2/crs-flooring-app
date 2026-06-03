@@ -22,13 +22,13 @@ function hasAnyValue(values: InventoryIdentityValues): boolean {
 
 function FieldGrid({ values }: { values: InventoryIdentityValues }) {
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-4 gap-1.5">
       {FIELDS.map(({ key, label }) => {
         const value = values[key].trim()
         return (
           <div
             key={key}
-            className="flex min-w-0 flex-col gap-0.5 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2.5 py-1.5"
+            className="flex min-w-0 flex-col gap-0.5 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2 py-1"
           >
             <span className={LABEL_CLASS}>{label}</span>
             <span className="truncate text-sm text-[var(--foreground)]">

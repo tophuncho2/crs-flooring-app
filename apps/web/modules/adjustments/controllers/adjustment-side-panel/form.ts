@@ -10,8 +10,9 @@ import type {
 /**
  * Canonical per-context picker configs. WO-create lets the operator choose
  * warehouse → inventory → location (cross-warehouse sourcing) and relink the
- * WO. Hub-create + edit lock warehouse/inventory/location to the parent
- * inventory but keep the WO relinkable.
+ * WO. Hub-create locks warehouse/inventory/location to the parent inventory but
+ * keeps the WO relinkable. Edit hides the location filter entirely — it's a
+ * search-narrowing aid only meaningful while picking, not on a saved row.
  */
 export const WO_CREATE_PICKER_CONFIG: AdjustmentPickerConfig = {
   workOrder: "editable",
@@ -29,7 +30,7 @@ export const EDIT_PICKER_CONFIG: AdjustmentPickerConfig = {
   workOrder: "editable",
   warehouse: "locked",
   inventory: "locked",
-  location: "locked",
+  location: "hidden",
 }
 
 export const EMPTY_FORM: AdjustmentEditForm = {

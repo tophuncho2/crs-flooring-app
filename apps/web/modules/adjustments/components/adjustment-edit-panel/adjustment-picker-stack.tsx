@@ -1,13 +1,14 @@
 "use client"
 
 import { HubSidePanelPickerTrigger } from "@/components/hub-side-panel"
+import { FieldSection, FormField } from "@/components/fields"
+import { SectionCard } from "@/components/headers"
+import { CellAt } from "@/components/layout-grid/cell-at"
 import type {
   AdjustmentEditPanelController,
   AdjustmentPanelPickerKind,
 } from "@/modules/adjustments/controllers/adjustment-side-panel"
 import { InventoryIdentityFields } from "./inventory-identity-fields"
-
-const LABEL_CLASS = "text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65"
 
 export type AdjustmentPickerStackProps = {
   controller: AdjustmentEditPanelController
@@ -22,8 +23,14 @@ export type AdjustmentPickerStackProps = {
  * showing its value), or hidden. The material-item block is always a read-only
  * display, auto-linked from the chosen work order.
  *
+ * Layout mirrors the form body's group cards (`AdjustmentEditFormFields`): two
+ * `SectionCard` groups built on `FieldSection` / `CellAt` / `FormField` — a
+ * "Source" group (warehouse / inventory / location filter) and a "Work order"
+ * group (work order + auto-linked material item).
+ *
  * Pickers that search by warehouse (inventory / location / work-order) are
- * additionally gated until a warehouse is chosen.
+ * additionally gated until a warehouse is chosen. The location filter is a
+ * search-narrowing aid, so the edit config hides it.
  */
 export function AdjustmentPickerStack({
   controller,
@@ -59,102 +66,101 @@ export function AdjustmentPickerStack({
 
   return (
     <div className="flex flex-col gap-3">
-      {showWarehouse ? (
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL_CLASS}>Warehouse</span>
-          <HubSidePanelPickerTrigger
-            {...trigger("warehouse")}
-            selectedLabel={local.pickedWarehouseLabel || null}
-            placeholder="Select warehouse"
-            disabled={isSaving || !whEditable}
-            ariaLabel="Open warehouse picker"
-          />
-        </label>
-      ) : null}
+      <SectionCard title="Source" tone="neutral">
+        <FieldSection gap="0.75rem">
+          {showWarehouse ? (
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Warehouse">
+                <HubSidePanelPickerTrigger
+                  {...trigger("warehouse")}
+                  selectedLabel={local.pickedWarehouseLabel || null}
+                  placeholder="Select warehouse"
+                  disabled={isSaving || !whEditable}
+                  ariaLabel="Open warehouse picker"
+                />
+              </FormField>
+            </CellAt>
+          ) : null}
 
-      {showInventory ? (
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL_CLASS}>Inventory</span>
-          {invEditable ? (
-            <InventoryIdentityFields
-              mode="editable"
-              values={inventoryIdentityValues}
-              expanded={pickerKind === "inventory"}
-              onToggle={() => controller.openPicker("inventory")}
-              disabled={isSaving || noWarehouse}
-              disabledPlaceholder={noWarehouse ? "Select warehouse first" : undefined}
-            />
-          ) : (
-            <InventoryIdentityFields mode="locked" values={inventoryIdentityValues} />
-          )}
-        </label>
-      ) : null}
+          {showInventory ? (
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Inventory">
+                {invEditable ? (
+                  <InventoryIdentityFields
+                    mode="editable"
+                    values={inventoryIdentityValues}
+                    expanded={pickerKind === "inventory"}
+                    onToggle={() => controller.openPicker("inventory")}
+                    disabled={isSaving || noWarehouse}
+                    disabledPlaceholder={noWarehouse ? "Select warehouse first" : undefined}
+                  />
+                ) : (
+                  <InventoryIdentityFields mode="locked" values={inventoryIdentityValues} />
+                )}
+              </FormField>
+            </CellAt>
+          ) : null}
 
-      {showLocation ? (
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL_CLASS}>Location filter</span>
-          <HubSidePanelPickerTrigger
-            {...trigger("location")}
-            selectedLabel={local.locationFilter || null}
-            placeholder="Select location"
-            disabled={isSaving || !locEditable || (locEditable && noWarehouse)}
-            disabledPlaceholder={
-              locEditable && noWarehouse ? "Select warehouse first" : undefined
-            }
-            ariaLabel="Open location filter picker"
-          />
-        </label>
-      ) : null}
+          {showLocation ? (
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Location filter">
+                <HubSidePanelPickerTrigger
+                  {...trigger("location")}
+                  selectedLabel={local.locationFilter || null}
+                  placeholder="Select location"
+                  disabled={isSaving || !locEditable || (locEditable && noWarehouse)}
+                  disabledPlaceholder={
+                    locEditable && noWarehouse ? "Select warehouse first" : undefined
+                  }
+                  ariaLabel="Open location filter picker"
+                />
+              </FormField>
+            </CellAt>
+          ) : null}
+        </FieldSection>
+      </SectionCard>
 
       {showWorkOrder ? (
-        <>
-          <label className="flex flex-col gap-1.5">
-            <span className={LABEL_CLASS}>Work order</span>
-            <HubSidePanelPickerTrigger
-              {...trigger("workOrder")}
-              selectedLabel={local.pickedWorkOrderLabel || null}
-              placeholder="Select work order"
-              disabled={isSaving || !woEditable || (woEditable && noWarehouse)}
-              disabledPlaceholder={
-                woEditable && noWarehouse ? "Select warehouse first" : undefined
-              }
-              ariaLabel="Open work order picker"
-              onOpenLinked={
-                onOpenWorkOrder && form.workOrderId
-                  ? () => onOpenWorkOrder(form.workOrderId!)
-                  : undefined
-              }
-              openLinkedAriaLabel="Open work order"
-              openLinkedDisabled={isSaving}
-            />
-          </label>
-          <div className="flex flex-col gap-1.5">
-            <span className={LABEL_CLASS}>Material item</span>
-            {/* Read-only: auto-linked from the selected work order (product is
-                fixed + unique per WO), so there is no picker. */}
-            <div className="flex flex-col gap-1 rounded-md border border-[var(--panel-border)] bg-[var(--panel-border)]/10 px-3 py-2">
-              {!form.workOrderId ? (
-                <span className="text-sm text-[var(--foreground)]/55">
-                  Select a work order to auto-link its material item
-                </span>
-              ) : materialItemResolving ? (
-                <span className="text-sm text-[var(--foreground)]/55">Resolving…</span>
-              ) : (
-                <>
-                  <span className="text-sm text-[var(--foreground)]">
-                    {workOrderItemLabel || "—"}
+        <SectionCard title="Work order" tone="neutral">
+          <FieldSection gap="0.75rem">
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Work order">
+                <HubSidePanelPickerTrigger
+                  {...trigger("workOrder")}
+                  selectedLabel={local.pickedWorkOrderLabel || null}
+                  placeholder="Select work order"
+                  disabled={isSaving || !woEditable || (woEditable && noWarehouse)}
+                  disabledPlaceholder={
+                    woEditable && noWarehouse ? "Select warehouse first" : undefined
+                  }
+                  ariaLabel="Open work order picker"
+                  onOpenLinked={
+                    onOpenWorkOrder && form.workOrderId
+                      ? () => onOpenWorkOrder(form.workOrderId!)
+                      : undefined
+                  }
+                  openLinkedAriaLabel="Open work order"
+                  openLinkedDisabled={isSaving}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              {/* Read-only: auto-linked from the selected work order (product is
+                  fixed + unique per WO), so there is no picker — product name only. */}
+              <FormField label="Material item">
+                {!form.workOrderId ? (
+                  <span className="text-sm text-[var(--foreground)]/55">Select a work order</span>
+                ) : materialItemResolving ? (
+                  <span className="text-sm text-[var(--foreground)]/55">Resolving…</span>
+                ) : (
+                  <span className="truncate text-sm text-[var(--foreground)]">
+                    {workOrderItemLabel}
                   </span>
-                  <span className="text-xs text-[var(--foreground)]/60">
-                    {local.pickedWorkOrderItemNotes.trim() ? local.pickedWorkOrderItemNotes : "—"}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-wide text-[var(--foreground)]/45">
-                    Auto-linked from work order
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </>
+                )}
+              </FormField>
+            </CellAt>
+          </FieldSection>
+        </SectionCard>
       ) : null}
     </div>
   )
