@@ -20,6 +20,10 @@ export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [
   "templateId",
   "warehouseId",
   "jobTypeId",
+  "unitType",
+  "unitNumber",
+  "workOrderNumber",
+  "description",
   "scheduledForStart",
   "scheduledForEnd",
 ] as const satisfies readonly string[]
@@ -69,7 +73,6 @@ function readFiltersFromSearchParams(
 export function parseWorkOrdersListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): WorkOrdersListInput {
-  const search = (readSearchParam(searchParams, "q") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
   const direction = readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc"
@@ -80,7 +83,6 @@ export function parseWorkOrdersListInputFromSearchParams(
     ? (sortFieldRaw as string)
     : "createdAt"
   return {
-    search: search || undefined,
     sort: { field, direction },
     filters: readFiltersFromSearchParams(searchParams),
     page,
@@ -90,7 +92,6 @@ export function parseWorkOrdersListInputFromSearchParams(
 
 function buildSearchString(input: WorkOrdersListInput): string {
   const params = new URLSearchParams()
-  if (input.search) params.set("q", input.search)
   if (input.sort?.direction) params.set("sort", input.sort.direction)
   if (input.sort?.field) params.set("sortField", input.sort.field)
   if (input.page && input.page !== 1) params.set("page", String(input.page))

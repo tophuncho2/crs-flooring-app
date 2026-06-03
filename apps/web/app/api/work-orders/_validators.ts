@@ -263,8 +263,13 @@ const DATE_FILTER_KEYS = ["scheduledForStart", "scheduledForEnd"] as const
 type DateFilterKey = (typeof DATE_FILTER_KEYS)[number]
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
+// Per-column identity search — the list-view search bars. Each is a single
+// free-text value carried as a one-element array (same contract as the date
+// bounds), applied server-side as a case-insensitive ILIKE on its own column.
+const TEXT_FILTER_KEYS = ["unitType", "unitNumber", "workOrderNumber", "description"] as const
+type TextFilterKey = (typeof TEXT_FILTER_KEYS)[number]
+
 const listWorkOrdersQuerySchema = z.object({
-  q: z.string().optional(),
   sort: z.enum(["asc", "desc"]).default("desc"),
   sortField: z
     .enum(["createdAt", "scheduledFor", "property", "managementCompany", "workOrderNumber"])
@@ -294,7 +299,11 @@ export function validateListWorkOrdersQuery(
 ): ListInput<WorkOrdersListFilters> {
   // Strip multi-value keys before zod sees them.
   const raw: Record<string, string> = {}
-  const reservedMultiValueKeys = new Set<string>([...ID_FILTER_KEYS, ...DATE_FILTER_KEYS])
+  const reservedMultiValueKeys = new Set<string>([
+    ...ID_FILTER_KEYS,
+    ...DATE_FILTER_KEYS,
+    ...TEXT_FILTER_KEYS,
+  ])
   searchParams.forEach((value, key) => {
     if (reservedMultiValueKeys.has(key)) return
     raw[key] = value
@@ -310,13 +319,15 @@ export function validateListWorkOrdersQuery(
   }
 
   const parsed = parseResult.data
-  const trimmedSearch = parsed.q?.trim()
-  const search = trimmedSearch ? trimmedSearch : undefined
 
   const filterRecord: WorkOrdersListFilters = {}
   for (const key of ID_FILTER_KEYS) {
     const values = readMultiValue(searchParams, key)
     if (values.length > 0) filterRecord[key as IdFilterKey] = values
+  }
+  for (const key of TEXT_FILTER_KEYS) {
+    const value = readMultiValue(searchParams, key)[0]
+    if (value) filterRecord[key as TextFilterKey] = [value]
   }
   for (const key of DATE_FILTER_KEYS) {
     const value = readMultiValue(searchParams, key)[0]
@@ -330,7 +341,6 @@ export function validateListWorkOrdersQuery(
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
   return {
-    search,
     sort: { field: parsed.sortField, direction: parsed.sort },
     ...(hasAnyFilter ? { filters: filterRecord } : {}),
     page: parsed.page,

@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { PaginateControls } from "@/components/features/paginate"
+import { DebouncedSearchControl } from "@/components/features/search"
 import {
   ListToolbar,
   ListToolbarBottomRow,
@@ -34,7 +35,6 @@ import { ScheduledForFilterChip } from "./toolbar-controls/scheduled-for-filter-
 import { SortPickerChip, type SortPickerField } from "./toolbar-controls/sort-picker-chip"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
-import { WorkOrdersListSearch } from "./toolbar-controls/work-orders-list-search"
 import { WorkOrdersClearAll } from "./toolbar-controls/sub-controls/work-orders-clear-all"
 import { WorkOrdersRowCount } from "./toolbar-controls/sub-controls/work-orders-row-count"
 
@@ -80,7 +80,6 @@ export default function WorkOrdersClient({
   const {
     rows,
     total,
-    searchQuery,
     filters,
     sort,
     page,
@@ -90,7 +89,6 @@ export default function WorkOrdersClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    onSearchQueryChange,
     onSortChange,
     onFilterChange,
     onClearAllFilters,
@@ -119,6 +117,12 @@ export default function WorkOrdersClient({
   const selectedJobTypeId = filters.jobTypeId?.[0] ?? null
   const selectedScheduledStart = filters.scheduledForStart?.[0] ?? null
   const selectedScheduledEnd = filters.scheduledForEnd?.[0] ?? null
+
+  // --- Per-column identity search bars ---
+  const unitTypeValue = filters.unitType?.[0] ?? ""
+  const unitNumberValue = filters.unitNumber?.[0] ?? ""
+  const workOrderNumberValue = filters.workOrderNumber?.[0] ?? ""
+  const descriptionValue = filters.description?.[0] ?? ""
 
   // --- Selected-label snapshots (initial-seed + fallback to current options) ---
   const mgmtCoLabel = useMemo(() => {
@@ -157,6 +161,17 @@ export default function WorkOrdersClient({
   // --- Cascade-clear handlers ---
   // Mgmt Co change → clear Property + Template (property-scoped chain).
   // Property change → clear Template (template is property-scoped).
+
+  const handleTextFilterChange = useCallback(
+    (
+      key: "unitType" | "unitNumber" | "workOrderNumber" | "description",
+      next: string,
+    ) => {
+      const trimmed = next.trim()
+      onFilterChange(key, trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
 
   const handleMgmtCoChange = useCallback(
     (id: string | null) => {
@@ -205,7 +220,14 @@ export default function WorkOrdersClient({
   )
 
   const hasActiveFilters = useMemo(() => {
-    if (searchQuery.trim().length > 0) return true
+    if (
+      unitTypeValue ||
+      unitNumberValue ||
+      workOrderNumberValue ||
+      descriptionValue
+    ) {
+      return true
+    }
     if (
       selectedMgmtCoId ||
       selectedPropertyId ||
@@ -219,7 +241,10 @@ export default function WorkOrdersClient({
     }
     return false
   }, [
-    searchQuery,
+    unitTypeValue,
+    unitNumberValue,
+    workOrderNumberValue,
+    descriptionValue,
     selectedMgmtCoId,
     selectedPropertyId,
     selectedTemplateId,
@@ -231,8 +256,7 @@ export default function WorkOrdersClient({
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
-    onSearchQueryChange("")
-  }, [onClearAllFilters, onSearchQueryChange])
+  }, [onClearAllFilters])
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -261,12 +285,34 @@ export default function WorkOrdersClient({
           {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
               the encased card's top edge (rounded-tl-none seam). */}
           <ListToolbar className="pt-0" showDivider={false}>
-            {/* Search + (Clear all | row count) — encased card attached to the tab above */}
+            {/* Per-column search bars + (Clear all | row count) — encased card
+                attached to the tab above. Unit type / Unit # / WO # / Description
+                each filter their own column (case-insensitive ILIKE). */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <WorkOrdersListSearch
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
+                <DebouncedSearchControl
+                  value={unitTypeValue}
+                  onCommit={(next) => handleTextFilterChange("unitType", next)}
+                  placeholder="Unit type"
+                  ariaLabel="Search work orders by unit type"
+                />
+                <DebouncedSearchControl
+                  value={unitNumberValue}
+                  onCommit={(next) => handleTextFilterChange("unitNumber", next)}
+                  placeholder="Unit #"
+                  ariaLabel="Search work orders by unit number"
+                />
+                <DebouncedSearchControl
+                  value={workOrderNumberValue}
+                  onCommit={(next) => handleTextFilterChange("workOrderNumber", next)}
+                  placeholder="WO #"
+                  ariaLabel="Search work orders by work order number"
+                />
+                <DebouncedSearchControl
+                  value={descriptionValue}
+                  onCommit={(next) => handleTextFilterChange("description", next)}
+                  placeholder="Description"
+                  ariaLabel="Search work orders by description"
                 />
                 <ListToolbarBottomRow
                   left={<WorkOrdersClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}

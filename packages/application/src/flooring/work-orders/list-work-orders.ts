@@ -16,6 +16,13 @@ export type WorkOrdersListFilters = {
   templateId?: string[]
   warehouseId?: string[]
   jobTypeId?: string[]
+  // Per-column identity search — the list-view search bars. Each is a free-text
+  // ILIKE against its own column; single-element arrays matching the multi-value
+  // filter contract, AND-ed together to narrow.
+  unitType?: string[]
+  unitNumber?: string[]
+  workOrderNumber?: string[]
+  description?: string[]
   // Inclusive `scheduledFor` lower / upper bound as `YYYY-MM-DD` (single-element
   // arrays). From-only ⇒ on/after; To-only ⇒ on/before; same date ⇒ that day.
   scheduledForStart?: string[]
@@ -30,7 +37,6 @@ export async function listWorkOrdersUseCase(
   const requestedPageSize = Math.floor(input.pageSize || DEFAULT_PAGE_SIZE)
   const pageSize = Math.max(1, Math.min(MAX_PAGE_SIZE, requestedPageSize))
 
-  const search = input.search?.trim() || undefined
   const sort = input.sort
     ? {
         field: input.sort.field,
@@ -42,12 +48,11 @@ export async function listWorkOrdersUseCase(
 
   const [rows, total] = await Promise.all([
     listWorkOrders({
-      searchQuery: search,
       sort,
       filters: input.filters,
       pagination: { skip: (page - 1) * pageSize, take: pageSize },
     }),
-    countWorkOrders({ searchQuery: search, filters: input.filters }),
+    countWorkOrders({ filters: input.filters }),
   ])
 
   return { rows, total }

@@ -37,6 +37,16 @@ export type WorkOrdersListFilterMap = {
   warehouseId?: string[]
   jobTypeId?: string[]
   /**
+   * Per-column identity search — the list-view search bars. Each is an
+   * independent case-insensitive substring (ILIKE) match against its own
+   * column; single-element arrays matching the multi-value filter contract,
+   * and multiple set fields AND together to narrow.
+   */
+  unitType?: string[]
+  unitNumber?: string[]
+  workOrderNumber?: string[]
+  description?: string[]
+  /**
    * Inclusive `scheduledFor` lower / upper bound as `YYYY-MM-DD` (single-element
    * array, matching the multi-value filter contract). Compared UTC-pinned to
    * match how the date-only `@db.Date` column is stored and displayed.
@@ -47,27 +57,32 @@ export type WorkOrdersListFilterMap = {
 }
 
 export type WorkOrdersListArgs = {
-  searchQuery?: string
   sort?: WorkOrdersListSort
   filters?: WorkOrdersListFilterMap
   pagination?: { skip: number; take: number }
 }
 
 function buildWorkOrdersWhere(
-  searchQuery: string | undefined,
   filters: WorkOrdersListFilterMap | undefined,
 ): Prisma.FlooringWorkOrderWhereInput | undefined {
   const andClauses: Prisma.FlooringWorkOrderWhereInput[] = []
 
-  if (searchQuery) {
-    andClauses.push({
-      OR: [
-        { unitType: { contains: searchQuery, mode: "insensitive" } },
-        { description: { contains: searchQuery, mode: "insensitive" } },
-        { property: { name: { contains: searchQuery, mode: "insensitive" } } },
-        { jobType: { name: { contains: searchQuery, mode: "insensitive" } } },
-      ],
-    })
+  // Per-column identity search — one independent ILIKE per filled search bar.
+  const unitType = filters?.unitType?.[0]
+  if (unitType) {
+    andClauses.push({ unitType: { contains: unitType, mode: "insensitive" } })
+  }
+  const unitNumber = filters?.unitNumber?.[0]
+  if (unitNumber) {
+    andClauses.push({ unitNumber: { contains: unitNumber, mode: "insensitive" } })
+  }
+  const workOrderNumber = filters?.workOrderNumber?.[0]
+  if (workOrderNumber) {
+    andClauses.push({ workOrderNumber: { contains: workOrderNumber, mode: "insensitive" } })
+  }
+  const description = filters?.description?.[0]
+  if (description) {
+    andClauses.push({ description: { contains: description, mode: "insensitive" } })
   }
 
   if (filters?.managementCompanyId?.length) {
@@ -161,7 +176,7 @@ export async function listWorkOrders(
   client: WorkOrdersDbClient = db,
 ): Promise<WorkOrderListRow[]> {
   const workOrders = await client.flooringWorkOrder.findMany({
-    where: buildWorkOrdersWhere(args.searchQuery, args.filters),
+    where: buildWorkOrdersWhere(args.filters),
     orderBy: buildWorkOrdersOrderBy(args.sort),
     select: workOrderListSelect,
     ...(args.pagination ?? {}),
@@ -276,11 +291,11 @@ export async function getWorkOrderDetailById(
 }
 
 export async function countWorkOrders(
-  args: { searchQuery?: string; filters?: WorkOrdersListFilterMap },
+  args: { filters?: WorkOrdersListFilterMap },
   client: WorkOrdersDbClient = db,
 ): Promise<number> {
   return client.flooringWorkOrder.count({
-    where: buildWorkOrdersWhere(args.searchQuery, args.filters),
+    where: buildWorkOrdersWhere(args.filters),
   })
 }
 
