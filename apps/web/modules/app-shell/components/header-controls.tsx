@@ -2,7 +2,6 @@
 
 import NavDrawerButton from "./nav-drawer-button"
 import UserMenu from "./user-menu"
-import { InventoryHubButton } from "./inventory-hub-button"
 import { TemplateSyncButton } from "@/modules/template-sync/components/template-sync-button"
 import { FLOORING_NAV_ITEMS } from "@/modules/app-shell/navigation/definitions"
 
@@ -21,7 +20,6 @@ export default function HeaderControls({ email, role }: HeaderControlsProps) {
         <div id="record-back-button-slot" className="contents" />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
-        <InventoryHubButton />
         <TemplateSyncButton />
         <UserMenu email={email} role={role} />
       </div>
