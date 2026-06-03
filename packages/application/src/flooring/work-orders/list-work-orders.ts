@@ -23,6 +23,8 @@ export type WorkOrdersListFilters = {
   unitNumber?: string[]
   workOrderNumber?: string[]
   description?: string[]
+  // Vacancy enum filter — single-element array of `VACANT` / `OCCUPIED`.
+  vacancy?: string[]
   // Inclusive `scheduledFor` lower / upper bound as `YYYY-MM-DD` (single-element
   // arrays). From-only ⇒ on/after; To-only ⇒ on/before; same date ⇒ that day.
   scheduledForStart?: string[]

@@ -34,6 +34,7 @@ import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { ScheduledForFilterChip } from "./toolbar-controls/scheduled-for-filter-chip"
 import { SortPickerChip, type SortPickerField } from "./toolbar-controls/sort-picker-chip"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
+import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 import { WorkOrdersClearAll } from "./toolbar-controls/sub-controls/work-orders-clear-all"
 import { WorkOrdersRowCount } from "./toolbar-controls/sub-controls/work-orders-row-count"
@@ -115,6 +116,7 @@ export default function WorkOrdersClient({
   const selectedTemplateId = filters.templateId?.[0] ?? null
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
   const selectedJobTypeId = filters.jobTypeId?.[0] ?? null
+  const selectedVacancy = filters.vacancy?.[0] ?? null
   const selectedScheduledStart = filters.scheduledForStart?.[0] ?? null
   const selectedScheduledEnd = filters.scheduledForEnd?.[0] ?? null
 
@@ -211,6 +213,13 @@ export default function WorkOrdersClient({
     [onFilterChange],
   )
 
+  const handleVacancyChange = useCallback(
+    (value: string | null) => {
+      onFilterChange("vacancy", value ? [value] : [])
+    },
+    [onFilterChange],
+  )
+
   const handleScheduledForChange = useCallback(
     (start: string | null, end: string | null) => {
       onFilterChange("scheduledForStart", start ? [start] : [])
@@ -234,6 +243,7 @@ export default function WorkOrdersClient({
       selectedTemplateId ||
       selectedWarehouseId ||
       selectedJobTypeId ||
+      selectedVacancy ||
       selectedScheduledStart ||
       selectedScheduledEnd
     ) {
@@ -250,6 +260,7 @@ export default function WorkOrdersClient({
     selectedTemplateId,
     selectedWarehouseId,
     selectedJobTypeId,
+    selectedVacancy,
     selectedScheduledStart,
     selectedScheduledEnd,
   ])
@@ -351,8 +362,9 @@ export default function WorkOrdersClient({
               </div>
             </ListToolbarCell>
 
-            {/* One encased card: Warehouse + Job Type stacked together. Both are
-                independent, non-cascading single-selects. */}
+            {/* One encased card: Warehouse + Job Type + Vacancy stacked together.
+                All independent, non-cascading single-selects. Vacancy is a static
+                two-option enum dropdown (off when nothing is selected). */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <WarehouseFilterChip
@@ -366,6 +378,10 @@ export default function WorkOrdersClient({
                   selectedLabel={jobTypeLabel}
                   onChange={handleJobTypeChange}
                   initialOptions={initialJobTypeOptions}
+                />
+                <VacancyFilterChip
+                  value={selectedVacancy}
+                  onChange={handleVacancyChange}
                 />
               </div>
             </ListToolbarCell>

@@ -269,6 +269,10 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const TEXT_FILTER_KEYS = ["unitType", "unitNumber", "workOrderNumber", "description"] as const
 type TextFilterKey = (typeof TEXT_FILTER_KEYS)[number]
 
+// Vacancy enum filter — single-select, carried as a one-element array. Invalid
+// values are dropped (filter off) rather than 400'd, matching optionalVacancy.
+const VACANCY_VALUES = ["VACANT", "OCCUPIED"] as const
+
 const listWorkOrdersQuerySchema = z.object({
   sort: z.enum(["asc", "desc"]).default("desc"),
   sortField: z
@@ -303,6 +307,7 @@ export function validateListWorkOrdersQuery(
     ...ID_FILTER_KEYS,
     ...DATE_FILTER_KEYS,
     ...TEXT_FILTER_KEYS,
+    "vacancy",
   ])
   searchParams.forEach((value, key) => {
     if (reservedMultiValueKeys.has(key)) return
@@ -328,6 +333,10 @@ export function validateListWorkOrdersQuery(
   for (const key of TEXT_FILTER_KEYS) {
     const value = readMultiValue(searchParams, key)[0]
     if (value) filterRecord[key as TextFilterKey] = [value]
+  }
+  const vacancy = readMultiValue(searchParams, "vacancy")[0]
+  if (vacancy && (VACANCY_VALUES as readonly string[]).includes(vacancy)) {
+    filterRecord.vacancy = [vacancy]
   }
   for (const key of DATE_FILTER_KEYS) {
     const value = readMultiValue(searchParams, key)[0]

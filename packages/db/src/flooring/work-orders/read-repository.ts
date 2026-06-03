@@ -1,5 +1,5 @@
 import { db } from "../../client.js"
-import type { Prisma } from "../../generated/prisma/client.js"
+import type { FlooringVacancyStatus, Prisma } from "../../generated/prisma/client.js"
 import {
   normalizeWorkOrder,
   normalizeWorkOrderListRow,
@@ -46,6 +46,8 @@ export type WorkOrdersListFilterMap = {
   unitNumber?: string[]
   workOrderNumber?: string[]
   description?: string[]
+  // Vacancy enum filter — single-element array of `VACANT` / `OCCUPIED`.
+  vacancy?: string[]
   /**
    * Inclusive `scheduledFor` lower / upper bound as `YYYY-MM-DD` (single-element
    * array, matching the multi-value filter contract). Compared UTC-pinned to
@@ -99,6 +101,9 @@ function buildWorkOrdersWhere(
   }
   if (filters?.jobTypeId?.length) {
     andClauses.push({ jobTypeId: { in: filters.jobTypeId } })
+  }
+  if (filters?.vacancy?.length) {
+    andClauses.push({ vacancy: { in: filters.vacancy as FlooringVacancyStatus[] } })
   }
   if (filters?.statusId?.length) {
     andClauses.push({ statusId: { in: filters.statusId } })
