@@ -24,8 +24,7 @@ import {
   WO_CREATE_PICKER_CONFIG,
   type AdjustmentPanelPatch,
 } from "@/modules/adjustments"
-import { useInventoryHubSidePanel } from "@/modules/inventory/controllers/inventory-hub-side-panel"
-import { InventoryHubSidePanel } from "@/modules/inventory/components/side-panel/hub"
+import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
 import { WorkOrderAdjustmentRow } from "./work-order-adjustment-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import { MaterialItemRemoveButton } from "./row-controls"
@@ -62,15 +61,11 @@ export function WorkOrderMaterialItemsSection({
     publishWorkOrder,
   })
 
-  // Inventory hub panel for the "Hub view" jump on the adjustment edit
-  // panel. No initial inventory — the panel opens on demand for whatever
-  // adjustment the user clicked; the hub fetches `InventoryDetail` via its
-  // own query path. publishAdjustmentPatch is shared so a hub-driven adjustment
-  // mutation also refreshes the WO-side snapshot through this panel.
-  const inventoryHubPanel = useInventoryHubSidePanel({
-    initialInventory: null,
-    publishAdjustmentPatch,
-  })
+  // Editing an adjustment is hub-driven. The hub instance is the page-scoped
+  // one mounted by `InventoryHubProvider` in the WO record panel (wired with
+  // this WO's `publishAdjustmentPatch`), shared via context — so there is one
+  // hub mount per page, not a second instance hand-wired here.
+  const { openForAdjustmentEdit } = useInventoryHub()
 
   // Route a successful adjustment create from the WO panel directly into
   // the inventory-hub adjustment edit panel — same surface the WO edit
@@ -83,7 +78,7 @@ export function WorkOrderMaterialItemsSection({
       // (inventory-hub) variant, which never routes through this section.
       if (!workOrderItemId) return
       const item = section.items.find((i) => i.id === workOrderItemId)
-      inventoryHubPanel.openForAdjustmentEdit({
+      openForAdjustmentEdit({
         ...adjustment,
         workOrderItemId,
         workOrderNumber: workOrder.workOrderNumber,
@@ -92,7 +87,7 @@ export function WorkOrderMaterialItemsSection({
       })
     },
     [
-      inventoryHubPanel,
+      openForAdjustmentEdit,
       section.items,
       workOrder.workOrderNumber,
       workOrder.warehouseName,
@@ -115,12 +110,12 @@ export function WorkOrderMaterialItemsSection({
   const handleOpenEdit = useCallback(
     (_workOrderItemId: string, adjustment: EnrichedInventoryAdjustmentRow) => {
       // Editing is hub-driven (mirrors the inventory record view's row
-      // click) — opens the InventoryHubSidePanel directly at
+      // click) — opens the shared inventory hub directly at
       // section-edit-adjustment mode. The WO-side read is now enriched, so the
       // row already carries WO/WOMI/warehouse labels for the hub's header.
-      inventoryHubPanel.openForAdjustmentEdit(adjustment)
+      openForAdjustmentEdit(adjustment)
     },
-    [inventoryHubPanel],
+    [openForAdjustmentEdit],
   )
 
   const handleCreateNew = useCallback(
@@ -329,7 +324,6 @@ export function WorkOrderMaterialItemsSection({
       />
 
       <AdjustmentEditPanel controller={adjustmentPanel} />
-      <InventoryHubSidePanel controller={inventoryHubPanel} />
     </div>
   )
 }

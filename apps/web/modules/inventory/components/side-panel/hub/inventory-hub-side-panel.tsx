@@ -7,6 +7,7 @@ import {
   HubSidePanelShell,
 } from "@/components/hub-side-panel"
 import { AdjustmentPickerTakeoverBody } from "@/modules/adjustments"
+import { SidePanelRefreshButton } from "@/engines/side-panel"
 import type { InventoryHubSidePanelController } from "@/modules/inventory/controllers/inventory-hub-side-panel"
 import { InventoryHubAdjustmentCreateSection } from "./inventory-hub-adjustment-create-section"
 import { InventoryHubAdjustmentEditSection } from "./inventory-hub-adjustment-edit-section"
@@ -61,6 +62,8 @@ export function InventoryHubSidePanel({
     enterDuplicateFromView,
     enterAdjustmentCreate,
     isSaving,
+    refreshAll,
+    isRefreshing,
   } = controller
 
   const { title, topToolbar, isAdjustmentPickerActive } = useInventoryHubChrome(controller, {
@@ -103,6 +106,11 @@ export function InventoryHubSidePanel({
       topToolbar={topToolbar}
       titleEnd={
         <>
+          <SidePanelRefreshButton
+            onClick={refreshAll}
+            isRefreshing={isRefreshing}
+            disabled={isSaving}
+          />
           {showHubViewButton ? <HubSidePanelHubViewButton onClick={exitToView} /> : null}
           {showAddAdjustmentButton ? (
             <HubSidePanelAddButton

@@ -11,6 +11,7 @@ import type {
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
+import { InventoryHubProvider } from "@/modules/app-shell/components/inventory-hub-provider"
 import type { AdjustmentPanelPatch } from "@/modules/adjustments"
 import type { PropertyHubSaveResult } from "@/modules/properties/controllers/property-hub-side-panel"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
@@ -130,7 +131,7 @@ export function WorkOrderRecordPanel({
   }, [materialItems, controller.record])
 
   return (
-    <>
+    <InventoryHubProvider publishAdjustmentPatch={publishAdjustmentPatch}>
       <RecordMultiSectionPanel
         page={page}
         sections={[
@@ -217,6 +218,6 @@ export function WorkOrderRecordPanel({
         onClose={page.closePage}
         onDelete={controller.deleteRecord}
       />
-    </>
+    </InventoryHubProvider>
   )
 }

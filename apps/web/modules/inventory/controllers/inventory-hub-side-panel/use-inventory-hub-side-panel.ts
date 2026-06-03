@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import type { InventoryDetail } from "@builders/domain"
+import { useSidePanelFreshness } from "@/engines/side-panel"
 import {
   useAdjustmentEditPanel,
   EDIT_PICKER_CONFIG,
@@ -23,6 +23,9 @@ import {
   normalizeRecordSectionError,
   type RecordSectionError,
 } from "@/types/record/section-error"
+
+// Stable empty children list for the freshness config when nothing is open.
+const EMPTY_CHILD_KEYS: ReadonlyArray<readonly unknown[]> = []
 
 export type UseInventoryHubSidePanelOptions = {
   /**
@@ -114,30 +117,30 @@ export function useInventoryHubSidePanel({
   const isLoadingInventory = needsFetch && detailQuery.isPending
   const isErrorInventory = needsFetch && detailQuery.isError
 
-  const queryClient = useQueryClient()
-  const invalidateInventoryDetail = useCallback(
-    (id: string) => {
-      void queryClient.invalidateQueries({
-        queryKey: [...INVENTORY_DETAIL_QUERY_KEY, id],
-      })
-    },
-    [queryClient],
-  )
+  // Engine-owned freshness for the open record. Registers the two queries this
+  // panel renders — the inventory detail card + the in-hub adjustments list —
+  // so every mutation and every flip refreshes both through one mechanism. This
+  // is what closes the "finalize left the adjustments row stale" class of bug:
+  // no individual mutation has to remember which keys to invalidate.
+  const freshness = useSidePanelFreshness({
+    detail: openId !== null ? [...INVENTORY_DETAIL_QUERY_KEY, openId] : null,
+    children:
+      openId !== null ? [[...INVENTORY_ADJUSTMENTS_QUERY_KEY, openId]] : EMPTY_CHILD_KEYS,
+  })
 
   // The embedded adjustment panel's mutations notify success via `publish`.
-  // A `delete` with `reason: "removed"` means the row is gone and the panel
-  // has already cleared its open spec — pop back to view so the hub doesn't
-  // sit on an empty adjustment edit body. A `reason: "relink-move"` delete is
-  // only the bucket-move half of a relink (the WO-side snapshot cares; the
-  // inv-side keeps the row since its `inventoryId` is unchanged), so it must
-  // NOT pop — otherwise editing the work-order link bounces the user out of
-  // the still-open panel. Also invalidate the inventory detail query so the
-  // cells card reflects post-mutation totals when the hub is fetch-backed
-  // (record-view callers already update via patchRecord; harmless there).
+  // EVERY patch refreshes the registered queries (detail card totals + the
+  // in-hub adjustments list) via the engine, so finalize / update / void /
+  // create all leave both surfaces live. A `delete` with `reason: "removed"`
+  // additionally means the row is gone and the panel has cleared its open spec —
+  // pop back to view so the hub doesn't sit on an empty adjustment edit body. A
+  // `reason: "relink-move"` delete is only the bucket-move half of a relink (the
+  // WO-side snapshot cares; the inv-side keeps the row since its `inventoryId` is
+  // unchanged), so it must NOT pop.
   const publishWithModePop = useCallback(
     (patch: AdjustmentPanelPatch) => {
       publishAdjustmentPatch(patch)
-      if (openId !== null) invalidateInventoryDetail(openId)
+      freshness.invalidateRegistered()
       if (patch.kind === "delete" && patch.reason === "removed") {
         setMode((current) =>
           current.kind === "section-edit-adjustment"
@@ -147,7 +150,7 @@ export function useInventoryHubSidePanel({
         setError(null)
       }
     },
-    [publishAdjustmentPatch, openId, invalidateInventoryDetail],
+    [publishAdjustmentPatch, freshness],
   )
 
   const contextInventoryId: string | null = useMemo(() => {
@@ -165,32 +168,40 @@ export function useInventoryHubSidePanel({
 
   const isInventoryEditActive = mode.kind === "section-edit-inventory"
 
-  // After a manual adjustment is created, refresh the hub adjustments list so
-  // the new row appears, then pop back to the Adjustments tab. The mutation
-  // closes the panel's open spec; the hub owns the mode transition.
-  const handleManualAdjustmentCreated = useCallback(() => {
-    if (openId !== null) {
-      void queryClient.invalidateQueries({
-        queryKey: [...INVENTORY_ADJUSTMENTS_QUERY_KEY, openId],
-      })
-      setViewTab("adjustments")
-      setMode({ kind: "view", inventoryId: openId })
-    }
-    setError(null)
-  }, [openId, queryClient])
-
   // ===== Embedded adjustment edit panel controller =====
   // Reuses the standalone panel's controller for all adjustment state +
   // mutations. The hub renders the fields inline inside the hub shell
   // instead of mounting the standalone shell. canCreate is true — the
   // inventory hub hosts the manual (non-WO) INCREASE/DEDUCTION create flow;
   // WO-linked cuts are still created from the work-orders record view.
+  //
+  // No `onCreated` override: after a create the panel flips to edit on the new
+  // row (the mutation's default) and STAYS there — uniform with finalize /
+  // update. The hub mode follows that flip via the reconciliation below. The
+  // new row's freshness is handled by `publishWithModePop` (create publishes an
+  // upsert, which invalidates the registered queries).
   const adjustmentPanel = useAdjustmentEditPanel({
     scope: { kind: "inventory", inventoryId: openId ?? "" },
     canCreate: true,
     publish: publishWithModePop,
-    onCreated: handleManualAdjustmentCreated,
   })
+
+  // Follow the embedded panel's create→edit flip: when a hub create succeeds the
+  // panel's open spec becomes `edit` while the hub is still in
+  // `section-create-adjustment`. Align the hub mode so the body dispatch renders
+  // the edit section on the now-created row. Conditional setState-during-render
+  // (the condition is false after the flip, so it cannot loop) — mirrors the
+  // panel's own `trackedOpen` reconciliation.
+  if (
+    mode.kind === "section-create-adjustment" &&
+    adjustmentPanel.open?.mode === "edit"
+  ) {
+    setMode({
+      kind: "section-edit-adjustment",
+      inventoryId: mode.inventoryId,
+      adjustmentId: adjustmentPanel.open.adjustment.id,
+    })
+  }
 
   // ===== Section-state slices =====
   const inventoryEdit = useHubInventoryEdit({
@@ -264,8 +275,17 @@ export function useInventoryHubSidePanel({
     [initialInventory?.id, resetAll],
   )
 
-  const goToInventoryView = useCallback(() => setViewTab("inventory"), [])
-  const goToAdjustmentsView = useCallback(() => setViewTab("adjustments"), [])
+  // Flips refresh the surface being shown: the observer stays mounted across a
+  // tab switch, so `refetchOnMount` never fires — invalidate explicitly so a
+  // flip always reflects concurrent edits.
+  const goToInventoryView = useCallback(() => {
+    setViewTab("inventory")
+    freshness.invalidateRegistered()
+  }, [freshness])
+  const goToAdjustmentsView = useCallback(() => {
+    setViewTab("adjustments")
+    freshness.invalidateRegistered()
+  }, [freshness])
 
   // External opener that lands directly in adjustment edit. Accepts the
   // broader `AdjustmentPanelRow` shape so both call sites can hand off
@@ -297,15 +317,20 @@ export function useInventoryHubSidePanel({
   const close = useCallback(() => {
     if (isSaving) return
     setMode({ kind: "closed" })
+    // Drop the open id so a later reopen of the SAME record remounts the
+    // detail + adjustments observers — `FRESH_ON_OPEN` then refetches, giving
+    // fresh-on-open even in the app-wide shared mount (where the panel never
+    // unmounts on its own). Seeded callers re-seed via `openForView()`.
+    setOpenId(initialInventory?.id ?? null)
     resetAll()
-  }, [isSaving, resetAll])
+  }, [isSaving, resetAll, initialInventory?.id])
 
   // ===== Section transitions =====
   const {
     enterInventoryEditFromContext,
     enterAdjustmentEditFromContext,
     enterAdjustmentCreate,
-    exitToView,
+    exitToView: exitToViewBase,
   } = useHubSectionTransitions({
     contextInventoryId,
     inventory,
@@ -316,6 +341,14 @@ export function useInventoryHubSidePanel({
     adjustmentPanel,
     resetAll,
   })
+
+  // Backing out of a section to the view list is a flip — refresh the registered
+  // queries so the list + cells card reflect the edit just made (and any
+  // concurrent edits) without a remount.
+  const exitToView = useCallback(() => {
+    exitToViewBase()
+    freshness.invalidateRegistered()
+  }, [exitToViewBase, freshness])
 
   // Enter the duplicate flow from view mode. The draft opens blank — nothing
   // is pre-filled from the source; the source stays visible via the red
@@ -336,7 +369,7 @@ export function useInventoryHubSidePanel({
         onSuccess: (detail) => {
           setError(null)
           onInventoryUpdated?.(detail)
-          invalidateInventoryDetail(detail.id)
+          freshness.invalidateRegistered()
           // Stay open in section-edit-inventory; the slice already
           // applied the server snapshot to its form + baseline.
         },
@@ -369,7 +402,7 @@ export function useInventoryHubSidePanel({
     inventoryDuplicate,
     adjustmentPanel,
     onInventoryUpdated,
-    invalidateInventoryDetail,
+    freshness,
     openForView,
     setErrorMessage,
   ])
@@ -395,6 +428,10 @@ export function useInventoryHubSidePanel({
     viewTab,
     goToInventoryView,
     goToAdjustmentsView,
+
+    // ===== Engine freshness (refresh button) =====
+    refreshAll: freshness.refreshAll,
+    isRefreshing: freshness.isRefreshing,
 
     // ===== Openers =====
     openForView,
