@@ -422,11 +422,16 @@ export type InventoryOptionsSearchArgs = {
   /** Free-text location filter chip — `ILIKE %value%` on the location column. */
   location?: string
   /**
-   * Free-text identity search — ILIKEs across `inventoryNumber`,
-   * `rollNumber`, `dyeLot`, `note`. Location is intentionally excluded; the
-   * separate `location` arg above owns that concern.
+   * Per-field identity search — one independent `ILIKE %value%` per filled bar
+   * (`inventory_number` / `rollNumber` / `dyeLot` / `note`), AND'd together so
+   * filling more than one narrows the result set. Mirrors the list-view read
+   * path's `buildListViewWhere` semantics. Location is intentionally excluded;
+   * the separate `location` arg above owns that concern.
    */
-  search?: string
+  invNumber?: string
+  rollNumber?: string
+  dyeLot?: string
+  note?: string
   /** Page offset for infinite scroll. Defaults to 0. */
   skip?: number
   take: number
@@ -440,6 +445,10 @@ export type InventoryOptionsSearchResult = {
 type InventoryOptionRawRow = {
   id: string
   inventoryItem: string
+  inventory_number: string | null
+  rollNumber: string | null
+  dyeLot: string | null
+  note: string | null
   warehouseId: string
   location: string | null
   categorySlug: string
@@ -453,8 +462,9 @@ type InventoryOptionRawRow = {
 /**
  * Picker / options search for inventory rows. Filters are AND'd: warehouse +
  * archived=false + computed-balance>0 (`startingStock > netDeducted`) +
- * (optional) product + (optional) location text contains, then identity-OR
- * across `inventoryNumber`, `rollNumber`, `dyeLot`, `note`. Balance + coverage
+ * (optional) product + (optional) location text contains, then per-field
+ * identity ILIKEs across `inventory_number`, `rollNumber`, `dyeLot`, `note`
+ * (each independent, AND'd). Balance + coverage
  * are stamped via the same pure helpers used by the row normalizer (single
  * source of truth for the math) — coverage is null for non-coverage categories.
  * Results are ordered `inventoryNumberInt ASC` (a flat ascending
@@ -482,12 +492,23 @@ export async function searchInventoryOptions(
   if (locationFilter.length > 0) {
     conditions.push(Prisma.sql`"location" ILIKE ${`%${locationFilter}%`}`)
   }
-  const trimmed = args.search?.trim() ?? ""
-  if (trimmed.length > 0) {
-    const pattern = `%${trimmed}%`
-    conditions.push(
-      Prisma.sql`("inventory_number" ILIKE ${pattern} OR "rollNumber" ILIKE ${pattern} OR "dyeLot" ILIKE ${pattern} OR "note" ILIKE ${pattern})`,
-    )
+  // Per-field identity search — one independent ILIKE per filled bar, AND'd via
+  // the shared `conditions` join below (mirrors `buildListViewWhere`).
+  const invNumber = args.invNumber?.trim() ?? ""
+  if (invNumber.length > 0) {
+    conditions.push(Prisma.sql`"inventory_number" ILIKE ${`%${invNumber}%`}`)
+  }
+  const rollNumber = args.rollNumber?.trim() ?? ""
+  if (rollNumber.length > 0) {
+    conditions.push(Prisma.sql`"rollNumber" ILIKE ${`%${rollNumber}%`}`)
+  }
+  const dyeLot = args.dyeLot?.trim() ?? ""
+  if (dyeLot.length > 0) {
+    conditions.push(Prisma.sql`"dyeLot" ILIKE ${`%${dyeLot}%`}`)
+  }
+  const note = args.note?.trim() ?? ""
+  if (note.length > 0) {
+    conditions.push(Prisma.sql`"note" ILIKE ${`%${note}%`}`)
   }
   const whereClause = Prisma.join(conditions, " AND ")
 
@@ -497,6 +518,10 @@ export async function searchInventoryOptions(
     SELECT
       "id",
       "inventoryItem",
+      "inventory_number",
+      "rollNumber",
+      "dyeLot",
+      "note",
       "warehouseId",
       "location",
       "categorySlug",
@@ -526,6 +551,10 @@ export async function searchInventoryOptions(
     return {
       id: row.id,
       inventoryItem: row.inventoryItem,
+      inventoryNumber: row.inventory_number,
+      rollNumber: row.rollNumber,
+      dyeLot: row.dyeLot,
+      note: row.note,
       warehouseId: row.warehouseId,
       location: row.location,
       stockBalance: toInventoryFixedString(balanceNum),

@@ -46,7 +46,11 @@ export const EMPTY_FORM: AdjustmentEditForm = {
 export const EMPTY_LOCAL: AdjustmentPanelLocal = {
   locationFilter: "",
   pickedWarehouseLabel: "",
-  pickedInventoryLabel: "",
+  pickedInventoryItem: "",
+  pickedInventoryNumber: "",
+  pickedInventoryRollNumber: "",
+  pickedInventoryDyeLot: "",
+  pickedInventoryNote: "",
   pickedInventoryStockUnitAbbrev: "",
   pickedWorkOrderLabel: "",
   pickedWorkOrderItemLabel: "",
@@ -74,7 +78,11 @@ export function buildEditLocal(adjustment: AdjustmentPanelRow): AdjustmentPanelL
   return {
     locationFilter: adjustment.location ?? "",
     pickedWarehouseLabel: adjustment.warehouseName ?? "",
-    pickedInventoryLabel: adjustment.inventoryItem ?? "",
+    pickedInventoryItem: adjustment.inventoryItem ?? "",
+    pickedInventoryNumber: adjustment.inventoryNumber ?? "",
+    pickedInventoryRollNumber: adjustment.rollNumber ?? "",
+    pickedInventoryDyeLot: adjustment.dyeLot ?? "",
+    pickedInventoryNote: adjustment.inventoryNote ?? "",
     pickedInventoryStockUnitAbbrev: adjustment.stockUnitAbbrev ?? "",
     pickedWorkOrderLabel: adjustment.workOrderNumber ? `#${adjustment.workOrderNumber}` : "",
     pickedWorkOrderItemLabel:
@@ -97,7 +105,11 @@ export function buildCreateLocal(seed: AdjustmentCreateSeed): AdjustmentPanelLoc
   return {
     locationFilter: seed.locationLabel ?? "",
     pickedWarehouseLabel: seed.warehouseLabel ?? "",
-    pickedInventoryLabel: seed.inventoryLabel ?? "",
+    pickedInventoryItem: seed.inventoryItem ?? "",
+    pickedInventoryNumber: seed.inventoryNumber ?? "",
+    pickedInventoryRollNumber: seed.inventoryRollNumber ?? "",
+    pickedInventoryDyeLot: seed.inventoryDyeLot ?? "",
+    pickedInventoryNote: seed.inventoryNote ?? "",
     pickedInventoryStockUnitAbbrev: seed.stockUnitAbbrev ?? "",
     pickedWorkOrderLabel: seed.workOrderLabel ?? "",
     pickedWorkOrderItemLabel: seed.materialItemLabel ?? "",

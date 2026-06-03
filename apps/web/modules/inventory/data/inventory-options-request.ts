@@ -13,22 +13,29 @@ export type InventoryOptionsRequestArgs = {
   productId?: string
   /**
    * Free-text location filter chip — server-side ILIKE on `inventory.location`.
-   * Used by the adjustment side panel inventory picker; independent from the
-   * search bar (which targets the denormalized `inventoryItem` column).
+   * Independent from the four identity search bars below.
    */
   location?: string
+  /**
+   * Per-field identity search bars — each an independent server-side ILIKE on
+   * its own column (`inventory_number` / `rollNumber` / `dyeLot` / `note`),
+   * AND'd together. Mirrors the inventory list view's column search bars.
+   */
+  invNumber?: string
+  rollNumber?: string
+  dyeLot?: string
+  note?: string
   skip?: number
   take?: number
 }
 
 /**
  * Infinite-scroll picker/list search. Returns one page (`{ items, hasMore }`);
- * the dropdown controller calls this with increasing `skip` via `pagedSearchFn`.
- * Powers both the adjustment inventory picker and the inventory-hub starting-spot
- * list (filters = warehouse + product + location).
+ * the dropdown controller calls this with increasing `skip`. Powers the
+ * adjustment inventory picker (filters = warehouse + product + location + the
+ * four identity columns).
  */
 export async function searchInventoryOptionsRequest(
-  search: string,
   signal: AbortSignal | undefined,
   args: InventoryOptionsRequestArgs,
 ): Promise<InventoryOptionsPage> {
@@ -36,7 +43,10 @@ export async function searchInventoryOptionsRequest(
   params.set("warehouseId", args.warehouseId)
   if (args.productId) params.set("productId", args.productId)
   if (args.location) params.set("location", args.location)
-  if (search) params.set("search", search)
+  if (args.invNumber) params.set("invNumber", args.invNumber)
+  if (args.rollNumber) params.set("rollNumber", args.rollNumber)
+  if (args.dyeLot) params.set("dyeLot", args.dyeLot)
+  if (args.note) params.set("note", args.note)
   if (args.skip !== undefined && args.skip > 0) params.set("skip", String(args.skip))
   params.set("take", String(args.take ?? 20))
   const url = `/api/inventory/options/search?${params.toString()}`

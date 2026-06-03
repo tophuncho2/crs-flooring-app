@@ -51,6 +51,13 @@ export type HubSidePanelPickerProps<TOption> = {
    * navigation are unchanged. Defaults to inline.
    */
   searchPortalTarget?: HTMLElement | null
+  /**
+   * Omit the built-in search input entirely. For consumers that drive the
+   * options query from their own external search controls (e.g. the adjustment
+   * inventory picker's four column bars) and would otherwise render a redundant
+   * extra box. The listbox + clear-row + load-more are unaffected.
+   */
+  hideSearchInput?: boolean
 }
 
 /**
@@ -74,6 +81,7 @@ export function HubSidePanelPicker<TOption>({
   loadingMessage = "Searching…",
   clearLabel = "Clear selection",
   searchPortalTarget,
+  hideSearchInput = false,
 }: HubSidePanelPickerProps<TOption>) {
   const listboxId = useId()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
@@ -207,7 +215,11 @@ export function HubSidePanelPicker<TOption>({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {searchPortalTarget ? createPortal(searchNode, searchPortalTarget) : searchNode}
+      {hideSearchInput
+        ? null
+        : searchPortalTarget
+          ? createPortal(searchNode, searchPortalTarget)
+          : searchNode}
 
       {hasSelection ? (
         <button

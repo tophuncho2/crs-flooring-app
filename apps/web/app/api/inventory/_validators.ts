@@ -63,7 +63,10 @@ const inventorySearchQuerySchema = z.object({
   warehouseId: z.string().min(1, "warehouseId is required"),
   productId: z.string().optional(),
   location: z.string().optional(),
-  search: z.string().optional(),
+  invNumber: z.string().optional(),
+  rollNumber: z.string().optional(),
+  dyeLot: z.string().optional(),
+  note: z.string().optional(),
   skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce
     .number()
@@ -77,7 +80,10 @@ export type ValidatedInventorySearchQuery = {
   warehouseId: string
   productId?: string
   location?: string
-  search?: string
+  invNumber?: string
+  rollNumber?: string
+  dyeLot?: string
+  note?: string
   skip: number
   take: number
 }
@@ -102,14 +108,20 @@ export function validateInventorySearchQuery(
   }
 
   const parsed = parseResult.data
-  const trimSearch = parsed.search?.trim()
   const trimProduct = parsed.productId?.trim()
   const trimLocation = parsed.location?.trim()
+  const trimInvNumber = parsed.invNumber?.trim()
+  const trimRollNumber = parsed.rollNumber?.trim()
+  const trimDyeLot = parsed.dyeLot?.trim()
+  const trimNote = parsed.note?.trim()
   return {
     warehouseId: parsed.warehouseId.trim(),
     ...(trimProduct ? { productId: trimProduct } : {}),
     ...(trimLocation ? { location: trimLocation } : {}),
-    ...(trimSearch ? { search: trimSearch } : {}),
+    ...(trimInvNumber ? { invNumber: trimInvNumber } : {}),
+    ...(trimRollNumber ? { rollNumber: trimRollNumber } : {}),
+    ...(trimDyeLot ? { dyeLot: trimDyeLot } : {}),
+    ...(trimNote ? { note: trimNote } : {}),
     skip: parsed.skip,
     take: parsed.take,
   }

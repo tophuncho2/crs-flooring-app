@@ -5,6 +5,7 @@ import type {
   AdjustmentEditPanelController,
   AdjustmentPanelPickerKind,
 } from "@/modules/adjustments/controllers/adjustment-side-panel"
+import { InventoryIdentityFields } from "./inventory-identity-fields"
 
 const LABEL_CLASS = "text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65"
 
@@ -52,6 +53,13 @@ export function AdjustmentPickerStack({
   const workOrderItemLabel = local.pickedWorkOrderItemLabel
   const materialItemResolving = Boolean(form.workOrderId) && !form.workOrderItemId
 
+  const inventoryIdentityValues = {
+    invNumber: local.pickedInventoryNumber,
+    rollNumber: local.pickedInventoryRollNumber,
+    dyeLot: local.pickedInventoryDyeLot,
+    note: local.pickedInventoryNote,
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {showWarehouse ? (
@@ -70,23 +78,35 @@ export function AdjustmentPickerStack({
       {showInventory ? (
         <label className="flex flex-col gap-1.5">
           <span className={LABEL_CLASS}>Inventory</span>
-          <HubSidePanelPickerTrigger
-            {...trigger("inventory")}
-            selectedLabel={local.pickedInventoryLabel || null}
-            placeholder="Select inventory"
-            disabled={isSaving || !invEditable || (invEditable && noWarehouse)}
-            disabledPlaceholder={
-              invEditable && noWarehouse ? "Select warehouse first" : undefined
-            }
-            ariaLabel="Open inventory picker"
-            onOpenLinked={
-              onOpenInventory && form.inventoryId
-                ? () => onOpenInventory(form.inventoryId)
-                : undefined
-            }
-            openLinkedAriaLabel="Open inventory"
-            openLinkedDisabled={isSaving}
-          />
+          {invEditable ? (
+            <InventoryIdentityFields
+              mode="editable"
+              values={inventoryIdentityValues}
+              expanded={pickerKind === "inventory"}
+              onToggle={() => controller.openPicker("inventory")}
+              disabled={isSaving || noWarehouse}
+              disabledPlaceholder={noWarehouse ? "Select warehouse first" : undefined}
+              onOpenLinked={
+                onOpenInventory && form.inventoryId
+                  ? () => onOpenInventory(form.inventoryId)
+                  : undefined
+              }
+              openLinkedAriaLabel="Open inventory"
+              openLinkedDisabled={isSaving}
+            />
+          ) : (
+            <InventoryIdentityFields
+              mode="locked"
+              values={inventoryIdentityValues}
+              onOpenLinked={
+                onOpenInventory && form.inventoryId
+                  ? () => onOpenInventory(form.inventoryId)
+                  : undefined
+              }
+              openLinkedAriaLabel="Open inventory"
+              openLinkedDisabled={isSaving}
+            />
+          )}
         </label>
       ) : null}
 

@@ -101,6 +101,13 @@ export type InventoryFormOptions = {
 export type InventoryOption = {
   id: string
   inventoryItem: string
+  // Raw identity columns — kept alongside the denormalized `inventoryItem` blob
+  // so side-panel pickers can render/seed the four-column identity (inv# / roll# /
+  // dye lot / note) instead of one string.
+  inventoryNumber: string | null
+  rollNumber: string | null
+  dyeLot: string | null
+  note: string | null
   warehouseId: string
   location: string | null
   stockBalance: string

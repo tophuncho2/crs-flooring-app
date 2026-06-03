@@ -208,7 +208,11 @@ export function useAdjustmentEditPanel({
     setForm((prev) => ({ ...prev, inventoryId: option?.id ?? "" }))
     setLocal((prev) => ({
       ...prev,
-      pickedInventoryLabel: option?.inventoryItem ?? "",
+      pickedInventoryItem: option?.inventoryItem ?? "",
+      pickedInventoryNumber: option?.inventoryNumber ?? "",
+      pickedInventoryRollNumber: option?.rollNumber ?? "",
+      pickedInventoryDyeLot: option?.dyeLot ?? "",
+      pickedInventoryNote: option?.note ?? "",
       pickedInventoryStockUnitAbbrev: option?.stockUnitAbbrev ?? "",
     }))
     setPickerKind(null)
@@ -224,7 +228,11 @@ export function useAdjustmentEditPanel({
     setLocal((prev) => ({
       ...prev,
       pickedWarehouseLabel: option?.name ?? "",
-      pickedInventoryLabel: "",
+      pickedInventoryItem: "",
+      pickedInventoryNumber: "",
+      pickedInventoryRollNumber: "",
+      pickedInventoryDyeLot: "",
+      pickedInventoryNote: "",
       pickedInventoryStockUnitAbbrev: "",
       locationFilter: "",
     }))
