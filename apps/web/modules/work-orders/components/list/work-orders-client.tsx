@@ -321,52 +321,53 @@ export default function WorkOrdersClient({
               </div>
             </ListToolbarCell>
 
-            {/* Mgmt Co → Property: property is mgmt-co-scoped (mgmt-co change
-                cascades the property + template chip clears via
-                handleMgmtCoChange). */}
+            {/* One encased card: Mgmt Co → Property → Template stacked together.
+                Property is mgmt-co-scoped and Template is property-scoped — a
+                mgmt-co change cascades the property + template chip clears
+                (handleMgmtCoChange); a property change cascades the template
+                clear (handlePropertyChange). */}
             <ListToolbarCell>
-              <MgmtCoFilterChip
-                value={selectedMgmtCoId}
-                selectedLabel={mgmtCoLabel}
-                onChange={handleMgmtCoChange}
-                initialOptions={initialMgmtCoOptions}
-              />
-              <PropertyFilterChip
-                value={selectedPropertyId}
-                selectedLabel={propertyLabel}
-                managementCompanyId={selectedMgmtCoId}
-                onChange={handlePropertyChange}
-                initialOptions={initialPropertyOptions}
-              />
+              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
+                <MgmtCoFilterChip
+                  value={selectedMgmtCoId}
+                  selectedLabel={mgmtCoLabel}
+                  onChange={handleMgmtCoChange}
+                  initialOptions={initialMgmtCoOptions}
+                />
+                <PropertyFilterChip
+                  value={selectedPropertyId}
+                  selectedLabel={propertyLabel}
+                  managementCompanyId={selectedMgmtCoId}
+                  onChange={handlePropertyChange}
+                  initialOptions={initialPropertyOptions}
+                />
+                <TemplateFilterChip
+                  value={selectedTemplateId}
+                  selectedLabel={templateLabel}
+                  propertyId={selectedPropertyId}
+                  onChange={handleTemplateChange}
+                  initialOptions={initialTemplateOptions}
+                />
+              </div>
             </ListToolbarCell>
 
-            {/* Warehouse (independent) + Template (property-scoped). Template
-                picker is disabled until a property is picked; property change
-                cascades the template chip clear via handlePropertyChange. */}
+            {/* One encased card: Warehouse + Job Type stacked together. Both are
+                independent, non-cascading single-selects. */}
             <ListToolbarCell>
-              <WarehouseFilterChip
-                value={selectedWarehouseId}
-                selectedLabel={warehouseLabel}
-                onChange={handleWarehouseChange}
-                initialOptions={initialWarehouseOptions}
-              />
-              <TemplateFilterChip
-                value={selectedTemplateId}
-                selectedLabel={templateLabel}
-                propertyId={selectedPropertyId}
-                onChange={handleTemplateChange}
-                initialOptions={initialTemplateOptions}
-              />
-            </ListToolbarCell>
-
-            {/* Job type (independent, non-cascading single-select). */}
-            <ListToolbarCell>
-              <JobTypeFilterChip
-                value={selectedJobTypeId}
-                selectedLabel={jobTypeLabel}
-                onChange={handleJobTypeChange}
-                initialOptions={initialJobTypeOptions}
-              />
+              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
+                <WarehouseFilterChip
+                  value={selectedWarehouseId}
+                  selectedLabel={warehouseLabel}
+                  onChange={handleWarehouseChange}
+                  initialOptions={initialWarehouseOptions}
+                />
+                <JobTypeFilterChip
+                  value={selectedJobTypeId}
+                  selectedLabel={jobTypeLabel}
+                  onChange={handleJobTypeChange}
+                  initialOptions={initialJobTypeOptions}
+                />
+              </div>
             </ListToolbarCell>
 
             {/* Scheduled-for date filter (top) + sort picker (under it).

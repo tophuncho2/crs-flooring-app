@@ -22,18 +22,16 @@ export function MgmtCoFilterChip({
   initialOptions,
 }: MgmtCoFilterChipProps) {
   return (
-    <div className="min-w-[12rem] max-w-[18rem]">
-      <ManagementCompanyPicker
-        value={value}
-        selectedLabel={selectedLabel}
-        onChange={onChange}
-        initialOptions={initialOptions}
-        placeholder="Mgmt co"
-        searchPlaceholder="Search companies"
-        emptyMessage="No companies match"
-        clearLabel="Clear filter"
-        ariaLabel="Filter work orders by management company"
-      />
-    </div>
+    <ManagementCompanyPicker
+      value={value}
+      selectedLabel={selectedLabel}
+      onChange={onChange}
+      initialOptions={initialOptions}
+      placeholder="Mgmt co"
+      searchPlaceholder="Search companies"
+      emptyMessage="No companies match"
+      clearLabel="Clear filter"
+      ariaLabel="Filter work orders by management company"
+    />
   )
 }

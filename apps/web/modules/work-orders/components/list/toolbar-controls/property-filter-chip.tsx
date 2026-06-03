@@ -26,19 +26,17 @@ export function PropertyFilterChip({
   initialOptions,
 }: PropertyFilterChipProps) {
   return (
-    <div className="min-w-[14rem] max-w-[20rem]">
-      <PropertyPicker
-        value={value}
-        selectedLabel={selectedLabel}
-        onChange={onChange}
-        managementCompanyId={managementCompanyId}
-        initialOptions={initialOptions}
-        placeholder="Property"
-        searchPlaceholder="Search properties"
-        emptyMessage="No properties match"
-        clearLabel="Clear filter"
-        ariaLabel="Filter work orders by property"
-      />
-    </div>
+    <PropertyPicker
+      value={value}
+      selectedLabel={selectedLabel}
+      onChange={onChange}
+      managementCompanyId={managementCompanyId}
+      initialOptions={initialOptions}
+      placeholder="Property"
+      searchPlaceholder="Search properties"
+      emptyMessage="No properties match"
+      clearLabel="Clear filter"
+      ariaLabel="Filter work orders by property"
+    />
   )
 }

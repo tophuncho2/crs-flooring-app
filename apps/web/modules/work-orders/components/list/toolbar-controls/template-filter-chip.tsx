@@ -30,20 +30,18 @@ export function TemplateFilterChip({
   initialOptions,
 }: TemplateFilterChipProps) {
   return (
-    <div className="min-w-[14rem] max-w-[20rem]">
-      <TemplatePicker
-        value={value}
-        selectedLabel={selectedLabel}
-        onChange={onChange}
-        propertyId={propertyId}
-        initialOptions={initialOptions}
-        placeholder="Template"
-        disabledPlaceholder="Pick a property first"
-        searchPlaceholder="Search templates"
-        emptyMessage="No templates match"
-        clearLabel="Clear filter"
-        ariaLabel="Filter work orders by template"
-      />
-    </div>
+    <TemplatePicker
+      value={value}
+      selectedLabel={selectedLabel}
+      onChange={onChange}
+      propertyId={propertyId}
+      initialOptions={initialOptions}
+      placeholder="Template"
+      disabledPlaceholder="Pick a property first"
+      searchPlaceholder="Search templates"
+      emptyMessage="No templates match"
+      clearLabel="Clear filter"
+      ariaLabel="Filter work orders by template"
+    />
   )
 }

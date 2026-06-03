@@ -20,18 +20,16 @@ export function JobTypeFilterChip({
   initialOptions,
 }: JobTypeFilterChipProps) {
   return (
-    <div className="min-w-[14rem] max-w-[20rem]">
-      <JobTypePicker
-        value={value}
-        selectedLabel={selectedLabel}
-        onChange={onChange}
-        initialOptions={initialOptions}
-        placeholder="Job type"
-        searchPlaceholder="Search job types"
-        emptyMessage="No job types match"
-        clearLabel="Clear filter"
-        ariaLabel="Filter work orders by job type"
-      />
-    </div>
+    <JobTypePicker
+      value={value}
+      selectedLabel={selectedLabel}
+      onChange={onChange}
+      initialOptions={initialOptions}
+      placeholder="Job type"
+      searchPlaceholder="Search job types"
+      emptyMessage="No job types match"
+      clearLabel="Clear filter"
+      ariaLabel="Filter work orders by job type"
+    />
   )
 }
