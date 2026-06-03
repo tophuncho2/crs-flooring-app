@@ -10,7 +10,7 @@ import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-bad
 import { StatusBadge } from "@/components/badges/status-badge"
 import { TextCell, ToggleCell, UnitCell } from "@/components/cells"
 import { SegmentedDropdown } from "@/components/dropdowns/segmented-dropdown/segmented-dropdown"
-import { FieldSection, FormField } from "@/components/fields"
+import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
 import { SectionCard, type SectionCardTone } from "@/components/headers"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
@@ -170,7 +170,7 @@ export function AdjustmentEditFormFields({
       }
     >
       <FieldSection gap="0.75rem">
-        <CellAt col={1} colSpan={4}>
+        <CellAt col={1} colSpan={3}>
           <FormField label="Quantity" required>
             <UnitCell
               editable={fieldsEditable}
@@ -182,14 +182,16 @@ export function AdjustmentEditFormFields({
             />
           </FormField>
         </CellAt>
-        <CellAt col={5} colSpan={4}>
+        <CellAt col={4} colSpan={2}>
           <FormField label="Coverage">
-            <UnitCell editable={false} value={coverageValue} unit={coverageUnit} ariaLabel="Coverage" />
+            <StaticFieldValue>
+              {coverageValue ? `${coverageValue} ${coverageUnit}`.trim() : EMPTY_CELL}
+            </StaticFieldValue>
           </FormField>
         </CellAt>
-        <CellAt col={1} colSpan={8}>
+        <CellAt col={6} colSpan={3}>
           <FormField label="Adjustment">
-            <span className="text-sm tabular-nums text-[var(--foreground)]/80">{transition}</span>
+            <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
           </FormField>
         </CellAt>
         <CellAt col={1} colSpan={8}>
@@ -210,16 +212,12 @@ export function AdjustmentEditFormFields({
         </CellAt>
         <CellAt col={1} colSpan={4}>
           <FormField label="Created">
-            <span className="text-sm text-[var(--foreground)]/80">
-              {formatAdjustmentTimestamp(adjustment.createdAt)}
-            </span>
+            <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.createdAt)}</StaticFieldValue>
           </FormField>
         </CellAt>
         <CellAt col={5} colSpan={4}>
           <FormField label="Updated">
-            <span className="text-sm text-[var(--foreground)]/80">
-              {formatAdjustmentTimestamp(adjustment.updatedAt)}
-            </span>
+            <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.updatedAt)}</StaticFieldValue>
           </FormField>
         </CellAt>
       </FieldSection>
