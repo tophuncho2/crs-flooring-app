@@ -539,6 +539,12 @@ model FlooringWorkOrder {
   @@index([scheduledFor])
   @@index([createdAt])
   @@index([updatedAt])
+  // GIN trigram indexes backing the list-view per-column search bars (ILIKE
+  // substring). Mirrors the FlooringInventory identity-search indexes.
+  @@index([unitType(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_unitType_trgm_idx")
+  @@index([unitNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_unitNumber_trgm_idx")
+  @@index([workOrderNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_work_order_number_trgm_idx")
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_description_trgm_idx")
   @@map("flooring_work_order")
 }
 
