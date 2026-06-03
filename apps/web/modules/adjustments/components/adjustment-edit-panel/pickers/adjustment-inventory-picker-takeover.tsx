@@ -132,7 +132,7 @@ export function AdjustmentInventoryPickerTakeover({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
-      <div className="grid shrink-0 grid-cols-2 gap-2">
+      <div className="grid shrink-0 grid-cols-4 gap-1.5">
         {SEARCH_BARS.map(({ key, placeholder, ariaLabel }) => (
           <DebouncedSearchControl
             key={key}
