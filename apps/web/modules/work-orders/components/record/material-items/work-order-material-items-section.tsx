@@ -328,10 +328,7 @@ export function WorkOrderMaterialItemsSection({
         }}
       />
 
-      <AdjustmentEditPanel
-        controller={adjustmentPanel}
-        onOpenInventory={(id) => inventoryHubPanel.openForView(id)}
-      />
+      <AdjustmentEditPanel controller={adjustmentPanel} />
       <InventoryHubSidePanel controller={inventoryHubPanel} />
     </div>
   )

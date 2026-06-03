@@ -11,8 +11,6 @@ const LABEL_CLASS = "text-xs font-medium uppercase tracking-wide text-[var(--for
 
 export type AdjustmentPickerStackProps = {
   controller: AdjustmentEditPanelController
-  /** Open the picked inventory in the inventory hub (WO surface wires this). */
-  onOpenInventory?: (inventoryId: string) => void
   /** Navigate to the linked work order (e.g. router.push to its record page). */
   onOpenWorkOrder?: (workOrderId: string) => void
 }
@@ -29,7 +27,6 @@ export type AdjustmentPickerStackProps = {
  */
 export function AdjustmentPickerStack({
   controller,
-  onOpenInventory,
   onOpenWorkOrder,
 }: AdjustmentPickerStackProps) {
   const { pickerConfig, pickerKind, isSaving, warehouseId, form, local } = controller
@@ -86,26 +83,9 @@ export function AdjustmentPickerStack({
               onToggle={() => controller.openPicker("inventory")}
               disabled={isSaving || noWarehouse}
               disabledPlaceholder={noWarehouse ? "Select warehouse first" : undefined}
-              onOpenLinked={
-                onOpenInventory && form.inventoryId
-                  ? () => onOpenInventory(form.inventoryId)
-                  : undefined
-              }
-              openLinkedAriaLabel="Open inventory"
-              openLinkedDisabled={isSaving}
             />
           ) : (
-            <InventoryIdentityFields
-              mode="locked"
-              values={inventoryIdentityValues}
-              onOpenLinked={
-                onOpenInventory && form.inventoryId
-                  ? () => onOpenInventory(form.inventoryId)
-                  : undefined
-              }
-              openLinkedAriaLabel="Open inventory"
-              openLinkedDisabled={isSaving}
-            />
+            <InventoryIdentityFields mode="locked" values={inventoryIdentityValues} />
           )}
         </label>
       ) : null}

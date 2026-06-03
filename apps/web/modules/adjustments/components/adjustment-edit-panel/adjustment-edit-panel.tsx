@@ -13,13 +13,6 @@ import { AdjustmentPickerTakeoverBody } from "./adjustment-picker-takeover-body"
 
 export type AdjustmentEditPanelProps = {
   controller: AdjustmentEditPanelController
-  /**
-   * Optional "open the picked inventory" handler. When provided, the inventory
-   * trigger renders a trailing arrow that opens the selected inventory (the
-   * work-orders host wires this to its inventory-hub `openForView`). There is
-   * no inventory record page, so the hub view is the inventory surface.
-   */
-  onOpenInventory?: (inventoryId: string) => void
 }
 
 /**
@@ -34,7 +27,7 @@ export type AdjustmentEditPanelProps = {
  * `topToolbar` beneath the Create/Discard toolbar; the body is either the
  * active picker takeover or the editable cells.
  */
-export function AdjustmentEditPanel({ controller, onOpenInventory }: AdjustmentEditPanelProps) {
+export function AdjustmentEditPanel({ controller }: AdjustmentEditPanelProps) {
   const { open, pickerKind, isDirty, isSaving, error, save, discard, close } = controller
 
   const create = open?.mode === "create" ? open : null
@@ -68,10 +61,10 @@ export function AdjustmentEditPanel({ controller, onOpenInventory }: AdjustmentE
     )
     return (
       <HubSidePanelEditLayout toolbar={actionsToolbar}>
-        <AdjustmentPickerStack controller={controller} onOpenInventory={onOpenInventory} />
+        <AdjustmentPickerStack controller={controller} />
       </HubSidePanelEditLayout>
     )
-  }, [create, isPickerActive, isDirty, isSaving, save, discard, error, controller, onOpenInventory])
+  }, [create, isPickerActive, isDirty, isSaving, save, discard, error, controller])
 
   return (
     <HubSidePanelShell open={isOpen} onClose={close} title={title} topToolbar={topToolbar}>
