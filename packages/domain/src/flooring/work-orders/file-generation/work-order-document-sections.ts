@@ -109,8 +109,13 @@ export function renderWorkOrderTopTable(
   const dateCell = input.scheduledFor
     ? escapeHtml(input.scheduledFor)
     : `<span class="empty-cell">—</span>`
-  // Address renders as one flat comma-joined line (no forced wrapping).
-  const warehouseAddressMarkup = escapeOrEmpty(buildAddressLine(input.warehouse))
+  // Warehouse name followed by its address on one flat line, dash-separated:
+  // "Main WH - 123 Main St, Springfield, IL, 62701". Either side is dropped
+  // (with its dash) when blank.
+  const warehouseParts = [input.warehouse.name, buildAddressLine(input.warehouse)].filter(Boolean)
+  const warehouseCellMarkup = warehouseParts.length
+    ? escapeHtml(warehouseParts.join(" - "))
+    : `<span class="empty-cell">—</span>`
   // Description rides as a borderless row in the top table (label under the
   // date, value extending rightward across the remaining columns).
   // Slip-only — the picking ticket omits the description entirely.
@@ -133,8 +138,7 @@ export function renderWorkOrderTopTable(
   </colgroup>
   <tbody>
     <tr>
-      <th>${dateCell}</th><th>Warehouse</th><td>${escapeOrEmpty(input.warehouse.name)}</td>
-      <th>Address</th><td colspan="2">${warehouseAddressMarkup}</td>
+      <th>${dateCell}</th><th>Warehouse</th><td colspan="4">${warehouseCellMarkup}</td>
     </tr>
     <tr>
       <th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td>
