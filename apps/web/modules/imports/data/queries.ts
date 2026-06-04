@@ -12,7 +12,7 @@ import {
   type StagedInventoryFilterRecord,
   type StagedInventoryRecord,
 } from "@builders/db"
-import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
+import { withLoaderTiming } from "@/server/telemetry/loader-timing"
 
 // All form-options for the imports record view are powered by async pickers
 // (WarehousePicker / ProductPicker / CategoryPicker / ManufacturerPicker)

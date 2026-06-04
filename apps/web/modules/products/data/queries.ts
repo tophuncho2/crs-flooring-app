@@ -7,7 +7,7 @@ import {
   type PrismaDetailPageResult,
   type ProductDetailRecord,
 } from "@builders/db"
-import { withLoaderTiming } from "@/modules/shared/engines/common/application/loader-timing"
+import { withLoaderTiming } from "@/server/telemetry/loader-timing"
 
 // ---- Create page loader ----
 

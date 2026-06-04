@@ -1,6 +1,6 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
-import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
+import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { getProductCreatePageData } from "@/modules/products/data/queries"
 import { ProductCreateClient } from "@/modules/products/components/record/product-create-client"
 

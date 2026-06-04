@@ -1,5 +1,5 @@
 import { requireSessionUser } from "@/server/auth/session"
-import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
+import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { TemplateCreateClient } from "@/modules/templates/components/record/template-create-client"
 
 export default async function TemplateCreatePage({

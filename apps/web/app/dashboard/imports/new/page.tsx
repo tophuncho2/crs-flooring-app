@@ -1,5 +1,5 @@
 import { requireSessionUser } from "@/server/auth/session"
-import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
+import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { ImportCreateClient } from "@/modules/imports/components/record/import-create-client"
 
 export default async function ImportCreatePage({

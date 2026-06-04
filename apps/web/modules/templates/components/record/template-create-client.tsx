@@ -6,7 +6,7 @@ import {
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
+import { buildRecordDetailHref } from "@/hooks/navigation"
 import { createTemplateRequest } from "@/modules/templates/data/mutations"
 import { EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"

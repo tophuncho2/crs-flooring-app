@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { requestJson } from "@/modules/shared/engines/common/transport/http"
+import { requestJson } from "@/transport/http"
 
 describe("requestJson", () => {
   const fetchMock = vi.fn()

@@ -1,6 +1,6 @@
 "use client"
 
-import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
+import { buildRecordDetailHref } from "@/hooks/navigation"
 import { createImportRequest } from "@/modules/imports/data/mutations"
 import {
   RecordCreateClientScaffold,

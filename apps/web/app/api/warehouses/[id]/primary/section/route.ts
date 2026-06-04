@@ -1,4 +1,4 @@
-import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { updateWarehouseUseCase, WarehouseExecutionError } from "@builders/application"
 import { getWarehouseById } from "@builders/db"
 import { validateWarehouseInput } from "../../../_validators"

@@ -1,6 +1,6 @@
 import { getInventoryById, getInventoryDetailById } from "@builders/db"
 import { InventoryExecutionError, updateInventoryUseCase } from "@builders/application"
-import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
 import {
   applyRoutePolicy,

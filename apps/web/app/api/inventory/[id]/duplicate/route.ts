@@ -1,6 +1,6 @@
 import { getInventoryDetailById } from "@builders/db"
 import { duplicateInventoryUseCase } from "@builders/application"
-import { withMutationTelemetry } from "@/modules/shared/engines/common/application/mutation-telemetry"
+import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import {
   applyRoutePolicy,

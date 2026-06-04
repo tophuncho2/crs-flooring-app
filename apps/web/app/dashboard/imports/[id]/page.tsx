@@ -1,7 +1,7 @@
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { notFound } from "next/navigation"
 import { requireSessionUser } from "@/server/auth/session"
-import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/modules/shared/engines/common/record-entry"
+import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { getImportDetailPageData } from "@/modules/imports/data/queries"
 import { ImportDetailClient } from "@/modules/imports/components/record/import-detail-client"
 

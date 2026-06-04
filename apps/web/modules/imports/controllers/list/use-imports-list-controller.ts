@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRecordEntryNavigation } from "@/modules/shared/engines/common/record-entry"
+import { useRecordEntryNavigation } from "@/hooks/navigation"
 import { useImportsListMutations } from "./use-imports-list-mutations"
 
 export type { ImportRow } from "@builders/domain"
