@@ -1,6 +1,6 @@
 "use client"
 
-import { SearchControl } from "@/components/features/search"
+import { SearchControl } from "@/engines/list-view"
 
 export type TemplatesListSearchProps = {
   query: string

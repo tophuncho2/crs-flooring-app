@@ -8,7 +8,7 @@ Pure UI primitives. Modules and routes consume these; nothing in here knows abou
 
 | Primitive | Placement model | Chrome default | Use case |
 |---|---|---|---|
-| `Grid<TRow>` (in `grid/`) | Streaming rows by array order | Visible borders, header, scroll | List view tables, record-view sub-grids (staged inventory rows, materials, adjustments) |
+| `Grid<TRow>` (in `grid/`) | Streaming rows by array order | Visible borders, header, scroll | Record-view sub-grids (staged inventory rows, materials, adjustments). Main list-view tables now use `DataTable` from `@/engines/list-view` (not this `Grid`). |
 | `LayoutGrid` (in `layout-grid/`) | Positioned cells via `(col, row)` coordinates | Invisible by default; opt into visible chrome | Field/main sections, dashboard layouts, future chart-spanning compositions |
 | `FormField` + `StaticFieldValue` + `FieldSection` (in `fields/`) | Wrappers, no placement of their own | N/A | Labelled controls + read-only displays + section shell, dropped into `LayoutGrid` cells |
 
@@ -55,7 +55,7 @@ Pure UI primitives. Modules and routes consume these; nothing in here knows abou
 - **`nav/`** — navigation overlay primitives (`SidePanel`). Backdrop + edge-anchored slide-in card; consumers control `open` and supply `onClose`. Use for nav drawers, feature side panels (template sync, filters), or any side-anchored overlay. Pure chrome — nav-item lists, drawer compositions, and feature wiring live in their consuming module, not here.
 - **`badges/`** — status pills + tone-coded indicators.
 - **`headers/`** — section headers, action headers (title + status surface + actions panel).
-- **`features/{search,sort,group,paginate}/`** — opt-in feature layers. Each ships a contract + a JSX control that consumers slot wherever they want.
+- **`features/`** — opt-in row side-cars: `select-batch/` (select-all button) and `duplicate-row/` (row-duplication button + builder), used by record-view sub-grids. The list-view feature layers (`search`, `sort`, `group`, `paginate`, `filter`, `list-toolbar`) have moved into the list-view engine — see `@/engines/list-view` (`toolbar/`).
 - **`theme/`** — global design tokens (class-name constants). `accent-styles.ts` = the "flooring blue" brand accent + derived nav/avatar/button class strings, shared by app-shell chrome and the record-view engine.
 
 ## Child-scoped row pattern (warehouse precedent)
@@ -108,4 +108,4 @@ Auto-flow: row 1 holds Order Number (1-2) + Tag (3-4) + Manufacturer (5-8); row 
 
 ## Migration status
 
-This tree is **scaffolding**. Consumers (modules, sections, dashboard pages) currently still import from `apps/web/engines/record-view/` (record-view has been moved into its contained engine) and `apps/web/controllers/list-view/` (list-view not yet moved into an engine). Migration happens module-by-module in subsequent sweeps; the engine stays in place until nothing imports it.
+This tree is **scaffolding**. Both view engines now live under `apps/web/engines/` — record-view (`@/engines/record-view`) and list-view (`@/engines/list-view`, which absorbed the old `controllers/list-view/`, `components/data-table/`, and the list `features/` layers). What remains here is pure shared primitives (`grid/`, `layout-grid/`, `fields/`, `cells/`, `dropdowns/`, `dialogs/`, `nav/`, `badges/`, `headers/`, `theme/`) plus the `features/` row side-cars; the engines depend inward on these, never the reverse.

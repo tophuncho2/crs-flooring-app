@@ -7,7 +7,6 @@ import type { GridLayout } from "./contracts/grid-layout"
 import type { GridRow } from "./contracts/grid-row"
 import type { ScrollContract } from "./contracts/grid-scroll"
 import { resolveScrollContract } from "./contracts/grid-scroll"
-import type { GridFeatures } from "./contracts/grid-features"
 import { GridEmpty } from "./grid-empty"
 import { GridHeader } from "./grid-header"
 import { GridBodyRow } from "./grid-row"
@@ -22,7 +21,6 @@ export type GridProps<TRow extends GridRow> = {
   /** Canonical layout: data columns + optional leading/trailing control columns. */
   layout: GridLayout<TRow>
   scroll?: ScrollContract
-  features?: GridFeatures
   empty?: ReactNode
   /** Slot rendered above the grid header — typically holds search/sort controls. */
   headerSlot?: ReactNode
@@ -59,7 +57,6 @@ export function Grid<TRow extends GridRow>({
   rows,
   layout,
   scroll,
-  features: _features,
   empty,
   headerSlot,
   footerSlot,

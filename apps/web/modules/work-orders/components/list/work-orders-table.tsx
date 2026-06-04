@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { DataTable } from "@/components/data-table"
+import { DataTable } from "@/engines/list-view"
 import type { WorkOrderListRow } from "@builders/domain"
 import { WORK_ORDERS_LIST_COLUMNS } from "./table/work-orders-list-columns"
 import { renderWorkOrderRowCell } from "./table/work-orders-row-cell"

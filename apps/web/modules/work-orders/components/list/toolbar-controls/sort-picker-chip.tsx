@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { SortToggle } from "@/components/features/sort"
+import { SortToggle } from "@/engines/list-view"
 
 export type SortPickerField =
   | "createdAt"

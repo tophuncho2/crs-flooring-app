@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import type { DataTableColumn } from "@/components/data-table"
+import type { DataTableColumn } from "@/engines/list-view"
 import { formatEasternDateTime, type ImportRow } from "@builders/domain"
 
 function formatImportNumber(value: number): string {

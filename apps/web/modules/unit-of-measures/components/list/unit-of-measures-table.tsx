@@ -1,15 +1,13 @@
 "use client"
 
-import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
+import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { formatStableDateTime } from "@builders/domain"
 import type { UnitOfMeasureRow } from "../../types"
 
-const UNIT_OF_MEASURES_LIST_LAYOUT: GridLayout<UnitOfMeasureRow> = {
-  dataColumns: [
-    { key: "name", label: "Unit Of Measure", minWidth: 240, grow: 1 },
-    { key: "createdAt", label: "Created", minWidth: 200, grow: 0 },
-  ],
-}
+const UNIT_OF_MEASURES_LIST_COLUMNS: DataTableColumn<UnitOfMeasureRow>[] = [
+  { key: "name", label: "Unit Of Measure" },
+  { key: "createdAt", label: "Created" },
+]
 
 export type UnitOfMeasuresTableProps = {
   rows: UnitOfMeasureRow[]
@@ -17,10 +15,10 @@ export type UnitOfMeasuresTableProps = {
 
 export function UnitOfMeasuresTable({ rows }: UnitOfMeasuresTableProps) {
   return (
-    <Grid<UnitOfMeasureRow>
+    <DataTable<UnitOfMeasureRow>
       rows={rows}
-      layout={UNIT_OF_MEASURES_LIST_LAYOUT}
-      empty={<GridEmpty>No units of measure found.</GridEmpty>}
+      columns={UNIT_OF_MEASURES_LIST_COLUMNS}
+      empty="No units of measure found."
       renderCell={(column, row) => {
         switch (column.key) {
           case "name":

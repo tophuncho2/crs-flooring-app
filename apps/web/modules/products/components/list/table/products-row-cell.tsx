@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import type { DataTableColumn } from "@/components/data-table"
+import type { DataTableColumn } from "@/engines/list-view"
 import { formatEasternDateTime, type ProductListRow } from "@builders/domain"
 
 // Unit snapshot cell: "Name (abbrev)" when both present, else the name, else "-".

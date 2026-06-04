@@ -1,4 +1,4 @@
-import type { DataTableColumn } from "@/components/data-table"
+import type { DataTableColumn } from "@/engines/list-view"
 import type { JobTypeListRow } from "@builders/domain"
 
 export const JOB_TYPES_LIST_COLUMNS: ReadonlyArray<

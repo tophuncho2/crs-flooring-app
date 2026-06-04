@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { DataTable } from "@/components/data-table"
+import { DataTable } from "@/engines/list-view"
 import type { PropertyListRow } from "@builders/domain"
 import { PROPERTIES_LIST_COLUMNS } from "./table/properties-list-columns"
 import { renderPropertyRowCell } from "./table/properties-row-cell"

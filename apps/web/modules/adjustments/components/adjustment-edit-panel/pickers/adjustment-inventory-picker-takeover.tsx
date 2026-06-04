@@ -6,7 +6,7 @@ import {
   type InventoryOption,
 } from "@builders/domain"
 import { HubSidePanelPicker, type HubSidePanelPickerOption } from "@/components/hub-side-panel"
-import { DebouncedSearchControl } from "@/components/features/search"
+import { DebouncedSearchControl } from "@/engines/list-view"
 import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
 import {
   INVENTORY_OPTIONS_SEARCH_QUERY_KEY,

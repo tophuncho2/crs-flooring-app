@@ -1,4 +1,4 @@
-import type { DataTableColumn } from "@/components/data-table"
+import type { DataTableColumn } from "@/engines/list-view"
 import type { WarehouseListRow } from "@builders/domain"
 
 export const WAREHOUSE_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WarehouseListRow>> = [

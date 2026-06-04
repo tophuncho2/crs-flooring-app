@@ -1,6 +1,6 @@
 "use client"
 
-import { ListRowCount } from "@/components/features/list-toolbar"
+import { ListRowCount } from "@/engines/list-view"
 
 export type TemplatesRowCountProps = {
   count: number

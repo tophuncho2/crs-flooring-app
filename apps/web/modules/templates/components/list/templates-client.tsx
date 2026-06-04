@@ -1,14 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls } from "@/components/features/paginate"
-import {
-  ListToolbar,
-  ListToolbarBottomRow,
-  ListToolbarCell,
-} from "@/components/features/list-toolbar"
-import { useFetchListController } from "@/controllers/list-view"
-import { LIST_FRESHNESS_STANDARD } from "@/query-policies"
+import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { TemplatesListFilters } from "@builders/application"
 import {
   LIST_TEMPLATES_PAGE_SIZE,

@@ -1,6 +1,6 @@
 "use client"
 
-import { ClearAllFiltersButton } from "@/components/features/filter"
+import { ClearAllFiltersButton } from "@/engines/list-view"
 
 export type PropertiesClearAllProps = {
   hasActive: boolean

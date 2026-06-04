@@ -1,16 +1,14 @@
 "use client"
 
-import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
+import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import type { CategoryRow } from "../../types"
 
-const CATEGORIES_LIST_LAYOUT: GridLayout<CategoryRow> = {
-  dataColumns: [
-    { key: "name", label: "Category", minWidth: 240, grow: 1 },
-    { key: "sendUnit", label: "Send Unit", minWidth: 160, grow: 0 },
-    { key: "stockUnit", label: "Stock Unit", minWidth: 160, grow: 0 },
-    { key: "itemCoverageUnit", label: "Item Coverage Unit", minWidth: 200, grow: 0 },
-  ],
-}
+const CATEGORIES_LIST_COLUMNS: DataTableColumn<CategoryRow>[] = [
+  { key: "name", label: "Category" },
+  { key: "sendUnit", label: "Send Unit" },
+  { key: "stockUnit", label: "Stock Unit" },
+  { key: "itemCoverageUnit", label: "Item Coverage Unit" },
+]
 
 export type CategoriesTableProps = {
   rows: CategoryRow[]
@@ -18,10 +16,10 @@ export type CategoriesTableProps = {
 
 export function CategoriesTable({ rows }: CategoriesTableProps) {
   return (
-    <Grid<CategoryRow>
+    <DataTable<CategoryRow>
       rows={rows}
-      layout={CATEGORIES_LIST_LAYOUT}
-      empty={<GridEmpty>No categories found.</GridEmpty>}
+      columns={CATEGORIES_LIST_COLUMNS}
+      empty="No categories found."
       renderCell={(column, row) => {
         switch (column.key) {
           case "name":
