@@ -48,7 +48,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
   .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
   .wo-print-root .page-brand { justify-self: start; }
-  .wo-print-root .page-logo { justify-self: start; height: 40px; width: auto; }
+  .wo-print-root .page-logo { justify-self: start; height: 56px; width: auto; }
   .wo-print-root .page-number { justify-self: end; }
   .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
