@@ -195,35 +195,51 @@ ${instructionsMarkup}
 
 export function renderWorkOrderAdjustments(
   items: WorkOrderFileMaterialItemProjection[],
+  options: { includeInventoryDetail?: boolean } = {},
 ): string {
   // The material-item construct is intentionally not shown on the document —
   // every adjustment is flattened into one table and labeled with its parent
   // product name (the leading column).
+  //
+  // includeInventoryDetail (default true → Picking Ticket): the warehouse view
+  // shows where stock came from and the balance change. The Slip passes false
+  // for a customer-facing summary — Product / Quantity / Coverage only.
+  const includeInventoryDetail = options.includeInventoryDetail ?? true
   const rows = items.flatMap((item) =>
     item.inventoryAdjustments.map((adj) => ({ adj, productName: item.productName })),
   )
   if (rows.length === 0) {
     return `<div class="empty-cell">No inventory adjustments.</div>`
   }
-  const renderedRows = rows.map(renderAdjustmentRow).join("\n")
-  return `
-<table class="flat-rows">
-  <colgroup>
-    <col style="width: 20%;" />
+  const renderedRows = rows.map((row) => renderAdjustmentRow(row, includeInventoryDetail)).join("\n")
+  const colgroup = includeInventoryDetail
+    ? `<col style="width: 20%;" />
     <col style="width: 24%;" />
     <col style="width: 10%;" />
     <col style="width: 20%;" />
     <col style="width: 12%;" />
-    <col style="width: 14%;" />
-  </colgroup>
-  <thead>
-    <tr>
-      <th>Product</th>
+    <col style="width: 14%;" />`
+    : `<col style="width: 40%;" />
+    <col style="width: 30%;" />
+    <col style="width: 30%;" />`
+  const headCells = includeInventoryDetail
+    ? `<th>Product</th>
       <th>Inventory Item</th>
       <th class="cl-num">Quantity</th>
       <th class="cl-num">Adjustment</th>
       <th class="cl-num">Coverage</th>
-      <th>Location</th>
+      <th>Location</th>`
+    : `<th>Product</th>
+      <th class="cl-num">Quantity</th>
+      <th class="cl-num">Coverage</th>`
+  return `
+<table class="flat-rows">
+  <colgroup>
+    ${colgroup}
+  </colgroup>
+  <thead>
+    <tr>
+      ${headCells}
     </tr>
   </thead>
   <tbody>
@@ -247,21 +263,30 @@ function formatPropertyAddress(property: WorkOrderFileGenerationInput["property"
   return lines.join("\n")
 }
 
-function renderAdjustmentRow({
-  adj,
-  productName,
-}: {
-  adj: WorkOrderFileAdjustmentProjection
-  productName: string
-}): string {
+function renderAdjustmentRow(
+  {
+    adj,
+    productName,
+  }: {
+    adj: WorkOrderFileAdjustmentProjection
+    productName: string
+  },
+  includeInventoryDetail: boolean,
+): string {
+  // Inventory Item, the before→after Adjustment, and Location are warehouse-only
+  // (Picking Ticket); the Slip omits them.
+  const inventoryDetailCells = includeInventoryDetail
+    ? {
+        item: `\n  <td>${escapeOrEmpty(adj.inventoryItem)}</td>`,
+        adjustment: `\n  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.stockUnitAbbrev)}</td>`,
+        location: `\n  <td>${escapeOrEmpty(adj.location)}</td>`,
+      }
+    : { item: "", adjustment: "", location: "" }
   return `
 <tr>
-  <td>${escapeOrEmpty(productName)}</td>
-  <td>${escapeOrEmpty(adj.inventoryItem)}</td>
-  <td class="cl-num">${renderUnitValue(adj.quantity, adj.stockUnitAbbrev)}</td>
-  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.stockUnitAbbrev)}</td>
-  <td class="cl-num">${renderUnitValue(adj.coverage, adj.itemCoverageUnitAbbrev)}</td>
-  <td>${escapeOrEmpty(adj.location)}</td>
+  <td>${escapeOrEmpty(productName)}</td>${inventoryDetailCells.item}
+  <td class="cl-num">${renderUnitValue(adj.quantity, adj.stockUnitAbbrev)}</td>${inventoryDetailCells.adjustment}
+  <td class="cl-num">${renderUnitValue(adj.coverage, adj.itemCoverageUnitAbbrev)}</td>${inventoryDetailCells.location}
 </tr>
 `.trim()
 }

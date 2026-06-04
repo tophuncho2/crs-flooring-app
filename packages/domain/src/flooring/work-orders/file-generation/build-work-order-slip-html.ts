@@ -36,7 +36,7 @@ export function buildWorkOrderSlipHtml(
     renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderPropertyInfo(input),
     renderWorkOrderInstallerInstructionsBlock(input),
-    renderWorkOrderAdjustments(input.materialItems),
+    renderWorkOrderAdjustments(input.materialItems, { includeInventoryDetail: false }),
   ]
     .filter(Boolean)
     .join("\n")
