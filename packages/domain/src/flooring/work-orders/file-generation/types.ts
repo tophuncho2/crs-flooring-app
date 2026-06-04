@@ -24,10 +24,12 @@ export type WorkOrderFileAdjustmentProjection = {
   coverage: string
   isWaste: boolean
   notes: string
-  // Inventory identity sourced from the adjustment row's snapshot
-  // (NOT the joined inventory row). The denormalized `inventoryItem` column
-  // already encodes `inv# · roll# · dyeLot · note` — render directly.
-  inventoryItem: string
+  // Dye lot + roll number, read from the adjustment row's own snapshot columns
+  // (NOT the joined inventory row). `rollNumber` is the bare value — the print
+  // view's "Roll#" header supplies the label, so the `rollPrefix` ("ROLL#") is
+  // intentionally not glued on here.
+  dyeLot: string
+  rollNumber: string
   // Inventory location snapshot from the adjustment row. Empty string when
   // the parent inventory had no location at the moment of the adjustment.
   location: string

@@ -191,21 +191,23 @@ export function renderWorkOrderAdjustments(
   }
   const renderedRows = rows.map((row) => renderAdjustmentRow(row, includeInventoryDetail)).join("\n")
   const colgroup = includeInventoryDetail
-    ? `<col style="width: 20%;" />
-    <col style="width: 24%;" />
-    <col style="width: 10%;" />
-    <col style="width: 20%;" />
+    ? `<col style="width: 18%;" />
     <col style="width: 12%;" />
+    <col style="width: 12%;" />
+    <col style="width: 12%;" />
+    <col style="width: 12%;" />
+    <col style="width: 20%;" />
     <col style="width: 14%;" />`
     : `<col style="width: 40%;" />
     <col style="width: 30%;" />
     <col style="width: 30%;" />`
   const headCells = includeInventoryDetail
     ? `<th>Product</th>
-      <th>Inventory Item</th>
+      <th>Dyelot</th>
+      <th>Roll#</th>
       <th class="cl-num">Quantity</th>
-      <th class="cl-num">Adjustment</th>
       <th class="cl-num">Coverage</th>
+      <th class="cl-num">Adjustment</th>
       <th>Location</th>`
     : `<th>Product</th>
       <th class="cl-num">Quantity</th>
@@ -243,20 +245,20 @@ function renderAdjustmentRow(
   },
   includeInventoryDetail: boolean,
 ): string {
-  // Inventory Item, the before→after Adjustment, and Location are warehouse-only
-  // (Picking Ticket); the Slip omits them.
-  const inventoryDetailCells = includeInventoryDetail
-    ? {
-        item: `\n  <td>${escapeOrEmpty(adj.inventoryItem)}</td>`,
-        adjustment: `\n  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.stockUnitAbbrev)}</td>`,
-        location: `\n  <td>${escapeOrEmpty(adj.location)}</td>`,
-      }
-    : { item: "", adjustment: "", location: "" }
+  // Dyelot/Roll# (after Product) and the before→after Adjustment + Location
+  // (after Coverage) are warehouse-only (Picking Ticket); the Slip omits them,
+  // leaving Product / Quantity / Coverage.
+  const leadDetailCells = includeInventoryDetail
+    ? `\n  <td>${escapeOrEmpty(adj.dyeLot)}</td>\n  <td>${escapeOrEmpty(adj.rollNumber)}</td>`
+    : ""
+  const trailDetailCells = includeInventoryDetail
+    ? `\n  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.stockUnitAbbrev)}</td>\n  <td>${escapeOrEmpty(adj.location)}</td>`
+    : ""
   return `
 <tr>
-  <td>${escapeOrEmpty(productName)}</td>${inventoryDetailCells.item}
-  <td class="cl-num">${renderUnitValue(adj.quantity, adj.stockUnitAbbrev)}</td>${inventoryDetailCells.adjustment}
-  <td class="cl-num">${renderUnitValue(adj.coverage, adj.itemCoverageUnitAbbrev)}</td>${inventoryDetailCells.location}
+  <td>${escapeOrEmpty(productName)}</td>${leadDetailCells}
+  <td class="cl-num">${renderUnitValue(adj.quantity, adj.stockUnitAbbrev)}</td>
+  <td class="cl-num">${renderUnitValue(adj.coverage, adj.itemCoverageUnitAbbrev)}</td>${trailDetailCells}
 </tr>
 `.trim()
 }
