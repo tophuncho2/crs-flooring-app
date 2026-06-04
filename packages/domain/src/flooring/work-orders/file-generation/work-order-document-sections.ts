@@ -36,7 +36,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root h3 { font-size: 12px; font-weight: 600; margin: 10px 0 4px 0; }
   .wo-print-root table { width: 100%; border-collapse: collapse; margin: 6px 0; }
   .wo-print-root .wo-top-table th, .wo-print-root .wo-top-table td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
-  .wo-print-root .wo-top-table th { font-weight: 600; }
+  .wo-print-root .wo-top-table th { font-weight: 600; white-space: nowrap; padding-right: 16px; }
   .wo-print-root .property-info-table { table-layout: fixed; }
   .wo-print-root .property-info-table th { width: 14%; }
   .wo-print-root .property-info-table td { width: 26%; }
@@ -50,6 +50,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .page-brand { justify-self: start; }
   .wo-print-root .page-logo { justify-self: start; height: 56px; width: auto; }
   .wo-print-root .page-number { justify-self: end; }
+  .wo-print-root .page-date { margin-left: 12px; }
   .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
   .wo-print-root .page-frame { margin: 0; }
@@ -72,11 +73,16 @@ function renderDocumentHeader(
   const brand = logoUrl
     ? `<img class="page-logo" src="${escapeHtml(logoUrl)}" alt="CRS Floor Covering" />`
     : `<span class="page-brand">CRS Floor Covering</span>`
+  // The scheduled date rides to the right of the WO number — value only, no
+  // label. Omitted entirely when the work order has no scheduled date.
+  const scheduledDate = input.scheduledFor
+    ? `<span class="page-date">${escapeHtml(input.scheduledFor)}</span>`
+    : ""
   return `
 <div class="page-header">
   ${brand}
   <span class="page-tag">${escapeHtml(tag)}</span>
-  <span class="page-number">${escapeHtml(input.workOrderNumber)}</span>
+  <span class="page-number">${escapeHtml(input.workOrderNumber)}${scheduledDate}</span>
 </div>
 `.trim()
 }
@@ -121,47 +127,38 @@ export function renderWorkOrderTopTable(
   input: WorkOrderFileGenerationInput,
   options: { includeDescription?: boolean } = {},
 ): string {
-  // The scheduled date anchors the top-left of row 1 (it used to be the
-  // standalone <h2> heading); the warehouse + its address run to its right.
-  const dateCell = input.scheduledFor
-    ? escapeHtml(input.scheduledFor)
-    : `<span class="empty-cell">—</span>`
   // Warehouse name followed by its address on one flat line, dash-separated:
   // "Main WH - 123 Main St, Springfield, IL, 62701". Either side is dropped
-  // (with its dash) when blank.
+  // (with its dash) when blank. (The scheduled date now lives in the header
+  // next to the WO number, so row 1 leads with the warehouse.)
   const warehouseParts = [input.warehouse.name, buildAddressLine(input.warehouse)].filter(Boolean)
   const warehouseCellMarkup = warehouseParts.length
     ? escapeHtml(warehouseParts.join(" - "))
     : `<span class="empty-cell">—</span>`
-  // Description rides as a borderless row in the top table (label under the
-  // date, value extending rightward across the remaining columns).
-  // Slip-only — the picking ticket omits the description entirely.
+  // Description closes the stack (label + multi-line value). Slip-only — the
+  // picking ticket omits the description entirely.
   const descriptionRow =
     options.includeDescription && input.description
       ? `
-    <tr>
-      <th>Description</th><td colspan="5" class="multiline">${escapeHtml(input.description)}</td>
-    </tr>`
+    <tr><th>Description</th><td class="multiline">${escapeHtml(input.description)}</td></tr>`
       : ""
+  // Single label/value stack, one field per row. The label column hugs its
+  // content (width:1% + nowrap labels) so "Management Company" never wraps;
+  // the value column takes the rest.
   return `
 <table class="wo-top-table">
   <colgroup>
-    <col style="width: 12%;" />
-    <col style="width: 12%;" />
-    <col style="width: 20%;" />
-    <col style="width: 12%;" />
-    <col style="width: 22%;" />
-    <col style="width: 22%;" />
+    <col style="width: 1%;" />
+    <col />
   </colgroup>
   <tbody>
-    <tr>
-      <th>${dateCell}</th><th>Warehouse</th><td colspan="4">${warehouseCellMarkup}</td>
-    </tr>
-    <tr>
-      <th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td>
-      <th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td>
-      <th>Property</th><td>${escapeOrEmpty(input.property.name)}</td>
-    </tr>${descriptionRow}
+    <tr><th>Warehouse</th><td>${warehouseCellMarkup}</td></tr>
+    <tr><th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td></tr>
+    <tr><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
+    <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${descriptionRow}
+    <tr><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
+    <tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>
+    <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>
   </tbody>
 </table>
 `.trim()
@@ -178,6 +175,9 @@ export function renderWorkOrderInstallerInstructionsBlock(
 }
 
 export function renderWorkOrderPropertyInfo(input: WorkOrderFileGenerationInput): string {
+  // Unit Type / Unit Number / Vacancy now live in the top-table stack; this
+  // section carries the property address (customAddress overrides) plus any
+  // property instructions.
   const address = input.customAddress || formatPropertyAddress(input.property)
   const addressMarkup = address
     ? `<div class="multiline">${escapeHtml(address)}</div>`
@@ -185,27 +185,11 @@ export function renderWorkOrderPropertyInfo(input: WorkOrderFileGenerationInput)
   const instructionsMarkup = input.property.instructions
     ? `<h3>Property Instructions</h3><div class="multiline">${escapeHtml(input.property.instructions)}</div>`
     : ""
-  const vacancyLabel = formatVacancy(input.vacancy)
   return `
 <h2>Property Info</h2>
-<table class="wo-top-table property-info-table">
-  <tbody>
-    <tr>
-      <td class="property-info-address" rowspan="3">
-        <h3>Address</h3>
-        ${addressMarkup}
-        ${instructionsMarkup}
-      </td>
-      <th>Vacancy</th><td>${escapeOrEmpty(vacancyLabel)}</td>
-    </tr>
-    <tr>
-      <th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td>
-    </tr>
-    <tr>
-      <th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td>
-    </tr>
-  </tbody>
-</table>
+<h3>Address</h3>
+${addressMarkup}
+${instructionsMarkup}
 `.trim()
 }
 
