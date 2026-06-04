@@ -3,19 +3,19 @@ import {
   WO_PRINT_STYLE_BLOCK,
   renderPageFrame,
   renderWorkOrderAdjustments,
+  renderWorkOrderInfo,
   renderWorkOrderPickingTicketHeader,
-  renderWorkOrderTopTable,
 } from "./work-order-document-sections.js"
 
 /**
  * The "Picking Ticket" document, rendered as a self-contained HTML
  * fragment for the on-demand print view:
  *
- *   - Header: "CRS Floor Covering" (left) · centered "Picking Ticket" tag ·
- *     work-order number (right) — all the same size
- *   - H2 scheduled date + the same top table as the slip, including the
- *     description row beneath Job Type
- *   - The same flat cut-log table as the slip (no Property Info)
+ *   - Header: logo (left) · centered "Picking Ticket" tag · work-order number
+ *     + scheduled date (right)
+ *   - The same info stack as the Slip (`renderWorkOrderInfo`)
+ *   - Cut logs with full inventory detail (Product · Inventory Item · Quantity ·
+ *     Adjustment · Coverage · Location) — the warehouse pick view
  *
  * Returns a `<style>` + `.wo-print-root` fragment to inject into the print
  * page; no `<html>`/`<body>` (those come from the Next root layout). This
@@ -26,7 +26,7 @@ export function buildWorkOrderPickingTicketHtml(
   options: { logoUrl?: string | null } = {},
 ): string {
   const body = [
-    renderWorkOrderTopTable(input, { includeDescription: true }),
+    renderWorkOrderInfo(input),
     renderWorkOrderAdjustments(input.materialItems),
   ].join("\n")
 

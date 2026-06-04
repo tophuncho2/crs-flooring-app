@@ -37,6 +37,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root table { width: 100%; border-collapse: collapse; margin: 6px 0; }
   .wo-print-root .wo-top-table th, .wo-print-root .wo-top-table td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
   .wo-print-root .wo-top-table th { font-weight: 600; white-space: nowrap; padding-right: 16px; }
+  .wo-print-root .wo-top-table tr.row-gap > th, .wo-print-root .wo-top-table tr.row-gap > td { padding-top: 12px; }
   .wo-print-root .property-info-table { table-layout: fixed; }
   .wo-print-root .property-info-table th { width: 14%; }
   .wo-print-root .property-info-table td { width: 26%; }
@@ -123,28 +124,39 @@ ${body}
 `.trim()
 }
 
-export function renderWorkOrderTopTable(
-  input: WorkOrderFileGenerationInput,
-  options: { includeDescription?: boolean } = {},
-): string {
-  // Warehouse name followed by its address on one flat line, dash-separated:
-  // "Main WH - 123 Main St, Springfield, IL, 62701". Either side is dropped
-  // (with its dash) when blank. (The scheduled date now lives in the header
-  // next to the WO number, so row 1 leads with the warehouse.)
+/**
+ * Shared work-order info stack, rendered above the adjustments table on BOTH
+ * the Slip and the Picking Ticket (the two diverge only in the adjustments
+ * table below). One continuous label/value table — no section heading. The
+ * label column hugs its content (width:1% + nowrap labels) so "Management
+ * Company" never wraps.
+ *
+ * Order: Warehouse · Job Type · Description · Management Company · Property
+ * (+ flat address beneath) · Unit Type · Unit Number · Vacancy · Property
+ * Instructions · Installer Instructions. Description / address / instruction
+ * rows are omitted when their value is blank; the address is the customAddress
+ * override or the property's flat address line.
+ */
+export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string {
   const warehouseParts = [input.warehouse.name, buildAddressLine(input.warehouse)].filter(Boolean)
-  const warehouseCellMarkup = warehouseParts.length
+  const warehouseCell = warehouseParts.length
     ? escapeHtml(warehouseParts.join(" - "))
     : `<span class="empty-cell">—</span>`
-  // Description closes the stack (label + multi-line value). Slip-only — the
-  // picking ticket omits the description entirely.
-  const descriptionRow =
-    options.includeDescription && input.description
-      ? `
-    <tr><th>Description</th><td class="multiline">${escapeHtml(input.description)}</td></tr>`
-      : ""
-  // Single label/value stack, one field per row. The label column hugs its
-  // content (width:1% + nowrap labels) so "Management Company" never wraps;
-  // the value column takes the rest.
+  const descriptionRow = input.description
+    ? `\n    <tr><th>Description</th><td class="multiline">${escapeHtml(input.description)}</td></tr>`
+    : ""
+  // Property (or custom) address, flat text — sits beneath the Property name in
+  // the value column (empty label cell).
+  const propertyAddress = input.customAddress || buildAddressLine(input.property)
+  const propertyAddressRow = propertyAddress
+    ? `\n    <tr><td></td><td>${escapeHtml(propertyAddress)}</td></tr>`
+    : ""
+  const propertyInstructionsRow = input.property.instructions
+    ? `\n    <tr><th>Property Instructions</th><td class="multiline">${escapeHtml(input.property.instructions)}</td></tr>`
+    : ""
+  const installerInstructionsRow = input.installerInstructions
+    ? `\n    <tr><th>Installer Instructions</th><td class="multiline">${escapeHtml(input.installerInstructions)}</td></tr>`
+    : ""
   return `
 <table class="wo-top-table">
   <colgroup>
@@ -152,44 +164,15 @@ export function renderWorkOrderTopTable(
     <col />
   </colgroup>
   <tbody>
-    <tr><th>Warehouse</th><td>${warehouseCellMarkup}</td></tr>
-    <tr><th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td></tr>
+    <tr><th>Warehouse</th><td>${warehouseCell}</td></tr>
+    <tr><th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td></tr>${descriptionRow}
     <tr><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
-    <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${descriptionRow}
-    <tr><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
+    <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${propertyAddressRow}
+    <tr class="row-gap"><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
     <tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>
-    <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>
+    <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>${propertyInstructionsRow}${installerInstructionsRow}
   </tbody>
 </table>
-`.trim()
-}
-
-export function renderWorkOrderInstallerInstructionsBlock(
-  input: WorkOrderFileGenerationInput,
-): string {
-  if (!input.installerInstructions) return ""
-  return `
-<h2>Installer Instructions</h2>
-<div class="multiline">${escapeHtml(input.installerInstructions)}</div>
-`.trim()
-}
-
-export function renderWorkOrderPropertyInfo(input: WorkOrderFileGenerationInput): string {
-  // Unit Type / Unit Number / Vacancy now live in the top-table stack; this
-  // section carries the property address (customAddress overrides) plus any
-  // property instructions.
-  const address = input.customAddress || formatPropertyAddress(input.property)
-  const addressMarkup = address
-    ? `<div class="multiline">${escapeHtml(address)}</div>`
-    : `<span class="empty-cell">—</span>`
-  const instructionsMarkup = input.property.instructions
-    ? `<h3>Property Instructions</h3><div class="multiline">${escapeHtml(input.property.instructions)}</div>`
-    : ""
-  return `
-<h2>Property Info</h2>
-<h3>Address</h3>
-${addressMarkup}
-${instructionsMarkup}
 `.trim()
 }
 
@@ -253,14 +236,6 @@ function formatVacancy(vacancy: "VACANT" | "OCCUPIED" | null): string {
   if (vacancy === "VACANT") return "Vacant"
   if (vacancy === "OCCUPIED") return "Occupied"
   return ""
-}
-
-function formatPropertyAddress(property: WorkOrderFileGenerationInput["property"]): string {
-  const lines = [
-    property.streetAddress,
-    [property.city, property.state, property.postalCode].filter(Boolean).join(", "),
-  ].filter(Boolean)
-  return lines.join("\n")
 }
 
 function renderAdjustmentRow(
