@@ -139,11 +139,11 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
   const descriptionRow = input.description
     ? `\n    <tr><th>Description</th><td class="multiline">${escapeHtml(input.description)}</td></tr>`
     : ""
-  // Property (or custom) address, flat text — sits beneath the Property name in
-  // the value column (empty label cell).
+  // Property (or custom) address, flat text — labeled row beneath the Property
+  // name.
   const propertyAddress = input.customAddress || buildAddressLine(input.property)
   const propertyAddressRow = propertyAddress
-    ? `\n    <tr><td></td><td>${escapeHtml(propertyAddress)}</td></tr>`
+    ? `\n    <tr><th>Property Address</th><td>${escapeHtml(propertyAddress)}</td></tr>`
     : ""
   const propertyInstructionsRow = input.property.instructions
     ? `\n    <tr><th>Property Instructions</th><td class="multiline">${escapeHtml(input.property.instructions)}</td></tr>`
@@ -161,7 +161,7 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
     <tr><th>Date</th><td>${escapeOrEmpty(input.scheduledFor)}</td></tr>
     <tr><th>Warehouse</th><td>${warehouseCell}</td></tr>
     <tr><th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td></tr>${descriptionRow}
-    <tr><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
+    <tr class="row-gap"><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
     <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${propertyAddressRow}
     <tr class="row-gap"><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
     <tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>
