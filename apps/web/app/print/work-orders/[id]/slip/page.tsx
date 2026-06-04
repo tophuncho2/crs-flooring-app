@@ -5,6 +5,7 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { requireSessionUser } from "@/server/auth/session"
 import { WorkOrderPrintView } from "@/modules/work-orders/components/record/print/work-order-print-view"
 import { getWorkOrderForFileGenerationPageData } from "@/modules/work-orders/data/queries"
+import { getBrandLogoPrintUrl } from "@/server/storage/s3"
 
 export const metadata: Metadata = {
   title: { absolute: "CRS Floor Covering" },
@@ -38,5 +39,7 @@ export default async function WorkOrderSlipPrintPage({
     )
   }
 
-  return <WorkOrderPrintView html={buildWorkOrderSlipHtml(result.data.workOrder)} />
+  const logoUrl = await getBrandLogoPrintUrl()
+
+  return <WorkOrderPrintView html={buildWorkOrderSlipHtml(result.data.workOrder, { logoUrl })} />
 }

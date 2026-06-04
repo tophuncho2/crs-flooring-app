@@ -45,9 +45,10 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .flat-rows th, .wo-print-root .flat-rows td { border: 0; padding: 3px 8px; font-size: 12px; text-align: left; vertical-align: top; overflow-wrap: break-word; word-break: break-word; }
   .wo-print-root .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
   .wo-print-root .flat-rows .cl-num { text-align: right; }
-  .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; margin: 0; }
+  .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
   .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
   .wo-print-root .page-brand { justify-self: start; }
+  .wo-print-root .page-logo { justify-self: start; height: 40px; width: auto; }
   .wo-print-root .page-number { justify-self: end; }
   .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
@@ -60,22 +61,38 @@ export const WO_PRINT_STYLE_BLOCK = `
 // Shared header (.page-header grid, all three spans the same size):
 // "CRS Floor Covering" on the left, the document-type tag centered, and the
 // work-order number mirrored to the right.
-function renderDocumentHeader(input: WorkOrderFileGenerationInput, tag: string): string {
+function renderDocumentHeader(
+  input: WorkOrderFileGenerationInput,
+  tag: string,
+  logoUrl?: string | null,
+): string {
+  // When a logo URL is supplied (a presigned bucket URL minted by the page
+  // loader) render the logo; otherwise fall back to the brand text so the
+  // document never breaks if the asset is missing.
+  const brand = logoUrl
+    ? `<img class="page-logo" src="${escapeHtml(logoUrl)}" alt="CRS Floor Covering" />`
+    : `<span class="page-brand">CRS Floor Covering</span>`
   return `
 <div class="page-header">
-  <span class="page-brand">CRS Floor Covering</span>
+  ${brand}
   <span class="page-tag">${escapeHtml(tag)}</span>
   <span class="page-number">${escapeHtml(input.workOrderNumber)}</span>
 </div>
 `.trim()
 }
 
-export function renderWorkOrderHeader(input: WorkOrderFileGenerationInput): string {
-  return renderDocumentHeader(input, "Work Order")
+export function renderWorkOrderHeader(
+  input: WorkOrderFileGenerationInput,
+  logoUrl?: string | null,
+): string {
+  return renderDocumentHeader(input, "Work Order", logoUrl)
 }
 
-export function renderWorkOrderPickingTicketHeader(input: WorkOrderFileGenerationInput): string {
-  return renderDocumentHeader(input, "Picking Ticket")
+export function renderWorkOrderPickingTicketHeader(
+  input: WorkOrderFileGenerationInput,
+  logoUrl?: string | null,
+): string {
+  return renderDocumentHeader(input, "Picking Ticket", logoUrl)
 }
 
 // Wraps the document so the header repeats on every printed page. The header

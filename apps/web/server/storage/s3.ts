@@ -58,3 +58,21 @@ export function isBucketFileUrl(url: string) {
 export async function getFileFromBucket(fileName: string) {
   return getBucketObject(getEnv(), `uploads/${fileName}`)
 }
+
+// Fixed bucket key for the brand logo shown on the work-order print files. The
+// bucket name varies per environment (AWS_S3_BUCKET_NAME), so staging/main read
+// their own object under the same key.
+const BRAND_LOGO_KEY = "assets/logo.png"
+
+/**
+ * Presigned GET URL for the print-file brand logo, or null when the object is
+ * absent (callers fall back to brand text so prints never break). Kept private:
+ * the bucket also holds sensitive uploads, so we sign rather than rely on public
+ * read. The ~1h TTL outlives a print tab left open.
+ */
+export async function getBrandLogoPrintUrl(): Promise<string | null> {
+  if (!(await bucketObjectExistsForKey(BRAND_LOGO_KEY))) {
+    return null
+  }
+  return createPresignedBucketObjectUrlForKey(BRAND_LOGO_KEY, { expiresInSeconds: 3600 })
+}

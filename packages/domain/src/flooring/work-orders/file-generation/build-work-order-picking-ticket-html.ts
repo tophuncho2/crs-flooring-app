@@ -21,7 +21,10 @@ import {
  * page; no `<html>`/`<body>` (those come from the Next root layout). This
  * view is its own single page — no inter-page break wrapper.
  */
-export function buildWorkOrderPickingTicketHtml(input: WorkOrderFileGenerationInput): string {
+export function buildWorkOrderPickingTicketHtml(
+  input: WorkOrderFileGenerationInput,
+  options: { logoUrl?: string | null } = {},
+): string {
   const body = [
     renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderAdjustments(input.materialItems),
@@ -29,6 +32,6 @@ export function buildWorkOrderPickingTicketHtml(input: WorkOrderFileGenerationIn
 
   return `<style>${WO_PRINT_STYLE_BLOCK}</style>
 <div class="wo-print-root">
-${renderPageFrame(renderWorkOrderPickingTicketHeader(input), body)}
+${renderPageFrame(renderWorkOrderPickingTicketHeader(input, options.logoUrl), body)}
 </div>`
 }

@@ -28,7 +28,10 @@ import {
  * Returns a `<style>` + `.wo-print-root` fragment to inject into the print
  * page; no `<html>`/`<body>` (those come from the Next root layout).
  */
-export function buildWorkOrderSlipHtml(input: WorkOrderFileGenerationInput): string {
+export function buildWorkOrderSlipHtml(
+  input: WorkOrderFileGenerationInput,
+  options: { logoUrl?: string | null } = {},
+): string {
   const body = [
     renderWorkOrderTopTable(input, { includeDescription: true }),
     renderWorkOrderPropertyInfo(input),
@@ -40,6 +43,6 @@ export function buildWorkOrderSlipHtml(input: WorkOrderFileGenerationInput): str
 
   return `<style>${WO_PRINT_STYLE_BLOCK}</style>
 <div class="wo-print-root">
-${renderPageFrame(renderWorkOrderHeader(input), body)}
+${renderPageFrame(renderWorkOrderHeader(input, options.logoUrl), body)}
 </div>`
 }
