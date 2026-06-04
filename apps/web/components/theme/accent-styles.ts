@@ -16,8 +16,3 @@ export const FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME = [
   "rounded px-4 py-2 text-sm font-semibold transition disabled:opacity-60",
   FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME,
 ].join(" ")
-
-export const FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME = [
-  "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-60",
-  FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME,
-].join(" ")

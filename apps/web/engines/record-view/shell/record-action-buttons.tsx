@@ -3,10 +3,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react"
-import {
-  FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME,
-  FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME,
-} from "@/components/theme/accent-styles"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/components/theme/accent-styles"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
@@ -32,11 +29,6 @@ const RECORD_DESTRUCTIVE_ACTION_CLASS_NAME = joinClasses(
 const RECORD_PRIMARY_ACTION_CLASS_NAME = joinClasses(
   FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME,
   "rounded-lg hover:shadow-[0_0_18px_rgba(59,130,246,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
-)
-
-const RECORD_HEADER_PRIMARY_ACTION_CLASS_NAME = joinClasses(
-  FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME,
-  "hover:shadow-[0_0_18px_rgba(59,130,246,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40",
 )
 
 type RecordButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
