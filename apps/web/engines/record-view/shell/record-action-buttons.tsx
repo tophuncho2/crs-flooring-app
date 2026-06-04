@@ -6,7 +6,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "reac
 import {
   FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME,
   FLOORING_PRIMARY_ACTION_BUTTON_INLINE_CLASS_NAME,
-} from "@/modules/shared/engines/common/display/accent-styles"
+} from "@/components/theme/accent-styles"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")

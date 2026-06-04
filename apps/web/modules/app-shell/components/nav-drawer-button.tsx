@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu } from "lucide-react"
 import { SidePanel } from "@/components/nav"
-import { FLOORING_ACTIVE_NAV_TAB_CLASS_NAME } from "@/modules/shared/engines/common/display/accent-styles"
+import { FLOORING_ACTIVE_NAV_TAB_CLASS_NAME } from "@/components/theme/accent-styles"
 import {
   FLOORING_NAV_GROUPS,
   isActiveFlooringItem,

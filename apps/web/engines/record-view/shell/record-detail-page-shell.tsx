@@ -1,9 +1,10 @@
 import type { ReactNode } from "react"
-import { DASHBOARD_PAGE_SHELL_WIDE_EDGE_TO_EDGE_CLASS_NAME } from "@/modules/shared/engines/common/display/dashboard-card-title"
 import { RecordBackButtonPortal } from "./record-back-button-portal"
 import { RecordPrimaryHeader } from "./record-primary-header"
 
 const RECORD_DETAIL_PANEL_WIDTH_CLASS = "max-w-none"
+const RECORD_PAGE_SHELL_CLASS_NAME =
+  "min-h-screen bg-[var(--background)] px-0 pb-12 text-[var(--foreground)] pt-24 sm:pt-28"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
@@ -35,7 +36,7 @@ export function RecordDetailPageShell({
   sizeClass?: string
 }) {
   return (
-    <div className={DASHBOARD_PAGE_SHELL_WIDE_EDGE_TO_EDGE_CLASS_NAME}>
+    <div className={RECORD_PAGE_SHELL_CLASS_NAME}>
       <RecordBackButtonPortal backHref={backHref} onBack={onBack} backLabel={backLabel} />
       <div className={joinClasses("mx-auto w-full", sizeClass)}>
         <div className="overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl">

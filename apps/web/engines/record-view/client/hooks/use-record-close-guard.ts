@@ -1,6 +1,6 @@
 "use client"
 
-import { useUnsavedChangesGuard } from "@/modules/shared/engines/common/navigation/use-unsaved-changes-guard"
+import { useUnsavedChangesGuard } from "./use-unsaved-changes-guard"
 
 export function useRecordCloseGuard({
   isDirty,

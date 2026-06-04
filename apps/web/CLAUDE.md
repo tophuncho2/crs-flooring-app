@@ -33,9 +33,9 @@ React-query freshness presets for list views.
 
 ## `engines/`
 
-Self-contained, reusable UI engines. Each engine owns its components, controllers, hooks, and contracts and exposes a single public surface via its root `index.ts` barrel — consumers import from `@/engines/<name>`, never from deep paths. (`modules/shared/engines/` is being retired in favor of this directory.)
+Self-contained, reusable UI engines. Each engine owns its components, controllers, hooks, and contracts and exposes a single public surface via its root `index.ts` barrel — consumers import from `@/engines/<name>`, never from deep paths. (`modules/shared/engines/` has been fully retired in favor of this directory.)
 
-- [ ] `record-view/` — the canonical record detail/create engine (work-orders, templates, imports, products). Public surface: `@/engines/record-view`. Internals: `client/` (scaffolds, controllers, hooks, utils), `panel/`, `shell/`, `sections/`, `feedback/`, `forms/`, `adapters/`, `contracts/`. Depends outward only on shared primitives (`@/types`, `@/components/dialogs`, `@/transport`, `@/modules/shared/engines/common`); nothing reaches back into it.
+- [ ] `record-view/` — the canonical record detail/create engine (work-orders, templates, imports, products). Public surface: `@/engines/record-view`. Internals: `client/` (scaffolds, controllers, hooks, utils), `panel/`, `shell/`, `sections/`, `feedback/`, `forms/`, `adapters/`, `contracts/`. Depends outward only on shared primitives (`@/types`, `@/components/dialogs`, `@/components/theme`, `@/transport`); nothing reaches back into it.
 - [ ] `side-panel/` — side-panel freshness/refresh engine.
 
 ## `tests/`

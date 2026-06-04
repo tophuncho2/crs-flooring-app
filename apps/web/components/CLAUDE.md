@@ -56,6 +56,7 @@ Pure UI primitives. Modules and routes consume these; nothing in here knows abou
 - **`badges/`** — status pills + tone-coded indicators.
 - **`headers/`** — section headers, action headers (title + status surface + actions panel).
 - **`features/{search,sort,group,paginate}/`** — opt-in feature layers. Each ships a contract + a JSX control that consumers slot wherever they want.
+- **`theme/`** — global design tokens (class-name constants). `accent-styles.ts` = the "flooring blue" brand accent + derived nav/avatar/button class strings, shared by app-shell chrome and the record-view engine.
 
 ## Child-scoped row pattern (warehouse precedent)
 
@@ -107,4 +108,4 @@ Auto-flow: row 1 holds Order Number (1-2) + Tag (3-4) + Manufacturer (5-8); row 
 
 ## Migration status
 
-This tree is **scaffolding**. Consumers (modules, sections, dashboard pages) currently still import from `apps/web/engines/record-view/` (record-view has been moved into its contained engine) and `apps/web/modules/shared/engines/list-view/` (list-view not yet moved). Migration happens module-by-module in subsequent sweeps; the engine stays in place until nothing imports it.
+This tree is **scaffolding**. Consumers (modules, sections, dashboard pages) currently still import from `apps/web/engines/record-view/` (record-view has been moved into its contained engine) and `apps/web/controllers/list-view/` (list-view not yet moved into an engine). Migration happens module-by-module in subsequent sweeps; the engine stays in place until nothing imports it.
