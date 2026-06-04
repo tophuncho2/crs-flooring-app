@@ -66,7 +66,13 @@ export type WorkOrderFileGenerationInput = {
     instructions: string
   }
   managementCompanyName: string
-  warehouseName: string
+  warehouse: {
+    name: string
+    streetAddress: string
+    city: string
+    state: string
+    postalCode: string
+  }
   jobTypeName: string
   materialItems: WorkOrderFileMaterialItemProjection[]
 }

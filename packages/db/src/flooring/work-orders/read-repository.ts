@@ -343,7 +343,15 @@ export async function getWorkOrderForFileGeneration(
         },
       },
       managementCompany: { select: { name: true } },
-      warehouse: { select: { name: true } },
+      warehouse: {
+        select: {
+          name: true,
+          streetAddress: true,
+          city: true,
+          state: true,
+          postalCode: true,
+        },
+      },
       jobType: { select: { name: true } },
       items: {
         orderBy: { createdAt: "asc" as const },
@@ -428,7 +436,13 @@ export async function getWorkOrderForFileGeneration(
       instructions: workOrder.property.instructions ?? "",
     },
     managementCompanyName: workOrder.managementCompany?.name ?? "",
-    warehouseName: workOrder.warehouse?.name ?? "",
+    warehouse: {
+      name: workOrder.warehouse?.name ?? "",
+      streetAddress: workOrder.warehouse?.streetAddress ?? "",
+      city: workOrder.warehouse?.city ?? "",
+      state: workOrder.warehouse?.state ?? "",
+      postalCode: workOrder.warehouse?.postalCode ?? "",
+    },
     jobTypeName: workOrder.jobType?.name ?? "",
     materialItems,
   }

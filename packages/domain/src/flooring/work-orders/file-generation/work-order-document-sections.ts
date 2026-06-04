@@ -1,3 +1,4 @@
+import { buildAddressLine } from "../../../shared/address/index.js"
 import type {
   WorkOrderFileAdjustmentProjection,
   WorkOrderFileGenerationInput,
@@ -103,34 +104,40 @@ export function renderWorkOrderTopTable(
   input: WorkOrderFileGenerationInput,
   options: { includeDescription?: boolean } = {},
 ): string {
-  const dateHeading = input.scheduledFor
+  // The scheduled date anchors the top-left of row 1 (it used to be the
+  // standalone <h2> heading); the warehouse + its address run to its right.
+  const dateCell = input.scheduledFor
     ? escapeHtml(input.scheduledFor)
     : `<span class="empty-cell">—</span>`
-  // Description rides as a borderless row in the top table (label under
-  // "Job Type", value extending rightward across the remaining columns).
+  // Address renders as one flat comma-joined line (no forced wrapping).
+  const warehouseAddressMarkup = escapeOrEmpty(buildAddressLine(input.warehouse))
+  // Description rides as a borderless row in the top table (label under the
+  // date, value extending rightward across the remaining columns).
   // Slip-only — the picking ticket omits the description entirely.
   const descriptionRow =
     options.includeDescription && input.description
       ? `
     <tr>
-      <th>Description</th><td colspan="3" class="multiline">${escapeHtml(input.description)}</td>
+      <th>Description</th><td colspan="5" class="multiline">${escapeHtml(input.description)}</td>
     </tr>`
       : ""
   return `
-<h2>${dateHeading}</h2>
 <table class="wo-top-table">
   <colgroup>
-    <col style="width: 14%;" />
-    <col style="width: 24%;" />
+    <col style="width: 12%;" />
+    <col style="width: 12%;" />
     <col style="width: 20%;" />
-    <col style="width: 42%;" />
+    <col style="width: 12%;" />
+    <col style="width: 22%;" />
+    <col style="width: 22%;" />
   </colgroup>
   <tbody>
     <tr>
-      <th>Warehouse</th><td>${escapeOrEmpty(input.warehouseName)}</td>
-      <th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td>
+      <th>${dateCell}</th><th>Warehouse</th><td>${escapeOrEmpty(input.warehouse.name)}</td>
+      <th>Address</th><td colspan="2">${warehouseAddressMarkup}</td>
     </tr>
     <tr>
+      <th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td>
       <th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td>
       <th>Property</th><td>${escapeOrEmpty(input.property.name)}</td>
     </tr>${descriptionRow}
