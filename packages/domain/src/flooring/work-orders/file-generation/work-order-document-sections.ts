@@ -51,7 +51,6 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .page-brand { justify-self: start; }
   .wo-print-root .page-logo { justify-self: start; height: 56px; width: auto; }
   .wo-print-root .page-number { justify-self: end; }
-  .wo-print-root .page-date { margin-left: 12px; }
   .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
   .wo-print-root .page-frame { margin: 0; }
@@ -74,16 +73,11 @@ function renderDocumentHeader(
   const brand = logoUrl
     ? `<img class="page-logo" src="${escapeHtml(logoUrl)}" alt="CRS Floor Covering" />`
     : `<span class="page-brand">CRS Floor Covering</span>`
-  // The scheduled date rides to the right of the WO number — value only, no
-  // label. Omitted entirely when the work order has no scheduled date.
-  const scheduledDate = input.scheduledFor
-    ? `<span class="page-date">${escapeHtml(input.scheduledFor)}</span>`
-    : ""
   return `
 <div class="page-header">
   ${brand}
   <span class="page-tag">${escapeHtml(tag)}</span>
-  <span class="page-number">${escapeHtml(input.workOrderNumber)}${scheduledDate}</span>
+  <span class="page-number">${escapeHtml(input.workOrderNumber)}</span>
 </div>
 `.trim()
 }
@@ -164,6 +158,7 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
     <col />
   </colgroup>
   <tbody>
+    <tr><th>Date</th><td>${escapeOrEmpty(input.scheduledFor)}</td></tr>
     <tr><th>Warehouse</th><td>${warehouseCell}</td></tr>
     <tr><th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td></tr>${descriptionRow}
     <tr><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
