@@ -2,9 +2,9 @@
 
 import { useCallback, useMemo, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { useRecordCloseGuard } from "@/hooks/record/use-record-close-guard"
+import { useRecordCloseGuard } from "../hooks/use-record-close-guard"
 import type { UnsavedChangesDialogProps } from "@/modules/shared/engines/common/navigation/use-unsaved-changes-guard"
-import { useRecordNotices, type RecordNotices } from "@/hooks/record/use-record-notices"
+import { useRecordNotices, type RecordNotices } from "../hooks/use-record-notices"
 
 export type RecordPageSummaryMetric = {
   key?: string

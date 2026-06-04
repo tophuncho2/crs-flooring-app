@@ -1,10 +1,12 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import { RecordMultiSectionPanel } from "@/components/panels/record-multi-section-panel"
-import { RecordPrimarySectionInstance } from "@/components/sections/panels/record-primary-section-instance"
-import type { RecordSectionSubHeaderAction } from "@/components/sections/structure/record-section-sub-header"
-import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
+import {
+  RecordMultiSectionPanel,
+  RecordPrimarySectionInstance,
+  type RecordSectionSubHeaderAction,
+  type RecordDetailClientScaffoldContext,
+} from "@/engines/record-view"
 import type {
   EnrichedInventoryAdjustmentRow,
   WorkOrderDetail,

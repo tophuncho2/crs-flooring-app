@@ -5,7 +5,7 @@ import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 import { ImportPrimaryFieldsSection } from "./primary/import-primary-fields-section"
 import { ImportStagedInventorySection } from "./staged-inventory/import-staged-inventory-section"
 import { ImportRecordFooter } from "./footer"

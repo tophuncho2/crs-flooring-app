@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import type { RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view/client/scaffolds/record-detail-client-scaffold"
+import type { RecordDetailClientScaffoldContext } from "../scaffolds/record-detail-client-scaffold"
 import { useRecordScopedSectionController } from "./use-record-scoped-section-controller"
 
 export function useSingleSectionCreateController<TLocal>({

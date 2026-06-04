@@ -5,7 +5,7 @@ import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/use-template-primary-section"
 import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/record/use-template-material-items-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"

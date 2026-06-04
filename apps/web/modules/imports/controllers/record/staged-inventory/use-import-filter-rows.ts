@@ -6,7 +6,7 @@ import {
   createRecordSectionError,
   isLocalOnlyRecordRow,
   useRecordScopedSectionController,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 import type {
   ImportDetail,
   ImportStagedInventorySectionDiff,

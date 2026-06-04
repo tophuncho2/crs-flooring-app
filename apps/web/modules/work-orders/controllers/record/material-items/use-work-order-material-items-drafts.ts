@@ -2,7 +2,7 @@
 
 import { useCallback } from "react"
 import type { Dispatch, SetStateAction } from "react"
-import { createLocalRecordRowId } from "@/controllers/record/utils/record-row-ids"
+import { createLocalRecordRowId } from "@/engines/record-view"
 import type { ProductOption } from "@builders/domain"
 import type { RecordSectionError } from "@/types/record/section-error"
 import { createBlankMaterialItemLocal } from "./drafts"

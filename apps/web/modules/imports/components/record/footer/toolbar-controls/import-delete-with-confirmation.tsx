@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { RecordFooterDestructiveButton } from "@/components/panels/record-action-buttons"
+import { RecordFooterDestructiveButton } from "@/engines/record-view"
 import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
 
 export function ImportDeleteWithConfirmation({

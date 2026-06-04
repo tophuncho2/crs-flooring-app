@@ -2,7 +2,7 @@
 
 import { useCallback } from "react"
 import type { StagedInventoryRow } from "@builders/domain"
-import { useGatedBatchSelect } from "@/controllers/record/use-gated-batch-select"
+import { useGatedBatchSelect } from "@/engines/record-view"
 import { useMarkForImportMutation } from "./mutations/use-mark-for-import-mutation"
 
 /**

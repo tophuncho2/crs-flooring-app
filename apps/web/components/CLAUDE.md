@@ -107,4 +107,4 @@ Auto-flow: row 1 holds Order Number (1-2) + Tag (3-4) + Manufacturer (5-8); row 
 
 ## Migration status
 
-This tree is **scaffolding**. Consumers (modules, sections, dashboard pages) currently still import from `apps/web/modules/shared/engines/record-view/` and `apps/web/modules/shared/engines/list-view/`. Migration happens module-by-module in subsequent sweeps; the engine stays in place until nothing imports it.
+This tree is **scaffolding**. Consumers (modules, sections, dashboard pages) currently still import from `apps/web/engines/record-view/` (record-view has been moved into its contained engine) and `apps/web/modules/shared/engines/list-view/` (list-view not yet moved). Migration happens module-by-module in subsequent sweeps; the engine stays in place until nothing imports it.

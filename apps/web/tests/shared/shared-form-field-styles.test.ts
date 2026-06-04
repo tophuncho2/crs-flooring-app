@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { getSharedFormFieldClass } from "@/modules/shared/engines/record-view/forms/form-field-styles"
+import { getSharedFormFieldClass } from "@/engines/record-view/forms/form-field-styles"
 
 describe("getSharedFormFieldClass", () => {
   it("returns the required-empty class set for empty required fields", () => {

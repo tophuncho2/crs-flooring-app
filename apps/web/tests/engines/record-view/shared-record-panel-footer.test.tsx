@@ -3,7 +3,7 @@
 import React from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { RecordPanelFooter } from "@/modules/shared/engines/record-view/shell/record-panel-footer"
+import { RecordPanelFooter } from "@/engines/record-view/shell/record-panel-footer"
 
 describe("RecordPanelFooter", () => {
   beforeEach(() => {

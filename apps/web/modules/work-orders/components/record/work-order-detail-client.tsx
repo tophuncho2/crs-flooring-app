@@ -3,7 +3,7 @@
 import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
-} from "@/scaffolds/record-detail-client-scaffold"
+} from "@/engines/record-view"
 import type {
   EnrichedInventoryAdjustmentRow,
   WorkOrderDetail,

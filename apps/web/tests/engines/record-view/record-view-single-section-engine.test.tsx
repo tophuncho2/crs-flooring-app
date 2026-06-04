@@ -27,8 +27,8 @@ import {
   useRecordPageController,
   useRecordScopedSectionController,
   useSingleSectionRecordController,
-} from "@/modules/shared/engines/record-view"
-import * as RecordViewEngine from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
+import * as RecordViewEngine from "@/engines/record-view"
 
 function renderSingleSectionHarness() {
   const saveSection = vi.fn().mockImplementation(async ({ localValue }) => ({

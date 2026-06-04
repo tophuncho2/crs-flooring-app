@@ -1,6 +1,6 @@
 "use client"
 
-import { RecordSectionErrorPanel } from "@/components/feedback/errors"
+import { RecordSectionErrorPanel } from "@/engines/record-view"
 import { ErrorNotice, SuccessNotice } from "@/components/feedback/notices"
 import type { RecordSectionError } from "@/types/record/section-error"
 

@@ -4,7 +4,7 @@ import {
   createRecordSectionError,
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 import { updateTemplateRequest } from "@/modules/templates/data/mutations"
 import { useTemplatesListMutations } from "@/modules/templates/controllers/list/use-templates-list-mutations"
 import {

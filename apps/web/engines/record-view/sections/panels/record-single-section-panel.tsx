@@ -5,15 +5,15 @@ import { Fragment, useCallback, useMemo } from "react"
 import {
   buildRecordActionConfirmationMessage,
   confirmRecordAction,
-} from "@/controllers/record/utils/confirm-record-action"
-import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
+} from "../../client/controllers/utils/confirm-record-action"
+import type { RecordDetailClientScaffoldContext } from "../../client/scaffolds/record-detail-client-scaffold"
 import type { RecordSectionError } from "@/types/record/section-error"
-import {
-  RecordPanelRenderer,
-  type RecordPanelFooterConfig,
-  type RecordPanelSectionConfig,
-} from "@/components/panels"
-import { RecordPanelFooter } from "@/components/panels/record-panel-footer"
+import { RecordPanelRenderer } from "../../panel/record-panel-renderer"
+import type {
+  RecordPanelFooterConfig,
+  RecordPanelSectionConfig,
+} from "../../panel/record-panel-config"
+import { RecordPanelFooter } from "../../shell/record-panel-footer"
 import { RecordFieldSection } from "./record-field-section"
 import { RecordSectionStack } from "../structure/record-section-stack"
 

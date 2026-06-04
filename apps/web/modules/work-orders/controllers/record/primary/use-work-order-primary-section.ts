@@ -1,7 +1,9 @@
 "use client"
 
-import { useSingleSectionRecordController } from "@/controllers/record/use-single-section-record-controller"
-import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
+import {
+  useSingleSectionRecordController,
+  type RecordDetailClientScaffoldContext,
+} from "@/engines/record-view"
 import { createRecordSectionError } from "@/types/record/section-error"
 import {
   toWorkOrderForm,

@@ -1,6 +1,6 @@
 "use client"
 
-import { RecordFooterNeutralButton } from "@/components/panels/record-action-buttons"
+import { RecordFooterNeutralButton } from "@/engines/record-view"
 
 export function ImportCloseButton({
   label = "Close",

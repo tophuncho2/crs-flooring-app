@@ -4,7 +4,7 @@ import {
   RecordDetailClientScaffoldContext,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
 import { useProductPrimarySection } from "@/modules/products/controllers/use-product-primary-section"
 import { ProductPrimaryFieldsSection } from "./primary/product-primary-fields-section"

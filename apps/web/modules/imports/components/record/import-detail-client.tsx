@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/modules/shared/engines/record-view"
+import { RecordDetailClientScaffold, type RecordDetailClientScaffoldContext } from "@/engines/record-view"
 import { ImportRecordPanel } from "./import-record-panel"
 import type {
   ImportDetail,

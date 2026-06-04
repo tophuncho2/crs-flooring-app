@@ -9,11 +9,11 @@ import { RecordItemSection } from "./record-item-section"
 import {
   RecordSectionGrid,
   RecordSectionGridRow,
-} from "@/modules/shared/engines/record-view/sections/rows/record-section-grid"
+} from "../rows/record-section-grid"
 import type { RecordSectionMetricValue } from "../metrics/record-section-metric"
 import type { RecordSectionSubHeaderProps } from "../structure/record-section-sub-header"
 import { RECORD_SECTION_BORDER_CLASS_NAME } from "../structure/record-section-tokens"
-import type { RecordGridColumnSpec } from "@/modules/shared/engines/record-view/sections/rows/record-row-layout"
+import type { RecordGridColumnSpec } from "../rows/record-row-layout"
 
 export function RecordCalculationSection<TItem>({
   title,

@@ -8,7 +8,7 @@ import {
   RecordPanelFooter,
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 import {
   EMPTY_PRODUCT_CREATE_FORM,
   validateProductPrimaryForm,

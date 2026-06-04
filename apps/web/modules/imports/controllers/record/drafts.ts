@@ -10,7 +10,7 @@ import {
   type StagedInventoryFilterRow,
   type StagedInventoryRow,
 } from "@builders/domain"
-import { createLocalRecordRowId } from "@/modules/shared/engines/record-view"
+import { createLocalRecordRowId } from "@/engines/record-view"
 
 // Record-view files pass `entry` with id pointers — use ImportDetail shape.
 export type ImportRecordEntry = ImportDetail

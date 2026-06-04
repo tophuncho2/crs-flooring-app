@@ -1,4 +1,4 @@
-import { isLocalOnlyRecordRow } from "@/controllers/record/utils/record-row-ids"
+import { isLocalOnlyRecordRow } from "@/engines/record-view"
 import type {
   WorkOrderMaterialItemCreateForm,
   WorkOrderMaterialItemRow,

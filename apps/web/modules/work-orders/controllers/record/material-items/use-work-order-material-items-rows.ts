@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { useRecordScopedSectionController } from "@/controllers/record/use-record-scoped-section-controller"
+import { useRecordScopedSectionController } from "@/engines/record-view"
 import { createRecordSectionError } from "@/types/record/section-error"
 import type {
   WorkOrderDetail,

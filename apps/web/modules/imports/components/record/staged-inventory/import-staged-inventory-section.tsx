@@ -7,7 +7,7 @@ import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
 import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandable-rows"
 import { Grid, GridEmpty } from "@/components/grid"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
-import { isLocalOnlyRecordRow } from "@/modules/shared/engines/record-view"
+import { isLocalOnlyRecordRow } from "@/engines/record-view"
 import type {
   ImportDetail,
   StagedInventoryFilterRow,

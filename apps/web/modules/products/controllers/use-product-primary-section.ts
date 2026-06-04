@@ -4,7 +4,7 @@ import {
   createRecordSectionError,
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 import {
   toProductUpdateForm,
   validateProductPrimaryForm,

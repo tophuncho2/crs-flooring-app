@@ -2,10 +2,12 @@
 
 import { buildRecordDetailHref } from "@/hooks/navigation"
 import { createWorkOrderRequest } from "@/modules/work-orders/data/mutations"
-import { RecordCreateClientScaffold } from "@/scaffolds/record-create-client-scaffold"
-import { RecordSingleSectionPanel } from "@/components/sections/panels/record-single-section-panel"
-import { useSingleSectionCreateController } from "@/controllers/record/use-single-section-create-controller"
-import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
+import {
+  RecordCreateClientScaffold,
+  RecordSingleSectionPanel,
+  useSingleSectionCreateController,
+  type RecordDetailClientScaffoldContext,
+} from "@/engines/record-view"
 import { EMPTY_WORK_ORDER_FORM, type WorkOrderForm } from "@builders/domain"
 import { toUpdateWorkOrderInput } from "@/modules/work-orders/controllers/record/drafts"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"

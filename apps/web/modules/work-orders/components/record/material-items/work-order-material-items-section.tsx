@@ -5,7 +5,7 @@ import { NumberCell, TextCell } from "@/components/cells"
 import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandable-rows"
-import { isLocalOnlyRecordRow } from "@/controllers/record/utils/record-row-ids"
+import { isLocalOnlyRecordRow } from "@/engines/record-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import {
   type EnrichedInventoryAdjustmentRow,

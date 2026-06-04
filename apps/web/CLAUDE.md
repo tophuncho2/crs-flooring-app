@@ -15,14 +15,15 @@ Generic, reusable controller hooks. (Not preffered but, module-specific controll
 
 - [ ] `dropdown-search/` — `use-async-rich-dropdown-controller` (async picker w/ search)
 - [ ] `list-view/` — server list controller, URL bindings, table preferences, list-view contracts
-- [ ] `record/` — record page / detail / section controllers, batch-select actions, single-section create + record controllers
+- [ ] `expandable-rows/` — expandable-row controller
+- [ ] Record controllers now live inside the record-view engine — see `engines/record-view/client/controllers/`.
 
 ## `hooks/`
 
 Generic React hooks for the dashboard.
 
 - [ ] `navigation/` — routes table + record-entry navigation hook
-- [ ] `record/` — record dirty-state, close-guard, notices, section-workflow, pending-workflow polling
+- [ ] Record hooks (dirty-state, close-guard, notices, section-workflow, pending-workflow polling) now live inside the record-view engine — see `engines/record-view/client/hooks/`.
 
 ## `query-policies/`
 
@@ -30,14 +31,12 @@ React-query freshness presets for list views.
 
 - [ ] `index.ts` — `ListFreshness` type + `LIST_FRESHNESS_LIVE`, `LIST_FRESHNESS_STANDARD`, `LIST_FRESHNESS_OFF` (refetch interval + stale time)
 
-## `scaffolds/`
+## `engines/`
 
-Shared client-side shells used by record-view modules.
+Self-contained, reusable UI engines. Each engine owns its components, controllers, hooks, and contracts and exposes a single public surface via its root `index.ts` barrel — consumers import from `@/engines/<name>`, never from deep paths. (`modules/shared/engines/` is being retired in favor of this directory.)
 
-- [ ] `record-detail-client-scaffold.tsx` — wraps a record detail view with the page controller
-- [ ] `record-create-client-scaffold.tsx` — wraps a record create view
-- [ ] `record-detail-page-shell.tsx` — page layout shell for record detail
-- [ ] `record-primary-header.tsx` — primary header chrome for the record page
+- [ ] `record-view/` — the canonical record detail/create engine (work-orders, templates, imports, products). Public surface: `@/engines/record-view`. Internals: `client/` (scaffolds, controllers, hooks, utils), `panel/`, `shell/`, `sections/`, `feedback/`, `forms/`, `adapters/`, `contracts/`. Depends outward only on shared primitives (`@/types`, `@/components/dialogs`, `@/transport`, `@/modules/shared/engines/common`); nothing reaches back into it.
+- [ ] `side-panel/` — side-panel freshness/refresh engine.
 
 ## `tests/`
 

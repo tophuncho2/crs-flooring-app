@@ -1,11 +1,11 @@
 "use client"
 
 import { Fragment, useEffect, useMemo, type ReactNode } from "react"
-import type { RecordNotices } from "@/hooks/record/use-record-notices"
-import type { RecordPageSummary } from "@/controllers/record/use-record-page-controller"
-import { RecordPageActionNotices } from "@/components/feedback/notices/record-page-action-notices"
-import { RecordSectionStack } from "@/components/sections/structure/record-section-stack"
-import { RecordPanelFooter } from "./record-panel-footer"
+import type { RecordNotices } from "../client/hooks/use-record-notices"
+import type { RecordPageSummary } from "../client/controllers/use-record-page-controller"
+import { RecordPageActionNotices } from "../feedback/record-page-action-notices"
+import { RecordSectionStack } from "../sections/structure/record-section-stack"
+import { RecordPanelFooter } from "../shell/record-panel-footer"
 import type {
   RecordPanelContext,
   RecordPanelFooterConfig,

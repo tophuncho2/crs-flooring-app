@@ -6,9 +6,9 @@ import {
   RecordFooterDestructiveButton,
   RecordFooterNeutralButton,
   RecordFooterPrimaryButton,
-} from "@/components/panels/record-action-buttons"
-import { RecordSectionActionPanel } from "@/modules/shared/engines/record-view/sections/status/record-section-action-panel"
-import { RecordSectionSaveStateIndicators } from "@/modules/shared/engines/record-view/sections/status/record-section-status-indicators"
+} from "../../shell/record-action-buttons"
+import { RecordSectionActionPanel } from "../status/record-section-action-panel"
+import { RecordSectionSaveStateIndicators } from "../status/record-section-status-indicators"
 import {
   resolveRecordSectionCapabilities,
   type RecordSectionCapabilities,

@@ -7,7 +7,7 @@ import {
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 import {
   EMPTY_IMPORT_PRIMARY_FORM,
   type ImportPrimaryForm,

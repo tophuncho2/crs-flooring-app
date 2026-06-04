@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import type { RecordSectionError } from "@/types/record/section-error"
-import { RecordFormNotices } from "@/components/feedback/notices/record-form-notices"
+import { RecordFormNotices } from "../../feedback/record-form-notices"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,

@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest"
 import { render, screen } from "@testing-library/react"
-import { CurrencyCell } from "@/modules/shared/engines/record-view"
+import { CurrencyCell } from "@/engines/record-view"
 
 describe("CurrencyCell", () => {
   it("strips a preformatted leading dollar sign from readonly values", () => {

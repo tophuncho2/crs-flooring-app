@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { RecordSectionHeader } from "@/components/sections/structure/record-section-header"
+import { RecordSectionHeader } from "../sections/structure/record-section-header"
 
 export function RecordPrimaryHeader({
   title,

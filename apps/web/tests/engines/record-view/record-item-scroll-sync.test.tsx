@@ -11,7 +11,7 @@ import {
   RecordSectionGridRow,
   type RecordRowColumnSpec,
   type RecordGridLayout,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 
 const ITEM_COLUMNS: RecordRowColumnSpec[] = [
   { key: "name", label: "Name", kind: "text", minWidth: 220, preferredWidth: 240, grow: 1 },

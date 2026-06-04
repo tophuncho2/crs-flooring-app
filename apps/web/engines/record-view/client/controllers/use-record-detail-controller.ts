@@ -7,7 +7,7 @@ import {
   getCachedRecordDetail,
   setCachedRecordDetail,
 } from "./utils/record-detail-cache"
-import { hasRecordDraftChanges } from "@/hooks/record/use-record-dirty-state"
+import { hasRecordDraftChanges } from "../hooks/use-record-dirty-state"
 
 type CachedRecord = {
   id: string

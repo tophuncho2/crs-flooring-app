@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react"
 import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
-import { useRecordPageController, type RecordPageController } from "@/controllers/record/use-record-page-controller"
-import { RecordDetailPageShell } from "./record-detail-page-shell"
+import { useRecordPageController, type RecordPageController } from "../controllers/use-record-page-controller"
+import { RecordDetailPageShell } from "../../shell/record-detail-page-shell"
 
 export type RecordDetailClientScaffoldContext = RecordPageController
 

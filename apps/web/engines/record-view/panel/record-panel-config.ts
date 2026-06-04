@@ -1,11 +1,11 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { RecordDetailClientScaffoldContext } from "@/scaffolds/record-detail-client-scaffold"
-import type { RecordNotices } from "@/hooks/record/use-record-notices"
-import type { RecordSectionCapabilities, RecordSectionType } from "@/components/sections/structure/record-section-capabilities"
-import type { RecordSectionMetricValue } from "@/components/sections/metrics/record-section-metric"
-import type { RecordSectionSubHeaderProps } from "@/components/sections/structure/record-section-sub-header"
+import type { RecordDetailClientScaffoldContext } from "../client/scaffolds/record-detail-client-scaffold"
+import type { RecordNotices } from "../client/hooks/use-record-notices"
+import type { RecordSectionCapabilities, RecordSectionType } from "../sections/structure/record-section-capabilities"
+import type { RecordSectionMetricValue } from "../sections/metrics/record-section-metric"
+import type { RecordSectionSubHeaderProps } from "../sections/structure/record-section-sub-header"
 
 export type RecordPanelSectionControllerState = {
   isDirty?: boolean

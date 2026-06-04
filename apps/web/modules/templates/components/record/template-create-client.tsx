@@ -5,7 +5,7 @@ import {
   RecordSingleSectionPanel,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
-} from "@/modules/shared/engines/record-view"
+} from "@/engines/record-view"
 import { buildRecordDetailHref } from "@/modules/shared/engines/common/record-entry"
 import { createTemplateRequest } from "@/modules/templates/data/mutations"
 import { EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"

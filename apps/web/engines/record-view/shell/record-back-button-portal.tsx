@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react"
 import { createPortal } from "react-dom"
-import { RecordBackButton } from "@/components/panels/record-action-buttons"
+import { RecordBackButton } from "./record-action-buttons"
 
 const SLOT_ID = "record-back-button-slot"
 

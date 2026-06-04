@@ -1,3 +1,3 @@
 "use client"
 
-export { FormStatusNotices as RecordFormNotices } from "./form-status-notices"
+export { FormStatusNotices as RecordFormNotices } from "@/components/feedback/notices/form-status-notices"
