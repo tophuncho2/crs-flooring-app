@@ -36,3 +36,6 @@ export * from "./metrics/record-line-summary"
 
 // Status
 export * from "./status/record-section-status-indicators"
+
+// Drilldown
+export * from "./drilldown/record-drilldown-section"

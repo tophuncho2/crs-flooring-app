@@ -8,11 +8,7 @@ import {
   type ReactNode,
 } from "react"
 import { useRouter } from "next/navigation"
-import type {
-  ManagementCompanyListRow,
-  PropertyListRow,
-  TemplateListRow,
-} from "@builders/domain"
+import type { TemplateListRow } from "@builders/domain"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
 import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
 
@@ -23,14 +19,6 @@ export type HubPanelContextValue = {
   openCascade: () => void
   /** Open the hub on the combined "+ Hub" create form. */
   openForCreate: () => void
-  /** Open the hub straight into a property's edit view (from a list row). */
-  openForPropertyEdit: (row: PropertyListRow) => void
-  /** Open the hub straight into a management company's edit view (from a list row). */
-  openForMcEdit: (row: ManagementCompanyListRow) => void
-  /** Open the property edit panel by id (used by the template-sync page picker arrow). */
-  openForPropertyEditById: (propertyId: string) => void | Promise<void>
-  /** Open the MC edit panel by id (used by the template-sync page picker arrow). */
-  openForMcEditById: (managementCompanyId: string) => void | Promise<void>
 }
 
 const HubPanelContext = createContext<HubPanelContextValue | null>(null)
@@ -60,14 +48,7 @@ function buildTemplateSyncPresetHref(row: TemplateListRow): string {
 export function HubPanelProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const hubPanel = usePropertyHubSidePanel()
-  const {
-    openForCreate,
-    openForPropertyEdit,
-    openForMcEdit,
-    openForPropertyEditById,
-    openForMcEditById,
-    close: closeHub,
-  } = hubPanel
+  const { openForCreate, close: closeHub } = hubPanel
 
   const openCascade = useCallback(() => {
     router.push(TEMPLATE_SYNC_ROUTE)
@@ -90,22 +71,8 @@ export function HubPanelProvider({ children }: { children: ReactNode }) {
   }, [closeHub, router])
 
   const value = useMemo<HubPanelContextValue>(
-    () => ({
-      openCascade,
-      openForCreate,
-      openForPropertyEdit,
-      openForMcEdit,
-      openForPropertyEditById,
-      openForMcEditById,
-    }),
-    [
-      openCascade,
-      openForCreate,
-      openForPropertyEdit,
-      openForMcEdit,
-      openForPropertyEditById,
-      openForMcEditById,
-    ],
+    () => ({ openCascade, openForCreate }),
+    [openCascade, openForCreate],
   )
 
   return (

@@ -15,6 +15,7 @@ import {
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
 import { useHubPanel } from "@/modules/app-shell/components/hub-panel-provider"
+import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
@@ -41,7 +42,8 @@ export default function PropertiesClient({
   initialSelectedManagementCompany = null,
 }: PropertiesClientProps) {
   const { message, pageError } = usePropertiesListController()
-  const { openForCreate, openForPropertyEdit } = useHubPanel()
+  const { openForCreate } = useHubPanel()
+  const { openRecord: openProperty } = useRecordEntryNavigation("/dashboard/properties")
 
   const {
     rows,
@@ -180,7 +182,7 @@ export default function PropertiesClient({
 
       <PropertiesTable
         rows={rows}
-        onOpenProperty={openForPropertyEdit}
+        onOpenProperty={(row) => openProperty(row.id)}
         pagination={
           <PaginateControls
             page={page}

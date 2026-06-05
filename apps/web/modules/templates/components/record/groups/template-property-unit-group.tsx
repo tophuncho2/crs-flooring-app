@@ -1,9 +1,11 @@
 "use client"
 
 import { useCallback, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Pencil } from "lucide-react"
 import { TextCell, TextareaCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
+import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation/routes"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
@@ -139,6 +141,10 @@ export function TemplatePropertyUnitGroup({
     onCreated: handleHubCreated,
     onSaved: handleHubSaved,
   })
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
   const formattedAddress = propertyJoined
     ? buildAddressBlock({
@@ -158,11 +164,17 @@ export function TemplatePropertyUnitGroup({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            aria-label="Edit management company"
-            title="Edit management company"
+            aria-label="Open management company"
+            title="Open management company"
             onClick={() => {
               if (managementCompanyValue) {
-                void hubPanel.openForMcEditById(managementCompanyValue)
+                router.push(
+                  buildRecordDetailHref(
+                    "/dashboard/management-companies",
+                    managementCompanyValue,
+                    returnTo,
+                  ),
+                )
               }
             }}
             disabled={!managementCompanyValue}
@@ -172,11 +184,13 @@ export function TemplatePropertyUnitGroup({
           </button>
           <button
             type="button"
-            aria-label="Edit property"
-            title="Edit property"
+            aria-label="Open property"
+            title="Open property"
             onClick={() => {
               if (propertyValue) {
-                void hubPanel.openForPropertyEditById(propertyValue)
+                router.push(
+                  buildRecordDetailHref("/dashboard/properties", propertyValue, returnTo),
+                )
               }
             }}
             disabled={!propertyValue}

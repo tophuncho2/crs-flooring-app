@@ -1,11 +1,11 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ExternalLink, Pencil } from "lucide-react"
 import { StaticFieldValue } from "@/components/fields"
 import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
-import { buildRecordDetailHref } from "@/hooks/navigation/routes"
+import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation/routes"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
@@ -161,6 +161,9 @@ export function WorkOrderPropertyUnitGroup({
     onSaved: handleHubSaved,
   })
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
   const formattedAddress = propertyJoined
     ? buildAddressBlock({
@@ -180,11 +183,17 @@ export function WorkOrderPropertyUnitGroup({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            aria-label="Edit management company"
-            title="Edit management company"
+            aria-label="Open management company"
+            title="Open management company"
             onClick={() => {
               if (managementCompanyValue) {
-                void hubPanel.openForMcEditById(managementCompanyValue)
+                router.push(
+                  buildRecordDetailHref(
+                    "/dashboard/management-companies",
+                    managementCompanyValue,
+                    returnTo,
+                  ),
+                )
               }
             }}
             disabled={!managementCompanyValue}
@@ -194,11 +203,13 @@ export function WorkOrderPropertyUnitGroup({
           </button>
           <button
             type="button"
-            aria-label="Edit property"
-            title="Edit property"
+            aria-label="Open property"
+            title="Open property"
             onClick={() => {
               if (propertyValue) {
-                void hubPanel.openForPropertyEditById(propertyValue)
+                router.push(
+                  buildRecordDetailHref("/dashboard/properties", propertyValue, returnTo),
+                )
               }
             }}
             disabled={!propertyValue}

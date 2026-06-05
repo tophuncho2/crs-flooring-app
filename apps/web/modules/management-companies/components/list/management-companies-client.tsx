@@ -15,6 +15,7 @@ import {
 } from "@/modules/management-companies/data/list-management-companies-request"
 import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/list/use-management-companies-list-controller"
 import { useHubPanel } from "@/modules/app-shell/components/hub-panel-provider"
+import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
 import { ManagementCompaniesTable } from "./management-companies-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { ManagementCompaniesListSearch } from "./toolbar-controls/management-companies-list-search"
@@ -38,7 +39,10 @@ export default function ManagementCompaniesClient({
   initialStateOptions,
 }: ManagementCompaniesClientProps) {
   const { message, pageError } = useManagementCompaniesListController()
-  const { openForCreate, openForMcEdit } = useHubPanel()
+  const { openForCreate } = useHubPanel()
+  const { openRecord: openManagementCompany } = useRecordEntryNavigation(
+    "/dashboard/management-companies",
+  )
 
   const {
     rows,
@@ -150,7 +154,7 @@ export default function ManagementCompaniesClient({
 
       <ManagementCompaniesTable
         rows={rows}
-        onOpenCompany={openForMcEdit}
+        onOpenCompany={(row) => openManagementCompany(row.id)}
         pagination={
           <PaginateControls
             page={page}
