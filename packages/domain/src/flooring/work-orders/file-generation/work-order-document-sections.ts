@@ -44,7 +44,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .property-info-address { width: 60%; }
   .wo-print-root .flat-rows { width: 100%; border-collapse: collapse; table-layout: auto; margin: 12px 0 0 0; }
   .wo-print-root .flat-rows th, .wo-print-root .flat-rows td { border: 0; padding: 3px 6px; font-size: 13px; text-align: left; vertical-align: top; white-space: nowrap; }
-  .wo-print-root .flat-rows th:first-child, .wo-print-root .flat-rows td:first-child { width: 100%; white-space: normal; overflow-wrap: break-word; }
+  .wo-print-root .flat-rows th:first-child, .wo-print-root .flat-rows td:first-child { width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
   .wo-print-root .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
   .wo-print-root .flat-rows .cl-num { text-align: right; }
   .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
@@ -54,7 +54,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .page-number { justify-self: end; }
   .wo-print-root .multiline { white-space: pre-wrap; overflow-wrap: break-word; }
   .wo-print-root .empty-cell { color: #666; }
-  .wo-print-root .page-frame { margin: 0; }
+  .wo-print-root .page-frame { margin: 0; table-layout: fixed; }
   .wo-print-root .page-frame > thead { display: table-header-group; }
   .wo-print-root .page-frame > thead > tr > td { border: 0; padding: 0.25in 0 0 0; }
   .wo-print-root .page-frame > tbody > tr > td { border: 0; padding: 0; }
