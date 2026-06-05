@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  HubSidePanelAddButton,
   HubSidePanelEditLayout,
   HubSidePanelPickerTrigger,
 } from "@/components/hub-side-panel"
@@ -50,6 +51,7 @@ export function TemplateSyncTopToolbar({
     errorMessage,
     resetSelections,
     handleOpen,
+    handleCreate,
     handleSync,
   } = controller
 
@@ -58,6 +60,11 @@ export function TemplateSyncTopToolbar({
       toolbar={
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <HubSidePanelAddButton
+              label="+Template"
+              onClick={handleCreate}
+              disabled={isSyncing}
+            />
             <TemplateSyncClearButton
               disabled={!hasSelections || isSyncing}
               onClick={resetSelections}
