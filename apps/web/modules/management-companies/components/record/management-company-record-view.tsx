@@ -100,6 +100,7 @@ export function ManagementCompanyRecordView({
               hostPage={ctx.page}
               onBack={onBack}
               onDirtyChange={setEmbeddedDirty}
+              deletable
             />
           )}
         />

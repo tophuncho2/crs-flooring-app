@@ -7,6 +7,7 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
+import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
 import type { ManagementCompanyOption, PropertyDetailRecord } from "@builders/domain"
 import { TemplatesSectionList } from "@/modules/templates/components/record/templates-section-list"
 import { usePropertyPrimarySection } from "@/modules/properties/controllers/record/primary/use-property-primary-section"
@@ -18,15 +19,21 @@ import { PropertyPrimaryFieldsSection } from "./primary/property-primary-fields-
  * (its properties drilldown, or the MC create flow), sharing the host page
  * controller. Sections: ① property cells + editable MC picker (the primary,
  * headerless under the host's back bar), ② templates for this property.
+ *
+ * `deletable` (the drilldown edit view) adds a "Delete Property" button to the
+ * primary section's action row, right of Discard; the MC create flow omits it.
+ * Delete routes back through the shared page controller on success.
  */
 export function PropertyRecordView({
   page,
   entry,
   onDirtyChange,
+  deletable = false,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: PropertyDetailRecord
   onDirtyChange?: (isDirty: boolean) => void
+  deletable?: boolean
 }) {
   const controller = usePropertyPrimarySection({ page, entry })
   const primary = controller.primarySection
@@ -34,6 +41,19 @@ export function PropertyRecordView({
   const [mcLabel, setMcLabel] = useState<string | null>(
     record.managementCompany?.name ?? null,
   )
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  async function confirmDelete() {
+    if (isDeleting) return
+    setIsDeleting(true)
+    try {
+      await controller.deleteRecord()
+    } finally {
+      setIsDeleting(false)
+      setConfirmDeleteOpen(false)
+    }
+  }
 
   const sections: RecordPanelSectionConfig[] = [
     {
@@ -54,6 +74,8 @@ export function PropertyRecordView({
           hasConflict={primary.hasConflict}
           onSave={() => void primary.save()}
           onDiscard={primary.discard}
+          onDelete={deletable ? () => setConfirmDeleteOpen(true) : undefined}
+          deleteLabel="Delete Property"
         >
           <PropertyPrimaryFieldsSection
             draft={primary.localValue}
@@ -78,6 +100,20 @@ export function PropertyRecordView({
   ]
 
   return (
-    <RecordMultiSectionPanel page={page} sections={sections} onDirtyChange={onDirtyChange} />
+    <>
+      <RecordMultiSectionPanel page={page} sections={sections} onDirtyChange={onDirtyChange} />
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Delete property?"
+        message="This cannot be undone."
+        confirmLabel={isDeleting ? "Deleting…" : "Delete"}
+        cancelLabel="Cancel"
+        tone="destructive"
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => {
+          if (!isDeleting) setConfirmDeleteOpen(false)
+        }}
+      />
+    </>
   )
 }

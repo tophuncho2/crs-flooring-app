@@ -17,17 +17,22 @@ import { PropertyRecordView } from "./property-record-view"
  * host page in an embedded page proxy (shares the host's guard/dialog, keeps
  * its own dirty/summary state, routes "close" → `onBack`), and bridges its
  * dirtiness up via `onDirtyChange` so the host section reflects it.
+ *
+ * `deletable` opts into the property's "Delete Property" action — on for the MC
+ * drilldown (edit), off for the MC create flow's linked-property section.
  */
 export function EmbeddedPropertyRecordView({
   propertyId,
   hostPage,
   onBack,
   onDirtyChange,
+  deletable = false,
 }: {
   propertyId: string
   hostPage: RecordDetailClientScaffoldContext
   onBack: () => void
   onDirtyChange?: (isDirty: boolean) => void
+  deletable?: boolean
 }) {
   const embeddedPage = useEmbeddedRecordPageController({ host: hostPage, onNavigateBack: onBack })
 
@@ -44,6 +49,11 @@ export function EmbeddedPropertyRecordView({
   }
 
   return (
-    <PropertyRecordView page={embeddedPage} entry={query.data} onDirtyChange={onDirtyChange} />
+    <PropertyRecordView
+      page={embeddedPage}
+      entry={query.data}
+      onDirtyChange={onDirtyChange}
+      deletable={deletable}
+    />
   )
 }
