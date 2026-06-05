@@ -4,8 +4,6 @@ import type {
   TemplateDetail,
   TemplateListRow,
   TemplateOption,
-  TemplatePreviewHeader,
-  TemplatePreviewMaterialItemPage,
 } from "./types.js"
 
 type TemplateListInput = {
@@ -73,58 +71,6 @@ export function normalizeTemplate(template: TemplateDetailInput): TemplateDetail
     propertyPostalCode: template.property.postalCode ?? "",
     propertyInstructions: template.property.instructions ?? "",
     items,
-  }
-}
-
-type TemplatePreviewHeaderInput = {
-  id: string
-  unitType: string
-  description: string | null
-  installerInstructions: string | null
-  jobType: { name: string } | null
-  warehouse: { name: string } | null
-  property: {
-    streetAddress: string | null
-    city: string | null
-    state: string | null
-    postalCode: string | null
-    instructions: string | null
-  }
-}
-
-export function normalizeTemplatePreviewHeader(
-  template: TemplatePreviewHeaderInput,
-): TemplatePreviewHeader {
-  return {
-    id: template.id,
-    propertyStreetAddress: template.property.streetAddress ?? "",
-    propertyCity: template.property.city ?? "",
-    propertyState: template.property.state ?? "",
-    propertyPostalCode: template.property.postalCode ?? "",
-    propertyInstructions: template.property.instructions ?? "",
-    jobTypeName: template.jobType?.name ?? null,
-    unitType: template.unitType,
-    warehouseName: template.warehouse?.name ?? "",
-    description: template.description ?? "",
-    installerInstructions: template.installerInstructions ?? "",
-  }
-}
-
-export type TemplatePreviewMaterialItemPageInput = {
-  rows: Array<Parameters<typeof normalizeTemplateMaterialItem>[0]>
-  total: number
-  page: number
-  pageSize: number
-}
-
-export function normalizeTemplatePreviewMaterialItemPage(
-  input: TemplatePreviewMaterialItemPageInput,
-): TemplatePreviewMaterialItemPage {
-  return {
-    rows: input.rows.map(normalizeTemplateMaterialItem),
-    total: input.total,
-    page: input.page,
-    pageSize: input.pageSize,
   }
 }
 

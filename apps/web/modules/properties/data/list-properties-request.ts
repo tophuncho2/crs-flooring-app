@@ -62,7 +62,7 @@ export function parsePropertiesListInputFromSearchParams(
   }
 }
 
-export function buildPropertiesListSearchString(
+function buildPropertiesListSearchString(
   input: ListInput<PropertiesListFilters>,
 ): string {
   const params = new URLSearchParams()

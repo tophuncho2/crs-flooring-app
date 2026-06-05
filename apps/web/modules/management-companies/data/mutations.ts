@@ -4,14 +4,6 @@ import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
 import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
 
-export async function createManagementCompanyRequest(input: ManagementCompanyForm) {
-  return requestJson<{ managementCompany: ManagementCompanyDetail }>("/api/management-companies", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(withMutationMeta(input)),
-  })
-}
-
 export async function updateManagementCompanyRequest(
   id: string,
   input: ManagementCompanyForm,

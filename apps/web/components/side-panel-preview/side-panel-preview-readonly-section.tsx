@@ -13,9 +13,7 @@ export type SidePanelPreviewReadonlySectionProps = {
  * inner padding + vertical rhythm).
  *
  * Pure layout — no rows of its own. Compose with
- * {@link SidePanelPreviewReadonlyRow} for label / value pairs, or with
- * {@link SidePanelPreviewSection} when grouping multiple titled subsections
- * inside the same card.
+ * {@link SidePanelPreviewReadonlyRow} for label / value pairs.
  */
 export function SidePanelPreviewReadonlySection({
   children,

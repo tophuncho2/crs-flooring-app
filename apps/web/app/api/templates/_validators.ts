@@ -13,8 +13,6 @@ import {
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
   TEMPLATE_MATERIAL_ITEM_NOTES_MAX,
-  TEMPLATE_PREVIEW_ITEMS_MAX_PAGE_SIZE,
-  TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE,
   TEMPLATE_UNIT_TYPE_MAX,
   type TemplateMaterialItemForm,
   type TemplateMaterialItemsDiff,
@@ -256,43 +254,6 @@ export function validateListTemplatesQuery(
     page: parsed.page,
     pageSize: parsed.pageSize,
   }
-}
-
-// --- Template preview material-items query validator (paginated) ---
-
-const templatePreviewMaterialItemsQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(TEMPLATE_PREVIEW_ITEMS_MAX_PAGE_SIZE)
-    .default(TEMPLATE_PREVIEW_ITEMS_PAGE_SIZE),
-})
-
-export type ValidatedTemplatePreviewMaterialItemsQuery = {
-  page: number
-  pageSize: number
-}
-
-export function validateTemplatePreviewMaterialItemsQuery(
-  searchParams: URLSearchParams,
-): ValidatedTemplatePreviewMaterialItemsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = templatePreviewMaterialItemsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    failTemplate(
-      issue?.message ?? "Invalid template preview material items query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-
-  return parseResult.data
 }
 
 // --- Options query validator ---

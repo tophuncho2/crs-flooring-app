@@ -55,7 +55,7 @@ export function parseManagementCompaniesListInputFromSearchParams(
   }
 }
 
-export function buildManagementCompaniesListSearchString(
+function buildManagementCompaniesListSearchString(
   input: ListInput<ManagementCompaniesListFilters>,
 ): string {
   const params = new URLSearchParams()

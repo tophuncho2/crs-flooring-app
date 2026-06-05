@@ -53,7 +53,7 @@ export function parseTemplatesListInputFromSearchParams(
   }
 }
 
-export function buildTemplatesListSearchString(
+function buildTemplatesListSearchString(
   input: ListInput<TemplatesListFilters>,
 ): string {
   const params = new URLSearchParams()

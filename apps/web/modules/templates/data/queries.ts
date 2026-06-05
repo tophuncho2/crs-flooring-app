@@ -2,12 +2,10 @@ import {
   createPrismaPageLoadIssue,
   getTemplateById,
   isPrismaNotFoundError,
-  listTemplates,
-  listTemplateOptions,
   type PrismaDetailPageResult,
 } from "@builders/db"
 
-export { listTemplates, listTemplateOptions, getTemplateById }
+export { getTemplateById }
 
 // All form-option fields are powered by async pickers
 // (PropertyPicker / ManagementCompanyPicker / JobTypePicker /
