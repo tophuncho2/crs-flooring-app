@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Pencil } from "lucide-react"
 import { TextCell, TextareaCell } from "@/components/cells"
@@ -8,17 +8,12 @@ import { StaticFieldValue } from "@/components/fields"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
+  buildRecordCreateHref,
   buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
-import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
-import {
-  usePropertyHubSidePanel,
-  type PropertyHubCreateResult,
-  type PropertyHubSaveResult,
-} from "@/modules/properties/controllers/property-hub-side-panel"
 
 import {
   buildAddressBlock,
@@ -51,7 +46,6 @@ export function TemplatePropertyUnitGroup({
   onFieldChange,
   onFieldsChange,
   onPropertyOption,
-  onHubEntitySaved,
 }: {
   editable: boolean
   draft: TemplateForm
@@ -61,12 +55,6 @@ export function TemplatePropertyUnitGroup({
   /** Multi-field setter — used for the MC→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
   onPropertyOption: (option: PropertyOption | null) => void
-  /**
-   * Forwarded to the embedded hub panel: fires when the user saves an
-   * MC or Property edit via the pencil buttons. The host record view
-   * uses this to patch its joined fields without a full refetch.
-   */
-  onHubEntitySaved?: (result: PropertyHubSaveResult) => void
 }) {
   const managementCompanyValue = draft.managementCompanyId || null
   const propertyValue = draft.propertyId || null
@@ -91,60 +79,6 @@ export function TemplatePropertyUnitGroup({
   const managementCompanyLabel = pickedMcLabel ?? detail?.managementCompanyName ?? null
   const propertyLabel = pickedPropertyLabel ?? detail?.propertyName ?? null
 
-  const handleHubCreated = useCallback(
-    (result: PropertyHubCreateResult) => {
-      const property = result.property
-      if (!property) {
-        if (result.managementCompany) {
-          onFieldsChange({ managementCompanyId: result.managementCompany.id })
-          setPickedMcLabel(result.managementCompany.name)
-        }
-        return
-      }
-
-      const mcId =
-        result.managementCompany?.id ?? property.managementCompany?.id ?? ""
-      const mcName =
-        result.managementCompany?.name ?? property.managementCompany?.name ?? null
-
-      onFieldsChange({ managementCompanyId: mcId, propertyId: property.id })
-
-      const syntheticOption: PropertyOption = {
-        id: property.id,
-        name: property.name,
-        address: property.fullAddress,
-        streetAddress: property.streetAddress,
-        city: property.city,
-        state: property.state,
-        postalCode: property.zip,
-        instructions: property.instructions,
-        managementCompanyId:
-          result.managementCompany?.id ?? property.managementCompany?.id ?? null,
-      }
-      onPropertyOption(syntheticOption)
-
-      setPickedMcLabel(mcName)
-      setPickedPropertyLabel(property.name)
-    },
-    [onFieldsChange, onPropertyOption],
-  )
-
-  const handleHubSaved = useCallback(
-    (result: PropertyHubSaveResult) => {
-      // Drop the local label snapshots so the patched detail (which the
-      // host record-view applies via patchRecord) becomes visible in the
-      // picker triggers — they're only auto-cleared on a bound-id change.
-      setPickedMcLabel(null)
-      setPickedPropertyLabel(null)
-      onHubEntitySaved?.(result)
-    },
-    [onHubEntitySaved],
-  )
-
-  const hubPanel = usePropertyHubSidePanel({
-    onCreated: handleHubCreated,
-    onSaved: handleHubSaved,
-  })
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -206,7 +140,9 @@ export function TemplatePropertyUnitGroup({
             <button
               type="button"
               aria-label="New property"
-              onClick={hubPanel.open}
+              onClick={() =>
+                router.push(buildRecordCreateHref("/dashboard/properties", { returnTo }))
+              }
               className={GROUP_HEADER_BUTTON_CLASS}
             >
               + New property
@@ -215,7 +151,6 @@ export function TemplatePropertyUnitGroup({
         </div>
       }
     >
-      <PropertyHubSidePanel controller={hubPanel} />
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-3">

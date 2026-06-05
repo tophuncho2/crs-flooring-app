@@ -18,7 +18,7 @@ const PICKER_LABEL_CLASS =
  * right-aligned action button row, then the three cascade picker triggers and
  * the preview items sub-header (when applicable). `HubSidePanelEditLayout`
  * pins the actions on top. The MC / property "open linked record" arrows are
- * supplied by the host (the page wires them to `useHubPanel()`); the template
+ * supplied by the host (the page wires them to router navigation); the template
  * arrow opens the template detail page via the controller.
  */
 export function TemplateSyncTopToolbar({

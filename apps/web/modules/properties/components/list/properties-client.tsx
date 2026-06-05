@@ -14,10 +14,9 @@ import {
   listPropertiesRequest,
 } from "@/modules/properties/data/list-properties-request"
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
-import { useHubPanel } from "@/modules/app-shell/components/hub-panel-provider"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
 import { useRouter } from "next/navigation"
-import { buildPropertyRecordHref } from "@/hooks/navigation/routes"
+import { buildPropertyRecordHref, buildRecordCreateHref } from "@/hooks/navigation/routes"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
@@ -44,7 +43,6 @@ export default function PropertiesClient({
   initialSelectedManagementCompany = null,
 }: PropertiesClientProps) {
   const { message, pageError } = usePropertiesListController()
-  const { openForCreate } = useHubPanel()
   const router = useRouter()
   // Properties have no record page of their own — a row opens its management
   // company's record view drilled into the property (or the MC create flow when
@@ -180,7 +178,11 @@ export default function PropertiesClient({
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">
-              <AddHubButton onClick={openForCreate} />
+              <AddHubButton
+                onClick={() =>
+                  router.push(buildRecordCreateHref("/dashboard/properties", { returnTo }))
+                }
+              />
             </ListToolbarCell>
           </ListToolbar>
         </div>

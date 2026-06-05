@@ -9,7 +9,6 @@ import {
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/use-template-primary-section"
 import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/record/use-template-material-items-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
-import type { PropertyHubSaveResult } from "@/modules/properties/controllers/property-hub-side-panel"
 import type { JobType, TemplateDetail, TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
 import { TemplateMaterialItemsSection } from "./template-material-items-section"
@@ -30,31 +29,6 @@ export function TemplateRecordPanel({
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
   const isDirty = primary.primarySection.isDirty || materialItems.isDirty
   const canSync = !isDirty && !primary.primarySection.isSaving && !materialItems.isSaving
-
-  const handleHubEntitySaved = useCallback(
-    (result: PropertyHubSaveResult) => {
-      const current = primary.record
-      if (!current) return
-      if (result.kind === "mc") {
-        if (current.managementCompanyId !== result.managementCompany.id) return
-        primary.patchRecord({ managementCompanyName: result.managementCompany.name })
-        return
-      }
-      if (current.propertyId !== result.property.id) return
-      const property = result.property
-      primary.patchRecord({
-        propertyName: property.name,
-        propertyStreetAddress: property.streetAddress,
-        propertyCity: property.city,
-        propertyState: property.state,
-        propertyPostalCode: property.zip,
-        propertyInstructions: property.instructions,
-        managementCompanyId: property.managementCompany?.id ?? null,
-        managementCompanyName: property.managementCompany?.name ?? null,
-      })
-    },
-    [primary],
-  )
 
   const handleJobTypeRenamed = useCallback(
     (jobType: JobType) => {
@@ -131,7 +105,6 @@ export function TemplateRecordPanel({
                       ...patch,
                     }))
                   }}
-                  onHubEntitySaved={handleHubEntitySaved}
                   onJobTypeRenamed={handleJobTypeRenamed}
                 />
               </RecordPrimarySectionInstance>

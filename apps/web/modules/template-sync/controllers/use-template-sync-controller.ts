@@ -12,7 +12,6 @@ import {
   useTemplateSyncItems,
   type TemplateSyncItemsController,
 } from "@/modules/template-sync/controllers/use-template-sync-items"
-import { NEW_TEMPLATE_ROUTE } from "@/modules/properties/controllers/property-hub-side-panel"
 
 export type ExpandedPicker = "managementCompany" | "property" | "template" | null
 
@@ -78,7 +77,7 @@ export type TemplateSyncController = {
  * expand/collapse, and runs every toolbar action (sync / clear / open /
  * create). It is a pure page controller — navigation is handled via the
  * router and there is no panel open/close state. Picker "open linked record"
- * arrows are wired by the page from `useHubPanel()`, not here.
+ * arrows are wired by the page (router navigation), not here.
  */
 export function useTemplateSyncController(
   options: { initialSelections?: TemplateSyncInitialSelections } = {},
@@ -191,7 +190,7 @@ export function useTemplateSyncController(
   // Always available: opens a raw new-template form with no property/MC
   // pre-linkage.
   const handleCreate = useCallback(() => {
-    router.push(NEW_TEMPLATE_ROUTE)
+    router.push("/dashboard/templates/new")
   }, [router])
 
   const handleSync = useCallback(async () => {

@@ -14,8 +14,9 @@ import {
   listManagementCompaniesRequest,
 } from "@/modules/management-companies/data/list-management-companies-request"
 import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/list/use-management-companies-list-controller"
-import { useHubPanel } from "@/modules/app-shell/components/hub-panel-provider"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
+import { useRouter } from "next/navigation"
+import { buildRecordCreateHref } from "@/hooks/navigation/routes"
 import { ManagementCompaniesTable } from "./management-companies-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { ManagementCompaniesListSearch } from "./toolbar-controls/management-companies-list-search"
@@ -39,8 +40,8 @@ export default function ManagementCompaniesClient({
   initialStateOptions,
 }: ManagementCompaniesClientProps) {
   const { message, pageError } = useManagementCompaniesListController()
-  const { openForCreate } = useHubPanel()
-  const { openRecord: openManagementCompany } = useRecordEntryNavigation(
+  const router = useRouter()
+  const { openRecord: openManagementCompany, returnTo } = useRecordEntryNavigation(
     "/dashboard/management-companies",
   )
 
@@ -146,7 +147,11 @@ export default function ManagementCompaniesClient({
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">
-              <AddHubButton onClick={openForCreate} />
+              <AddHubButton
+                onClick={() =>
+                  router.push(buildRecordCreateHref("/dashboard/properties", { returnTo }))
+                }
+              />
             </ListToolbarCell>
           </ListToolbar>
         </div>

@@ -1,17 +1,16 @@
 "use client"
 
 import { RefreshCw } from "lucide-react"
-import { useHubPanel } from "@/modules/app-shell/components/hub-panel-provider"
+import { useRouter } from "next/navigation"
 
-// Header trigger for the unified hub + template-sync panel. The panel itself is
-// mounted once by HubPanelProvider; this button only opens it on the cascade.
+// Header trigger that opens the template-sync page (its own record-view URL page).
 export function TemplateSyncButton() {
-  const { openCascade } = useHubPanel()
+  const router = useRouter()
 
   return (
     <button
       type="button"
-      onClick={openCascade}
+      onClick={() => router.push("/dashboard/template-sync")}
       aria-label="Open template sync"
       className="
         w-10 h-10 rounded-full
