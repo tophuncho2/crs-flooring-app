@@ -44,11 +44,6 @@ export function EmbeddedPropertyRecordView({
   }
 
   return (
-    <PropertyRecordView
-      page={embeddedPage}
-      entry={query.data}
-      embedded
-      onDirtyChange={onDirtyChange}
-    />
+    <PropertyRecordView page={embeddedPage} entry={query.data} onDirtyChange={onDirtyChange} />
   )
 }

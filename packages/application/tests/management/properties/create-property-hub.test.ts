@@ -5,6 +5,7 @@ const {
   getManagementCompanyByIdMock,
   createManagementCompanyRecordMock,
   createPropertyRecordMock,
+  updatePropertyRecordMock,
   PrismaKnownError,
 } = vi.hoisted(() => {
   class PrismaKnownError extends Error {
@@ -21,6 +22,7 @@ const {
     getManagementCompanyByIdMock: vi.fn(),
     createManagementCompanyRecordMock: vi.fn(),
     createPropertyRecordMock: vi.fn(),
+    updatePropertyRecordMock: vi.fn(),
     PrismaKnownError,
   }
 })
@@ -31,6 +33,7 @@ vi.mock("@builders/db", () => ({
   getManagementCompanyById: getManagementCompanyByIdMock,
   createManagementCompanyRecord: createManagementCompanyRecordMock,
   createPropertyRecord: createPropertyRecordMock,
+  updatePropertyRecord: updatePropertyRecordMock,
 }))
 
 import { createPropertyHubUseCase } from "../../../src/management/properties/create-property-hub.js"
@@ -67,11 +70,13 @@ beforeEach(() => {
   getManagementCompanyByIdMock.mockReset()
   createManagementCompanyRecordMock.mockReset()
   createPropertyRecordMock.mockReset()
+  updatePropertyRecordMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
   getManagementCompanyByIdMock.mockResolvedValue({ id: "mc-1", name: "Acme" })
   createManagementCompanyRecordMock.mockResolvedValue({ id: "mc-1", name: "Acme" })
   createPropertyRecordMock.mockResolvedValue({ id: "prop-1", name: "Maple Court" })
+  updatePropertyRecordMock.mockResolvedValue({ id: "prop-1", name: "Maple Court" })
 })
 
 describe("createPropertyHubUseCase", () => {
@@ -130,6 +135,35 @@ describe("createPropertyHubUseCase", () => {
       expect.objectContaining({ managementCompanyId: "mc-7" }),
       expect.anything(),
     )
+  })
+
+  it("creates a new MC and links it to an existing property", async () => {
+    createManagementCompanyRecordMock.mockResolvedValue({ id: "mc-3", name: "Acme" })
+    updatePropertyRecordMock.mockResolvedValue({ id: "prop-3", name: "Maple Court" })
+
+    const result = await createPropertyHubUseCase({
+      managementCompany: { mode: "create", fields: mcFields() },
+      property: { mode: "link", id: "prop-3" },
+    } as never)
+
+    expect(result.managementCompany).toEqual({ id: "mc-3", name: "Acme" })
+    expect(result.property).toEqual({ id: "prop-3", name: "Maple Court" })
+    expect(createPropertyRecordMock).not.toHaveBeenCalled()
+    expect(updatePropertyRecordMock).toHaveBeenCalledWith(
+      "prop-3",
+      { managementCompanyId: "mc-3" },
+      expect.anything(),
+    )
+  })
+
+  it("rejects linking a property with no MC action", async () => {
+    await expect(
+      createPropertyHubUseCase({
+        managementCompany: { mode: "none" },
+        property: { mode: "link", id: "prop-3" },
+      } as never),
+    ).rejects.toMatchObject({ code: "PROPERTY_VALIDATION_FAILED", status: 400 })
+    expect(updatePropertyRecordMock).not.toHaveBeenCalled()
   })
 
   it("creates a property alone with a null management company", async () => {

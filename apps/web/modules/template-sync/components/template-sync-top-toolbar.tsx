@@ -28,7 +28,7 @@ export function TemplateSyncTopToolbar({
 }: {
   controller: TemplateSyncController
   onOpenManagementCompany: (managementCompanyId: string) => void
-  onOpenProperty: (propertyId: string) => void
+  onOpenProperty: (propertyId: string, managementCompanyId: string | null) => void
 }) {
   const {
     isSyncing,
@@ -110,7 +110,7 @@ export function TemplateSyncTopToolbar({
           placeholder="Select a property"
           ariaLabel="Property"
           onOpenLinked={() => {
-            if (propertyId) onOpenProperty(propertyId)
+            if (propertyId) onOpenProperty(propertyId, managementCompanyId)
           }}
           openLinkedAriaLabel="Open property"
           openLinkedDisabled={isSyncing}

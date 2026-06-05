@@ -5,7 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ExternalLink, Pencil } from "lucide-react"
 import { StaticFieldValue } from "@/components/fields"
 import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
-import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation/routes"
+import {
+  buildCurrentRecordEntryPath,
+  buildPropertyRecordHref,
+  buildRecordDetailHref,
+} from "@/hooks/navigation/routes"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
@@ -208,7 +212,7 @@ export function WorkOrderPropertyUnitGroup({
             onClick={() => {
               if (propertyValue) {
                 router.push(
-                  buildRecordDetailHref("/dashboard/properties", propertyValue, returnTo),
+                  buildPropertyRecordHref(propertyValue, managementCompanyValue, returnTo),
                 )
               }
             }}

@@ -43,6 +43,12 @@ function readPropertySelection(
   if (!isRecord(raw)) fail("property is required", "property")
   const mode = raw.mode
   if (mode === "none") return { mode: "none" }
+  if (mode === "link") {
+    if (typeof raw.id !== "string" || !raw.id.trim()) {
+      fail("property.id is required", "property.id")
+    }
+    return { mode: "link", id: raw.id.trim() }
+  }
   if (mode === "create") {
     if (!isRecord(raw.fields)) fail("property.fields is required", "property.fields")
     const parsed = validateCreatePropertyInput(raw.fields)
@@ -60,7 +66,7 @@ function readPropertySelection(
       },
     }
   }
-  fail("property.mode must be one of none|create", "property.mode")
+  fail("property.mode must be one of none|link|create", "property.mode")
 }
 
 export function validateCreatePropertyHubInput(

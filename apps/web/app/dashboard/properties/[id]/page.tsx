@@ -1,11 +1,16 @@
-import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { requireSessionUser } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
-import { getPropertyDetailPageData } from "@/modules/properties/data/queries"
-import { PropertyDetailClient } from "@/modules/properties/components/record/property-detail-client"
+import { buildPropertyRecordHref } from "@/hooks/navigation/routes"
+import { getPropertyById } from "@/modules/properties/data/queries"
 
-export default async function PropertyDetailPage({
+/**
+ * Properties no longer have a standalone record page — they live inside their
+ * management company's record view. This route is kept only to resolve old
+ * links/bookmarks: it looks up the property's MC and redirects into the MC view
+ * (drilled into the property), or the MC create flow when the property has none.
+ */
+export default async function PropertyDetailRedirectPage({
   params,
   searchParams,
 }: {
@@ -13,33 +18,14 @@ export default async function PropertyDetailPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   await requireSessionUser()
-
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const result = await getPropertyDetailPageData(id)
+  const returnTo = resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/properties")
 
-  if (!result.ok) {
-    if ("notFound" in result && result.notFound) {
-      notFound()
-    }
-    if (!("error" in result)) {
-      notFound()
-    }
-
-    return (
-      <DashboardErrorState
-        title={result.error.title}
-        message={result.error.message}
-        detail={result.error.detail}
-        errorCode={result.error.code}
-      />
-    )
+  const property = await getPropertyById(id).catch(() => null)
+  if (!property) {
+    notFound()
   }
 
-  return (
-    <PropertyDetailClient
-      property={result.data.property}
-      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/properties")}
-    />
-  )
+  redirect(buildPropertyRecordHref(id, property.managementCompany?.id ?? null, returnTo))
 }

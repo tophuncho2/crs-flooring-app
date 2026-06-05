@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { RecordDetailClientScaffold, RecordMultiSectionPanel } from "@/engines/record-view"
+import { buildPropertyRecordHref } from "@/hooks/navigation/routes"
 import { TemplateSyncBody } from "@/modules/template-sync/components/template-sync-body"
 import { TemplateSyncTopToolbar } from "@/modules/template-sync/components/template-sync-top-toolbar"
 import {
@@ -44,7 +45,11 @@ export function TemplateSyncPageClient({
                     onOpenManagementCompany={(id) =>
                       router.push(`/dashboard/management-companies/${id}`)
                     }
-                    onOpenProperty={(id) => router.push(`/dashboard/properties/${id}`)}
+                    onOpenProperty={(id, managementCompanyId) =>
+                      router.push(
+                        buildPropertyRecordHref(id, managementCompanyId, "/dashboard/template-sync"),
+                      )
+                    }
                   />
                   <TemplateSyncBody controller={controller} />
                 </div>

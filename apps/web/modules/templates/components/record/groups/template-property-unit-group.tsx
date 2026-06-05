@@ -5,7 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Pencil } from "lucide-react"
 import { TextCell, TextareaCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
-import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation/routes"
+import {
+  buildCurrentRecordEntryPath,
+  buildPropertyRecordHref,
+  buildRecordDetailHref,
+} from "@/hooks/navigation/routes"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
@@ -189,7 +193,7 @@ export function TemplatePropertyUnitGroup({
             onClick={() => {
               if (propertyValue) {
                 router.push(
-                  buildRecordDetailHref("/dashboard/properties", propertyValue, returnTo),
+                  buildPropertyRecordHref(propertyValue, managementCompanyValue, returnTo),
                 )
               }
             }}

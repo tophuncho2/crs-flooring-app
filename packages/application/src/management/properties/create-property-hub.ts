@@ -3,6 +3,7 @@ import {
   createManagementCompanyRecord,
   createPropertyRecord,
   getManagementCompanyById,
+  updatePropertyRecord,
   withDatabaseTransaction,
   type CreateManagementCompanyRecordInput,
 } from "@builders/db"
@@ -23,6 +24,7 @@ export type CreatePropertyHubUseCaseInput = {
     | { mode: "create"; fields: CreateManagementCompanyRecordInput }
   property:
     | { mode: "none" }
+    | { mode: "link"; id: string }
     | {
         mode: "create"
         fields: {
@@ -134,6 +136,14 @@ export async function createPropertyHubUseCase(
           email: input.property.fields.email,
           instructions: input.property.fields.instructions,
         },
+        c,
+      )
+    } else if (input.property.mode === "link") {
+      // Link an existing property to the resolved (created or linked) MC. The
+      // domain rule guarantees an MC action accompanies a property link.
+      property = await updatePropertyRecord(
+        input.property.id,
+        { managementCompanyId: managementCompany?.id ?? null },
         c,
       )
     }

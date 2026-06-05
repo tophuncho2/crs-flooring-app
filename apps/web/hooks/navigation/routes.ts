@@ -60,6 +60,34 @@ export function buildRecordCreateHref(
   return query ? `${createPath}?${query}` : createPath
 }
 
+const MANAGEMENT_COMPANIES_BASE = "/dashboard/management-companies"
+
+/**
+ * The single entry point for "open a property". A property never has its own
+ * record page — it always lives inside its management company's record view.
+ * When the property has an MC, open that MC drilled into the property
+ * (`?property=`); when it has none, open the MC **create** flow that will link
+ * this property on save. Shared by every property entry point (the list, the
+ * WO/template "✎ Property" buttons, the template-sync arrow).
+ */
+export function buildPropertyRecordHref(
+  propertyId: string,
+  managementCompanyId: string | null,
+  returnTo?: string | null,
+) {
+  if (managementCompanyId) {
+    const searchParams = new URLSearchParams()
+    searchParams.set("property", propertyId)
+    if (returnTo) searchParams.set("returnTo", returnTo)
+    return `${MANAGEMENT_COMPANIES_BASE}/${managementCompanyId}?${searchParams.toString()}`
+  }
+
+  return buildRecordCreateHref(MANAGEMENT_COMPANIES_BASE, {
+    returnTo,
+    params: { property: propertyId },
+  })
+}
+
 export function resolveRecordEntryReturnTo(
   returnTo: string | string[] | undefined,
   fallbackHref: string,

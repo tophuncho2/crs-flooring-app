@@ -25,6 +25,7 @@ export type PropertyHubMcSelection =
 
 export type PropertyHubPropertySelection =
   | { mode: "none" }
+  | { mode: "link"; id: string }
   | { mode: "create"; fields: PropertyHubPropertyFields }
 
 export type CreatePropertyHubForm = {
@@ -46,6 +47,20 @@ export const EMPTY_PROPERTY_HUB_PROPERTY_FIELDS: PropertyHubPropertyFields = {
 export function validateCreatePropertyHubForm(form: CreatePropertyHubForm): string {
   const hasMcCreate = form.managementCompany.mode === "create"
   const hasPropertyCreate = form.property.mode === "create"
+
+  // New flow: link an existing property to a (new or existing) management
+  // company. The property already exists, so the create-flow guards below don't
+  // apply — only require a real MC action to perform.
+  if (form.property.mode === "link") {
+    if (!form.property.id || form.managementCompany.mode === "none") {
+      return PROPERTY_HUB_NO_ACTIONS_MESSAGE
+    }
+    if (form.managementCompany.mode === "create") {
+      const mcError = validateManagementCompanyForm(form.managementCompany.fields)
+      if (mcError) return mcError
+    }
+    return ""
+  }
 
   // Order matters: a "link" selection is not a "create", so the
   // link-requires-property case must be checked before the no-actions guard —

@@ -16,6 +16,8 @@ import {
 import { usePropertiesListController } from "@/modules/properties/controllers/use-properties-list-controller"
 import { useHubPanel } from "@/modules/app-shell/components/hub-panel-provider"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
+import { useRouter } from "next/navigation"
+import { buildPropertyRecordHref } from "@/hooks/navigation/routes"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
@@ -43,7 +45,11 @@ export default function PropertiesClient({
 }: PropertiesClientProps) {
   const { message, pageError } = usePropertiesListController()
   const { openForCreate } = useHubPanel()
-  const { openRecord: openProperty } = useRecordEntryNavigation("/dashboard/properties")
+  const router = useRouter()
+  // Properties have no record page of their own — a row opens its management
+  // company's record view drilled into the property (or the MC create flow when
+  // the property has no MC). `returnTo` brings the user back to this list.
+  const { returnTo } = useRecordEntryNavigation("/dashboard/properties")
 
   const {
     rows,
@@ -182,7 +188,9 @@ export default function PropertiesClient({
 
       <PropertiesTable
         rows={rows}
-        onOpenProperty={(row) => openProperty(row.id)}
+        onOpenProperty={(row) =>
+          router.push(buildPropertyRecordHref(row.id, row.managementCompany?.id ?? null, returnTo))
+        }
         pagination={
           <PaginateControls
             page={page}

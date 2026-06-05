@@ -40,6 +40,16 @@ export type ManagementCompanyForm = {
   email: string
 }
 
+export const EMPTY_MANAGEMENT_COMPANY_FORM: ManagementCompanyForm = {
+  name: "",
+  streetAddress: "",
+  city: "",
+  state: "",
+  zip: "",
+  phone: "",
+  email: "",
+}
+
 export type ManagementCompanyStateOption = {
   value: string
 }
