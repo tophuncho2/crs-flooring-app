@@ -13,7 +13,7 @@ function readParam(
   return typeof value === "string" ? value : undefined
 }
 
-export default async function TemplateSyncPage({
+export default async function TemplateHubPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>

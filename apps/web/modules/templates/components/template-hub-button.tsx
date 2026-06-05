@@ -13,7 +13,7 @@ export function TemplateHubButton() {
     <button
       type="button"
       onClick={() => router.push(buildTemplateHubHref())}
-      aria-label="Open template sync"
+      aria-label="Open template hub"
       className="
         w-10 h-10 rounded-full
         bg-[var(--panel-background)]

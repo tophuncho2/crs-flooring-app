@@ -34,7 +34,7 @@ export type CascadeOptionsPage<TOption> = {
  * chrome + cascade state; the consumer owns *what* each step searches and how
  * an option maps to a display row. Keeping the requests injected is what makes
  * the engine self-contained (no imports from `modules/*`) and reusable across
- * template-sync and, later, work-orders.
+ * the template hub and, later, work-orders.
  */
 export type CascadePickerStepConfig<TOption> = {
   /** Stable react-query cache-key prefix (bucket parent filters into it). */

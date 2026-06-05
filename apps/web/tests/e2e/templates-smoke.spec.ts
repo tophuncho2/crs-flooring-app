@@ -50,7 +50,7 @@ test.describe("templates smoke", () => {
     await page.getByRole("button", { name: "Create Template" }).click()
 
     // Create now lands on the template hub with the new template selected.
-    await page.waitForURL(/\/dashboard\/template-sync\?.*templateId=/)
-    await expect(page).toHaveURL(/\/dashboard\/template-sync\?.*templateId=/)
+    await page.waitForURL(/\/dashboard\/templates\/edit\?.*templateId=/)
+    await expect(page).toHaveURL(/\/dashboard\/templates\/edit\?.*templateId=/)
   })
 })

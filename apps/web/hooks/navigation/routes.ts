@@ -68,7 +68,7 @@ const MANAGEMENT_COMPANIES_BASE = "/dashboard/management-companies"
  * When the property has an MC, open that MC drilled into the property
  * (`?property=`); when it has none, open the MC **create** flow that will link
  * this property on save. Shared by every property entry point (the list, the
- * WO/template "✎ Property" buttons, the template-sync arrow).
+ * WO/template "✎ Property" buttons, the template hub arrow).
  */
 export function buildPropertyRecordHref(
   propertyId: string,
@@ -88,11 +88,11 @@ export function buildPropertyRecordHref(
   })
 }
 
-const TEMPLATE_HUB_BASE = "/dashboard/template-sync"
+const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
 
 /**
  * The single entry point for "open a template". Templates have no standalone
- * record page — they live on the template hub (`/dashboard/template-sync`),
+ * record page — they live on the template hub (`/dashboard/templates/edit`),
  * selected via `?templateId=`. Pass whatever the caller already knows
  * (property/MC ids + labels) so the cascade pickers seed immediately; a caller
  * with only the id is fine — the hub fills the pickers from the loaded template.

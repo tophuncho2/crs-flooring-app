@@ -35,7 +35,7 @@ import {
   fetchTemplateDetailRequest,
 } from "@/modules/templates/data/template-detail-request"
 
-const TEMPLATE_HUB_BASE = "/dashboard/template-sync"
+const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
 
 /**
  * Cascade preset threaded in from the hub page's search params (deep links +
