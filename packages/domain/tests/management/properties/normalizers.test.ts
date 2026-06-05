@@ -100,6 +100,7 @@ describe("normalizePropertyOption", () => {
       postalCode: null,
       instructions: null,
       managementCompanyId: "mc-1",
+      managementCompany: { name: "Acme Property Mgmt" },
     })
     expect(result).toEqual({
       id: "prop-1",
@@ -111,7 +112,22 @@ describe("normalizePropertyOption", () => {
       postalCode: "",
       instructions: "",
       managementCompanyId: "mc-1",
+      managementCompanyName: "Acme Property Mgmt",
     })
+  })
+
+  it("coalesces a missing management company name to null", () => {
+    const result = normalizePropertyOption({
+      id: "prop-1",
+      name: "Maple Court",
+      streetAddress: "1 Main St",
+      city: "Austin",
+      state: "TX",
+      postalCode: "78701",
+      instructions: "Gate 1234",
+      managementCompanyId: null,
+    })
+    expect(result.managementCompanyName).toBeNull()
   })
 
   it("keeps a null managementCompanyId", () => {

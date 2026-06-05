@@ -1,239 +1,195 @@
 "use client"
 
-import { useCallback, useRef, useState, type RefObject } from "react"
+import { useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import type {
-  ManagementCompanyOption,
-  PropertyOption,
-  TemplateOption,
-} from "@builders/domain"
-import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
+import { useQuery } from "@tanstack/react-query"
 import {
-  useTemplateSyncItems,
-  type TemplateSyncItemsController,
-} from "@/modules/template-sync/controllers/use-template-sync-items"
+  formatTemplateItemsCount,
+  type ManagementCompanyOption,
+  type PropertyOption,
+  type TemplateDetail,
+  type TemplateOption,
+} from "@builders/domain"
+import {
+  useCascadePickerController,
+  type CascadePickerController,
+  type CascadePickerInitialSelections,
+  type CascadePickerSteps,
+} from "@/engines/cascade-picker"
+import type { HubSidePanelPickerOption } from "@/components/hub-side-panel"
+import { buildPropertyRecordHref } from "@/hooks/navigation/routes"
+import {
+  MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY,
+  searchManagementCompanyOptionsRequest,
+} from "@/modules/management-companies/data/management-company-options-request"
+import {
+  PROPERTY_OPTIONS_QUERY_KEY,
+  searchPropertyOptionsRequest,
+} from "@/modules/properties/data/property-options-request"
+import {
+  TEMPLATE_OPTIONS_QUERY_KEY,
+  searchTemplateOptionsRequest,
+} from "@/modules/templates/data/template-options-request"
+import {
+  TEMPLATE_DETAIL_QUERY_KEY,
+  fetchTemplateDetailRequest,
+} from "@/modules/template-sync/data/template-detail-request"
 
-export type ExpandedPicker = "managementCompany" | "property" | "template" | null
+const TEMPLATE_SYNC_RETURN_TO = "/dashboard/template-sync"
 
 /**
- * Optional cascade preset, threaded in from the template-sync page's search
- * params (deep links + the hub view's template-row handoff). Each id/label
- * pair seeds the matching picker so the page opens pre-selected.
+ * Cascade preset threaded in from the page's search params (deep links + the
+ * hub view's template-row hand-off). Re-uses the engine's selection shape.
  */
-export type TemplateSyncInitialSelections = {
-  managementCompanyId?: string | null
-  selectedManagementCompanyLabel?: string | null
-  propertyId?: string | null
-  selectedPropertyLabel?: string | null
-  templateId?: string | null
-  selectedTemplateLabel?: string | null
+export type TemplateSyncInitialSelections = CascadePickerInitialSelections
+
+function managementCompanyToOption(option: ManagementCompanyOption): HubSidePanelPickerOption {
+  return { id: option.id, title: option.name }
+}
+
+function propertyToOption(option: PropertyOption): HubSidePanelPickerOption {
+  return { id: option.id, title: option.name, subtitle: option.address || null }
+}
+
+function templateToOption(option: TemplateOption): HubSidePanelPickerOption {
+  return {
+    id: option.id,
+    title: option.unitType || "—",
+    subtitles: [option.jobTypeName, option.description].filter(
+      (value): value is string => Boolean(value && value.trim().length > 0),
+    ),
+    meta: formatTemplateItemsCount(option.itemsCount),
+  }
 }
 
 export type TemplateSyncController = {
-  // ===== Cascade selections =====
-  managementCompanyId: string | null
-  selectedManagementCompanyLabel: string | null
-  propertyId: string | null
-  selectedPropertyLabel: string | null
-  templateId: string | null
-  selectedTemplateLabel: string | null
-  expandedPicker: ExpandedPicker
-  isSyncing: boolean
-  errorMessage: string | null
-  headerCollapsed: boolean
-
-  // ===== Picker focus refs =====
-  managementCompanyTriggerRef: RefObject<HTMLButtonElement | null>
-  propertyTriggerRef: RefObject<HTMLButtonElement | null>
-  templateTriggerRef: RefObject<HTMLButtonElement | null>
-
-  // ===== Picker toggles + selection handlers =====
-  togglePicker: (picker: Exclude<ExpandedPicker, null>) => void
-  handleManagementCompanySelect: (option: ManagementCompanyOption | null) => void
-  handlePropertySelect: (option: PropertyOption | null) => void
-  handleTemplateSelect: (option: TemplateOption | null) => void
-  handleCancelExpanded: () => void
-
-  // ===== Reset =====
-  resetSelections: () => void
-
-  // ===== Toolbar action handlers =====
-  handleOpen: () => void
-  handleCreate: () => void
-  handleSync: () => Promise<void>
-  toggleHeaderCollapsed: () => void
-
-  // ===== Items preview pagination =====
-  itemsController: TemplateSyncItemsController
-
-  // ===== Derived flags =====
-  canActOnTemplate: boolean
-  hasSelections: boolean
+  cascade: CascadePickerController
+  steps: CascadePickerSteps
+  /** Full record for the selected template, or null while none is loaded. */
+  templateDetail: TemplateDetail | null
+  isTemplateLoading: boolean
+  templateError: string | null
+  // ===== Actions =====
+  clear: () => void
+  newTemplate: () => void
+  openManagementCompany: (managementCompanyId: string) => void
+  openProperty: (propertyId: string, managementCompanyId: string | null) => void
+  openTemplate: (templateId: string) => void
 }
 
 /**
- * Controller for the template-sync page. Owns the cascade selection state
- * (Management Company → Property → Template), drives the inline picker
- * expand/collapse, and runs every toolbar action (sync / clear / open /
- * create). It is a pure page controller — navigation is handled via the
- * router and there is no panel open/close state. Picker "open linked record"
- * arrows are wired by the page (router navigation), not here.
+ * Page controller for the combined template-sync page. Composes the shared
+ * cascade picker (Management Company → Property → Template), wires each step's
+ * data request, loads the full editable template record when one is selected,
+ * and owns the page-level actions (clear, new template, open-linked records).
  */
 export function useTemplateSyncController(
-  options: { initialSelections?: TemplateSyncInitialSelections } = {},
+  options: { initialSelections?: TemplateSyncInitialSelections; initialTemplate?: TemplateDetail | null } = {},
 ): TemplateSyncController {
-  const { initialSelections } = options
+  const { initialSelections, initialTemplate } = options
   const router = useRouter()
-  const [managementCompanyId, setManagementCompanyId] = useState<string | null>(
-    initialSelections?.managementCompanyId ?? null,
-  )
-  const [selectedManagementCompanyLabel, setSelectedManagementCompanyLabel] =
-    useState<string | null>(initialSelections?.selectedManagementCompanyLabel ?? null)
-  const [propertyId, setPropertyId] = useState<string | null>(
-    initialSelections?.propertyId ?? null,
-  )
-  const [selectedPropertyLabel, setSelectedPropertyLabel] = useState<string | null>(
-    initialSelections?.selectedPropertyLabel ?? null,
-  )
-  const [templateId, setTemplateId] = useState<string | null>(
-    initialSelections?.templateId ?? null,
-  )
-  const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string | null>(
-    initialSelections?.selectedTemplateLabel ?? null,
-  )
-  const [expandedPicker, setExpandedPicker] = useState<ExpandedPicker>(null)
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [headerCollapsed, setHeaderCollapsed] = useState(false)
-  const itemsController = useTemplateSyncItems(templateId)
+  const cascade = useCascadePickerController({ initialSelections })
 
-  const managementCompanyTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const propertyTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const templateTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const { managementCompanyId, propertyId, templateId } = cascade
 
-  const toggleHeaderCollapsed = useCallback(() => {
-    setHeaderCollapsed((value) => !value)
-  }, [])
+  const steps = useMemo<CascadePickerSteps>(
+    () => ({
+      managementCompany: {
+        bucketKey: MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY,
+        pagedSearchFn: (search, signal, skip) =>
+          searchManagementCompanyOptionsRequest(search, signal, { skip }),
+        toOption: managementCompanyToOption,
+        searchPlaceholder: "Search companies",
+      },
+      property: {
+        // Bucket per management-company so cache results stay scoped to the parent filter.
+        bucketKey: [...PROPERTY_OPTIONS_QUERY_KEY, managementCompanyId ?? null],
+        pagedSearchFn: (search, signal, skip) =>
+          searchPropertyOptionsRequest(search, signal, {
+            managementCompanyId: managementCompanyId ?? undefined,
+            skip,
+          }),
+        toOption: propertyToOption,
+        searchPlaceholder: "Search properties",
+      },
+      template: {
+        bucketKey: [...TEMPLATE_OPTIONS_QUERY_KEY, propertyId ?? null],
+        pagedSearchFn: (search, signal, skip) =>
+          searchTemplateOptionsRequest(search, signal, {
+            propertyId: propertyId ?? "",
+            skip,
+          }),
+        toOption: templateToOption,
+        searchPlaceholder: "Search templates",
+      },
+    }),
+    [managementCompanyId, propertyId],
+  )
 
-  const togglePicker = useCallback((picker: Exclude<ExpandedPicker, null>) => {
-    setExpandedPicker((current) => (current === picker ? null : picker))
-  }, [])
+  const templateQuery = useQuery({
+    queryKey: [...TEMPLATE_DETAIL_QUERY_KEY, templateId],
+    queryFn: ({ signal }) => fetchTemplateDetailRequest(templateId!, signal),
+    enabled: templateId !== null,
+    // Seed once and keep stable so the record panel below isn't reseeded (and
+    // unsaved edits aren't clobbered) by a background refetch.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    initialData:
+      initialTemplate && initialTemplate.id === templateId ? initialTemplate : undefined,
+  })
 
-  const handleManagementCompanySelect = useCallback(
-    (option: ManagementCompanyOption | null) => {
-      setManagementCompanyId(option?.id ?? null)
-      setSelectedManagementCompanyLabel(option?.name ?? null)
-      setPropertyId(null)
-      setSelectedPropertyLabel(null)
-      setTemplateId(null)
-      setSelectedTemplateLabel(null)
-      setExpandedPicker(null)
-      managementCompanyTriggerRef.current?.focus()
+  const templateDetail = templateId !== null ? templateQuery.data ?? null : null
+  const isTemplateLoading = templateId !== null && templateQuery.isLoading
+  const templateError =
+    templateId !== null && templateQuery.isError
+      ? templateQuery.error instanceof Error
+        ? templateQuery.error.message
+        : "Failed to load template."
+      : null
+
+  const clear = useCallback(() => {
+    cascade.reset()
+  }, [cascade])
+
+  const newTemplate = useCallback(() => {
+    const params = new URLSearchParams()
+    if (propertyId) params.set("propertyId", propertyId)
+    if (managementCompanyId) params.set("managementCompanyId", managementCompanyId)
+    params.set("returnTo", TEMPLATE_SYNC_RETURN_TO)
+    router.push(`/dashboard/templates/new?${params.toString()}`)
+  }, [managementCompanyId, propertyId, router])
+
+  const openManagementCompany = useCallback(
+    (id: string) => {
+      router.push(`/dashboard/management-companies/${id}`)
     },
-    [],
+    [router],
   )
 
-  const handlePropertySelect = useCallback((option: PropertyOption | null) => {
-    setPropertyId(option?.id ?? null)
-    setSelectedPropertyLabel(option?.name ?? null)
-    setTemplateId(null)
-    setSelectedTemplateLabel(null)
-    setExpandedPicker(null)
-    propertyTriggerRef.current?.focus()
-  }, [])
+  const openProperty = useCallback(
+    (id: string, mcId: string | null) => {
+      router.push(buildPropertyRecordHref(id, mcId, TEMPLATE_SYNC_RETURN_TO))
+    },
+    [router],
+  )
 
-  const handleTemplateSelect = useCallback((option: TemplateOption | null) => {
-    setTemplateId(option?.id ?? null)
-    setSelectedTemplateLabel(option ? option.unitType || "—" : null)
-    setExpandedPicker(null)
-    templateTriggerRef.current?.focus()
-  }, [])
-
-  const resetSelections = useCallback(() => {
-    setManagementCompanyId(null)
-    setSelectedManagementCompanyLabel(null)
-    setPropertyId(null)
-    setSelectedPropertyLabel(null)
-    setTemplateId(null)
-    setSelectedTemplateLabel(null)
-    setExpandedPicker(null)
-    setErrorMessage(null)
-  }, [])
-
-  // No defensive effect is needed to collapse the template picker when the
-  // cascade clears: every path that nulls `propertyId`
-  // (handleManagementCompanySelect / handlePropertySelect / resetSelections)
-  // also nulls `expandedPicker`, and both consumers gate the template branch
-  // on `propertyId` (TemplateSyncBody's `&& propertyId`, the trigger's
-  // `disabled={propertyId === null}`).
-
-  const handleCancelExpanded = useCallback(() => {
-    setExpandedPicker(null)
-    if (expandedPicker === "managementCompany") {
-      managementCompanyTriggerRef.current?.focus()
-    } else if (expandedPicker === "property") {
-      propertyTriggerRef.current?.focus()
-    } else if (expandedPicker === "template") {
-      templateTriggerRef.current?.focus()
-    }
-  }, [expandedPicker])
-
-  const canActOnTemplate = templateId !== null
-  const hasSelections =
-    managementCompanyId !== null || propertyId !== null || templateId !== null
-
-  const handleOpen = useCallback(() => {
-    if (!templateId) return
-    router.push(`/dashboard/templates/${templateId}`)
-  }, [templateId, router])
-
-  // Always available: opens a raw new-template form with no property/MC
-  // pre-linkage.
-  const handleCreate = useCallback(() => {
-    router.push("/dashboard/templates/new")
-  }, [router])
-
-  const handleSync = useCallback(async () => {
-    if (!templateId || isSyncing) return
-    setIsSyncing(true)
-    setErrorMessage(null)
-    try {
-      const result = await syncTemplateRequest({ templateId })
-      const newId = result.workOrder.id
-      router.push(`/dashboard/work-orders/${newId}`)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Sync failed. Try again."
-      setErrorMessage(message)
-      setIsSyncing(false)
-    }
-  }, [templateId, isSyncing, router])
+  const openTemplate = useCallback(
+    (id: string) => {
+      router.push(`/dashboard/templates/${id}`)
+    },
+    [router],
+  )
 
   return {
-    managementCompanyId,
-    selectedManagementCompanyLabel,
-    propertyId,
-    selectedPropertyLabel,
-    templateId,
-    selectedTemplateLabel,
-    expandedPicker,
-    isSyncing,
-    errorMessage,
-    headerCollapsed,
-    managementCompanyTriggerRef,
-    propertyTriggerRef,
-    templateTriggerRef,
-    togglePicker,
-    handleManagementCompanySelect,
-    handlePropertySelect,
-    handleTemplateSelect,
-    handleCancelExpanded,
-    resetSelections,
-    handleOpen,
-    handleCreate,
-    handleSync,
-    toggleHeaderCollapsed,
-    itemsController,
-    canActOnTemplate,
-    hasSelections,
+    cascade,
+    steps,
+    templateDetail,
+    isTemplateLoading,
+    templateError,
+    clear,
+    newTemplate,
+    openManagementCompany,
+    openProperty,
+    openTemplate,
   }
 }

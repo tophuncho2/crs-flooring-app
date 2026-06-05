@@ -1,5 +1,7 @@
+import type { TemplateDetail } from "@builders/domain"
 import { requireSessionUser } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
+import { getTemplateDetailPageData } from "@/modules/templates/data/queries"
 import { TemplateSyncPageClient } from "@/modules/template-sync/components/template-sync-page-client"
 import type { TemplateSyncInitialSelections } from "@/modules/template-sync/controllers/use-template-sync-controller"
 
@@ -21,18 +23,26 @@ export default async function TemplateSyncPage({
 
   const initialSelections: TemplateSyncInitialSelections = {
     managementCompanyId: readParam(resolvedSearchParams, "managementCompanyId") ?? null,
-    selectedManagementCompanyLabel:
-      readParam(resolvedSearchParams, "managementCompanyLabel") ?? null,
+    managementCompanyLabel: readParam(resolvedSearchParams, "managementCompanyLabel") ?? null,
     propertyId: readParam(resolvedSearchParams, "propertyId") ?? null,
-    selectedPropertyLabel: readParam(resolvedSearchParams, "propertyLabel") ?? null,
+    propertyLabel: readParam(resolvedSearchParams, "propertyLabel") ?? null,
     templateId: readParam(resolvedSearchParams, "templateId") ?? null,
-    selectedTemplateLabel: readParam(resolvedSearchParams, "templateLabel") ?? null,
+    templateLabel: readParam(resolvedSearchParams, "templateLabel") ?? null,
+  }
+
+  // Deep-linked template renders without a client round-trip when it loads
+  // cleanly; otherwise the client fetches it (or surfaces the error) on mount.
+  let initialTemplate: TemplateDetail | null = null
+  if (initialSelections.templateId) {
+    const result = await getTemplateDetailPageData(initialSelections.templateId)
+    if (result.ok) initialTemplate = result.data.template
   }
 
   return (
     <TemplateSyncPageClient
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/work-orders")}
       initialSelections={initialSelections}
+      initialTemplate={initialTemplate}
     />
   )
 }

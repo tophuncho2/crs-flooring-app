@@ -43,6 +43,7 @@ export type PropertyOption = {
   postalCode: string
   instructions: string
   managementCompanyId: string | null
+  managementCompanyName: string | null
 }
 
 export type PropertyPrimaryForm = {

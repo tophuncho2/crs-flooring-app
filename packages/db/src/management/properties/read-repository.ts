@@ -57,6 +57,9 @@ const propertyOptionSelect = {
   postalCode: true,
   instructions: true,
   managementCompanyId: true,
+  managementCompany: {
+    select: { name: true },
+  },
 } as const
 
 export async function listPropertyOptions(
