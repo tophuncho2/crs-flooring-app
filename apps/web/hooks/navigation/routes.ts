@@ -88,6 +88,43 @@ export function buildPropertyRecordHref(
   })
 }
 
+const TEMPLATE_HUB_BASE = "/dashboard/template-sync"
+
+/**
+ * The single entry point for "open a template". Templates have no standalone
+ * record page — they live on the template hub (`/dashboard/template-sync`),
+ * selected via `?templateId=`. Pass whatever the caller already knows
+ * (property/MC ids + labels) so the cascade pickers seed immediately; a caller
+ * with only the id is fine — the hub fills the pickers from the loaded template.
+ * No args → the empty hub (the app-shell icon entry). Shared by the templates
+ * list, the MC record view's templates section, a work-order's template arrow,
+ * and the create-template success redirect.
+ */
+export function buildTemplateHubHref(options?: {
+  templateId?: string | null
+  templateLabel?: string | null
+  propertyId?: string | null
+  propertyLabel?: string | null
+  managementCompanyId?: string | null
+  managementCompanyLabel?: string | null
+  returnTo?: string | null
+}): string {
+  const searchParams = new URLSearchParams()
+  const set = (key: string, value: string | null | undefined) => {
+    if (value) searchParams.set(key, value)
+  }
+  set("templateId", options?.templateId)
+  set("templateLabel", options?.templateLabel)
+  set("propertyId", options?.propertyId)
+  set("propertyLabel", options?.propertyLabel)
+  set("managementCompanyId", options?.managementCompanyId)
+  set("managementCompanyLabel", options?.managementCompanyLabel)
+  set("returnTo", options?.returnTo)
+
+  const query = searchParams.toString()
+  return query ? `${TEMPLATE_HUB_BASE}?${query}` : TEMPLATE_HUB_BASE
+}
+
 export function resolveRecordEntryReturnTo(
   returnTo: string | string[] | undefined,
   fallbackHref: string,

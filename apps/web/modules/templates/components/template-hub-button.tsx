@@ -2,15 +2,17 @@
 
 import { RefreshCw } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { buildTemplateHubHref } from "@/hooks/navigation"
 
-// Header trigger that opens the template-sync page (its own record-view URL page).
-export function TemplateSyncButton() {
+// Header trigger that opens the template hub in its empty state (no template
+// pre-selected). Rows/links open the same page with a template selected.
+export function TemplateHubButton() {
   const router = useRouter()
 
   return (
     <button
       type="button"
-      onClick={() => router.push("/dashboard/template-sync")}
+      onClick={() => router.push(buildTemplateHubHref())}
       aria-label="Open template sync"
       className="
         w-10 h-10 rounded-full

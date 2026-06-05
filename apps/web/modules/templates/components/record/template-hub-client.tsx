@@ -13,35 +13,36 @@ import {
 import { HubSidePanelAddButton } from "@/components/hub-side-panel"
 import { SidePanelPreviewClearButton } from "@/components/side-panel-preview"
 import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
-import { TemplateRecordPanel } from "@/modules/templates/components/record/template-record-panel"
 import type { TemplateDetail } from "@builders/domain"
+import { TemplateRecordPanel } from "./template-record-panel"
 import {
-  useTemplateSyncController,
-  type TemplateSyncController,
-  type TemplateSyncInitialSelections,
-} from "@/modules/template-sync/controllers/use-template-sync-controller"
+  useTemplateHubController,
+  type TemplateHubController,
+  type TemplateHubInitialSelections,
+} from "@/modules/templates/controllers/record/use-template-hub-controller"
 
 /**
- * Combined template-sync page. The top section is the shared cascade picker
- * (Management Company → Property → Template); selecting a template loads the
- * *editable* template record below (its primary + material-items sections,
- * reused verbatim from the standalone detail view). Re-selecting a template
- * swaps the record in place. The old read-only preview is gone.
+ * The single templates page ("template hub"). The top section is the shared
+ * cascade picker (Management Company → Property → Template); selecting a
+ * template loads the *editable* template record below (its primary +
+ * material-items sections). Re-selecting swaps the record in place. Opened from
+ * every template entry point (list / MC / work-order / create) with the
+ * template pre-selected, or from the app-shell icon in the empty state.
  */
-export function TemplateSyncPageClient({
+export function TemplateHubClient({
   backHref,
   initialSelections,
   initialTemplate,
 }: {
   backHref: string
-  initialSelections?: TemplateSyncInitialSelections
+  initialSelections?: TemplateHubInitialSelections
   initialTemplate?: TemplateDetail | null
 }) {
-  const controller = useTemplateSyncController({ initialSelections, initialTemplate })
+  const controller = useTemplateHubController({ initialSelections, initialTemplate })
 
   return (
     <RecordDetailClientScaffold title="Template sync" backHref={backHref} dirtyMessage="">
-      {(page) => <TemplateSyncView page={page} controller={controller} />}
+      {(page) => <TemplateHubView page={page} controller={controller} />}
     </RecordDetailClientScaffold>
   )
 }
@@ -49,12 +50,12 @@ export function TemplateSyncPageClient({
 const PROMPT_CARD_CLASS =
   "rounded-xl border border-dashed border-[var(--panel-border)] bg-[var(--subpanel-background)] px-5 py-10 text-center text-sm text-[var(--foreground)]/65"
 
-function TemplateSyncView({
+function TemplateHubView({
   page,
   controller,
 }: {
   page: RecordDetailClientScaffoldContext
-  controller: TemplateSyncController
+  controller: TemplateHubController
 }) {
   const {
     cascade,
@@ -66,7 +67,6 @@ function TemplateSyncView({
     newTemplate,
     openManagementCompany,
     openProperty,
-    openTemplate,
   } = controller
 
   // Selecting a different template (or clearing the cascade) discards the
@@ -108,7 +108,6 @@ function TemplateSyncView({
         error={templateError}
         onOpenManagementCompany={openManagementCompany}
         onOpenProperty={openProperty}
-        onOpenTemplate={openTemplate}
         actions={
           <>
             <HubSidePanelAddButton label="+ Template" onClick={newTemplate} />

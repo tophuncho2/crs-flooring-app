@@ -12,6 +12,17 @@ export type CascadeSelection = {
   label: string | null
 }
 
+/**
+ * Direct seed for the cascade selections (e.g. pre-setting the pickers from a
+ * loaded parent record). An omitted key leaves that step untouched; an explicit
+ * `null` clears it. No cascade side-effects (no downstream clear, no focus).
+ */
+export type CascadePickerSeed = {
+  managementCompany?: CascadeSelection | null
+  property?: CascadeSelection | null
+  template?: CascadeSelection | null
+}
+
 /** One fetched page of options, matching the dropdown engine's paged shape. */
 export type CascadeOptionsPage<TOption> = {
   items: TOption[]

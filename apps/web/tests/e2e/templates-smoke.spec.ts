@@ -4,7 +4,7 @@ import { e2eCredentialsMissing } from "./helpers/login"
 test.describe("templates smoke", () => {
   test.skip(e2eCredentialsMissing, "Set E2E_EMAIL and E2E_PASSWORD to run the smoke suite.")
 
-  test("creates a template with an inline-new property and lands on the detail page", async ({ page }) => {
+  test("creates a template with an inline-new property and lands on the template hub", async ({ page }) => {
     const stamp = Date.now()
     const companyName = `Smoke Tmpl MC ${stamp}`
     const propertyName = `Smoke Tmpl Property ${stamp}`
@@ -49,7 +49,8 @@ test.describe("templates smoke", () => {
 
     await page.getByRole("button", { name: "Create Template" }).click()
 
-    await page.waitForURL(/\/dashboard\/templates\/[^/]+/)
-    await expect(page).toHaveURL(/\/dashboard\/templates\/[^/]+/)
+    // Create now lands on the template hub with the new template selected.
+    await page.waitForURL(/\/dashboard\/template-sync\?.*templateId=/)
+    await expect(page).toHaveURL(/\/dashboard\/template-sync\?.*templateId=/)
   })
 })

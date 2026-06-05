@@ -189,7 +189,7 @@ export default function TemplatesClient({
 
       <TemplatesTable
         rows={rows}
-        onOpen={(row) => openTemplate(row.id)}
+        onOpen={(row) => openTemplate(row)}
         pagination={
           <PaginateControls
             page={page}

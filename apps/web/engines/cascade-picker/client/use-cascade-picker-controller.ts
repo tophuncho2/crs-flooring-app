@@ -6,7 +6,7 @@ import type {
   PropertyOption,
   TemplateOption,
 } from "@builders/domain"
-import type { CascadeStep } from "../contracts/cascade-picker-contracts"
+import type { CascadePickerSeed, CascadeStep } from "../contracts/cascade-picker-contracts"
 
 /**
  * Optional preset seeding each step's id + label (deep links / row hand-offs).
@@ -42,6 +42,8 @@ export type CascadePickerController = {
   selectTemplate: (option: TemplateOption | null) => void
   cancelExpanded: () => void
   reset: () => void
+  /** Set selections directly (no cascade side-effects) — e.g. pre-set from a loaded record. */
+  seed: (selections: CascadePickerSeed) => void
 
   // ===== Derived =====
   hasSelections: boolean
@@ -144,6 +146,21 @@ export function useCascadePickerController(
     })
   }, [])
 
+  const seed = useCallback((selections: CascadePickerSeed) => {
+    if (selections.managementCompany !== undefined) {
+      setManagementCompanyId(selections.managementCompany?.id ?? null)
+      setManagementCompanyLabel(selections.managementCompany?.label ?? null)
+    }
+    if (selections.property !== undefined) {
+      setPropertyId(selections.property?.id ?? null)
+      setPropertyLabel(selections.property?.label ?? null)
+    }
+    if (selections.template !== undefined) {
+      setTemplateId(selections.template?.id ?? null)
+      setTemplateLabel(selections.template?.label ?? null)
+    }
+  }, [])
+
   const reset = useCallback(() => {
     setManagementCompanyId(null)
     setManagementCompanyLabel(null)
@@ -174,6 +191,7 @@ export function useCascadePickerController(
     selectTemplate,
     cancelExpanded,
     reset,
+    seed,
     hasSelections,
   }
 }

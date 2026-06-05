@@ -6,7 +6,7 @@ import {
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import { buildRecordDetailHref } from "@/hooks/navigation"
+import { buildTemplateHubHref } from "@/hooks/navigation"
 import { createTemplateRequest } from "@/modules/templates/data/mutations"
 import { EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
@@ -34,7 +34,7 @@ function TemplateCreatePanel({
       const payload = await createTemplateRequest(localValue)
 
       return {
-        redirectTo: buildRecordDetailHref("/dashboard/templates", payload.template.id, backHref),
+        redirectTo: buildTemplateHubHref({ templateId: payload.template.id, returnTo: backHref }),
       }
     },
   })

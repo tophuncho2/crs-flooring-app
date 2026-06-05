@@ -2,8 +2,8 @@ import type { TemplateDetail } from "@builders/domain"
 import { requireSessionUser } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { getTemplateDetailPageData } from "@/modules/templates/data/queries"
-import { TemplateSyncPageClient } from "@/modules/template-sync/components/template-sync-page-client"
-import type { TemplateSyncInitialSelections } from "@/modules/template-sync/controllers/use-template-sync-controller"
+import { TemplateHubClient } from "@/modules/templates/components/record/template-hub-client"
+import type { TemplateHubInitialSelections } from "@/modules/templates/controllers/record/use-template-hub-controller"
 
 function readParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -21,7 +21,7 @@ export default async function TemplateSyncPage({
   await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
-  const initialSelections: TemplateSyncInitialSelections = {
+  const initialSelections: TemplateHubInitialSelections = {
     managementCompanyId: readParam(resolvedSearchParams, "managementCompanyId") ?? null,
     managementCompanyLabel: readParam(resolvedSearchParams, "managementCompanyLabel") ?? null,
     propertyId: readParam(resolvedSearchParams, "propertyId") ?? null,
@@ -39,7 +39,7 @@ export default async function TemplateSyncPage({
   }
 
   return (
-    <TemplateSyncPageClient
+    <TemplateHubClient
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/work-orders")}
       initialSelections={initialSelections}
       initialTemplate={initialTemplate}

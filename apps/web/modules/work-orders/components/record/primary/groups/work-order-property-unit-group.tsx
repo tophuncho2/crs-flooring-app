@@ -10,6 +10,7 @@ import {
   buildPropertyRecordHref,
   buildRecordCreateHref,
   buildRecordDetailHref,
+  buildTemplateHubHref,
 } from "@/hooks/navigation/routes"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
@@ -157,7 +158,7 @@ export function WorkOrderPropertyUnitGroup({
             title="Open template record"
             onClick={() => {
               if (templateValue) {
-                router.push(buildRecordDetailHref("/dashboard/templates", templateValue))
+                router.push(buildTemplateHubHref({ templateId: templateValue, returnTo }))
               }
             }}
             disabled={!templateValue}

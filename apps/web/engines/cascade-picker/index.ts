@@ -18,6 +18,7 @@ export {
 export type {
   CascadeStep,
   CascadeSelection,
+  CascadePickerSeed,
   CascadeOptionsPage,
   CascadePickerStepConfig,
 } from "./contracts/cascade-picker-contracts"

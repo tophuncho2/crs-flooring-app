@@ -15,7 +15,7 @@ import {
   TEMPLATES_LIST_COLUMNS,
 } from "@/modules/templates/components/list/table/templates-list-columns"
 import { renderTemplateRowCell } from "@/modules/templates/components/list/table/templates-row-cell"
-import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation/routes"
+import { buildCurrentRecordEntryPath, buildTemplateHubHref } from "@/hooks/navigation/routes"
 
 const SECTION_PAGE_SIZE = 15
 
@@ -76,7 +76,17 @@ export function TemplatesSectionList({ filters }: { filters: TemplatesListFilter
         renderCell={renderTemplateRowCell}
         empty="No templates yet."
         onRowClick={(row) =>
-          router.push(buildRecordDetailHref("/dashboard/templates", row.id, returnTo))
+          router.push(
+            buildTemplateHubHref({
+              templateId: row.id,
+              templateLabel: row.unitType,
+              propertyId: row.propertyId,
+              propertyLabel: row.propertyName,
+              managementCompanyId: row.managementCompanyId,
+              managementCompanyLabel: row.managementCompanyName,
+              returnTo,
+            }),
+          )
         }
         getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
         className="rounded-none! border-0! shadow-none!"

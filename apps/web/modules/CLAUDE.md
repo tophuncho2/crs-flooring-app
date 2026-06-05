@@ -50,7 +50,7 @@ apps/web/modules/{module}/
     └── {feature}-request.ts                      — rare: one-off feature/action request (see note below)
 ```
 
-> **Note on `{feature}-request.ts`:** this pattern is only used for template sync right now (`apps/web/modules/template-sync/data/sync-template-request.ts`). The `template-sync/` module is a tiny single-purpose "wrapper module" whose entire job is to expose one button that POSTs to a feature-specific route. Its single `*-request.ts` file stands in for a full `mutations.ts`. Don't reach for this pattern unless unless i explicitely mention to — for everything else, mutations belong in `data/mutations.ts`.
+> **Note on `{feature}-request.ts`:** a rare one-off request file for a single feature action/read that doesn't fit `queries.ts`/`mutations.ts`. Current example: `apps/web/modules/templates/data/template-detail-request.ts` (the template hub's client read of a full template record). The old `template-sync/` wrapper module has been merged into `templates/`. Don't reach for this pattern unless I explicitly mention to — for everything else, mutations belong in `data/mutations.ts`.
 
 ## `components/`
 
@@ -80,4 +80,4 @@ apps/web/modules/{module}/
 - [ ] **`data/mutations.ts`** — `"use client"` HTTP helpers (`createXRequest`, `updateXRequest`, `deleteXRequest`, plus per-section/per-row save helpers). All wrap `withMutationMeta` and call `requestJson`.
 - [ ] **`data/list-{module}-request.ts`** — URL/search-params contract for the **list view (table)**. Defines `*ListInput`, the react-query key, page size, filter keys, and the parser that turns `searchParams` into a `ListInput`. Calls `/api/{module}` (GET). This is the list-view contract — pickers do **not** use this file.
 - [ ] **`data/{module}-options-request.ts`** *(optional)* — picker options request. Defines a query key + an async search function that calls `/api/{module}/options` and returns option rows. Paired with a picker in `components/picker/`.
-- [ ] **`data/{feature}-request.ts`** *(rare)* — one-off feature/action request when a module is a tiny single-purpose wrapper (see note under folder shape; only `template-sync/` uses this today).
+- [ ] **`data/{feature}-request.ts`** *(rare)* — one-off feature/action request that doesn't fit `queries.ts`/`mutations.ts` (see note under folder shape; `templates/data/template-detail-request.ts` is the current example).

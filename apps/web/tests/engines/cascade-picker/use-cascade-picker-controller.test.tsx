@@ -103,6 +103,38 @@ describe("useCascadePickerController", () => {
     expect(result.current.templateId).toBeNull()
   })
 
+  it("seed sets selections directly without cascade side-effects", () => {
+    const { result } = renderHook(() => useCascadePickerController())
+
+    act(() =>
+      result.current.seed({
+        managementCompany: { id: "mc-9", label: "Seeded MC" },
+        property: { id: "prop-9", label: "Seeded Property" },
+        template: { id: "tmpl-9", label: "3BR" },
+      }),
+    )
+
+    expect(result.current.managementCompanyId).toBe("mc-9")
+    expect(result.current.managementCompanyLabel).toBe("Seeded MC")
+    expect(result.current.propertyId).toBe("prop-9")
+    expect(result.current.propertyLabel).toBe("Seeded Property")
+    expect(result.current.templateId).toBe("tmpl-9")
+    expect(result.current.templateLabel).toBe("3BR")
+  })
+
+  it("seed leaves omitted steps untouched", () => {
+    const { result } = renderHook(() => useCascadePickerController())
+
+    act(() => result.current.seed({ property: { id: "prop-1", label: "Maple Court" } }))
+    expect(result.current.propertyId).toBe("prop-1")
+    expect(result.current.templateId).toBeNull()
+
+    act(() => result.current.seed({ template: { id: "tmpl-1", label: "2BR" } }))
+    // property untouched, template now set — no downstream clear
+    expect(result.current.propertyId).toBe("prop-1")
+    expect(result.current.templateId).toBe("tmpl-1")
+  })
+
   it("reset clears every selection", () => {
     const { result } = renderHook(() => useCascadePickerController())
 
