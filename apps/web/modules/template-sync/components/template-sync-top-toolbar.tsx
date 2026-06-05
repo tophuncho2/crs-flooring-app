@@ -13,13 +13,22 @@ const PICKER_LABEL_CLASS =
   "text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/65"
 
 /**
- * Sticky top-toolbar for the template-sync side panel. Composes (top to
- * bottom): the right-aligned action button row, then the three cascade
- * picker triggers and the preview items sub-header (when applicable).
- * `HubSidePanelEditLayout` pins the actions on top to match the read-only
- * hub view and the other hub edit panels.
+ * Sticky toolbar for the template-sync cascade. Composes (top to bottom): the
+ * right-aligned action button row, then the three cascade picker triggers and
+ * the preview items sub-header (when applicable). `HubSidePanelEditLayout`
+ * pins the actions on top. The MC / property "open linked record" arrows are
+ * supplied by the host (the page wires them to `useHubPanel()`); the template
+ * arrow opens the template detail page via the controller.
  */
-export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyncController }) {
+export function TemplateSyncTopToolbar({
+  controller,
+  onOpenManagementCompany,
+  onOpenProperty,
+}: {
+  controller: TemplateSyncController
+  onOpenManagementCompany: (managementCompanyId: string) => void
+  onOpenProperty: (propertyId: string) => void
+}) {
   const {
     isSyncing,
     expandedPicker,
@@ -40,7 +49,6 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
     canActOnTemplate,
     errorMessage,
     resetSelections,
-    hubPanel,
     handleOpen,
     handleSync,
   } = controller
@@ -78,7 +86,7 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
           placeholder="Any management company (optional)"
           ariaLabel="Management company"
           onOpenLinked={() => {
-            if (managementCompanyId) hubPanel.openForMcEditById(managementCompanyId)
+            if (managementCompanyId) onOpenManagementCompany(managementCompanyId)
           }}
           openLinkedAriaLabel="Open management company"
           openLinkedDisabled={isSyncing}
@@ -95,7 +103,7 @@ export function TemplateSyncTopToolbar({ controller }: { controller: TemplateSyn
           placeholder="Select a property"
           ariaLabel="Property"
           onOpenLinked={() => {
-            if (propertyId) hubPanel.openForPropertyEditById(propertyId)
+            if (propertyId) onOpenProperty(propertyId)
           }}
           openLinkedAriaLabel="Open property"
           openLinkedDisabled={isSyncing}

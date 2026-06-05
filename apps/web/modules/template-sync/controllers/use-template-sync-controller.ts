@@ -1,11 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
+import { useCallback, useRef, useState, type RefObject } from "react"
 import { useRouter } from "next/navigation"
 import type {
   ManagementCompanyOption,
   PropertyOption,
-  TemplateListRow,
   TemplateOption,
 } from "@builders/domain"
 import { syncTemplateRequest } from "@/modules/template-sync/data/sync-template-request"
@@ -13,20 +12,25 @@ import {
   useTemplateSyncItems,
   type TemplateSyncItemsController,
 } from "@/modules/template-sync/controllers/use-template-sync-items"
-import {
-  NEW_TEMPLATE_ROUTE,
-  usePropertyHubSidePanel,
-  type PropertyHubSidePanelController,
-} from "@/modules/properties/controllers/property-hub-side-panel"
+import { NEW_TEMPLATE_ROUTE } from "@/modules/properties/controllers/property-hub-side-panel"
 
 export type ExpandedPicker = "managementCompany" | "property" | "template" | null
 
-export type TemplateSyncController = {
-  // ===== Panel open state =====
-  open: boolean
-  setOpen: (open: boolean) => void
-  handleClose: () => void
+/**
+ * Optional cascade preset, threaded in from the template-sync page's search
+ * params (deep links + the hub view's template-row handoff). Each id/label
+ * pair seeds the matching picker so the page opens pre-selected.
+ */
+export type TemplateSyncInitialSelections = {
+  managementCompanyId?: string | null
+  selectedManagementCompanyLabel?: string | null
+  propertyId?: string | null
+  selectedPropertyLabel?: string | null
+  templateId?: string | null
+  selectedTemplateLabel?: string | null
+}
 
+export type TemplateSyncController = {
   // ===== Cascade selections =====
   managementCompanyId: string | null
   selectedManagementCompanyLabel: string | null
@@ -57,13 +61,8 @@ export type TemplateSyncController = {
   // ===== Toolbar action handlers =====
   handleOpen: () => void
   handleCreate: () => void
-  handleCreateHub: () => void
   handleSync: () => Promise<void>
   toggleHeaderCollapsed: () => void
-
-  // ===== Cross-panel orchestration =====
-  hubPanel: PropertyHubSidePanelController
-  handleOpenTemplateRow: (row: TemplateListRow) => void
 
   // ===== Items preview pagination =====
   itemsController: TemplateSyncItemsController
@@ -74,22 +73,35 @@ export type TemplateSyncController = {
 }
 
 /**
- * Single controller for the template-sync side panel. Owns the cascade
- * selection state (Management Company → Property → Template), drives the
- * inline picker expand/collapse, and runs every toolbar action — including
- * the row-click handoff coming back from the hub view. Per-cell "open linked
- * record" buttons (in the toolbar) reach into the hub via `hubPanel`.
+ * Controller for the template-sync page. Owns the cascade selection state
+ * (Management Company → Property → Template), drives the inline picker
+ * expand/collapse, and runs every toolbar action (sync / clear / open /
+ * create). It is a pure page controller — navigation is handled via the
+ * router and there is no panel open/close state. Picker "open linked record"
+ * arrows are wired by the page from `useHubPanel()`, not here.
  */
-export function useTemplateSyncController(): TemplateSyncController {
+export function useTemplateSyncController(
+  options: { initialSelections?: TemplateSyncInitialSelections } = {},
+): TemplateSyncController {
+  const { initialSelections } = options
   const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const [managementCompanyId, setManagementCompanyId] = useState<string | null>(null)
+  const [managementCompanyId, setManagementCompanyId] = useState<string | null>(
+    initialSelections?.managementCompanyId ?? null,
+  )
   const [selectedManagementCompanyLabel, setSelectedManagementCompanyLabel] =
-    useState<string | null>(null)
-  const [propertyId, setPropertyId] = useState<string | null>(null)
-  const [selectedPropertyLabel, setSelectedPropertyLabel] = useState<string | null>(null)
-  const [templateId, setTemplateId] = useState<string | null>(null)
-  const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string | null>(null)
+    useState<string | null>(initialSelections?.selectedManagementCompanyLabel ?? null)
+  const [propertyId, setPropertyId] = useState<string | null>(
+    initialSelections?.propertyId ?? null,
+  )
+  const [selectedPropertyLabel, setSelectedPropertyLabel] = useState<string | null>(
+    initialSelections?.selectedPropertyLabel ?? null,
+  )
+  const [templateId, setTemplateId] = useState<string | null>(
+    initialSelections?.templateId ?? null,
+  )
+  const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string | null>(
+    initialSelections?.selectedTemplateLabel ?? null,
+  )
   const [expandedPicker, setExpandedPicker] = useState<ExpandedPicker>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -99,10 +111,6 @@ export function useTemplateSyncController(): TemplateSyncController {
   const managementCompanyTriggerRef = useRef<HTMLButtonElement | null>(null)
   const propertyTriggerRef = useRef<HTMLButtonElement | null>(null)
   const templateTriggerRef = useRef<HTMLButtonElement | null>(null)
-
-  // Single unified hub panel — covers Create hub, hub view, and property edit
-  // (clicking a property row inside the hub view transitions in-place).
-  const hubPanel = usePropertyHubSidePanel()
 
   const toggleHeaderCollapsed = useCallback(() => {
     setHeaderCollapsed((value) => !value)
@@ -153,27 +161,12 @@ export function useTemplateSyncController(): TemplateSyncController {
     setErrorMessage(null)
   }, [])
 
-  // Pre-populate all three pickers from a template row inside the hub view.
-  // Drives the row-click handoff back into this panel.
-  const presetFromTemplateRow = useCallback((row: TemplateListRow) => {
-    setManagementCompanyId(row.managementCompanyId)
-    setSelectedManagementCompanyLabel(row.managementCompanyName)
-    setPropertyId(row.propertyId)
-    setSelectedPropertyLabel(row.propertyName)
-    setTemplateId(row.id)
-    const unit = row.unitType.trim()
-    setSelectedTemplateLabel(unit.length > 0 ? unit : "—")
-    setExpandedPicker(null)
-    setErrorMessage(null)
-  }, [])
-
-  // Defensive: template picker is gated on propertyId; if the cascade clears
-  // it while the picker is expanded, collapse — the trigger becomes disabled.
-  useEffect(() => {
-    if (propertyId === null && expandedPicker === "template") {
-      setExpandedPicker(null)
-    }
-  }, [propertyId, expandedPicker])
+  // No defensive effect is needed to collapse the template picker when the
+  // cascade clears: every path that nulls `propertyId`
+  // (handleManagementCompanySelect / handlePropertySelect / resetSelections)
+  // also nulls `expandedPicker`, and both consumers gate the template branch
+  // on `propertyId` (TemplateSyncBody's `&& propertyId`, the trigger's
+  // `disabled={propertyId === null}`).
 
   const handleCancelExpanded = useCallback(() => {
     setExpandedPicker(null)
@@ -186,35 +179,20 @@ export function useTemplateSyncController(): TemplateSyncController {
     }
   }, [expandedPicker])
 
-  const handleClose = useCallback(() => {
-    if (isSyncing) return
-    setOpen(false)
-  }, [isSyncing])
-
   const canActOnTemplate = templateId !== null
   const hasSelections =
     managementCompanyId !== null || propertyId !== null || templateId !== null
 
   const handleOpen = useCallback(() => {
     if (!templateId) return
-    setOpen(false)
-    resetSelections()
     router.push(`/dashboard/templates/${templateId}`)
-  }, [templateId, resetSelections, router])
+  }, [templateId, router])
 
   // Always available: opens a raw new-template form with no property/MC
-  // pre-linkage. Closing the panel discards the cascade selections.
+  // pre-linkage.
   const handleCreate = useCallback(() => {
-    setOpen(false)
-    resetSelections()
     router.push(NEW_TEMPLATE_ROUTE)
-  }, [resetSelections, router])
-
-  const handleCreateHub = useCallback(() => {
-    setOpen(false)
-    resetSelections()
-    hubPanel.openForCreate()
-  }, [resetSelections, hubPanel])
+  }, [router])
 
   const handleSync = useCallback(async () => {
     if (!templateId || isSyncing) return
@@ -223,32 +201,15 @@ export function useTemplateSyncController(): TemplateSyncController {
     try {
       const result = await syncTemplateRequest({ templateId })
       const newId = result.workOrder.id
-      setOpen(false)
-      resetSelections()
       router.push(`/dashboard/work-orders/${newId}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sync failed. Try again."
       setErrorMessage(message)
-    } finally {
       setIsSyncing(false)
     }
-  }, [templateId, isSyncing, resetSelections, router])
-
-  // Row click inside the hub view's templates tab — close the hub and
-  // re-open this panel preselected to the row's mgmt-co + property + template.
-  const handleOpenTemplateRow = useCallback(
-    (row: TemplateListRow) => {
-      hubPanel.close()
-      presetFromTemplateRow(row)
-      setOpen(true)
-    },
-    [hubPanel, presetFromTemplateRow],
-  )
+  }, [templateId, isSyncing, router])
 
   return {
-    open,
-    setOpen,
-    handleClose,
     managementCompanyId,
     selectedManagementCompanyLabel,
     propertyId,
@@ -270,11 +231,8 @@ export function useTemplateSyncController(): TemplateSyncController {
     resetSelections,
     handleOpen,
     handleCreate,
-    handleCreateHub,
     handleSync,
     toggleHeaderCollapsed,
-    hubPanel,
-    handleOpenTemplateRow,
     itemsController,
     canActOnTemplate,
     hasSelections,

@@ -7,81 +7,113 @@ import {
   useMemo,
   type ReactNode,
 } from "react"
-import type { ManagementCompanyListRow, PropertyListRow } from "@builders/domain"
-import { HubSidePanelAddButton, HubSidePanelShell } from "@/components/hub-side-panel"
+import { useRouter } from "next/navigation"
+import type {
+  ManagementCompanyListRow,
+  PropertyListRow,
+  TemplateListRow,
+} from "@builders/domain"
 import { PropertyHubSidePanel } from "@/modules/properties/components/side-panel/hub"
-import { TemplateSyncBody } from "@/modules/template-sync/components/template-sync-body"
-import { TemplateSyncTopToolbar } from "@/modules/template-sync/components/template-sync-top-toolbar"
-import { useTemplateSyncController } from "@/modules/template-sync/controllers/use-template-sync-controller"
+import { usePropertyHubSidePanel } from "@/modules/properties/controllers/property-hub-side-panel"
+
+const TEMPLATE_SYNC_ROUTE = "/dashboard/template-sync"
 
 export type HubPanelContextValue = {
-  /** Open the unified panel on the template-sync cascade (header button). */
+  /** Navigate to the standalone template-sync cascade page. */
   openCascade: () => void
   /** Open the hub on the combined "+ Hub" create form. */
   openForCreate: () => void
-  /** Open the hub straight into a property's edit view. */
+  /** Open the hub straight into a property's edit view (from a list row). */
   openForPropertyEdit: (row: PropertyListRow) => void
-  /** Open the hub straight into a management company's edit view. */
+  /** Open the hub straight into a management company's edit view (from a list row). */
   openForMcEdit: (row: ManagementCompanyListRow) => void
+  /** Open the property edit panel by id (used by the template-sync page picker arrow). */
+  openForPropertyEditById: (propertyId: string) => void | Promise<void>
+  /** Open the MC edit panel by id (used by the template-sync page picker arrow). */
+  openForMcEditById: (managementCompanyId: string) => void | Promise<void>
 }
 
 const HubPanelContext = createContext<HubPanelContextValue | null>(null)
 
+/** Build a template-sync deep-link that pre-selects the cascade from a hub template row. */
+function buildTemplateSyncPresetHref(row: TemplateListRow): string {
+  const params = new URLSearchParams()
+  if (row.managementCompanyId) params.set("managementCompanyId", row.managementCompanyId)
+  if (row.managementCompanyName) params.set("managementCompanyLabel", row.managementCompanyName)
+  if (row.propertyId) params.set("propertyId", row.propertyId)
+  if (row.propertyName) params.set("propertyLabel", row.propertyName)
+  params.set("templateId", row.id)
+  const unit = row.unitType.trim()
+  params.set("templateLabel", unit.length > 0 ? unit : "—")
+  return `${TEMPLATE_SYNC_ROUTE}?${params.toString()}`
+}
+
 /**
- * Mounts the single, app-wide hub + template-sync panel once and shares its
- * openers via context. Every dashboard surface — the header button, the
- * properties list, the management-companies list — drives this one instance,
- * so there is exactly one panel in the DOM and one piece of state. Record-page
- * hub pickers (work orders / templates) intentionally keep their own scoped
- * instances and do not go through here.
+ * Mounts the single, app-wide property hub side panel once and shares its
+ * openers via context. Every dashboard surface — the properties list, the
+ * management-companies list — drives this one instance, so there is exactly
+ * one panel in the DOM and one piece of state. Template sync now lives on its
+ * own page (`/dashboard/template-sync`); `openCascade` navigates there.
+ * Record-page hub pickers (work orders / templates) intentionally keep their
+ * own scoped instances and do not go through here.
  */
 export function HubPanelProvider({ children }: { children: ReactNode }) {
-  const controller = useTemplateSyncController()
+  const router = useRouter()
+  const hubPanel = usePropertyHubSidePanel()
   const {
-    open,
-    setOpen,
-    handleClose,
-    handleCreate,
-    handleCreateHub,
-    handleOpenTemplateRow,
-    hubPanel,
-  } = controller
-  const { openForCreate, openForPropertyEdit, openForMcEdit, close: closeHub } = hubPanel
+    openForCreate,
+    openForPropertyEdit,
+    openForMcEdit,
+    openForPropertyEditById,
+    openForMcEditById,
+    close: closeHub,
+  } = hubPanel
 
-  const openCascade = useCallback(() => setOpen(true), [setOpen])
+  const openCascade = useCallback(() => {
+    router.push(TEMPLATE_SYNC_ROUTE)
+  }, [router])
+
+  // Hub view → template-sync page, pre-selected to the clicked row.
+  const handleOpenTemplate = useCallback(
+    (row: TemplateListRow) => {
+      closeHub()
+      router.push(buildTemplateSyncPresetHref(row))
+    },
+    [closeHub, router],
+  )
 
   // "Back to sync": from the hub view, the left chevron closes the hub and
-  // opens the template-sync cascade (empty — selections don't carry over).
+  // opens the empty template-sync cascade page.
   const handleBackToSync = useCallback(() => {
     closeHub()
-    setOpen(true)
-  }, [closeHub, setOpen])
+    router.push(TEMPLATE_SYNC_ROUTE)
+  }, [closeHub, router])
 
   const value = useMemo<HubPanelContextValue>(
-    () => ({ openCascade, openForCreate, openForPropertyEdit, openForMcEdit }),
-    [openCascade, openForCreate, openForPropertyEdit, openForMcEdit],
+    () => ({
+      openCascade,
+      openForCreate,
+      openForPropertyEdit,
+      openForMcEdit,
+      openForPropertyEditById,
+      openForMcEditById,
+    }),
+    [
+      openCascade,
+      openForCreate,
+      openForPropertyEdit,
+      openForMcEdit,
+      openForPropertyEditById,
+      openForMcEditById,
+    ],
   )
 
   return (
     <HubPanelContext.Provider value={value}>
       {children}
-      <HubSidePanelShell
-        open={open}
-        onClose={handleClose}
-        title="Hub & template sync"
-        topToolbar={<TemplateSyncTopToolbar controller={controller} />}
-        titleEnd={
-          <>
-            <HubSidePanelAddButton label="+Template" onClick={handleCreate} />
-            <HubSidePanelAddButton onClick={handleCreateHub} />
-          </>
-        }
-      >
-        <TemplateSyncBody controller={controller} />
-      </HubSidePanelShell>
       <PropertyHubSidePanel
         controller={hubPanel}
-        onOpenTemplate={handleOpenTemplateRow}
+        onOpenTemplate={handleOpenTemplate}
         onBackToSync={handleBackToSync}
       />
     </HubPanelContext.Provider>
