@@ -30,6 +30,7 @@ export function ManagementCompanyDetailClient({
         <ManagementCompanyRecordView
           page={page}
           entry={managementCompany}
+          backHref={backHref}
           selectedPropertyId={selectedPropertyId}
           onSelectProperty={(id) => void setSelectedPropertyId(id)}
         />

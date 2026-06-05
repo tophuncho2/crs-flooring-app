@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import {
+  RecordBackButton,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
@@ -76,6 +77,7 @@ export function PropertyRecordView({
           onDiscard={primary.discard}
           onDelete={deletable ? () => setConfirmDeleteOpen(true) : undefined}
           deleteLabel="Delete Property"
+          actionsLeading={<RecordBackButton onClick={page.closePage} label="Back" />}
         >
           <PropertyPrimaryFieldsSection
             draft={primary.localValue}

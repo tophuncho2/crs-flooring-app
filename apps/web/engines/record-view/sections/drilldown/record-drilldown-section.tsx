@@ -20,6 +20,13 @@ export type RecordDrilldownSectionProps = {
   /** Host page controller — its `confirmNavigation` guards the "back" action. */
   page: RecordPanelContext["page"]
   backLabel?: string
+  /**
+   * Suppress the built-in "← back" bar above the detail. Use when the embedded
+   * detail renders its own back affordance (e.g. the property record view puts
+   * a Back button in its section toolbar). Back navigation still routes through
+   * `page.confirmNavigation` via the `onBack` handed to `renderDetail`.
+   */
+  hideBackBar?: boolean
 }
 
 /**
@@ -43,6 +50,7 @@ export function RecordDrilldownSection({
   renderDetail,
   page,
   backLabel = "Back",
+  hideBackBar = false,
 }: RecordDrilldownSectionProps) {
   if (selectedId === null) {
     return <>{renderList(onSelect)}</>
@@ -52,12 +60,14 @@ export function RecordDrilldownSection({
 
   return (
     <div>
-      <div className="flex items-center border-b border-[var(--panel-border)] px-4 py-3">
-        <button type="button" className={DRILLDOWN_BACK_BUTTON_CLASS} onClick={handleBack}>
-          <ArrowLeft size={12} />
-          {backLabel}
-        </button>
-      </div>
+      {hideBackBar ? null : (
+        <div className="flex items-center border-b border-[var(--panel-border)] px-4 py-3">
+          <button type="button" className={DRILLDOWN_BACK_BUTTON_CLASS} onClick={handleBack}>
+            <ArrowLeft size={12} />
+            {backLabel}
+          </button>
+        </div>
+      )}
       {renderDetail(selectedId, handleBack)}
     </div>
   )

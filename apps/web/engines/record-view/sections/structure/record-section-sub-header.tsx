@@ -127,8 +127,8 @@ export function RecordSectionSubHeader({
   const managedActions =
     actionsLeading || actionButtons ? (
       <>
-        {actionButtons}
         {actionsLeading}
+        {actionButtons}
       </>
     ) : null
 

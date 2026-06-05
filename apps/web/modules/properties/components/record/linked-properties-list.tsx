@@ -1,10 +1,11 @@
 "use client"
 
-import { useMemo, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { PropertyListRow } from "@builders/domain"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, PaginateControls } from "@/engines/list-view"
 import { ActionHeader } from "@/components/headers"
+import type { HeaderAction } from "@/components/headers/contracts/header-action"
 import {
   PROPERTIES_LIST_QUERY_KEY,
   listPropertiesRequest,
@@ -12,7 +13,7 @@ import {
 import { PROPERTIES_LIST_COLUMNS } from "@/modules/properties/components/list/table/properties-list-columns"
 import { renderPropertyRowCell } from "@/modules/properties/components/list/table/properties-row-cell"
 
-const SECTION_PAGE_SIZE = 100
+const SECTION_PAGE_SIZE = 15
 
 const SECTION_CARD_CLASS =
   "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
@@ -25,14 +26,16 @@ const PROPERTIES_SECTION_COLUMNS = PROPERTIES_LIST_COLUMNS.filter(
 
 function PropertiesSectionCard({
   summary,
+  actions,
   children,
 }: {
   summary?: string
+  actions?: ReadonlyArray<HeaderAction>
   children: ReactNode
 }) {
   return (
     <div className={SECTION_CARD_CLASS}>
-      <ActionHeader title="Properties" summary={summary} />
+      <ActionHeader title="Properties" summary={summary} actions={actions} />
       <div className="p-4">{children}</div>
     </div>
   )
@@ -42,37 +45,49 @@ function PropertiesSectionCard({
  * Properties linked to a management company, rendered as the list face of the
  * MC record view's properties drilldown section. A columned `DataTable` (same
  * primitive + columns as the properties URL list, minus the MC column). Row
- * click drills into that property's embedded record view (via `select`).
+ * click drills into that property's embedded record view (via `select`); the
+ * header "+ Property" button opens the embedded create form (via `onCreate`).
+ * Paginated at {@link SECTION_PAGE_SIZE} rows per page.
  */
 export function LinkedPropertiesList({
   managementCompanyId,
   onSelect,
+  onCreate,
 }: {
   managementCompanyId: string
   onSelect: (propertyId: string) => void
+  onCreate: () => void
 }) {
+  const [page, setPage] = useState(1)
+
   const query = useQuery({
-    queryKey: [...PROPERTIES_LIST_QUERY_KEY, "mc-record-section", managementCompanyId],
+    queryKey: [...PROPERTIES_LIST_QUERY_KEY, "mc-record-section", managementCompanyId, page],
     queryFn: () =>
       listPropertiesRequest({
         filters: { managementCompanyId: [managementCompanyId] },
-        page: 1,
+        page,
         pageSize: SECTION_PAGE_SIZE,
       }),
   })
 
   const rows = useMemo(() => query.data?.rows ?? [], [query.data])
+  const total = query.data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / SECTION_PAGE_SIZE))
+
+  const headerActions: ReadonlyArray<HeaderAction> = [
+    { key: "add-property", label: "+ Property", kind: "primary", onClick: onCreate },
+  ]
 
   if (query.isLoading) {
     return (
-      <PropertiesSectionCard>
+      <PropertiesSectionCard actions={headerActions}>
         <p className="text-sm text-[var(--foreground)]/60">Loading properties…</p>
       </PropertiesSectionCard>
     )
   }
   if (query.isError) {
     return (
-      <PropertiesSectionCard>
+      <PropertiesSectionCard actions={headerActions}>
         <p className="text-sm text-rose-400">Could not load properties.</p>
       </PropertiesSectionCard>
     )
@@ -82,7 +97,8 @@ export function LinkedPropertiesList({
     <div className={SECTION_CARD_CLASS}>
       <ActionHeader
         title="Properties"
-        summary={`${rows.length} ${rows.length === 1 ? "property" : "properties"}`}
+        summary={`${total} ${total === 1 ? "property" : "properties"}`}
+        actions={headerActions}
       />
       <DataTable<PropertyListRow>
         rows={rows}
@@ -93,6 +109,19 @@ export function LinkedPropertiesList({
         getRowAriaLabel={(row) => `Open property ${row.name}`}
         className="rounded-none! border-0! shadow-none!"
       />
+      {totalPages > 1 ? (
+        <PaginateControls
+          page={page}
+          pageSize={SECTION_PAGE_SIZE}
+          totalItems={total}
+          totalPages={totalPages}
+          hasPreviousPage={page > 1}
+          hasNextPage={page < totalPages}
+          onPreviousPage={() => setPage((p) => Math.max(1, p - 1))}
+          onNextPage={() => setPage((p) => Math.min(totalPages, p + 1))}
+          className="border-t border-[var(--panel-border)]"
+        />
+      ) : null}
     </div>
   )
 }

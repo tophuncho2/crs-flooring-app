@@ -10,6 +10,7 @@ import {
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
 import type { ManagementCompanyDetail } from "@builders/domain"
+import { EmbeddedPropertyCreateView } from "@/modules/properties/components/record/embedded-property-create-view"
 import { EmbeddedPropertyRecordView } from "@/modules/properties/components/record/embedded-property-record-view"
 import { LinkedPropertiesList } from "@/modules/properties/components/record/linked-properties-list"
 import { TemplatesSectionList } from "@/modules/templates/components/record/templates-section-list"
@@ -22,14 +23,19 @@ import { ManagementCompanyCellsSection } from "./management-company-cells-sectio
  * by the `?property` URL param the detail client owns) · ③ templates across all
  * the MC's properties (default order is property-name A-Z).
  */
+/** Sentinel `?property` value that opens the embedded "new property" create form. */
+const NEW_PROPERTY_ID = "new"
+
 export function ManagementCompanyRecordView({
   page,
   entry,
+  backHref,
   selectedPropertyId,
   onSelectProperty,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: ManagementCompanyDetail
+  backHref: string
   selectedPropertyId: string | null
   onSelectProperty: (propertyId: string | null) => void
 }) {
@@ -90,19 +96,35 @@ export function ManagementCompanyRecordView({
           page={ctx.page}
           selectedId={selectedPropertyId}
           onSelect={handleSelectProperty}
+          hideBackBar
           renderList={(select) => (
-            <LinkedPropertiesList managementCompanyId={entry.id} onSelect={select} />
-          )}
-          renderDetail={(id, onBack) => (
-            <EmbeddedPropertyRecordView
-              key={id}
-              propertyId={id}
-              hostPage={ctx.page}
-              onBack={onBack}
-              onDirtyChange={setEmbeddedDirty}
-              deletable
+            <LinkedPropertiesList
+              managementCompanyId={entry.id}
+              onSelect={select}
+              onCreate={() => handleSelectProperty(NEW_PROPERTY_ID)}
             />
           )}
+          renderDetail={(id, onBack) =>
+            id === NEW_PROPERTY_ID ? (
+              <EmbeddedPropertyCreateView
+                managementCompanyId={entry.id}
+                managementCompanyName={entry.name}
+                hostPage={ctx.page}
+                backHref={backHref}
+                onBack={onBack}
+                onDirtyChange={setEmbeddedDirty}
+              />
+            ) : (
+              <EmbeddedPropertyRecordView
+                key={id}
+                propertyId={id}
+                hostPage={ctx.page}
+                onBack={onBack}
+                onDirtyChange={setEmbeddedDirty}
+                deletable
+              />
+            )
+          }
         />
       ),
     },
