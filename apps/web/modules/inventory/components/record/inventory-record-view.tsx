@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { EnrichedInventoryAdjustmentRow, InventoryDetail, InventoryForm } from "@builders/domain"
 import {
   RecordDrilldownSection,
@@ -11,8 +11,11 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import { EmbeddedAdjustmentRecordView } from "@/modules/adjustments"
-import { INVENTORY_ADJUSTMENTS_QUERY_KEY } from "@/modules/inventory/data/inventory-adjustments-request"
+import {
+  INVENTORY_ADJUSTMENTS_QUERY_KEY,
+  inventoryAdjustmentByIdRequest,
+} from "@/modules/inventory/data/inventory-adjustments-request"
+import { EmbeddedAdjustmentRecordView } from "./adjustments/embedded-adjustment-record-view"
 import { useInventoryPrimarySection } from "@/modules/inventory/controllers/record/primary/use-inventory-primary-section"
 import { useInventoryAdjustmentsSection } from "@/modules/inventory/controllers/record/adjustments/use-inventory-adjustments-section"
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
@@ -77,21 +80,43 @@ export function InventoryRecordView({
     [onSelectAdjustment],
   )
 
+  // Cold deep-link (e.g. from the adjustments ledger): the URL carries an
+  // adjustment id but the row isn't in memory (it may not be on the list's
+  // first page). Resolve it by id so edit opens regardless of page.
+  const needsFetch =
+    selectedAdjustmentId !== null &&
+    selectedAdjustmentId !== NEW_ADJUSTMENT_ID &&
+    (!selectedRow || selectedRow.id !== selectedAdjustmentId)
+
+  const byIdQuery = useQuery({
+    enabled: needsFetch,
+    queryKey: [...INVENTORY_ADJUSTMENTS_QUERY_KEY, entry.id, "by-id", selectedAdjustmentId],
+    queryFn: ({ signal }) =>
+      inventoryAdjustmentByIdRequest(entry.id, selectedAdjustmentId as string, signal),
+  })
+
+  const editRow =
+    selectedRow && selectedRow.id === selectedAdjustmentId
+      ? selectedRow
+      : byIdQuery.data && byIdQuery.data.id === selectedAdjustmentId
+        ? byIdQuery.data
+        : null
+
   // Drive the shared adjustment controller from the URL selection. Keyed on the
-  // selection (NOT `controller.open`) so a mutation's same-row refresh inside
-  // the controller is never clobbered.
+  // selection + resolved row (NOT `controller.open`) so a mutation's same-row
+  // refresh inside the controller is never clobbered.
   useEffect(() => {
     if (selectedAdjustmentId === null) {
       adjustments.panel.close()
     } else if (selectedAdjustmentId === NEW_ADJUSTMENT_ID) {
       adjustments.openCreate()
-    } else if (selectedRow && selectedRow.id === selectedAdjustmentId) {
-      adjustments.openEdit(selectedRow)
+    } else if (editRow) {
+      adjustments.openEdit(editRow)
     }
-    // Cold deep-link (id present but no in-memory row): leave closed — the
-    // detail face shows a loading stub until the list backfills the row.
+    // While a cold deep-link resolves, leave closed — the detail face shows a
+    // loading stub until the by-id read returns.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAdjustmentId, selectedRow])
+  }, [selectedAdjustmentId, editRow])
 
   const handleToggleDuplicate = useCallback(
     (open: boolean) => {

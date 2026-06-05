@@ -31,7 +31,7 @@ export type CommitInventoryDuplicateCallbacks = {
   onError?: (error: unknown) => void
 }
 
-export type HubInventoryDuplicateSlice = {
+export type InventoryDuplicateSlice = {
   form: InventoryDuplicateForm
   isDirty: boolean
   /** Minimal client gate (starting stock non-empty); server does full validation. */
@@ -47,17 +47,17 @@ export type HubInventoryDuplicateSlice = {
 }
 
 /**
- * Duplicate-inventory section slice. Owns the editable draft and the
- * create-from-source mutation. Unlike the edit slice there's no
- * optimistic-lock token — a duplicate inserts a brand-new row rather than
- * mutating an existing one. The draft opens blank (`reset`); nothing is
- * pre-filled from the source.
+ * Duplicate-inventory section slice for the inventory record view's duplicate
+ * face. Owns the editable draft and the create-from-source mutation. Unlike the
+ * edit slice there's no optimistic-lock token — a duplicate inserts a brand-new
+ * row rather than mutating an existing one. The draft opens blank (`reset`);
+ * nothing is pre-filled from the source.
  */
-export function useHubInventoryDuplicate({
+export function useInventoryDuplicateSection({
   clearError,
 }: {
   clearError: () => void
-}): HubInventoryDuplicateSlice {
+}): InventoryDuplicateSlice {
   const [form, setForm] = useState<InventoryDuplicateForm>(EMPTY_DUPLICATE_FORM)
   const [seed, setSeed] = useState<InventoryDuplicateForm>(EMPTY_DUPLICATE_FORM)
 

@@ -129,6 +129,25 @@ export async function getAdjustmentById(
 }
 
 /**
+ * Single enriched adjustment read by id. Uses the same enriched select +
+ * normalizer as `listInventoryAdjustmentsPage`, so the row carries the
+ * server-resolved labels (workOrderNumber, work-order-item product label,
+ * warehouseName) the record-view edit face expects. Powers deep-linking into a
+ * specific adjustment (the adjustments ledger row → inventory record view) when
+ * the row isn't on the first loaded page.
+ */
+export async function getEnrichedInventoryAdjustmentById(
+  id: string,
+  client: InventoryAdjustmentDbClient = db,
+): Promise<EnrichedInventoryAdjustmentRow | null> {
+  const row = await client.flooringInventoryAdjustment.findUnique({
+    where: { id },
+    select: enrichedInventoryAdjustmentRowSelect,
+  })
+  return row ? normalizeEnrichedInventoryAdjustmentRow(row) : null
+}
+
+/**
  * Returns the parent inventory context every adjustment mutation path needs
  * under the FOR UPDATE lock:
  *   - `startingStock` + `currentNetDeducted` for the

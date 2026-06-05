@@ -9,7 +9,7 @@ import {
   toInventoryForm,
   type InventoryRow,
 } from "@builders/domain"
-import type { InventoryDuplicateForm } from "@/modules/inventory/controllers/inventory-hub-side-panel/use-hub-inventory-duplicate"
+import type { InventoryDuplicateForm } from "@/modules/inventory/controllers/record/duplicate/use-inventory-duplicate-section"
 import { InventoryDetailsGroup } from "../primary/groups/inventory-details-group"
 import { InventoryField } from "../primary/groups/inventory-field"
 import { InventoryGroup } from "../primary/groups/inventory-group"

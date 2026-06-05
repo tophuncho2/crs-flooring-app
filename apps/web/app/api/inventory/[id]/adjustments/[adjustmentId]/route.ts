@@ -1,5 +1,6 @@
 import {
   deletePendingAdjustmentUseCase,
+  getInventoryAdjustmentUseCase,
   updatePendingAdjustmentUseCase,
 } from "@builders/application"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
@@ -8,6 +9,7 @@ import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
   enforceMutationReceipt,
+  enforceQueryRateLimit,
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
@@ -18,6 +20,41 @@ import {
 
 type RouteContext = {
   params: Promise<{ id: string; adjustmentId: string }>
+}
+
+/**
+ * GET /api/inventory/[id]/adjustments/[adjustmentId]
+ *
+ * Single enriched adjustment read scoped to its parent inventory. Powers
+ * deep-linking into a specific adjustment (the adjustments ledger row → the
+ * inventory record view at `?adjustment=<id>`) when the row isn't on the
+ * record view's first loaded page. Returns `{ adjustment }`, or 404 when the
+ * adjustment doesn't exist / doesn't belong to this inventory.
+ */
+export async function GET(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request)
+  if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(
+    request,
+    access,
+    "/api/inventory/[id]/adjustments/[adjustmentId]",
+  )
+  if (rateLimited) return rateLimited
+
+  try {
+    const { id: rawId, adjustmentId: rawAdjustmentId } = await params
+    const inventoryId = parseUuidParam(rawId, "id")
+    const adjustmentId = parseUuidParam(rawAdjustmentId, "adjustmentId")
+
+    const adjustment = await getInventoryAdjustmentUseCase({ inventoryId, adjustmentId })
+    if (!adjustment) {
+      return routeJson(access, { error: "Adjustment not found" }, { status: 404 })
+    }
+    return routeJson(access, { adjustment })
+  } catch (error) {
+    return routeError(access, error)
+  }
 }
 
 /**

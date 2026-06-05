@@ -88,6 +88,7 @@ export function buildPropertyRecordHref(
   })
 }
 
+<<<<<<< HEAD
 const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
 
 /**
@@ -123,6 +124,25 @@ export function buildTemplateHubHref(options?: {
 
   const query = searchParams.toString()
   return query ? `${TEMPLATE_HUB_BASE}?${query}` : TEMPLATE_HUB_BASE
+=======
+const INVENTORY_BASE = "/dashboard/inventory"
+
+/**
+ * Open an adjustment inside its parent inventory's record view, drilled into the
+ * adjustments section at that row (`?adjustment=<id>`). The single entry point
+ * for "open an adjustment" — used by the adjustments ledger row click. The
+ * record view resolves the row by id when it isn't on the first loaded page.
+ */
+export function buildInventoryAdjustmentHref(
+  inventoryId: string,
+  adjustmentId: string,
+  returnTo?: string | null,
+) {
+  const searchParams = new URLSearchParams()
+  searchParams.set("adjustment", adjustmentId)
+  if (returnTo) searchParams.set("returnTo", returnTo)
+  return `${INVENTORY_BASE}/${inventoryId}?${searchParams.toString()}`
+>>>>>>> 15df7ab9 (  feat(adjustments,inventory): make adjustments a pure module; own record-view in inventory)
 }
 
 export function resolveRecordEntryReturnTo(

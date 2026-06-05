@@ -7,10 +7,12 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
 } from "@/engines/record-view"
-import type { AdjustmentEditPanelController } from "@/modules/adjustments/controllers/adjustment-side-panel"
-import { AdjustmentEditFormFields } from "./adjustment-edit-form-fields"
-import { AdjustmentPickerStack } from "./adjustment-picker-stack"
-import { AdjustmentPickerTakeoverBody } from "./adjustment-picker-takeover-body"
+import {
+  AdjustmentEditFormFields,
+  AdjustmentPickerStack,
+  AdjustmentPickerTakeoverBody,
+  type AdjustmentEditPanelController,
+} from "@/modules/adjustments"
 
 export type EmbeddedAdjustmentRecordViewProps = {
   /** The shared adjustment state machine, already opened (create/edit) by the host. */
@@ -26,18 +28,20 @@ export type EmbeddedAdjustmentRecordViewProps = {
 }
 
 /**
- * The adjustment edit/create face rendered **inside** a record-view drilldown
- * (the inventory record view's adjustments section and the work-orders
- * material-items section). It is the chrome-less analog of
- * {@link AdjustmentEditPanel}: same controller-driven body (picker stack /
- * active picker takeover / editable form fields), but wrapped in a
- * `RecordSectionSubHeader` action row instead of a `HubSidePanelShell`.
+ * The adjustment edit/create face rendered **inside** a record-view drilldown.
+ * Adjustments only ever appear in a record view as the inventory record view's
+ * second section (the work-orders material-items section reuses this same
+ * component for its inline per-WOMI editing) — so the record-view composition
+ * lives here in `modules/inventory`, while `modules/adjustments` stays a pure
+ * primitives module (controller + form fields + pickers + columns) with no
+ * record-view-engine dependency.
  *
- * The host owns the open spec (it builds the scope-specific create seed / edit
- * row and calls `controller.openPanel`). This component only renders the current
- * controller state, bridges dirtiness via `onDirtyChange`, and routes Back
- * through the shared host guard so unsaved edits prompt before the drilldown
- * flips back.
+ * Chrome-less analog of `AdjustmentEditPanel`: same controller-driven body
+ * (picker stack / active picker takeover / editable form fields), wrapped in a
+ * `RecordSectionSubHeader` action row instead of a `HubSidePanelShell`. The host
+ * owns the open spec (builds the scope-specific create seed / edit row and calls
+ * `controller.openPanel`); this only renders state, bridges dirtiness, and
+ * routes Back through the shared host guard.
  */
 export function EmbeddedAdjustmentRecordView({
   controller,
@@ -109,9 +113,7 @@ export function EmbeddedAdjustmentRecordView({
   ]
 
   if (!open) {
-    return (
-      <p className="px-4 py-6 text-sm text-[var(--foreground)]/60">Loading adjustment…</p>
-    )
+    return <p className="px-4 py-6 text-sm text-[var(--foreground)]/60">Loading adjustment…</p>
   }
 
   return (

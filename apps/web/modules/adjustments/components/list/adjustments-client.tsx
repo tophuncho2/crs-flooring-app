@@ -18,7 +18,9 @@ import { ProductPicker } from "@/modules/products/components/picker/product-pick
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
 import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
 import { ArchiveSegmentedControl } from "@/modules/inventory/components/list/toolbar-controls/archive-segmented-control"
-import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
+import { useRouter } from "next/navigation"
+import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
+import { buildInventoryAdjustmentHref } from "@/hooks/navigation/routes"
 import {
   ADJUSTMENTS_LIST_QUERY_KEY,
   listAdjustmentsRequest,
@@ -119,11 +121,12 @@ export default function AdjustmentsClient({
   initialSelectedCategory?: CategoryOption | null
   initialSelectedProduct?: ProductOption | null
 }) {
-  // Row click opens the app-wide inventory hub focused on the clicked adjustment.
-  // `openForAdjustmentEdit(row)` derives the parent inventory from `row.inventoryId`
-  // and loads it. The provider invalidates the ledger after any hub mutation so
-  // it refreshes.
-  const { openForAdjustmentEdit } = useInventoryHub()
+  // Row click opens the adjustment inside its parent inventory's record view,
+  // drilled into the adjustments section at that row (`?adjustment=<id>`). The
+  // record view resolves the row by id when it isn't on its first loaded page.
+  // `returnTo` brings the user back to this ledger.
+  const router = useRouter()
+  const { returnTo } = useRecordEntryNavigation("/dashboard/inventory")
 
   // The engine's filter map carries `string[]` only — translate to typed
   // InventoryAdjustmentListFilters at the listFn boundary.
@@ -428,7 +431,9 @@ export default function AdjustmentsClient({
 
       <AdjustmentsTable
         rows={rows}
-        onOpenAdjustment={(row) => openForAdjustmentEdit(row)}
+        onOpenAdjustment={(row) =>
+          router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
+        }
         pagination={
           <PaginateControls
             page={page}

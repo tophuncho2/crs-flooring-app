@@ -9,7 +9,7 @@ import {
   type RecordSectionSubHeaderAction,
 } from "@/engines/record-view"
 import { getClientErrorMessage } from "@/transport"
-import { useHubInventoryDuplicate } from "@/modules/inventory/controllers/inventory-hub-side-panel/use-hub-inventory-duplicate"
+import { useInventoryDuplicateSection } from "@/modules/inventory/controllers/record/duplicate/use-inventory-duplicate-section"
 import { InventoryDuplicateFields } from "./inventory-duplicate-fields"
 
 /**
@@ -34,7 +34,7 @@ export function EmbeddedInventoryDuplicateView({
 }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
-  const duplicate = useHubInventoryDuplicate({ clearError: () => setError(null) })
+  const duplicate = useInventoryDuplicateSection({ clearError: () => setError(null) })
   const { form, setField, isDirty, canSubmit, isPending, commitDuplicate, resetToSeed } = duplicate
 
   // Bridge dirtiness up so the host section + page guard reflect it.

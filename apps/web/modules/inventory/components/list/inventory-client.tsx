@@ -15,7 +15,7 @@ import {
   listInventoryRequest,
 } from "@/modules/inventory/data/list-inventory-request"
 import { useInventoryListController } from "@/modules/inventory/controllers/list/use-inventory-list-controller"
-import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
+import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
@@ -122,10 +122,9 @@ export default function InventoryClient({
 }) {
   const { message, pageError } = useInventoryListController()
 
-  // Row clicks open the app-wide inventory hub (fetched mode — `openForView(id)`
-  // fetches the detail). The provider invalidates the inventory list query after
-  // any hub mutation, so the Stock/Coverage columns refresh in place.
-  const { openForView } = useInventoryHub()
+  // Row clicks open the inventory record view (full-page). `returnTo` brings the
+  // user back to this list with its filters intact.
+  const { openRecord } = useRecordEntryNavigation("/dashboard/inventory")
 
   // The engine's filter map carries `string[]` only — translate to typed
   // InventoryListFilters at the listFn boundary so the application layer
@@ -458,7 +457,7 @@ export default function InventoryClient({
 
       <InventoryTable
         rows={rows}
-        onOpenInventory={(id) => openForView(id)}
+        onOpenInventory={(id) => openRecord(id)}
         pagination={
           <PaginateControls
             page={page}

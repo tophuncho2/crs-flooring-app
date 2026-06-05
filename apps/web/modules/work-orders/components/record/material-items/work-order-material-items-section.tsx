@@ -19,11 +19,11 @@ import {
 } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import {
   EDIT_PICKER_CONFIG,
-  EmbeddedAdjustmentRecordView,
   useAdjustmentEditPanel,
   WO_CREATE_PICKER_CONFIG,
   type AdjustmentPanelPatch,
 } from "@/modules/adjustments"
+import { EmbeddedAdjustmentRecordView } from "@/modules/inventory/components/record/adjustments/embedded-adjustment-record-view"
 import { WorkOrderAdjustmentRow } from "./work-order-adjustment-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import { MaterialItemRemoveButton } from "./row-controls"
