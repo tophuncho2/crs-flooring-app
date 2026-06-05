@@ -31,6 +31,10 @@ export function useMcCreateSection({
 }) {
   return useSingleSectionCreateController<ManagementCompanyForm>({
     page,
+    // Rendered through RecordMultiSectionPanel, which is the sole dirty-sections
+    // writer; let it own that so the controller doesn't double-write and fight
+    // the panel (which loops). Mirrors useMcPrimarySection (edit).
+    manageDirtySections: false,
     createInitialValue: () => EMPTY_MANAGEMENT_COMPANY_FORM,
     createRecord: async (localValue) => {
       const validationError = validateManagementCompanyForm(localValue)
