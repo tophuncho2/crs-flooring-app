@@ -18,6 +18,7 @@ import {
 import { EmbeddedAdjustmentRecordView } from "./adjustments/embedded-adjustment-record-view"
 import { useInventoryPrimarySection } from "@/modules/inventory/controllers/record/primary/use-inventory-primary-section"
 import { useInventoryAdjustmentsSection } from "@/modules/inventory/controllers/record/adjustments/use-inventory-adjustments-section"
+import type { InventoryRecordWoSeed } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-list"
 import { EmbeddedInventoryDuplicateView } from "./duplicate/embedded-inventory-duplicate-view"
@@ -36,6 +37,7 @@ const NEW_ADJUSTMENT_ID = "new"
 export function InventoryRecordView({
   page,
   entry,
+  woSeed,
   selectedAdjustmentId,
   onSelectAdjustment,
   duplicateOpen,
@@ -43,6 +45,7 @@ export function InventoryRecordView({
 }: {
   page: RecordDetailClientScaffoldContext
   entry: InventoryDetail
+  woSeed?: InventoryRecordWoSeed | null
   selectedAdjustmentId: string | null
   onSelectAdjustment: (adjustmentId: string | null) => void
   duplicateOpen: boolean
@@ -63,6 +66,7 @@ export function InventoryRecordView({
   const adjustments = useInventoryAdjustmentsSection({
     inventory: record,
     onMutated: handleAdjustmentMutated,
+    woSeed,
   })
 
   const [embeddedAdjustmentDirty, setEmbeddedAdjustmentDirty] = useState(false)
@@ -161,7 +165,9 @@ export function InventoryRecordView({
             inventory={record}
             draft={primary.localValue}
             warehouseName={record.warehouseName}
-            editable={!primary.isSaving}
+            // Lock the inventory fields while an adjustment is open below — the
+            // operator is reading the inventory, not editing it.
+            editable={!primary.isSaving && selectedAdjustmentId === null}
             onFieldChange={(field, value) =>
               primary.setLocalValue((previous: InventoryForm) => ({ ...previous, [field]: value }))
             }

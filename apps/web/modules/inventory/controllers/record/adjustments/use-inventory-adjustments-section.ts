@@ -7,6 +7,7 @@ import {
   HUB_CREATE_PICKER_CONFIG,
   useAdjustmentEditPanel,
 } from "@/modules/adjustments"
+import type { InventoryRecordWoSeed } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 
 /**
  * Adjustments section of the inventory record view. Owns the shared, scope-aware
@@ -15,8 +16,9 @@ import {
  *
  *   - `openCreate()` → a manual INCREASE/DEDUCTION on this inventory. Warehouse
  *     / inventory / location are locked pickers seeded from the snapshot
- *     (`HUB_CREATE_PICKER_CONFIG`); the work-order link stays editable. Mirrors
- *     the (now-dormant) hub's `enterAdjustmentCreate` seed.
+ *     (`HUB_CREATE_PICKER_CONFIG`); the work-order link stays editable. When the
+ *     record view was opened from a work order (`woSeed`), the WO link is
+ *     pre-filled (still editable) so the operator doesn't re-pick it.
  *   - `openEdit(row)` → edit an existing adjustment (`EDIT_PICKER_CONFIG`).
  *
  * `onMutated` fires after every panel mutation so the host can refresh the
@@ -25,9 +27,11 @@ import {
 export function useInventoryAdjustmentsSection({
   inventory,
   onMutated,
+  woSeed,
 }: {
   inventory: InventoryDetail
   onMutated: () => void
+  woSeed?: InventoryRecordWoSeed | null
 }) {
   const panel = useAdjustmentEditPanel({
     scope: { kind: "inventory", inventoryId: inventory.id },
@@ -51,9 +55,19 @@ export function useInventoryAdjustmentsSection({
         locationLabel: inventory.location,
         productId: inventory.productId,
         stockUnitAbbrev: inventory.stockUnitAbbrev,
+        // Pre-link the originating work order (editable) when opened from a WO.
+        ...(woSeed
+          ? {
+              workOrderId: woSeed.workOrderId,
+              workOrderItemId: woSeed.workOrderItemId,
+              workOrderLabel: woSeed.workOrderLabel ?? undefined,
+              materialItemLabel: woSeed.materialItemLabel ?? undefined,
+              materialItemNotes: woSeed.materialItemNotes ?? undefined,
+            }
+          : {}),
       },
     })
-  }, [panel, inventory])
+  }, [panel, inventory, woSeed])
 
   const openEdit = useCallback(
     (row: EnrichedInventoryAdjustmentRow) => {

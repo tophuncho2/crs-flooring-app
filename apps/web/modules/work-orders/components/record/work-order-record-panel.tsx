@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -13,7 +13,6 @@ import type {
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
-import type { AdjustmentPanelPatch } from "@/modules/adjustments"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
@@ -32,9 +31,10 @@ export function WorkOrderRecordPanel({
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
-  const [adjustmentsByWorkOrderItemId, setAdjustmentsByWorkOrderItemId] = useState(
-    initialAdjustmentsByWorkOrderItemId,
-  )
+  // Read-only per-WOMI display snapshot. Adjustments are now created/edited on
+  // the inventory record view; returning here reloads the work order fresh, so
+  // there's no in-place patching to do.
+  const [adjustmentsByWorkOrderItemId] = useState(initialAdjustmentsByWorkOrderItemId)
 
   const primaryActions = workOrderPrimarySectionActions({
     onSave: () => void controller.primarySection.save(),
@@ -69,41 +69,6 @@ export function WorkOrderRecordPanel({
       },
     },
   ]
-
-  const publishAdjustmentPatch = useCallback((patch: AdjustmentPanelPatch) => {
-    // WO-side patches always carry the WOMI id (callers open the panel
-    // from within a WOMI row, and the controller threads it through to
-    // every mutation). If somehow null arrives (e.g. an inv-side patch
-    // routed here in error), skip — the adjustment is no longer linked to
-    // a WOMI on this WO so there's nothing to bucket.
-    if (patch.workOrderItemId === null) return
-    const womiId = patch.workOrderItemId
-    setAdjustmentsByWorkOrderItemId((current) => {
-      const existing = current[womiId] ?? []
-      if (patch.kind === "delete") {
-        const next = existing.filter((row) => row.id !== patch.adjustmentId)
-        return { ...current, [womiId]: next }
-      }
-      // Mutation responses are plain `InventoryAdjustmentRow`; the grid stores
-      // enriched rows. Preserve the enriched-only fields (warehouseName /
-      // workOrderNumber / WOMI labels) from the existing row on update, and
-      // synthesize them from in-scope WO + WOMI data for a freshly-created row.
-      const idx = existing.findIndex((row) => row.id === patch.adjustment.id)
-      if (idx >= 0) {
-        const merged: EnrichedInventoryAdjustmentRow = { ...existing[idx], ...patch.adjustment }
-        return { ...current, [womiId]: existing.map((row, i) => (i === idx ? merged : row)) }
-      }
-      const womi = materialItems.find((mi) => mi.id === womiId)
-      const created: EnrichedInventoryAdjustmentRow = {
-        ...patch.adjustment,
-        workOrderNumber: controller.record.workOrderNumber,
-        workOrderItemProductLabel: womi?.productName ?? null,
-        workOrderItemNotes: womi?.notes ?? null,
-        warehouseName: controller.record.warehouseName ?? "",
-      }
-      return { ...current, [womiId]: [...existing, created] }
-    })
-  }, [materialItems, controller.record])
 
   return (
     <>
@@ -175,15 +140,13 @@ export function WorkOrderRecordPanel({
             key: "material-items",
             type: "item",
             order: 10,
-            render: (ctx) => (
+            render: () => (
               <WorkOrderMaterialItemsSection
-                page={ctx.page}
                 workOrder={controller.record}
                 materialItems={materialItems}
                 adjustmentsByWorkOrderItemId={adjustmentsByWorkOrderItemId}
                 publishMaterialItems={setMaterialItems}
                 publishWorkOrder={controller.publishRecord}
-                publishAdjustmentPatch={publishAdjustmentPatch}
               />
             ),
           },

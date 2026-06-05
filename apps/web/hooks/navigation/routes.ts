@@ -125,10 +125,57 @@ export function buildTemplateHubHref(options?: {
   return query ? `${TEMPLATE_HUB_BASE}?${query}` : TEMPLATE_HUB_BASE
 }
 
-const INVENTORY_BASE = "/dashboard/inventory"
+const INVENTORY_RECORD_BASE = "/dashboard/inventory/record"
 
 /**
- * Open an adjustment inside its parent inventory's record view, drilled into the
+ * The single entry point for "open the inventory record view". Inventory has no
+ * per-id page — the record view lives at `/dashboard/inventory/record` and the
+ * selected item rides in the query string (`?inventoryId=…`), chosen by the
+ * Warehouse → Inventory pickers in the header. Pass whatever the caller already
+ * knows so those pickers seed immediately:
+ *   - a list/ledger row passes `inventoryId` (+ optional `adjustment` to drill in),
+ *   - a work-order passes the WO's `warehouseId` + the WO link seed
+ *     (`workOrderId`/`workOrderItemId`/`productId`/labels) and lets the operator
+ *     pick the inventory item there.
+ * No args → the empty record view (pickers, no record).
+ */
+export function buildInventoryRecordHref(options?: {
+  warehouseId?: string | null
+  warehouseLabel?: string | null
+  inventoryId?: string | null
+  inventoryLabel?: string | null
+  workOrderId?: string | null
+  workOrderItemId?: string | null
+  workOrderLabel?: string | null
+  productId?: string | null
+  materialItemLabel?: string | null
+  materialItemNotes?: string | null
+  adjustment?: string | null
+  returnTo?: string | null
+}): string {
+  const searchParams = new URLSearchParams()
+  const set = (key: string, value: string | null | undefined) => {
+    if (value) searchParams.set(key, value)
+  }
+  set("warehouseId", options?.warehouseId)
+  set("warehouseLabel", options?.warehouseLabel)
+  set("inventoryId", options?.inventoryId)
+  set("inventoryLabel", options?.inventoryLabel)
+  set("workOrderId", options?.workOrderId)
+  set("workOrderItemId", options?.workOrderItemId)
+  set("workOrderLabel", options?.workOrderLabel)
+  set("productId", options?.productId)
+  set("materialItemLabel", options?.materialItemLabel)
+  set("materialItemNotes", options?.materialItemNotes)
+  set("adjustment", options?.adjustment)
+  set("returnTo", options?.returnTo)
+
+  const query = searchParams.toString()
+  return query ? `${INVENTORY_RECORD_BASE}?${query}` : INVENTORY_RECORD_BASE
+}
+
+/**
+ * Open an adjustment inside the inventory record view, drilled into the
  * adjustments section at that row (`?adjustment=<id>`). The single entry point
  * for "open an adjustment" — used by the adjustments ledger row click. The
  * record view resolves the row by id when it isn't on the first loaded page.
@@ -138,10 +185,7 @@ export function buildInventoryAdjustmentHref(
   adjustmentId: string,
   returnTo?: string | null,
 ) {
-  const searchParams = new URLSearchParams()
-  searchParams.set("adjustment", adjustmentId)
-  if (returnTo) searchParams.set("returnTo", returnTo)
-  return `${INVENTORY_BASE}/${inventoryId}?${searchParams.toString()}`
+  return buildInventoryRecordHref({ inventoryId, adjustment: adjustmentId, returnTo })
 }
 
 export function resolveRecordEntryReturnTo(

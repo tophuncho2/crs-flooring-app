@@ -8,6 +8,7 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
 } from "@/engines/record-view"
+import { buildInventoryRecordHref } from "@/hooks/navigation"
 import { getClientErrorMessage } from "@/transport"
 import { useInventoryDuplicateSection } from "@/modules/inventory/controllers/record/duplicate/use-inventory-duplicate-section"
 import { InventoryDuplicateFields } from "./inventory-duplicate-fields"
@@ -47,7 +48,7 @@ export function EmbeddedInventoryDuplicateView({
       onSuccess: (created) => {
         onDirtyChange?.(false)
         onBack()
-        router.push(`/dashboard/inventory/${created.id}`)
+        router.push(buildInventoryRecordHref({ inventoryId: created.id }))
       },
       onError: (err) => setError(getClientErrorMessage(err, "Failed to duplicate inventory")),
     })

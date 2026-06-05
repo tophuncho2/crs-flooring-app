@@ -14,8 +14,10 @@ import {
   INVENTORY_LIST_QUERY_KEY,
   listInventoryRequest,
 } from "@/modules/inventory/data/list-inventory-request"
+import { useRouter } from "next/navigation"
 import { useInventoryListController } from "@/modules/inventory/controllers/list/use-inventory-list-controller"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
+import { buildInventoryRecordHref } from "@/hooks/navigation"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
@@ -122,9 +124,11 @@ export default function InventoryClient({
 }) {
   const { message, pageError } = useInventoryListController()
 
-  // Row clicks open the inventory record view (full-page). `returnTo` brings the
-  // user back to this list with its filters intact.
-  const { openRecord } = useRecordEntryNavigation("/dashboard/inventory")
+  // Row clicks open the inventory record view (full-page) with the item
+  // pre-selected in the header pickers. `returnTo` brings the user back to this
+  // list with its filters intact.
+  const router = useRouter()
+  const { returnTo } = useRecordEntryNavigation("/dashboard/inventory")
 
   // The engine's filter map carries `string[]` only — translate to typed
   // InventoryListFilters at the listFn boundary so the application layer
@@ -457,7 +461,9 @@ export default function InventoryClient({
 
       <InventoryTable
         rows={rows}
-        onOpenInventory={(id) => openRecord(id)}
+        onOpenInventory={(id) =>
+          router.push(buildInventoryRecordHref({ inventoryId: id, returnTo }))
+        }
         pagination={
           <PaginateControls
             page={page}
