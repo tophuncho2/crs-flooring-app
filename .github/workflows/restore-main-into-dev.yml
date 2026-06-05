@@ -1,14 +1,14 @@
-name: Restore main backup into staging
+name: Restore main backup into dev
 
-# Disaster-recovery / rollback. Pulls a main-DB backup from R2 and restores it
-# INTO THE STAGING DB. Manual only — never scheduled, so it can't clobber
-# staging while you're using it for dev. Never touches main.
+# Disaster-recovery / refresh. Pulls a main-DB backup from R2 and restores it
+# INTO THE DEV DB. Manual only — never scheduled, so it can't clobber dev
+# while you're working in it. Never touches main.
 #
 # Inputs:
 #   mode     = latest (newest builderswebapp-*.dump in R2)  |  named (you pass one)
 #   filename = exact dump name, only read when mode=named
 #
-# Safety: before clobbering staging it pg_dumps staging and uploads that as a
+# Safety: before clobbering dev it pg_dumps dev and uploads that as a
 # workflow artifact, so a wrong/corrupt restore is reversible.
 
 on:
@@ -64,7 +64,7 @@ jobs:
               echo "::error::mode=named requires a filename input"; exit 1
             fi
             KEY="$FILENAME"
-            # Confirm it actually exists in the bucket before we wipe staging.
+            # Confirm it actually exists in the bucket before we wipe dev.
             if ! aws s3 ls "s3://${{ secrets.R2_BUCKET_NAME }}/$KEY" \
                   --endpoint-url "${{ secrets.R2_ENDPOINT_URL }}" | grep -q .; then
               echo "::error::$KEY not found in bucket"; exit 1
@@ -92,26 +92,26 @@ jobs:
             --endpoint-url "${{ secrets.R2_ENDPOINT_URL }}"
           test "$(stat -c%s "$DUMP_KEY")" -ge 1024
 
-      - name: Safety-dump staging before clobber
+      - name: Safety-dump dev before clobber
         env:
-          DATABASE_URL: ${{ secrets.RAILWAY_STAGING_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.RAILWAY_DEV_DATABASE_URL }}
         run: |
           set -euo pipefail
-          SAFETY="staging-pre-restore-$(date -u +%Y-%m-%d-%H%M%S).dump"
+          SAFETY="dev-pre-restore-$(date -u +%Y-%m-%d-%H%M%S).dump"
           pg_dump --format=custom --no-owner --no-acl --file="$SAFETY" "$DATABASE_URL"
           test "$(stat -c%s "$SAFETY")" -ge 1024
           echo "SAFETY_FILE=$SAFETY" >> "$GITHUB_ENV"
 
-      - name: Upload staging safety dump as artifact
+      - name: Upload dev safety dump as artifact
         uses: actions/upload-artifact@v5
         with:
-          name: staging-pre-restore
+          name: dev-pre-restore
           path: ${{ env.SAFETY_FILE }}
           retention-days: 14
 
-      - name: Restore into staging
+      - name: Restore into dev
         env:
-          DATABASE_URL: ${{ secrets.RAILWAY_STAGING_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.RAILWAY_DEV_DATABASE_URL }}
         run: |
           set -euo pipefail
           # --clean --if-exists: drop existing objects first, then recreate from
@@ -124,5 +124,5 @@ jobs:
 
       - name: Summary
         run: |
-          echo "✅ Restored $DUMP_KEY into the STAGING database."
-          echo "   Staging's prior state saved as artifact 'staging-pre-restore' ($SAFETY_FILE)."
+          echo "✅ Restored $DUMP_KEY into the DEV database."
+          echo "   Dev's prior state saved as artifact 'dev-pre-restore' ($SAFETY_FILE)."
