@@ -123,6 +123,8 @@ export function buildTemplateHubHref(options?: {
 
   const query = searchParams.toString()
   return query ? `${TEMPLATE_HUB_BASE}?${query}` : TEMPLATE_HUB_BASE
+}
+
 const INVENTORY_BASE = "/dashboard/inventory"
 
 /**
