@@ -4,22 +4,32 @@ import { useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import type { TemplatesListFilters } from "@builders/application"
+import type { TemplateListRow } from "@builders/domain"
+import { DataTable } from "@/engines/list-view"
+import { ActionHeader } from "@/components/headers"
 import {
   TEMPLATES_LIST_QUERY_KEY,
   listTemplatesRequest,
 } from "@/modules/templates/data/list-templates-request"
+import {
+  TEMPLATES_LIST_COLUMNS,
+} from "@/modules/templates/components/list/table/templates-list-columns"
+import { renderTemplateRowCell } from "@/modules/templates/components/list/table/templates-row-cell"
 import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation/routes"
 
 const SECTION_PAGE_SIZE = 100
 
-const ROW_CLASS =
-  "flex w-full items-center justify-between gap-3 rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-2 text-left text-sm transition hover:border-sky-500/40 hover:bg-[var(--panel-hover)] focus:outline-none focus:ring-1 focus:ring-sky-500/40"
+const SECTION_CARD_CLASS =
+  "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
 
 /**
- * Read-only templates list rendered inside a record-view section. Backed by the
- * shared `listTemplatesRequest` (default order is property-name A-Z → unitType),
- * filtered by `propertyId` (property view) or `managementCompanyId` (MC view).
- * Row click opens the template record, threading the current page as `returnTo`.
+ * Templates section rendered inside a record-view (property or MC). A light
+ * section card (mirrors the work-orders material-items chrome) wrapping the
+ * canonical columned `DataTable` — reusing the templates list-view columns and
+ * cell renderer. Backed by the shared `listTemplatesRequest` (default order is
+ * property-name A-Z → unitType), filtered by `propertyId` (property view) or
+ * `managementCompanyId` (MC view). Row click opens the template record,
+ * threading the current page as `returnTo`.
  */
 export function TemplatesSectionList({ filters }: { filters: TemplatesListFilters }) {
   const router = useRouter()
@@ -35,43 +45,39 @@ export function TemplatesSectionList({ filters }: { filters: TemplatesListFilter
   const rows = useMemo(() => query.data?.rows ?? [], [query.data])
 
   if (query.isLoading) {
-    return <p className="text-sm text-[var(--foreground)]/60">Loading templates…</p>
+    return (
+      <div className={SECTION_CARD_CLASS}>
+        <ActionHeader title="Templates" />
+        <p className="px-4 py-6 text-sm text-[var(--foreground)]/60">Loading templates…</p>
+      </div>
+    )
   }
   if (query.isError) {
-    return <p className="text-sm text-rose-400">Could not load templates.</p>
-  }
-  if (rows.length === 0) {
-    return <p className="text-sm text-[var(--foreground)]/60">No templates yet.</p>
+    return (
+      <div className={SECTION_CARD_CLASS}>
+        <ActionHeader title="Templates" />
+        <p className="px-4 py-6 text-sm text-rose-400">Could not load templates.</p>
+      </div>
+    )
   }
 
   return (
-    <ul className="flex flex-col gap-2">
-      {rows.map((row) => {
-        const subtitle = [row.propertyName, row.jobTypeName].filter(Boolean).join(" · ")
-        return (
-          <li key={row.id}>
-            <button
-              type="button"
-              className={ROW_CLASS}
-              onClick={() =>
-                router.push(buildRecordDetailHref("/dashboard/templates", row.id, returnTo))
-              }
-            >
-              <span className="flex min-w-0 flex-col">
-                <span className="truncate font-medium text-[var(--foreground)]">
-                  {row.unitType || "—"}
-                </span>
-                {subtitle ? (
-                  <span className="truncate text-xs text-[var(--foreground)]/60">{subtitle}</span>
-                ) : null}
-              </span>
-              <span className="shrink-0 text-xs text-[var(--foreground)]/50">
-                {row.itemsCount} {row.itemsCount === 1 ? "item" : "items"}
-              </span>
-            </button>
-          </li>
-        )
-      })}
-    </ul>
+    <div className={SECTION_CARD_CLASS}>
+      <ActionHeader
+        title="Templates"
+        summary={`${rows.length} ${rows.length === 1 ? "template" : "templates"}`}
+      />
+      <DataTable<TemplateListRow>
+        rows={rows}
+        columns={TEMPLATES_LIST_COLUMNS}
+        renderCell={renderTemplateRowCell}
+        empty="No templates yet."
+        onRowClick={(row) =>
+          router.push(buildRecordDetailHref("/dashboard/templates", row.id, returnTo))
+        }
+        getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
+        className="rounded-none! border-0! shadow-none!"
+      />
+    </div>
   )
 }

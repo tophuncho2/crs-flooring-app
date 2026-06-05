@@ -19,6 +19,7 @@ export function PropertyDetailClient({
       title={property.name}
       backHref={backHref}
       dirtyMessage="You have unsaved property changes. Leave this property without saving?"
+      headerVariant="section"
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <PropertyRecordView page={page} entry={property} />

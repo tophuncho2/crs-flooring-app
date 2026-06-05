@@ -5,7 +5,6 @@ import {
   RecordDrilldownSection,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
-  RecordSectionShell,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
@@ -53,11 +52,13 @@ export function ManagementCompanyRecordView({
       key: "primary",
       type: "field",
       order: 0,
+      slot: "primary",
       dirtyLabel: "management company",
       controller: primary,
       render: () => (
         <RecordPrimarySectionInstance
           title="Management Company"
+          showHeader={false}
           error={primary.error}
           noticeMessage={primary.noticeMessage}
           noticeError={primary.noticeError}
@@ -86,7 +87,6 @@ export function ManagementCompanyRecordView({
       render: (ctx) => (
         <RecordDrilldownSection
           page={ctx.page}
-          title="Properties"
           selectedId={selectedPropertyId}
           onSelect={handleSelectProperty}
           renderList={(select) => (
@@ -108,11 +108,11 @@ export function ManagementCompanyRecordView({
       key: "templates",
       type: "item",
       order: 20,
-      render: () => (
-        <RecordSectionShell title="Templates">
-          <TemplatesSectionList filters={{ managementCompanyId: [entry.id] }} />
-        </RecordSectionShell>
-      ),
+      // Hidden while a property is drilled in — the embedded property view
+      // renders its own (property-scoped) templates section, so showing the
+      // MC-wide list too would duplicate it.
+      visibleWhen: () => selectedPropertyId === null,
+      render: () => <TemplatesSectionList filters={{ managementCompanyId: [entry.id] }} />,
     },
   ]
 
