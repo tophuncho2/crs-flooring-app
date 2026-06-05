@@ -1,15 +1,14 @@
 "use client"
 
-import { Fragment, useCallback } from "react"
+import { Fragment, useCallback, useState } from "react"
 import { NumberCell, TextCell } from "@/components/cells"
 import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
 import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
 import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandable-rows"
-import { isLocalOnlyRecordRow } from "@/engines/record-view"
+import { isLocalOnlyRecordRow, type RecordDetailClientScaffoldContext } from "@/engines/record-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import {
   type EnrichedInventoryAdjustmentRow,
-  type InventoryAdjustmentRow,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
@@ -19,12 +18,12 @@ import {
   type WorkOrderMaterialItemLocal,
 } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import {
-  AdjustmentEditPanel,
+  EDIT_PICKER_CONFIG,
+  EmbeddedAdjustmentRecordView,
   useAdjustmentEditPanel,
   WO_CREATE_PICKER_CONFIG,
   type AdjustmentPanelPatch,
 } from "@/modules/adjustments"
-import { useInventoryHub } from "@/modules/app-shell/components/inventory-hub-provider"
 import { WorkOrderAdjustmentRow } from "./work-order-adjustment-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import { MaterialItemRemoveButton } from "./row-controls"
@@ -39,6 +38,7 @@ const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> =
 }
 
 export function WorkOrderMaterialItemsSection({
+  page,
   workOrder,
   materialItems,
   adjustmentsByWorkOrderItemId,
@@ -46,6 +46,7 @@ export function WorkOrderMaterialItemsSection({
   publishWorkOrder,
   publishAdjustmentPatch,
 }: {
+  page: RecordDetailClientScaffoldContext
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
   adjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]>
@@ -61,45 +62,22 @@ export function WorkOrderMaterialItemsSection({
     publishWorkOrder,
   })
 
-  // Editing an adjustment is hub-driven. The hub instance is the page-scoped
-  // one mounted by `InventoryHubProvider` in the WO record panel (wired with
-  // this WO's `publishAdjustmentPatch`), shared via context — so there is one
-  // hub mount per page, not a second instance hand-wired here.
-  const { openForAdjustmentEdit } = useInventoryHub()
-
-  // Route a successful adjustment create from the WO panel directly into
-  // the inventory-hub adjustment edit panel — same surface the WO edit
-  // affordance uses (`handleOpenEdit`). The adjustment panel closes itself;
-  // the hub picks up the new row hydrated with WO/WOMI/warehouse labels
-  // so the read-only header summary matches the inv-side experience.
-  const handleAdjustmentCreated = useCallback(
-    (adjustment: InventoryAdjustmentRow, workOrderItemId: string | null) => {
-      // WO-side create always carries a WOMI id; the null case is the manual
-      // (inventory-hub) variant, which never routes through this section.
-      if (!workOrderItemId) return
-      const item = section.items.find((i) => i.id === workOrderItemId)
-      openForAdjustmentEdit({
-        ...adjustment,
-        workOrderItemId,
-        workOrderNumber: workOrder.workOrderNumber,
-        workOrderItemProductLabel: item?.productName || null,
-        warehouseName: workOrder.warehouseName,
-      })
-    },
-    [
-      openForAdjustmentEdit,
-      section.items,
-      workOrder.workOrderNumber,
-      workOrder.warehouseName,
-    ],
-  )
-
   const adjustmentPanel = useAdjustmentEditPanel({
     scope: { kind: "work-order", workOrderId: workOrder.id },
     canCreate: true,
     publish: publishAdjustmentPatch,
-    onCreated: handleAdjustmentCreated,
   })
+
+  // Which WOMI (if any) is showing the inline adjustment edit/create face in
+  // place of its read-only adjustment grid. Single-open — mirrors the old side
+  // panel's one-at-a-time semantics. The controller's `open` drives create vs
+  // edit (incl. the create→edit flip); this only tracks which WOMI to swap.
+  const [editingWorkOrderItemId, setEditingWorkOrderItemId] = useState<string | null>(null)
+
+  const closeAdjustment = useCallback(() => {
+    setEditingWorkOrderItemId(null)
+    adjustmentPanel.close()
+  }, [adjustmentPanel])
 
   const sectionBusy = section.isSaving
 
@@ -108,14 +86,19 @@ export function WorkOrderMaterialItemsSection({
   const editable = !sectionBusy
 
   const handleOpenEdit = useCallback(
-    (_workOrderItemId: string, adjustment: EnrichedInventoryAdjustmentRow) => {
-      // Editing is hub-driven (mirrors the inventory record view's row
-      // click) — opens the shared inventory hub directly at
-      // section-edit-adjustment mode. The WO-side read is now enriched, so the
-      // row already carries WO/WOMI/warehouse labels for the hub's header.
-      openForAdjustmentEdit(adjustment)
+    (workOrderItemId: string, adjustment: EnrichedInventoryAdjustmentRow) => {
+      // Inline edit (mirrors the inventory record view's row click): flips this
+      // WOMI's adjustment grid to the embedded edit face. The WO-side read is
+      // enriched, so the row already carries WO/WOMI/warehouse labels.
+      adjustmentPanel.openPanel({
+        mode: "edit",
+        pickerConfig: EDIT_PICKER_CONFIG,
+        workOrderItemId: adjustment.workOrderItemId,
+        adjustment,
+      })
+      setEditingWorkOrderItemId(workOrderItemId)
     },
-    [openForAdjustmentEdit],
+    [adjustmentPanel],
   )
 
   const handleCreateNew = useCallback(
@@ -138,6 +121,7 @@ export function WorkOrderMaterialItemsSection({
           materialItemNotes: item?.notes ?? "",
         },
       })
+      setEditingWorkOrderItemId(workOrderItemId)
     },
     [adjustmentPanel, section.items, workOrder.id, workOrder.warehouseId, workOrder.warehouseName, workOrder.workOrderNumber],
   )
@@ -171,6 +155,7 @@ export function WorkOrderMaterialItemsSection({
           locationLabel: adjustment.location ?? "",
         },
       })
+      setEditingWorkOrderItemId(workOrderItemId)
     },
     [adjustmentPanel, section.items, workOrder.id, workOrder.workOrderNumber],
   )
@@ -306,6 +291,12 @@ export function WorkOrderMaterialItemsSection({
                     <UnsavedParentMessage>
                       Save this material item to add adjustments.
                     </UnsavedParentMessage>
+                  ) : editingWorkOrderItemId === row.id ? (
+                    <EmbeddedAdjustmentRecordView
+                      controller={adjustmentPanel}
+                      hostPage={page}
+                      onBack={closeAdjustment}
+                    />
                   ) : (
                     <WorkOrderAdjustmentRow
                       workOrderItemId={row.id}
@@ -322,8 +313,6 @@ export function WorkOrderMaterialItemsSection({
           )
         }}
       />
-
-      <AdjustmentEditPanel controller={adjustmentPanel} />
     </div>
   )
 }

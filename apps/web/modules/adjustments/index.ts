@@ -7,6 +7,8 @@
 // WOMI in the UI); the shared panel's `canCreate` flag gates that path.
 export { AdjustmentEditPanel } from "./components/adjustment-edit-panel"
 export type { AdjustmentEditPanelProps } from "./components/adjustment-edit-panel"
+export { EmbeddedAdjustmentRecordView } from "./components/adjustment-edit-panel/adjustment-embedded-record-view"
+export type { EmbeddedAdjustmentRecordViewProps } from "./components/adjustment-edit-panel/adjustment-embedded-record-view"
 export { AdjustmentPickerStack } from "./components/adjustment-edit-panel/adjustment-picker-stack"
 export { AdjustmentPickerTakeoverBody } from "./components/adjustment-edit-panel/adjustment-picker-takeover-body"
 export {

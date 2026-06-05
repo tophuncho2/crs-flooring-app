@@ -143,6 +143,15 @@ export function useAdjustmentEditPanel({
 
   const isDirty = useMemo(() => formIsDirty(form, baseline), [form, baseline])
 
+  // Whether the Save/Create button should be enabled. Create requires a valid
+  // form; edit requires a valid form AND a pending change. Mirrors the `save()`
+  // no-op guards so a record-view sub-header can disable the button instead of
+  // rendering it enabled-but-inert.
+  const canSave = useMemo(() => {
+    if (!open) return false
+    return open.mode === "create" ? isCreateValid(form) : isEditValid(form) && isDirty
+  }, [open, form, isDirty])
+
   // Derived from the open spec: per-picker editable/locked/hidden state, and
   // the fixed product id (inventory is single-product per open) used to scope
   // the WO-relink picker + WOMI auto-resolve.
@@ -431,6 +440,7 @@ export function useAdjustmentEditPanel({
     productId,
     pickerConfig,
     isDirty,
+    canSave,
     isSaving,
     error,
     canCreate,
