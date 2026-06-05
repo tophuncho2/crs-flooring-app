@@ -88,7 +88,6 @@ export function buildPropertyRecordHref(
   })
 }
 
-<<<<<<< HEAD
 const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
 
 /**
@@ -124,7 +123,6 @@ export function buildTemplateHubHref(options?: {
 
   const query = searchParams.toString()
   return query ? `${TEMPLATE_HUB_BASE}?${query}` : TEMPLATE_HUB_BASE
-=======
 const INVENTORY_BASE = "/dashboard/inventory"
 
 /**
@@ -142,7 +140,6 @@ export function buildInventoryAdjustmentHref(
   searchParams.set("adjustment", adjustmentId)
   if (returnTo) searchParams.set("returnTo", returnTo)
   return `${INVENTORY_BASE}/${inventoryId}?${searchParams.toString()}`
->>>>>>> 15df7ab9 (  feat(adjustments,inventory): make adjustments a pure module; own record-view in inventory)
 }
 
 export function resolveRecordEntryReturnTo(
