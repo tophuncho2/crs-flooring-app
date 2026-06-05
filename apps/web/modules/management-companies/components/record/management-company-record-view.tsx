@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react"
 import {
   RecordDrilldownSection,
+  RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
@@ -117,10 +118,14 @@ export function ManagementCompanyRecordView({
   ]
 
   return (
-    <RecordMultiSectionPanel
-      page={page}
-      sections={sections}
-      footer={{ onClose: page.closePage, onDelete: () => void controller.deleteRecord() }}
-    />
+    <>
+      <RecordMultiSectionPanel page={page} sections={sections} />
+      <RecordEntityFooter
+        onClose={page.closePage}
+        onDelete={() => controller.deleteRecord()}
+        deleteLabel="Delete Management Company"
+        confirmTitle="Delete management company?"
+      />
+    </>
   )
 }
