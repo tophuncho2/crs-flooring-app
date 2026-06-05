@@ -21,7 +21,7 @@ export type PopoverPlacementOptions = {
  *
  * Returns a `position: fixed` placement (`top` xor `bottom`, plus `maxHeight`);
  * callers supply the horizontal placement (`left`/width). Shared by
- * `RichDropdown`, `AsyncRichDropdown`, and `AnchoredPanel`.
+ * `AsyncRichDropdown` and `AnchoredPanel`.
  */
 export function computePopoverPlacement(
   triggerRect: DOMRect,

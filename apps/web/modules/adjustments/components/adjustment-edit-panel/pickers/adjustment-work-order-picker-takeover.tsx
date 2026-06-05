@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react"
 import type { WorkOrderOption } from "@builders/domain"
 import { HubSidePanelPicker, type HubSidePanelPickerOption } from "@/components/hub-side-panel"
-import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
+import { useAsyncRichDropdownController } from "@/engines/dropdowns"
 import {
   WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY,
   searchWorkOrderOptionsRequest,

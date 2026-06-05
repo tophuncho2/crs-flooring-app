@@ -1,9 +1,7 @@
 "use client"
 
 import type { CellProps } from "./contracts/cell-base"
-import { SelectDropdown } from "../dropdowns/select-dropdown"
-import type { DropdownOption } from "../dropdowns/contracts/dropdown-option"
-
+import { SelectDropdown, type DropdownOption } from "@/engines/dropdowns"
 export type DropdownCellProps = CellProps<string | null> & {
   options: ReadonlyArray<DropdownOption>
   placeholder?: string

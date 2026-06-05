@@ -2,13 +2,12 @@
 
 import { useCallback, useMemo, useState } from "react"
 import type { CategoryOption, ProductOption } from "@builders/domain"
-import { AnchoredPanel } from "@/components/dropdowns/anchored-panel"
+import { AnchoredPanel, useAsyncRichDropdownController } from "@/engines/dropdowns"
 import {
   HubSidePanelPicker,
   HubSidePanelPickerTrigger,
   type HubSidePanelPickerOption,
 } from "@/components/hub-side-panel"
-import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
 import {
   CATEGORY_OPTIONS_QUERY_KEY,
   searchCategoryOptionsRequest,

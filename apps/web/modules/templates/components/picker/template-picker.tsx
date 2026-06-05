@@ -2,9 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { formatTemplateItemsCount, type TemplateOption } from "@builders/domain"
-import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
-import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
-import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
+import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/dropdowns"
 import {
   TEMPLATE_OPTIONS_QUERY_KEY,
   searchTemplateOptionsRequest,

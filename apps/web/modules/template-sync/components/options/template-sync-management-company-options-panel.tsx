@@ -2,7 +2,7 @@
 
 import { useCallback } from "react"
 import type { ManagementCompanyOption } from "@builders/domain"
-import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
+import { useAsyncRichDropdownController } from "@/engines/dropdowns"
 import {
   MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY,
   searchManagementCompanyOptionsRequest,

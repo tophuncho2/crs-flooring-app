@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react"
 import type { WarehouseOption } from "@builders/domain"
 import { HubSidePanelPicker, type HubSidePanelPickerOption } from "@/components/hub-side-panel"
-import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
+import { useAsyncRichDropdownController } from "@/engines/dropdowns"
 import {
   WAREHOUSE_OPTIONS_QUERY_KEY,
   searchWarehouseOptionsRequest,

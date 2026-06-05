@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { computePopoverPlacement } from "@/components/dropdowns/positioning/compute-popover-placement"
+import { computePopoverPlacement } from "../positioning/compute-popover-placement"
 import type { AsyncRichDropdownOption } from "./contracts/async-rich-dropdown-option"
 
 const TRIGGER_BASE_CLASS_NAME =
@@ -66,9 +66,9 @@ export type AsyncRichDropdownProps = {
 }
 
 /**
- * Server-search variant of `RichDropdown`. Identical popover chrome — search
- * input + scrollable list + clear affordance + keyboard navigation — but no
- * local substring filter. Consumers wire `query`/`onQueryChange` through a
+ * Server-search rich dropdown. Popover chrome — search input + scrollable
+ * list + clear affordance + keyboard navigation — with no local substring
+ * filter. Consumers wire `query`/`onQueryChange` through a
  * controller that fetches options server-side, so the dropdown can power
  * pickers backed by paginated APIs.
  *

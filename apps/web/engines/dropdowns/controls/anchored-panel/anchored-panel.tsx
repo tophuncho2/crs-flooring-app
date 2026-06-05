@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
-import { computePopoverPlacement } from "@/components/dropdowns/positioning/compute-popover-placement"
+import { computePopoverPlacement } from "../positioning/compute-popover-placement"
 
 const POPOVER_CLASS_NAME =
   "flex flex-col rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl focus:outline-none"

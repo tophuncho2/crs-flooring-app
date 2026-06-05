@@ -2,9 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { ImportOption } from "@builders/domain"
-import { AsyncRichDropdown } from "@/components/dropdowns/async-rich-dropdown"
-import type { AsyncRichDropdownOption } from "@/components/dropdowns/async-rich-dropdown"
-import { useAsyncRichDropdownController } from "@/controllers/dropdown-search"
+import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/dropdowns"
 import {
   IMPORTS_OPTIONS_QUERY_KEY,
   searchImportOptionsRequest,

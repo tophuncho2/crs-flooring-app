@@ -13,10 +13,10 @@ Next.js app. UI, client-side orchestration, API routes, dashboard pages.
 
 Generic, reusable controller hooks. (Not preffered but, module-specific controllers live in `modules/<module>/controllers/`.)
 
-- [ ] `dropdown-search/` — `use-async-rich-dropdown-controller` (async picker w/ search)
 - [ ] `expandable-rows/` — expandable-row controller
 - [ ] Record controllers now live inside the record-view engine — see `engines/record-view/client/controllers/`.
 - [ ] List controllers now live inside the list-view engine — see `engines/list-view/client/` (server list controller, URL bindings, list-view contracts).
+- [ ] The async dropdown controller now lives inside the dropdowns engine — see `engines/dropdowns/client/` (`use-async-rich-dropdown-controller`).
 
 ## `hooks/`
 
@@ -29,7 +29,7 @@ Generic React hooks for the dashboard.
 
 React-query freshness presets shared outside the list-view engine.
 
-- [ ] `index.ts` — `FRESH_ON_OPEN` (always-stale + refetch-on-mount, for pickers/side-panels). The list-view freshness presets (`ListFreshness` type + `LIST_FRESHNESS_LIVE`/`STANDARD`/`OFF`) now live in the list-view engine — see `engines/list-view/policies/`.
+- [ ] `index.ts` — `FRESH_ON_OPEN` (always-stale + refetch-on-mount). Shared by the dropdowns engine's async controller **and** the hub side-panel query hooks, so it stays here as a shared primitive. The list-view freshness presets (`ListFreshness` type + `LIST_FRESHNESS_LIVE`/`STANDARD`/`OFF`) now live in the list-view engine — see `engines/list-view/policies/`.
 
 ## `engines/`
 
@@ -37,6 +37,7 @@ Self-contained, reusable UI engines. Each engine owns its components, controller
 
 - [ ] `record-view/` — the canonical record detail/create engine (work-orders, templates, imports, products). Public surface: `@/engines/record-view`. Internals: `client/` (scaffolds, controllers, hooks, utils), `panel/`, `shell/`, `sections/`, `feedback/`, `forms/`, `adapters/`, `contracts/`. Depends outward only on shared primitives (`@/types`, `@/components/dialogs`, `@/components/theme`, `@/transport`); nothing reaches back into it.
 - [ ] `list-view/` — the canonical list/table page engine (all dashboard list views). Public surface: `@/engines/list-view`. Internals: `client/` (server list controller, contracts, nuqs url-bindings), `table/` (the `DataTable` primitive), `toolbar/` (`list-toolbar`, `search`, `filter`, `paginate`, `sort`, `group`), `policies/` (`LIST_FRESHNESS_*`). Self-contained; consumers import only from the barrel. `Grid` stays in `@/components/grid` (record-view sub-grids + categories/uom); the `select-batch`/`duplicate-row` row side-cars stay in `@/components/features`.
+- [ ] `dropdowns/` — the canonical dropdown/picker engine (every module picker, list filter chip, and `cells/dropdown-cell`). Public surface: `@/engines/dropdowns`. Internals: `controls/` (`SelectDropdown`, `AsyncRichDropdown`, `SegmentedDropdown`, `AnchoredPanel`, `positioning/`), `contracts/` (`DropdownOption`, `DropdownFeatures`), `client/` (`useAsyncRichDropdownController` — debounced search + paginated query that refetches on open via `FRESH_ON_OPEN`). Self-contained (React only). Side-panel picker chrome (`@/components/hub-side-panel`, `side-panel-edit`, `side-panel-preview`) is separate and stays.
 - [ ] `side-panel/` — side-panel freshness/refresh engine.
 
 ## `tests/`
