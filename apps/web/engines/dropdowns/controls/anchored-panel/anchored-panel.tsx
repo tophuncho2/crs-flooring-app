@@ -29,8 +29,8 @@ export type AnchoredPanelProps = {
  * Inline anchored popover. Renders a trigger and, while `open`, portals a panel
  * anchored to the trigger — below it, flipping above when space is tight (via
  * {@link computePopoverPlacement}). The panel is a flex column with a pinned
- * `stickyHeader` and a scrolling body, mirroring `SidePanelPreview` but anchored
- * to a cell rather than a screen edge.
+ * `stickyHeader` and a scrolling body, anchored to a cell rather than a screen
+ * edge.
  *
  * Pure chrome: it knows nothing about pickers. Consumers own the trigger button
  * (and its toggle), the header content, and the body content.
