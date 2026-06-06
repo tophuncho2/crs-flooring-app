@@ -1,11 +1,9 @@
 "use client"
 
-import { formatInventoryQuantity, type InventoryRow } from "@builders/domain"
 import {
   DataTable,
   DebouncedSearchControl,
   PaginateControls,
-  type DataTableColumn,
 } from "@/engines/list-view"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
@@ -16,29 +14,16 @@ import {
   toInventoryOption,
   type InventoryRecordSelectionController,
 } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
-
-const COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>> = [
-  { key: "inventoryItem", label: "Item" },
-  { key: "inventoryNumber", label: "Inv #" },
-  { key: "rollNumber", label: "Roll #" },
-  { key: "dyeLot", label: "Dye lot" },
-  { key: "location", label: "Location" },
-  { key: "warehouseName", label: "Warehouse" },
-  {
-    key: "stockBalance",
-    label: "Stock",
-    align: "end",
-    render: (row) => formatInventoryQuantity(row.stockBalance, row.stockUnitAbbrev),
-  },
-]
+import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
+import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
 
 /**
  * The inventory reference-header picker grid: a warehouse picker + the four
  * identity search bars (Inv # / Roll # / Dye lot / Note) inline, over a 15-row
  * paginated results table. Clicking a row selects that inventory record.
- * Reuses the list-view engine's presentational primitives (DataTable /
- * DebouncedSearchControl / PaginateControls) so the list's richer filter tools
- * can be folded in later.
+ * Renders rows through the shared `INVENTORY_LIST_COLUMNS` + `renderInventoryRowCell`
+ * (same as the list table and the reference row) so column changes propagate to
+ * every place an inventory row is shown.
  */
 export function InventoryOptionsGrid({
   selection,
@@ -96,7 +81,8 @@ export function InventoryOptionsGrid({
       ) : (
         <DataTable
           rows={grid.rows}
-          columns={COLUMNS}
+          columns={INVENTORY_LIST_COLUMNS}
+          renderCell={renderInventoryRowCell}
           onRowClick={(row) => onSelectInventory(toInventoryOption(row))}
           getRowAriaLabel={(row) => row.inventoryItem}
           empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
