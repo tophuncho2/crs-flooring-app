@@ -11,8 +11,7 @@ import {
   MANUFACTURERS_LIST_QUERY_KEY,
   listManufacturersRequest,
 } from "@/modules/manufacturers/data/list-manufacturers-request"
-import { useManufacturerSidePanel } from "@/modules/manufacturers/controllers/use-manufacturer-side-panel"
-import { ManufacturerSidePanel } from "@/modules/manufacturers/components/side-panel"
+import { useManufacturersListController } from "@/modules/manufacturers/controllers/list/use-manufacturers-list-controller"
 import { ManufacturersTable } from "./manufacturers-table"
 import { AddManufacturerButton } from "./toolbar-controls/add-manufacturer-button"
 import { ManufacturersListSearch } from "./toolbar-controls/manufacturers-list-search"
@@ -28,7 +27,7 @@ export default function ManufacturersClient({
   initialSearchQuery,
   initialPage,
 }: ManufacturersClientProps) {
-  const sidePanel = useManufacturerSidePanel()
+  const { openCreate, openManufacturer } = useManufacturersListController()
 
   const {
     rows,
@@ -89,7 +88,7 @@ export default function ManufacturersClient({
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">
-              <AddManufacturerButton onClick={() => sidePanel.openCreate()} />
+              <AddManufacturerButton onClick={() => openCreate()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
@@ -97,7 +96,7 @@ export default function ManufacturersClient({
 
       <ManufacturersTable
         rows={rows}
-        onOpen={sidePanel.openEdit}
+        onOpen={(row) => openManufacturer(row.id)}
         pagination={
           <PaginateControls
             page={page}
@@ -111,8 +110,6 @@ export default function ManufacturersClient({
           />
         }
       />
-
-      <ManufacturerSidePanel controller={sidePanel} />
     </div>
   )
 }

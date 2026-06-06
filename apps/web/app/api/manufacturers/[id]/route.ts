@@ -8,12 +8,30 @@ import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
   enforceMutationReceipt,
+  enforceQueryRateLimit,
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 
 type RouteContext = {
   params: Promise<{ id: string }>
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  const access = await applyRoutePolicy(request)
+  if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/manufacturers/[id]")
+  if (rateLimited) return rateLimited
+
+  try {
+    const { id: rawId } = await context.params
+    const id = parseUuidParam(rawId, "id")
+    const manufacturer = await getManufacturerById(id)
+    return routeJson(access, { manufacturer })
+  } catch (error) {
+    return routeError(access, error)
+  }
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
