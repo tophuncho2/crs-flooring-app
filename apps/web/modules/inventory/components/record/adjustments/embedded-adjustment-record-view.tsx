@@ -63,7 +63,7 @@ export function EmbeddedAdjustmentRecordView({
   const actions: RecordSectionSubHeaderAction[] = [
     {
       key: "back",
-      label: "Back",
+      label: "Show list",
       tone: "neutral",
       onClick: handleBack,
       disabled: isSaving,

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import {
   RecordBackButton,
+  RecordFooterNeutralButton,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
@@ -24,17 +25,26 @@ import { PropertyPrimaryFieldsSection } from "./primary/property-primary-fields-
  * `deletable` (the drilldown edit view) adds a "Delete Property" button to the
  * primary section's action row, right of Discard; the MC create flow omits it.
  * Delete routes back through the shared page controller on success.
+ *
+ * `onShowList` is the in-section drilldown flip (clears `?property`, swaps this
+ * section back to its linked-properties list). When provided (the MC edit
+ * drilldown) the leading action is a "Show list" button wired to it — NOT a
+ * route, and unrelated to the top-left record back button. When omitted (the MC
+ * create flow, which embeds a single property with no list to flip to) the
+ * leading action falls back to a real "Back" that routes via the page controller.
  */
 export function PropertyRecordView({
   page,
   entry,
   onDirtyChange,
   deletable = false,
+  onShowList,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: PropertyDetailRecord
   onDirtyChange?: (isDirty: boolean) => void
   deletable?: boolean
+  onShowList?: () => void
 }) {
   const controller = usePropertyPrimarySection({ page, entry })
   const primary = controller.primarySection
@@ -77,7 +87,13 @@ export function PropertyRecordView({
           onDiscard={primary.discard}
           onDelete={deletable ? () => setConfirmDeleteOpen(true) : undefined}
           deleteLabel="Delete Property"
-          actionsLeading={<RecordBackButton onClick={page.closePage} label="Back" />}
+          actionsLeading={
+            onShowList ? (
+              <RecordFooterNeutralButton onClick={onShowList}>Show list</RecordFooterNeutralButton>
+            ) : (
+              <RecordBackButton onClick={page.closePage} label="Back" />
+            )
+          }
         >
           <PropertyPrimaryFieldsSection
             draft={primary.localValue}

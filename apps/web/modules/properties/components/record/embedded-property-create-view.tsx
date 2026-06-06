@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import {
-  RecordBackButton,
+  RecordFooterNeutralButton,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   useEmbeddedRecordPageController,
@@ -66,7 +66,11 @@ export function EmbeddedPropertyCreateView({
           onDiscard={primary.discard}
           saveLabel="Create"
           savingLabel="Creating…"
-          actionsLeading={<RecordBackButton onClick={embeddedPage.closePage} label="Back" />}
+          actionsLeading={
+            <RecordFooterNeutralButton onClick={embeddedPage.closePage}>
+              Show list
+            </RecordFooterNeutralButton>
+          }
         >
           <PropertyPrimaryFieldsSection
             draft={primary.localValue}

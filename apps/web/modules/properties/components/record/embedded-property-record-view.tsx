@@ -27,12 +27,16 @@ export function EmbeddedPropertyRecordView({
   onBack,
   onDirtyChange,
   deletable = false,
+  onShowList,
 }: {
   propertyId: string
   hostPage: RecordDetailClientScaffoldContext
   onBack: () => void
   onDirtyChange?: (isDirty: boolean) => void
   deletable?: boolean
+  /** In-section drilldown flip — see `PropertyRecordView`. Omitted by the MC
+   *  create flow (no list to flip to). */
+  onShowList?: () => void
 }) {
   const embeddedPage = useEmbeddedRecordPageController({ host: hostPage, onNavigateBack: onBack })
 
@@ -54,6 +58,7 @@ export function EmbeddedPropertyRecordView({
       entry={query.data}
       onDirtyChange={onDirtyChange}
       deletable={deletable}
+      onShowList={onShowList}
     />
   )
 }

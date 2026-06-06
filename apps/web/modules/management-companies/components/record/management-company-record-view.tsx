@@ -120,6 +120,7 @@ export function ManagementCompanyRecordView({
                 propertyId={id}
                 hostPage={ctx.page}
                 onBack={onBack}
+                onShowList={onBack}
                 onDirtyChange={setEmbeddedDirty}
                 deletable
               />
