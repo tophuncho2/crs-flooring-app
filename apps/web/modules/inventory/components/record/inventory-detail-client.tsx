@@ -79,22 +79,32 @@ function InventoryRecordSurface({
         label="Inventory item"
         discardMessage="This inventory item has unsaved changes. Switching items will discard them."
         actions={({ guard }) => (
-          <SidePanelPreviewClearButton
-            disabled={!hasSelection}
-            onClick={() =>
-              guard(() => {
-                selection.clear()
-                setIsPicking(false)
-              })
-            }
-          />
+          <>
+            {!expanded ? (
+              <button
+                type="button"
+                onClick={() => setIsPicking(true)}
+                className="shrink-0 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:border-sky-500/45 hover:text-[var(--foreground)]"
+              >
+                Change
+              </button>
+            ) : null}
+            <SidePanelPreviewClearButton
+              disabled={!hasSelection}
+              onClick={() =>
+                guard(() => {
+                  selection.clear()
+                  setIsPicking(false)
+                })
+              }
+            />
+          </>
         )}
       >
         {({ guard }) => (
           <InventoryRecordHeader
             selection={selection}
             expanded={expanded}
-            onToggleExpanded={() => setIsPicking((value) => !value)}
             onSelectWarehouse={(option) => guard(() => selection.selectWarehouse(option))}
             onSelectInventory={(option) =>
               guard(() => {
