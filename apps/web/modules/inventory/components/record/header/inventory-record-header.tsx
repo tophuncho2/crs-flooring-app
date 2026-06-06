@@ -1,10 +1,8 @@
 "use client"
 
-import { DataTable } from "@/engines/list-view"
 import type { InventoryRecordSelectionController } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
-import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
-import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
 import { InventoryOptionsGrid } from "./inventory-options-grid"
+import { InventoryReferenceRow } from "./inventory-reference-row"
 
 /**
  * The inventory reference-header body (rendered inside the shared
@@ -47,11 +45,5 @@ export function InventoryRecordHeader({
     )
   }
 
-  return (
-    <DataTable
-      rows={[selection.inventory]}
-      columns={INVENTORY_LIST_COLUMNS}
-      renderCell={renderInventoryRowCell}
-    />
-  )
+  return <InventoryReferenceRow inventory={selection.inventory} />
 }

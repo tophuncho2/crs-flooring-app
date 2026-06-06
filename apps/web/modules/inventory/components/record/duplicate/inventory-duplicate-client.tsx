@@ -87,8 +87,8 @@ function InventoryDuplicatePanel({
         actions={actions}
       />
       <InventoryDuplicateFields
+        page={page}
         inventory={source}
-        warehouseName={source.warehouseName}
         form={form}
         setField={setField}
         editable={!isPending}

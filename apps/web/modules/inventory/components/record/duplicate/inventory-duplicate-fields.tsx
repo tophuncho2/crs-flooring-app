@@ -6,37 +6,37 @@ import {
   INVENTORY_LOCATION_MAX,
   INVENTORY_NOTE_MAX,
   INVENTORY_ROLL_NUMBER_MAX,
-  toInventoryForm,
   type InventoryRow,
 } from "@builders/domain"
+import {
+  RecordReferenceHeader,
+  type RecordDetailClientScaffoldContext,
+} from "@/engines/record-view"
 import type { InventoryDuplicateForm } from "@/modules/inventory/controllers/record/duplicate/use-inventory-duplicate-section"
-import { InventoryDetailsGroup } from "../primary/groups/inventory-details-group"
+import { InventoryReferenceRow } from "../header/inventory-reference-row"
 import { InventoryField } from "../primary/groups/inventory-field"
 import { InventoryGroup } from "../primary/groups/inventory-group"
 
-const NOOP = () => {}
-
 /**
- * Presentational body for the duplicate-inventory flow — two stacked groups:
- *   1. "Duplicate inventory item" — the five editable cells the operator sets on
- *      the new row (roll# / starting stock / note / location / internal notes).
- *   2. "Reference inventory" (red) — the source row rendered read-only via the
- *      shared {@link InventoryDetailsGroup} so the operator can see what they're
- *      cloning while they type.
+ * Presentational body for the duplicate-inventory flow — the editable
+ * "Duplicate inventory item" group (roll# / starting stock / note / location /
+ * internal notes) over a locked reference header showing the source row (the
+ * same chrome the record view uses, no Change/Clear — reselecting the reference
+ * is a later step).
  *
  * Controller-agnostic: takes the draft form + a `setField` writer + the source
  * snapshot, so both the record-view embedded duplicate face and the (dormant)
  * hub duplicate section render identically.
  */
 export function InventoryDuplicateFields({
+  page,
   inventory,
-  warehouseName,
   form,
   setField,
   editable,
 }: {
+  page: RecordDetailClientScaffoldContext
   inventory: InventoryRow
-  warehouseName: string | null
   form: InventoryDuplicateForm
   setField: <K extends keyof InventoryDuplicateForm>(
     field: K,
@@ -102,16 +102,11 @@ export function InventoryDuplicateFields({
         </div>
       </InventoryGroup>
 
-      {/* Read-only source row — same cells as the record view, red-shaded. */}
-      <InventoryDetailsGroup
-        editable={false}
-        inventory={inventory}
-        draft={toInventoryForm(inventory)}
-        warehouseName={warehouseName}
-        onFieldChange={NOOP}
-        title="Reference inventory"
-        tone="red"
-      />
+      {/* Locked reference header — the source row in the same chrome the record
+          view uses; reselecting the reference is a later step. */}
+      <RecordReferenceHeader page={page} label="Reference inventory">
+        {() => <InventoryReferenceRow inventory={inventory} />}
+      </RecordReferenceHeader>
     </div>
   )
 }

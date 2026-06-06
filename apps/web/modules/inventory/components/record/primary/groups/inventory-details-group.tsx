@@ -3,8 +3,6 @@
 import { TextCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import {
-  formatEasternDateTime,
-  formatFifoReceivedAtEastern,
   formatInventoryQuantity,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
@@ -16,25 +14,16 @@ import { InventoryField } from "./inventory-field"
 import { InventoryGroup } from "./inventory-group"
 
 /**
- * Single consolidated inventory cells group. Replaces the former Stock /
- * Product / Internal trio with one card laid out as a two-column grid:
- *
- *   Location            | —
- *   Internal Notes (full width)
- *   Warehouse           | Category
- *   Product (full width)
- *   Inv #               | Stock Balance
- *   Roll #              | Coverage Balance
- *   Dye Lot             | Coverage Per Unit
- *   Note                | Deducted
- *   Import #            | Starting Stock
- *   PO #                | FIFO Received
- *   Updated             | —
+ * The record view's inventory cells group — one card laid out as a two-column
+ * grid (Location, Internal Notes, Warehouse, Category, then the stock/coverage
+ * derived fields). The identity/derived fields now duplicated by the reference
+ * header row (Product, Inv #, Import #, PO #, FIFO, Updated) have been removed;
+ * pairing/layout of the remaining fields is a pending follow-up.
  *
  * Only Location + Internal Notes (and the archive chip in the header) are
  * editable; everything else is identity / derived data rendered static. The
- * `editable` flag drives both the hub's read-only view and its
- * section-edit-inventory mode off one component.
+ * `editable` flag drives both the read-only view and the section-edit mode off
+ * one component.
  */
 export function InventoryDetailsGroup({
   editable,
@@ -97,13 +86,6 @@ export function InventoryDetailsGroup({
           <StaticFieldValue>{inventory.categoryName || "—"}</StaticFieldValue>
         </InventoryField>
 
-        <InventoryField label="Product" className="col-span-2">
-          <StaticFieldValue>{inventory.productName || "—"}</StaticFieldValue>
-        </InventoryField>
-
-        <InventoryField label="Inv #">
-          <StaticFieldValue>{inventory.inventoryNumber}</StaticFieldValue>
-        </InventoryField>
         <InventoryField label="Stock Balance">
           <StaticFieldValue>
             {formatInventoryQuantity(inventory.stockBalance, inventory.stockUnitAbbrev)}
@@ -141,27 +123,9 @@ export function InventoryDetailsGroup({
           </StaticFieldValue>
         </InventoryField>
 
-        <InventoryField label="Import #">
-          <StaticFieldValue>{inventory.importNumber || "—"}</StaticFieldValue>
-        </InventoryField>
         <InventoryField label="Starting Stock">
           <StaticFieldValue>
             {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
-          </StaticFieldValue>
-        </InventoryField>
-
-        <InventoryField label="PO #">
-          <StaticFieldValue>{inventory.purchaseOrderNumber || "—"}</StaticFieldValue>
-        </InventoryField>
-        <InventoryField label="FIFO Received">
-          <StaticFieldValue>
-            {inventory.fifoReceivedAt ? formatFifoReceivedAtEastern(inventory.fifoReceivedAt) : "—"}
-          </StaticFieldValue>
-        </InventoryField>
-
-        <InventoryField label="Updated">
-          <StaticFieldValue>
-            {inventory.updatedAt ? formatEasternDateTime(inventory.updatedAt) : "—"}
           </StaticFieldValue>
         </InventoryField>
       </div>
