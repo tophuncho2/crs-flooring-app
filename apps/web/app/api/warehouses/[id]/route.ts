@@ -8,11 +8,36 @@ import {
   applyRoutePolicy,
   assertExpectedUpdatedAt,
   enforceMutationReceipt,
+  enforceQueryRateLimit,
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 
 type RouteContext = { params: Promise<{ id: string }> }
+
+export async function GET(request: Request, { params }: RouteContext) {
+  const access = await applyRoutePolicy(request)
+  if (access instanceof Response) return access
+
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/warehouses/[id]")
+  if (rateLimited) return rateLimited
+
+  try {
+    const { id: rawId } = await params
+    const id = parseUuidParam(rawId, "id")
+    const warehouse = await getWarehouseById(id)
+    if (!warehouse) {
+      throw new WarehouseExecutionError({
+        code: "WAREHOUSE_NOT_FOUND",
+        message: "Warehouse not found",
+        status: 404,
+      })
+    }
+    return routeJson(access, { warehouse })
+  } catch (error) {
+    return routeError(access, error)
+  }
+}
 
 export async function DELETE(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {

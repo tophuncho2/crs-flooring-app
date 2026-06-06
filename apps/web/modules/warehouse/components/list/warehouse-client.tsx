@@ -11,8 +11,7 @@ import {
   WAREHOUSE_LIST_QUERY_KEY,
   listWarehousesRequest,
 } from "@/modules/warehouse/data/list-warehouse-request"
-import { useWarehouseSidePanel } from "@/modules/warehouse/controllers/use-warehouse-side-panel"
-import { WarehouseSidePanel } from "@/modules/warehouse/components/side-panel"
+import { useWarehouseListController } from "@/modules/warehouse/controllers/list/use-warehouse-list-controller"
 import { WarehouseTable } from "./warehouse-table"
 import { AddWarehouseButton } from "./toolbar-controls/add-warehouse-button"
 import { WarehouseListSearch } from "./toolbar-controls/warehouse-list-search"
@@ -28,7 +27,7 @@ export default function WarehouseClient({
   initialSearchQuery,
   initialPage,
 }: WarehouseClientProps) {
-  const sidePanel = useWarehouseSidePanel()
+  const { openCreate, openWarehouse } = useWarehouseListController()
 
   const {
     rows,
@@ -85,7 +84,7 @@ export default function WarehouseClient({
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">
-              <AddWarehouseButton onClick={() => sidePanel.openCreate()} />
+              <AddWarehouseButton onClick={() => openCreate()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
@@ -93,7 +92,7 @@ export default function WarehouseClient({
 
       <WarehouseTable
         rows={rows}
-        onOpen={sidePanel.openEdit}
+        onOpen={(row) => openWarehouse(row.id)}
         pagination={
           <PaginateControls
             page={page}
@@ -107,8 +106,6 @@ export default function WarehouseClient({
           />
         }
       />
-
-      <WarehouseSidePanel controller={sidePanel} />
     </div>
   )
 }
