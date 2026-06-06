@@ -1,6 +1,6 @@
 "use client"
 
-import type { JobType, TemplateForm } from "@builders/domain"
+import type { TemplateForm } from "@builders/domain"
 import { TemplateJobGroup } from "./groups/template-job-group"
 import { TemplateNotesGroup } from "./groups/template-notes-group"
 import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group"
@@ -41,7 +41,6 @@ export function TemplatePrimaryFieldsSection({
   disabled,
   onFieldChange,
   onFieldsChange,
-  onJobTypeRenamed,
 }: {
   draft: TemplateForm
   detail: TemplatePrimaryDetail | null
@@ -49,8 +48,6 @@ export function TemplatePrimaryFieldsSection({
   onFieldChange: (field: keyof TemplateForm, value: string) => void
   /** Multi-field setter — used by the property-unit group for the MC→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
-  /** Forwarded to the Job group — host patches `jobTypeName` after a rename. */
-  onJobTypeRenamed?: (jobType: JobType) => void
 }) {
   const editable = !disabled
   const { propertyJoined, handlePropertyOption } = usePropertyJoinedOverride(detail)
@@ -62,7 +59,6 @@ export function TemplatePrimaryFieldsSection({
         draft={draft}
         detail={detail}
         onFieldChange={onFieldChange}
-        onJobTypeRenamed={onJobTypeRenamed}
       />
       <TemplatePropertyUnitGroup
         editable={editable}

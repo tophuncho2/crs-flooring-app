@@ -12,8 +12,6 @@ import {
   listJobTypesRequest,
 } from "@/modules/job-types/data/list-job-types-request"
 import { useJobTypesListController } from "@/modules/job-types/controllers/list/use-job-types-list-controller"
-import { useJobTypeSidePanel } from "@/modules/job-types/controllers/side-panel"
-import { JobTypeSidePanel } from "@/modules/job-types/components/side-panel/job-type-side-panel"
 import { JobTypesTable } from "./job-types-table"
 import { AddJobTypeButton } from "./toolbar-controls/add-job-type-button"
 import { JobTypesListSearch } from "./toolbar-controls/job-types-list-search"
@@ -33,8 +31,7 @@ export default function JobTypesClient({
   initialPage,
   initialFilters,
 }: JobTypesClientProps) {
-  const { message, pageError } = useJobTypesListController()
-  const sidePanel = useJobTypeSidePanel()
+  const { message, pageError, openCreate, openJobType } = useJobTypesListController()
 
   const {
     rows,
@@ -113,7 +110,7 @@ export default function JobTypesClient({
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">
-              <AddJobTypeButton onClick={() => sidePanel.openForCreate()} />
+              <AddJobTypeButton onClick={() => openCreate()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
@@ -121,7 +118,7 @@ export default function JobTypesClient({
 
       <JobTypesTable
         rows={rows}
-        onOpenJobType={(row) => sidePanel.openForEdit(row)}
+        onOpenJobType={(row) => openJobType(row.id)}
         pagination={
           <PaginateControls
             page={page}
@@ -135,8 +132,6 @@ export default function JobTypesClient({
           />
         }
       />
-
-      <JobTypeSidePanel controller={sidePanel} />
     </div>
   )
 }

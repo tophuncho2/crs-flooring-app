@@ -1,8 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { useRecordEntryNavigation } from "@/hooks/navigation"
 
 export function useJobTypesListController() {
+  const navigation = useRecordEntryNavigation("/dashboard/job-types")
   const [message, setMessage] = useState("")
   const [pageError, setPageError] = useState("")
 
@@ -11,5 +13,7 @@ export function useJobTypesListController() {
     setMessage,
     pageError,
     setPageError,
+    openCreate: navigation.openCreate,
+    openJobType: navigation.openRecord,
   }
 }

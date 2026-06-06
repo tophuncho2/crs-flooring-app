@@ -1,6 +1,5 @@
 "use client"
 
-import { useCallback } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -9,7 +8,7 @@ import {
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/use-template-primary-section"
 import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/record/use-template-material-items-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
-import type { JobType, TemplateDetail, TemplateForm } from "@builders/domain"
+import type { TemplateDetail, TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
 import { TemplateMaterialItemsSection } from "./template-material-items-section"
 import { TemplateRecordFooter } from "./footer"
@@ -29,15 +28,6 @@ export function TemplateRecordPanel({
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
   const isDirty = primary.primarySection.isDirty || materialItems.isDirty
   const canSync = !isDirty && !primary.primarySection.isSaving && !materialItems.isSaving
-
-  const handleJobTypeRenamed = useCallback(
-    (jobType: JobType) => {
-      const current = primary.record
-      if (!current || current.jobTypeId !== jobType.id) return
-      primary.patchRecord({ jobTypeName: jobType.name })
-    },
-    [primary],
-  )
 
   return (
     <>
@@ -105,7 +95,6 @@ export function TemplateRecordPanel({
                       ...patch,
                     }))
                   }}
-                  onJobTypeRenamed={handleJobTypeRenamed}
                 />
               </RecordPrimarySectionInstance>
             ),
