@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { EnrichedInventoryAdjustmentRow, InventoryDetail, InventoryForm } from "@builders/domain"
 import {
@@ -19,17 +20,17 @@ import { EmbeddedAdjustmentRecordView } from "./adjustments/embedded-adjustment-
 import { useInventoryPrimarySection } from "@/modules/inventory/controllers/record/primary/use-inventory-primary-section"
 import { useInventoryAdjustmentsSection } from "@/modules/inventory/controllers/record/adjustments/use-inventory-adjustments-section"
 import type { InventoryRecordWoSeed } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
+import { buildInventoryDuplicateHref } from "@/hooks/navigation"
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-list"
-import { EmbeddedInventoryDuplicateView } from "./duplicate/embedded-inventory-duplicate-view"
 
 /**
  * The inventory record view. ① editable inventory cells (primary — only Location
  * / Internal Notes / archive) · ② adjustments drilldown (a paginated list ⇄ the
  * embedded adjustment edit/create view, selection driven by the `?adjustment`
- * URL param the detail client owns) · the "Duplicate" primary action flips the
- * page into an embedded duplicate-create face (`?duplicate`). Mirrors the
- * Management Company record view.
+ * URL param the detail client owns). The "Duplicate" primary action navigates to
+ * the standalone duplicate-create page (`/dashboard/inventory/duplicate`).
+ * Mirrors the Management Company record view.
  */
 /** Sentinel `?adjustment` value that opens the embedded "new adjustment" form. */
 const NEW_ADJUSTMENT_ID = "new"
@@ -40,17 +41,14 @@ export function InventoryRecordView({
   woSeed,
   selectedAdjustmentId,
   onSelectAdjustment,
-  duplicateOpen,
-  onToggleDuplicate,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: InventoryDetail
   woSeed?: InventoryRecordWoSeed | null
   selectedAdjustmentId: string | null
   onSelectAdjustment: (adjustmentId: string | null) => void
-  duplicateOpen: boolean
-  onToggleDuplicate: (open: boolean) => void
 }) {
+  const router = useRouter()
   const controller = useInventoryPrimarySection({ page, entry })
   const primary = controller.primarySection
   const record = controller.record
@@ -70,7 +68,6 @@ export function InventoryRecordView({
   })
 
   const [embeddedAdjustmentDirty, setEmbeddedAdjustmentDirty] = useState(false)
-  const [duplicateDirty, setDuplicateDirty] = useState(false)
   const [selectedRow, setSelectedRow] = useState<EnrichedInventoryAdjustmentRow | null>(null)
 
   // Clear the bridged embedded-dirty flag as we leave the embedded adjustment,
@@ -122,13 +119,14 @@ export function InventoryRecordView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAdjustmentId, editRow])
 
-  const handleToggleDuplicate = useCallback(
-    (open: boolean) => {
-      if (!open) setDuplicateDirty(false)
-      onToggleDuplicate(open)
-    },
-    [onToggleDuplicate],
-  )
+  // "Duplicate" leaves the record for the standalone duplicate-create page,
+  // seeding it with this row as the source. Guard the navigation so unsaved
+  // primary edits prompt before we route away.
+  const handleDuplicate = useCallback(() => {
+    page.confirmNavigation(() => {
+      router.push(buildInventoryDuplicateHref({ sourceId: entry.id }))
+    })
+  }, [page, router, entry.id])
 
   const sections: RecordPanelSectionConfig[] = [
     {
@@ -138,7 +136,6 @@ export function InventoryRecordView({
       slot: "primary",
       dirtyLabel: "inventory",
       controller: primary,
-      visibleWhen: () => !duplicateOpen,
       render: () => (
         <RecordPrimarySectionInstance
           title="Inventory"
@@ -156,7 +153,7 @@ export function InventoryRecordView({
               key: "duplicate",
               label: "Duplicate",
               tone: "neutral",
-              onClick: () => handleToggleDuplicate(true),
+              onClick: handleDuplicate,
               disabled: primary.isSaving,
             },
           ]}
@@ -181,7 +178,6 @@ export function InventoryRecordView({
       order: 10,
       dirtyLabel: "adjustment",
       controller: { isDirty: embeddedAdjustmentDirty },
-      visibleWhen: () => !duplicateOpen,
       render: (ctx) => (
         <RecordDrilldownSection
           page={ctx.page}
@@ -209,23 +205,6 @@ export function InventoryRecordView({
               onDirtyChange={setEmbeddedAdjustmentDirty}
             />
           )}
-        />
-      ),
-    },
-    {
-      key: "duplicate",
-      type: "item",
-      order: 20,
-      dirtyLabel: "duplicate",
-      controller: { isDirty: duplicateDirty },
-      visibleWhen: () => duplicateOpen,
-      render: () => (
-        <EmbeddedInventoryDuplicateView
-          inventory={record}
-          warehouseName={record.warehouseName}
-          hostPage={page}
-          onBack={() => handleToggleDuplicate(false)}
-          onDirtyChange={setDuplicateDirty}
         />
       ),
     },

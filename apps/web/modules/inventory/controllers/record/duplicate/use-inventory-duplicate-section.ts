@@ -47,8 +47,9 @@ export type InventoryDuplicateSlice = {
 }
 
 /**
- * Duplicate-inventory section slice for the inventory record view's duplicate
- * face. Owns the editable draft and the create-from-source mutation. Unlike the
+ * Duplicate-inventory section slice for the standalone duplicate-create page
+ * (`/dashboard/inventory/duplicate`). Owns the editable draft and the
+ * create-from-source mutation. Unlike the
  * edit slice there's no optimistic-lock token — a duplicate inserts a brand-new
  * row rather than mutating an existing one. The draft opens blank (`reset`);
  * nothing is pre-filled from the source.

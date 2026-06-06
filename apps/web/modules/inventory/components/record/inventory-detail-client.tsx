@@ -19,11 +19,11 @@ import { InventoryRecordView } from "./inventory-record-view"
 /**
  * Client wrapper for the inventory record view. Owns the Warehouse → Inventory
  * header selection (URL query state, via `useInventoryRecordSelection`) plus the
- * adjustment drilldown (`?adjustment=<id>`, sentinel `"new"`) and the
- * duplicate-create toggle (`?duplicate`) — both now live in the selection
- * controller so switching inventory atomically discards them. Selecting an
- * inventory item loads its record below; the work-order hand-off opens here with
- * the WO's warehouse pre-seeded and the WO link carried in `woSeed`.
+ * adjustment drilldown (`?adjustment=<id>`, sentinel `"new"`), which lives in the
+ * selection controller so switching inventory atomically discards it. Selecting
+ * an inventory item loads its record below; the work-order hand-off opens here
+ * with the WO's warehouse pre-seeded and the WO link carried in `woSeed`. The
+ * "Duplicate" action navigates out to the standalone duplicate-create page.
  */
 export function InventoryDetailClient({
   backHref,
@@ -119,8 +119,6 @@ function InventoryRecordSurface({
             woSeed={selection.woSeed}
             selectedAdjustmentId={selection.adjustment}
             onSelectAdjustment={(id) => selection.setAdjustment(id)}
-            duplicateOpen={selection.duplicate}
-            onToggleDuplicate={(open) => selection.setDuplicate(open)}
           />
         ) : null}
       </div>

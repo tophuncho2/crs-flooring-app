@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { InventoryDetail } from "@builders/domain"
 import {
+  RecordCreateClientScaffold,
   RecordSectionSubHeader,
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
@@ -13,41 +14,38 @@ import { getClientErrorMessage } from "@/transport"
 import { useInventoryDuplicateSection } from "@/modules/inventory/controllers/record/duplicate/use-inventory-duplicate-section"
 import { InventoryDuplicateFields } from "./inventory-duplicate-fields"
 
+/** Dirty-section label surfaced in the scaffold's leave-guard message. */
+const DUPLICATE_DIRTY_SECTION = "duplicate"
+
 /**
- * Embedded "duplicate inventory" create face, rendered inside the inventory
- * record view's duplicate section. Reuses the shared `useHubInventoryDuplicate`
- * slice; a successful create routes to the new inventory's own record page
- * (mirrors property-create). Chrome-less — a `RecordSectionSubHeader` action row
- * over the shared duplicate fields, with Back routed through the host guard.
+ * The "duplicate inventory" create flow as its own page (mirrors
+ * `WorkOrderCreateClient` — a create scaffold over a single section). Reuses the
+ * shared `useInventoryDuplicateSection` slice + `InventoryDuplicateFields` (the
+ * source row still renders read-only beneath the editable five fields). A
+ * successful create routes to the new inventory item's record page.
  */
-export function EmbeddedInventoryDuplicateView({
-  inventory,
-  warehouseName,
-  hostPage,
-  onBack,
-  onDirtyChange,
+function InventoryDuplicatePanel({
+  page,
+  source,
 }: {
-  inventory: InventoryDetail
-  warehouseName: string | null
-  hostPage: RecordDetailClientScaffoldContext
-  onBack: () => void
-  onDirtyChange?: (dirty: boolean) => void
+  page: RecordDetailClientScaffoldContext
+  source: InventoryDetail
 }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const duplicate = useInventoryDuplicateSection({ clearError: () => setError(null) })
   const { form, setField, isDirty, canSubmit, isPending, commitDuplicate, resetToSeed } = duplicate
 
-  // Bridge dirtiness up so the host section + page guard reflect it.
+  // Register dirtiness with the page so the scaffold's leave-guard fires when
+  // navigating away (back arrow / Back action) with unsaved edits.
   useEffect(() => {
-    onDirtyChange?.(isDirty)
-  }, [isDirty, onDirtyChange])
+    page.setDirtySections(isDirty ? [DUPLICATE_DIRTY_SECTION] : [])
+  }, [isDirty, page])
 
   const handleCreate = () => {
-    commitDuplicate(inventory.id, {
+    commitDuplicate(source.id, {
       onSuccess: (created) => {
-        onDirtyChange?.(false)
-        onBack()
+        page.setDirtySections([])
         router.push(buildInventoryRecordHref({ inventoryId: created.id }))
       },
       onError: (err) => setError(getClientErrorMessage(err, "Failed to duplicate inventory")),
@@ -59,7 +57,7 @@ export function EmbeddedInventoryDuplicateView({
       key: "back",
       label: "Back",
       tone: "neutral",
-      onClick: () => hostPage.confirmNavigation(onBack),
+      onClick: page.closePage,
       disabled: isPending,
     },
     {
@@ -89,12 +87,30 @@ export function EmbeddedInventoryDuplicateView({
         actions={actions}
       />
       <InventoryDuplicateFields
-        inventory={inventory}
-        warehouseName={warehouseName}
+        inventory={source}
+        warehouseName={source.warehouseName}
         form={form}
         setField={setField}
         editable={!isPending}
       />
     </div>
+  )
+}
+
+export function InventoryDuplicateClient({
+  backHref,
+  source,
+}: {
+  backHref: string
+  source: InventoryDetail
+}) {
+  return (
+    <RecordCreateClientScaffold
+      title={`Duplicate ${source.inventoryItem}`}
+      backHref={backHref}
+      dirtyMessage="You have unsaved duplicate changes. Leave this form without saving?"
+    >
+      {(page) => <InventoryDuplicatePanel page={page} source={source} />}
+    </RecordCreateClientScaffold>
   )
 }
