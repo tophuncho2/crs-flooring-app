@@ -1,12 +1,12 @@
 "use client"
 
-import { useCallback, useState } from "react"
-import { parseAsBoolean, useQueryState } from "nuqs"
+import { useState } from "react"
 import {
   RecordDetailClientScaffold,
+  RecordReferenceHeader,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
+import { SidePanelPreviewClearButton } from "@/components/side-panel-preview"
 import type { InventoryDetail } from "@builders/domain"
 import {
   useInventoryRecordSelection,
@@ -20,9 +20,10 @@ import { InventoryRecordView } from "./inventory-record-view"
  * Client wrapper for the inventory record view. Owns the Warehouse → Inventory
  * header selection (URL query state, via `useInventoryRecordSelection`) plus the
  * adjustment drilldown (`?adjustment=<id>`, sentinel `"new"`) and the
- * duplicate-create toggle (`?duplicate`). Selecting an inventory item loads its
- * record below; the work-order hand-off opens here with the WO's warehouse
- * pre-seeded and the WO link carried in `woSeed`.
+ * duplicate-create toggle (`?duplicate`) — both now live in the selection
+ * controller so switching inventory atomically discards them. Selecting an
+ * inventory item loads its record below; the work-order hand-off opens here with
+ * the WO's warehouse pre-seeded and the WO link carried in `woSeed`.
  */
 export function InventoryDetailClient({
   backHref,
@@ -57,72 +58,72 @@ function InventoryRecordSurface({
   page: RecordDetailClientScaffoldContext
   selection: InventoryRecordSelectionController
 }) {
-  const [selectedAdjustmentId, setSelectedAdjustmentId] = useQueryState("adjustment")
-  const [duplicateOpen, setDuplicateOpen] = useQueryState(
-    "duplicate",
-    parseAsBoolean.withDefault(false),
-  )
-
-  // Selecting a different inventory item (or clearing the header) discards the
-  // loaded record. The in-place swap isn't a router navigation, so the
-  // scaffold's leave-guard doesn't fire — gate it here when the record is dirty.
-  const isRecordDirty = page.isDirty
-  const [pendingAction, setPendingAction] = useState<{ run: () => void } | null>(null)
-
-  const guard = useCallback(
-    (action: () => void) => {
-      if (isRecordDirty) {
-        setPendingAction({ run: action })
-      } else {
-        action()
-      }
-    },
-    [isRecordDirty],
-  )
-
   const inventory = selection.inventory
+  const hasSelection = selection.warehouseId !== null || selection.inventoryId !== null
 
+  // The picker grid shows while browsing; once an item is selected it collapses
+  // to a summary so the record sections own the space. With nothing selected the
+  // grid stays open so there's always a way to pick. `isPicking` is the explicit
+  // "re-open to change" toggle.
+  const [isPicking, setIsPicking] = useState(false)
+  const expanded = isPicking || selection.inventoryId === null
+
+  // The reference-header primitive owns the discard-guard: selecting a different
+  // inventory item (or clearing the header) while the record is dirty prompts a
+  // confirm before swapping. The swap isn't a router navigation, so this is
+  // separate from the scaffold's leave-guard.
   return (
     <div className="flex flex-col gap-4">
-      <InventoryRecordHeader
-        selection={selection}
-        onSelectWarehouse={(option) => guard(() => selection.selectWarehouse(option))}
-        onSelectInventory={(option) => guard(() => selection.selectInventory(option))}
-        onClear={() => guard(() => selection.clear())}
-      />
+      <RecordReferenceHeader
+        page={page}
+        label="Inventory item"
+        discardMessage="This inventory item has unsaved changes. Switching items will discard them."
+        actions={({ guard }) => (
+          <SidePanelPreviewClearButton
+            disabled={!hasSelection}
+            onClick={() =>
+              guard(() => {
+                selection.clear()
+                setIsPicking(false)
+              })
+            }
+          />
+        )}
+      >
+        {({ guard }) => (
+          <InventoryRecordHeader
+            selection={selection}
+            expanded={expanded}
+            onToggleExpanded={() => setIsPicking((value) => !value)}
+            onSelectWarehouse={(option) => guard(() => selection.selectWarehouse(option))}
+            onSelectInventory={(option) =>
+              guard(() => {
+                selection.selectInventory(option)
+                setIsPicking(false)
+              })
+            }
+          />
+        )}
+      </RecordReferenceHeader>
 
-      {selection.inventoryError ? (
-        <div className={PROMPT_CARD_CLASS}>{selection.inventoryError}</div>
-      ) : selection.isInventoryLoading ? (
-        <div className={PROMPT_CARD_CLASS}>Loading inventory…</div>
-      ) : inventory ? (
-        <InventoryRecordView
-          key={inventory.id}
-          page={page}
-          entry={inventory}
-          woSeed={selection.woSeed}
-          selectedAdjustmentId={selectedAdjustmentId}
-          onSelectAdjustment={(id) => void setSelectedAdjustmentId(id)}
-          duplicateOpen={duplicateOpen}
-          onToggleDuplicate={(open) => void setDuplicateOpen(open)}
-        />
-      ) : (
-        <div className={PROMPT_CARD_CLASS}>Select an inventory item to view its details.</div>
-      )}
-
-      <ConfirmDialog
-        open={pendingAction !== null}
-        title="Discard unsaved changes?"
-        message="This inventory item has unsaved changes. Switching items will discard them."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
-        tone="warning"
-        onConfirm={() => {
-          pendingAction?.run()
-          setPendingAction(null)
-        }}
-        onCancel={() => setPendingAction(null)}
-      />
+      <div className={expanded ? "hidden" : undefined}>
+        {selection.inventoryError ? (
+          <div className={PROMPT_CARD_CLASS}>{selection.inventoryError}</div>
+        ) : selection.isInventoryLoading ? (
+          <div className={PROMPT_CARD_CLASS}>Loading inventory…</div>
+        ) : inventory ? (
+          <InventoryRecordView
+            key={inventory.id}
+            page={page}
+            entry={inventory}
+            woSeed={selection.woSeed}
+            selectedAdjustmentId={selection.adjustment}
+            onSelectAdjustment={(id) => selection.setAdjustment(id)}
+            duplicateOpen={selection.duplicate}
+            onToggleDuplicate={(open) => selection.setDuplicate(open)}
+          />
+        ) : null}
+      </div>
     </div>
   )
 }

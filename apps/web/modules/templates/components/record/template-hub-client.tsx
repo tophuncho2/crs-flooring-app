@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo } from "react"
 import {
   RecordDetailClientScaffold,
+  RecordReferenceHeader,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
 import {
@@ -12,7 +13,6 @@ import {
 } from "@/engines/cascade-picker"
 import { HubSidePanelAddButton } from "@/components/hub-side-panel"
 import { SidePanelPreviewClearButton } from "@/components/side-panel-preview"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
 import type { TemplateDetail } from "@builders/domain"
 import { TemplateRecordPanel } from "./template-record-panel"
 import {
@@ -42,7 +42,14 @@ export function TemplateHubClient({
 
   return (
     <RecordDetailClientScaffold title="Template sync" backHref={backHref} dirtyMessage="">
-      {(page) => <TemplateHubView page={page} controller={controller} />}
+      {(page) => (
+        <RecordReferenceHeader
+          page={page}
+          discardMessage="This template has unsaved changes. Switching templates will discard them."
+        >
+          {({ guard }) => <TemplateHubView page={page} controller={controller} guard={guard} />}
+        </RecordReferenceHeader>
+      )}
     </RecordDetailClientScaffold>
   )
 }
@@ -53,9 +60,12 @@ const PROMPT_CARD_CLASS =
 function TemplateHubView({
   page,
   controller,
+  guard,
 }: {
   page: RecordDetailClientScaffoldContext
   controller: TemplateHubController
+  /** Discard-guard from the shared reference-header primitive. */
+  guard: (action: () => void) => void
 }) {
   const {
     cascade,
@@ -68,24 +78,6 @@ function TemplateHubView({
     openManagementCompany,
     openProperty,
   } = controller
-
-  // Selecting a different template (or clearing the cascade) discards the
-  // currently loaded record. The in-place swap is not a router navigation, so
-  // the scaffold's leave-guard doesn't fire — gate it here when the record is
-  // dirty by deferring the action behind a confirm dialog.
-  const isRecordDirty = page.isDirty
-  const [pendingAction, setPendingAction] = useState<{ run: () => void } | null>(null)
-
-  const guard = useCallback(
-    (action: () => void) => {
-      if (isRecordDirty) {
-        setPendingAction({ run: action })
-      } else {
-        action()
-      }
-    },
-    [isRecordDirty],
-  )
 
   const guardedCascade = useMemo<CascadePickerController>(
     () => ({
@@ -131,20 +123,6 @@ function TemplateHubView({
           <div className={PROMPT_CARD_CLASS}>Select a template to view and edit it.</div>
         )}
       </div>
-
-      <ConfirmDialog
-        open={pendingAction !== null}
-        title="Discard unsaved changes?"
-        message="This template has unsaved changes. Switching templates will discard them."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
-        tone="warning"
-        onConfirm={() => {
-          pendingAction?.run()
-          setPendingAction(null)
-        }}
-        onCancel={() => setPendingAction(null)}
-      />
     </div>
   )
 }

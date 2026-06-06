@@ -1,13 +1,40 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { parseAsString, useQueryStates } from "nuqs"
+import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs"
 import { useQuery } from "@tanstack/react-query"
-import type { InventoryDetail, InventoryOption, WarehouseOption } from "@builders/domain"
+import type {
+  InventoryDetail,
+  InventoryOption,
+  InventoryRow,
+  WarehouseOption,
+} from "@builders/domain"
 import {
   INVENTORY_DETAIL_QUERY_KEY,
   inventoryDetailRequest,
 } from "@/modules/inventory/data/inventory-detail-request"
+
+/**
+ * Map a full list-view inventory row to the lighter `InventoryOption` the
+ * selection accepts. Lets the multi-bar picker grid (which fetches `InventoryRow`s
+ * via the list endpoint) feed `selectInventory` without a second request.
+ */
+export function toInventoryOption(row: InventoryRow): InventoryOption {
+  return {
+    id: row.id,
+    inventoryItem: row.inventoryItem,
+    inventoryNumber: row.inventoryNumber,
+    rollNumber: row.rollNumber,
+    dyeLot: row.dyeLot,
+    note: row.note,
+    warehouseId: row.warehouseId,
+    location: row.location,
+    stockBalance: row.stockBalance,
+    stockUnitAbbrev: row.stockUnitAbbrev,
+    coverageBalance: row.coverageBalance,
+    itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev,
+  }
+}
 
 /**
  * Work-order context carried when the record view is opened from a WO material
@@ -40,6 +67,17 @@ export type InventoryRecordSelectionController = {
   isInventoryLoading: boolean
   inventoryError: string | null
   woSeed: InventoryRecordWoSeed | null
+  /**
+   * The adjustment drilldown / duplicate-create faces of the record view live in
+   * the URL alongside the selection so switching inventory atomically discards a
+   * stale `?adjustment` / `?duplicate` from the previous record (they're cleared
+   * inside the select* / clear actions, never on mount, so a WO hand-off's entry
+   * `?adjustment=new` survives until the operator manually re-picks).
+   */
+  adjustment: string | null
+  setAdjustment: (adjustmentId: string | null) => void
+  duplicate: boolean
+  setDuplicate: (open: boolean) => void
 }
 
 const SELECTION_PARSERS = {
@@ -47,6 +85,8 @@ const SELECTION_PARSERS = {
   warehouseLabel: parseAsString,
   inventoryId: parseAsString,
   inventoryLabel: parseAsString,
+  adjustment: parseAsString,
+  duplicate: parseAsBoolean,
 }
 
 /**
@@ -67,16 +107,20 @@ export function useInventoryRecordSelection({
 }): InventoryRecordSelectionController {
   const [selection, setSelection] = useQueryStates(SELECTION_PARSERS, { history: "replace" })
 
-  const { warehouseId, warehouseLabel, inventoryId, inventoryLabel } = selection
+  const { warehouseId, warehouseLabel, inventoryId, inventoryLabel, adjustment, duplicate } =
+    selection
 
   const selectWarehouse = useCallback(
     (option: WarehouseOption | null) => {
-      // Changing the warehouse invalidates the inventory scope — clear it.
+      // Changing the warehouse invalidates the inventory scope — clear it, plus
+      // any open adjustment / duplicate face from the previous record.
       void setSelection({
         warehouseId: option?.id ?? null,
         warehouseLabel: option?.name ?? null,
         inventoryId: null,
         inventoryLabel: null,
+        adjustment: null,
+        duplicate: null,
       })
     },
     [setSelection],
@@ -89,6 +133,9 @@ export function useInventoryRecordSelection({
         ...(option ? { warehouseId: option.warehouseId } : {}),
         inventoryId: option?.id ?? null,
         inventoryLabel: option?.inventoryItem ?? null,
+        // Swapping the record discards the previous one's drilldown faces.
+        adjustment: null,
+        duplicate: null,
       })
     },
     [setSelection],
@@ -100,8 +147,24 @@ export function useInventoryRecordSelection({
       warehouseLabel: null,
       inventoryId: null,
       inventoryLabel: null,
+      adjustment: null,
+      duplicate: null,
     })
   }, [setSelection])
+
+  const setAdjustment = useCallback(
+    (adjustmentId: string | null) => {
+      void setSelection({ adjustment: adjustmentId })
+    },
+    [setSelection],
+  )
+
+  const setDuplicate = useCallback(
+    (open: boolean) => {
+      void setSelection({ duplicate: open ? true : null })
+    },
+    [setSelection],
+  )
 
   const inventoryQuery = useQuery({
     queryKey: [...INVENTORY_DETAIL_QUERY_KEY, inventoryId],
@@ -144,5 +207,9 @@ export function useInventoryRecordSelection({
     isInventoryLoading,
     inventoryError,
     woSeed: resolvedWoSeed,
+    adjustment,
+    setAdjustment,
+    duplicate: duplicate ?? false,
+    setDuplicate,
   }
 }
