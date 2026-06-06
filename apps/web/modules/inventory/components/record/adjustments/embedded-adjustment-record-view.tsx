@@ -10,7 +10,6 @@ import {
 import {
   AdjustmentEditFormFields,
   AdjustmentPickerStack,
-  AdjustmentPickerTakeoverBody,
   type AdjustmentEditPanelController,
 } from "@/modules/adjustments"
 
@@ -23,8 +22,6 @@ export type EmbeddedAdjustmentRecordViewProps = {
   onBack: () => void
   /** Bridge the controller's dirtiness up so the host section reflects it. */
   onDirtyChange?: (dirty: boolean) => void
-  /** Navigate to the linked work order from the picker stack (optional). */
-  onOpenWorkOrder?: (workOrderId: string) => void
 }
 
 /**
@@ -36,11 +33,10 @@ export type EmbeddedAdjustmentRecordViewProps = {
  * primitives module (controller + form fields + pickers + columns) with no
  * record-view-engine dependency.
  *
- * Chrome-less analog of `AdjustmentEditPanel`: same controller-driven body
- * (picker stack / active picker takeover / editable form fields), wrapped in a
- * `RecordSectionSubHeader` action row instead of a `HubSidePanelShell`. The host
- * owns the open spec (builds the scope-specific create seed / edit row and calls
- * `controller.openPanel`); this only renders state, bridges dirtiness, and
+ * Chrome-less adjustment edit/create face: the "Work order" picker stack + the
+ * editable form fields, wrapped in a `RecordSectionSubHeader` action row. The
+ * host owns the open spec (builds the scope-specific create seed / edit row and
+ * calls `controller.openPanel`); this only renders state, bridges dirtiness, and
  * routes Back through the shared host guard.
  */
 export function EmbeddedAdjustmentRecordView({
@@ -48,9 +44,8 @@ export function EmbeddedAdjustmentRecordView({
   hostPage,
   onBack,
   onDirtyChange,
-  onOpenWorkOrder,
 }: EmbeddedAdjustmentRecordViewProps) {
-  const { open, pickerKind, isDirty, canSave, isSaving, error } = controller
+  const { open, isDirty, canSave, isSaving, error } = controller
 
   useEffect(() => {
     onDirtyChange?.(isDirty)
@@ -58,7 +53,6 @@ export function EmbeddedAdjustmentRecordView({
 
   const isCreate = open?.mode === "create"
   const adjustment = open?.mode === "edit" ? open.adjustment : null
-  const isPickerActive = pickerKind !== null
 
   const handleBack = () => hostPage.confirmNavigation(onBack)
 
@@ -126,18 +120,14 @@ export function EmbeddedAdjustmentRecordView({
         error={error}
         actions={actions}
       />
-      {isPickerActive ? (
-        <AdjustmentPickerTakeoverBody controller={controller} />
-      ) : (
-        <div className="flex flex-col gap-3">
-          <AdjustmentPickerStack controller={controller} onOpenWorkOrder={onOpenWorkOrder} />
-          <AdjustmentEditFormFields
-            mode={isCreate ? "create" : "edit"}
-            adjustment={adjustment}
-            controller={controller}
-          />
-        </div>
-      )}
+      <div className="flex flex-col gap-3">
+        <AdjustmentPickerStack controller={controller} />
+        <AdjustmentEditFormFields
+          mode={isCreate ? "create" : "edit"}
+          adjustment={adjustment}
+          controller={controller}
+        />
+      </div>
     </div>
   )
 }

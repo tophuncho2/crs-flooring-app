@@ -1,12 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import type {
-  InventoryAdjustmentRow,
-  InventoryOption,
-  WarehouseOption,
-  WorkOrderOption,
-} from "@builders/domain"
+import type { InventoryAdjustmentRow, WorkOrderOption } from "@builders/domain"
 import type { AdjustmentScopeUrl } from "@/modules/adjustments/data/mutations"
 import { formatWorkOrderOptionTitle } from "@/modules/work-orders/components/picker/work-order-picker"
 import { searchWorkOrderMaterialItemOptionsRequest } from "@/modules/work-orders/data/work-order-material-item-options-request"
@@ -62,8 +57,6 @@ import { createRecordSectionError, type RecordSectionError } from "@/types/recor
  *   - Delete        → close (row no longer exists)
  *   - Backdrop / ESC / X → close, discard unsaved
  */
-export type AdjustmentPanelPickerKind = "location" | "inventory" | "warehouse" | "workOrder"
-
 export function useAdjustmentEditPanel({
   scope,
   canCreate,
@@ -86,11 +79,6 @@ export function useAdjustmentEditPanel({
   const [baseline, setBaseline] = useState<AdjustmentEditForm>(EMPTY_FORM)
   const [local, setLocal] = useState<AdjustmentPanelLocal>(EMPTY_LOCAL)
   const [error, setError] = useState<RecordSectionError | null>(null)
-  // Body-takeover picker state for the create-mode Location + Inventory
-  // pickers. Mirrors the template-sync / property-hub picker takeover
-  // pattern — the panel body swaps to the picker listbox while a kind is
-  // active. Resets to null on close, on open spec change, and on commit.
-  const [pickerKind, setPickerKind] = useState<AdjustmentPanelPickerKind | null>(null)
 
   // When the open spec changes, reset form + filters + clear error. Derived
   // during render (previous-value tracking).
@@ -103,20 +91,18 @@ export function useAdjustmentEditPanel({
     // `open.adjustment` here would clobber those labels with its carried-
     // forward (stale-after-relink) enriched fields — reverting the work-order
     // trigger to the previously-linked WO until a fresh reopen. So on a
-    // same-row refresh, only clear the transient picker/error state.
+    // same-row refresh, only clear the error state.
     const isSameRowRefresh =
       trackedOpen?.mode === "edit" &&
       open?.mode === "edit" &&
       trackedOpen.adjustment.id === open.adjustment.id
     setTrackedOpen(open)
     if (isSameRowRefresh) {
-      setPickerKind(null)
       setError(null)
     } else if (!open) {
       setForm(EMPTY_FORM)
       setBaseline(EMPTY_FORM)
       setLocal(EMPTY_LOCAL)
-      setPickerKind(null)
       setError(null)
     } else {
       if (open.mode === "edit") {
@@ -136,7 +122,6 @@ export function useAdjustmentEditPanel({
         setBaseline(next)
         setLocal(buildCreateLocal(open.seed))
       }
-      setPickerKind(null)
       setError(null)
     }
   }
@@ -181,83 +166,6 @@ export function useAdjustmentEditPanel({
     [],
   )
 
-  const setLocationFilter = useCallback((next: string | null) => {
-    setLocal((prev) => ({ ...prev, locationFilter: next ?? "" }))
-  }, [])
-
-  // Body-takeover picker controls. The panel renders a HubSidePanelPicker
-  // in its body while `pickerKind` is non-null; commit handlers below
-  // close the takeover and update form state in one render.
-  //
-  // `openPicker` toggles — clicking the active trigger closes the picker
-  // (matches the template-sync top-toolbar pattern). It no-ops for any picker
-  // the current context marks non-editable (locked/hidden), so locked triggers
-  // are inert.
-  const openPicker = useCallback(
-    (kind: AdjustmentPanelPickerKind) => {
-      if (pickerConfig?.[kind] !== "editable") return
-      setPickerKind((current) => (current === kind ? null : kind))
-    },
-    [pickerConfig],
-  )
-
-  const closePicker = useCallback(() => {
-    setPickerKind(null)
-  }, [])
-
-  // Single source of truth for inventory selection: the picker hands the
-  // full option (or null for clear) and the form + local labels move together
-  // in one render. The legacy split (setInventoryId + snapshotInventoryOption)
-  // raced when the dropdown's commit path reset its search query between the
-  // two callbacks — the label would lag behind the form value until save
-  // rebuilt the form from the server response. Inventory is immutable after
-  // create, so this only fires from the create-mode picker. Closes the
-  // takeover after commit.
-  const selectInventoryOption = useCallback((option: InventoryOption | null) => {
-    setForm((prev) => ({ ...prev, inventoryId: option?.id ?? "" }))
-    setLocal((prev) => ({
-      ...prev,
-      pickedInventoryItem: option?.inventoryItem ?? "",
-      pickedInventoryNumber: option?.inventoryNumber ?? "",
-      pickedInventoryRollNumber: option?.rollNumber ?? "",
-      pickedInventoryDyeLot: option?.dyeLot ?? "",
-      pickedInventoryNote: option?.note ?? "",
-      pickedInventoryStockUnitAbbrev: option?.stockUnitAbbrev ?? "",
-    }))
-    setPickerKind(null)
-    setError(null)
-  }, [])
-
-  // Warehouse is an inventory filter: changing it invalidates the chosen
-  // inventory + location below it, so clear those (and their labels) in the
-  // same render. The persisted adjustment warehouse is always the chosen
-  // inventory's; this value only narrows the inventory + location pickers.
-  const selectWarehouseOption = useCallback((option: WarehouseOption | null) => {
-    setForm((prev) => ({ ...prev, warehouseId: option?.id ?? null, inventoryId: "" }))
-    setLocal((prev) => ({
-      ...prev,
-      pickedWarehouseLabel: option?.name ?? "",
-      pickedInventoryItem: "",
-      pickedInventoryNumber: "",
-      pickedInventoryRollNumber: "",
-      pickedInventoryDyeLot: "",
-      pickedInventoryNote: "",
-      pickedInventoryStockUnitAbbrev: "",
-      locationFilter: "",
-    }))
-    setPickerKind(null)
-    setError(null)
-  }, [])
-
-  // Atomic location-filter commit that also closes the picker takeover.
-  // The plain `setLocationFilter` stays available for any callers that
-  // need to write the filter without closing a takeover.
-  const selectLocationFilter = useCallback((value: string | null) => {
-    setLocal((prev) => ({ ...prev, locationFilter: value ?? "" }))
-    setPickerKind(null)
-    setError(null)
-  }, [])
-
   // Single atomic work-order commit for the relink flow. The material-item
   // picker is gone: a adjustment's product is fixed and WOMIs are unique per
   // (workOrder, product), so selecting a WO deterministically resolves the one
@@ -278,7 +186,6 @@ export function useAdjustmentEditPanel({
           pickedWorkOrderItemLabel: "",
           pickedWorkOrderItemNotes: "",
         }))
-        setPickerKind(null)
         setError(null)
         return
       }
@@ -291,7 +198,6 @@ export function useAdjustmentEditPanel({
         pickedWorkOrderItemLabel: "",
         pickedWorkOrderItemNotes: "",
       }))
-      setPickerKind(null)
       setError(null)
 
       // Product is fixed per open (edit: the row's product; create: the seed's).
@@ -444,17 +350,10 @@ export function useAdjustmentEditPanel({
     isSaving,
     error,
     canCreate,
-    pickerKind,
     openPanel,
     close,
     discard,
     setField,
-    setLocationFilter,
-    selectLocationFilter,
-    selectInventoryOption,
-    selectWarehouseOption,
-    openPicker,
-    closePicker,
     selectWorkOrderOption,
     save,
     finalize,

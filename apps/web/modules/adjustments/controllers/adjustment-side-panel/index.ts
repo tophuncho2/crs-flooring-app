@@ -1,7 +1,6 @@
 export {
   useAdjustmentEditPanel,
   type AdjustmentEditPanelController,
-  type AdjustmentPanelPickerKind,
 } from "./use-adjustment-side-panel"
 export {
   WO_CREATE_PICKER_CONFIG,
