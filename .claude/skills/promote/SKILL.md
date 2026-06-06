@@ -1,77 +1,90 @@
 ---
 name: promote
-description: Read-only safety audit for a planned staging → main promotion. Reads bin/promote.sh, sweeps git state, env files, pending migrations, and schema drift, then returns a structured PASS / FAIL report with actionable remediation steps. NEVER runs bin/promote.sh or any state-mutating command — the user runs the script themselves in the terminal. Explicit-only — invoke only on /promote.
+description: Read-only safety audit for a planned staging → main promotion in the worktree layout (.bare + per-branch folders). Sweeps git state across the main and staging worktrees, env files, pending migrations, and schema drift, then returns a structured PASS / FAIL report plus the exact commands to run in the main/ folder. NEVER merges, pushes, deploys, or mutates anything — the user runs the merge themselves in the main worktree. Explicit-only — invoke only on /promote.
 ---
 
 # /promote
 
-Audit a planned staging → main promotion. Output a structured report telling the user whether it is safe to run `bin/promote.sh`, and if not, exactly what to do to make it safe.
+Audit a planned staging → main promotion. Output a structured report telling the user whether it is safe to merge `staging` into `main`, what will happen if they do, and the exact commands to run **in the `main/` worktree folder**.
+
+## Repo layout (read this first)
+
+This repo is a **bare repo + worktrees**, not a single checkout:
+
+- `.bare/` — the git directory.
+- `main/`, `staging/`, `dev/` — one folder per branch, each a worktree with its **own persistent `.env`**.
+  - `main/.env` points at the **main DB**. `staging/.env` points at the **staging DB**.
+  - There is **no env swapping**. You never `cp .env.main .env`. Each folder's `.env` is already correct for its branch.
+- All worktrees share the same refs (they share `.bare/`), so any worktree can see `staging`, `main`, `origin/*`.
+
+Promotion is done **manually by the user inside the `main/` folder** — there is no `bin/promote.sh` anymore. You only audit and hand back the commands. Do not assume the cwd is any particular worktree; resolve paths with `git worktree list --porcelain`.
 
 ## Hard rules
 
-- **You do not run `bin/promote.sh`.** Ever. Not even with confirmation. The user runs it themselves.
-- **You do not run any command that mutates state.** No `git fetch`, no `git pull`, no `git checkout`, no `cp`, no `npm run db:*` commands that alter the DB, no writes. Only read-only inspection.
-  - Allowed read-only: `git status`, `git log`, `git rev-parse`, `git rev-list`, `git diff` (without `--apply`), `git ls-remote`, `git check-ignore`, `git branch`, `cat`/`Read` on tracked or env files, `diff -q`, `ls`, `grep`. Note: `git fetch` is **not** allowed even though it's "just" updating refs — the user runs it as part of the script.
+- **You do not merge, push, pull, fetch, deploy, or checkout anything.** Only read-only inspection. The user runs the merge themselves in `main/`.
+  - Allowed read-only: `git status`, `git log`, `git rev-parse`, `git rev-list`, `git diff` (no `--apply`), `git ls-remote`, `git check-ignore`, `git branch`, `git worktree list`, `cat`/`Read` on tracked or env files, `diff -q`, `ls`, `grep`. `git fetch` is **not** allowed — the user runs it as part of their promote.
+  - Because you don't fetch, your `origin/*` refs are only as fresh as the last fetch. Say so in the report and make `git fetch origin` the first command in the runbook.
 - **You do not auto-fix anything.** If a check fails, the report tells the user the fix; they run it.
-- **`bin/promote.sh` is for code-only promotes.** If one or more migrations are pending (any folder under `packages/db/prisma/migrations/` is on origin/staging but not origin/main), the verdict is `MANUAL — MIGRATIONS PRESENT` and no `Run: bin/promote.sh` line is printed. The full audit still runs — the user needs the context to plan the manual one-at-a-time flow. The bin's `db:deploy` step stays in place as a no-op safety boundary; the bin will only ever execute when there's nothing to deploy.
+- **You never write to any worktree's `.env`.** Read them to compare DATABASE_URL hosts; never print credentials.
 - **Explicit-only.** Run only when the user types `/promote`. Never on phrases like "ship", "deploy", "promote it".
-- **No deviations from the script.** If `bin/promote.sh` does something the audit doesn't recognize, surface it in the report — do not silently approve.
 
 ## What "safe to promote" means here
 
-The user is going to:
-1. Manually run `bin/promote.sh` in their terminal
-2. The script will fast-forward main from staging, apply pending Prisma migrations to the main DB via `db:deploy`, push, then return them to staging
+The user will, **in the `main/` folder**:
+1. `git fetch origin`
+2. `git pull --ff-only origin main` — bring the main worktree current
+3. `git merge --ff-only staging` — fast-forward main to staging
+4. `npm run db:deploy` — apply any pending Prisma migrations to the **main DB** (uses `main/.env`; no-op if none pending)
+5. `git push origin main` — Railway auto-deploys
 
-"Safe" = every precondition the script depends on is currently true, and nothing about the diff between staging and main looks dangerous.
+"Safe" = every precondition that flow depends on is currently true, and nothing about the staging↔main diff looks dangerous.
 
-## Step 1 — Read the script the user is about to run
+## Step 1 — Resolve the worktrees
 
-- `Read bin/promote.sh`. If it doesn't exist, the report's verdict is **CANNOT AUDIT** with remediation: "Create `bin/promote.sh` first." Stop there.
-- Confirm its contents match the expected staging→main flow (git fetch → checkout main → pull --ff-only → merge --ff-only staging → cp `.env.main` → `npm run db:deploy` → git push origin main → checkout staging → cp `.env.staging`).
-- If the script does anything outside that scope (force pushes, resets, prod-only commands, extra branches), the report's verdict is **UNSAFE** with that as a blocker — the audit cannot reason about behavior it doesn't expect.
+- Run `git worktree list --porcelain`. Identify the absolute paths of the `main` and `staging` worktrees. Call them `MAIN_WT` and `STAGING_WT`.
+- If the `main` worktree is missing, verdict is **CANNOT AUDIT** — remediation: "No `main` worktree found; `git worktree add` it before promoting." Stop.
 
-## Step 2 — Run the read-only sweep
+## Step 2 — Read-only sweep
 
-Tag each finding as **BLOCKER**, **WARNING**, or **OK**. Run all checks even if early ones fail — the user wants the full picture in one pass, not a fail-fast trickle.
+Tag each finding **BLOCKER**, **WARNING**, or **OK**. Run all checks even if early ones fail — the user wants the full picture in one pass.
 
 ### Git state
 
-- BLOCKER: `git status --porcelain` non-empty (uncommitted or untracked changes).
-- BLOCKER: current branch is not `staging`.
-- BLOCKER: local `staging` is behind `origin/staging` (`git rev-list --count staging..origin/staging` > 0). Fix: `git pull --ff-only origin staging`.
-- BLOCKER: local `staging` is **ahead** of `origin/staging` (`git rev-list --count origin/staging..staging` > 0). The script merges local staging, but the audit compares origin/main vs origin/staging — unpushed commits would silently land on main. Fix: `git push origin staging` first, then re-run `/promote`.
-- BLOCKER: main is **not** strictly behind staging — `git rev-list --count origin/staging..origin/main` > 0 means main has commits staging doesn't, and `git merge --ff-only staging` from main will fail.
-- WARNING: nothing to merge — `git rev-list --count origin/main..origin/staging` is 0. Running the script is a no-op, not strictly unsafe.
+- BLOCKER: **main worktree dirty** — `git -C "$MAIN_WT" status --porcelain` non-empty. `pull --ff-only` / `merge --ff-only` will refuse. Fix: clean it (commit, stash, or discard) in `main/`.
+- WARNING: **staging worktree dirty** — `git -C "$STAGING_WT" status --porcelain` non-empty. Those uncommitted changes will **not** be promoted (only committed+pushed staging is). Heads-up, not a blocker.
+- BLOCKER: local `staging` behind `origin/staging` (`git rev-list --count staging..origin/staging` > 0). Fix: in `staging/`, `git pull --ff-only origin staging`.
+- BLOCKER: local `staging` **ahead** of `origin/staging` (`git rev-list --count origin/staging..staging` > 0). The merge takes local staging, but those commits aren't on origin/staging — they'd land on main without ever being on origin/staging. Fix: in `staging/`, `git push origin staging`, then re-run `/promote`.
+- BLOCKER: local `main` **ahead** of `origin/main` (`git rev-list --count origin/main..main` > 0) — someone committed directly into the main worktree. `pull --ff-only` will fail. Fix: inspect `git -C "$MAIN_WT" log origin/main..main` and reconcile.
+- BLOCKER: `origin/main` not strictly behind `origin/staging` — `git rev-list --count origin/staging..origin/main` > 0 means main has commits staging lacks, so `git merge --ff-only staging` fails. Fix: inspect `git log origin/staging..origin/main`; merge those into staging first or investigate the divergence.
+- WARNING: nothing to merge — `git rev-list --count origin/main..origin/staging` is 0. The promote is a no-op.
 
-### Env files
+### Env files (worktree model)
 
-- BLOCKER: `.env`, `.env.staging`, or `.env.main` missing.
-- BLOCKER: any of the three not gitignored (`git check-ignore .env .env.staging .env.main` doesn't list all three).
-- BLOCKER: `.env` does not currently match `.env.staging` (`diff -q .env .env.staging` reports differ). The script assumes the user is starting from a staging-active env.
-- BLOCKER: `.env.main` and `.env.staging` have **identical** `DATABASE_URL` lines. Strong signal that one of them is misconfigured. Do not print the values — only that they match.
-- WARNING: either env file is missing a `DATABASE_URL=` line or an `AWS_S3_BUCKET_NAME=` line.
+- BLOCKER: `MAIN_WT/.env` missing. Without it `db:deploy` has no DATABASE_URL.
+- BLOCKER: `MAIN_WT/.env` and `STAGING_WT/.env` resolve to the **same DATABASE_URL host/db**. Running `db:deploy` from `main/` would hit the **staging** DB. Compare hosts only; never print values.
+- BLOCKER: `.env` not gitignored in the main worktree (`git -C "$MAIN_WT" check-ignore .env` empty).
+- WARNING: `MAIN_WT/.env` missing a `DATABASE_URL=` or `AWS_S3_BUCKET_NAME=` line.
 
 ### Migrations
 
-- Identify pending migrations: any folder under `packages/db/prisma/migrations/` whose name is on staging but not on origin/main. Use `git diff --name-only origin/main origin/staging -- packages/db/prisma/migrations/`. List the folder names.
-- BLOCKER: `packages/db/prisma/schema.prisma` has a modification timestamp newer than the most recent migration folder's timestamp prefix (orphan schema change — a schema edit was made but `db:migrate:dev` was never run to generate the migration file).
-- WARNING: any pending migration's `migration.sql` contains `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, `ALTER ... RENAME`, or `DROP CONSTRAINT`. List which migration and which keyword. These are destructive on main and may break old running app code during the deploy window.
-- WARNING: more than 5 migrations pending. Many at once is harder to debug if one fails mid-apply.
-- OK: zero migrations pending — `db:deploy` will be a no-op, but the git half of the script still runs.
+- Pending migrations = folders under `packages/db/prisma/migrations/` on staging but not on origin/main: `git diff --name-only origin/main origin/staging -- packages/db/prisma/migrations/`. List the folder names.
+- WARNING: any pending `migration.sql` contains `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, `ALTER ... RENAME`, or `DROP CONSTRAINT`. Name the migration and keyword — these are destructive on the main DB and may break the still-running old app code during the deploy window. Consider push-before-migrate ordering (flag for the user; out of scope here).
+- WARNING: more than 5 migrations pending — harder to debug if one fails mid-apply.
+- OK: zero pending — `db:deploy` no-ops; the git half still runs.
 
 ### Drift
 
-- WARNING: `npm run guard:prisma` would fail if run. Do not actually run it (it may have side effects). Instead, read `packages/db/scripts/guard-prisma.js` to understand what it checks, and apply that check by inspection if practical.
-- OK: nothing else to flag.
+- BLOCKER: `packages/db/prisma/schema.prisma` modified more recently than the newest migration folder's timestamp prefix (orphan schema edit — `db:migrate:dev` was never run to generate the migration). Fix: in `staging/`, `npm run db:migrate:dev`, then re-run `/promote`.
+- WARNING: the `guard:prisma` check would fail. Do **not** run it (side effects possible) — read `packages/db/scripts/guard-prisma.js` and apply its logic by inspection.
 
 ## Step 3 — Output the report
 
-Use exactly this format. Keep it scannable. Do not pad with prose.
+Use exactly this format. Keep it scannable.
 
 ```
-PROMOTE AUDIT — staging → main
+PROMOTE AUDIT — staging → main   (worktree layout)
 Verdict: <SAFE | SAFE WITH WARNINGS | UNSAFE | CANNOT AUDIT>
+Refs as of last fetch — re-fetch is step 1 of the runbook.
 
 ═══ Summary ═══
 Blockers: <N>
@@ -79,52 +92,50 @@ Warnings: <N>
 Pending migrations: <N>  (<destructive count> destructive)
 Commits to merge:    <N>
 
-═══ What will happen if you run bin/promote.sh ═══
+═══ What will happen when you merge staging → main ═══
 - Fast-forward main to <staging short-sha> "<subject>"
-- Apply <N> migration(s) to main DB:
-    • 20260507120000_add_foo
-    • 20260508090000_widen_bar  ⚠️ DROP COLUMN
-- Push main to origin
-- Return to staging branch with .env back to staging
+- Apply <N> migration(s) to the main DB:
+    • 20260602120000_adjustment_identity_search_indexes
+    • 20260602130000_widen_bar  ⚠️ DROP COLUMN
+- Push main to origin (Railway redeploys)
+- main/.env stays pointed at the main DB; staging/ is untouched
 
 ═══ Blockers ═══
-<For each blocker:>
+<For each:>
 ❌ <short title>
-   What's wrong: <one-line description>
-   Why it matters: <one-line>
-   Fix: <exact command or steps to run>
+   What's wrong: <one line>
+   Why it matters: <one line>
+   Fix: <exact command(s), with the worktree folder they run in>
 
 ═══ Warnings ═══
-<For each warning, same shape as above but with ⚠️ prefix>
+<For each, same shape with ⚠️ prefix>
 
 ═══ Notes ═══
-<Anything else worth knowing — e.g. "no migrations pending, db:deploy will no-op">
+<e.g. "no migrations pending, db:deploy will no-op">
 ```
 
-If verdict is **SAFE**: end the report with the literal line `Run: bin/promote.sh` (no extra commentary). The user will copy that into their terminal.
+End the report with the runbook block **only when the verdict is SAFE or SAFE WITH WARNINGS**. Substitute the actual main worktree path:
 
-If verdict is **SAFE WITH WARNINGS**: end with `Run: bin/promote.sh   (review warnings above first)`.
+```
+═══ Run these in the main/ folder ═══
+cd "<MAIN_WT>"
+git fetch origin
+git pull --ff-only origin main
+git merge --ff-only staging
+npm run db:deploy          # only if migrations pending; no-op otherwise
+git push origin main
+```
 
-If verdict is **UNSAFE**: do **not** print a `Run:` line at all. The fix list is the deliverable.
+- **SAFE** → print the runbook as-is.
+- **SAFE WITH WARNINGS** → print the runbook, preceded by the line `Review the warnings above before running.`
+- **UNSAFE** → do **not** print the runbook. The fix list is the deliverable.
+- **CANNOT AUDIT** → explain what's missing and stop.
 
-If verdict is **CANNOT AUDIT**: explain what's missing (e.g. "bin/promote.sh does not exist") and stop.
-
-## Remediation reference (use these exact fixes when the matching blocker fires)
-
-- Uncommitted/untracked changes → `git stash --include-untracked` or commit them
-- On wrong branch → `git checkout staging`
-- Local staging behind origin → `git pull --ff-only origin staging`
-- Main has commits staging doesn't → manually inspect `git log origin/staging..origin/main`. Either merge those commits into staging first, or investigate why main diverged. The promote flow assumes main only ever moves forward via this script.
-- `.env` not matching `.env.staging` → `cp .env.staging .env`
-- `.env.main` `DATABASE_URL` matches `.env.staging` → re-pull the correct prod DATABASE_URL from Railway and rewrite `.env.main` by hand
-- Env file not gitignored → add the filename to `.gitignore` and `git rm --cached <file>` if it was already tracked
-- Orphan schema change → `cp .env.staging .env && npm run db:migrate:dev` to generate the migration file, then re-run `/promote`
-- Destructive migration warning → manual review. Consider whether running app code (the version about to be live on main between push and pod restart) can survive the missing column / renamed table. If not, the script's order needs to be flipped (push first, migrate after) — but that's outside this skill's scope; flag for the user.
+If there are zero pending migrations, drop the `npm run db:deploy` line from the runbook (or keep it with a `# no-op` comment) — your call, but don't imply migrations exist when they don't.
 
 ## What this skill does NOT do
 
-- Run `bin/promote.sh`.
-- Run any command that changes the working tree, refs, env files, or DB.
+- Merge, push, pull, fetch, checkout, or deploy anything.
+- Swap or write any `.env` (the worktree model has no env swap).
 - Auto-fix any blocker.
-- Deploy, push, merge, or migrate anything.
 - Run on phrases other than the literal `/promote` invocation.

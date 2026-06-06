@@ -12,21 +12,18 @@ All migrations are applied with `npx prisma migrate deploy`.
 
 ## Migrating to main
 
+Worktree layout: each branch lives in its own folder (`main/`, `staging/`, …) with its own persistent `.env`. There is no env swapping and no `git checkout` to switch branches — the main promotion is done **inside the `main/` folder**.
+
 - [ ] **0. Never run directly after a staging migration** — staging must be clean and clear first; do not chain main migration onto the same session as the staging one
-- [ ] **1. Run `/promote` skill** — read-only pre-check scan; only proceed once it returns green
-- [ ] **2. `git fetch origin`**
-- [ ] **3. `git checkout main`**
+- [ ] **1. Run `/promote` skill** — read-only pre-check scan; only proceed once it returns green. It hands back the exact commands.
+- [ ] **2. `cd` into the `main/` folder**
+- [ ] **3. `git fetch origin`**
 - [ ] **4. `git pull --ff-only origin main`**
 - [ ] **5. `git merge --ff-only staging`**
-- [ ] **6. `cp .env.main .env`**
-- [ ] **7. `diff -q .env .env.main >/dev/null`** — verify env matches `.env.main`
-- [ ] **8. `npm run db:deploy`** — runs `prisma migrate deploy` against main
-- [ ] **9. `git push origin main`**
-- [ ] **10. `git checkout staging`**
-- [ ] **11. `cp .env.staging .env`**
-- [ ] **12. `diff -q .env .env.staging >/dev/null`** — verify env restored to `.env.staging`
+- [ ] **6. `npm run db:deploy`** — runs `prisma migrate deploy` against main (uses `main/.env`; no-op if no migrations pending)
+- [ ] **7. `git push origin main`**
 
-> Use `bin/promote.sh` (the quick bin command) **only** when there are no actual migrations to apply to main. If migrations are pending, run the steps above manually.
+> No `.env` swap is needed — `main/.env` already points at the main DB. There is no `bin/promote.sh` anymore; run the steps above (or copy them from `/promote`'s output) in the `main/` folder.
 
 ## Backups
 
