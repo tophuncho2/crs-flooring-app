@@ -1,14 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import {
-  RecordBackButton,
+  RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
 import type { JobType } from "@builders/domain"
 import { useJobTypePrimarySection } from "@/modules/job-types/controllers/record/primary/use-job-type-primary-section"
 import { JobTypePrimaryFieldsSection } from "./primary/job-type-primary-fields-section"
@@ -23,19 +21,6 @@ export function JobTypeRecordPanel({
   const controller = useJobTypePrimarySection({ page, entry })
   const primary = controller.primarySection
   const record = controller.record
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-
-  async function confirmDelete() {
-    if (isDeleting) return
-    setIsDeleting(true)
-    try {
-      await controller.deleteRecord()
-    } finally {
-      setIsDeleting(false)
-      setConfirmDeleteOpen(false)
-    }
-  }
 
   const sections: RecordPanelSectionConfig[] = [
     {
@@ -56,9 +41,6 @@ export function JobTypeRecordPanel({
           hasConflict={primary.hasConflict}
           onSave={() => void primary.save()}
           onDiscard={primary.discard}
-          onDelete={() => setConfirmDeleteOpen(true)}
-          deleteLabel="Delete Job Type"
-          actionsLeading={<RecordBackButton onClick={page.closePage} label="Back" />}
         >
           <JobTypePrimaryFieldsSection
             draft={primary.localValue}
@@ -77,17 +59,12 @@ export function JobTypeRecordPanel({
   return (
     <>
       <RecordMultiSectionPanel page={page} sections={sections} />
-      <ConfirmDialog
-        open={confirmDeleteOpen}
-        title="Delete job type?"
-        message="This cannot be undone."
-        confirmLabel={isDeleting ? "Deleting…" : "Delete"}
-        cancelLabel="Cancel"
-        tone="destructive"
-        onConfirm={() => void confirmDelete()}
-        onCancel={() => {
-          if (!isDeleting) setConfirmDeleteOpen(false)
-        }}
+      <RecordEntityFooter
+        onClose={page.closePage}
+        onDelete={controller.deleteRecord}
+        deleteLabel="Delete Job Type"
+        confirmTitle="Delete job type?"
+        confirmMessage="This cannot be undone."
       />
     </>
   )
