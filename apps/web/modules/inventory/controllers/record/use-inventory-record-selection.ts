@@ -130,9 +130,12 @@ export function useInventoryRecordSelection({
 
   return {
     warehouseId,
-    warehouseLabel,
+    // Fall back to the loaded record's labels so the picker triggers render the
+    // warehouse name / inventory item string even when the entry URL carried
+    // only the ids (e.g. the list row click passes `inventoryId` alone).
+    warehouseLabel: warehouseLabel ?? inventory?.warehouseName ?? null,
     inventoryId,
-    inventoryLabel,
+    inventoryLabel: inventoryLabel ?? inventory?.inventoryItem ?? null,
     productFilterId: resolvedWoSeed?.productId ?? null,
     selectWarehouse,
     selectInventory,
