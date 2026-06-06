@@ -1,14 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import {
-  RecordBackButton,
+  RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
 import type { WarehouseRow } from "@builders/domain"
 import { useWarehousePrimarySection } from "@/modules/warehouse/controllers/record/primary/use-warehouse-primary-section"
 import { WarehousePrimaryFieldsSection } from "./primary/warehouse-primary-fields-section"
@@ -23,19 +21,6 @@ export function WarehouseRecordPanel({
   const controller = useWarehousePrimarySection({ page, entry })
   const primary = controller.primarySection
   const record = controller.record
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-
-  async function confirmDelete() {
-    if (isDeleting) return
-    setIsDeleting(true)
-    try {
-      await controller.deleteRecord()
-    } finally {
-      setIsDeleting(false)
-      setConfirmDeleteOpen(false)
-    }
-  }
 
   const sections: RecordPanelSectionConfig[] = [
     {
@@ -56,9 +41,6 @@ export function WarehouseRecordPanel({
           hasConflict={primary.hasConflict}
           onSave={() => void primary.save()}
           onDiscard={primary.discard}
-          onDelete={() => setConfirmDeleteOpen(true)}
-          deleteLabel="Delete Warehouse"
-          actionsLeading={<RecordBackButton onClick={page.closePage} label="Back" />}
         >
           <WarehousePrimaryFieldsSection
             draft={primary.localValue}
@@ -79,17 +61,12 @@ export function WarehouseRecordPanel({
   return (
     <>
       <RecordMultiSectionPanel page={page} sections={sections} />
-      <ConfirmDialog
-        open={confirmDeleteOpen}
-        title="Delete warehouse?"
-        message="This cannot be undone."
-        confirmLabel={isDeleting ? "Deleting…" : "Delete"}
-        cancelLabel="Cancel"
-        tone="destructive"
-        onConfirm={() => void confirmDelete()}
-        onCancel={() => {
-          if (!isDeleting) setConfirmDeleteOpen(false)
-        }}
+      <RecordEntityFooter
+        onClose={page.closePage}
+        onDelete={controller.deleteRecord}
+        deleteLabel="Delete Warehouse"
+        confirmTitle="Delete warehouse?"
+        confirmMessage="This cannot be undone."
       />
     </>
   )
