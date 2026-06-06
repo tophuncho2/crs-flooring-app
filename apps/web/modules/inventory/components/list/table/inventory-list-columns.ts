@@ -10,6 +10,7 @@ import type { InventoryRow } from "@builders/domain"
 export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>> = [
   { key: "stockBalance", label: "Stock", align: "start" },
   { key: "netDeducted", label: "Deducted", align: "end" },
+  { key: "startingStock", label: "Starting", align: "end" },
   { key: "productName", label: "Product" },
   { key: "inventoryNumber", label: "Inv #" },
   { key: "rollNumber", label: "Roll #" },
@@ -19,6 +20,7 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
   { key: "coveragePerUnit", label: "Per Unit", align: "end" },
   { key: "location", label: "Location" },
   { key: "warehouse", label: "Warehouse" },
+  { key: "categoryName", label: "Category" },
   { key: "purchaseOrderNumber", label: "PO #" },
   { key: "importNumber", label: "Import #" },
   { key: "fifoReceivedAt", label: "FIFO Received" },

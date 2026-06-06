@@ -60,6 +60,14 @@ export function renderInventoryRowCell(
           {formatInventoryQuantity(row.netDeducted, row.stockUnitAbbrev)}
         </span>
       )
+    case "startingStock":
+      return (
+        <span className="tabular-nums">
+          {formatInventoryQuantity(row.startingStock, row.stockUnitAbbrev)}
+        </span>
+      )
+    case "categoryName":
+      return row.categoryName || "-"
     case "purchaseOrderNumber":
       return row.purchaseOrderNumber || "-"
     case "importNumber":
