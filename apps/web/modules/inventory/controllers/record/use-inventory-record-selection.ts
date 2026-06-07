@@ -7,12 +7,32 @@ import type {
   InventoryDetail,
   InventoryOption,
   InventoryRow,
+  ProductOption,
   WarehouseOption,
 } from "@builders/domain"
 import {
   INVENTORY_DETAIL_QUERY_KEY,
   inventoryDetailRequest,
 } from "@/modules/inventory/data/inventory-detail-request"
+
+/**
+ * Sentinel `?adjustment` value that opens the embedded "new adjustment" form.
+ * Lives here (not in the record view) because the selection controller owns the
+ * `adjustment` param and has to distinguish this record-agnostic *create intent*
+ * (form mode — survives inventory/warehouse/product swaps) from a concrete
+ * `?adjustment=<id>` *edit drilldown* (record-bound — cleared on swap).
+ */
+export const NEW_ADJUSTMENT_ID = "new"
+
+/**
+ * On a header swap (warehouse / product / inventory) keep the create intent
+ * ("new") alive so a WO hand-off — or an in-record "Add adjustment" — flows
+ * straight into the form for the newly selected item with no second click; drop
+ * a concrete edit drilldown id, which is meaningless on a different record.
+ */
+function preserveCreateIntent(current: string | null): string | null {
+  return current === NEW_ADJUSTMENT_ID ? NEW_ADJUSTMENT_ID : null
+}
 
 /**
  * Map a full list-view inventory row to the lighter `InventoryOption` the
@@ -57,9 +77,18 @@ export type InventoryRecordSelectionController = {
   warehouseLabel: string | null
   inventoryId: string | null
   inventoryLabel: string | null
-  /** Product filter for the inventory picker (from the WO seed, when present). */
-  productFilterId: string | null
+  /**
+   * The header product picker's selection — the master filter that narrows the
+   * inventory picker grid (and, downstream, the adjustment form's WO picker). On
+   * a WO hand-off the URL seeds it from the material item's product; otherwise
+   * the operator picks it to narrow their search.
+   */
+  productId: string | null
+  productLabel: string | null
+  /** True while the record view is in "add adjustment" mode (`?adjustment=new`). */
+  isAdjustmentFormMode: boolean
   selectWarehouse: (option: WarehouseOption | null) => void
+  selectProduct: (option: ProductOption | null) => void
   selectInventory: (option: InventoryOption | null) => void
   clear: () => void
   /** Full record for the selected inventory, or null while none is loaded. */
@@ -81,6 +110,8 @@ export type InventoryRecordSelectionController = {
 const SELECTION_PARSERS = {
   warehouseId: parseAsString,
   warehouseLabel: parseAsString,
+  productId: parseAsString,
+  productLabel: parseAsString,
   inventoryId: parseAsString,
   inventoryLabel: parseAsString,
   adjustment: parseAsString,
@@ -104,21 +135,46 @@ export function useInventoryRecordSelection({
 }): InventoryRecordSelectionController {
   const [selection, setSelection] = useQueryStates(SELECTION_PARSERS, { history: "replace" })
 
-  const { warehouseId, warehouseLabel, inventoryId, inventoryLabel, adjustment } = selection
+  const {
+    warehouseId,
+    warehouseLabel,
+    productId,
+    productLabel,
+    inventoryId,
+    inventoryLabel,
+    adjustment,
+  } = selection
 
   const selectWarehouse = useCallback(
     (option: WarehouseOption | null) => {
       // Changing the warehouse invalidates the inventory scope — clear it, plus
-      // any open adjustment drilldown from the previous record.
+      // any concrete adjustment drilldown from the previous record (the create
+      // intent rides through). Product is warehouse-independent, so it stays.
       void setSelection({
         warehouseId: option?.id ?? null,
         warehouseLabel: option?.name ?? null,
         inventoryId: null,
         inventoryLabel: null,
-        adjustment: null,
+        adjustment: preserveCreateIntent(adjustment),
       })
     },
-    [setSelection],
+    [setSelection, adjustment],
+  )
+
+  const selectProduct = useCallback(
+    (option: ProductOption | null) => {
+      // Product is the master filter: changing it invalidates the selected
+      // inventory (inventory is single-product), so cascade-clear it. Keep the
+      // create intent (form mode) alive — the operator re-picks a matching item.
+      void setSelection({
+        productId: option?.id ?? null,
+        productLabel: option?.name ?? null,
+        inventoryId: null,
+        inventoryLabel: null,
+        adjustment: preserveCreateIntent(adjustment),
+      })
+    },
+    [setSelection, adjustment],
   )
 
   const selectInventory = useCallback(
@@ -128,17 +184,21 @@ export function useInventoryRecordSelection({
         ...(option ? { warehouseId: option.warehouseId } : {}),
         inventoryId: option?.id ?? null,
         inventoryLabel: option?.inventoryItem ?? null,
-        // Swapping the record discards the previous one's drilldown.
-        adjustment: null,
+        // Swapping the record discards a concrete drilldown but preserves the
+        // create intent, so a WO hand-off lands straight in the form.
+        adjustment: preserveCreateIntent(adjustment),
       })
     },
-    [setSelection],
+    [setSelection, adjustment],
   )
 
   const clear = useCallback(() => {
+    // The explicit "Clear" reset also exits form mode (adjustment → null).
     void setSelection({
       warehouseId: null,
       warehouseLabel: null,
+      productId: null,
+      productLabel: null,
       inventoryId: null,
       inventoryLabel: null,
       adjustment: null,
@@ -185,8 +245,13 @@ export function useInventoryRecordSelection({
     warehouseLabel: warehouseLabel ?? inventory?.warehouseName ?? null,
     inventoryId,
     inventoryLabel: inventoryLabel ?? inventory?.inventoryItem ?? null,
-    productFilterId: resolvedWoSeed?.productId ?? null,
+    productId,
+    // Fall back to the WO seed's material-item label (the product name) so the
+    // picker trigger renders on a fresh hand-off before any product search runs.
+    productLabel: productLabel ?? resolvedWoSeed?.materialItemLabel ?? null,
+    isAdjustmentFormMode: adjustment === NEW_ADJUSTMENT_ID,
     selectWarehouse,
+    selectProduct,
     selectInventory,
     clear,
     inventory,

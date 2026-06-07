@@ -17,11 +17,13 @@ export function InventoryRecordHeader({
   selection,
   expanded,
   onSelectWarehouse,
+  onSelectProduct,
   onSelectInventory,
 }: {
   selection: InventoryRecordSelectionController
   expanded: boolean
   onSelectWarehouse: InventoryRecordSelectionController["selectWarehouse"]
+  onSelectProduct: InventoryRecordSelectionController["selectProduct"]
   onSelectInventory: InventoryRecordSelectionController["selectInventory"]
 }) {
   if (expanded) {
@@ -29,6 +31,7 @@ export function InventoryRecordHeader({
       <InventoryOptionsGrid
         selection={selection}
         onSelectWarehouse={onSelectWarehouse}
+        onSelectProduct={onSelectProduct}
         onSelectInventory={onSelectInventory}
       />
     )

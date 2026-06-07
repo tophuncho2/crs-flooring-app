@@ -22,7 +22,7 @@ export type AdjustmentPickerStackProps = {
  * WO is editable / locked / hidden.
  */
 export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps) {
-  const { pickerConfig, isSaving, warehouseId, form, local } = controller
+  const { pickerConfig, isSaving, warehouseId, productId, form, local } = controller
   if (!pickerConfig || pickerConfig.workOrder === "hidden") return null
 
   const woEditable = pickerConfig.workOrder === "editable"
@@ -38,6 +38,7 @@ export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps
               <WorkOrderPicker
                 value={form.workOrderId}
                 warehouseId={warehouseId}
+                productId={productId}
                 selectedLabel={local.pickedWorkOrderLabel || null}
                 onChange={() => {}}
                 onOptionSelected={(option) => void controller.selectWorkOrderOption(option)}

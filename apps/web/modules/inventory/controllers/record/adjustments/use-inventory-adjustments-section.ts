@@ -52,8 +52,12 @@ export function useInventoryAdjustmentsSection({
         locationLabel: inventory.location,
         productId: inventory.productId,
         stockUnitAbbrev: inventory.stockUnitAbbrev,
-        // Pre-link the originating work order (editable) when opened from a WO.
-        ...(woSeed
+        // Pre-link the originating work order (editable) when opened from a WO —
+        // but only if the selected inventory still matches the WO's product. If
+        // the operator re-filtered product and picked a different-product item,
+        // the pre-link would be invalid (server enforces product match), so drop
+        // it rather than ride it to a create-time error.
+        ...(woSeed && woSeed.productId === inventory.productId
           ? {
               workOrderId: woSeed.workOrderId,
               workOrderItemId: woSeed.workOrderItemId,

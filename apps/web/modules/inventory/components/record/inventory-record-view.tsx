@@ -19,7 +19,10 @@ import {
 import { EmbeddedAdjustmentRecordView } from "./adjustments/embedded-adjustment-record-view"
 import { useInventoryPrimarySection } from "@/modules/inventory/controllers/record/primary/use-inventory-primary-section"
 import { useInventoryAdjustmentsSection } from "@/modules/inventory/controllers/record/adjustments/use-inventory-adjustments-section"
-import type { InventoryRecordWoSeed } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
+import {
+  NEW_ADJUSTMENT_ID,
+  type InventoryRecordWoSeed,
+} from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { buildInventoryDuplicateHref } from "@/hooks/navigation"
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-list"
@@ -32,9 +35,6 @@ import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-li
  * the standalone duplicate-create page (`/dashboard/inventory/duplicate`).
  * Mirrors the Management Company record view.
  */
-/** Sentinel `?adjustment` value that opens the embedded "new adjustment" form. */
-const NEW_ADJUSTMENT_ID = "new"
-
 export function InventoryRecordView({
   page,
   entry,

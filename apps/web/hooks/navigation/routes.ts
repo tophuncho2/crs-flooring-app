@@ -148,6 +148,7 @@ export function buildInventoryRecordHref(options?: {
   workOrderItemId?: string | null
   workOrderLabel?: string | null
   productId?: string | null
+  productLabel?: string | null
   materialItemLabel?: string | null
   materialItemNotes?: string | null
   adjustment?: string | null
@@ -165,6 +166,7 @@ export function buildInventoryRecordHref(options?: {
   set("workOrderItemId", options?.workOrderItemId)
   set("workOrderLabel", options?.workOrderLabel)
   set("productId", options?.productId)
+  set("productLabel", options?.productLabel)
   set("materialItemLabel", options?.materialItemLabel)
   set("materialItemNotes", options?.materialItemNotes)
   set("adjustment", options?.adjustment)

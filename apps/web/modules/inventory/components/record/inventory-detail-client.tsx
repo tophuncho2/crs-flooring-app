@@ -36,9 +36,15 @@ export function InventoryDetailClient({
 }) {
   const selection = useInventoryRecordSelection({ initialInventory, woSeed })
 
+  // In form mode the surface is dedicated to creating an adjustment — title it
+  // so before an inventory item is even selected.
+  const title = selection.isAdjustmentFormMode
+    ? "Add adjustment"
+    : selection.inventory?.inventoryItem ?? "Inventory"
+
   return (
     <RecordDetailClientScaffold
-      title={selection.inventory?.inventoryItem ?? "Inventory"}
+      title={title}
       backHref={backHref}
       dirtyMessage="You have unsaved inventory changes. Leave without saving?"
       headerVariant="section"
@@ -68,12 +74,29 @@ function InventoryRecordSurface({
   const [isPicking, setIsPicking] = useState(false)
   const expanded = isPicking || selection.inventoryId === null
 
+  // Form mode before an item is picked: make the grid's purpose obvious — the
+  // operator is here to add an adjustment and just needs to choose which item.
+  const woSeed = selection.woSeed
+  const showFormModeHint = selection.isAdjustmentFormMode && selection.inventoryId === null
+  const formModeContext = woSeed
+    ? [woSeed.workOrderLabel, woSeed.materialItemLabel].filter(Boolean).join(" · ")
+    : null
+
   // The reference-header primitive owns the discard-guard: selecting a different
   // inventory item (or clearing the header) while the record is dirty prompts a
   // confirm before swapping. The swap isn't a router navigation, so this is
   // separate from the scaffold's leave-guard.
   return (
     <div className="flex flex-col gap-4">
+      {showFormModeHint ? (
+        <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 px-4 py-3 text-sm text-[var(--foreground)]/80">
+          <span className="font-medium text-[var(--foreground)]">Adding an adjustment</span> —
+          choose the inventory item to adjust.
+          {formModeContext ? (
+            <span className="text-[var(--foreground)]/55"> {formModeContext}</span>
+          ) : null}
+        </div>
+      ) : null}
       <RecordReferenceHeader
         page={page}
         label="Inventory item"
@@ -106,6 +129,7 @@ function InventoryRecordSurface({
             selection={selection}
             expanded={expanded}
             onSelectWarehouse={(option) => guard(() => selection.selectWarehouse(option))}
+            onSelectProduct={(option) => guard(() => selection.selectProduct(option))}
             onSelectInventory={(option) =>
               guard(() => {
                 selection.selectInventory(option)

@@ -6,6 +6,7 @@ import {
   PaginateControls,
 } from "@/engines/list-view"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
+import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import {
   useInventoryOptionsGrid,
   INVENTORY_PICKER_PAGE_SIZE,
@@ -28,18 +29,21 @@ import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
 export function InventoryOptionsGrid({
   selection,
   onSelectWarehouse,
+  onSelectProduct,
   onSelectInventory,
 }: {
   selection: InventoryRecordSelectionController
   onSelectWarehouse: InventoryRecordSelectionController["selectWarehouse"]
+  onSelectProduct: InventoryRecordSelectionController["selectProduct"]
   onSelectInventory: InventoryRecordSelectionController["selectInventory"]
 }) {
-  const { warehouseId, warehouseLabel, productFilterId } = selection
-  const grid = useInventoryOptionsGrid({ warehouseId, productFilterId })
+  const { warehouseId, warehouseLabel, productId, productLabel } = selection
+  const grid = useInventoryOptionsGrid({ warehouseId, productFilterId: productId })
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      {/* Scope pickers: warehouse (required) + product (the master filter). */}
+      <div className="grid gap-2 sm:grid-cols-2">
         <WarehousePicker
           value={warehouseId}
           selectedLabel={warehouseLabel}
@@ -48,6 +52,17 @@ export function InventoryOptionsGrid({
           placeholder="Select warehouse"
           ariaLabel="Select warehouse"
         />
+        <ProductPicker
+          value={productId}
+          selectedLabel={productLabel}
+          onChange={() => {}}
+          onOptionSelected={onSelectProduct}
+          placeholder="All products"
+          ariaLabel="Filter inventory by product"
+        />
+      </div>
+      {/* Identity search bars. */}
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <DebouncedSearchControl
           value={grid.invNumber}
           onCommit={grid.setInvNumber}
