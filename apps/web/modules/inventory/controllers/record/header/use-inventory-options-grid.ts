@@ -29,6 +29,10 @@ export type InventoryOptionsGridController = {
   setRollNumber: (value: string) => void
   setDyeLot: (value: string) => void
   setNote: (value: string) => void
+  /** True when any of the four identity search bars holds a value. */
+  hasSearch: boolean
+  /** Clear all four search bars and return to page 1. */
+  reset: () => void
   isLoading: boolean
   isFetching: boolean
   error: string | null
@@ -40,14 +44,19 @@ export type InventoryOptionsGridController = {
  * URL — the picker's transient search/page must not pollute the record-view
  * URL), and fetches a page of `InventoryRow`s through the same list endpoint the
  * inventory list view uses (`listInventoryRequest`). Warehouse + the optional WO
- * product ride in as filters; any filter change resets to page 1.
+ * product ride in as filters (both optional — the grid lists across all
+ * warehouses when none is picked); any filter change resets to page 1. `enabled`
+ * gates the fetch so the query only runs while the picker is open (the hook is
+ * lifted above the picker so the reference header can read/reset its search bars).
  */
 export function useInventoryOptionsGrid({
   warehouseId,
   productFilterId,
+  enabled,
 }: {
   warehouseId: string | null
   productFilterId: string | null
+  enabled: boolean
 }): InventoryOptionsGridController {
   const [invNumber, setInvNumberState] = useState("")
   const [rollNumber, setRollNumberState] = useState("")
@@ -100,7 +109,7 @@ export function useInventoryOptionsGrid({
   const query = useQuery({
     queryKey: [...INVENTORY_LIST_QUERY_KEY, "picker", input],
     queryFn: () => listInventoryRequest(input),
-    enabled: warehouseId !== null,
+    enabled,
     placeholderData: keepPreviousData,
   })
 
@@ -110,6 +119,18 @@ export function useInventoryOptionsGrid({
 
   const goToPrevious = useCallback(() => setPage((current) => Math.max(1, current - 1)), [])
   const goToNext = useCallback(() => setPage((current) => current + 1), [])
+
+  const reset = useCallback(() => {
+    setInvNumberState("")
+    setRollNumberState("")
+    setDyeLotState("")
+    setNoteState("")
+    setPage(1)
+  }, [])
+
+  const hasSearch = Boolean(
+    invNumber.trim() || rollNumber.trim() || dyeLot.trim() || note.trim(),
+  )
 
   return {
     rows,
@@ -128,7 +149,9 @@ export function useInventoryOptionsGrid({
     setRollNumber,
     setDyeLot,
     setNote,
-    isLoading: warehouseId !== null && query.isLoading,
+    hasSearch,
+    reset,
+    isLoading: enabled && query.isLoading,
     isFetching: query.isFetching,
     error:
       query.isError && query.error instanceof Error

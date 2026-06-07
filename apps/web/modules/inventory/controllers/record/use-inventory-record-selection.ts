@@ -72,6 +72,22 @@ export type InventoryRecordWoSeed = {
   materialItemNotes: string | null
 }
 
+/**
+ * A point-in-time copy of the header's URL selection. Captured when the operator
+ * begins re-picking an already-selected item so the reference header's "Discard"
+ * action can atomically restore it (warehouse + product + inventory + the
+ * adjustment face) without replaying cascade-clears.
+ */
+export type InventorySelectionSnapshot = {
+  warehouseId: string | null
+  warehouseLabel: string | null
+  productId: string | null
+  productLabel: string | null
+  inventoryId: string | null
+  inventoryLabel: string | null
+  adjustment: string | null
+}
+
 export type InventoryRecordSelectionController = {
   warehouseId: string | null
   warehouseLabel: string | null
@@ -91,6 +107,12 @@ export type InventoryRecordSelectionController = {
   selectProduct: (option: ProductOption | null) => void
   selectInventory: (option: InventoryOption | null) => void
   clear: () => void
+  /**
+   * Atomically restore a previously captured selection (the "Discard" action on
+   * the reference header). One `setSelection` write, so it bypasses the
+   * cascade-clears that the per-field `select*` setters apply.
+   */
+  restore: (snapshot: InventorySelectionSnapshot) => void
   /** Full record for the selected inventory, or null while none is loaded. */
   inventory: InventoryDetail | null
   isInventoryLoading: boolean
@@ -205,6 +227,13 @@ export function useInventoryRecordSelection({
     })
   }, [setSelection])
 
+  const restore = useCallback(
+    (snapshot: InventorySelectionSnapshot) => {
+      void setSelection(snapshot)
+    },
+    [setSelection],
+  )
+
   const setAdjustment = useCallback(
     (adjustmentId: string | null) => {
       void setSelection({ adjustment: adjustmentId })
@@ -254,6 +283,7 @@ export function useInventoryRecordSelection({
     selectProduct,
     selectInventory,
     clear,
+    restore,
     inventory,
     isInventoryLoading,
     inventoryError,

@@ -5,6 +5,7 @@ import {
   RecordDetailClientScaffold,
   RecordReferenceHeader,
   ReferenceHeaderClearButton,
+  ReferenceHeaderDiscardButton,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
 import type { InventoryDetail } from "@builders/domain"
@@ -12,7 +13,9 @@ import {
   useInventoryRecordSelection,
   type InventoryRecordSelectionController,
   type InventoryRecordWoSeed,
+  type InventorySelectionSnapshot,
 } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
+import { useInventoryOptionsGrid } from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
 import { InventoryRecordHeader } from "./header/inventory-record-header"
 import { InventoryRecordView } from "./inventory-record-view"
 
@@ -65,14 +68,50 @@ function InventoryRecordSurface({
   selection: InventoryRecordSelectionController
 }) {
   const inventory = selection.inventory
-  const hasSelection = selection.warehouseId !== null || selection.inventoryId !== null
 
   // The picker grid shows while browsing; once an item is selected it collapses
   // to a summary so the record sections own the space. With nothing selected the
   // grid stays open so there's always a way to pick. `isPicking` is the explicit
-  // "re-open to change" toggle.
+  // "re-open to re-select" toggle (driven by the Re-select button or clicking the
+  // collapsed row).
   const [isPicking, setIsPicking] = useState(false)
   const expanded = isPicking || selection.inventoryId === null
+
+  // The picker grid controller is owned here (not inside the grid component) so
+  // the reference header's Clear can both read whether the search bars hold a
+  // value and reset them. It only fetches while the picker is open (`enabled`).
+  const grid = useInventoryOptionsGrid({
+    warehouseId: selection.warehouseId,
+    productFilterId: selection.productId,
+    enabled: expanded,
+  })
+
+  // Clear is the full reset: enabled whenever any header tool is in use —
+  // warehouse, product, a selected item, or any of the four search bars.
+  const hasSelection =
+    selection.warehouseId !== null ||
+    selection.productId !== null ||
+    selection.inventoryId !== null ||
+    grid.hasSearch
+
+  // Snapshot of the selection captured when re-picking begins, so "Discard" can
+  // restore the item the operator started from (changing warehouse/product mid-
+  // pick cascade-clears the inventory id, so we can't recover it from the URL).
+  const [reselectSnapshot, setReselectSnapshot] = useState<InventorySelectionSnapshot | null>(
+    null,
+  )
+  const beginReselect = () => {
+    setReselectSnapshot({
+      warehouseId: selection.warehouseId,
+      warehouseLabel: selection.warehouseLabel,
+      productId: selection.productId,
+      productLabel: selection.productLabel,
+      inventoryId: selection.inventoryId,
+      inventoryLabel: selection.inventoryLabel,
+      adjustment: selection.adjustment,
+    })
+    setIsPicking(true)
+  }
 
   // Form mode before an item is picked: make the grid's purpose obvious — the
   // operator is here to add an adjustment and just needs to choose which item.
@@ -106,17 +145,33 @@ function InventoryRecordSurface({
             {!expanded ? (
               <button
                 type="button"
-                onClick={() => setIsPicking(true)}
+                onClick={beginReselect}
                 className="shrink-0 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:border-sky-500/45 hover:text-[var(--foreground)]"
               >
-                Change
+                Re-select
               </button>
+            ) : null}
+            {/* Discard cancels an in-progress re-pick, restoring the item the
+                operator started from. Not guarded: committing a different item
+                already collapses the picker, so this only ever restores the
+                snapshot's own (possibly dirty, preserved) record. */}
+            {expanded && reselectSnapshot ? (
+              <ReferenceHeaderDiscardButton
+                disabled={false}
+                onClick={() => {
+                  selection.restore(reselectSnapshot)
+                  setReselectSnapshot(null)
+                  setIsPicking(false)
+                }}
+              />
             ) : null}
             <ReferenceHeaderClearButton
               disabled={!hasSelection}
               onClick={() =>
                 guard(() => {
                   selection.clear()
+                  grid.reset()
+                  setReselectSnapshot(null)
                   setIsPicking(false)
                 })
               }
@@ -127,12 +182,15 @@ function InventoryRecordSurface({
         {({ guard }) => (
           <InventoryRecordHeader
             selection={selection}
+            grid={grid}
             expanded={expanded}
+            onReselect={beginReselect}
             onSelectWarehouse={(option) => guard(() => selection.selectWarehouse(option))}
             onSelectProduct={(option) => guard(() => selection.selectProduct(option))}
             onSelectInventory={(option) =>
               guard(() => {
                 selection.selectInventory(option)
+                setReselectSnapshot(null)
                 setIsPicking(false)
               })
             }
