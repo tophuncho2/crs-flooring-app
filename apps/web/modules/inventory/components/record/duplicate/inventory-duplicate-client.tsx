@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import type { InventoryDetail } from "@builders/domain"
 import {
   RecordCreateClientScaffold,
+  RecordReferenceHeader,
   RecordSectionSubHeader,
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
@@ -12,6 +13,7 @@ import {
 import { buildInventoryRecordHref } from "@/hooks/navigation"
 import { getClientErrorMessage } from "@/transport"
 import { useInventoryDuplicateSection } from "@/modules/inventory/controllers/record/duplicate/use-inventory-duplicate-section"
+import { InventoryReferenceRow } from "../header/inventory-reference-row"
 import { InventoryDuplicateFields } from "./inventory-duplicate-fields"
 
 /** Dirty-section label surfaced in the scaffold's leave-guard message. */
@@ -78,6 +80,12 @@ function InventoryDuplicatePanel({
 
   return (
     <div className="flex flex-col gap-3 p-4">
+      {/* Locked reference header — the source row in the same chrome the record
+          view uses, sitting above the section controls; reselecting the
+          reference is a later step. */}
+      <RecordReferenceHeader page={page} label="Reference inventory">
+        {() => <InventoryReferenceRow inventory={source} />}
+      </RecordReferenceHeader>
       <RecordSectionSubHeader
         canManage={false}
         isDirty={isDirty}
@@ -87,7 +95,6 @@ function InventoryDuplicatePanel({
         actions={actions}
       />
       <InventoryDuplicateFields
-        page={page}
         inventory={source}
         form={form}
         setField={setField}
