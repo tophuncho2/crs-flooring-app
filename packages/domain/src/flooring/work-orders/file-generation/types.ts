@@ -54,6 +54,7 @@ export type WorkOrderFileGenerationInput = {
   workOrderNumber: string
   scheduledFor: string
   vacancy: "VACANT" | "OCCUPIED" | null
+  timeOfDay: "AM" | "PM" | null
   unitNumber: string
   unitType: string
   customAddress: string

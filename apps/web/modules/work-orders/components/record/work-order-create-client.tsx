@@ -44,6 +44,7 @@ function WorkOrderCreatePanel({
         installerInstructions: updateInput.installerInstructions,
         scheduledFor: updateInput.scheduledFor,
         vacancy: updateInput.vacancy ?? null,
+        timeOfDay: updateInput.timeOfDay ?? null,
       })
       return {
         redirectTo: buildRecordDetailHref(

@@ -16,6 +16,8 @@ export function renderWorkOrderRowCell(
       return <span className="font-medium">{row.workOrderNumber}</span>
     case "scheduledFor":
       return row.scheduledFor ? formatStableDate(row.scheduledFor) : "-"
+    case "timeOfDay":
+      return row.timeOfDay ?? "-"
     case "warehouseName":
       return row.warehouseName || "-"
     case "description":

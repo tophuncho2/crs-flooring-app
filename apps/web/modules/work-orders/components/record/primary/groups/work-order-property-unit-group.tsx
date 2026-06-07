@@ -28,7 +28,7 @@ import {
   type PropertyOption,
   type WorkOrderForm,
 } from "@builders/domain"
-import { VACANCY_OPTIONS } from "../helpers"
+import { TIME_OF_DAY_OPTIONS, VACANCY_OPTIONS } from "../helpers"
 import type { WorkOrderPrimaryDetail } from "../types"
 import { WorkOrderField } from "./work-order-field"
 import { WorkOrderGroup } from "./work-order-group"
@@ -238,6 +238,17 @@ export function WorkOrderPropertyUnitGroup({
                 placeholder="—"
                 onChange={(value) =>
                   onFieldChange("vacancy", value as WorkOrderForm["vacancy"])
+                }
+              />
+            </WorkOrderField>
+            <WorkOrderField label="Time of Day">
+              <SelectCell
+                editable={editable}
+                value={draft.timeOfDay}
+                options={TIME_OF_DAY_OPTIONS}
+                placeholder="—"
+                onChange={(value) =>
+                  onFieldChange("timeOfDay", value as WorkOrderForm["timeOfDay"])
                 }
               />
             </WorkOrderField>

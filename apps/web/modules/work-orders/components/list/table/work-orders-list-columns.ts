@@ -10,6 +10,7 @@ import type { WorkOrderListRow } from "@builders/domain"
 export const WORK_ORDERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WorkOrderListRow>> = [
   { key: "workOrderNumber", label: "WO #" },
   { key: "scheduledFor", label: "Date" },
+  { key: "timeOfDay", label: "Time of Day" },
   { key: "warehouseName", label: "Warehouse" },
   { key: "description", label: "Description" },
   { key: "propertyName", label: "Property" },

@@ -166,7 +166,8 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
     <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${propertyAddressRow}
     <tr class="row-gap"><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
     <tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>
-    <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>${propertyInstructionsRow}${installerInstructionsRow}
+    <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>
+    <tr><th>Time of Day</th><td>${escapeOrEmpty(formatTimeOfDay(input.timeOfDay))}</td></tr>${propertyInstructionsRow}${installerInstructionsRow}
   </tbody>
 </table>
 `.trim()
@@ -220,6 +221,10 @@ function formatVacancy(vacancy: "VACANT" | "OCCUPIED" | null): string {
   if (vacancy === "VACANT") return "Vacant"
   if (vacancy === "OCCUPIED") return "Occupied"
   return ""
+}
+
+function formatTimeOfDay(timeOfDay: "AM" | "PM" | null): string {
+  return timeOfDay ?? ""
 }
 
 function renderAdjustmentRow(

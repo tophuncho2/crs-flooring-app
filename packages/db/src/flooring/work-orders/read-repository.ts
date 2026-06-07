@@ -326,6 +326,7 @@ export async function getWorkOrderForFileGeneration(
     select: {
       workOrderNumber: true,
       vacancy: true,
+      timeOfDay: true,
       scheduledFor: true,
       unitNumber: true,
       unitType: true,
@@ -424,6 +425,7 @@ export async function getWorkOrderForFileGeneration(
     workOrderNumber: workOrder.workOrderNumber,
     scheduledFor: workOrder.scheduledFor === null ? "" : workOrder.scheduledFor.toISOString().slice(0, 10),
     vacancy: workOrder.vacancy,
+    timeOfDay: workOrder.timeOfDay,
     unitNumber: workOrder.unitNumber ?? "",
     unitType: workOrder.unitType ?? "",
     customAddress: workOrder.customAddress ?? "",

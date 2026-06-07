@@ -6,6 +6,11 @@ export const VACANCY_OPTIONS = [
   { value: "OCCUPIED", label: "Occupied" },
 ]
 
+export const TIME_OF_DAY_OPTIONS = [
+  { value: "AM", label: "AM" },
+  { value: "PM", label: "PM" },
+]
+
 export function detailToPropertyJoined(
   detail: WorkOrderPrimaryDetail | null,
 ): PropertyJoinedFields | null {
