@@ -12,7 +12,8 @@ export type AdjustmentPickerStackProps = {
 
 /**
  * The "Work order" group of the adjustment form: an inline work-order picker
- * (relink, warehouse-scoped) plus the auto-linked material item (read-only — a
+ * (relink, not warehouse-scoped — adjustments cross-source across warehouses)
+ * plus the auto-linked material item (read-only — a
  * WO's material item is unique per product, so selecting the WO resolves it via
  * `selectWorkOrderOption`).
  *
@@ -22,7 +23,7 @@ export type AdjustmentPickerStackProps = {
  * WO is editable / locked / hidden.
  */
 export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps) {
-  const { pickerConfig, isSaving, warehouseId, productId, form, local } = controller
+  const { pickerConfig, isSaving, productId, form, local } = controller
   if (!pickerConfig || pickerConfig.workOrder === "hidden") return null
 
   const woEditable = pickerConfig.workOrder === "editable"
@@ -37,7 +38,6 @@ export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps
             <FormField label="Work order">
               <WorkOrderPicker
                 value={form.workOrderId}
-                warehouseId={warehouseId}
                 productId={productId}
                 selectedLabel={local.pickedWorkOrderLabel || null}
                 onChange={() => {}}

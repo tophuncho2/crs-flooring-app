@@ -19,14 +19,9 @@ export type WorkOrderPickerProps = {
    */
   onOptionSelected?: (option: WorkOrderOption | null) => void
   /**
-   * Required scope — every work order belongs to a warehouse. Picker
-   * renders disabled when null.
-   */
-  warehouseId: string | null
-  /**
    * Optional product scope. When set, only work orders carrying a material
-   * item for this product are listed — adjustments are product-locked, so the
-   * relink picker must never surface a WO that can't satisfy the link.
+   * item for this product are listed. Note: the relink picker may still offer
+   * WOs without a matching item — supplying this just narrows the list.
    */
   productId?: string | null
   /**
@@ -78,11 +73,10 @@ export function WorkOrderPicker({
   value,
   onChange,
   onOptionSelected,
-  warehouseId,
   productId = null,
   selectedLabel = null,
   placeholder = "Select work order",
-  disabledPlaceholder = "Select warehouse first",
+  disabledPlaceholder = "Select work order",
   searchPlaceholder = "Search description or unit type",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
@@ -93,21 +87,20 @@ export function WorkOrderPicker({
   className,
   initialOptions,
 }: WorkOrderPickerProps) {
-  const enabled = warehouseId !== null && !disabled
+  const enabled = !disabled
 
   const bucketKey = useMemo(
-    () => [...WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY, warehouseId ?? null, productId ?? null] as const,
-    [warehouseId, productId],
+    () => [...WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY, productId ?? null] as const,
+    [productId],
   )
 
   const pagedSearchFn = useCallback(
     (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchWorkOrderOptionsRequest(search, signal, {
-        warehouseId: warehouseId ?? "",
         ...(productId ? { productId } : {}),
         skip,
       }),
-    [warehouseId, productId],
+    [productId],
   )
 
   const controller = useAsyncRichDropdownController<WorkOrderOption>({
@@ -157,7 +150,7 @@ export function WorkOrderPicker({
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
       clearLabel={clearLabel}
-      disabled={disabled || warehouseId === null}
+      disabled={disabled}
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}

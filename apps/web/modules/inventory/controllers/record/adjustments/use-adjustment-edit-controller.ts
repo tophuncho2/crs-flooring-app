@@ -342,7 +342,6 @@ export function useAdjustmentEditController({
     open,
     form,
     local,
-    warehouseId: form.warehouseId,
     productId,
     pickerConfig,
     isDirty,
