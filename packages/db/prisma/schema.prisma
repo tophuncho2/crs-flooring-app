@@ -68,6 +68,11 @@ enum FlooringVacancyStatus {
   OCCUPIED
 }
 
+enum FlooringTimeOfDay {
+  AM
+  PM
+}
+
 enum FlooringStagedRowStatus {
   DRAFT
   QUEUED
@@ -517,6 +522,7 @@ model FlooringWorkOrder {
   statusId             String?                    @map("status_id")
   status               FlooringWorkOrderStatus?   @relation(fields: [statusId], references: [id], onDelete: SetNull)
   vacancy              FlooringVacancyStatus?
+  timeOfDay            FlooringTimeOfDay?
   scheduledFor         DateTime?                  @db.Date
   unitNumber           String?                    @db.VarChar(30)
   unitType             String?                    @db.VarChar(40)

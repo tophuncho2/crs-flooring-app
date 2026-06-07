@@ -15,6 +15,7 @@ export type WorkOrderListRow = {
   statusId: string | null
   statusName: string | null
   vacancy: "VACANT" | "OCCUPIED" | null
+  timeOfDay: "AM" | "PM" | null
   scheduledFor: string
   description: string
   createdAt: string
@@ -56,6 +57,7 @@ export type WorkOrderForm = {
   scheduledFor: string
   statusId: string
   vacancy: "VACANT" | "OCCUPIED" | ""
+  timeOfDay: "AM" | "PM" | ""
 }
 
 export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
@@ -73,4 +75,5 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   scheduledFor: "",
   statusId: "",
   vacancy: "",
+  timeOfDay: "",
 }

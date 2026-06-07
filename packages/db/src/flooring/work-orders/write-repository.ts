@@ -23,6 +23,7 @@ export type CreateWorkOrderRecordInput = {
   installerInstructions?: string | null
   scheduledFor?: Date | null
   vacancy?: "VACANT" | "OCCUPIED" | null
+  timeOfDay?: "AM" | "PM" | null
 }
 
 export type UpdateWorkOrderRecordInput = Partial<CreateWorkOrderRecordInput>

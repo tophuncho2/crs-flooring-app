@@ -6,6 +6,9 @@ export function validateWorkOrderForm(input: WorkOrderForm) {
   if (input.vacancy !== "" && input.vacancy !== "VACANT" && input.vacancy !== "OCCUPIED") {
     return "Vacancy status must be VACANT or OCCUPIED"
   }
+  if (input.timeOfDay !== "" && input.timeOfDay !== "AM" && input.timeOfDay !== "PM") {
+    return "Time of day must be AM or PM"
+  }
   return ""
 }
 
@@ -25,5 +28,6 @@ export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
     scheduledFor: toDateInputValue(workOrder.scheduledFor),
     statusId: workOrder.statusId ?? "",
     vacancy: workOrder.vacancy ?? "",
+    timeOfDay: workOrder.timeOfDay ?? "",
   }
 }

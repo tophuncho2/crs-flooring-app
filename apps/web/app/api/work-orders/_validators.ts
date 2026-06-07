@@ -81,6 +81,13 @@ function optionalVacancy(value: unknown): "VACANT" | "OCCUPIED" | null {
   return null
 }
 
+function optionalTimeOfDay(value: unknown): "AM" | "PM" | null {
+  if (value === undefined || value === null) return null
+  if (value === "AM" || value === "PM") return value
+  if (value === "") return null
+  return null
+}
+
 function optionalDate(value: unknown, field: string): Date | null {
   if (value === undefined || value === null || value === "") return null
   if (typeof value !== "string") {
@@ -117,6 +124,7 @@ export function validateCreateWorkOrderInput(
     ),
     scheduledFor: optionalDate(body.scheduledFor, "scheduledFor"),
     vacancy: optionalVacancy(body.vacancy),
+    timeOfDay: optionalTimeOfDay(body.timeOfDay),
   }
 }
 
@@ -153,6 +161,7 @@ export function validateUpdateWorkOrderInput(
   }
   if ("scheduledFor" in body) input.scheduledFor = optionalDate(body.scheduledFor, "scheduledFor")
   if ("vacancy" in body) input.vacancy = optionalVacancy(body.vacancy)
+  if ("timeOfDay" in body) input.timeOfDay = optionalTimeOfDay(body.timeOfDay)
 
   return input
 }
