@@ -2,7 +2,7 @@
 
 import { useCallback, useState, type ReactNode } from "react"
 import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
-import type { RecordDetailClientScaffoldContext } from "../client/scaffolds/record-detail-client-scaffold"
+import type { RecordDetailClientScaffoldContext } from "../../client/scaffolds/record-detail-client-scaffold"
 
 /**
  * Handed to the header body (and actions) so every record-swapping selection
