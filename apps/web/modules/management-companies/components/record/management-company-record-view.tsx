@@ -10,6 +10,7 @@ import {
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
 import type { ManagementCompanyDetail } from "@builders/domain"
+import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
 import { PropertyCreateView } from "./properties/property-create-view"
 import { PropertyRecordView } from "./properties/property-record-view"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
@@ -42,6 +43,19 @@ export function ManagementCompanyRecordView({
   const controller = useMcPrimarySection({ page, entry })
   const primary = controller.primarySection
   const [embeddedDirty, setEmbeddedDirty] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  async function confirmDelete() {
+    if (isDeleting) return
+    setIsDeleting(true)
+    try {
+      await controller.deleteRecord()
+    } finally {
+      setIsDeleting(false)
+      setConfirmDeleteOpen(false)
+    }
+  }
 
   // Clear the bridged embedded-dirty flag as we leave the embedded property,
   // so backing out of a (clean or discarded) property doesn't leave the MC
@@ -74,6 +88,8 @@ export function ManagementCompanyRecordView({
           hasConflict={primary.hasConflict}
           onSave={() => void primary.save()}
           onDiscard={primary.discard}
+          onDelete={() => setConfirmDeleteOpen(true)}
+          deleteLabel="Delete Management Company"
         >
           <ManagementCompanyCellsSection
             form={primary.localValue}
@@ -144,11 +160,18 @@ export function ManagementCompanyRecordView({
   return (
     <>
       <RecordMultiSectionPanel page={page} sections={sections} />
-      <RecordEntityFooter
-        onClose={page.closePage}
-        onDelete={() => controller.deleteRecord()}
-        deleteLabel="Delete Management Company"
-        confirmTitle="Delete management company?"
+      <RecordEntityFooter onClose={page.closePage} />
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Delete management company?"
+        message="This cannot be undone."
+        confirmLabel={isDeleting ? "Deleting…" : "Delete"}
+        cancelLabel="Cancel"
+        tone="destructive"
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => {
+          if (!isDeleting) setConfirmDeleteOpen(false)
+        }}
       />
     </>
   )
