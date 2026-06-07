@@ -4,7 +4,7 @@ import type {
 } from "@builders/domain"
 
 /**
- * Editable form values for the adjustment side panel. `inventoryId` is editable
+ * Editable form values for the adjustment edit form. `inventoryId` is editable
  * only in create mode; saved rows treat it as immutable. The `workOrderId` /
  * `workOrderItemId` pair is editable in edit mode on any non-voided,
  * non-queued row (the adjustment relink path — independent from the
@@ -42,7 +42,7 @@ export type AdjustmentEditForm = {
  * after the user picks a new option — otherwise the triggers would stay
  * pinned to the original adjustment's labels.
  */
-export type AdjustmentPanelLocal = {
+export type AdjustmentEditLocal = {
   locationFilter: string
   pickedWarehouseLabel: string
   /**
@@ -119,7 +119,7 @@ export type AdjustmentCreateSeed = {
  * inv-side keeps the row (its `inventoryId` is unchanged), so it pops the
  * panel only on `"removed"`.
  */
-export type AdjustmentPanelPatch =
+export type AdjustmentEditPatch =
   | { kind: "upsert"; workOrderItemId: string | null; adjustment: InventoryAdjustmentRow }
   | {
       kind: "delete"
@@ -128,7 +128,7 @@ export type AdjustmentPanelPatch =
       adjustmentId: string
     }
 
-export type AdjustmentEditPanelMode = "create" | "edit"
+export type AdjustmentEditMode = "create" | "edit"
 
 /**
  * Row shape the panel renders in edit mode. Widens `InventoryAdjustmentRow` with the
@@ -138,7 +138,7 @@ export type AdjustmentEditPanelMode = "create" | "edit"
  * `InventoryAdjustmentRow` — callers (and the update-mutation handler) carry labels
  * forward from the prior snapshot.
  */
-export type AdjustmentPanelRow = InventoryAdjustmentRow & {
+export type AdjustmentEditRow = InventoryAdjustmentRow & {
   workOrderNumber?: string | null
   workOrderItemProductLabel?: string | null
   workOrderItemNotes?: string | null
@@ -152,7 +152,7 @@ export type AdjustmentPanelRow = InventoryAdjustmentRow & {
  * view and the inventory hub — open the panel with the same union; only the
  * config + seed differ per context.
  */
-export type AdjustmentEditPanelOpenSpec =
+export type AdjustmentEditOpenSpec =
   | {
       mode: "create"
       pickerConfig: AdjustmentPickerConfig
@@ -162,5 +162,5 @@ export type AdjustmentEditPanelOpenSpec =
       mode: "edit"
       pickerConfig: AdjustmentPickerConfig
       workOrderItemId: string | null
-      adjustment: AdjustmentPanelRow
+      adjustment: AdjustmentEditRow
     }

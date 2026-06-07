@@ -4,10 +4,10 @@ import { FieldSection, FormField } from "@/components/fields"
 import { SectionCard } from "@/components/headers"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import { WorkOrderPicker } from "@/modules/work-orders/components/picker/work-order-picker"
-import type { AdjustmentEditPanelController } from "@/modules/adjustments/controllers/adjustment-side-panel"
+import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 
 export type AdjustmentPickerStackProps = {
-  controller: AdjustmentEditPanelController
+  controller: AdjustmentEditController
 }
 
 /**
@@ -17,7 +17,7 @@ export type AdjustmentPickerStackProps = {
  * `selectWorkOrderOption`).
  *
  * Warehouse + inventory are chosen in the inventory record view's header now, so
- * the old "Source" group and the body-takeover pickers (a side-panel artifact)
+ * the old "Source" group and the body-takeover pickers (a legacy edit-panel artifact)
  * are gone. The per-context `pickerConfig.workOrder` still decides whether the
  * WO is editable / locked / hidden.
  */

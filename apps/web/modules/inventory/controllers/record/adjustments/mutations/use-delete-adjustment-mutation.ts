@@ -11,12 +11,12 @@ import {
   deletePendingAdjustmentRequest,
   type AdjustmentScopeUrl,
 } from "@/modules/adjustments/data/mutations"
-import type { AdjustmentEditPanelOpenSpec, AdjustmentPanelPatch } from "../types"
+import type { AdjustmentEditOpenSpec, AdjustmentEditPatch } from "../types"
 
 type Deps = {
   scope: AdjustmentScopeUrl
-  publish: (patch: AdjustmentPanelPatch) => void
-  setOpen: Dispatch<SetStateAction<AdjustmentEditPanelOpenSpec | null>>
+  publish: (patch: AdjustmentEditPatch) => void
+  setOpen: Dispatch<SetStateAction<AdjustmentEditOpenSpec | null>>
   setError: Dispatch<SetStateAction<RecordSectionError | null>>
 }
 

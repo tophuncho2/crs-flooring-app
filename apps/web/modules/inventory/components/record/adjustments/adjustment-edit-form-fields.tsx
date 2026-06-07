@@ -14,10 +14,8 @@ import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
 import { SectionCard, type SectionCardTone } from "@/components/headers"
 import { CellAt } from "@/components/layout-grid/cell-at"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
-import type {
-  AdjustmentEditPanelController,
-  AdjustmentPanelRow,
-} from "@/modules/adjustments/controllers/adjustment-side-panel"
+import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
+import type { AdjustmentEditRow } from "../../../controllers/record/adjustments/types"
 
 const EMPTY_CELL = "—"
 
@@ -32,8 +30,8 @@ function cardToneForStatus(status: string): SectionCardTone {
 
 export type AdjustmentEditFormFieldsProps = {
   mode: "create" | "edit"
-  adjustment: AdjustmentPanelRow | null
-  controller: AdjustmentEditPanelController
+  adjustment: AdjustmentEditRow | null
+  controller: AdjustmentEditController
 }
 
 const ADJUSTMENT_TYPE_OPTIONS = [

@@ -2,8 +2,8 @@ import type { InventoryAdjustmentRow } from "@builders/domain"
 import type {
   AdjustmentCreateSeed,
   AdjustmentEditForm,
-  AdjustmentPanelLocal,
-  AdjustmentPanelRow,
+  AdjustmentEditLocal,
+  AdjustmentEditRow,
   AdjustmentPickerConfig,
 } from "./types"
 
@@ -44,7 +44,7 @@ export const EMPTY_FORM: AdjustmentEditForm = {
   workOrderItemId: null,
 }
 
-export const EMPTY_LOCAL: AdjustmentPanelLocal = {
+export const EMPTY_LOCAL: AdjustmentEditLocal = {
   locationFilter: "",
   pickedWarehouseLabel: "",
   pickedInventoryItem: "",
@@ -75,7 +75,7 @@ export function buildEditForm(adjustment: InventoryAdjustmentRow): AdjustmentEdi
  * Local picker-trigger labels for edit mode. Warehouse / inventory / location
  * are locked, so their labels come straight off the row's frozen snapshot.
  */
-export function buildEditLocal(adjustment: AdjustmentPanelRow): AdjustmentPanelLocal {
+export function buildEditLocal(adjustment: AdjustmentEditRow): AdjustmentEditLocal {
   return {
     locationFilter: adjustment.location ?? "",
     pickedWarehouseLabel: adjustment.warehouseName ?? "",
@@ -102,7 +102,7 @@ export function buildCreateForm(seed: AdjustmentCreateSeed): AdjustmentEditForm 
   }
 }
 
-export function buildCreateLocal(seed: AdjustmentCreateSeed): AdjustmentPanelLocal {
+export function buildCreateLocal(seed: AdjustmentCreateSeed): AdjustmentEditLocal {
   return {
     locationFilter: seed.locationLabel ?? "",
     pickedWarehouseLabel: seed.warehouseLabel ?? "",

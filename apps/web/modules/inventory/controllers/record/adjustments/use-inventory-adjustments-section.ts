@@ -2,16 +2,13 @@
 
 import { useCallback } from "react"
 import type { EnrichedInventoryAdjustmentRow, InventoryDetail } from "@builders/domain"
-import {
-  EDIT_PICKER_CONFIG,
-  HUB_CREATE_PICKER_CONFIG,
-  useAdjustmentEditPanel,
-} from "@/modules/adjustments"
+import { EDIT_PICKER_CONFIG, HUB_CREATE_PICKER_CONFIG } from "./form"
+import { useAdjustmentEditController } from "./use-adjustment-edit-controller"
 import type { InventoryRecordWoSeed } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 
 /**
  * Adjustments section of the inventory record view. Owns the shared, scope-aware
- * adjustment state machine (`useAdjustmentEditPanel`) pointed at this inventory,
+ * adjustment state machine (`useAdjustmentEditController`) pointed at this inventory,
  * plus the two open-spec builders the drilldown detail face needs:
  *
  *   - `openCreate()` → a manual INCREASE/DEDUCTION on this inventory. Warehouse
@@ -33,7 +30,7 @@ export function useInventoryAdjustmentsSection({
   onMutated: () => void
   woSeed?: InventoryRecordWoSeed | null
 }) {
-  const panel = useAdjustmentEditPanel({
+  const panel = useAdjustmentEditController({
     scope: { kind: "inventory", inventoryId: inventory.id },
     canCreate: true,
     publish: onMutated,

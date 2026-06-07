@@ -7,15 +7,13 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
 } from "@/engines/record-view"
-import {
-  AdjustmentEditFormFields,
-  AdjustmentPickerStack,
-  type AdjustmentEditPanelController,
-} from "@/modules/adjustments"
+import { AdjustmentEditFormFields } from "./adjustment-edit-form-fields"
+import { AdjustmentPickerStack } from "./adjustment-picker-stack"
+import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 
 export type EmbeddedAdjustmentRecordViewProps = {
   /** The shared adjustment state machine, already opened (create/edit) by the host. */
-  controller: AdjustmentEditPanelController
+  controller: AdjustmentEditController
   /** Host record page — its `confirmNavigation` guards the Back action. */
   hostPage: RecordDetailClientScaffoldContext
   /** Flip the host drilldown back to its list face. */

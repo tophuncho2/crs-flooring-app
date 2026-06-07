@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest"
 import {
   buildCreateLocal,
   buildEditLocal,
-} from "@/modules/adjustments/controllers/adjustment-side-panel/form"
+} from "@/modules/inventory/controllers/record/adjustments/form"
 import type {
   AdjustmentCreateSeed,
-  AdjustmentPanelRow,
-} from "@/modules/adjustments/controllers/adjustment-side-panel/types"
+  AdjustmentEditRow,
+} from "@/modules/inventory/controllers/record/adjustments/types"
 
-describe("adjustment panel — four-column inventory identity", () => {
+describe("adjustment edit — four-column inventory identity", () => {
   it("buildCreateLocal maps the four seed columns into the picked identity locals", () => {
     const seed: AdjustmentCreateSeed = {
       inventoryId: "inv-1",
@@ -48,7 +48,7 @@ describe("adjustment panel — four-column inventory identity", () => {
       stockUnitAbbrev: "sqyd",
       location: "A-12",
       warehouseName: "Main",
-    } as unknown as AdjustmentPanelRow
+    } as unknown as AdjustmentEditRow
 
     const local = buildEditLocal(adjustment)
 
@@ -69,7 +69,7 @@ describe("adjustment panel — four-column inventory identity", () => {
       stockUnitAbbrev: null,
       location: null,
       warehouseName: null,
-    } as unknown as AdjustmentPanelRow
+    } as unknown as AdjustmentEditRow
 
     const local = buildEditLocal(adjustment)
     expect(local.pickedInventoryNumber).toBe("")

@@ -25,14 +25,14 @@ import {
 } from "./mutations"
 import type {
   AdjustmentEditForm,
-  AdjustmentEditPanelOpenSpec,
-  AdjustmentPanelLocal,
-  AdjustmentPanelPatch,
+  AdjustmentEditOpenSpec,
+  AdjustmentEditLocal,
+  AdjustmentEditPatch,
 } from "./types"
 import { createRecordSectionError, type RecordSectionError } from "@/types/record/section-error"
 
 /**
- * Owns the side-panel lifecycle for adjustment editing: open/close, current
+ * Owns the edit lifecycle for an adjustment record: open/close, current
  * row, editable form, dirty tracking, free-text location filter for create
  * mode, and composes all five adjustment mutation hooks (create / update /
  * delete / void / finalize).
@@ -57,7 +57,7 @@ import { createRecordSectionError, type RecordSectionError } from "@/types/recor
  *   - Delete        → close (row no longer exists)
  *   - Backdrop / ESC / X → close, discard unsaved
  */
-export function useAdjustmentEditPanel({
+export function useAdjustmentEditController({
   scope,
   canCreate,
   publish,
@@ -65,7 +65,7 @@ export function useAdjustmentEditPanel({
 }: {
   scope: AdjustmentScopeUrl
   canCreate: boolean
-  publish: (patch: AdjustmentPanelPatch) => void
+  publish: (patch: AdjustmentEditPatch) => void
   /**
    * Optional override for post-create routing. When provided, the panel
    * closes after a successful create and the consumer routes the new
@@ -74,10 +74,10 @@ export function useAdjustmentEditPanel({
    */
   onCreated?: (adjustment: InventoryAdjustmentRow, workOrderItemId: string | null) => void
 }) {
-  const [open, setOpen] = useState<AdjustmentEditPanelOpenSpec | null>(null)
+  const [open, setOpen] = useState<AdjustmentEditOpenSpec | null>(null)
   const [form, setForm] = useState<AdjustmentEditForm>(EMPTY_FORM)
   const [baseline, setBaseline] = useState<AdjustmentEditForm>(EMPTY_FORM)
-  const [local, setLocal] = useState<AdjustmentPanelLocal>(EMPTY_LOCAL)
+  const [local, setLocal] = useState<AdjustmentEditLocal>(EMPTY_LOCAL)
   const [error, setError] = useState<RecordSectionError | null>(null)
 
   // When the open spec changes, reset form + filters + clear error. Derived
@@ -149,7 +149,7 @@ export function useAdjustmentEditPanel({
         : null
 
   const openPanel = useCallback(
-    (spec: AdjustmentEditPanelOpenSpec) => {
+    (spec: AdjustmentEditOpenSpec) => {
       // Defensive: callers without create capability should never pass
       // mode: "create". Silently no-op to keep the UI honest.
       if (spec.mode === "create" && !canCreate) return
@@ -361,4 +361,4 @@ export function useAdjustmentEditPanel({
   }
 }
 
-export type AdjustmentEditPanelController = ReturnType<typeof useAdjustmentEditPanel>
+export type AdjustmentEditController = ReturnType<typeof useAdjustmentEditController>

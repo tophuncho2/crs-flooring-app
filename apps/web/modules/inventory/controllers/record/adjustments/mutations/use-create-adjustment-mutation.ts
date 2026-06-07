@@ -11,15 +11,15 @@ import { createAdjustmentRequest } from "@/modules/adjustments/data/mutations"
 import { buildEditForm, EDIT_PICKER_CONFIG } from "../form"
 import type {
   AdjustmentEditForm,
-  AdjustmentEditPanelOpenSpec,
-  AdjustmentPanelPatch,
+  AdjustmentEditOpenSpec,
+  AdjustmentEditPatch,
 } from "../types"
 
 type Deps = {
-  publish: (patch: AdjustmentPanelPatch) => void
+  publish: (patch: AdjustmentEditPatch) => void
   setForm: Dispatch<SetStateAction<AdjustmentEditForm>>
   setBaseline: Dispatch<SetStateAction<AdjustmentEditForm>>
-  setOpen: Dispatch<SetStateAction<AdjustmentEditPanelOpenSpec | null>>
+  setOpen: Dispatch<SetStateAction<AdjustmentEditOpenSpec | null>>
   setError: Dispatch<SetStateAction<RecordSectionError | null>>
   /**
    * Optional override for post-create routing. When provided, the
