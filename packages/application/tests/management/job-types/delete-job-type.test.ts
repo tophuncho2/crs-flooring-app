@@ -1,33 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const {
-  withDatabaseTransactionMock,
-  countWorkOrdersByJobTypeIdMock,
-  countTemplatesByJobTypeIdMock,
-  deleteJobTypeRecordByIdMock,
-  PrismaKnownError,
-} = vi.hoisted(() => {
-  class PrismaKnownError extends Error {
-    code: string
-    constructor(message: string, opts: { code: string }) {
-      super(message)
-      this.code = opts.code
+const { withDatabaseTransactionMock, deleteJobTypeRecordByIdMock, PrismaKnownError } = vi.hoisted(
+  () => {
+    class PrismaKnownError extends Error {
+      code: string
+      constructor(message: string, opts: { code: string }) {
+        super(message)
+        this.code = opts.code
+      }
     }
-  }
-  return {
-    withDatabaseTransactionMock: vi.fn(),
-    countWorkOrdersByJobTypeIdMock: vi.fn(),
-    countTemplatesByJobTypeIdMock: vi.fn(),
-    deleteJobTypeRecordByIdMock: vi.fn(),
-    PrismaKnownError,
-  }
-})
+    return {
+      withDatabaseTransactionMock: vi.fn(),
+      deleteJobTypeRecordByIdMock: vi.fn(),
+      PrismaKnownError,
+    }
+  },
+)
 
 vi.mock("@builders/db", () => ({
   Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
   withDatabaseTransaction: withDatabaseTransactionMock,
-  countWorkOrdersByJobTypeId: countWorkOrdersByJobTypeIdMock,
-  countTemplatesByJobTypeId: countTemplatesByJobTypeIdMock,
   deleteJobTypeRecordById: deleteJobTypeRecordByIdMock,
 }))
 
@@ -37,36 +29,14 @@ const ID = "jt-1"
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
-  countWorkOrdersByJobTypeIdMock.mockReset()
-  countTemplatesByJobTypeIdMock.mockReset()
   deleteJobTypeRecordByIdMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  countWorkOrdersByJobTypeIdMock.mockResolvedValue(0)
-  countTemplatesByJobTypeIdMock.mockResolvedValue(0)
   deleteJobTypeRecordByIdMock.mockResolvedValue(undefined)
 })
 
 describe("deleteJobTypeUseCase", () => {
-  it("blocks deletion with 409 when work orders are linked and never deletes", async () => {
-    countWorkOrdersByJobTypeIdMock.mockResolvedValue(2)
-    await expect(deleteJobTypeUseCase(ID)).rejects.toMatchObject({
-      code: "JOB_TYPE_IN_USE",
-      status: 409,
-    })
-    expect(deleteJobTypeRecordByIdMock).not.toHaveBeenCalled()
-  })
-
-  it("blocks deletion with 409 when templates are linked and never deletes", async () => {
-    countTemplatesByJobTypeIdMock.mockResolvedValue(1)
-    await expect(deleteJobTypeUseCase(ID)).rejects.toMatchObject({
-      code: "JOB_TYPE_IN_USE",
-      status: 409,
-    })
-    expect(deleteJobTypeRecordByIdMock).not.toHaveBeenCalled()
-  })
-
-  it("deletes and returns ok when nothing is linked", async () => {
+  it("deletes and returns ok", async () => {
     expect(await deleteJobTypeUseCase(ID)).toEqual({ ok: true })
     expect(deleteJobTypeRecordByIdMock).toHaveBeenCalledWith(ID, expect.anything())
   })

@@ -2,7 +2,6 @@ export type JobTypeErrorCode =
   | "JOB_TYPE_VALIDATION_FAILED"
   | "JOB_TYPE_NOT_FOUND"
   | "JOB_TYPE_NAME_CONFLICT"
-  | "JOB_TYPE_IN_USE"
 
 export class JobTypeExecutionError extends Error {
   readonly code: JobTypeErrorCode
