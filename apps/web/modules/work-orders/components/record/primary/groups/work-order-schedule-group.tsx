@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { DateCell, TextCell } from "@/components/cells"
+import { DateCell, SelectCell, TextCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { WO_DESCRIPTION_MAX, type WorkOrderForm } from "@builders/domain"
+import { TIME_OF_DAY_OPTIONS } from "../helpers"
 import type { WorkOrderPrimaryDetail } from "../types"
 import { WorkOrderField } from "./work-order-field"
 import { WorkOrderGroup } from "./work-order-group"
@@ -69,6 +70,17 @@ export function WorkOrderScheduleGroup({
             editable={editable}
             value={draft.scheduledFor}
             onChange={(value) => onFieldChange("scheduledFor", value)}
+          />
+        </WorkOrderField>
+        <WorkOrderField label="Time of Day">
+          <SelectCell
+            editable={editable}
+            value={draft.timeOfDay}
+            options={TIME_OF_DAY_OPTIONS}
+            placeholder="—"
+            onChange={(value) =>
+              onFieldChange("timeOfDay", value as WorkOrderForm["timeOfDay"])
+            }
           />
         </WorkOrderField>
         <WorkOrderField label="Job Type">
