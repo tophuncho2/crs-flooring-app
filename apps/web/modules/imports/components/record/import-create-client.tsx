@@ -65,6 +65,7 @@ export function ImportCreateClient({ backHref }: { backHref: string }) {
     <RecordCreateClientScaffold
       title="New Import"
       backHref={backHref}
+      modeNoticeLabel="Import"
       dirtyMessage="You have unsaved import changes. Leave this form without saving?"
     >
       {(page) => <ImportCreatePanel page={page} backHref={backHref} />}
