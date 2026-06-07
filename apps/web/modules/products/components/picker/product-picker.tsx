@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { ProductOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/dropdowns"
+import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
 import {
   PRODUCT_OPTIONS_QUERY_KEY,
   searchProductOptionsRequest,

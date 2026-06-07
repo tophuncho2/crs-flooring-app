@@ -7,7 +7,7 @@ import type {
   PropertyOption,
   TemplateOption,
 } from "@builders/domain"
-import { useCascadePickerController } from "@/engines/cascade-picker"
+import { useCascadePickerController } from "@/engines/picker"
 
 function mc(overrides: Partial<ManagementCompanyOption> = {}): ManagementCompanyOption {
   return { id: "mc-1", name: "Acme Property Mgmt", ...overrides }

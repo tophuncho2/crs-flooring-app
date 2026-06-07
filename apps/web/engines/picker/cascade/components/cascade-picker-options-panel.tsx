@@ -1,7 +1,7 @@
 "use client"
 
-import { HubSidePanelPicker } from "@/components/hub-side-panel"
-import { useAsyncRichDropdownController } from "@/engines/dropdowns"
+import { PickerList } from "../../chrome"
+import { useAsyncRichDropdownController } from "../../client"
 import type { CascadePickerStepConfig } from "../contracts/cascade-picker-contracts"
 
 export type CascadePickerOptionsPanelProps<TOption> = {
@@ -13,8 +13,8 @@ export type CascadePickerOptionsPanelProps<TOption> = {
 }
 
 /**
- * Generic expanded-options panel for one cascade step. Wraps the dropdown
- * engine's async controller + the shared side-panel picker chrome; the step's
+ * Generic expanded-options panel for one cascade step. Wraps the picker
+ * engine's async controller + the shared picker-list chrome; the step's
  * `bucketKey` / `pagedSearchFn` / `toOption` come from the consumer's wiring.
  */
 export function CascadePickerOptionsPanel<TOption>({
@@ -30,7 +30,7 @@ export function CascadePickerOptionsPanel<TOption>({
   })
 
   return (
-    <HubSidePanelPicker<TOption>
+    <PickerList<TOption>
       controller={controller}
       toOption={step.toOption}
       selectedId={currentValue}

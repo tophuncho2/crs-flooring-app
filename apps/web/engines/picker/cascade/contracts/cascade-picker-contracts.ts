@@ -1,4 +1,4 @@
-import type { HubSidePanelPickerOption } from "@/components/hub-side-panel"
+import type { PickerListOption } from "../../chrome"
 
 /**
  * The three cascading steps, root → leaf. Selecting an upstream step clears
@@ -46,6 +46,6 @@ export type CascadePickerStepConfig<TOption> = {
     skip: number,
   ) => Promise<CascadeOptionsPage<TOption>>
   /** Map a raw option to the picker's display row. */
-  toOption: (option: TOption) => HubSidePanelPickerOption
+  toOption: (option: TOption) => PickerListOption
   searchPlaceholder?: string
 }

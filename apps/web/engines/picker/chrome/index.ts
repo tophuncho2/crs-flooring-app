@@ -1,15 +1,15 @@
 export {
-  HubSidePanelEditLayout,
-  type HubSidePanelEditLayoutProps,
-} from "./hub-side-panel-edit-layout"
+  PickerEditLayout,
+  type PickerEditLayoutProps,
+} from "./picker-edit-layout"
 export {
-  HubSidePanelAddButton,
-  type HubSidePanelAddButtonProps,
-} from "./hub-side-panel-add-button"
-export { HubSidePanelPickerTrigger } from "./hub-side-panel-picker-trigger"
-export type { HubSidePanelPickerTriggerProps } from "./hub-side-panel-picker-trigger"
+  PickerAddButton,
+  type PickerAddButtonProps,
+} from "./picker-add-button"
+export { PickerTrigger } from "./picker-trigger"
+export type { PickerTriggerProps } from "./picker-trigger"
 export {
-  HubSidePanelPicker,
-  type HubSidePanelPickerProps,
-  type HubSidePanelPickerOption,
-} from "./hub-side-panel-picker"
+  PickerList,
+  type PickerListProps,
+  type PickerListOption,
+} from "./picker"

@@ -15,7 +15,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ")
 }
 
-export type HubSidePanelPickerTriggerProps = {
+export type PickerTriggerProps = {
   expanded: boolean
   onToggle: () => void
   selectedLabel: string | null
@@ -36,14 +36,14 @@ export type HubSidePanelPickerTriggerProps = {
 /**
  * In-panel picker trigger styled to match the standard async dropdown. When
  * clicked, the consumer flips the hub panel into a picker-takeover mode and
- * the panel body renders {@link HubSidePanelPicker}. An optional trailing
- * arrow button ({@link HubSidePanelPickerTriggerProps.onOpenLinked}) opens the
+ * the panel body renders {@link PickerList}. An optional trailing
+ * arrow button ({@link PickerTriggerProps.onOpenLinked}) opens the
  * selected record without expanding the picker.
  */
-export const HubSidePanelPickerTrigger = forwardRef<
+export const PickerTrigger = forwardRef<
   HTMLButtonElement,
-  HubSidePanelPickerTriggerProps
->(function HubSidePanelPickerTrigger(
+  PickerTriggerProps
+>(function PickerTrigger(
   {
     expanded,
     onToggle,

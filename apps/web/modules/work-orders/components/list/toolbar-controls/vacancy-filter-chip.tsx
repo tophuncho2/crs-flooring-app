@@ -1,6 +1,6 @@
 "use client"
 
-import { type DropdownOption, SelectDropdown } from "@/engines/dropdowns"
+import { type DropdownOption, SelectDropdown } from "@/engines/picker"
 export type VacancyFilterChipProps = {
   value: string | null
   onChange: (value: string | null) => void

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { JobTypeOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/dropdowns"
+import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
 import {
   JOB_TYPE_OPTIONS_QUERY_KEY,
   searchJobTypeOptionsRequest,

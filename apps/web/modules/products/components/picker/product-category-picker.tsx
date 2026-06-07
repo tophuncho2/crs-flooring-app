@@ -2,12 +2,13 @@
 
 import { useCallback, useMemo, useState } from "react"
 import type { CategoryOption, ProductOption } from "@builders/domain"
-import { AnchoredPanel, useAsyncRichDropdownController } from "@/engines/dropdowns"
 import {
-  HubSidePanelPicker,
-  HubSidePanelPickerTrigger,
-  type HubSidePanelPickerOption,
-} from "@/components/hub-side-panel"
+  AnchoredPanel,
+  PickerList,
+  PickerTrigger,
+  useAsyncRichDropdownController,
+  type PickerListOption,
+} from "@/engines/picker"
 import {
   CATEGORY_OPTIONS_QUERY_KEY,
   searchCategoryOptionsRequest,
@@ -51,11 +52,11 @@ export type ProductCategoryPickerProps = {
   ariaLabel?: string
 }
 
-function toCategoryOption(option: CategoryOption): HubSidePanelPickerOption {
+function toCategoryOption(option: CategoryOption): PickerListOption {
   return { id: option.id, title: option.name, subtitles: [option.slug] }
 }
 
-function toProductOption(option: ProductOption): HubSidePanelPickerOption {
+function toProductOption(option: ProductOption): PickerListOption {
   return {
     id: option.id,
     title: option.name,
@@ -136,7 +137,7 @@ export function ProductCategoryPicker({
   const closePanel = useCallback(() => setOpen(false), [])
 
   const handleCategorySelect = useCallback(
-    (option: HubSidePanelPickerOption) => {
+    (option: PickerListOption) => {
       // Changing to a different category clears the selected product — a
       // product from the old category can't stay selected once the row is
       // scoped to a new one. (Clearing the filter to "All" keeps it, since
@@ -158,7 +159,7 @@ export function ProductCategoryPicker({
   }, [onCategoryChange])
 
   const handleProductSelect = useCallback(
-    (_option: HubSidePanelPickerOption, raw: ProductOption) => {
+    (_option: PickerListOption, raw: ProductOption) => {
       onProductChange(raw.id)
       onProductOptionSelected?.(raw)
       if (showProductCategory) setPickedCategoryName(raw.categoryName)
@@ -174,7 +175,7 @@ export function ProductCategoryPicker({
 
   const stickyHeader = (
     <div className="flex flex-col gap-2">
-      <HubSidePanelPickerTrigger
+      <PickerTrigger
         expanded={activePicker === "category"}
         onToggle={() => setActivePicker("category")}
         selectedLabel={categoryDisplayLabel}
@@ -182,7 +183,7 @@ export function ProductCategoryPicker({
         disabled={!categoryEditable}
         ariaLabel="Category filter"
       />
-      <HubSidePanelPickerTrigger
+      <PickerTrigger
         expanded={activePicker === "product"}
         onToggle={() => setActivePicker("product")}
         selectedLabel={productLabel}
@@ -195,7 +196,7 @@ export function ProductCategoryPicker({
   )
 
   const trigger = (
-    <HubSidePanelPickerTrigger
+    <PickerTrigger
       expanded={open}
       onToggle={() => (open ? closePanel() : openPanel())}
       selectedLabel={productLabel}
@@ -210,7 +211,7 @@ export function ProductCategoryPicker({
       {/* Mount the list only once the header search slot exists, so the search
           input portals straight into the sticky header (never flashing inline). */}
       {searchSlot === null ? null : activePicker === "category" ? (
-        <HubSidePanelPicker<CategoryOption>
+        <PickerList<CategoryOption>
           controller={categoryController}
           toOption={toCategoryOption}
           selectedId={categoryId}
@@ -222,7 +223,7 @@ export function ProductCategoryPicker({
           searchPortalTarget={searchSlot}
         />
       ) : (
-        <HubSidePanelPicker<ProductOption>
+        <PickerList<ProductOption>
           controller={productController}
           toOption={toProductOption}
           selectedId={productId}

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { InventoryLocationOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/dropdowns"
+import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
 import {
   INVENTORY_LOCATIONS_SEARCH_QUERY_KEY,
   searchInventoryLocationsRequest,

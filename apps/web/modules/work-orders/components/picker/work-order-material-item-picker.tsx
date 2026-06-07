@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { WorkOrderMaterialItemOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/dropdowns"
+import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
 import {
   WORK_ORDER_MATERIAL_ITEM_OPTIONS_QUERY_KEY,
   searchWorkOrderMaterialItemOptionsRequest,

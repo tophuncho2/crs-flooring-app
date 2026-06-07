@@ -9,7 +9,7 @@ import {
 import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
 import { StatusBadge } from "@/components/badges/status-badge"
 import { TextCell, ToggleCell, UnitCell } from "@/components/cells"
-import { SegmentedDropdown } from "@/engines/dropdowns"
+import { SegmentedDropdown } from "@/engines/picker"
 import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
 import { SectionCard, type SectionCardTone } from "@/components/headers"
 import { CellAt } from "@/components/layout-grid/cell-at"

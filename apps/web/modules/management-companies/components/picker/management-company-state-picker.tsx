@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { ManagementCompanyStateOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/dropdowns"
+import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
 import {
   MANAGEMENT_COMPANY_STATES_SEARCH_QUERY_KEY,
   searchManagementCompanyStatesRequest,

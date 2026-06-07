@@ -10,9 +10,9 @@ import {
 import {
   CascadePickerBody,
   CascadePickerTriggers,
+  PickerAddButton,
   type CascadePickerController,
-} from "@/engines/cascade-picker"
-import { HubSidePanelAddButton } from "@/components/hub-side-panel"
+} from "@/engines/picker"
 import type { TemplateDetail } from "@builders/domain"
 import { TemplateRecordPanel } from "./template-record-panel"
 import {
@@ -102,7 +102,7 @@ function TemplateHubView({
         onOpenProperty={openProperty}
         actions={
           <>
-            <HubSidePanelAddButton label="+ Template" onClick={newTemplate} />
+            <PickerAddButton label="+ Template" onClick={newTemplate} />
             <ReferenceHeaderClearButton
               disabled={!cascade.hasSelections}
               onClick={handleClear}

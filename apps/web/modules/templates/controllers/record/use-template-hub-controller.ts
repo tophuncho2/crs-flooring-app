@@ -15,8 +15,8 @@ import {
   type CascadePickerController,
   type CascadePickerInitialSelections,
   type CascadePickerSteps,
-} from "@/engines/cascade-picker"
-import type { HubSidePanelPickerOption } from "@/components/hub-side-panel"
+} from "@/engines/picker"
+import type { PickerListOption } from "@/engines/picker"
 import { buildPropertyRecordHref, buildTemplateHubHref } from "@/hooks/navigation"
 import {
   MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY,
@@ -43,15 +43,15 @@ const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
  */
 export type TemplateHubInitialSelections = CascadePickerInitialSelections
 
-function managementCompanyToOption(option: ManagementCompanyOption): HubSidePanelPickerOption {
+function managementCompanyToOption(option: ManagementCompanyOption): PickerListOption {
   return { id: option.id, title: option.name }
 }
 
-function propertyToOption(option: PropertyOption): HubSidePanelPickerOption {
+function propertyToOption(option: PropertyOption): PickerListOption {
   return { id: option.id, title: option.name, subtitle: option.address || null }
 }
 
-function templateToOption(option: TemplateOption): HubSidePanelPickerOption {
+function templateToOption(option: TemplateOption): PickerListOption {
   return {
     id: option.id,
     title: option.unitType || "—",

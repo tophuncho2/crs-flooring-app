@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
-import type { AsyncRichDropdownControllerOutput } from "@/engines/dropdowns"
+import type { AsyncRichDropdownControllerOutput } from "../client"
 
 const SEARCH_INPUT_CLASS_NAME =
   "w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2.5 py-1.5 text-sm text-[var(--foreground)] outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40"
@@ -13,7 +13,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ")
 }
 
-export type HubSidePanelPickerOption = {
+export type PickerListOption = {
   id: string
   title: string
   subtitle?: string | null
@@ -27,9 +27,9 @@ export type HubSidePanelPickerOption = {
   meta?: ReactNode
 }
 
-export type HubSidePanelPickerProps<TOption> = {
+export type PickerListProps<TOption> = {
   controller: AsyncRichDropdownControllerOutput<TOption>
-  toOption: (raw: TOption) => HubSidePanelPickerOption
+  toOption: (raw: TOption) => PickerListOption
   selectedId: string | null
   /**
    * Pre-resolved label for the selected id. Used to render the "Clear
@@ -37,7 +37,7 @@ export type HubSidePanelPickerProps<TOption> = {
    * server page.
    */
   selectedLabel: string | null
-  onSelect: (option: HubSidePanelPickerOption, raw: TOption) => void
+  onSelect: (option: PickerListOption, raw: TOption) => void
   onClear: () => void
   onCancel: () => void
   searchPlaceholder?: string
@@ -62,13 +62,13 @@ export type HubSidePanelPickerProps<TOption> = {
 
 /**
  * Inline-in-body picker shell. Search input + listbox + load-more, fills the
- * side-panel body height. Escape collapses only the picker (the consumer's
+ * picker body height. Escape collapses only the picker (the consumer's
  * `onCancel` re-focuses the trigger and the parent's Escape handler does not
  * dismiss the whole panel because we stop propagation here).
  *
  * Pure UI — consumers supply the dropdown controller and an option mapper.
  */
-export function HubSidePanelPicker<TOption>({
+export function PickerList<TOption>({
   controller,
   toOption,
   selectedId,
@@ -82,13 +82,13 @@ export function HubSidePanelPicker<TOption>({
   clearLabel = "Clear selection",
   searchPortalTarget,
   hideSearchInput = false,
-}: HubSidePanelPickerProps<TOption>) {
+}: PickerListProps<TOption>) {
   const listboxId = useId()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const listboxRef = useRef<HTMLDivElement | null>(null)
   const [activeIndex, setActiveIndex] = useState<number>(-1)
 
-  const options = useMemo<Array<{ option: HubSidePanelPickerOption; raw: TOption }>>(
+  const options = useMemo<Array<{ option: PickerListOption; raw: TOption }>>(
     () => controller.options.map((raw) => ({ option: toOption(raw), raw })),
     [controller.options, toOption],
   )
@@ -114,7 +114,7 @@ export function HubSidePanelPicker<TOption>({
   )
 
   const commitSelect = useCallback(
-    (entry: { option: HubSidePanelPickerOption; raw: TOption }) => {
+    (entry: { option: PickerListOption; raw: TOption }) => {
       onSelect(entry.option, entry.raw)
     },
     [onSelect],

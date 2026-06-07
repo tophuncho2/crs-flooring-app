@@ -3,7 +3,7 @@
 const BUTTON_CLASS_NAME =
   "inline-flex items-center justify-center rounded-md border border-sky-500/60 bg-[var(--panel-background)] px-2.5 py-1 text-xs font-semibold tracking-tight text-sky-700 shadow-sm transition hover:bg-sky-500/10 hover:border-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
 
-export type HubSidePanelAddButtonProps = {
+export type PickerAddButtonProps = {
   onClick: () => void
   disabled?: boolean
   label?: string
@@ -15,11 +15,11 @@ export type HubSidePanelAddButtonProps = {
  * slot, so it is shared and identical across every panel connected to the
  * property hub.
  */
-export function HubSidePanelAddButton({
+export function PickerAddButton({
   onClick,
   disabled,
   label = "+ Hub",
-}: HubSidePanelAddButtonProps) {
+}: PickerAddButtonProps) {
   return (
     <button
       type="button"

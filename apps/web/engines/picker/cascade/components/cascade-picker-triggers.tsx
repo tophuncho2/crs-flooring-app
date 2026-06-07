@@ -2,9 +2,9 @@
 
 import type { ReactNode } from "react"
 import {
-  HubSidePanelEditLayout,
-  HubSidePanelPickerTrigger,
-} from "@/components/hub-side-panel"
+  PickerEditLayout,
+  PickerTrigger,
+} from "../../chrome"
 import type { CascadePickerController } from "../client/use-cascade-picker-controller"
 
 const PICKER_LABEL_CLASS =
@@ -54,7 +54,7 @@ export function CascadePickerTriggers({
   } = controller
 
   return (
-    <HubSidePanelEditLayout
+    <PickerEditLayout
       toolbar={
         actions || error ? (
           <div className="flex flex-col gap-2">
@@ -72,7 +72,7 @@ export function CascadePickerTriggers({
     >
       <label className="flex flex-col gap-1.5">
         <span className={PICKER_LABEL_CLASS}>Management company</span>
-        <HubSidePanelPickerTrigger
+        <PickerTrigger
           ref={managementCompanyTriggerRef}
           expanded={expandedStep === "managementCompany"}
           onToggle={() => toggleStep("managementCompany")}
@@ -93,7 +93,7 @@ export function CascadePickerTriggers({
 
       <label className="flex flex-col gap-1.5">
         <span className={PICKER_LABEL_CLASS}>Property</span>
-        <HubSidePanelPickerTrigger
+        <PickerTrigger
           ref={propertyTriggerRef}
           expanded={expandedStep === "property"}
           onToggle={() => toggleStep("property")}
@@ -114,7 +114,7 @@ export function CascadePickerTriggers({
 
       <label className="flex flex-col gap-1.5">
         <span className={PICKER_LABEL_CLASS}>Template</span>
-        <HubSidePanelPickerTrigger
+        <PickerTrigger
           ref={templateTriggerRef}
           expanded={expandedStep === "template"}
           onToggle={() => toggleStep("template")}
@@ -134,6 +134,6 @@ export function CascadePickerTriggers({
           openLinkedDisabled={disabled}
         />
       </label>
-    </HubSidePanelEditLayout>
+    </PickerEditLayout>
   )
 }

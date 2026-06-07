@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 
-export type HubSidePanelEditLayoutProps = {
+export type PickerEditLayoutProps = {
   /** Action toolbar (edit toolbar / action button row) — pinned on top. */
   toolbar?: ReactNode
   /** Contextual controls below the toolbar: picker triggers, relink header, sub-header. */
@@ -16,10 +16,10 @@ export type HubSidePanelEditLayoutProps = {
  * pins its controls at the top. A null `toolbar` (e.g. while a picker takeover
  * is active) collapses cleanly with no stray gap.
  */
-export function HubSidePanelEditLayout({
+export function PickerEditLayout({
   toolbar,
   children,
-}: HubSidePanelEditLayoutProps) {
+}: PickerEditLayoutProps) {
   return (
     <div className="flex flex-col gap-3">
       {toolbar}

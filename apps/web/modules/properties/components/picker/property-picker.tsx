@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { PropertyOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/dropdowns"
+import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
 import {
   PROPERTY_OPTIONS_QUERY_KEY,
   searchPropertyOptionsRequest,

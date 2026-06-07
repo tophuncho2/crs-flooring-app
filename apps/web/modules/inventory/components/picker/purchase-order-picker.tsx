@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { InventoryPurchaseOrderOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/dropdowns"
+import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
 import {
   INVENTORY_PURCHASE_ORDERS_SEARCH_QUERY_KEY,
   searchInventoryPurchaseOrderNumbersRequest,
