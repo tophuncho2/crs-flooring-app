@@ -91,28 +91,6 @@ export async function manufacturerCompanyNameExists(
   return Boolean(existing)
 }
 
-export type ManufacturerDeleteStateResult = {
-  id: string
-  _count: { products: number }
-} | null
-
-export async function getManufacturerDeleteState(
-  id: string,
-  client: ManufacturerDbClient = db,
-): Promise<ManufacturerDeleteStateResult> {
-  return client.flooringManufacturer.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      _count: {
-        select: {
-          products: true,
-        },
-      },
-    },
-  })
-}
-
 // --- Picker / options search ---
 
 export type ManufacturerOptionsSearchArgs = {

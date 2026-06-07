@@ -1,15 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, getManufacturerDeleteStateMock, deleteManufacturerRecordByIdMock } =
-  vi.hoisted(() => ({
-    withDatabaseTransactionMock: vi.fn(),
-    getManufacturerDeleteStateMock: vi.fn(),
-    deleteManufacturerRecordByIdMock: vi.fn(),
-  }))
+const { withDatabaseTransactionMock, deleteManufacturerRecordByIdMock, PrismaKnownError } =
+  vi.hoisted(() => {
+    class PrismaKnownError extends Error {
+      code: string
+      constructor(message: string, opts: { code: string }) {
+        super(message)
+        this.code = opts.code
+      }
+    }
+    return {
+      withDatabaseTransactionMock: vi.fn(),
+      deleteManufacturerRecordByIdMock: vi.fn(),
+      PrismaKnownError,
+    }
+  })
 
 vi.mock("@builders/db", () => ({
+  Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
   withDatabaseTransaction: withDatabaseTransactionMock,
-  getManufacturerDeleteState: getManufacturerDeleteStateMock,
   deleteManufacturerRecordById: deleteManufacturerRecordByIdMock,
 }))
 
@@ -19,35 +28,25 @@ const ID = "mfr-1"
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
-  getManufacturerDeleteStateMock.mockReset()
   deleteManufacturerRecordByIdMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  getManufacturerDeleteStateMock.mockResolvedValue({ id: ID, _count: { products: 0 } })
   deleteManufacturerRecordByIdMock.mockResolvedValue(undefined)
 })
 
 describe("deleteManufacturerUseCase", () => {
-  it("throws 404 when the manufacturer does not exist and never deletes", async () => {
-    getManufacturerDeleteStateMock.mockResolvedValue(null)
+  it("deletes and returns ok", async () => {
+    expect(await deleteManufacturerUseCase(ID)).toEqual({ ok: true })
+    expect(deleteManufacturerRecordByIdMock).toHaveBeenCalledWith(ID, expect.anything())
+  })
+
+  it("maps a P2025 on delete to a 404 not-found", async () => {
+    deleteManufacturerRecordByIdMock.mockRejectedValue(
+      new PrismaKnownError("missing", { code: "P2025" }),
+    )
     await expect(deleteManufacturerUseCase(ID)).rejects.toMatchObject({
       code: "MANUFACTURER_NOT_FOUND",
       status: 404,
     })
-    expect(deleteManufacturerRecordByIdMock).not.toHaveBeenCalled()
-  })
-
-  it("blocks deletion with 409 when products are linked and never deletes", async () => {
-    getManufacturerDeleteStateMock.mockResolvedValue({ id: ID, _count: { products: 5 } })
-    await expect(deleteManufacturerUseCase(ID)).rejects.toMatchObject({
-      code: "MANUFACTURER_IN_USE",
-      status: 409,
-    })
-    expect(deleteManufacturerRecordByIdMock).not.toHaveBeenCalled()
-  })
-
-  it("deletes and returns ok when no products are linked", async () => {
-    expect(await deleteManufacturerUseCase(ID)).toEqual({ ok: true })
-    expect(deleteManufacturerRecordByIdMock).toHaveBeenCalledWith(ID, expect.anything())
   })
 })

@@ -1,7 +1,6 @@
 export type ManufacturerErrorCode =
   | "MANUFACTURER_NAME_CONFLICT"
   | "MANUFACTURER_NOT_FOUND"
-  | "MANUFACTURER_IN_USE"
   | "MANUFACTURER_VALIDATION_FAILED"
 
 export class ManufacturerExecutionError extends Error {

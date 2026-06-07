@@ -5,7 +5,3 @@ export function normalizeManufacturerCompanyNameForUniqueness(value: string) {
 export function isManufacturerCompanyNameConflict(exists: boolean) {
   return exists
 }
-
-export function isManufacturerDeleteBlocked(productCount: number) {
-  return productCount > 0
-}

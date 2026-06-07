@@ -235,37 +235,6 @@ describe("manufacturers", () => {
     expect(createManufacturerUseCaseMock).toHaveBeenCalled()
   })
 
-  it("prevents deleting a manufacturer that still has linked products", async () => {
-    const snapshot = normalizedManufacturerRow()
-    getManufacturerByIdMock.mockResolvedValue(snapshot)
-    deleteManufacturerUseCaseMock.mockRejectedValue(
-      Object.assign(new Error("This manufacturer has linked products and cannot be deleted"), {
-        code: "MANUFACTURER_IN_USE",
-        status: 409,
-      }),
-    )
-
-    const response = await DELETE(
-      new Request("http://localhost/api/manufacturers/mfg-1", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mutation: {
-            idempotencyKey: "idem-6",
-            expectedUpdatedAt: "2026-03-18T00:00:00.000Z",
-          },
-        }),
-      }),
-      { params: Promise.resolve({ id: "11111111-1111-4111-8111-111111111111" }) },
-    )
-
-    const payload = await response.json()
-
-    expect(response.status).toBe(409)
-    expect(payload.error).toBe("This manufacturer has linked products and cannot be deleted")
-    expect(deleteManufacturerUseCaseMock).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
-  })
-
   it("deletes a manufacturer when there are no linked products", async () => {
     const snapshot = normalizedManufacturerRow()
     getManufacturerByIdMock.mockResolvedValue(snapshot)
