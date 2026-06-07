@@ -26,25 +26,52 @@ describe("isWarehouseNameConflict", () => {
   })
 })
 
+const NO_DEPENDENTS = {
+  inventoriesCount: 0,
+  importsCount: 0,
+  stagedInventoryRowsCount: 0,
+  inventoryAdjustmentsCount: 0,
+  workOrdersCount: 0,
+  templatesCount: 0,
+}
+
 describe("isWarehouseDeleteBlocked", () => {
-  it("blocks when work orders are linked", () => {
-    expect(isWarehouseDeleteBlocked({ workOrdersCount: 1 })).toBe(true)
+  it.each([
+    ["inventory", { ...NO_DEPENDENTS, inventoriesCount: 1 }],
+    ["imports", { ...NO_DEPENDENTS, importsCount: 1 }],
+    ["staged inventory rows", { ...NO_DEPENDENTS, stagedInventoryRowsCount: 1 }],
+    ["adjustments", { ...NO_DEPENDENTS, inventoryAdjustmentsCount: 1 }],
+    ["work orders", { ...NO_DEPENDENTS, workOrdersCount: 1 }],
+    ["templates", { ...NO_DEPENDENTS, templatesCount: 1 }],
+  ])("blocks when %s are linked", (_label, counts) => {
+    expect(isWarehouseDeleteBlocked(counts)).toBe(true)
   })
 
-  it("allows deletion when no work orders are linked", () => {
-    expect(isWarehouseDeleteBlocked({ workOrdersCount: 0 })).toBe(false)
+  it("allows deletion when nothing is linked", () => {
+    expect(isWarehouseDeleteBlocked(NO_DEPENDENTS)).toBe(false)
   })
 })
 
 describe("buildWarehouseDeleteBlockedMessage", () => {
-  it("explains the work-order block when work orders exist", () => {
-    expect(buildWarehouseDeleteBlockedMessage({ workOrdersCount: 3 })).toBe(
-      "Warehouse cannot be deleted while work orders are linked to it",
+  it("lists a single linked dependent", () => {
+    expect(buildWarehouseDeleteBlockedMessage({ ...NO_DEPENDENTS, workOrdersCount: 3 })).toBe(
+      "Warehouse cannot be deleted while it has linked: work orders",
     )
   })
 
+  it("lists multiple linked dependents in reading order", () => {
+    expect(
+      buildWarehouseDeleteBlockedMessage({
+        ...NO_DEPENDENTS,
+        inventoriesCount: 2,
+        workOrdersCount: 1,
+        templatesCount: 4,
+      }),
+    ).toBe("Warehouse cannot be deleted while it has linked: inventory, work orders, templates")
+  })
+
   it("falls back to the no-dependents message when nothing is linked", () => {
-    expect(buildWarehouseDeleteBlockedMessage({ workOrdersCount: 0 })).toBe(
+    expect(buildWarehouseDeleteBlockedMessage(NO_DEPENDENTS)).toBe(
       "Warehouse has no linked dependents",
     )
   })

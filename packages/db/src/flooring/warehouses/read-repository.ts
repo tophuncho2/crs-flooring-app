@@ -1,4 +1,4 @@
-import { buildAddressLine, type WarehouseListRow } from "@builders/domain"
+import { buildAddressLine, type WarehouseDependentCounts, type WarehouseListRow } from "@builders/domain"
 import { db } from "../../client.js"
 import {
   type WarehouseListRowPayload,
@@ -198,19 +198,29 @@ export async function listWarehousesForListView(
 export async function getWarehouseDeleteState(
   id: string,
   client: WarehousesDbClient = db,
-): Promise<{ workOrdersCount: number } | null> {
+): Promise<WarehouseDependentCounts | null> {
   const row = await client.flooringWarehouse.findUnique({
     where: { id },
     select: {
       _count: {
         select: {
+          inventories: true,
+          imports: true,
+          stagedInventoryRows: true,
+          inventoryAdjustments: true,
           workOrders: true,
+          templates: true,
         },
       },
     },
   })
   if (!row) return null
   return {
+    inventoriesCount: row._count.inventories,
+    importsCount: row._count.imports,
+    stagedInventoryRowsCount: row._count.stagedInventoryRows,
+    inventoryAdjustmentsCount: row._count.inventoryAdjustments,
     workOrdersCount: row._count.workOrders,
+    templatesCount: row._count.templates,
   }
 }
