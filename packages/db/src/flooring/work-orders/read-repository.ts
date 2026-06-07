@@ -213,9 +213,9 @@ export async function listWorkOrderOptions(
 /**
  * Async-picker search: work-order options for the cut-log relink dropdown.
  * Not warehouse-scoped — adjustments cross-source inventory across warehouses,
- * so the picker offers WOs from any warehouse. Excludes work orders with the
- * "complete" status and matches `unitType` or `description` via ILIKE on the
- * optional search term. Takes a bounded count to keep the dropdown responsive.
+ * so the picker offers WOs from any warehouse, regardless of status (completed
+ * WOs included). Matches `unitType` or `description` via ILIKE on the optional
+ * search term. Takes a bounded count to keep the dropdown responsive.
  */
 export type SearchWorkOrderOptionsInput = {
   search?: string
@@ -245,7 +245,6 @@ export async function searchWorkOrderOptions(
   // Fetch take+1 to detect a next page without a separate count query.
   const workOrders = await client.flooringWorkOrder.findMany({
     where: {
-      status: { isNot: { slug: "complete" } },
       ...(input.productId
         ? { items: { some: { productId: input.productId } } }
         : {}),
