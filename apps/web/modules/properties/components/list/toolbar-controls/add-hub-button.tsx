@@ -21,7 +21,7 @@ export function AddHubButton({ onClick, disabled }: AddHubButtonProps) {
       disabled={disabled ?? !onClick}
       className={BUTTON_CLASS_NAME}
     >
-      + Hub
+      + Property
     </button>
   )
 }
