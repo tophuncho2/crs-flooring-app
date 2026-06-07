@@ -56,6 +56,7 @@ export function WarehouseCreateClient({ backHref }: { backHref: string }) {
     <RecordCreateClientScaffold
       title="New Warehouse"
       backHref={backHref}
+      modeNoticeLabel="Warehouse"
       dirtyMessage="You have unsaved warehouse changes. Leave this form without saving?"
     >
       {(page) => <WarehouseCreatePanel page={page} backHref={backHref} />}

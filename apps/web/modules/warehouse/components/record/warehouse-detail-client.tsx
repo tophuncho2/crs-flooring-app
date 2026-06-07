@@ -15,6 +15,7 @@ export function WarehouseDetailClient({
     <RecordDetailClientScaffold
       title={initialWarehouse.name || "Warehouse"}
       backHref={backHref}
+      modeNotice={{ mode: "edit", label: "Warehouse" }}
       dirtyMessage="You have unsaved warehouse changes. Leave this page without saving?"
     >
       {(page) => <WarehouseRecordPanel page={page} entry={initialWarehouse} />}

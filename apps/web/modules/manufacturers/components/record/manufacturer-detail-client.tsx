@@ -15,6 +15,7 @@ export function ManufacturerDetailClient({
     <RecordDetailClientScaffold
       title={initialManufacturer.companyName || initialManufacturer.agentName || "Manufacturer"}
       backHref={backHref}
+      modeNotice={{ mode: "edit", label: "Manufacturer" }}
       dirtyMessage="You have unsaved manufacturer changes. Leave this page without saving?"
     >
       {(page) => <ManufacturerRecordPanel page={page} entry={initialManufacturer} />}

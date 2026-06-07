@@ -56,6 +56,7 @@ export function ManufacturerCreateClient({ backHref }: { backHref: string }) {
     <RecordCreateClientScaffold
       title="New Manufacturer"
       backHref={backHref}
+      modeNoticeLabel="Manufacturer"
       dirtyMessage="You have unsaved manufacturer changes. Leave this form without saving?"
     >
       {(page) => <ManufacturerCreatePanel page={page} backHref={backHref} />}

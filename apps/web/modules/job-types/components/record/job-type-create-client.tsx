@@ -56,6 +56,7 @@ export function JobTypeCreateClient({ backHref }: { backHref: string }) {
     <RecordCreateClientScaffold
       title="New Job Type"
       backHref={backHref}
+      modeNoticeLabel="Job Type"
       dirtyMessage="You have unsaved job type changes. Leave this form without saving?"
     >
       {(page) => <JobTypeCreatePanel page={page} backHref={backHref} />}
