@@ -12,6 +12,7 @@ export function RecordCreateClientScaffold({
   dirtyMessage,
   headerMeta,
   headerActions,
+  modeNoticeLabel,
   children,
 }: {
   title: string
@@ -19,6 +20,7 @@ export function RecordCreateClientScaffold({
   dirtyMessage: string
   headerMeta?: ReactNode | ((context: RecordDetailClientScaffoldContext) => ReactNode)
   headerActions?: ReactNode | ((context: RecordDetailClientScaffoldContext) => ReactNode)
+  modeNoticeLabel?: string
   children: (context: RecordDetailClientScaffoldContext) => ReactNode
 }) {
   return (
@@ -29,6 +31,7 @@ export function RecordCreateClientScaffold({
       headerVariant="section"
       headerMeta={headerMeta}
       headerActions={headerActions}
+      modeNotice={modeNoticeLabel ? { mode: "form", label: modeNoticeLabel } : undefined}
     >
       {children}
     </RecordDetailClientScaffold>

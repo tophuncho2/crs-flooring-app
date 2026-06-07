@@ -93,6 +93,7 @@ export function WorkOrderCreateClient({ backHref }: { backHref: string }) {
     <RecordCreateClientScaffold
       title="New Work Order"
       backHref={backHref}
+      modeNoticeLabel="Work Order"
       dirtyMessage="You have unsaved work-order changes. Leave this form without saving?"
     >
       {(page) => <WorkOrderCreatePanel page={page} backHref={backHref} />}
