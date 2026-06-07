@@ -9,22 +9,21 @@ const CLEAR_BUTTON_CLASS_NAME = [
   "disabled:hover:border-[var(--panel-border)] disabled:hover:bg-[var(--panel-background)] disabled:hover:text-[var(--foreground)]/80 disabled:hover:shadow-none",
 ].join(" ")
 
-export type SidePanelPreviewClearButtonProps = {
+export type ReferenceHeaderClearButtonProps = {
   disabled: boolean
   onClick: () => void
   label?: string
 }
 
 /**
- * Neutral "clear" button for side-panel-preview footers. Mirrors the
- * side-panel-edit discard button chrome so preview and edit panels share
- * one visual vocabulary.
+ * Neutral "clear" button for record-view reference-header actions. Lets a
+ * reference header drop its current selection with the standard discard chrome.
  */
-export function SidePanelPreviewClearButton({
+export function ReferenceHeaderClearButton({
   disabled,
   onClick,
   label = "Clear",
-}: SidePanelPreviewClearButtonProps) {
+}: ReferenceHeaderClearButtonProps) {
   return (
     <button
       type="button"

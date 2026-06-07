@@ -4,9 +4,9 @@ import { useState } from "react"
 import {
   RecordDetailClientScaffold,
   RecordReferenceHeader,
+  ReferenceHeaderClearButton,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import { SidePanelPreviewClearButton } from "@/components/side-panel-preview"
 import type { InventoryDetail } from "@builders/domain"
 import {
   useInventoryRecordSelection,
@@ -89,7 +89,7 @@ function InventoryRecordSurface({
                 Change
               </button>
             ) : null}
-            <SidePanelPreviewClearButton
+            <ReferenceHeaderClearButton
               disabled={!hasSelection}
               onClick={() =>
                 guard(() => {

@@ -4,6 +4,7 @@ import { useCallback, useMemo } from "react"
 import {
   RecordDetailClientScaffold,
   RecordReferenceHeader,
+  ReferenceHeaderClearButton,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
 import {
@@ -12,7 +13,6 @@ import {
   type CascadePickerController,
 } from "@/engines/cascade-picker"
 import { HubSidePanelAddButton } from "@/components/hub-side-panel"
-import { SidePanelPreviewClearButton } from "@/components/side-panel-preview"
 import type { TemplateDetail } from "@builders/domain"
 import { TemplateRecordPanel } from "./template-record-panel"
 import {
@@ -103,7 +103,7 @@ function TemplateHubView({
         actions={
           <>
             <HubSidePanelAddButton label="+ Template" onClick={newTemplate} />
-            <SidePanelPreviewClearButton
+            <ReferenceHeaderClearButton
               disabled={!cascade.hasSelections}
               onClick={handleClear}
             />
