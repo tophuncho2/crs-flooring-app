@@ -10,9 +10,9 @@ import {
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
 import type { ManagementCompanyDetail } from "@builders/domain"
-import { EmbeddedPropertyCreateView } from "@/modules/properties/components/record/embedded-property-create-view"
-import { EmbeddedPropertyRecordView } from "@/modules/properties/components/record/embedded-property-record-view"
-import { LinkedPropertiesList } from "@/modules/properties/components/record/linked-properties-list"
+import { PropertyCreateView } from "./properties/property-create-view"
+import { PropertyRecordView } from "./properties/property-record-view"
+import { LinkedPropertiesList } from "./properties/linked-properties-list"
 import { TemplatesSectionList } from "@/modules/templates/components/record/templates-section-list"
 import { useMcPrimarySection } from "@/modules/management-companies/controllers/record/primary/use-mc-primary-section"
 import { ManagementCompanyCellsSection } from "./management-company-cells-section"
@@ -106,7 +106,7 @@ export function ManagementCompanyRecordView({
           )}
           renderDetail={(id, onBack) =>
             id === NEW_PROPERTY_ID ? (
-              <EmbeddedPropertyCreateView
+              <PropertyCreateView
                 managementCompanyId={entry.id}
                 managementCompanyName={entry.name}
                 hostPage={ctx.page}
@@ -115,7 +115,7 @@ export function ManagementCompanyRecordView({
                 onDirtyChange={setEmbeddedDirty}
               />
             ) : (
-              <EmbeddedPropertyRecordView
+              <PropertyRecordView
                 key={id}
                 propertyId={id}
                 hostPage={ctx.page}

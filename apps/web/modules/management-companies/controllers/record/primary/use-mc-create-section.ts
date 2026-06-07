@@ -10,7 +10,7 @@ import {
   validateManagementCompanyForm,
   type ManagementCompanyForm,
 } from "@builders/domain"
-import { createPropertyHubRequest } from "@/modules/properties/data/mutations"
+import { createPropertyHubRequest } from "@/modules/management-companies/data/properties/property-mutations"
 import { buildRecordDetailHref } from "@/hooks/navigation/routes"
 
 /**

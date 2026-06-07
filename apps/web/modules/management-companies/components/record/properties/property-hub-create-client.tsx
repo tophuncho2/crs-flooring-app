@@ -7,7 +7,7 @@ import {
 } from "@/engines/record-view"
 import { EMPTY_MANAGEMENT_COMPANY_FORM } from "@builders/domain"
 import { ActionHeader } from "@/components/headers"
-import { usePropertyHubCreateSection } from "@/modules/properties/controllers/record/primary/use-property-hub-create-section"
+import { usePropertyHubCreateSection } from "@/modules/management-companies/controllers/record/properties/use-property-hub-create-section"
 import { ManagementCompanySelectSection } from "./primary/management-company-select-section"
 import { PropertyCreateFieldsSection } from "./primary/property-create-fields-section"
 

@@ -180,7 +180,7 @@ export default function PropertiesClient({
             <ListToolbarCell className="ml-auto">
               <AddHubButton
                 onClick={() =>
-                  router.push(buildRecordCreateHref("/dashboard/properties", { returnTo }))
+                  router.push(buildRecordCreateHref("/dashboard/management-companies", { returnTo }))
                 }
               />
             </ListToolbarCell>

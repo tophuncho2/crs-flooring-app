@@ -12,7 +12,7 @@ import {
 import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
 import type { ManagementCompanyOption, PropertyDetailRecord } from "@builders/domain"
 import { TemplatesSectionList } from "@/modules/templates/components/record/templates-section-list"
-import { usePropertyPrimarySection } from "@/modules/properties/controllers/record/primary/use-property-primary-section"
+import { usePropertyPrimarySection } from "@/modules/management-companies/controllers/record/properties/use-property-primary-section"
 import { PropertyPrimaryFieldsSection } from "./primary/property-primary-fields-section"
 
 /**
@@ -33,7 +33,7 @@ import { PropertyPrimaryFieldsSection } from "./primary/property-primary-fields-
  * create flow, which embeds a single property with no list to flip to) the
  * leading action falls back to a real "Back" that routes via the page controller.
  */
-export function PropertyRecordView({
+export function PropertyRecordPanel({
   page,
   entry,
   onDirtyChange,

@@ -8,8 +8,8 @@ import {
 import {
   PROPERTY_DETAIL_QUERY_KEY,
   getPropertyDetailRequest,
-} from "@/modules/properties/data/property-detail-request"
-import { PropertyRecordView } from "./property-record-view"
+} from "@/modules/management-companies/data/properties/property-detail-request"
+import { PropertyRecordPanel } from "./property-record-panel"
 
 /**
  * Property record view rendered **inside** the MC record view's properties
@@ -21,7 +21,7 @@ import { PropertyRecordView } from "./property-record-view"
  * `deletable` opts into the property's "Delete Property" action — on for the MC
  * drilldown (edit), off for the MC create flow's linked-property section.
  */
-export function EmbeddedPropertyRecordView({
+export function PropertyRecordView({
   propertyId,
   hostPage,
   onBack,
@@ -53,7 +53,7 @@ export function EmbeddedPropertyRecordView({
   }
 
   return (
-    <PropertyRecordView
+    <PropertyRecordPanel
       page={embeddedPage}
       entry={query.data}
       onDirtyChange={onDirtyChange}

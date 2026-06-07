@@ -14,7 +14,7 @@ import {
   type ManagementCompanyForm,
   type PropertyHubPropertyFields,
 } from "@builders/domain"
-import { createPropertyHubRequest } from "@/modules/properties/data/mutations"
+import { createPropertyHubRequest } from "@/modules/management-companies/data/properties/property-mutations"
 import { PROPERTIES_LIST_QUERY_KEY } from "@/modules/properties/data/list-properties-request"
 import { MANAGEMENT_COMPANIES_LIST_QUERY_KEY } from "@/modules/management-companies/data/list-management-companies-request"
 import { MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY } from "@/modules/management-companies/data/management-company-options-request"

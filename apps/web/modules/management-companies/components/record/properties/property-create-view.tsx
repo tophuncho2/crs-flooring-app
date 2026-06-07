@@ -10,18 +10,18 @@ import {
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
 import type { ManagementCompanyOption } from "@builders/domain"
-import { usePropertyCreateSection } from "@/modules/properties/controllers/record/primary/use-property-create-section"
+import { usePropertyCreateSection } from "@/modules/management-companies/controllers/record/properties/use-property-create-section"
 import { PropertyPrimaryFieldsSection } from "./primary/property-primary-fields-section"
 
 /**
  * The **create** face of the MC record view's properties drilldown — opened
- * from the "+ Property" button. Mirrors `EmbeddedPropertyRecordView`: wraps the
+ * from the "+ Property" button. Mirrors `PropertyRecordView`: wraps the
  * host page in an embedded page proxy (shared guard/dialog, own dirty state,
  * "back" → the list), and renders the same property primary fields with the
  * management company **prelinked but editable**. On save it creates the
  * property and drills into it in edit mode (via `?property=<newId>`).
  */
-export function EmbeddedPropertyCreateView({
+export function PropertyCreateView({
   managementCompanyId,
   managementCompanyName,
   hostPage,

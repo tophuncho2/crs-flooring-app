@@ -10,7 +10,7 @@ import {
   validatePropertyPrimaryForm,
   type PropertyPrimaryForm,
 } from "@builders/domain"
-import { createPropertyRequest } from "@/modules/properties/data/mutations"
+import { createPropertyRequest } from "@/modules/management-companies/data/properties/property-mutations"
 import { PROPERTIES_LIST_QUERY_KEY } from "@/modules/properties/data/list-properties-request"
 import { MANAGEMENT_COMPANIES_LIST_QUERY_KEY } from "@/modules/management-companies/data/list-management-companies-request"
 import { buildPropertyRecordHref } from "@/hooks/navigation/routes"

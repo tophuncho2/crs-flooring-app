@@ -8,7 +8,7 @@ import { ManagementCompanyCellsSection } from "@/modules/management-companies/co
 import {
   deriveMcMode,
   type PropertyHubCreateForm,
-} from "@/modules/properties/controllers/record/primary/use-property-hub-create-section"
+} from "@/modules/management-companies/controllers/record/properties/use-property-hub-create-section"
 
 const SECTION_CARD_CLASS =
   "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"

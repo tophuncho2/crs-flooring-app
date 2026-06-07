@@ -7,7 +7,7 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import { EmbeddedPropertyRecordView } from "@/modules/properties/components/record/embedded-property-record-view"
+import { PropertyRecordView } from "./properties/property-record-view"
 import { useMcCreateSection } from "@/modules/management-companies/controllers/record/primary/use-mc-create-section"
 import { ManagementCompanyCellsSection } from "./management-company-cells-section"
 
@@ -68,7 +68,7 @@ function ManagementCompanyCreatePanel({
       type: "item",
       order: 10,
       render: () => (
-        <EmbeddedPropertyRecordView
+        <PropertyRecordView
           propertyId={propertyId}
           hostPage={page}
           onBack={page.closePage}
