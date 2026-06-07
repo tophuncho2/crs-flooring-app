@@ -41,7 +41,12 @@ export function TemplateHubClient({
   const controller = useTemplateHubController({ initialSelections, initialTemplate })
 
   return (
-    <RecordDetailClientScaffold title="Template sync" backHref={backHref} dirtyMessage="">
+    <RecordDetailClientScaffold
+      title="Template sync"
+      backHref={backHref}
+      dirtyMessage=""
+      modeNotice={{ mode: "edit", label: "Template" }}
+    >
       {(page) => (
         <RecordReferenceHeader
           page={page}
