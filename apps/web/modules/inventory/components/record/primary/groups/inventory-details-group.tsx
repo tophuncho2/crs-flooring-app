@@ -3,7 +3,6 @@
 import { TextCell } from "@/components/cells"
 import { StaticFieldValue } from "@/components/fields"
 import {
-  formatInventoryQuantity,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
   type InventoryForm,
@@ -82,51 +81,17 @@ export function InventoryDetailsGroup({
         <InventoryField label="Warehouse">
           <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
         </InventoryField>
-        <InventoryField label="Category">
-          <StaticFieldValue>{inventory.categoryName || "—"}</StaticFieldValue>
-        </InventoryField>
-
-        <InventoryField label="Stock Balance">
-          <StaticFieldValue>
-            {formatInventoryQuantity(inventory.stockBalance, inventory.stockUnitAbbrev)}
-          </StaticFieldValue>
-        </InventoryField>
 
         <InventoryField label="Roll #">
           <StaticFieldValue>{inventory.rollNumber || "—"}</StaticFieldValue>
-        </InventoryField>
-        <InventoryField label="Coverage Balance">
-          <StaticFieldValue>
-            {inventory.coverageBalance
-              ? formatInventoryQuantity(inventory.coverageBalance, inventory.itemCoverageUnitAbbrev)
-              : "—"}
-          </StaticFieldValue>
         </InventoryField>
 
         <InventoryField label="Dye Lot">
           <StaticFieldValue>{inventory.dyeLot || "—"}</StaticFieldValue>
         </InventoryField>
-        <InventoryField label="Coverage Per Unit">
-          <StaticFieldValue>
-            {inventory.coveragePerUnit
-              ? formatInventoryQuantity(inventory.coveragePerUnit, inventory.itemCoverageUnitAbbrev)
-              : "—"}
-          </StaticFieldValue>
-        </InventoryField>
 
         <InventoryField label="Note">
           <StaticFieldValue>{inventory.note || "—"}</StaticFieldValue>
-        </InventoryField>
-        <InventoryField label="Deducted">
-          <StaticFieldValue>
-            {formatInventoryQuantity(inventory.netDeducted, inventory.stockUnitAbbrev)}
-          </StaticFieldValue>
-        </InventoryField>
-
-        <InventoryField label="Starting Stock">
-          <StaticFieldValue>
-            {formatInventoryQuantity(inventory.startingStock, inventory.stockUnitAbbrev)}
-          </StaticFieldValue>
         </InventoryField>
       </div>
     </InventoryGroup>
