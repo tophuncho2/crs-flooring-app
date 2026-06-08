@@ -10,10 +10,6 @@ import type {
   StagedInventoryRow,
 } from "@builders/domain"
 
-function formatImportNumber(value: number) {
-  return `IMP-${value}`
-}
-
 export function ImportDetailClient({
   initialImport,
   initialFilterRows,
@@ -35,7 +31,7 @@ export function ImportDetailClient({
 
   return (
     <RecordDetailClientScaffold
-      title={`Import ${formatImportNumber(initialImport.importNumber)}`}
+      title="Imports Hub"
       backHref={backHref}
       modeNotice={{ mode: "edit", label: "Import" }}
       dirtyMessage="You have unsaved import changes. Leave this import record without saving?"

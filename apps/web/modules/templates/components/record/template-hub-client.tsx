@@ -42,7 +42,7 @@ export function TemplateHubClient({
 
   return (
     <RecordDetailClientScaffold
-      title="Templates"
+      title="Templates Hub"
       backHref={backHref}
       dirtyMessage=""
       headerVariant="section"

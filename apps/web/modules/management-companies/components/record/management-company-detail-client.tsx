@@ -21,7 +21,7 @@ export function ManagementCompanyDetailClient({
 
   return (
     <RecordDetailClientScaffold
-      title={managementCompany.name}
+      title="Management Hub"
       backHref={backHref}
       dirtyMessage="You have unsaved management-company changes. Leave without saving?"
       headerVariant="section"
