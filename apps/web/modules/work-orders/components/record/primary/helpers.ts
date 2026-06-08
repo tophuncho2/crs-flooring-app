@@ -8,9 +8,12 @@ export const VACANCY_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
   { value: "OCCUPIED", label: "Occupied", tone: "warning" },
 ]
 
-export const TIME_OF_DAY_OPTIONS = [
-  { value: "AM", label: "AM" },
-  { value: "PM", label: "PM" },
+// AM = light green (success tone), PM = caution yellow (warning tone) — same
+// palette as vacancy. Optional field: colour shows in the record/create form
+// only; the list column + print view stay plain text.
+export const TIME_OF_DAY_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
+  { value: "AM", label: "AM", tone: "success" },
+  { value: "PM", label: "PM", tone: "warning" },
 ]
 
 export function detailToPropertyJoined(

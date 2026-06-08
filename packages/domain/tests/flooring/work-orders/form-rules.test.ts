@@ -23,3 +23,19 @@ describe("validateWorkOrderForm — vacancy", () => {
     )
   })
 })
+
+describe("validateWorkOrderForm — time of day (optional)", () => {
+  const validBase = { ...baseForm, vacancy: "VACANT" as const }
+
+  it("accepts a blank time of day", () => {
+    expect(validateWorkOrderForm({ ...validBase, timeOfDay: "" })).toBe("")
+  })
+
+  it("accepts AM", () => {
+    expect(validateWorkOrderForm({ ...validBase, timeOfDay: "AM" })).toBe("")
+  })
+
+  it("accepts PM", () => {
+    expect(validateWorkOrderForm({ ...validBase, timeOfDay: "PM" })).toBe("")
+  })
+})

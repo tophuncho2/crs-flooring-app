@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DateCell, SelectCell, TextCell } from "@/engines/record-view"
+import { DateCell, SegmentedChoiceCell, TextCell } from "@/engines/record-view"
 import { StaticFieldValue } from "@/engines/record-view"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
@@ -73,11 +73,11 @@ export function WorkOrderScheduleGroup({
           />
         </WorkOrderField>
         <WorkOrderField label="Time of Day">
-          <SelectCell
+          <SegmentedChoiceCell
             editable={editable}
             value={draft.timeOfDay}
             options={TIME_OF_DAY_OPTIONS}
-            placeholder="—"
+            ariaLabel="Time of Day"
             onChange={(value) =>
               onFieldChange("timeOfDay", value as WorkOrderForm["timeOfDay"])
             }
