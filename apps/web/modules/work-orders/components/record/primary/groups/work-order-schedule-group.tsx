@@ -51,21 +51,35 @@ export function WorkOrderScheduleGroup({
   return (
     <WorkOrderGroup title="Schedule">
       <div className="flex flex-col gap-3">
-        <WorkOrderField label="Warehouse">
-          {editable ? (
-            <WarehousePicker
-              value={draft.warehouseId || null}
-              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
-              onOptionSelected={(option) => setPickedWarehouseLabel(option?.name ?? null)}
-              selectedLabel={warehouseLabel}
-              placeholder="Select warehouse"
-              ariaLabel="Warehouse"
-            />
-          ) : (
-            <StaticFieldValue>{warehouseLabel || "—"}</StaticFieldValue>
-          )}
-        </WorkOrderField>
         <div className="flex items-start gap-3">
+          <WorkOrderField label="Warehouse" className="flex-1">
+            {editable ? (
+              <WarehousePicker
+                value={draft.warehouseId || null}
+                onChange={(id) => onFieldChange("warehouseId", id ?? "")}
+                onOptionSelected={(option) => setPickedWarehouseLabel(option?.name ?? null)}
+                selectedLabel={warehouseLabel}
+                placeholder="Select warehouse"
+                ariaLabel="Warehouse"
+              />
+            ) : (
+              <StaticFieldValue>{warehouseLabel || "—"}</StaticFieldValue>
+            )}
+          </WorkOrderField>
+          <WorkOrderField label="Job Type" className="flex-1">
+            {editable ? (
+              <JobTypePicker
+                value={draft.jobTypeId || null}
+                onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
+                onOptionSelected={(option) => setPickedJobTypeLabel(option?.name ?? null)}
+                selectedLabel={jobTypeLabel}
+                placeholder="—"
+                ariaLabel="Job type"
+              />
+            ) : (
+              <StaticFieldValue>{jobTypeLabel ?? "—"}</StaticFieldValue>
+            )}
+          </WorkOrderField>
           <WorkOrderField label="Scheduled For" className="flex-1">
             <DateCell
               editable={editable}
@@ -85,20 +99,6 @@ export function WorkOrderScheduleGroup({
             />
           </WorkOrderField>
         </div>
-        <WorkOrderField label="Job Type">
-          {editable ? (
-            <JobTypePicker
-              value={draft.jobTypeId || null}
-              onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
-              onOptionSelected={(option) => setPickedJobTypeLabel(option?.name ?? null)}
-              selectedLabel={jobTypeLabel}
-              placeholder="—"
-              ariaLabel="Job type"
-            />
-          ) : (
-            <StaticFieldValue>{jobTypeLabel ?? "—"}</StaticFieldValue>
-          )}
-        </WorkOrderField>
         <WorkOrderField
           label="Description"
           editable={editable}
