@@ -1,12 +1,18 @@
 "use client"
 
-import { useCallback, useRef, useState, type RefObject } from "react"
+import { useCallback, useState } from "react"
 import type {
   ManagementCompanyOption,
   PropertyOption,
   TemplateOption,
 } from "@builders/domain"
-import type { CascadePickerSeed, CascadeStep } from "../contracts/cascade-picker-contracts"
+import type { CascadePickerSeed } from "../contracts/cascade-picker-contracts"
+import {
+  applyManagementCompanySelection,
+  applyPropertySelection,
+  applyTemplateSelection,
+  type CascadeSelectionPatch,
+} from "./cascade-rules"
 
 /**
  * Optional preset seeding each step's id + label (deep links / row hand-offs).
@@ -28,19 +34,11 @@ export type CascadePickerController = {
   propertyLabel: string | null
   templateId: string | null
   templateLabel: string | null
-  expandedStep: CascadeStep | null
 
-  // ===== Focus refs (re-focus the trigger after a selection) =====
-  managementCompanyTriggerRef: RefObject<HTMLButtonElement | null>
-  propertyTriggerRef: RefObject<HTMLButtonElement | null>
-  templateTriggerRef: RefObject<HTMLButtonElement | null>
-
-  // ===== Toggles + selection handlers =====
-  toggleStep: (step: CascadeStep) => void
+  // ===== Selection handlers =====
   selectManagementCompany: (option: ManagementCompanyOption | null) => void
   selectProperty: (option: PropertyOption | null) => void
   selectTemplate: (option: TemplateOption | null) => void
-  cancelExpanded: () => void
   reset: () => void
   /** Set selections directly (no cascade side-effects) — e.g. pre-set from a loaded record. */
   seed: (selections: CascadePickerSeed) => void
@@ -50,17 +48,11 @@ export type CascadePickerController = {
 }
 
 /**
- * Cascade selection controller for the Management Company → Property → Template
- * pickers. Owns the three id+label selections, the inline expand/collapse
- * state, and the cascade rules:
- *
- * - Selecting a Management Company clears Property + Template (the property
- *   filter changed).
- * - Selecting a Property clears the Template, and **auto-links the property's
- *   Management Company** when it has one — users usually pick the property first
- *   (or skip the MC entirely), so back-filling the MC saves a step. A property
- *   with no linked MC leaves the MC selection untouched.
- * - Selecting a Template clears nothing (it is the leaf).
+ * Stateful cascade selection controller for the Management Company → Property →
+ * Template pickers. Owns the three id+label selections and applies the shared
+ * cascade rules (`cascade-rules.ts`) on each selection. Used where the cascade
+ * itself is the source of truth (the templates reference header); record-view
+ * *forms* apply the same rules directly to their draft instead.
  *
  * Pure selection state only — no data fetching, navigation, or record loading;
  * those belong to the consumer.
@@ -88,63 +80,39 @@ export function useCascadePickerController(
   const [templateLabel, setTemplateLabel] = useState<string | null>(
     initialSelections?.templateLabel ?? null,
   )
-  const [expandedStep, setExpandedStep] = useState<CascadeStep | null>(null)
 
-  const managementCompanyTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const propertyTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const templateTriggerRef = useRef<HTMLButtonElement | null>(null)
-
-  const toggleStep = useCallback((step: CascadeStep) => {
-    setExpandedStep((current) => (current === step ? null : step))
+  // Apply a cascade patch to the selection state — an omitted key leaves its
+  // field untouched (how property→MC auto-link skips back-filling when absent).
+  const applyPatch = useCallback((patch: CascadeSelectionPatch) => {
+    if (patch.managementCompanyId !== undefined) setManagementCompanyId(patch.managementCompanyId)
+    if (patch.managementCompanyLabel !== undefined)
+      setManagementCompanyLabel(patch.managementCompanyLabel)
+    if (patch.propertyId !== undefined) setPropertyId(patch.propertyId)
+    if (patch.propertyLabel !== undefined) setPropertyLabel(patch.propertyLabel)
+    if (patch.templateId !== undefined) setTemplateId(patch.templateId)
+    if (patch.templateLabel !== undefined) setTemplateLabel(patch.templateLabel)
   }, [])
 
   const selectManagementCompany = useCallback(
     (option: ManagementCompanyOption | null) => {
-      setManagementCompanyId(option?.id ?? null)
-      setManagementCompanyLabel(option?.name ?? null)
-      // Changing the MC invalidates the property filter — clear downstream.
-      setPropertyId(null)
-      setPropertyLabel(null)
-      setTemplateId(null)
-      setTemplateLabel(null)
-      setExpandedStep(null)
-      managementCompanyTriggerRef.current?.focus()
+      applyPatch(applyManagementCompanySelection(option))
     },
-    [],
+    [applyPatch],
   )
 
-  const selectProperty = useCallback((option: PropertyOption | null) => {
-    setPropertyId(option?.id ?? null)
-    setPropertyLabel(option?.name ?? null)
-    // Auto-link the property's management company when it has one. (When an MC
-    // filter was already applied the picked property carries that same MC, so
-    // this is a no-op; when no MC was selected it back-fills the first picker.)
-    if (option?.managementCompanyId) {
-      setManagementCompanyId(option.managementCompanyId)
-      setManagementCompanyLabel(option.managementCompanyName)
-    }
-    // Changing the property invalidates the template filter — clear it.
-    setTemplateId(null)
-    setTemplateLabel(null)
-    setExpandedStep(null)
-    propertyTriggerRef.current?.focus()
-  }, [])
+  const selectProperty = useCallback(
+    (option: PropertyOption | null) => {
+      applyPatch(applyPropertySelection(option))
+    },
+    [applyPatch],
+  )
 
-  const selectTemplate = useCallback((option: TemplateOption | null) => {
-    setTemplateId(option?.id ?? null)
-    setTemplateLabel(option ? option.unitType || "—" : null)
-    setExpandedStep(null)
-    templateTriggerRef.current?.focus()
-  }, [])
-
-  const cancelExpanded = useCallback(() => {
-    setExpandedStep((current) => {
-      if (current === "managementCompany") managementCompanyTriggerRef.current?.focus()
-      else if (current === "property") propertyTriggerRef.current?.focus()
-      else if (current === "template") templateTriggerRef.current?.focus()
-      return null
-    })
-  }, [])
+  const selectTemplate = useCallback(
+    (option: TemplateOption | null) => {
+      applyPatch(applyTemplateSelection(option))
+    },
+    [applyPatch],
+  )
 
   const seed = useCallback((selections: CascadePickerSeed) => {
     if (selections.managementCompany !== undefined) {
@@ -168,7 +136,6 @@ export function useCascadePickerController(
     setPropertyLabel(null)
     setTemplateId(null)
     setTemplateLabel(null)
-    setExpandedStep(null)
   }, [])
 
   const hasSelections =
@@ -181,15 +148,9 @@ export function useCascadePickerController(
     propertyLabel,
     templateId,
     templateLabel,
-    expandedStep,
-    managementCompanyTriggerRef,
-    propertyTriggerRef,
-    templateTriggerRef,
-    toggleStep,
     selectManagementCompany,
     selectProperty,
     selectTemplate,
-    cancelExpanded,
     reset,
     seed,
     hasSelections,

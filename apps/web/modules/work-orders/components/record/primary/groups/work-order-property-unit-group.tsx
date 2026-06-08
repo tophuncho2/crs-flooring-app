@@ -12,6 +12,11 @@ import {
   buildRecordDetailHref,
   buildTemplateHubHref,
 } from "@/hooks/navigation/routes"
+import {
+  applyManagementCompanySelection,
+  applyPropertySelection,
+  applyTemplateSelection,
+} from "@/engines/picker"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
@@ -39,13 +44,16 @@ import { WorkOrderGroup } from "./work-order-group"
  * separates that from the bottom block: read-only property address +
  * editable custom address + installer instructions, full-width.
  *
- * Cascade rules (UI / local state only) — preserved from the prior
- * `WorkOrderPropertyFieldsBand`:
+ * Cascade rules come from the shared engine (`@/engines/picker`
+ * `applyManagementCompanySelection` / `applyPropertySelection` /
+ * `applyTemplateSelection`), the same source the templates form +
+ * templates reference header use:
  *  - MC change/clear → clears propertyId + templateId
- *  - Property change/clear → clears templateId
+ *  - Property change/clear → clears templateId, and back-fills the
+ *    property's linked MC
  *  - Template change → no cascade
  *  - Template option-select also writes the template's unitType into
- *    the draft.
+ *    the draft (WO-specific side-effect, not a cascade rule).
  */
 export function WorkOrderPropertyUnitGroup({
   editable,
@@ -188,17 +196,17 @@ export function WorkOrderPropertyUnitGroup({
               {editable ? (
                 <ManagementCompanyPicker
                   value={managementCompanyValue}
-                  onChange={(id) =>
-                    onFieldsChange({
-                      managementCompanyId: id ?? "",
-                      propertyId: "",
-                      templateId: "",
-                    })
-                  }
+                  onChange={() => {}}
                   onOptionSelected={(option) => {
-                    setPickedMcLabel(option?.name ?? null)
-                    // Property cascade clears alongside MC change.
-                    setPickedPropertyLabel(null)
+                    const patch = applyManagementCompanySelection(option)
+                    onFieldsChange({
+                      managementCompanyId: patch.managementCompanyId ?? "",
+                      propertyId: patch.propertyId ?? "",
+                      templateId: patch.templateId ?? "",
+                    })
+                    setPickedMcLabel(patch.managementCompanyLabel ?? null)
+                    setPickedPropertyLabel(patch.propertyLabel ?? null)
+                    setPickedTemplateLabel(patch.templateLabel ?? null)
                   }}
                   selectedLabel={managementCompanyLabel}
                   placeholder="—"
@@ -212,13 +220,21 @@ export function WorkOrderPropertyUnitGroup({
               {editable ? (
                 <PropertyPicker
                   value={propertyValue}
-                  onChange={(id) =>
-                    onFieldsChange({ propertyId: id ?? "", templateId: "" })
-                  }
+                  onChange={() => {}}
                   onOptionSelected={(option) => {
-                    setPickedPropertyLabel(option?.name ?? null)
-                    // Property change clears templateId — drop the stale snapshot.
-                    setPickedTemplateLabel(null)
+                    const patch = applyPropertySelection(option)
+                    const fieldPatch: Partial<WorkOrderForm> = {
+                      propertyId: patch.propertyId ?? "",
+                      templateId: patch.templateId ?? "",
+                    }
+                    // Back-fill the MC when the property carries a linked one.
+                    if (patch.managementCompanyId !== undefined) {
+                      fieldPatch.managementCompanyId = patch.managementCompanyId ?? ""
+                      setPickedMcLabel(patch.managementCompanyLabel ?? null)
+                    }
+                    onFieldsChange(fieldPatch)
+                    setPickedPropertyLabel(patch.propertyLabel ?? null)
+                    setPickedTemplateLabel(patch.templateLabel ?? null)
                     onPropertyOption(option)
                   }}
                   managementCompanyId={managementCompanyValue}
@@ -247,9 +263,12 @@ export function WorkOrderPropertyUnitGroup({
               {editable ? (
                 <TemplatePicker
                   value={templateValue}
-                  onChange={(id) => onFieldChange("templateId", id ?? "")}
+                  onChange={() => {}}
                   onOptionSelected={(option) => {
-                    setPickedTemplateLabel(option?.unitType ?? null)
+                    const patch = applyTemplateSelection(option)
+                    onFieldChange("templateId", patch.templateId ?? "")
+                    setPickedTemplateLabel(patch.templateLabel ?? null)
+                    // WO-specific side-effect: mirror the template's unit type.
                     if (option) onFieldChange("unitType", option.unitType)
                   }}
                   propertyId={propertyValue}

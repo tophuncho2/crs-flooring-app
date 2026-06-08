@@ -11,6 +11,7 @@ import {
   buildRecordCreateHref,
   buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
+import { applyManagementCompanySelection, applyPropertySelection } from "@/engines/picker"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import type { PropertyJoinedFields } from "@/engines/record-view"
@@ -33,10 +34,12 @@ import { GROUP_HEADER_BUTTON_CLASS, TemplateGroup } from "./template-group"
  * property address + instructions + editable installer instructions,
  * full-width.
  *
- * Cascade rule (UI / local state only) — mirrors WO's MC→Property
- * cascade: MC change/clear clears propertyId (and the picked-property
- * label snapshot), so a stale property tied to the prior MC doesn't
- * linger in the draft after switching companies.
+ * Cascade rules come from the shared engine (`@/engines/picker`
+ * `applyManagementCompanySelection` / `applyPropertySelection`), the
+ * same source the templates reference header + work-orders form use:
+ * MC change/clear clears propertyId, and picking a property back-fills
+ * its linked MC. Patches are applied to the draft (ids) + the picked-
+ * label snapshots below.
  */
 export function TemplatePropertyUnitGroup({
   editable,
@@ -158,16 +161,15 @@ export function TemplatePropertyUnitGroup({
               {editable ? (
                 <ManagementCompanyPicker
                   value={managementCompanyValue}
-                  onChange={(id) =>
-                    onFieldsChange({
-                      managementCompanyId: id ?? "",
-                      propertyId: "",
-                    })
-                  }
+                  onChange={() => {}}
                   onOptionSelected={(option) => {
-                    setPickedMcLabel(option?.name ?? null)
-                    // Property cascade clears alongside MC change.
-                    setPickedPropertyLabel(null)
+                    const patch = applyManagementCompanySelection(option)
+                    onFieldsChange({
+                      managementCompanyId: patch.managementCompanyId ?? "",
+                      propertyId: patch.propertyId ?? "",
+                    })
+                    setPickedMcLabel(patch.managementCompanyLabel ?? null)
+                    setPickedPropertyLabel(patch.propertyLabel ?? null)
                   }}
                   selectedLabel={managementCompanyLabel}
                   placeholder="No management company"
@@ -181,9 +183,19 @@ export function TemplatePropertyUnitGroup({
               {editable ? (
                 <PropertyPicker
                   value={propertyValue}
-                  onChange={(id) => onFieldChange("propertyId", id ?? "")}
+                  onChange={() => {}}
                   onOptionSelected={(option) => {
-                    setPickedPropertyLabel(option?.name ?? null)
+                    const patch = applyPropertySelection(option)
+                    const fieldPatch: Partial<TemplateForm> = {
+                      propertyId: patch.propertyId ?? "",
+                    }
+                    // Back-fill the MC when the property carries a linked one.
+                    if (patch.managementCompanyId !== undefined) {
+                      fieldPatch.managementCompanyId = patch.managementCompanyId ?? ""
+                      setPickedMcLabel(patch.managementCompanyLabel ?? null)
+                    }
+                    onFieldsChange(fieldPatch)
+                    setPickedPropertyLabel(patch.propertyLabel ?? null)
                     onPropertyOption(option)
                   }}
                   managementCompanyId={managementCompanyValue}
