@@ -89,7 +89,7 @@ export function WorkOrderAdjustmentRow({
   }
 
   return (
-    <div className="space-y-3 border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
+    <div className="w-0 min-w-full space-y-3 border border-[var(--panel-border)] bg-[var(--panel-border)]/5 p-3">
       <Grid<EnrichedInventoryAdjustmentRow>
         rows={rows}
         layout={WORK_ORDER_ADJUSTMENT_LAYOUT}
