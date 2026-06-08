@@ -3,7 +3,11 @@
 import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
 import type { InventoryDetailRecord, InventoryRecord } from "@builders/db"
-import type { DuplicateInventoryInput, UpdateInventoryInput } from "@builders/application"
+import type {
+  CreateInventoryInput,
+  DuplicateInventoryInput,
+  UpdateInventoryInput,
+} from "@builders/application"
 
 export async function updateInventoryRequest(
   id: string,
@@ -29,6 +33,14 @@ export async function duplicateInventoryRequest(
       body: JSON.stringify(withMutationMeta(input)),
     },
   )
+}
+
+export async function createInventoryRequest(input: CreateInventoryInput) {
+  return requestJson<{ inventory: InventoryDetailRecord }>(`/api/inventory`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withMutationMeta(input)),
+  })
 }
 
 export async function deleteInventoryRequest(id: string, updatedAt: string) {

@@ -22,6 +22,7 @@ import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
 import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
+import { AddInventoryButton } from "./toolbar-controls/add-inventory-button"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
@@ -128,7 +129,7 @@ export default function InventoryClient({
   // pre-selected in the header pickers. `returnTo` brings the user back to this
   // list with its filters intact.
   const router = useRouter()
-  const { returnTo } = useRecordEntryNavigation("/dashboard/inventory")
+  const { returnTo, openCreate } = useRecordEntryNavigation("/dashboard/inventory")
 
   // The engine's filter map carries `string[]` only — translate to typed
   // InventoryListFilters at the listFn boundary so the application layer
@@ -455,6 +456,13 @@ export default function InventoryClient({
                   onChange={handleProductChange}
                 />
               </div>
+            </ListToolbarCell>
+
+            {/* Right-anchored create action — opens the manual create-inventory
+                form. Sits in its own top-aligned cell so it lines up with the
+                top row of the search cell on the left. */}
+            <ListToolbarCell className="self-start">
+              <AddInventoryButton onClick={() => openCreate()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>

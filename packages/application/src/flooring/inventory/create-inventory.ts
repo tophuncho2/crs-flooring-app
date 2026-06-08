@@ -1,0 +1,75 @@
+import {
+  Prisma,
+  getProductById,
+  getWarehouseById,
+  insertInventoryRow,
+  withDatabaseTransaction,
+} from "@builders/db"
+import {
+  buildCreatedInventoryInsert,
+  describeInventoryCreateIssues,
+  validateCreateInventoryEdits,
+} from "@builders/domain"
+import { InventoryExecutionError } from "./errors.js"
+import type { CreateInventoryInput, InventoryResult } from "./types.js"
+
+export async function createInventoryUseCase(
+  input: CreateInventoryInput,
+  client?: Prisma.TransactionClient,
+): Promise<InventoryResult> {
+  return withDatabaseTransaction(async (tx) => {
+    const c = client ?? tx
+
+    const issues = validateCreateInventoryEdits(input)
+    if (issues.length > 0) {
+      throw new InventoryExecutionError({
+        code: "INVENTORY_VALIDATION_FAILED",
+        message: describeInventoryCreateIssues(issues),
+        status: 422,
+        payload: { issues },
+      })
+    }
+
+    const product = await getProductById(input.productId, c)
+    if (!product) {
+      throw new InventoryExecutionError({
+        code: "INVENTORY_PRODUCT_NOT_FOUND",
+        message: "Product not found.",
+        status: 404,
+      })
+    }
+
+    const warehouse = await getWarehouseById(input.warehouseId, c)
+    if (!warehouse) {
+      throw new InventoryExecutionError({
+        code: "INVENTORY_WAREHOUSE_NOT_FOUND",
+        message: "Warehouse not found.",
+        status: 404,
+      })
+    }
+
+    const fields = buildCreatedInventoryInsert(
+      {
+        categorySlug: product.category.slug,
+        categoryName: product.category.name,
+        stockUnitName: product.stockUnitName,
+        stockUnitAbbrev: product.stockUnitAbbrev,
+        itemCoverageUnitName: product.itemCoverageUnitName,
+        itemCoverageUnitAbbrev: product.itemCoverageUnitAbbrev,
+        sendUnitName: product.sendUnitName,
+        sendUnitAbbrev: product.sendUnitAbbrev,
+        coveragePerUnit: product.coveragePerUnit,
+      },
+      input,
+    )
+
+    // Stamp createdAt and fifoReceivedAt from the same instant so the row's
+    // FIFO position matches its creation time exactly.
+    const now = new Date()
+    return insertInventoryRow(c, {
+      ...fields,
+      createdAt: now,
+      fifoReceivedAt: now,
+    })
+  })
+}

@@ -1,0 +1,132 @@
+"use client"
+
+import { useCallback, useMemo, useState } from "react"
+import type { InventoryDetail } from "@builders/domain"
+import type { InventoryDetailRecord } from "@builders/db"
+import { useInventoryListMutations } from "@/modules/inventory/controllers/list/use-inventory-list-mutations"
+
+/**
+ * Editable draft for the manual create-inventory flow. `productId` + `warehouseId`
+ * select the snapshot/relation (immutable after create); the rest are free-entry
+ * fields. All start blank; the product's unit/category snapshot columns are
+ * derived server-side from the picked product.
+ */
+export type InventoryCreateForm = {
+  productId: string
+  warehouseId: string
+  rollNumber: string
+  dyeLot: string
+  note: string
+  startingStock: string
+  location: string
+  internalNotes: string
+}
+
+const EMPTY_CREATE_FORM: InventoryCreateForm = {
+  productId: "",
+  warehouseId: "",
+  rollNumber: "",
+  dyeLot: "",
+  note: "",
+  startingStock: "",
+  location: "",
+  internalNotes: "",
+}
+
+export type CommitInventoryCreateCallbacks = {
+  onSuccess?: (inventory: InventoryDetail) => void
+  onError?: (error: unknown) => void
+}
+
+export type InventoryCreateSlice = {
+  form: InventoryCreateForm
+  isDirty: boolean
+  /** Minimal client gate (product + warehouse + starting stock); server does full validation. */
+  canSubmit: boolean
+  setField: <K extends keyof InventoryCreateForm>(
+    field: K,
+    value: InventoryCreateForm[K],
+  ) => void
+  reset: () => void
+  resetToSeed: () => void
+  isPending: boolean
+  commitCreate: (callbacks: CommitInventoryCreateCallbacks) => void
+}
+
+/**
+ * Create-inventory section slice for the standalone create page
+ * (`/dashboard/inventory/new`). Owns the editable draft and the create
+ * mutation. No optimistic-lock token — a create inserts a brand-new row rather
+ * than mutating an existing one. Mirrors `useInventoryDuplicateSection`.
+ */
+export function useInventoryCreateSection({
+  clearError,
+}: {
+  clearError: () => void
+}): InventoryCreateSlice {
+  const [form, setForm] = useState<InventoryCreateForm>(EMPTY_CREATE_FORM)
+  const [seed, setSeed] = useState<InventoryCreateForm>(EMPTY_CREATE_FORM)
+
+  const reset = useCallback(() => {
+    setForm(EMPTY_CREATE_FORM)
+    setSeed(EMPTY_CREATE_FORM)
+  }, [])
+
+  const resetToSeed = useCallback(() => setForm(seed), [seed])
+
+  const setField = useCallback(
+    <K extends keyof InventoryCreateForm>(field: K, value: InventoryCreateForm[K]) => {
+      setForm((prev) => ({ ...prev, [field]: value }))
+      clearError()
+    },
+    [clearError],
+  )
+
+  const isDirty = useMemo(
+    () =>
+      form.productId !== seed.productId ||
+      form.warehouseId !== seed.warehouseId ||
+      form.rollNumber !== seed.rollNumber ||
+      form.dyeLot !== seed.dyeLot ||
+      form.note !== seed.note ||
+      form.startingStock !== seed.startingStock ||
+      form.location !== seed.location ||
+      form.internalNotes !== seed.internalNotes,
+    [form, seed],
+  )
+
+  const canSubmit =
+    form.productId.trim().length > 0 &&
+    form.warehouseId.trim().length > 0 &&
+    form.startingStock.trim().length > 0
+
+  const { createInventory } = useInventoryListMutations()
+  const isPending = createInventory.isPending
+
+  const commitCreate = useCallback(
+    ({ onSuccess, onError }: CommitInventoryCreateCallbacks) => {
+      createInventory.mutate(
+        { input: form },
+        {
+          onSuccess: (response) => {
+            const detail = response.inventory as InventoryDetailRecord
+            onSuccess?.(detail as InventoryDetail)
+          },
+          onError: (err) => onError?.(err),
+        },
+      )
+    },
+    [createInventory, form],
+  )
+
+  return {
+    form,
+    isDirty,
+    canSubmit,
+    setField,
+    reset,
+    resetToSeed,
+    isPending,
+    commitCreate,
+  }
+}

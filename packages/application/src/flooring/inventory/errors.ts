@@ -4,6 +4,8 @@ export type InventoryErrorCode =
   | "INVENTORY_VALIDATION_FAILED"
   | "INVENTORY_LOCATION_WAREHOUSE_MISMATCH"
   | "INVENTORY_LOCATION_NOT_FOUND"
+  | "INVENTORY_PRODUCT_NOT_FOUND"
+  | "INVENTORY_WAREHOUSE_NOT_FOUND"
 
 export class InventoryExecutionError extends Error {
   readonly code: InventoryErrorCode

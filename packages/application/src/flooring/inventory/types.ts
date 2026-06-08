@@ -17,4 +17,15 @@ export type DuplicateInventoryInput = {
   internalNotes: string
 }
 
+export type CreateInventoryInput = {
+  productId: string
+  warehouseId: string
+  rollNumber: string
+  dyeLot: string
+  note: string
+  startingStock: string
+  location: string
+  internalNotes: string
+}
+
 export type InventoryResult = InventoryRecord

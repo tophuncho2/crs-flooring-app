@@ -166,9 +166,11 @@ export async function deleteInventoryRecordById(
  * "duplicate inventory item" use case — the only non-worker construction
  * path). Excludes the DB-managed columns: `id`, `inventoryNumber` /
  * `inventoryNumberInt` (sequence/computed), `inventoryItem` (composed here
- * post-insert), `createdAt` / `updatedAt`. The caller (application use case)
- * pastes the snapshot columns from the source row, drops import provenance
- * to null, and stamps `fifoReceivedAt`.
+ * post-insert) and `updatedAt`. `createdAt` is optional: omitted, it falls to
+ * the DB `@default(now())` (the duplicate path); supplied, the caller can pin
+ * it (the manual-create path stamps `createdAt` and `fifoReceivedAt` from one
+ * timestamp so they match exactly). The caller pastes the snapshot columns,
+ * drops import provenance to null, and stamps `fifoReceivedAt`.
  */
 export type InsertInventoryRowInput = {
   importEntryId: string | null
@@ -196,6 +198,7 @@ export type InsertInventoryRowInput = {
   netDeducted: Prisma.Decimal | string | number
   isArchived: boolean
   fifoReceivedAt: Date
+  createdAt?: Date
 }
 
 /**
@@ -238,6 +241,7 @@ export async function insertInventoryRow(
       netDeducted: input.netDeducted,
       isArchived: input.isArchived,
       fifoReceivedAt: input.fifoReceivedAt,
+      ...(input.createdAt ? { createdAt: input.createdAt } : {}),
     },
     select: { id: true, inventoryNumber: true },
   })

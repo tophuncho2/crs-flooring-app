@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { InventoryExecutionError } from "@builders/application"
 import type {
+  CreateInventoryInput,
   DuplicateInventoryInput,
   InventoryListFilters,
   UpdateInventoryInput,
@@ -403,6 +404,29 @@ export function validateDuplicateInventoryInput(
 ): DuplicateInventoryInput {
   return {
     rollNumber: optionalString(body.rollNumber, "rollNumber"),
+    note: optionalString(body.note, "note"),
+    startingStock: optionalString(body.startingStock, "startingStock"),
+    location: optionalString(body.location, "location"),
+    internalNotes: optionalString(body.internalNotes, "internalNotes"),
+  }
+}
+
+/**
+ * Shape validator for the manual create-inventory action. `productId` +
+ * `warehouseId` select the snapshot/relation; the rest are coerced to strings
+ * (missing → ""). Business rules (product/warehouse required, startingStock a
+ * positive number, length caps) run in the domain via the use case and surface
+ * as a 422. Snapshot columns are never accepted from the client — they're read
+ * from the product server-side.
+ */
+export function validateCreateInventoryInput(
+  body: Record<string, unknown>,
+): CreateInventoryInput {
+  return {
+    productId: optionalString(body.productId, "productId"),
+    warehouseId: optionalString(body.warehouseId, "warehouseId"),
+    rollNumber: optionalString(body.rollNumber, "rollNumber"),
+    dyeLot: optionalString(body.dyeLot, "dyeLot"),
     note: optionalString(body.note, "note"),
     startingStock: optionalString(body.startingStock, "startingStock"),
     location: optionalString(body.location, "location"),
