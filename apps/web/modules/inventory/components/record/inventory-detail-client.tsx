@@ -41,9 +41,7 @@ export function InventoryDetailClient({
 
   // In form mode the surface is dedicated to creating an adjustment — title it
   // so before an inventory item is even selected.
-  const title = selection.isAdjustmentFormMode
-    ? "Add adjustment"
-    : selection.inventory?.inventoryItem ?? "Inventory"
+  const title = selection.isAdjustmentFormMode ? "Add adjustment" : "Inventory Hub"
 
   return (
     <RecordDetailClientScaffold
