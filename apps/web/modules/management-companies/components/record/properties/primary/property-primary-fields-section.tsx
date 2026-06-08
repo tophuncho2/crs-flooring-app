@@ -50,7 +50,7 @@ export function PropertyPrimaryFieldsSection({
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={8}>
-        <FormField label="Management Company">
+        <FormField label="Management Company" required>
           <ManagementCompanyPicker
             value={draft.managementCompanyId || null}
             onChange={(id) => onFieldChange("managementCompanyId", id ?? "")}
