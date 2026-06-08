@@ -1,35 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
-import {
-  formatTemplateItemsCount,
-  type ManagementCompanyOption,
-  type PropertyOption,
-  type TemplateDetail,
-  type TemplateOption,
-} from "@builders/domain"
+import type { TemplateDetail, TemplateListRow, TemplateOption } from "@builders/domain"
 import {
   useCascadePickerController,
   type CascadePickerController,
   type CascadePickerInitialSelections,
-  type CascadePickerSteps,
 } from "@/engines/picker"
-import type { PickerListOption } from "@/engines/picker"
-import { buildPropertyRecordHref, buildTemplateHubHref } from "@/hooks/navigation"
-import {
-  MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY,
-  searchManagementCompanyOptionsRequest,
-} from "@/modules/management-companies/data/management-company-options-request"
-import {
-  PROPERTY_OPTIONS_QUERY_KEY,
-  searchPropertyOptionsRequest,
-} from "@/modules/properties/data/property-options-request"
-import {
-  TEMPLATE_OPTIONS_QUERY_KEY,
-  searchTemplateOptionsRequest,
-} from "@/modules/templates/data/template-options-request"
+import { buildTemplateHubHref } from "@/hooks/navigation"
 import {
   TEMPLATE_DETAIL_QUERY_KEY,
   fetchTemplateDetailRequest,
@@ -43,28 +23,23 @@ const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
  */
 export type TemplateHubInitialSelections = CascadePickerInitialSelections
 
-function managementCompanyToOption(option: ManagementCompanyOption): PickerListOption {
-  return { id: option.id, title: option.name }
-}
-
-function propertyToOption(option: PropertyOption): PickerListOption {
-  return { id: option.id, title: option.name, subtitle: option.address || null }
-}
-
-function templateToOption(option: TemplateOption): PickerListOption {
+/**
+ * Map a clicked list row to the cascade controller's leaf-step option. The
+ * templates picker grid surfaces full `TemplateListRow`s; the cascade controller
+ * only needs the `TemplateOption` subset to record the selection + label.
+ */
+export function toTemplateOption(row: TemplateListRow): TemplateOption {
   return {
-    id: option.id,
-    title: option.unitType || "—",
-    subtitles: [option.jobTypeName, option.description].filter(
-      (value): value is string => Boolean(value && value.trim().length > 0),
-    ),
-    meta: formatTemplateItemsCount(option.itemsCount),
+    id: row.id,
+    unitType: row.unitType,
+    jobTypeName: row.jobTypeName,
+    description: row.description,
+    itemsCount: row.itemsCount,
   }
 }
 
 export type TemplateHubController = {
   cascade: CascadePickerController
-  steps: CascadePickerSteps
   /** Full record for the selected template, or null while none is loaded. */
   templateDetail: TemplateDetail | null
   isTemplateLoading: boolean
@@ -72,16 +47,16 @@ export type TemplateHubController = {
   // ===== Actions =====
   clear: () => void
   newTemplate: () => void
-  openManagementCompany: (managementCompanyId: string) => void
-  openProperty: (propertyId: string, managementCompanyId: string | null) => void
 }
 
 /**
  * Controller for the template hub — the single templates page. Composes the
- * shared cascade picker (Management Company → Property → Template), wires each
- * step's data request, loads the full editable template record when one is
- * selected, pre-sets the pickers from that loaded record, mirrors the selection
- * into the URL (`?templateId=…`, shallow), and owns the page-level actions.
+ * shared cascade picker (Management Company → Property → Template), loads the
+ * full editable template record when one is selected, pre-sets the pickers from
+ * that loaded record, mirrors the selection into the URL (`?templateId=…`,
+ * shallow), and owns the page-level actions. The reference-header UI drives the
+ * cascade through standalone MC/Property pickers + a clickable templates table;
+ * the cascade controller still owns clear-downstream + auto-link MC.
  */
 export function useTemplateHubController(
   options: {
@@ -91,46 +66,11 @@ export function useTemplateHubController(
 ): TemplateHubController {
   const { initialSelections, initialTemplate } = options
   const router = useRouter()
-  const pathname = usePathname()
   const searchParams = useSearchParams()
   const returnToParam = searchParams.get("returnTo")
   const cascade = useCascadePickerController({ initialSelections })
 
   const { managementCompanyId, propertyId, templateId } = cascade
-
-  const steps = useMemo<CascadePickerSteps>(
-    () => ({
-      managementCompany: {
-        bucketKey: MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY,
-        pagedSearchFn: (search, signal, skip) =>
-          searchManagementCompanyOptionsRequest(search, signal, { skip }),
-        toOption: managementCompanyToOption,
-        searchPlaceholder: "Search companies",
-      },
-      property: {
-        // Bucket per management-company so cache results stay scoped to the parent filter.
-        bucketKey: [...PROPERTY_OPTIONS_QUERY_KEY, managementCompanyId ?? null],
-        pagedSearchFn: (search, signal, skip) =>
-          searchPropertyOptionsRequest(search, signal, {
-            managementCompanyId: managementCompanyId ?? undefined,
-            skip,
-          }),
-        toOption: propertyToOption,
-        searchPlaceholder: "Search properties",
-      },
-      template: {
-        bucketKey: [...TEMPLATE_OPTIONS_QUERY_KEY, propertyId ?? null],
-        pagedSearchFn: (search, signal, skip) =>
-          searchTemplateOptionsRequest(search, signal, {
-            propertyId: propertyId ?? "",
-            skip,
-          }),
-        toOption: templateToOption,
-        searchPlaceholder: "Search templates",
-      },
-    }),
-    [managementCompanyId, propertyId],
-  )
 
   const templateQuery = useQuery({
     queryKey: [...TEMPLATE_DETAIL_QUERY_KEY, templateId],
@@ -210,29 +150,12 @@ export function useTemplateHubController(
     router.push(`/dashboard/templates/new?${params.toString()}`)
   }, [managementCompanyId, propertyId, router])
 
-  const openManagementCompany = useCallback(
-    (id: string) => {
-      router.push(`/dashboard/management-companies/${id}`)
-    },
-    [router],
-  )
-
-  const openProperty = useCallback(
-    (id: string, mcId: string | null) => {
-      router.push(buildPropertyRecordHref(id, mcId, pathname))
-    },
-    [router, pathname],
-  )
-
   return {
     cascade,
-    steps,
     templateDetail,
     isTemplateLoading,
     templateError,
     clear,
     newTemplate,
-    openManagementCompany,
-    openProperty,
   }
 }
