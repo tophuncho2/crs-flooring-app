@@ -12,6 +12,7 @@ import {
   assertAdjustmentExpectedUpdatedAtMatches,
   assertAdjustmentLinkMutationAllowed,
   assertAdjustmentLinkageRules,
+  assertAdjustmentMetaMutationAllowed,
   assertAdjustmentPendingMutationAllowed,
   assertNetDeductedWithinStartingStock,
   deriveAdjustmentCoverageString,
@@ -93,11 +94,15 @@ export async function updatePendingAdjustmentUseCase(
     })
 
     const hasLinkPatch = input.patch.link !== undefined
-    const hasFieldPatch =
-      input.patch.quantity !== undefined ||
+    // `quantity` is pending-only; the metadata trio (`isWaste` / `notes` /
+    // `location`) stays editable after finalize and is gated separately (only
+    // QUEUED blocks), mirroring the link gate below.
+    const hasQuantityPatch = input.patch.quantity !== undefined
+    const hasMetaPatch =
       input.patch.isWaste !== undefined ||
-      input.patch.notes !== undefined
-    if (hasFieldPatch) {
+      input.patch.notes !== undefined ||
+      input.patch.location !== undefined
+    if (hasQuantityPatch) {
       try {
         assertAdjustmentPendingMutationAllowed({
           status: existing.status,
@@ -108,12 +113,31 @@ export async function updatePendingAdjustmentUseCase(
           throw new InventoryAdjustmentExecutionError({
             code: "INVENTORY_ADJUSTMENT_NOT_PENDING",
             message:
-              "Inventory adjustment cannot be edited; it has been finalized",
+              "Inventory adjustment quantity cannot be edited; it has been finalized",
             status: 409,
             payload: {
               adjustmentId: existing.id,
               status: existing.status,
               isFinal: existing.isFinal,
+            },
+          })
+        }
+        throw error
+      }
+    }
+    if (hasMetaPatch) {
+      try {
+        assertAdjustmentMetaMutationAllowed({ status: existing.status })
+      } catch (error) {
+        if (error instanceof InventoryAdjustmentDomainError) {
+          throw new InventoryAdjustmentExecutionError({
+            code: "INVENTORY_ADJUSTMENT_META_NOT_ALLOWED",
+            message:
+              "Inventory adjustment has a worker job in flight; try again once it settles.",
+            status: 409,
+            payload: {
+              adjustmentId: existing.id,
+              status: existing.status,
             },
           })
         }
@@ -225,11 +249,13 @@ export async function updatePendingAdjustmentUseCase(
     }
     if (input.patch.isWaste !== undefined) patch.isWaste = input.patch.isWaste
     if (input.patch.notes !== undefined) patch.notes = input.patch.notes
+    // Location is user-owned free text — written only when the patch carries it,
+    // never re-snapped from the parent inventory.
+    if (input.patch.location !== undefined) patch.location = input.patch.location
     if (input.patch.link !== undefined) {
       patch.workOrderId = input.patch.link.workOrderId
       patch.workOrderItemId = input.patch.link.workOrderItemId
     }
-    patch.location = inventory.location
 
     const adjustment = await updatePendingAdjustmentRow(c, { id: existing.id, patch })
 

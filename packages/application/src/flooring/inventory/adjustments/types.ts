@@ -24,14 +24,24 @@ export type CreatePendingAdjustmentInput = {
   quantity: string
   isWaste: boolean
   notes: string
+  /** User-owned free-text location. Not seeded from the parent inventory. */
+  location?: string | null
 }
 
 export type UpdatePendingAdjustmentPatch = {
-  /** Always positive (validator enforces); direction is immutable post-create. */
+  /**
+   * Always positive (validator enforces); direction is immutable post-create.
+   * Pending-only — locked once the row is finalized.
+   */
   quantity?: string
-  /** Reporting flag; editable on either direction. */
+  /**
+   * Metadata trio — editable through the row's whole lifecycle, including after
+   * finalize (only QUEUED blocks). `isWaste` is a reporting flag on either
+   * direction; `location` is user-owned free text (never re-snapped from parent).
+   */
   isWaste?: boolean
   notes?: string
+  location?: string | null
   /** WO link, editable on either direction (both ids set, or both null). */
   link?: { workOrderId: string | null; workOrderItemId: string | null }
 }

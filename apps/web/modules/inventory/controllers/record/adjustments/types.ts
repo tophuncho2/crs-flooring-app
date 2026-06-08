@@ -6,9 +6,10 @@ import type {
 /**
  * Editable form values for the adjustment edit form. `inventoryId` is editable
  * only in create mode; saved rows treat it as immutable. The `workOrderId` /
- * `workOrderItemId` pair is editable in edit mode on any non-voided,
- * non-queued row (the adjustment relink path — independent from the
- * pending-editable rule that locks `cut` / `notes` / `isWaste`).
+ * `workOrderItemId` pair is editable in edit mode on any non-queued row (the
+ * adjustment relink path). The metadata trio `location` / `notes` / `isWaste`
+ * is editable on any non-queued row too (including after finalize); only
+ * `quantity` is locked once the row leaves the PENDING-editable state.
  *
  * `adjustmentType` (INCREASE | DEDUCTION) is direction. It is chosen only in
  * the manual create flow (inventory hub); WO-linked cuts are always DEDUCTION
@@ -26,6 +27,8 @@ export type AdjustmentEditForm = {
   quantity: string
   isWaste: boolean
   notes: string
+  /** User-owned free text; never seeded from the parent inventory. */
+  location: string
   workOrderId: string | null
   workOrderItemId: string | null
 }

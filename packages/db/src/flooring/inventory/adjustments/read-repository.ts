@@ -35,12 +35,11 @@ function toDecimalStringOrNull(
  * columns surface as strings; nullable columns preserve null instead of
  * coercing to "".
  *
- * Two snapshot families on the adjustment row:
- *  - Frozen-at-create: `inventoryItem`, `categorySlug`, `inventoryNumber`,
- *    `rollPrefix`, `rollNumber`, `dyeLot`, `inventoryNote`, and the four
- *    unit-of-measure labels. Stamped once at insert, never mutated.
- *  - Denormalized mirror: `location` — re-stamped on create / update /
- *    finalize.
+ * Frozen-at-create snapshots on the adjustment row: `inventoryItem`,
+ * `categorySlug`, `inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`,
+ * `inventoryNote`, and the four unit-of-measure labels. Stamped once at
+ * insert, never mutated. (`location` is separate — user-owned free text,
+ * editable through update; not a parent mirror.)
  */
 export function normalizeAdjustmentRow(
   row: InventoryAdjustmentRowPayload,
@@ -161,8 +160,9 @@ export async function getEnrichedInventoryAdjustmentById(
  *     (frozen thereafter); FKs used for joins and to filter the adjustment
  *     edit panel's link pickers. The product label is derived from the
  *     `product` join at read time, not stored.
- *   - `location` — re-snapped on every state-changing write. Carries the
- *     parent's current value at call time.
+ *   - `location` — the parent inventory's own location. No longer mirrored
+ *     onto adjustments (their `location` is user-owned); retained here for
+ *     any caller that wants the parent's value.
  *
  * Caller has already locked the inventory FOR UPDATE.
  */

@@ -28,6 +28,19 @@ export function canRelinkAdjustment(
   return true
 }
 
+/**
+ * The metadata trio — `location`, `notes`, `isWaste` — is editable through the
+ * row's whole lifecycle, including after finalize (mirrors `canRelinkAdjustment`).
+ * Only a QUEUED row (worker job in flight) blocks the edit; PENDING and FINAL
+ * both allow it. `quantity` is NOT in this set — it stays pending-only via
+ * `isAdjustmentPendingEditable`.
+ */
+export function canEditAdjustmentMeta(
+  row: Pick<InventoryAdjustmentRow, "status">,
+): boolean {
+  return row.status !== "QUEUED"
+}
+
 export function buildAdjustmentNotPendingMessage(
   row: Pick<InventoryAdjustmentRow, "status" | "isFinal">,
 ): string {

@@ -50,11 +50,12 @@ export function useUpdateAdjustmentMutation({
       adjustment: InventoryAdjustmentRow
       form: AdjustmentEditForm
     }) => {
-      // FINAL rows lock `cut` / `notes` / `isWaste`; only the link is
-      // mutable. Send those fields only when the row is still
-      // PENDING-editable so the server gate (which separates field
-      // patches from link patches) doesn't 409.
-      const fieldsEditable = isAdjustmentPendingEditable(input.adjustment)
+      // Mirror the server's gate split: `quantity` is pending-only, so send it
+      // only while the row is still PENDING-editable; the metadata trio
+      // (`isWaste` / `notes` / `location`) stays editable after finalize and is
+      // sent whenever the row isn't QUEUED; the link is sent only when changed.
+      const quantityEditable = isAdjustmentPendingEditable(input.adjustment)
+      const metaEditable = input.adjustment.status !== "QUEUED"
       const linkChanged =
         input.form.workOrderId !== input.adjustment.workOrderId ||
         input.form.workOrderItemId !== input.adjustment.workOrderItemId
@@ -63,11 +64,12 @@ export function useUpdateAdjustmentMutation({
         adjustmentId: input.adjustment.id,
         expectedUpdatedAt: input.adjustment.updatedAt,
         patch: {
-          ...(fieldsEditable
+          ...(quantityEditable ? { quantity: input.form.quantity } : {}),
+          ...(metaEditable
             ? {
-                quantity: input.form.quantity,
                 isWaste: input.form.isWaste,
                 notes: input.form.notes,
+                location: input.form.location,
               }
             : {}),
           ...(linkChanged

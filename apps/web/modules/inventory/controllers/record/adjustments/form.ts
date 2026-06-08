@@ -40,6 +40,7 @@ export const EMPTY_FORM: AdjustmentEditForm = {
   quantity: "",
   isWaste: false,
   notes: "",
+  location: "",
   workOrderId: null,
   workOrderItemId: null,
 }
@@ -66,6 +67,7 @@ export function buildEditForm(adjustment: InventoryAdjustmentRow): AdjustmentEdi
     quantity: adjustment.quantity,
     isWaste: adjustment.isWaste,
     notes: adjustment.notes,
+    location: adjustment.location ?? "",
     workOrderId: adjustment.workOrderId,
     workOrderItemId: adjustment.workOrderItemId,
   }
@@ -126,6 +128,7 @@ export function formIsDirty(current: AdjustmentEditForm, baseline: AdjustmentEdi
     current.quantity !== baseline.quantity ||
     current.isWaste !== baseline.isWaste ||
     current.notes !== baseline.notes ||
+    current.location !== baseline.location ||
     current.workOrderId !== baseline.workOrderId ||
     current.workOrderItemId !== baseline.workOrderItemId
   )

@@ -4,6 +4,7 @@ import {
   adjustmentSign,
   formatAdjustmentTransition,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
+  INVENTORY_LOCATION_MAX,
   isAdjustmentPendingEditable,
 } from "@builders/domain"
 import { AdjustmentStatusBadge } from "@/engines/common"
@@ -59,16 +60,21 @@ export function AdjustmentEditFormFields({
   const stockUnit = adjustment?.stockUnitAbbrev ?? local.pickedInventoryStockUnitAbbrev
   const coverageUnit = adjustment?.itemCoverageUnitAbbrev ?? ""
 
-  // Locked once the row leaves the PENDING-editable state. Mirrors the server
-  // guard so finalized rows can't accept input — the PATCH would 409 anyway.
-  const isReadOnly = mode === "edit" && adjustment != null && !isAdjustmentPendingEditable(adjustment)
-  const fieldsEditable = !isSaving && !isReadOnly
+  // Two editability gates mirror the server's split. `quantity` is pending-only
+  // — locked once the row leaves the PENDING-editable state (the PATCH would 409
+  // anyway). The metadata trio (`isWaste` / `notes` / `location`) stays editable
+  // through the whole lifecycle, including after finalize; only a QUEUED row
+  // (worker job in flight) blocks it.
+  const quantityEditable =
+    !isSaving && (mode === "create" || adjustment == null || isAdjustmentPendingEditable(adjustment))
+  const metaEditable =
+    !isSaving && (mode === "create" || adjustment == null || adjustment.status !== "QUEUED")
 
   const wasteToggle = (
     <span className="flex items-center gap-1.5">
       <span className={STATUS_LABEL_CLASS}>Waste</span>
       <ToggleCell
-        editable={fieldsEditable}
+        editable={metaEditable}
         value={form.isWaste}
         onChange={(next) => controller.setField("isWaste", next)}
         ariaLabel="Waste flag"
@@ -95,7 +101,7 @@ export function AdjustmentEditFormFields({
           </InventoryField>
           <InventoryField label="Quantity">
             <UnitCell
-              editable={fieldsEditable}
+              editable={quantityEditable}
               value={form.quantity}
               onChange={(next) => controller.setField("quantity", next)}
               unit={stockUnit}
@@ -104,14 +110,29 @@ export function AdjustmentEditFormFields({
             />
           </InventoryField>
           <InventoryField
+            label="Location"
+            editable={metaEditable}
+            currentLength={metaEditable ? form.location.length : undefined}
+            maxLength={INVENTORY_LOCATION_MAX}
+          >
+            <TextCell
+              editable={metaEditable}
+              value={form.location}
+              onChange={(next) => controller.setField("location", next)}
+              placeholder="Location"
+              ariaLabel="Adjustment location"
+              maxLength={INVENTORY_LOCATION_MAX}
+            />
+          </InventoryField>
+          <InventoryField
             label="Notes"
             className="col-span-2"
-            editable={fieldsEditable}
-            currentLength={fieldsEditable ? form.notes.length : undefined}
+            editable={metaEditable}
+            currentLength={metaEditable ? form.notes.length : undefined}
             maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
           >
             <TextCell
-              editable={fieldsEditable}
+              editable={metaEditable}
               value={form.notes}
               onChange={(next) => controller.setField("notes", next)}
               placeholder="Notes"
@@ -152,7 +173,7 @@ export function AdjustmentEditFormFields({
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">
         <InventoryField label="Quantity">
           <UnitCell
-            editable={fieldsEditable}
+            editable={quantityEditable}
             value={form.quantity}
             onChange={(next) => controller.setField("quantity", next)}
             unit={stockUnit}
@@ -168,18 +189,30 @@ export function AdjustmentEditFormFields({
         <InventoryField label="Adjustment">
           <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
         </InventoryField>
-        <InventoryField label="Location">
-          <StaticFieldValue>{adjustment.location || EMPTY_CELL}</StaticFieldValue>
+        <InventoryField
+          label="Location"
+          editable={metaEditable}
+          currentLength={metaEditable ? form.location.length : undefined}
+          maxLength={INVENTORY_LOCATION_MAX}
+        >
+          <TextCell
+            editable={metaEditable}
+            value={form.location}
+            onChange={(next) => controller.setField("location", next)}
+            placeholder="Location"
+            ariaLabel="Adjustment location"
+            maxLength={INVENTORY_LOCATION_MAX}
+          />
         </InventoryField>
         <InventoryField
           label="Notes"
           className="col-span-2"
-          editable={fieldsEditable}
-          currentLength={fieldsEditable ? form.notes.length : undefined}
+          editable={metaEditable}
+          currentLength={metaEditable ? form.notes.length : undefined}
           maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
         >
           <TextCell
-            editable={fieldsEditable}
+            editable={metaEditable}
             value={form.notes}
             onChange={(next) => controller.setField("notes", next)}
             placeholder="Notes"

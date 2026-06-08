@@ -39,8 +39,7 @@ export type FinalizeStampedRow = {
 
 /**
  * Flips one PENDING adjustment to FINAL, stamping `before`/`after` +
- * `finalSequence` against the current state of the parent inventory, and
- * re-snapping the denormalized `location` mirror from the parent.
+ * `finalSequence` against the current state of the parent inventory.
  *
  *   - `existingNetDeducted` = Σ signedDelta(row) over the inventory's rows
  *     where `isFinal: true`. DEDUCTIONs add their quantity, INCREASEs
@@ -50,9 +49,8 @@ export type FinalizeStampedRow = {
  *   - `before = startingStock − existingNetDeducted`,
  *     `after  = before − signedDelta(targetRow)`,
  *     `finalSequence = maxExistingSequence + 1`.
- *   - `location` is re-stamped from the parent inventory's current value
- *     (denormalized mirror tracks the latest parent location through
- *     create / update / finalize).
+ *   - `location` is left untouched — it is user-owned free text, not a parent
+ *     mirror, so finalize must not overwrite it.
  *
  * Returns the stamped values so the caller can defensively assert
  * `before − signedDelta === after` via the domain invariant.
@@ -75,7 +73,7 @@ export async function applyFinalizeAdjustment(
   const [inventory, existingFinalRows] = await Promise.all([
     tx.flooringInventory.findUnique({
       where: { id: target.inventoryId },
-      select: { startingStock: true, location: true },
+      select: { startingStock: true },
     }),
     tx.flooringInventoryAdjustment.findMany({
       where: { inventoryId: target.inventoryId, isFinal: true },
@@ -112,7 +110,6 @@ export async function applyFinalizeAdjustment(
       finalSequence: nextSequence,
       before: beforeStr,
       after: afterStr,
-      location: inventory.location ?? null,
     },
   })
 
@@ -171,8 +168,8 @@ export type InsertPendingAdjustmentRowInput = {
    */
   inventorySnapshot: PendingAdjustmentInventorySnapshot
   /**
-   * Parent inventory's `location` at insert time. Stored as a denormalized
-   * mirror — re-stamped by update-pending and finalize.
+   * User-owned free-text location. Not seeded from the parent inventory and
+   * never re-snapped by update-pending or finalize.
    */
   location: string | null
 }
@@ -186,7 +183,7 @@ export type InsertPendingAdjustmentRowInput = {
  *
  * Stamps the four unit-snapshot fields, the nine identity-snapshot fields
  * (`inventoryItem`, `categorySlug`, the 5 identity primitives, plus
- * `productId` / `warehouseId`), and the `location` mirror from the input.
+ * `productId` / `warehouseId`), and the user-owned `location` from the input.
  *
  * Worker-only fields stay at their schema defaults / null:
  *   - `before` / `after` / `finalSequence`: null (finalize stamps them).
@@ -241,9 +238,8 @@ export type UpdatePendingAdjustmentRowPatch = {
   /** Empty string accepted; persisted as null when blank. */
   notes?: string
   /**
-   * Re-snapped from the parent inventory by the use case on every
-   * update-pending call (denormalized mirror semantics). Use case passes
-   * the parent's current value; data primitive trusts it.
+   * User-owned free-text location. Written only when the patch carries it
+   * (`null` clears it); never re-snapped from the parent inventory.
    */
   location?: string | null
   /**
@@ -267,9 +263,8 @@ export type UpdatePendingAdjustmentRowInput = {
  * and locked the parent inventory FOR UPDATE.
  *
  * Writable in this primitive:
- *   - user-editable form fields: `quantity`, `isWaste`, `notes`
+ *   - user-editable form fields: `quantity`, `isWaste`, `notes`, `location`
  *   - use-case-recomputed `coverage`
- *   - denormalized mirror `location` (re-snapped from parent)
  *   - link relations `workOrderId` / `workOrderItemId` (both-or-neither
  *     for DEDUCTION; forbidden on INCREASE — enforced upstream)
  *

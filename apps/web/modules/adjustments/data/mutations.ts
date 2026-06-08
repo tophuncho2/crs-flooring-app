@@ -55,6 +55,7 @@ export async function createAdjustmentRequest(args: {
   quantity: string
   isWaste: boolean
   notes: string
+  location?: string | null
   warehouseId?: string | null
   workOrderId?: string | null
   workOrderItemId?: string | null
@@ -64,6 +65,7 @@ export async function createAdjustmentRequest(args: {
     quantity: args.quantity,
     isWaste: args.isWaste,
     notes: args.notes,
+    location: args.location ?? null,
   }
   if (args.warehouseId) payload.warehouseId = args.warehouseId
   if (args.workOrderId && args.workOrderItemId) {
@@ -89,6 +91,7 @@ export async function updatePendingAdjustmentRequest(args: {
     quantity?: string
     isWaste?: boolean
     notes?: string
+    location?: string | null
     link?: { workOrderId: string | null; workOrderItemId: string | null }
   }
 }) {

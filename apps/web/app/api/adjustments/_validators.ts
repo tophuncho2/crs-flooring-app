@@ -3,6 +3,7 @@ import { InventoryAdjustmentExecutionError } from "@builders/application"
 import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENT_NOTES_MAX,
+  INVENTORY_LOCATION_MAX,
   INVENTORY_ADJUSTMENTS_LIST_MAX_PAGE_SIZE,
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   INVENTORY_ADJUSTMENT_MAX_PAGE_SIZE,
@@ -52,6 +53,7 @@ export type ValidatedCreateManualAdjustmentInput = {
   quantity: string
   isWaste: boolean
   notes: string
+  location: string | null
   workOrderId: string | null
   workOrderItemId: string | null
   warehouseId: string | null
@@ -79,11 +81,13 @@ export function validateCreateManualAdjustmentInput(
       ? null
       : requireAdjustmentString(body.warehouseId, "warehouseId")
   const isWaste = typeof body.isWaste === "boolean" ? body.isWaste : false
+  const location = optionalBoundedAdjustmentText(body.location, INVENTORY_LOCATION_MAX, "location")
   return {
     adjustmentType: rawType,
     quantity: requireAdjustmentString(body.quantity, "quantity"),
     isWaste,
     notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
+    location: location && location.trim() !== "" ? location : null,
     workOrderId: link.workOrderId,
     workOrderItemId: link.workOrderItemId,
     warehouseId,
@@ -122,6 +126,7 @@ export type ValidatedUpdatePendingAdjustmentPatch = {
   quantity?: string
   isWaste?: boolean
   notes?: string
+  location?: string | null
   link?: ValidatedUpdatePendingAdjustmentLink
 }
 
@@ -176,11 +181,19 @@ export function validateUpdatePendingAdjustmentInput(
     const next = optionalBoundedAdjustmentText(patchBody.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "patch.notes")
     if (next !== null) patch.notes = next
   }
+  if ("location" in patchBody) {
+    // User-owned free text; a blank/absent value clears it to null.
+    const next = optionalBoundedAdjustmentText(patchBody.location, INVENTORY_LOCATION_MAX, "patch.location")
+    patch.location = next && next.trim() !== "" ? next : null
+  }
   if ("link" in patchBody) {
     patch.link = validateUpdatePendingAdjustmentLink(patchBody.link)
   }
   if (Object.keys(patch).length === 0) {
-    failAdjustment("Patch must contain at least one of quantity, isWaste, notes, or link", "patch")
+    failAdjustment(
+      "Patch must contain at least one of quantity, isWaste, notes, location, or link",
+      "patch",
+    )
   }
   return { patch }
 }

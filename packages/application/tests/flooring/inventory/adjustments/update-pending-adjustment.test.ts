@@ -10,6 +10,7 @@ const {
   assertAdjustmentExpectedUpdatedAtMatchesMock,
   assertAdjustmentLinkMutationAllowedMock,
   assertAdjustmentLinkageRulesMock,
+  assertAdjustmentMetaMutationAllowedMock,
   assertAdjustmentPendingMutationAllowedMock,
   assertNetDeductedWithinStartingStockMock,
   deriveAdjustmentCoverageStringMock,
@@ -37,6 +38,7 @@ const {
     assertAdjustmentExpectedUpdatedAtMatchesMock: vi.fn(),
     assertAdjustmentLinkMutationAllowedMock: vi.fn(),
     assertAdjustmentLinkageRulesMock: vi.fn(),
+    assertAdjustmentMetaMutationAllowedMock: vi.fn(),
     assertAdjustmentPendingMutationAllowedMock: vi.fn(),
     assertNetDeductedWithinStartingStockMock: vi.fn(),
     deriveAdjustmentCoverageStringMock: vi.fn(),
@@ -61,6 +63,7 @@ vi.mock("@builders/domain", () => ({
   assertAdjustmentExpectedUpdatedAtMatches: assertAdjustmentExpectedUpdatedAtMatchesMock,
   assertAdjustmentLinkMutationAllowed: assertAdjustmentLinkMutationAllowedMock,
   assertAdjustmentLinkageRules: assertAdjustmentLinkageRulesMock,
+  assertAdjustmentMetaMutationAllowed: assertAdjustmentMetaMutationAllowedMock,
   assertAdjustmentPendingMutationAllowed: assertAdjustmentPendingMutationAllowedMock,
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
   deriveAdjustmentCoverageString: deriveAdjustmentCoverageStringMock,
@@ -137,6 +140,7 @@ beforeEach(() => {
   assertAdjustmentExpectedUpdatedAtMatchesMock.mockReset()
   assertAdjustmentLinkMutationAllowedMock.mockReset()
   assertAdjustmentLinkageRulesMock.mockReset()
+  assertAdjustmentMetaMutationAllowedMock.mockReset()
   assertAdjustmentPendingMutationAllowedMock.mockReset()
   assertNetDeductedWithinStartingStockMock.mockReset()
   deriveAdjustmentCoverageStringMock.mockReset()
@@ -156,6 +160,7 @@ beforeEach(() => {
   assertAdjustmentExpectedUpdatedAtMatchesMock.mockReturnValue(undefined)
   assertAdjustmentLinkMutationAllowedMock.mockReturnValue(undefined)
   assertAdjustmentLinkageRulesMock.mockReturnValue(undefined)
+  assertAdjustmentMetaMutationAllowedMock.mockReturnValue(undefined)
   assertAdjustmentPendingMutationAllowedMock.mockReturnValue(undefined)
   assertNetDeductedWithinStartingStockMock.mockReturnValue(undefined)
   deriveAdjustmentCoverageStringMock.mockReturnValue("12.50")
@@ -168,7 +173,7 @@ beforeEach(() => {
 
 describe("updatePendingAdjustmentUseCase", () => {
   describe("happy path", () => {
-    it("re-derives coverage when quantity changes, re-snaps location, recomputes, and returns", async () => {
+    it("re-derives coverage when quantity changes, recomputes, and returns (location not re-snapped)", async () => {
       const result = await updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }))
 
       expect(result).toEqual({
@@ -183,7 +188,7 @@ describe("updatePendingAdjustmentUseCase", () => {
       })
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { quantity: "3", coverage: "12.50", location: "A1" } },
+        { id: ADJUSTMENT_ID, patch: { quantity: "3", coverage: "12.50" } },
       )
     })
 
@@ -199,19 +204,62 @@ describe("updatePendingAdjustmentUseCase", () => {
         { tx: true },
         {
           id: ADJUSTMENT_ID,
-          patch: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI, location: "A1" },
+          patch: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI },
         },
       )
     })
 
-    it("always re-snaps location even on a non-quantity field patch", async () => {
-      await updatePendingAdjustmentUseCase(input({ patch: { isWaste: true } }))
+    it("writes user-owned location only when the patch carries it, never re-snapped from the parent", async () => {
+      await updatePendingAdjustmentUseCase(input({ patch: { location: "Bay 7" } }))
 
       expect(deriveAdjustmentCoverageStringMock).not.toHaveBeenCalled()
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { isWaste: true, location: "A1" } },
+        { id: ADJUSTMENT_ID, patch: { location: "Bay 7" } },
       )
+    })
+
+    it("does not touch location on a non-location field patch", async () => {
+      await updatePendingAdjustmentUseCase(input({ patch: { isWaste: true } }))
+
+      expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
+        { tx: true },
+        { id: ADJUSTMENT_ID, patch: { isWaste: true } },
+      )
+    })
+  })
+
+  describe("metadata trio editable after finalize", () => {
+    it("accepts notes / location / isWaste on a FINAL row (only QUEUED blocks them)", async () => {
+      getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
+        found({ adjustment: { status: "FINAL", isFinal: true } }),
+      )
+
+      await updatePendingAdjustmentUseCase(
+        input({ patch: { isWaste: true, notes: "rework", location: "Bay 7" } }),
+      )
+
+      // Quantity gate is never consulted for a meta-only patch.
+      expect(assertAdjustmentPendingMutationAllowedMock).not.toHaveBeenCalled()
+      expect(assertAdjustmentMetaMutationAllowedMock).toHaveBeenCalledWith({ status: "FINAL" })
+      expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
+        { tx: true },
+        { id: ADJUSTMENT_ID, patch: { isWaste: true, notes: "rework", location: "Bay 7" } },
+      )
+    })
+
+    it("throws INVENTORY_ADJUSTMENT_META_NOT_ALLOWED (409) when a meta patch hits a QUEUED row", async () => {
+      getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
+        found({ adjustment: { status: "QUEUED" } }),
+      )
+      assertAdjustmentMetaMutationAllowedMock.mockImplementation(() => {
+        throw new InventoryAdjustmentDomainErrorClass("INVENTORY_ADJUSTMENT_META_NOT_ALLOWED")
+      })
+
+      await expect(
+        updatePendingAdjustmentUseCase(input({ patch: { notes: "x" } })),
+      ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_META_NOT_ALLOWED", status: 409 })
+      expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
     })
   })
 

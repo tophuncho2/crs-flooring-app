@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   canDeleteAdjustment,
+  canEditAdjustmentMeta,
   canFinalizeAdjustment,
   canRelinkAdjustment,
   getAdjustmentFinalizabilityBlocker,
@@ -47,6 +48,18 @@ describe("canRelinkAdjustment", () => {
     expect(
       canRelinkAdjustment(row({ adjustmentType: "INCREASE", status: "QUEUED" })),
     ).toBe(false)
+  })
+})
+
+describe("canEditAdjustmentMeta", () => {
+  it("allows the metadata trio on PENDING and FINAL, rejects only QUEUED", () => {
+    expect(canEditAdjustmentMeta(row())).toBe(true)
+    expect(canEditAdjustmentMeta(row({ isFinal: true, status: "FINAL" }))).toBe(true)
+    expect(canEditAdjustmentMeta(row({ status: "QUEUED" }))).toBe(false)
+    // Direction-agnostic, same as the link gate.
+    expect(
+      canEditAdjustmentMeta(row({ adjustmentType: "INCREASE", isFinal: true, status: "FINAL" })),
+    ).toBe(true)
   })
 })
 

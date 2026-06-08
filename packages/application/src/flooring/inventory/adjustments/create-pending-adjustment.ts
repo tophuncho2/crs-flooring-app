@@ -165,7 +165,8 @@ export async function createPendingAdjustmentUseCase(
         productId: inventory.productId,
         warehouseId: inventory.warehouseId,
       }),
-      location: inventory.location,
+      // User-owned free text — never seeded from the parent inventory.
+      location: input.location ?? null,
     })
 
     const recomputed = await recomputeAndPersistNetDeducted(c, [input.inventoryId])
