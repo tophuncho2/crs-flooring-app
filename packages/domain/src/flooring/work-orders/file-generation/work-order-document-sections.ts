@@ -195,16 +195,14 @@ export function renderWorkOrderAdjustments(
       return ""
     }
     // One product group at a time: its adjustment rows, then a summed subtotal
-    // row (Quantity + Coverage) under a rule. Single-adjustment groups skip the
-    // subtotal — it would just repeat the lone row. Never a grand total.
+    // row (Quantity + Coverage) under a rule. Every group gets a subtotal for
+    // visual consistency, even single-adjustment groups. Never a grand total.
     renderedRows = itemsWithAdjustments
       .map((item) => {
         const adjustmentRows = item.inventoryAdjustments
           .map((adj) => renderAdjustmentRow({ adj, productName: item.productName }, true))
           .join("\n")
-        return item.inventoryAdjustments.length > 1
-          ? `${adjustmentRows}\n${renderPickingTicketSubtotalRow(item)}`
-          : adjustmentRows
+        return `${adjustmentRows}\n${renderPickingTicketSubtotalRow(item)}`
       })
       .join("\n")
   } else {
