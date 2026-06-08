@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListViewNoticePortal, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
@@ -128,6 +128,7 @@ export default function PropertiesClient({
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+      <ListViewNoticePortal label="Properties" />
       <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
