@@ -147,6 +147,27 @@ const SEEDED_CATEGORIES = [
     stockUnitSlug: "boxes",
     itemCoverageUnitSlug: null,
   },
+  {
+    slug: "ceramic-tile",
+    name: "Ceramic Tile",
+    sendUnitSlug: "square-feet",
+    stockUnitSlug: "square-feet",
+    itemCoverageUnitSlug: null,
+  },
+  {
+    slug: "stair-treads",
+    name: "Stair Treads",
+    sendUnitSlug: "pieces",
+    stockUnitSlug: "pieces",
+    itemCoverageUnitSlug: null,
+  },
+  {
+    slug: "rubber-transition",
+    name: "Rubber Transition",
+    sendUnitSlug: "pieces",
+    stockUnitSlug: "pieces",
+    itemCoverageUnitSlug: null,
+  },
 ]
 
 function verifySyncWithTypeScriptSource() {
