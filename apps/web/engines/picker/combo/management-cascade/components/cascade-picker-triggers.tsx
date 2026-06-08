@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 import {
   PickerEditLayout,
   PickerTrigger,
-} from "../../chrome"
+} from "../../../chrome"
 import type { CascadePickerController } from "../client/use-cascade-picker-controller"
 
 const PICKER_LABEL_CLASS =

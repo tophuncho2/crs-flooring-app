@@ -1,4 +1,4 @@
-import type { PickerListOption } from "../../chrome"
+import type { PickerListOption } from "../../../chrome"
 
 /**
  * The three cascading steps, root → leaf. Selecting an upstream step clears

@@ -1,7 +1,7 @@
 "use client"
 
-import { PickerList } from "../../chrome"
-import { useAsyncRichDropdownController } from "../../client"
+import { PickerList } from "../../../chrome"
+import { useAsyncRichDropdownController } from "../../../client"
 import type { CascadePickerStepConfig } from "../contracts/cascade-picker-contracts"
 
 export type CascadePickerOptionsPanelProps<TOption> = {
