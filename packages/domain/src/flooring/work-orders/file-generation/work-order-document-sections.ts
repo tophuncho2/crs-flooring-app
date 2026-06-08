@@ -159,15 +159,14 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
     <col />
   </colgroup>
   <tbody>
-    <tr><th>Date</th><td>${escapeOrEmpty(input.scheduledFor)}</td></tr>
+    <tr><th>Date</th><td>${escapeOrEmpty(input.scheduledFor)} - ${formatTimeOfDay(input.timeOfDay)}</td></tr>
     <tr><th>Warehouse</th><td>${warehouseCell}</td></tr>
     <tr><th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td></tr>${descriptionRow}
     <tr class="row-gap"><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
     <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${propertyAddressRow}
     <tr class="row-gap"><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
     <tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>
-    <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>
-    <tr><th>Time of Day</th><td>${escapeOrEmpty(formatTimeOfDay(input.timeOfDay))}</td></tr>${propertyInstructionsRow}${installerInstructionsRow}
+    <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>${propertyInstructionsRow}${installerInstructionsRow}
   </tbody>
 </table>
 `.trim()
@@ -224,7 +223,7 @@ function formatVacancy(vacancy: "VACANT" | "OCCUPIED" | null): string {
 }
 
 function formatTimeOfDay(timeOfDay: "AM" | "PM" | null): string {
-  return timeOfDay ?? ""
+  return timeOfDay ?? "-"
 }
 
 function renderAdjustmentRow(
