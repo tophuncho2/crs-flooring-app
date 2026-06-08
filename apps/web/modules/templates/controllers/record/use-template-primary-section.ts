@@ -1,11 +1,13 @@
 "use client"
 
+import { useQueryClient } from "@tanstack/react-query"
 import {
   createRecordSectionError,
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
 import { updateTemplateRequest } from "@/modules/templates/data/mutations"
+import { TEMPLATE_DETAIL_QUERY_KEY } from "@/modules/templates/data/template-detail-request"
 import { useTemplatesListMutations } from "@/modules/templates/controllers/list/use-templates-list-mutations"
 import {
   toTemplateForm,
@@ -22,6 +24,7 @@ export function useTemplatePrimarySection({
   template: TemplateDetail
 }) {
   const { deleteTemplate } = useTemplatesListMutations()
+  const queryClient = useQueryClient()
 
   return useSingleSectionRecordController<TemplateDetail, TemplateForm>({
     page,
@@ -32,6 +35,12 @@ export function useTemplatePrimarySection({
     payloadKey: "template",
     createLocalValue: toTemplateForm,
     manageDirtySections: false,
+    // Write-through every reconciled record into the detail query the reference
+    // header reads (`templateDetail`), so a primary save or a material-items save
+    // (which publishes via `primary.publishRecord`) refreshes the header row
+    // immediately — no manual page refresh.
+    reconcile: (record) =>
+      queryClient.setQueryData([...TEMPLATE_DETAIL_QUERY_KEY, template.id], record),
     saveSection: async ({ localValue, record, revisionKey }) => {
       const validationError = validateTemplateForm(localValue)
       if (validationError) {
