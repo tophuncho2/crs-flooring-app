@@ -180,21 +180,29 @@ export function renderWorkOrderAdjustments(
   items: WorkOrderFileMaterialItemProjection[],
   options: { includeInventoryDetail?: boolean } = {},
 ): string {
-  // The material-item construct is intentionally not shown on the document —
-  // every adjustment is flattened into one table and labeled with its parent
-  // product name (the leading column).
-  //
   // includeInventoryDetail (default true → Picking Ticket): the warehouse view
-  // shows where stock came from and the balance change. The Slip passes false
-  // for a customer-facing summary — Product / Quantity / Coverage only.
+  // shows where stock came from and the balance change, so every adjustment is
+  // flattened into its own row labeled with its parent product name (the leading
+  // column). The Slip (false) is a customer-facing summary — Product / Quantity /
+  // Coverage only — and collapses each material item's adjustments into ONE row,
+  // summing Quantity and Coverage.
   const includeInventoryDetail = options.includeInventoryDetail ?? true
-  const rows = items.flatMap((item) =>
-    item.inventoryAdjustments.map((adj) => ({ adj, productName: item.productName })),
-  )
-  if (rows.length === 0) {
-    return ""
+  let renderedRows: string
+  if (includeInventoryDetail) {
+    const rows = items.flatMap((item) =>
+      item.inventoryAdjustments.map((adj) => ({ adj, productName: item.productName })),
+    )
+    if (rows.length === 0) {
+      return ""
+    }
+    renderedRows = rows.map((row) => renderAdjustmentRow(row, true)).join("\n")
+  } else {
+    const itemsWithAdjustments = items.filter((item) => item.inventoryAdjustments.length > 0)
+    if (itemsWithAdjustments.length === 0) {
+      return ""
+    }
+    renderedRows = itemsWithAdjustments.map(renderSummedSlipItemRow).join("\n")
   }
-  const renderedRows = rows.map((row) => renderAdjustmentRow(row, includeInventoryDetail)).join("\n")
   const headCells = includeInventoryDetail
     ? `<th>Product</th>
       <th>Dyelot</th>
@@ -256,6 +264,41 @@ function renderAdjustmentRow(
   <td class="cl-num">${renderUnitValue(adj.coverage, adj.itemCoverageUnitAbbrev)}</td>${trailDetailCells}
 </tr>
 `.trim()
+}
+
+/**
+ * Slip-only: one collapsed row per material item — Product / Quantity / Coverage,
+ * with Quantity and Coverage summed across all of the item's adjustments. The
+ * unit suffix is taken from the first adjustment that carries one (adjustments
+ * within a material item share units).
+ */
+function renderSummedSlipItemRow(item: WorkOrderFileMaterialItemProjection): string {
+  const adjustments = item.inventoryAdjustments
+  const quantity = sumDecimalStrings(adjustments.map((adj) => adj.quantity))
+  const coverage = sumDecimalStrings(adjustments.map((adj) => adj.coverage))
+  const stockUnitAbbrev = adjustments.find((adj) => adj.stockUnitAbbrev !== "")?.stockUnitAbbrev ?? ""
+  const coverageUnitAbbrev =
+    adjustments.find((adj) => adj.itemCoverageUnitAbbrev !== "")?.itemCoverageUnitAbbrev ?? ""
+  return `
+<tr>
+  <td>${escapeOrEmpty(item.productName)}</td>
+  <td class="cl-num">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
+  <td class="cl-num">${renderUnitValue(coverage, coverageUnitAbbrev)}</td>
+</tr>
+`.trim()
+}
+
+/**
+ * Sums a list of decimal strings (Prisma Decimal `.toString()` values), skipping
+ * empties. Returns "" when nothing summable is present so the caller renders the
+ * standard "—" placeholder. Trailing zeros/dot are trimmed: "10.00"→"10",
+ * "10.50"→"10.5", "0.25" stays.
+ */
+function sumDecimalStrings(values: string[]): string {
+  const present = values.filter((value) => value !== "")
+  if (present.length === 0) return ""
+  const total = present.reduce((sum, value) => sum + (Number(value) || 0), 0)
+  return total.toFixed(2).replace(/\.?0+$/, "")
 }
 
 function renderUnitValue(value: string, unitAbbrev: string): string {
