@@ -26,9 +26,9 @@ import { MaterialItemRemoveButton } from "./row-controls"
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
   leadingControls: [{ key: "remove", kind: "actions", width: 56 }],
   dataColumns: [
-    { key: "product", label: "Product", minWidth: 220, grow: 2 },
-    { key: "quantity", label: "Quantity", kind: "number", minWidth: 180, grow: 0.5, align: "end" },
-    { key: "notes", label: "Notes", minWidth: 200, grow: 1.5 },
+    { key: "product", label: "Product", minWidth: 260, grow: 2 },
+    { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
+    { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
   ],
 }
 

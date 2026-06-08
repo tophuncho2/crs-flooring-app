@@ -9,12 +9,12 @@ import { type ProductOption, TEMPLATE_MATERIAL_ITEM_NOTES_MAX } from "@builders/
 import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/record/use-template-material-items-section"
 
 const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
+  leadingControls: [{ key: "remove", kind: "actions", width: 56 }],
   dataColumns: [
     { key: "product", label: "Product", minWidth: 260, grow: 2 },
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
   ],
-  trailingControls: [{ key: "remove", kind: "actions", width: 56 }],
 }
 
 export function TemplateMaterialItemsSection({
