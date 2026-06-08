@@ -33,7 +33,7 @@ export function RecordSectionStatusBadge({
   return (
     <span
       className={joinRecordSectionClasses(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]",
+        "inline-flex items-center rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.12em]",
         toneClassName,
         className,
       )}
