@@ -75,6 +75,7 @@ export type WorkOrderFileGenerationInput = {
     city: string
     state: string
     postalCode: string
+    phone: string
   }
   jobTypeName: string
   materialItems: WorkOrderFileMaterialItemProjection[]

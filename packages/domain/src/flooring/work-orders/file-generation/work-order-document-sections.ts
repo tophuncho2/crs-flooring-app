@@ -133,7 +133,11 @@ ${body}
  * override or the property's flat address line.
  */
 export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string {
-  const warehouseParts = [input.warehouse.name, buildAddressLine(input.warehouse)].filter(Boolean)
+  const warehouseParts = [
+    input.warehouse.name,
+    buildAddressLine(input.warehouse),
+    input.warehouse.phone,
+  ].filter(Boolean)
   const warehouseCell = warehouseParts.length
     ? escapeHtml(warehouseParts.join(" - "))
     : `<span class="empty-cell">—</span>`
