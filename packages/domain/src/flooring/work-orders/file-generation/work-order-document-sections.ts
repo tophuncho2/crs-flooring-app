@@ -47,6 +47,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .flat-rows th:first-child, .wo-print-root .flat-rows td:first-child { width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
   .wo-print-root .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
   .wo-print-root .flat-rows .cl-num { text-align: right; }
+  .wo-print-root .flat-rows .subtotal-cell { border-top: 1px solid #111; font-weight: 600; padding-top: 3px; }
   .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
   .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
   .wo-print-root .page-brand { justify-self: start; }
@@ -189,13 +190,23 @@ export function renderWorkOrderAdjustments(
   const includeInventoryDetail = options.includeInventoryDetail ?? true
   let renderedRows: string
   if (includeInventoryDetail) {
-    const rows = items.flatMap((item) =>
-      item.inventoryAdjustments.map((adj) => ({ adj, productName: item.productName })),
-    )
-    if (rows.length === 0) {
+    const itemsWithAdjustments = items.filter((item) => item.inventoryAdjustments.length > 0)
+    if (itemsWithAdjustments.length === 0) {
       return ""
     }
-    renderedRows = rows.map((row) => renderAdjustmentRow(row, true)).join("\n")
+    // One product group at a time: its adjustment rows, then a summed subtotal
+    // row (Quantity + Coverage) under a rule. Single-adjustment groups skip the
+    // subtotal — it would just repeat the lone row. Never a grand total.
+    renderedRows = itemsWithAdjustments
+      .map((item) => {
+        const adjustmentRows = item.inventoryAdjustments
+          .map((adj) => renderAdjustmentRow({ adj, productName: item.productName }, true))
+          .join("\n")
+        return item.inventoryAdjustments.length > 1
+          ? `${adjustmentRows}\n${renderPickingTicketSubtotalRow(item)}`
+          : adjustmentRows
+      })
+      .join("\n")
   } else {
     const itemsWithAdjustments = items.filter((item) => item.inventoryAdjustments.length > 0)
     if (itemsWithAdjustments.length === 0) {
@@ -267,23 +278,59 @@ function renderAdjustmentRow(
 }
 
 /**
+ * Summed Quantity + Coverage across a material item's adjustments, with the unit
+ * suffix taken from the first adjustment that carries one (adjustments within a
+ * material item share units). Shared by the Slip's collapsed row and the Picking
+ * Ticket's per-group subtotal row.
+ */
+function sumItemTotals(item: WorkOrderFileMaterialItemProjection): {
+  quantity: string
+  coverage: string
+  stockUnitAbbrev: string
+  coverageUnitAbbrev: string
+} {
+  const adjustments = item.inventoryAdjustments
+  return {
+    quantity: sumDecimalStrings(adjustments.map((adj) => adj.quantity)),
+    coverage: sumDecimalStrings(adjustments.map((adj) => adj.coverage)),
+    stockUnitAbbrev: adjustments.find((adj) => adj.stockUnitAbbrev !== "")?.stockUnitAbbrev ?? "",
+    coverageUnitAbbrev:
+      adjustments.find((adj) => adj.itemCoverageUnitAbbrev !== "")?.itemCoverageUnitAbbrev ?? "",
+  }
+}
+
+/**
  * Slip-only: one collapsed row per material item — Product / Quantity / Coverage,
- * with Quantity and Coverage summed across all of the item's adjustments. The
- * unit suffix is taken from the first adjustment that carries one (adjustments
- * within a material item share units).
+ * with Quantity and Coverage summed across all of the item's adjustments.
  */
 function renderSummedSlipItemRow(item: WorkOrderFileMaterialItemProjection): string {
-  const adjustments = item.inventoryAdjustments
-  const quantity = sumDecimalStrings(adjustments.map((adj) => adj.quantity))
-  const coverage = sumDecimalStrings(adjustments.map((adj) => adj.coverage))
-  const stockUnitAbbrev = adjustments.find((adj) => adj.stockUnitAbbrev !== "")?.stockUnitAbbrev ?? ""
-  const coverageUnitAbbrev =
-    adjustments.find((adj) => adj.itemCoverageUnitAbbrev !== "")?.itemCoverageUnitAbbrev ?? ""
+  const { quantity, coverage, stockUnitAbbrev, coverageUnitAbbrev } = sumItemTotals(item)
   return `
 <tr>
   <td>${escapeOrEmpty(item.productName)}</td>
   <td class="cl-num">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
   <td class="cl-num">${renderUnitValue(coverage, coverageUnitAbbrev)}</td>
+</tr>
+`.trim()
+}
+
+/**
+ * Picking-Ticket-only: a per-product-group subtotal row appended beneath the
+ * group's adjustment rows. Empty Product/Dyelot/Roll#/Adjustment/Location cells;
+ * the Quantity and Coverage cells carry the group sums under a rule
+ * (`.subtotal-cell` border-top). Mirrors the 7-column adjustment-row layout.
+ */
+function renderPickingTicketSubtotalRow(item: WorkOrderFileMaterialItemProjection): string {
+  const { quantity, coverage, stockUnitAbbrev, coverageUnitAbbrev } = sumItemTotals(item)
+  return `
+<tr>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
+  <td class="cl-num subtotal-cell">${renderUnitValue(coverage, coverageUnitAbbrev)}</td>
+  <td></td>
+  <td></td>
 </tr>
 `.trim()
 }
