@@ -6,8 +6,8 @@ import { createPortal } from "react-dom"
 
 const SLOT_ID = "list-view-notice-slot"
 
-// Distinct from the record-view notice colors (sky=form, emerald=edit). Amber for list.
-const LIST_VIEW_NOTICE_CLASS_NAME = "border-amber-500/30 bg-amber-500/5 text-amber-600"
+// Unified to the record-view edit-mode green across every view.
+const LIST_VIEW_NOTICE_CLASS_NAME = "border-emerald-500/30 bg-emerald-500/5 text-emerald-600"
 
 export function ListViewNotice({ children }: { children: ReactNode }) {
   return (

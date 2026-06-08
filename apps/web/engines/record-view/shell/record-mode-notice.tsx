@@ -8,8 +8,9 @@ const SLOT_ID = "record-mode-notice-slot"
 
 type RecordMode = "form" | "edit"
 
+// Unified to the edit-mode green across every view (form, edit, and list).
 const RECORD_MODE_NOTICE_CLASS_NAME: Record<RecordMode, string> = {
-  form: "border-sky-500/30 bg-sky-500/5 text-sky-600",
+  form: "border-emerald-500/30 bg-emerald-500/5 text-emerald-600",
   edit: "border-emerald-500/30 bg-emerald-500/5 text-emerald-600",
 }
 
