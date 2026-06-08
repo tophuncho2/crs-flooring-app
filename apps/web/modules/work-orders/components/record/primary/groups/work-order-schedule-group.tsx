@@ -65,24 +65,26 @@ export function WorkOrderScheduleGroup({
             <StaticFieldValue>{warehouseLabel || "—"}</StaticFieldValue>
           )}
         </WorkOrderField>
-        <WorkOrderField label="Scheduled For">
-          <DateCell
-            editable={editable}
-            value={draft.scheduledFor}
-            onChange={(value) => onFieldChange("scheduledFor", value)}
-          />
-        </WorkOrderField>
-        <WorkOrderField label="Time of Day">
-          <SegmentedChoiceCell
-            editable={editable}
-            value={draft.timeOfDay}
-            options={TIME_OF_DAY_OPTIONS}
-            ariaLabel="Time of Day"
-            onChange={(value) =>
-              onFieldChange("timeOfDay", value as WorkOrderForm["timeOfDay"])
-            }
-          />
-        </WorkOrderField>
+        <div className="flex items-start gap-3">
+          <WorkOrderField label="Scheduled For" className="flex-1">
+            <DateCell
+              editable={editable}
+              value={draft.scheduledFor}
+              onChange={(value) => onFieldChange("scheduledFor", value)}
+            />
+          </WorkOrderField>
+          <WorkOrderField label="Time of Day" className="w-44 shrink-0">
+            <SegmentedChoiceCell
+              editable={editable}
+              value={draft.timeOfDay}
+              options={TIME_OF_DAY_OPTIONS}
+              ariaLabel="Time of Day"
+              onChange={(value) =>
+                onFieldChange("timeOfDay", value as WorkOrderForm["timeOfDay"])
+              }
+            />
+          </WorkOrderField>
+        </div>
         <WorkOrderField label="Job Type">
           {editable ? (
             <JobTypePicker
