@@ -13,8 +13,9 @@ export function JobTypeDetailClient({
 }) {
   return (
     <RecordDetailClientScaffold
-      title={initialJobType.name || "Job Type"}
+      title="Job Type Hub"
       backHref={backHref}
+      headerVariant="section"
       modeNotice={{ mode: "edit", label: "Job Type" }}
       dirtyMessage="You have unsaved job type changes. Leave this page without saving?"
     >
