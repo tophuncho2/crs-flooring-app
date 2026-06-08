@@ -39,12 +39,12 @@ export function ManagementCompanySelectSection({
     <div className={SECTION_CARD_CLASS}>
       <ActionHeader title="Management Company" />
       <div className="space-y-4 p-4">
-        <FormField label="Link existing company">
+        <FormField label="Link existing company" required>
           <ManagementCompanyPicker
             value={value.mcLinkId}
             selectedLabel={value.mcLinkLabel}
             disabled={disabled || mode === "create"}
-            placeholder="Link an existing company (optional)"
+            placeholder="Link an existing company"
             ariaLabel="Link existing management company"
             onChange={(id) => {
               if (!id) onLink(null)
