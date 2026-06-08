@@ -159,7 +159,7 @@ export function TemplatePropertyUnitGroup({
             <TemplateField label="Management Company">
               <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
             </TemplateField>
-            <TemplateField label="Property">
+            <TemplateField label="Property" required>
               {editable ? (
                 <PropertyPicker
                   value={propertyValue}
@@ -187,6 +187,7 @@ export function TemplatePropertyUnitGroup({
           <div className="flex flex-col gap-3">
             <TemplateField
               label="Unit Type"
+              required
               editable={editable}
               currentLength={draft.unitType.length}
               maxLength={TEMPLATE_UNIT_TYPE_MAX}

@@ -21,6 +21,7 @@ export function TemplateField({
   children,
   className,
   editable,
+  required,
   currentLength,
   maxLength,
 }: {
@@ -28,6 +29,8 @@ export function TemplateField({
   children: ReactNode
   className?: string
   editable?: boolean
+  /** Visually marks the label as required (rose asterisk). Pure UI; no validation. */
+  required?: boolean
   currentLength?: number
   maxLength?: number
 }) {
@@ -37,7 +40,10 @@ export function TemplateField({
   return (
     <label className={joinClassNames("flex min-w-0 flex-col gap-1 text-sm", className)}>
       <span className="flex items-baseline justify-between gap-2 text-[var(--foreground)]/80">
-        <span>{label}</span>
+        <span className="flex items-center gap-1">
+          {label}
+          {required ? <span aria-hidden="true" className="text-rose-600">*</span> : null}
+        </span>
         {showCounter ? (
           <span
             className={joinClassNames(

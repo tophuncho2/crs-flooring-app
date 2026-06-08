@@ -189,7 +189,7 @@ export function WorkOrderPropertyUnitGroup({
             <WorkOrderField label="Management Company">
               <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
             </WorkOrderField>
-            <WorkOrderField label="Property">
+            <WorkOrderField label="Property" required>
               {editable ? (
                 <PropertyPicker
                   value={propertyValue}
@@ -217,7 +217,7 @@ export function WorkOrderPropertyUnitGroup({
                 <StaticFieldValue>{propertyLabel ?? "—"}</StaticFieldValue>
               )}
             </WorkOrderField>
-            <WorkOrderField label="Vacancy">
+            <WorkOrderField label="Vacancy" required>
               <SelectCell
                 editable={editable}
                 value={draft.vacancy}
