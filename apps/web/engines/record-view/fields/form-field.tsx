@@ -41,7 +41,7 @@ export function FormField({
       <span className="flex items-center justify-between gap-2 text-[var(--foreground)]/80">
         <span className="flex items-center gap-1">
           {label}
-          {required ? <span aria-hidden="true" className="text-rose-600">*</span> : null}
+          {required ? <span aria-hidden="true" className="text-base leading-none text-rose-600">*</span> : null}
         </span>
         {showCounter ? (
           <span
