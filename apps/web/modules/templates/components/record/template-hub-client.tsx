@@ -42,9 +42,10 @@ export function TemplateHubClient({
 
   return (
     <RecordDetailClientScaffold
-      title="Template sync"
+      title="Templates"
       backHref={backHref}
       dirtyMessage=""
+      headerVariant="section"
       modeNotice={{ mode: "edit", label: "Template" }}
     >
       {(page) => <TemplateHubView page={page} controller={controller} />}
