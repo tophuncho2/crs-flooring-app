@@ -3,7 +3,6 @@
 import type { ReactNode } from "react"
 import {
   adjustmentSign,
-  composeRollNumberDisplay,
   formatAdjustmentTransition,
   type InventoryAdjustmentRow,
   type FlooringInventoryAdjustmentStatus,
@@ -137,7 +136,7 @@ export function renderAdjustmentReadOnlyCell(
         return (
           <TextCell
             editable={false}
-            value={composeRollNumberDisplay(row.rollPrefix ?? "", row.rollNumber ?? "") || "—"}
+            value={row.rollNumber || "—"}
             ariaLabel={`${row.adjustmentNumber} roll number`}
           />
         )

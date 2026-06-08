@@ -103,13 +103,7 @@ export function StagedInvRowSubGrid({
         return (
           <TextCell
             editable={editable}
-            value={
-              editable
-                ? draft.rollNumber
-                : draft.rollNumber
-                  ? `${draft.rollPrefix}${draft.rollNumber}`
-                  : ""
-            }
+            value={draft.rollNumber}
             onChange={(next) => onSetField(filterClientId, draft.clientId, "rollNumber", next)}
             ariaLabel="Roll number"
           />
