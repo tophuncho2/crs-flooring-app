@@ -36,6 +36,7 @@ export function useSingleSectionRecordController<TRecord extends BaseRecord, TLo
   deleteRecord,
   deleteErrorMessage = "Failed to delete record",
   manageDirtySections = true,
+  reconcile,
 }: {
   page: RecordDetailClientScaffoldContext
   scope: string
@@ -53,6 +54,8 @@ export function useSingleSectionRecordController<TRecord extends BaseRecord, TLo
   deleteRecord?: (record: TRecord) => Promise<void>
   deleteErrorMessage?: string
   manageDirtySections?: boolean
+  /** Write-through sink for the canonical record — see `useRecordDetailController`. */
+  reconcile?: (record: TRecord) => void
 }) {
   const detail = useRecordDetailController<TRecord, never>({
     scope,
@@ -61,6 +64,7 @@ export function useSingleSectionRecordController<TRecord extends BaseRecord, TLo
     url: detailUrl,
     payloadKey,
     manageDraft: false,
+    reconcile,
   })
 
   const currentRecord = detail.record ?? initialRecord

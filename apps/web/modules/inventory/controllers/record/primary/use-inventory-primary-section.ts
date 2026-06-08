@@ -1,5 +1,6 @@
 "use client"
 
+import { useQueryClient } from "@tanstack/react-query"
 import {
   useSingleSectionRecordController,
   type RecordDetailClientScaffoldContext,
@@ -13,6 +14,7 @@ import {
   deleteInventoryRequest,
   updateInventoryRequest,
 } from "@/modules/inventory/data/mutations"
+import { INVENTORY_DETAIL_QUERY_KEY } from "@/modules/inventory/data/inventory-detail-request"
 
 /**
  * Primary section of the inventory record view. Mirrors `useMcPrimarySection`:
@@ -29,6 +31,8 @@ export function useInventoryPrimarySection({
   page: RecordDetailClientScaffoldContext
   entry: InventoryDetail
 }) {
+  const queryClient = useQueryClient()
+
   return useSingleSectionRecordController<InventoryDetail, InventoryForm>({
     page,
     scope: "inventory",
@@ -38,6 +42,11 @@ export function useInventoryPrimarySection({
     payloadKey: "inventory",
     createLocalValue: toInventoryForm,
     manageDirtySections: false,
+    // Write-through every reconciled record into the detail query the reference
+    // header reads (`selection.inventory`), so a primary save or an adjustment
+    // mutation refreshes the header row immediately — no manual page refresh.
+    reconcile: (record) =>
+      queryClient.setQueryData([...INVENTORY_DETAIL_QUERY_KEY, entry.id], record),
     saveSection: async ({ localValue, record }) => {
       const { inventory } = await updateInventoryRequest(record.id, localValue, record.updatedAt)
       return {
