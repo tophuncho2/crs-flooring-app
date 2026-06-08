@@ -458,10 +458,11 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* Right-anchored create action — opens the manual create-inventory
-                form. Sits in its own top-aligned cell so it lines up with the
-                top row of the search cell on the left. */}
-            <ListToolbarCell className="self-start">
+            {/* Far-right create action — opens the manual create-inventory
+                form. `ml-auto` pushes it to the right edge (matching the other
+                list views' "+ New" button); `self-start` keeps it top-aligned
+                in the tall toolbar. */}
+            <ListToolbarCell className="ml-auto self-start">
               <AddInventoryButton onClick={() => openCreate()} />
             </ListToolbarCell>
           </ListToolbar>
