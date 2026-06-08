@@ -113,6 +113,7 @@ function TemplateHubView({
         discardMessage="This template has unsaved changes. Switching templates will discard them."
         actions={({ guard }) => (
           <>
+            <PickerAddButton label="+ Template" onClick={newTemplate} />
             {!expanded ? (
               <button
                 type="button"
@@ -136,7 +137,6 @@ function TemplateHubView({
                 }}
               />
             ) : null}
-            <PickerAddButton label="+ Template" onClick={newTemplate} />
             <ReferenceHeaderClearButton
               disabled={!cascade.hasSelections}
               onClick={() =>
