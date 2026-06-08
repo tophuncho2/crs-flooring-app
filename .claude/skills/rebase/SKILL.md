@@ -178,7 +178,9 @@ npm run db:deploy                            # ran here, in <TOPIC>/, against <T
 cd "<BASE_WT>"
 git merge --ff-only <TOPIC>                  # ff — TOPIC now sits directly on top of BASE
 git push origin <BASE>
-# npm run db:deploy   ← only in the separate-DB case AND "BASE DB will gain" was non-empty
+npm run db:deploy                            # separate-DB only: applies TOPIC's new migrations to the BASE DB
+                                             #   (run manually; no-op if "BASE DB will gain" was empty)
+                                             #   omit entirely in the shared-DB case — already deployed above
 ```
 
 - **CLEAR** → print runbook as-is.
