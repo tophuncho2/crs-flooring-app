@@ -28,7 +28,7 @@ export function ManufacturerPrimaryFieldsSection({
   return (
     <FieldSection gap="0.75rem">
       <CellAt col={1} colSpan={8}>
-        <FormField label="Company Name">
+        <FormField label="Company Name" required>
           <TextCell
             editable={editable}
             value={draft.companyName}
