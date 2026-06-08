@@ -74,11 +74,9 @@ function optionalBoundedText(
   return value
 }
 
-function optionalVacancy(value: unknown): "VACANT" | "OCCUPIED" | null {
-  if (value === undefined || value === null) return null
+function requiredVacancy(value: unknown): "VACANT" | "OCCUPIED" {
   if (value === "VACANT" || value === "OCCUPIED") return value
-  if (value === "") return null
-  return null
+  failWorkOrder("Vacancy status is required", "vacancy")
 }
 
 function optionalTimeOfDay(value: unknown): "AM" | "PM" | null {
@@ -122,7 +120,7 @@ export function validateCreateWorkOrderInput(
       failWorkOrder,
     ),
     scheduledFor: optionalDate(body.scheduledFor, "scheduledFor"),
-    vacancy: optionalVacancy(body.vacancy),
+    vacancy: requiredVacancy(body.vacancy),
     timeOfDay: optionalTimeOfDay(body.timeOfDay),
   }
 }
@@ -158,7 +156,7 @@ export function validateUpdateWorkOrderInput(
     )
   }
   if ("scheduledFor" in body) input.scheduledFor = optionalDate(body.scheduledFor, "scheduledFor")
-  if ("vacancy" in body) input.vacancy = optionalVacancy(body.vacancy)
+  if ("vacancy" in body) input.vacancy = requiredVacancy(body.vacancy)
   if ("timeOfDay" in body) input.timeOfDay = optionalTimeOfDay(body.timeOfDay)
 
   return input
@@ -277,7 +275,9 @@ const TEXT_FILTER_KEYS = ["unitType", "unitNumber", "workOrderNumber", "descript
 type TextFilterKey = (typeof TEXT_FILTER_KEYS)[number]
 
 // Vacancy enum filter — single-select, carried as a one-element array. Invalid
-// values are dropped (filter off) rather than 400'd, matching optionalVacancy.
+// list-filter values are dropped (filter off) rather than 400'd. (Note: the
+// vacancy *field* is required on create/update via `requiredVacancy`; this is
+// only the read-side filter.)
 const VACANCY_VALUES = ["VACANT", "OCCUPIED"] as const
 
 const listWorkOrdersQuerySchema = z.object({

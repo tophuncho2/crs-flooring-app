@@ -9,7 +9,11 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
 import { EMPTY_WORK_ORDER_FORM, type WorkOrderForm } from "@builders/domain"
-import { toUpdateWorkOrderInput } from "@/modules/work-orders/controllers/record/drafts"
+import { createRecordSectionError } from "@/types/record/section-error"
+import {
+  toUpdateWorkOrderInput,
+  validateWorkOrderPrimaryForm,
+} from "@/modules/work-orders/controllers/record/drafts"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { WorkOrderRecordFooter } from "./footer"
 
@@ -24,10 +28,18 @@ function WorkOrderCreatePanel({
     page,
     createInitialValue: () => ({ ...EMPTY_WORK_ORDER_FORM }),
     createRecord: async (localValue) => {
-      // The create API requires propertyId + warehouseId; the form
-      // validator catches missing required fields before submit. Cast
-      // the partial-update shape to the create input shape — the
-      // validator on the server enforces the required keys.
+      // Gate on the shared form validator first (property + vacancy required)
+      // so the user sees an inline message instead of a server 400. The
+      // server validator still enforces the required keys as the source of truth.
+      const validationError = validateWorkOrderPrimaryForm(localValue)
+      if (validationError) {
+        throw createRecordSectionError({
+          kind: "validation",
+          message: validationError,
+          retryable: true,
+        })
+      }
+      // Cast the partial-update shape to the create input shape.
       const updateInput = toUpdateWorkOrderInput(localValue)
       const payload = await createWorkOrderRequest({
         propertyId: localValue.propertyId,

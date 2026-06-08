@@ -4,7 +4,7 @@ import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ExternalLink, Pencil } from "lucide-react"
 import { StaticFieldValue } from "@/engines/record-view"
-import { SelectCell, TextCell, TextareaCell } from "@/engines/record-view"
+import { SegmentedChoiceCell, TextCell, TextareaCell } from "@/engines/record-view"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
@@ -218,11 +218,11 @@ export function WorkOrderPropertyUnitGroup({
               )}
             </WorkOrderField>
             <WorkOrderField label="Vacancy" required>
-              <SelectCell
+              <SegmentedChoiceCell
                 editable={editable}
                 value={draft.vacancy}
                 options={VACANCY_OPTIONS}
-                placeholder="—"
+                ariaLabel="Vacancy"
                 onChange={(value) =>
                   onFieldChange("vacancy", value as WorkOrderForm["vacancy"])
                 }

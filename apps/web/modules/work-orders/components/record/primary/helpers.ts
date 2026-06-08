@@ -1,9 +1,11 @@
-import type { PropertyJoinedFields } from "@/engines/record-view"
+import type { PropertyJoinedFields, SegmentedChoiceOption } from "@/engines/record-view"
 import type { WorkOrderPrimaryDetail } from "./types"
 
-export const VACANCY_OPTIONS = [
-  { value: "VACANT", label: "Vacant" },
-  { value: "OCCUPIED", label: "Occupied" },
+// Vacant = light green (success tone), Occupied = caution yellow (warning tone).
+// Colour shows in the record/create form only — the list column stays plain text.
+export const VACANCY_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
+  { value: "VACANT", label: "Vacant", tone: "success" },
+  { value: "OCCUPIED", label: "Occupied", tone: "warning" },
 ]
 
 export const TIME_OF_DAY_OPTIONS = [
