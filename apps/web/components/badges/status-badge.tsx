@@ -16,19 +16,29 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ")
 }
 
+export type BadgeSize = "sm" | "md"
+
+const SIZE_CLASS_NAME: Record<BadgeSize, string> = {
+  sm: "px-2.5 py-1 text-[10px]",
+  md: "px-3 py-1.5 text-xs",
+}
+
 export function StatusBadge({
   children,
   tone = "default",
+  size = "sm",
   className,
 }: {
   children: ReactNode
   tone?: BadgeTone
+  size?: BadgeSize
   className?: string
 }) {
   return (
     <span
       className={joinClassNames(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-full border font-semibold uppercase tracking-[0.12em]",
+        SIZE_CLASS_NAME[size],
         TONE_CLASS_NAME[tone],
         className,
       )}

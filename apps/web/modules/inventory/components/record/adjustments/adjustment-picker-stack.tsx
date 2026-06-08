@@ -1,9 +1,8 @@
 "use client"
 
-import { FieldSection, FormField } from "@/components/fields"
-import { SectionCard } from "@/components/headers"
-import { CellAt } from "@/components/layout-grid/cell-at"
 import { WorkOrderPicker } from "@/modules/work-orders/components/picker/work-order-picker"
+import { InventoryField } from "../primary/groups/inventory-field"
+import { InventoryGroup } from "../primary/groups/inventory-group"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 
 export type AdjustmentPickerStackProps = {
@@ -31,39 +30,31 @@ export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps
   const materialItemResolving = Boolean(form.workOrderId) && !form.workOrderItemId
 
   return (
-    <div className="flex flex-col gap-3">
-      <SectionCard title="Work order" tone="neutral">
-        <FieldSection gap="0.75rem">
-          <CellAt col={1} colSpan={8}>
-            <FormField label="Work order">
-              <WorkOrderPicker
-                value={form.workOrderId}
-                productId={productId}
-                selectedLabel={local.pickedWorkOrderLabel || null}
-                onChange={() => {}}
-                onOptionSelected={(option) => void controller.selectWorkOrderOption(option)}
-                disabled={isSaving || !woEditable}
-                ariaLabel="Select work order"
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={8}>
-            {/* Read-only: auto-linked from the selected work order (product is
-                fixed + unique per WO), so there is no picker — product name only. */}
-            <FormField label="Material item">
-              {!form.workOrderId ? (
-                <span className="text-sm text-[var(--foreground)]/55">Select a work order</span>
-              ) : materialItemResolving ? (
-                <span className="text-sm text-[var(--foreground)]/55">Resolving…</span>
-              ) : (
-                <span className="truncate text-sm text-[var(--foreground)]">
-                  {workOrderItemLabel}
-                </span>
-              )}
-            </FormField>
-          </CellAt>
-        </FieldSection>
-      </SectionCard>
-    </div>
+    <InventoryGroup title="Work order" tone="blue">
+      <div className="flex flex-col gap-3">
+        <InventoryField label="Work order">
+          <WorkOrderPicker
+            value={form.workOrderId}
+            productId={productId}
+            selectedLabel={local.pickedWorkOrderLabel || null}
+            onChange={() => {}}
+            onOptionSelected={(option) => void controller.selectWorkOrderOption(option)}
+            disabled={isSaving || !woEditable}
+            ariaLabel="Select work order"
+          />
+        </InventoryField>
+        {/* Read-only: auto-linked from the selected work order (product is
+            fixed + unique per WO), so there is no picker — product name only. */}
+        <InventoryField label="Material item">
+          {!form.workOrderId ? (
+            <span className="text-sm text-[var(--foreground)]/55">Select a work order</span>
+          ) : materialItemResolving ? (
+            <span className="text-sm text-[var(--foreground)]/55">Resolving…</span>
+          ) : (
+            <span className="truncate text-sm text-[var(--foreground)]">{workOrderItemLabel}</span>
+          )}
+        </InventoryField>
+      </div>
+    </InventoryGroup>
   )
 }

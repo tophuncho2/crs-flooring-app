@@ -2,7 +2,7 @@
 
 import { formatAdjustmentStatus, type FlooringInventoryAdjustmentStatus } from "@builders/domain"
 import type { BadgeTone } from "./contracts/badge-tone"
-import { StatusBadge } from "./status-badge"
+import { StatusBadge, type BadgeSize } from "./status-badge"
 
 const TONE_BY_STATUS: Record<FlooringInventoryAdjustmentStatus, BadgeTone> = {
   PENDING: "warning",
@@ -12,6 +12,7 @@ const TONE_BY_STATUS: Record<FlooringInventoryAdjustmentStatus, BadgeTone> = {
 
 export type AdjustmentStatusBadgeProps = {
   status: FlooringInventoryAdjustmentStatus
+  size?: BadgeSize
   className?: string
 }
 
@@ -24,9 +25,9 @@ export type AdjustmentStatusBadgeProps = {
  * The status → tone mapping is itself a UI presentation choice (not a domain
  * rule), so it lives here next to the badge primitive rather than in domain.
  */
-export function AdjustmentStatusBadge({ status, className }: AdjustmentStatusBadgeProps) {
+export function AdjustmentStatusBadge({ status, size, className }: AdjustmentStatusBadgeProps) {
   return (
-    <StatusBadge tone={TONE_BY_STATUS[status]} className={className}>
+    <StatusBadge tone={TONE_BY_STATUS[status]} size={size} className={className}>
       {formatAdjustmentStatus(status)}
     </StatusBadge>
   )
