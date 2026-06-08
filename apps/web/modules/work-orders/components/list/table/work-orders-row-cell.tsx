@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import { formatStableDate, type WorkOrderListRow } from "@builders/domain"
+import { formatEasternDateTime, formatStableDate, type WorkOrderListRow } from "@builders/domain"
 
 /**
  * Per-cell renderer for the work-orders list `DataTable`. Switches on
@@ -34,6 +34,10 @@ export function renderWorkOrderRowCell(
       return row.unitNumber || "-"
     case "unitType":
       return row.unitType || "-"
+    case "createdAt":
+      return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
+    case "updatedAt":
+      return <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
     default:
       return "-"
   }

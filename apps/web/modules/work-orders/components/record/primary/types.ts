@@ -22,4 +22,6 @@ export type WorkOrderPrimaryDetail = {
   statusName: string | null
   warehouseId: string | null
   warehouseName: string
+  createdAt: string
+  updatedAt: string
 }

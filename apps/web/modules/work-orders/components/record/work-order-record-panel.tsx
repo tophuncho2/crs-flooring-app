@@ -118,6 +118,8 @@ export function WorkOrderRecordPanel({
                     statusName: controller.record.statusName,
                     warehouseId: controller.record.warehouseId,
                     warehouseName: controller.record.warehouseName,
+                    createdAt: controller.record.createdAt,
+                    updatedAt: controller.record.updatedAt,
                   }}
                   disabled={controller.primarySection.isSaving}
                   onFieldChange={(field, value) => {

@@ -53,6 +53,7 @@ export function WorkOrderPrimaryFieldsSection({
       <WorkOrderNotesGroup
         editable={editable}
         draft={draft}
+        detail={detail}
         onFieldChange={onFieldChange}
       />
     </div>
