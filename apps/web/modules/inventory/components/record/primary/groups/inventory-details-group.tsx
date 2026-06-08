@@ -6,7 +6,6 @@ import {
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
   type InventoryForm,
-  type InventoryRow,
 } from "@builders/domain"
 import { InventoryArchiveChip } from "../controls/inventory-archive-chip"
 import { InventoryField } from "./inventory-field"
@@ -14,10 +13,10 @@ import { InventoryGroup } from "./inventory-group"
 
 /**
  * The record view's inventory cells group — one card laid out as a two-column
- * grid (Location, Internal Notes, Warehouse, Category, then the stock/coverage
- * derived fields). The identity/derived fields now duplicated by the reference
- * header row (Product, Inv #, Import #, PO #, FIFO, Updated) have been removed;
- * pairing/layout of the remaining fields is a pending follow-up.
+ * grid (Location, Internal Notes, Warehouse). Identity fields surfaced by the
+ * reference header row (Product, Inv #, Import #, PO #, Roll #, Dye Lot, Note,
+ * FIFO, Updated) are not repeated here; pairing/layout of the remaining fields
+ * is a pending follow-up.
  *
  * Only Location + Internal Notes (and the archive chip in the header) are
  * editable; everything else is identity / derived data rendered static. The
@@ -26,7 +25,6 @@ import { InventoryGroup } from "./inventory-group"
  */
 export function InventoryDetailsGroup({
   editable,
-  inventory,
   draft,
   warehouseName,
   onFieldChange,
@@ -34,7 +32,6 @@ export function InventoryDetailsGroup({
   tone = "blue",
 }: {
   editable: boolean
-  inventory: InventoryRow
   draft: InventoryForm
   warehouseName: string | null
   onFieldChange: (field: keyof InventoryForm, value: string | boolean) => void
@@ -80,18 +77,6 @@ export function InventoryDetailsGroup({
 
         <InventoryField label="Warehouse">
           <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
-        </InventoryField>
-
-        <InventoryField label="Roll #">
-          <StaticFieldValue>{inventory.rollNumber || "—"}</StaticFieldValue>
-        </InventoryField>
-
-        <InventoryField label="Dye Lot">
-          <StaticFieldValue>{inventory.dyeLot || "—"}</StaticFieldValue>
-        </InventoryField>
-
-        <InventoryField label="Note">
-          <StaticFieldValue>{inventory.note || "—"}</StaticFieldValue>
         </InventoryField>
       </div>
     </InventoryGroup>

@@ -1,6 +1,6 @@
 "use client"
 
-import type { InventoryForm, InventoryRow } from "@builders/domain"
+import type { InventoryForm } from "@builders/domain"
 import { InventoryDetailsGroup } from "./groups/inventory-details-group"
 
 /**
@@ -11,13 +11,11 @@ import { InventoryDetailsGroup } from "./groups/inventory-details-group"
  * static. Analog of `ManagementCompanyCellsSection`.
  */
 export function InventoryPrimaryFieldsSection({
-  inventory,
   draft,
   warehouseName,
   editable,
   onFieldChange,
 }: {
-  inventory: InventoryRow
   draft: InventoryForm
   warehouseName: string | null
   editable: boolean
@@ -26,7 +24,6 @@ export function InventoryPrimaryFieldsSection({
   return (
     <InventoryDetailsGroup
       editable={editable}
-      inventory={inventory}
       draft={draft}
       warehouseName={warehouseName}
       onFieldChange={onFieldChange}
