@@ -192,7 +192,7 @@ export function renderWorkOrderAdjustments(
     item.inventoryAdjustments.map((adj) => ({ adj, productName: item.productName })),
   )
   if (rows.length === 0) {
-    return `<div class="empty-cell">No inventory adjustments.</div>`
+    return ""
   }
   const renderedRows = rows.map((row) => renderAdjustmentRow(row, includeInventoryDetail)).join("\n")
   const headCells = includeInventoryDetail
