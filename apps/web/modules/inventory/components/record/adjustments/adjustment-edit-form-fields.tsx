@@ -99,7 +99,7 @@ export function AdjustmentEditFormFields({
               disabled={isSaving}
             />
           </InventoryField>
-          <InventoryField label="Quantity">
+          <InventoryField label="Quantity" required>
             <UnitCell
               editable={quantityEditable}
               value={form.quantity}
@@ -171,7 +171,7 @@ export function AdjustmentEditFormFields({
       }
     >
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-        <InventoryField label="Quantity">
+        <InventoryField label="Quantity" required>
           <UnitCell
             editable={quantityEditable}
             value={form.quantity}
