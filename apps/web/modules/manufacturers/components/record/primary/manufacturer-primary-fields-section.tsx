@@ -71,17 +71,6 @@ export function ManufacturerPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Website">
-          <TextCell
-            editable={editable}
-            value={draft.website}
-            onChange={(next) => onFieldChange("website", next)}
-            placeholder="https://"
-            ariaLabel="Manufacturer website"
-          />
-        </FormField>
-      </CellAt>
       {showSummary ? (
         <>
           <CellAt col={1} colSpan={2}>

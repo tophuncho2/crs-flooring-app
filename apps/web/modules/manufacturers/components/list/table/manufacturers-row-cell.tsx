@@ -11,8 +11,6 @@ export function renderManufacturerRowCell(
       return <span className="font-medium text-blue-500">{row.companyName || "-"}</span>
     case "agentName":
       return row.agentName || "-"
-    case "website":
-      return row.website || "-"
     case "phone":
       return row.phone || "-"
     case "email":
