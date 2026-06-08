@@ -9,7 +9,6 @@ export function validateTemplateForm(input: TemplateForm) {
 export function toTemplateForm(template: TemplateDetail): TemplateForm {
   return {
     propertyId: template.propertyId,
-    managementCompanyId: template.managementCompanyId ?? "",
     jobTypeId: template.jobTypeId ?? "",
     warehouseId: template.warehouseId ?? "",
     unitType: template.unitType,

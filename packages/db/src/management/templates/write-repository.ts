@@ -6,7 +6,6 @@ type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
 export type CreateTemplateRecordInput = {
   propertyId: string
-  managementCompanyId: string | null
   jobTypeId: string | null
   warehouseId: string | null
   unitType: string
@@ -28,6 +27,7 @@ const templateDetailSelect = {
   property: {
     select: {
       name: true,
+      managementCompany: { select: { id: true, name: true } },
       streetAddress: true,
       city: true,
       state: true,
@@ -35,8 +35,6 @@ const templateDetailSelect = {
       instructions: true,
     },
   },
-  managementCompanyId: true,
-  managementCompany: { select: { id: true, name: true } },
   jobTypeId: true,
   jobType: { select: { id: true, name: true } },
   warehouseId: true,

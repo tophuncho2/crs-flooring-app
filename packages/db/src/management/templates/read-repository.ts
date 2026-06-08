@@ -34,9 +34,9 @@ const templateListSelect = {
   unitType: true,
   description: true,
   propertyId: true,
-  property: { select: { name: true } },
-  managementCompanyId: true,
-  managementCompany: { select: { id: true, name: true } },
+  property: {
+    select: { name: true, managementCompany: { select: { id: true, name: true } } },
+  },
   jobTypeId: true,
   jobType: { select: { id: true, name: true } },
   warehouseId: true,
@@ -53,6 +53,7 @@ const templateDetailSelect = {
   property: {
     select: {
       name: true,
+      managementCompany: { select: { id: true, name: true } },
       streetAddress: true,
       city: true,
       state: true,
@@ -78,7 +79,8 @@ const templateDetailSelect = {
 /**
  * List-view search mirrors the picker (`searchTemplateOptions`): OR-ILIKE
  * across unitType and description. Filters AND together via exact `IN (...)`
- * matches on the direct columns of `FlooringTemplate`.
+ * matches — propertyId on `FlooringTemplate` directly, managementCompanyId
+ * through the linked property (templates no longer store their own MC).
  */
 function buildTemplatesWhere(
   searchQuery: string | undefined,
@@ -98,7 +100,7 @@ function buildTemplatesWhere(
 
   const managementCompanyIds = filters?.managementCompanyId
   if (managementCompanyIds && managementCompanyIds.length > 0) {
-    clauses.push({ managementCompanyId: { in: [...managementCompanyIds] } })
+    clauses.push({ property: { managementCompanyId: { in: [...managementCompanyIds] } } })
   }
 
   const propertyIds = filters?.propertyId

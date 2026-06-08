@@ -10,16 +10,11 @@ export default async function TemplateCreatePage({
   await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const propertyId = typeof resolvedSearchParams?.propertyId === "string" ? resolvedSearchParams.propertyId : undefined
-  const managementCompanyId =
-    typeof resolvedSearchParams?.managementCompanyId === "string"
-      ? resolvedSearchParams.managementCompanyId
-      : undefined
 
   return (
     <TemplateCreateClient
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/templates")}
       initialPropertyId={propertyId}
-      initialManagementCompanyId={managementCompanyId}
     />
   )
 }

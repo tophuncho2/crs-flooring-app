@@ -11,7 +11,6 @@ import { listWorkOrderMaterialItems } from "./material-items/read-repository.js"
 export type CreateWorkOrderRecordInput = {
   propertyId: string
   templateId: string | null
-  managementCompanyId: string | null
   jobTypeId: string | null
   warehouseId: string | null
   statusId?: string | null

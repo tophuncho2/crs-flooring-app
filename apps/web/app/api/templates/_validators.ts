@@ -85,7 +85,6 @@ export function validateCreateTemplateInput(
 ): CreateTemplateUseCaseInput {
   return {
     propertyId: requireString(body.propertyId, "propertyId", failTemplate),
-    managementCompanyId: optionalString(body.managementCompanyId),
     jobTypeId: optionalString(body.jobTypeId),
     warehouseId: optionalString(body.warehouseId),
     unitType: requireBoundedString(body.unitType, TEMPLATE_UNIT_TYPE_MAX, "unitType", failTemplate),
@@ -111,7 +110,6 @@ export function validateUpdateTemplateInput(
   const input: UpdateTemplateUseCaseInput = {}
 
   if ("propertyId" in body) input.propertyId = requireString(body.propertyId, "propertyId", failTemplate)
-  if ("managementCompanyId" in body) input.managementCompanyId = optionalString(body.managementCompanyId)
   if ("jobTypeId" in body) input.jobTypeId = optionalString(body.jobTypeId)
   if ("warehouseId" in body) input.warehouseId = optionalString(body.warehouseId)
   if ("unitType" in body) {

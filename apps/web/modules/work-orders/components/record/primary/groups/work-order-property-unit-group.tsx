@@ -12,12 +12,7 @@ import {
   buildRecordDetailHref,
   buildTemplateHubHref,
 } from "@/hooks/navigation/routes"
-import {
-  applyManagementCompanySelection,
-  applyPropertySelection,
-  applyTemplateSelection,
-} from "@/engines/picker"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
+import { applyPropertySelection, applyTemplateSelection } from "@/engines/picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
 import type { PropertyJoinedFields } from "@/engines/record-view"
@@ -72,26 +67,24 @@ export function WorkOrderPropertyUnitGroup({
   onFieldsChange: (patch: Partial<WorkOrderForm>) => void
   onPropertyOption: (option: PropertyOption | null) => void
 }) {
-  const managementCompanyValue = draft.managementCompanyId || null
   const propertyValue = draft.propertyId || null
   const templateValue = draft.templateId || null
 
-  const [pickedMcLabel, setPickedMcLabel] = useState<string | null>(null)
+  // The management company is a read-only mirror of the selected property's MC
+  // (work orders no longer store their own). Track the picked property's MC id +
+  // name so the cell + "open MC" link follow a re-select before save.
   const [pickedPropertyLabel, setPickedPropertyLabel] = useState<string | null>(null)
   const [pickedTemplateLabel, setPickedTemplateLabel] = useState<string | null>(null)
+  const [pickedMc, setPickedMc] = useState<{ id: string | null; name: string | null } | null>(null)
 
-  // Clear the picked-label snapshots when the bound detail ids change — done
-  // during render (previous-value tracking) so the next record's saved names
-  // show immediately instead of after a post-commit effect.
-  const [trackedMcId, setTrackedMcId] = useState(detail?.managementCompanyId)
-  if (trackedMcId !== detail?.managementCompanyId) {
-    setTrackedMcId(detail?.managementCompanyId)
-    setPickedMcLabel(null)
-  }
+  // Clear the picked snapshots when the bound detail ids change — done during
+  // render (previous-value tracking) so the next record's saved names show
+  // immediately instead of after a post-commit effect.
   const [trackedPropertyId, setTrackedPropertyId] = useState(detail?.propertyId)
   if (trackedPropertyId !== detail?.propertyId) {
     setTrackedPropertyId(detail?.propertyId)
     setPickedPropertyLabel(null)
+    setPickedMc(null)
   }
   const [trackedTemplateId, setTrackedTemplateId] = useState(detail?.templateId)
   if (trackedTemplateId !== detail?.templateId) {
@@ -99,7 +92,8 @@ export function WorkOrderPropertyUnitGroup({
     setPickedTemplateLabel(null)
   }
 
-  const managementCompanyLabel = pickedMcLabel ?? detail?.managementCompanyName ?? null
+  const managementCompanyValue = pickedMc ? pickedMc.id : detail?.managementCompanyId ?? null
+  const managementCompanyLabel = pickedMc ? pickedMc.name : detail?.managementCompanyName ?? null
   const propertyLabel = pickedPropertyLabel ?? detail?.propertyName ?? null
   const templateLabel = pickedTemplateLabel ?? (detail?.templateUnitType || null)
 
@@ -193,28 +187,7 @@ export function WorkOrderPropertyUnitGroup({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-3">
             <WorkOrderField label="Management Company">
-              {editable ? (
-                <ManagementCompanyPicker
-                  value={managementCompanyValue}
-                  onChange={() => {}}
-                  onOptionSelected={(option) => {
-                    const patch = applyManagementCompanySelection(option)
-                    onFieldsChange({
-                      managementCompanyId: patch.managementCompanyId ?? "",
-                      propertyId: patch.propertyId ?? "",
-                      templateId: patch.templateId ?? "",
-                    })
-                    setPickedMcLabel(patch.managementCompanyLabel ?? null)
-                    setPickedPropertyLabel(patch.propertyLabel ?? null)
-                    setPickedTemplateLabel(patch.templateLabel ?? null)
-                  }}
-                  selectedLabel={managementCompanyLabel}
-                  placeholder="—"
-                  ariaLabel="Management company"
-                />
-              ) : (
-                <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
-              )}
+              <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
             </WorkOrderField>
             <WorkOrderField label="Property">
               {editable ? (
@@ -223,21 +196,19 @@ export function WorkOrderPropertyUnitGroup({
                   onChange={() => {}}
                   onOptionSelected={(option) => {
                     const patch = applyPropertySelection(option)
-                    const fieldPatch: Partial<WorkOrderForm> = {
+                    onFieldsChange({
                       propertyId: patch.propertyId ?? "",
                       templateId: patch.templateId ?? "",
-                    }
-                    // Back-fill the MC when the property carries a linked one.
-                    if (patch.managementCompanyId !== undefined) {
-                      fieldPatch.managementCompanyId = patch.managementCompanyId ?? ""
-                      setPickedMcLabel(patch.managementCompanyLabel ?? null)
-                    }
-                    onFieldsChange(fieldPatch)
+                    })
                     setPickedPropertyLabel(patch.propertyLabel ?? null)
                     setPickedTemplateLabel(patch.templateLabel ?? null)
+                    // MC mirrors the chosen property (null when it has none).
+                    setPickedMc({
+                      id: option?.managementCompanyId ?? null,
+                      name: option?.managementCompanyName ?? null,
+                    })
                     onPropertyOption(option)
                   }}
-                  managementCompanyId={managementCompanyValue}
                   selectedLabel={propertyLabel}
                   placeholder="Select property"
                   ariaLabel="Property"

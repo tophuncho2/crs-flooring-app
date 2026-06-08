@@ -108,7 +108,6 @@ export function validateCreateWorkOrderInput(
     // Warehouse is optional — a work order may be created without one.
     warehouseId: optionalString(body.warehouseId),
     templateId: optionalString(body.templateId),
-    managementCompanyId: optionalString(body.managementCompanyId),
     jobTypeId: optionalString(body.jobTypeId),
     statusId: optionalString(body.statusId),
     unitNumber: optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder),
@@ -141,7 +140,6 @@ export function validateUpdateWorkOrderInput(
     input.warehouseId = optionalString(body.warehouseId)
   }
   if ("templateId" in body) input.templateId = optionalString(body.templateId)
-  if ("managementCompanyId" in body) input.managementCompanyId = optionalString(body.managementCompanyId)
   if ("jobTypeId" in body) input.jobTypeId = optionalString(body.jobTypeId)
   if ("statusId" in body) input.statusId = optionalString(body.statusId)
   if ("unitNumber" in body) input.unitNumber = optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder)

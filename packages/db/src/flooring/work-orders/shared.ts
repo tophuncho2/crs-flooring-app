@@ -12,9 +12,9 @@ export const workOrderListSelect = {
   id: true,
   workOrderNumber: true,
   propertyId: true,
-  property: { select: { name: true } },
-  managementCompanyId: true,
-  managementCompany: { select: { id: true, name: true } },
+  property: {
+    select: { name: true, managementCompany: { select: { id: true, name: true } } },
+  },
   jobTypeId: true,
   jobType: { select: { id: true, name: true } },
   templateId: true,
@@ -44,6 +44,7 @@ export const workOrderDetailSelect = {
   property: {
     select: {
       name: true,
+      managementCompany: { select: { id: true, name: true } },
       streetAddress: true,
       city: true,
       state: true,
@@ -51,8 +52,6 @@ export const workOrderDetailSelect = {
       instructions: true,
     },
   },
-  managementCompanyId: true,
-  managementCompany: { select: { id: true, name: true } },
   jobTypeId: true,
   jobType: { select: { id: true, name: true } },
   templateId: true,

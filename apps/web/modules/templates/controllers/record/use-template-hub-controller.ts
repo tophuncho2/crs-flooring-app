@@ -70,7 +70,7 @@ export function useTemplateHubController(
   const returnToParam = searchParams.get("returnTo")
   const cascade = useCascadePickerController({ initialSelections })
 
-  const { managementCompanyId, propertyId, templateId } = cascade
+  const { propertyId, templateId } = cascade
 
   const templateQuery = useQuery({
     queryKey: [...TEMPLATE_DETAIL_QUERY_KEY, templateId],
@@ -145,10 +145,9 @@ export function useTemplateHubController(
   const newTemplate = useCallback(() => {
     const params = new URLSearchParams()
     if (propertyId) params.set("propertyId", propertyId)
-    if (managementCompanyId) params.set("managementCompanyId", managementCompanyId)
     params.set("returnTo", TEMPLATE_HUB_BASE)
     router.push(`/dashboard/templates/new?${params.toString()}`)
-  }, [managementCompanyId, propertyId, router])
+  }, [propertyId, router])
 
   return {
     cascade,

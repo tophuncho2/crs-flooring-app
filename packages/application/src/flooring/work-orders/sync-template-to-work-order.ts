@@ -68,7 +68,6 @@ export async function syncTemplateToWorkOrderUseCase(
         workOrder: {
           propertyId: template.propertyId,
           templateId: template.id,
-          managementCompanyId: template.managementCompanyId,
           jobTypeId: template.jobTypeId,
           warehouseId: template.warehouseId,
           statusId,

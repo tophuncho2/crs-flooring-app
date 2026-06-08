@@ -39,7 +39,6 @@ export type TemplateOption = {
 
 export type TemplateForm = {
   propertyId: string
-  managementCompanyId: string
   jobTypeId: string
   warehouseId: string
   unitType: string
@@ -50,7 +49,6 @@ export type TemplateForm = {
 
 export const EMPTY_TEMPLATE_FORM: TemplateForm = {
   propertyId: "",
-  managementCompanyId: "",
   jobTypeId: "",
   warehouseId: "",
   unitType: "",

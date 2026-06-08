@@ -15,7 +15,6 @@ export function validateWorkOrderForm(input: WorkOrderForm) {
 export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
   return {
     propertyId: workOrder.propertyId,
-    managementCompanyId: workOrder.managementCompanyId ?? "",
     jobTypeId: workOrder.jobTypeId ?? "",
     templateId: workOrder.templateId ?? "",
     warehouseId: workOrder.warehouseId ?? "",

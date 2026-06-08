@@ -11,8 +11,7 @@ import {
   buildRecordCreateHref,
   buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
-import { applyManagementCompanySelection, applyPropertySelection } from "@/engines/picker"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
+import { applyPropertySelection } from "@/engines/picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import type { PropertyJoinedFields } from "@/engines/record-view"
 
@@ -59,27 +58,27 @@ export function TemplatePropertyUnitGroup({
   onFieldsChange: (patch: Partial<TemplateForm>) => void
   onPropertyOption: (option: PropertyOption | null) => void
 }) {
-  const managementCompanyValue = draft.managementCompanyId || null
   const propertyValue = draft.propertyId || null
 
-  const [pickedMcLabel, setPickedMcLabel] = useState<string | null>(null)
+  // The management company is a read-only mirror of the selected property's MC
+  // (templates no longer store their own). Track the picked property's MC id +
+  // name so the cell + "open MC" link follow a re-select before save; fall back
+  // to the saved detail otherwise.
   const [pickedPropertyLabel, setPickedPropertyLabel] = useState<string | null>(null)
+  const [pickedMc, setPickedMc] = useState<{ id: string | null; name: string | null } | null>(null)
 
-  // Clear the picked-label snapshots when the bound detail ids change — done
+  // Clear the picked snapshots when the bound detail record changes — done
   // during render (previous-value tracking) so the next record's saved names
   // show immediately instead of after a post-commit effect.
-  const [trackedMcId, setTrackedMcId] = useState(detail?.managementCompanyId)
-  if (trackedMcId !== detail?.managementCompanyId) {
-    setTrackedMcId(detail?.managementCompanyId)
-    setPickedMcLabel(null)
-  }
   const [trackedPropertyId, setTrackedPropertyId] = useState(detail?.propertyId)
   if (trackedPropertyId !== detail?.propertyId) {
     setTrackedPropertyId(detail?.propertyId)
     setPickedPropertyLabel(null)
+    setPickedMc(null)
   }
 
-  const managementCompanyLabel = pickedMcLabel ?? detail?.managementCompanyName ?? null
+  const managementCompanyValue = pickedMc ? pickedMc.id : detail?.managementCompanyId ?? null
+  const managementCompanyLabel = pickedMc ? pickedMc.name : detail?.managementCompanyName ?? null
   const propertyLabel = pickedPropertyLabel ?? detail?.propertyName ?? null
 
   const router = useRouter()
@@ -158,26 +157,7 @@ export function TemplatePropertyUnitGroup({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-3">
             <TemplateField label="Management Company">
-              {editable ? (
-                <ManagementCompanyPicker
-                  value={managementCompanyValue}
-                  onChange={() => {}}
-                  onOptionSelected={(option) => {
-                    const patch = applyManagementCompanySelection(option)
-                    onFieldsChange({
-                      managementCompanyId: patch.managementCompanyId ?? "",
-                      propertyId: patch.propertyId ?? "",
-                    })
-                    setPickedMcLabel(patch.managementCompanyLabel ?? null)
-                    setPickedPropertyLabel(patch.propertyLabel ?? null)
-                  }}
-                  selectedLabel={managementCompanyLabel}
-                  placeholder="No management company"
-                  ariaLabel="Management company"
-                />
-              ) : (
-                <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
-              )}
+              <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
             </TemplateField>
             <TemplateField label="Property">
               {editable ? (
@@ -186,19 +166,15 @@ export function TemplatePropertyUnitGroup({
                   onChange={() => {}}
                   onOptionSelected={(option) => {
                     const patch = applyPropertySelection(option)
-                    const fieldPatch: Partial<TemplateForm> = {
-                      propertyId: patch.propertyId ?? "",
-                    }
-                    // Back-fill the MC when the property carries a linked one.
-                    if (patch.managementCompanyId !== undefined) {
-                      fieldPatch.managementCompanyId = patch.managementCompanyId ?? ""
-                      setPickedMcLabel(patch.managementCompanyLabel ?? null)
-                    }
-                    onFieldsChange(fieldPatch)
+                    onFieldsChange({ propertyId: patch.propertyId ?? "" })
                     setPickedPropertyLabel(patch.propertyLabel ?? null)
+                    // MC mirrors the chosen property (null when it has none).
+                    setPickedMc({
+                      id: option?.managementCompanyId ?? null,
+                      name: option?.managementCompanyName ?? null,
+                    })
                     onPropertyOption(option)
                   }}
-                  managementCompanyId={managementCompanyValue}
                   selectedLabel={propertyLabel}
                   placeholder="Select property"
                   ariaLabel="Property"

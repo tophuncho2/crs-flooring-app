@@ -12,9 +12,7 @@ type TemplateListInput = {
   unitType: string
   description: string | null
   propertyId: string
-  property: { name: string }
-  managementCompanyId: string | null
-  managementCompany: { id: string; name: string } | null
+  property: { name: string; managementCompany: { id: string; name: string } | null }
   jobTypeId: string | null
   jobType: { id: string; name: string } | null
   warehouseId: string | null
@@ -29,6 +27,7 @@ type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
   installerInstructions: string | null
   property: {
     name: string
+    managementCompany: { id: string; name: string } | null
     streetAddress: string | null
     city: string | null
     state: string | null
@@ -46,8 +45,8 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
     description: template.description ?? "",
     propertyId: template.propertyId,
     propertyName: template.property.name,
-    managementCompanyId: template.managementCompanyId,
-    managementCompanyName: template.managementCompany?.name ?? null,
+    managementCompanyId: template.property.managementCompany?.id ?? null,
+    managementCompanyName: template.property.managementCompany?.name ?? null,
     jobTypeId: template.jobTypeId,
     jobTypeName: template.jobType?.name ?? null,
     warehouseId: template.warehouseId,

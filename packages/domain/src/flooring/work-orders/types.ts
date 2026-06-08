@@ -44,7 +44,6 @@ export type WorkOrderOption = {
 
 export type WorkOrderForm = {
   propertyId: string
-  managementCompanyId: string
   jobTypeId: string
   templateId: string
   warehouseId: string
@@ -62,7 +61,6 @@ export type WorkOrderForm = {
 
 export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   propertyId: "",
-  managementCompanyId: "",
   jobTypeId: "",
   templateId: "",
   warehouseId: "",

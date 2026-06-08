@@ -108,8 +108,6 @@ model FlooringManagementCompany {
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
   properties    Property[]
-  templates     FlooringTemplate[]
-  workOrders    FlooringWorkOrder[]
 
   @@map("flooring_management_company")
 }
@@ -440,8 +438,6 @@ model FlooringTemplate {
   templateNumber       String                     @unique @default(dbgenerated("('TP-'::text || (nextval('flooring_template_number_seq'::regclass))::text)")) @map("template_number")
   propertyId           String
   property             Property                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
-  managementCompanyId  String?
-  managementCompany    FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
   jobTypeId            String?
   jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
   warehouseId          String?
@@ -457,7 +453,6 @@ model FlooringTemplate {
 
   @@index([templateNumber])
   @@index([propertyId])
-  @@index([managementCompanyId])
   @@index([jobTypeId])
   @@index([warehouseId])
   @@index([unitType])
@@ -513,8 +508,6 @@ model FlooringWorkOrder {
   property             Property                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   templateId           String?
   template             FlooringTemplate?          @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  managementCompanyId  String?
-  managementCompany    FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
   jobTypeId            String?
   jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
   warehouseId          String?
@@ -539,7 +532,6 @@ model FlooringWorkOrder {
   @@index([statusId])
   @@index([propertyId])
   @@index([templateId])
-  @@index([managementCompanyId])
   @@index([jobTypeId])
   @@index([warehouseId])
   @@index([scheduledFor])

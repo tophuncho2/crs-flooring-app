@@ -111,7 +111,6 @@ export function toUpdateWorkOrderInput(form: WorkOrderForm): UpdateWorkOrderUseC
     propertyId: form.propertyId || undefined,
     warehouseId: form.warehouseId || undefined,
     templateId: form.templateId || null,
-    managementCompanyId: form.managementCompanyId || null,
     jobTypeId: form.jobTypeId || null,
     statusId: form.statusId || null,
     unitNumber: form.unitNumber,

@@ -88,7 +88,7 @@ function buildWorkOrdersWhere(
   }
 
   if (filters?.managementCompanyId?.length) {
-    andClauses.push({ managementCompanyId: { in: filters.managementCompanyId } })
+    andClauses.push({ property: { managementCompanyId: { in: filters.managementCompanyId } } })
   }
   if (filters?.propertyId?.length) {
     andClauses.push({ propertyId: { in: filters.propertyId } })
@@ -144,7 +144,7 @@ function buildWorkOrdersOrderBy(
   const fieldMap: Record<string, Prisma.FlooringWorkOrderOrderByWithRelationInput> = {
     workOrderNumber: { workOrderNumber: direction },
     property: { property: { name: direction } },
-    managementCompany: { managementCompany: { name: direction } },
+    managementCompany: { property: { managementCompany: { name: direction } } },
     jobType: { jobType: { name: direction } },
     warehouse: { warehouse: { name: direction } },
     scheduledFor: { scheduledFor: direction },
@@ -333,6 +333,7 @@ export async function getWorkOrderForFileGeneration(
       property: {
         select: {
           name: true,
+          managementCompany: { select: { name: true } },
           streetAddress: true,
           city: true,
           state: true,
@@ -340,7 +341,6 @@ export async function getWorkOrderForFileGeneration(
           instructions: true,
         },
       },
-      managementCompany: { select: { name: true } },
       warehouse: {
         select: {
           name: true,
@@ -436,7 +436,7 @@ export async function getWorkOrderForFileGeneration(
       postalCode: workOrder.property.postalCode ?? "",
       instructions: workOrder.property.instructions ?? "",
     },
-    managementCompanyName: workOrder.managementCompany?.name ?? "",
+    managementCompanyName: workOrder.property.managementCompany?.name ?? "",
     warehouse: {
       name: workOrder.warehouse?.name ?? "",
       streetAddress: workOrder.warehouse?.streetAddress ?? "",
