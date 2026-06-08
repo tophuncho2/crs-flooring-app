@@ -128,9 +128,8 @@ export function ProductDetailsGroup({
           )}
         </ProductField>
         <ProductField
-          label={
-            categoryReadOnly || !coverageRequired ? "Coverage Per Unit" : "Coverage Per Unit *"
-          }
+          label="Coverage Per Unit"
+          required={!categoryReadOnly && coverageRequired}
         >
           {categoryReadOnly ? (
             // Immutable post-create — coveragePerUnit is snapshotted onto
