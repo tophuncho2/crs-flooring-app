@@ -12,11 +12,11 @@ export const WORK_ORDERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WorkOrderLi
   { key: "scheduledFor", label: "Date" },
   { key: "timeOfDay", label: "Time of Day" },
   { key: "warehouseName", label: "Warehouse" },
-  { key: "description", label: "Description" },
   { key: "propertyName", label: "Property" },
   { key: "managementCompanyName", label: "Management Company" },
   { key: "jobTypeName", label: "Job Type" },
   { key: "vacancy", label: "Vacancy" },
   { key: "unitNumber", label: "Unit #" },
   { key: "unitType", label: "Unit Type" },
+  { key: "description", label: "Description" },
 ]
