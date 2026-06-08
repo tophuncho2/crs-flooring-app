@@ -95,13 +95,13 @@ export function RecordFieldSection({
 
   if (!showHeader) {
     return (
-      <>
+      <div>
         {actionPanel}
         <RecordFormNotices message={noticeMessage} error={noticeError} />
         <div className={joinRecordSectionClasses("px-5 py-5 space-y-0", RECORD_SECTION_BODY_SURFACE_CLASS_NAME)}>
           {children}
         </div>
-      </>
+      </div>
     )
   }
 
