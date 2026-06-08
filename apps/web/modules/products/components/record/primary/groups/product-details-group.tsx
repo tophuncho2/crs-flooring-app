@@ -52,7 +52,7 @@ export function ProductDetailsGroup({
   return (
     <ProductGroup title="Details">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <ProductField label="Category">
+        <ProductField label="Category" required={!categoryReadOnly}>
           {categoryReadOnly ? (
             <StaticFieldValue>{product.category.name || "—"}</StaticFieldValue>
           ) : (

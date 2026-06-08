@@ -18,7 +18,7 @@ export function ProductDetailClient({
 }) {
   return (
     <RecordDetailClientScaffold
-      title={`Product ${initialProduct.name || initialProduct.id}`}
+      title="Product Hub"
       backHref={backHref}
       modeNotice={{ mode: "edit", label: "Product" }}
       dirtyMessage="You have unsaved product changes. Leave this product without saving?"
