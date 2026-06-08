@@ -1,14 +1,9 @@
 import {
   Prisma,
-  countPropertiesByManagementCompanyId,
   deleteManagementCompanyRecordById,
   withDatabaseTransaction,
 } from "@builders/db"
-import {
-  MANAGEMENT_COMPANY_NOT_FOUND_MESSAGE,
-  getManagementCompanyDeleteBlockedMessage,
-  isManagementCompanyDeleteBlocked,
-} from "@builders/domain"
+import { MANAGEMENT_COMPANY_NOT_FOUND_MESSAGE } from "@builders/domain"
 import { ManagementCompanyExecutionError } from "./errors.js"
 
 export async function deleteManagementCompanyUseCase(
@@ -17,17 +12,6 @@ export async function deleteManagementCompanyUseCase(
 ): Promise<{ ok: true }> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
-
-    const propertyCount = await countPropertiesByManagementCompanyId(id, c)
-    const linkState = { propertyCount }
-
-    if (isManagementCompanyDeleteBlocked(linkState)) {
-      throw new ManagementCompanyExecutionError({
-        code: "MANAGEMENT_COMPANY_IN_USE",
-        message: getManagementCompanyDeleteBlockedMessage(linkState),
-        status: 409,
-      })
-    }
 
     try {
       await deleteManagementCompanyRecordById(id, c)

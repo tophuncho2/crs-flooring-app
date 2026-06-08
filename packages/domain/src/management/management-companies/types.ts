@@ -9,6 +9,7 @@ export type ManagementCompanyDetail = {
   phone: string
   email: string
   fullAddress: string
+  propertyCount: number
 }
 
 export type ManagementCompanyListRow = {

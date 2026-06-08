@@ -164,7 +164,13 @@ export function ManagementCompanyRecordView({
       <ConfirmDialog
         open={confirmDeleteOpen}
         title="Delete management company?"
-        message="This cannot be undone."
+        message={
+          entry.propertyCount > 0
+            ? `This will unlink ${entry.propertyCount} ${
+                entry.propertyCount === 1 ? "property" : "properties"
+              } from this management company. This cannot be undone.`
+            : "This cannot be undone."
+        }
         confirmLabel={isDeleting ? "Deleting…" : "Delete"}
         cancelLabel="Cancel"
         tone="destructive"

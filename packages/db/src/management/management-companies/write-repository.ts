@@ -26,6 +26,9 @@ const managementCompanyDetailSelect = {
   postalCode: true,
   phone: true,
   email: true,
+  _count: {
+    select: { properties: true },
+  },
 } as const
 
 export async function createManagementCompanyRecord(

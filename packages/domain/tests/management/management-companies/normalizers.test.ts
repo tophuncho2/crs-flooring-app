@@ -16,6 +16,7 @@ describe("normalizeManagementCompany", () => {
     postalCode: "78701",
     phone: "555-1212",
     email: "a@b.com",
+    _count: { properties: 0 },
   }
 
   it("converts a Date updatedAt to an ISO string", () => {
