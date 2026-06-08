@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { isAdjustmentPendingEditable } from "@builders/domain"
 import {
+  RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
   RecordSectionSubHeader,
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
@@ -108,8 +109,12 @@ export function EmbeddedAdjustmentRecordView({
     return <p className="px-4 py-6 text-sm text-[var(--foreground)]/60">Loading adjustment…</p>
   }
 
+  // Mirror the primary section's chrome (RecordFieldSection, showHeader=false):
+  // the sub-header sits flush above a body that carries the shared section
+  // surface, so the adjustment section reads as one panel like the inventory
+  // section above — rather than groups floating on white.
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div>
       <RecordSectionSubHeader
         canManage={false}
         isDirty={isDirty}
@@ -118,13 +123,15 @@ export function EmbeddedAdjustmentRecordView({
         error={error}
         actions={actions}
       />
-      <div className="flex flex-col gap-3">
-        <AdjustmentPickerStack controller={controller} />
-        <AdjustmentEditFormFields
-          mode={isCreate ? "create" : "edit"}
-          adjustment={adjustment}
-          controller={controller}
-        />
+      <div className={`px-5 py-5 ${RECORD_SECTION_BODY_SURFACE_CLASS_NAME}`}>
+        <div className="flex flex-col gap-3">
+          <AdjustmentPickerStack controller={controller} />
+          <AdjustmentEditFormFields
+            mode={isCreate ? "create" : "edit"}
+            adjustment={adjustment}
+            controller={controller}
+          />
+        </div>
       </div>
     </div>
   )
