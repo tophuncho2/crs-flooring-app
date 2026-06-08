@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ExternalLink, Pencil } from "lucide-react"
-import { StaticFieldValue } from "@/components/fields"
-import { SelectCell, TextCell, TextareaCell } from "@/components/cells"
+import { StaticFieldValue } from "@/engines/record-view"
+import { SelectCell, TextCell, TextareaCell } from "@/engines/record-view"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
@@ -15,7 +15,7 @@ import {
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
-import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
+import type { PropertyJoinedFields } from "@/engines/record-view"
 
 const GROUP_HEADER_BUTTON_CLASS =
   "inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 focus:outline-none focus:ring-1 focus:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"

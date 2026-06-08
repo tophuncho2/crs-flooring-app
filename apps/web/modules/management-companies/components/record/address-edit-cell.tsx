@@ -1,9 +1,9 @@
 "use client"
 
 import { buildAddressBlock, normalizeAddressState } from "@builders/domain"
-import { CellAt } from "@/components/layout-grid"
-import { FormField, StaticFieldValue } from "@/components/fields"
-import { TextCell } from "@/components/cells"
+import { CellAt } from "@/engines/record-view"
+import { FormField, StaticFieldValue } from "@/engines/record-view"
+import { TextCell } from "@/engines/record-view"
 
 export type AddressFieldsValue = {
   streetAddress: string

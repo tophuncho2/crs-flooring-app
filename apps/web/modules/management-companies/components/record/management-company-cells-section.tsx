@@ -1,10 +1,10 @@
 "use client"
 
 import type { ManagementCompanyForm } from "@builders/domain"
-import { CellAt } from "@/components/layout-grid"
-import { FieldSection, FormField } from "@/components/fields"
-import { TextCell } from "@/components/cells"
-import { AddressEditCell } from "@/components/composites/address-fields/address-edit-cell"
+import { CellAt } from "@/engines/record-view"
+import { FieldSection, FormField } from "@/engines/record-view"
+import { TextCell } from "@/engines/record-view"
+import { AddressEditCell } from "./address-edit-cell"
 
 /**
  * The Management Company "cells" field grid — the shared §1 layout that renders

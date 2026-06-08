@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
+import { ConfirmDialog } from "../../dialogs/confirm-dialog"
 import { useRecordPageController, type RecordPageController } from "../controllers/use-record-page-controller"
 import { RecordDetailPageShell } from "../../shell/record-detail-page-shell"
 import { RecordModeNoticePortal } from "../../shell/record-mode-notice"

@@ -4,8 +4,8 @@ import { useMemo, useState, type ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { PropertyListRow } from "@builders/domain"
 import { DataTable, PaginateControls } from "@/engines/list-view"
-import { ActionHeader } from "@/components/headers"
-import type { HeaderAction } from "@/components/headers/contracts/header-action"
+import { ActionHeader } from "@/engines/common"
+import type { HeaderAction } from "@/engines/common"
 import {
   PROPERTIES_LIST_QUERY_KEY,
   listPropertiesRequest,

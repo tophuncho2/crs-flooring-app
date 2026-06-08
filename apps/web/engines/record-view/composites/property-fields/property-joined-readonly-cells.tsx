@@ -1,7 +1,7 @@
 "use client"
 
-import { CellAt } from "@/components/layout-grid"
-import { FormField, StaticFieldValue } from "@/components/fields"
+import { CellAt } from "../../layout-grid"
+import { FormField, StaticFieldValue } from "../../fields"
 import { buildAddressBlock } from "@builders/domain"
 
 export type PropertyJoinedFields = {

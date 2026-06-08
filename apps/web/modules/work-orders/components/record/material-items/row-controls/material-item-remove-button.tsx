@@ -1,6 +1,6 @@
 "use client"
 
-import { RowActionButton } from "@/components/cells"
+import { RowActionButton } from "@/engines/record-view"
 
 export type MaterialItemRemoveButtonProps = {
   editable: boolean

@@ -6,11 +6,11 @@ import {
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   isAdjustmentPendingEditable,
 } from "@builders/domain"
-import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
-import { StatusBadge } from "@/components/badges/status-badge"
-import { TextCell, ToggleCell, UnitCell } from "@/components/cells"
+import { AdjustmentStatusBadge } from "@/engines/common"
+import { StatusBadge } from "@/engines/common"
+import { TextCell, ToggleCell, UnitCell } from "@/engines/record-view"
 import { SegmentedDropdown } from "@/engines/picker"
-import { StaticFieldValue } from "@/components/fields"
+import { StaticFieldValue } from "@/engines/record-view"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
 import { InventoryField } from "../primary/groups/inventory-field"
 import { InventoryGroup } from "../primary/groups/inventory-group"

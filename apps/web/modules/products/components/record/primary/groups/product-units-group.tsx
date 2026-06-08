@@ -1,6 +1,6 @@
 "use client"
 
-import { StaticFieldValue } from "@/components/fields"
+import { StaticFieldValue } from "@/engines/record-view"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
 import { ProductField } from "./product-field"
 import { ProductGroup } from "./product-group"

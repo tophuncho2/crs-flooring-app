@@ -1,6 +1,6 @@
 "use client"
 
-import { SelectAllButton } from "@/components/features/select-batch"
+import { SelectAllButton } from "@/engines/record-view"
 
 export type SelectAllEligibleButtonProps = {
   isSelectionActive: boolean

@@ -1,10 +1,10 @@
 "use client"
 
 import type { ManagementCompanyOption, PropertyPrimaryForm } from "@builders/domain"
-import { CellAt } from "@/components/layout-grid"
-import { FieldSection, FormField } from "@/components/fields"
-import { TextCell, TextareaCell } from "@/components/cells"
-import { AddressEditCell } from "@/components/composites/address-fields/address-edit-cell"
+import { CellAt } from "@/engines/record-view"
+import { FieldSection, FormField } from "@/engines/record-view"
+import { TextCell, TextareaCell } from "@/engines/record-view"
+import { AddressEditCell } from "../../address-edit-cell"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 
 /**

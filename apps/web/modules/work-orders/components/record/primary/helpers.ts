@@ -1,4 +1,4 @@
-import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
+import type { PropertyJoinedFields } from "@/engines/record-view"
 import type { WorkOrderPrimaryDetail } from "./types"
 
 export const VACANCY_OPTIONS = [

@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { CellTone } from "../cells/contracts/cell-tone"
+import type { CellTone } from "@/engines/common"
 
 const TONE_CLASS_NAME: Record<CellTone, string> = {
   default: "text-[var(--foreground)]",

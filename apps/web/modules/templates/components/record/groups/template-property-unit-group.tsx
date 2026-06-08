@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Pencil } from "lucide-react"
-import { TextCell, TextareaCell } from "@/components/cells"
-import { StaticFieldValue } from "@/components/fields"
+import { TextCell, TextareaCell } from "@/engines/record-view"
+import { StaticFieldValue } from "@/engines/record-view"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
@@ -13,7 +13,7 @@ import {
 } from "@/hooks/navigation/routes"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
-import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
+import type { PropertyJoinedFields } from "@/engines/record-view"
 
 import {
   buildAddressBlock,

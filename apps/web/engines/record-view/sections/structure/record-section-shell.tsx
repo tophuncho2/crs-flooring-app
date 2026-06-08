@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode, useEffect, useRef, useState } from "react"
-import { TableBleed } from "@/components/sections/structure/table-bleed"
+import { TableBleed } from "./table-bleed"
 import { RecordFormNotices } from "../../feedback/record-form-notices"
 import { RecordSectionHeader } from "./record-section-header"
 import { RecordSectionMetric, type RecordSectionMetricValue } from "../metrics/record-section-metric"

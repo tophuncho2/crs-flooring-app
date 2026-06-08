@@ -1,6 +1,6 @@
 "use client"
 
-import { SectionHeader } from "@/components/headers"
+import { SectionHeader } from "@/engines/common"
 import type { CategoryRow } from "../../types"
 import { CategoriesTable } from "./categories-table"
 

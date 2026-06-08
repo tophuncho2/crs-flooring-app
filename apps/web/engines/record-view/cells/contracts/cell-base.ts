@@ -5,7 +5,7 @@
 
 import type { EditabilityContract } from "../../grid/contracts/grid-editability"
 import type { CellAlign } from "../../grid/contracts/grid-cell-kind"
-import type { CellTone } from "./cell-tone"
+import type { CellTone } from "@/engines/common"
 
 export type { CellAlign, CellTone }
 

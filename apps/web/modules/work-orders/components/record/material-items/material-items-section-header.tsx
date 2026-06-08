@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { ActionHeader } from "@/components/headers"
+import { ActionHeader } from "@/engines/common"
 import {
   MaterialItemsExpandToggle,
   materialItemsSectionActions,

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react"
-import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/components/theme/accent-styles"
+import { FLOORING_PRIMARY_ACTION_BUTTON_CLASS_NAME } from "@/engines/common"
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")

@@ -1,8 +1,8 @@
 "use client"
 
 import type { ManagementCompanyForm, ManagementCompanyOption } from "@builders/domain"
-import { FormField } from "@/components/fields"
-import { ActionHeader } from "@/components/headers"
+import { FormField } from "@/engines/record-view"
+import { ActionHeader } from "@/engines/common"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { ManagementCompanyCellsSection } from "@/modules/management-companies/components/record/management-company-cells-section"
 import {

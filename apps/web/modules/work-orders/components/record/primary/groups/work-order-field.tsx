@@ -8,7 +8,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
 
 /**
  * Minimal labelled-control wrapper used inside WO record-view groups.
- * Mirrors the visual shape of `@/components/fields` `FormField` (the
+ * Mirrors the visual shape of `@/engines/record-view` `FormField` (the
  * primitive the WO record view is opting out of), but local to this
  * module so the groups don't pull in the `FieldSection` placement
  * primitives.

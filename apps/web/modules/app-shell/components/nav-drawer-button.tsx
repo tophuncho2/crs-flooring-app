@@ -4,8 +4,8 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu } from "lucide-react"
-import { SidePanel } from "@/components/nav"
-import { FLOORING_ACTIVE_NAV_TAB_CLASS_NAME } from "@/components/theme/accent-styles"
+import { SidePanel } from "./side-panel"
+import { FLOORING_ACTIVE_NAV_TAB_CLASS_NAME } from "@/engines/common"
 import {
   FLOORING_NAV_GROUPS,
   isActiveFlooringItem,

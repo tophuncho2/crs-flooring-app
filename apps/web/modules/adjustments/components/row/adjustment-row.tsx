@@ -8,11 +8,11 @@ import {
   type InventoryAdjustmentRow,
   type FlooringInventoryAdjustmentStatus,
 } from "@builders/domain"
-import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
-import { CheckboxCell } from "@/components/cells/checkbox-cell"
-import { TextCell } from "@/components/cells/text-cell"
-import { UnitCell } from "@/components/cells/unit-cell"
-import type { GridControlColumn } from "@/components/grid/contracts/grid-control-column"
+import { AdjustmentStatusBadge } from "@/engines/common"
+import { CheckboxCell } from "@/engines/record-view"
+import { TextCell } from "@/engines/record-view"
+import { UnitCell } from "@/engines/record-view"
+import type { GridControlColumn } from "@/engines/record-view"
 import { formatAdjustmentTimestamp } from "./format-adjustment-timestamp"
 
 /**

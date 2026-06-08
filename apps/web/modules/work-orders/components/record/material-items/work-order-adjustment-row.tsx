@@ -3,7 +3,7 @@
 import { useMemo, type ReactNode } from "react"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { renderAdjustmentReadOnlyCell } from "@/modules/adjustments"
-import { Grid, GridEmpty } from "@/components/grid"
+import { Grid, GridEmpty } from "@/engines/record-view"
 import { AdjustmentRowToolbar } from "./toolbar-controls"
 import { AdjustmentDuplicateButton } from "./row-controls/sub-controls"
 import { WORK_ORDER_ADJUSTMENT_LAYOUT } from "./work-order-adjustment-row-layout"

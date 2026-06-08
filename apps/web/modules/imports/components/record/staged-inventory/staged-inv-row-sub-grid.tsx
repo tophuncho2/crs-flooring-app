@@ -5,10 +5,10 @@ import type {
   FlooringStagedRowStatus,
   StagedInventoryFilterRow,
 } from "@builders/domain"
-import { StatusBadge } from "@/components/badges"
-import type { BadgeTone } from "@/components/badges/contracts/badge-tone"
-import { Grid, GridEmpty } from "@/components/grid"
-import { TextCell, UnitCell } from "@/components/cells"
+import { StatusBadge } from "@/engines/common"
+import type { BadgeTone } from "@/engines/common"
+import { Grid, GridEmpty } from "@/engines/record-view"
+import { TextCell, UnitCell } from "@/engines/record-view"
 import { isLocalOnlyRecordRow } from "@/engines/record-view"
 import type { ImportStagedRowDraft } from "@/modules/imports/controllers/record/drafts"
 import { STAGED_INV_ROW_LAYOUT, type StagedInvGridRow } from "./staged-inv-row-layout"

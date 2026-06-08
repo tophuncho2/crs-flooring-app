@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import { AdjustmentStatusBadge } from "@/components/badges/adjustment-status-badge"
+import { AdjustmentStatusBadge } from "@/engines/common"
 import {
   composeRollNumberDisplay,
   formatAdjustmentTransition,

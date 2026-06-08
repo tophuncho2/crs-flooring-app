@@ -1,14 +1,14 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { confirmRecordDelete } from "@/components/dialogs/confirm-delete"
+import { confirmRecordDelete } from "../dialogs/confirm-delete"
 import {
   RecordFooterDestructiveButton,
   RecordFooterNeutralButton,
   RecordFooterPrimaryButton,
 } from "./record-action-buttons"
 
-export { confirmRecordDelete } from "@/components/dialogs/confirm-delete"
+export { confirmRecordDelete } from "../dialogs/confirm-delete"
 
 export function RecordPanelFooter({
   deleteLabel,

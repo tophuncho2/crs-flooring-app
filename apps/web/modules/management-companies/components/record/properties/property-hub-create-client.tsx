@@ -6,7 +6,7 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
 import { EMPTY_MANAGEMENT_COMPANY_FORM } from "@builders/domain"
-import { ActionHeader } from "@/components/headers"
+import { ActionHeader } from "@/engines/common"
 import { usePropertyHubCreateSection } from "@/modules/management-companies/controllers/record/properties/use-property-hub-create-section"
 import { ManagementCompanySelectSection } from "./primary/management-company-select-section"
 import { PropertyCreateFieldsSection } from "./primary/property-create-fields-section"

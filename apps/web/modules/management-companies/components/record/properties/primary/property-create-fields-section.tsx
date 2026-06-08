@@ -1,10 +1,10 @@
 "use client"
 
 import type { PropertyHubPropertyFields } from "@builders/domain"
-import { CellAt } from "@/components/layout-grid"
-import { FieldSection, FormField } from "@/components/fields"
-import { TextCell, TextareaCell } from "@/components/cells"
-import { AddressEditCell } from "@/components/composites/address-fields/address-edit-cell"
+import { CellAt } from "@/engines/record-view"
+import { FieldSection, FormField } from "@/engines/record-view"
+import { TextCell, TextareaCell } from "@/engines/record-view"
+import { AddressEditCell } from "../../address-edit-cell"
 
 /**
  * The property fields for the hub create form (no MC picker — the management

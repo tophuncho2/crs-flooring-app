@@ -1,8 +1,8 @@
 "use client"
 
-import { CellAt } from "@/components/layout-grid"
-import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { TextCell, TextareaCell } from "@/components/cells"
+import { CellAt } from "@/engines/record-view"
+import { FieldSection, FormField, StaticFieldValue } from "@/engines/record-view"
+import { TextCell, TextareaCell } from "@/engines/record-view"
 import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {

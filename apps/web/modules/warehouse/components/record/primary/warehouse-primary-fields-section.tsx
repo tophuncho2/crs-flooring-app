@@ -1,9 +1,9 @@
 "use client"
 
 import { normalizeAddressState, type WarehouseForm } from "@builders/domain"
-import { TextCell } from "@/components/cells"
-import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { CellAt } from "@/components/layout-grid"
+import { TextCell } from "@/engines/record-view"
+import { FieldSection, FormField, StaticFieldValue } from "@/engines/record-view"
+import { CellAt } from "@/engines/record-view"
 
 function formatDate(value: string) {
   if (!value) return "—"

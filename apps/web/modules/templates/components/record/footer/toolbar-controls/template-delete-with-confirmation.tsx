@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { RecordFooterDestructiveButton } from "@/engines/record-view"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
+import { ConfirmDialog } from "@/engines/record-view"
 
 export function TemplateDeleteWithConfirmation({
   label,

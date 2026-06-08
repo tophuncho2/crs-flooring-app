@@ -1,6 +1,6 @@
 "use client"
 
-import { TextareaCell } from "@/components/cells"
+import { TextareaCell } from "@/engines/record-view"
 import { TEMPLATE_INTERNAL_NOTES_MAX, type TemplateForm } from "@builders/domain"
 import { TemplateField } from "./template-field"
 import { TemplateGroup } from "./template-group"

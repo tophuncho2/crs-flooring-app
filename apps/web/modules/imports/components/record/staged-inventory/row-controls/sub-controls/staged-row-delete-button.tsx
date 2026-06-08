@@ -1,6 +1,6 @@
 "use client"
 
-import { RowActionButton } from "@/components/cells/row-action-button"
+import { RowActionButton } from "@/engines/record-view"
 
 export type StagedRowDeleteButtonProps = {
   isDraft: boolean

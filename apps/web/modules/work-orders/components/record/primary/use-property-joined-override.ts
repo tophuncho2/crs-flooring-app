@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import type { PropertyJoinedFields } from "@/components/composites/property-fields/property-joined-readonly-cells"
+import type { PropertyJoinedFields } from "@/engines/record-view"
 import type { PropertyOption } from "@builders/domain"
 import { detailToPropertyJoined } from "./helpers"
 import type { WorkOrderPrimaryDetail } from "./types"

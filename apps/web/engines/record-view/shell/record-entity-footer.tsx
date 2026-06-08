@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
+import { ConfirmDialog } from "../dialogs/confirm-dialog"
 import {
   RecordFooterDestructiveButton,
   RecordFooterNeutralButton,

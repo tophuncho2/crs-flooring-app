@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 import type { TemplatesListFilters } from "@builders/application"
 import type { TemplateListRow } from "@builders/domain"
 import { DataTable, PaginateControls } from "@/engines/list-view"
-import { ActionHeader } from "@/components/headers"
+import { ActionHeader } from "@/engines/common"
 import {
   TEMPLATES_LIST_QUERY_KEY,
   listTemplatesRequest,

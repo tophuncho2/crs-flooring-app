@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState, type ReactNode } from "react"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
+import { ConfirmDialog } from "../../dialogs/confirm-dialog"
 import type { RecordDetailClientScaffoldContext } from "../../client/scaffolds/record-detail-client-scaffold"
 
 /**

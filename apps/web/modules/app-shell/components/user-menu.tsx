@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/components/theme/accent-styles"
+import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/engines/common"
 
 type UserMenuProps = {
   email: string

@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckboxCell } from "@/components/cells"
+import { CheckboxCell } from "@/engines/record-view"
 
 export type StagedRowSelectCellProps = {
   editable: boolean

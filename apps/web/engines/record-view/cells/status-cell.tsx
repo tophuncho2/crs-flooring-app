@@ -1,8 +1,7 @@
 "use client"
 
 import type { CellProps } from "./contracts/cell-base"
-import { StatusBadge } from "../badges/status-badge"
-import type { BadgeTone } from "../badges/contracts/badge-tone"
+import { StatusBadge, type BadgeTone } from "@/engines/common"
 
 export type StatusCellProps = CellProps<string> & {
   /**

@@ -1,4 +1,4 @@
-import type { GridLayout } from "@/components/grid"
+import type { GridLayout } from "@/engines/record-view"
 import { ADJUSTMENT_COLUMN_DEFINITIONS } from "@/modules/adjustments"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 

@@ -10,7 +10,7 @@ import {
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
 import type { ManagementCompanyDetail } from "@builders/domain"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
+import { ConfirmDialog } from "@/engines/record-view"
 import { PropertyCreateView } from "./properties/property-create-view"
 import { PropertyRecordView } from "./properties/property-record-view"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"

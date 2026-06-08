@@ -1,9 +1,9 @@
 "use client"
 
 import { formatEasternDateTime, type ManufacturerForm } from "@builders/domain"
-import { TextCell } from "@/components/cells"
-import { FieldSection, FormField, StaticFieldValue } from "@/components/fields"
-import { CellAt } from "@/components/layout-grid"
+import { TextCell } from "@/engines/record-view"
+import { FieldSection, FormField, StaticFieldValue } from "@/engines/record-view"
+import { CellAt } from "@/engines/record-view"
 
 export type ManufacturerPrimaryFieldsSectionProps = {
   draft: ManufacturerForm

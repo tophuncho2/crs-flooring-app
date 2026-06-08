@@ -1,6 +1,6 @@
 "use client"
 
-import { DuplicateRowButton } from "@/components/features/duplicate-row"
+import { DuplicateRowButton } from "@/engines/record-view"
 
 export type AdjustmentDuplicateButtonProps = {
   /** True when the source row's status is "PENDING" — the only status eligible for duplicate. */

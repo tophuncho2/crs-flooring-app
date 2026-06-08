@@ -1,6 +1,6 @@
 "use client"
 
-import { CenteredErrorState } from "@/components/feedback/states"
+import { CenteredErrorState } from "@/engines/common"
 
 export default function DashboardError({
   error,

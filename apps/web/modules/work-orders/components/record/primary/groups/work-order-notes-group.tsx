@@ -1,6 +1,6 @@
 "use client"
 
-import { TextareaCell } from "@/components/cells"
+import { TextareaCell } from "@/engines/record-view"
 import { WO_INTERNAL_NOTES_MAX, type WorkOrderForm } from "@builders/domain"
 import { WorkOrderField } from "./work-order-field"
 import { WorkOrderGroup } from "./work-order-group"

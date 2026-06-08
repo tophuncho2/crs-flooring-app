@@ -1,6 +1,6 @@
 "use client"
 
-import { DuplicateRowButton } from "@/components/features/duplicate-row"
+import { DuplicateRowButton } from "@/engines/record-view"
 
 export type StagedRowDuplicateButtonProps = {
   isDraft: boolean

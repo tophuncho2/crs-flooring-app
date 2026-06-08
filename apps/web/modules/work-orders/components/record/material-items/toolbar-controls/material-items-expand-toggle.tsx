@@ -1,6 +1,6 @@
 "use client"
 
-import { ExpandToggle } from "@/components/grid/expandable-rows"
+import { ExpandToggle } from "@/engines/record-view"
 
 export type MaterialItemsExpandToggleProps = {
   itemsCount: number

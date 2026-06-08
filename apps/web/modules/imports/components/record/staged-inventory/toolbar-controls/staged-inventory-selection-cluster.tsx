@@ -1,6 +1,6 @@
 "use client"
 
-import { StatusBadge } from "@/components/badges"
+import { StatusBadge } from "@/engines/common"
 import { SelectAllEligibleButton } from "./select-all-eligible-button"
 import { RunImportButton } from "./run-import-button"
 

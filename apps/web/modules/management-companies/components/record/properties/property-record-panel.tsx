@@ -9,7 +9,7 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import { ConfirmDialog } from "@/components/dialogs/confirm-dialog"
+import { ConfirmDialog } from "@/engines/record-view"
 import type { ManagementCompanyOption, PropertyDetailRecord } from "@builders/domain"
 import { TemplatesSectionList } from "@/modules/templates/components/record/templates-section-list"
 import { usePropertyPrimarySection } from "@/modules/management-companies/controllers/record/properties/use-property-primary-section"

@@ -1,4 +1,4 @@
-import type { GridLayout } from "@/components/grid"
+import type { GridLayout } from "@/engines/record-view"
 import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
 
 /**

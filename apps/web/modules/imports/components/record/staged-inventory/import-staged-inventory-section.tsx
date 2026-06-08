@@ -2,10 +2,10 @@
 
 import { Fragment, useMemo } from "react"
 import type { ReactNode } from "react"
-import { UnitCell } from "@/components/cells"
-import { useExpandableRowsToggle } from "@/controllers/expandable-rows"
-import { ExpandableRow, UnsavedParentMessage } from "@/components/grid/expandable-rows"
-import { Grid, GridEmpty } from "@/components/grid"
+import { UnitCell } from "@/engines/record-view"
+import { useExpandableRowsToggle } from "@/engines/record-view"
+import { ExpandableRow, UnsavedParentMessage } from "@/engines/record-view"
+import { Grid, GridEmpty } from "@/engines/record-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { isLocalOnlyRecordRow } from "@/engines/record-view"
 import type {

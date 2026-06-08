@@ -1,4 +1,4 @@
-import type { GridLayout } from "@/components/grid"
+import type { GridLayout } from "@/engines/record-view"
 import type { ImportStagedRowDraft } from "@/modules/imports/controllers/record/drafts"
 
 export type StagedInvGridRow = {

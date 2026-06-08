@@ -2,7 +2,7 @@
 // vocabulary; `label` is the visible text; `detail` is an optional secondary
 // line for more context.
 
-import type { CellTone } from "../../cells/contracts/cell-tone"
+import type { CellTone } from "../../contracts/cell-tone"
 
 export type HeaderStatus = {
   tone: CellTone

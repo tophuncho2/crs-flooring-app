@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { DateCell, SelectCell, TextCell } from "@/components/cells"
-import { StaticFieldValue } from "@/components/fields"
+import { DateCell, SelectCell, TextCell } from "@/engines/record-view"
+import { StaticFieldValue } from "@/engines/record-view"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { WO_DESCRIPTION_MAX, type WorkOrderForm } from "@builders/domain"

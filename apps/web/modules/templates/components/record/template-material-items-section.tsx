@@ -1,9 +1,9 @@
 "use client"
 
 import { type ReactNode } from "react"
-import { ActionHeader } from "@/components/headers"
-import { NumberCell, RowActionButton, TextCell } from "@/components/cells"
-import { Grid, GridEmpty, type GridLayout } from "@/components/grid"
+import { ActionHeader } from "@/engines/common"
+import { NumberCell, RowActionButton, TextCell } from "@/engines/record-view"
+import { Grid, GridEmpty, type GridLayout } from "@/engines/record-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { type ProductOption, TEMPLATE_MATERIAL_ITEM_NOTES_MAX } from "@builders/domain"
 import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/record/use-template-material-items-section"

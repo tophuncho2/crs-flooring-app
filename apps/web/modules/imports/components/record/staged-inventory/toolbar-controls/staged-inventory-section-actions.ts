@@ -1,4 +1,4 @@
-import type { HeaderAction } from "@/components/headers/contracts/header-action"
+import type { HeaderAction } from "@/engines/common"
 
 export type StagedInventorySectionActionsInput = {
   isSaving: boolean

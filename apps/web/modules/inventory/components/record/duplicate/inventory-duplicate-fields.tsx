@@ -1,6 +1,6 @@
 "use client"
 
-import { TextCell, UnitCell } from "@/components/cells"
+import { TextCell, UnitCell } from "@/engines/record-view"
 import {
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,

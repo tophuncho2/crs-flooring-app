@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
-import { Grid, GridEmpty } from "@/components/grid"
-import { ActionHeader } from "@/components/headers"
-import type { HeaderAction } from "@/components/headers/contracts/header-action"
+import { Grid, GridEmpty } from "@/engines/record-view"
+import { ActionHeader } from "@/engines/common"
+import type { HeaderAction } from "@/engines/common"
 import { INVENTORY_ADJUSTMENT_LAYOUT, renderAdjustmentReadOnlyCell } from "@/modules/adjustments"
 import {
   INVENTORY_ADJUSTMENTS_QUERY_KEY,

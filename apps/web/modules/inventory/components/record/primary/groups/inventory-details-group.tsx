@@ -1,7 +1,7 @@
 "use client"
 
-import { TextCell } from "@/components/cells"
-import { StaticFieldValue } from "@/components/fields"
+import { TextCell } from "@/engines/record-view"
+import { StaticFieldValue } from "@/engines/record-view"
 import {
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
