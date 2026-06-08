@@ -38,7 +38,8 @@
     "db:seed:categories": "npm run db:seed:categories --workspace @builders/db",
     "db:seed:work-order-statuses": "npm run db:seed:work-order-statuses --workspace @builders/db",
     "db:seed:properties": "npm run db:seed:properties --workspace @builders/db --",
-    "db:purge:inventory": "npm run db:purge:inventory --workspace @builders/db --"
+    "db:purge:inventory": "npm run db:purge:inventory --workspace @builders/db --",
+    "upload:brand-logo": "npm run upload:brand-logo --workspace @builders/db --"
   },
   "overrides": {
     "flatted": "^3.4.2",
