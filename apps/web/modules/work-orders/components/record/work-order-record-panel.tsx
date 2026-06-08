@@ -45,16 +45,6 @@ export function WorkOrderRecordPanel({
   const workOrderId = controller.record.id
   const printActions: RecordSectionSubHeaderAction[] = [
     {
-      key: "print-slip",
-      label: "Work Order Slip",
-      tone: "neutral",
-      onClick: () => {
-        if (typeof window !== "undefined") {
-          window.open(`/print/work-orders/${workOrderId}/slip`, "_blank", "noopener,noreferrer")
-        }
-      },
-    },
-    {
       key: "print-picking-ticket",
       label: "Picking Ticket",
       tone: "neutral",
@@ -65,6 +55,16 @@ export function WorkOrderRecordPanel({
             "_blank",
             "noopener,noreferrer",
           )
+        }
+      },
+    },
+    {
+      key: "print-slip",
+      label: "Work Order Slip",
+      tone: "neutral",
+      onClick: () => {
+        if (typeof window !== "undefined") {
+          window.open(`/print/work-orders/${workOrderId}/slip`, "_blank", "noopener,noreferrer")
         }
       },
     },
