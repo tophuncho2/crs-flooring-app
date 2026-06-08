@@ -1,7 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
 import {
-  composeRollNumberDisplay,
   formatEasternDateTime,
   formatFifoReceivedAtEastern,
   formatInventoryQuantity,
@@ -23,7 +22,7 @@ export function renderInventoryRowCell(
     case "productName":
       return row.productName || "-"
     case "rollNumber":
-      return composeRollNumberDisplay(row.rollPrefix, row.rollNumber) || "-"
+      return row.rollNumber || "-"
     case "location":
       return row.location || "-"
     case "dyeLot":

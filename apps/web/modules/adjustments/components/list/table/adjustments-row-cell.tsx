@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
 import { AdjustmentStatusBadge } from "@/engines/common"
 import {
-  composeRollNumberDisplay,
   formatAdjustmentTransition,
   formatSignedAdjustmentCoverage,
   formatSignedAdjustmentQuantity,
@@ -32,7 +31,7 @@ export function renderAdjustmentsRowCell(
     case "inventoryNumber":
       return row.inventoryNumber || "-"
     case "rollNumber":
-      return composeRollNumberDisplay(row.rollPrefix ?? "", row.rollNumber ?? "") || "-"
+      return row.rollNumber || "-"
     case "dyeLot":
       return row.dyeLot || "-"
     case "inventoryNote":

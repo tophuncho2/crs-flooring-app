@@ -37,37 +37,44 @@ export const ADJUSTMENT_COLUMN_DEFINITIONS = {
 } as const satisfies Record<string, GridColumn<InventoryAdjustmentRow>>
 
 /**
- * Canonical column shape used by BOTH the inventory record view's adjustment
- * section AND the work-orders material items section's adjustment grid. Order:
- * status → inventoryItem → location → quantity → adjustment → coverage →
- * isWaste → notes → adjustmentNumber → warehouse. The `adjustment` column is a
- * collapsed `before → after` balance transition; `quantity` carries the signed
- * delta.
+ * Column shape for the inventory record view's adjustment section. Mirrors the
+ * standalone `/dashboard/adjustments` ledger column set head-to-toe — same keys,
+ * same left-to-right order (see `ADJUSTMENTS_LIST_COLUMNS` in
+ * `adjustments/components/list/table/adjustments-list-columns.ts`) — so the
+ * embedded section surfaces every field the ledger does rather than a slim
+ * subset. The decomposed inventory identity (productName / inventoryNumber /
+ * rollNumber / dyeLot / inventoryNote) is shown as discrete columns to match the
+ * ledger, not collapsed into the `inventoryItem` composite. The `adjustment`
+ * column is a collapsed `before → after` balance transition; `quantity` carries
+ * the signed delta.
  *
- * `inventoryItem` cell renders the adjustment's frozen-at-create snapshot of
- * the parent inventory's identity (inv# / roll# / dyeLot / note). `location`
- * is a denormalized mirror that re-snaps on create / update / finalize and
- * clears on void — surfaced as its own column so operators can scan where
- * the cut originated without opening the panel. `isWaste` and `notes` are
- * the operator-editable fields from the adjustment side panel, surfaced as
- * read-only columns here so operators can scan without opening the panel.
- * `warehouse` reads `warehouseName` straight off the row. On the inv side
- * it's the joined snapshot label on `EnrichedInventoryAdjustmentRow`. On the WO side
- * the row shape is plain `InventoryAdjustmentRow`, so the consuming section hydrates
- * each row with the WO's warehouse name before handing the array to the
- * grid (every adjustment on a WO shares the WO's warehouse by construction).
+ * `warehouseName` is the joined snapshot label on `EnrichedInventoryAdjustmentRow`
+ * (the inventory section always feeds enriched rows). `workOrderNumber` is the
+ * enriched per-row WO label, correct under cross-warehouse sourcing.
+ *
+ * The work-orders material-items section keeps its own `WORK_ORDER_ADJUSTMENT_LAYOUT`
+ * (same column set, plus a leading duplicate control).
  */
 export const INVENTORY_ADJUSTMENT_LAYOUT: GridLayout<InventoryAdjustmentRow> = {
   dataColumns: [
     ADJUSTMENT_COLUMN_DEFINITIONS.status,
-    ADJUSTMENT_COLUMN_DEFINITIONS.inventoryItem,
-    ADJUSTMENT_COLUMN_DEFINITIONS.location,
+    ADJUSTMENT_COLUMN_DEFINITIONS.coverage,
     ADJUSTMENT_COLUMN_DEFINITIONS.quantity,
     ADJUSTMENT_COLUMN_DEFINITIONS.adjustment,
-    ADJUSTMENT_COLUMN_DEFINITIONS.coverage,
+    ADJUSTMENT_COLUMN_DEFINITIONS.productName,
+    ADJUSTMENT_COLUMN_DEFINITIONS.inventoryNumber,
+    ADJUSTMENT_COLUMN_DEFINITIONS.rollNumber,
+    ADJUSTMENT_COLUMN_DEFINITIONS.dyeLot,
+    ADJUSTMENT_COLUMN_DEFINITIONS.inventoryNote,
+    ADJUSTMENT_COLUMN_DEFINITIONS.location,
     ADJUSTMENT_COLUMN_DEFINITIONS.isWaste,
+    ADJUSTMENT_COLUMN_DEFINITIONS.finalSequence,
     ADJUSTMENT_COLUMN_DEFINITIONS.notes,
     ADJUSTMENT_COLUMN_DEFINITIONS.adjustmentNumber,
-    ADJUSTMENT_COLUMN_DEFINITIONS.warehouse,
+    ADJUSTMENT_COLUMN_DEFINITIONS.adjustmentType,
+    ADJUSTMENT_COLUMN_DEFINITIONS.warehouseName,
+    ADJUSTMENT_COLUMN_DEFINITIONS.workOrderNumber,
+    ADJUSTMENT_COLUMN_DEFINITIONS.createdAt,
+    ADJUSTMENT_COLUMN_DEFINITIONS.updatedAt,
   ],
 }
