@@ -7,7 +7,6 @@ const CATEGORIES_LIST_COLUMNS: DataTableColumn<CategoryRow>[] = [
   { key: "name", label: "Category" },
   { key: "sendUnit", label: "Send Unit" },
   { key: "stockUnit", label: "Stock Unit" },
-  { key: "itemCoverageUnit", label: "Item Coverage Unit" },
 ]
 
 export type CategoriesTableProps = {
@@ -28,8 +27,6 @@ export function CategoriesTable({ rows }: CategoriesTableProps) {
             return row.sendUnit || "-"
           case "stockUnit":
             return row.stockUnit || "-"
-          case "itemCoverageUnit":
-            return row.itemCoverageUnit || "-"
           default:
             return "-"
         }

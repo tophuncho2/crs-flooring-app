@@ -1,7 +1,3 @@
-export type CategoryUnitRule = {
-  hasCoverageUnit: boolean
-}
-
 export type CategoryMeta = {
   id: string
   slug: string
@@ -10,8 +6,6 @@ export type CategoryMeta = {
   stockUnitAbbrev: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
-  itemCoverageUnitName: string | null
-  itemCoverageUnitAbbrev: string | null
 }
 
 // Slim option shape consumed by the canonical CategoryPicker (server-side

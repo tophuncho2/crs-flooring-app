@@ -167,7 +167,7 @@ export type InsertPendingAdjustmentRowInput = {
 /**
  * Single-row insert for the synchronous create flow. Caller has locked the
  * parent inventory FOR UPDATE and read the inventory's unit fields +
- * identity fields + computed `coverage`. This primitive is a pure
+ * identity fields. This primitive is a pure
  * persistence call — no business rules, no invariant checks (those run in
  * the use case before/after via the domain).
  *

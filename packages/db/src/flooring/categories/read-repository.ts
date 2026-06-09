@@ -9,7 +9,6 @@ type CategoryDbClient = PrismaClient | Prisma.TransactionClient
 const categoryUnitInclude = {
   sendUnit: { select: { id: true, name: true, abbreviation: true } },
   stockUnit: { select: { id: true, name: true, abbreviation: true } },
-  itemCoverageUnit: { select: { id: true, name: true, abbreviation: true } },
 } as const
 
 export const categoryInclude = categoryUnitInclude
@@ -19,20 +18,16 @@ type UnitRef = { id: string; name: string; abbreviation: string } | null
 type CategoryUnitRefs = {
   sendUnit: UnitRef
   stockUnit: UnitRef
-  itemCoverageUnit: UnitRef
 }
 
 function normalizeCategoryUnitValues(category: CategoryUnitRefs) {
   return {
     sendUnitId: category.sendUnit?.id ?? "",
     stockUnitId: category.stockUnit?.id ?? "",
-    itemCoverageUnitId: category.itemCoverageUnit?.id ?? "",
     sendUnit: category.sendUnit?.name ?? "",
     stockUnit: category.stockUnit?.name ?? "",
-    itemCoverageUnit: category.itemCoverageUnit?.name ?? "",
     sendUnitAbbrev: category.sendUnit?.abbreviation ?? "",
     stockUnitAbbrev: category.stockUnit?.abbreviation ?? "",
-    itemCoverageUnitAbbrev: category.itemCoverageUnit?.abbreviation ?? "",
   }
 }
 
@@ -44,13 +39,10 @@ export type CategoryRecord = {
   name: string
   sendUnitId: string
   stockUnitId: string
-  itemCoverageUnitId: string
   sendUnit: string
   stockUnit: string
-  itemCoverageUnit: string
   sendUnitAbbrev: string
   stockUnitAbbrev: string
-  itemCoverageUnitAbbrev: string
 }
 
 // --- Normalizers ---
@@ -61,7 +53,6 @@ export function normalizeCategoryRow(category: {
   name: string
   sendUnit: UnitRef
   stockUnit: UnitRef
-  itemCoverageUnit: UnitRef
 }): CategoryRecord {
   return {
     id: category.id,

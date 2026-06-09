@@ -4,8 +4,6 @@ export type CategoryRow = {
   name: string
   sendUnitId: string
   stockUnitId: string
-  itemCoverageUnitId: string
   sendUnit: string
   stockUnit: string
-  itemCoverageUnit: string
 }
