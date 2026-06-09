@@ -15,14 +15,17 @@ function count(haystack: string, needle: string): number {
 describe("picking ticket — header", () => {
   const html = pickingTable([makeMaterialItem()])
 
-  it("renders all seven columns in order", () => {
+  it("renders all six columns in order", () => {
     expect(html).toContain("<th>Product</th>")
     expect(html).toContain("<th>Dyelot</th>")
     expect(html).toContain("<th>Roll#</th>")
     expect(html).toContain('<th class="cl-num">Quantity</th>')
-    expect(html).toContain('<th class="cl-num">Coverage</th>')
     expect(html).toContain('<th class="cl-num">Adjustment</th>')
     expect(html).toContain("<th>Location</th>")
+  })
+
+  it("omits the Coverage column header", () => {
+    expect(html).not.toContain('<th class="cl-num">Coverage</th>')
   })
 })
 
@@ -39,8 +42,8 @@ describe("picking ticket — one row per adjustment (not collapsed)", () => {
 
     // <tr> count = 1 header + 3 detail + 1 subtotal = 5
     expect(count(html, "<tr>")).toBe(5)
-    // exactly one subtotal row (two subtotal cells)
-    expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(2)
+    // exactly one subtotal row (one subtotal cell — Quantity only)
+    expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(1)
   })
 })
 
@@ -124,16 +127,15 @@ describe("picking ticket — Adjustment (before → after) transition", () => {
 })
 
 describe("picking ticket — per-group subtotal row", () => {
-  it("sums Quantity and Coverage under a subtotal-cell rule", () => {
+  it("sums Quantity under a subtotal-cell rule", () => {
     const item = makeMaterialItem({
       inventoryAdjustments: [
-        makeAdjustment({ quantity: "10", coverage: "120", stockUnitAbbrev: "rolls", itemCoverageUnitAbbrev: "sf" }),
-        makeAdjustment({ quantity: "5", coverage: "60", stockUnitAbbrev: "rolls", itemCoverageUnitAbbrev: "sf" }),
+        makeAdjustment({ quantity: "10", stockUnitAbbrev: "rolls" }),
+        makeAdjustment({ quantity: "5", stockUnitAbbrev: "rolls" }),
       ],
     })
     const html = pickingTable([item])
     expect(html).toContain('<td class="cl-num subtotal-cell">15 rolls</td>')
-    expect(html).toContain('<td class="cl-num subtotal-cell">180 sf</td>')
   })
 })
 
@@ -146,7 +148,7 @@ describe("picking ticket — grouping across material items (no grand total)", (
     const html = pickingTable(items)
     expect(html).toContain("<td>Carpet A</td>")
     expect(html).toContain("<td>Carpet B</td>")
-    // two subtotal rows → four subtotal cells, and no third (grand-total) row
-    expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(4)
+    // two subtotal rows → two subtotal cells, and no third (grand-total) row
+    expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(2)
   })
 })

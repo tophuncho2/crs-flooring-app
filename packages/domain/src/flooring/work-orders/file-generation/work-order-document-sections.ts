@@ -217,12 +217,10 @@ export function renderWorkOrderAdjustments(
       <th>Dyelot</th>
       <th>Roll#</th>
       <th class="cl-num">Quantity</th>
-      <th class="cl-num">Coverage</th>
       <th class="cl-num">Adjustment</th>
       <th>Location</th>`
     : `<th>Product</th>
-      <th class="cl-num">Quantity</th>
-      <th class="cl-num">Coverage</th>`
+      <th class="cl-num">Quantity</th>`
   return `
 <table class="flat-rows">
   <thead>
@@ -258,8 +256,8 @@ function renderAdjustmentRow(
   includeInventoryDetail: boolean,
 ): string {
   // Dyelot/Roll# (after Product) and the before→after Adjustment + Location
-  // (after Coverage) are warehouse-only (Picking Ticket); the Slip omits them,
-  // leaving Product / Quantity / Coverage.
+  // (after Quantity) are warehouse-only (Picking Ticket); the Slip omits them,
+  // leaving Product / Quantity.
   const leadDetailCells = includeInventoryDetail
     ? `\n  <td>${escapeOrEmpty(adj.dyeLot)}</td>\n  <td>${escapeOrEmpty(adj.rollNumber)}</td>`
     : ""
@@ -269,45 +267,38 @@ function renderAdjustmentRow(
   return `
 <tr>
   <td>${escapeOrEmpty(productName)}</td>${leadDetailCells}
-  <td class="cl-num">${renderUnitValue(adj.quantity, adj.stockUnitAbbrev)}</td>
-  <td class="cl-num">${renderUnitValue(adj.coverage, adj.itemCoverageUnitAbbrev)}</td>${trailDetailCells}
+  <td class="cl-num">${renderUnitValue(adj.quantity, adj.stockUnitAbbrev)}</td>${trailDetailCells}
 </tr>
 `.trim()
 }
 
 /**
- * Summed Quantity + Coverage across a material item's adjustments, with the unit
- * suffix taken from the first adjustment that carries one (adjustments within a
- * material item share units). Shared by the Slip's collapsed row and the Picking
- * Ticket's per-group subtotal row.
+ * Summed Quantity across a material item's adjustments, with the unit suffix
+ * taken from the first adjustment that carries one (adjustments within a material
+ * item share units). Shared by the Slip's collapsed row and the Picking Ticket's
+ * per-group subtotal row.
  */
 function sumItemTotals(item: WorkOrderFileMaterialItemProjection): {
   quantity: string
-  coverage: string
   stockUnitAbbrev: string
-  coverageUnitAbbrev: string
 } {
   const adjustments = item.inventoryAdjustments
   return {
     quantity: sumDecimalStrings(adjustments.map((adj) => adj.quantity)),
-    coverage: sumDecimalStrings(adjustments.map((adj) => adj.coverage)),
     stockUnitAbbrev: adjustments.find((adj) => adj.stockUnitAbbrev !== "")?.stockUnitAbbrev ?? "",
-    coverageUnitAbbrev:
-      adjustments.find((adj) => adj.itemCoverageUnitAbbrev !== "")?.itemCoverageUnitAbbrev ?? "",
   }
 }
 
 /**
- * Slip-only: one collapsed row per material item — Product / Quantity / Coverage,
- * with Quantity and Coverage summed across all of the item's adjustments.
+ * Slip-only: one collapsed row per material item — Product / Quantity, with
+ * Quantity summed across all of the item's adjustments.
  */
 function renderSummedSlipItemRow(item: WorkOrderFileMaterialItemProjection): string {
-  const { quantity, coverage, stockUnitAbbrev, coverageUnitAbbrev } = sumItemTotals(item)
+  const { quantity, stockUnitAbbrev } = sumItemTotals(item)
   return `
 <tr>
   <td>${escapeOrEmpty(item.productName)}</td>
   <td class="cl-num">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
-  <td class="cl-num">${renderUnitValue(coverage, coverageUnitAbbrev)}</td>
 </tr>
 `.trim()
 }
@@ -315,18 +306,17 @@ function renderSummedSlipItemRow(item: WorkOrderFileMaterialItemProjection): str
 /**
  * Picking-Ticket-only: a per-product-group subtotal row appended beneath the
  * group's adjustment rows. Empty Product/Dyelot/Roll#/Adjustment/Location cells;
- * the Quantity and Coverage cells carry the group sums under a rule
- * (`.subtotal-cell` border-top). Mirrors the 7-column adjustment-row layout.
+ * the Quantity cell carries the group sum under a rule (`.subtotal-cell`
+ * border-top). Mirrors the 6-column adjustment-row layout.
  */
 function renderPickingTicketSubtotalRow(item: WorkOrderFileMaterialItemProjection): string {
-  const { quantity, coverage, stockUnitAbbrev, coverageUnitAbbrev } = sumItemTotals(item)
+  const { quantity, stockUnitAbbrev } = sumItemTotals(item)
   return `
 <tr>
   <td></td>
   <td></td>
   <td></td>
   <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
-  <td class="cl-num subtotal-cell">${renderUnitValue(coverage, coverageUnitAbbrev)}</td>
   <td></td>
   <td></td>
 </tr>

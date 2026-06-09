@@ -12,16 +12,16 @@ function count(haystack: string, needle: string): number {
   return haystack.split(needle).length - 1
 }
 
-describe("slip — header is Product / Quantity / Coverage only", () => {
+describe("slip — header is Product / Quantity only", () => {
   const html = slipTable([makeMaterialItem()])
 
-  it("renders the three slip columns", () => {
+  it("renders the two slip columns", () => {
     expect(html).toContain("<th>Product</th>")
     expect(html).toContain('<th class="cl-num">Quantity</th>')
-    expect(html).toContain('<th class="cl-num">Coverage</th>')
   })
 
-  it("omits the warehouse-only column headers", () => {
+  it("omits the Coverage and warehouse-only column headers", () => {
+    expect(html).not.toContain('<th class="cl-num">Coverage</th>')
     expect(html).not.toContain("<th>Dyelot</th>")
     expect(html).not.toContain("<th>Roll#</th>")
     expect(html).not.toContain('<th class="cl-num">Adjustment</th>')
@@ -44,9 +44,8 @@ describe("slip — collapsed to one row per material item", () => {
     // <tr> count = 1 header + 1 collapsed item row
     expect(count(html, "<tr>")).toBe(2)
     expect(html).toContain("<td>Shaw Carpet</td>")
-    // summed quantity (17) and coverage (204), no per-adjustment breakdown
+    // summed quantity (17), no per-adjustment breakdown
     expect(html).toContain('<td class="cl-num">17 rolls</td>')
-    expect(html).toContain('<td class="cl-num">204 sf</td>')
   })
 })
 
