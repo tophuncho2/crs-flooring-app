@@ -20,4 +20,6 @@
 - After executing changes, provide a commit message provide a commit message of no more than 17 words.
 - Paste headlines, error counts, and TL:DR in the chat, use charts / tables for visual display. - Any open questions must be in your response
 - Drive, don't poll. Drive the design and stick to the agreed plan. Don't stop to offer multiple-choice options when you can make a sound call — surface decisions as you go, not as menus, unless you need me to give you an answer. Questions are usually address before a plan is approved for execution
+- Worktree layout. Repo uses a .bare + per-branch-folder worktree layout (main/, staging/, dev/, dev-1..3). Promotions/rebases run in the target branch's folder. User opens one window per folder, each has its own color theme.
+- Engines. Shared client engines live in apps/web/engines/, imported as @/engines/<name>, each self-contained behind its barrel.
 
