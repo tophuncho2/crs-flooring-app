@@ -43,6 +43,7 @@
     "db:purge:inventory": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/purge-inventory-before-cutoff.js",
     "db:purge:category": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/delete-category-rows.js",
     "db:backfill:coverage-stock": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-coverage-to-stock.js",
+    "db:recompute:ledger": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/recompute-adjustment-ledger.js",
     "upload:brand-logo": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/upload-brand-logo.js"
   },
   "dependencies": {

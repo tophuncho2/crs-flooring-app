@@ -5,11 +5,10 @@ import type {
 
 /**
  * Editable form values for the adjustment edit form. `inventoryId` is editable
- * only in create mode; saved rows treat it as immutable. The `workOrderId` /
- * `workOrderItemId` pair is editable in edit mode on any non-queued row (the
- * adjustment relink path). The metadata trio `location` / `notes` / `isWaste`
- * is editable on any non-queued row too (including after finalize); only
- * `quantity` is locked once the row leaves the PENDING-editable state.
+ * only in create mode; saved rows treat it as immutable. Every other field —
+ * `quantity`, the metadata trio (`location` / `notes` / `isWaste`), and the
+ * `workOrderId` / `workOrderItemId` relink pair — is freely editable for the
+ * row's whole lifecycle; there is no finalize/freeze.
  *
  * `adjustmentType` (INCREASE | DEDUCTION) is direction. It is chosen only in
  * the manual create flow (inventory hub); WO-linked cuts are always DEDUCTION

@@ -31,13 +31,14 @@ export type CreatePendingAdjustmentInput = {
 export type UpdatePendingAdjustmentPatch = {
   /**
    * Always positive (validator enforces); direction is immutable post-create.
-   * Pending-only — locked once the row is finalized.
+   * Freely editable for the row's whole lifecycle — editing it re-flows the
+   * inventory's before/after chain.
    */
   quantity?: string
   /**
-   * Metadata trio — editable through the row's whole lifecycle, including after
-   * finalize (only QUEUED blocks). `isWaste` is a reporting flag on either
-   * direction; `location` is user-owned free text (never re-snapped from parent).
+   * Metadata trio — also freely editable. `isWaste` is a reporting flag on
+   * either direction; `location` is user-owned free text (never re-snapped
+   * from parent).
    */
   isWaste?: boolean
   notes?: string
@@ -59,11 +60,6 @@ export type DeletePendingAdjustmentInput = {
   expectedUpdatedAt: string
 }
 
-export type FinalizeAdjustmentInput = {
-  scope: AdjustmentMutationScope
-  adjustmentId: string
-}
-
 export type AdjustmentMutationResult = {
   adjustment: InventoryAdjustmentRecord
   inventoryId: string
@@ -74,8 +70,4 @@ export type DeleteAdjustmentResult = {
   deletedId: string
   inventoryId: string
   netDeducted: string
-}
-
-export type FinalizeAdjustmentResult = {
-  adjustment: InventoryAdjustmentRecord
 }

@@ -77,8 +77,6 @@ export function normalizeAdjustmentRow(
     stockUnitAbbrev: row.stockUnitAbbrev ?? null,
     adjustmentType,
     status,
-    isFinal: row.isFinal,
-    finalSequence: row.finalSequence,
     isWaste: row.isWaste,
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),
@@ -259,18 +257,11 @@ export async function listAdjustmentsForWorkOrderItemIds(
  * Powers the adjustments section on the inventory record view. Returns
  * both DEDUCTION and INCREASE rows interleaved.
  *
- * Sort: `finalSequence DESC NULLS FIRST`, then `id DESC`. This is the
- * single-inventory projection of the shared adjustments order
- * (inventory number → final sequence → id); inv# is constant here because
- * the query is scoped to one `inventoryId`, so it drops out. Two natural
- * buckets fall out without a CASE expression:
- *
- *   1. Rows with `finalSequence = null` (pending) float to the top.
- *   2. Rows with `finalSequence` set (FINAL) come next, ordered DESC so
- *      the most recently finalized row leads.
- *
- * `id DESC` is a deterministic tiebreak only (UUIDs aren't chronological).
- * Backed by the `@@unique([inventoryId, finalSequence])` index.
+ * Sort: `createdAt DESC`, then `id DESC` (deterministic tiebreak for
+ * same-instant inserts). The ledger is purely chronological now — the newest
+ * adjustment leads, and its `after` is the current on-hand. `before`/`after`
+ * are maintained by `recomputeAndPersistNetDeducted`, which replays the chain
+ * in the inverse (`createdAt` ASC) order on every mutation.
  */
 export async function listInventoryAdjustmentsPage(
   args: { inventoryId: string; skip: number; take: number },
@@ -285,7 +276,7 @@ export async function listInventoryAdjustmentsPage(
     where,
     select: enrichedInventoryAdjustmentRowSelect,
     orderBy: [
-      { finalSequence: { sort: "desc", nulls: "first" } },
+      { createdAt: "desc" },
       { id: "desc" },
     ],
     skip: args.skip,
@@ -406,29 +397,40 @@ export async function listAdjustmentsForListView(
 
 /**
  * Minimal-shape read of every adjustment on each inventory id, used by
- * `recomputeAndPersistNetDeducted` to project the post-mutation `netDeducted`.
- * Returns just the fields `computeNetDeducted` operates on (signed math
- * keys off the `adjustmentType` discriminator).
+ * `recomputeAndPersistNetDeducted` to project the post-mutation `netDeducted`
+ * AND to replay the per-row `before`/`after` ledger. Returns `id` + `createdAt`
+ * (the chain order) alongside the signed-math fields (`quantity`,
+ * `adjustmentType`).
  */
 export async function listAdjustmentsForInventoryIds(
   inventoryIds: string[],
   client: InventoryAdjustmentDbClient = db,
 ): Promise<
   Array<{
+    id: string
     inventoryId: string
     quantity: string
     adjustmentType: FlooringInventoryAdjustmentType
+    createdAt: Date
   }>
 > {
   if (inventoryIds.length === 0) return []
   const rows = await client.flooringInventoryAdjustment.findMany({
     where: { inventoryId: { in: inventoryIds } },
-    select: { inventoryId: true, quantity: true, adjustmentType: true },
+    select: {
+      id: true,
+      inventoryId: true,
+      quantity: true,
+      adjustmentType: true,
+      createdAt: true,
+    },
   })
   return rows.map((r) => ({
+    id: r.id,
     inventoryId: r.inventoryId,
     quantity: r.quantity.toString(),
     adjustmentType: r.adjustmentType,
+    createdAt: r.createdAt,
   }))
 }
 

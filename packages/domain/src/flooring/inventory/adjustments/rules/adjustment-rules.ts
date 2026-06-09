@@ -1,9 +1,7 @@
-import { canDeleteAdjustment } from "../editability.js"
 import { InventoryAdjustmentDomainError } from "../errors.js"
 import type {
   FlooringInventoryAdjustmentStatus,
   FlooringInventoryAdjustmentType,
-  InventoryAdjustmentRow,
 } from "../types.js"
 
 const ARITHMETIC_TOLERANCE = 0.005
@@ -37,17 +35,6 @@ export function assertBeforeAfterInvariant(input: {
       signedDelta,
       after,
       expectedAfter: before - signedDelta,
-    })
-  }
-}
-
-export function assertAdjustmentDeleteAllowed(
-  row: Pick<InventoryAdjustmentRow, "status" | "isFinal">,
-): void {
-  if (!canDeleteAdjustment(row)) {
-    throw new InventoryAdjustmentDomainError("INVENTORY_ADJUSTMENT_PENDING_INPUT_NOT_ALLOWED", {
-      status: row.status,
-      isFinal: row.isFinal,
     })
   }
 }

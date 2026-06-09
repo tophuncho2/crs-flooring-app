@@ -206,14 +206,6 @@ export function validateDeletePendingAdjustmentInput(
   return {}
 }
 
-export type ValidatedFinalizeAdjustmentInput = Record<string, never>
-
-export function validateFinalizeAdjustmentInput(
-  _body: Record<string, unknown>,
-): ValidatedFinalizeAdjustmentInput {
-  return {}
-}
-
 const adjustmentsPageQuerySchema = z.object({
   skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce

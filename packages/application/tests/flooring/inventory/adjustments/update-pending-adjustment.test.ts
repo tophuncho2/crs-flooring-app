@@ -4,6 +4,7 @@ const {
   withDatabaseTransactionMock,
   dbWomiFindUniqueMock,
   getPendingAdjustmentWithInventoryForMutationMock,
+  getAdjustmentByIdMock,
   lockInventoryForAdjustmentMock,
   updatePendingAdjustmentRowMock,
   recomputeAndPersistNetDeductedMock,
@@ -31,6 +32,7 @@ const {
     withDatabaseTransactionMock: vi.fn(),
     dbWomiFindUniqueMock: vi.fn(),
     getPendingAdjustmentWithInventoryForMutationMock: vi.fn(),
+    getAdjustmentByIdMock: vi.fn(),
     lockInventoryForAdjustmentMock: vi.fn(),
     updatePendingAdjustmentRowMock: vi.fn(),
     recomputeAndPersistNetDeductedMock: vi.fn(),
@@ -51,6 +53,7 @@ vi.mock("@builders/db", () => ({
   db: { flooringWorkOrderItem: { findUnique: dbWomiFindUniqueMock } },
   withDatabaseTransaction: withDatabaseTransactionMock,
   getPendingAdjustmentWithInventoryForMutation: getPendingAdjustmentWithInventoryForMutationMock,
+  getAdjustmentById: getAdjustmentByIdMock,
   lockInventoryForAdjustment: lockInventoryForAdjustmentMock,
   updatePendingAdjustmentRow: updatePendingAdjustmentRowMock,
   recomputeAndPersistNetDeducted: recomputeAndPersistNetDeductedMock,
@@ -130,6 +133,7 @@ beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   dbWomiFindUniqueMock.mockReset()
   getPendingAdjustmentWithInventoryForMutationMock.mockReset()
+  getAdjustmentByIdMock.mockReset()
   lockInventoryForAdjustmentMock.mockReset()
   updatePendingAdjustmentRowMock.mockReset()
   recomputeAndPersistNetDeductedMock.mockReset()
@@ -160,6 +164,7 @@ beforeEach(() => {
   assertNetDeductedWithinStartingStockMock.mockReturnValue(undefined)
   validateAdjustmentPendingFormMock.mockReturnValue([])
   updatePendingAdjustmentRowMock.mockResolvedValue(UPDATED)
+  getAdjustmentByIdMock.mockResolvedValue(UPDATED)
   recomputeAndPersistNetDeductedMock.mockResolvedValue([
     { inventoryId: INVENTORY_ID, netDeducted: "5.00" },
   ])
@@ -217,37 +222,23 @@ describe("updatePendingAdjustmentUseCase", () => {
     })
   })
 
-  describe("metadata trio editable after finalize", () => {
-    it("accepts notes / location / isWaste on a FINAL row (only QUEUED blocks them)", async () => {
+  describe("always editable", () => {
+    it("accepts a quantity + metadata patch on a once-finalized row (no freeze any more)", async () => {
       getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
         found({ adjustment: { status: "FINAL", isFinal: true } }),
       )
 
       await updatePendingAdjustmentUseCase(
-        input({ patch: { isWaste: true, notes: "rework", location: "Bay 7" } }),
+        input({ patch: { quantity: "3", isWaste: true, notes: "rework", location: "Bay 7" } }),
       )
 
-      // Quantity gate is never consulted for a meta-only patch.
-      expect(assertAdjustmentPendingMutationAllowedMock).not.toHaveBeenCalled()
-      expect(assertAdjustmentMetaMutationAllowedMock).toHaveBeenCalledWith({ status: "FINAL" })
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { isWaste: true, notes: "rework", location: "Bay 7" } },
+        {
+          id: ADJUSTMENT_ID,
+          patch: { quantity: "3", isWaste: true, notes: "rework", location: "Bay 7" },
+        },
       )
-    })
-
-    it("throws INVENTORY_ADJUSTMENT_META_NOT_ALLOWED (409) when a meta patch hits a QUEUED row", async () => {
-      getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
-        found({ adjustment: { status: "QUEUED" } }),
-      )
-      assertAdjustmentMetaMutationAllowedMock.mockImplementation(() => {
-        throw new InventoryAdjustmentDomainErrorClass("INVENTORY_ADJUSTMENT_META_NOT_ALLOWED")
-      })
-
-      await expect(
-        updatePendingAdjustmentUseCase(input({ patch: { notes: "x" } })),
-      ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_META_NOT_ALLOWED", status: 409 })
-      expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
     })
   })
 
@@ -258,35 +249,6 @@ describe("updatePendingAdjustmentUseCase", () => {
       await expect(
         updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } })),
       ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_NOT_FOUND", status: 404 })
-      expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
-    })
-
-    it("throws INVENTORY_ADJUSTMENT_NOT_PENDING (409) when a field patch hits a finalized row", async () => {
-      getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
-        found({ adjustment: { status: "FINAL", isFinal: true } }),
-      )
-      assertAdjustmentPendingMutationAllowedMock.mockImplementation(() => {
-        throw new InventoryAdjustmentDomainErrorClass(
-          "INVENTORY_ADJUSTMENT_PENDING_INPUT_NOT_ALLOWED",
-        )
-      })
-
-      await expect(
-        updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } })),
-      ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_NOT_PENDING", status: 409 })
-      expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
-    })
-
-    it("throws INVENTORY_ADJUSTMENT_LINK_NOT_ALLOWED (409) when a link patch hits a queued row", async () => {
-      assertAdjustmentLinkMutationAllowedMock.mockImplementation(() => {
-        throw new InventoryAdjustmentDomainErrorClass("INVENTORY_ADJUSTMENT_LINK_NOT_ALLOWED")
-      })
-
-      await expect(
-        updatePendingAdjustmentUseCase(
-          input({ patch: { link: { workOrderId: null, workOrderItemId: null } } }),
-        ),
-      ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_LINK_NOT_ALLOWED", status: 409 })
       expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
     })
 

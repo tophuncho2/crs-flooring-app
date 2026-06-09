@@ -28,8 +28,6 @@ export type InventoryAdjustmentRow = {
   stockUnitAbbrev: string | null
   adjustmentType: FlooringInventoryAdjustmentType
   status: FlooringInventoryAdjustmentStatus
-  isFinal: boolean
-  finalSequence: number | null
   isWaste: boolean
   notes: string
   createdAt: string

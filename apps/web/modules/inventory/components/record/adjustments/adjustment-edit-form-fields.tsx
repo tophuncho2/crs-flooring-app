@@ -4,7 +4,6 @@ import {
   formatAdjustmentTransition,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
-  isAdjustmentPendingEditable,
 } from "@builders/domain"
 import { AdjustmentStatusBadge } from "@/engines/common"
 import { StatusBadge } from "@/engines/common"
@@ -40,12 +39,11 @@ const ADJUSTMENT_TYPE_OPTIONS = [
  *
  * Create mode: a "New adjustment" group — type selector, quantity, notes, with a
  * waste lever in the group header.
- * Edit mode: an "Adjustment" group whose header carries one inline status cluster
- * — the type pill (Increase/Deduction), the lifecycle pill (PENDING/QUEUED/FINAL),
- * the final-sequence pill, and the waste lever furthest right. The body shows
- * quantity, then the before→after transition + location, then notes, then
- * created / updated. Inputs lock once the row leaves the PENDING-editable
- * state.
+ * Edit mode: an "Adjustment" group whose header carries the type pill
+ * (Increase/Deduction) and the waste lever. The body shows quantity, then the
+ * before→after transition + location, then notes, then created / updated. Every
+ * field is always editable (only disabled mid-save); the before→after transition
+ * re-flows server-side on each save.
  */
 export function AdjustmentEditFormFields({
   mode,
@@ -58,21 +56,15 @@ export function AdjustmentEditFormFields({
   // inventory's snapshot kept in `local` (seeded for the locked hub case).
   const stockUnit = adjustment?.stockUnitAbbrev ?? local.pickedInventoryStockUnitAbbrev
 
-  // Two editability gates mirror the server's split. `quantity` is pending-only
-  // — locked once the row leaves the PENDING-editable state (the PATCH would 409
-  // anyway). The metadata trio (`isWaste` / `notes` / `location`) stays editable
-  // through the whole lifecycle, including after finalize; only a QUEUED row
-  // (worker job in flight) blocks it.
-  const quantityEditable =
-    !isSaving && (mode === "create" || adjustment == null || isAdjustmentPendingEditable(adjustment))
-  const metaEditable =
-    !isSaving && (mode === "create" || adjustment == null || adjustment.status !== "QUEUED")
+  // Every field is freely editable now — there is no finalize/freeze. Cells are
+  // only disabled while a save is in flight.
+  const editable = !isSaving
 
   const wasteToggle = (
     <span className="flex items-center gap-1.5">
       <span className={STATUS_LABEL_CLASS}>Waste</span>
       <ToggleCell
-        editable={metaEditable}
+        editable={editable}
         value={form.isWaste}
         onChange={(next) => controller.setField("isWaste", next)}
         ariaLabel="Waste flag"
@@ -99,7 +91,7 @@ export function AdjustmentEditFormFields({
           </InventoryField>
           <InventoryField label="Quantity" required>
             <UnitCell
-              editable={quantityEditable}
+              editable={editable}
               value={form.quantity}
               onChange={(next) => controller.setField("quantity", next)}
               unit={stockUnit}
@@ -109,12 +101,12 @@ export function AdjustmentEditFormFields({
           </InventoryField>
           <InventoryField
             label="Location"
-            editable={metaEditable}
-            currentLength={metaEditable ? form.location.length : undefined}
+            editable={editable}
+            currentLength={editable ? form.location.length : undefined}
             maxLength={INVENTORY_LOCATION_MAX}
           >
             <TextCell
-              editable={metaEditable}
+              editable={editable}
               value={form.location}
               onChange={(next) => controller.setField("location", next)}
               placeholder="Location"
@@ -125,12 +117,12 @@ export function AdjustmentEditFormFields({
           <InventoryField
             label="Notes"
             className="col-span-2"
-            editable={metaEditable}
-            currentLength={metaEditable ? form.notes.length : undefined}
+            editable={editable}
+            currentLength={editable ? form.notes.length : undefined}
             maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
           >
             <TextCell
-              editable={metaEditable}
+              editable={editable}
               value={form.notes}
               onChange={(next) => controller.setField("notes", next)}
               placeholder="Notes"
@@ -158,9 +150,6 @@ export function AdjustmentEditFormFields({
             {adjustment.adjustmentType === "INCREASE" ? "Increase" : "Deduction"}
           </StatusBadge>
           <AdjustmentStatusBadge size="md" status={adjustment.status} />
-          <StatusBadge size="md" tone="muted">
-            {`Final seq · ${adjustment.finalSequence != null ? adjustment.finalSequence : EMPTY_CELL}`}
-          </StatusBadge>
           <span className="ml-1">{wasteToggle}</span>
         </div>
       }
@@ -168,7 +157,7 @@ export function AdjustmentEditFormFields({
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">
         <InventoryField label="Quantity" required>
           <UnitCell
-            editable={quantityEditable}
+            editable={editable}
             value={form.quantity}
             onChange={(next) => controller.setField("quantity", next)}
             unit={stockUnit}
@@ -181,12 +170,12 @@ export function AdjustmentEditFormFields({
         </InventoryField>
         <InventoryField
           label="Location"
-          editable={metaEditable}
-          currentLength={metaEditable ? form.location.length : undefined}
+          editable={editable}
+          currentLength={editable ? form.location.length : undefined}
           maxLength={INVENTORY_LOCATION_MAX}
         >
           <TextCell
-            editable={metaEditable}
+            editable={editable}
             value={form.location}
             onChange={(next) => controller.setField("location", next)}
             placeholder="Location"
@@ -197,12 +186,12 @@ export function AdjustmentEditFormFields({
         <InventoryField
           label="Notes"
           className="col-span-2"
-          editable={metaEditable}
-          currentLength={metaEditable ? form.notes.length : undefined}
+          editable={editable}
+          currentLength={editable ? form.notes.length : undefined}
           maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
         >
           <TextCell
-            editable={metaEditable}
+            editable={editable}
             value={form.notes}
             onChange={(next) => controller.setField("notes", next)}
             placeholder="Notes"

@@ -53,12 +53,6 @@ export function renderAdjustmentsRowCell(
       ) : (
         <span className="text-[var(--text-muted)]">-</span>
       )
-    case "finalSequence":
-      return row.finalSequence != null ? (
-        <span className="tabular-nums">{row.finalSequence}</span>
-      ) : (
-        "-"
-      )
     case "notes":
       return row.notes || "-"
     case "warehouseName":

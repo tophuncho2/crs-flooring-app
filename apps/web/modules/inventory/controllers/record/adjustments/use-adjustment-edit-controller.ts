@@ -20,7 +20,6 @@ import type { AdjustmentPickerConfig } from "./types"
 import {
   useCreateAdjustmentMutation,
   useDeleteAdjustmentMutation,
-  useFinalizeAdjustmentMutation,
   useUpdateAdjustmentMutation,
 } from "./mutations"
 import type {
@@ -34,8 +33,10 @@ import { createRecordSectionError, type RecordSectionError } from "@/types/recor
 /**
  * Owns the edit lifecycle for an adjustment record: open/close, current
  * row, editable form, dirty tracking, free-text location filter for create
- * mode, and composes all five adjustment mutation hooks (create / update /
- * delete / void / finalize).
+ * mode, and composes the three adjustment mutation hooks (create / update /
+ * delete). Every field — quantity included — is always editable; there is no
+ * finalize/freeze, and the row's `before`/`after` recompute server-side on
+ * every save.
  *
  * Scope-aware: `scope` drives the request URLs. WO callers pass
  * `{ kind: "work-order", workOrderId }`; inv callers pass
@@ -49,11 +50,8 @@ import { createRecordSectionError, type RecordSectionError } from "@/types/recor
  *   - Save (create) → default: stay open, transition to edit on the new
  *                     row. When `onCreated` is provided, close instead
  *                     and let the consumer route the new row elsewhere.
- *   - Save (edit)   → stay open, refresh form to server values
- *   - Finalize      → stay open on the now-FINAL row (input cells go
- *                     read-only via `isAdjustmentPendingEditable`)
- *   - Void          → stay open on the now-VOID row (input cells go
- *                     read-only)
+ *   - Save (edit)   → stay open, refresh form to server values (incl. the
+ *                     re-flowed before/after)
  *   - Delete        → close (row no longer exists)
  *   - Backdrop / ESC / X → close, discard unsaved
  */
@@ -282,20 +280,11 @@ export function useAdjustmentEditController({
     setOpen,
     setError,
   })
-  const finalizeMutation = useFinalizeAdjustmentMutation({
-    scope,
-    publish,
-    setForm,
-    setBaseline,
-    setOpen,
-    setError,
-  })
 
   const isSaving =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending ||
-    finalizeMutation.isPending
+    deleteMutation.isPending
 
   const save = useCallback(() => {
     if (!open || isSaving) return
@@ -319,14 +308,6 @@ export function useAdjustmentEditController({
     if (!open || open.mode !== "edit" || isSaving) return
     deleteMutation.mutate({ workOrderItemId: open.workOrderItemId, adjustment: open.adjustment })
   }, [open, isSaving, deleteMutation])
-
-  const finalize = useCallback(() => {
-    if (!open || open.mode !== "edit" || isSaving || isDirty) return
-    finalizeMutation.mutate({
-      workOrderItemId: open.workOrderItemId,
-      adjustment: open.adjustment,
-    })
-  }, [open, isDirty, isSaving, finalizeMutation])
 
   const close = useCallback(() => {
     if (isSaving) return
@@ -355,7 +336,6 @@ export function useAdjustmentEditController({
     setField,
     selectWorkOrderOption,
     save,
-    finalize,
     deleteAdjustment,
   }
 }

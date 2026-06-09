@@ -1,5 +1,6 @@
 import {
   Prisma,
+  getAdjustmentById,
   getInventoryParentContextForAdjustments,
   insertPendingAdjustmentRow,
   lockInventoryForAdjustment,
@@ -132,7 +133,7 @@ export async function createPendingAdjustmentUseCase(
       }
     }
 
-    const adjustment = await insertPendingAdjustmentRow(c, {
+    const inserted = await insertPendingAdjustmentRow(c, {
       adjustmentType,
       workOrderId,
       workOrderItemId,
@@ -170,6 +171,10 @@ export async function createPendingAdjustmentUseCase(
         },
       )
     }
+
+    // The recompute stamped this row's `before`/`after` (insert left them null);
+    // re-read so the response carries the fresh ledger values.
+    const adjustment = (await getAdjustmentById(inserted.id, c)) ?? inserted
 
     try {
       assertNetDeductedWithinStartingStock({

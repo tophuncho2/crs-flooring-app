@@ -26,7 +26,6 @@ export const WORK_ORDER_ADJUSTMENT_LAYOUT: GridLayout<EnrichedInventoryAdjustmen
     C.inventoryNote,
     C.location,
     C.isWaste,
-    C.finalSequence,
     C.notes,
     C.adjustmentNumber,
     C.adjustmentType,

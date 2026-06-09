@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect } from "react"
-import { isAdjustmentPendingEditable } from "@builders/domain"
 import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
   RecordSectionSubHeader,
@@ -55,8 +54,7 @@ export function EmbeddedAdjustmentRecordView({
 
   const handleBack = () => hostPage.confirmNavigation(onBack)
 
-  // Finalize only while the row is still pending-editable; delete only in edit.
-  const showFinalize = adjustment != null && isAdjustmentPendingEditable(adjustment)
+  // Delete is available on any saved row (edit mode).
   const showDelete = adjustment != null
 
   const actions: RecordSectionSubHeaderAction[] = [
@@ -81,17 +79,6 @@ export function EmbeddedAdjustmentRecordView({
       onClick: () => controller.discard(),
       disabled: !isDirty || isSaving,
     },
-    ...(showFinalize
-      ? [
-          {
-            key: "finalize",
-            label: "Finalize",
-            tone: "neutral" as const,
-            onClick: () => controller.finalize(),
-            disabled: isSaving || isDirty,
-          },
-        ]
-      : []),
     ...(showDelete
       ? [
           {

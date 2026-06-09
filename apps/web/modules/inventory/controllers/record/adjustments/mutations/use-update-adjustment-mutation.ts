@@ -6,7 +6,7 @@ import {
   type RecordSectionError,
 } from "@/types/record/section-error"
 import { useMutation } from "@tanstack/react-query"
-import { isAdjustmentPendingEditable, type InventoryAdjustmentRow } from "@builders/domain"
+import type { InventoryAdjustmentRow } from "@builders/domain"
 import {
   updatePendingAdjustmentRequest,
   type AdjustmentScopeUrl,
@@ -50,12 +50,9 @@ export function useUpdateAdjustmentMutation({
       adjustment: InventoryAdjustmentRow
       form: AdjustmentEditForm
     }) => {
-      // Mirror the server's gate split: `quantity` is pending-only, so send it
-      // only while the row is still PENDING-editable; the metadata trio
-      // (`isWaste` / `notes` / `location`) stays editable after finalize and is
-      // sent whenever the row isn't QUEUED; the link is sent only when changed.
-      const quantityEditable = isAdjustmentPendingEditable(input.adjustment)
-      const metaEditable = input.adjustment.status !== "QUEUED"
+      // Every field is freely editable now — send quantity + the metadata trio
+      // on every save; the link is sent only when it actually changed. The
+      // server re-flows before/after for the whole chain on the write.
       const linkChanged =
         input.form.workOrderId !== input.adjustment.workOrderId ||
         input.form.workOrderItemId !== input.adjustment.workOrderItemId
@@ -64,14 +61,10 @@ export function useUpdateAdjustmentMutation({
         adjustmentId: input.adjustment.id,
         expectedUpdatedAt: input.adjustment.updatedAt,
         patch: {
-          ...(quantityEditable ? { quantity: input.form.quantity } : {}),
-          ...(metaEditable
-            ? {
-                isWaste: input.form.isWaste,
-                notes: input.form.notes,
-                location: input.form.location,
-              }
-            : {}),
+          quantity: input.form.quantity,
+          isWaste: input.form.isWaste,
+          notes: input.form.notes,
+          location: input.form.location,
           ...(linkChanged
             ? {
                 link: {

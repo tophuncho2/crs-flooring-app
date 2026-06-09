@@ -1,29 +1,14 @@
 import { describe, expect, it } from "vitest"
 import {
-  assertAdjustmentDeleteAllowed,
   assertAdjustmentLinkageRules,
   assertAdjustmentWarehouseMatchesInventory,
   assertBeforeAfterInvariant,
 } from "../../../../src/flooring/inventory/adjustments/rules/adjustment-rules.js"
-import {
-  assertAdjustmentExpectedUpdatedAtMatches,
-  assertAdjustmentLinkMutationAllowed,
-  assertAdjustmentPendingMutationAllowed,
-} from "../../../../src/flooring/inventory/adjustments/rules/pending-mutation-rules.js"
+import { assertAdjustmentExpectedUpdatedAtMatches } from "../../../../src/flooring/inventory/adjustments/rules/pending-mutation-rules.js"
 import {
   describeAdjustmentPendingFormIssues,
   validateAdjustmentPendingForm,
 } from "../../../../src/flooring/inventory/adjustments/rules/form-rules.js"
-
-function row(overrides: Record<string, unknown> = {}) {
-  return {
-    id: "adj-1",
-    status: "PENDING",
-    isFinal: false,
-    adjustmentType: "DEDUCTION",
-    ...overrides,
-  } as never
-}
 
 describe("assertBeforeAfterInvariant", () => {
   it("passes when before − signedDelta === after (within tolerance)", () => {
@@ -121,43 +106,6 @@ describe("assertAdjustmentLinkageRules — INCREASE", () => {
         isWaste: true,
       }),
     ).not.toThrow()
-  })
-})
-
-describe("assertAdjustmentDeleteAllowed", () => {
-  it("allows a pending row, rejects a finalized one", () => {
-    expect(() => assertAdjustmentDeleteAllowed(row())).not.toThrow()
-    expect(() => assertAdjustmentDeleteAllowed(row({ isFinal: true, status: "FINAL" }))).toThrow(
-      "INVENTORY_ADJUSTMENT_PENDING_INPUT_NOT_ALLOWED",
-    )
-  })
-})
-
-describe("assertAdjustmentPendingMutationAllowed", () => {
-  it("allows pending, rejects finalized", () => {
-    expect(() => assertAdjustmentPendingMutationAllowed(row())).not.toThrow()
-    expect(() =>
-      assertAdjustmentPendingMutationAllowed(row({ isFinal: true, status: "FINAL" })),
-    ).toThrow("INVENTORY_ADJUSTMENT_PENDING_INPUT_NOT_ALLOWED")
-  })
-})
-
-describe("assertAdjustmentLinkMutationAllowed", () => {
-  it("allows pending/final DEDUCTION link edits", () => {
-    expect(() => assertAdjustmentLinkMutationAllowed(row())).not.toThrow()
-    expect(() => assertAdjustmentLinkMutationAllowed(row({ status: "FINAL" }))).not.toThrow()
-  })
-
-  it("allows link edits on INCREASE rows (an INCREASE may link a work order)", () => {
-    expect(() =>
-      assertAdjustmentLinkMutationAllowed(row({ adjustmentType: "INCREASE" })),
-    ).not.toThrow()
-  })
-
-  it("rejects link edits on QUEUED rows", () => {
-    expect(() => assertAdjustmentLinkMutationAllowed(row({ status: "QUEUED" }))).toThrow(
-      "INVENTORY_ADJUSTMENT_LINK_NOT_ALLOWED",
-    )
   })
 })
 

@@ -18,9 +18,7 @@ export {
   createAdjustmentRequest,
   updatePendingAdjustmentRequest,
   deletePendingAdjustmentRequest,
-  finalizeAdjustmentRequest,
   type AdjustmentScopeUrl,
   type PendingAdjustmentMutationResponse,
   type DeletePendingAdjustmentResponse,
-  type FinalizeAdjustmentResponse,
 } from "./data/mutations"

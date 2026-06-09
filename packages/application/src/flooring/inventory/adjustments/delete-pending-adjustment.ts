@@ -8,7 +8,6 @@ import {
 } from "@builders/db"
 import {
   assertAdjustmentExpectedUpdatedAtMatches,
-  assertAdjustmentPendingMutationAllowed,
   assertNetDeductedWithinStartingStock,
   InventoryAdjustmentDomainError,
 } from "@builders/domain"
@@ -41,27 +40,8 @@ export async function deletePendingAdjustmentUseCase(
       inventoryId: existing.inventoryId,
     })
 
-    try {
-      assertAdjustmentPendingMutationAllowed({
-        status: existing.status,
-        isFinal: existing.isFinal,
-      })
-    } catch (error) {
-      if (error instanceof InventoryAdjustmentDomainError) {
-        throw new InventoryAdjustmentExecutionError({
-          code: "INVENTORY_ADJUSTMENT_DELETE_NOT_ALLOWED",
-          message: "Cannot delete a finalized inventory adjustment",
-          status: 409,
-          payload: {
-            adjustmentId: existing.id,
-            status: existing.status,
-            isFinal: existing.isFinal,
-          },
-        })
-      }
-      throw error
-    }
-
+    // Any adjustment is freely deletable now — deleting re-flows the chain via
+    // the recompute below. Only the optimistic-concurrency check still gates.
     try {
       assertAdjustmentExpectedUpdatedAtMatches({
         rowUpdatedAt: existing.updatedAt,

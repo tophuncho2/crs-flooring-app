@@ -11,9 +11,9 @@ import type {
  * URL-deriving scope discriminator. Mirrors the application-layer
  * `AdjustmentMutationScope` (in `@builders/application`): work-order routes
  * hang off `/api/work-orders/[id]/adjustments/…` and inventory routes off
- * `/api/inventory/[id]/adjustments/…`. Update / delete / finalize accept
- * either scope; create always targets the inventory route (the form knows the
- * chosen inventory id) via `createAdjustmentRequest`.
+ * `/api/inventory/[id]/adjustments/…`. Update / delete accept either scope;
+ * create always targets the inventory route (the form knows the chosen
+ * inventory id) via `createAdjustmentRequest`.
  */
 export type AdjustmentScopeUrl =
   | { kind: "work-order"; workOrderId: string }
@@ -35,10 +35,6 @@ export type DeletePendingAdjustmentResponse = {
   deletedId: string
   inventoryId: string
   netDeducted: string
-}
-
-export type FinalizeAdjustmentResponse = {
-  adjustment: InventoryAdjustmentRow
 }
 
 /**
@@ -125,21 +121,3 @@ export async function deletePendingAdjustmentRequest(args: {
   )
 }
 
-/**
- * Finalize — resource-level URL on BOTH sides. The WO finalize URL was
- * normalized in this sweep (collection-level `/adjustments/finalize`
- * deleted) so the request shape is symmetric across WO + inv.
- */
-export async function finalizeAdjustmentRequest(args: {
-  scope: AdjustmentScopeUrl
-  adjustmentId: string
-}) {
-  return requestJson<FinalizeAdjustmentResponse>(
-    `${basePath(args.scope)}/${args.adjustmentId}/finalize`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(withMutationMeta({})),
-    },
-  )
-}

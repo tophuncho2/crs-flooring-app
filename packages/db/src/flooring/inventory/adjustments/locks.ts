@@ -11,7 +11,6 @@ import { Prisma } from "../../../generated/prisma/client.js"
  *   - createPendingAdjustmentUseCase (WO-linked DEDUCTION or manual)
  *   - updatePendingAdjustmentUseCase (scope-aware)
  *   - deletePendingAdjustmentUseCase (scope-aware)
- *   - finalizeAdjustmentUseCase      (scope-aware)
  *
  * Adjustment mutations always touch exactly one inventory; concurrent
  * mutations against the same inventory serialize on this lock, and

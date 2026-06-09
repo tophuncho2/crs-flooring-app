@@ -1,6 +1,7 @@
 import {
   Prisma,
   db,
+  getAdjustmentById,
   getPendingAdjustmentWithInventoryForMutation,
   lockInventoryForAdjustment,
   recomputeAndPersistNetDeducted,
@@ -10,10 +11,7 @@ import {
 } from "@builders/db"
 import {
   assertAdjustmentExpectedUpdatedAtMatches,
-  assertAdjustmentLinkMutationAllowed,
   assertAdjustmentLinkageRules,
-  assertAdjustmentMetaMutationAllowed,
-  assertAdjustmentPendingMutationAllowed,
   assertNetDeductedWithinStartingStock,
   describeAdjustmentPendingFormIssues,
   InventoryAdjustmentDomainError,
@@ -92,83 +90,15 @@ export async function updatePendingAdjustmentUseCase(
       inventoryId: existing.inventoryId,
     })
 
-    const hasLinkPatch = input.patch.link !== undefined
-    // `quantity` is pending-only; the metadata trio (`isWaste` / `notes` /
-    // `location`) stays editable after finalize and is gated separately (only
-    // QUEUED blocks), mirroring the link gate below.
-    const hasQuantityPatch = input.patch.quantity !== undefined
-    const hasMetaPatch =
-      input.patch.isWaste !== undefined ||
-      input.patch.notes !== undefined ||
-      input.patch.location !== undefined
-    if (hasQuantityPatch) {
-      try {
-        assertAdjustmentPendingMutationAllowed({
-          status: existing.status,
-          isFinal: existing.isFinal,
-        })
-      } catch (error) {
-        if (error instanceof InventoryAdjustmentDomainError) {
-          throw new InventoryAdjustmentExecutionError({
-            code: "INVENTORY_ADJUSTMENT_NOT_PENDING",
-            message:
-              "Inventory adjustment quantity cannot be edited; it has been finalized",
-            status: 409,
-            payload: {
-              adjustmentId: existing.id,
-              status: existing.status,
-              isFinal: existing.isFinal,
-            },
-          })
-        }
-        throw error
-      }
-    }
-    if (hasMetaPatch) {
-      try {
-        assertAdjustmentMetaMutationAllowed({ status: existing.status })
-      } catch (error) {
-        if (error instanceof InventoryAdjustmentDomainError) {
-          throw new InventoryAdjustmentExecutionError({
-            code: "INVENTORY_ADJUSTMENT_META_NOT_ALLOWED",
-            message:
-              "Inventory adjustment has a worker job in flight; try again once it settles.",
-            status: 409,
-            payload: {
-              adjustmentId: existing.id,
-              status: existing.status,
-            },
-          })
-        }
-        throw error
-      }
-    }
-    if (hasLinkPatch) {
-      try {
-        assertAdjustmentLinkMutationAllowed({
-          status: existing.status,
-          adjustmentType: existing.adjustmentType,
-        })
-      } catch (error) {
-        if (error instanceof InventoryAdjustmentDomainError) {
-          throw new InventoryAdjustmentExecutionError({
-            code: "INVENTORY_ADJUSTMENT_LINK_NOT_ALLOWED",
-            message: "Adjustment link cannot be changed in its current state.",
-            status: 409,
-            payload: {
-              adjustmentId: existing.id,
-              status: existing.status,
-            },
-          })
-        }
-        throw error
-      }
-      // Structural sanity-check on the patch shape itself (both-null OR
-      // both-set for a DEDUCTION row).
+    // Every field — quantity, the metadata trio, and the WO link — is now
+    // freely editable for the whole lifecycle of the row; there is no
+    // finalize/freeze and `QUEUED` never occurs. Only the structural linkage
+    // symmetry (both ids set, or both null) is still enforced on a link patch.
+    if (input.patch.link !== undefined) {
       assertAdjustmentLinkageRules({
         adjustmentType: existing.adjustmentType,
-        workOrderId: input.patch.link!.workOrderId,
-        workOrderItemId: input.patch.link!.workOrderItemId,
+        workOrderId: input.patch.link.workOrderId,
+        workOrderItemId: input.patch.link.workOrderItemId,
         isWaste: input.patch.isWaste ?? existing.isWaste,
       })
     }
@@ -251,7 +181,7 @@ export async function updatePendingAdjustmentUseCase(
       patch.workOrderItemId = input.patch.link.workOrderItemId
     }
 
-    const adjustment = await updatePendingAdjustmentRow(c, { id: existing.id, patch })
+    const written = await updatePendingAdjustmentRow(c, { id: existing.id, patch })
 
     const recomputed = await recomputeAndPersistNetDeducted(c, [existing.inventoryId])
     const result = recomputed[0]
@@ -288,6 +218,10 @@ export async function updatePendingAdjustmentUseCase(
       }
       throw error
     }
+
+    // The recompute rewrote this row's `before`/`after` (and the rest of the
+    // chain); re-read so the response carries the fresh ledger values.
+    const adjustment = (await getAdjustmentById(existing.id, c)) ?? written
 
     return {
       adjustment,

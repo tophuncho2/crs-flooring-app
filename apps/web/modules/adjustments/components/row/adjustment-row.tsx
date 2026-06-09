@@ -172,15 +172,6 @@ export function renderAdjustmentReadOnlyCell(
             ariaLabel={`${row.adjustmentNumber} adjustment`}
           />
         )
-      case "finalSeq":
-      case "finalSequence":
-        return (
-          <TextCell
-            editable={false}
-            value={row.finalSequence != null ? String(row.finalSequence) : "—"}
-            ariaLabel={`${row.adjustmentNumber} final sequence`}
-          />
-        )
       case "workOrder":
         return (
           <TextCell

@@ -5,6 +5,7 @@ const {
   lockInventoryForAdjustmentMock,
   getInventoryParentContextForAdjustmentsMock,
   insertPendingAdjustmentRowMock,
+  getAdjustmentByIdMock,
   recomputeAndPersistNetDeductedMock,
   validateAdjustmentPendingFormMock,
   describeAdjustmentPendingFormIssuesMock,
@@ -29,6 +30,7 @@ const {
     lockInventoryForAdjustmentMock: vi.fn(),
     getInventoryParentContextForAdjustmentsMock: vi.fn(),
     insertPendingAdjustmentRowMock: vi.fn(),
+    getAdjustmentByIdMock: vi.fn(),
     recomputeAndPersistNetDeductedMock: vi.fn(),
     validateAdjustmentPendingFormMock: vi.fn(),
     describeAdjustmentPendingFormIssuesMock: vi.fn(),
@@ -46,6 +48,7 @@ vi.mock("@builders/db", () => ({
   lockInventoryForAdjustment: lockInventoryForAdjustmentMock,
   getInventoryParentContextForAdjustments: getInventoryParentContextForAdjustmentsMock,
   insertPendingAdjustmentRow: insertPendingAdjustmentRowMock,
+  getAdjustmentById: getAdjustmentByIdMock,
   recomputeAndPersistNetDeducted: recomputeAndPersistNetDeductedMock,
 }))
 
@@ -123,6 +126,7 @@ beforeEach(() => {
   lockInventoryForAdjustmentMock.mockReset()
   getInventoryParentContextForAdjustmentsMock.mockReset()
   insertPendingAdjustmentRowMock.mockReset()
+  getAdjustmentByIdMock.mockReset()
   recomputeAndPersistNetDeductedMock.mockReset()
   validateAdjustmentPendingFormMock.mockReset()
   describeAdjustmentPendingFormIssuesMock.mockReset()
@@ -142,6 +146,7 @@ beforeEach(() => {
   getInventoryParentContextForAdjustmentsMock.mockResolvedValue(inventoryContext())
   buildPendingAdjustmentInventorySnapshotMock.mockReturnValue(SNAPSHOT)
   insertPendingAdjustmentRowMock.mockResolvedValue(INSERTED)
+  getAdjustmentByIdMock.mockResolvedValue(INSERTED)
   recomputeAndPersistNetDeductedMock.mockResolvedValue([
     { inventoryId: INVENTORY_ID, netDeducted: "5.00" },
   ])

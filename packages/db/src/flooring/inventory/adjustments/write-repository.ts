@@ -1,7 +1,7 @@
 import type { Prisma } from "../../../generated/prisma/client.js"
 import {
+  computeLedgerBeforeAfter,
   computeNetDeducted,
-  signedDelta,
   type FlooringInventoryAdjustmentType,
   type PendingAdjustmentInventorySnapshot,
 } from "@builders/domain"
@@ -26,108 +26,11 @@ import { adjustmentRowSelect } from "./shared.js"
 // scope just differs by which identity columns it supplies).
 // ---------------------------------------------------------------------------
 
-export type ApplyFinalizeAdjustmentInput = {
-  adjustmentId: string
-}
-
-export type FinalizeStampedRow = {
-  id: string
-  before: string
-  signedDelta: string
-  after: string
-}
-
-/**
- * Flips one PENDING adjustment to FINAL, stamping `before`/`after` +
- * `finalSequence` against the current state of the parent inventory.
- *
- *   - `existingNetDeducted` = Σ signedDelta(row) over the inventory's rows
- *     where `isFinal: true`. DEDUCTIONs add their quantity, INCREASEs
- *     subtract.
- *   - `maxExistingSequence` = max `finalSequence` over the same set; the
- *     next allocation is one greater.
- *   - `before = startingStock − existingNetDeducted`,
- *     `after  = before − signedDelta(targetRow)`,
- *     `finalSequence = maxExistingSequence + 1`.
- *   - `location` is left untouched — it is user-owned free text, not a parent
- *     mirror, so finalize must not overwrite it.
- *
- * Returns the stamped values so the caller can defensively assert
- * `before − signedDelta === after` via the domain invariant.
- *
- * Caller takes the parent inventory's FOR UPDATE lock via
- * `lockInventoryForAdjustment` (see `./locks.ts`) before this runs. If the
- * adjustment id does not resolve to a row, returns `{ stampedRow: null }` —
- * the caller treats that as a no-op success.
- */
-export async function applyFinalizeAdjustment(
-  tx: Prisma.TransactionClient,
-  input: ApplyFinalizeAdjustmentInput,
-): Promise<{ stampedRow: FinalizeStampedRow | null }> {
-  const target = await tx.flooringInventoryAdjustment.findUnique({
-    where: { id: input.adjustmentId },
-    select: { id: true, inventoryId: true, quantity: true, adjustmentType: true },
-  })
-  if (target === null) return { stampedRow: null }
-
-  const [inventory, existingFinalRows] = await Promise.all([
-    tx.flooringInventory.findUnique({
-      where: { id: target.inventoryId },
-      select: { startingStock: true },
-    }),
-    tx.flooringInventoryAdjustment.findMany({
-      where: { inventoryId: target.inventoryId, isFinal: true },
-      select: { quantity: true, adjustmentType: true, finalSequence: true },
-    }),
-  ])
-  if (inventory === null) return { stampedRow: null }
-
-  let runningBalance = Number(inventory.startingStock)
-  let nextSequence = 1
-  for (const row of existingFinalRows) {
-    runningBalance -= signedDelta({
-      quantity: row.quantity.toString(),
-      adjustmentType: row.adjustmentType,
-    })
-    if (row.finalSequence !== null && row.finalSequence >= nextSequence) {
-      nextSequence = row.finalSequence + 1
-    }
-  }
-
-  const targetSignedDelta = signedDelta({
-    quantity: target.quantity.toString(),
-    adjustmentType: target.adjustmentType,
-  })
-  const beforeStr = runningBalance.toFixed(2)
-  const afterStr = (runningBalance - targetSignedDelta).toFixed(2)
-  const signedDeltaStr = targetSignedDelta.toFixed(2)
-
-  await tx.flooringInventoryAdjustment.update({
-    where: { id: target.id },
-    data: {
-      status: "FINAL",
-      isFinal: true,
-      finalSequence: nextSequence,
-      before: beforeStr,
-      after: afterStr,
-    },
-  })
-
-  return {
-    stampedRow: {
-      id: target.id,
-      before: beforeStr,
-      signedDelta: signedDeltaStr,
-      after: afterStr,
-    },
-  }
-}
-
 /**
  * Snapshot of the parent inventory's unit-of-measure labels at create
- * time. Stamped onto the adjustment on insert and never mutated afterward —
- * the adjustment keeps its frozen labels even if the parent inventory's
- * UoM is later edited.
+ * time. Stamped onto the adjustment on insert and never re-snapped — the
+ * adjustment keeps its frozen labels even if the parent inventory's UoM is
+ * later edited.
  */
 export type PendingAdjustmentUnitSnapshot = {
   stockUnitName: string | null
@@ -153,13 +56,12 @@ export type InsertPendingAdjustmentRowInput = {
    * Identity snapshot from the parent inventory: the composed
    * `inventoryItem` string + `categorySlug` + the 5 underlying primitives
    * (`inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`,
-   * `inventoryNote`). Stamped at insert and frozen — finalize does not
-   * re-stamp these.
+   * `inventoryNote`). Stamped at insert and frozen — never re-stamped.
    */
   inventorySnapshot: PendingAdjustmentInventorySnapshot
   /**
    * User-owned free-text location. Not seeded from the parent inventory and
-   * never re-snapped by update-pending or finalize.
+   * never re-snapped by update-pending.
    */
   location: string | null
 }
@@ -175,11 +77,12 @@ export type InsertPendingAdjustmentRowInput = {
  * (`inventoryItem`, `categorySlug`, the 5 identity primitives, plus
  * `productId` / `warehouseId`), and the user-owned `location` from the input.
  *
- * Worker-only fields stay at their schema defaults / null:
- *   - `before` / `after` / `finalSequence`: null (finalize stamps them).
- *   - `status`: defaults to `PENDING`.
- *   - `isFinal`: defaults to false.
- *   - `adjustmentNumber`: DB-generated via the sequence default.
+ * `before` / `after` are left null here; the caller immediately runs
+ * `recomputeAndPersistNetDeducted`, which replays the inventory's whole chain
+ * in `createdAt` order and stamps `before`/`after` on every row (including this
+ * one). The vestigial `finalSequence` / `isFinal` / `status` columns stay at
+ * their schema defaults (null / false / PENDING) — they're no longer read.
+ * `adjustmentNumber` is DB-generated via the sequence default.
  */
 export async function insertPendingAdjustmentRow(
   tx: Prisma.TransactionClient,
@@ -306,17 +209,38 @@ export async function deletePendingAdjustmentRow(
   await tx.flooringInventoryAdjustment.delete({ where: { id: input.id } })
 }
 
+type LedgerAdjustmentRow = {
+  id: string
+  inventoryId: string
+  quantity: string
+  adjustmentType: FlooringInventoryAdjustmentType
+  createdAt: Date
+}
+
+/** Ledger order: `createdAt` ASC, `id` ASC tiebreak (matches the read-side display order inverted). */
+function compareLedgerOrder(a: LedgerAdjustmentRow, b: LedgerAdjustmentRow): number {
+  const byTime = a.createdAt.getTime() - b.createdAt.getTime()
+  if (byTime !== 0) return byTime
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+}
+
 /**
- * For each inventory id in the input, recomputes `netDeducted` from its
- * adjustments (via the domain's pure `computeNetDeducted`) and persists
- * the new value. INCREASE rows contribute as negative deltas; DEDUCTION
- * rows as positive. Application layer asserts the
- * `netDeducted ≤ startingStock` invariant separately via
+ * For each inventory id, reconciles BOTH derived projections of its adjustment
+ * ledger in one pass:
+ *
+ *   1. `inventory.netDeducted` — Σ signedDelta(row) (order-independent;
+ *      DEDUCTIONs positive, INCREASEs negative), via `computeNetDeducted`.
+ *   2. Every adjustment's `before`/`after` — the running balance, replayed in
+ *      `createdAt` order from `startingStock` via `computeLedgerBeforeAfter`.
+ *
+ * Called by every adjustment mutation (create/update/delete) so editing any
+ * row re-flows the whole chain below it. The application layer asserts the
+ * `netDeducted ≤ startingStock` ceiling separately via
  * `assertNetDeductedWithinStartingStock`.
  *
  * Co-located with the adjustment write primitives because every caller is
- * "wrote an adjustment → now reconcile the parent inventory netDeducted" —
- * the functional cohesion keeps callers from hopping between modules.
+ * "wrote an adjustment → now reconcile the parent inventory" — the functional
+ * cohesion keeps callers from hopping between modules.
  */
 export async function recomputeAndPersistNetDeducted(
   tx: Prisma.TransactionClient,
@@ -324,29 +248,56 @@ export async function recomputeAndPersistNetDeducted(
 ): Promise<Array<{ inventoryId: string; netDeducted: string }>> {
   if (inventoryIds.length === 0) return []
 
-  const rows = await listAdjustmentsForInventoryIds(inventoryIds, tx)
+  const [rows, inventories] = await Promise.all([
+    listAdjustmentsForInventoryIds(inventoryIds, tx),
+    tx.flooringInventory.findMany({
+      where: { id: { in: inventoryIds } },
+      select: { id: true, startingStock: true },
+    }),
+  ])
 
-  const grouped = new Map<
-    string,
-    Array<{ quantity: string; adjustmentType: FlooringInventoryAdjustmentType }>
-  >()
+  const startingStockById = new Map<string, string>()
+  for (const inv of inventories) {
+    startingStockById.set(inv.id, inv.startingStock.toString())
+  }
+
+  const grouped = new Map<string, LedgerAdjustmentRow[]>()
   for (const id of inventoryIds) {
     grouped.set(id, [])
   }
   for (const row of rows) {
-    grouped
-      .get(row.inventoryId)
-      ?.push({ quantity: row.quantity, adjustmentType: row.adjustmentType })
+    grouped.get(row.inventoryId)?.push(row)
   }
 
   const results: Array<{ inventoryId: string; netDeducted: string }> = []
   for (const [inventoryId, group] of grouped) {
-    const netDeducted = computeNetDeducted(group)
+    // 1. netDeducted (order-independent sum).
+    const netDeducted = computeNetDeducted(
+      group.map((r) => ({ quantity: r.quantity, adjustmentType: r.adjustmentType })),
+    )
     await tx.flooringInventory.update({
       where: { id: inventoryId },
       data: { netDeducted },
       select: { id: true },
     })
+
+    // 2. Per-row before/after — replay the chain in createdAt order.
+    const ledger = computeLedgerBeforeAfter(
+      [...group].sort(compareLedgerOrder).map((r) => ({
+        id: r.id,
+        quantity: r.quantity,
+        adjustmentType: r.adjustmentType,
+      })),
+      startingStockById.get(inventoryId) ?? "0",
+    )
+    for (const entry of ledger) {
+      await tx.flooringInventoryAdjustment.update({
+        where: { id: entry.id },
+        data: { before: entry.before, after: entry.after },
+        select: { id: true },
+      })
+    }
+
     results.push({ inventoryId, netDeducted })
   }
 

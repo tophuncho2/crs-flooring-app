@@ -148,21 +148,15 @@ describe("deletePendingAdjustmentUseCase", () => {
       expect(deletePendingAdjustmentRowMock).not.toHaveBeenCalled()
     })
 
-    it("throws INVENTORY_ADJUSTMENT_DELETE_NOT_ALLOWED (409) for a finalized row", async () => {
+    it("deletes a once-finalized row too (no freeze any more)", async () => {
       getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
         found({ status: "FINAL", isFinal: true }),
       )
-      assertAdjustmentPendingMutationAllowedMock.mockImplementation(() => {
-        throw new InventoryAdjustmentDomainErrorClass(
-          "INVENTORY_ADJUSTMENT_PENDING_INPUT_NOT_ALLOWED",
-        )
-      })
 
-      await expect(deletePendingAdjustmentUseCase(input())).rejects.toMatchObject({
-        code: "INVENTORY_ADJUSTMENT_DELETE_NOT_ALLOWED",
-        status: 409,
-      })
-      expect(deletePendingAdjustmentRowMock).not.toHaveBeenCalled()
+      const result = await deletePendingAdjustmentUseCase(input())
+
+      expect(result.deletedId).toBe(ADJUSTMENT_ID)
+      expect(deletePendingAdjustmentRowMock).toHaveBeenCalledWith({ tx: true }, { id: ADJUSTMENT_ID })
     })
 
     it("throws INVENTORY_ADJUSTMENT_STALE (409) when the OCC token does not match", async () => {
