@@ -38,11 +38,12 @@ export const ADJUSTMENT_COLUMN_DEFINITIONS = {
 
 /**
  * Column shape for the inventory record view's adjustment section. Mirrors the
- * standalone `/dashboard/adjustments` ledger column set head-to-toe — same keys,
- * same left-to-right order (see `ADJUSTMENTS_LIST_COLUMNS` in
- * `adjustments/components/list/table/adjustments-list-columns.ts`) — so the
- * embedded section surfaces every field the ledger does rather than a slim
- * subset. The decomposed inventory identity (productName / inventoryNumber /
+ * standalone `/dashboard/adjustments` ledger column set (see
+ * `ADJUSTMENTS_LIST_COLUMNS` in
+ * `adjustments/components/list/table/adjustments-list-columns.ts`) so the
+ * embedded section surfaces the ledger's fields rather than a slim subset — with
+ * the one deliberate exception that `coverage` is omitted here (hidden from the
+ * inventory record view). The decomposed inventory identity (productName / inventoryNumber /
  * rollNumber / dyeLot / inventoryNote) is shown as discrete columns to match the
  * ledger, not collapsed into the `inventoryItem` composite. The `adjustment`
  * column is a collapsed `before → after` balance transition; `quantity` carries
@@ -58,7 +59,6 @@ export const ADJUSTMENT_COLUMN_DEFINITIONS = {
 export const INVENTORY_ADJUSTMENT_LAYOUT: GridLayout<InventoryAdjustmentRow> = {
   dataColumns: [
     ADJUSTMENT_COLUMN_DEFINITIONS.status,
-    ADJUSTMENT_COLUMN_DEFINITIONS.coverage,
     ADJUSTMENT_COLUMN_DEFINITIONS.quantity,
     ADJUSTMENT_COLUMN_DEFINITIONS.adjustment,
     ADJUSTMENT_COLUMN_DEFINITIONS.productName,

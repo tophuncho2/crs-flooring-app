@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  adjustmentSign,
   formatAdjustmentTransition,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
@@ -43,9 +42,9 @@ const ADJUSTMENT_TYPE_OPTIONS = [
  * waste lever in the group header.
  * Edit mode: an "Adjustment" group whose header carries one inline status cluster
  * — the type pill (Increase/Deduction), the lifecycle pill (PENDING/QUEUED/FINAL),
- * the final-sequence pill, and the waste lever furthest right. The body pairs
- * quantity + coverage, then the before→after transition + location, then notes,
- * then created / updated. Inputs lock once the row leaves the PENDING-editable
+ * the final-sequence pill, and the waste lever furthest right. The body shows
+ * quantity, then the before→after transition + location, then notes, then
+ * created / updated. Inputs lock once the row leaves the PENDING-editable
  * state.
  */
 export function AdjustmentEditFormFields({
@@ -58,7 +57,6 @@ export function AdjustmentEditFormFields({
   // Stock-unit source: edit → the row's frozen snapshot; create → the picked
   // inventory's snapshot kept in `local` (seeded for the locked hub case).
   const stockUnit = adjustment?.stockUnitAbbrev ?? local.pickedInventoryStockUnitAbbrev
-  const coverageUnit = adjustment?.itemCoverageUnitAbbrev ?? ""
 
   // Two editability gates mirror the server's split. `quantity` is pending-only
   // — locked once the row leaves the PENDING-editable state (the PATCH would 409
@@ -146,9 +144,6 @@ export function AdjustmentEditFormFields({
   }
 
   const transition = formatAdjustmentTransition(adjustment.before, adjustment.after, stockUnit) ?? EMPTY_CELL
-  const coverageValue = adjustment.coverage
-    ? `${adjustmentSign(adjustment.adjustmentType)}${adjustment.coverage}`
-    : ""
 
   return (
     <InventoryGroup
@@ -180,11 +175,6 @@ export function AdjustmentEditFormFields({
             placeholder="0"
             ariaLabel="Adjustment quantity"
           />
-        </InventoryField>
-        <InventoryField label="Coverage">
-          <StaticFieldValue>
-            {coverageValue ? `${coverageValue} ${coverageUnit}`.trim() : EMPTY_CELL}
-          </StaticFieldValue>
         </InventoryField>
         <InventoryField label="Adjustment">
           <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
