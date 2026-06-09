@@ -6,6 +6,7 @@ import {
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  recordPrimaryEditable,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
@@ -93,7 +94,12 @@ export function ManagementCompanyRecordView({
         >
           <ManagementCompanyCellsSection
             form={primary.localValue}
-            editable={!primary.isSaving}
+            // Lock the MC fields while a property is open below — the operator
+            // is reading the MC, not editing it (mirrors inventory ⇄ adjustments).
+            editable={recordPrimaryEditable({
+              isSaving: primary.isSaving,
+              drilldownOpen: selectedPropertyId !== null,
+            })}
             onFieldChange={(field, value) =>
               primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
             }

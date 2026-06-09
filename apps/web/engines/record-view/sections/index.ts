@@ -39,3 +39,4 @@ export * from "./status/record-section-status-indicators"
 
 // Drilldown
 export * from "./drilldown/record-drilldown-section"
+export * from "./drilldown/record-drilldown-lock"
