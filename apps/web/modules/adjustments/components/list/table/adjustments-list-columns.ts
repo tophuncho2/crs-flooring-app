@@ -8,7 +8,6 @@ import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
  */
 export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInventoryAdjustmentRow>> = [
   { key: "status", label: "Status" },
-  { key: "coverage", label: "Coverage", align: "end" },
   { key: "quantity", label: "Quantity", align: "end" },
   { key: "adjustment", label: "Adjustment" },
   { key: "productName", label: "Product" },

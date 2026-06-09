@@ -3,7 +3,6 @@ import type { DataTableColumn } from "@/engines/list-view"
 import { AdjustmentStatusBadge } from "@/engines/common"
 import {
   formatAdjustmentTransition,
-  formatSignedAdjustmentCoverage,
   formatSignedAdjustmentQuantity,
   type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
@@ -47,18 +46,6 @@ export function renderAdjustmentsRowCell(
     case "adjustment": {
       const transition = formatAdjustmentTransition(row.before, row.after, row.stockUnitAbbrev ?? "")
       return transition != null ? <span className="tabular-nums">{transition}</span> : "-"
-    }
-    case "coverage": {
-      const signedCoverage = formatSignedAdjustmentCoverage(
-        row.coverage,
-        row.adjustmentType,
-        row.itemCoverageUnitAbbrev ?? "",
-      )
-      return signedCoverage != null ? (
-        <span className="tabular-nums">{signedCoverage}</span>
-      ) : (
-        "-"
-      )
     }
     case "isWaste":
       return row.isWaste ? (

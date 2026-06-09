@@ -37,22 +37,6 @@ export function renderInventoryRowCell(
           {formatInventoryQuantity(row.stockBalance, row.stockUnitAbbrev)}
         </span>
       )
-    case "coverageBalance":
-      return row.coverageBalance ? (
-        <span className="tabular-nums">
-          {formatInventoryQuantity(row.coverageBalance, row.itemCoverageUnitAbbrev)}
-        </span>
-      ) : (
-        <span className="text-[var(--text-muted)]">-</span>
-      )
-    case "coveragePerUnit":
-      return row.coveragePerUnit ? (
-        <span className="tabular-nums">
-          {formatInventoryQuantity(row.coveragePerUnit, row.itemCoverageUnitAbbrev)}
-        </span>
-      ) : (
-        <span className="text-[var(--text-muted)]">-</span>
-      )
     case "netDeducted":
       return (
         <span className="tabular-nums">

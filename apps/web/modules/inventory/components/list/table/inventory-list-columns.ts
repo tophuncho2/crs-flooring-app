@@ -16,8 +16,6 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
   { key: "rollNumber", label: "Roll #" },
   { key: "dyeLot", label: "Dye Lot" },
   { key: "note", label: "Note" },
-  { key: "coverageBalance", label: "Coverage", align: "end" },
-  { key: "coveragePerUnit", label: "Per Unit", align: "end" },
   { key: "location", label: "Location" },
   { key: "warehouse", label: "Warehouse" },
   { key: "categoryName", label: "Category" },
