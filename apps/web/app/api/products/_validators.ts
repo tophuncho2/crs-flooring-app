@@ -9,7 +9,7 @@ import {
   LIST_PRODUCTS_MAX_PAGE_SIZE,
   LIST_PRODUCTS_PAGE_SIZE,
 } from "@builders/domain"
-import { parseDecimal, parseOptionalString } from "@/server/http/api-helpers"
+import { parseOptionalString } from "@/server/http/api-helpers"
 
 function fail(message: string, field?: string): never {
   throw new ProductExecutionError({
@@ -20,17 +20,11 @@ function fail(message: string, field?: string): never {
   })
 }
 
-function parseCoveragePerUnit(value: unknown) {
-  if (value === "" || value === null || value === undefined) return null
-  return parseDecimal(value, "coveragePerUnit", 4)
-}
-
 function parseSharedFields(body: Record<string, unknown>) {
   return {
     manufacturerId: parseOptionalString(body.manufacturerId),
     style: parseOptionalString(body.style),
     color: parseOptionalString(body.color),
-    coveragePerUnit: parseCoveragePerUnit(body.coveragePerUnit),
     note: parseOptionalString(body.note),
   }
 }
@@ -65,16 +59,15 @@ export function validateCreateProductInput(body: Record<string, unknown>): Creat
 /**
  * Route-edge validator for PATCH /api/products/[id]/primary/section (update flow).
  *
- * `categoryId` and `coveragePerUnit` are immutable post-create (mirrored at the
- * type level — `ProductUpdateForm` in @builders/domain and `UpdateProductInput`
- * in @builders/db both omit them; `isProductCategoryChangeBlocked` rejects any
+ * `categoryId` is immutable post-create (mirrored at the type level —
+ * `ProductUpdateForm` in @builders/domain and `UpdateProductInput` in
+ * @builders/db both omit it; `isProductCategoryChangeBlocked` rejects any
  * category change that bypasses the type system). This validator rejects
- * `categoryId` outright and drops `coveragePerUnit` from the parsed update so
- * the wire boundary enforces both rules too.
+ * `categoryId` outright so the wire boundary enforces the rule too.
  */
 export function validateUpdateProductInput(
   body: Record<string, unknown>,
-): Omit<CreateProductInput, "categoryId" | "coveragePerUnit"> {
+): Omit<CreateProductInput, "categoryId"> {
   if (body.categoryId !== undefined) {
     throw new ProductExecutionError({
       code: "PRODUCT_CATEGORY_LOCKED",
@@ -84,8 +77,7 @@ export function validateUpdateProductInput(
     })
   }
 
-  const { coveragePerUnit: _coveragePerUnit, ...rest } = parseSharedFields(body)
-  return rest
+  return parseSharedFields(body)
 }
 
 // --- List query validator ---

@@ -8,10 +8,8 @@ import {
 } from "@builders/db"
 import {
   ProductExecutionError,
-  buildCategoryCoveragePerUnitRequiredMessage,
   buildProductUnitSnapshotsFromCategory,
   buildStoredFlooringProductName,
-  categoryRequiresCoveragePerUnit,
   resolveProductManufacturerName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
@@ -31,15 +29,6 @@ export async function createProductUseCase(
         message: "Selected category was not found",
         status: 400,
         field: "categoryId",
-      })
-    }
-
-    if (categoryRequiresCoveragePerUnit(category.slug) && input.coveragePerUnit === null) {
-      throw new ProductExecutionError({
-        code: "PRODUCT_COVERAGE_PER_UNIT_REQUIRED",
-        message: buildCategoryCoveragePerUnitRequiredMessage(category.name),
-        status: 400,
-        field: "coveragePerUnit",
       })
     }
 
@@ -88,9 +77,6 @@ export async function createProductUseCase(
       stockUnit: category.stockUnitId
         ? { name: category.stockUnit, abbreviation: category.stockUnitAbbrev }
         : null,
-      itemCoverageUnit: category.itemCoverageUnitId
-        ? { name: category.itemCoverageUnit, abbreviation: category.itemCoverageUnitAbbrev }
-        : null,
     })
 
     try {
@@ -102,7 +88,6 @@ export async function createProductUseCase(
           manufacturerName,
           style: input.style,
           color: input.color,
-          coveragePerUnit: input.coveragePerUnit,
           note: input.note,
           ...snapshot,
         },

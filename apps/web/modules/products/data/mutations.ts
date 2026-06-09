@@ -5,31 +5,25 @@ import { withMutationMeta } from "@/transport/mutation"
 import type { ProductRecord } from "@builders/db"
 
 // Serialized product form — the raw client-side shape sent to the API.
-// `coveragePerUnit` is a string at this layer because the UI uses text inputs;
-// the route-edge `_validators.ts` converts it to a Prisma.Decimal.
 export type ProductRequestInput = {
   categoryId: string
   manufacturerId: string
   style: string
   color: string
-  coveragePerUnit: string
   note: string
 }
 
 function toCreateRequestBody(input: ProductRequestInput): Record<string, unknown> {
-  return {
-    ...input,
-    coveragePerUnit: input.coveragePerUnit.trim(),
-  }
+  return { ...input }
 }
 
-// Strips `categoryId` and `coveragePerUnit` before sending — both are immutable
-// post-create. The PATCH validator rejects categoryId (PRODUCT_CATEGORY_LOCKED)
-// and ignores coveragePerUnit. The record-view section displays both as
-// readonly but the controller's local form value still carries them for shape
-// parity with the create flow, so we drop them here at the wire boundary.
+// Strips `categoryId` before sending — it's immutable post-create. The PATCH
+// validator rejects categoryId (PRODUCT_CATEGORY_LOCKED). The record-view
+// section displays it readonly but the controller's local form value still
+// carries it for shape parity with the create flow, so we drop it here at the
+// wire boundary.
 function toUpdateRequestBody(input: ProductRequestInput): Record<string, unknown> {
-  const { categoryId: _categoryId, coveragePerUnit: _coveragePerUnit, ...rest } = input
+  const { categoryId: _categoryId, ...rest } = input
   return rest
 }
 

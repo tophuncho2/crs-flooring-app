@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
-import { categoryRequiresCoveragePerUnit, type ProductCreateForm } from "@builders/domain"
+import { type ProductCreateForm } from "@builders/domain"
 import { ProductDetailsGroup } from "./groups/product-details-group"
 import { ProductUnitsGroup } from "./groups/product-units-group"
 
@@ -53,17 +53,14 @@ export function ProductPrimaryFieldsSection({
     }
     return categoryOptions.find((category) => category.id === draft.categoryId) ?? null
   }, [categoryOptions, categoryReadOnly, draft.categoryId, product.category.id])
-  const coverageRequired = categoryRequiresCoveragePerUnit(selectedCategory?.slug)
 
   return (
     <div className="flex flex-col gap-4">
       <ProductDetailsGroup
         product={product}
         draft={draft}
-        categoryOptions={categoryOptions}
         manufacturerName={manufacturerName}
         selectedCategory={selectedCategory}
-        coverageRequired={coverageRequired}
         disabled={disabled}
         categoryReadOnly={categoryReadOnly}
         fieldsReadOnly={fieldsReadOnly}

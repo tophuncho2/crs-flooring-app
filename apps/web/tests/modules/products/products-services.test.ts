@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { Prisma, normalizeProductRow } from "@builders/db"
+import { normalizeProductRow } from "@builders/db"
 
 describe("normalizeProductRow", () => {
   it("products resolve manufacturer display names from the live company name", () => {
@@ -11,7 +11,6 @@ describe("normalizeProductRow", () => {
       manufacturerName: "stale manufacturer name",
       style: "Plush",
       color: "Sand",
-      coveragePerUnit: new Prisma.Decimal("12.5"),
       note: null,
       createdAt: new Date("2026-03-18T00:00:00Z"),
       updatedAt: new Date("2026-03-18T00:00:00Z"),
@@ -21,7 +20,6 @@ describe("normalizeProductRow", () => {
         name: "Carpet",
         sendUnit: { id: "u1", name: "SY" },
         stockUnit: { id: "u2", name: "Roll" },
-        itemCoverageUnit: { id: "u3", name: "SF" },
       },
       manufacturer: {
         id: "mfg-1",
@@ -41,7 +39,6 @@ describe("normalizeProductRow", () => {
       manufacturerName: "Legacy Co",
       style: "Plush",
       color: "Sand",
-      coveragePerUnit: null,
       note: null,
       createdAt: new Date("2026-03-18T00:00:00Z"),
       updatedAt: new Date("2026-03-18T00:00:00Z"),
@@ -51,7 +48,6 @@ describe("normalizeProductRow", () => {
         name: "Carpet",
         sendUnit: null,
         stockUnit: null,
-        itemCoverageUnit: null,
       },
       manufacturer: null,
     })

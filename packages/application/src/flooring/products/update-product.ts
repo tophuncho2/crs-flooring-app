@@ -42,10 +42,6 @@ export async function updateProductUseCase(
     const nextNote = "note" in input ? input.note : current.note || null
     const nameAffected = "style" in input || "color" in input || "note" in input
 
-    // `coveragePerUnit` is immutable post-create — it's omitted from
-    // `UpdateProductInput` at the type level and stripped by the PATCH
-    // validator, so there is nothing to validate or write here.
-
     let manufacturerName: string | null | undefined
     if ("manufacturerId" in input) {
       const nextManufacturerId = input.manufacturerId

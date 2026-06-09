@@ -26,14 +26,10 @@ const EMPTY_PRODUCT: ProductRecord = {
   manufacturerName: "",
   style: "",
   color: "",
-  coveragePerUnit: "",
   sendUnitName: "",
   sendUnitAbbrev: "",
   stockUnitName: "",
   stockUnitAbbrev: "",
-  itemCoverageUnitName: "",
-  itemCoverageUnitAbbrev: "",
-  coverageUnit: "",
   note: "",
   createdAt: "",
   updatedAt: "",
@@ -43,7 +39,6 @@ const EMPTY_PRODUCT: ProductRecord = {
     name: "",
     sendUnitId: "",
     stockUnitId: "",
-    itemCoverageUnitId: "",
   },
 }
 
@@ -61,12 +56,7 @@ function ProductCreatePanel({
     page,
     createInitialValue: () => ({ ...EMPTY_PRODUCT_CREATE_FORM }),
     createRecord: async (localValue) => {
-      const selectedCategory = categoryOptions.find((category) => category.id === localValue.categoryId)
-      const validationError = validateProductPrimaryForm({
-        ...localValue,
-        categorySlug: selectedCategory?.slug ?? null,
-        categoryName: selectedCategory?.name ?? null,
-      })
+      const validationError = validateProductPrimaryForm({ categoryId: localValue.categoryId })
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",

@@ -14,14 +14,13 @@ import type { ProductRecord } from "@builders/db"
 import { useProductsListMutations } from "@/modules/products/controllers/list/use-products-list-mutations"
 
 // Synthesize a ProductCreateForm-shaped local value for the record-view section.
-// `categoryId` and `coveragePerUnit` are sourced from the loaded record and
-// never edited (the section renders both cells readonly, and the PATCH body
-// strips them), but the section component shares its draft type with the create
-// flow which DOES carry both. They're still needed here for read-only display.
+// `categoryId` is sourced from the loaded record and never edited (the section
+// renders it readonly, and the PATCH body strips it), but the section component
+// shares its draft type with the create flow which DOES carry it. It's still
+// needed here for read-only display.
 function toProductRecordViewForm(product: ProductRecord): ProductCreateForm {
   return {
     categoryId: product.categoryId,
-    coveragePerUnit: product.coveragePerUnit,
     ...toProductUpdateForm(product),
   }
 }
@@ -45,15 +44,7 @@ export function useProductPrimarySection({
     createLocalValue: toProductRecordViewForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      // Category is immutable post-create — pass the loaded record's category
-      // slug + name so `validateProductPrimaryForm` can fire its required /
-      // not-allowed branches before the network roundtrip. Without these,
-      // the validator only checks categoryId-non-empty + numeric format.
-      const validationError = validateProductPrimaryForm({
-        ...localValue,
-        categorySlug: record.category.slug,
-        categoryName: record.category.name,
-      })
+      const validationError = validateProductPrimaryForm({ categoryId: localValue.categoryId })
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",

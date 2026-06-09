@@ -11,8 +11,8 @@ import { normalizeProductRow, type ProductRecord } from "./read-repository.js"
 // Keeping the data layer free of name-building and FK-lookup logic maintains the
 // "persistence only" rule for packages/db.
 //
-// The six unit-of-measure snapshot fields (sendUnit/stockUnit/itemCoverageUnit
-// × Name/Abbrev) are pre-computed by the application use case via
+// The unit-of-measure snapshot fields (sendUnit/stockUnit × Name/Abbrev) are
+// pre-computed by the application use case via
 // `buildProductUnitSnapshotsFromCategory` from `@builders/domain` and passed in
 // at create time. They're immutable post-create — `UpdateProductInput` omits
 // them.
@@ -24,31 +24,24 @@ export type CreateProductInput = {
   manufacturerName: string | null
   style: string | null
   color: string | null
-  coveragePerUnit: Prisma.Decimal | null
   note: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
   stockUnitName: string | null
   stockUnitAbbrev: string | null
-  itemCoverageUnitName: string | null
-  itemCoverageUnitAbbrev: string | null
 }
 
-// `categoryId`, `coveragePerUnit`, and the six unit-snapshot fields are
-// immutable post-create — removed from the update shape at the type level so
-// call sites can't pass them. `coveragePerUnit` is snapshotted onto inventory
-// rows at materialize time; category drives the unit snapshots (the tightened
+// `categoryId` and the unit-snapshot fields are immutable post-create —
+// removed from the update shape at the type level so call sites can't pass
+// them. Category drives the unit snapshots (the tightened
 // `isProductCategoryChangeBlocked` predicate in @builders/domain catches
 // anything that bypasses the type system).
 type ImmutableProductFields =
   | "categoryId"
-  | "coveragePerUnit"
   | "sendUnitName"
   | "sendUnitAbbrev"
   | "stockUnitName"
   | "stockUnitAbbrev"
-  | "itemCoverageUnitName"
-  | "itemCoverageUnitAbbrev"
 
 export type UpdateProductInput = Partial<Omit<CreateProductInput, ImmutableProductFields>>
 
@@ -66,14 +59,11 @@ export async function createProduct(
       manufacturerName: input.manufacturerName,
       style: input.style,
       color: input.color,
-      coveragePerUnit: input.coveragePerUnit,
       note: input.note,
       sendUnitName: input.sendUnitName,
       sendUnitAbbrev: input.sendUnitAbbrev,
       stockUnitName: input.stockUnitName,
       stockUnitAbbrev: input.stockUnitAbbrev,
-      itemCoverageUnitName: input.itemCoverageUnitName,
-      itemCoverageUnitAbbrev: input.itemCoverageUnitAbbrev,
     },
     select: productRowSelect,
   })

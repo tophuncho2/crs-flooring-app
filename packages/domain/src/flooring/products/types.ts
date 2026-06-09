@@ -10,7 +10,6 @@ export type ProductRowCategory = {
   name: string
   sendUnitId: string
   stockUnitId: string
-  itemCoverageUnitId: string
 }
 
 export type ProductRow = {
@@ -21,8 +20,7 @@ export type ProductRow = {
   manufacturerName: string
   style: string
   color: string
-  coveragePerUnit: string
-  // Send / stock / item-coverage unit name + abbreviation snapshots, stamped onto
+  // Send / stock unit name + abbreviation snapshots, stamped onto
   // the product row at write time from the chosen category. Reads never join
   // through `category → unit_of_measure`. Empty string when the category does
   // not have the corresponding unit configured.
@@ -30,10 +28,6 @@ export type ProductRow = {
   sendUnitAbbrev: string
   stockUnitName: string
   stockUnitAbbrev: string
-  itemCoverageUnitName: string
-  itemCoverageUnitAbbrev: string
-  // Backward-compat alias for `itemCoverageUnitName`. Future cleanup target.
-  coverageUnit: string
   note: string
   createdAt: string
   updatedAt: string
@@ -46,15 +40,13 @@ export type ProductCreateForm = {
   manufacturerId: string
   style: string
   color: string
-  coveragePerUnit: string
   note: string
 }
 
-// Update form — categoryId and coveragePerUnit are omitted. Both are immutable
-// post-create: category drives the unit snapshots, and coveragePerUnit is
-// snapshotted onto inventory rows at materialize time. Enforced by type,
-// validator, and (for category) `isProductCategoryChangeBlocked`.
-export type ProductUpdateForm = Omit<ProductCreateForm, "categoryId" | "coveragePerUnit">
+// Update form — categoryId is omitted: it's immutable post-create (it drives
+// the unit snapshots). Enforced by type, validator, and
+// `isProductCategoryChangeBlocked`.
+export type ProductUpdateForm = Omit<ProductCreateForm, "categoryId">
 
 // Slim option shape for product pickers / dropdowns. Matches the DB-layer
 // `ProductOptionRecord` shape — kept in domain so picker requests + search
@@ -81,7 +73,6 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   manufacturerId: "",
   style: "",
   color: "",
-  coveragePerUnit: "",
   note: "",
 }
 

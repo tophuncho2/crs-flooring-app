@@ -21,7 +21,6 @@ export type ProductRecordCategory = {
   name: string
   sendUnitId: string
   stockUnitId: string
-  itemCoverageUnitId: string
 }
 
 export type ProductRecord = {
@@ -32,15 +31,10 @@ export type ProductRecord = {
   manufacturerName: string
   style: string
   color: string
-  coveragePerUnit: string
   sendUnitName: string
   sendUnitAbbrev: string
   stockUnitName: string
   stockUnitAbbrev: string
-  itemCoverageUnitName: string
-  itemCoverageUnitAbbrev: string
-  // Backward-compat alias — same value as `itemCoverageUnitName`.
-  coverageUnit: string
   note: string
   createdAt: string
   updatedAt: string
@@ -76,7 +70,6 @@ export type ProductDeleteStateResult = {
 // --- Normalizers ---
 
 export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
-  const itemCoverageUnitName = product.itemCoverageUnitName ?? ""
   return {
     id: product.id,
     name: product.name,
@@ -89,14 +82,10 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     manufacturerName: product.manufacturer?.companyName ?? product.manufacturerName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
-    coveragePerUnit: product.coveragePerUnit?.toString() ?? "",
     sendUnitName: product.sendUnitName ?? "",
     sendUnitAbbrev: product.sendUnitAbbrev ?? "",
     stockUnitName: product.stockUnitName ?? "",
     stockUnitAbbrev: product.stockUnitAbbrev ?? "",
-    itemCoverageUnitName,
-    itemCoverageUnitAbbrev: product.itemCoverageUnitAbbrev ?? "",
-    coverageUnit: itemCoverageUnitName,
     note: product.note ?? "",
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
@@ -106,7 +95,6 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
       name: product.category.name,
       sendUnitId: product.category.sendUnitId ?? "",
       stockUnitId: product.category.stockUnitId ?? "",
-      itemCoverageUnitId: product.category.itemCoverageUnitId ?? "",
     },
   }
 }

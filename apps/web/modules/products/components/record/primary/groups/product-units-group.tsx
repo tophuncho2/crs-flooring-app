@@ -11,13 +11,13 @@ function formatUnit(name: string | null | undefined, abbrev: string | null | und
 }
 
 /**
- * Group 2: Units. Read-only snapshots of the three UoMs derived from
+ * Group 2: Units. Read-only snapshots of the UoMs derived from
  * the category. On the record view (`categoryReadOnly`), the displays
  * are sourced from the immutable snapshot stamped on the product row
  * at create — accurate even if a UoM was renamed afterwards. In create
  * mode they come live from the currently-selected category so the
- * cells populate as soon as the user picks one. Laid out as a 3-col
- * single row: Stock Unit / Send Unit / Item Coverage Unit.
+ * cells populate as soon as the user picks one. Laid out as a 2-col
+ * single row: Stock Unit / Send Unit.
  */
 export function ProductUnitsGroup({
   product,
@@ -34,21 +34,15 @@ export function ProductUnitsGroup({
   const sendUnitDisplay = categoryReadOnly
     ? formatUnit(product.sendUnitName, product.sendUnitAbbrev)
     : formatUnit(selectedCategory?.sendUnit, selectedCategory?.sendUnitAbbrev)
-  const itemCoverageUnitDisplay = categoryReadOnly
-    ? formatUnit(product.itemCoverageUnitName, product.itemCoverageUnitAbbrev)
-    : formatUnit(selectedCategory?.itemCoverageUnit, selectedCategory?.itemCoverageUnitAbbrev)
 
   return (
     <ProductGroup title="Units">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <ProductField label="Stock Unit">
           <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
         </ProductField>
         <ProductField label="Send Unit">
           <StaticFieldValue>{sendUnitDisplay}</StaticFieldValue>
-        </ProductField>
-        <ProductField label="Item Coverage Unit">
-          <StaticFieldValue>{itemCoverageUnitDisplay}</StaticFieldValue>
         </ProductField>
       </div>
     </ProductGroup>

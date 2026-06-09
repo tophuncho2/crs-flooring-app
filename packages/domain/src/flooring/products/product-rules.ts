@@ -1,12 +1,6 @@
 // Pure business rules for the product domain. Consumed by the use-case layer
 // (packages/application) — no I/O, no framework imports.
 
-import {
-  buildCategoryCoveragePerUnitNotAllowedMessage,
-  buildCategoryCoveragePerUnitRequiredMessage,
-  categoryRequiresCoveragePerUnit,
-} from "../categories/rules.js"
-
 /**
  * Count shape returned by `getProductDeleteState` in @builders/db. Kept here
  * so domain rules express their contract without reaching into data-layer types.
@@ -71,47 +65,10 @@ export function isProductNameConflict(a: string, b: string): boolean {
 }
 
 /**
- * Count shape describing how many inventory rows reference this product. Kept
- * here (not reaching into @builders/db types) so domain rules stay pure.
- */
-export type ProductInventoryLinkState = {
-  inventoryCount: number
-}
-
-/**
- * A product's `coveragePerUnit` is snapshotted onto each inventory row at
- * import time (the worker copies `product.coveragePerUnit` → `inventory.coveragePerUnit`
- * for categories that require coverage). Changing the product value after
- * inventory exists would drift the product value from all the snapshots on
- * inventory rows — corrupting reporting / accounting rollups.
- *
- * Returns true when the caller is attempting to change the value AND there are
- * inventory rows. Returns false when no inventory rows exist OR the value isn't
- * actually changing. Both `current` and `next` are compared trimmed so
- * whitespace noise doesn't trigger a false positive.
- */
-export function isProductCoveragePerUnitChangeBlocked(
-  state: ProductInventoryLinkState,
-  current: string | null | undefined,
-  next: string | null | undefined,
-): boolean {
-  if (state.inventoryCount <= 0) return false
-  const currentNormalized = (current ?? "").trim()
-  const nextNormalized = (next ?? "").trim()
-  return currentNormalized !== nextNormalized
-}
-
-export function buildProductCoveragePerUnitChangeBlockedMessage(
-  state: ProductInventoryLinkState,
-): string {
-  return `Coverage per unit cannot change while ${state.inventoryCount} inventory row${state.inventoryCount === 1 ? "" : "s"} reference this product. Archive or remove the inventory rows before editing coverage per unit.`
-}
-
-/**
  * Category is immutable post-create — full stop, regardless of whether any
  * inventory exists yet. The product's category drives the unit-of-measure
- * snapshot stamped on the product row (sendUnit/stockUnit/itemCoverageUnit
- * Name + Abbrev), and downstream snapshots on inventory rows
+ * snapshot stamped on the product row (sendUnit/stockUnit Name + Abbrev),
+ * and downstream snapshots on inventory rows
  * (`inventory.categorySlug`) and material item rows (`*.sendUnitName` etc).
  * Allowing the category to change post-create would drift every snapshot.
  *
@@ -142,31 +99,9 @@ export function buildProductCategoryChangeBlockedMessage(): string {
  * Kept in the domain layer so the same rule can be reused by non-UI callers
  * (admin scripts, imports) without reaching into web-only code.
  */
-export function validateProductPrimaryForm(input: {
-  categoryId: string
-  coveragePerUnit: string
-  categorySlug?: string | null
-  categoryName?: string | null
-}): string {
+export function validateProductPrimaryForm(input: { categoryId: string }): string {
   if (!input.categoryId.trim()) {
     return "Category is required"
-  }
-  if (input.coveragePerUnit.trim() && !/^\d+(\.\d{0,4})?$/.test(input.coveragePerUnit.trim())) {
-    return "Coverage per unit must be numeric with up to 4 decimals"
-  }
-  if (
-    input.categorySlug &&
-    categoryRequiresCoveragePerUnit(input.categorySlug) &&
-    !input.coveragePerUnit.trim()
-  ) {
-    return buildCategoryCoveragePerUnitRequiredMessage(input.categoryName ?? "this category")
-  }
-  if (
-    input.categorySlug &&
-    !categoryRequiresCoveragePerUnit(input.categorySlug) &&
-    input.coveragePerUnit.trim()
-  ) {
-    return buildCategoryCoveragePerUnitNotAllowedMessage(input.categoryName ?? "this category")
   }
   return ""
 }
