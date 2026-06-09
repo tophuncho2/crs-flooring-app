@@ -11,13 +11,6 @@ import { type ImportMaterializeBatchPayload } from "@builders/domain"
 import { StagedInventoryExecutionError } from "./errors.js"
 import type { MaterializeImportedStagedRowsResult } from "./types.js"
 
-function decimalToString(
-  value: { toString(): string } | null | undefined,
-): string | null {
-  if (value === null || value === undefined) return null
-  return value.toString()
-}
-
 export async function materializeImportedStagedRowsUseCase(
   payload: ImportMaterializeBatchPayload,
   client?: Prisma.TransactionClient,
@@ -63,11 +56,8 @@ export async function materializeImportedStagedRowsUseCase(
       categoryName: row.product.category.name,
       stockUnitName: row.product.stockUnitName,
       stockUnitAbbrev: row.product.stockUnitAbbrev,
-      itemCoverageUnitName: row.product.itemCoverageUnitName,
-      itemCoverageUnitAbbrev: row.product.itemCoverageUnitAbbrev,
       sendUnitName: row.product.sendUnitName,
       sendUnitAbbrev: row.product.sendUnitAbbrev,
-      coveragePerUnit: decimalToString(row.product.coveragePerUnit),
       rollPrefix: row.rollPrefix,
       rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,

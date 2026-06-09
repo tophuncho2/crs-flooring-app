@@ -21,11 +21,8 @@ export type DuplicateInventorySource = Pick<
   | "categoryName"
   | "stockUnitName"
   | "stockUnitAbbrev"
-  | "itemCoverageUnitName"
-  | "itemCoverageUnitAbbrev"
   | "sendUnitName"
   | "sendUnitAbbrev"
-  | "coveragePerUnit"
   | "rollPrefix"
   | "dyeLot"
   | "purchaseOrderNumber"
@@ -42,11 +39,8 @@ export type DuplicatedInventoryInsertFields = {
   categoryName: string
   stockUnitName: string | null
   stockUnitAbbrev: string | null
-  itemCoverageUnitName: string | null
-  itemCoverageUnitAbbrev: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
-  coveragePerUnit: string | null
   rollPrefix: string
   rollNumber: string | null
   dyeLot: string | null
@@ -136,11 +130,8 @@ export function buildDuplicatedInventoryInsert(
     categoryName: source.categoryName,
     stockUnitName: emptyToNull(source.stockUnitName),
     stockUnitAbbrev: emptyToNull(source.stockUnitAbbrev),
-    itemCoverageUnitName: emptyToNull(source.itemCoverageUnitName),
-    itemCoverageUnitAbbrev: emptyToNull(source.itemCoverageUnitAbbrev),
     sendUnitName: emptyToNull(source.sendUnitName),
     sendUnitAbbrev: emptyToNull(source.sendUnitAbbrev),
-    coveragePerUnit: emptyToNull(source.coveragePerUnit),
     rollPrefix: source.rollPrefix,
     rollNumber: emptyToNull(edits.rollNumber),
     dyeLot: emptyToNull(source.dyeLot),

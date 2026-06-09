@@ -11,10 +11,10 @@ type RouteContext = {
 /**
  * GET /api/inventory/[id]/balances
  *
- * Returns just the three derived cells on the inventory primary section that
+ * Returns just the derived cells on the inventory primary section that
  * change in response to adjustment mutations. Used by the inventory record view
  * to reconcile after a adjustment mutation without refetching the full detail
- * row. Returns `{ balances: { stockBalance, totalCutSum, coverageBalance } }`.
+ * row. Returns `{ balances: { stockBalance, netDeducted } }`.
  */
 export async function GET(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request)

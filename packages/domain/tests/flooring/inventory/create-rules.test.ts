@@ -29,11 +29,8 @@ function product(
     categoryName: "Carpet",
     stockUnitName: "Square Feet",
     stockUnitAbbrev: "SF",
-    itemCoverageUnitName: "",
-    itemCoverageUnitAbbrev: "",
     sendUnitName: "Linear Feet",
     sendUnitAbbrev: "LF",
-    coveragePerUnit: "1.50",
     ...overrides,
   }
 }
@@ -104,7 +101,6 @@ describe("buildCreatedInventoryInsert", () => {
     expect(fields.categoryName).toBe("Carpet")
     expect(fields.stockUnitAbbrev).toBe("SF")
     expect(fields.sendUnitAbbrev).toBe("LF")
-    expect(fields.coveragePerUnit).toBe("1.50")
 
     // Roll prefix defaults; dye lot comes from edits (not a source row).
     expect(fields.rollPrefix).toBe(DEFAULT_ROLL_PREFIX)
@@ -121,16 +117,14 @@ describe("buildCreatedInventoryInsert", () => {
     expect(fields.isArchived).toBe(false)
   })
 
-  it("normalizes empty short-text + empty unit labels to null", () => {
+  it("normalizes empty short-text fields to null", () => {
     const fields = buildCreatedInventoryInsert(
-      product({ itemCoverageUnitName: "", itemCoverageUnitAbbrev: "" }),
+      product(),
       edits({ dyeLot: "", location: "", internalNotes: "" }),
     )
     expect(fields.dyeLot).toBeNull()
     expect(fields.location).toBeNull()
     expect(fields.internalNotes).toBeNull()
-    expect(fields.itemCoverageUnitName).toBeNull()
-    expect(fields.itemCoverageUnitAbbrev).toBeNull()
   })
 
   it("trims the edited starting stock", () => {

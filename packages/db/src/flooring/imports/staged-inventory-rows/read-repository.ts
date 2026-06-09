@@ -93,8 +93,7 @@ export async function getStagedInventoryById(
  * Worker-only read primitive for the materialize-import flow. Returns the raw
  * `StagedInventoryRowPayload` (with the full join graph) instead of the
  * normalized `StagedInventoryRecord` because the materialize use case needs
- * unit abbreviations and `product.coveragePerUnit` that the normalizer
- * flattens away.
+ * the unit abbreviations that the normalizer flattens away.
  *
  * Filters by `status = QUEUED` so any row that drifted state (raced edit /
  * delete / retry) is silently excluded — the caller compares the returned

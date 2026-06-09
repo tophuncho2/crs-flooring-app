@@ -54,11 +54,8 @@ export async function createInventoryUseCase(
         categoryName: product.category.name,
         stockUnitName: product.stockUnitName,
         stockUnitAbbrev: product.stockUnitAbbrev,
-        itemCoverageUnitName: product.itemCoverageUnitName,
-        itemCoverageUnitAbbrev: product.itemCoverageUnitAbbrev,
         sendUnitName: product.sendUnitName,
         sendUnitAbbrev: product.sendUnitAbbrev,
-        coveragePerUnit: product.coveragePerUnit,
       },
       input,
     )

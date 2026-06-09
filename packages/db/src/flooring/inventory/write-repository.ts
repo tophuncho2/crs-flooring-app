@@ -28,12 +28,11 @@ export async function lockInventoryRow(
  * user-creatable — the materialize import worker is the sole construction
  * path, consumed exclusively via `materializeStagedRowsToInventory` and
  * `MaterializeStagedRowsToInventoryInput` below. The snapshot columns
- * (`categoryName`, `categorySlug`, the 6 unit fields,
+ * (`categoryName`, `categorySlug`, the stock + send unit fields,
  * `importNumber`, `purchaseOrderNumber`, `inventoryItem`) are stamped at
  * materialize time from the linked product + import entry and are
- * immutable post-create; product-level locks
- * (`isProductCategoryChangeBlocked`, `isProductCoveragePerUnitChangeBlocked`)
- * keep the joined source consistent with the snapshots for the lifetime of
+ * immutable post-create; the `isProductCategoryChangeBlocked` product lock
+ * keeps the joined source consistent with the snapshots for the lifetime of
  * the inventory row.
  */
 export type MaterializeInventoryRowFields = {
@@ -45,8 +44,6 @@ export type MaterializeInventoryRowFields = {
   categoryName: string
   stockUnitName: string | null
   stockUnitAbbrev: string | null
-  itemCoverageUnitName: string | null
-  itemCoverageUnitAbbrev: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
   /**
@@ -64,7 +61,6 @@ export type MaterializeInventoryRowFields = {
   warehouseId: string
   location: string | null
   startingStock: Prisma.Decimal | string | number
-  coveragePerUnit: Prisma.Decimal | string | number | null
   fifoReceivedAt: Date
 }
 
@@ -182,11 +178,8 @@ export type InsertInventoryRowInput = {
   categoryName: string
   stockUnitName: string | null
   stockUnitAbbrev: string | null
-  itemCoverageUnitName: string | null
-  itemCoverageUnitAbbrev: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
-  coveragePerUnit: Prisma.Decimal | string | number | null
   rollPrefix: string
   rollNumber: string | null
   dyeLot: string | null
@@ -224,11 +217,8 @@ export async function insertInventoryRow(
       categoryName: input.categoryName,
       stockUnitName: input.stockUnitName,
       stockUnitAbbrev: input.stockUnitAbbrev,
-      itemCoverageUnitName: input.itemCoverageUnitName,
-      itemCoverageUnitAbbrev: input.itemCoverageUnitAbbrev,
       sendUnitName: input.sendUnitName,
       sendUnitAbbrev: input.sendUnitAbbrev,
-      coveragePerUnit: input.coveragePerUnit,
       rollPrefix: input.rollPrefix,
       rollNumber: input.rollNumber,
       dyeLot: input.dyeLot,
@@ -280,9 +270,7 @@ export async function insertInventoryRow(
  *    their source staged rows for the secondary `updateMany`.
  *  - Caller computed every per-row field (categoryName, unit
  *    snapshots, importNumber, purchaseOrderNumber, inventoryItem,
- *    fifoReceivedAt, etc.) — this primitive does no field math. Coverage-rule
- *    branching belongs in the application layer via
- *    `categorySupportsCoverageComputation`.
+ *    fifoReceivedAt, etc.) — this primitive does no field math.
  *  - Caller has already transitioned the source staged rows from DRAFT to
  *    QUEUED via `markStagedRowsForImport`. The status-flip below targets
  *    QUEUED → IMPORTED defensively (rows in any other state are skipped by
@@ -329,8 +317,6 @@ export async function materializeStagedRowsToInventory(
       categoryName: row.categoryName,
       stockUnitName: row.stockUnitName,
       stockUnitAbbrev: row.stockUnitAbbrev,
-      itemCoverageUnitName: row.itemCoverageUnitName,
-      itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev,
       sendUnitName: row.sendUnitName,
       sendUnitAbbrev: row.sendUnitAbbrev,
       rollPrefix: row.rollPrefix,
@@ -342,7 +328,6 @@ export async function materializeStagedRowsToInventory(
       warehouseId: row.warehouseId,
       location: row.location,
       startingStock: row.startingStock,
-      coveragePerUnit: row.coveragePerUnit,
       fifoReceivedAt: row.fifoReceivedAt,
     }),
   )

@@ -1,7 +1,6 @@
 import {
   buildFlooringProductDisplayName,
   computeInventoryBalance,
-  computeInventoryCoverage,
   toInventoryFixedString,
 } from "@builders/domain"
 import type {
@@ -41,9 +40,9 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
 }
 
 /**
- * Normalize an inventory row into the domain read shape. Stamps the two
- * computed fields (`stockBalance`, `coverageBalance`) by calling the pure
- * domain helpers — single source of truth for the math. Per the data-package
+ * Normalize an inventory row into the domain read shape. Stamps the
+ * computed `stockBalance` by calling the pure
+ * domain helper — single source of truth for the math. Per the data-package
  * carve-out, this is a data-layer normalizer reusing pure domain
  * formatters/computations; it MUST NOT call domain rules that throw.
  *
@@ -62,12 +61,6 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
   const balanceNum = computeInventoryBalance({
     startingStock: payload.startingStock.toString(),
     netDeducted: payload.netDeducted.toString(),
-  })
-  const coverageNum = computeInventoryCoverage({
-    balance: balanceNum,
-    coveragePerUnit:
-      payload.coveragePerUnit === null ? null : payload.coveragePerUnit.toString(),
-    categorySlug,
   })
 
   return {
@@ -91,8 +84,6 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     categorySlug,
     stockUnitName: payload.stockUnitName ?? "",
     stockUnitAbbrev: payload.stockUnitAbbrev ?? "",
-    itemCoverageUnitName: payload.itemCoverageUnitName ?? "",
-    itemCoverageUnitAbbrev: payload.itemCoverageUnitAbbrev ?? "",
     sendUnitName: payload.sendUnitName ?? "",
     sendUnitAbbrev: payload.sendUnitAbbrev ?? "",
     rollPrefix: payload.rollPrefix,
@@ -104,9 +95,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     location: payload.location ?? "",
     startingStock: toDecimalString(payload.startingStock),
     netDeducted: toDecimalString(payload.netDeducted),
-    coveragePerUnit: toDecimalString(payload.coveragePerUnit),
     stockBalance: toInventoryFixedString(balanceNum),
-    coverageBalance: coverageNum === null ? "" : toInventoryFixedString(coverageNum),
     isArchived: payload.isArchived,
     note: payload.note ?? "",
     internalNotes: payload.internalNotes ?? "",
@@ -175,12 +164,12 @@ export async function getInventoryDetailById(
 
 export type InventoryBalances = Pick<
   InventoryRow,
-  "stockBalance" | "netDeducted" | "coverageBalance"
+  "stockBalance" | "netDeducted"
 >
 
-// Narrow projection used by the inventory record view to reconcile the three
-// derived "balance" cells (stock balance, net deducted, coverage balance)
-// after an inventory adjustment without refetching the full detail row.
+// Narrow projection used by the inventory record view to reconcile the two
+// derived "balance" cells (stock balance, net deducted) after an inventory
+// adjustment without refetching the full detail row.
 export async function getInventoryBalancesById(
   id: string,
   client: InventoryDbClient = db,
@@ -190,8 +179,6 @@ export async function getInventoryBalancesById(
     select: {
       startingStock: true,
       netDeducted: true,
-      coveragePerUnit: true,
-      categorySlug: true,
     },
   })
   if (!row) return null
@@ -200,17 +187,10 @@ export async function getInventoryBalancesById(
     startingStock: row.startingStock.toString(),
     netDeducted: row.netDeducted.toString(),
   })
-  const coverageNum = computeInventoryCoverage({
-    balance: balanceNum,
-    coveragePerUnit:
-      row.coveragePerUnit === null ? null : row.coveragePerUnit.toString(),
-    categorySlug: row.categorySlug,
-  })
 
   return {
     netDeducted: toDecimalString(row.netDeducted),
     stockBalance: toInventoryFixedString(balanceNum),
-    coverageBalance: coverageNum === null ? "" : toInventoryFixedString(coverageNum),
   }
 }
 
@@ -453,10 +433,8 @@ type InventoryOptionRawRow = {
   location: string | null
   categorySlug: string
   stockUnitAbbrev: string | null
-  itemCoverageUnitAbbrev: string | null
   startingStock: Prisma.Decimal
   netDeducted: Prisma.Decimal
-  coveragePerUnit: Prisma.Decimal | null
 }
 
 /**
@@ -464,9 +442,8 @@ type InventoryOptionRawRow = {
  * archived=false + computed-balance>0 (`startingStock > netDeducted`) +
  * (optional) product + (optional) location text contains, then per-field
  * identity ILIKEs across `inventory_number`, `rollNumber`, `dyeLot`, `note`
- * (each independent, AND'd). Balance + coverage
- * are stamped via the same pure helpers used by the row normalizer (single
- * source of truth for the math) — coverage is null for non-coverage categories.
+ * (each independent, AND'd). Balance is stamped via the same pure helper used
+ * by the row normalizer (single source of truth for the math).
  * Results are ordered `inventoryNumberInt ASC` (a flat ascending
  * inventory-number order across all products, via the stored generated int
  * column), matching the inventory list view's sort and avoiding the
@@ -526,10 +503,8 @@ export async function searchInventoryOptions(
       "location",
       "categorySlug",
       "stockUnitAbbrev",
-      "itemCoverageUnitAbbrev",
       "startingStock",
-      "netDeducted",
-      "coveragePerUnit"
+      "netDeducted"
     FROM "flooring_inventory"
     WHERE ${whereClause}
     ORDER BY "inventoryNumberInt" ASC, "id" ASC
@@ -543,11 +518,6 @@ export async function searchInventoryOptions(
       startingStock: row.startingStock.toString(),
       netDeducted: row.netDeducted.toString(),
     })
-    const coverageNum = computeInventoryCoverage({
-      balance: balanceNum,
-      coveragePerUnit: row.coveragePerUnit === null ? null : row.coveragePerUnit.toString(),
-      categorySlug: row.categorySlug,
-    })
     return {
       id: row.id,
       inventoryItem: row.inventoryItem,
@@ -559,8 +529,6 @@ export async function searchInventoryOptions(
       location: row.location,
       stockBalance: toInventoryFixedString(balanceNum),
       stockUnitAbbrev: row.stockUnitAbbrev ?? "",
-      coverageBalance: coverageNum === null ? null : toInventoryFixedString(coverageNum),
-      itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? "",
     }
   })
 
@@ -733,7 +701,6 @@ export async function listInventoryOptions(
         style: true,
         color: true,
         categoryId: true,
-        coveragePerUnit: true,
         category: {
           select: {
             slug: true,
@@ -769,7 +736,6 @@ export async function listInventoryOptions(
       categorySlug: row.category.slug,
       stockUnit: row.category.stockUnit?.name ?? "",
       sendUnit: row.category.sendUnit?.name ?? "",
-      coveragePerUnit: toDecimalString(row.coveragePerUnit),
     })),
     warehouses,
     categories,

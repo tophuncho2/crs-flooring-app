@@ -16,7 +16,6 @@ export const inventoryRowSelect = {
       name: true,
       style: true,
       color: true,
-      coveragePerUnit: true,
       category: {
         select: {
           id: true,
@@ -30,8 +29,6 @@ export const inventoryRowSelect = {
   categoryName: true,
   stockUnitName: true,
   stockUnitAbbrev: true,
-  itemCoverageUnitName: true,
-  itemCoverageUnitAbbrev: true,
   sendUnitName: true,
   sendUnitAbbrev: true,
   rollPrefix: true,
@@ -42,7 +39,6 @@ export const inventoryRowSelect = {
   location: true,
   startingStock: true,
   netDeducted: true,
-  coveragePerUnit: true,
   isArchived: true,
   note: true,
   internalNotes: true,

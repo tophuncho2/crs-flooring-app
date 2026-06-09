@@ -70,11 +70,8 @@ function loadedRow(overrides: Record<string, unknown> = {}) {
       name: "Carpet — Style A — Beige",
       stockUnitName: "Square Yard",
       stockUnitAbbrev: "sy",
-      itemCoverageUnitName: "Square Foot",
-      itemCoverageUnitAbbrev: "sf",
       sendUnitName: "Roll",
       sendUnitAbbrev: "rl",
-      coveragePerUnit: { toString: () => "9.0000" },
       category: {
         id: "cat-1",
         slug: "carpet",
@@ -187,15 +184,11 @@ describe("materializeImportedStagedRowsUseCase", () => {
       expect(created.productName).toBeUndefined()
       expect(created.categorySlug).toBe("carpet")
       expect(created.categoryName).toBe("Carpet")
-      // 6 UoM snapshots from product.
+      // UoM snapshots from product.
       expect(created.stockUnitName).toBe("Square Yard")
       expect(created.stockUnitAbbrev).toBe("sy")
-      expect(created.itemCoverageUnitName).toBe("Square Foot")
-      expect(created.itemCoverageUnitAbbrev).toBe("sf")
       expect(created.sendUnitName).toBe("Roll")
       expect(created.sendUnitAbbrev).toBe("rl")
-      // Decimal → string for coveragePerUnit.
-      expect(created.coveragePerUnit).toBe("9.0000")
       // User values copied verbatim from staged row.
       expect(created.rollPrefix).toBe("ROLL#")
       expect(created.rollNumber).toBe("A-001")
@@ -244,38 +237,6 @@ describe("materializeImportedStagedRowsUseCase", () => {
         inventoryRowsToCreate: Array<Record<string, unknown>>
       }).inventoryRowsToCreate[0]!
       expect(created.warehouseId).toBe("wh-staged-original")
-    })
-
-    it("decimalToString: null coveragePerUnit → null inventory field", async () => {
-      listStagedInventoryForMaterializationMock.mockResolvedValue([
-        loadedRow({
-          product: {
-            id: "product-1",
-            name: "Coverage-free product",
-            stockUnitName: "ea",
-            stockUnitAbbrev: "ea",
-            itemCoverageUnitName: null,
-            itemCoverageUnitAbbrev: null,
-            sendUnitName: "ea",
-            sendUnitAbbrev: "ea",
-            coveragePerUnit: null,
-            category: { id: "cat-1", slug: "misc", name: "Misc" },
-          },
-        }),
-      ])
-      materializeStagedRowsToInventoryMock.mockResolvedValue({
-        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
-        materializedStagedRowIds: [ROW_ID_A],
-      })
-
-      await materializeImportedStagedRowsUseCase(payload())
-
-      const created = (materializeStagedRowsToInventoryMock.mock.calls[0]?.[1] as {
-        inventoryRowsToCreate: Array<Record<string, unknown>>
-      }).inventoryRowsToCreate[0]!
-      expect(created.coveragePerUnit).toBeNull()
-      expect(created.itemCoverageUnitName).toBeNull()
-      expect(created.itemCoverageUnitAbbrev).toBeNull()
     })
 
     it("purchaseOrderNumber falls back to null when import entry's value is null", async () => {

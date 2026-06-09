@@ -33,11 +33,8 @@ export type CreateInventoryProductSnapshot = {
   categoryName: string
   stockUnitName: string
   stockUnitAbbrev: string
-  itemCoverageUnitName: string
-  itemCoverageUnitAbbrev: string
   sendUnitName: string
   sendUnitAbbrev: string
-  coveragePerUnit: string
 }
 
 export type CreatedInventoryInsertFields = {
@@ -50,11 +47,8 @@ export type CreatedInventoryInsertFields = {
   categoryName: string
   stockUnitName: string | null
   stockUnitAbbrev: string | null
-  itemCoverageUnitName: string | null
-  itemCoverageUnitAbbrev: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
-  coveragePerUnit: string | null
   rollPrefix: string
   rollNumber: string | null
   dyeLot: string | null
@@ -160,11 +154,8 @@ export function buildCreatedInventoryInsert(
     categoryName: product.categoryName,
     stockUnitName: emptyToNull(product.stockUnitName),
     stockUnitAbbrev: emptyToNull(product.stockUnitAbbrev),
-    itemCoverageUnitName: emptyToNull(product.itemCoverageUnitName),
-    itemCoverageUnitAbbrev: emptyToNull(product.itemCoverageUnitAbbrev),
     sendUnitName: emptyToNull(product.sendUnitName),
     sendUnitAbbrev: emptyToNull(product.sendUnitAbbrev),
-    coveragePerUnit: emptyToNull(product.coveragePerUnit),
     rollPrefix: DEFAULT_ROLL_PREFIX,
     rollNumber: emptyToNull(edits.rollNumber),
     dyeLot: emptyToNull(edits.dyeLot),

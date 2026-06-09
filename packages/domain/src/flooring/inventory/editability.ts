@@ -1,6 +1,5 @@
 export const INVENTORY_IMMUTABLE_FIELDS = [
   "startingStock",
-  "coveragePerUnit",
   "importEntryId",
   "productId",
   "categorySlug",
@@ -9,8 +8,6 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "purchaseOrderNumber",
   "stockUnitName",
   "stockUnitAbbrev",
-  "itemCoverageUnitName",
-  "itemCoverageUnitAbbrev",
   "sendUnitName",
   "sendUnitAbbrev",
   "fifoReceivedAt",
@@ -42,12 +39,6 @@ export function isInventoryFieldImmutable(field: string): field is InventoryImmu
 
 export function isInventoryFieldTransactional(field: string): field is InventoryTransactionalField {
   return (INVENTORY_TRANSACTIONAL_FIELDS as readonly string[]).includes(field)
-}
-
-import { categoryRequiresCoveragePerUnit } from "../categories/rules.js"
-
-export function categorySupportsCoverageComputation(categorySlug: string): boolean {
-  return categoryRequiresCoveragePerUnit(categorySlug)
 }
 
 export function buildInventoryFieldNotEditableMessage(field: string): string {

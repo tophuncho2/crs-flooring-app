@@ -53,11 +53,8 @@ const PRODUCT = {
   id: "p-1",
   stockUnitName: "Square Feet",
   stockUnitAbbrev: "SF",
-  itemCoverageUnitName: "",
-  itemCoverageUnitAbbrev: "",
   sendUnitName: "Linear Feet",
   sendUnitAbbrev: "LF",
-  coveragePerUnit: "1.50",
   category: { slug: "carpet", name: "Carpet" },
 }
 const WAREHOUSE = { id: "wh-1", name: "Main" }
@@ -99,7 +96,6 @@ describe("createInventoryUseCase", () => {
           categorySlug: "carpet",
           categoryName: "Carpet",
           stockUnitAbbrev: "SF",
-          coveragePerUnit: "1.50",
         }),
         input(),
       )

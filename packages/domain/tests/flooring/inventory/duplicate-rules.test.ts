@@ -24,11 +24,8 @@ function source(overrides: Partial<DuplicateInventorySource> = {}): DuplicateInv
     categoryName: "Carpet",
     stockUnitName: "Square Feet",
     stockUnitAbbrev: "SF",
-    itemCoverageUnitName: "",
-    itemCoverageUnitAbbrev: "",
     sendUnitName: "Linear Feet",
     sendUnitAbbrev: "LF",
-    coveragePerUnit: "1.50",
     rollPrefix: "ROLL#",
     dyeLot: "DYE-9",
     purchaseOrderNumber: "PO-123",
@@ -88,7 +85,6 @@ describe("buildDuplicatedInventoryInsert", () => {
     expect(fields.purchaseOrderNumber).toBe("PO-123")
     expect(fields.productId).toBe("p-1")
     expect(fields.categorySlug).toBe("carpet")
-    expect(fields.coveragePerUnit).toBe("1.50")
     expect(fields.rollPrefix).toBe("ROLL#")
     expect(fields.dyeLot).toBe("DYE-9")
     expect(fields.warehouseId).toBe("wh-1")
@@ -103,15 +99,13 @@ describe("buildDuplicatedInventoryInsert", () => {
     expect(fields.isArchived).toBe(false)
   })
 
-  it("normalizes empty short-text + empty unit labels to null", () => {
+  it("normalizes empty short-text fields to null", () => {
     const fields = buildDuplicatedInventoryInsert(
-      source({ itemCoverageUnitName: "", itemCoverageUnitAbbrev: "" }),
+      source(),
       edits({ location: "", internalNotes: "" }),
     )
     expect(fields.location).toBeNull()
     expect(fields.internalNotes).toBeNull()
-    expect(fields.itemCoverageUnitName).toBeNull()
-    expect(fields.itemCoverageUnitAbbrev).toBeNull()
   })
 
   it("trims the edited starting stock", () => {

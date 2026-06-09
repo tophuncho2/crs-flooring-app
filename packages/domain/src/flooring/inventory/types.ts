@@ -19,8 +19,6 @@ export type InventoryRow = {
   categorySlug: string
   stockUnitName: string
   stockUnitAbbrev: string
-  itemCoverageUnitName: string
-  itemCoverageUnitAbbrev: string
   sendUnitName: string
   sendUnitAbbrev: string
   rollPrefix: string
@@ -32,9 +30,7 @@ export type InventoryRow = {
   location: string
   startingStock: string
   netDeducted: string
-  coveragePerUnit: string
   stockBalance: string
-  coverageBalance: string
   isArchived: boolean
   note: string
   internalNotes: string
@@ -78,7 +74,6 @@ export type InventoryProductOption = {
   categorySlug: string
   stockUnit: string
   sendUnit: string
-  coveragePerUnit: string
 }
 
 export type InventoryWarehouseOption = {
@@ -112,8 +107,6 @@ export type InventoryOption = {
   location: string | null
   stockBalance: string
   stockUnitAbbrev: string
-  coverageBalance: string | null
-  itemCoverageUnitAbbrev: string
 }
 
 export type InventoryLocationOption = {

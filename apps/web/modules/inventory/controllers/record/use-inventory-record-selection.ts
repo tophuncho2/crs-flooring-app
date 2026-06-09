@@ -51,8 +51,6 @@ export function toInventoryOption(row: InventoryRow): InventoryOption {
     location: row.location,
     stockBalance: row.stockBalance,
     stockUnitAbbrev: row.stockUnitAbbrev,
-    coverageBalance: row.coverageBalance,
-    itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev,
   }
 }
 

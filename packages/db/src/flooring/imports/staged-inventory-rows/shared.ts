@@ -29,11 +29,8 @@ export const stagedInventoryRowSelect = {
       name: true,
       style: true,
       color: true,
-      coveragePerUnit: true,
       stockUnitName: true,
       stockUnitAbbrev: true,
-      itemCoverageUnitName: true,
-      itemCoverageUnitAbbrev: true,
       sendUnitName: true,
       sendUnitAbbrev: true,
       category: {
