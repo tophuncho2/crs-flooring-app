@@ -5,7 +5,7 @@
 - [ ] The list below is in order of how would apply major changes, restructuring or sweeps (what were doing now), and new modules.
 - [ ] Each layer has a clear definition of its boundaries, rules and things to be responsible for.
 
-- **Schema** - The user always runs migrations, never Claude — unless the user explicitly says so. Main, staging, and dev each have their own .env credentials, and dev 1-3 share dev's .env.
+- **Schema** - The user always runs migrations, never Claude — unless the user explicitly says so. Main, staging, and dev each have their own .env credentials, and dev 1-3 share dev's .env. NOTE - Main db is backed up every 24 hours and rolled into staging and dev every so often. In case of disaster, users get migrated to staging branch and pick up with 24 hours of lost data. 
 - **Domain** — Predecates, message builders, types, zod schema payload, business logic
 - **Data** — persisting data, read repository, write repository, helpers and normalizers
 - **Application** — orchestration of use cases, imports domain rules, initiates outbox events, called on by an api route, opens transactions, decides which rows to lock, each use case has its own file, use cases do not import other use cases
