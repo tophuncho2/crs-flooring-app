@@ -115,8 +115,8 @@ const SEEDED_CATEGORIES = [
   {
     slug: "shoe-molding",
     name: "Shoe Molding",
-    sendUnitSlug: "pieces",
-    stockUnitSlug: "pieces",
+    sendUnitSlug: "linear-feet",
+    stockUnitSlug: "linear-feet",
     itemCoverageUnitSlug: null,
   },
   {
