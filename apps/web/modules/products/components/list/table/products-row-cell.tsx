@@ -25,20 +25,10 @@ export function renderProductRowCell(
       return row.color || "-"
     case "note":
       return row.note || "-"
-    case "coverage":
-      return row.coveragePerUnit ? (
-        <span className="tabular-nums">
-          {row.coveragePerUnit} / {row.itemCoverageUnitName || "unit"}
-        </span>
-      ) : (
-        "-"
-      )
     case "stockUnit":
       return formatUnit(row.stockUnitName, row.stockUnitAbbrev)
     case "sendUnit":
       return formatUnit(row.sendUnitName, row.sendUnitAbbrev)
-    case "itemCoverageUnit":
-      return formatUnit(row.itemCoverageUnitName, row.itemCoverageUnitAbbrev)
     case "createdAt":
       return (
         <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
