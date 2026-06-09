@@ -40,6 +40,7 @@
     "db:seed:properties": "npm run db:seed:properties --workspace @builders/db --",
     "db:purge:inventory": "npm run db:purge:inventory --workspace @builders/db --",
     "db:purge:category": "npm run db:purge:category --workspace @builders/db --",
+    "db:backfill:coverage-stock": "npm run db:backfill:coverage-stock --workspace @builders/db --",
     "upload:brand-logo": "npm run upload:brand-logo --workspace @builders/db --"
   },
   "overrides": {
