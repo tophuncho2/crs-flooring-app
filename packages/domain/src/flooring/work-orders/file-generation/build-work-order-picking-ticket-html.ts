@@ -15,7 +15,7 @@ import {
  *     + scheduled date (right)
  *   - The same info stack as the Slip (`renderWorkOrderInfo`)
  *   - Cut logs with full inventory detail (Product · Inventory Item · Quantity ·
- *     Adjustment · Coverage · Location) — the warehouse pick view
+ *     Adjustment · Location) — the warehouse pick view
  *
  * Returns a `<style>` + `.wo-print-root` fragment to inject into the print
  * page; no `<html>`/`<body>` (those come from the Next root layout). This

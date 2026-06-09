@@ -24,11 +24,8 @@ export type InventoryAdjustmentRow = {
   before: string | null
   quantity: string
   after: string | null
-  coverage: string | null
   stockUnitName: string | null
   stockUnitAbbrev: string | null
-  itemCoverageUnitName: string | null
-  itemCoverageUnitAbbrev: string | null
   adjustmentType: FlooringInventoryAdjustmentType
   status: FlooringInventoryAdjustmentStatus
   isFinal: boolean
@@ -94,12 +91,9 @@ export type InventoryAdjustmentParentContext = {
   inventoryItem: string
   startingStock: string
   currentNetDeducted: string
-  coveragePerUnit: string | null
   categorySlug: string
   stockUnitName: string | null
   stockUnitAbbrev: string | null
-  itemCoverageUnitName: string | null
-  itemCoverageUnitAbbrev: string | null
   inventoryNumber: string | null
   rollPrefix: string | null
   rollNumber: string | null

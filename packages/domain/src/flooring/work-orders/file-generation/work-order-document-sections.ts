@@ -184,9 +184,9 @@ export function renderWorkOrderAdjustments(
   // includeInventoryDetail (default true → Picking Ticket): the warehouse view
   // shows where stock came from and the balance change, so every adjustment is
   // flattened into its own row labeled with its parent product name (the leading
-  // column). The Slip (false) is a customer-facing summary — Product / Quantity /
-  // Coverage only — and collapses each material item's adjustments into ONE row,
-  // summing Quantity and Coverage.
+  // column). The Slip (false) is a customer-facing summary — Product / Quantity
+  // only — and collapses each material item's adjustments into ONE row,
+  // summing Quantity.
   const includeInventoryDetail = options.includeInventoryDetail ?? true
   let renderedRows: string
   if (includeInventoryDetail) {
@@ -195,7 +195,7 @@ export function renderWorkOrderAdjustments(
       return ""
     }
     // One product group at a time: its adjustment rows, then a summed subtotal
-    // row (Quantity + Coverage) under a rule. Every group gets a subtotal for
+    // row (Quantity) under a rule. Every group gets a subtotal for
     // visual consistency, even single-adjustment groups. Never a grand total.
     renderedRows = itemsWithAdjustments
       .map((item) => {

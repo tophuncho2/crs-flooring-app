@@ -17,7 +17,6 @@ export const WORK_ORDER_ADJUSTMENT_LAYOUT: GridLayout<EnrichedInventoryAdjustmen
   leadingControls: [{ key: "duplicate", kind: "actions", width: 56 }],
   dataColumns: [
     C.status,
-    C.coverage,
     C.quantity,
     C.adjustment,
     C.productName,

@@ -34,9 +34,9 @@ describe("slip — collapsed to one row per material item", () => {
     const item = makeMaterialItem({
       productName: "Shaw Carpet",
       inventoryAdjustments: [
-        makeAdjustment({ id: "a1", quantity: "10", coverage: "120" }),
-        makeAdjustment({ id: "a2", quantity: "5", coverage: "60" }),
-        makeAdjustment({ id: "a3", quantity: "2", coverage: "24" }),
+        makeAdjustment({ id: "a1", quantity: "10" }),
+        makeAdjustment({ id: "a2", quantity: "5" }),
+        makeAdjustment({ id: "a3", quantity: "2" }),
       ],
     })
     const html = slipTable([item])
@@ -93,8 +93,8 @@ describe("slip — wired through the full builder", () => {
         makeMaterialItem({
           productName: "Vinyl Plank",
           inventoryAdjustments: [
-            makeAdjustment({ quantity: "3", coverage: "30", location: "LOC-LEAK" }),
-            makeAdjustment({ quantity: "7", coverage: "70", location: "LOC-LEAK" }),
+            makeAdjustment({ quantity: "3", location: "LOC-LEAK" }),
+            makeAdjustment({ quantity: "7", location: "LOC-LEAK" }),
           ],
         }),
       ],

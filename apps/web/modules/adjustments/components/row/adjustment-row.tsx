@@ -29,19 +29,10 @@ export type AdjustmentReadOnlyRenderOptions = {
    * Post-snapshot rows always use their own `stockUnitAbbrev`.
    */
   stockUnitFallback?: string
-  /**
-   * Fallback unit label for the `coverage` column. Post-snapshot rows
-   * always use their own `itemCoverageUnitAbbrev`.
-   */
-  coverageUnitFallback?: string
 }
 
 function pickStockUnit(row: InventoryAdjustmentRow, options: AdjustmentReadOnlyRenderOptions): string {
   return row.stockUnitAbbrev ?? options.stockUnitFallback ?? ""
-}
-
-function pickCoverageUnit(row: InventoryAdjustmentRow, options: AdjustmentReadOnlyRenderOptions): string {
-  return row.itemCoverageUnitAbbrev ?? options.coverageUnitFallback ?? ""
 }
 
 /**
@@ -55,9 +46,9 @@ function pickCoverageUnit(row: InventoryAdjustmentRow, options: AdjustmentReadOn
  * their own per-column branches and delegate to this renderer for any cell
  * that isn't currently being edited.
  *
- * The renderer prefers the row's own unit-snapshot fields
- * (`stockUnitAbbrev`, `itemCoverageUnitAbbrev`) for unit display, falling
- * back to the consumer-provided defaults. This keeps historical rows that
+ * The renderer prefers the row's own unit-snapshot field
+ * (`stockUnitAbbrev`) for unit display, falling
+ * back to the consumer-provided default. This keeps historical rows that
  * were created before the snapshot migration rendering correctly while
  * ensuring post-snapshot rows display their frozen-at-create-time unit
  * labels even if the parent inventory's UoM was later edited.
@@ -163,15 +154,6 @@ export function renderAdjustmentReadOnlyCell(
             value={`${adjustmentSign(row.adjustmentType)}${row.quantity}`}
             unit={pickStockUnit(row, options)}
             ariaLabel={`${row.adjustmentNumber} quantity`}
-          />
-        )
-      case "coverage":
-        return (
-          <UnitCell
-            editable={false}
-            value={row.coverage ? `${adjustmentSign(row.adjustmentType)}${row.coverage}` : ""}
-            unit={pickCoverageUnit(row, options)}
-            ariaLabel={`${row.adjustmentNumber} coverage`}
           />
         )
       case "isWaste":

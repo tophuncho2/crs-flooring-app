@@ -24,7 +24,6 @@ export const ADJUSTMENT_COLUMN_DEFINITIONS = {
   location: { key: "location", label: "Location", minWidth: 140, grow: 0.5 },
   quantity: { key: "quantity", label: "Quantity", minWidth: 144, grow: 0, align: "center" },
   adjustment: { key: "adjustment", label: "Adjustment", minWidth: 200, grow: 0.6, align: "center" },
-  coverage: { key: "coverage", label: "Coverage", minWidth: 144, grow: 0, align: "center" },
   isWaste: { key: "isWaste", label: "Waste", minWidth: 88, grow: 0, align: "center" },
   finalSequence: { key: "finalSequence", label: "Final Seq #", minWidth: 120, grow: 0, align: "center" },
   notes: { key: "notes", label: "Notes", minWidth: 200, grow: 1 },
@@ -41,9 +40,8 @@ export const ADJUSTMENT_COLUMN_DEFINITIONS = {
  * standalone `/dashboard/adjustments` ledger column set (see
  * `ADJUSTMENTS_LIST_COLUMNS` in
  * `adjustments/components/list/table/adjustments-list-columns.ts`) so the
- * embedded section surfaces the ledger's fields rather than a slim subset — with
- * the one deliberate exception that `coverage` is omitted here (hidden from the
- * inventory record view). The decomposed inventory identity (productName / inventoryNumber /
+ * embedded section surfaces the ledger's fields rather than a slim subset.
+ * The decomposed inventory identity (productName / inventoryNumber /
  * rollNumber / dyeLot / inventoryNote) is shown as discrete columns to match the
  * ledger, not collapsed into the `inventoryItem` composite. The `adjustment`
  * column is a collapsed `before → after` balance transition; `quantity` carries

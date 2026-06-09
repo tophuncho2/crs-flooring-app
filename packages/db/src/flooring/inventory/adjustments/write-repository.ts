@@ -132,8 +132,6 @@ export async function applyFinalizeAdjustment(
 export type PendingAdjustmentUnitSnapshot = {
   stockUnitName: string | null
   stockUnitAbbrev: string | null
-  itemCoverageUnitName: string | null
-  itemCoverageUnitAbbrev: string | null
 }
 
 export type InsertPendingAdjustmentRowInput = {
@@ -141,14 +139,6 @@ export type InsertPendingAdjustmentRowInput = {
   adjustmentType: FlooringInventoryAdjustmentType
   /** Always positive in storage; direction lives in `adjustmentType`. */
   quantity: string
-  /**
-   * Pre-derived by the use case via the domain's `computeAdjustmentCoverage`
-   * against the parent inventory's `coveragePerUnit` + `categorySlug`.
-   * `null` when the inventory's category lacks a coverage unit, or when
-   * `coveragePerUnit` is null. Computed the same way for INCREASE and
-   * DEDUCTION rows.
-   */
-  coverage: string | null
   /** Required null on INCREASE rows. */
   workOrderId: string | null
   /** Required null on INCREASE rows. */
@@ -181,7 +171,7 @@ export type InsertPendingAdjustmentRowInput = {
  * persistence call — no business rules, no invariant checks (those run in
  * the use case before/after via the domain).
  *
- * Stamps the four unit-snapshot fields, the nine identity-snapshot fields
+ * Stamps the two stock unit-snapshot fields, the nine identity-snapshot fields
  * (`inventoryItem`, `categorySlug`, the 5 identity primitives, plus
  * `productId` / `warehouseId`), and the user-owned `location` from the input.
  *
@@ -202,13 +192,10 @@ export async function insertPendingAdjustmentRow(
       workOrderItemId: input.workOrderItemId,
       adjustmentType: input.adjustmentType,
       quantity: input.quantity,
-      coverage: input.coverage,
       isWaste: input.isWaste,
       notes: input.notes ? input.notes : null,
       stockUnitName: input.unitSnapshot.stockUnitName,
       stockUnitAbbrev: input.unitSnapshot.stockUnitAbbrev,
-      itemCoverageUnitName: input.unitSnapshot.itemCoverageUnitName,
-      itemCoverageUnitAbbrev: input.unitSnapshot.itemCoverageUnitAbbrev,
       inventoryItem: input.inventorySnapshot.inventoryItem,
       categorySlug: input.inventorySnapshot.categorySlug,
       inventoryNumber: input.inventorySnapshot.inventoryNumber,
@@ -228,12 +215,6 @@ export async function insertPendingAdjustmentRow(
 export type UpdatePendingAdjustmentRowPatch = {
   /** Always positive (validator enforces); direction is immutable post-create. */
   quantity?: string
-  /**
-   * Re-derived by the use case when (and only when) `quantity` is in the
-   * patch. Carries `null` if the parent inventory's category doesn't
-   * support coverage. Absent when `quantity` didn't change.
-   */
-  coverage?: string | null
   isWaste?: boolean
   /** Empty string accepted; persisted as null when blank. */
   notes?: string
@@ -264,14 +245,13 @@ export type UpdatePendingAdjustmentRowInput = {
  *
  * Writable in this primitive:
  *   - user-editable form fields: `quantity`, `isWaste`, `notes`, `location`
- *   - use-case-recomputed `coverage`
  *   - link relations `workOrderId` / `workOrderItemId` (both-or-neither
  *     for DEDUCTION; forbidden on INCREASE — enforced upstream)
  *
  * Never written here: `inventoryId`, `adjustmentType`, `status`, `isFinal`,
  * `before`, `after`, `finalSequence`, `adjustmentNumber`, `createdAt`,
  * `inventoryItem`, the 5 inventory-identity snapshot primitives, and the
- * four unit-snapshot fields. Empty-patch calls return the row as-is.
+ * stock unit-snapshot fields. Empty-patch calls return the row as-is.
  */
 export async function updatePendingAdjustmentRow(
   tx: Prisma.TransactionClient,
@@ -279,7 +259,6 @@ export async function updatePendingAdjustmentRow(
 ): Promise<InventoryAdjustmentRecord> {
   const data: Prisma.FlooringInventoryAdjustmentUpdateInput = {}
   if (input.patch.quantity !== undefined) data.quantity = input.patch.quantity
-  if (input.patch.coverage !== undefined) data.coverage = input.patch.coverage
   if (input.patch.isWaste !== undefined) data.isWaste = input.patch.isWaste
   if (input.patch.notes !== undefined) {
     data.notes = input.patch.notes ? input.patch.notes : null

@@ -11,7 +11,6 @@ import {
   assertAdjustmentWarehouseMatchesInventory,
   assertNetDeductedWithinStartingStock,
   buildPendingAdjustmentInventorySnapshot,
-  deriveAdjustmentCoverageString,
   describeAdjustmentPendingFormIssues,
   InventoryAdjustmentDomainError,
   validateAdjustmentPendingForm,
@@ -133,26 +132,17 @@ export async function createPendingAdjustmentUseCase(
       }
     }
 
-    const coverage = deriveAdjustmentCoverageString({
-      quantity,
-      coveragePerUnit: inventory.coveragePerUnit,
-      categorySlug: inventory.categorySlug,
-    })
-
     const adjustment = await insertPendingAdjustmentRow(c, {
       adjustmentType,
       workOrderId,
       workOrderItemId,
       inventoryId: input.inventoryId,
       quantity,
-      coverage,
       isWaste,
       notes,
       unitSnapshot: {
         stockUnitName: inventory.stockUnitName,
         stockUnitAbbrev: inventory.stockUnitAbbrev,
-        itemCoverageUnitName: inventory.itemCoverageUnitName,
-        itemCoverageUnitAbbrev: inventory.itemCoverageUnitAbbrev,
       },
       inventorySnapshot: buildPendingAdjustmentInventorySnapshot({
         inventoryItem: inventory.inventoryItem,

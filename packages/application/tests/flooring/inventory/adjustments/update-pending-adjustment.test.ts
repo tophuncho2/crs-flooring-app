@@ -13,7 +13,6 @@ const {
   assertAdjustmentMetaMutationAllowedMock,
   assertAdjustmentPendingMutationAllowedMock,
   assertNetDeductedWithinStartingStockMock,
-  deriveAdjustmentCoverageStringMock,
   describeAdjustmentPendingFormIssuesMock,
   validateAdjustmentPendingFormMock,
   InventoryAdjustmentDomainErrorClass,
@@ -41,7 +40,6 @@ const {
     assertAdjustmentMetaMutationAllowedMock: vi.fn(),
     assertAdjustmentPendingMutationAllowedMock: vi.fn(),
     assertNetDeductedWithinStartingStockMock: vi.fn(),
-    deriveAdjustmentCoverageStringMock: vi.fn(),
     describeAdjustmentPendingFormIssuesMock: vi.fn(),
     validateAdjustmentPendingFormMock: vi.fn(),
     InventoryAdjustmentDomainErrorClass: InventoryAdjustmentDomainError,
@@ -66,7 +64,6 @@ vi.mock("@builders/domain", () => ({
   assertAdjustmentMetaMutationAllowed: assertAdjustmentMetaMutationAllowedMock,
   assertAdjustmentPendingMutationAllowed: assertAdjustmentPendingMutationAllowedMock,
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
-  deriveAdjustmentCoverageString: deriveAdjustmentCoverageStringMock,
   describeAdjustmentPendingFormIssues: describeAdjustmentPendingFormIssuesMock,
   validateAdjustmentPendingForm: validateAdjustmentPendingFormMock,
 }))
@@ -103,7 +100,6 @@ function existingRow(overrides: Record<string, unknown> = {}) {
 
 function inventoryRow(overrides: Record<string, unknown> = {}) {
   return {
-    coveragePerUnit: "2.50",
     categorySlug: "vinyl-plank",
     location: "A1",
     startingStock: "100.00",
@@ -143,7 +139,6 @@ beforeEach(() => {
   assertAdjustmentMetaMutationAllowedMock.mockReset()
   assertAdjustmentPendingMutationAllowedMock.mockReset()
   assertNetDeductedWithinStartingStockMock.mockReset()
-  deriveAdjustmentCoverageStringMock.mockReset()
   describeAdjustmentPendingFormIssuesMock.mockReset()
   validateAdjustmentPendingFormMock.mockReset()
 
@@ -163,7 +158,6 @@ beforeEach(() => {
   assertAdjustmentMetaMutationAllowedMock.mockReturnValue(undefined)
   assertAdjustmentPendingMutationAllowedMock.mockReturnValue(undefined)
   assertNetDeductedWithinStartingStockMock.mockReturnValue(undefined)
-  deriveAdjustmentCoverageStringMock.mockReturnValue("12.50")
   validateAdjustmentPendingFormMock.mockReturnValue([])
   updatePendingAdjustmentRowMock.mockResolvedValue(UPDATED)
   recomputeAndPersistNetDeductedMock.mockResolvedValue([
@@ -173,7 +167,7 @@ beforeEach(() => {
 
 describe("updatePendingAdjustmentUseCase", () => {
   describe("happy path", () => {
-    it("re-derives coverage when quantity changes, recomputes, and returns (location not re-snapped)", async () => {
+    it("patches quantity when it changes, recomputes, and returns (location not re-snapped)", async () => {
       const result = await updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }))
 
       expect(result).toEqual({
@@ -181,14 +175,9 @@ describe("updatePendingAdjustmentUseCase", () => {
         inventoryId: INVENTORY_ID,
         netDeducted: "5.00",
       })
-      expect(deriveAdjustmentCoverageStringMock).toHaveBeenCalledWith({
-        quantity: "3",
-        coveragePerUnit: "2.50",
-        categorySlug: "vinyl-plank",
-      })
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { quantity: "3", coverage: "12.50" } },
+        { id: ADJUSTMENT_ID, patch: { quantity: "3" } },
       )
     })
 
@@ -212,7 +201,6 @@ describe("updatePendingAdjustmentUseCase", () => {
     it("writes user-owned location only when the patch carries it, never re-snapped from the parent", async () => {
       await updatePendingAdjustmentUseCase(input({ patch: { location: "Bay 7" } }))
 
-      expect(deriveAdjustmentCoverageStringMock).not.toHaveBeenCalled()
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
         { id: ADJUSTMENT_ID, patch: { location: "Bay 7" } },

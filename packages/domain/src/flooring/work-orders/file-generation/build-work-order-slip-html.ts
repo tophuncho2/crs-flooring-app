@@ -18,7 +18,7 @@ import {
  *     Warehouse / Job Type / Description / Management Company / Property (with
  *     flat address beneath) / Unit Type / Unit Number / Vacancy / Property
  *     Instructions / Installer Instructions
- *   - Cut logs (slip variant: Product / Quantity / Coverage only — no inventory
+ *   - Cut logs (slip variant: Product / Quantity only — no inventory
  *     item / adjustment / location columns)
  *
  * Returns a `<style>` + `.wo-print-root` fragment to inject into the print

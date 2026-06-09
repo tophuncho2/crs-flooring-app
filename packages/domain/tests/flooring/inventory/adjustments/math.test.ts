@@ -6,7 +6,6 @@ import {
   signedDelta,
 } from "../../../../src/flooring/inventory/adjustments/math/net-deducted-math.js"
 import { computeBeforeAfterForFinalize } from "../../../../src/flooring/inventory/adjustments/math/finalize-math.js"
-import { deriveAdjustmentCoverageString } from "../../../../src/flooring/inventory/adjustments/math/category-math.js"
 
 describe("signedDelta", () => {
   it("returns +quantity for a DEDUCTION row", () => {
@@ -113,47 +112,5 @@ describe("computeBeforeAfterForFinalize", () => {
     expect(() =>
       computeBeforeAfterForFinalize({ startingStock: "x", priorNetDeducted: "0", signedDelta: "5" }),
     ).toThrow("INVENTORY_ADJUSTMENT_ARITHMETIC_MISMATCH")
-  })
-})
-
-describe("deriveAdjustmentCoverageString", () => {
-  it("multiplies quantity by coveragePerUnit for a coverage category", () => {
-    expect(
-      deriveAdjustmentCoverageString({
-        quantity: "10",
-        coveragePerUnit: "2.5",
-        categorySlug: "vinyl-plank",
-      }),
-    ).toBe("25.00")
-  })
-
-  it("returns null when coveragePerUnit is null", () => {
-    expect(
-      deriveAdjustmentCoverageString({
-        quantity: "10",
-        coveragePerUnit: null,
-        categorySlug: "vinyl-plank",
-      }),
-    ).toBeNull()
-  })
-
-  it("returns null for a category that does not support coverage", () => {
-    expect(
-      deriveAdjustmentCoverageString({
-        quantity: "10",
-        coveragePerUnit: "2.5",
-        categorySlug: "broadloom",
-      }),
-    ).toBeNull()
-  })
-
-  it("returns null for a non-finite quantity", () => {
-    expect(
-      deriveAdjustmentCoverageString({
-        quantity: "abc",
-        coveragePerUnit: "2.5",
-        categorySlug: "vinyl-plank",
-      }),
-    ).toBeNull()
   })
 })

@@ -18,10 +18,6 @@ export type WorkOrderFileAdjustmentProjection = {
   before: string
   quantity: string
   after: string
-  // Empty string when the adjustment carries no coverage value. The print
-  // view always renders a "Coverage" column — empty rows just render
-  // the standard "—" placeholder.
-  coverage: string
   isWaste: boolean
   notes: string
   // Dye lot + roll number, read from the adjustment row's own snapshot columns
@@ -33,10 +29,9 @@ export type WorkOrderFileAdjustmentProjection = {
   // Inventory location snapshot from the adjustment row. Empty string when
   // the parent inventory had no location at the moment of the adjustment.
   location: string
-  // Unit snapshots from the adjustment row — used as the per-cell suffix in
-  // the print sub-table. Empty string when the snapshot is null.
+  // Stock-unit snapshot from the adjustment row — used as the per-cell suffix
+  // in the print sub-table. Empty string when the snapshot is null.
   stockUnitAbbrev: string
-  itemCoverageUnitAbbrev: string
 }
 
 export type WorkOrderFileMaterialItemProjection = {

@@ -15,7 +15,6 @@ import {
   assertAdjustmentMetaMutationAllowed,
   assertAdjustmentPendingMutationAllowed,
   assertNetDeductedWithinStartingStock,
-  deriveAdjustmentCoverageString,
   describeAdjustmentPendingFormIssues,
   InventoryAdjustmentDomainError,
   validateAdjustmentPendingForm,
@@ -241,11 +240,6 @@ export async function updatePendingAdjustmentUseCase(
     const patch: UpdatePendingAdjustmentRowPatch = {}
     if (input.patch.quantity !== undefined) {
       patch.quantity = input.patch.quantity
-      patch.coverage = deriveAdjustmentCoverageString({
-        quantity: input.patch.quantity,
-        coveragePerUnit: inventory.coveragePerUnit,
-        categorySlug: inventory.categorySlug,
-      })
     }
     if (input.patch.isWaste !== undefined) patch.isWaste = input.patch.isWaste
     if (input.patch.notes !== undefined) patch.notes = input.patch.notes

@@ -10,7 +10,6 @@ const {
   describeAdjustmentPendingFormIssuesMock,
   assertAdjustmentLinkageRulesMock,
   assertAdjustmentWarehouseMatchesInventoryMock,
-  deriveAdjustmentCoverageStringMock,
   buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStockMock,
   InventoryAdjustmentDomainErrorClass,
@@ -35,7 +34,6 @@ const {
     describeAdjustmentPendingFormIssuesMock: vi.fn(),
     assertAdjustmentLinkageRulesMock: vi.fn(),
     assertAdjustmentWarehouseMatchesInventoryMock: vi.fn(),
-    deriveAdjustmentCoverageStringMock: vi.fn(),
     buildPendingAdjustmentInventorySnapshotMock: vi.fn(),
     assertNetDeductedWithinStartingStockMock: vi.fn(),
     InventoryAdjustmentDomainErrorClass: InventoryAdjustmentDomainError,
@@ -57,7 +55,6 @@ vi.mock("@builders/domain", () => ({
   describeAdjustmentPendingFormIssues: describeAdjustmentPendingFormIssuesMock,
   assertAdjustmentLinkageRules: assertAdjustmentLinkageRulesMock,
   assertAdjustmentWarehouseMatchesInventory: assertAdjustmentWarehouseMatchesInventoryMock,
-  deriveAdjustmentCoverageString: deriveAdjustmentCoverageStringMock,
   buildPendingAdjustmentInventorySnapshot: buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
 }))
@@ -101,11 +98,8 @@ function inventoryContext(overrides: Record<string, unknown> = {}) {
   return {
     startingStock: "100.00",
     categorySlug: "vinyl-plank",
-    coveragePerUnit: "2.50",
     stockUnitName: "Square Foot",
     stockUnitAbbrev: "sf",
-    itemCoverageUnitName: "Box",
-    itemCoverageUnitAbbrev: "bx",
     inventoryItem: "INV-5 · ROLL#R-1",
     inventoryNumber: "INV-5",
     rollPrefix: "ROLL#",
@@ -134,7 +128,6 @@ beforeEach(() => {
   describeAdjustmentPendingFormIssuesMock.mockReset()
   assertAdjustmentLinkageRulesMock.mockReset()
   assertAdjustmentWarehouseMatchesInventoryMock.mockReset()
-  deriveAdjustmentCoverageStringMock.mockReset()
   buildPendingAdjustmentInventorySnapshotMock.mockReset()
   assertNetDeductedWithinStartingStockMock.mockReset()
 
@@ -147,7 +140,6 @@ beforeEach(() => {
   assertAdjustmentLinkageRulesMock.mockReturnValue(undefined)
   assertAdjustmentWarehouseMatchesInventoryMock.mockReturnValue(undefined)
   getInventoryParentContextForAdjustmentsMock.mockResolvedValue(inventoryContext())
-  deriveAdjustmentCoverageStringMock.mockReturnValue("12.50")
   buildPendingAdjustmentInventorySnapshotMock.mockReturnValue(SNAPSHOT)
   insertPendingAdjustmentRowMock.mockResolvedValue(INSERTED)
   recomputeAndPersistNetDeductedMock.mockResolvedValue([
@@ -158,7 +150,7 @@ beforeEach(() => {
 
 describe("createPendingAdjustmentUseCase — WO-linked create", () => {
   describe("happy path", () => {
-    it("inserts a DEDUCTION with derived coverage + snapshot, recomputes netDeducted, returns the result", async () => {
+    it("inserts a DEDUCTION with snapshot, recomputes netDeducted, returns the result", async () => {
       const result = await createPendingAdjustmentUseCase(cutVariantInput())
 
       expect(result).toEqual({
@@ -174,7 +166,6 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
           workOrderItemId: WOMI_ID,
           inventoryId: INVENTORY_ID,
           quantity: "5",
-          coverage: "12.50",
           isWaste: false,
           inventorySnapshot: SNAPSHOT,
           // User-owned: comes from the input ("Bay 7"), not the parent inventory ("A1").
@@ -182,8 +173,6 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
           unitSnapshot: {
             stockUnitName: "Square Foot",
             stockUnitAbbrev: "sf",
-            itemCoverageUnitName: "Box",
-            itemCoverageUnitAbbrev: "bx",
           },
         }),
       )

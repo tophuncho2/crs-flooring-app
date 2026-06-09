@@ -37,7 +37,7 @@ function toDecimalStringOrNull(
  *
  * Frozen-at-create snapshots on the adjustment row: `inventoryItem`,
  * `categorySlug`, `inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`,
- * `inventoryNote`, and the four unit-of-measure labels. Stamped once at
+ * `inventoryNote`, and the stock unit-of-measure labels. Stamped once at
  * insert, never mutated. (`location` is separate — user-owned free text,
  * editable through update; not a parent mirror.)
  */
@@ -73,11 +73,8 @@ export function normalizeAdjustmentRow(
     before: toDecimalStringOrNull(row.before),
     quantity: toDecimalString(row.quantity),
     after: toDecimalStringOrNull(row.after),
-    coverage: toDecimalStringOrNull(row.coverage),
     stockUnitName: row.stockUnitName ?? null,
     stockUnitAbbrev: row.stockUnitAbbrev ?? null,
-    itemCoverageUnitName: row.itemCoverageUnitName ?? null,
-    itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? null,
     adjustmentType,
     status,
     isFinal: row.isFinal,
@@ -151,8 +148,8 @@ export async function getEnrichedInventoryAdjustmentById(
  * under the FOR UPDATE lock:
  *   - `startingStock` + `currentNetDeducted` for the
  *     `netDeducted ≤ startingStock` invariant.
- *   - `coveragePerUnit` + `categorySlug` for `computeAdjustmentCoverage`.
- *   - Unit-of-measure labels — stamped on the adjustment at create
+ *   - `categorySlug` — stamped on the adjustment at create.
+ *   - Stock unit-of-measure labels — stamped on the adjustment at create
  *     (frozen thereafter).
  *   - The 5 inventory-identity primitives + the composed `inventoryItem`
  *     — stamped on the adjustment at create (frozen thereafter).
@@ -183,12 +180,9 @@ export async function getInventoryParentContextForAdjustments(
       location: true,
       startingStock: true,
       netDeducted: true,
-      coveragePerUnit: true,
       categorySlug: true,
       stockUnitName: true,
       stockUnitAbbrev: true,
-      itemCoverageUnitName: true,
-      itemCoverageUnitAbbrev: true,
       productId: true,
       warehouseId: true,
     },
@@ -199,13 +193,9 @@ export async function getInventoryParentContextForAdjustments(
     inventoryItem: row.inventoryItem,
     startingStock: row.startingStock.toString(),
     currentNetDeducted: row.netDeducted.toString(),
-    coveragePerUnit:
-      row.coveragePerUnit === null ? null : row.coveragePerUnit.toString(),
     categorySlug: row.categorySlug,
     stockUnitName: row.stockUnitName ?? null,
     stockUnitAbbrev: row.stockUnitAbbrev ?? null,
-    itemCoverageUnitName: row.itemCoverageUnitName ?? null,
-    itemCoverageUnitAbbrev: row.itemCoverageUnitAbbrev ?? null,
     inventoryNumber: row.inventoryNumber,
     rollPrefix: row.rollPrefix,
     rollNumber: row.rollNumber ?? null,
@@ -477,12 +467,9 @@ export async function getPendingAdjustmentWithInventoryForMutation(
           location: true,
           startingStock: true,
           netDeducted: true,
-          coveragePerUnit: true,
           categorySlug: true,
           stockUnitName: true,
           stockUnitAbbrev: true,
-          itemCoverageUnitName: true,
-          itemCoverageUnitAbbrev: true,
           productId: true,
           warehouseId: true,
         },
@@ -498,13 +485,9 @@ export async function getPendingAdjustmentWithInventoryForMutation(
       inventoryItem: inv.inventoryItem,
       startingStock: inv.startingStock.toString(),
       currentNetDeducted: inv.netDeducted.toString(),
-      coveragePerUnit:
-        inv.coveragePerUnit === null ? null : inv.coveragePerUnit.toString(),
       categorySlug: inv.categorySlug,
       stockUnitName: inv.stockUnitName ?? null,
       stockUnitAbbrev: inv.stockUnitAbbrev ?? null,
-      itemCoverageUnitName: inv.itemCoverageUnitName ?? null,
-      itemCoverageUnitAbbrev: inv.itemCoverageUnitAbbrev ?? null,
       inventoryNumber: inv.inventoryNumber,
       rollPrefix: inv.rollPrefix,
       rollNumber: inv.rollNumber ?? null,

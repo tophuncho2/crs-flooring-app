@@ -16,7 +16,7 @@ function slipQtyOnly(quantities: string[], stockUnitAbbrev = ""): string {
   return slip([
     makeMaterialItem({
       inventoryAdjustments: quantities.map((quantity, i) =>
-        makeAdjustment({ id: `a${i}`, quantity, coverage: "", stockUnitAbbrev }),
+        makeAdjustment({ id: `a${i}`, quantity, stockUnitAbbrev }),
       ),
     }),
   ])
@@ -64,24 +64,22 @@ describe("both sections — summed totals are identical (shared sumItemTotals)",
   it("the slip's collapsed total equals the picking ticket's subtotal", () => {
     const item = makeMaterialItem({
       inventoryAdjustments: [
-        makeAdjustment({ id: "a1", quantity: "10", coverage: "120", stockUnitAbbrev: "rolls", itemCoverageUnitAbbrev: "sf" }),
-        makeAdjustment({ id: "a2", quantity: "5", coverage: "60", stockUnitAbbrev: "rolls", itemCoverageUnitAbbrev: "sf" }),
+        makeAdjustment({ id: "a1", quantity: "10", stockUnitAbbrev: "rolls" }),
+        makeAdjustment({ id: "a2", quantity: "5", stockUnitAbbrev: "rolls" }),
       ],
     })
 
     // Picking ticket: under a subtotal-cell rule.
     expect(picking([item])).toContain('<td class="cl-num subtotal-cell">15 rolls</td>')
-    expect(picking([item])).toContain('<td class="cl-num subtotal-cell">180 sf</td>')
-    // Slip: the same numbers in the plain collapsed row.
+    // Slip: the same number in the plain collapsed row.
     expect(slip([item])).toContain('<td class="cl-num">15 rolls</td>')
-    expect(slip([item])).toContain('<td class="cl-num">180 sf</td>')
   })
 
   it("picks the unit abbrev from the first adjustment that carries one", () => {
     const item = makeMaterialItem({
       inventoryAdjustments: [
-        makeAdjustment({ id: "a1", quantity: "1", coverage: "", stockUnitAbbrev: "" }),
-        makeAdjustment({ id: "a2", quantity: "2", coverage: "", stockUnitAbbrev: "boxes" }),
+        makeAdjustment({ id: "a1", quantity: "1", stockUnitAbbrev: "" }),
+        makeAdjustment({ id: "a2", quantity: "2", stockUnitAbbrev: "boxes" }),
       ],
     })
     expect(slip([item])).toContain('<td class="cl-num">3 boxes</td>')

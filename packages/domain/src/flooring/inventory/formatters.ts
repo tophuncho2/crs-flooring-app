@@ -33,20 +33,6 @@ export function formatSignedAdjustmentQuantity(
 }
 
 /**
- * Coverage with the adjustment's direction sign prefixed, mirroring
- * {@link formatSignedAdjustmentQuantity}. Returns `null` when coverage is absent
- * (no-coverage categories / unset) so callers render their own placeholder.
- */
-export function formatSignedAdjustmentCoverage(
-  coverage: string | null,
-  adjustmentType: FlooringInventoryAdjustmentType,
-  unitLabel: string,
-): string | null {
-  if (coverage == null || coverage.trim() === "") return null
-  return `${adjustmentSign(adjustmentType)}${formatInventoryQuantity(coverage.trim(), unitLabel)}`
-}
-
-/**
  * Before → After balance transition, units on both sides, e.g. `100 sq ft → 75 sq ft`
  * (arrow U+2192). Returns `null` when either side is absent (pending/unfinalized rows)
  * so callers can render their own placeholder.

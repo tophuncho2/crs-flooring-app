@@ -72,14 +72,12 @@ export function makeAdjustment(
     before: "100",
     quantity: "10",
     after: "90",
-    coverage: "120",
     isWaste: false,
     notes: "",
     dyeLot: "",
     rollNumber: "",
     location: "A-1",
     stockUnitAbbrev: "rolls",
-    itemCoverageUnitAbbrev: "sf",
     ...overrides,
   }
 }
