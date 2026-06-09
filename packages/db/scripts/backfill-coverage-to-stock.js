@@ -104,6 +104,56 @@ async function countPlan(prisma) {
   return q
 }
 
+// Round to the column scale (Decimal(12,2)) via integer cents to avoid float fuzz.
+function round2(n) {
+  return Math.round((n + (n >= 0 ? Number.EPSILON : -Number.EPSILON)) * 100) / 100
+}
+
+/**
+ * Pure ledger rebuild for one inventory + its adjustments. Scales every value
+ * by EFFMULT once, then REPLAYS the finalized chain in finalSequence order so
+ * before/after are derived by exact 2-dp subtraction of the scaled quantity —
+ * eliminating the per-row rounding drift that independent column scaling causes
+ * when coveragePerUnit is fractional. netDeducted is derived from the same
+ * scaled quantities so the chain endpoint ties out to (startingStock - netDeducted).
+ *
+ *   inv:  { startingStock, coveragePerUnit }  (numbers)
+ *   adjs: [{ id, quantity, adjustmentType, isFinal, finalSequence,
+ *            itemCoverageUnitName, itemCoverageUnitAbbrev }]
+ * Returns { newStarting, newNetDeducted, adjustments: [{ id, newQty, before, after }] }
+ * where before/after are null for non-final (pending/queued) rows.
+ */
+function computeInventoryConversion(inv, adjs) {
+  const cpu = Number(inv.coveragePerUnit)
+  const effmult = cpu > 0 ? cpu : 1
+  const newStarting = round2(Number(inv.startingStock) * effmult)
+
+  const scaled = adjs.map((a) => ({
+    id: a.id,
+    isFinal: a.isFinal,
+    finalSequence: a.finalSequence === null ? null : Number(a.finalSequence),
+    adjustmentType: a.adjustmentType,
+    newQty: round2(Number(a.quantity) * effmult),
+    before: null,
+    after: null,
+  }))
+
+  const finals = scaled
+    .filter((a) => a.isFinal && a.finalSequence !== null)
+    .sort((x, y) => x.finalSequence - y.finalSequence)
+
+  let running = newStarting
+  for (const a of finals) {
+    a.before = running
+    const signedDelta = a.adjustmentType === "DEDUCTION" ? a.newQty : -a.newQty
+    a.after = round2(running - signedDelta)
+    running = a.after
+  }
+  const newNetDeducted = round2(newStarting - running)
+
+  return { newStarting, newNetDeducted, adjustments: scaled }
+}
+
 async function backfillCoverageToStock({ prisma, apply = false, logger = console }) {
   logger.log(`Categories: ${COVERAGE_SLUGS.join(", ")}`)
   logger.log(`Mode: ${apply ? "APPLY (will convert)" : "DRY-RUN (counts only)"}`)
@@ -148,38 +198,71 @@ async function backfillCoverageToStock({ prisma, apply = false, logger = console
   await prisma.$transaction(
     async (tx) => {
       // EFFMULT: cpu when > 0 (value-convert), else 1 (relabel-only, keep value).
-      // 1. Adjustments — multiply by the PARENT inventory's effective multiplier
-      //    (the same cpu that produced `coverage` at creation). Run BEFORE
-      //    inventory, which resets cpu to 1. RHS reads pre-update column values,
-      //    so `coverage` = old quantity * effmult = new quantity.
-      converted.adjustments = await tx.$executeRaw`
-        UPDATE "flooring_inventory_adjustment" adj
-        SET "quantity"        = adj."quantity" * (CASE WHEN inv."coveragePerUnit" > 0 THEN inv."coveragePerUnit" ELSE 1 END),
-            "before"          = adj."before"   * (CASE WHEN inv."coveragePerUnit" > 0 THEN inv."coveragePerUnit" ELSE 1 END),
-            "after"           = adj."after"    * (CASE WHEN inv."coveragePerUnit" > 0 THEN inv."coveragePerUnit" ELSE 1 END),
-            "coverage"        = adj."quantity" * (CASE WHEN inv."coveragePerUnit" > 0 THEN inv."coveragePerUnit" ELSE 1 END),
-            "stockUnitName"   = adj."itemCoverageUnitName",
-            "stockUnitAbbrev" = adj."itemCoverageUnitAbbrev"
-        FROM "flooring_inventory" inv
-        WHERE adj."inventoryId" = inv."id"
-          AND adj."categorySlug" = ANY(${COVERAGE_SLUGS})
-          AND adj."itemCoverageUnitAbbrev" IS NOT NULL
-          AND adj."stockUnitAbbrev" IS DISTINCT FROM adj."itemCoverageUnitAbbrev"
-      `
-
-      // 2. Inventory — re-express startingStock/netDeducted, relabel stock unit,
-      //    then collapse coveragePerUnit to 1.
-      converted.inventory = await tx.$executeRaw`
-        UPDATE "flooring_inventory"
-        SET "startingStock"   = "startingStock" * (CASE WHEN "coveragePerUnit" > 0 THEN "coveragePerUnit" ELSE 1 END),
-            "netDeducted"     = "netDeducted"   * (CASE WHEN "coveragePerUnit" > 0 THEN "coveragePerUnit" ELSE 1 END),
-            "stockUnitName"   = "itemCoverageUnitName",
-            "stockUnitAbbrev" = "itemCoverageUnitAbbrev",
-            "coveragePerUnit" = 1
+      // 1 + 2. Inventory & adjustments — read each unconverted inventory with its
+      //    adjustments, rebuild the ledger by replaying the finalSequence chain
+      //    (exact 2-dp before/after, derived netDeducted), then write per row.
+      const invRows = await tx.$queryRaw`
+        SELECT "id", "startingStock"::text AS "startingStock",
+               "coveragePerUnit"::text AS "coveragePerUnit",
+               "itemCoverageUnitName", "itemCoverageUnitAbbrev"
+        FROM "flooring_inventory"
         WHERE "categorySlug" = ANY(${COVERAGE_SLUGS})
           AND "itemCoverageUnitAbbrev" IS NOT NULL
           AND "stockUnitAbbrev" IS DISTINCT FROM "itemCoverageUnitAbbrev"
       `
+      const invIds = invRows.map((r) => r.id)
+      const adjRows = invIds.length
+        ? await tx.$queryRaw`
+            SELECT "id", "inventoryId", "quantity"::text AS "quantity",
+                   "adjustmentType", "isFinal", "finalSequence",
+                   "itemCoverageUnitName", "itemCoverageUnitAbbrev"
+            FROM "flooring_inventory_adjustment"
+            WHERE "inventoryId" = ANY(${invIds})
+              AND "itemCoverageUnitAbbrev" IS NOT NULL
+              AND "stockUnitAbbrev" IS DISTINCT FROM "itemCoverageUnitAbbrev"
+          `
+        : []
+      const adjByInv = new Map()
+      for (const a of adjRows) {
+        if (!adjByInv.has(a.inventoryId)) adjByInv.set(a.inventoryId, [])
+        adjByInv.get(a.inventoryId).push(a)
+      }
+
+      let invCount = 0
+      let adjCount = 0
+      for (const inv of invRows) {
+        const adjs = adjByInv.get(inv.id) ?? []
+        const result = computeInventoryConversion(inv, adjs)
+
+        await tx.$executeRaw`
+          UPDATE "flooring_inventory"
+          SET "startingStock"   = ${result.newStarting},
+              "netDeducted"     = ${result.newNetDeducted},
+              "stockUnitName"   = ${inv.itemCoverageUnitName},
+              "stockUnitAbbrev" = ${inv.itemCoverageUnitAbbrev},
+              "coveragePerUnit" = 1
+          WHERE "id" = ${inv.id}
+        `
+        invCount += 1
+
+        const labelByAdj = new Map(adjs.map((a) => [a.id, a]))
+        for (const a of result.adjustments) {
+          const src = labelByAdj.get(a.id)
+          await tx.$executeRaw`
+            UPDATE "flooring_inventory_adjustment"
+            SET "quantity"        = ${a.newQty},
+                "coverage"        = ${a.newQty},
+                "before"          = ${a.before},
+                "after"           = ${a.after},
+                "stockUnitName"   = ${src.itemCoverageUnitName},
+                "stockUnitAbbrev" = ${src.itemCoverageUnitAbbrev}
+            WHERE "id" = ${a.id}
+          `
+          adjCount += 1
+        }
+      }
+      converted.inventory = invCount
+      converted.adjustments = adjCount
 
       // 3. Staged inventory rows — multiply by the product's effective multiplier.
       //    Run BEFORE products (which resets cpu to 1).
@@ -253,4 +336,6 @@ if (require.main === module) {
 module.exports = {
   COVERAGE_SLUGS,
   backfillCoverageToStock,
+  computeInventoryConversion,
+  round2,
 }
