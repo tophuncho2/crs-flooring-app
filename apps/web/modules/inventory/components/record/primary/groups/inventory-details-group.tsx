@@ -60,7 +60,6 @@ export function InventoryDetailsGroup({
 
         <InventoryField
           label="Internal Notes"
-          className="col-span-2"
           editable={editable}
           currentLength={draft.internalNotes.length}
           maxLength={INVENTORY_INTERNAL_NOTES_MAX}
@@ -73,7 +72,7 @@ export function InventoryDetailsGroup({
           />
         </InventoryField>
 
-        <InventoryField label="Warehouse">
+        <InventoryField label="Warehouse" className="col-start-1">
           <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
         </InventoryField>
       </div>
