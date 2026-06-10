@@ -183,8 +183,6 @@ export function TemplatePropertyUnitGroup({
                 <StaticFieldValue>{propertyLabel ?? "—"}</StaticFieldValue>
               )}
             </TemplateField>
-          </div>
-          <div className="flex flex-col gap-3">
             <TemplateField
               label="Unit Type"
               required
@@ -200,6 +198,7 @@ export function TemplatePropertyUnitGroup({
               />
             </TemplateField>
           </div>
+          <div />
         </div>
 
         <div className="border-t border-[var(--panel-border)]/60" />
