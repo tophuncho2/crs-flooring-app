@@ -8,7 +8,6 @@ import {
   type PropertyDetailRecord,
   type PropertyListRow,
   type PropertyOption,
-  type PropertyStateOption,
 } from "@builders/domain"
 
 type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
@@ -192,39 +191,4 @@ export async function searchPropertyOptions(
   const hasMore = rows.length > args.take
   const page = hasMore ? rows.slice(0, args.take) : rows
   return { items: page.map(normalizePropertyOption), hasMore }
-}
-
-export type PropertyStatesSearchArgs = {
-  search?: string
-  take: number
-}
-
-/**
- * Distinct state codes across all properties. Excludes NULL/whitespace-only
- * values. Optional ILIKE substring on the search term. Sorted ASC, deduped at
- * the SQL layer.
- */
-export async function searchPropertyStates(
-  args: PropertyStatesSearchArgs,
-  client: PropertiesDbClient = db,
-): Promise<PropertyStateOption[]> {
-  const conditions: Prisma.Sql[] = [
-    Prisma.sql`"state" IS NOT NULL`,
-    Prisma.sql`length(trim("state")) > 0`,
-  ]
-  const trimmed = args.search?.trim() ?? ""
-  if (trimmed.length > 0) {
-    conditions.push(Prisma.sql`"state" ILIKE ${`%${trimmed}%`}`)
-  }
-  const whereClause = Prisma.join(conditions, " AND ")
-
-  const rows = await client.$queryRaw<{ state: string }[]>(Prisma.sql`
-    SELECT DISTINCT "state"
-    FROM "property_hub"
-    WHERE ${whereClause}
-    ORDER BY "state" ASC
-    LIMIT ${args.take}
-  `)
-
-  return rows.map((row) => ({ value: row.state }))
 }

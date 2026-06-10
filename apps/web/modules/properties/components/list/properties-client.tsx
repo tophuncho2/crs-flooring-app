@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListViewNoticePortal, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListViewNoticePortal, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
@@ -19,7 +19,6 @@ import { useRouter } from "next/navigation"
 import { buildPropertyRecordHref, buildRecordCreateHref } from "@/hooks/navigation/routes"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
-import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
 import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
 import { PropertiesListSearch } from "./toolbar-controls/properties-list-search"
 import { PropertiesClearAll } from "./toolbar-controls/sub-controls/properties-clear-all"
@@ -158,6 +157,11 @@ export default function PropertiesClient({
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
                 />
+                <StateSearchControl
+                  value={selectedState}
+                  onChange={handleStateChange}
+                  ariaLabel="Filter properties by state"
+                />
                 <ListToolbarBottomRow
                   left={<PropertiesClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
                   right={<PropertiesRowCount count={rows.length} total={total} />}
@@ -171,10 +175,6 @@ export default function PropertiesClient({
                 selectedLabel={selectedManagementCompanyLabel}
                 onChange={handleManagementCompanyChange}
                 initialOptions={initialManagementCompanyOptions}
-              />
-              <StateFilterChip
-                value={selectedState}
-                onChange={handleStateChange}
               />
             </ListToolbarCell>
 

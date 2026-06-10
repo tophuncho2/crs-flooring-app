@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListViewNoticePortal, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListViewNoticePortal, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { ManagementCompaniesListFilters } from "@builders/application"
 import {
   LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
@@ -19,7 +19,6 @@ import { buildRecordCreateHref } from "@/hooks/navigation/routes"
 import { ManagementCompaniesTable } from "./management-companies-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { ManagementCompaniesListSearch } from "./toolbar-controls/management-companies-list-search"
-import { ManagementCompaniesStateSearch } from "./toolbar-controls/management-companies-state-search"
 import { ManagementCompaniesClearAll } from "./toolbar-controls/sub-controls/management-companies-clear-all"
 import { ManagementCompaniesRowCount } from "./toolbar-controls/sub-controls/management-companies-row-count"
 
@@ -124,9 +123,10 @@ export default function ManagementCompaniesClient({
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
                 />
-                <ManagementCompaniesStateSearch
+                <StateSearchControl
                   value={selectedState}
                   onChange={handleStateChange}
+                  ariaLabel="Filter management companies by state"
                 />
                 <ListToolbarBottomRow
                   left={
