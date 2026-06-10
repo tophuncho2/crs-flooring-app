@@ -19,8 +19,8 @@ const GROUP_TONE = {
 
 /**
  * Group container for the inventory record view. Tab label on the
- * top-left, optional `headerRight` slot on the right (e.g. archive
- * chip), and a bordered card body whose top-left corner butts into the
+ * top-left, optional `headerRight` slot on the right (e.g. the waste
+ * toggle on the adjustment form), and a bordered card body whose top-left corner butts into the
  * tab so the two read as a single piece of chrome. Mirrors
  * `WorkOrderGroup` / `TemplateGroup` and stays module-local rather
  * than crossing into either of those modules.

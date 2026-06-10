@@ -18,7 +18,7 @@ import { InventoryGroup } from "./inventory-group"
  * FIFO, Updated) are not repeated here; pairing/layout of the remaining fields
  * is a pending follow-up.
  *
- * Only Location + Internal Notes (and the archive chip in the header) are
+ * Only Location + Internal Notes (and the archive control beside Location) are
  * editable; everything else is identity / derived data rendered static. The
  * `editable` flag drives both the read-only view and the section-edit mode off
  * one component.
@@ -39,17 +39,7 @@ export function InventoryDetailsGroup({
   tone?: "blue" | "red"
 }) {
   return (
-    <InventoryGroup
-      title={title}
-      tone={tone}
-      headerRight={
-        <InventoryArchiveChip
-          value={draft.isArchived}
-          onChange={(next) => onFieldChange("isArchived", next)}
-          disabled={!editable}
-        />
-      }
-    >
+    <InventoryGroup title={title} tone={tone}>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">
         <InventoryField label="Location">
           <TextCell
@@ -57,6 +47,14 @@ export function InventoryDetailsGroup({
             value={draft.location}
             onChange={(value) => onFieldChange("location", value)}
             maxLength={INVENTORY_LOCATION_MAX}
+          />
+        </InventoryField>
+
+        <InventoryField label="Status">
+          <InventoryArchiveChip
+            value={draft.isArchived}
+            onChange={(next) => onFieldChange("isArchived", next)}
+            disabled={!editable}
           />
         </InventoryField>
 
