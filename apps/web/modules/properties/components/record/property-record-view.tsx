@@ -20,10 +20,10 @@ import {
   buildRecordCreateHref,
   buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
-import { TemplateReferenceSection } from "@/modules/templates/components/record/reference-section/template-reference-section"
 import { usePropertyPrimarySection } from "@/modules/properties/controllers/record/use-property-primary-section"
 import { PropertyFieldsSection } from "./primary/property-fields-section"
 import { LinkedManagementCompanySection } from "./primary/linked-management-company-section"
+import { PropertyTemplatesSection } from "./templates/property-templates-section"
 
 /**
  * The standalone Property record view. ① the linked management company shown
@@ -150,12 +150,10 @@ export function PropertyRecordView({
       type: "item",
       order: 20,
       render: (ctx) => (
-        <TemplateReferenceSection
+        <PropertyTemplatesSection
           page={ctx.page}
-          managementCompany={{ id: linkedMc.id, label: linkedMc.name }}
-          property={{ id: record.id, label: record.name }}
-          managementCompanySelectable={false}
-          propertySelectable={false}
+          managementCompany={linkedMc}
+          property={record}
         />
       ),
     })
