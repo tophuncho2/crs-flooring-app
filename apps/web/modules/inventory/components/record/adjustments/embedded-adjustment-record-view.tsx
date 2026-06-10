@@ -4,6 +4,9 @@ import { useEffect } from "react"
 import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
   RecordSectionSubHeader,
+  RecordDeleteDialog,
+  buildDeleteConfirmationMessage,
+  useRecordDeleteConfirmation,
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
 } from "@/engines/record-view"
@@ -54,6 +57,19 @@ export function EmbeddedAdjustmentRecordView({
 
   const handleBack = () => hostPage.confirmNavigation(onBack)
 
+  // Delete is confirmed through a dialog that holds "Deleting…" until the row
+  // commits, then routes back to the list face (`onBack` clears the URL
+  // selection so the drilldown remounts the refreshed list). On error we stay on
+  // the edit face — the controller has already surfaced it in the sub-header.
+  const del = useRecordDeleteConfirmation(async () => {
+    try {
+      await controller.deleteAdjustment()
+      onBack()
+    } catch {
+      // Error already surfaced via `controller.error`; keep the user on the row.
+    }
+  })
+
   // Delete is available on any saved row (edit mode).
   const showDelete = adjustment != null
 
@@ -85,7 +101,7 @@ export function EmbeddedAdjustmentRecordView({
             key: "delete",
             label: "Delete",
             tone: "destructive" as const,
-            onClick: () => controller.deleteAdjustment(),
+            onClick: del.requestDelete,
             disabled: isSaving,
           },
         ]
@@ -120,6 +136,14 @@ export function EmbeddedAdjustmentRecordView({
           />
         </div>
       </div>
+      <RecordDeleteDialog
+        open={del.isOpen}
+        isDeleting={del.isDeleting}
+        title="Delete adjustment?"
+        message={buildDeleteConfirmationMessage("adjustment")}
+        onConfirm={del.confirmDelete}
+        onCancel={del.cancelDelete}
+      />
     </div>
   )
 }

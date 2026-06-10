@@ -304,9 +304,15 @@ export function useAdjustmentEditController({
     }
   }, [open, form, isDirty, isSaving, createMutation, updateMutation])
 
+  // Returns a promise that resolves once the delete commits (and rejects on
+  // error, with `onError` already having surfaced it) so the caller can sequence
+  // its navigate-back-to-list off a successful settle.
   const deleteAdjustment = useCallback(() => {
-    if (!open || open.mode !== "edit" || isSaving) return
-    deleteMutation.mutate({ workOrderItemId: open.workOrderItemId, adjustment: open.adjustment })
+    if (!open || open.mode !== "edit" || isSaving) return Promise.resolve()
+    return deleteMutation.mutateAsync({
+      workOrderItemId: open.workOrderItemId,
+      adjustment: open.adjustment,
+    })
   }, [open, isSaving, deleteMutation])
 
   const close = useCallback(() => {
