@@ -1,6 +1,6 @@
 "use client"
 
-import { NumberCell, TextCell } from "@/engines/record-view"
+import { MoneyCell, TextCell } from "@/engines/record-view"
 import { FieldSection, FormField, StaticFieldValue } from "@/engines/record-view"
 import { CellAt } from "@/engines/record-view"
 import { formatEasternDateTime } from "@builders/domain"
@@ -53,12 +53,10 @@ export function LaborPaymentEditFormFields({
       </CellAt>
       <CellAt col={5} colSpan={4}>
         <FormField label="Cost">
-          <NumberCell
+          <MoneyCell
             editable={editable}
             value={form.cost}
             onChange={(next) => setField("cost", next)}
-            maxDecimals={2}
-            prefix="$"
             ariaLabel="Cost"
           />
         </FormField>

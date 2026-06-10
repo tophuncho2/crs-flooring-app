@@ -7,6 +7,8 @@ import type {
   UpdateLaborPaymentUseCaseInput,
 } from "@builders/application"
 import {
+  isValidMoneyAmount,
+  normalizeMoneyAmount,
   LIST_LABOR_PAYMENTS_MAX_PAGE_SIZE,
   LIST_LABOR_PAYMENTS_PAGE_SIZE,
 } from "@builders/domain"
@@ -33,19 +35,25 @@ function optionalString(value: unknown, field: string): string | undefined {
   return (value as string).trim()
 }
 
+// Money standard: normalize every accepted amount to a canonical two-decimal
+// string (`@builders/domain`). Rejects negatives / >2 decimals; empty → "".
 function optionalCost(value: unknown, field: string): string | undefined {
   if (value === undefined || value === null) return undefined
+  let raw: string
   if (typeof value === "number") {
     if (!Number.isFinite(value)) fail(`${field} must be a valid amount`, field)
-    return String(value)
+    raw = String(value)
+  } else if (typeof value === "string") {
+    raw = value
+  } else {
+    fail(`${field} must be an amount`, field)
   }
-  if (typeof value !== "string") fail(`${field} must be an amount`, field)
-  const trimmed = (value as string).trim()
+  const trimmed = raw.trim()
   if (!trimmed) return ""
-  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
+  if (!isValidMoneyAmount(trimmed)) {
     fail(`${field} must be a positive amount with up to 2 decimals`, field)
   }
-  return trimmed
+  return normalizeMoneyAmount(trimmed)
 }
 
 export function validateCreateLaborPaymentInput(

@@ -1,3 +1,5 @@
+import { formatMoney } from "./money.js"
+
 export type LineTotalInput = {
   quantity: string | number
   unitPrice: string | number
@@ -17,7 +19,7 @@ export function formatLineTotal(input: LineTotalInput) {
 }
 
 export function formatCurrencyValue(value: string | number) {
-  return `$${toNumber(value).toFixed(2)}`
+  return formatMoney(value)
 }
 
 export function sumLineTotals(lines: LineTotalInput[]) {

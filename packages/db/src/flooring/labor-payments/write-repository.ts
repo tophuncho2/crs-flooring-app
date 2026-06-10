@@ -1,6 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { normalizeLaborPayment, type LaborPayment } from "@builders/domain"
+import { normalizeLaborPayment, normalizeMoneyAmount, type LaborPayment } from "@builders/domain"
 
 type LaborPaymentsDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -25,8 +25,8 @@ function optionalText(value: string | undefined): string | null | undefined {
 
 function optionalDecimal(value: string | undefined): string | null | undefined {
   if (value === undefined) return undefined
-  const trimmed = value.trim()
-  return trimmed ? trimmed : null
+  const normalized = normalizeMoneyAmount(value.trim())
+  return normalized ? normalized : null
 }
 
 export async function createLaborPaymentRecord(

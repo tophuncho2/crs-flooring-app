@@ -1,3 +1,4 @@
+import { normalizeMoneyAmount } from "../../shared/money.js"
 import type { LaborPayment } from "./types.js"
 
 type LaborPaymentInput = {
@@ -18,7 +19,7 @@ export function normalizeLaborPayment(laborPayment: LaborPaymentInput): LaborPay
     contactName: laborPayment.contact?.name ?? "",
     unit: laborPayment.unit ?? "",
     description: laborPayment.description ?? "",
-    cost: laborPayment.cost == null ? "" : laborPayment.cost.toString(),
+    cost: laborPayment.cost == null ? "" : normalizeMoneyAmount(laborPayment.cost.toString()),
     createdAt:
       laborPayment.createdAt instanceof Date ? laborPayment.createdAt.toISOString() : laborPayment.createdAt,
     updatedAt:

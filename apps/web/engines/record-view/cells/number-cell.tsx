@@ -44,6 +44,12 @@ export type NumberCellProps = CellProps<string> & {
    * Visual only — it does not become part of `value`.
    */
   prefix?: ReactNode
+  /**
+   * Optional canonicalizer run on blur (e.g. pad money to exactly 2 decimals).
+   * Fires `onChange` only when it actually changes the value, so an
+   * already-canonical field never dirties on focus-out.
+   */
+  formatOnBlur?: (raw: string) => string
 }
 
 /**
@@ -68,6 +74,14 @@ export function NumberCell(props: NumberCellProps) {
           const next = sanitizeDecimal(event.target.value, maxDecimals)
           props.onChange?.(next)
         }}
+        onBlur={
+          props.formatOnBlur
+            ? () => {
+                const next = props.formatOnBlur!(props.value)
+                if (next !== props.value) props.onChange?.(next)
+              }
+            : undefined
+        }
         placeholder={props.placeholder ?? "0.00"}
         aria-label={props.ariaLabel}
         aria-invalid={props.invalid || undefined}
