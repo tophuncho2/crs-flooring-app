@@ -16,10 +16,10 @@ import {
   buildPropertyRecordHref,
   buildRecordCreateHref,
 } from "@/hooks/navigation/routes"
-import { TemplateReferenceSection } from "@/modules/templates/components/record/reference-section/template-reference-section"
 import { useMcPrimarySection } from "@/modules/management-companies/controllers/record/primary/use-mc-primary-section"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
 import { ManagementCompanyCellsSection } from "./primary/management-company-cells-section"
+import { ManagementCompanyTemplatesSection } from "./templates/management-company-templates-section"
 
 /**
  * The Management Company record view. ① editable MC cells (primary) · ② the
@@ -123,12 +123,7 @@ export function ManagementCompanyRecordView({
       type: "item",
       order: 20,
       render: (ctx) => (
-        <TemplateReferenceSection
-          page={ctx.page}
-          managementCompany={{ id: entry.id, label: entry.name }}
-          managementCompanySelectable={false}
-          propertySelectable
-        />
+        <ManagementCompanyTemplatesSection page={ctx.page} managementCompany={entry} />
       ),
     },
   ]
