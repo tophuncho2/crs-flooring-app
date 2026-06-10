@@ -85,6 +85,7 @@ export async function updatePendingAdjustmentRequest(args: {
   expectedUpdatedAt: string
   patch: {
     quantity?: string
+    adjustmentType?: FlooringInventoryAdjustmentType
     isWaste?: boolean
     notes?: string
     location?: string | null

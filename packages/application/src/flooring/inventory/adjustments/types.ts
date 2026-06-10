@@ -30,11 +30,17 @@ export type CreatePendingAdjustmentInput = {
 
 export type UpdatePendingAdjustmentPatch = {
   /**
-   * Always positive (validator enforces); direction is immutable post-create.
+   * Always positive (validator enforces); direction lives in `adjustmentType`.
    * Freely editable for the row's whole lifecycle — editing it re-flows the
    * inventory's before/after chain.
    */
   quantity?: string
+  /**
+   * Direction (INCREASE | DEDUCTION). Freely editable for the row's whole
+   * lifecycle — flipping it re-flows the inventory's netDeducted + before/after
+   * chain and is re-checked against the starting-stock ceiling.
+   */
+  adjustmentType?: FlooringInventoryAdjustmentType
   /**
    * Metadata trio — also freely editable. `isWaste` is a reporting flag on
    * either direction; `location` is user-owned free text (never re-snapped

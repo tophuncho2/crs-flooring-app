@@ -123,6 +123,7 @@ export type ValidatedUpdatePendingAdjustmentLink = {
 
 export type ValidatedUpdatePendingAdjustmentPatch = {
   quantity?: string
+  adjustmentType?: "INCREASE" | "DEDUCTION"
   isWaste?: boolean
   notes?: string
   location?: string | null
@@ -173,6 +174,16 @@ export function validateUpdatePendingAdjustmentInput(
   if ("quantity" in patchBody) {
     patch.quantity = requireAdjustmentString(patchBody.quantity, "patch.quantity")
   }
+  if ("adjustmentType" in patchBody) {
+    const rawType = patchBody.adjustmentType
+    if (rawType !== "INCREASE" && rawType !== "DEDUCTION") {
+      failAdjustment(
+        "patch.adjustmentType must be INCREASE or DEDUCTION",
+        "patch.adjustmentType",
+      )
+    }
+    patch.adjustmentType = rawType
+  }
   if ("isWaste" in patchBody && typeof patchBody.isWaste === "boolean") {
     patch.isWaste = patchBody.isWaste
   }
@@ -190,7 +201,7 @@ export function validateUpdatePendingAdjustmentInput(
   }
   if (Object.keys(patch).length === 0) {
     failAdjustment(
-      "Patch must contain at least one of quantity, isWaste, notes, location, or link",
+      "Patch must contain at least one of quantity, adjustmentType, isWaste, notes, location, or link",
       "patch",
     )
   }

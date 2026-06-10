@@ -116,8 +116,14 @@ export async function insertPendingAdjustmentRow(
 }
 
 export type UpdatePendingAdjustmentRowPatch = {
-  /** Always positive (validator enforces); direction is immutable post-create. */
+  /** Always positive (validator enforces); direction lives in `adjustmentType`. */
   quantity?: string
+  /**
+   * Direction (INCREASE | DEDUCTION). Freely editable for the row's whole
+   * lifecycle — flipping it re-flows the inventory's netDeducted + before/after
+   * chain via `recomputeAndPersistNetDeducted`.
+   */
+  adjustmentType?: FlooringInventoryAdjustmentType
   isWaste?: boolean
   /** Empty string accepted; persisted as null when blank. */
   notes?: string
@@ -147,11 +153,12 @@ export type UpdatePendingAdjustmentRowInput = {
  * and locked the parent inventory FOR UPDATE.
  *
  * Writable in this primitive:
- *   - user-editable form fields: `quantity`, `isWaste`, `notes`, `location`
- *   - link relations `workOrderId` / `workOrderItemId` (both-or-neither
- *     for DEDUCTION; forbidden on INCREASE — enforced upstream)
+ *   - user-editable form fields: `quantity`, `adjustmentType`, `isWaste`,
+ *     `notes`, `location`
+ *   - link relations `workOrderId` / `workOrderItemId` (both-or-neither,
+ *     allowed on either direction — enforced upstream)
  *
- * Never written here: `inventoryId`, `adjustmentType`, `status`, `isFinal`,
+ * Never written here: `inventoryId`, `status`, `isFinal`,
  * `before`, `after`, `finalSequence`, `adjustmentNumber`, `createdAt`,
  * `inventoryItem`, the 5 inventory-identity snapshot primitives, and the
  * stock unit-snapshot fields. Empty-patch calls return the row as-is.
@@ -162,6 +169,9 @@ export async function updatePendingAdjustmentRow(
 ): Promise<InventoryAdjustmentRecord> {
   const data: Prisma.FlooringInventoryAdjustmentUpdateInput = {}
   if (input.patch.quantity !== undefined) data.quantity = input.patch.quantity
+  if (input.patch.adjustmentType !== undefined) {
+    data.adjustmentType = input.patch.adjustmentType
+  }
   if (input.patch.isWaste !== undefined) data.isWaste = input.patch.isWaste
   if (input.patch.notes !== undefined) {
     data.notes = input.patch.notes ? input.patch.notes : null

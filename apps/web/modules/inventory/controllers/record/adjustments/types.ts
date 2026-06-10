@@ -10,9 +10,9 @@ import type {
  * `workOrderId` / `workOrderItemId` relink pair — is freely editable for the
  * row's whole lifecycle; there is no finalize/freeze.
  *
- * `adjustmentType` (INCREASE | DEDUCTION) is direction. It is chosen only in
- * the manual create flow (inventory hub); WO-linked cuts are always DEDUCTION
- * and saved rows treat direction as immutable.
+ * `adjustmentType` (INCREASE | DEDUCTION) is direction. It is freely editable
+ * for the row's whole lifecycle in both the manual create flow and on saved
+ * rows; flipping it re-flows the inventory's netDeducted + before/after chain.
  */
 export type AdjustmentEditForm = {
   inventoryId: string

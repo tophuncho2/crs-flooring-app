@@ -50,9 +50,10 @@ export function useUpdateAdjustmentMutation({
       adjustment: InventoryAdjustmentRow
       form: AdjustmentEditForm
     }) => {
-      // Every field is freely editable now — send quantity + the metadata trio
-      // on every save; the link is sent only when it actually changed. The
-      // server re-flows before/after for the whole chain on the write.
+      // Every field is freely editable now — send quantity + direction + the
+      // metadata trio on every save; the link is sent only when it actually
+      // changed. The server re-flows netDeducted + before/after for the whole
+      // chain on the write.
       const linkChanged =
         input.form.workOrderId !== input.adjustment.workOrderId ||
         input.form.workOrderItemId !== input.adjustment.workOrderItemId
@@ -62,6 +63,7 @@ export function useUpdateAdjustmentMutation({
         expectedUpdatedAt: input.adjustment.updatedAt,
         patch: {
           quantity: input.form.quantity,
+          adjustmentType: input.form.adjustmentType,
           isWaste: input.form.isWaste,
           notes: input.form.notes,
           location: input.form.location,

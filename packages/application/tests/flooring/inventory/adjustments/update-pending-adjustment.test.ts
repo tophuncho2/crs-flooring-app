@@ -240,6 +240,26 @@ describe("updatePendingAdjustmentUseCase", () => {
         },
       )
     })
+
+    it("flips direction: writes adjustmentType, validates + re-checks linkage with the merged type", async () => {
+      await updatePendingAdjustmentUseCase(input({ patch: { adjustmentType: "INCREASE" } }))
+
+      expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
+        { tx: true },
+        { id: ADJUSTMENT_ID, patch: { adjustmentType: "INCREASE" } },
+      )
+      // Form validation runs against the new (merged) direction, not the stale row.
+      expect(validateAdjustmentPendingFormMock).toHaveBeenCalledWith(
+        expect.objectContaining({ adjustmentType: "INCREASE" }),
+      )
+      // A direction change re-asserts linkage with the merged type + existing link.
+      expect(assertAdjustmentLinkageRulesMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          adjustmentType: "INCREASE",
+          workOrderId: WO_ID,
+        }),
+      )
+    })
   })
 
   describe("guards", () => {

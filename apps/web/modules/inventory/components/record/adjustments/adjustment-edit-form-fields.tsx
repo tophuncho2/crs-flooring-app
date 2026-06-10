@@ -5,7 +5,6 @@ import {
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
 } from "@builders/domain"
-import { StatusBadge } from "@/engines/common"
 import { TextCell, ToggleCell, UnitCell } from "@/engines/record-view"
 import { SegmentedDropdown } from "@/engines/picker"
 import { StaticFieldValue } from "@/engines/record-view"
@@ -38,11 +37,11 @@ const ADJUSTMENT_TYPE_OPTIONS = [
  *
  * Create mode: a "New adjustment" group — type selector, quantity, notes, with a
  * waste lever in the group header.
- * Edit mode: an "Adjustment" group whose header carries the type pill
- * (Increase/Deduction) and the waste lever. The body shows quantity, then the
+ * Edit mode: an "Adjustment" group whose header carries the waste lever. The
+ * body shows quantity + the type selector (Increase/Deduction), then the
  * before→after transition + location, then notes, then created / updated. Every
- * field is always editable (only disabled mid-save); the before→after transition
- * re-flows server-side on each save.
+ * field is always editable (only disabled mid-save); flipping the type re-flows
+ * the before→after transition server-side on each save.
  */
 export function AdjustmentEditFormFields({
   mode,
@@ -134,21 +133,7 @@ export function AdjustmentEditFormFields({
   const transition = formatAdjustmentTransition(adjustment.before, adjustment.after, stockUnit) ?? EMPTY_CELL
 
   return (
-    <InventoryGroup
-      title="Adjustment"
-      tone="blue"
-      headerRight={
-        <div className="flex items-center gap-2">
-          <StatusBadge
-            size="md"
-            tone={adjustment.adjustmentType === "INCREASE" ? "success" : "error"}
-          >
-            {adjustment.adjustmentType === "INCREASE" ? "Increase" : "Deduction"}
-          </StatusBadge>
-          <span className="ml-1">{wasteToggle}</span>
-        </div>
-      }
-    >
+    <InventoryGroup title="Adjustment" tone="blue" headerRight={wasteToggle}>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">
         <InventoryField label="Quantity" required>
           <UnitCell
@@ -158,6 +143,19 @@ export function AdjustmentEditFormFields({
             unit={stockUnit}
             placeholder="0"
             ariaLabel="Adjustment quantity"
+          />
+        </InventoryField>
+        <InventoryField label="Type">
+          <SegmentedDropdown
+            value={form.adjustmentType}
+            onChange={(next: string | null) => {
+              if (next === "INCREASE" || next === "DEDUCTION") {
+                controller.setField("adjustmentType", next)
+              }
+            }}
+            options={ADJUSTMENT_TYPE_OPTIONS}
+            ariaLabel="Adjustment type"
+            disabled={isSaving}
           />
         </InventoryField>
         <InventoryField label="Adjustment">

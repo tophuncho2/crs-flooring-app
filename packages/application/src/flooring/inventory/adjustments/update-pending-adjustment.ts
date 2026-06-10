@@ -94,11 +94,21 @@ export async function updatePendingAdjustmentUseCase(
     // freely editable for the whole lifecycle of the row; there is no
     // finalize/freeze and `QUEUED` never occurs. Only the structural linkage
     // symmetry (both ids set, or both null) is still enforced on a link patch.
-    if (input.patch.link !== undefined) {
+    const mergedAdjustmentType =
+      input.patch.adjustmentType !== undefined
+        ? input.patch.adjustmentType
+        : existing.adjustmentType
+    if (input.patch.link !== undefined || input.patch.adjustmentType !== undefined) {
       assertAdjustmentLinkageRules({
-        adjustmentType: existing.adjustmentType,
-        workOrderId: input.patch.link.workOrderId,
-        workOrderItemId: input.patch.link.workOrderItemId,
+        adjustmentType: mergedAdjustmentType,
+        workOrderId:
+          input.patch.link !== undefined
+            ? input.patch.link.workOrderId
+            : existing.workOrderId,
+        workOrderItemId:
+          input.patch.link !== undefined
+            ? input.patch.link.workOrderItemId
+            : existing.workOrderItemId,
         isWaste: input.patch.isWaste ?? existing.isWaste,
       })
     }
@@ -151,7 +161,7 @@ export async function updatePendingAdjustmentUseCase(
     const mergedNotes =
       input.patch.notes !== undefined ? input.patch.notes : existing.notes
     const formIssues = validateAdjustmentPendingForm({
-      adjustmentType: existing.adjustmentType,
+      adjustmentType: mergedAdjustmentType,
       quantity: mergedQuantity,
       isWaste: mergedIsWaste,
       notes: mergedNotes,
@@ -170,6 +180,9 @@ export async function updatePendingAdjustmentUseCase(
     const patch: UpdatePendingAdjustmentRowPatch = {}
     if (input.patch.quantity !== undefined) {
       patch.quantity = input.patch.quantity
+    }
+    if (input.patch.adjustmentType !== undefined) {
+      patch.adjustmentType = input.patch.adjustmentType
     }
     if (input.patch.isWaste !== undefined) patch.isWaste = input.patch.isWaste
     if (input.patch.notes !== undefined) patch.notes = input.patch.notes
