@@ -92,6 +92,7 @@ export function ManagementCompanyCreateClient({
       title="New Management Company"
       backHref={backHref}
       dirtyMessage="You have unsaved management-company changes. Leave without saving?"
+      modeNoticeLabel="Management"
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <ManagementCompanyCreatePanel page={page} propertyId={propertyId} backHref={backHref} />

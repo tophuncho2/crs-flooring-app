@@ -25,6 +25,7 @@ export function ManagementCompanyDetailClient({
       backHref={backHref}
       dirtyMessage="You have unsaved management-company changes. Leave without saving?"
       headerVariant="section"
+      modeNotice={{ mode: "edit", label: "Management" }}
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <ManagementCompanyRecordView
