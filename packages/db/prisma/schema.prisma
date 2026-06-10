@@ -433,6 +433,18 @@ model FlooringJobType {
   @@map("flooring_job_type")
 }
 
+model FlooringContact {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@map("flooring_contact")
+}
+
 model FlooringTemplate {
   id                   String                     @id @default(uuid())
   templateNumber       String                     @unique @default(dbgenerated("('TP-'::text || (nextval('flooring_template_number_seq'::regclass))::text)")) @map("template_number")

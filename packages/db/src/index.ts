@@ -4,6 +4,7 @@ export { createPrismaClient, db, prisma, withDatabaseTransaction } from "./clien
 export * from "./env.js"
 export * from "./errors.js"
 export * from "./flooring/categories/read-repository.js"
+export * from "./flooring/contacts/index.js"
 export * from "./flooring/imports/index.js"
 export * from "./flooring/inventory/index.js"
 export * from "./flooring/manufacturers/read-repository.js"
