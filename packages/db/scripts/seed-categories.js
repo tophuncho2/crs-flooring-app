@@ -12,161 +12,138 @@ const SEEDED_CATEGORIES = [
     name: "Plank",
     sendUnitSlug: "square-feet",
     stockUnitSlug: "square-feet",
-    itemCoverageUnitSlug: "square-feet",
   },
   {
     slug: "carpet-tile",
     name: "Carpet Tile",
     sendUnitSlug: "square-yard",
     stockUnitSlug: "square-yard",
-    itemCoverageUnitSlug: "square-yard",
   },
   {
     slug: "covebase",
     name: "Covebase",
     sendUnitSlug: "linear-feet",
     stockUnitSlug: "linear-feet",
-    itemCoverageUnitSlug: "linear-feet",
   },
   {
     slug: "pad",
     name: "Pad",
     sendUnitSlug: "square-yard",
     stockUnitSlug: "square-yard",
-    itemCoverageUnitSlug: "square-yard",
   },
   {
     slug: "adhesive",
     name: "Adhesive",
     sendUnitSlug: "buckets",
     stockUnitSlug: "buckets",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "baseboard",
     name: "Baseboard",
     sendUnitSlug: "pieces",
     stockUnitSlug: "pieces",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "carpet",
     name: "Carpet",
     sendUnitSlug: "linear-feet",
     stockUnitSlug: "linear-feet",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "kilz",
     name: "Kilz",
     sendUnitSlug: "units",
     stockUnitSlug: "units",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "luan",
     name: "Luan",
     sendUnitSlug: "sheets",
     stockUnitSlug: "sheets",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "metals",
     name: "Metals",
     sendUnitSlug: "pieces",
     stockUnitSlug: "pieces",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "moisture-barrier",
     name: "Moisture Barrier",
     sendUnitSlug: "units",
     stockUnitSlug: "units",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "patch",
     name: "Patch",
     sendUnitSlug: "bags",
     stockUnitSlug: "bags",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "plywood",
     name: "Plywood",
     sendUnitSlug: "sheets",
     stockUnitSlug: "sheets",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "primer",
     name: "Primer",
     sendUnitSlug: "units",
     stockUnitSlug: "units",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "scent-stop",
     name: "Scent Stop",
     sendUnitSlug: "units",
     stockUnitSlug: "units",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "shoe-molding",
     name: "Shoe Molding",
     sendUnitSlug: "linear-feet",
     stockUnitSlug: "linear-feet",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "trim",
     name: "Trim",
     sendUnitSlug: "pieces",
     stockUnitSlug: "pieces",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "vct",
     name: "VCT",
     sendUnitSlug: "boxes",
     stockUnitSlug: "boxes",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "vinyl-sheet",
     name: "Vinyl Sheet",
     sendUnitSlug: "linear-feet",
     stockUnitSlug: "linear-feet",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "wax-ring",
     name: "Wax Ring",
     sendUnitSlug: "boxes",
     stockUnitSlug: "boxes",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "ceramic-tile",
     name: "Ceramic Tile",
     sendUnitSlug: "square-feet",
     stockUnitSlug: "square-feet",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "stair-treads",
     name: "Stair Treads",
     sendUnitSlug: "pieces",
     stockUnitSlug: "pieces",
-    itemCoverageUnitSlug: null,
   },
   {
     slug: "rubber-transition",
     name: "Rubber Transition",
     sendUnitSlug: "pieces",
     stockUnitSlug: "pieces",
-    itemCoverageUnitSlug: null,
   },
 ]
 
@@ -175,7 +152,7 @@ function verifySyncWithTypeScriptSource() {
   const tsSource = readFileSync(tsPath, "utf8")
 
   const entryPattern =
-    /\{\s*slug:\s*"([^"]+)",\s*name:\s*"([^"]+)",\s*sendUnitSlug:\s*(?:"([^"]+)"|null),\s*stockUnitSlug:\s*(?:"([^"]+)"|null),\s*itemCoverageUnitSlug:\s*(?:"([^"]+)"|null)\s*,?\s*\}/g
+    /\{\s*slug:\s*"([^"]+)",\s*name:\s*"([^"]+)",\s*sendUnitSlug:\s*(?:"([^"]+)"|null),\s*stockUnitSlug:\s*(?:"([^"]+)"|null)\s*,?\s*\}/g
   const tsEntries = []
   let match
   while ((match = entryPattern.exec(tsSource)) !== null) {
@@ -184,12 +161,11 @@ function verifySyncWithTypeScriptSource() {
       name: match[2],
       sendUnitSlug: match[3] ?? null,
       stockUnitSlug: match[4] ?? null,
-      itemCoverageUnitSlug: match[5] ?? null,
     })
   }
 
   const jsKey = (entry) =>
-    `${entry.slug}|${entry.name}|${entry.sendUnitSlug}|${entry.stockUnitSlug}|${entry.itemCoverageUnitSlug}`
+    `${entry.slug}|${entry.name}|${entry.sendUnitSlug}|${entry.stockUnitSlug}`
   const jsKeys = SEEDED_CATEGORIES.map(jsKey)
   const tsKeys = tsEntries.map(jsKey)
 
@@ -238,7 +214,6 @@ async function seedCategories({ prisma, logger = console }) {
     for (const entry of SEEDED_CATEGORIES) {
       const sendUnitId = resolveUnitId(unitSlugMap, entry.sendUnitSlug, "sendUnitSlug", entry.slug)
       const stockUnitId = resolveUnitId(unitSlugMap, entry.stockUnitSlug, "stockUnitSlug", entry.slug)
-      const itemCoverageUnitId = resolveUnitId(unitSlugMap, entry.itemCoverageUnitSlug, "itemCoverageUnitSlug", entry.slug)
 
       const existing = await tx.flooringCategory.findUnique({
         where: { slug: entry.slug },
@@ -252,7 +227,6 @@ async function seedCategories({ prisma, logger = console }) {
             name: entry.name,
             sendUnitId,
             stockUnitId,
-            itemCoverageUnitId,
           },
         })
         updated += 1
@@ -263,7 +237,6 @@ async function seedCategories({ prisma, logger = console }) {
             name: entry.name,
             sendUnitId,
             stockUnitId,
-            itemCoverageUnitId,
           },
         })
         created += 1
