@@ -29,22 +29,23 @@ export type TemplateReferenceScopeSeed = {
  * Clicking a template row routes straight to that template's hub record view —
  * there is no read-only preview here.
  *
- * Hosts configure it with a seeded management company (always) and an optional
+ * Hosts configure it with an optional seeded management company and an optional
  * seeded property, plus per-picker selectability:
  *   - MC record view: `managementCompany` seeded + locked, `propertySelectable`
  *     (property filtered to the company); Clear resets that property filter.
- *   - Property record view: both `managementCompany` + `property` seeded + locked;
+ *   - Property record view: `property` seeded + locked, and `managementCompany`
+ *     seeded + locked when the property has one (null for an orphan property);
  *     the operator only browses + opens templates.
  */
 export function TemplateReferenceSection({
   page,
-  managementCompany,
+  managementCompany = null,
   property = null,
   managementCompanySelectable = false,
   propertySelectable = false,
 }: {
   page: RecordDetailClientScaffoldContext
-  managementCompany: TemplateReferenceScopeSeed
+  managementCompany?: TemplateReferenceScopeSeed | null
   property?: TemplateReferenceScopeSeed | null
   /** Allow re-selecting the management company (default: locked to the seed). */
   managementCompanySelectable?: boolean
@@ -56,8 +57,8 @@ export function TemplateReferenceSection({
   const searchParams = useSearchParams()
 
   const { cascade } = useTemplateReferenceSection({
-    managementCompanyId: managementCompany.id,
-    managementCompanyLabel: managementCompany.label,
+    managementCompanyId: managementCompany?.id ?? null,
+    managementCompanyLabel: managementCompany?.label ?? null,
     propertyId: property?.id ?? null,
     propertyLabel: property?.label ?? null,
   })

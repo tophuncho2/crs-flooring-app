@@ -29,8 +29,9 @@ import { PropertyTemplatesSection } from "./templates/property-templates-section
 /**
  * The standalone Property record view. ① the linked management company shown
  * read-only (hand-off to the MC record view) above the editable property cells —
- * one section · ② the shared templates reference section, with both the MC and
- * the property pre-seeded and locked so only a template is choosable for preview.
+ * one section · ② the shared templates reference section (always shown), with the
+ * property pre-seeded and locked — plus the MC when the property has one — so only
+ * a template is choosable.
  *
  * Reached by clicking a property anywhere (the properties list, the MC record
  * view's property list, the WO/template "✎ Property" buttons) — it no longer
@@ -124,20 +125,18 @@ export function PropertyRecordView({
     },
   ]
 
-  if (linkedMc) {
-    sections.push({
-      key: "templates",
-      type: "item",
-      order: 20,
-      render: (ctx) => (
-        <PropertyTemplatesSection
-          page={ctx.page}
-          managementCompany={linkedMc}
-          property={record}
-        />
-      ),
-    })
-  }
+  sections.push({
+    key: "templates",
+    type: "item",
+    order: 20,
+    render: (ctx) => (
+      <PropertyTemplatesSection
+        page={ctx.page}
+        managementCompany={linkedMc}
+        property={record}
+      />
+    ),
+  })
 
   return (
     <>

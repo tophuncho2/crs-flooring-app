@@ -6,11 +6,12 @@ import { TemplateReferenceSection } from "@/modules/templates/components/record/
 
 /**
  * The Property record view's §2 templates section. Configures the shared
- * `TemplateReferenceSection` (owned by `modules/templates`) for a property: both
- * the management company and the property are pre-seeded and **locked**, so the
+ * `TemplateReferenceSection` (owned by `modules/templates`) for a property: the
+ * property is pre-seeded and **locked**, and the management company is pre-seeded
+ * and locked too when the property has one (null for an orphan property). The
  * operator only browses the property's templates and clicks a row to open it in
- * the template hub. Rendered only when the property has a linked management
- * company (the section's scope).
+ * the template hub. Always rendered — an orphan property simply shows its
+ * templates with the MC picker empty.
  */
 export function PropertyTemplatesSection({
   page,
@@ -18,13 +19,17 @@ export function PropertyTemplatesSection({
   property,
 }: {
   page: RecordDetailClientScaffoldContext
-  managementCompany: PropertyManagementCompany
+  managementCompany: PropertyManagementCompany | null
   property: { id: string; name: string }
 }) {
   return (
     <TemplateReferenceSection
       page={page}
-      managementCompany={{ id: managementCompany.id, label: managementCompany.name }}
+      managementCompany={
+        managementCompany
+          ? { id: managementCompany.id, label: managementCompany.name }
+          : null
+      }
       property={{ id: property.id, label: property.name }}
       managementCompanySelectable={false}
       propertySelectable={false}
