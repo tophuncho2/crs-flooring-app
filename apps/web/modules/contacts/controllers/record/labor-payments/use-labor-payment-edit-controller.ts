@@ -51,7 +51,8 @@ export function useLaborPaymentEditController({
   const [isSaving, setIsSaving] = useState(false)
 
   // Rebuild form/baseline/local when the open spec changes (previous-value
-  // tracking during render). A mutation's same-row refresh only clears error.
+  // tracking during render). An edit save refreshes form/baseline itself (see
+  // `save`), so the same-row refresh here only needs to clear error.
   const [trackedOpen, setTrackedOpen] = useState(open)
   if (trackedOpen !== open) {
     const isSameRowRefresh =
@@ -124,6 +125,10 @@ export function useLaborPaymentEditController({
           form,
           open.laborPayment.updatedAt,
         )
+        const next = buildEditForm(laborPayment)
+        setForm(next)
+        setBaseline(next)
+        setLocal(buildEditLocal(laborPayment))
         setOpen({ mode: "edit", laborPayment })
         publish()
       }
