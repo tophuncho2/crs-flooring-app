@@ -1,17 +1,40 @@
 "use client"
 
 import { useMemo } from "react"
+import {
+  CellAt,
+  FieldSection,
+  FormField,
+  PerUnitCell,
+  StaticFieldValue,
+  TextCell,
+} from "@/engines/record-view"
+import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
+import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
-import { type ProductCreateForm } from "@builders/domain"
-import { ProductDetailsGroup } from "./groups/product-details-group"
-import { ProductUnitsGroup } from "./groups/product-units-group"
+import {
+  formatEasternDateTime,
+  type ProductCreateForm,
+} from "@builders/domain"
+
+const PRODUCT_NOTE_MAX = 80
+
+function formatUnit(name: string | null | undefined, abbrev: string | null | undefined) {
+  if (!name) return "—"
+  return abbrev ? `${name} (${abbrev})` : name
+}
 
 /**
- * Composer for the products primary section. Renders two visual
- * groups in order — Details, Units — each with a tab-style header
- * matching the inventory / WO / template record view. The `draft` /
- * `onFieldChange` contract is unchanged from the prior 1/4 + 3/4
- * pane composition.
+ * Products primary section, on the canonical record-view invisible grid.
+ * One `FieldSection` (8-col `LayoutGrid`) places every cell with `CellAt`,
+ * mirroring `properties/.../property-fields-section.tsx`. The former
+ * Details / Units card groupings are gone — identity/spec fields and the
+ * read-only unit snapshots flow as one continuous grid.
+ *
+ * `categoryReadOnly` renders Category as a static value (immutable
+ * post-create; enforced at the type/validator/domain layers). `fieldsReadOnly`
+ * renders the remaining identity/spec cells (manufacturer, style, color, note)
+ * read-only too — set on the record view, left false on the create flow.
  */
 export function ProductPrimaryFieldsSection({
   product,
@@ -34,14 +57,7 @@ export function ProductPrimaryFieldsSection({
    */
   manufacturerName: string | null
   disabled: boolean
-  // When true, render the category cell as a static text display sourced from
-  // `product.category`. Use on the record view — category is immutable
-  // post-create and the lock is enforced at the type system, validator, and
-  // domain-rule layers; the UI mirrors that here.
   categoryReadOnly?: boolean
-  // When true, the identity/spec cells (manufacturer, style, color, note)
-  // render read-only. Set on the record view — products are immutable
-  // post-create; the create flow leaves this false so the form is editable.
   fieldsReadOnly?: boolean
   onFieldChange: (field: keyof ProductCreateForm, value: string) => void
 }) {
@@ -54,26 +70,129 @@ export function ProductPrimaryFieldsSection({
     return categoryOptions.find((category) => category.id === draft.categoryId) ?? null
   }, [categoryOptions, categoryReadOnly, draft.categoryId, product.category.id])
 
+  const editable = !disabled && !fieldsReadOnly
+
+  const stockUnitDisplay = categoryReadOnly
+    ? formatUnit(product.stockUnitName, product.stockUnitAbbrev)
+    : formatUnit(selectedCategory?.stockUnit, selectedCategory?.stockUnitAbbrev)
+  const sendUnitDisplay = categoryReadOnly
+    ? formatUnit(product.sendUnitName, product.sendUnitAbbrev)
+    : formatUnit(selectedCategory?.sendUnit, selectedCategory?.sendUnitAbbrev)
+  const coverageUnitAbbrev = categoryReadOnly
+    ? product.stockUnitAbbrev
+    : selectedCategory?.stockUnitAbbrev ?? ""
+
   return (
-    <div className="flex flex-col gap-4">
-      <ProductDetailsGroup
-        product={product}
-        draft={draft}
-        manufacturerName={manufacturerName}
-        selectedCategory={selectedCategory}
-        disabled={disabled}
-        categoryReadOnly={categoryReadOnly}
-        fieldsReadOnly={fieldsReadOnly}
-        onFieldChange={onFieldChange}
-      />
-      <ProductUnitsGroup
-        product={product}
-        draft={draft}
-        selectedCategory={selectedCategory}
-        categoryReadOnly={categoryReadOnly}
-        disabled={disabled}
-        onFieldChange={onFieldChange}
-      />
-    </div>
+    <FieldSection>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Category" required={!categoryReadOnly}>
+          {categoryReadOnly ? (
+            <StaticFieldValue>{product.category.name || "—"}</StaticFieldValue>
+          ) : (
+            <CategoryPicker
+              value={draft.categoryId || null}
+              onChange={(nextCategoryId) => {
+                onFieldChange("categoryId", nextCategoryId ?? "")
+              }}
+              selectedLabel={selectedCategory?.name ?? null}
+              disabled={disabled}
+              placeholder="Select a category"
+              ariaLabel="Category"
+            />
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={4}>
+        <FormField label="Manufacturer">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
+          ) : (
+            <ManufacturerPicker
+              value={draft.manufacturerId || null}
+              onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
+              selectedLabel={manufacturerName || null}
+              disabled={disabled}
+              placeholder="Select Manufacturer"
+              ariaLabel="Manufacturer"
+            />
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Style">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{draft.style || "—"}</StaticFieldValue>
+          ) : (
+            <TextCell
+              editable={editable}
+              value={draft.style}
+              onChange={(value) => onFieldChange("style", value)}
+            />
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={4}>
+        <FormField label="Color">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{draft.color || "—"}</StaticFieldValue>
+          ) : (
+            <TextCell
+              editable={editable}
+              value={draft.color}
+              onChange={(value) => onFieldChange("color", value)}
+            />
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={8}>
+        <FormField
+          label="Note"
+          currentLength={editable ? draft.note.length : undefined}
+          maxLength={editable ? PRODUCT_NOTE_MAX : undefined}
+        >
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{draft.note || "—"}</StaticFieldValue>
+          ) : (
+            <TextCell
+              editable={editable}
+              value={draft.note}
+              onChange={(value) => onFieldChange("note", value)}
+              maxLength={PRODUCT_NOTE_MAX}
+            />
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Stock Unit">
+          <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={4}>
+        <FormField label="Send Unit">
+          <StaticFieldValue>{sendUnitDisplay}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Coverage / Unit">
+          <PerUnitCell
+            editable={!disabled}
+            value={draft.coveragePerUnit}
+            onChange={(value) => onFieldChange("coveragePerUnit", value)}
+            unit={coverageUnitAbbrev}
+            currencyPrefix=""
+            ariaLabel="Coverage per unit"
+          />
+        </FormField>
+      </CellAt>
+      {product.createdAt ? (
+        <CellAt col={1} colSpan={4}>
+          <FormField label="Created">
+            <StaticFieldValue>
+              {formatEasternDateTime(product.createdAt) || "—"}
+            </StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
+    </FieldSection>
   )
 }
