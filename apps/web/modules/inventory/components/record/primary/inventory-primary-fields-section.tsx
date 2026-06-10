@@ -1,14 +1,22 @@
 "use client"
 
 import type { InventoryForm } from "@builders/domain"
-import { InventoryDetailsGroup } from "./groups/inventory-details-group"
+import { CellAt } from "@/engines/record-view"
+import {
+  InventoryFieldGrid,
+  InternalNotesField,
+  LocationField,
+  StatusField,
+  WarehouseStaticField,
+} from "../fields"
 
 /**
- * The inventory "cells" grid for the record view's primary section. A thin
- * wrapper over the shared {@link InventoryDetailsGroup} (the same component the
- * dormant hub used), driven by the primary controller's draft. Only Location,
- * Internal Notes, and the archive chip are editable; everything else renders
- * static. Analog of `ManagementCompanyCellsSection`.
+ * The inventory "cells" grid for the record view's primary section, built on the
+ * shared inventory field package (`../fields`) over the record-view engine.
+ * Only Location, Internal Notes, and the archive (Status) chip are editable;
+ * Warehouse renders static. Identity / derived fields are surfaced by the
+ * reference header row, not repeated here. Analog of
+ * `ManufacturerPrimaryFieldsSection`.
  */
 export function InventoryPrimaryFieldsSection({
   draft,
@@ -22,11 +30,31 @@ export function InventoryPrimaryFieldsSection({
   onFieldChange: (field: keyof InventoryForm, value: string | boolean) => void
 }) {
   return (
-    <InventoryDetailsGroup
-      editable={editable}
-      draft={draft}
-      warehouseName={warehouseName}
-      onFieldChange={onFieldChange}
-    />
+    <InventoryFieldGrid>
+      <CellAt col={1} colSpan={4}>
+        <LocationField
+          editable={editable}
+          value={draft.location}
+          onChange={(value) => onFieldChange("location", value)}
+        />
+      </CellAt>
+      <CellAt col={5} colSpan={4}>
+        <StatusField
+          editable={editable}
+          value={draft.isArchived}
+          onChange={(next) => onFieldChange("isArchived", next)}
+        />
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
+        <InternalNotesField
+          editable={editable}
+          value={draft.internalNotes}
+          onChange={(value) => onFieldChange("internalNotes", value)}
+        />
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
+        <WarehouseStaticField warehouseName={warehouseName} />
+      </CellAt>
+    </InventoryFieldGrid>
   )
 }
