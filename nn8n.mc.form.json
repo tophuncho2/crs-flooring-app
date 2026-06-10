@@ -1,0 +1,143 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Management Company / Property Intake",
+        "formDescription": "Fill in whatever applies. A management company can complete every section; a property can leave the company blank and just fill in its own details and materials. All fields are free text — nothing here is required.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "section-management-company",
+              "fieldType": "html",
+              "html": "<h3 class=\"crs-section crs-section-first\">Management Company</h3>"
+            },
+            {
+              "fieldLabel": "MC — Name",
+              "fieldType": "text",
+              "placeholder": "Management company name",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "MC — Street Address",
+              "fieldType": "text",
+              "placeholder": "Street address",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "MC — City",
+              "fieldType": "text",
+              "placeholder": "City",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "MC — State",
+              "fieldType": "text",
+              "placeholder": "State",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "MC — Postal Code",
+              "fieldType": "text",
+              "placeholder": "Postal code",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "MC — Phone",
+              "fieldType": "text",
+              "placeholder": "Phone",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "MC — Email",
+              "fieldType": "text",
+              "placeholder": "Email",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "section-property",
+              "fieldType": "html",
+              "html": "<h3 class=\"crs-section\">Property</h3>"
+            },
+            {
+              "fieldLabel": "Property — Name",
+              "fieldType": "text",
+              "placeholder": "Property name",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Property — Street Address",
+              "fieldType": "text",
+              "placeholder": "Street address",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Property — City",
+              "fieldType": "text",
+              "placeholder": "City",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Property — State",
+              "fieldType": "text",
+              "placeholder": "State",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Property — Postal Code",
+              "fieldType": "text",
+              "placeholder": "Postal code",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Property — Phone",
+              "fieldType": "text",
+              "placeholder": "Phone",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Property — Email",
+              "fieldType": "text",
+              "placeholder": "Email",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Property — Instructions",
+              "fieldType": "textarea",
+              "placeholder": "Access notes, special instructions, etc.",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "section-materials",
+              "fieldType": "html",
+              "html": "<h3 class=\"crs-section\">Materials</h3>"
+            },
+            {
+              "fieldLabel": "materials",
+              "fieldType": "html",
+              "html": "<div class=\"crs-materials\"><p class=\"crs-mat-help\">Add each product on its own row. Use “+ Add item” for as many as you need.</p><table class=\"crs-mat-table\"><thead><tr><th>Product</th><th>Qty</th><th>UOM</th><th>Notes</th><th></th></tr></thead><tbody id=\"crsMatBody\"></tbody></table><button type=\"button\" id=\"crsMatAdd\" class=\"crs-mat-add\">+ Add item</button><input type=\"hidden\" name=\"materialItems\" id=\"crsMaterialItems\"></div><script>(function(){var body=document.getElementById(\"crsMatBody\");var hidden=document.getElementById(\"crsMaterialItems\");function sync(){var data=[];body.querySelectorAll(\"tr\").forEach(function(r){var i=r.querySelectorAll(\"input\");var o={product:i[0].value.trim(),qty:i[1].value.trim(),uom:i[2].value.trim(),notes:i[3].value.trim()};if(o.product||o.qty||o.uom||o.notes){data.push(o);}});hidden.value=JSON.stringify(data);}function addRow(){var tr=document.createElement(\"tr\");[\"Product\",\"Qty\",\"UOM\",\"Notes\"].forEach(function(ph){var td=document.createElement(\"td\");var inp=document.createElement(\"input\");inp.type=\"text\";inp.placeholder=ph;inp.addEventListener(\"input\",sync);td.appendChild(inp);tr.appendChild(td);});var rtd=document.createElement(\"td\");var btn=document.createElement(\"button\");btn.type=\"button\";btn.className=\"crs-mat-rm\";btn.setAttribute(\"aria-label\",\"Remove row\");btn.textContent=\"×\";btn.addEventListener(\"click\",function(){tr.remove();sync();});rtd.appendChild(btn);tr.appendChild(rtd);body.appendChild(tr);sync();}document.getElementById(\"crsMatAdd\").addEventListener(\"click\",addRow);addRow();})();</script>"
+            }
+          ]
+        },
+        "options": {
+          "buttonLabel": "Submit request",
+          "formSubmittedText": "Thanks — your request has been received. Our team will review it and follow up.",
+          "customCss": ":root{--font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--color-primary:#1f6feb;--color-primary-shade-1:#1a5fce;--card-border-radius:12px;--input-border-color:#d5dae1;}body{background:#f4f6f9;}.crs-section{margin:22px 0 6px;font-size:15px;font-weight:700;color:#111827;border-top:1px solid #e5e7eb;padding-top:18px;}.crs-section-first{border-top:none;padding-top:0;margin-top:4px;}.crs-materials{margin-top:6px;}.crs-mat-help{margin:0 0 10px;font-size:13px;color:#6b7280;}.crs-mat-table{width:100%;border-collapse:collapse;font-size:14px;}.crs-mat-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;font-weight:600;padding:0 8px 6px 0;}.crs-mat-table td{padding:0 8px 8px 0;vertical-align:top;}.crs-mat-table td:last-child{padding-right:0;width:38px;}.crs-mat-table input{width:100%;padding:8px 10px;border:1px solid #d5dae1;border-radius:8px;font-size:14px;box-sizing:border-box;}.crs-mat-table input:focus{outline:none;border-color:#1f6feb;box-shadow:0 0 0 3px rgba(31,111,235,.15);}.crs-mat-rm{border:none;background:#f0f2f5;color:#6b7280;width:34px;height:36px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;}.crs-mat-rm:hover{background:#fde2e1;color:#c0392b;}.crs-mat-add{margin-top:6px;border:1px dashed #b6c0cc;background:#fff;color:#1f6feb;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;}.crs-mat-add:hover{background:#eef4ff;border-color:#1f6feb;}"
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0fa06681-b4c5-47ef-8223-9045e6e0213a",
+      "name": "On form submission",
+      "webhookId": "79b1a8ad-a03b-4e26-96db-516f915b2555"
+    }
+  ],
+  "connections": {},
+  "pinData": {},
+  "meta": {
+    "instanceId": "ab1ebb2f06b562a2a1bf0f487e242c65d274bcbe9377e1eb8a53f411404fcf5d"
+  }
+}
