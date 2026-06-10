@@ -25,7 +25,7 @@ export function LaborPaymentEditFormFields({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} colSpan={3}>
         <FormField label="Contact" required>
           <ContactPicker
             value={form.contactId || null}
