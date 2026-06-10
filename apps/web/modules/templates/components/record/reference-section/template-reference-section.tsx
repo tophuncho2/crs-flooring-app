@@ -3,10 +3,15 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   RecordReferenceHeader,
+  ReferenceHeaderAddButton,
   ReferenceHeaderClearButton,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import { buildCurrentRecordEntryPath, buildTemplateHubHref } from "@/hooks/navigation/routes"
+import {
+  buildCurrentRecordEntryPath,
+  buildRecordCreateHref,
+  buildTemplateHubHref,
+} from "@/hooks/navigation/routes"
 import { TemplateOptionsGrid } from "@/modules/templates/components/record/header/template-options-grid"
 import { useTemplateOptionsGrid } from "@/modules/templates/controllers/record/header/use-template-options-grid"
 import { useTemplateReferenceSection } from "@/modules/templates/controllers/record/use-template-reference-section"
@@ -71,21 +76,31 @@ export function TemplateReferenceSection({
     grid.reset()
   }
 
+  // "+ Template" just opens a fresh template create form — no scope seeding.
+  const openTemplateCreate = () => {
+    router.push(
+      buildRecordCreateHref("/dashboard/templates", {
+        returnTo: buildCurrentRecordEntryPath(pathname, searchParams),
+      }),
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <RecordReferenceHeader
         page={page}
         label="Template"
-        actions={
-          propertySelectable
-            ? () => (
-                <ReferenceHeaderClearButton
-                  disabled={cascade.propertyId === null}
-                  onClick={clearPropertyFilter}
-                />
-              )
-            : undefined
-        }
+        actions={() => (
+          <div className="flex items-center gap-2">
+            <ReferenceHeaderAddButton label="+ Template" onClick={openTemplateCreate} />
+            {propertySelectable ? (
+              <ReferenceHeaderClearButton
+                disabled={cascade.propertyId === null}
+                onClick={clearPropertyFilter}
+              />
+            ) : null}
+          </div>
+        )}
       >
         {() => (
           <TemplateOptionsGrid
