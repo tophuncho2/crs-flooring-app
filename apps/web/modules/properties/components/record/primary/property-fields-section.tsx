@@ -11,8 +11,7 @@ import { AddressEditCell, CellAt, FieldSection, FormField, TextCell, TextareaCel
  * along unchanged on save.
  *
  * Layout mirrors the MC cells grid: every field stacked one-per-row at col 1,
- * each spanning 2/8 columns (¼ width — reaching only a quarter of the way
- * across), with Email below Phone.
+ * each spanning 5/8 columns, with Email below Phone.
  */
 export function PropertyFieldsSection({
   draft,
@@ -34,7 +33,7 @@ export function PropertyFieldsSection({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={2}>
+      <CellAt col={1} colSpan={5}>
         <FormField label="Property Name" required>
           <TextCell
             editable={editable}
@@ -45,7 +44,7 @@ export function PropertyFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={2}>
+      <CellAt col={1} colSpan={5}>
         <FormField label="Phone">
           <TextCell
             editable={editable}
@@ -56,7 +55,7 @@ export function PropertyFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={2}>
+      <CellAt col={1} colSpan={5}>
         <FormField label="Email">
           <TextCell
             editable={editable}
@@ -69,7 +68,7 @@ export function PropertyFieldsSection({
       </CellAt>
       <AddressEditCell
         editable={editable}
-        colSpan={2}
+        colSpan={5}
         value={{
           streetAddress: draft.streetAddress,
           city: draft.city,
@@ -78,7 +77,7 @@ export function PropertyFieldsSection({
         }}
         onChange={(field, value) => onFieldChange(field, value)}
       />
-      <CellAt col={1} colSpan={2}>
+      <CellAt col={1} colSpan={5}>
         <FormField label="Instructions">
           <TextareaCell
             editable={editable}
