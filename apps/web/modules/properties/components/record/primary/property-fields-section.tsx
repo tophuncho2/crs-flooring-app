@@ -4,32 +4,41 @@ import type { PropertyPrimaryForm } from "@builders/domain"
 import { AddressEditCell, CellAt, FieldSection, FormField, TextCell, TextareaCell } from "@/engines/record-view"
 
 /**
- * The Property record view's editable §1 fields: name, contact, address, and
- * instructions. The linked management company is **not** editable here — it is
- * shown read-only above this block with a hand-off to the MC record view (see
- * `PropertyRecordView`) — so the draft's `managementCompanyId` simply rides
- * along unchanged on save.
+ * The text/address fields rendered by this section — the shared subset common
+ * to the property record view (`PropertyPrimaryForm`, which adds an unrendered
+ * `managementCompanyId` that rides along on save) and the management hub create
+ * form (`PropertyHubPropertyFields`). Both are assignable to this shape, so a
+ * single component serves both instead of two hand-mirrored copies.
+ */
+export type PropertyFieldsDraft = Pick<
+  PropertyPrimaryForm,
+  "name" | "streetAddress" | "city" | "state" | "zip" | "phone" | "email" | "instructions"
+>
+
+/**
+ * The editable property fields: name, contact, address, and instructions —
+ * shared by the property record view's §1 and the management hub create form's
+ * "Property" group. Chrome-free (just the field grid); each consumer supplies
+ * its own section shell. The linked/selected management company is handled
+ * outside this block, so the draft's `managementCompanyId` (record view) is
+ * left untouched here.
  *
- * Layout mirrors the MC cells grid: every field stacked one-per-row at col 1,
- * each spanning 5/8 columns, with Email below Phone.
+ * Layout: every field stacked one-per-row at col 1, each spanning 5/8 columns,
+ * with Email below Phone.
  */
 export function PropertyFieldsSection({
   draft,
   editable,
   onFieldChange,
+  ariaPrefix = "Property",
 }: {
-  draft: PropertyPrimaryForm
+  draft: PropertyFieldsDraft
   editable: boolean
-  onFieldChange: <K extends keyof PropertyPrimaryForm>(
-    field: K,
-    value: PropertyPrimaryForm[K],
-  ) => void
+  onFieldChange: (field: keyof PropertyFieldsDraft, value: string) => void
+  /** Prefix for the fields' aria-labels, e.g. "Property" → "Property phone". */
+  ariaPrefix?: string
 }) {
-  const onText =
-    <K extends keyof PropertyPrimaryForm>(field: K) =>
-    (value: string) => {
-      onFieldChange(field, value as PropertyPrimaryForm[K])
-    }
+  const onText = (field: keyof PropertyFieldsDraft) => (value: string) => onFieldChange(field, value)
 
   return (
     <FieldSection gap="0.75rem">
@@ -40,7 +49,7 @@ export function PropertyFieldsSection({
             value={draft.name}
             onChange={onText("name")}
             placeholder="Property name"
-            ariaLabel="Property name"
+            ariaLabel={`${ariaPrefix} name`}
           />
         </FormField>
       </CellAt>
@@ -51,7 +60,7 @@ export function PropertyFieldsSection({
             value={draft.phone}
             onChange={onText("phone")}
             placeholder="Phone"
-            ariaLabel="Phone"
+            ariaLabel={`${ariaPrefix} phone`}
           />
         </FormField>
       </CellAt>
@@ -62,13 +71,14 @@ export function PropertyFieldsSection({
             value={draft.email}
             onChange={onText("email")}
             placeholder="Email"
-            ariaLabel="Email"
+            ariaLabel={`${ariaPrefix} email`}
           />
         </FormField>
       </CellAt>
       <AddressEditCell
         editable={editable}
         colSpan={5}
+        ariaPrefix={ariaPrefix}
         value={{
           streetAddress: draft.streetAddress,
           city: draft.city,
@@ -84,7 +94,7 @@ export function PropertyFieldsSection({
             value={draft.instructions}
             onChange={onText("instructions")}
             placeholder="Instructions"
-            ariaLabel="Instructions"
+            ariaLabel={`${ariaPrefix} instructions`}
             rows={3}
           />
         </FormField>

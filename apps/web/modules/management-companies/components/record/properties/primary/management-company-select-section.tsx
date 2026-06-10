@@ -1,7 +1,7 @@
 "use client"
 
 import type { ManagementCompanyForm, ManagementCompanyOption } from "@builders/domain"
-import { FormField } from "@/engines/record-view"
+import { CellAt, FieldSection, FormField } from "@/engines/record-view"
 import { ActionHeader } from "@/engines/common"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
 import { ManagementCompanyCellsSection } from "@/modules/management-companies/components/record/primary/management-company-cells-section"
@@ -39,21 +39,25 @@ export function ManagementCompanySelectSection({
     <div className={SECTION_CARD_CLASS}>
       <ActionHeader title="Management Company" />
       <div className="space-y-4 p-4">
-        <FormField label="Link existing company" required>
-          <ManagementCompanyPicker
-            value={value.mcLinkId}
-            selectedLabel={value.mcLinkLabel}
-            disabled={disabled || mode === "create"}
-            placeholder="Link an existing company"
-            ariaLabel="Link existing management company"
-            onChange={(id) => {
-              if (!id) onLink(null)
-            }}
-            onOptionSelected={(option) => {
-              if (option) onLink(option)
-            }}
-          />
-        </FormField>
+        <FieldSection gap="0.75rem">
+          <CellAt col={1} colSpan={6}>
+            <FormField label="Link existing company" required>
+              <ManagementCompanyPicker
+                value={value.mcLinkId}
+                selectedLabel={value.mcLinkLabel}
+                disabled={disabled || mode === "create"}
+                placeholder="Link an existing company"
+                ariaLabel="Link existing management company"
+                onChange={(id) => {
+                  if (!id) onLink(null)
+                }}
+                onOptionSelected={(option) => {
+                  if (option) onLink(option)
+                }}
+              />
+            </FormField>
+          </CellAt>
+        </FieldSection>
 
         <p className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/55">
           or create new

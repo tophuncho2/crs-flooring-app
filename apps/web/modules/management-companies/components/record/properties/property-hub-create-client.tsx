@@ -9,8 +9,8 @@ import {
 import { EMPTY_MANAGEMENT_COMPANY_FORM } from "@builders/domain"
 import { ActionHeader } from "@/engines/common"
 import { usePropertyHubCreateSection } from "@/modules/management-companies/controllers/record/properties/use-property-hub-create-section"
+import { PropertyFieldsSection } from "@/modules/properties/components/record/primary/property-fields-section"
 import { ManagementCompanySelectSection } from "./primary/management-company-select-section"
-import { PropertyCreateFieldsSection } from "./primary/property-create-fields-section"
 
 const SECTION_CARD_CLASS =
   "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
@@ -74,9 +74,10 @@ function PropertyHubCreatePanel({
         <div className={SECTION_CARD_CLASS}>
           <ActionHeader title="Property" />
           <div className="p-4">
-            <PropertyCreateFieldsSection
+            <PropertyFieldsSection
               draft={primary.localValue.propertyForm}
               editable={editable}
+              ariaPrefix="Property"
               onFieldChange={(field, next) =>
                 primary.setLocalValue((prev) => ({
                   ...prev,
