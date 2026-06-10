@@ -3,7 +3,6 @@ import {
   INVENTORY_ADJUSTMENTS_LIST_MAX_PAGE_SIZE,
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   type EnrichedInventoryAdjustmentRow,
-  type FlooringInventoryAdjustmentStatus,
   type InventoryAdjustmentListFilters,
 } from "@builders/domain"
 import type { ListInput, ListOutput } from "../../../list-view/contracts.js"
@@ -33,9 +32,6 @@ export async function listAdjustmentsUseCase(
   const productId = normalizeIds(input.filters?.productId)
   const importNumber = normalizeIds(input.filters?.importNumber)
   const purchaseOrderNumber = normalizeIds(input.filters?.purchaseOrderNumber)
-  const status = normalizeIds(input.filters?.status) as
-    | ReadonlyArray<FlooringInventoryAdjustmentStatus>
-    | undefined
   const isArchived = input.filters?.isArchived
   const invNumber = input.filters?.invNumber?.trim() || undefined
   const rollNumber = input.filters?.rollNumber?.trim() || undefined
@@ -49,7 +45,6 @@ export async function listAdjustmentsUseCase(
       ...(productId ? { productId } : {}),
       ...(importNumber ? { importNumber } : {}),
       ...(purchaseOrderNumber ? { purchaseOrderNumber } : {}),
-      ...(status ? { status } : {}),
       ...(isArchived !== undefined ? { isArchived } : {}),
       ...(invNumber ? { invNumber } : {}),
       ...(rollNumber ? { rollNumber } : {}),

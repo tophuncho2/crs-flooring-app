@@ -69,8 +69,6 @@ export type InventoryAdjustmentListFilters = {
   // its own). "Show all adjustments of inventory rows from this PO#/import#."
   importNumber?: ReadonlyArray<string>
   purchaseOrderNumber?: ReadonlyArray<string>
-  // Adjustment lifecycle status — a direct match on the adjustment's own enum.
-  status?: ReadonlyArray<FlooringInventoryAdjustmentStatus>
   // Parent-inventory archive state, reached through the `inventory` relation
   // (`true` = archived only, `false` = active only, undefined = all).
   isArchived?: boolean

@@ -6,7 +6,6 @@ import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   type CategoryOption,
-  type FlooringInventoryAdjustmentStatus,
   type InventoryAdjustmentListFilters,
   type EnrichedInventoryAdjustmentRow,
   type ProductOption,
@@ -26,7 +25,6 @@ import {
   listAdjustmentsRequest,
 } from "@/modules/adjustments/data/list-adjustments-request"
 import { AdjustmentsTable } from "./adjustments-table"
-import { AdjustmentStatusSegmentedControl } from "./toolbar-controls/adjustment-status-segmented-control"
 
 const ADJUSTMENTS_FILTERABLE_FIELDS = [
   "warehouseId",
@@ -34,7 +32,6 @@ const ADJUSTMENTS_FILTERABLE_FIELDS = [
   "productId",
   "importNumber",
   "purchaseOrderNumber",
-  "status",
   "isArchived",
   "invNumber",
   "rollNumber",
@@ -54,7 +51,6 @@ type EngineAdjustmentFilters = {
   productId?: ReadonlyArray<string>
   importNumber?: ReadonlyArray<string>
   purchaseOrderNumber?: ReadonlyArray<string>
-  status?: ReadonlyArray<string>
   isArchived?: ReadonlyArray<string>
   invNumber?: ReadonlyArray<string>
   rollNumber?: ReadonlyArray<string>
@@ -69,7 +65,6 @@ function toEngineFilters(app: InventoryAdjustmentListFilters): EngineAdjustmentF
   if (app.productId?.length) out.productId = app.productId
   if (app.importNumber?.length) out.importNumber = app.importNumber
   if (app.purchaseOrderNumber?.length) out.purchaseOrderNumber = app.purchaseOrderNumber
-  if (app.status?.length) out.status = app.status
   if (app.isArchived !== undefined) out.isArchived = [app.isArchived ? "true" : "false"]
   if (app.invNumber && app.invNumber.length > 0) out.invNumber = [app.invNumber]
   if (app.rollNumber && app.rollNumber.length > 0) out.rollNumber = [app.rollNumber]
@@ -85,9 +80,6 @@ function toAppFilters(engine: EngineAdjustmentFilters): InventoryAdjustmentListF
   if (engine.productId?.length) out.productId = engine.productId
   if (engine.importNumber?.length) out.importNumber = engine.importNumber
   if (engine.purchaseOrderNumber?.length) out.purchaseOrderNumber = engine.purchaseOrderNumber
-  if (engine.status?.length) {
-    out.status = engine.status as InventoryAdjustmentListFilters["status"]
-  }
   const arch = engine.isArchived?.[0]
   if (arch === "true") out.isArchived = true
   else if (arch === "false") out.isArchived = false
@@ -170,8 +162,6 @@ export default function AdjustmentsClient({
   const selectedProductId = filters.productId?.[0] ?? null
   const selectedPurchaseOrderNumber = filters.purchaseOrderNumber?.[0] ?? null
   const selectedImportNumber = filters.importNumber?.[0] ?? null
-  const statusValue =
-    (filters.status?.[0] as FlooringInventoryAdjustmentStatus | undefined) ?? undefined
   const archivedRaw = filters.isArchived?.[0]
   const isArchivedValue =
     archivedRaw === "true" ? true : archivedRaw === "false" ? false : undefined
@@ -245,13 +235,6 @@ export default function AdjustmentsClient({
     [onFilterChange],
   )
 
-  const handleStatusChange = useCallback(
-    (next: FlooringInventoryAdjustmentStatus | undefined) => {
-      onFilterChange("status", next ? [next] : [])
-    },
-    [onFilterChange],
-  )
-
   const handleArchivedChange = useCallback(
     (next: boolean | undefined) => {
       onFilterChange("isArchived", next === undefined ? [] : [next ? "true" : "false"])
@@ -276,7 +259,6 @@ export default function AdjustmentsClient({
       Boolean(selectedProductId) ||
       Boolean(selectedPurchaseOrderNumber) ||
       Boolean(selectedImportNumber) ||
-      statusValue !== undefined ||
       isArchivedValue !== undefined ||
       Boolean(invNumberValue) ||
       Boolean(rollNumberValue) ||
@@ -288,7 +270,6 @@ export default function AdjustmentsClient({
       selectedProductId,
       selectedPurchaseOrderNumber,
       selectedImportNumber,
-      statusValue,
       isArchivedValue,
       invNumberValue,
       rollNumberValue,
@@ -414,17 +395,6 @@ export default function AdjustmentsClient({
                   ariaLabel="Filter adjustments by product"
                 />
               </div>
-            </ListToolbarCell>
-
-            {/* Adjustment lifecycle status — sits to the right of the
-                warehouse/category/product stack. */}
-            <ListToolbarCell className="self-start">
-              <ListToolbarTallCard label="Status">
-                <AdjustmentStatusSegmentedControl
-                  value={statusValue}
-                  onChange={handleStatusChange}
-                />
-              </ListToolbarTallCard>
             </ListToolbarCell>
           </ListToolbar>
         </div>

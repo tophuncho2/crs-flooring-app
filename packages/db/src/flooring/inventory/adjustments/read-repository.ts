@@ -373,12 +373,6 @@ export async function listAdjustmentsForListView(
     where.inventory = { is: inventoryWhere }
   }
 
-  // Adjustment lifecycle status — direct match on the adjustment row's enum.
-  const statuses = args.filters.status
-  if (statuses && statuses.length > 0) {
-    where.status = { in: [...statuses] }
-  }
-
   const skip = (args.page - 1) * args.pageSize
 
   const [rows, total] = await Promise.all([

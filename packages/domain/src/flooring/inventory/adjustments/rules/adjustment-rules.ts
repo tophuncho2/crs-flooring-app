@@ -1,18 +1,7 @@
 import { InventoryAdjustmentDomainError } from "../errors.js"
-import type {
-  FlooringInventoryAdjustmentStatus,
-  FlooringInventoryAdjustmentType,
-} from "../types.js"
+import type { FlooringInventoryAdjustmentType } from "../types.js"
 
 const ARITHMETIC_TOLERANCE = 0.005
-
-export function formatAdjustmentStatus(
-  status: FlooringInventoryAdjustmentStatus,
-): "Pending" | "Queued" | "Final" {
-  if (status === "QUEUED") return "Queued"
-  if (status === "FINAL") return "Final"
-  return "Pending"
-}
 
 export function assertBeforeAfterInvariant(input: {
   before: string
