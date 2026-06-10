@@ -5,13 +5,10 @@ import {
   adjustmentSign,
   formatAdjustmentTransition,
   type InventoryAdjustmentRow,
-  type FlooringInventoryAdjustmentStatus,
 } from "@builders/domain"
-import { AdjustmentStatusBadge } from "@/engines/common"
 import { CheckboxCell } from "@/engines/record-view"
 import { TextCell } from "@/engines/record-view"
 import { UnitCell } from "@/engines/record-view"
-import type { GridControlColumn } from "@/engines/record-view"
 import { formatAdjustmentTimestamp } from "./format-adjustment-timestamp"
 
 /**
@@ -64,8 +61,6 @@ export function renderAdjustmentReadOnlyCell(
     row: InventoryAdjustmentRow & { warehouseName?: string | null; workOrderNumber?: string | null },
   ): ReactNode {
     switch (column.key) {
-      case "status":
-        return <AdjustmentStatusBadge status={row.status as FlooringInventoryAdjustmentStatus} />
       case "inventoryItem":
         return (
           <TextCell
@@ -226,18 +221,4 @@ export function renderAdjustmentReadOnlyCell(
   }
 
   return renderReadOnlyCell
-}
-
-/**
- * Renderer for the canonical status-indicator trailing control. Inventory
- * sections (active + historical) and the WO section all share this — the
- * tone+label mapping previously lived inline as `statusTone()` /
- * `rowStatusTone()` / `rowStatusLabel()` in three places.
- */
-export function renderAdjustmentStatusControl(
-  control: GridControlColumn,
-  row: InventoryAdjustmentRow,
-): ReactNode {
-  if (control.kind !== "status-indicator") return null
-  return <AdjustmentStatusBadge status={row.status as FlooringInventoryAdjustmentStatus} />
 }

@@ -1,8 +1,7 @@
 // Canonical column definitions for adjustment grids. Single source of truth for
 // the metadata used by the inventory adjustment section and (independently) the
 // work-order adjustment section. Consumers pick the keys they need to build a
-// `GridLayout`. Status is a regular data column on every layout; rows that
-// flip PENDING → FINAL keep the same column count.
+// `GridLayout`.
 
 import type { GridColumn } from "@/engines/record-view"
 import type { GridLayout } from "@/engines/record-view"
@@ -13,7 +12,6 @@ import type { InventoryAdjustmentRow } from "@builders/domain"
  * they need into a `GridLayout.dataColumns` array.
  */
 export const ADJUSTMENT_COLUMN_DEFINITIONS = {
-  status: { key: "status", label: "Status", minWidth: 140, grow: 0, align: "center" },
   adjustmentType: { key: "adjustmentType", label: "Type", minWidth: 120, grow: 0, align: "center" },
   inventoryItem: { key: "inventoryItem", label: "Inventory Item", minWidth: 220, grow: 1.2 },
   productName: { key: "productName", label: "Product", minWidth: 200, grow: 1 },
@@ -55,7 +53,6 @@ export const ADJUSTMENT_COLUMN_DEFINITIONS = {
  */
 export const INVENTORY_ADJUSTMENT_LAYOUT: GridLayout<InventoryAdjustmentRow> = {
   dataColumns: [
-    ADJUSTMENT_COLUMN_DEFINITIONS.status,
     ADJUSTMENT_COLUMN_DEFINITIONS.quantity,
     ADJUSTMENT_COLUMN_DEFINITIONS.adjustment,
     ADJUSTMENT_COLUMN_DEFINITIONS.productName,

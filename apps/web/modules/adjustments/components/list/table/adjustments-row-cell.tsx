@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import { AdjustmentStatusBadge } from "@/engines/common"
 import {
   formatAdjustmentTransition,
   formatSignedAdjustmentQuantity,
@@ -10,9 +9,8 @@ import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/
 
 /**
  * Per-cell renderer for the adjustments ledger `DataTable`. Plain-span rendering
- * to match the sibling inventory list, reusing the shared status badge +
- * inventory quantity / roll-number formatters. Nullable adjustment snapshot
- * fields fall back to "-".
+ * to match the sibling inventory list, reusing the shared inventory quantity /
+ * roll-number formatters. Nullable adjustment snapshot fields fall back to "-".
  */
 export function renderAdjustmentsRowCell(
   column: DataTableColumn<EnrichedInventoryAdjustmentRow>,
@@ -21,8 +19,6 @@ export function renderAdjustmentsRowCell(
   switch (column.key) {
     case "adjustmentNumber":
       return <span className="font-medium">{row.adjustmentNumber}</span>
-    case "status":
-      return <AdjustmentStatusBadge status={row.status} />
     case "adjustmentType":
       return row.adjustmentType === "INCREASE" ? "Increase" : "Deduction"
     case "productName":

@@ -5,7 +5,6 @@ import {
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
 } from "@builders/domain"
-import { AdjustmentStatusBadge } from "@/engines/common"
 import { StatusBadge } from "@/engines/common"
 import { TextCell, ToggleCell, UnitCell } from "@/engines/record-view"
 import { SegmentedDropdown } from "@/engines/picker"
@@ -149,7 +148,6 @@ export function AdjustmentEditFormFields({
           >
             {adjustment.adjustmentType === "INCREASE" ? "Increase" : "Deduction"}
           </StatusBadge>
-          <AdjustmentStatusBadge size="md" status={adjustment.status} />
           <span className="ml-1">{wasteToggle}</span>
         </div>
       }

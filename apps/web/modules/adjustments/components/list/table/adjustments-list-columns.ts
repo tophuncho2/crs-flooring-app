@@ -3,11 +3,10 @@ import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 
 /**
  * Column definitions for the adjustments ledger `DataTable`. Order is the visual
- * left-to-right order. Status + Waste are shown as data columns (the ledger
- * surfaces them) but are not filterable — warehouse is the only toolbar filter.
+ * left-to-right order. Waste is shown as a data column (the ledger surfaces it)
+ * but is not filterable — warehouse is the only toolbar filter.
  */
 export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInventoryAdjustmentRow>> = [
-  { key: "status", label: "Status" },
   { key: "quantity", label: "Quantity", align: "end" },
   { key: "adjustment", label: "Adjustment" },
   { key: "productName", label: "Product" },

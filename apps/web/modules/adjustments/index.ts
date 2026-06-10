@@ -11,7 +11,6 @@ export {
   INVENTORY_ADJUSTMENT_LAYOUT,
   formatAdjustmentTimestamp,
   renderAdjustmentReadOnlyCell,
-  renderAdjustmentStatusControl,
   type AdjustmentReadOnlyRenderOptions,
 } from "./components/row"
 export {
