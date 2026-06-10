@@ -27,35 +27,47 @@ export function ContactPrimaryFieldsSection({
     <FieldSection gap="0.75rem">
       <CellAt col={1} colSpan={8}>
         <FormField label="Name" required>
-          <TextCell
-            editable={editable}
-            value={draft.name}
-            onChange={(next) => onFieldChange("name", next)}
-            placeholder="Contact name"
-            ariaLabel="Contact name"
-          />
+          {editable ? (
+            <TextCell
+              editable
+              value={draft.name}
+              onChange={(next) => onFieldChange("name", next)}
+              placeholder="Contact name"
+              ariaLabel="Contact name"
+            />
+          ) : (
+            <StaticFieldValue>{draft.name || "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={4}>
         <FormField label="Phone">
-          <TextCell
-            editable={editable}
-            value={draft.phone}
-            onChange={(next) => onFieldChange("phone", next)}
-            placeholder="Phone"
-            ariaLabel="Contact phone"
-          />
+          {editable ? (
+            <TextCell
+              editable
+              value={draft.phone}
+              onChange={(next) => onFieldChange("phone", next)}
+              placeholder="Phone"
+              ariaLabel="Contact phone"
+            />
+          ) : (
+            <StaticFieldValue>{draft.phone || "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       <CellAt col={5} colSpan={4}>
         <FormField label="Email">
-          <TextCell
-            editable={editable}
-            value={draft.email}
-            onChange={(next) => onFieldChange("email", next)}
-            placeholder="Email"
-            ariaLabel="Contact email"
-          />
+          {editable ? (
+            <TextCell
+              editable
+              value={draft.email}
+              onChange={(next) => onFieldChange("email", next)}
+              placeholder="Email"
+              ariaLabel="Contact email"
+            />
+          ) : (
+            <StaticFieldValue>{draft.email || "—"}</StaticFieldValue>
+          )}
         </FormField>
       </CellAt>
       {showTimestamps ? (
