@@ -26,12 +26,19 @@ import { renderTemplateRowCell } from "../../list/table/templates-row-cell"
 export function TemplateOptionsGrid({
   cascade,
   grid,
+  hideManagementCompanyPicker = false,
   onSelectManagementCompany,
   onSelectProperty,
   onSelectTemplate,
 }: {
   cascade: CascadePickerController
   grid: TemplateOptionsGridController
+  /**
+   * Hide the MC scope picker — used when the host already fixes the management
+   * company (the MC record view), so only the Property picker is shown. The MC
+   * still rides in the cascade as a filter; it just isn't user-selectable.
+   */
+  hideManagementCompanyPicker?: boolean
   onSelectManagementCompany: (option: ManagementCompanyOption | null) => void
   onSelectProperty: (option: PropertyOption | null) => void
   onSelectTemplate: (row: TemplateListRow) => void
@@ -39,15 +46,17 @@ export function TemplateOptionsGrid({
   return (
     <div className="flex flex-col gap-3">
       {/* Scope pickers: management company + property. Both narrow the list. */}
-      <div className="grid gap-2 sm:grid-cols-2">
-        <ManagementCompanyPicker
-          value={cascade.managementCompanyId}
-          selectedLabel={cascade.managementCompanyLabel}
-          onChange={() => {}}
-          onOptionSelected={onSelectManagementCompany}
-          placeholder="Select company"
-          ariaLabel="Select management company"
-        />
+      <div className={hideManagementCompanyPicker ? undefined : "grid gap-2 sm:grid-cols-2"}>
+        {hideManagementCompanyPicker ? null : (
+          <ManagementCompanyPicker
+            value={cascade.managementCompanyId}
+            selectedLabel={cascade.managementCompanyLabel}
+            onChange={() => {}}
+            onOptionSelected={onSelectManagementCompany}
+            placeholder="Select company"
+            ariaLabel="Select management company"
+          />
+        )}
         <PropertyPicker
           value={cascade.propertyId}
           selectedLabel={cascade.propertyLabel}

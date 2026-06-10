@@ -26,6 +26,7 @@ export function TemplateRecordHeader({
   grid,
   templateDetail,
   expanded,
+  hideManagementCompanyPicker = false,
   onReselect,
   onSelectManagementCompany,
   onSelectProperty,
@@ -35,6 +36,8 @@ export function TemplateRecordHeader({
   grid: TemplateOptionsGridController
   templateDetail: TemplateDetail | null
   expanded: boolean
+  /** Hide the MC scope picker (host already fixes the company). */
+  hideManagementCompanyPicker?: boolean
   onReselect: () => void
   onSelectManagementCompany: (option: ManagementCompanyOption | null) => void
   onSelectProperty: (option: PropertyOption | null) => void
@@ -45,6 +48,7 @@ export function TemplateRecordHeader({
       <TemplateOptionsGrid
         cascade={cascade}
         grid={grid}
+        hideManagementCompanyPicker={hideManagementCompanyPicker}
         onSelectManagementCompany={onSelectManagementCompany}
         onSelectProperty={onSelectProperty}
         onSelectTemplate={onSelectTemplate}

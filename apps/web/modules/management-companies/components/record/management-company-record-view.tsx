@@ -15,7 +15,7 @@ import { ConfirmDialog } from "@/engines/record-view"
 import { PropertyCreateView } from "./properties/property-create-view"
 import { PropertyRecordView } from "./properties/property-record-view"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
-import { TemplatesSectionList } from "@/modules/templates/components/record/templates-section-list"
+import { TemplateReferenceSection } from "./templates/template-reference-section"
 import { useMcPrimarySection } from "@/modules/management-companies/controllers/record/primary/use-mc-primary-section"
 import { ManagementCompanyCellsSection } from "./management-company-cells-section"
 
@@ -157,9 +157,15 @@ export function ManagementCompanyRecordView({
       order: 20,
       // Hidden while a property is drilled in — the embedded property view
       // renders its own (property-scoped) templates section, so showing the
-      // MC-wide list too would duplicate it.
+      // MC-wide reference header too would duplicate it.
       visibleWhen: () => selectedPropertyId === null,
-      render: () => <TemplatesSectionList filters={{ managementCompanyId: [entry.id] }} />,
+      render: (ctx) => (
+        <TemplateReferenceSection
+          page={ctx.page}
+          managementCompanyId={entry.id}
+          managementCompanyLabel={entry.name}
+        />
+      ),
     },
   ]
 
