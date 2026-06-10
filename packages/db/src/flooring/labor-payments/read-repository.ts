@@ -4,6 +4,7 @@ import {
   normalizeLaborPayment,
   type LaborPayment,
   type LaborPaymentListRow,
+  type LaborPaymentPage,
 } from "@builders/domain"
 
 type LaborPaymentsDbClient = PrismaClient | Prisma.TransactionClient
@@ -61,4 +62,36 @@ export async function getLaborPaymentById(
 
 export async function countLaborPayments(client: LaborPaymentsDbClient = db): Promise<number> {
   return client.flooringLaborPayment.count()
+}
+
+export type LaborPaymentsForContactPageOptions = {
+  contactId: string
+  skip: number
+  take: number
+}
+
+/**
+ * Paginated read of one contact's labor payments. Powers the contact record
+ * view's labor-payments section. Fetches `take + 1` to report `hasMore` without
+ * a separate count query. Mirrors `listInventoryAdjustmentsPage`.
+ */
+export async function listLaborPaymentsForContactPage(
+  options: LaborPaymentsForContactPageOptions,
+  client: LaborPaymentsDbClient = db,
+): Promise<LaborPaymentPage> {
+  const rows = await client.flooringLaborPayment.findMany({
+    where: { contactId: options.contactId },
+    include: laborPaymentInclude,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: options.skip,
+    take: options.take + 1,
+  })
+
+  const hasMore = rows.length > options.take
+  const page = hasMore ? rows.slice(0, options.take) : rows
+
+  return {
+    rows: page.map(normalizeLaborPayment),
+    hasMore,
+  }
 }

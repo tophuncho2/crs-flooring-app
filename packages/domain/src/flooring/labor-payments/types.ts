@@ -11,6 +11,11 @@ export type LaborPayment = {
 
 export type LaborPaymentListRow = LaborPayment
 
+export type LaborPaymentPage = {
+  rows: LaborPaymentListRow[]
+  hasMore: boolean
+}
+
 export type LaborPaymentForm = {
   contactId: string
   unit: string

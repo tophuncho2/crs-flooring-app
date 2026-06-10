@@ -13,7 +13,7 @@ import {
 } from "@/modules/labor-payments/data/list-labor-payments-request"
 import { useLaborPaymentsListController } from "@/modules/labor-payments/controllers/list/use-labor-payments-list-controller"
 import { LaborPaymentsTable } from "./labor-payments-table"
-import { AddLaborPaymentButton } from "./toolbar-controls/add-labor-payment-button"
+import { LaborPaymentCreateEntry } from "./toolbar-controls/labor-payment-create-entry"
 import { LaborPaymentsListSearch } from "./toolbar-controls/labor-payments-list-search"
 import { LaborPaymentsClearAll } from "./toolbar-controls/sub-controls/labor-payments-clear-all"
 import { LaborPaymentsRowCount } from "./toolbar-controls/sub-controls/labor-payments-row-count"
@@ -31,7 +31,7 @@ export default function LaborPaymentsClient({
   initialPage,
   initialFilters,
 }: LaborPaymentsClientProps) {
-  const { message, pageError, openCreate, openLaborPayment } = useLaborPaymentsListController()
+  const { message, pageError, openCreateForContact, openLaborPayment } = useLaborPaymentsListController()
 
   const {
     rows,
@@ -111,7 +111,7 @@ export default function LaborPaymentsClient({
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">
-              <AddLaborPaymentButton onClick={() => openCreate()} />
+              <LaborPaymentCreateEntry onPick={openCreateForContact} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
@@ -119,7 +119,7 @@ export default function LaborPaymentsClient({
 
       <LaborPaymentsTable
         rows={rows}
-        onOpenLaborPayment={(row) => openLaborPayment(row.id)}
+        onOpenLaborPayment={(row) => openLaborPayment(row)}
         pagination={
           <PaginateControls
             page={page}
