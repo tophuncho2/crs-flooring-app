@@ -434,15 +434,30 @@ model FlooringJobType {
 }
 
 model FlooringContact {
-  id        String   @id @default(uuid())
-  name      String
-  phone     String?
-  email     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String                 @id @default(uuid())
+  name          String
+  phone         String?
+  email         String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  laborPayments FlooringLaborPayment[]
 
   @@index([name])
   @@map("flooring_contact")
+}
+
+model FlooringLaborPayment {
+  id          String          @id @default(uuid())
+  contactId   String
+  contact     FlooringContact @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  unit        String?
+  description String?
+  cost        Decimal?        @db.Decimal(12, 2)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([contactId])
+  @@map("flooring_labor_payment")
 }
 
 model FlooringTemplate {

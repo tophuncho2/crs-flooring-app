@@ -2,8 +2,10 @@ import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeContact,
+  normalizeContactOption,
   type Contact,
   type ContactListRow,
+  type ContactOption,
 } from "@builders/domain"
 
 type ContactsDbClient = PrismaClient | Prisma.TransactionClient
@@ -55,4 +57,26 @@ export async function getContactById(
 
 export async function countContacts(client: ContactsDbClient = db): Promise<number> {
   return client.flooringContact.count()
+}
+
+export type ContactOptionsSearchArgs = {
+  search?: string
+  take: number
+}
+
+export async function searchContactOptions(
+  args: ContactOptionsSearchArgs,
+  client: ContactsDbClient = db,
+): Promise<ContactOption[]> {
+  const where = args.search
+    ? { name: { contains: args.search, mode: "insensitive" as const } }
+    : undefined
+
+  const contacts = await client.flooringContact.findMany({
+    where,
+    orderBy: { name: "asc" },
+    take: args.take,
+    select: { id: true, name: true },
+  })
+  return contacts.map(normalizeContactOption)
 }

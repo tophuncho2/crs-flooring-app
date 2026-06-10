@@ -1,4 +1,4 @@
-import type { Contact } from "./types.js"
+import type { Contact, ContactOption } from "./types.js"
 
 type ContactInput = {
   id: string
@@ -18,4 +18,8 @@ export function normalizeContact(contact: ContactInput): Contact {
     createdAt: contact.createdAt instanceof Date ? contact.createdAt.toISOString() : contact.createdAt,
     updatedAt: contact.updatedAt instanceof Date ? contact.updatedAt.toISOString() : contact.updatedAt,
   }
+}
+
+export function normalizeContactOption(contact: { id: string; name: string }): ContactOption {
+  return { id: contact.id, name: contact.name }
 }

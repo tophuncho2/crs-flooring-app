@@ -93,3 +93,59 @@ export function validateListContactsQuery(
     pageSize: parsed.pageSize,
   }
 }
+
+// --- Options query validator (powers the contacts picker) ---
+
+const OPTIONS_DEFAULT_TAKE = 20
+const OPTIONS_MAX_TAKE = 50
+
+const contactOptionsQuerySchema = z.object({
+  search: z.string().optional(),
+  take: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(OPTIONS_MAX_TAKE)
+    .default(OPTIONS_DEFAULT_TAKE),
+})
+
+export type ValidatedContactOptionsQuery = {
+  search?: string
+  take: number
+}
+
+export class ContactOptionsValidationError extends Error {
+  readonly status = 400
+  readonly field: string | undefined
+
+  constructor(message: string, field?: string) {
+    super(message)
+    this.name = "ContactOptionsValidationError"
+    this.field = field
+  }
+}
+
+export function validateContactOptionsQuery(
+  searchParams: URLSearchParams,
+): ValidatedContactOptionsQuery {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = contactOptionsQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    throw new ContactOptionsValidationError(
+      issue?.message ?? "Invalid contact options query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmed = parsed.search?.trim()
+  return {
+    search: trimmed ? trimmed : undefined,
+    take: parsed.take,
+  }
+}

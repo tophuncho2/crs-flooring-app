@@ -9,6 +9,11 @@ export type Contact = {
 
 export type ContactListRow = Contact
 
+export type ContactOption = {
+  id: string
+  name: string
+}
+
 export type ContactForm = {
   name: string
   phone: string
