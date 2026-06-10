@@ -25,7 +25,7 @@ export function LaborPaymentEditFormFields({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <FormField label="Contact" required>
           <ContactPicker
             value={form.contactId || null}
@@ -40,6 +40,16 @@ export function LaborPaymentEditFormFields({
           />
         </FormField>
       </CellAt>
+      <CellAt col={5} colSpan={1}>
+        <FormField label="Cost">
+          <MoneyCell
+            editable={editable}
+            value={form.cost}
+            onChange={(next) => setField("cost", next)}
+            ariaLabel="Cost"
+          />
+        </FormField>
+      </CellAt>
       <CellAt col={1} colSpan={4}>
         <FormField label="Unit">
           <TextCell
@@ -51,17 +61,7 @@ export function LaborPaymentEditFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={4}>
-        <FormField label="Cost">
-          <MoneyCell
-            editable={editable}
-            value={form.cost}
-            onChange={(next) => setField("cost", next)}
-            ariaLabel="Cost"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <FormField label="Description">
           <TextCell
             editable={editable}
@@ -79,7 +79,7 @@ export function LaborPaymentEditFormFields({
               <StaticFieldValue>{formatEasternDateTime(laborPayment.createdAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={5} colSpan={4}>
+          <CellAt col={1} colSpan={4}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(laborPayment.updatedAt) || "—"}</StaticFieldValue>
             </FormField>
