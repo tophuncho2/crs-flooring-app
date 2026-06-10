@@ -58,8 +58,8 @@ function CellTextField({
  * (title / save chrome) is supplied by the consumer.
  *
  * Layout: Company Name · Phone · Email · Address stacked one-per-row, each
- * spanning 6/8 columns (¾ width — a quarter narrower than the old full-width
- * address cell, which is now likewise 6/8).
+ * spanning 2/8 columns (¼ width — reaching only a quarter of the way across,
+ * address cell included).
  */
 export function ManagementCompanyCellsSection({
   form,
@@ -81,7 +81,7 @@ export function ManagementCompanyCellsSection({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={6}>
+      <CellAt col={1} colSpan={2}>
         <CellTextField
           label="Company Name"
           required
@@ -92,7 +92,7 @@ export function ManagementCompanyCellsSection({
           ariaLabel="Company name"
         />
       </CellAt>
-      <CellAt col={1} colSpan={6}>
+      <CellAt col={1} colSpan={2}>
         <CellTextField
           label="Phone"
           editable={editable}
@@ -102,7 +102,7 @@ export function ManagementCompanyCellsSection({
           ariaLabel="Phone"
         />
       </CellAt>
-      <CellAt col={1} colSpan={6}>
+      <CellAt col={1} colSpan={2}>
         <CellTextField
           label="Email"
           editable={editable}
@@ -114,7 +114,7 @@ export function ManagementCompanyCellsSection({
       </CellAt>
       <AddressEditCell
         editable={editable}
-        colSpan={6}
+        colSpan={2}
         value={{
           streetAddress: form.streetAddress,
           city: form.city,
