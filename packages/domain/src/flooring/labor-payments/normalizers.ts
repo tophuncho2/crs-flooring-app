@@ -5,6 +5,8 @@ type LaborPaymentInput = {
   id: string
   contactId: string
   contact: { name: string } | null
+  workOrderId: string | null
+  workOrder: { workOrderNumber: string } | null
   unit: string | null
   description: string | null
   cost: { toString(): string } | null
@@ -17,6 +19,8 @@ export function normalizeLaborPayment(laborPayment: LaborPaymentInput): LaborPay
     id: laborPayment.id,
     contactId: laborPayment.contactId,
     contactName: laborPayment.contact?.name ?? "",
+    workOrderId: laborPayment.workOrderId ?? "",
+    workOrderNumber: laborPayment.workOrder?.workOrderNumber ?? "",
     unit: laborPayment.unit ?? "",
     description: laborPayment.description ?? "",
     cost: laborPayment.cost == null ? "" : normalizeMoneyAmount(laborPayment.cost.toString()),

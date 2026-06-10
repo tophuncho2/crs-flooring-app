@@ -11,6 +11,7 @@ type LaborPaymentsDbClient = PrismaClient | Prisma.TransactionClient
 
 const laborPaymentInclude = {
   contact: { select: { name: true } },
+  workOrder: { select: { workOrderNumber: true } },
 } satisfies Prisma.FlooringLaborPaymentInclude
 
 export type LaborPaymentListViewOptions = {

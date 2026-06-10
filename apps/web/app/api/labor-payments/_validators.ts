@@ -61,6 +61,7 @@ export function validateCreateLaborPaymentInput(
 ): CreateLaborPaymentUseCaseInput {
   return {
     contactId: requireString(body.contactId, "contactId"),
+    workOrderId: optionalString(body.workOrderId, "workOrderId"),
     unit: optionalString(body.unit, "unit"),
     description: optionalString(body.description, "description"),
     cost: optionalCost(body.cost, "cost"),
@@ -72,6 +73,7 @@ export function validateUpdateLaborPaymentInput(
 ): UpdateLaborPaymentUseCaseInput {
   const input: UpdateLaborPaymentUseCaseInput = {}
   if ("contactId" in body) input.contactId = requireString(body.contactId, "contactId")
+  if ("workOrderId" in body) input.workOrderId = optionalString(body.workOrderId, "workOrderId")
   if ("unit" in body) input.unit = optionalString(body.unit, "unit")
   if ("description" in body) input.description = optionalString(body.description, "description")
   if ("cost" in body) input.cost = optionalCost(body.cost, "cost")

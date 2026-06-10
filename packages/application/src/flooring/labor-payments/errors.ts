@@ -2,6 +2,7 @@ export type LaborPaymentErrorCode =
   | "LABOR_PAYMENT_VALIDATION_FAILED"
   | "LABOR_PAYMENT_NOT_FOUND"
   | "LABOR_PAYMENT_CONTACT_NOT_FOUND"
+  | "LABOR_PAYMENT_WORK_ORDER_NOT_FOUND"
 
 export class LaborPaymentExecutionError extends Error {
   readonly code: LaborPaymentErrorCode

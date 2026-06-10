@@ -2,6 +2,8 @@ export type LaborPayment = {
   id: string
   contactId: string
   contactName: string
+  workOrderId: string
+  workOrderNumber: string
   unit: string
   description: string
   cost: string
@@ -18,6 +20,7 @@ export type LaborPaymentPage = {
 
 export type LaborPaymentForm = {
   contactId: string
+  workOrderId: string
   unit: string
   description: string
   cost: string
@@ -25,6 +28,7 @@ export type LaborPaymentForm = {
 
 export const EMPTY_LABOR_PAYMENT_FORM: LaborPaymentForm = {
   contactId: "",
+  workOrderId: "",
   unit: "",
   description: "",
   cost: "",
@@ -33,6 +37,7 @@ export const EMPTY_LABOR_PAYMENT_FORM: LaborPaymentForm = {
 export function toLaborPaymentForm(laborPayment: LaborPayment): LaborPaymentForm {
   return {
     contactId: laborPayment.contactId,
+    workOrderId: laborPayment.workOrderId,
     unit: laborPayment.unit,
     description: laborPayment.description,
     cost: laborPayment.cost,

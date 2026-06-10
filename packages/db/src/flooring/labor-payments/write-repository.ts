@@ -6,10 +6,12 @@ type LaborPaymentsDbClient = PrismaClient | Prisma.TransactionClient
 
 const laborPaymentInclude = {
   contact: { select: { name: true } },
+  workOrder: { select: { workOrderNumber: true } },
 } satisfies Prisma.FlooringLaborPaymentInclude
 
 export type CreateLaborPaymentRecordInput = {
   contactId: string
+  workOrderId?: string
   unit?: string
   description?: string
   cost?: string
@@ -29,6 +31,12 @@ function optionalDecimal(value: string | undefined): string | null | undefined {
   return normalized ? normalized : null
 }
 
+function optionalId(value: string | undefined): string | null | undefined {
+  if (value === undefined) return undefined
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
 export async function createLaborPaymentRecord(
   input: CreateLaborPaymentRecordInput,
   client: LaborPaymentsDbClient = db,
@@ -36,6 +44,7 @@ export async function createLaborPaymentRecord(
   const laborPayment = await client.flooringLaborPayment.create({
     data: {
       contactId: input.contactId,
+      workOrderId: optionalId(input.workOrderId) ?? null,
       unit: optionalText(input.unit) ?? null,
       description: optionalText(input.description) ?? null,
       cost: optionalDecimal(input.cost) ?? null,
@@ -53,6 +62,11 @@ export async function updateLaborPaymentRecord(
   const data: Prisma.FlooringLaborPaymentUpdateInput = {}
   if (input.contactId !== undefined) {
     data.contact = { connect: { id: input.contactId } }
+  }
+  if (input.workOrderId !== undefined) {
+    data.workOrder = input.workOrderId.trim()
+      ? { connect: { id: input.workOrderId } }
+      : { disconnect: true }
   }
   if (input.unit !== undefined) data.unit = optionalText(input.unit)
   if (input.description !== undefined) data.description = optionalText(input.description)

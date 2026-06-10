@@ -2,6 +2,7 @@ import { Prisma, createLaborPaymentRecord, withDatabaseTransaction } from "@buil
 import {
   LABOR_PAYMENT_CONTACT_NOT_FOUND_MESSAGE,
   LABOR_PAYMENT_CONTACT_REQUIRED_MESSAGE,
+  LABOR_PAYMENT_WORK_ORDER_NOT_FOUND_MESSAGE,
 } from "@builders/domain"
 import { LaborPaymentExecutionError } from "./errors.js"
 import type {
@@ -29,6 +30,15 @@ export async function createLaborPaymentUseCase(
       return await createLaborPaymentRecord(input, c)
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        const fieldName = String(error.meta?.field_name ?? "")
+        if (fieldName.toLowerCase().includes("workorder")) {
+          throw new LaborPaymentExecutionError({
+            code: "LABOR_PAYMENT_WORK_ORDER_NOT_FOUND",
+            message: LABOR_PAYMENT_WORK_ORDER_NOT_FOUND_MESSAGE,
+            status: 404,
+            field: "workOrderId",
+          })
+        }
         throw new LaborPaymentExecutionError({
           code: "LABOR_PAYMENT_CONTACT_NOT_FOUND",
           message: LABOR_PAYMENT_CONTACT_NOT_FOUND_MESSAGE,
