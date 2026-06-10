@@ -4,7 +4,7 @@ import type { ManagementCompanyForm } from "@builders/domain"
 import { CellAt } from "@/engines/record-view"
 import { FieldSection, FormField } from "@/engines/record-view"
 import { TextCell } from "@/engines/record-view"
-import { AddressEditCell } from "./address-edit-cell"
+import { AddressEditCell } from "../address-edit-cell"
 
 /**
  * The Management Company "cells" field grid — the shared §1 layout that renders

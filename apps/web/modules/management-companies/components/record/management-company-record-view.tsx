@@ -17,7 +17,7 @@ import { PropertyRecordView } from "./properties/property-record-view"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
 import { TemplateReferenceSection } from "./templates/template-reference-section"
 import { useMcPrimarySection } from "@/modules/management-companies/controllers/record/primary/use-mc-primary-section"
-import { ManagementCompanyCellsSection } from "./management-company-cells-section"
+import { ManagementCompanyCellsSection } from "./primary/management-company-cells-section"
 
 /**
  * The Management Company record view. ① editable MC cells (primary) · ②

@@ -5,12 +5,12 @@ import {
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/use-template-primary-section"
-import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/record/use-template-material-items-section"
+import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/primary/use-template-primary-section"
+import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/record/material-items/use-template-material-items-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
 import type { TemplateDetail, TemplateForm } from "@builders/domain"
-import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
-import { TemplateMaterialItemsSection } from "./template-material-items-section"
+import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
+import { TemplateMaterialItemsSection } from "./material-items/template-material-items-section"
 import { TemplateRecordFooter } from "./footer"
 
 export function TemplateRecordPanel({

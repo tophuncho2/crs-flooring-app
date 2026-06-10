@@ -9,7 +9,7 @@ import {
 } from "@/engines/record-view"
 import { PropertyRecordView } from "./properties/property-record-view"
 import { useMcCreateSection } from "@/modules/management-companies/controllers/record/primary/use-mc-create-section"
-import { ManagementCompanyCellsSection } from "./management-company-cells-section"
+import { ManagementCompanyCellsSection } from "./primary/management-company-cells-section"
 
 /**
  * The Management Company **create** view, reached when a property without an MC

@@ -9,7 +9,7 @@ import {
 import { buildTemplateHubHref } from "@/hooks/navigation"
 import { createTemplateRequest } from "@/modules/templates/data/mutations"
 import { EMPTY_TEMPLATE_FORM, type TemplateForm } from "@builders/domain"
-import { TemplatePrimaryFieldsSection } from "./template-primary-fields-section"
+import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
 import { TemplateRecordFooter } from "./footer"
 
 function TemplateCreatePanel({

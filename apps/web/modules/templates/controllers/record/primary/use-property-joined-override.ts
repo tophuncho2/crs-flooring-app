@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react"
 import type { PropertyJoinedFields } from "@/engines/record-view"
 import type { PropertyOption } from "@builders/domain"
-import type { TemplatePrimaryDetail } from "./template-primary-fields-section"
+import type { TemplatePrimaryDetail } from "@/modules/templates/components/record/primary/template-primary-fields-section"
 
 function detailToPropertyJoined(
   detail: TemplatePrimaryDetail | null,

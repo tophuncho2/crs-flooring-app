@@ -6,7 +6,7 @@ import { NumberCell, RowActionButton, TextCell } from "@/engines/record-view"
 import { Grid, GridEmpty, type GridLayout } from "@/engines/record-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { type ProductOption, TEMPLATE_MATERIAL_ITEM_NOTES_MAX } from "@builders/domain"
-import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/record/use-template-material-items-section"
+import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/record/material-items/use-template-material-items-section"
 
 const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
   leadingControls: [{ key: "remove", kind: "actions", width: 56 }],

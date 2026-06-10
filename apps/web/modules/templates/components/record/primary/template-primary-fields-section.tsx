@@ -4,7 +4,7 @@ import type { TemplateForm } from "@builders/domain"
 import { TemplateJobGroup } from "./groups/template-job-group"
 import { TemplateNotesGroup } from "./groups/template-notes-group"
 import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group"
-import { usePropertyJoinedOverride } from "./use-property-joined-override"
+import { usePropertyJoinedOverride } from "@/modules/templates/controllers/record/primary/use-property-joined-override"
 
 /**
  * Slim joined-name + joined-property snapshot the section needs from

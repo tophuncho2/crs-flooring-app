@@ -4,7 +4,7 @@ import type { ManagementCompanyForm, ManagementCompanyOption } from "@builders/d
 import { FormField } from "@/engines/record-view"
 import { ActionHeader } from "@/engines/common"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
-import { ManagementCompanyCellsSection } from "@/modules/management-companies/components/record/management-company-cells-section"
+import { ManagementCompanyCellsSection } from "@/modules/management-companies/components/record/primary/management-company-cells-section"
 import {
   deriveMcMode,
   type PropertyHubCreateForm,
