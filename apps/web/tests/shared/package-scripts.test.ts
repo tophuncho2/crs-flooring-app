@@ -34,7 +34,10 @@ describe("package scripts", () => {
 
     expect(webPackageJson.scripts.dev).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next dev")
     expect(webPackageJson.scripts.build).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next build --webpack")
-    expect(webPackageJson.scripts.start).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next start")
+    // Deploy runs Next's standalone server (output: "standalone"); postbuild copies
+    // static + public into the bundle since standalone omits them.
+    expect(webPackageJson.scripts.postbuild).toBe("mkdir -p .next/standalone/apps/web/.next && cp -R .next/static .next/standalone/apps/web/.next/static && cp -R public .next/standalone/apps/web/public")
+    expect(webPackageJson.scripts.start).toBe("node ../../run-with-root-env.mjs .next/standalone/apps/web/server.js")
     expect(webPackageJson.scripts.typecheck).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next typegen && tsc -p tsconfig.json --noEmit")
 
     expectBuildChain(rootPackageJson.scripts["build:web"], "@builders/web")

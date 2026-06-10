@@ -1,3 +1,4 @@
+import path from "node:path"
 import { withSentryConfig } from "@sentry/nextjs"
 import type { NextConfig } from "next"
 
@@ -34,6 +35,13 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // Railpack's runtime image only reliably carries Next's self-contained
+  // standalone server (relay/worker deploy the same `node <file>` way). Plain
+  // `next start` lost its `.next` build under the current builder, so emit the
+  // standalone bundle instead. outputFileTracingRoot points at the monorepo
+  // root so workspace deps get traced into the bundle.
+  output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, "../.."),
   transpilePackages: ["@builders/db", "@builders/domain", "@builders/lib"],
   serverExternalPackages: ["@prisma/adapter-pg", "pg"],
   async headers() {
