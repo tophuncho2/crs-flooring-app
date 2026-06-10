@@ -84,7 +84,8 @@ export function ProductPrimaryFieldsSection({
 
   return (
     <FieldSection>
-      <CellAt col={1} colSpan={4}>
+      {/* Left column */}
+      <CellAt col={1} row={1} colSpan={4}>
         <FormField label="Category" required={!categoryReadOnly}>
           {categoryReadOnly ? (
             <StaticFieldValue>{product.category.name || "—"}</StaticFieldValue>
@@ -102,23 +103,7 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={4}>
-        <FormField label="Manufacturer">
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
-          ) : (
-            <ManufacturerPicker
-              value={draft.manufacturerId || null}
-              onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
-              selectedLabel={manufacturerName || null}
-              disabled={disabled}
-              placeholder="Select Manufacturer"
-              ariaLabel="Manufacturer"
-            />
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} row={2} colSpan={4}>
         <FormField label="Style">
           {fieldsReadOnly ? (
             <StaticFieldValue>{draft.style || "—"}</StaticFieldValue>
@@ -131,7 +116,7 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={4}>
+      <CellAt col={1} row={3} colSpan={4}>
         <FormField label="Color">
           {fieldsReadOnly ? (
             <StaticFieldValue>{draft.color || "—"}</StaticFieldValue>
@@ -144,7 +129,7 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} row={4} colSpan={4}>
         <FormField
           label="Note"
           currentLength={editable ? draft.note.length : undefined}
@@ -162,17 +147,8 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Stock Unit">
-          <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={4}>
-        <FormField label="Send Unit">
-          <StaticFieldValue>{sendUnitDisplay}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
+      {/* Right column */}
+      <CellAt col={5} row={1} colSpan={2}>
         <FormField label="Coverage / Unit">
           <PerUnitCell
             editable={!disabled}
@@ -184,8 +160,34 @@ export function ProductPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
+      <CellAt col={5} row={2} colSpan={2}>
+        <FormField label="Stock Unit">
+          <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={5} row={3} colSpan={2}>
+        <FormField label="Send Unit">
+          <StaticFieldValue>{sendUnitDisplay}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={1} row={5} colSpan={4}>
+        <FormField label="Manufacturer">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
+          ) : (
+            <ManufacturerPicker
+              value={draft.manufacturerId || null}
+              onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
+              selectedLabel={manufacturerName || null}
+              disabled={disabled}
+              placeholder="Select Manufacturer"
+              ariaLabel="Manufacturer"
+            />
+          )}
+        </FormField>
+      </CellAt>
       {product.createdAt ? (
-        <CellAt col={1} colSpan={4}>
+        <CellAt col={1} row={6} colSpan={4}>
           <FormField label="Created">
             <StaticFieldValue>
               {formatEasternDateTime(product.createdAt) || "—"}
