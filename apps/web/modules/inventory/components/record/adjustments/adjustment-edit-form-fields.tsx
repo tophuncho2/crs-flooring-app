@@ -74,7 +74,17 @@ export function AdjustmentEditFormFields({
   if (mode === "create" || !adjustment) {
     return (
       <InventoryGroup title="New adjustment" tone="blue" headerRight={wasteToggle}>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+        <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+          <InventoryField label="Quantity" required>
+            <UnitCell
+              editable={editable}
+              value={form.quantity}
+              onChange={(next) => controller.setField("quantity", next)}
+              unit={stockUnit}
+              placeholder="0"
+              ariaLabel="Adjustment quantity"
+            />
+          </InventoryField>
           <InventoryField label="Type" className="col-span-2">
             <SegmentedDropdown
               value={form.adjustmentType}
@@ -88,18 +98,9 @@ export function AdjustmentEditFormFields({
               disabled={isSaving}
             />
           </InventoryField>
-          <InventoryField label="Quantity" required>
-            <UnitCell
-              editable={editable}
-              value={form.quantity}
-              onChange={(next) => controller.setField("quantity", next)}
-              unit={stockUnit}
-              placeholder="0"
-              ariaLabel="Adjustment quantity"
-            />
-          </InventoryField>
           {/* Seeded from the parent inventory's location and locked during create.
-              Becomes editable once the row exists (edit branch below). */}
+              Becomes editable once the row exists (edit branch below). Sits in
+              column 1 of row 2 — directly below Quantity. */}
           <InventoryField label="Location" editable={false}>
             <TextCell
               editable={false}
@@ -111,7 +112,7 @@ export function AdjustmentEditFormFields({
           </InventoryField>
           <InventoryField
             label="Notes"
-            className="col-span-2"
+            className="col-span-3"
             editable={editable}
             currentLength={editable ? form.notes.length : undefined}
             maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
