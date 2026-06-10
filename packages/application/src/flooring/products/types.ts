@@ -1,4 +1,4 @@
-import type { Prisma, ProductRecord } from "@builders/db"
+import type { ProductRecord } from "@builders/db"
 
 // Input types consumed by the product use cases. These are what the route-edge
 // `_validators.ts` produces — pre-parsed / pre-typed but not yet resolved against
@@ -9,9 +9,9 @@ export type CreateProductInput = {
   manufacturerId: string | null
   style: string | null
   color: string | null
-  // Mutable on create AND update. Parsed/validated to a Prisma.Decimal at the
-  // route edge; null clears it.
-  coveragePerUnit: Prisma.Decimal | null
+  // Mutable on create AND update. Canonical decimal string (mirrors inventory
+  // `startingStock`); Prisma coerces it to the Decimal column. null clears it.
+  coveragePerUnit: string | null
   note: string | null
 }
 

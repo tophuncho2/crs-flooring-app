@@ -5,12 +5,11 @@ import type {
   ListInput,
   ProductsListFilters,
 } from "@builders/application"
-import type { Prisma } from "@builders/db"
 import {
   LIST_PRODUCTS_MAX_PAGE_SIZE,
   LIST_PRODUCTS_PAGE_SIZE,
 } from "@builders/domain"
-import { parseDecimal, parseOptionalString } from "@/server/http/api-helpers"
+import { parseOptionalString } from "@/server/http/api-helpers"
 
 function fail(message: string, field?: string): never {
   throw new ProductExecutionError({
@@ -22,16 +21,23 @@ function fail(message: string, field?: string): never {
 }
 
 // Coverage per stock unit — mutable reference value on create AND update.
-// Blank clears it. Reuses the shared `parseDecimal` 2-decimal-max primitive
-// (scale = 2); `parseDecimal` permits negatives, so a non-negative guard is
-// layered on top.
-function parseCoveragePerUnit(value: unknown): Prisma.Decimal | null {
-  if (value === "" || value === null || value === undefined) return null
-  const decimal = parseDecimal(value, "coveragePerUnit", 2)
-  if (decimal.isNegative()) {
-    fail("coveragePerUnit must be non-negative", "coveragePerUnit")
+// Carried as a canonical string (mirrors the inventory/imports `startingStock`
+// setup), NOT the strict `api-helpers.parseDecimal`: the number cell allows a
+// trailing/lone dot mid-typing ("8.", "."), which that strict regex rejects.
+// Here we validate leniently with `Number()` (tolerates "8.") and hand the
+// trimmed string to Prisma, which coerces it to the Decimal column. The
+// 2-decimal cap + non-negativity are already enforced by the cell's
+// `sanitizeDecimal`; the `Number()` finiteness + `< 0` checks are defense.
+// Blank or a lone "." clears it.
+function parseCoveragePerUnit(value: unknown): string | null {
+  if (value === null || value === undefined) return null
+  const trimmed = String(value).trim()
+  if (trimmed === "" || trimmed === ".") return null
+  const numeric = Number(trimmed)
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    fail("coveragePerUnit must be a non-negative number", "coveragePerUnit")
   }
-  return decimal
+  return trimmed
 }
 
 function parseSharedFields(body: Record<string, unknown>) {

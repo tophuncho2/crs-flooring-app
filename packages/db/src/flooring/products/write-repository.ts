@@ -24,9 +24,10 @@ export type CreateProductInput = {
   manufacturerName: string | null
   style: string | null
   color: string | null
-  // Mutable reference value (mutable on create AND update). Decimal column on
-  // the product row; the API validator parses/validates it to a Prisma.Decimal.
-  coveragePerUnit: Prisma.Decimal | null
+  // Mutable reference value (mutable on create AND update). Canonical decimal
+  // string off the wire (mirrors inventory `startingStock`); Prisma coerces it
+  // to the Decimal column on write.
+  coveragePerUnit: string | null
   note: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
