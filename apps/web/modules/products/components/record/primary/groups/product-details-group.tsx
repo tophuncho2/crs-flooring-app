@@ -101,6 +101,7 @@ export function ProductDetailsGroup({
         </ProductField>
         <ProductField
           label="Note"
+          className="md:col-span-2"
           editable={editable}
           currentLength={draft.note.length}
           maxLength={PRODUCT_NOTE_MAX}
