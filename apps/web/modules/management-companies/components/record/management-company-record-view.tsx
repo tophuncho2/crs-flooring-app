@@ -145,6 +145,10 @@ export function ManagementCompanyRecordView({
                 onShowList={onBack}
                 onDirtyChange={setEmbeddedDirty}
                 deletable
+                // The MC view already shows an MC-wide templates reference
+                // header alongside this drilldown — suppress the property's own
+                // templates section so the two don't stack.
+                showTemplates={false}
               />
             )
           }
@@ -155,10 +159,10 @@ export function ManagementCompanyRecordView({
       key: "templates",
       type: "item",
       order: 20,
-      // Hidden while a property is drilled in — the embedded property view
-      // renders its own (property-scoped) templates section, so showing the
-      // MC-wide reference header too would duplicate it.
-      visibleWhen: () => selectedPropertyId === null,
+      // Always visible — the MC-wide templates reference header stays on the
+      // record view even while a property is drilled in below it. (The embedded
+      // property view also renders its own property-scoped templates section;
+      // both are shown intentionally.)
       render: (ctx) => (
         <TemplateReferenceSection
           page={ctx.page}

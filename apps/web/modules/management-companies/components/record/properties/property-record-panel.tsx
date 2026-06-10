@@ -32,6 +32,12 @@ import { PropertyPrimaryFieldsSection } from "./primary/property-primary-fields-
  * route, and unrelated to the top-left record back button. When omitted (the MC
  * create flow, which embeds a single property with no list to flip to) the
  * leading action falls back to a real "Back" that routes via the page controller.
+ *
+ * `showTemplates` (default on) renders this property's own templates section.
+ * The MC edit drilldown turns it OFF because that host already shows an MC-wide
+ * templates reference header alongside the drilldown — two templates blocks
+ * would otherwise stack. The create flow keeps it on (no MC reference header
+ * exists there yet).
  */
 export function PropertyRecordPanel({
   page,
@@ -39,12 +45,14 @@ export function PropertyRecordPanel({
   onDirtyChange,
   deletable = false,
   onShowList,
+  showTemplates = true,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: PropertyDetailRecord
   onDirtyChange?: (isDirty: boolean) => void
   deletable?: boolean
   onShowList?: () => void
+  showTemplates?: boolean
 }) {
   const controller = usePropertyPrimarySection({ page, entry })
   const primary = controller.primarySection
@@ -109,13 +117,16 @@ export function PropertyRecordPanel({
         </RecordPrimarySectionInstance>
       ),
     },
-    {
+  ]
+
+  if (showTemplates) {
+    sections.push({
       key: "templates",
       type: "item",
       order: 20,
       render: () => <TemplatesSectionList filters={{ propertyId: [entry.id] }} />,
-    },
-  ]
+    })
+  }
 
   return (
     <>

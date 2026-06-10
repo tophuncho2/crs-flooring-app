@@ -28,6 +28,7 @@ export function PropertyRecordView({
   onDirtyChange,
   deletable = false,
   onShowList,
+  showTemplates = true,
 }: {
   propertyId: string
   hostPage: RecordDetailClientScaffoldContext
@@ -37,6 +38,9 @@ export function PropertyRecordView({
   /** In-section drilldown flip — see `PropertyRecordView`. Omitted by the MC
    *  create flow (no list to flip to). */
   onShowList?: () => void
+  /** Off in the MC edit drilldown (the host shows an MC-wide templates
+   *  reference header) — see `PropertyRecordPanel`. */
+  showTemplates?: boolean
 }) {
   const embeddedPage = useEmbeddedRecordPageController({ host: hostPage, onNavigateBack: onBack })
 
@@ -59,6 +63,7 @@ export function PropertyRecordView({
       onDirtyChange={onDirtyChange}
       deletable={deletable}
       onShowList={onShowList}
+      showTemplates={showTemplates}
     />
   )
 }
