@@ -32,17 +32,13 @@ export function InventoryPrimaryFieldsSection({
   return (
     <InventoryFieldGrid>
       <CellAt col={1} colSpan={4}>
+        <WarehouseStaticField warehouseName={warehouseName} />
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
         <LocationField
           editable={editable}
           value={draft.location}
           onChange={(value) => onFieldChange("location", value)}
-        />
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
-        <StatusField
-          editable={editable}
-          value={draft.isArchived}
-          onChange={(next) => onFieldChange("isArchived", next)}
         />
       </CellAt>
       <CellAt col={1} colSpan={4}>
@@ -53,7 +49,11 @@ export function InventoryPrimaryFieldsSection({
         />
       </CellAt>
       <CellAt col={1} colSpan={4}>
-        <WarehouseStaticField warehouseName={warehouseName} />
+        <StatusField
+          editable={editable}
+          value={draft.isArchived}
+          onChange={(next) => onFieldChange("isArchived", next)}
+        />
       </CellAt>
     </InventoryFieldGrid>
   )
