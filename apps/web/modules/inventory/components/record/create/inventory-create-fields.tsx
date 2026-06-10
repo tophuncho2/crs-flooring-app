@@ -47,7 +47,7 @@ export function InventoryCreateFields({
 }) {
   return (
     <InventoryFieldGrid>
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <ProductPickerField
           value={form.productId || null}
           selectedLabel={productLabel}
@@ -57,7 +57,7 @@ export function InventoryCreateFields({
           ariaLabel="Select a product"
         />
       </CellAt>
-      <CellAt col={5} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <WarehousePickerField
           value={form.warehouseId || null}
           selectedLabel={warehouseLabel}
@@ -69,14 +69,14 @@ export function InventoryCreateFields({
         />
       </CellAt>
 
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <RollNumberField
           editable={editable}
           value={form.rollNumber}
           onChange={(value) => setField("rollNumber", value)}
         />
       </CellAt>
-      <CellAt col={5} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <StartingStockField
           editable={editable}
           value={form.startingStock}
@@ -85,18 +85,18 @@ export function InventoryCreateFields({
         />
       </CellAt>
 
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <DyeLotField
           editable={editable}
           value={form.dyeLot}
           onChange={(value) => setField("dyeLot", value)}
         />
       </CellAt>
-      <CellAt col={5} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <NoteField editable={editable} value={form.note} onChange={(value) => setField("note", value)} />
       </CellAt>
 
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <LocationField
           editable={editable}
           value={form.location}
