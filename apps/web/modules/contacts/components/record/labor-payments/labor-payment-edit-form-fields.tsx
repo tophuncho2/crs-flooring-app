@@ -40,7 +40,7 @@ export function LaborPaymentEditFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={1}>
+      <CellAt col={4} colSpan={1}>
         <FormField label="Cost">
           <MoneyCell
             editable={editable}
