@@ -49,6 +49,7 @@ export function LaborPaymentsCostSearch({ value, onCommit }: LaborPaymentsCostSe
       editable
       value={input}
       onChange={handleChange}
+      align="start"
       ariaLabel="Search by cost"
       placeholder="Search by cost"
     />
