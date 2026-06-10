@@ -69,6 +69,7 @@ export async function updateProductUseCase(
     if (manufacturerName !== undefined) patch.manufacturerName = manufacturerName
     if ("style" in input) patch.style = input.style
     if ("color" in input) patch.color = input.color
+    if ("coveragePerUnit" in input) patch.coveragePerUnit = input.coveragePerUnit
     if ("note" in input) patch.note = input.note
 
     if (nameAffected) {

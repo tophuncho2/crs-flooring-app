@@ -68,8 +68,11 @@ export function ProductPrimaryFieldsSection({
       />
       <ProductUnitsGroup
         product={product}
+        draft={draft}
         selectedCategory={selectedCategory}
         categoryReadOnly={categoryReadOnly}
+        disabled={disabled}
+        onFieldChange={onFieldChange}
       />
     </div>
   )

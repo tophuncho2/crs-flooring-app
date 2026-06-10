@@ -88,6 +88,7 @@ export async function createProductUseCase(
           manufacturerName,
           style: input.style,
           color: input.color,
+          coveragePerUnit: input.coveragePerUnit,
           note: input.note,
           ...snapshot,
         },

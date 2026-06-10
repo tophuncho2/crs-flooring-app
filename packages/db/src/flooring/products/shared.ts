@@ -20,6 +20,7 @@ export const productRowSelect = {
   sendUnitAbbrev: true,
   stockUnitName: true,
   stockUnitAbbrev: true,
+  coveragePerUnit: true,
   note: true,
   createdAt: true,
   updatedAt: true,

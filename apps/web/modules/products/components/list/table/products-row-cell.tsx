@@ -29,6 +29,10 @@ export function renderProductRowCell(
       return formatUnit(row.stockUnitName, row.stockUnitAbbrev)
     case "sendUnit":
       return formatUnit(row.sendUnitName, row.sendUnitAbbrev)
+    case "coveragePerUnit":
+      return row.coveragePerUnit
+        ? `${row.coveragePerUnit} ${row.stockUnitAbbrev}`.trim()
+        : "-"
     case "createdAt":
       return (
         <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>

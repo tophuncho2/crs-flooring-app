@@ -30,6 +30,7 @@ const EMPTY_PRODUCT: ProductRecord = {
   sendUnitAbbrev: "",
   stockUnitName: "",
   stockUnitAbbrev: "",
+  coveragePerUnit: "",
   note: "",
   createdAt: "",
   updatedAt: "",

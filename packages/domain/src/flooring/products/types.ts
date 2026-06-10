@@ -28,6 +28,10 @@ export type ProductRow = {
   sendUnitAbbrev: string
   stockUnitName: string
   stockUnitAbbrev: string
+  // Coverage per stock unit. Mutable reference value (no business logic depends
+  // on it yet) — stored as a string here; the read normalizer converts the
+  // Decimal column to a string and "" when null.
+  coveragePerUnit: string
   note: string
   createdAt: string
   updatedAt: string
@@ -40,6 +44,8 @@ export type ProductCreateForm = {
   manufacturerId: string
   style: string
   color: string
+  // Mutable on create AND update — not an immutable snapshot. Empty string clears it.
+  coveragePerUnit: string
   note: string
 }
 
@@ -73,6 +79,7 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   manufacturerId: "",
   style: "",
   color: "",
+  coveragePerUnit: "",
   note: "",
 }
 
@@ -81,6 +88,7 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     manufacturerId: row.manufacturerId,
     style: row.style,
     color: row.color,
+    coveragePerUnit: row.coveragePerUnit,
     note: row.note,
   }
 }

@@ -5,11 +5,12 @@ import type {
   ListInput,
   ProductsListFilters,
 } from "@builders/application"
+import type { Prisma } from "@builders/db"
 import {
   LIST_PRODUCTS_MAX_PAGE_SIZE,
   LIST_PRODUCTS_PAGE_SIZE,
 } from "@builders/domain"
-import { parseOptionalString } from "@/server/http/api-helpers"
+import { parseDecimal, parseOptionalString } from "@/server/http/api-helpers"
 
 function fail(message: string, field?: string): never {
   throw new ProductExecutionError({
@@ -20,11 +21,25 @@ function fail(message: string, field?: string): never {
   })
 }
 
+// Coverage per stock unit — mutable reference value on create AND update.
+// Blank clears it. Reuses the shared `parseDecimal` 2-decimal-max primitive
+// (scale = 2); `parseDecimal` permits negatives, so a non-negative guard is
+// layered on top.
+function parseCoveragePerUnit(value: unknown): Prisma.Decimal | null {
+  if (value === "" || value === null || value === undefined) return null
+  const decimal = parseDecimal(value, "coveragePerUnit", 2)
+  if (decimal.isNegative()) {
+    fail("coveragePerUnit must be non-negative", "coveragePerUnit")
+  }
+  return decimal
+}
+
 function parseSharedFields(body: Record<string, unknown>) {
   return {
     manufacturerId: parseOptionalString(body.manufacturerId),
     style: parseOptionalString(body.style),
     color: parseOptionalString(body.color),
+    coveragePerUnit: parseCoveragePerUnit(body.coveragePerUnit),
     note: parseOptionalString(body.note),
   }
 }

@@ -24,6 +24,9 @@ export type CreateProductInput = {
   manufacturerName: string | null
   style: string | null
   color: string | null
+  // Mutable reference value (mutable on create AND update). Decimal column on
+  // the product row; the API validator parses/validates it to a Prisma.Decimal.
+  coveragePerUnit: Prisma.Decimal | null
   note: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
@@ -59,6 +62,7 @@ export async function createProduct(
       manufacturerName: input.manufacturerName,
       style: input.style,
       color: input.color,
+      coveragePerUnit: input.coveragePerUnit,
       note: input.note,
       sendUnitName: input.sendUnitName,
       sendUnitAbbrev: input.sendUnitAbbrev,
@@ -81,6 +85,7 @@ export async function updateProduct(
   if (input.manufacturerName !== undefined) data.manufacturerName = input.manufacturerName
   if (input.style !== undefined) data.style = input.style
   if (input.color !== undefined) data.color = input.color
+  if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
   if (input.note !== undefined) data.note = input.note
 
   const row = await client.flooringProduct.update({
