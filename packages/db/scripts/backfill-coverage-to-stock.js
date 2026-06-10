@@ -264,8 +264,8 @@ async function backfillCoverageToStock({ prisma, apply = false, logger = console
       converted.inventory = invCount
       converted.adjustments = adjCount
 
-      // 3. Staged inventory rows — multiply by the product's effective multiplier.
-      //    Run BEFORE products (which resets cpu to 1).
+      // 3. Staged inventory rows — multiply by the product's effective multiplier
+      //    (read from the still-original product coveragePerUnit).
       converted["staged inventory rows"] = await tx.$executeRaw`
         UPDATE "flooring_import_staged_inventory_row" r
         SET "startingStock"   = r."startingStock" * (CASE WHEN p."coveragePerUnit" > 0 THEN p."coveragePerUnit" ELSE 1 END),
@@ -291,13 +291,14 @@ async function backfillCoverageToStock({ prisma, apply = false, logger = console
           AND r."stockUnitAbbrev" IS DISTINCT FROM p."itemCoverageUnitAbbrev"
       `
 
-      // 5. Products — collapse coveragePerUnit to 1 and relabel stock unit.
-      //    Template for future inventory; must match the converted category.
+      // 5. Products — relabel stock unit to the coverage unit. coveragePerUnit
+      //    is left UNTOUCHED: it survives as a stored read-only reference on the
+      //    product (surfaced in the record view next to the stock unit), no
+      //    longer a live conversion multiplier.
       converted.products = await tx.$executeRaw`
         UPDATE "flooring_product" p
         SET "stockUnitName"   = p."itemCoverageUnitName",
-            "stockUnitAbbrev" = p."itemCoverageUnitAbbrev",
-            "coveragePerUnit" = 1
+            "stockUnitAbbrev" = p."itemCoverageUnitAbbrev"
         WHERE p."categoryId" IN (SELECT "id" FROM "flooring_category" WHERE "slug" = ANY(${COVERAGE_SLUGS}))
           AND p."itemCoverageUnitAbbrev" IS NOT NULL
           AND p."stockUnitAbbrev" IS DISTINCT FROM p."itemCoverageUnitAbbrev"
