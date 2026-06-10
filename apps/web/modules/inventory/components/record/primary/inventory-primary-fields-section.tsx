@@ -31,28 +31,28 @@ export function InventoryPrimaryFieldsSection({
 }) {
   return (
     <InventoryFieldGrid>
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <LocationField
           editable={editable}
           value={draft.location}
           onChange={(value) => onFieldChange("location", value)}
         />
       </CellAt>
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <StatusField
           editable={editable}
           value={draft.isArchived}
           onChange={(next) => onFieldChange("isArchived", next)}
         />
       </CellAt>
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <InternalNotesField
           editable={editable}
           value={draft.internalNotes}
           onChange={(value) => onFieldChange("internalNotes", value)}
         />
       </CellAt>
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <WarehouseStaticField warehouseName={warehouseName} />
       </CellAt>
     </InventoryFieldGrid>

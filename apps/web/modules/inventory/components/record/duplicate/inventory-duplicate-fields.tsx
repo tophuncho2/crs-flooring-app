@@ -39,14 +39,14 @@ export function InventoryDuplicateFields({
 }) {
   return (
     <InventoryFieldGrid>
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <RollNumberField
           editable={editable}
           value={form.rollNumber}
           onChange={(value) => setField("rollNumber", value)}
         />
       </CellAt>
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <StartingStockField
           editable={editable}
           value={form.startingStock}
@@ -55,10 +55,10 @@ export function InventoryDuplicateFields({
         />
       </CellAt>
 
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <NoteField editable={editable} value={form.note} onChange={(value) => setField("note", value)} />
       </CellAt>
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <LocationField
           editable={editable}
           value={form.location}
@@ -66,7 +66,7 @@ export function InventoryDuplicateFields({
         />
       </CellAt>
 
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <InternalNotesField
           editable={editable}
           value={form.internalNotes}
