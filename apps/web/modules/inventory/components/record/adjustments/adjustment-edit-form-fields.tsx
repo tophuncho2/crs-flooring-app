@@ -74,8 +74,8 @@ export function AdjustmentEditFormFields({
   if (mode === "create" || !adjustment) {
     return (
       <InventoryGroup title="New adjustment" tone="blue" headerRight={wasteToggle}>
-        <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-          <InventoryField label="Quantity" required>
+        <div className="grid grid-cols-6 gap-x-4 gap-y-3">
+          <InventoryField label="Quantity" className="col-span-4" required>
             <UnitCell
               editable={editable}
               value={form.quantity}
@@ -100,8 +100,8 @@ export function AdjustmentEditFormFields({
           </InventoryField>
           {/* Seeded from the parent inventory's location and locked during create.
               Becomes editable once the row exists (edit branch below). Sits in
-              column 1 of row 2 — directly below Quantity. */}
-          <InventoryField label="Location" editable={false}>
+              columns 1–4 of row 2 — directly below Quantity. */}
+          <InventoryField label="Location" className="col-span-4" editable={false}>
             <TextCell
               editable={false}
               value={form.location}
@@ -112,7 +112,7 @@ export function AdjustmentEditFormFields({
           </InventoryField>
           <InventoryField
             label="Notes"
-            className="col-span-3"
+            className="col-span-6"
             editable={editable}
             currentLength={editable ? form.notes.length : undefined}
             maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
