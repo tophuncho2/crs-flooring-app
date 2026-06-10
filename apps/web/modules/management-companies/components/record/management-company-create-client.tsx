@@ -1,7 +1,7 @@
 "use client"
 
 import {
-  RecordCreateClientScaffold,
+  RecordDetailClientScaffold,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
@@ -88,15 +88,16 @@ export function ManagementCompanyCreateClient({
   backHref: string
 }) {
   return (
-    <RecordCreateClientScaffold
+    <RecordDetailClientScaffold
       title="New Management Company"
       backHref={backHref}
       dirtyMessage="You have unsaved management-company changes. Leave without saving?"
-      modeNoticeLabel="Management"
+      headerVariant="section"
+      modeNotice={{ mode: "edit", label: "Management" }}
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <ManagementCompanyCreatePanel page={page} propertyId={propertyId} backHref={backHref} />
       )}
-    </RecordCreateClientScaffold>
+    </RecordDetailClientScaffold>
   )
 }
