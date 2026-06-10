@@ -6,7 +6,7 @@ import {
 import { listLaborPaymentsForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
-export type LaborPaymentsListFilters = Record<string, never>
+export type LaborPaymentsListFilters = { cost?: string[] }
 
 export async function listLaborPaymentsUseCase(
   input: ListInput<LaborPaymentsListFilters>,
@@ -19,9 +19,11 @@ export async function listLaborPaymentsUseCase(
   )
 
   const search = input.search?.trim() || undefined
+  const cost = input.filters?.cost?.[0]?.trim() || undefined
 
   const { rows, total } = await listLaborPaymentsForListView({
     search,
+    cost,
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

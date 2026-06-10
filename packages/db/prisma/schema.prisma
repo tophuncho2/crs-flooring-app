@@ -445,6 +445,7 @@ model FlooringLaborPayment {
   updatedAt   DateTime        @updatedAt
 
   @@index([contactId])
+  @@index([cost])
   @@map("flooring_labor_payment")
 }
 

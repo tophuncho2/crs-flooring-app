@@ -82,6 +82,7 @@ export function validateUpdateLaborPaymentInput(
 
 const listLaborPaymentsQuerySchema = z.object({
   q: z.string().optional(),
+  cost: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -112,8 +113,18 @@ export function validateListLaborPaymentsQuery(
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
 
+  // Money standard: only apply the cost filter when the typed value is a valid
+  // amount; normalize to canonical `X.XX`. A half-typed value (e.g. "100.")
+  // silently drops the filter rather than 400-ing the list.
+  const trimmedCost = parsed.cost?.trim()
+  const filters: LaborPaymentsListFilters =
+    trimmedCost && isValidMoneyAmount(trimmedCost)
+      ? { cost: [normalizeMoneyAmount(trimmedCost)] }
+      : {}
+
   return {
     search,
+    filters,
     page: parsed.page,
     pageSize: parsed.pageSize,
   }

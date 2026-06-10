@@ -21,11 +21,13 @@ export function parseLaborPaymentsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<LaborPaymentsListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
+  const costRaw = (readSearchParam(searchParams, "cost") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
   return {
     search: searchRaw || undefined,
+    filters: costRaw ? { cost: [costRaw] } : {},
     page,
     pageSize: LIST_LABOR_PAYMENTS_PAGE_SIZE,
   }
@@ -36,6 +38,8 @@ export function buildLaborPaymentsListSearchString(
 ): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
+  const cost = input.filters?.cost?.[0]
+  if (cost) params.set("cost", cost)
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   return params.toString()

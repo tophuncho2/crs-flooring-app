@@ -15,6 +15,7 @@ const laborPaymentInclude = {
 
 export type LaborPaymentListViewOptions = {
   search?: string
+  cost?: string
   skip: number
   take: number
 }
@@ -28,9 +29,15 @@ export async function listLaborPaymentsForListView(
   options: LaborPaymentListViewOptions,
   client: LaborPaymentsDbClient = db,
 ): Promise<LaborPaymentListViewResult> {
-  const where: Prisma.FlooringLaborPaymentWhereInput | undefined = options.search
-    ? { contact: { name: { contains: options.search, mode: "insensitive" } } }
-    : undefined
+  const conditions: Prisma.FlooringLaborPaymentWhereInput[] = []
+  if (options.search) {
+    conditions.push({ contact: { name: { contains: options.search, mode: "insensitive" } } })
+  }
+  if (options.cost) {
+    conditions.push({ cost: { equals: options.cost } })
+  }
+  const where: Prisma.FlooringLaborPaymentWhereInput | undefined =
+    conditions.length > 0 ? { AND: conditions } : undefined
 
   const [total, rows] = await Promise.all([
     client.flooringLaborPayment.count({ where }),

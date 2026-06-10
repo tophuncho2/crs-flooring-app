@@ -15,10 +15,11 @@ import { useLaborPaymentsListController } from "@/modules/labor-payments/control
 import { LaborPaymentsTable } from "./labor-payments-table"
 import { LaborPaymentCreateEntry } from "./toolbar-controls/labor-payment-create-entry"
 import { LaborPaymentsListSearch } from "./toolbar-controls/labor-payments-list-search"
+import { LaborPaymentsCostSearch } from "./toolbar-controls/labor-payments-cost-search"
 import { LaborPaymentsClearAll } from "./toolbar-controls/sub-controls/labor-payments-clear-all"
 import { LaborPaymentsRowCount } from "./toolbar-controls/sub-controls/labor-payments-row-count"
 
-const LABOR_PAYMENTS_FILTERABLE_FIELDS = [] as const
+const LABOR_PAYMENTS_FILTERABLE_FIELDS = ["cost"] as const
 
 export type LaborPaymentsClientProps = {
   initialSearchQuery: string
@@ -45,6 +46,8 @@ export default function LaborPaymentsClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
+    filters,
+    onFilterChange,
     onClearAllFilters,
   } = useFetchListController<LaborPaymentListRow, LaborPaymentsListFilters>({
     mode: "fetch",
@@ -59,7 +62,12 @@ export default function LaborPaymentsClient({
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  const hasActiveFilters = useMemo(() => searchQuery.trim().length > 0, [searchQuery])
+  const costFilter = filters.cost?.[0] ?? ""
+
+  const hasActiveFilters = useMemo(
+    () => searchQuery.trim().length > 0 || costFilter.length > 0,
+    [searchQuery, costFilter],
+  )
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -106,6 +114,15 @@ export default function LaborPaymentsClient({
                     />
                   }
                   right={<LaborPaymentsRowCount count={rows.length} total={total} />}
+                />
+              </div>
+            </ListToolbarCell>
+
+            <ListToolbarCell>
+              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
+                <LaborPaymentsCostSearch
+                  value={costFilter}
+                  onCommit={(next) => onFilterChange("cost", next ? [next] : [])}
                 />
               </div>
             </ListToolbarCell>
