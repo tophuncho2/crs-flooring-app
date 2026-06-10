@@ -112,16 +112,248 @@
               "html": "<h3 class=\"crs-section\">Materials</h3>"
             },
             {
-              "fieldLabel": "materials",
+              "fieldLabel": "materials-help",
               "fieldType": "html",
-              "html": "<div class=\"crs-materials\"><p class=\"crs-mat-help\">Add each product on its own row. Use “+ Add item” for as many as you need.</p><table class=\"crs-mat-table\"><thead><tr><th>Product</th><th>Qty</th><th>UOM</th><th>Notes</th><th></th></tr></thead><tbody id=\"crsMatBody\"></tbody></table><button type=\"button\" id=\"crsMatAdd\" class=\"crs-mat-add\">+ Add item</button><input type=\"hidden\" name=\"materialItems\" id=\"crsMaterialItems\"></div><script>(function(){var body=document.getElementById(\"crsMatBody\");var hidden=document.getElementById(\"crsMaterialItems\");function sync(){var data=[];body.querySelectorAll(\"tr\").forEach(function(r){var i=r.querySelectorAll(\"input\");var o={product:i[0].value.trim(),qty:i[1].value.trim(),uom:i[2].value.trim(),notes:i[3].value.trim()};if(o.product||o.qty||o.uom||o.notes){data.push(o);}});hidden.value=JSON.stringify(data);}function addRow(){var tr=document.createElement(\"tr\");[\"Product\",\"Qty\",\"UOM\",\"Notes\"].forEach(function(ph){var td=document.createElement(\"td\");var inp=document.createElement(\"input\");inp.type=\"text\";inp.placeholder=ph;inp.addEventListener(\"input\",sync);td.appendChild(inp);tr.appendChild(td);});var rtd=document.createElement(\"td\");var btn=document.createElement(\"button\");btn.type=\"button\";btn.className=\"crs-mat-rm\";btn.setAttribute(\"aria-label\",\"Remove row\");btn.textContent=\"×\";btn.addEventListener(\"click\",function(){tr.remove();sync();});rtd.appendChild(btn);tr.appendChild(rtd);body.appendChild(tr);sync();}document.getElementById(\"crsMatAdd\").addEventListener(\"click\",addRow);addRow();})();</script>"
+              "html": "<p class=\"crs-mat-help\">Add up to 8 material items — leave any unused rows blank.</p>"
+            },
+            {
+              "fieldLabel": "item-1",
+              "fieldType": "html",
+              "html": "<div class=\"crs-item\">Item 1</div>"
+            },
+            {
+              "fieldLabel": "Item 1 — Product",
+              "fieldType": "text",
+              "placeholder": "Product",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 1 — Qty",
+              "fieldType": "text",
+              "placeholder": "Qty",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 1 — UOM",
+              "fieldType": "text",
+              "placeholder": "UOM",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 1 — Notes",
+              "fieldType": "text",
+              "placeholder": "Notes",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "item-2",
+              "fieldType": "html",
+              "html": "<div class=\"crs-item\">Item 2</div>"
+            },
+            {
+              "fieldLabel": "Item 2 — Product",
+              "fieldType": "text",
+              "placeholder": "Product",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 2 — Qty",
+              "fieldType": "text",
+              "placeholder": "Qty",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 2 — UOM",
+              "fieldType": "text",
+              "placeholder": "UOM",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 2 — Notes",
+              "fieldType": "text",
+              "placeholder": "Notes",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "item-3",
+              "fieldType": "html",
+              "html": "<div class=\"crs-item\">Item 3</div>"
+            },
+            {
+              "fieldLabel": "Item 3 — Product",
+              "fieldType": "text",
+              "placeholder": "Product",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 3 — Qty",
+              "fieldType": "text",
+              "placeholder": "Qty",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 3 — UOM",
+              "fieldType": "text",
+              "placeholder": "UOM",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 3 — Notes",
+              "fieldType": "text",
+              "placeholder": "Notes",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "item-4",
+              "fieldType": "html",
+              "html": "<div class=\"crs-item\">Item 4</div>"
+            },
+            {
+              "fieldLabel": "Item 4 — Product",
+              "fieldType": "text",
+              "placeholder": "Product",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 4 — Qty",
+              "fieldType": "text",
+              "placeholder": "Qty",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 4 — UOM",
+              "fieldType": "text",
+              "placeholder": "UOM",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 4 — Notes",
+              "fieldType": "text",
+              "placeholder": "Notes",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "item-5",
+              "fieldType": "html",
+              "html": "<div class=\"crs-item\">Item 5</div>"
+            },
+            {
+              "fieldLabel": "Item 5 — Product",
+              "fieldType": "text",
+              "placeholder": "Product",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 5 — Qty",
+              "fieldType": "text",
+              "placeholder": "Qty",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 5 — UOM",
+              "fieldType": "text",
+              "placeholder": "UOM",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 5 — Notes",
+              "fieldType": "text",
+              "placeholder": "Notes",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "item-6",
+              "fieldType": "html",
+              "html": "<div class=\"crs-item\">Item 6</div>"
+            },
+            {
+              "fieldLabel": "Item 6 — Product",
+              "fieldType": "text",
+              "placeholder": "Product",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 6 — Qty",
+              "fieldType": "text",
+              "placeholder": "Qty",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 6 — UOM",
+              "fieldType": "text",
+              "placeholder": "UOM",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 6 — Notes",
+              "fieldType": "text",
+              "placeholder": "Notes",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "item-7",
+              "fieldType": "html",
+              "html": "<div class=\"crs-item\">Item 7</div>"
+            },
+            {
+              "fieldLabel": "Item 7 — Product",
+              "fieldType": "text",
+              "placeholder": "Product",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 7 — Qty",
+              "fieldType": "text",
+              "placeholder": "Qty",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 7 — UOM",
+              "fieldType": "text",
+              "placeholder": "UOM",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 7 — Notes",
+              "fieldType": "text",
+              "placeholder": "Notes",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "item-8",
+              "fieldType": "html",
+              "html": "<div class=\"crs-item\">Item 8</div>"
+            },
+            {
+              "fieldLabel": "Item 8 — Product",
+              "fieldType": "text",
+              "placeholder": "Product",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 8 — Qty",
+              "fieldType": "text",
+              "placeholder": "Qty",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 8 — UOM",
+              "fieldType": "text",
+              "placeholder": "UOM",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Item 8 — Notes",
+              "fieldType": "text",
+              "placeholder": "Notes",
+              "requiredField": false
             }
           ]
         },
         "options": {
           "buttonLabel": "Submit request",
           "formSubmittedText": "Thanks — your request has been received. Our team will review it and follow up.",
-          "customCss": ":root{--font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--color-primary:#1f6feb;--color-primary-shade-1:#1a5fce;--card-border-radius:12px;--input-border-color:#d5dae1;}body{background:#f4f6f9;}.crs-section{margin:22px 0 6px;font-size:15px;font-weight:700;color:#111827;border-top:1px solid #e5e7eb;padding-top:18px;}.crs-section-first{border-top:none;padding-top:0;margin-top:4px;}.crs-materials{margin-top:6px;}.crs-mat-help{margin:0 0 10px;font-size:13px;color:#6b7280;}.crs-mat-table{width:100%;border-collapse:collapse;font-size:14px;}.crs-mat-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;font-weight:600;padding:0 8px 6px 0;}.crs-mat-table td{padding:0 8px 8px 0;vertical-align:top;}.crs-mat-table td:last-child{padding-right:0;width:38px;}.crs-mat-table input{width:100%;padding:8px 10px;border:1px solid #d5dae1;border-radius:8px;font-size:14px;box-sizing:border-box;}.crs-mat-table input:focus{outline:none;border-color:#1f6feb;box-shadow:0 0 0 3px rgba(31,111,235,.15);}.crs-mat-rm{border:none;background:#f0f2f5;color:#6b7280;width:34px;height:36px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;}.crs-mat-rm:hover{background:#fde2e1;color:#c0392b;}.crs-mat-add{margin-top:6px;border:1px dashed #b6c0cc;background:#fff;color:#1f6feb;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;}.crs-mat-add:hover{background:#eef4ff;border-color:#1f6feb;}"
+          "customCss": ":root{--font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--color-primary:#1f6feb;--color-primary-shade-1:#1a5fce;--card-border-radius:12px;--input-border-color:#d5dae1;}body{background:#f4f6f9;}.crs-section{margin:22px 0 6px;font-size:15px;font-weight:700;color:#111827;border-top:1px solid #e5e7eb;padding-top:18px;}.crs-section-first{border-top:none;padding-top:0;margin-top:4px;}.crs-materials{margin-top:6px;}.crs-mat-help{margin:0 0 10px;font-size:13px;color:#6b7280;}.crs-mat-table{width:100%;border-collapse:collapse;font-size:14px;}.crs-mat-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;font-weight:600;padding:0 8px 6px 0;}.crs-mat-table td{padding:0 8px 8px 0;vertical-align:top;}.crs-mat-table td:last-child{padding-right:0;width:38px;}.crs-mat-table input{width:100%;padding:8px 10px;border:1px solid #d5dae1;border-radius:8px;font-size:14px;box-sizing:border-box;}.crs-mat-table input:focus{outline:none;border-color:#1f6feb;box-shadow:0 0 0 3px rgba(31,111,235,.15);}.crs-mat-rm{border:none;background:#f0f2f5;color:#6b7280;width:34px;height:36px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;}.crs-mat-rm:hover{background:#fde2e1;color:#c0392b;}.crs-mat-add{margin-top:6px;border:1px dashed #b6c0cc;background:#fff;color:#1f6feb;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;}.crs-mat-add:hover{background:#eef4ff;border-color:#1f6feb;}.crs-item{margin:16px 0 2px;font-size:13px;font-weight:600;color:#374151;}"
         }
       },
       "type": "n8n-nodes-base.formTrigger",
