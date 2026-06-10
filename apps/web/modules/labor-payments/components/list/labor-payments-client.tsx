@@ -106,6 +106,10 @@ export default function LaborPaymentsClient({
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
                 />
+                <LaborPaymentsCostSearch
+                  value={costFilter}
+                  onCommit={(next) => onFilterChange("cost", next ? [next] : [])}
+                />
                 <ListToolbarBottomRow
                   left={
                     <LaborPaymentsClearAll
@@ -114,15 +118,6 @@ export default function LaborPaymentsClient({
                     />
                   }
                   right={<LaborPaymentsRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
-
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
-                <LaborPaymentsCostSearch
-                  value={costFilter}
-                  onCommit={(next) => onFilterChange("cost", next ? [next] : [])}
                 />
               </div>
             </ListToolbarCell>
