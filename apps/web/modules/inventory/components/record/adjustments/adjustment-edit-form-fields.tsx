@@ -98,16 +98,12 @@ export function AdjustmentEditFormFields({
               ariaLabel="Adjustment quantity"
             />
           </InventoryField>
-          <InventoryField
-            label="Location"
-            editable={editable}
-            currentLength={editable ? form.location.length : undefined}
-            maxLength={INVENTORY_LOCATION_MAX}
-          >
+          {/* Seeded from the parent inventory's location and locked during create.
+              Becomes editable once the row exists (edit branch below). */}
+          <InventoryField label="Location" editable={false}>
             <TextCell
-              editable={editable}
+              editable={false}
               value={form.location}
-              onChange={(next) => controller.setField("location", next)}
               placeholder="Location"
               ariaLabel="Adjustment location"
               maxLength={INVENTORY_LOCATION_MAX}

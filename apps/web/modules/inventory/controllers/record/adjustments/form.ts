@@ -99,6 +99,11 @@ export function buildCreateForm(seed: AdjustmentCreateSeed): AdjustmentEditForm 
     ...EMPTY_FORM,
     inventoryId: seed.inventoryId ?? "",
     warehouseId: seed.warehouseId ?? null,
+    // Seed from the parent inventory's location and lock the field during create
+    // (the cell is read-only in create mode). It becomes user-owned/editable once
+    // the row exists. In the only live create path the seed carries the locked
+    // parent inventory's location as `locationLabel`.
+    location: seed.locationLabel ?? "",
     workOrderId: seed.workOrderId ?? null,
     workOrderItemId: seed.workOrderItemId ?? null,
   }

@@ -26,7 +26,11 @@ export type AdjustmentEditForm = {
   quantity: string
   isWaste: boolean
   notes: string
-  /** User-owned free text; never seeded from the parent inventory. */
+  /**
+   * Seeded from the parent inventory's location on create and locked (read-only)
+   * while the form is in create mode. Once the row exists it is user-owned free
+   * text, fully editable for the rest of its lifecycle.
+   */
   location: string
   workOrderId: string | null
   workOrderItemId: string | null
