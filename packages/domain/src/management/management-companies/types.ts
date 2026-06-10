@@ -50,7 +50,3 @@ export const EMPTY_MANAGEMENT_COMPANY_FORM: ManagementCompanyForm = {
   phone: "",
   email: "",
 }
-
-export type ManagementCompanyStateOption = {
-  value: string
-}

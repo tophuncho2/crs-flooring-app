@@ -7,7 +7,6 @@ import {
   LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
   normalizeAddressState,
   type ManagementCompanyListRow,
-  type ManagementCompanyStateOption,
 } from "@builders/domain"
 import {
   MANAGEMENT_COMPANIES_LIST_QUERY_KEY,
@@ -20,7 +19,7 @@ import { buildRecordCreateHref } from "@/hooks/navigation/routes"
 import { ManagementCompaniesTable } from "./management-companies-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { ManagementCompaniesListSearch } from "./toolbar-controls/management-companies-list-search"
-import { StateFilterChip } from "./toolbar-controls/state-filter-chip"
+import { ManagementCompaniesStateSearch } from "./toolbar-controls/management-companies-state-search"
 import { ManagementCompaniesClearAll } from "./toolbar-controls/sub-controls/management-companies-clear-all"
 import { ManagementCompaniesRowCount } from "./toolbar-controls/sub-controls/management-companies-row-count"
 
@@ -30,14 +29,12 @@ export type ManagementCompaniesClientProps = {
   initialSearchQuery: string
   initialPage: number
   initialFilters: ManagementCompaniesListFilters
-  initialStateOptions?: ManagementCompanyStateOption[]
 }
 
 export default function ManagementCompaniesClient({
   initialSearchQuery,
   initialPage,
   initialFilters,
-  initialStateOptions,
 }: ManagementCompaniesClientProps) {
   const { message, pageError } = useManagementCompaniesListController()
   const router = useRouter()
@@ -127,6 +124,10 @@ export default function ManagementCompaniesClient({
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
                 />
+                <ManagementCompaniesStateSearch
+                  value={selectedState}
+                  onChange={handleStateChange}
+                />
                 <ListToolbarBottomRow
                   left={
                     <ManagementCompaniesClearAll
@@ -137,14 +138,6 @@ export default function ManagementCompaniesClient({
                   right={<ManagementCompaniesRowCount count={rows.length} total={total} />}
                 />
               </div>
-            </ListToolbarCell>
-
-            <ListToolbarCell>
-              <StateFilterChip
-                value={selectedState}
-                onChange={handleStateChange}
-                initialOptions={initialStateOptions}
-              />
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">

@@ -1,8 +1,5 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
-import {
-  listManagementCompaniesUseCase,
-  searchManagementCompanyStatesUseCase,
-} from "@builders/application"
+import { listManagementCompaniesUseCase } from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
 import ManagementCompaniesClient from "@/modules/management-companies/components/list/management-companies-client"
@@ -10,8 +7,6 @@ import {
   MANAGEMENT_COMPANIES_LIST_QUERY_KEY,
   parseManagementCompaniesListInputFromSearchParams,
 } from "@/modules/management-companies/data/list-management-companies-request"
-
-const INITIAL_STATE_OPTIONS_TAKE = 20
 
 export default async function ManagementCompaniesPage({
   searchParams,
@@ -28,18 +23,15 @@ export default async function ManagementCompaniesPage({
   // Settle the load into a result value (no try/catch around JSX, no
   // reassignment) so the success/error branches construct JSX outside any
   // try block — both required by the React Compiler lint rules.
-  const load = await Promise.all([
-    queryClient.prefetchQuery({
+  const load = await queryClient
+    .prefetchQuery({
       queryKey: [...MANAGEMENT_COMPANIES_LIST_QUERY_KEY, initialInput],
       queryFn: () => listManagementCompaniesUseCase(initialInput),
-    }),
-    searchManagementCompanyStatesUseCase({
-      take: INITIAL_STATE_OPTIONS_TAKE,
-    }),
-  ]).then(
-    ([, stateOptions]) => ({ ok: true as const, stateOptions }),
-    (error: unknown) => ({ ok: false as const, error }),
-  )
+    })
+    .then(
+      () => ({ ok: true as const }),
+      (error: unknown) => ({ ok: false as const, error }),
+    )
 
   if (!load.ok) {
     return (
@@ -58,7 +50,6 @@ export default async function ManagementCompaniesPage({
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}
-        initialStateOptions={load.stateOptions}
       />
     </HydrationBoundary>
   )
