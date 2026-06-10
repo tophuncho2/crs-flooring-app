@@ -8,8 +8,8 @@ export const PRODUCTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ProductListRow
   { key: "note", label: "Note" },
   { key: "manufacturer", label: "Manufacturer" },
   { key: "name", label: "Product" },
+  { key: "coveragePerUnit", label: "Coverage / Unit", align: "end" },
   { key: "stockUnit", label: "Stock Unit" },
   { key: "sendUnit", label: "Send Unit" },
-  { key: "coveragePerUnit", label: "Coverage / Unit", align: "end" },
   { key: "createdAt", label: "Created" },
 ]
