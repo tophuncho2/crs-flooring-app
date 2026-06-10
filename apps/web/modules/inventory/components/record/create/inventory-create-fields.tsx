@@ -57,6 +57,15 @@ export function InventoryCreateFields({
           ariaLabel="Select a product"
         />
       </CellAt>
+      <CellAt col={5} colSpan={2}>
+        <StartingStockField
+          editable={editable}
+          value={form.startingStock}
+          onChange={(value) => setField("startingStock", value)}
+          unit={stockUnitAbbrev}
+        />
+      </CellAt>
+
       <CellAt col={1} colSpan={4}>
         <WarehousePickerField
           value={form.warehouseId || null}
@@ -68,20 +77,19 @@ export function InventoryCreateFields({
           ariaLabel="Select a warehouse"
         />
       </CellAt>
+      <CellAt col={5} colSpan={2}>
+        <LocationField
+          editable={editable}
+          value={form.location}
+          onChange={(value) => setField("location", value)}
+        />
+      </CellAt>
 
       <CellAt col={1} colSpan={4}>
         <RollNumberField
           editable={editable}
           value={form.rollNumber}
           onChange={(value) => setField("rollNumber", value)}
-        />
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
-        <StartingStockField
-          editable={editable}
-          value={form.startingStock}
-          onChange={(value) => setField("startingStock", value)}
-          unit={stockUnitAbbrev}
         />
       </CellAt>
 
@@ -94,14 +102,6 @@ export function InventoryCreateFields({
       </CellAt>
       <CellAt col={1} colSpan={4}>
         <NoteField editable={editable} value={form.note} onChange={(value) => setField("note", value)} />
-      </CellAt>
-
-      <CellAt col={1} colSpan={4}>
-        <LocationField
-          editable={editable}
-          value={form.location}
-          onChange={(value) => setField("location", value)}
-        />
       </CellAt>
 
       <CellAt col={1} colSpan={4}>
