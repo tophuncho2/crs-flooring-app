@@ -106,6 +106,7 @@ function inventoryRow(overrides: Record<string, unknown> = {}) {
     categorySlug: "vinyl-plank",
     location: "A1",
     startingStock: "100.00",
+    currentNetDeducted: "5.00",
     stockUnitAbbrev: "sf",
     ...overrides,
   }
@@ -259,6 +260,46 @@ describe("updatePendingAdjustmentUseCase", () => {
           workOrderId: WO_ID,
         }),
       )
+    })
+  })
+
+  describe("recompute gating", () => {
+    it("skips the ledger replay + ceiling check on a metadata-only edit, returning the snapshot netDeducted", async () => {
+      const result = await updatePendingAdjustmentUseCase(
+        input({ patch: { isWaste: true, notes: "rework", location: "Bay 7" } }),
+      )
+
+      expect(recomputeAndPersistNetDeductedMock).not.toHaveBeenCalled()
+      expect(assertNetDeductedWithinStartingStockMock).not.toHaveBeenCalled()
+      expect(getAdjustmentByIdMock).not.toHaveBeenCalled()
+      expect(result).toEqual({
+        adjustment: UPDATED,
+        inventoryId: INVENTORY_ID,
+        netDeducted: "5.00",
+      })
+    })
+
+    it("skips the ledger replay on a link-only edit (relink does not move the balance)", async () => {
+      await updatePendingAdjustmentUseCase(
+        input({ patch: { link: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI } } }),
+      )
+
+      expect(recomputeAndPersistNetDeductedMock).not.toHaveBeenCalled()
+      expect(assertNetDeductedWithinStartingStockMock).not.toHaveBeenCalled()
+    })
+
+    it("runs the ledger replay + ceiling check on a quantity edit", async () => {
+      await updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }))
+
+      expect(recomputeAndPersistNetDeductedMock).toHaveBeenCalledWith({ tx: true }, [INVENTORY_ID])
+      expect(assertNetDeductedWithinStartingStockMock).toHaveBeenCalled()
+    })
+
+    it("runs the ledger replay + ceiling check on a direction flip", async () => {
+      await updatePendingAdjustmentUseCase(input({ patch: { adjustmentType: "INCREASE" } }))
+
+      expect(recomputeAndPersistNetDeductedMock).toHaveBeenCalledWith({ tx: true }, [INVENTORY_ID])
+      expect(assertNetDeductedWithinStartingStockMock).toHaveBeenCalled()
     })
   })
 

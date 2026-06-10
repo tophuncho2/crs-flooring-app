@@ -196,6 +196,20 @@ export async function updatePendingAdjustmentUseCase(
 
     const written = await updatePendingAdjustmentRow(c, { id: existing.id, patch })
 
+    // Only quantity + direction move the running balance. A metadata-only edit
+    // (notes / isWaste / location / link) leaves the whole before/after chain
+    // and netDeducted untouched, so skip the ledger replay + ceiling re-check
+    // and return the written row with the inventory's existing netDeducted.
+    const chainTouched =
+      input.patch.quantity !== undefined || input.patch.adjustmentType !== undefined
+    if (!chainTouched) {
+      return {
+        adjustment: written,
+        inventoryId: existing.inventoryId,
+        netDeducted: inventory.currentNetDeducted,
+      }
+    }
+
     const recomputed = await recomputeAndPersistNetDeducted(c, [existing.inventoryId])
     const result = recomputed[0]
     if (!result) {
