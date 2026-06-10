@@ -143,7 +143,7 @@ export function TemplatePropertyUnitGroup({
               type="button"
               aria-label="New property"
               onClick={() =>
-                router.push(buildRecordCreateHref("/dashboard/properties", { returnTo }))
+                router.push(buildRecordCreateHref("/dashboard/management-companies", { returnTo }))
               }
               className={GROUP_HEADER_BUTTON_CLASS}
             >
