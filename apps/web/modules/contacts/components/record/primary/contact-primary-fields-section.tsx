@@ -25,7 +25,7 @@ export function ContactPrimaryFieldsSection({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={4}>
         <FormField label="Name" required>
           {editable ? (
             <TextCell
@@ -55,7 +55,7 @@ export function ContactPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={4}>
+      <CellAt col={1} colSpan={4}>
         <FormField label="Email">
           {editable ? (
             <TextCell
@@ -77,7 +77,7 @@ export function ContactPrimaryFieldsSection({
               <StaticFieldValue>{formatEasternDateTime(createdAt ?? null) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={5} colSpan={4}>
+          <CellAt col={1} colSpan={4}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(updatedAt ?? null) || "—"}</StaticFieldValue>
             </FormField>
