@@ -16,7 +16,12 @@ export function useSingleSectionCreateController<TLocal>({
   createInitialValue: () => TLocal
   isEqual?: (left: TLocal, right: TLocal) => boolean
   createRecord: (localValue: TLocal) => Promise<{
-    redirectTo: string
+    /**
+     * Where to navigate after a successful create. `null` skips the automatic
+     * redirect so the consumer can route itself (e.g. open a "where to?" choice
+     * dialog when more than one record was created).
+     */
+    redirectTo: string | null
     noticeMessage?: string
   }>
   manageDirtySections?: boolean
@@ -37,7 +42,9 @@ export function useSingleSectionCreateController<TLocal>({
     onSave: async (localValue) => {
       const result = await createRecord(localValue)
       page.setDirtySections([])
-      router.push(result.redirectTo, { scroll: false })
+      if (result.redirectTo) {
+        router.push(result.redirectTo, { scroll: false })
+      }
 
       return {
         serverValue: localValue,

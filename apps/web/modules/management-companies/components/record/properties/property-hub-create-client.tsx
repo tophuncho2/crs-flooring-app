@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  ChoiceDialog,
   RecordCreateClientScaffold,
   RecordSingleSectionPanel,
   type RecordDetailClientScaffoldContext,
@@ -20,18 +21,23 @@ const SECTION_CARD_CLASS =
  * company (link or create) and the property fields. Saving creates them
  * atomically via `/api/properties/hub` and lands on the created record.
  */
+export type HubCreateManagementCompanySeed = { id: string; label: string | null }
+
 function PropertyHubCreatePanel({
   page,
   backHref,
+  initialManagementCompany,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
+  initialManagementCompany?: HubCreateManagementCompanySeed | null
 }) {
-  const controller = usePropertyHubCreateSection({ page, backHref })
+  const controller = usePropertyHubCreateSection({ page, backHref, initialManagementCompany })
   const primary = controller.primarySection
   const editable = !primary.isSaving
 
   return (
+    <>
     <RecordSingleSectionPanel
       title="New Property"
       controller={controller}
@@ -82,10 +88,28 @@ function PropertyHubCreatePanel({
         </div>
       </div>
     </RecordSingleSectionPanel>
+    {controller.choiceDialog ? (
+      <ChoiceDialog
+        open={controller.choiceDialog.open}
+        title="Created"
+        message="The management company and property were both created. Where would you like to go?"
+        primaryLabel="Go to property"
+        onPrimary={controller.choiceDialog.goToProperty}
+        secondaryLabel="Go to management company"
+        onSecondary={controller.choiceDialog.goToManagementCompany}
+      />
+    ) : null}
+    </>
   )
 }
 
-export function PropertyHubCreateClient({ backHref }: { backHref: string }) {
+export function PropertyHubCreateClient({
+  backHref,
+  initialManagementCompany,
+}: {
+  backHref: string
+  initialManagementCompany?: HubCreateManagementCompanySeed | null
+}) {
   return (
     <RecordCreateClientScaffold
       title="New Property"
@@ -94,7 +118,11 @@ export function PropertyHubCreateClient({ backHref }: { backHref: string }) {
       modeNoticeLabel="Management"
     >
       {(page: RecordDetailClientScaffoldContext) => (
-        <PropertyHubCreatePanel page={page} backHref={backHref} />
+        <PropertyHubCreatePanel
+          page={page}
+          backHref={backHref}
+          initialManagementCompany={initialManagementCompany}
+        />
       )}
     </RecordCreateClientScaffold>
   )

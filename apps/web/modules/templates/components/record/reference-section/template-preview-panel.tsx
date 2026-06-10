@@ -27,11 +27,12 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
 }
 
 /**
- * Read-only preview of a template shown beneath the MC record view's templates
- * reference header. Mirrors the (editable) template record panel's two sections —
- * Template Details + Material Items — as static, non-editable surfaces. The
- * "Open template" action hands off to the full editable hub. No editing happens
- * here (a future task); switching the previewed template discards nothing.
+ * Read-only preview of a template shown beneath the shared templates reference
+ * header (consumed by both the MC and property record views). Mirrors the
+ * (editable) template record panel's two sections — Template Details + Material
+ * Items — as static, non-editable surfaces. The "Open template" action hands off
+ * to the full editable hub. No editing happens here; switching the previewed
+ * template discards nothing.
  */
 export function TemplatePreviewPanel({
   template,

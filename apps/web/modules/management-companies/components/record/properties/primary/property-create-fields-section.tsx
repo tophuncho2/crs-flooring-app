@@ -1,10 +1,14 @@
 "use client"
 
 import type { PropertyHubPropertyFields } from "@builders/domain"
-import { CellAt } from "@/engines/record-view"
-import { FieldSection, FormField } from "@/engines/record-view"
-import { TextCell, TextareaCell } from "@/engines/record-view"
-import { AddressEditCell } from "../../address-edit-cell"
+import {
+  AddressEditCell,
+  CellAt,
+  FieldSection,
+  FormField,
+  TextCell,
+  TextareaCell,
+} from "@/engines/record-view"
 
 /**
  * The property fields for the hub create form (no MC picker — the management

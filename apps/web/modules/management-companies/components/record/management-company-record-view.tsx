@@ -1,49 +1,47 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
-  RecordDrilldownSection,
+  ConfirmDialog,
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
-  recordPrimaryEditable,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
 import type { ManagementCompanyDetail } from "@builders/domain"
-import { ConfirmDialog } from "@/engines/record-view"
-import { PropertyCreateView } from "./properties/property-create-view"
-import { PropertyRecordView } from "./properties/property-record-view"
-import { LinkedPropertiesList } from "./properties/linked-properties-list"
-import { TemplateReferenceSection } from "./templates/template-reference-section"
+import {
+  buildCurrentRecordEntryPath,
+  buildPropertyRecordHref,
+  buildRecordCreateHref,
+} from "@/hooks/navigation/routes"
+import { TemplateReferenceSection } from "@/modules/templates/components/record/reference-section/template-reference-section"
 import { useMcPrimarySection } from "@/modules/management-companies/controllers/record/primary/use-mc-primary-section"
+import { LinkedPropertiesList } from "./properties/linked-properties-list"
 import { ManagementCompanyCellsSection } from "./primary/management-company-cells-section"
 
 /**
- * The Management Company record view. ① editable MC cells (primary) · ②
- * properties drilldown (list ⇄ embedded Property record view, selection driven
- * by the `?property` URL param the detail client owns) · ③ templates across all
- * the MC's properties (default order is property-name A-Z).
+ * The Management Company record view. ① editable MC cells (primary) · ② the
+ * linked-properties list — clicking a row **navigates** to that property's
+ * standalone record view (no longer an inline drilldown); "+ Property" opens the
+ * management form pre-linked to this company · ③ the shared templates reference
+ * section, scoped to this MC (its picker locked) with a selectable Property
+ * filter, previewing a chosen template read-only.
  */
-/** Sentinel `?property` value that opens the embedded "new property" create form. */
-const NEW_PROPERTY_ID = "new"
-
 export function ManagementCompanyRecordView({
   page,
   entry,
-  backHref,
-  selectedPropertyId,
-  onSelectProperty,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: ManagementCompanyDetail
-  backHref: string
-  selectedPropertyId: string | null
-  onSelectProperty: (propertyId: string | null) => void
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const controller = useMcPrimarySection({ page, entry })
   const primary = controller.primarySection
-  const [embeddedDirty, setEmbeddedDirty] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -58,16 +56,22 @@ export function ManagementCompanyRecordView({
     }
   }
 
-  // Clear the bridged embedded-dirty flag as we leave the embedded property,
-  // so backing out of a (clean or discarded) property doesn't leave the MC
-  // page falsely dirty.
-  const handleSelectProperty = useCallback(
-    (id: string | null) => {
-      if (id === null) setEmbeddedDirty(false)
-      onSelectProperty(id)
-    },
-    [onSelectProperty],
-  )
+  const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
+
+  const openProperty = (propertyId: string) => {
+    router.push(buildPropertyRecordHref(propertyId, entry.id, returnTo))
+  }
+
+  // "+ Property" opens the single management form (the hub create flow),
+  // pre-linked to this company so the operator only fills the property fields.
+  const createProperty = () => {
+    router.push(
+      buildRecordCreateHref("/dashboard/management-companies", {
+        returnTo,
+        params: { managementCompanyId: entry.id, managementCompanyLabel: entry.name },
+      }),
+    )
+  }
 
   const sections: RecordPanelSectionConfig[] = [
     {
@@ -94,12 +98,7 @@ export function ManagementCompanyRecordView({
         >
           <ManagementCompanyCellsSection
             form={primary.localValue}
-            // Lock the MC fields while a property is open below — the operator
-            // is reading the MC, not editing it (mirrors inventory ⇄ adjustments).
-            editable={recordPrimaryEditable({
-              isSaving: primary.isSaving,
-              drilldownOpen: selectedPropertyId !== null,
-            })}
+            editable={!primary.isSaving}
             onFieldChange={(field, value) =>
               primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
             }
@@ -111,47 +110,11 @@ export function ManagementCompanyRecordView({
       key: "properties",
       type: "item",
       order: 10,
-      dirtyLabel: "property",
-      controller: { isDirty: embeddedDirty },
-      render: (ctx) => (
-        <RecordDrilldownSection
-          page={ctx.page}
-          selectedId={selectedPropertyId}
-          onSelect={handleSelectProperty}
-          hideBackBar
-          renderList={(select) => (
-            <LinkedPropertiesList
-              managementCompanyId={entry.id}
-              onSelect={select}
-              onCreate={() => handleSelectProperty(NEW_PROPERTY_ID)}
-            />
-          )}
-          renderDetail={(id, onBack) =>
-            id === NEW_PROPERTY_ID ? (
-              <PropertyCreateView
-                managementCompanyId={entry.id}
-                managementCompanyName={entry.name}
-                hostPage={ctx.page}
-                backHref={backHref}
-                onBack={onBack}
-                onDirtyChange={setEmbeddedDirty}
-              />
-            ) : (
-              <PropertyRecordView
-                key={id}
-                propertyId={id}
-                hostPage={ctx.page}
-                onBack={onBack}
-                onShowList={onBack}
-                onDirtyChange={setEmbeddedDirty}
-                deletable
-                // The MC view already shows an MC-wide templates reference
-                // header alongside this drilldown — suppress the property's own
-                // templates section so the two don't stack.
-                showTemplates={false}
-              />
-            )
-          }
+      render: () => (
+        <LinkedPropertiesList
+          managementCompanyId={entry.id}
+          onSelect={openProperty}
+          onCreate={createProperty}
         />
       ),
     },
@@ -159,15 +122,12 @@ export function ManagementCompanyRecordView({
       key: "templates",
       type: "item",
       order: 20,
-      // Always visible — the MC-wide templates reference header stays on the
-      // record view even while a property is drilled in below it. (The embedded
-      // property view also renders its own property-scoped templates section;
-      // both are shown intentionally.)
       render: (ctx) => (
         <TemplateReferenceSection
           page={ctx.page}
-          managementCompanyId={entry.id}
-          managementCompanyLabel={entry.name}
+          managementCompany={{ id: entry.id, label: entry.name }}
+          managementCompanySelectable={false}
+          propertySelectable
         />
       ),
     },

@@ -1,22 +1,22 @@
 "use client"
 
 import {
-  RecordDetailClientScaffold,
   RecordMultiSectionPanel,
+  RecordDetailClientScaffold,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import { PropertyRecordView } from "./properties/property-record-view"
 import { useMcCreateSection } from "@/modules/management-companies/controllers/record/primary/use-mc-create-section"
 import { ManagementCompanyCellsSection } from "./primary/management-company-cells-section"
 
 /**
  * The Management Company **create** view, reached when a property without an MC
- * is opened (`/dashboard/management-companies/new?property=<id>`). Same shape as
- * the edit view: §1 = MC cells (a blank, creatable primary), §2 = the property
- * being linked (embedded, editable). Saving §1 creates the MC + links the
- * property atomically, then redirects to the MC edit view drilled into it.
+ * is linked from the standalone property record view
+ * (`/dashboard/management-companies/new?property=<id>`). §1 = MC cells (a blank,
+ * creatable primary). Saving creates the MC and links the in-tow property
+ * atomically (the property rides in `propertyId`), then redirects to the linked
+ * property's record view.
  */
 function ManagementCompanyCreatePanel({
   page,
@@ -61,18 +61,6 @@ function ManagementCompanyCreatePanel({
             }
           />
         </RecordPrimarySectionInstance>
-      ),
-    },
-    {
-      key: "property",
-      type: "item",
-      order: 10,
-      render: () => (
-        <PropertyRecordView
-          propertyId={propertyId}
-          hostPage={page}
-          onBack={page.closePage}
-        />
       ),
     },
   ]

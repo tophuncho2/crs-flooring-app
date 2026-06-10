@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   useSingleSectionCreateController,
@@ -72,17 +74,29 @@ function buildHubCreatePayload(local: PropertyHubCreateForm): CreatePropertyHubF
 export function usePropertyHubCreateSection({
   page,
   backHref,
+  initialManagementCompany,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
+  /** Pre-link an existing MC (e.g. "+ Property" from inside that MC's record view). */
+  initialManagementCompany?: { id: string; label: string | null } | null
 }) {
+  const router = useRouter()
   const queryClient = useQueryClient()
 
-  return useSingleSectionCreateController<PropertyHubCreateForm>({
+  // When the form creates BOTH an MC and a property, we can't pick one
+  // destination for the operator — surface a choice dialog instead of
+  // auto-redirecting (see the `redirectTo: null` branch below).
+  const [choice, setChoice] = useState<{
+    propertyHref: string
+    managementCompanyHref: string
+  } | null>(null)
+
+  const controller = useSingleSectionCreateController<PropertyHubCreateForm>({
     page,
     createInitialValue: () => ({
-      mcLinkId: null,
-      mcLinkLabel: null,
+      mcLinkId: initialManagementCompany?.id ?? null,
+      mcLinkLabel: initialManagementCompany?.label ?? null,
       mcForm: EMPTY_MANAGEMENT_COMPANY_FORM,
       propertyForm: EMPTY_PROPERTY_HUB_PROPERTY_FIELDS,
     }),
@@ -106,6 +120,20 @@ export function usePropertyHubCreateSection({
         queryClient.invalidateQueries({ queryKey: MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY }),
       ])
 
+      // Both created → let the operator choose where to land. Defer navigation
+      // by returning `redirectTo: null` and opening the choice dialog.
+      if (property && managementCompany) {
+        setChoice({
+          propertyHref: buildPropertyRecordHref(property.id, managementCompany.id, backHref),
+          managementCompanyHref: buildRecordDetailHref(
+            "/dashboard/management-companies",
+            managementCompany.id,
+            backHref,
+          ),
+        })
+        return { redirectTo: null, noticeMessage: "Created" }
+      }
+
       const redirectTo = property
         ? buildPropertyRecordHref(property.id, managementCompany?.id ?? null, backHref)
         : managementCompany
@@ -119,4 +147,15 @@ export function usePropertyHubCreateSection({
       return { redirectTo, noticeMessage: "Created" }
     },
   })
+
+  const choiceDialog = choice
+    ? {
+        open: true,
+        goToProperty: () => router.push(choice.propertyHref, { scroll: false }),
+        goToManagementCompany: () =>
+          router.push(choice.managementCompanyHref, { scroll: false }),
+      }
+    : null
+
+  return { ...controller, choiceDialog }
 }

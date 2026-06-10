@@ -1,6 +1,5 @@
 "use client"
 
-import { useQueryState } from "nuqs"
 import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
@@ -15,10 +14,6 @@ export function ManagementCompanyDetailClient({
   managementCompany: ManagementCompanyDetail
   backHref: string
 }) {
-  // The drilled-in property lives in the URL (`?property=<id>`) so the browser
-  // back button and deep links work.
-  const [selectedPropertyId, setSelectedPropertyId] = useQueryState("property")
-
   return (
     <RecordDetailClientScaffold
       title="Management Hub"
@@ -28,13 +23,7 @@ export function ManagementCompanyDetailClient({
       modeNotice={{ mode: "edit", label: "Management" }}
     >
       {(page: RecordDetailClientScaffoldContext) => (
-        <ManagementCompanyRecordView
-          page={page}
-          entry={managementCompany}
-          backHref={backHref}
-          selectedPropertyId={selectedPropertyId}
-          onSelectProperty={(id) => void setSelectedPropertyId(id)}
-        />
+        <ManagementCompanyRecordView page={page} entry={managementCompany} />
       )}
     </RecordDetailClientScaffold>
   )

@@ -42,12 +42,12 @@ function PropertiesSectionCard({
 }
 
 /**
- * Properties linked to a management company, rendered as the list face of the
- * MC record view's properties drilldown section. A columned `DataTable` (same
- * primitive + columns as the properties URL list, minus the MC column). Row
- * click drills into that property's embedded record view (via `select`); the
- * header "+ Property" button opens the embedded create form (via `onCreate`).
- * Paginated at {@link SECTION_PAGE_SIZE} rows per page.
+ * Properties linked to a management company, rendered as §2 of the MC record
+ * view. A columned `DataTable` (same primitive + columns as the properties URL
+ * list, minus the MC column). Row click **navigates** to that property's
+ * standalone record view (via `onSelect`); the header "+ Property" button opens
+ * the management form pre-linked to this company (via `onCreate`). Paginated at
+ * {@link SECTION_PAGE_SIZE} rows per page.
  */
 export function LinkedPropertiesList({
   managementCompanyId,

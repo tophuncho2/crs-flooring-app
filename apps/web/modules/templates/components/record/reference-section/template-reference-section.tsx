@@ -7,44 +7,67 @@ import {
   ReferenceHeaderClearButton,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import { TemplateRecordHeader } from "@/modules/templates/components/record/header/template-record-header"
-import { TemplatePreviewPanel } from "./template-preview-panel"
-import { useTemplateOptionsGrid } from "@/modules/templates/controllers/record/header/use-template-options-grid"
-import { toTemplateOption } from "@/modules/templates/controllers/record/use-template-hub-controller"
-import { useMcTemplateReferenceController } from "@/modules/management-companies/controllers/record/templates/use-mc-template-reference-controller"
 import { buildCurrentRecordEntryPath, buildTemplateHubHref } from "@/hooks/navigation/routes"
+import { TemplateRecordHeader } from "@/modules/templates/components/record/header/template-record-header"
+import { useTemplateOptionsGrid } from "@/modules/templates/controllers/record/header/use-template-options-grid"
+import { useTemplateReferenceSection } from "@/modules/templates/controllers/record/use-template-reference-section"
+import { toTemplateOption } from "@/modules/templates/controllers/record/use-template-hub-controller"
+import { TemplatePreviewPanel } from "./template-preview-panel"
 
 const PROMPT_CARD_CLASS =
   "rounded-xl border border-dashed border-[var(--panel-border)] bg-[var(--subpanel-background)] px-5 py-10 text-center text-sm text-[var(--foreground)]/65"
 
+export type TemplateReferenceScopeSeed = {
+  id: string
+  label: string | null
+}
+
 /**
- * The MC record view's third section: the same shared reference header the
- * templates hub uses (Property scope picker over a paginated templates table),
- * scoped to this management company. The MC picker is hidden — we're already
- * inside the company — so the operator only picks a Property (to filter) and a
- * Template. Selecting a template reveals a read-only preview of its details +
- * material items beneath, with an "Open template" hand-off to the editable hub.
+ * The shared templates reference section, owned by `modules/templates` and
+ * consumed by both the MC record view and the property record view. Wraps the
+ * shared `RecordReferenceHeader` chrome (from `@/engines/record-view`) around the
+ * cascade picker grid (MC + Property pickers over a paginated templates table);
+ * selecting a template reveals a read-only preview of its two sections (Template
+ * Details + Material Items) with an "Open template" hand-off to the editable hub.
  *
- * Read-only by design (editing is a future pass), so the reference header's
- * dirty discard-guard is intentionally bypassed: switching the previewed
- * template loses nothing, and the host `page.isDirty` reflects the *MC* form,
- * not this section.
+ * Hosts configure it with a seeded management company (always) and an optional
+ * seeded property, plus per-picker selectability:
+ *   - MC record view: `managementCompany` seeded + locked, `propertySelectable`
+ *     (property filtered to the company).
+ *   - Property record view: both `managementCompany` + `property` seeded + locked;
+ *     only the template is choosable.
+ *
+ * Read-only by design (the previewed template is never edited here), so the
+ * reference header's dirty discard-guard is intentionally bypassed — switching
+ * the previewed template loses nothing, and the host `page.isDirty` reflects the
+ * host record's own form, not this section.
  */
 export function TemplateReferenceSection({
   page,
-  managementCompanyId,
-  managementCompanyLabel,
+  managementCompany,
+  property = null,
+  managementCompanySelectable = false,
+  propertySelectable = false,
 }: {
   page: RecordDetailClientScaffoldContext
-  managementCompanyId: string
-  managementCompanyLabel: string | null
+  managementCompany: TemplateReferenceScopeSeed
+  property?: TemplateReferenceScopeSeed | null
+  /** Allow re-selecting the management company (default: locked to the seed). */
+  managementCompanySelectable?: boolean
+  /** Allow re-selecting the property (default: locked to the seed). */
+  propertySelectable?: boolean
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const { cascade, templateDetail, isTemplateLoading, templateError, clear } =
-    useMcTemplateReferenceController({ managementCompanyId, managementCompanyLabel })
+  const { cascade, templateDetail, isTemplateLoading, templateError } =
+    useTemplateReferenceSection({
+      managementCompanyId: managementCompany.id,
+      managementCompanyLabel: managementCompany.label,
+      propertyId: property?.id ?? null,
+      propertyLabel: property?.label ?? null,
+    })
 
   // The picker grid shows while browsing; once a template is selected it
   // collapses to its list row and the read-only preview takes the space.
@@ -59,6 +82,18 @@ export function TemplateReferenceSection({
   })
 
   const beginReselect = () => setIsPicking(true)
+
+  // Clear resets the template; it also resets the property when the property is
+  // user-selectable (MC view), but keeps a locked seed (property view) in place.
+  // The seeded management company is always kept. `seed` applies with no cascade
+  // side-effects (a full `cascade.reset()` would wipe the locked scope).
+  const clear = () => {
+    cascade.seed(propertySelectable ? { property: null, template: null } : { template: null })
+    grid.reset()
+    setIsPicking(false)
+  }
+  const clearDisabled =
+    cascade.templateId === null && (!propertySelectable || cascade.propertyId === null)
 
   const openInHub = () => {
     if (!templateDetail) return
@@ -91,14 +126,7 @@ export function TemplateReferenceSection({
                 Re-select
               </button>
             ) : null}
-            <ReferenceHeaderClearButton
-              disabled={cascade.propertyId === null && cascade.templateId === null}
-              onClick={() => {
-                clear()
-                grid.reset()
-                setIsPicking(false)
-              }}
-            />
+            <ReferenceHeaderClearButton disabled={clearDisabled} onClick={clear} />
           </>
         )}
       >
@@ -108,10 +136,15 @@ export function TemplateReferenceSection({
             grid={grid}
             templateDetail={templateDetail}
             expanded={expanded}
-            hideManagementCompanyPicker
+            managementCompanyPickerDisabled={!managementCompanySelectable}
+            propertyPickerDisabled={!propertySelectable}
             onReselect={beginReselect}
-            onSelectManagementCompany={() => {}}
-            onSelectProperty={(option) => cascade.selectProperty(option)}
+            onSelectManagementCompany={(option) =>
+              managementCompanySelectable ? cascade.selectManagementCompany(option) : undefined
+            }
+            onSelectProperty={(option) =>
+              propertySelectable ? cascade.selectProperty(option) : undefined
+            }
             onSelectTemplate={(row) => {
               cascade.selectTemplate(toTemplateOption(row))
               setIsPicking(false)

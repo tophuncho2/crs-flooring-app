@@ -1,25 +1,19 @@
 "use client"
 
-import type { ManagementCompanyOption, PropertyPrimaryForm } from "@builders/domain"
-import { CellAt } from "@/engines/record-view"
-import { FieldSection, FormField } from "@/engines/record-view"
-import { TextCell, TextareaCell } from "@/engines/record-view"
-import { AddressEditCell } from "../../address-edit-cell"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
+import type { PropertyPrimaryForm } from "@builders/domain"
+import { AddressEditCell, CellAt, FieldSection, FormField, TextCell, TextareaCell } from "@/engines/record-view"
 
 /**
- * Property "cells" — the §2 primary fields of the Property record view. Same
- * 8-col layout the hub used, plus an **editable Management Company picker** so
- * the property can be (re-)linked from inside the record view. The picker is
- * editable in every context; opened from the MC record view it simply arrives
- * pre-selected (the property already belongs to that MC) but stays changeable.
+ * The Property record view's editable §1 fields: name, contact, address, and
+ * instructions. The linked management company is **not** editable here — it is
+ * shown read-only above this block with a hand-off to the MC record view (see
+ * `PropertyRecordView`) — so the draft's `managementCompanyId` simply rides
+ * along unchanged on save.
  */
-export function PropertyPrimaryFieldsSection({
+export function PropertyFieldsSection({
   draft,
   editable,
   onFieldChange,
-  managementCompanyLabel,
-  onManagementCompanyOption,
 }: {
   draft: PropertyPrimaryForm
   editable: boolean
@@ -27,8 +21,6 @@ export function PropertyPrimaryFieldsSection({
     field: K,
     value: PropertyPrimaryForm[K],
   ) => void
-  managementCompanyLabel: string | null
-  onManagementCompanyOption: (option: ManagementCompanyOption | null) => void
 }) {
   const onText =
     <K extends keyof PropertyPrimaryForm>(field: K) =>
@@ -46,19 +38,6 @@ export function PropertyPrimaryFieldsSection({
             onChange={onText("name")}
             placeholder="Property name"
             ariaLabel="Property name"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Management Company" required>
-          <ManagementCompanyPicker
-            value={draft.managementCompanyId || null}
-            onChange={(id) => onFieldChange("managementCompanyId", id ?? "")}
-            onOptionSelected={onManagementCompanyOption}
-            selectedLabel={managementCompanyLabel}
-            disabled={!editable}
-            placeholder="No management company"
-            ariaLabel="Management company"
           />
         </FormField>
       </CellAt>

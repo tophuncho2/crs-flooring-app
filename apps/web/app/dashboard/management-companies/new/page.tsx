@@ -18,11 +18,24 @@ export default async function ManagementCompanyCreatePage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const propertyId =
     typeof resolvedSearchParams?.property === "string" ? resolvedSearchParams.property : undefined
+  const managementCompanyId =
+    typeof resolvedSearchParams?.managementCompanyId === "string"
+      ? resolvedSearchParams.managementCompanyId
+      : undefined
+  const managementCompanyLabel =
+    typeof resolvedSearchParams?.managementCompanyLabel === "string"
+      ? resolvedSearchParams.managementCompanyLabel
+      : null
   const backHref = resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/properties")
 
   return propertyId ? (
     <ManagementCompanyCreateClient propertyId={propertyId} backHref={backHref} />
   ) : (
-    <PropertyHubCreateClient backHref={backHref} />
+    <PropertyHubCreateClient
+      backHref={backHref}
+      initialManagementCompany={
+        managementCompanyId ? { id: managementCompanyId, label: managementCompanyLabel } : null
+      }
+    />
   )
 }

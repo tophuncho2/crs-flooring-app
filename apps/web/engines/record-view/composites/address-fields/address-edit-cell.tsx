@@ -1,9 +1,9 @@
 "use client"
 
 import { buildAddressBlock, normalizeAddressState } from "@builders/domain"
-import { CellAt } from "@/engines/record-view"
-import { FormField, StaticFieldValue } from "@/engines/record-view"
-import { TextCell } from "@/engines/record-view"
+import { CellAt } from "../../layout-grid"
+import { FormField, StaticFieldValue } from "../../fields"
+import { TextCell } from "../../cells"
 
 export type AddressFieldsValue = {
   streetAddress: string
@@ -31,9 +31,10 @@ export type AddressEditCellProps = {
  *   2-letter code on change).
  * - Read-only: one formatted address block (street / "city, ST zip") so the
  *   value reads as a single tidy address instead of short values strewn across
- *   the row. Mirrors the read-only MC view treatment.
+ *   the row.
  *
- * Shared by the property and management-company hub forms.
+ * Shared record-view composite — consumed by the property and management-company
+ * hub forms.
  */
 export function AddressEditCell({
   value,

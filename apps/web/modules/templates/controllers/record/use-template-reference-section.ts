@@ -1,6 +1,5 @@
 "use client"
 
-import { useCallback } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { TemplateDetail } from "@builders/domain"
 import {
@@ -12,37 +11,45 @@ import {
   fetchTemplateDetailRequest,
 } from "@/modules/templates/data/template-detail-request"
 
-export type McTemplateReferenceController = {
+export type TemplateReferenceSectionController = {
   cascade: CascadePickerController
   /** Full record for the selected template, or null while none is loaded. */
   templateDetail: TemplateDetail | null
   isTemplateLoading: boolean
   templateError: string | null
-  /** Clear the property + template selection, keeping the locked MC. */
-  clear: () => void
 }
 
 /**
- * Controller for the MC record view's templates reference section. A trimmed
- * sibling of `useTemplateHubController`: it seeds the shared cascade picker with
- * the host MC (which never changes — we're already inside that company, so the
- * UI hides the MC picker), loads the full template record when one is selected,
- * and exposes a property+template Clear that keeps the MC locked.
+ * Controller for the shared templates reference section consumed by the MC and
+ * property record views. A trimmed sibling of `useTemplateHubController`: it
+ * seeds the shared cascade picker with the host scope (always a management
+ * company; optionally a property when the property record view fixes one),
+ * then loads the full template record when one is selected.
  *
- * Deliberately omits the hub controller's `window.history.replaceState` URL
- * mirroring — the MC page owns its own `?property=` drilldown param, so the
- * selected template stays in local state for this first (read-only) pass rather
- * than competing for the URL.
+ * Selectability (which seeded pickers the operator may change) and the Clear
+ * semantics live in the consuming component — this controller only owns the
+ * seeded cascade + the selected template's detail query. It deliberately omits
+ * the hub controller's `window.history.replaceState` URL mirroring: the host
+ * page owns the URL, so the previewed template stays in local state.
  */
-export function useMcTemplateReferenceController({
+export function useTemplateReferenceSection({
   managementCompanyId,
   managementCompanyLabel,
+  propertyId = null,
+  propertyLabel = null,
 }: {
   managementCompanyId: string
   managementCompanyLabel: string | null
-}): McTemplateReferenceController {
+  propertyId?: string | null
+  propertyLabel?: string | null
+}): TemplateReferenceSectionController {
   const cascade = useCascadePickerController({
-    initialSelections: { managementCompanyId, managementCompanyLabel },
+    initialSelections: {
+      managementCompanyId,
+      managementCompanyLabel,
+      propertyId,
+      propertyLabel,
+    },
   })
   const { templateId } = cascade
 
@@ -63,13 +70,5 @@ export function useMcTemplateReferenceController({
         : "Failed to load template."
       : null
 
-  // Clear only the downstream selection — `seed` applies with no cascade
-  // side-effects, and omitting the `managementCompany` key leaves the locked MC
-  // in place (a full `cascade.reset()` would wipe it).
-  const seed = cascade.seed
-  const clear = useCallback(() => {
-    seed({ property: null, template: null })
-  }, [seed])
-
-  return { cascade, templateDetail, isTemplateLoading, templateError, clear }
+  return { cascade, templateDetail, isTemplateLoading, templateError }
 }

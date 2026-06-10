@@ -60,32 +60,28 @@ export function buildRecordCreateHref(
   return query ? `${createPath}?${query}` : createPath
 }
 
-const MANAGEMENT_COMPANIES_BASE = "/dashboard/management-companies"
+const PROPERTIES_RECORD_BASE = "/dashboard/properties/record"
 
 /**
- * The single entry point for "open a property". A property never has its own
- * record page — it always lives inside its management company's record view.
- * When the property has an MC, open that MC drilled into the property
- * (`?property=`); when it has none, open the MC **create** flow that will link
- * this property on save. Shared by every property entry point (the list, the
- * WO/template "✎ Property" buttons, the template hub arrow).
+ * The single entry point for "open a property". A property has its own
+ * standalone record view at `/dashboard/properties/record`, with the selected
+ * property riding in the query string (`?propertyId=…`) — mirroring the
+ * inventory record-view contract. The page resolves the property's management
+ * company itself (rendered read-only with a button to the MC record view), so
+ * the `managementCompanyId` arg is no longer needed for routing; it is kept in
+ * the signature for call-site compatibility. Shared by every property entry
+ * point (the list, the WO/template "✎ Property" buttons, the MC record view's
+ * property list).
  */
 export function buildPropertyRecordHref(
   propertyId: string,
-  managementCompanyId: string | null,
+  _managementCompanyId?: string | null,
   returnTo?: string | null,
 ) {
-  if (managementCompanyId) {
-    const searchParams = new URLSearchParams()
-    searchParams.set("property", propertyId)
-    if (returnTo) searchParams.set("returnTo", returnTo)
-    return `${MANAGEMENT_COMPANIES_BASE}/${managementCompanyId}?${searchParams.toString()}`
-  }
-
-  return buildRecordCreateHref(MANAGEMENT_COMPANIES_BASE, {
-    returnTo,
-    params: { property: propertyId },
-  })
+  const searchParams = new URLSearchParams()
+  searchParams.set("propertyId", propertyId)
+  if (returnTo) searchParams.set("returnTo", returnTo)
+  return `${PROPERTIES_RECORD_BASE}?${searchParams.toString()}`
 }
 
 const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
