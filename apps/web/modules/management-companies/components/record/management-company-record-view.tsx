@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
-  ConfirmDialog,
+  RecordDeleteDialog,
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  useRecordDeleteConfirmation,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
@@ -42,19 +42,7 @@ export function ManagementCompanyRecordView({
 
   const controller = useMcPrimarySection({ page, entry })
   const primary = controller.primarySection
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-
-  async function confirmDelete() {
-    if (isDeleting) return
-    setIsDeleting(true)
-    try {
-      await controller.deleteRecord()
-    } finally {
-      setIsDeleting(false)
-      setConfirmDeleteOpen(false)
-    }
-  }
+  const deletion = useRecordDeleteConfirmation(controller.deleteRecord)
 
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
@@ -93,7 +81,7 @@ export function ManagementCompanyRecordView({
           hasConflict={primary.hasConflict}
           onSave={() => void primary.save()}
           onDiscard={primary.discard}
-          onDelete={() => setConfirmDeleteOpen(true)}
+          onDelete={deletion.requestDelete}
           deleteLabel="Delete Management Company"
         >
           <ManagementCompanyCellsSection
@@ -132,8 +120,9 @@ export function ManagementCompanyRecordView({
     <>
       <RecordMultiSectionPanel page={page} sections={sections} />
       <RecordEntityFooter onClose={page.closePage} />
-      <ConfirmDialog
-        open={confirmDeleteOpen}
+      <RecordDeleteDialog
+        open={deletion.isOpen}
+        isDeleting={deletion.isDeleting}
         title="Delete management company?"
         message={
           entry.propertyCount > 0
@@ -142,13 +131,8 @@ export function ManagementCompanyRecordView({
               } from this management company. This cannot be undone.`
             : "This cannot be undone."
         }
-        confirmLabel={isDeleting ? "Deleting…" : "Delete"}
-        cancelLabel="Cancel"
-        tone="destructive"
-        onConfirm={() => void confirmDelete()}
-        onCancel={() => {
-          if (!isDeleting) setConfirmDeleteOpen(false)
-        }}
+        onConfirm={() => void deletion.confirmDelete()}
+        onCancel={deletion.cancelDelete}
       />
     </>
   )

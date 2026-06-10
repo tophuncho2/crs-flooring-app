@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
-  ConfirmDialog,
+  RecordDeleteDialog,
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  useRecordDeleteConfirmation,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
@@ -23,6 +23,7 @@ import {
 import { usePropertyPrimarySection } from "@/modules/properties/controllers/record/use-property-primary-section"
 import { PropertyFieldsSection } from "./primary/property-fields-section"
 import { LinkedManagementCompanySection } from "./primary/linked-management-company-section"
+import { EmptyManagementCompanySection } from "./primary/empty-management-company-section"
 import { PropertyTemplatesSection } from "./templates/property-templates-section"
 
 /**
@@ -51,19 +52,7 @@ export function PropertyRecordView({
   const controller = usePropertyPrimarySection({ page, entry })
   const primary = controller.primarySection
   const record = controller.record
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-
-  async function confirmDelete() {
-    if (isDeleting) return
-    setIsDeleting(true)
-    try {
-      await controller.deleteRecord()
-    } finally {
-      setIsDeleting(false)
-      setConfirmDeleteOpen(false)
-    }
-  }
+  const deletion = useRecordDeleteConfirmation(controller.deleteRecord)
 
   const linkedMc = record.managementCompany
   const mcForm = managementCompany ? toManagementCompanyForm(managementCompany) : null
@@ -110,7 +99,7 @@ export function PropertyRecordView({
           hasConflict={primary.hasConflict}
           onSave={() => void primary.save()}
           onDiscard={primary.discard}
-          onDelete={() => setConfirmDeleteOpen(true)}
+          onDelete={deletion.requestDelete}
           deleteLabel="Delete Property"
         >
           <div className="flex flex-col gap-4">
@@ -120,16 +109,7 @@ export function PropertyRecordView({
                 onOpen={openManagementCompany}
               />
             ) : (
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-[var(--panel-border)] bg-[var(--subpanel-background)] px-4 py-3 text-sm text-[var(--foreground)]/70">
-                <span>No management company linked.</span>
-                <button
-                  type="button"
-                  onClick={linkManagementCompany}
-                  className="shrink-0 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:border-sky-500/45 hover:text-[var(--foreground)]"
-                >
-                  Add management company
-                </button>
-              </div>
+              <EmptyManagementCompanySection onLink={linkManagementCompany} />
             )}
             <PropertyFieldsSection
               draft={primary.localValue}
@@ -163,17 +143,13 @@ export function PropertyRecordView({
     <>
       <RecordMultiSectionPanel page={page} sections={sections} />
       <RecordEntityFooter onClose={page.closePage} />
-      <ConfirmDialog
-        open={confirmDeleteOpen}
+      <RecordDeleteDialog
+        open={deletion.isOpen}
+        isDeleting={deletion.isDeleting}
         title="Delete property?"
         message="This cannot be undone."
-        confirmLabel={isDeleting ? "Deleting…" : "Delete"}
-        cancelLabel="Cancel"
-        tone="destructive"
-        onConfirm={() => void confirmDelete()}
-        onCancel={() => {
-          if (!isDeleting) setConfirmDeleteOpen(false)
-        }}
+        onConfirm={() => void deletion.confirmDelete()}
+        onCancel={deletion.cancelDelete}
       />
     </>
   )
