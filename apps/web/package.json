@@ -9,7 +9,7 @@
     "dev": "node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next dev",
     "build": "node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next build --webpack",
     "postbuild": "mkdir -p .next/standalone/apps/web/.next && cp -R .next/static .next/standalone/apps/web/.next/static && cp -R public .next/standalone/apps/web/public",
-    "start": "node ../../run-with-root-env.mjs .next/standalone/apps/web/server.js",
+    "start": "HOSTNAME=0.0.0.0 node ../../run-with-root-env.mjs .next/standalone/apps/web/server.js",
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",

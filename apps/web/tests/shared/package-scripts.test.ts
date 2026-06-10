@@ -37,7 +37,9 @@ describe("package scripts", () => {
     // Deploy runs Next's standalone server (output: "standalone"); postbuild copies
     // static + public into the bundle since standalone omits them.
     expect(webPackageJson.scripts.postbuild).toBe("mkdir -p .next/standalone/apps/web/.next && cp -R .next/static .next/standalone/apps/web/.next/static && cp -R public .next/standalone/apps/web/public")
-    expect(webPackageJson.scripts.start).toBe("node ../../run-with-root-env.mjs .next/standalone/apps/web/server.js")
+    // HOSTNAME=0.0.0.0 forces the standalone server to bind all interfaces; Docker/Railway
+    // otherwise sets HOSTNAME to the container id and the healthcheck can't reach it.
+    expect(webPackageJson.scripts.start).toBe("HOSTNAME=0.0.0.0 node ../../run-with-root-env.mjs .next/standalone/apps/web/server.js")
     expect(webPackageJson.scripts.typecheck).toBe("node ../../run-with-root-env.mjs ../../node_modules/next/dist/bin/next typegen && tsc -p tsconfig.json --noEmit")
 
     expectBuildChain(rootPackageJson.scripts["build:web"], "@builders/web")
