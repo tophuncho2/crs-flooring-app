@@ -21,7 +21,6 @@ export function LinkedManagementCompanySection({
   return (
     <div className="flex flex-col gap-2">
       <ActionHeader
-        title="Management Company"
         actions={[
           { key: "open", label: "Open management company ↗", onClick: onOpen, kind: "secondary" },
         ]}
