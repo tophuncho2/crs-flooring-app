@@ -4,11 +4,12 @@ import { useState } from "react"
 import {
   RecordDetailClientScaffold,
   RecordReferenceHeader,
+  ReferenceHeaderAddButton,
   ReferenceHeaderClearButton,
   ReferenceHeaderDiscardButton,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import { PickerAddButton, type CascadePickerSeed } from "@/engines/picker"
+import { type CascadePickerSeed } from "@/engines/picker"
 import type { TemplateDetail } from "@builders/domain"
 import { TemplateRecordPanel } from "./template-record-panel"
 import { TemplateRecordHeader } from "./header/template-record-header"
@@ -114,7 +115,7 @@ function TemplateHubView({
         discardMessage="This template has unsaved changes. Switching templates will discard them."
         actions={({ guard }) => (
           <>
-            <PickerAddButton label="+ Template" onClick={newTemplate} />
+            <ReferenceHeaderAddButton label="+ Template" onClick={newTemplate} />
             {!expanded ? (
               <button
                 type="button"
