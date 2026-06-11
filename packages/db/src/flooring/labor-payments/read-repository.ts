@@ -2,6 +2,7 @@ import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeLaborPayment,
+  normalizeMoneyAmount,
   type LaborPayment,
   type LaborPaymentListRow,
   type LaborPaymentPage,
@@ -102,4 +103,20 @@ export async function listLaborPaymentsForContactPage(
     rows: page.map(normalizeLaborPayment),
     hasMore,
   }
+}
+
+/**
+ * Sum of `cost` across ALL of a contact's labor payments, as a canonical money
+ * string. Powers the "Total Labor Cost" stat on the contact record view.
+ * Returns "0.00" when the contact has no payments (or all costs are null).
+ */
+export async function sumLaborPaymentCostForContact(
+  contactId: string,
+  client: LaborPaymentsDbClient = db,
+): Promise<string> {
+  const result = await client.flooringLaborPayment.aggregate({
+    where: { contactId },
+    _sum: { cost: true },
+  })
+  return normalizeMoneyAmount((result._sum.cost ?? 0).toString())
 }

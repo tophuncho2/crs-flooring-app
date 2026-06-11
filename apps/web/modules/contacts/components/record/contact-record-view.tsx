@@ -18,9 +18,11 @@ import {
   CONTACT_LABOR_PAYMENTS_QUERY_KEY,
   laborPaymentByIdRequest,
 } from "@/modules/contacts/data/contact-labor-payments-request"
+import { CONTACT_WORK_ORDERS_QUERY_KEY } from "@/modules/contacts/data/contact-work-orders-request"
 import { ContactPrimaryFieldsSection } from "./primary/contact-primary-fields-section"
 import { ContactLaborPaymentsList } from "./labor-payments/contact-labor-payments-list"
 import { EmbeddedLaborPaymentRecordView } from "./labor-payments/embedded-labor-payment-record-view"
+import { ContactStatisticsSection } from "./statistics/contact-statistics-section"
 
 /**
  * The contact record view. ① editable contact fields (primary) · ② labor-payments
@@ -47,6 +49,11 @@ export function ContactRecordView({
   const handleLaborPaymentMutated = useCallback(() => {
     void queryClient.invalidateQueries({
       queryKey: [...CONTACT_LABOR_PAYMENTS_QUERY_KEY, entry.id],
+    })
+    // A payment edit can change the contact's total labor cost and its set of
+    // linked work orders — refresh the Statistics section too.
+    void queryClient.invalidateQueries({
+      queryKey: [...CONTACT_WORK_ORDERS_QUERY_KEY, entry.id],
     })
   }, [queryClient, entry.id])
 
@@ -170,6 +177,12 @@ export function ContactRecordView({
           )}
         />
       ),
+    },
+    {
+      key: "statistics",
+      type: "item",
+      order: 20,
+      render: () => <ContactStatisticsSection contactId={entry.id} />,
     },
   ]
 

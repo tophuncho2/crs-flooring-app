@@ -22,6 +22,17 @@ export type WorkOrderListRow = {
   updatedAt: string
 }
 
+/**
+ * One page of a contact's work orders for the contact record-view Statistics
+ * section, plus the contact's total labor cost (a money string, summed over ALL
+ * the contact's labor payments — broader than the listed work orders).
+ */
+export type WorkOrdersForContactPage = {
+  rows: WorkOrderListRow[]
+  total: number
+  laborCostTotal: string
+}
+
 export type WorkOrderDetail = WorkOrderListRow & {
   customAddress: string
   internalNotes: string
