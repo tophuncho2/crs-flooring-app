@@ -1,0 +1,107 @@
+name: CI — gauntlet + deploy smoke test
+
+# Runs the SAME local verification gauntlet you run by hand
+# (bin/check.sh: clean → build → typecheck → lint → test), PLUS the one thing
+# local checks can't see: a deploy-shaped smoke test that boots the Next.js
+# standalone server exactly like Railway does and curls /api/health.
+#
+# Why the smoke test exists: two deploys failed while the full gauntlet was
+# green — first a missing `.next` build (standalone packaging), then the
+# standalone server binding the container hostname instead of 0.0.0.0. Neither
+# is catchable by build/typecheck/lint/test. This job reproduces Railway's
+# `npm run start:web` → /api/health path so that class of failure is caught in
+# CI, before it ever reaches Railway.
+#
+# Make it MATTER: mark this check Required in branch protection and turn on
+# Railway's "Wait for CI" so a red run can't deploy.
+
+on:
+  pull_request:
+  push:
+    branches: [dev, staging, main]
+
+# A newer push to the same branch/PR cancels the in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # The gauntlet never launches a browser (Playwright e2e is a separate
+      # script, not part of `npm run test`), so skip puppeteer's Chromium
+      # download to keep `npm ci` fast. Runtime PDF generation is unaffected.
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+
+    steps:
+      - name: Checkout (full history for the migration-discipline diff)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node 20 (matches the Railway runtime)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      # Opinionated guard: editing the Prisma schema in a PR without committing a
+      # migration is the "forgot to migrate" mistake. The user owns migrations
+      # (never auto-applied in CI) — this only checks one was authored. If a rare
+      # schema edit genuinely needs no migration, remove this step or soften the
+      # `exit 1` to a `::warning::`.
+      - name: Migration discipline — schema.prisma change needs a migration
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          CHANGED="$(git diff --name-only "origin/$BASE_REF"...HEAD)"
+          if echo "$CHANGED" | grep -qx 'packages/db/prisma/schema.prisma'; then
+            if echo "$CHANGED" | grep -qE '^packages/db/prisma/migrations/.+/migration\.sql$'; then
+              echo "✓ schema.prisma changed and a migration is included."
+            else
+              echo "::error::schema.prisma changed but no new migration was committed. Run 'npm run db:migrate:dev' and commit the generated migration."
+              exit 1
+            fi
+          else
+            echo "schema.prisma unchanged — nothing to check."
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Gauntlet (clean → build → typecheck → lint → test)
+        run: bash bin/check.sh
+
+      - name: Deploy smoke test — boot the standalone server like Railway, curl /api/health
+        run: |
+          set -euo pipefail
+          # bin/check.sh already produced the standalone bundle via `npm run build`.
+          SERVER=apps/web/.next/standalone/apps/web/server.js
+          if [ ! -f "$SERVER" ]; then
+            echo "::error::standalone server missing at $SERVER — did the web build emit output:'standalone'?"
+            exit 1
+          fi
+          HOSTNAME=0.0.0.0 PORT=8099 node "$SERVER" > /tmp/web.log 2>&1 &
+          echo $! > /tmp/web.pid
+          # Mirror Railway's healthcheck: retry /api/health until it answers 200.
+          # --retry-connrefused waits for the listener; -f makes non-2xx a failure.
+          if curl --retry 15 --retry-delay 2 --retry-all-errors --retry-connrefused \
+                  -fsS -o /dev/null -w 'health: HTTP %{http_code}\n' \
+                  http://127.0.0.1:8099/api/health; then
+            echo "✓ standalone server healthy on 0.0.0.0:8099 — matches Railway's deploy path."
+          else
+            echo "::error::/api/health never became healthy — the exact failure Railway sees."
+            kill "$(cat /tmp/web.pid)" 2>/dev/null || true
+            exit 1
+          fi
+          kill "$(cat /tmp/web.pid)" 2>/dev/null || true
+
+      - name: Server log (only on failure)
+        if: failure()
+        run: cat /tmp/web.log 2>/dev/null || true
