@@ -1,4 +1,5 @@
 import { buildAddressLine } from "../../shared/address/index.js"
+import { normalizePhoneNumber } from "../../shared/phone.js"
 import type { PropertyDetailRecord, PropertyListRow, PropertyOption } from "./types.js"
 
 type PropertyDetailInput = {
@@ -51,7 +52,7 @@ export function normalizeProperty(property: PropertyDetailInput): PropertyDetail
     city: property.city ?? "",
     state: property.state ?? "",
     zip: property.postalCode ?? "",
-    phone: property.phone ?? "",
+    phone: normalizePhoneNumber(property.phone ?? ""),
     email: property.email ?? "",
     instructions: property.instructions ?? "",
     fullAddress: buildAddressLine(property),
@@ -68,7 +69,7 @@ export function normalizePropertyListRow(property: PropertyListRowInput): Proper
     city: property.city ?? "",
     state: property.state ?? "",
     zip: property.postalCode ?? "",
-    phone: property.phone ?? "",
+    phone: normalizePhoneNumber(property.phone ?? ""),
     email: property.email ?? "",
     fullAddress: buildAddressLine(property),
     managementCompany: property.managementCompany,

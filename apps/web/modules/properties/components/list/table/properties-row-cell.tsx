@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import type { PropertyListRow } from "@builders/domain"
+import { formatPhoneNumber, type PropertyListRow } from "@builders/domain"
 
 /**
  * Per-cell renderer for the properties list `DataTable`. Switches on
@@ -25,7 +25,7 @@ export function renderPropertyRowCell(
     case "zip":
       return row.zip || "-"
     case "phone":
-      return row.phone || "-"
+      return <span>{formatPhoneNumber(row.phone) || "—"}</span>
     case "email":
       return row.email || "-"
     case "templateCount":

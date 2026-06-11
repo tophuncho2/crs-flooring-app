@@ -1,7 +1,7 @@
 "use client"
 
 import type { PropertyPrimaryForm } from "@builders/domain"
-import { AddressEditCell, CellAt, FieldSection, FormField, TextCell, TextareaCell } from "@/engines/record-view"
+import { AddressEditCell, CellAt, FieldSection, FormField, PhoneCell, TextCell, TextareaCell } from "@/engines/record-view"
 
 /**
  * The text/address fields rendered by this section — the shared subset common
@@ -55,11 +55,10 @@ export function PropertyFieldsSection({
       </CellAt>
       <CellAt col={1} colSpan={5}>
         <FormField label="Phone">
-          <TextCell
+          <PhoneCell
             editable={editable}
             value={draft.phone}
             onChange={onText("phone")}
-            placeholder="Phone"
             ariaLabel={`${ariaPrefix} phone`}
           />
         </FormField>

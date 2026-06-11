@@ -1,8 +1,17 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { normalizeProperty, type PropertyDetailRecord } from "@builders/domain"
+import { normalizeProperty, normalizePhoneNumber, type PropertyDetailRecord } from "@builders/domain"
 
 type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
+
+// Phone standard: persist the canonical digits-only form (defensive guard — the
+// API validator already normalized, but the data layer is the last gate).
+// `undefined` is preserved so a partial update never clears the column.
+function normalizeNullablePhone(value: string | null | undefined): string | null | undefined {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  return normalizePhoneNumber(value) || null
+}
 
 export type CreatePropertyRecordInput = {
   managementCompanyId: string | null
@@ -39,7 +48,7 @@ export async function createPropertyRecord(
   client: PropertiesDbClient = db,
 ): Promise<PropertyDetailRecord> {
   const property = await client.property.create({
-    data: input,
+    data: { ...input, phone: normalizeNullablePhone(input.phone) },
     select: propertyDetailSelect,
   })
 
@@ -53,7 +62,7 @@ export async function updatePropertyRecord(
 ): Promise<PropertyDetailRecord> {
   const property = await client.property.update({
     where: { id },
-    data: input,
+    data: { ...input, phone: normalizeNullablePhone(input.phone) },
     select: propertyDetailSelect,
   })
 
