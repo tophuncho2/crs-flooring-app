@@ -2,6 +2,9 @@
 export * from "./scaffolds/record-create-client-scaffold"
 export * from "./scaffolds/record-detail-client-scaffold"
 
+// hooks
+export * from "./hooks/use-record-swap-guard"
+
 // controllers
 export * from "./controllers/use-record-page-controller"
 export * from "./controllers/use-embedded-record-page-controller"
