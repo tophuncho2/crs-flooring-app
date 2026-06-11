@@ -75,17 +75,17 @@ export function WarehousePrimaryFieldsSection({
       />
       {showSummary ? (
         <>
-          <CellAt col={6} row={1} colSpan={3}>
+          <CellAt col={1} colSpan={5}>
             <FormField label="Warehouse #">
               <StaticFieldValue>{number ?? "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={6} row={2} colSpan={3}>
+          <CellAt col={1} colSpan={5}>
             <FormField label="Created">
               <StaticFieldValue>{formatDate(createdAt ?? "")}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={6} row={3} colSpan={3}>
+          <CellAt col={1} colSpan={5}>
             <FormField label="Updated">
               <StaticFieldValue>{formatDate(updatedAt ?? "")}</StaticFieldValue>
             </FormField>
