@@ -518,6 +518,24 @@ export type InventoryMergeCandidatesArgs = {
 }
 
 /**
+ * The shared "available / eligible inventory" predicate used by every read that
+ * lets a user *pick* an inventory row (merge candidates, the cut-log adjustment
+ * picker). A row is pickable only if it is not archived, not already merged
+ * (`wasMerged`), and still has remaining balance (`startingStock > netDeducted`).
+ * These rows stay fully editable in the record view — this filter governs
+ * *pickability*, not editability. Single source of truth so the selection reads
+ * can't drift. (The work-orders eligible-inventory read mirrors the same three
+ * states in its own Prisma-object style; the db submodules stay decoupled.)
+ */
+function availableInventorySqlConditions(): Prisma.Sql[] {
+  return [
+    Prisma.sql`"isArchived" = false`,
+    Prisma.sql`"wasMerged" = false`,
+    Prisma.sql`"startingStock" > "netDeducted"`,
+  ]
+}
+
+/**
  * Paginated read for the inventory **merge** candidate picker. Same row shape +
  * sort as `listInventoryForListView`, but scoped to one product and excluding
  * rows that can't legitimately be merged: archived, already-merged
@@ -534,9 +552,7 @@ export async function listInventoryMergeCandidates(
 ): Promise<InventoryListViewResult> {
   const conditions: Prisma.Sql[] = [
     Prisma.sql`"productId" = ${args.productId}`,
-    Prisma.sql`"isArchived" = false`,
-    Prisma.sql`"wasMerged" = false`,
-    Prisma.sql`"startingStock" > "netDeducted"`,
+    ...availableInventorySqlConditions(),
   ]
   if (args.warehouseId !== undefined) {
     conditions.push(Prisma.sql`"warehouseId" = ${args.warehouseId}`)
@@ -644,7 +660,8 @@ type InventoryOptionRawRow = {
 
 /**
  * Picker / options search for inventory rows. Filters are AND'd: warehouse +
- * archived=false + computed-balance>0 (`startingStock > netDeducted`) +
+ * the shared availability predicate (archived=false + wasMerged=false +
+ * computed-balance>0, via `availableInventorySqlConditions`) +
  * (optional) product + (optional) location text contains, then per-field
  * identity ILIKEs across `inventory_number`, `rollNumber`, `dyeLot`, `note`
  * (each independent, AND'd). Balance is stamped via the same pure helper used
@@ -664,8 +681,7 @@ export async function searchInventoryOptions(
 ): Promise<InventoryOptionsSearchResult> {
   const conditions: Prisma.Sql[] = [
     Prisma.sql`"warehouseId" = ${args.warehouseId}`,
-    Prisma.sql`"isArchived" = false`,
-    Prisma.sql`"startingStock" > "netDeducted"`,
+    ...availableInventorySqlConditions(),
   ]
   if (args.productId !== undefined) {
     conditions.push(Prisma.sql`"productId" = ${args.productId}`)

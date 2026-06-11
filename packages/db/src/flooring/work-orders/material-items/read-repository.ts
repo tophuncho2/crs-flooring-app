@@ -123,9 +123,11 @@ export type EligibleInventoryRow = {
 
 /**
  * Returns inventory rows eligible for a new pending adjustment on this WOMI:
- * same warehouse as the parent WO, same product as the WOMI, and at least
- * some remaining stock (`startingStock - netDeducted > 0`). Drives the
- * inventory dropdown in the adjustment expandable row UI.
+ * same warehouse as the parent WO, same product as the WOMI, not archived, not
+ * already merged, and with remaining stock (`startingStock - netDeducted > 0`).
+ * Drives the inventory dropdown in the adjustment expandable row UI. Mirrors the
+ * inventory module's shared availability predicate (kept in this submodule's own
+ * Prisma-object style rather than importing across db submodules).
  */
 export async function listEligibleInventoryForWorkOrderItem(
   args: { workOrderId: string; workOrderItemId: string },
@@ -146,6 +148,11 @@ export async function listEligibleInventoryForWorkOrderItem(
       productId: womi.productId,
       warehouseId: womi.workOrder.warehouseId,
       isArchived: false,
+      // Merged sources are spent — never offer them as deductible stock (their
+      // balance has rolled into the consolidated row). Mirrors the shared
+      // `availableInventorySqlConditions` predicate; the JS `remaining > 0`
+      // filter below covers the balance leg. Editability is unaffected.
+      wasMerged: false,
     },
     select: {
       id: true,

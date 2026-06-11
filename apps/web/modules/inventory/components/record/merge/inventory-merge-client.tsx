@@ -132,6 +132,9 @@ function InventoryMergePanel({ page }: { page: RecordDetailClientScaffoldContext
                     ariaLabel="Search inventory by note"
                   />
                 </div>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Archived, merged, and zero-balance rows aren&apos;t shown.
+                </p>
                 <DataTable
                   rows={grid.rows}
                   columns={INVENTORY_LIST_COLUMNS}
