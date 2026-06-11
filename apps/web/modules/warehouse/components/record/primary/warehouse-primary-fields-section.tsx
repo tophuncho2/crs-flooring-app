@@ -1,9 +1,14 @@
 "use client"
 
-import { normalizeAddressState, type WarehouseForm } from "@builders/domain"
-import { TextCell } from "@/engines/record-view"
-import { FieldSection, FormField, StaticFieldValue } from "@/engines/record-view"
-import { CellAt } from "@/engines/record-view"
+import type { WarehouseForm } from "@builders/domain"
+import {
+  AddressEditCell,
+  CellAt,
+  FieldSection,
+  FormField,
+  StaticFieldValue,
+  TextCell,
+} from "@/engines/record-view"
 
 function formatDate(value: string) {
   if (!value) return "—"
@@ -45,7 +50,7 @@ export function WarehousePrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={6} colSpan={3}>
+      <CellAt col={1} colSpan={5}>
         <FormField label="Store Phone">
           <TextCell
             editable={editable}
@@ -56,63 +61,31 @@ export function WarehousePrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Street Address">
-          <TextCell
-            editable={editable}
-            value={draft.streetAddress}
-            onChange={(next) => onFieldChange("streetAddress", next)}
-            placeholder="Street address"
-            ariaLabel="Warehouse street address"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
-        <FormField label="City">
-          <TextCell
-            editable={editable}
-            value={draft.city}
-            onChange={(next) => onFieldChange("city", next)}
-            placeholder="City"
-            ariaLabel="Warehouse city"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={2}>
-        <FormField label="State">
-          <TextCell
-            editable={editable}
-            value={draft.state}
-            onChange={(next) => onFieldChange("state", normalizeAddressState(next))}
-            placeholder="ST"
-            ariaLabel="Warehouse state"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={7} colSpan={2}>
-        <FormField label="Postal Code">
-          <TextCell
-            editable={editable}
-            value={draft.postalCode}
-            onChange={(next) => onFieldChange("postalCode", next)}
-            placeholder="Postal code"
-            ariaLabel="Warehouse postal code"
-          />
-        </FormField>
-      </CellAt>
+      <AddressEditCell
+        editable={editable}
+        colSpan={5}
+        ariaPrefix="Warehouse"
+        value={{
+          streetAddress: draft.streetAddress,
+          city: draft.city,
+          state: draft.state,
+          zip: draft.postalCode,
+        }}
+        onChange={(field, value) => onFieldChange(field === "zip" ? "postalCode" : field, value)}
+      />
       {showSummary ? (
         <>
-          <CellAt col={1} colSpan={2}>
+          <CellAt col={6} row={1} colSpan={3}>
             <FormField label="Warehouse #">
               <StaticFieldValue>{number ?? "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={3} colSpan={3}>
+          <CellAt col={6} row={2} colSpan={3}>
             <FormField label="Created">
               <StaticFieldValue>{formatDate(createdAt ?? "")}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={6} colSpan={3}>
+          <CellAt col={6} row={3} colSpan={3}>
             <FormField label="Updated">
               <StaticFieldValue>{formatDate(updatedAt ?? "")}</StaticFieldValue>
             </FormField>
