@@ -1,10 +1,20 @@
 "use client"
 
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { Pencil, Plus } from "lucide-react"
 import {
   RecordMultiSectionPanel,
+  RecordOptionsMenu,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
+  type RecordOptionsMenuItem,
 } from "@/engines/record-view"
+import {
+  buildCurrentRecordEntryPath,
+  buildPropertyRecordHref,
+  buildRecordCreateHref,
+  buildRecordDetailHref,
+} from "@/hooks/navigation/routes"
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/primary/use-template-primary-section"
 import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/record/material-items/use-template-material-items-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
@@ -28,6 +38,54 @@ export function TemplateRecordPanel({
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
   const isDirty = primary.primarySection.isDirty || materialItems.isDirty
   const canSync = !isDirty && !primary.primarySection.isSaving && !materialItems.isSaving
+
+  // Temporary home for the MC / Property / + New property nav buttons: the
+  // primary header's Options menu. Targets derive from the saved record + the
+  // live draft propertyId; these move to the cell label row once that shared
+  // primitive merges. Open MC reflects the saved MC until save.
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
+  const mcId = primary.record.managementCompanyId
+  const propertyId = primary.primarySection.localValue.propertyId || null
+  const editable = !primary.primarySection.isSaving
+
+  const navItems: RecordOptionsMenuItem[] = [
+    {
+      key: "open-management-company",
+      label: "Open management company",
+      icon: <Pencil size={14} />,
+      disabled: !mcId,
+      onClick: () => {
+        if (mcId) {
+          router.push(buildRecordDetailHref("/dashboard/management-companies", mcId, returnTo))
+        }
+      },
+    },
+    {
+      key: "open-property",
+      label: "Open property",
+      icon: <Pencil size={14} />,
+      disabled: !propertyId,
+      onClick: () => {
+        if (propertyId) {
+          router.push(buildPropertyRecordHref(propertyId, mcId, returnTo))
+        }
+      },
+    },
+    ...(editable
+      ? [
+          {
+            key: "new-property",
+            label: "New property",
+            icon: <Plus size={14} />,
+            onClick: () =>
+              router.push(buildRecordCreateHref("/dashboard/management-companies", { returnTo })),
+          },
+        ]
+      : []),
+  ]
 
   return (
     <>
@@ -64,6 +122,7 @@ export function TemplateRecordPanel({
                     disabled: !canSync || syncToWorkOrder.isSyncing,
                   },
                 ]}
+                actionsTrailing={<RecordOptionsMenu items={navItems} />}
               >
                 <TemplatePrimaryFieldsSection
                   draft={primary.primarySection.localValue}

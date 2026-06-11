@@ -1,10 +1,22 @@
 "use client"
 
-import type { TemplateForm } from "@builders/domain"
-import { TemplateJobGroup } from "./groups/template-job-group"
-import { TemplateNotesGroup } from "./groups/template-notes-group"
-import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group"
+import { useState } from "react"
+import {
+  CellAt,
+  FieldSection,
+  FormField,
+  StaticFieldValue,
+  TextareaCell,
+} from "@/engines/record-view"
+import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
+import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
+import {
+  TEMPLATE_DESCRIPTION_MAX,
+  TEMPLATE_INTERNAL_NOTES_MAX,
+  type TemplateForm,
+} from "@builders/domain"
 import { usePropertyJoinedOverride } from "@/modules/templates/controllers/record/primary/use-property-joined-override"
+import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group"
 
 /**
  * Slim joined-name + joined-property snapshot the section needs from
@@ -29,11 +41,11 @@ export type TemplatePrimaryDetail = {
 }
 
 /**
- * Composer for the templates primary section. Renders three visual
- * groups in order — Job, Property & Unit, Notes — each with a
- * tab-style header matching the WO record view. Pure UI orchestration;
- * the `draft` / `onFieldChange` interface is unchanged from the prior
- * monolithic `FieldSection` composition.
+ * Composer for the templates primary section. Renders every field on the
+ * record-view engine's invisible grid (`FieldSection` + `CellAt` + `FormField`),
+ * single-column stacked — half-width controls up top, full-width read-only
+ * property fields + textareas below. The former tab-card groups are gone; the
+ * MC / Property / + New property nav buttons moved to the header Options menu.
  */
 export function TemplatePrimaryFieldsSection({
   draft,
@@ -46,20 +58,65 @@ export function TemplatePrimaryFieldsSection({
   detail: TemplatePrimaryDetail | null
   disabled: boolean
   onFieldChange: (field: keyof TemplateForm, value: string) => void
-  /** Multi-field setter — used by the property-unit group for the MC→Property cascade. */
+  /** Multi-field setter — used by the property-unit cluster for the MC→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
 }) {
   const editable = !disabled
   const { propertyJoined, handlePropertyOption } = usePropertyJoinedOverride(detail)
 
+  // Snapshot the picked job-type label so it survives the dropdown preferring
+  // `selectedOption` over its live results; falls back to the saved joined name.
+  const [pickedJobTypeLabel, setPickedJobTypeLabel] = useState<string | null>(null)
+  const jobTypeLabel = pickedJobTypeLabel ?? detail?.jobTypeName ?? null
+
   return (
-    <div className="flex flex-col gap-4">
-      <TemplateJobGroup
-        editable={editable}
-        draft={draft}
-        detail={detail}
-        onFieldChange={onFieldChange}
-      />
+    <FieldSection gap="0.75rem">
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Warehouse">
+          {editable ? (
+            <WarehousePicker
+              value={draft.warehouseId || null}
+              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
+              selectedLabel={detail?.warehouseName || null}
+              placeholder="No warehouse"
+              ariaLabel="Warehouse"
+            />
+          ) : (
+            <StaticFieldValue>{detail?.warehouseName || "—"}</StaticFieldValue>
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Job Type">
+          {editable ? (
+            <JobTypePicker
+              value={draft.jobTypeId || null}
+              onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
+              onOptionSelected={(option) => setPickedJobTypeLabel(option?.name ?? null)}
+              selectedLabel={jobTypeLabel}
+              placeholder="No job type"
+              ariaLabel="Job type"
+            />
+          ) : (
+            <StaticFieldValue>{jobTypeLabel ?? "—"}</StaticFieldValue>
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
+        <FormField
+          label="Description"
+          currentLength={editable ? draft.description.length : undefined}
+          maxLength={editable ? TEMPLATE_DESCRIPTION_MAX : undefined}
+        >
+          <TextareaCell
+            editable={editable}
+            value={draft.description}
+            onChange={(value) => onFieldChange("description", value)}
+            maxLength={TEMPLATE_DESCRIPTION_MAX}
+          />
+        </FormField>
+      </CellAt>
+
       <TemplatePropertyUnitGroup
         editable={editable}
         draft={draft}
@@ -69,11 +126,22 @@ export function TemplatePrimaryFieldsSection({
         onFieldsChange={onFieldsChange}
         onPropertyOption={handlePropertyOption}
       />
-      <TemplateNotesGroup
-        editable={editable}
-        draft={draft}
-        onFieldChange={onFieldChange}
-      />
-    </div>
+
+      <CellAt col={1} colSpan={8}>
+        <FormField
+          label="Internal Notes"
+          currentLength={editable ? draft.internalNotes.length : undefined}
+          maxLength={editable ? TEMPLATE_INTERNAL_NOTES_MAX : undefined}
+        >
+          <TextareaCell
+            editable={editable}
+            value={draft.internalNotes}
+            onChange={(value) => onFieldChange("internalNotes", value)}
+            maxLength={TEMPLATE_INTERNAL_NOTES_MAX}
+            rows={4}
+          />
+        </FormField>
+      </CellAt>
+    </FieldSection>
   )
 }

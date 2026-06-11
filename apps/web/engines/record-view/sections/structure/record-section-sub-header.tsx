@@ -58,6 +58,8 @@ export type RecordSectionSubHeaderProps = {
   actions?: RecordSectionSubHeaderAction[]
   /** Node rendered to the left of the action buttons (e.g. a lock notice). */
   actionsLeading?: ReactNode
+  /** Node rendered to the right of the action buttons (e.g. an options menu). */
+  actionsTrailing?: ReactNode
   statusExtra?: ReactNode
   canManage?: boolean
   showStatus?: boolean
@@ -80,6 +82,7 @@ export function RecordSectionSubHeader({
   deleteLabel = "Delete",
   actions = [],
   actionsLeading,
+  actionsTrailing,
   statusExtra,
   canManage = true,
   showStatus = true,
@@ -125,10 +128,11 @@ export function RecordSectionSubHeader({
   ) : null
 
   const managedActions =
-    actionsLeading || actionButtons ? (
+    actionsLeading || actionButtons || actionsTrailing ? (
       <>
         {actionsLeading}
         {actionButtons}
+        {actionsTrailing}
       </>
     ) : null
 
