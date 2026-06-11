@@ -26,6 +26,7 @@ export type FormFieldWrapperProps = FormFieldProps & {
  */
 export function FormField({
   label,
+  actions,
   hint,
   error,
   required,
@@ -43,14 +44,19 @@ export function FormField({
           {label}
           {required ? <span aria-hidden="true" className="text-base leading-none text-rose-600">*</span> : null}
         </span>
-        {showCounter ? (
-          <span
-            className={joinClassNames(
-              "text-[10px] tabular-nums",
-              atMax ? "text-rose-700" : "text-[var(--foreground)]/55",
-            )}
-          >
-            {currentLength}/{maxLength}
+        {showCounter || actions ? (
+          <span className="flex items-center gap-2">
+            {showCounter ? (
+              <span
+                className={joinClassNames(
+                  "text-[10px] tabular-nums",
+                  atMax ? "text-rose-700" : "text-[var(--foreground)]/55",
+                )}
+              >
+                {currentLength}/{maxLength}
+              </span>
+            ) : null}
+            {actions ? <span className="flex items-center gap-1">{actions}</span> : null}
           </span>
         ) : null}
       </span>
