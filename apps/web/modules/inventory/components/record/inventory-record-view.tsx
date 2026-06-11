@@ -23,6 +23,7 @@ import {
   NEW_ADJUSTMENT_ID,
   type InventoryRecordWoSeed,
 } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
+import { WarningNotice } from "@/engines/common"
 import { buildInventoryDuplicateHref } from "@/hooks/navigation"
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-list"
@@ -211,6 +212,12 @@ export function InventoryRecordView({
 
   return (
     <>
+      {entry.wasMerged ? (
+        <WarningNotice className="mb-4">
+          This inventory item has been merged into another row. Editing it at this point may
+          not reflect where its stock actually lives — edit at your own risk.
+        </WarningNotice>
+      ) : null}
       <RecordMultiSectionPanel page={page} sections={sections} />
       <RecordEntityFooter
         onClose={page.closePage}

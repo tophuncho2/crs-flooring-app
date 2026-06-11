@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
+import { StatusBadge } from "@/engines/common"
 import {
   formatEasternDateTime,
   formatFifoReceivedAtEastern,
@@ -59,6 +60,14 @@ export function renderInventoryRowCell(
       return formatFifoReceivedAtEastern(row.fifoReceivedAt)
     case "updatedAt":
       return formatEasternDateTime(row.updatedAt) || "—"
+    case "wasMerged":
+      return row.wasMerged ? (
+        <StatusBadge tone="warning" size="sm">
+          Merged
+        </StatusBadge>
+      ) : (
+        <span className="text-[var(--text-muted)]">-</span>
+      )
     default:
       return "-"
   }
