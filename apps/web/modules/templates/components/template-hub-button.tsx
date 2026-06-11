@@ -13,18 +13,20 @@ export function TemplateHubButton() {
     <button
       type="button"
       onClick={() => router.push(buildTemplateHubHref())}
-      aria-label="Open template hub"
+      aria-label="Open template finder"
       className="
-        w-10 h-10 rounded-full
+        h-10 rounded-md px-3
         bg-[var(--panel-background)]
         border border-[var(--panel-border)]
-        flex items-center justify-center
+        flex items-center justify-center gap-2
+        text-sm font-medium
         hover:bg-[var(--panel-hover)]
         transition
         shadow-[0_0_6px_rgba(59,130,246,0.25)]
       "
     >
-      <RefreshCw size={18} className="text-blue-500" />
+      <RefreshCw size={16} className="text-blue-500" />
+      Template Finder
     </button>
   )
 }
