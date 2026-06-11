@@ -229,6 +229,13 @@ export function useInventoryRecordSelection({
         // fallback a cold list-row deep-link relies on).
         warehouseId: neighbor.warehouseId,
         warehouseLabel: null,
+        // The product master-filter belongs to the previous browsing context;
+        // stepping by global number transcends it (and can land on a different
+        // product), so reset it rather than leave a stale filter on the header.
+        // The adjustment form derives product from the loaded record, not this,
+        // so the form is unaffected.
+        productId: null,
+        productLabel: null,
         inventoryId: neighbor.id,
         inventoryLabel: null,
         // Swapping the record drops a concrete drilldown but keeps create intent.
