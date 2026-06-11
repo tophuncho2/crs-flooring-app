@@ -147,8 +147,8 @@ export function WorkOrderPrimaryFieldsSection({
 
   return (
     <FieldSection>
-      {/* Schedule — pickers two-up across the left half */}
-      <CellAt col={1} row={1} colSpan={2}>
+      {/* Schedule — pickers two-up across the right half */}
+      <CellAt col={5} row={1} colSpan={2}>
         <FormField label="Warehouse">
           {editable ? (
             <WarehousePicker
@@ -164,7 +164,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={3} row={1} colSpan={2}>
+      <CellAt col={7} row={1} colSpan={1}>
         <FormField label="Job Type">
           {editable ? (
             <JobTypePicker
@@ -180,7 +180,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} row={2} colSpan={2}>
+      <CellAt col={5} row={2} colSpan={2}>
         <FormField label="Scheduled For">
           <DateCell
             editable={editable}
@@ -189,7 +189,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={3} row={2} colSpan={2}>
+      <CellAt col={7} row={2} colSpan={1}>
         <FormField label="Time of Day">
           <SegmentedChoiceCell
             editable={editable}
@@ -200,7 +200,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={3} colSpan={4}>
+      <CellAt col={5} row={3} colSpan={3}>
         <FormField
           label="Description"
           currentLength={editable ? draft.description.length : undefined}
@@ -216,8 +216,8 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      {/* Management company + property pair the schedule rows on the right */}
-      <CellAt col={5} row={1} colSpan={4}>
+      {/* Management company + property pair the schedule rows on the left */}
+      <CellAt col={1} row={1} colSpan={4}>
         <FormField
           label="Management Company"
           actions={
@@ -242,7 +242,7 @@ export function WorkOrderPrimaryFieldsSection({
           <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={5} row={2} colSpan={4}>
+      <CellAt col={1} row={2} colSpan={4}>
         <FormField
           label="Property"
           required
@@ -375,8 +375,8 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      {/* Property address + custom address sit to the right of Description */}
-      <CellAt col={5} row={3} colSpan={2}>
+      {/* Property address + custom address sit to the left of Description */}
+      <CellAt col={1} row={3} colSpan={2}>
         <FormField label="Property Address">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{addressDisplay}</span>
@@ -390,7 +390,7 @@ export function WorkOrderPrimaryFieldsSection({
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={7} row={3} colSpan={2}>
+      <CellAt col={3} row={3} colSpan={2}>
         <FormField
           label="Custom Address"
           currentLength={editable ? draft.customAddress.length : undefined}
