@@ -51,6 +51,9 @@ export const inventoryRowSelect = {
 
 export const inventoryDetailSelect = {
   ...inventoryRowSelect,
+  // The numeric sort key (generated column) — read here so the detail loader can
+  // resolve the adjacent rows for the record-view shell stepper.
+  inventoryNumberInt: true,
   inventoryAdjustments: {
     select: enrichedInventoryAdjustmentRowSelect,
     orderBy: [{ createdAt: "asc" }],

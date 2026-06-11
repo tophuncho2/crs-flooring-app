@@ -40,8 +40,26 @@ export type InventoryRow = {
   updatedAt: string
 }
 
+/**
+ * An adjacent inventory row in the global inventory-number sequence
+ * (`inventoryNumberInt`). The `warehouseId` rides along so the record-view
+ * shell stepper can sync the header warehouse to the stepped-to row (the
+ * sequence is global and can cross warehouses). Null at the ends.
+ */
+export type InventoryNeighbor = {
+  id: string
+  warehouseId: string
+}
+
 export type InventoryDetail = InventoryRow & {
   inventoryAdjustments: EnrichedInventoryAdjustmentRow[]
+  /**
+   * Neighbors by global inventory-number order (`inventoryNumberInt`), ignoring
+   * warehouse/product/archive filters — powers the record-view shell stepper
+   * (◀ INV-# ▶). Null when the current row is at the start/end of the sequence.
+   */
+  previousInventory: InventoryNeighbor | null
+  nextInventory: InventoryNeighbor | null
 }
 
 export type InventoryForm = {

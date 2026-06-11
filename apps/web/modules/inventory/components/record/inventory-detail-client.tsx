@@ -4,6 +4,7 @@ import { useState } from "react"
 import {
   RecordDetailClientScaffold,
   RecordReferenceHeader,
+  RecordStepperPortal,
   ReferenceHeaderClearButton,
   ReferenceHeaderDiscardButton,
   type RecordDetailClientScaffoldContext,
@@ -49,6 +50,7 @@ export function InventoryDetailClient({
       backHref={backHref}
       dirtyMessage="You have unsaved inventory changes. Leave without saving?"
       headerVariant="section"
+      modeNotice={{ mode: "edit", label: "Inventory" }}
     >
       {(page) => <InventoryRecordSurface page={page} selection={selection} />}
     </RecordDetailClientScaffold>
@@ -125,6 +127,27 @@ function InventoryRecordSurface({
   // separate from the scaffold's leave-guard.
   return (
     <div className="flex flex-col gap-4">
+      {/* Walks the global inventory-number sequence (◀ INV-# ▶) from the top bar.
+          Mounted here so it can read the loaded record's number + neighbors and
+          the page's dirty state; the engine primitive paints into the shell slot
+          and owns the discard guard. Only shown once a record is loaded. */}
+      {inventory ? (
+        <RecordStepperPortal
+          label={inventory.inventoryNumber}
+          isDirty={page.isDirty}
+          discardMessage="This inventory item has unsaved changes. Stepping to another item will discard them."
+          onPrevious={
+            inventory.previousInventory
+              ? () => selection.stepToInventory(inventory.previousInventory!)
+              : null
+          }
+          onNext={
+            inventory.nextInventory
+              ? () => selection.stepToInventory(inventory.nextInventory!)
+              : null
+          }
+        />
+      ) : null}
       {showFormModeHint ? (
         <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 px-4 py-3 text-sm text-[var(--foreground)]/80">
           <span className="font-medium text-[var(--foreground)]">Adding an adjustment</span> —

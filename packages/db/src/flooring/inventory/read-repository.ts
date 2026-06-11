@@ -8,6 +8,7 @@ import type {
   InventoryFormOptions,
   InventoryImportNumberOption,
   InventoryLocationOption,
+  InventoryNeighbor,
   InventoryOption,
   InventoryPurchaseOrderOption,
   InventoryRow,
@@ -106,14 +107,62 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
   }
 }
 
+type InventoryNeighbors = {
+  previousInventory: InventoryNeighbor | null
+  nextInventory: InventoryNeighbor | null
+}
+
+const NO_INVENTORY_NEIGHBORS: InventoryNeighbors = {
+  previousInventory: null,
+  nextInventory: null,
+}
+
 export function normalizeInventoryDetail(
   payload: InventoryDetailPayload,
+  neighbors: InventoryNeighbors = NO_INVENTORY_NEIGHBORS,
 ): InventoryDetailRecord {
   return {
     ...normalizeInventoryRow(payload),
     inventoryAdjustments: payload.inventoryAdjustments.map(
       normalizeEnrichedInventoryAdjustmentRow,
     ),
+    previousInventory: neighbors.previousInventory,
+    nextInventory: neighbors.nextInventory,
+  }
+}
+
+/**
+ * Resolve the inventory rows immediately before/after the given numeric sort
+ * key in the global inventory-number order (`inventoryNumberInt`). Powers the
+ * record-view shell stepper — deliberately global: no warehouse / product /
+ * archive scoping, the stepper walks the raw number line. Two single-row
+ * lookups on the `inventoryNumberInt` index. Both null when the key is null
+ * (no generated value yet) or the row is at the sequence's edge.
+ */
+async function getInventoryNeighbors(
+  inventoryNumberInt: number | null,
+  client: InventoryDbClient = db,
+): Promise<InventoryNeighbors> {
+  if (inventoryNumberInt === null) return NO_INVENTORY_NEIGHBORS
+
+  const [previous, next] = await Promise.all([
+    client.flooringInventory.findFirst({
+      where: { inventoryNumberInt: { lt: inventoryNumberInt } },
+      orderBy: { inventoryNumberInt: "desc" },
+      select: { id: true, warehouseId: true },
+    }),
+    client.flooringInventory.findFirst({
+      where: { inventoryNumberInt: { gt: inventoryNumberInt } },
+      orderBy: { inventoryNumberInt: "asc" },
+      select: { id: true, warehouseId: true },
+    }),
+  ])
+
+  return {
+    previousInventory: previous
+      ? { id: previous.id, warehouseId: previous.warehouseId }
+      : null,
+    nextInventory: next ? { id: next.id, warehouseId: next.warehouseId } : null,
   }
 }
 
@@ -159,7 +208,9 @@ export async function getInventoryDetailById(
     where: { id },
     select: inventoryDetailSelect,
   })
-  return row ? normalizeInventoryDetail(row) : null
+  if (!row) return null
+  const neighbors = await getInventoryNeighbors(row.inventoryNumberInt, client)
+  return normalizeInventoryDetail(row, neighbors)
 }
 
 export type InventoryBalances = Pick<

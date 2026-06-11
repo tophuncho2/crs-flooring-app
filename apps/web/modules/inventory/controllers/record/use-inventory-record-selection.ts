@@ -5,6 +5,7 @@ import { parseAsString, useQueryStates } from "nuqs"
 import { useQuery } from "@tanstack/react-query"
 import type {
   InventoryDetail,
+  InventoryNeighbor,
   InventoryOption,
   InventoryRow,
   ProductOption,
@@ -104,6 +105,13 @@ export type InventoryRecordSelectionController = {
   selectWarehouse: (option: WarehouseOption | null) => void
   selectProduct: (option: ProductOption | null) => void
   selectInventory: (option: InventoryOption | null) => void
+  /**
+   * Step the header to an adjacent inventory row (the record-view shell stepper,
+   * ◀ INV-# ▶). The stepper walks the global inventory-number sequence — which
+   * can cross warehouses — so this syncs the header warehouse to the target and
+   * clears the labels, letting them re-resolve from the freshly loaded record.
+   */
+  stepToInventory: (neighbor: InventoryNeighbor) => void
   clear: () => void
   /**
    * Atomically restore a previously captured selection (the "Discard" action on
@@ -212,6 +220,24 @@ export function useInventoryRecordSelection({
     [setSelection, adjustment],
   )
 
+  const stepToInventory = useCallback(
+    (neighbor: InventoryNeighbor) => {
+      void setSelection({
+        // The stepper walks the global inventory-number line, which can cross
+        // warehouses — sync the header warehouse to the stepped-to row. Clear the
+        // labels so they fall back to the newly loaded record's names (the same
+        // fallback a cold list-row deep-link relies on).
+        warehouseId: neighbor.warehouseId,
+        warehouseLabel: null,
+        inventoryId: neighbor.id,
+        inventoryLabel: null,
+        // Swapping the record drops a concrete drilldown but keeps create intent.
+        adjustment: preserveCreateIntent(adjustment),
+      })
+    },
+    [setSelection, adjustment],
+  )
+
   const clear = useCallback(() => {
     // The explicit "Clear" reset also exits form mode (adjustment → null).
     void setSelection({
@@ -280,6 +306,7 @@ export function useInventoryRecordSelection({
     selectWarehouse,
     selectProduct,
     selectInventory,
+    stepToInventory,
     clear,
     restore,
     inventory,
