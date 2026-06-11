@@ -9,6 +9,7 @@ const {
   lockInventoryRowMock,
   markInventoryRowsMergedMock,
   assertMergeSourcesMock,
+  assertMergeSourcesEligibleMock,
   sumMergedStartingStockMock,
   buildCreatedInventoryInsertMock,
   validateCreateInventoryEditsMock,
@@ -32,6 +33,7 @@ const {
     lockInventoryRowMock: vi.fn(),
     markInventoryRowsMergedMock: vi.fn(),
     assertMergeSourcesMock: vi.fn(),
+    assertMergeSourcesEligibleMock: vi.fn(),
     sumMergedStartingStockMock: vi.fn(),
     buildCreatedInventoryInsertMock: vi.fn(),
     validateCreateInventoryEditsMock: vi.fn(),
@@ -53,6 +55,7 @@ vi.mock("@builders/db", () => ({
 
 vi.mock("@builders/domain", () => ({
   assertMergeSources: assertMergeSourcesMock,
+  assertMergeSourcesEligible: assertMergeSourcesEligibleMock,
   sumMergedStartingStock: sumMergedStartingStockMock,
   buildCreatedInventoryInsert: buildCreatedInventoryInsertMock,
   validateCreateInventoryEdits: validateCreateInventoryEditsMock,
@@ -103,6 +106,7 @@ beforeEach(() => {
   lockInventoryRowMock.mockResolvedValue(undefined)
   getInventoryRowsForMergeMock.mockResolvedValue(SOURCES)
   assertMergeSourcesMock.mockReturnValue(undefined)
+  assertMergeSourcesEligibleMock.mockReturnValue(undefined)
   getProductByIdMock.mockResolvedValue(PRODUCT)
   getWarehouseByIdMock.mockResolvedValue(WAREHOUSE)
   sumMergedStartingStockMock.mockReturnValue("175.00")
@@ -162,6 +166,46 @@ describe("mergeInventoryUseCase", () => {
       } catch (error) {
         if (!(error instanceof InventoryExecutionError)) throw error
         expect(error.code).toBe("INVENTORY_MERGE_CROSS_PRODUCT")
+        expect(error.status).toBe(422)
+      }
+      expect(insertInventoryRowMock).not.toHaveBeenCalled()
+      expect(markInventoryRowsMergedMock).not.toHaveBeenCalled()
+    })
+
+    it("throws INVENTORY_MERGE_ZERO_BALANCE_SOURCE (422) and never inserts or flags when a source is spent", async () => {
+      assertMergeSourcesEligibleMock.mockImplementation(() => {
+        throw new MockInventoryDomainError(
+          "INVENTORY_MERGE_ZERO_BALANCE_SOURCE",
+          "no remaining balance",
+        )
+      })
+
+      try {
+        await mergeInventoryUseCase(input())
+        expect.fail("Expected throw")
+      } catch (error) {
+        if (!(error instanceof InventoryExecutionError)) throw error
+        expect(error.code).toBe("INVENTORY_MERGE_ZERO_BALANCE_SOURCE")
+        expect(error.status).toBe(422)
+      }
+      expect(insertInventoryRowMock).not.toHaveBeenCalled()
+      expect(markInventoryRowsMergedMock).not.toHaveBeenCalled()
+    })
+
+    it("throws INVENTORY_MERGE_ALREADY_MERGED_SOURCE (422) and never inserts or flags when a source was already merged", async () => {
+      assertMergeSourcesEligibleMock.mockImplementation(() => {
+        throw new MockInventoryDomainError(
+          "INVENTORY_MERGE_ALREADY_MERGED_SOURCE",
+          "already merged",
+        )
+      })
+
+      try {
+        await mergeInventoryUseCase(input())
+        expect.fail("Expected throw")
+      } catch (error) {
+        if (!(error instanceof InventoryExecutionError)) throw error
+        expect(error.code).toBe("INVENTORY_MERGE_ALREADY_MERGED_SOURCE")
         expect(error.status).toBe(422)
       }
       expect(insertInventoryRowMock).not.toHaveBeenCalled()

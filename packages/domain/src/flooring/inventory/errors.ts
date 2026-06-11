@@ -6,6 +6,8 @@ export type InventoryDomainErrorCode =
   | "INVENTORY_OVERSOLD"
   | "INVENTORY_MERGE_TOO_FEW_SOURCES"
   | "INVENTORY_MERGE_CROSS_PRODUCT"
+  | "INVENTORY_MERGE_ZERO_BALANCE_SOURCE"
+  | "INVENTORY_MERGE_ALREADY_MERGED_SOURCE"
 
 export class InventoryDomainError extends Error {
   readonly code: InventoryDomainErrorCode

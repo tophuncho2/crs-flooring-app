@@ -2,12 +2,17 @@
 
 import { useCallback, useMemo, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import type { InventoryListFilters, ListInput } from "@builders/application"
+import type { InventoryListFilters, ListInput, ListOutput } from "@builders/application"
 import type { InventoryRow } from "@builders/domain"
 import {
   INVENTORY_LIST_QUERY_KEY,
   listInventoryRequest,
 } from "@/modules/inventory/data/list-inventory-request"
+
+/** A list-shaped fetcher the grid can page through (list read or merge candidates). */
+export type InventoryOptionsGridRequest = (
+  input: ListInput<InventoryListFilters>,
+) => Promise<ListOutput<InventoryRow>>
 
 /** Picker grid page size — small so the reference header stays compact. */
 export const INVENTORY_PICKER_PAGE_SIZE = 15
@@ -42,21 +47,29 @@ export type InventoryOptionsGridController = {
  * Local-state controller behind the inventory reference-header picker grid.
  * Holds the four identity search bars + the current page in React state (NOT the
  * URL — the picker's transient search/page must not pollute the record-view
- * URL), and fetches a page of `InventoryRow`s through the same list endpoint the
- * inventory list view uses (`listInventoryRequest`). Warehouse + the optional WO
- * product ride in as filters (both optional — the grid lists across all
- * warehouses when none is picked); any filter change resets to page 1. `enabled`
- * gates the fetch so the query only runs while the picker is open (the hook is
- * lifted above the picker so the reference header can read/reset its search bars).
+ * URL), and fetches a page of `InventoryRow`s. By default it uses the same list
+ * endpoint the inventory list view uses (`listInventoryRequest`); the merge
+ * picker injects `requestFn`/`queryKey` to page through the merge-candidate
+ * endpoint instead (zero-balance + already-merged rows excluded). Warehouse + the
+ * optional WO product ride in as filters (both optional — the grid lists across
+ * all warehouses when none is picked); any filter change resets to page 1.
+ * `enabled` gates the fetch so the query only runs while the picker is open (the
+ * hook is lifted above the picker so the reference header can read/reset its bars).
  */
 export function useInventoryOptionsGrid({
   warehouseId,
   productFilterId,
   enabled,
+  requestFn = listInventoryRequest,
+  queryKey = INVENTORY_LIST_QUERY_KEY,
 }: {
   warehouseId: string | null
   productFilterId: string | null
   enabled: boolean
+  /** Override the fetcher — defaults to the shared list read. */
+  requestFn?: InventoryOptionsGridRequest
+  /** React-query key prefix paired with `requestFn` (must match the fetcher's cache namespace). */
+  queryKey?: readonly unknown[]
 }): InventoryOptionsGridController {
   const [invNumber, setInvNumberState] = useState("")
   const [rollNumber, setRollNumberState] = useState("")
@@ -107,8 +120,8 @@ export function useInventoryOptionsGrid({
   }, [warehouseId, productFilterId, invNumber, rollNumber, dyeLot, note, page])
 
   const query = useQuery({
-    queryKey: [...INVENTORY_LIST_QUERY_KEY, "picker", input],
-    queryFn: () => listInventoryRequest(input),
+    queryKey: [...queryKey, "picker", input],
+    queryFn: () => requestFn(input),
     enabled,
     placeholderData: keepPreviousData,
   })

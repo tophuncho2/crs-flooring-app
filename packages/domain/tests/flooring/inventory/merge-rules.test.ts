@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   MERGE_MIN_SOURCES,
   assertMergeSources,
+  assertMergeSourcesEligible,
   sumMergedStartingStock,
   type MergeSourceRow,
 } from "../../../src/flooring/inventory/merge-rules.js"
@@ -13,6 +14,7 @@ function source(overrides: Partial<MergeSourceRow> = {}): MergeSourceRow {
     productId: "p-1",
     startingStock: "100",
     netDeducted: "0",
+    wasMerged: false,
     ...overrides,
   }
 }
@@ -67,6 +69,56 @@ describe("assertMergeSources", () => {
     } catch (error) {
       if (!(error instanceof InventoryDomainError)) throw error
       expect(error.code).toBe("INVENTORY_MERGE_CROSS_PRODUCT")
+    }
+  })
+})
+
+describe("assertMergeSourcesEligible", () => {
+  it("passes when every row has remaining balance and none was already merged", () => {
+    expect(() =>
+      assertMergeSourcesEligible([
+        source({ id: "a", startingStock: "10", netDeducted: "0" }),
+        source({ id: "b", startingStock: "5", netDeducted: "2" }),
+      ]),
+    ).not.toThrow()
+  })
+
+  it("throws INVENTORY_MERGE_ZERO_BALANCE_SOURCE when a row has exactly zero balance", () => {
+    try {
+      assertMergeSourcesEligible([
+        source({ id: "a", startingStock: "10", netDeducted: "10" }),
+        source({ id: "b", startingStock: "40", netDeducted: "0" }),
+      ])
+      expect.fail("Expected throw")
+    } catch (error) {
+      if (!(error instanceof InventoryDomainError)) throw error
+      expect(error.code).toBe("INVENTORY_MERGE_ZERO_BALANCE_SOURCE")
+    }
+  })
+
+  it("throws INVENTORY_MERGE_ZERO_BALANCE_SOURCE when a row is oversold (negative balance clamps to 0)", () => {
+    try {
+      assertMergeSourcesEligible([
+        source({ id: "a", startingStock: "5", netDeducted: "99" }),
+        source({ id: "b", startingStock: "40", netDeducted: "0" }),
+      ])
+      expect.fail("Expected throw")
+    } catch (error) {
+      if (!(error instanceof InventoryDomainError)) throw error
+      expect(error.code).toBe("INVENTORY_MERGE_ZERO_BALANCE_SOURCE")
+    }
+  })
+
+  it("throws INVENTORY_MERGE_ALREADY_MERGED_SOURCE when a balance-positive row was already merged", () => {
+    try {
+      assertMergeSourcesEligible([
+        source({ id: "a", startingStock: "100", netDeducted: "0", wasMerged: true }),
+        source({ id: "b", startingStock: "40", netDeducted: "0" }),
+      ])
+      expect.fail("Expected throw")
+    } catch (error) {
+      if (!(error instanceof InventoryDomainError)) throw error
+      expect(error.code).toBe("INVENTORY_MERGE_ALREADY_MERGED_SOURCE")
     }
   })
 })

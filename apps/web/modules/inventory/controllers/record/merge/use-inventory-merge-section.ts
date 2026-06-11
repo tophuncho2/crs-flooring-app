@@ -8,6 +8,10 @@ import {
   useInventoryOptionsGrid,
   type InventoryOptionsGridController,
 } from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
+import {
+  INVENTORY_MERGE_CANDIDATES_QUERY_KEY,
+  mergeInventoryCandidatesRequest,
+} from "@/modules/inventory/data/merge-candidates-request"
 
 /** Editable cells of the merged row (product + starting stock are NOT here — product is the locked scope, starting stock is derived). */
 export type InventoryMergeForm = {
@@ -45,7 +49,7 @@ export type InventoryMergeSlice = {
   /** Selected source rows (retained across candidate pages). */
   selectedIds: Set<string>
   selectedCount: number
-  /** Σ remaining balance of the selected rows — the merged row's starting stock (display + client gate). */
+  /** Σ remaining balance of the selected rows — the merged row's starting stock (display only; recomputed server-authoritative under lock). */
   summedStartingStock: string
   isSelectionActive: boolean
   eligibleCount: number
@@ -73,8 +77,9 @@ function sumBalances(rows: InventoryRow[]): string {
  * (`/dashboard/inventory/merge`). The user picks a product (the locked scope),
  * batch-selects rows of that product across all warehouses, and fills the
  * editable cells of the new consolidated row. The merged row's starting stock
- * is the Σ remaining balance of the selected rows (derived here for display +
- * the submit gate; recomputed server-authoritative under lock).
+ * is the Σ remaining balance of the selected rows (derived here for display only;
+ * recomputed server-authoritative under lock — the candidate list already
+ * excludes zero-balance rows, and the use case re-asserts eligibility).
  *
  * Selection is retained in a `Map` keyed by id so a row selected on page 1 keeps
  * counting after the candidate list pages away from it. **Changing the product
@@ -98,6 +103,10 @@ export function useInventoryMergeSection({
     warehouseId: null,
     productFilterId: productId || null,
     enabled: productId !== "",
+    // Merge candidates only: the endpoint excludes archived, already-merged, and
+    // zero-balance rows so a spent row can never be picked into a merge.
+    requestFn: mergeInventoryCandidatesRequest,
+    queryKey: INVENTORY_MERGE_CANDIDATES_QUERY_KEY,
   })
 
   const setField = useCallback(

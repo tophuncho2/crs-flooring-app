@@ -10,6 +10,7 @@ import {
 } from "@builders/db"
 import {
   assertMergeSources,
+  assertMergeSourcesEligible,
   buildCreatedInventoryInsert,
   describeInventoryCreateIssues,
   InventoryDomainError,
@@ -64,16 +65,20 @@ export async function mergeInventoryUseCase(
       })
     }
 
-    // The cardinal invariant: ≥2 sources, all the same product. Domain rule
-    // throws a named error; translate it to the HTTP-aware execution error.
+    // The cardinal invariant: ≥2 sources, all the same product; plus per-row
+    // eligibility (no zero-balance or already-merged source). Domain rules throw
+    // named errors; translate them to the HTTP-aware execution error.
     try {
       assertMergeSources(sources, input.productId)
+      assertMergeSourcesEligible(sources)
     } catch (error) {
       if (error instanceof InventoryDomainError) {
         throw new InventoryExecutionError({
           code:
-            error.code === "INVENTORY_MERGE_CROSS_PRODUCT"
-              ? "INVENTORY_MERGE_CROSS_PRODUCT"
+            error.code === "INVENTORY_MERGE_CROSS_PRODUCT" ||
+            error.code === "INVENTORY_MERGE_ZERO_BALANCE_SOURCE" ||
+            error.code === "INVENTORY_MERGE_ALREADY_MERGED_SOURCE"
+              ? error.code
               : "INVENTORY_MERGE_TOO_FEW_SOURCES",
           message: error.message,
           status: 422,

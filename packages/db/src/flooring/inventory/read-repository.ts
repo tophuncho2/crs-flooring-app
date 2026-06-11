@@ -271,6 +271,7 @@ export type MergeSourceInventoryRow = {
   warehouseId: string
   startingStock: string
   netDeducted: string
+  wasMerged: boolean
 }
 
 /**
@@ -292,6 +293,7 @@ export async function getInventoryRowsForMerge(
       warehouseId: true,
       startingStock: true,
       netDeducted: true,
+      wasMerged: true,
     },
   })
   return rows.map((row) => ({
@@ -300,6 +302,7 @@ export async function getInventoryRowsForMerge(
     warehouseId: row.warehouseId,
     startingStock: toDecimalString(row.startingStock),
     netDeducted: toDecimalString(row.netDeducted),
+    wasMerged: row.wasMerged,
   }))
 }
 
@@ -498,6 +501,99 @@ export async function listInventoryForListView(
   ])
 
   return { total, rows: rows.map(normalizeInventoryRow) }
+}
+
+export type InventoryMergeCandidatesArgs = {
+  /** Locked product scope — merge candidates are always a single product. */
+  productId: string
+  /** Optional warehouse narrowing — the merge picker is warehouse-agnostic, so usually absent. */
+  warehouseId?: string
+  /** Per-field identity search (independent ILIKEs, AND'd) — mirrors the list/options reads. */
+  invNumber?: string
+  rollNumber?: string
+  dyeLot?: string
+  note?: string
+  skip: number
+  take: number
+}
+
+/**
+ * Paginated read for the inventory **merge** candidate picker. Same row shape +
+ * sort as `listInventoryForListView`, but scoped to one product and excluding
+ * rows that can't legitimately be merged: archived, already-merged
+ * (`wasMerged`), and zero-balance (`startingStock > netDeducted`). The
+ * balance + merged predicates need a column-to-column compare Prisma's typed
+ * `where` can't express, so a raw `$queryRaw` resolves the page of ids (and the
+ * total) under those predicates; the rows are then hydrated through the shared
+ * `inventoryRowSelect` + `normalizeInventoryRow` (single source of truth for the
+ * row shape — no raw-SQL drift) and re-ordered to the raw id order.
+ */
+export async function listInventoryMergeCandidates(
+  args: InventoryMergeCandidatesArgs,
+  client: InventoryDbClient = db,
+): Promise<InventoryListViewResult> {
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"productId" = ${args.productId}`,
+    Prisma.sql`"isArchived" = false`,
+    Prisma.sql`"wasMerged" = false`,
+    Prisma.sql`"startingStock" > "netDeducted"`,
+  ]
+  if (args.warehouseId !== undefined) {
+    conditions.push(Prisma.sql`"warehouseId" = ${args.warehouseId}`)
+  }
+  const invNumber = args.invNumber?.trim() ?? ""
+  if (invNumber.length > 0) {
+    conditions.push(Prisma.sql`"inventory_number" ILIKE ${`%${invNumber}%`}`)
+  }
+  const rollNumber = args.rollNumber?.trim() ?? ""
+  if (rollNumber.length > 0) {
+    conditions.push(Prisma.sql`"rollNumber" ILIKE ${`%${rollNumber}%`}`)
+  }
+  const dyeLot = args.dyeLot?.trim() ?? ""
+  if (dyeLot.length > 0) {
+    conditions.push(Prisma.sql`"dyeLot" ILIKE ${`%${dyeLot}%`}`)
+  }
+  const note = args.note?.trim() ?? ""
+  if (note.length > 0) {
+    conditions.push(Prisma.sql`"note" ILIKE ${`%${note}%`}`)
+  }
+  const whereClause = Prisma.join(conditions, " AND ")
+
+  const skip = Math.max(0, Math.floor(args.skip))
+  const take = Math.max(1, Math.floor(args.take))
+
+  const [idRows, countRows] = await Promise.all([
+    client.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT "id"
+      FROM "flooring_inventory"
+      WHERE ${whereClause}
+      ORDER BY "inventoryNumberInt" ASC, "id" ASC
+      LIMIT ${take} OFFSET ${skip}
+    `),
+    client.$queryRaw<{ count: number }[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS count
+      FROM "flooring_inventory"
+      WHERE ${whereClause}
+    `),
+  ])
+
+  const total = countRows[0]?.count ?? 0
+  const ids = idRows.map((row) => row.id)
+  if (ids.length === 0) return { total, rows: [] }
+
+  // Hydrate through the shared select/normalizer, then restore the raw page order
+  // (findMany's `in` does not preserve it).
+  const hydrated = await client.flooringInventory.findMany({
+    where: { id: { in: ids } },
+    select: inventoryRowSelect,
+  })
+  const byId = new Map(hydrated.map((row) => [row.id, row]))
+  const rows = ids
+    .map((id) => byId.get(id))
+    .filter((row): row is (typeof hydrated)[number] => row !== undefined)
+    .map(normalizeInventoryRow)
+
+  return { total, rows }
 }
 
 export type InventoryOptionsSearchArgs = {

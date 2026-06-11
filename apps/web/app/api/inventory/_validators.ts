@@ -4,6 +4,7 @@ import type {
   CreateInventoryInput,
   DuplicateInventoryInput,
   InventoryListFilters,
+  ListInventoryMergeCandidatesInput,
   MergeInventoryInput,
   UpdateInventoryInput,
 } from "@builders/application"
@@ -477,5 +478,59 @@ export function validateMergeInventoryInput(
     note: optionalString(body.note, "note"),
     location: optionalString(body.location, "location"),
     internalNotes: optionalString(body.internalNotes, "internalNotes"),
+  }
+}
+
+// --- Merge-candidate picker query validator (product-scoped, paginated) ---
+
+const mergeCandidatesQuerySchema = z.object({
+  productId: z.string().min(1, "productId is required"),
+  warehouseId: z.string().optional(),
+  invNumber: z.string().optional(),
+  rollNumber: z.string().optional(),
+  dyeLot: z.string().optional(),
+  note: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(LIST_INVENTORY_MAX_PAGE_SIZE)
+    .default(LIST_INVENTORY_PAGE_SIZE),
+})
+
+export function validateMergeCandidatesQuery(
+  searchParams: URLSearchParams,
+): ListInventoryMergeCandidatesInput {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = mergeCandidatesQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    throw new InventoryExecutionError({
+      code: "INVENTORY_VALIDATION_FAILED",
+      message: issue?.message ?? "Invalid merge candidates query",
+      status: 400,
+      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
+    })
+  }
+
+  const parsed = parseResult.data
+  const trim = (value: string | undefined): string | undefined => {
+    const t = value?.trim()
+    return t && t.length > 0 ? t : undefined
+  }
+  return {
+    productId: parsed.productId.trim(),
+    ...(trim(parsed.warehouseId) ? { warehouseId: trim(parsed.warehouseId) } : {}),
+    ...(trim(parsed.invNumber) ? { invNumber: trim(parsed.invNumber) } : {}),
+    ...(trim(parsed.rollNumber) ? { rollNumber: trim(parsed.rollNumber) } : {}),
+    ...(trim(parsed.dyeLot) ? { dyeLot: trim(parsed.dyeLot) } : {}),
+    ...(trim(parsed.note) ? { note: trim(parsed.note) } : {}),
+    page: parsed.page,
+    pageSize: parsed.pageSize,
   }
 }

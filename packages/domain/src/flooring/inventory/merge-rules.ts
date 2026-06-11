@@ -14,6 +14,8 @@ export type MergeSourceRow = {
   productId: string
   startingStock: string
   netDeducted: string
+  /** Already-consolidated rows are spent and must not be merged again. */
+  wasMerged: boolean
 }
 
 /**
@@ -55,6 +57,37 @@ export function assertMergeSources(sources: MergeSourceRow[], productId: string)
     throw new InventoryDomainError(
       "INVENTORY_MERGE_CROSS_PRODUCT",
       "All merged inventory rows must belong to the same product.",
+    )
+  }
+}
+
+/**
+ * Per-row eligibility for a merge, asserted under lock alongside
+ * `assertMergeSources`. A row is ineligible if it has **no remaining balance**
+ * (`startingStock − netDeducted ≤ 0` — nothing to consolidate) or was **already
+ * merged** (`wasMerged` — spent; merging it again would double-count its stock).
+ * The candidate picker hides both, so this is the server-side backstop for a
+ * stale client, a direct API call, or a row that hit zero between load and submit.
+ */
+export function assertMergeSourcesEligible(sources: MergeSourceRow[]): void {
+  const hasZeroBalance = sources.some(
+    (row) =>
+      computeInventoryBalance({
+        startingStock: row.startingStock,
+        netDeducted: row.netDeducted,
+      }) <= 0,
+  )
+  if (hasZeroBalance) {
+    throw new InventoryDomainError(
+      "INVENTORY_MERGE_ZERO_BALANCE_SOURCE",
+      "Inventory rows with no remaining balance cannot be merged.",
+    )
+  }
+  const hasMerged = sources.some((row) => row.wasMerged)
+  if (hasMerged) {
+    throw new InventoryDomainError(
+      "INVENTORY_MERGE_ALREADY_MERGED_SOURCE",
+      "An already-merged inventory row cannot be merged again.",
     )
   }
 }
