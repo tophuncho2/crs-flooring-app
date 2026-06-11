@@ -1,13 +1,15 @@
 import {
   createPrismaPageLoadIssue,
   getManufacturerById,
+  getManufacturerStats,
   isPrismaNotFoundError,
   type PrismaDetailPageResult,
 } from "@builders/db"
-import type { ManufacturerRow } from "@builders/domain"
+import type { ManufacturerRow, ManufacturerStats } from "@builders/domain"
 
 export type ManufacturerDetailPageData = {
   manufacturer: ManufacturerRow
+  stats: ManufacturerStats
 }
 
 export async function getManufacturerDetailPageData(
@@ -15,7 +17,8 @@ export async function getManufacturerDetailPageData(
 ): Promise<PrismaDetailPageResult<ManufacturerDetailPageData>> {
   try {
     const manufacturer = await getManufacturerById(id)
-    return { ok: true, data: { manufacturer } }
+    const stats = (await getManufacturerStats(id)) ?? { productsCount: 0, importsCount: 0 }
+    return { ok: true, data: { manufacturer, stats } }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {
       return { ok: false, notFound: true }

@@ -19,6 +19,12 @@ export type ManufacturerRow = {
   updatedAt: string
 }
 
+/** Read-only totals for the manufacturer record-view "Statistics" section. */
+export type ManufacturerStats = {
+  productsCount: number
+  importsCount: number
+}
+
 export type ManufacturerForm = {
   companyName: string
   agentName: string

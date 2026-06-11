@@ -1,6 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { normalizePhoneNumber, type ManufacturerOption } from "@builders/domain"
+import { normalizePhoneNumber, type ManufacturerOption, type ManufacturerStats } from "@builders/domain"
 
 type ManufacturerDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -73,6 +73,21 @@ export async function getManufacturerById(
   })
 
   return normalizeManufacturer(manufacturer)
+}
+
+// Read-only totals for the manufacturer record-view "Statistics" section. Kept
+// separate from `manufacturerInclude` so the list view doesn't pay for the
+// imports count subquery per row.
+export async function getManufacturerStats(
+  id: string,
+  client: ManufacturerDbClient = db,
+): Promise<ManufacturerStats | null> {
+  const row = await client.flooringManufacturer.findUnique({
+    where: { id },
+    select: { _count: { select: { products: true, imports: true } } },
+  })
+  if (!row) return null
+  return { productsCount: row._count.products, importsCount: row._count.imports }
 }
 
 export async function manufacturerCompanyNameExists(

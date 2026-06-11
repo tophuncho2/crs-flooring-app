@@ -38,6 +38,7 @@ export default async function ManufacturerDetailPage({
   return (
     <ManufacturerDetailClient
       initialManufacturer={result.data.manufacturer}
+      stats={result.data.stats}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/manufacturers")}
     />
   )

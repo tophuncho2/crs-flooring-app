@@ -1,14 +1,16 @@
 "use client"
 
 import { RecordDetailClientScaffold } from "@/engines/record-view"
-import type { ManufacturerRow } from "@builders/domain"
+import type { ManufacturerRow, ManufacturerStats } from "@builders/domain"
 import { ManufacturerRecordPanel } from "./manufacturer-record-panel"
 
 export function ManufacturerDetailClient({
   initialManufacturer,
+  stats,
   backHref,
 }: {
   initialManufacturer: ManufacturerRow
+  stats: ManufacturerStats
   backHref: string
 }) {
   return (
@@ -19,7 +21,7 @@ export function ManufacturerDetailClient({
       modeNotice={{ mode: "edit", label: "Manufacturer" }}
       dirtyMessage="You have unsaved manufacturer changes. Leave this page without saving?"
     >
-      {(page) => <ManufacturerRecordPanel page={page} entry={initialManufacturer} />}
+      {(page) => <ManufacturerRecordPanel page={page} entry={initialManufacturer} stats={stats} />}
     </RecordDetailClientScaffold>
   )
 }

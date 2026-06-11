@@ -7,16 +7,19 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import type { ManufacturerRow } from "@builders/domain"
+import type { ManufacturerRow, ManufacturerStats } from "@builders/domain"
 import { useManufacturerPrimarySection } from "@/modules/manufacturers/controllers/record/primary/use-manufacturer-primary-section"
 import { ManufacturerPrimaryFieldsSection } from "./primary/manufacturer-primary-fields-section"
+import { ManufacturerStatisticsSection } from "./statistics/manufacturer-statistics-section"
 
 export function ManufacturerRecordPanel({
   page,
   entry,
+  stats,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: ManufacturerRow
+  stats: ManufacturerStats
 }) {
   const controller = useManufacturerPrimarySection({ page, entry })
   const primary = controller.primarySection
@@ -48,12 +51,17 @@ export function ManufacturerRecordPanel({
             onFieldChange={(field, value) =>
               primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
             }
-            productsCount={record.productsCount}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
           />
         </RecordPrimarySectionInstance>
       ),
+    },
+    {
+      key: "statistics",
+      type: "item",
+      order: 20,
+      render: () => <ManufacturerStatisticsSection stats={stats} />,
     },
   ]
 

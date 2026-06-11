@@ -10,7 +10,6 @@ export type ManufacturerPrimaryFieldsSectionProps = {
   editable: boolean
   onFieldChange: (field: keyof ManufacturerForm, value: string) => void
   /** Read-only summary shown in the detail view; omit in the create flow. */
-  productsCount?: number
   createdAt?: string
   updatedAt?: string
 }
@@ -19,11 +18,10 @@ export function ManufacturerPrimaryFieldsSection({
   draft,
   editable,
   onFieldChange,
-  productsCount,
   createdAt,
   updatedAt,
 }: ManufacturerPrimaryFieldsSectionProps) {
-  const showSummary = productsCount !== undefined
+  const showSummary = createdAt !== undefined
 
   return (
     <FieldSection gap="0.75rem">
@@ -72,17 +70,12 @@ export function ManufacturerPrimaryFieldsSection({
       </CellAt>
       {showSummary ? (
         <>
-          <CellAt col={1} colSpan={2}>
-            <FormField label="Products">
-              <StaticFieldValue>{productsCount ?? 0}</StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={3} colSpan={3}>
+          <CellAt col={1} colSpan={4}>
             <FormField label="Created">
               <StaticFieldValue>{formatEasternDateTime(createdAt ?? null) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={6} colSpan={3}>
+          <CellAt col={5} colSpan={4}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(updatedAt ?? null) || "—"}</StaticFieldValue>
             </FormField>
