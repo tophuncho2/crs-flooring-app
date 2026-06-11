@@ -13,6 +13,7 @@ import {
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
+  sumAssignmentQuantities,
 } from "@builders/domain"
 import {
   useWorkOrderMaterialItemsSection,
@@ -28,6 +29,7 @@ const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> =
   dataColumns: [
     { key: "product", label: "Product", minWidth: 260, grow: 2 },
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
+    { key: "assignments", label: "Assignments", kind: "number", minWidth: 120, grow: 0, align: "end" },
     { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
   ],
 }
@@ -193,6 +195,27 @@ export function WorkOrderMaterialItemsSection({
             </div>
             <span className="shrink-0 text-[var(--foreground)]/60" aria-hidden="true">
               {unitAbbrev || "—"}
+            </span>
+          </div>
+        )
+      }
+      case "assignments": {
+        // Total Assignments = Σ of this item's linked DEDUCTION adjustments'
+        // quantity. Derived from the LIVE adjustment map (same source as the
+        // product-lock above), so it stays in sync with the expandable rows and
+        // updates without a page refresh. INCREASE rows can also link a WOMI but
+        // are NOT assignments, so they're filtered out.
+        const deductions = (adjustmentsByWorkOrderItemId[item.id] ?? []).filter(
+          (adj) => adj.adjustmentType === "DEDUCTION",
+        )
+        const { quantity, stockUnitAbbrev } = sumAssignmentQuantities(deductions)
+        return (
+          <div className="flex w-full items-center justify-end gap-2">
+            <span className="min-w-0 flex-1 text-right tabular-nums text-[var(--foreground)]/80">
+              {quantity || "—"}
+            </span>
+            <span className="shrink-0 text-[var(--foreground)]/60" aria-hidden="true">
+              {quantity ? stockUnitAbbrev || "—" : ""}
             </span>
           </div>
         )

@@ -1,5 +1,6 @@
 import { buildAddressLine } from "../../../shared/address/index.js"
 import { formatPhoneNumber } from "../../../shared/phone.js"
+import { sumAssignmentQuantities } from "../material-items/assignments.js"
 import type {
   WorkOrderFileAdjustmentProjection,
   WorkOrderFileGenerationInput,
@@ -274,28 +275,11 @@ function renderAdjustmentRow(
 }
 
 /**
- * Summed Quantity across a material item's adjustments, with the unit suffix
- * taken from the first adjustment that carries one (adjustments within a material
- * item share units). Shared by the Slip's collapsed row and the Picking Ticket's
- * per-group subtotal row.
- */
-function sumItemTotals(item: WorkOrderFileMaterialItemProjection): {
-  quantity: string
-  stockUnitAbbrev: string
-} {
-  const adjustments = item.inventoryAdjustments
-  return {
-    quantity: sumDecimalStrings(adjustments.map((adj) => adj.quantity)),
-    stockUnitAbbrev: adjustments.find((adj) => adj.stockUnitAbbrev !== "")?.stockUnitAbbrev ?? "",
-  }
-}
-
-/**
  * Slip-only: one collapsed row per material item — Product / Quantity, with
  * Quantity summed across all of the item's adjustments.
  */
 function renderSummedSlipItemRow(item: WorkOrderFileMaterialItemProjection): string {
-  const { quantity, stockUnitAbbrev } = sumItemTotals(item)
+  const { quantity, stockUnitAbbrev } = sumAssignmentQuantities(item.inventoryAdjustments)
   return `
 <tr>
   <td>${escapeOrEmpty(item.productName)}</td>
@@ -311,7 +295,7 @@ function renderSummedSlipItemRow(item: WorkOrderFileMaterialItemProjection): str
  * border-top). Mirrors the 6-column adjustment-row layout.
  */
 function renderPickingTicketSubtotalRow(item: WorkOrderFileMaterialItemProjection): string {
-  const { quantity, stockUnitAbbrev } = sumItemTotals(item)
+  const { quantity, stockUnitAbbrev } = sumAssignmentQuantities(item.inventoryAdjustments)
   return `
 <tr>
   <td></td>
@@ -322,19 +306,6 @@ function renderPickingTicketSubtotalRow(item: WorkOrderFileMaterialItemProjectio
   <td></td>
 </tr>
 `.trim()
-}
-
-/**
- * Sums a list of decimal strings (Prisma Decimal `.toString()` values), skipping
- * empties. Returns "" when nothing summable is present so the caller renders the
- * standard "—" placeholder. Trailing zeros/dot are trimmed: "10.00"→"10",
- * "10.50"→"10.5", "0.25" stays.
- */
-function sumDecimalStrings(values: string[]): string {
-  const present = values.filter((value) => value !== "")
-  if (present.length === 0) return ""
-  const total = present.reduce((sum, value) => sum + (Number(value) || 0), 0)
-  return total.toFixed(2).replace(/\.?0+$/, "")
 }
 
 function renderUnitValue(value: string, unitAbbrev: string): string {
