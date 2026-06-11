@@ -18,7 +18,6 @@ export type WarehousePrimaryFieldsSectionProps = {
   onFieldChange: (field: keyof WarehouseForm, value: string) => void
   /** Read-only summary shown in the detail view; omit in the create flow. */
   number?: number
-  workOrdersCount?: number
   createdAt?: string
   updatedAt?: string
 }
@@ -28,7 +27,6 @@ export function WarehousePrimaryFieldsSection({
   editable,
   onFieldChange,
   number,
-  workOrdersCount,
   createdAt,
   updatedAt,
 }: WarehousePrimaryFieldsSectionProps) {
@@ -109,17 +107,12 @@ export function WarehousePrimaryFieldsSection({
               <StaticFieldValue>{number ?? "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={3} colSpan={2}>
-            <FormField label="Work Orders">
-              <StaticFieldValue>{workOrdersCount ?? 0}</StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={5} colSpan={2}>
+          <CellAt col={3} colSpan={3}>
             <FormField label="Created">
               <StaticFieldValue>{formatDate(createdAt ?? "")}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={7} colSpan={2}>
+          <CellAt col={6} colSpan={3}>
             <FormField label="Updated">
               <StaticFieldValue>{formatDate(updatedAt ?? "")}</StaticFieldValue>
             </FormField>
