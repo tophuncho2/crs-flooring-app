@@ -211,7 +211,7 @@ export function WorkOrderPrimaryFieldsSection({
             value={draft.description}
             onChange={(value) => onFieldChange("description", value)}
             maxLength={WO_DESCRIPTION_MAX}
-            rows={3}
+            rows={2}
           />
         </FormField>
       </CellAt>
@@ -405,7 +405,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={8} colSpan={4}>
+      <CellAt col={5} row={4} colSpan={3}>
         <FormField
           label="Installer Instructions"
           currentLength={editable ? draft.installerInstructions.length : undefined}
@@ -420,7 +420,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={9} colSpan={4}>
+      <CellAt col={5} row={5} colSpan={3}>
         <FormField
           label="Internal Notes"
           currentLength={editable ? draft.internalNotes.length : undefined}
@@ -437,12 +437,12 @@ export function WorkOrderPrimaryFieldsSection({
       </CellAt>
       {detail ? (
         <>
-          <CellAt col={1} row={10} colSpan={1}>
+          <CellAt col={1} row={8} colSpan={1}>
             <FormField label="Created">
               <StaticFieldValue>{formatEasternDateTime(detail.createdAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={2} row={10} colSpan={1}>
+          <CellAt col={2} row={8} colSpan={1}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(detail.updatedAt) || "—"}</StaticFieldValue>
             </FormField>
