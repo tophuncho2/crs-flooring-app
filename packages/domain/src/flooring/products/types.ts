@@ -38,6 +38,14 @@ export type ProductRow = {
   category: ProductRowCategory
 }
 
+/** Read-only totals for the product record-view "Statistics" section. */
+export type ProductStats = {
+  templateItemsCount: number
+  workOrderItemsCount: number
+  inventoryCount: number
+  adjustmentsCount: number
+}
+
 // Create form — accepts categoryId. Used by the create-product flow.
 export type ProductCreateForm = {
   categoryId: string

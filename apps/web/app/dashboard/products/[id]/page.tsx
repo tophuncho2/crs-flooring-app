@@ -40,6 +40,7 @@ export default async function ProductDetailPage({
     <ProductDetailClient
       initialProduct={result.data.product}
       categoryOptions={result.data.categoryOptions}
+      stats={result.data.stats}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/products")}
     />
   )

@@ -6,18 +6,22 @@ import {
   RecordPrimarySectionInstance,
 } from "@/engines/record-view"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
+import type { ProductStats } from "@builders/domain"
 import { useProductPrimarySection } from "@/modules/products/controllers/use-product-primary-section"
 import { ProductPrimaryFieldsSection } from "./primary/product-primary-fields-section"
+import { ProductStatisticsSection } from "./statistics/product-statistics-section"
 import { ProductRecordFooter } from "./footer"
 
 export function ProductRecordPanel({
   page,
   product,
   categoryOptions,
+  stats,
 }: {
   page: RecordDetailClientScaffoldContext
   product: ProductRecord
   categoryOptions: CategoryRecord[]
+  stats: ProductStats
 }) {
   const controller = useProductPrimarySection({
     page,
@@ -67,6 +71,12 @@ export function ProductRecordPanel({
                 />
               </RecordPrimarySectionInstance>
             ),
+          },
+          {
+            key: "statistics",
+            type: "item",
+            order: 20,
+            render: () => <ProductStatisticsSection stats={stats} />,
           },
         ]}
       />

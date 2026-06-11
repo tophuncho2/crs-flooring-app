@@ -1,6 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma } from "../../generated/prisma/client.js"
-import type { ProductOption } from "@builders/domain"
+import type { ProductOption, ProductStats } from "@builders/domain"
 import {
   listCategories,
   type CategoryRecord,
@@ -149,6 +149,35 @@ export async function getProductDetailById(
     select: productRowSelect,
   })
   return row ? normalizeProductDetail(row) : null
+}
+
+// Read-only totals for the product record-view "Statistics" section. Kept
+// separate from `productRowSelect` so the list view doesn't pay for these
+// count subqueries per row.
+export async function getProductStats(
+  id: string,
+  client: ProductsDbClient = db,
+): Promise<ProductStats | null> {
+  const row = await client.flooringProduct.findUnique({
+    where: { id },
+    select: {
+      _count: {
+        select: {
+          templateItems: true,
+          workOrderItems: true,
+          inventories: true,
+          inventoryAdjustments: true,
+        },
+      },
+    },
+  })
+  if (!row) return null
+  return {
+    templateItemsCount: row._count.templateItems,
+    workOrderItemsCount: row._count.workOrderItems,
+    inventoryCount: row._count.inventories,
+    adjustmentsCount: row._count.inventoryAdjustments,
+  }
 }
 
 export async function listProductOptions(client: ProductsDbClient = db): Promise<ProductOptionRecord[]> {
