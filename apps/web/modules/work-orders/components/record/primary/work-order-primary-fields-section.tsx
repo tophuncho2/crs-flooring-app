@@ -435,12 +435,12 @@ export function WorkOrderPrimaryFieldsSection({
       </CellAt>
       {detail ? (
         <>
-          <CellAt col={1} row={15} colSpan={4}>
+          <CellAt col={1} row={15} colSpan={1}>
             <FormField label="Created">
               <StaticFieldValue>{formatEasternDateTime(detail.createdAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={1} row={16} colSpan={4}>
+          <CellAt col={2} row={15} colSpan={1}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(detail.updatedAt) || "—"}</StaticFieldValue>
             </FormField>
