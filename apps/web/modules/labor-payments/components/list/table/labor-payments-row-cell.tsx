@@ -9,6 +9,8 @@ export function renderLaborPaymentRowCell(
   switch (column.key) {
     case "contactName":
       return <span className="font-medium">{row.contactName || "—"}</span>
+    case "workOrderNumber":
+      return <span className="tabular-nums">{row.workOrderNumber || "—"}</span>
     case "unit":
       return <span>{row.unit || "—"}</span>
     case "description":

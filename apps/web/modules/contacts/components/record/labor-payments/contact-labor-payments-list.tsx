@@ -3,17 +3,15 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { LaborPaymentListRow } from "@builders/domain"
-import { Grid, GridEmpty } from "@/engines/record-view"
+import { DataTable } from "@/engines/list-view"
 import { ActionHeader } from "@/engines/common"
 import type { HeaderAction } from "@/engines/common"
+import { LABOR_PAYMENTS_LIST_COLUMNS } from "@/modules/labor-payments/components/list/table/labor-payments-list-columns"
+import { renderLaborPaymentRowCell } from "@/modules/labor-payments/components/list/table/labor-payments-row-cell"
 import {
   CONTACT_LABOR_PAYMENTS_QUERY_KEY,
   contactLaborPaymentsPageRequest,
 } from "@/modules/contacts/data/contact-labor-payments-request"
-import {
-  LABOR_PAYMENT_SECTION_LAYOUT,
-  renderLaborPaymentSectionCell,
-} from "./labor-payment-section-grid"
 
 const SECTION_PAGE_SIZE = 15
 
@@ -25,11 +23,15 @@ const PAGER_BUTTON_CLASS =
 
 /**
  * The list face of the contact record view's labor-payments drilldown section.
- * A `Grid` (Unit / Description / Cost / Created) paginated at
- * {@link SECTION_PAGE_SIZE}; the page payload reports only `hasMore`, so the
- * footer is a plain prev/next. Row click drills into the payment's embedded edit
- * view; the header "+ Labor Payment" opens the create face. Mirrors
- * `InventoryAdjustmentsList`.
+ * A columned `DataTable` — the same list-view primitive + columns + cell
+ * renderer the standalone `/dashboard/labor-payments` ledger uses (incl. the
+ * Work Order column) — so the embedded section surfaces the ledger's fields
+ * rather than a bespoke slim subset. Mirrors `LinkedPropertiesList`.
+ *
+ * Paginated at {@link SECTION_PAGE_SIZE}; the page payload reports only
+ * `hasMore` (no total), so the footer is a plain prev/next rather than a
+ * counted pager. Row click drills into the payment's embedded edit view; the
+ * header "+ Labor Payment" opens the create face.
  */
 export function ContactLaborPaymentsList({
   contactId,
@@ -64,7 +66,7 @@ export function ContactLaborPaymentsList({
     return (
       <div className={SECTION_CARD_CLASS}>
         <ActionHeader title="Labor Payments" actions={headerActions} />
-        <p className="p-4 text-sm text-[var(--foreground)]/60">Loading labor payments…</p>
+        <p className="px-4 py-6 text-sm text-[var(--foreground)]/60">Loading labor payments…</p>
       </div>
     )
   }
@@ -72,7 +74,7 @@ export function ContactLaborPaymentsList({
     return (
       <div className={SECTION_CARD_CLASS}>
         <ActionHeader title="Labor Payments" actions={headerActions} />
-        <p className="p-4 text-sm text-rose-400">Could not load labor payments.</p>
+        <p className="px-4 py-6 text-sm text-rose-400">Could not load labor payments.</p>
       </div>
     )
   }
@@ -82,16 +84,15 @@ export function ContactLaborPaymentsList({
   return (
     <div className={SECTION_CARD_CLASS}>
       <ActionHeader title="Labor Payments" actions={headerActions} />
-      <div className="p-4">
-        <Grid<LaborPaymentListRow>
-          rows={rows}
-          layout={LABOR_PAYMENT_SECTION_LAYOUT}
-          empty={<GridEmpty>No labor payments yet.</GridEmpty>}
-          renderCell={renderLaborPaymentSectionCell}
-          onRowClick={(row) => onSelect(row)}
-          getRowAriaLabel={(row) => `Edit labor payment ${row.description || row.id}`}
-        />
-      </div>
+      <DataTable<LaborPaymentListRow>
+        rows={rows}
+        columns={LABOR_PAYMENTS_LIST_COLUMNS}
+        renderCell={renderLaborPaymentRowCell}
+        empty="No labor payments yet."
+        onRowClick={(row) => onSelect(row)}
+        getRowAriaLabel={(row) => `Edit labor payment ${row.description || row.id}`}
+        className="rounded-none! border-0! shadow-none!"
+      />
       {showPager ? (
         <div className="flex items-center justify-between border-t border-[var(--panel-border)] px-4 py-2">
           <span className="text-xs text-[var(--foreground)]/55">Page {page}</span>
