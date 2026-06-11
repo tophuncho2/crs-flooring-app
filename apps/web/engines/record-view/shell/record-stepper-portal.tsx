@@ -1,9 +1,10 @@
 "use client"
 
-import { useCallback, useState, useSyncExternalStore } from "react"
+import { useSyncExternalStore } from "react"
 import { createPortal } from "react-dom"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ConfirmDialog } from "../dialogs/confirm-dialog"
+import { useRecordSwapGuard } from "../client/hooks/use-record-swap-guard"
 
 const SLOT_ID = "record-stepper-slot"
 
@@ -65,15 +66,7 @@ export function RecordStepperPortal({
   discardMessage = DEFAULT_DISCARD_MESSAGE,
 }: RecordStepperPortalProps) {
   const target = useSyncExternalStore(subscribe, getSlot, getServerSlot)
-  const [pendingAction, setPendingAction] = useState<{ run: () => void } | null>(null)
-
-  const guard = useCallback(
-    (action: () => void) => {
-      if (isDirty) setPendingAction({ run: action })
-      else action()
-    },
-    [isDirty],
-  )
+  const { guard, dialogProps } = useRecordSwapGuard({ isDirty, discardMessage })
 
   if (!target) return null
 
@@ -102,19 +95,7 @@ export function RecordStepperPortal({
           <ChevronRight size={16} />
         </button>
       </div>
-      <ConfirmDialog
-        open={pendingAction !== null}
-        title="Discard unsaved changes?"
-        message={discardMessage}
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
-        tone="warning"
-        onConfirm={() => {
-          pendingAction?.run()
-          setPendingAction(null)
-        }}
-        onCancel={() => setPendingAction(null)}
-      />
+      <ConfirmDialog {...dialogProps} />
     </>,
     target,
   )

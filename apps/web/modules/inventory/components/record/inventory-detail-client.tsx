@@ -130,8 +130,11 @@ function InventoryRecordSurface({
       {/* Walks the global inventory-number sequence (◀ INV-# ▶) from the top bar.
           Mounted here so it can read the loaded record's number + neighbors and
           the page's dirty state; the engine primitive paints into the shell slot
-          and owns the discard guard. Only shown once a record is loaded. */}
-      {inventory ? (
+          and owns the discard guard. Shown only while actually viewing a record:
+          hidden while the picker is open for a re-pick (`expanded`), and hidden in
+          a WO hand-off (`woSeed`) where global stepping could wander the adjustment
+          onto a different product than the material item. */}
+      {inventory && !expanded && !woSeed ? (
         <RecordStepperPortal
           label={inventory.inventoryNumber}
           isDirty={page.isDirty}

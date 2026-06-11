@@ -200,8 +200,17 @@ export async function getInventoryById(
   return row ? normalizeInventoryRow(row) : null
 }
 
+/**
+ * Read the full inventory detail (row + adjustments). By default it also
+ * resolves the adjacent rows for the record-view shell stepper; pass
+ * `{ withNeighbors: false }` on paths that only navigate/invalidate off the
+ * result (create / duplicate) to skip the two extra lookups. The record-view
+ * reads — the SSR loader, the detail GET, and the primary-section save (which
+ * reconciles its response into the query the stepper reads) — keep neighbors on.
+ */
 export async function getInventoryDetailById(
   id: string,
+  options: { withNeighbors?: boolean } = {},
   client: InventoryDbClient = db,
 ): Promise<InventoryDetailRecord | null> {
   const row = await client.flooringInventory.findUnique({
@@ -209,7 +218,10 @@ export async function getInventoryDetailById(
     select: inventoryDetailSelect,
   })
   if (!row) return null
-  const neighbors = await getInventoryNeighbors(row.inventoryNumberInt, client)
+  const neighbors =
+    options.withNeighbors === false
+      ? NO_INVENTORY_NEIGHBORS
+      : await getInventoryNeighbors(row.inventoryNumberInt, client)
   return normalizeInventoryDetail(row, neighbors)
 }
 

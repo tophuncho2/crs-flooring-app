@@ -74,8 +74,10 @@ export async function POST(request: Request) {
     )
 
     // Return the full detail (row + adjustments) so the hub can seed its view on
-    // the brand-new row. A fresh row always has zero adjustments.
-    const detail = (await getInventoryDetailById(result.id)) ?? result
+    // the brand-new row. A fresh row always has zero adjustments. Skip the
+    // stepper neighbor lookups — the create flow only navigates/invalidates off
+    // this result, never seeds the stepper-read detail query.
+    const detail = (await getInventoryDetailById(result.id, { withNeighbors: false })) ?? result
     const responseBody = { inventory: detail }
     await finalizeMutationReceipt({
       scope: "inventory.create",

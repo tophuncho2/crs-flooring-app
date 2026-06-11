@@ -1,7 +1,8 @@
 "use client"
 
-import { useCallback, useState, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { ConfirmDialog } from "../../dialogs/confirm-dialog"
+import { useRecordSwapGuard } from "../../client/hooks/use-record-swap-guard"
 import type { RecordDetailClientScaffoldContext } from "../../client/scaffolds/record-detail-client-scaffold"
 
 /**
@@ -35,14 +36,12 @@ export type RecordReferenceHeaderProps = {
   discardMessage?: string
 }
 
-const DEFAULT_DISCARD_MESSAGE =
-  "This record has unsaved changes. Switching will discard them."
-
 /**
  * The canonical record-view "reference header" primitive: the chrome that sits
  * atop the first section and lets the user change which record they're viewing.
- * It owns the dirty-guard + confirm-discard dialog so every consumer (inventory,
- * templates, …) shares one swap-discard contract instead of hand-rolling it.
+ * It shares the dirty-guard + confirm-discard dialog (`useRecordSwapGuard`) with
+ * the shell stepper so every consumer (inventory, templates, …) routes through
+ * one swap-discard contract instead of hand-rolling it.
  *
  * The in-place record swap is NOT a router navigation, so this dialog is
  * distinct from the scaffold's route-leave dialog (`page.dirtyLeaveDialogProps`);
@@ -53,20 +52,11 @@ export function RecordReferenceHeader({
   children,
   label,
   actions,
-  discardMessage = DEFAULT_DISCARD_MESSAGE,
+  discardMessage,
 }: RecordReferenceHeaderProps) {
-  const isDirty = page.isDirty
-  const [pendingAction, setPendingAction] = useState<{ run: () => void } | null>(null)
+  const { guard, dialogProps } = useRecordSwapGuard({ isDirty: page.isDirty, discardMessage })
 
-  const guard = useCallback(
-    (action: () => void) => {
-      if (isDirty) setPendingAction({ run: action })
-      else action()
-    },
-    [isDirty],
-  )
-
-  const api: RecordReferenceHeaderApi = { guard, isDirty }
+  const api: RecordReferenceHeaderApi = { guard, isDirty: page.isDirty }
 
   const labeled = label !== undefined
 
@@ -85,19 +75,7 @@ export function RecordReferenceHeader({
       ) : (
         children(api)
       )}
-      <ConfirmDialog
-        open={pendingAction !== null}
-        title="Discard unsaved changes?"
-        message={discardMessage}
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
-        tone="warning"
-        onConfirm={() => {
-          pendingAction?.run()
-          setPendingAction(null)
-        }}
-        onCancel={() => setPendingAction(null)}
-      />
+      <ConfirmDialog {...dialogProps} />
     </>
   )
 }
