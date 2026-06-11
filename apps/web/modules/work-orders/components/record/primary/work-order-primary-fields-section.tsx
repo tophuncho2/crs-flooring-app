@@ -350,7 +350,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={6} colSpan={4}>
+      <CellAt col={1} row={6} colSpan={2}>
         <FormField
           label="Unit Number"
           currentLength={editable ? draft.unitNumber.length : undefined}
@@ -364,7 +364,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={7} colSpan={4}>
+      <CellAt col={3} row={6} colSpan={2}>
         <FormField label="Vacancy" required>
           <SegmentedChoiceCell
             editable={editable}
@@ -383,7 +383,7 @@ export function WorkOrderPrimaryFieldsSection({
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={8} colSpan={4}>
+      <CellAt col={1} row={7} colSpan={4}>
         <FormField label="Property Instructions">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{instructionsDisplay}</span>
@@ -405,7 +405,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={9} colSpan={4}>
+      <CellAt col={1} row={8} colSpan={4}>
         <FormField
           label="Installer Instructions"
           currentLength={editable ? draft.installerInstructions.length : undefined}
@@ -420,7 +420,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={10} colSpan={4}>
+      <CellAt col={1} row={9} colSpan={4}>
         <FormField
           label="Internal Notes"
           currentLength={editable ? draft.internalNotes.length : undefined}
@@ -437,12 +437,12 @@ export function WorkOrderPrimaryFieldsSection({
       </CellAt>
       {detail ? (
         <>
-          <CellAt col={1} row={11} colSpan={1}>
+          <CellAt col={1} row={10} colSpan={1}>
             <FormField label="Created">
               <StaticFieldValue>{formatEasternDateTime(detail.createdAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={2} row={11} colSpan={1}>
+          <CellAt col={2} row={10} colSpan={1}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(detail.updatedAt) || "—"}</StaticFieldValue>
             </FormField>
