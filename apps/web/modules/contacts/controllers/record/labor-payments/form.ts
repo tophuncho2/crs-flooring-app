@@ -10,14 +10,14 @@ import type {
 } from "./types"
 
 export const EMPTY_FORM: LaborPaymentEditForm = { ...EMPTY_LABOR_PAYMENT_FORM }
-export const EMPTY_LOCAL: LaborPaymentEditLocal = { contactLabel: "" }
+export const EMPTY_LOCAL: LaborPaymentEditLocal = { contactLabel: "", workOrderLabel: "" }
 
 export function buildCreateForm(seed: LaborPaymentCreateSeed): LaborPaymentEditForm {
   return { ...EMPTY_LABOR_PAYMENT_FORM, contactId: seed.contactId }
 }
 
 export function buildCreateLocal(seed: LaborPaymentCreateSeed): LaborPaymentEditLocal {
-  return { contactLabel: seed.contactName }
+  return { contactLabel: seed.contactName, workOrderLabel: "" }
 }
 
 export function buildEditForm(laborPayment: LaborPayment): LaborPaymentEditForm {
@@ -25,7 +25,7 @@ export function buildEditForm(laborPayment: LaborPayment): LaborPaymentEditForm 
 }
 
 export function buildEditLocal(laborPayment: LaborPayment): LaborPaymentEditLocal {
-  return { contactLabel: laborPayment.contactName }
+  return { contactLabel: laborPayment.contactName, workOrderLabel: laborPayment.workOrderNumber }
 }
 
 export function formIsDirty(
@@ -34,6 +34,7 @@ export function formIsDirty(
 ): boolean {
   return (
     form.contactId !== baseline.contactId ||
+    form.workOrderId !== baseline.workOrderId ||
     form.unit !== baseline.unit ||
     form.description !== baseline.description ||
     form.cost !== baseline.cost

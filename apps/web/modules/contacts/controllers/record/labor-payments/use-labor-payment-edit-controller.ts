@@ -1,9 +1,10 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import type { ContactOption } from "@builders/domain"
+import type { ContactOption, WorkOrderOption } from "@builders/domain"
 import { createRecordSectionError, type RecordSectionError } from "@/types/record/section-error"
 import { getClientErrorMessage } from "@/transport/client-errors"
+import { formatWorkOrderOptionTitle } from "@/modules/work-orders/components/picker/work-order-picker"
 import {
   createLaborPaymentRequest,
   deleteLaborPaymentRequest,
@@ -106,6 +107,15 @@ export function useLaborPaymentEditController({
     setError(null)
   }, [])
 
+  const selectWorkOrder = useCallback((option: WorkOrderOption | null) => {
+    setForm((prev) => ({ ...prev, workOrderId: option?.id ?? "" }))
+    setLocal((prev) => ({
+      ...prev,
+      workOrderLabel: option ? formatWorkOrderOptionTitle(option) : "",
+    }))
+    setError(null)
+  }, [])
+
   const save = useCallback(async () => {
     if (!open || isSaving || !isFormValid(form)) return
     setIsSaving(true)
@@ -191,6 +201,7 @@ export function useLaborPaymentEditController({
     discard,
     setField,
     selectContact,
+    selectWorkOrder,
     save,
     deleteLaborPayment,
   }

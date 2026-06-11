@@ -13,7 +13,8 @@ export type LaborPaymentEditOpenSpec =
 
 export type LaborPaymentEditForm = LaborPaymentForm
 
-/** UI-only state: the picked contact label for the picker trigger. */
+/** UI-only state: the picked contact + work-order labels for the picker triggers. */
 export type LaborPaymentEditLocal = {
   contactLabel: string
+  workOrderLabel: string
 }
