@@ -40,6 +40,7 @@ export const inventoryRowSelect = {
   startingStock: true,
   netDeducted: true,
   isArchived: true,
+  wasMerged: true,
   note: true,
   internalNotes: true,
   inventoryItem: true,

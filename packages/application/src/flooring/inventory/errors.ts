@@ -6,6 +6,8 @@ export type InventoryErrorCode =
   | "INVENTORY_LOCATION_NOT_FOUND"
   | "INVENTORY_PRODUCT_NOT_FOUND"
   | "INVENTORY_WAREHOUSE_NOT_FOUND"
+  | "INVENTORY_MERGE_TOO_FEW_SOURCES"
+  | "INVENTORY_MERGE_CROSS_PRODUCT"
 
 export class InventoryExecutionError extends Error {
   readonly code: InventoryErrorCode

@@ -98,6 +98,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     netDeducted: toDecimalString(payload.netDeducted),
     stockBalance: toInventoryFixedString(balanceNum),
     isArchived: payload.isArchived,
+    wasMerged: payload.wasMerged,
     note: payload.note ?? "",
     internalNotes: payload.internalNotes ?? "",
     inventoryItem: payload.inventoryItem,
@@ -255,6 +256,51 @@ export async function getInventoryBalancesById(
     netDeducted: toDecimalString(row.netDeducted),
     stockBalance: toInventoryFixedString(balanceNum),
   }
+}
+
+/**
+ * The locked source rows a merge reads after taking the per-row `FOR UPDATE`
+ * locks. Just the identity + stock columns the merge use case needs to assert
+ * the single-product invariant and sum the remaining balance — no joins, no
+ * normalization. Warehouse rides along only so the use case can surface it if
+ * needed; the merged row's warehouse is operator-chosen, not derived from here.
+ */
+export type MergeSourceInventoryRow = {
+  id: string
+  productId: string
+  warehouseId: string
+  startingStock: string
+  netDeducted: string
+}
+
+/**
+ * Read the supplied inventory rows for a merge. Call AFTER `lockInventoryRow`
+ * has locked each id in the same transaction so the product check + balance sum
+ * see a stable snapshot. Returns only the rows that exist (a missing id simply
+ * drops out — the use case compares counts to detect that).
+ */
+export async function getInventoryRowsForMerge(
+  ids: string[],
+  client: InventoryDbClient = db,
+): Promise<MergeSourceInventoryRow[]> {
+  if (ids.length === 0) return []
+  const rows = await client.flooringInventory.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      productId: true,
+      warehouseId: true,
+      startingStock: true,
+      netDeducted: true,
+    },
+  })
+  return rows.map((row) => ({
+    id: row.id,
+    productId: row.productId,
+    warehouseId: row.warehouseId,
+    startingStock: toDecimalString(row.startingStock),
+    netDeducted: toDecimalString(row.netDeducted),
+  }))
 }
 
 export async function countInventory(

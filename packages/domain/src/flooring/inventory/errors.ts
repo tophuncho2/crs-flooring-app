@@ -4,6 +4,8 @@ export type InventoryDomainErrorCode =
   | "INVENTORY_DELETE_BLOCKED"
   | "INVENTORY_FIELD_NOT_EDITABLE"
   | "INVENTORY_OVERSOLD"
+  | "INVENTORY_MERGE_TOO_FEW_SOURCES"
+  | "INVENTORY_MERGE_CROSS_PRODUCT"
 
 export class InventoryDomainError extends Error {
   readonly code: InventoryDomainErrorCode

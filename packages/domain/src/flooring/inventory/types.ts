@@ -32,6 +32,7 @@ export type InventoryRow = {
   netDeducted: string
   stockBalance: string
   isArchived: boolean
+  wasMerged: boolean
   note: string
   internalNotes: string
   inventoryItem: string

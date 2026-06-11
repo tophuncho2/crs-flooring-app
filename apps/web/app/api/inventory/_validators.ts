@@ -4,6 +4,7 @@ import type {
   CreateInventoryInput,
   DuplicateInventoryInput,
   InventoryListFilters,
+  MergeInventoryInput,
   UpdateInventoryInput,
 } from "@builders/application"
 import type { ListInput } from "@builders/application"
@@ -429,6 +430,51 @@ export function validateCreateInventoryInput(
     dyeLot: optionalString(body.dyeLot, "dyeLot"),
     note: optionalString(body.note, "note"),
     startingStock: optionalString(body.startingStock, "startingStock"),
+    location: optionalString(body.location, "location"),
+    internalNotes: optionalString(body.internalNotes, "internalNotes"),
+  }
+}
+
+function stringIdArray(value: unknown, field: string): string[] {
+  if (!Array.isArray(value)) {
+    throw new InventoryExecutionError({
+      code: "INVENTORY_VALIDATION_FAILED",
+      message: `${field} must be an array`,
+      status: 400,
+      field,
+    })
+  }
+  return value.map((entry, index) => {
+    if (typeof entry !== "string" || entry.trim().length === 0) {
+      throw new InventoryExecutionError({
+        code: "INVENTORY_VALIDATION_FAILED",
+        message: `${field}[${index}] must be a non-empty string`,
+        status: 400,
+        field,
+      })
+    }
+    return entry
+  })
+}
+
+/**
+ * Shape validator for the merge-inventory action. `productId` + `warehouseId`
+ * select the snapshot/relation; `sourceInventoryIds` is the set of rows being
+ * consolidated; the rest are the editable cells coerced to strings. The merged
+ * row's `startingStock` is deliberately NOT accepted — it is computed
+ * server-authoritative from the locked sources. Business rules (≥2 sources, one
+ * product, positive stock, length caps) run in the domain/use case as a 422.
+ */
+export function validateMergeInventoryInput(
+  body: Record<string, unknown>,
+): MergeInventoryInput {
+  return {
+    productId: optionalString(body.productId, "productId"),
+    warehouseId: optionalString(body.warehouseId, "warehouseId"),
+    sourceInventoryIds: stringIdArray(body.sourceInventoryIds, "sourceInventoryIds"),
+    rollNumber: optionalString(body.rollNumber, "rollNumber"),
+    dyeLot: optionalString(body.dyeLot, "dyeLot"),
+    note: optionalString(body.note, "note"),
     location: optionalString(body.location, "location"),
     internalNotes: optionalString(body.internalNotes, "internalNotes"),
   }

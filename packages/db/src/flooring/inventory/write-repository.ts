@@ -148,6 +148,25 @@ export async function updateInventoryNetDeducted(
   return record
 }
 
+/**
+ * Flag the supplied inventory rows as merged (`wasMerged = true`). Called inside
+ * the merge transaction after the new consolidated row is inserted, against the
+ * already-locked source ids. Status only — the rows stay fully editable; a
+ * future sweep that drops inventory delete restrictions is how operators clean
+ * them up. Returns the number of rows flagged.
+ */
+export async function markInventoryRowsMerged(
+  tx: Prisma.TransactionClient,
+  ids: string[],
+): Promise<number> {
+  if (ids.length === 0) return 0
+  const result = await tx.flooringInventory.updateMany({
+    where: { id: { in: ids } },
+    data: { wasMerged: true },
+  })
+  return result.count
+}
+
 export async function deleteInventoryRecordById(
   id: string,
   client: InventoryDbClient = db,
