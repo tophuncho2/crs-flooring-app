@@ -25,7 +25,7 @@ export function JobTypePrimaryFieldsSection({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={2}>
         <FormField label="Name" required>
           <TextCell
             editable={editable}
@@ -38,12 +38,12 @@ export function JobTypePrimaryFieldsSection({
       </CellAt>
       {showTimestamps ? (
         <>
-          <CellAt col={1} colSpan={4}>
+          <CellAt col={1} colSpan={2}>
             <FormField label="Created">
               <StaticFieldValue>{formatEasternDateTime(createdAt ?? null) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={5} colSpan={4}>
+          <CellAt col={1} colSpan={2}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(updatedAt ?? null) || "—"}</StaticFieldValue>
             </FormField>
