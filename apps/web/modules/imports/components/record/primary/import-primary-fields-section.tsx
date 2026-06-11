@@ -11,8 +11,15 @@ import {
   IMPORT_PURCHASE_ORDER_NUMBER_MAX,
   type ImportPrimaryForm,
 } from "@builders/domain"
-import { ImportGroup } from "./import-group"
 
+/**
+ * Composer for the imports primary section. Renders every field on the
+ * record-view engine's invisible grid (`FieldSection` + `CellAt` + `FormField`),
+ * mirroring the templates migration — the former "Details" / "Notes" tab-card
+ * groups (`ImportGroup`) are gone, with the controls flowing across the top row
+ * and the Internal Notes textarea spanning beneath. Cells use column-only
+ * placement so the create flow (no Created / Updated cells) flows without a gap.
+ */
 export function ImportPrimaryFieldsSection({
   draft,
   warehouseName,
@@ -35,71 +42,66 @@ export function ImportPrimaryFieldsSection({
   const editable = !disabled
 
   return (
-    <div className="flex flex-col gap-4">
-      <ImportGroup title="Details">
-        <FieldSection>
-          <CellAt col={1} colSpan={2}>
-            <FormField
-              label="Purchase Order Number"
-              currentLength={editable ? draft.purchaseOrderNumber.length : undefined}
-              maxLength={IMPORT_PURCHASE_ORDER_NUMBER_MAX}
-            >
-              <TextCell
-                editable={editable}
-                value={draft.purchaseOrderNumber}
-                onChange={(value) => onFieldChange("purchaseOrderNumber", value)}
-                maxLength={IMPORT_PURCHASE_ORDER_NUMBER_MAX}
-              />
-            </FormField>
-          </CellAt>
-          <CellAt col={3} colSpan={2}>
-            <FormField label="Warehouse" required>
-              {editable ? (
-                <WarehousePicker
-                  value={draft.warehouseId || null}
-                  onChange={(id) => onFieldChange("warehouseId", id ?? "")}
-                  selectedLabel={warehouseName || null}
-                  placeholder="Select Warehouse"
-                  ariaLabel="Warehouse"
-                />
-              ) : (
-                <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
-              )}
-            </FormField>
-          </CellAt>
-          <CellAt col={5} colSpan={2}>
-            <FormField label="Manufacturer">
-              {editable ? (
-                <ManufacturerPicker
-                  value={draft.manufacturerId || null}
-                  onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
-                  selectedLabel={manufacturerName || null}
-                  placeholder="Select Manufacturer"
-                  ariaLabel="Manufacturer"
-                />
-              ) : (
-                <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
-              )}
-            </FormField>
-          </CellAt>
-          {createdAt ? (
-            <CellAt col={1} colSpan={2}>
-              <FormField label="Created">
-                <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
-              </FormField>
-            </CellAt>
-          ) : null}
-          {updatedAt ? (
-            <CellAt col={3} colSpan={2}>
-              <FormField label="Updated">
-                <StaticFieldValue>{formatEasternDateTime(updatedAt) || "—"}</StaticFieldValue>
-              </FormField>
-            </CellAt>
-          ) : null}
-        </FieldSection>
-      </ImportGroup>
-
-      <ImportGroup title="Notes">
+    <FieldSection gap="0.75rem">
+      <CellAt col={1} colSpan={2}>
+        <FormField
+          label="Purchase Order Number"
+          currentLength={editable ? draft.purchaseOrderNumber.length : undefined}
+          maxLength={IMPORT_PURCHASE_ORDER_NUMBER_MAX}
+        >
+          <TextCell
+            editable={editable}
+            value={draft.purchaseOrderNumber}
+            onChange={(value) => onFieldChange("purchaseOrderNumber", value)}
+            maxLength={IMPORT_PURCHASE_ORDER_NUMBER_MAX}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={3} colSpan={2}>
+        <FormField label="Warehouse" required>
+          {editable ? (
+            <WarehousePicker
+              value={draft.warehouseId || null}
+              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
+              selectedLabel={warehouseName || null}
+              placeholder="Select Warehouse"
+              ariaLabel="Warehouse"
+            />
+          ) : (
+            <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={2}>
+        <FormField label="Manufacturer">
+          {editable ? (
+            <ManufacturerPicker
+              value={draft.manufacturerId || null}
+              onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
+              selectedLabel={manufacturerName || null}
+              placeholder="Select Manufacturer"
+              ariaLabel="Manufacturer"
+            />
+          ) : (
+            <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
+          )}
+        </FormField>
+      </CellAt>
+      {createdAt ? (
+        <CellAt col={1} colSpan={2}>
+          <FormField label="Created">
+            <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
+      {updatedAt ? (
+        <CellAt col={3} colSpan={2}>
+          <FormField label="Updated">
+            <StaticFieldValue>{formatEasternDateTime(updatedAt) || "—"}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
+      <CellAt col={1} colSpan={6}>
         <FormField
           label="Internal Notes"
           currentLength={editable ? draft.internalNotes.length : undefined}
@@ -113,7 +115,7 @@ export function ImportPrimaryFieldsSection({
             rows={3}
           />
         </FormField>
-      </ImportGroup>
-    </div>
+      </CellAt>
+    </FieldSection>
   )
 }
