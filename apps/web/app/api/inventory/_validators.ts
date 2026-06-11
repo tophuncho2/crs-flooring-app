@@ -57,78 +57,10 @@ function requireBoolean(value: unknown, field: string): boolean {
   return value
 }
 
-// --- Picker / options search validator ---
+// --- Shared picker pagination bounds (locations / PO# / import# search) ---
 
 const OPTIONS_DEFAULT_TAKE = 20
 const OPTIONS_MAX_TAKE = 50
-
-const inventorySearchQuerySchema = z.object({
-  warehouseId: z.string().min(1, "warehouseId is required"),
-  productId: z.string().optional(),
-  location: z.string().optional(),
-  invNumber: z.string().optional(),
-  rollNumber: z.string().optional(),
-  dyeLot: z.string().optional(),
-  note: z.string().optional(),
-  skip: z.coerce.number().int().min(0).default(0),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(OPTIONS_MAX_TAKE)
-    .default(OPTIONS_DEFAULT_TAKE),
-})
-
-export type ValidatedInventorySearchQuery = {
-  warehouseId: string
-  productId?: string
-  location?: string
-  invNumber?: string
-  rollNumber?: string
-  dyeLot?: string
-  note?: string
-  skip: number
-  take: number
-}
-
-export function validateInventorySearchQuery(
-  searchParams: URLSearchParams,
-): ValidatedInventorySearchQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-
-  const parseResult = inventorySearchQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    throw new InventoryExecutionError({
-      code: "INVENTORY_VALIDATION_FAILED",
-      message: issue?.message ?? "Invalid inventory options query",
-      status: 400,
-      ...(issue?.path[0] ? { field: String(issue.path[0]) } : {}),
-    })
-  }
-
-  const parsed = parseResult.data
-  const trimProduct = parsed.productId?.trim()
-  const trimLocation = parsed.location?.trim()
-  const trimInvNumber = parsed.invNumber?.trim()
-  const trimRollNumber = parsed.rollNumber?.trim()
-  const trimDyeLot = parsed.dyeLot?.trim()
-  const trimNote = parsed.note?.trim()
-  return {
-    warehouseId: parsed.warehouseId.trim(),
-    ...(trimProduct ? { productId: trimProduct } : {}),
-    ...(trimLocation ? { location: trimLocation } : {}),
-    ...(trimInvNumber ? { invNumber: trimInvNumber } : {}),
-    ...(trimRollNumber ? { rollNumber: trimRollNumber } : {}),
-    ...(trimDyeLot ? { dyeLot: trimDyeLot } : {}),
-    ...(trimNote ? { note: trimNote } : {}),
-    skip: parsed.skip,
-    take: parsed.take,
-  }
-}
 
 // --- Locations picker (warehouse-scoped, distinct) validator ---
 

@@ -66,28 +66,3 @@ export async function saveWorkOrderMaterialItemsSectionRequest(
 // shared peer module consumed by both work-orders and inventory record
 // views). They were extracted in the adjustments FE sweep; this file no
 // longer carries them.
-
-export async function listEligibleInventoryRequest(args: {
-  workOrderId: string
-  workOrderItemId: string
-}) {
-  return requestJson<{
-    inventories: Array<{
-      id: string
-      inventoryNumber: string
-      itemNumber: string
-      dyeLot: string
-      notes: string
-      startingStock: string
-      netDeducted: string
-      remainingStock: string
-      stockUnitAbbrev: string
-    }>
-  }>(
-    `/api/work-orders/${args.workOrderId}/material-items/${args.workOrderItemId}/eligible-inventory`,
-    {
-      method: "GET",
-      headers: { Accept: "application/json" },
-    },
-  )
-}

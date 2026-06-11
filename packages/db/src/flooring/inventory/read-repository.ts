@@ -9,7 +9,6 @@ import type {
   InventoryImportNumberOption,
   InventoryLocationOption,
   InventoryNeighbor,
-  InventoryOption,
   InventoryPurchaseOrderOption,
   InventoryRow,
 } from "@builders/domain"
@@ -518,14 +517,13 @@ export type InventoryMergeCandidatesArgs = {
 }
 
 /**
- * The shared "available / eligible inventory" predicate used by every read that
- * lets a user *pick* an inventory row (merge candidates, the cut-log adjustment
- * picker). A row is pickable only if it is not archived, not already merged
- * (`wasMerged`), and still has remaining balance (`startingStock > netDeducted`).
- * These rows stay fully editable in the record view — this filter governs
- * *pickability*, not editability. Single source of truth so the selection reads
- * can't drift. (The work-orders eligible-inventory read mirrors the same three
- * states in its own Prisma-object style; the db submodules stay decoupled.)
+ * The shared "available / eligible inventory" predicate for any read that lets a
+ * user *pick* an inventory row (today: merge candidates). A row is pickable only
+ * if it is not archived, not already merged (`wasMerged`), and still has
+ * remaining balance (`startingStock > netDeducted`). These rows stay fully
+ * editable in the record view — this filter governs *pickability*, not
+ * editability. Kept as a named predicate so future selection reads reuse one
+ * source of truth and can't drift.
  */
 function availableInventorySqlConditions(): Prisma.Sql[] {
   return [
@@ -610,150 +608,6 @@ export async function listInventoryMergeCandidates(
     .map(normalizeInventoryRow)
 
   return { total, rows }
-}
-
-export type InventoryOptionsSearchArgs = {
-  warehouseId: string
-  /**
-   * Optional product narrowing — when set, only inventory rows whose product
-   * matches. Cut-log pickers always pass this so users can't reference an
-   * inventory row of a different product than the material item's.
-   */
-  productId?: string
-  /** Free-text location filter chip — `ILIKE %value%` on the location column. */
-  location?: string
-  /**
-   * Per-field identity search — one independent `ILIKE %value%` per filled bar
-   * (`inventory_number` / `rollNumber` / `dyeLot` / `note`), AND'd together so
-   * filling more than one narrows the result set. Mirrors the list-view read
-   * path's `buildListViewWhere` semantics. Location is intentionally excluded;
-   * the separate `location` arg above owns that concern.
-   */
-  invNumber?: string
-  rollNumber?: string
-  dyeLot?: string
-  note?: string
-  /** Page offset for infinite scroll. Defaults to 0. */
-  skip?: number
-  take: number
-}
-
-export type InventoryOptionsSearchResult = {
-  items: InventoryOption[]
-  hasMore: boolean
-}
-
-type InventoryOptionRawRow = {
-  id: string
-  inventoryItem: string
-  inventory_number: string | null
-  rollNumber: string | null
-  dyeLot: string | null
-  note: string | null
-  warehouseId: string
-  location: string | null
-  categorySlug: string
-  stockUnitAbbrev: string | null
-  startingStock: Prisma.Decimal
-  netDeducted: Prisma.Decimal
-}
-
-/**
- * Picker / options search for inventory rows. Filters are AND'd: warehouse +
- * the shared availability predicate (archived=false + wasMerged=false +
- * computed-balance>0, via `availableInventorySqlConditions`) +
- * (optional) product + (optional) location text contains, then per-field
- * identity ILIKEs across `inventory_number`, `rollNumber`, `dyeLot`, `note`
- * (each independent, AND'd). Balance is stamped via the same pure helper used
- * by the row normalizer (single source of truth for the math).
- * Results are ordered `inventoryNumberInt ASC` (a flat ascending
- * inventory-number order across all products, via the stored generated int
- * column), matching the inventory list view's sort and avoiding the
- * lex-vs-numeric trap of the unpadded string format.
- *
- * Built on `$queryRaw` so the column-to-column compare for the
- * positive-balance constraint can live in SQL — Prisma's typed `where` cannot
- * compare two columns of the same row.
- */
-export async function searchInventoryOptions(
-  args: InventoryOptionsSearchArgs,
-  client: InventoryDbClient = db,
-): Promise<InventoryOptionsSearchResult> {
-  const conditions: Prisma.Sql[] = [
-    Prisma.sql`"warehouseId" = ${args.warehouseId}`,
-    ...availableInventorySqlConditions(),
-  ]
-  if (args.productId !== undefined) {
-    conditions.push(Prisma.sql`"productId" = ${args.productId}`)
-  }
-  const locationFilter = args.location?.trim() ?? ""
-  if (locationFilter.length > 0) {
-    conditions.push(Prisma.sql`"location" ILIKE ${`%${locationFilter}%`}`)
-  }
-  // Per-field identity search — one independent ILIKE per filled bar, AND'd via
-  // the shared `conditions` join below (mirrors `buildListViewWhere`).
-  const invNumber = args.invNumber?.trim() ?? ""
-  if (invNumber.length > 0) {
-    conditions.push(Prisma.sql`"inventory_number" ILIKE ${`%${invNumber}%`}`)
-  }
-  const rollNumber = args.rollNumber?.trim() ?? ""
-  if (rollNumber.length > 0) {
-    conditions.push(Prisma.sql`"rollNumber" ILIKE ${`%${rollNumber}%`}`)
-  }
-  const dyeLot = args.dyeLot?.trim() ?? ""
-  if (dyeLot.length > 0) {
-    conditions.push(Prisma.sql`"dyeLot" ILIKE ${`%${dyeLot}%`}`)
-  }
-  const note = args.note?.trim() ?? ""
-  if (note.length > 0) {
-    conditions.push(Prisma.sql`"note" ILIKE ${`%${note}%`}`)
-  }
-  const whereClause = Prisma.join(conditions, " AND ")
-
-  // Fetch take+1 (offset by skip) to detect a next page without a count query.
-  const skip = Math.max(0, Math.floor(args.skip ?? 0))
-  const rows = await client.$queryRaw<InventoryOptionRawRow[]>(Prisma.sql`
-    SELECT
-      "id",
-      "inventoryItem",
-      "inventory_number",
-      "rollNumber",
-      "dyeLot",
-      "note",
-      "warehouseId",
-      "location",
-      "categorySlug",
-      "stockUnitAbbrev",
-      "startingStock",
-      "netDeducted"
-    FROM "flooring_inventory"
-    WHERE ${whereClause}
-    ORDER BY "inventoryNumberInt" ASC, "id" ASC
-    LIMIT ${args.take + 1} OFFSET ${skip}
-  `)
-
-  const hasMore = rows.length > args.take
-  const page = hasMore ? rows.slice(0, args.take) : rows
-  const items = page.map((row) => {
-    const balanceNum = computeInventoryBalance({
-      startingStock: row.startingStock.toString(),
-      netDeducted: row.netDeducted.toString(),
-    })
-    return {
-      id: row.id,
-      inventoryItem: row.inventoryItem,
-      inventoryNumber: row.inventory_number,
-      rollNumber: row.rollNumber,
-      dyeLot: row.dyeLot,
-      note: row.note,
-      warehouseId: row.warehouseId,
-      location: row.location,
-      stockBalance: toInventoryFixedString(balanceNum),
-      stockUnitAbbrev: row.stockUnitAbbrev ?? "",
-    }
-  })
-
-  return { items, hasMore }
 }
 
 export type InventoryLocationsSearchArgs = {

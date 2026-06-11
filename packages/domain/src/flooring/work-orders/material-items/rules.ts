@@ -33,10 +33,9 @@ export function validateWorkOrderMaterialItemUpdateForm(
  * The product stays editable until the item has linked inventory adjustments.
  * Once one exists, the product is locked — the WOMI carries product-derived
  * snapshots (`productName`, `sendUnitName`, `sendUnitAbbrev`) and its
- * adjustments scope their inventory search by `workOrderItem.productId` (see
- * `listEligibleInventoryForWorkOrderItem`). Changing the product then would
- * drift the snapshots and sever every adjustment → inventory linkage; the
- * row can only be deleted instead.
+ * adjustments scope their inventory by `workOrderItem.productId`. Changing the
+ * product then would drift the snapshots and sever every adjustment → inventory
+ * linkage; the row can only be deleted instead.
  *
  * Returns true when the caller is changing the product on an item that has
  * inventory adjustments. Ids are compared trimmed so whitespace noise can't
