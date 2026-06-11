@@ -16,9 +16,12 @@ import {
  * Composer for the imports primary section. Renders every field on the
  * record-view engine's invisible grid (`FieldSection` + `CellAt` + `FormField`),
  * mirroring the templates migration — the former "Details" / "Notes" tab-card
- * groups (`ImportGroup`) are gone, with the controls flowing across the top row
- * and the Internal Notes textarea spanning beneath. Cells use column-only
- * placement so the create flow (no Created / Updated cells) flows without a gap.
+ * groups (`ImportGroup`) are gone. Layout (all cells 2 cols wide): Warehouse /
+ * Created on row 1, Manufacturer / Updated on row 2, Purchase Order Number on
+ * row 3, Internal Notes on row 4. Each timestamp cell is sourced right after its
+ * left-column partner so column-only auto-flow seats them on the same row; the
+ * create flow (no Created / Updated cells) collapses to a single left column
+ * without a gap.
  */
 export function ImportPrimaryFieldsSection({
   draft,
@@ -44,20 +47,6 @@ export function ImportPrimaryFieldsSection({
   return (
     <FieldSection gap="0.75rem">
       <CellAt col={1} colSpan={2}>
-        <FormField
-          label="Purchase Order Number"
-          currentLength={editable ? draft.purchaseOrderNumber.length : undefined}
-          maxLength={IMPORT_PURCHASE_ORDER_NUMBER_MAX}
-        >
-          <TextCell
-            editable={editable}
-            value={draft.purchaseOrderNumber}
-            onChange={(value) => onFieldChange("purchaseOrderNumber", value)}
-            maxLength={IMPORT_PURCHASE_ORDER_NUMBER_MAX}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={3} colSpan={2}>
         <FormField label="Warehouse" required>
           {editable ? (
             <WarehousePicker
@@ -72,7 +61,14 @@ export function ImportPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={2}>
+      {createdAt ? (
+        <CellAt col={3} colSpan={2}>
+          <FormField label="Created">
+            <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
+      <CellAt col={1} colSpan={2}>
         <FormField label="Manufacturer">
           {editable ? (
             <ManufacturerPicker
@@ -87,13 +83,6 @@ export function ImportPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      {createdAt ? (
-        <CellAt col={1} colSpan={2}>
-          <FormField label="Created">
-            <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
-          </FormField>
-        </CellAt>
-      ) : null}
       {updatedAt ? (
         <CellAt col={3} colSpan={2}>
           <FormField label="Updated">
@@ -101,7 +90,21 @@ export function ImportPrimaryFieldsSection({
           </FormField>
         </CellAt>
       ) : null}
-      <CellAt col={1} colSpan={6}>
+      <CellAt col={1} colSpan={2}>
+        <FormField
+          label="Purchase Order Number"
+          currentLength={editable ? draft.purchaseOrderNumber.length : undefined}
+          maxLength={IMPORT_PURCHASE_ORDER_NUMBER_MAX}
+        >
+          <TextCell
+            editable={editable}
+            value={draft.purchaseOrderNumber}
+            onChange={(value) => onFieldChange("purchaseOrderNumber", value)}
+            maxLength={IMPORT_PURCHASE_ORDER_NUMBER_MAX}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={2}>
         <FormField
           label="Internal Notes"
           currentLength={editable ? draft.internalNotes.length : undefined}
