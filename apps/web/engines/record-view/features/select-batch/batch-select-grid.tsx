@@ -114,12 +114,22 @@ export function BatchSelectGrid<TRow extends GridRow>({
       footerSlot={footerSlot}
       renderCell={renderCell}
       renderControl={(_control, row) => (
-        <CheckboxCell
-          editable={canToggleSelection && isSelectable(row)}
-          value={selectedIds.has(row.id)}
-          onChange={() => onToggle(row.id)}
-          ariaLabel={getSelectionAriaLabel?.(row) ?? `Select ${row.id}`}
-        />
+        // Stop the checkbox's click from bubbling to the row's onClick — without
+        // this the row handler toggles a second time and cancels the checkbox's
+        // own toggle (Select-All is unaffected; it's a separate button). Mirrors
+        // the proven staged-inventory select cell, generalized into the engine.
+        <div
+          className="flex items-center justify-center"
+          onClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <CheckboxCell
+            editable={canToggleSelection && isSelectable(row)}
+            value={selectedIds.has(row.id)}
+            onChange={() => onToggle(row.id)}
+            ariaLabel={getSelectionAriaLabel?.(row) ?? `Select ${row.id}`}
+          />
+        </div>
       )}
       onRowClick={
         canToggleSelection
