@@ -116,6 +116,11 @@ function InventoryRecordSurface({
   // Form mode before an item is picked: make the grid's purpose obvious — the
   // operator is here to add an adjustment and just needs to choose which item.
   const woSeed = selection.woSeed
+  // Adjacent rows for the top-bar stepper. Read off the loaded record; both are
+  // null while a step's neighbor detail loads, so the arrows disable and the
+  // engine primitive holds the last number steady (no flicker).
+  const stepPrevious = inventory?.previousInventory ?? null
+  const stepNext = inventory?.nextInventory ?? null
   const showFormModeHint = selection.isAdjustmentFormMode && selection.inventoryId === null
   const formModeContext = woSeed
     ? [woSeed.workOrderLabel, woSeed.materialItemLabel].filter(Boolean).join(" · ")
@@ -130,25 +135,19 @@ function InventoryRecordSurface({
       {/* Walks the global inventory-number sequence (◀ INV-# ▶) from the top bar.
           Mounted here so it can read the loaded record's number + neighbors and
           the page's dirty state; the engine primitive paints into the shell slot
-          and owns the discard guard. Shown only while actually viewing a record:
-          hidden while the picker is open for a re-pick (`expanded`), and hidden in
-          a WO hand-off (`woSeed`) where global stepping could wander the adjustment
+          and owns the discard guard. Mounted while a record is *selected* (not
+          only while loaded) so an in-flight step doesn't unmount/remount the
+          control — the primitive holds the last number while the neighbor loads.
+          Hidden while the picker is open for a re-pick (`expanded`), and in a WO
+          hand-off (`woSeed`) where global stepping could wander the adjustment
           onto a different product than the material item. */}
-      {inventory && !expanded && !woSeed ? (
+      {selection.inventoryId !== null && !expanded && !woSeed ? (
         <RecordStepperPortal
-          label={inventory.inventoryNumber}
+          label={inventory?.inventoryNumber ?? ""}
           isDirty={page.isDirty}
           discardMessage="This inventory item has unsaved changes. Stepping to another item will discard them."
-          onPrevious={
-            inventory.previousInventory
-              ? () => selection.stepToInventory(inventory.previousInventory!)
-              : null
-          }
-          onNext={
-            inventory.nextInventory
-              ? () => selection.stepToInventory(inventory.nextInventory!)
-              : null
-          }
+          onPrevious={stepPrevious ? () => selection.stepToInventory(stepPrevious) : null}
+          onNext={stepNext ? () => selection.stepToInventory(stepNext) : null}
         />
       ) : null}
       {showFormModeHint ? (

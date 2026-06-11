@@ -1,6 +1,6 @@
 "use client"
 
-import { useSyncExternalStore } from "react"
+import { useState, useSyncExternalStore } from "react"
 import { createPortal } from "react-dom"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ConfirmDialog } from "../dialogs/confirm-dialog"
@@ -29,7 +29,13 @@ function getServerSlot(): HTMLElement | null {
 }
 
 export type RecordStepperPortalProps = {
-  /** The current record's display number, shown between the arrows. */
+  /**
+   * The current record's display number, shown between the arrows. Pass an empty
+   * string while an in-flight step resolves (the neighbor's detail may be
+   * uncached) — the stepper holds the last non-empty label so the control stays
+   * steady instead of blanking. Keep the stepper mounted across that load and
+   * disable the arrows (null callbacks) while it's pending.
+   */
   label: string
   /** Step to the previous record. `null` disables the ◀ arrow (sequence edge). */
   onPrevious: (() => void) | null
@@ -68,6 +74,17 @@ export function RecordStepperPortal({
   const target = useSyncExternalStore(subscribe, getSlot, getServerSlot)
   const { guard, dialogProps } = useRecordSwapGuard({ isDirty, discardMessage })
 
+  // Hold the last non-empty label so an in-flight step doesn't blank the control
+  // while the neighbor's detail loads. A non-empty label renders immediately (no
+  // lag); the retained value only fills the pending gap. Adjusting state during
+  // render (React's documented pattern for derived-from-prior-render state) — the
+  // guard makes it converge, never looping. The arrows still come straight from
+  // the consumer (null = disabled during the pending step), so only the number is
+  // retained, never stale navigation.
+  const [lastLabel, setLastLabel] = useState(label)
+  if (label && label !== lastLabel) setLastLabel(label)
+  const displayLabel = label || lastLabel
+
   if (!target) return null
 
   return createPortal(
@@ -83,7 +100,7 @@ export function RecordStepperPortal({
           <ChevronLeft size={16} />
         </button>
         <span className="min-w-[4rem] px-1 text-center text-sm font-medium text-[var(--foreground)]/80">
-          {label}
+          {displayLabel}
         </span>
         <button
           type="button"
