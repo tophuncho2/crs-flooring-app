@@ -1,7 +1,7 @@
 "use client"
 
 import { formatEasternDateTime, type ManufacturerForm } from "@builders/domain"
-import { TextCell } from "@/engines/record-view"
+import { PhoneCell, TextCell } from "@/engines/record-view"
 import { FieldSection, FormField, StaticFieldValue } from "@/engines/record-view"
 import { CellAt } from "@/engines/record-view"
 
@@ -62,11 +62,10 @@ export function ManufacturerPrimaryFieldsSection({
       </CellAt>
       <CellAt col={1} colSpan={8}>
         <FormField label="Phone">
-          <TextCell
+          <PhoneCell
             editable={editable}
             value={draft.phone}
             onChange={(next) => onFieldChange("phone", next)}
-            placeholder="Phone"
             ariaLabel="Manufacturer phone"
           />
         </FormField>

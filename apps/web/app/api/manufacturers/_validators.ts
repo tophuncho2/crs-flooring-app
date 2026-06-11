@@ -8,6 +8,7 @@ import type {
 import {
   LIST_MANUFACTURERS_MAX_PAGE_SIZE,
   LIST_MANUFACTURERS_PAGE_SIZE,
+  normalizePhoneNumber,
 } from "@builders/domain"
 
 function fail(message: string, field?: string): never {
@@ -30,7 +31,7 @@ export function validateManufacturerInput(body: Record<string, unknown>): Manufa
     companyName,
     agentName: typeof body.agentName === "string" ? body.agentName : typeof body.name === "string" ? body.name : "",
     website: typeof body.website === "string" ? body.website : "",
-    phone: typeof body.phone === "string" ? body.phone : "",
+    phone: typeof body.phone === "string" ? normalizePhoneNumber(body.phone) : "",
     email: typeof body.email === "string" ? body.email : "",
   }
 }

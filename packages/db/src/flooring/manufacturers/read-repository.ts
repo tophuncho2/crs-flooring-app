@@ -1,6 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import type { ManufacturerOption } from "@builders/domain"
+import { normalizePhoneNumber, type ManufacturerOption } from "@builders/domain"
 
 type ManufacturerDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -36,7 +36,7 @@ export function normalizeManufacturer(manufacturer: {
     companyName: manufacturer.companyName,
     agentName: manufacturer.agentName ?? "",
     website: manufacturer.website ?? "",
-    phone: manufacturer.phone ?? "",
+    phone: normalizePhoneNumber(manufacturer.phone ?? ""),
     email: manufacturer.email ?? "",
     productsCount: manufacturer._count?.products ?? 0,
     createdAt: manufacturer.createdAt.toISOString(),

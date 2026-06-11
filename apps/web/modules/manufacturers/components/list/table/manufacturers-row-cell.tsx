@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import { formatEasternDateTime, type ManufacturerListRow } from "@builders/domain"
+import { formatEasternDateTime, formatPhoneNumber, type ManufacturerListRow } from "@builders/domain"
 
 export function renderManufacturerRowCell(
   column: DataTableColumn<ManufacturerListRow>,
@@ -12,7 +12,7 @@ export function renderManufacturerRowCell(
     case "agentName":
       return row.agentName || "-"
     case "phone":
-      return row.phone || "-"
+      return <span>{formatPhoneNumber(row.phone) || "—"}</span>
     case "email":
       return row.email || "-"
     case "productsCount":

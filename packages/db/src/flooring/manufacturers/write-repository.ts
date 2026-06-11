@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
+import { normalizePhoneNumber } from "@builders/domain"
 import { normalizeManufacturer, type ManufacturerRecord } from "./read-repository.js"
 
 type ManufacturerDbClient = PrismaClient | Prisma.TransactionClient
@@ -27,7 +28,7 @@ export async function createManufacturerPrimaryRecord(
       companyNameNormalized: input.companyNameNormalized,
       agentName: input.agentName.trim() || null,
       website: input.website.trim() || null,
-      phone: input.phone.trim() || null,
+      phone: normalizePhoneNumber(input.phone) || null,
       email: input.email.trim() || null,
     },
     include: manufacturerInclude,
@@ -48,7 +49,7 @@ export async function updateManufacturerPrimaryRecord(
       companyNameNormalized: input.companyNameNormalized,
       agentName: input.agentName.trim() || null,
       website: input.website.trim() || null,
-      phone: input.phone.trim() || null,
+      phone: normalizePhoneNumber(input.phone) || null,
       email: input.email.trim() || null,
     },
     include: manufacturerInclude,
