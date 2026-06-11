@@ -9,6 +9,7 @@ import type {
 import {
   LIST_MANAGEMENT_COMPANIES_MAX_PAGE_SIZE,
   LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
+  normalizePhoneNumber,
 } from "@builders/domain"
 
 function fail(message: string, field?: string): never {
@@ -32,6 +33,13 @@ function optionalString(value: unknown): string | null {
   if (typeof value !== "string") return null
   const trimmed = value.trim()
   return trimmed ? trimmed : null
+}
+
+// Phone standard (lenient): normalize to canonical digits, never reject. Bad
+// shapes (extensions, international, partial) are kept as digits, not 400'd.
+function optionalPhone(value: unknown): string | null {
+  const trimmed = optionalString(value)
+  return trimmed === null ? null : normalizePhoneNumber(trimmed) || null
 }
 
 function optionalState(value: unknown, field: string): string | null {
@@ -58,7 +66,7 @@ export function validateCreateManagementCompanyInput(
     city: optionalString(body.city),
     state: optionalState(body.state, "state"),
     postalCode: optionalString(pickPostalCode(body)),
-    phone: optionalString(body.phone),
+    phone: optionalPhone(body.phone),
     email: optionalString(body.email),
   }
 }
@@ -73,7 +81,7 @@ export function validateUpdateManagementCompanyInput(
   if ("city" in body) input.city = optionalString(body.city)
   if ("state" in body) input.state = optionalState(body.state, "state")
   if ("zip" in body || "postalCode" in body) input.postalCode = optionalString(pickPostalCode(body))
-  if ("phone" in body) input.phone = optionalString(body.phone)
+  if ("phone" in body) input.phone = optionalPhone(body.phone)
   if ("email" in body) input.email = optionalString(body.email)
 
   return input

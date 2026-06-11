@@ -1,11 +1,12 @@
 "use client"
 
-import type { ManagementCompanyForm } from "@builders/domain"
+import { formatPhoneNumber, type ManagementCompanyForm } from "@builders/domain"
 import {
   AddressEditCell,
   CellAt,
   FieldSection,
   FormField,
+  PhoneCell,
   StaticFieldValue,
   TextCell,
 } from "@/engines/record-view"
@@ -92,14 +93,18 @@ export function ManagementCompanyCellsSection({
         />
       </CellAt>
       <CellAt col={1} colSpan={5}>
-        <CellTextField
-          label="Phone"
-          editable={editable}
-          value={form.phone}
-          onChange={onText("phone")}
-          placeholder="Phone"
-          ariaLabel="Phone"
-        />
+        <FormField label="Phone">
+          {editable ? (
+            <PhoneCell
+              editable
+              value={form.phone}
+              onChange={onText("phone")}
+              ariaLabel="Phone"
+            />
+          ) : (
+            <StaticFieldValue>{formatPhoneNumber(form.phone) || "—"}</StaticFieldValue>
+          )}
+        </FormField>
       </CellAt>
       <CellAt col={1} colSpan={5}>
         <CellTextField

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import type { ManagementCompanyListRow } from "@builders/domain"
+import { formatPhoneNumber, type ManagementCompanyListRow } from "@builders/domain"
 
 /**
  * Per-cell renderer for the management-companies list `DataTable`. Switches
@@ -23,7 +23,7 @@ export function renderManagementCompanyRowCell(
     case "zip":
       return row.zip || "-"
     case "phone":
-      return row.phone || "-"
+      return <span>{formatPhoneNumber(row.phone) || "—"}</span>
     case "email":
       return row.email || "-"
     case "propertyCount":

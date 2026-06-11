@@ -1,4 +1,5 @@
 import { buildAddressLine } from "../../shared/address/index.js"
+import { normalizePhoneNumber } from "../../shared/phone.js"
 import type {
   ManagementCompanyDetail,
   ManagementCompanyListRow,
@@ -40,7 +41,7 @@ export function normalizeManagementCompany(company: ManagementCompanyDetailInput
     city: company.city ?? "",
     state: company.state ?? "",
     zip: company.postalCode ?? "",
-    phone: company.phone ?? "",
+    phone: normalizePhoneNumber(company.phone ?? ""),
     email: company.email ?? "",
     fullAddress: buildAddressLine(company),
     propertyCount: company._count.properties,
@@ -56,7 +57,7 @@ export function normalizeManagementCompanyListRow(company: ManagementCompanyList
     city: company.city ?? "",
     state: company.state ?? "",
     zip: company.postalCode ?? "",
-    phone: company.phone ?? "",
+    phone: normalizePhoneNumber(company.phone ?? ""),
     email: company.email ?? "",
     fullAddress: buildAddressLine(company),
     propertyCount: company._count.properties,
