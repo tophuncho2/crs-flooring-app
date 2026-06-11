@@ -299,7 +299,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
       {/* Template → notes: single 4-col stack on the left, under Description */}
-      <CellAt col={1} row={4} colSpan={4}>
+      <CellAt col={1} row={5} colSpan={4}>
         <FormField
           label="Template"
           actions={
@@ -336,7 +336,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} row={5} colSpan={4}>
+      <CellAt col={1} row={6} colSpan={4}>
         <FormField
           label="Unit Type"
           currentLength={editable ? draft.unitType.length : undefined}
@@ -350,7 +350,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={6} colSpan={2}>
+      <CellAt col={1} row={7} colSpan={2}>
         <FormField
           label="Unit Number"
           currentLength={editable ? draft.unitNumber.length : undefined}
@@ -364,7 +364,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={3} row={6} colSpan={2}>
+      <CellAt col={3} row={7} colSpan={2}>
         <FormField label="Vacancy" required>
           <SegmentedChoiceCell
             editable={editable}
@@ -383,7 +383,7 @@ export function WorkOrderPrimaryFieldsSection({
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={7} colSpan={4}>
+      <CellAt col={1} row={4} colSpan={4}>
         <FormField label="Property Instructions">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{instructionsDisplay}</span>
