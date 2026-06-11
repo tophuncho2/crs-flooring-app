@@ -73,7 +73,7 @@ export function TemplatePrimaryFieldsSection({
   return (
     <FieldSection gap="0.75rem">
       {/* Left column (cols 1–4): property cluster — MC, Property, Address +
-          Instructions, Unit Type. col 5 is the gutter to the right stack. */}
+          Instructions, Unit Type. */}
       <TemplatePropertyUnitGroup
         editable={editable}
         draft={draft}
@@ -84,9 +84,9 @@ export function TemplatePrimaryFieldsSection({
         onPropertyOption={handlePropertyOption}
       />
 
-      {/* Right column (cols 6–8): Warehouse + Job Type on top, then the
-          Description / Installer Instructions / Internal Notes textarea stack. */}
-      <CellAt col={6} row={1} colSpan={2}>
+      {/* Right column (cols 5–7, col 8 left empty): Warehouse + Job Type on top,
+          then the Description / Installer Instructions / Internal Notes stack. */}
+      <CellAt col={5} row={1} colSpan={2}>
         <FormField label="Warehouse">
           {editable ? (
             <WarehousePicker
@@ -101,7 +101,7 @@ export function TemplatePrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={8} row={1} colSpan={1}>
+      <CellAt col={7} row={1} colSpan={1}>
         <FormField label="Job Type">
           {editable ? (
             <JobTypePicker
@@ -117,7 +117,7 @@ export function TemplatePrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={6} row={2} colSpan={3}>
+      <CellAt col={5} row={2} colSpan={3}>
         <FormField
           label="Description"
           currentLength={editable ? draft.description.length : undefined}
@@ -131,7 +131,7 @@ export function TemplatePrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={6} row={3} colSpan={3}>
+      <CellAt col={5} row={3} colSpan={3}>
         <FormField
           label="Installer Instructions"
           currentLength={editable ? draft.installerInstructions.length : undefined}
@@ -146,7 +146,7 @@ export function TemplatePrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={6} row={4} colSpan={3}>
+      <CellAt col={5} row={4} colSpan={3}>
         <FormField
           label="Internal Notes"
           currentLength={editable ? draft.internalNotes.length : undefined}
