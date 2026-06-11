@@ -49,6 +49,10 @@ export type { WorkOrderPrimaryDetail } from "./types"
  * mirroring `products`/`properties`. The former Schedule / Property & Unit /
  * Notes card groupings are gone — every field flows as one continuous grid.
  *
+ * Layout: schedule pickers sit two-up (2 cols each) across the left half; from
+ * the management-company cell down, every field is a single 4-col stack on the
+ * left, leaving the right half open.
+ *
  * The "open MC / Property / Template" + "new property" affordances that used to
  * live in a group header now sit in each field's label-row `actions` slot via
  * the record-view `CellOpenButton` / `CellAddButton` primitives.
@@ -143,8 +147,8 @@ export function WorkOrderPrimaryFieldsSection({
 
   return (
     <FieldSection>
-      {/* Schedule */}
-      <CellAt col={1} row={1} colSpan={4}>
+      {/* Schedule — pickers two-up across the left half */}
+      <CellAt col={1} row={1} colSpan={2}>
         <FormField label="Warehouse">
           {editable ? (
             <WarehousePicker
@@ -160,7 +164,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} row={1} colSpan={4}>
+      <CellAt col={3} row={1} colSpan={2}>
         <FormField label="Job Type">
           {editable ? (
             <JobTypePicker
@@ -176,7 +180,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} row={2} colSpan={4}>
+      <CellAt col={1} row={2} colSpan={2}>
         <FormField label="Scheduled For">
           <DateCell
             editable={editable}
@@ -185,7 +189,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} row={2} colSpan={4}>
+      <CellAt col={3} row={2} colSpan={2}>
         <FormField label="Time of Day">
           <SegmentedChoiceCell
             editable={editable}
@@ -196,22 +200,23 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={3} colSpan={8}>
+      <CellAt col={1} row={3} colSpan={4}>
         <FormField
           label="Description"
           currentLength={editable ? draft.description.length : undefined}
           maxLength={editable ? WO_DESCRIPTION_MAX : undefined}
         >
-          <TextCell
+          <TextareaCell
             editable={editable}
             value={draft.description}
             onChange={(value) => onFieldChange("description", value)}
             maxLength={WO_DESCRIPTION_MAX}
+            rows={3}
           />
         </FormField>
       </CellAt>
 
-      {/* Property & Unit */}
+      {/* Management company → notes: single 4-col stack on the left */}
       <CellAt col={1} row={4} colSpan={4}>
         <FormField
           label="Management Company"
@@ -235,43 +240,6 @@ export function WorkOrderPrimaryFieldsSection({
           }
         >
           <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={4} colSpan={4}>
-        <FormField
-          label="Template"
-          actions={
-            <CellOpenButton
-              ariaLabel="Open template record"
-              title="Open template record"
-              disabled={!templateValue}
-              onClick={() => {
-                if (templateValue) {
-                  router.push(buildTemplateHubHref({ templateId: templateValue, returnTo }))
-                }
-              }}
-            />
-          }
-        >
-          {editable ? (
-            <TemplatePicker
-              value={templateValue}
-              onChange={() => {}}
-              onOptionSelected={(option) => {
-                const patch = applyTemplateSelection(option)
-                onFieldChange("templateId", patch.templateId ?? "")
-                setPickedTemplateLabel(patch.templateLabel ?? null)
-                // WO-specific side-effect: mirror the template's unit type.
-                if (option) onFieldChange("unitType", option.unitType)
-              }}
-              propertyId={propertyValue}
-              selectedLabel={templateLabel}
-              placeholder="—"
-              ariaLabel="Template"
-            />
-          ) : (
-            <StaticFieldValue>{templateLabel ?? "—"}</StaticFieldValue>
-          )}
         </FormField>
       </CellAt>
       <CellAt col={1} row={5} colSpan={4}>
@@ -330,7 +298,44 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} row={5} colSpan={4}>
+      <CellAt col={1} row={6} colSpan={4}>
+        <FormField
+          label="Template"
+          actions={
+            <CellOpenButton
+              ariaLabel="Open template record"
+              title="Open template record"
+              disabled={!templateValue}
+              onClick={() => {
+                if (templateValue) {
+                  router.push(buildTemplateHubHref({ templateId: templateValue, returnTo }))
+                }
+              }}
+            />
+          }
+        >
+          {editable ? (
+            <TemplatePicker
+              value={templateValue}
+              onChange={() => {}}
+              onOptionSelected={(option) => {
+                const patch = applyTemplateSelection(option)
+                onFieldChange("templateId", patch.templateId ?? "")
+                setPickedTemplateLabel(patch.templateLabel ?? null)
+                // WO-specific side-effect: mirror the template's unit type.
+                if (option) onFieldChange("unitType", option.unitType)
+              }}
+              propertyId={propertyValue}
+              selectedLabel={templateLabel}
+              placeholder="—"
+              ariaLabel="Template"
+            />
+          ) : (
+            <StaticFieldValue>{templateLabel ?? "—"}</StaticFieldValue>
+          )}
+        </FormField>
+      </CellAt>
+      <CellAt col={1} row={7} colSpan={4}>
         <FormField
           label="Unit Type"
           currentLength={editable ? draft.unitType.length : undefined}
@@ -344,18 +349,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={6} colSpan={4}>
-        <FormField label="Vacancy" required>
-          <SegmentedChoiceCell
-            editable={editable}
-            value={draft.vacancy}
-            options={VACANCY_OPTIONS}
-            ariaLabel="Vacancy"
-            onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={6} colSpan={4}>
+      <CellAt col={1} row={8} colSpan={4}>
         <FormField
           label="Unit Number"
           currentLength={editable ? draft.unitNumber.length : undefined}
@@ -369,21 +363,32 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={7} colSpan={4}>
+      <CellAt col={1} row={9} colSpan={4}>
+        <FormField label="Vacancy" required>
+          <SegmentedChoiceCell
+            editable={editable}
+            value={draft.vacancy}
+            options={VACANCY_OPTIONS}
+            ariaLabel="Vacancy"
+            onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={1} row={10} colSpan={4}>
         <FormField label="Property Address">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{addressDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={5} row={7} colSpan={4}>
+      <CellAt col={1} row={11} colSpan={4}>
         <FormField label="Property Instructions">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{instructionsDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={8} colSpan={4}>
+      <CellAt col={1} row={12} colSpan={4}>
         <FormField
           label="Custom Address"
           currentLength={editable ? draft.customAddress.length : undefined}
@@ -398,7 +403,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} row={8} colSpan={4}>
+      <CellAt col={1} row={13} colSpan={4}>
         <FormField
           label="Installer Instructions"
           currentLength={editable ? draft.installerInstructions.length : undefined}
@@ -413,9 +418,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-
-      {/* Notes */}
-      <CellAt col={1} row={9} colSpan={8}>
+      <CellAt col={1} row={14} colSpan={4}>
         <FormField
           label="Internal Notes"
           currentLength={editable ? draft.internalNotes.length : undefined}
@@ -432,12 +435,12 @@ export function WorkOrderPrimaryFieldsSection({
       </CellAt>
       {detail ? (
         <>
-          <CellAt col={1} row={10} colSpan={4}>
+          <CellAt col={1} row={15} colSpan={4}>
             <FormField label="Created">
               <StaticFieldValue>{formatEasternDateTime(detail.createdAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={5} row={10} colSpan={4}>
+          <CellAt col={1} row={16} colSpan={4}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(detail.updatedAt) || "—"}</StaticFieldValue>
             </FormField>
