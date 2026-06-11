@@ -7,16 +7,19 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import type { WarehouseRow } from "@builders/domain"
+import type { WarehouseRow, WarehouseStats } from "@builders/domain"
 import { useWarehousePrimarySection } from "@/modules/warehouse/controllers/record/primary/use-warehouse-primary-section"
 import { WarehousePrimaryFieldsSection } from "./primary/warehouse-primary-fields-section"
+import { WarehouseStatisticsSection } from "./statistics/warehouse-statistics-section"
 
 export function WarehouseRecordPanel({
   page,
   entry,
+  stats,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WarehouseRow
+  stats: WarehouseStats
 }) {
   const controller = useWarehousePrimarySection({ page, entry })
   const primary = controller.primarySection
@@ -55,6 +58,12 @@ export function WarehouseRecordPanel({
           />
         </RecordPrimarySectionInstance>
       ),
+    },
+    {
+      key: "statistics",
+      type: "item",
+      order: 20,
+      render: () => <WarehouseStatisticsSection stats={stats} />,
     },
   ]
 

@@ -1,4 +1,9 @@
-import { buildAddressLine, type WarehouseDependentCounts, type WarehouseListRow } from "@builders/domain"
+import {
+  buildAddressLine,
+  type WarehouseDependentCounts,
+  type WarehouseListRow,
+  type WarehouseStats,
+} from "@builders/domain"
 import { db } from "../../client.js"
 import {
   type WarehouseListRowPayload,
@@ -192,6 +197,33 @@ export async function listWarehousesForListView(
   return {
     total,
     rows: rows.map(normalizeWarehouseListRow),
+  }
+}
+
+// Read-only totals for the warehouse record-view "Statistics" section. Kept
+// separate from `warehouseRowSelect` so the list view doesn't pay for these
+// count subqueries per row.
+export async function getWarehouseStats(
+  id: string,
+  client: WarehousesDbClient = db,
+): Promise<WarehouseStats | null> {
+  const row = await client.flooringWarehouse.findUnique({
+    where: { id },
+    select: {
+      _count: {
+        select: {
+          templates: true,
+          workOrders: true,
+          imports: true,
+        },
+      },
+    },
+  })
+  if (!row) return null
+  return {
+    templatesCount: row._count.templates,
+    workOrdersCount: row._count.workOrders,
+    importsCount: row._count.imports,
   }
 }
 

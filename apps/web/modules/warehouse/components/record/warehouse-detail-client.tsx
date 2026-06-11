@@ -1,14 +1,16 @@
 "use client"
 
 import { RecordDetailClientScaffold } from "@/engines/record-view"
-import type { WarehouseRow } from "@builders/domain"
+import type { WarehouseRow, WarehouseStats } from "@builders/domain"
 import { WarehouseRecordPanel } from "./warehouse-record-panel"
 
 export function WarehouseDetailClient({
   initialWarehouse,
+  stats,
   backHref,
 }: {
   initialWarehouse: WarehouseRow
+  stats: WarehouseStats
   backHref: string
 }) {
   return (
@@ -19,7 +21,7 @@ export function WarehouseDetailClient({
       modeNotice={{ mode: "edit", label: "Warehouse" }}
       dirtyMessage="You have unsaved warehouse changes. Leave this page without saving?"
     >
-      {(page) => <WarehouseRecordPanel page={page} entry={initialWarehouse} />}
+      {(page) => <WarehouseRecordPanel page={page} entry={initialWarehouse} stats={stats} />}
     </RecordDetailClientScaffold>
   )
 }

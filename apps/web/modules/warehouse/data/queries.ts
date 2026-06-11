@@ -1,12 +1,14 @@
 import {
   createPrismaPageLoadIssue,
   getWarehouseById,
+  getWarehouseStats,
   type PrismaDetailPageResult,
 } from "@builders/db"
-import type { WarehouseRow } from "@builders/domain"
+import type { WarehouseRow, WarehouseStats } from "@builders/domain"
 
 export type WarehouseDetailPageData = {
   warehouse: WarehouseRow
+  stats: WarehouseStats
 }
 
 export async function getWarehouseDetailPageData(
@@ -17,7 +19,12 @@ export async function getWarehouseDetailPageData(
     if (!warehouse) {
       return { ok: false, notFound: true }
     }
-    return { ok: true, data: { warehouse } }
+    const stats = (await getWarehouseStats(id)) ?? {
+      templatesCount: 0,
+      workOrdersCount: 0,
+      importsCount: 0,
+    }
+    return { ok: true, data: { warehouse, stats } }
   } catch (error) {
     return {
       ok: false,

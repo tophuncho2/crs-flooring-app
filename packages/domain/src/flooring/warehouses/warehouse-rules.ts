@@ -7,6 +7,16 @@ export type WarehouseDependentCounts = {
   templatesCount: number
 }
 
+/**
+ * Read-only totals shown in the warehouse record-view "Statistics" section.
+ * Each value is a count of rows linked to the warehouse for that model.
+ */
+export type WarehouseStats = {
+  templatesCount: number
+  workOrdersCount: number
+  importsCount: number
+}
+
 // Ordered so the blocked message lists dependents in a sensible reading order.
 const WAREHOUSE_DEPENDENT_LABELS: ReadonlyArray<[keyof WarehouseDependentCounts, string]> = [
   ["inventoriesCount", "inventory"],
