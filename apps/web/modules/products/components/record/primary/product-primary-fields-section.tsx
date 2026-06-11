@@ -160,17 +160,17 @@ export function ProductPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} row={2} colSpan={2}>
+      <CellAt col={5} row={3} colSpan={2}>
         <FormField label="Stock Unit">
           <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={5} row={3} colSpan={2}>
+      <CellAt col={5} row={4} colSpan={2}>
         <FormField label="Send Unit">
           <StaticFieldValue>{sendUnitDisplay}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={5} colSpan={4}>
+      <CellAt col={5} row={2} colSpan={2}>
         <FormField label="Manufacturer">
           {fieldsReadOnly ? (
             <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
@@ -187,7 +187,7 @@ export function ProductPrimaryFieldsSection({
         </FormField>
       </CellAt>
       {product.createdAt ? (
-        <CellAt col={1} row={6} colSpan={4}>
+        <CellAt col={1} row={5} colSpan={4}>
           <FormField label="Created">
             <StaticFieldValue>
               {formatEasternDateTime(product.createdAt) || "—"}
