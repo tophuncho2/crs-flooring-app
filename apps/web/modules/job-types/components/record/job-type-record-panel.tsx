@@ -7,16 +7,19 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import type { JobType } from "@builders/domain"
+import type { JobType, JobTypeStats } from "@builders/domain"
 import { useJobTypePrimarySection } from "@/modules/job-types/controllers/record/primary/use-job-type-primary-section"
 import { JobTypePrimaryFieldsSection } from "./primary/job-type-primary-fields-section"
+import { JobTypeStatisticsSection } from "./statistics/job-type-statistics-section"
 
 export function JobTypeRecordPanel({
   page,
   entry,
+  stats,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: JobType
+  stats: JobTypeStats
 }) {
   const controller = useJobTypePrimarySection({ page, entry })
   const primary = controller.primarySection
@@ -53,6 +56,12 @@ export function JobTypeRecordPanel({
           />
         </RecordPrimarySectionInstance>
       ),
+    },
+    {
+      key: "statistics",
+      type: "item",
+      order: 20,
+      render: () => <JobTypeStatisticsSection stats={stats} />,
     },
   ]
 

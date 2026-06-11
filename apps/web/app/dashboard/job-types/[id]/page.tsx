@@ -38,6 +38,7 @@ export default async function JobTypeDetailPage({
   return (
     <JobTypeDetailClient
       initialJobType={result.data.jobType}
+      stats={result.data.stats}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/job-types")}
     />
   )

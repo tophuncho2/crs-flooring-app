@@ -7,6 +7,12 @@ export type JobType = {
 
 export type JobTypeListRow = JobType
 
+/** Read-only totals shown in the job-type record-view "Statistics" section. */
+export type JobTypeStats = {
+  templatesCount: number
+  workOrdersCount: number
+}
+
 export type JobTypeOption = {
   id: string
   name: string

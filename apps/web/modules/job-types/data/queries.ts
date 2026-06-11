@@ -1,13 +1,15 @@
 import {
   createPrismaPageLoadIssue,
   getJobTypeById,
+  getJobTypeStats,
   isPrismaNotFoundError,
   type PrismaDetailPageResult,
 } from "@builders/db"
-import type { JobType } from "@builders/domain"
+import type { JobType, JobTypeStats } from "@builders/domain"
 
 export type JobTypeDetailPageData = {
   jobType: JobType
+  stats: JobTypeStats
 }
 
 export async function getJobTypeDetailPageData(
@@ -15,7 +17,11 @@ export async function getJobTypeDetailPageData(
 ): Promise<PrismaDetailPageResult<JobTypeDetailPageData>> {
   try {
     const jobType = await getJobTypeById(id)
-    return { ok: true, data: { jobType } }
+    const stats = (await getJobTypeStats(id)) ?? {
+      templatesCount: 0,
+      workOrdersCount: 0,
+    }
+    return { ok: true, data: { jobType, stats } }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {
       return { ok: false, notFound: true }

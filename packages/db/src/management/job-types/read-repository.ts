@@ -6,6 +6,7 @@ import {
   type JobType,
   type JobTypeListRow,
   type JobTypeOption,
+  type JobTypeStats,
 } from "@builders/domain"
 
 type JobTypesDbClient = PrismaClient | Prisma.TransactionClient
@@ -94,4 +95,21 @@ export async function getJobTypeById(
 
 export async function countJobTypes(client: JobTypesDbClient = db): Promise<number> {
   return client.flooringJobType.count()
+}
+
+// Fetched separately from the row select so the list view never pays for the
+// count subqueries — mirrors getWarehouseStats.
+export async function getJobTypeStats(
+  id: string,
+  client: JobTypesDbClient = db,
+): Promise<JobTypeStats | null> {
+  const row = await client.flooringJobType.findUnique({
+    where: { id },
+    select: { _count: { select: { templates: true, workOrders: true } } },
+  })
+  if (!row) return null
+  return {
+    templatesCount: row._count.templates,
+    workOrdersCount: row._count.workOrders,
+  }
 }
