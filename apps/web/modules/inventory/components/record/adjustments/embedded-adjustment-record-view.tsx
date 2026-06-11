@@ -12,6 +12,7 @@ import {
 } from "@/engines/record-view"
 import { AdjustmentEditFormFields } from "./adjustment-edit-form-fields"
 import { AdjustmentPickerStack } from "./adjustment-picker-stack"
+import { InventoryFieldGrid } from "../fields"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 
 export type EmbeddedAdjustmentRecordViewProps = {
@@ -127,14 +128,14 @@ export function EmbeddedAdjustmentRecordView({
         actions={actions}
       />
       <div className={`px-5 py-5 ${RECORD_SECTION_BODY_SURFACE_CLASS_NAME}`}>
-        <div className="flex flex-col gap-3">
+        <InventoryFieldGrid>
           <AdjustmentPickerStack controller={controller} />
           <AdjustmentEditFormFields
             mode={isCreate ? "create" : "edit"}
             adjustment={adjustment}
             controller={controller}
           />
-        </div>
+        </InventoryFieldGrid>
       </div>
       <RecordDeleteDialog
         open={del.isOpen}

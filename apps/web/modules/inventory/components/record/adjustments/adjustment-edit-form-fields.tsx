@@ -5,18 +5,21 @@ import {
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
 } from "@builders/domain"
-import { TextCell, ToggleCell, UnitCell } from "@/engines/record-view"
+import {
+  CellAt,
+  FormField,
+  SegmentedChoiceCell,
+  StaticFieldValue,
+  TextCell,
+  UnitCell,
+  type SegmentedChoiceOption,
+} from "@/engines/record-view"
 import { SegmentedDropdown } from "@/engines/picker"
-import { StaticFieldValue } from "@/engines/record-view"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
-import { InventoryField } from "../primary/groups/inventory-field"
-import { InventoryGroup } from "../primary/groups/inventory-group"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 import type { AdjustmentEditRow } from "../../../controllers/record/adjustments/types"
 
 const EMPTY_CELL = "—"
-
-const STATUS_LABEL_CLASS = "text-[10px] font-semibold uppercase tracking-wide text-[var(--foreground)]/55"
 
 export type AdjustmentEditFormFieldsProps = {
   mode: "create" | "edit"
@@ -29,18 +32,21 @@ const ADJUSTMENT_TYPE_OPTIONS = [
   { value: "INCREASE", label: "Increase" },
 ] as const
 
+const WASTE_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
+  { value: "WASTE", label: "Waste", tone: "warning" },
+  { value: "NON_WASTE", label: "Non-waste", tone: "default" },
+]
+
 /**
- * The form body of the adjustment edit panel, rendered as an {@link InventoryGroup}
- * so it shares the record view's tab chrome with the inventory section above. The
- * picker stack (Work order / Material item) lives in its own group
- * (`AdjustmentPickerStack`), so this body holds only the adjustment's own facts.
+ * The adjustment's own facts, rendered as bare `<CellAt>` cells for the shared
+ * record-view field grid supplied by the host (`EmbeddedAdjustmentRecordView`) —
+ * no group chrome. The work-order cells live in `AdjustmentPickerStack`, ahead of
+ * these in the same grid.
  *
- * Create mode: a "New adjustment" group — type selector, quantity, notes, with a
- * waste lever in the group header.
- * Edit mode: an "Adjustment" group whose header carries the waste lever. The
- * body shows quantity + the type selector (Increase/Deduction), then the
- * before→after transition + location, then notes, then created / updated. Every
- * field is always editable (only disabled mid-save); flipping the type re-flows
+ * Create mode: Quantity + Type, then a locked Location, then Notes + the waste
+ * segmented cell. Edit mode adds the before→after Adjustment transition next to
+ * Location and the Created / Updated timestamps, and unlocks Location. Every
+ * field is freely editable (only disabled mid-save); flipping the type re-flows
  * the before→after transition server-side on each save.
  */
 export function AdjustmentEditFormFields({
@@ -58,49 +64,81 @@ export function AdjustmentEditFormFields({
   // only disabled while a save is in flight.
   const editable = !isSaving
 
-  const wasteToggle = (
-    <span className="flex items-center gap-1.5">
-      <span className={STATUS_LABEL_CLASS}>Waste</span>
-      <ToggleCell
-        editable={editable}
-        value={form.isWaste}
-        onChange={(next) => controller.setField("isWaste", next)}
-        ariaLabel="Waste flag"
-      />
-    </span>
+  const wasteCell = (
+    <CellAt col={5} colSpan={2}>
+      <FormField label="Waste">
+        <SegmentedChoiceCell
+          editable={editable}
+          value={form.isWaste ? "WASTE" : "NON_WASTE"}
+          options={WASTE_OPTIONS}
+          ariaLabel="Waste flag"
+          onChange={(next) => controller.setField("isWaste", next === "WASTE")}
+        />
+      </FormField>
+    </CellAt>
+  )
+
+  const typeCell = (
+    <CellAt col={5} colSpan={2}>
+      <FormField label="Type">
+        <SegmentedDropdown
+          value={form.adjustmentType}
+          onChange={(next: string | null) => {
+            if (next === "INCREASE" || next === "DEDUCTION") {
+              controller.setField("adjustmentType", next)
+            }
+          }}
+          options={ADJUSTMENT_TYPE_OPTIONS}
+          ariaLabel="Adjustment type"
+          disabled={isSaving}
+        />
+      </FormField>
+    </CellAt>
+  )
+
+  const quantityCell = (
+    <CellAt col={1} colSpan={4}>
+      <FormField label="Quantity" required>
+        <UnitCell
+          editable={editable}
+          value={form.quantity}
+          onChange={(next) => controller.setField("quantity", next)}
+          unit={stockUnit}
+          placeholder="0"
+          ariaLabel="Adjustment quantity"
+        />
+      </FormField>
+    </CellAt>
+  )
+
+  const notesCell = (
+    <CellAt col={1} colSpan={4}>
+      <FormField
+        label="Notes"
+        currentLength={editable ? form.notes.length : undefined}
+        maxLength={editable ? INVENTORY_ADJUSTMENT_NOTES_MAX : undefined}
+      >
+        <TextCell
+          editable={editable}
+          value={form.notes}
+          onChange={(next) => controller.setField("notes", next)}
+          placeholder="Notes"
+          ariaLabel="Adjustment notes"
+          maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
+        />
+      </FormField>
+    </CellAt>
   )
 
   if (mode === "create" || !adjustment) {
     return (
-      <InventoryGroup title="New adjustment" tone="blue" headerRight={wasteToggle}>
-        <div className="grid grid-cols-6 gap-x-4 gap-y-3">
-          <InventoryField label="Quantity" className="col-span-4" required>
-            <UnitCell
-              editable={editable}
-              value={form.quantity}
-              onChange={(next) => controller.setField("quantity", next)}
-              unit={stockUnit}
-              placeholder="0"
-              ariaLabel="Adjustment quantity"
-            />
-          </InventoryField>
-          <InventoryField label="Type" className="col-span-2">
-            <SegmentedDropdown
-              value={form.adjustmentType}
-              onChange={(next: string | null) => {
-                if (next === "INCREASE" || next === "DEDUCTION") {
-                  controller.setField("adjustmentType", next)
-                }
-              }}
-              options={ADJUSTMENT_TYPE_OPTIONS}
-              ariaLabel="Adjustment type"
-              disabled={isSaving}
-            />
-          </InventoryField>
-          {/* Seeded from the parent inventory's location and locked during create.
-              Becomes editable once the row exists (edit branch below). Sits in
-              columns 1–4 of row 2 — directly below Quantity. */}
-          <InventoryField label="Location" className="col-span-4" editable={false}>
+      <>
+        {quantityCell}
+        {typeCell}
+        {/* Seeded from the parent inventory's location and locked during create.
+            Becomes editable once the row exists (edit branch below). */}
+        <CellAt col={1} colSpan={4}>
+          <FormField label="Location">
             <TextCell
               editable={false}
               value={form.location}
@@ -108,64 +146,25 @@ export function AdjustmentEditFormFields({
               ariaLabel="Adjustment location"
               maxLength={INVENTORY_LOCATION_MAX}
             />
-          </InventoryField>
-          <InventoryField
-            label="Notes"
-            className="col-span-6"
-            editable={editable}
-            currentLength={editable ? form.notes.length : undefined}
-            maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
-          >
-            <TextCell
-              editable={editable}
-              value={form.notes}
-              onChange={(next) => controller.setField("notes", next)}
-              placeholder="Notes"
-              ariaLabel="Adjustment notes"
-              maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
-            />
-          </InventoryField>
-        </div>
-      </InventoryGroup>
+          </FormField>
+        </CellAt>
+        {notesCell}
+        {wasteCell}
+      </>
     )
   }
 
   const transition = formatAdjustmentTransition(adjustment.before, adjustment.after, stockUnit) ?? EMPTY_CELL
 
   return (
-    <InventoryGroup title="Adjustment" tone="blue" headerRight={wasteToggle}>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-        <InventoryField label="Quantity" required>
-          <UnitCell
-            editable={editable}
-            value={form.quantity}
-            onChange={(next) => controller.setField("quantity", next)}
-            unit={stockUnit}
-            placeholder="0"
-            ariaLabel="Adjustment quantity"
-          />
-        </InventoryField>
-        <InventoryField label="Type">
-          <SegmentedDropdown
-            value={form.adjustmentType}
-            onChange={(next: string | null) => {
-              if (next === "INCREASE" || next === "DEDUCTION") {
-                controller.setField("adjustmentType", next)
-              }
-            }}
-            options={ADJUSTMENT_TYPE_OPTIONS}
-            ariaLabel="Adjustment type"
-            disabled={isSaving}
-          />
-        </InventoryField>
-        <InventoryField label="Adjustment">
-          <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
-        </InventoryField>
-        <InventoryField
+    <>
+      {quantityCell}
+      {typeCell}
+      <CellAt col={1} colSpan={4}>
+        <FormField
           label="Location"
-          editable={editable}
           currentLength={editable ? form.location.length : undefined}
-          maxLength={INVENTORY_LOCATION_MAX}
+          maxLength={editable ? INVENTORY_LOCATION_MAX : undefined}
         >
           <TextCell
             editable={editable}
@@ -175,30 +174,25 @@ export function AdjustmentEditFormFields({
             ariaLabel="Adjustment location"
             maxLength={INVENTORY_LOCATION_MAX}
           />
-        </InventoryField>
-        <InventoryField
-          label="Notes"
-          className="col-span-2"
-          editable={editable}
-          currentLength={editable ? form.notes.length : undefined}
-          maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
-        >
-          <TextCell
-            editable={editable}
-            value={form.notes}
-            onChange={(next) => controller.setField("notes", next)}
-            placeholder="Notes"
-            ariaLabel="Adjustment notes"
-            maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
-          />
-        </InventoryField>
-        <InventoryField label="Created">
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={2}>
+        <FormField label="Adjustment">
+          <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+      {notesCell}
+      {wasteCell}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Created">
           <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.createdAt)}</StaticFieldValue>
-        </InventoryField>
-        <InventoryField label="Updated">
+        </FormField>
+      </CellAt>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Updated">
           <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.updatedAt)}</StaticFieldValue>
-        </InventoryField>
-      </div>
-    </InventoryGroup>
+        </FormField>
+      </CellAt>
+    </>
   )
 }

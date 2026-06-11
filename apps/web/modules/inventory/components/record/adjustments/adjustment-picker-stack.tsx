@@ -1,8 +1,7 @@
 "use client"
 
+import { CellAt, FormField } from "@/engines/record-view"
 import { WorkOrderPicker } from "@/modules/work-orders/components/picker/work-order-picker"
-import { InventoryField } from "../primary/groups/inventory-field"
-import { InventoryGroup } from "../primary/groups/inventory-group"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 
 export type AdjustmentPickerStackProps = {
@@ -10,16 +9,15 @@ export type AdjustmentPickerStackProps = {
 }
 
 /**
- * The "Work order" group of the adjustment form: an inline work-order picker
+ * The work-order cells of the adjustment form: an inline work-order picker
  * (relink, not warehouse-scoped — adjustments cross-source across warehouses)
- * plus the auto-linked material item (read-only — a
- * WO's material item is unique per product, so selecting the WO resolves it via
- * `selectWorkOrderOption`).
+ * plus the auto-linked material item (read-only — a WO's material item is unique
+ * per product, so selecting the WO resolves it via `selectWorkOrderOption`).
  *
- * Warehouse + inventory are chosen in the inventory record view's header now, so
- * the old "Source" group and the body-takeover pickers (a legacy edit-panel artifact)
- * are gone. The per-context `pickerConfig.workOrder` still decides whether the
- * WO is editable / locked / hidden.
+ * Renders bare `<CellAt>` cells (Work order, then Material item beneath it) for
+ * the shared record-view field grid supplied by the host — no group chrome.
+ * Returns `null` when the per-context `pickerConfig.workOrder` is `hidden`;
+ * `editable` / `locked` decide whether the WO picker is interactive.
  */
 export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps) {
   const { pickerConfig, isSaving, productId, form, local } = controller
@@ -30,9 +28,9 @@ export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps
   const materialItemResolving = Boolean(form.workOrderId) && !form.workOrderItemId
 
   return (
-    <InventoryGroup title="Work order" tone="blue">
-      <div className="flex flex-col gap-3">
-        <InventoryField label="Work order">
+    <>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Work order">
           <WorkOrderPicker
             value={form.workOrderId}
             productId={productId}
@@ -42,10 +40,12 @@ export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps
             disabled={isSaving || !woEditable}
             ariaLabel="Select work order"
           />
-        </InventoryField>
-        {/* Read-only: auto-linked from the selected work order (product is
-            fixed + unique per WO), so there is no picker — product name only. */}
-        <InventoryField label="Material item">
+        </FormField>
+      </CellAt>
+      {/* Read-only: auto-linked from the selected work order (product is fixed +
+          unique per WO), so there is no picker — product name only. */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Material item">
           {!form.workOrderId ? (
             <span className="text-sm text-[var(--foreground)]/55">Select a work order</span>
           ) : materialItemResolving ? (
@@ -53,8 +53,8 @@ export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps
           ) : (
             <span className="truncate text-sm text-[var(--foreground)]">{workOrderItemLabel}</span>
           )}
-        </InventoryField>
-      </div>
-    </InventoryGroup>
+        </FormField>
+      </CellAt>
+    </>
   )
 }
