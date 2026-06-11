@@ -431,7 +431,7 @@ export function WorkOrderPrimaryFieldsSection({
             value={draft.internalNotes}
             onChange={(value) => onFieldChange("internalNotes", value)}
             maxLength={WO_INTERNAL_NOTES_MAX}
-            rows={4}
+            rows={2}
           />
         </FormField>
       </CellAt>
