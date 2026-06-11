@@ -96,7 +96,7 @@ describe("work-order documents — above the adjustments table", () => {
         </colgroup>
         <tbody>
           <tr><th>Date</th><td>2026-06-08 - AM</td></tr>
-          <tr><th>Warehouse</th><td>North Warehouse - 5 Depot Rd, Round Rock, TX, 78664 - 512-555-0100</td></tr>
+          <tr><th>Warehouse</th><td>North Warehouse - 5 Depot Rd, Round Rock, TX, 78664 - (512) 555-0100</td></tr>
           <tr><th>Job Type</th><td>Turn</td></tr>
           <tr class="row-gap"><th>Management Company</th><td>Cardinal Management</td></tr>
           <tr><th>Property</th><td>Maple Court Apartments</td></tr>

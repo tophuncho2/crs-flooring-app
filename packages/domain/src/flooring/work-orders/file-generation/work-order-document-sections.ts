@@ -1,4 +1,5 @@
 import { buildAddressLine } from "../../../shared/address/index.js"
+import { formatPhoneNumber } from "../../../shared/phone.js"
 import type {
   WorkOrderFileAdjustmentProjection,
   WorkOrderFileGenerationInput,
@@ -137,7 +138,7 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
   const warehouseParts = [
     input.warehouse.name,
     buildAddressLine(input.warehouse),
-    input.warehouse.phone,
+    formatPhoneNumber(input.warehouse.phone),
   ].filter(Boolean)
   const warehouseCell = warehouseParts.length
     ? escapeHtml(warehouseParts.join(" - "))

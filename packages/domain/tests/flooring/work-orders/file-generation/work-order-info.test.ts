@@ -31,7 +31,7 @@ describe("renderWorkOrderInfo — warehouse cell composition", () => {
   it("joins name, address line, and phone with ' - '", () => {
     const html = renderWorkOrderInfo(makeFileGenInput())
     expect(html).toContain(
-      "<th>Warehouse</th><td>North Warehouse - 5 Depot Rd, Round Rock, TX, 78664 - 512-555-0100</td>",
+      "<th>Warehouse</th><td>North Warehouse - 5 Depot Rd, Round Rock, TX, 78664 - (512) 555-0100</td>",
     )
   })
 
@@ -41,7 +41,7 @@ describe("renderWorkOrderInfo — warehouse cell composition", () => {
         warehouse: { streetAddress: "", city: "", state: "", postalCode: "" },
       }),
     )
-    expect(html).toContain("<th>Warehouse</th><td>North Warehouse - 512-555-0100</td>")
+    expect(html).toContain("<th>Warehouse</th><td>North Warehouse - (512) 555-0100</td>")
   })
 
   it("renders the empty-cell placeholder when every warehouse part is blank", () => {

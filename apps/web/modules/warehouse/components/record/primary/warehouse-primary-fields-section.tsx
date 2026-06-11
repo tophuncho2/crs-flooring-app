@@ -6,6 +6,7 @@ import {
   CellAt,
   FieldSection,
   FormField,
+  PhoneCell,
   StaticFieldValue,
   TextCell,
 } from "@/engines/record-view"
@@ -52,11 +53,10 @@ export function WarehousePrimaryFieldsSection({
       </CellAt>
       <CellAt col={1} colSpan={5}>
         <FormField label="Store Phone">
-          <TextCell
+          <PhoneCell
             editable={editable}
             value={draft.phone}
             onChange={(next) => onFieldChange("phone", next)}
-            placeholder="Store phone"
             ariaLabel="Warehouse phone"
           />
         </FormField>

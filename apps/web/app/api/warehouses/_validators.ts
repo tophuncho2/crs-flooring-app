@@ -8,6 +8,7 @@ import type {
 import {
   LIST_WAREHOUSES_MAX_PAGE_SIZE,
   LIST_WAREHOUSES_PAGE_SIZE,
+  normalizePhoneNumber,
 } from "@builders/domain"
 
 export function validateWarehouseInput(body: Record<string, unknown>): CreateWarehouseInput {
@@ -28,7 +29,9 @@ export function validateWarehouseInput(body: Record<string, unknown>): CreateWar
   const state = typeof body.state === "string" && body.state.trim() !== "" ? body.state : null
   const postalCode =
     typeof body.postalCode === "string" && body.postalCode.trim() !== "" ? body.postalCode : null
-  const phone = typeof body.phone === "string" && body.phone.trim() !== "" ? body.phone : null
+  // Phone standard (lenient): normalize to canonical digits, never reject.
+  const phoneRaw = typeof body.phone === "string" ? body.phone.trim() : ""
+  const phone = phoneRaw ? normalizePhoneNumber(phoneRaw) || null : null
 
   return { name, streetAddress, city, state, postalCode, phone }
 }
