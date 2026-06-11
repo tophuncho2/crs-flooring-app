@@ -17,12 +17,13 @@ import {
 import { useRouter } from "next/navigation"
 import { useInventoryListController } from "@/modules/inventory/controllers/list/use-inventory-list-controller"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
-import { buildInventoryRecordHref } from "@/hooks/navigation"
+import { buildInventoryMergeHref, buildInventoryRecordHref } from "@/hooks/navigation"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
 import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
 import { AddInventoryButton } from "./toolbar-controls/add-inventory-button"
+import { MergeInventoryButton } from "./toolbar-controls/merge-inventory-button"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
@@ -463,7 +464,12 @@ export default function InventoryClient({
                 list views' "+ New" button); `self-start` keeps it top-aligned
                 in the tall toolbar. */}
             <ListToolbarCell className="ml-auto self-start">
-              <AddInventoryButton onClick={() => openCreate()} />
+              <div className="flex flex-col gap-2">
+                <AddInventoryButton onClick={() => openCreate()} />
+                <MergeInventoryButton
+                  onClick={() => router.push(buildInventoryMergeHref({ returnTo }))}
+                />
+              </div>
             </ListToolbarCell>
           </ListToolbar>
         </div>

@@ -241,6 +241,24 @@ export function buildInventoryDuplicateHref(options: {
   return `${INVENTORY_DUPLICATE_BASE}?${searchParams.toString()}`
 }
 
+const INVENTORY_MERGE_BASE = "/dashboard/inventory/merge"
+
+/**
+ * Open the "merge inventory" create form. Its own page (mirrors the canonical
+ * `/dashboard/{module}/new` create flow) — opens with an empty batch-select
+ * picker (no seeded source): the user picks a product, batch-selects the rows to
+ * consolidate, and a successful merge routes to the new item's record view.
+ * `returnTo` brings the user back to the originating list view.
+ */
+export function buildInventoryMergeHref(options?: {
+  returnTo?: string | null
+}): string {
+  if (!options?.returnTo) return INVENTORY_MERGE_BASE
+  const searchParams = new URLSearchParams()
+  searchParams.set("returnTo", options.returnTo)
+  return `${INVENTORY_MERGE_BASE}?${searchParams.toString()}`
+}
+
 export function resolveRecordEntryReturnTo(
   returnTo: string | string[] | undefined,
   fallbackHref: string,
