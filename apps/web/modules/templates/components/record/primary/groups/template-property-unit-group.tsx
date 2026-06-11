@@ -1,13 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { CellAt, FormField, StaticFieldValue, TextCell, TextareaCell } from "@/engines/record-view"
+import { CellAt, FormField, StaticFieldValue, TextCell } from "@/engines/record-view"
 import type { PropertyJoinedFields } from "@/engines/record-view"
 import { applyPropertySelection } from "@/engines/picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import {
   buildAddressBlock,
-  TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type PropertyOption,
   type TemplateForm,
@@ -74,12 +73,12 @@ export function TemplatePropertyUnitGroup({
 
   return (
     <>
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} row={1} colSpan={4}>
         <FormField label="Management Company">
           <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} row={2} colSpan={4}>
         <FormField label="Property" required>
           {editable ? (
             <PropertyPicker
@@ -105,7 +104,21 @@ export function TemplatePropertyUnitGroup({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} row={3} colSpan={2}>
+        <FormField label="Property Address">
+          <StaticFieldValue>
+            <span className="whitespace-pre-line">{addressDisplay}</span>
+          </StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={3} row={3} colSpan={2}>
+        <FormField label="Property Instructions">
+          <StaticFieldValue>
+            <span className="whitespace-pre-line">{instructionsDisplay}</span>
+          </StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={1} row={4} colSpan={2}>
         <FormField
           label="Unit Type"
           required
@@ -117,38 +130,6 @@ export function TemplatePropertyUnitGroup({
             value={draft.unitType}
             onChange={(value) => onFieldChange("unitType", value)}
             maxLength={TEMPLATE_UNIT_TYPE_MAX}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <div className="border-t border-[var(--panel-border)]/60" />
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Property Address">
-          <StaticFieldValue>
-            <span className="whitespace-pre-line">{addressDisplay}</span>
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField label="Property Instructions">
-          <StaticFieldValue>
-            <span className="whitespace-pre-line">{instructionsDisplay}</span>
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={8}>
-        <FormField
-          label="Installer Instructions"
-          currentLength={editable ? draft.installerInstructions.length : undefined}
-          maxLength={editable ? TEMPLATE_INSTALLER_INSTRUCTIONS_MAX : undefined}
-        >
-          <TextareaCell
-            editable={editable}
-            value={draft.installerInstructions}
-            onChange={(value) => onFieldChange("installerInstructions", value)}
-            maxLength={TEMPLATE_INSTALLER_INSTRUCTIONS_MAX}
-            rows={3}
           />
         </FormField>
       </CellAt>

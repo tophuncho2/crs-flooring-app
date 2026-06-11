@@ -12,6 +12,7 @@ import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-pi
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   TEMPLATE_DESCRIPTION_MAX,
+  TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
   type TemplateForm,
 } from "@builders/domain"
@@ -71,7 +72,21 @@ export function TemplatePrimaryFieldsSection({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={4}>
+      {/* Left column (cols 1–4): property cluster — MC, Property, Address +
+          Instructions, Unit Type. col 5 is the gutter to the right stack. */}
+      <TemplatePropertyUnitGroup
+        editable={editable}
+        draft={draft}
+        detail={detail}
+        propertyJoined={draft.propertyId ? propertyJoined : null}
+        onFieldChange={onFieldChange}
+        onFieldsChange={onFieldsChange}
+        onPropertyOption={handlePropertyOption}
+      />
+
+      {/* Right column (cols 6–8): Warehouse + Job Type on top, then the
+          Description / Installer Instructions / Internal Notes textarea stack. */}
+      <CellAt col={6} row={1} colSpan={2}>
         <FormField label="Warehouse">
           {editable ? (
             <WarehousePicker
@@ -86,7 +101,7 @@ export function TemplatePrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={8} row={1} colSpan={1}>
         <FormField label="Job Type">
           {editable ? (
             <JobTypePicker
@@ -102,7 +117,7 @@ export function TemplatePrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={6} row={2} colSpan={3}>
         <FormField
           label="Description"
           currentLength={editable ? draft.description.length : undefined}
@@ -116,18 +131,22 @@ export function TemplatePrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-
-      <TemplatePropertyUnitGroup
-        editable={editable}
-        draft={draft}
-        detail={detail}
-        propertyJoined={draft.propertyId ? propertyJoined : null}
-        onFieldChange={onFieldChange}
-        onFieldsChange={onFieldsChange}
-        onPropertyOption={handlePropertyOption}
-      />
-
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={6} row={3} colSpan={3}>
+        <FormField
+          label="Installer Instructions"
+          currentLength={editable ? draft.installerInstructions.length : undefined}
+          maxLength={editable ? TEMPLATE_INSTALLER_INSTRUCTIONS_MAX : undefined}
+        >
+          <TextareaCell
+            editable={editable}
+            value={draft.installerInstructions}
+            onChange={(value) => onFieldChange("installerInstructions", value)}
+            maxLength={TEMPLATE_INSTALLER_INSTRUCTIONS_MAX}
+            rows={3}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={6} row={4} colSpan={3}>
         <FormField
           label="Internal Notes"
           currentLength={editable ? draft.internalNotes.length : undefined}
