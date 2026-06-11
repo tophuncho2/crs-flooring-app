@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { TextCell } from "@/engines/record-view"
+import { TextareaCell } from "@/engines/record-view"
 import { StaticFieldValue } from "@/engines/record-view"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
@@ -74,7 +74,7 @@ export function TemplateJobGroup({
             currentLength={draft.description.length}
             maxLength={TEMPLATE_DESCRIPTION_MAX}
           >
-            <TextCell
+            <TextareaCell
               editable={editable}
               value={draft.description}
               onChange={(value) => onFieldChange("description", value)}
