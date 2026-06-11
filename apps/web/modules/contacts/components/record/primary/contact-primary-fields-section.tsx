@@ -1,9 +1,9 @@
 "use client"
 
-import { TextCell } from "@/engines/record-view"
+import { PhoneCell, TextCell } from "@/engines/record-view"
 import { FieldSection, FormField, StaticFieldValue } from "@/engines/record-view"
 import { CellAt } from "@/engines/record-view"
-import { formatEasternDateTime, type ContactForm } from "@builders/domain"
+import { formatEasternDateTime, formatPhoneNumber, type ContactForm } from "@builders/domain"
 
 export type ContactPrimaryFieldsSectionProps = {
   draft: ContactForm
@@ -43,15 +43,14 @@ export function ContactPrimaryFieldsSection({
       <CellAt col={1} colSpan={4}>
         <FormField label="Phone">
           {editable ? (
-            <TextCell
+            <PhoneCell
               editable
               value={draft.phone}
               onChange={(next) => onFieldChange("phone", next)}
-              placeholder="Phone"
               ariaLabel="Contact phone"
             />
           ) : (
-            <StaticFieldValue>{draft.phone || "—"}</StaticFieldValue>
+            <StaticFieldValue>{formatPhoneNumber(draft.phone) || "—"}</StaticFieldValue>
           )}
         </FormField>
       </CellAt>

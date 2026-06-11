@@ -9,6 +9,7 @@ import type {
 import {
   LIST_CONTACTS_MAX_PAGE_SIZE,
   LIST_CONTACTS_PAGE_SIZE,
+  normalizePhoneNumber,
 } from "@builders/domain"
 
 function fail(message: string, field?: string): never {
@@ -33,12 +34,20 @@ function optionalString(value: unknown, field: string): string | undefined {
   return (value as string).trim()
 }
 
+// Phone standard (lenient): normalize to canonical digits, never reject. Bad
+// shapes (extensions, international, partial) are kept as digits, not 400'd.
+function optionalPhone(value: unknown, field: string): string | undefined {
+  const trimmed = optionalString(value, field)
+  if (trimmed === undefined) return undefined
+  return normalizePhoneNumber(trimmed)
+}
+
 export function validateCreateContactInput(
   body: Record<string, unknown>,
 ): CreateContactUseCaseInput {
   return {
     name: requireString(body.name, "name"),
-    phone: optionalString(body.phone, "phone"),
+    phone: optionalPhone(body.phone, "phone"),
     email: optionalString(body.email, "email"),
   }
 }
@@ -48,7 +57,7 @@ export function validateUpdateContactInput(
 ): UpdateContactUseCaseInput {
   const input: UpdateContactUseCaseInput = {}
   if ("name" in body) input.name = requireString(body.name, "name")
-  if ("phone" in body) input.phone = optionalString(body.phone, "phone")
+  if ("phone" in body) input.phone = optionalPhone(body.phone, "phone")
   if ("email" in body) input.email = optionalString(body.email, "email")
   return input
 }

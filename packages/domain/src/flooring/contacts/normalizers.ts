@@ -1,3 +1,4 @@
+import { normalizePhoneNumber } from "../../shared/phone.js"
 import type { Contact, ContactOption } from "./types.js"
 
 type ContactInput = {
@@ -13,7 +14,7 @@ export function normalizeContact(contact: ContactInput): Contact {
   return {
     id: contact.id,
     name: contact.name,
-    phone: contact.phone ?? "",
+    phone: normalizePhoneNumber(contact.phone ?? ""),
     email: contact.email ?? "",
     createdAt: contact.createdAt instanceof Date ? contact.createdAt.toISOString() : contact.createdAt,
     updatedAt: contact.updatedAt instanceof Date ? contact.updatedAt.toISOString() : contact.updatedAt,
