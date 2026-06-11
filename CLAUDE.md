@@ -29,3 +29,5 @@ Next.js app-router, Prisma (migrations), zod payloads, outbox/relay pattern. Dep
 - Data rolldown. Main db is backed up every 24 hours and rolled into staging and dev every so often. In case of disaster, users get migrated to staging branch and pick up with 24 hours of lost data. Weird/junk data in dev is probably real prod data rolled down from main — don't assume it's a bug to fix; a dev anomaly likely also exists in main.
 - Engine migration convention. When migrating a module onto an engine (record-view, list-view, picker), mirror the engine's canonical folder structure head-to-toe; build module-local only where the engine falls short. 
 
+ Assignment = an adjustment row where adjustmentType = DEDUCTION and linked to a WO material item. Total Assignments for a material 
+  ▎ item = Σ of those DEDUCTION rows' quantity. INCREASE rows never count (and, per the schema comment, never even carry a WO link).
