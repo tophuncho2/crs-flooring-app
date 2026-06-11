@@ -1,3 +1,4 @@
 export * from "./contracts/data-table-column"
 export * from "./contracts/data-table-row"
 export * from "./data-table"
+export * from "./select"

@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { DebouncedSearchControl, PaginateControls } from "@/engines/list-view"
+import { DataTable, DebouncedSearchControl, PaginateControls } from "@/engines/list-view"
 import {
-  BatchSelectGrid,
   RecordCreateClientScaffold,
   RecordReferenceHeader,
   RecordSectionSubHeader,
@@ -16,7 +15,8 @@ import { getClientErrorMessage } from "@/transport"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import { useInventoryMergeSection } from "@/modules/inventory/controllers/record/merge/use-inventory-merge-section"
 import { INVENTORY_PICKER_PAGE_SIZE } from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
-import { INVENTORY_MERGE_COLUMNS } from "./inventory-merge-columns"
+import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
+import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
 import { InventoryMergeFields } from "./inventory-merge-fields"
 
 /** Dirty-section label surfaced in the scaffold's leave-guard message. */
@@ -132,17 +132,20 @@ function InventoryMergePanel({ page }: { page: RecordDetailClientScaffoldContext
                     ariaLabel="Search inventory by note"
                   />
                 </div>
-                <BatchSelectGrid
+                <DataTable
                   rows={grid.rows}
-                  dataColumns={INVENTORY_MERGE_COLUMNS}
-                  selectedIds={selectedIds}
-                  onToggle={toggleRow}
-                  canToggleSelection={!isPending}
-                  isSelectionActive={isSelectionActive}
-                  selectedCount={selectedCount}
-                  eligibleCount={eligibleCount}
-                  onToggleAll={toggleAll}
-                  getSelectionAriaLabel={(row) => row.inventoryItem}
+                  columns={INVENTORY_LIST_COLUMNS}
+                  renderCell={renderInventoryRowCell}
+                  getRowAriaLabel={(row) => row.inventoryItem}
+                  selection={{
+                    selectedIds,
+                    onToggleRow: toggleRow,
+                    isSelectionActive,
+                    selectedCount,
+                    eligibleCount,
+                    onToggleAll: toggleAll,
+                    canToggleSelection: !isPending,
+                  }}
                   empty={grid.isLoading ? "Searching…" : (grid.error ?? "No matching inventory")}
                   footerSlot={
                     <PaginateControls
