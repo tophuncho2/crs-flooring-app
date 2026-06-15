@@ -15,7 +15,7 @@ export function ManufacturerDetailClient({
 }) {
   return (
     <RecordDetailClientScaffold
-      title="Manufacturer Hub"
+      title="Manufacturers Hub"
       backHref={backHref}
       headerVariant="section"
       dirtyMessage="You have unsaved manufacturer changes. Leave this page without saving?"

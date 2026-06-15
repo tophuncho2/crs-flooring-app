@@ -18,7 +18,7 @@ export function PropertyDetailClient({
 }) {
   return (
     <RecordDetailClientScaffold
-      title="Property Hub"
+      title="Properties Hub"
       backHref={backHref}
       dirtyMessage="You have unsaved property changes. Leave without saving?"
       headerVariant="section"

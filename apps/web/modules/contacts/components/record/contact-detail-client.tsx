@@ -19,7 +19,7 @@ export function ContactDetailClient({
 
   return (
     <RecordDetailClientScaffold
-      title="Contact Hub"
+      title="Contacts Hub"
       backHref={backHref}
       headerVariant="section"
       dirtyMessage="You have unsaved contact changes. Leave this page without saving?"

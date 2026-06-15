@@ -21,7 +21,7 @@ export function ProductDetailClient({
 }) {
   return (
     <RecordDetailClientScaffold
-      title="Product Hub"
+      title="Products Hub"
       backHref={backHref}
       dirtyMessage="You have unsaved product changes. Leave this product without saving?"
       headerVariant="section"
