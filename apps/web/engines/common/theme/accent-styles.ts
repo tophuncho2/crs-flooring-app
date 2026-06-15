@@ -1,5 +1,8 @@
 export const FLOORING_PRIMARY_ACCENT_CLASS_NAME = "bg-blue-500 text-black"
 
+// Opaque panel/rail surface matching the list-view title tab (blue-500/15 composited over the page).
+export const FLOORING_LIST_TINT_PANEL_CLASS_NAME = "bg-[#dce9fc]"
+
 export const FLOORING_PRIMARY_ACCENT_INTERACTIVE_CLASS_NAME = `${FLOORING_PRIMARY_ACCENT_CLASS_NAME} hover:bg-blue-400`
 
 export const FLOORING_ACTIVE_NAV_TAB_CLASS_NAME = [

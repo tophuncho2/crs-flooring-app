@@ -41,6 +41,12 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-categories", name: "Categories", href: "/dashboard/categories", group: "catalog" },
 ]
 
+// Persistent nav rail geometry — kept here so the rail and the dashboard layout
+// (which shifts all content right by the rail width) stay in sync.
+export const NAV_RAIL_WIDTH_CLASS = "w-14"
+export const NAV_RAIL_CONTENT_OFFSET_CLASS = "pl-14"
+export const NAV_RAIL_HEADER_OFFSET_CLASS = "left-14"
+
 export function isFlooringRoute(pathname: string) {
   return pathname.startsWith("/dashboard")
 }

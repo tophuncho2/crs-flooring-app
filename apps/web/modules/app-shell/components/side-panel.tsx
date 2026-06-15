@@ -18,6 +18,8 @@ export type SidePanelProps = {
   ariaLabel?: string
   /** Tailwind width class applied to the panel. Default `w-72`. */
   widthClassName?: string
+  /** Overrides the panel card background. Defaults to the white panel surface. */
+  panelClassName?: string
   /** Panel body. */
   children: ReactNode
 }
@@ -43,6 +45,7 @@ export function SidePanel({
   title,
   ariaLabel,
   widthClassName = "w-72",
+  panelClassName = "bg-[var(--panel-background)]",
   children,
 }: SidePanelProps) {
   useEffect(() => {
@@ -76,7 +79,8 @@ export function SidePanel({
       <div
         className={[
           "absolute inset-y-0 flex flex-col",
-          "border-[var(--panel-border)] bg-[var(--panel-background)]",
+          "border-[var(--panel-border)]",
+          panelClassName,
           "shadow-[0_24px_60px_rgba(0,0,0,0.25)]",
           SIDE_POSITION_CLASS_NAME[side],
           widthClassName,
