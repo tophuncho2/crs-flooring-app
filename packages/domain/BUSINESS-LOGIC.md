@@ -8,8 +8,11 @@
 
 ## Properties
 
-### A property is never linked to two management companies
-
 A property belongs to exactly one management company at a time — it can never be
 linked to two at once.
+
+## Inventory
+
+Every inventory record is linked to a parent product — inventory can never exist
+without one.
 
