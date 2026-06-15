@@ -1,0 +1,5 @@
+# Plan files (written here by Claude Code via plansDirectory) are local-only
+# per branch — same idea as .vscode/. Keep the folder structure + the
+# briefing tracked; ignore the auto-slugged plan files inside each branch folder.
+*/*
+!*/.gitkeep

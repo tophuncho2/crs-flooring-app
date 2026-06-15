@@ -46,3 +46,10 @@
   - [ ] Each `.vscode/settings.json` carries `git.ignoredRepositories` listing every sibling worktree + the container folder — don't remove entries. This is what keeps one window's Source Control panel from showing sibling branches.
 - [ ] Each branch has its own theme in VS Code
 
+## Plans
+
+- [ ] Claude Code writes plan-mode plans to this folder, sorted by branch — `.claude/work-trees/<branch>/`.
+- [ ] Each worktree folder has its own untracked `.claude/settings.local.json` setting `plansDirectory` to its branch folder — same local-only pattern as `.vscode/` (excluded via `.git/info/exclude`). Don't commit it; don't point two folders at the same branch.
+- [ ] The folder structure + this briefing are tracked; the plan files themselves are gitignored (local-only) via `work-trees/.gitignore`.
+- [ ] Default plan location (`~/.claude/plans/`) is overridden by this; that's why plans now land in-project instead of buried in your home dir.
+
