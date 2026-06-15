@@ -36,3 +36,13 @@
 - [ ] Shared DB with dev
 - [ ] Where the bulk of editing happens
 
+## Settings
+
+- [ ] User opens a branch from its dedicated, checked-out local folder
+- [ ] Worktrees are separated by checked-out local folders
+- [ ] 1 window per branch when working
+- [ ] Source control setup is good as is — don't mess it up. The two load-bearing invariants:
+  - [ ] `.vscode/` is intentionally **local-only via `.git/info/exclude`** (not tracked, not in `.gitignore`) — never `git add` it, never move it into `.gitignore`, never commit it. This is what keeps each window's theme isolated to its branch.
+  - [ ] Each `.vscode/settings.json` carries `git.ignoredRepositories` listing every sibling worktree + the container folder — don't remove entries. This is what keeps one window's Source Control panel from showing sibling branches.
+- [ ] Each branch has its own theme in VS Code
+
