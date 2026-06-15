@@ -20,5 +20,16 @@
 
 ## Staging
 
+- [ ] Not always a clean fast-forward from dev
+- [ ] Can be used for hotfixes
+- [ ] Not always - but typical branch for inspecting Railway, GitHub, or any top-level things
+
 ## Dev
+
+
+## Dev 1-3
+
+- [ ] do not have live deployments, only localhost
+- [ ] Shared DB with dev
+- [ ]  where the bulk of editing happens
 
