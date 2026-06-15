@@ -8,6 +8,7 @@ import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
 } from "../structure/record-section-tokens"
 import { RecordSectionShell } from "../structure/record-section-shell"
+import { TableBleed } from "../structure/table-bleed"
 import {
   RecordSectionSubHeader,
   type RecordSectionSubHeaderProps,
@@ -98,13 +99,13 @@ export function RecordFieldSection({
 
   if (!showHeader) {
     return (
-      <div>
+      <TableBleed variant="record">
         {actionPanel}
         <RecordFormNotices message={noticeMessage} error={noticeError} />
         <div className={joinRecordSectionClasses("px-5 py-5 space-y-0", RECORD_SECTION_BODY_SURFACE_CLASS_NAME)}>
           {children}
         </div>
-      </div>
+      </TableBleed>
     )
   }
 
