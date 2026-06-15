@@ -8,11 +8,13 @@
 
 ## Properties
 
-A property belongs to exactly one management company at a time — it can never be
-linked to two at once.
+- [ ] A property belongs to exactly one management company at a time — it can never be linked to two at once.
 
 ## Inventory
 
-Every inventory record is linked to a parent product — inventory can never exist
-without one.
+- [ ] Every inventory record is linked to a parent product — inventory can never exist without one.
+
+## Products
+
+- [ ] A product must be linked to a category.
 
