@@ -76,7 +76,7 @@ export function RecordDetailPageShell({
               </div>
             </div>
           )}
-          <div className="px-5 py-4">{children}</div>
+          <div className={joinClasses("px-5 pb-4", headerVariant === "section" ? "pt-0" : "pt-4")}>{children}</div>
         </div>
       </div>
     </div>
