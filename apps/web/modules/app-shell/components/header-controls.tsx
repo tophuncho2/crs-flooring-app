@@ -1,7 +1,6 @@
 "use client"
 
 import UserMenu from "./user-menu"
-import { FinderMenu } from "./finder-menu"
 
 type HeaderControlsProps = {
   email: string
@@ -18,7 +17,6 @@ export default function HeaderControls({ email, role }: HeaderControlsProps) {
         <div id="record-stepper-slot" className="contents" />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
-        <FinderMenu />
         <UserMenu email={email} role={role} />
       </div>
     </div>
