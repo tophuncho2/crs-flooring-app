@@ -13,6 +13,7 @@
 ## Inventory
 
 - [ ] Every inventory record is linked to a parent product — inventory can never exist without one.
+- [ ] An inventory adjustment linked to both a work order AND a WO material item is an assignment.
 
 ## Products
 
