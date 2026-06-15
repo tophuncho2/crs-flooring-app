@@ -60,7 +60,7 @@ export default function UserMenu({ email, role }: UserMenuProps) {
         {open && (
           <div
             className="
-              absolute right-0 mt-2 w-48
+              absolute bottom-full left-0 mb-2 w-48
               bg-[var(--panel-background)]
               border border-[var(--panel-border)]
               rounded-lg

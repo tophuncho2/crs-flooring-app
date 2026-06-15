@@ -44,10 +44,10 @@ export default async function DashboardLayout({
 
   return (
     <div className="relative min-h-screen">
-      <NavRail />
+      <NavRail email={user.email} role={user.role} />
 
       <div className={`fixed right-0 top-3 z-50 px-3 sm:top-6 sm:px-6 ${NAV_RAIL_HEADER_OFFSET_CLASS}`}>
-        <HeaderControls email={user.email} role={user.role} />
+        <HeaderControls />
       </div>
 
       <div className={NAV_RAIL_CONTENT_OFFSET_CLASS}>{children}</div>

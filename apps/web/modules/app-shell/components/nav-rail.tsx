@@ -24,6 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { SidePanel } from "./side-panel"
+import UserMenu from "./user-menu"
 import {
   FLOORING_ACTIVE_NAV_TAB_CLASS_NAME,
   FLOORING_LIST_TINT_PANEL_CLASS_NAME,
@@ -56,7 +57,12 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "flooring-categories": FolderTree,
 }
 
-export default function NavRail() {
+type NavRailProps = {
+  email: string
+  role: string
+}
+
+export default function NavRail({ email, role }: NavRailProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -146,6 +152,11 @@ export default function NavRail() {
             )
           })}
         </nav>
+
+        <div aria-hidden="true" className="mx-3 mb-1 border-t border-[var(--panel-border)]/70" />
+        <div className="flex justify-center py-2">
+          <UserMenu email={email} role={role} />
+        </div>
       </aside>
 
       {/* Expanded labeled drawer — opens over the rail on demand. */}
