@@ -26,10 +26,13 @@
 
 ## Dev
 
+- [ ] Sits over top of dev-1, 2 & 3
+- [ ] Where those branches merge into
+- [ ] Always wait for green deploys before merging in a second or 3rd branch
 
 ## Dev 1-3
 
 - [ ] do not have live deployments, only localhost
 - [ ] Shared DB with dev
-- [ ]  where the bulk of editing happens
+- [ ] Where the bulk of editing happens
 
