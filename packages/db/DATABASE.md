@@ -36,6 +36,9 @@ runs `npm run db:deploy`. Claude never applies migrations unless explicitly told
   `prisma.config.ts`, and `migrations/` exist only under `packages/db`, and that no
   Prisma CLI usage leaks into other packages/apps (e.g. `apps/web/server/db` is
   disallowed). The data package is the only place that may touch Prisma.
+
+## Backups
+
 - **Data rolldown.** Main is backed up every 24 hours and rolled down into staging
   and dev periodically. In a disaster, users migrate to the staging branch and
   resume with up to 24 hours of lost data.
