@@ -4,11 +4,8 @@ import type { ReactNode } from "react"
 import { ConfirmDialog } from "../../dialogs/confirm-dialog"
 import { useRecordPageController, type RecordPageController } from "../controllers/use-record-page-controller"
 import { RecordDetailPageShell } from "../../shell/record-detail-page-shell"
-import { RecordModeNoticePortal } from "../../shell/record-mode-notice"
 
 export type RecordDetailClientScaffoldContext = RecordPageController
-
-export type RecordModeNoticeConfig = { mode: "form" | "edit"; label: string }
 
 function resolveSlot(
   slot: ReactNode | ((context: RecordDetailClientScaffoldContext) => ReactNode) | undefined,
@@ -28,7 +25,6 @@ export function RecordDetailClientScaffold({
   headerMeta,
   headerActions,
   headerVariant = "default",
-  modeNotice,
   children,
 }: {
   title: string
@@ -37,7 +33,6 @@ export function RecordDetailClientScaffold({
   headerMeta?: ReactNode | ((context: RecordDetailClientScaffoldContext) => ReactNode)
   headerActions?: ReactNode | ((context: RecordDetailClientScaffoldContext) => ReactNode)
   headerVariant?: "default" | "section"
-  modeNotice?: RecordModeNoticeConfig
   children: (context: RecordDetailClientScaffoldContext) => ReactNode
 }) {
   const page = useRecordPageController({
@@ -47,9 +42,6 @@ export function RecordDetailClientScaffold({
 
   return (
     <>
-      {modeNotice ? (
-        <RecordModeNoticePortal mode={modeNotice.mode} label={modeNotice.label} />
-      ) : null}
       <RecordDetailPageShell
         title={title}
         backHref={backHref}

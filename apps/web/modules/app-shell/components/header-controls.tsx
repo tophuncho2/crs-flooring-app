@@ -18,9 +18,7 @@ export default function HeaderControls({ email, role }: HeaderControlsProps) {
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">
         <NavDrawerButton orderedItems={FLOORING_NAV_ITEMS} />
         <div id="record-back-button-slot" className="contents" />
-        <div id="record-mode-notice-slot" className="contents" />
         <div id="record-stepper-slot" className="contents" />
-        <div id="list-view-notice-slot" className="contents" />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
         <TemplateHubButton />

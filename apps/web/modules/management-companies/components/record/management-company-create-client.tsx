@@ -81,7 +81,6 @@ export function ManagementCompanyCreateClient({
       backHref={backHref}
       dirtyMessage="You have unsaved management-company changes. Leave without saving?"
       headerVariant="section"
-      modeNotice={{ mode: "edit", label: "Management" }}
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <ManagementCompanyCreatePanel page={page} propertyId={propertyId} backHref={backHref} />

@@ -18,7 +18,6 @@ export function WarehouseDetailClient({
       title="Warehouse Hub"
       backHref={backHref}
       headerVariant="section"
-      modeNotice={{ mode: "edit", label: "Warehouse" }}
       dirtyMessage="You have unsaved warehouse changes. Leave this page without saving?"
     >
       {(page) => <WarehouseRecordPanel page={page} entry={initialWarehouse} stats={stats} />}

@@ -113,7 +113,6 @@ export function ProductCreateClient({
     <RecordCreateClientScaffold
       title="New Product"
       backHref={backHref}
-      modeNoticeLabel="Product"
       dirtyMessage="You have unsaved product changes. Leave this form without saving?"
     >
       {(page) => (

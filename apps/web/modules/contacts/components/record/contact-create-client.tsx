@@ -56,7 +56,6 @@ export function ContactCreateClient({ backHref }: { backHref: string }) {
     <RecordCreateClientScaffold
       title="New Contact"
       backHref={backHref}
-      modeNoticeLabel="Contact"
       dirtyMessage="You have unsaved contact changes. Leave this form without saving?"
     >
       {(page) => <ContactCreatePanel page={page} backHref={backHref} />}

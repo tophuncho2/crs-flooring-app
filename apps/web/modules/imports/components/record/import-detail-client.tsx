@@ -33,7 +33,6 @@ export function ImportDetailClient({
     <RecordDetailClientScaffold
       title="Imports Hub"
       backHref={backHref}
-      modeNotice={{ mode: "edit", label: "Import" }}
       dirtyMessage="You have unsaved import changes. Leave this import record without saving?"
       headerVariant="section"
     >

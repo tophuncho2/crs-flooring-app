@@ -79,7 +79,6 @@ export function TemplateCreateClient({
     <RecordCreateClientScaffold
       title="New Template"
       backHref={backHref}
-      modeNoticeLabel="Template"
       dirtyMessage="You have unsaved template changes. Leave this form without saving?"
     >
       {(page) => (

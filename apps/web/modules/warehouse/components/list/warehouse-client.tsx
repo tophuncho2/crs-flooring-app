@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListViewNoticePortal, PaginateControls, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, PaginateControls, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { WarehousesListFilters } from "@builders/application"
 import {
   LIST_WAREHOUSES_PAGE_SIZE,
@@ -63,7 +63,6 @@ export default function WarehouseClient({
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <ListViewNoticePortal label="Warehouse" />
       <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         <div>
           <div className="px-4 pt-3">

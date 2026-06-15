@@ -50,7 +50,6 @@ export function InventoryDetailClient({
       backHref={backHref}
       dirtyMessage="You have unsaved inventory changes. Leave without saving?"
       headerVariant="section"
-      modeNotice={{ mode: "edit", label: "Inventory" }}
     >
       {(page) => <InventoryRecordSurface page={page} selection={selection} />}
     </RecordDetailClientScaffold>

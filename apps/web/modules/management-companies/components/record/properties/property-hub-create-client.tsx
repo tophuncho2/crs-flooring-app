@@ -116,7 +116,6 @@ export function PropertyHubCreateClient({
       title="New Property"
       backHref={backHref}
       dirtyMessage="You have unsaved changes. Leave this form without saving?"
-      modeNoticeLabel="Management"
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <PropertyHubCreatePanel

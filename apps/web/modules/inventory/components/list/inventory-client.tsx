@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListToolbarTallCard, ListViewNoticePortal, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl } from "@/engines/list-view"
+import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListToolbarTallCard, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl } from "@/engines/list-view"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
@@ -332,7 +332,6 @@ export default function InventoryClient({
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <ListViewNoticePortal label="Inventory" />
       <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
         {message || pageError ? (
           <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">

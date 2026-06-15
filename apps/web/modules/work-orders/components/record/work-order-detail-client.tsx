@@ -28,7 +28,6 @@ export function WorkOrderDetailClient({
       backHref={backHref}
       dirtyMessage="You have unsaved work-order changes. Leave this record without saving?"
       headerVariant="section"
-      modeNotice={{ mode: "edit", label: "Work Order" }}
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <WorkOrderRecordPanel

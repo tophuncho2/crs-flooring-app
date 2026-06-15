@@ -18,7 +18,6 @@ export function ManufacturerDetailClient({
       title="Manufacturer Hub"
       backHref={backHref}
       headerVariant="section"
-      modeNotice={{ mode: "edit", label: "Manufacturer" }}
       dirtyMessage="You have unsaved manufacturer changes. Leave this page without saving?"
     >
       {(page) => <ManufacturerRecordPanel page={page} entry={initialManufacturer} stats={stats} />}

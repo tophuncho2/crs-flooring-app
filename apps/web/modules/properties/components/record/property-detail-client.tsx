@@ -22,7 +22,6 @@ export function PropertyDetailClient({
       backHref={backHref}
       dirtyMessage="You have unsaved property changes. Leave without saving?"
       headerVariant="section"
-      modeNotice={{ mode: "edit", label: "Property" }}
     >
       {(page: RecordDetailClientScaffoldContext) => (
         <PropertyRecordView

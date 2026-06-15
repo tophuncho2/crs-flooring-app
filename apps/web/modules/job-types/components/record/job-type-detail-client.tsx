@@ -18,7 +18,6 @@ export function JobTypeDetailClient({
       title="Job Type Hub"
       backHref={backHref}
       headerVariant="section"
-      modeNotice={{ mode: "edit", label: "Job Type" }}
       dirtyMessage="You have unsaved job type changes. Leave this page without saving?"
     >
       {(page) => <JobTypeRecordPanel page={page} entry={initialJobType} stats={stats} />}

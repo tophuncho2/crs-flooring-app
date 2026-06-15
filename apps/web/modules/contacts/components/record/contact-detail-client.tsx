@@ -22,7 +22,6 @@ export function ContactDetailClient({
       title="Contact Hub"
       backHref={backHref}
       headerVariant="section"
-      modeNotice={{ mode: "edit", label: "Contact" }}
       dirtyMessage="You have unsaved contact changes. Leave this page without saving?"
     >
       {(page) => (
