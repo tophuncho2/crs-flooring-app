@@ -20,15 +20,12 @@
 
 ## Running migrations
 
-**The user always runs migrations, never Claude — unless the user explicitly says
-so.** Schema changes are the user's responsibility.
-
-All commands run from `packages/db` via the `db:*` scripts (each sets
-`DOTENV_CONFIG_PATH` and `XDG_CACHE_HOME`, so they pick up the right `.env`):
+**Workflow:** Claude Code edits the schema and authors the migration files; the user
+runs `npm run db:deploy`. Claude never applies migrations unless explicitly told to.
 
 | Action | Script | Notes |
 | --- | --- | --- |
-| Apply pending migrations | `npm run db:deploy` | Non-interactive; used on staging/main and after rolldowns. |
+| Apply pending migrations | `npm run db:deploy` | Non-interactive; the user runs this. Also after rolldowns. |
 | Check migration state | `npm run db:migrate:status` | Reports drift / pending migrations. |
 
 - Migrations live in `prisma/migrations/`; schema in `prisma/schema.prisma`.
