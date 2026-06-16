@@ -147,8 +147,14 @@ export function WorkOrderPrimaryFieldsSection({
 
   return (
     <FieldSection>
+      {/* Work Order Number — sits above all, spanning two columns */}
+      <CellAt col={1} row={1} colSpan={2}>
+        <FormField label="Work Order Number">
+          <StaticFieldValue>{detail?.workOrderNumber ?? "—"}</StaticFieldValue>
+        </FormField>
+      </CellAt>
       {/* Schedule — pickers two-up across the right half */}
-      <CellAt col={5} row={1} colSpan={2}>
+      <CellAt col={5} row={2} colSpan={2}>
         <FormField label="Warehouse">
           {editable ? (
             <WarehousePicker
@@ -164,7 +170,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={7} row={1} colSpan={1}>
+      <CellAt col={7} row={2} colSpan={1}>
         <FormField label="Job Type">
           {editable ? (
             <JobTypePicker
@@ -180,7 +186,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} row={2} colSpan={2}>
+      <CellAt col={5} row={3} colSpan={2}>
         <FormField label="Scheduled For">
           <DateCell
             editable={editable}
@@ -189,7 +195,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={7} row={2} colSpan={1}>
+      <CellAt col={7} row={3} colSpan={1}>
         <FormField label="Time of Day">
           <SegmentedChoiceCell
             editable={editable}
@@ -200,7 +206,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} row={3} colSpan={3}>
+      <CellAt col={5} row={4} colSpan={3}>
         <FormField
           label="Description"
           currentLength={editable ? draft.description.length : undefined}
@@ -217,7 +223,7 @@ export function WorkOrderPrimaryFieldsSection({
       </CellAt>
 
       {/* Management company + property pair the schedule rows on the left */}
-      <CellAt col={1} row={1} colSpan={4}>
+      <CellAt col={1} row={2} colSpan={4}>
         <FormField
           label="Management Company"
           actions={
@@ -242,7 +248,7 @@ export function WorkOrderPrimaryFieldsSection({
           <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={2} colSpan={4}>
+      <CellAt col={1} row={3} colSpan={4}>
         <FormField
           label="Property"
           required
@@ -299,7 +305,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
       {/* Template → notes: single 4-col stack on the left, under Description */}
-      <CellAt col={1} row={5} colSpan={4}>
+      <CellAt col={1} row={6} colSpan={4}>
         <FormField
           label="Template"
           actions={
@@ -336,7 +342,7 @@ export function WorkOrderPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} row={6} colSpan={4}>
+      <CellAt col={1} row={7} colSpan={4}>
         <FormField
           label="Unit Type"
           currentLength={editable ? draft.unitType.length : undefined}
@@ -350,7 +356,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={7} colSpan={2}>
+      <CellAt col={1} row={8} colSpan={2}>
         <FormField
           label="Unit Number"
           currentLength={editable ? draft.unitNumber.length : undefined}
@@ -364,7 +370,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={3} row={7} colSpan={2}>
+      <CellAt col={3} row={8} colSpan={2}>
         <FormField label="Vacancy">
           <SegmentedChoiceCell
             editable={editable}
@@ -376,21 +382,21 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
       {/* Property address + custom address sit to the left of Description */}
-      <CellAt col={1} row={3} colSpan={2}>
+      <CellAt col={1} row={4} colSpan={2}>
         <FormField label="Property Address">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{addressDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={4} colSpan={4}>
+      <CellAt col={1} row={5} colSpan={4}>
         <FormField label="Property Instructions">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{instructionsDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={3} row={3} colSpan={2}>
+      <CellAt col={3} row={4} colSpan={2}>
         <FormField
           label="Custom Address"
           currentLength={editable ? draft.customAddress.length : undefined}
@@ -405,7 +411,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} row={4} colSpan={3}>
+      <CellAt col={5} row={5} colSpan={3}>
         <FormField
           label="Installer Instructions"
           currentLength={editable ? draft.installerInstructions.length : undefined}
@@ -420,7 +426,7 @@ export function WorkOrderPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} row={5} colSpan={3}>
+      <CellAt col={5} row={6} colSpan={3}>
         <FormField
           label="Internal Notes"
           currentLength={editable ? draft.internalNotes.length : undefined}
@@ -437,12 +443,12 @@ export function WorkOrderPrimaryFieldsSection({
       </CellAt>
       {detail ? (
         <>
-          <CellAt col={1} row={8} colSpan={2}>
+          <CellAt col={1} row={9} colSpan={2}>
             <FormField label="Created">
               <StaticFieldValue>{formatEasternDateTime(detail.createdAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
-          <CellAt col={3} row={8} colSpan={2}>
+          <CellAt col={3} row={9} colSpan={2}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(detail.updatedAt) || "—"}</StaticFieldValue>
             </FormField>

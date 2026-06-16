@@ -5,6 +5,7 @@
  * without a server round-trip. Pass `null` from create flows.
  */
 export type WorkOrderPrimaryDetail = {
+  workOrderNumber: string
   propertyId: string
   propertyName: string
   propertyStreetAddress: string

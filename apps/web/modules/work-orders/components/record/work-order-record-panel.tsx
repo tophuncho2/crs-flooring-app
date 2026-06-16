@@ -101,6 +101,7 @@ export function WorkOrderRecordPanel({
                 <WorkOrderPrimaryFieldsSection
                   draft={controller.primarySection.localValue}
                   detail={{
+                    workOrderNumber: controller.record.workOrderNumber,
                     propertyId: controller.record.propertyId,
                     propertyName: controller.record.propertyName,
                     propertyStreetAddress: controller.record.propertyStreetAddress,

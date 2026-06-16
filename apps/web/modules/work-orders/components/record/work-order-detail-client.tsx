@@ -24,7 +24,7 @@ export function WorkOrderDetailClient({
 }) {
   return (
     <RecordDetailClientScaffold
-      title={initialWorkOrder.workOrderNumber}
+      title="Work Orders Hub"
       backHref={backHref}
       dirtyMessage="You have unsaved work-order changes. Leave this record without saving?"
       headerVariant="section"
