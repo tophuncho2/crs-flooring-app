@@ -133,6 +133,7 @@ export function PropertyRecordView({
               editable={!primary.isSaving}
               onOpen={openManagementCompany}
             />
+            <div className="border-t border-[var(--panel-border)]" />
             <PropertyFieldsSection
               draft={primary.localValue}
               editable={!primary.isSaving}
