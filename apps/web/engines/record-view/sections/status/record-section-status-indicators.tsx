@@ -7,15 +7,19 @@ export function RecordSectionSaveStateIndicators({
   isDirty,
   isSaving,
   hasConflict,
+  leading,
   extra,
 }: {
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
+  /** Node rendered before the state pill (e.g. a row count). */
+  leading?: ReactNode
   extra?: ReactNode
 }) {
   return (
     <>
+      {leading}
       <RecordSectionStatusBadge tone={isSaving ? "processing" : isDirty ? "warning" : "success"}>
         {isSaving ? "Saving" : isDirty ? "Dirty" : "Saved"}
       </RecordSectionStatusBadge>

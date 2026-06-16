@@ -62,6 +62,8 @@ export type RecordSectionSubHeaderProps = {
   actionsLeading?: ReactNode
   /** Node rendered to the right of the action buttons (e.g. an options menu). */
   actionsTrailing?: ReactNode
+  /** Node rendered before the save-state pill in the status row (e.g. a row count). */
+  statusLeading?: ReactNode
   statusExtra?: ReactNode
   canManage?: boolean
   showStatus?: boolean
@@ -87,6 +89,7 @@ export function RecordSectionSubHeader({
   actions = [],
   actionsLeading,
   actionsTrailing,
+  statusLeading,
   statusExtra,
   canManage = true,
   showStatus = true,
@@ -146,6 +149,7 @@ export function RecordSectionSubHeader({
         isDirty={isDirty}
         isSaving={isSaving}
         hasConflict={hasConflict}
+        leading={statusLeading}
         extra={statusExtra}
       />
     ) : null

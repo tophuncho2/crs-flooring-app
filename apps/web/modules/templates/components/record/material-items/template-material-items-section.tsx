@@ -58,7 +58,11 @@ export function TemplateMaterialItemsSection({
       noticeMessage={noticeMessage}
       noticeError={noticeError}
       subHeader={{
-        summary: `${items.length} item${items.length === 1 ? "" : "s"}`,
+        statusLeading: (
+          <span className="inline-flex items-center rounded-xl border border-[rgba(58,58,58,0.72)] bg-[var(--panel-hover)] px-3 py-2 text-sm text-[var(--foreground)]/75">
+            {items.length} item{items.length === 1 ? "" : "s"}
+          </span>
+        ),
         isDirty,
         isSaving,
         hasConflict,
