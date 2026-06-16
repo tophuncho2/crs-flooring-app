@@ -15,12 +15,15 @@ const SECTION_CARD_CLASS =
   "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
 
 /**
- * The quick-create property form mounted in a modal inside a record view — a
- * trimmed copy of the full hub create page (`PropertyHubCreatePanel`). Shows the
- * MC picker + MC name (create), and property name/address/instructions; omits MC
- * phone/email/address and property phone/email. Creates atomically via
- * `/api/properties/hub`, then hands the created records back through `onCreated`
- * so the host can fill the originating cell (no navigation).
+ * The quick-create property form mounted in a modal inside a record view — the
+ * full hub create form (`PropertyHubCreatePanel`'s field set) without the page
+ * scaffold/navigation. Creates atomically via `/api/properties/hub`, then hands
+ * the created records back through `onCreated` so the host can fill the
+ * originating cell (no navigation).
+ *
+ * The select/field sections accept visibility flags (`compact` /
+ * `showContact`) to trim cells for leaner quick forms; this property form
+ * renders the full set, matching the proper form.
  */
 export function PropertyHubQuickCreateModal({
   open,
@@ -60,7 +63,6 @@ export function PropertyHubQuickCreateModal({
         <ManagementCompanySelectSection
           value={controller.localValue}
           disabled={!editable}
-          compact
           onLink={(option) =>
             controller.setLocalValue((prev) =>
               option
@@ -90,7 +92,6 @@ export function PropertyHubQuickCreateModal({
               draft={controller.localValue.propertyForm}
               editable={editable}
               ariaPrefix="Property"
-              showContact={false}
               onFieldChange={(field, next) =>
                 controller.setLocalValue((prev) => ({
                   ...prev,
