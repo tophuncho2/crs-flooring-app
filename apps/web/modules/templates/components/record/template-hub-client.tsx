@@ -82,9 +82,7 @@ function TemplateHubView({
           <div className={PROMPT_CARD_CLASS}>Loading template…</div>
         ) : templateDetail ? (
           <TemplateRecordPanel key={templateDetail.id} page={page} template={templateDetail} />
-        ) : (
-          <div className={PROMPT_CARD_CLASS}>Select a template to view and edit it.</div>
-        )}
+        ) : null}
       </div>
     </div>
   )
