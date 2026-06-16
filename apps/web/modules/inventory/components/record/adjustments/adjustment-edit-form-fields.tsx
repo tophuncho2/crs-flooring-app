@@ -43,11 +43,11 @@ const WASTE_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
  * no group chrome. The work-order cells live in `AdjustmentPickerStack`, ahead of
  * these in the same grid.
  *
- * Create mode: Quantity + Type, then a locked Location, then Notes + the waste
- * segmented cell. Edit mode adds the before→after Adjustment transition next to
- * Location and the Created / Updated timestamps, and unlocks Location. Every
- * field is freely editable (only disabled mid-save); flipping the type re-flows
- * the before→after transition server-side on each save.
+ * Single full-width stack in both modes: Location, Quantity, Type. Create stops
+ * there with Notes then Waste; edit inserts the before→after Adjustment transition
+ * under Type, then Notes / Waste, then the Created / Updated timestamps, and
+ * unlocks Location. Every field is freely editable (only disabled mid-save);
+ * flipping the type re-flows the before→after transition server-side on each save.
  */
 export function AdjustmentEditFormFields({
   mode,
@@ -65,7 +65,7 @@ export function AdjustmentEditFormFields({
   const editable = !isSaving
 
   const wasteCell = (
-    <CellAt col={5} colSpan={2}>
+    <CellAt col={1} colSpan={4}>
       <FormField label="Waste">
         <SegmentedChoiceCell
           editable={editable}
@@ -79,7 +79,7 @@ export function AdjustmentEditFormFields({
   )
 
   const typeCell = (
-    <CellAt col={5} colSpan={2}>
+    <CellAt col={1} colSpan={4}>
       <FormField label="Type">
         <SegmentedDropdown
           value={form.adjustmentType}
@@ -133,8 +133,6 @@ export function AdjustmentEditFormFields({
   if (mode === "create" || !adjustment) {
     return (
       <>
-        {quantityCell}
-        {typeCell}
         {/* Seeded from the parent inventory's location and locked during create.
             Becomes editable once the row exists (edit branch below). */}
         <CellAt col={1} colSpan={4}>
@@ -148,6 +146,8 @@ export function AdjustmentEditFormFields({
             />
           </FormField>
         </CellAt>
+        {quantityCell}
+        {typeCell}
         {notesCell}
         {wasteCell}
       </>
@@ -158,8 +158,6 @@ export function AdjustmentEditFormFields({
 
   return (
     <>
-      {quantityCell}
-      {typeCell}
       <CellAt col={1} colSpan={4}>
         <FormField
           label="Location"
@@ -176,7 +174,9 @@ export function AdjustmentEditFormFields({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} colSpan={2}>
+      {quantityCell}
+      {typeCell}
+      <CellAt col={1} colSpan={4}>
         <FormField label="Adjustment">
           <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
         </FormField>
