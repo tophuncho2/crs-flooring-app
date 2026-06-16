@@ -1,25 +1,24 @@
 "use client"
 
 export type ArchiveSegmentedControlProps = {
-  /** `false` = Active only, `true` = Archived only, `undefined` = All. */
-  value: boolean | undefined
-  onChange: (next: boolean | undefined) => void
+  /** `false` = Active only, `true` = Archived only. */
+  value: boolean
+  onChange: (next: boolean) => void
 }
 
-const SEGMENTS: Array<{ key: string; label: string; value: boolean | undefined }> = [
+const SEGMENTS: Array<{ key: string; label: string; value: boolean }> = [
   { key: "active", label: "Active", value: false },
   { key: "archived", label: "Archived", value: true },
-  { key: "all", label: "All", value: undefined },
 ]
 
 /**
- * Inventory list-view segmented control replacing the prior single-button
- * "Hide archived" chip. Three mutually-exclusive states:
- *   - Active    → `value === false`  (URL `archived=false`)
+ * List-view segmented control replacing the prior single-button "Hide archived"
+ * chip. Two mutually-exclusive states; the list defaults to Active:
+ *   - Active    → `value === false`  (URL `archived=false` / absent)
  *   - Archived  → `value === true`   (URL `archived=true`)
- *   - All       → `value === undefined` (filter absent)
  *
- * Designed to live inside a `ListToolbarTallCard` labelled "Status".
+ * Designed to live inside a `ListToolbarTallCard` labelled "Status". Shared by
+ * the inventory and adjustments list views.
  */
 export function ArchiveSegmentedControl({
   value,
@@ -28,7 +27,7 @@ export function ArchiveSegmentedControl({
   return (
     <div
       role="radiogroup"
-      aria-label="Inventory archive status"
+      aria-label="Archive status"
       className="inline-flex w-full items-stretch rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] p-0.5"
     >
       {SEGMENTS.map((segment) => {

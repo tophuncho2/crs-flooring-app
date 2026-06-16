@@ -163,8 +163,8 @@ export default function AdjustmentsClient({
   const selectedPurchaseOrderNumber = filters.purchaseOrderNumber?.[0] ?? null
   const selectedImportNumber = filters.importNumber?.[0] ?? null
   const archivedRaw = filters.isArchived?.[0]
-  const isArchivedValue =
-    archivedRaw === "true" ? true : archivedRaw === "false" ? false : undefined
+  // Defaults to Active (`false`) — there is no "All" state; absent means active.
+  const isArchivedValue = archivedRaw === "true"
   const invNumberValue = filters.invNumber?.[0] ?? ""
   const rollNumberValue = filters.rollNumber?.[0] ?? ""
   const dyeLotValue = filters.dyeLot?.[0] ?? ""
@@ -236,8 +236,8 @@ export default function AdjustmentsClient({
   )
 
   const handleArchivedChange = useCallback(
-    (next: boolean | undefined) => {
-      onFilterChange("isArchived", next === undefined ? [] : [next ? "true" : "false"])
+    (next: boolean) => {
+      onFilterChange("isArchived", [next ? "true" : "false"])
     },
     [onFilterChange],
   )
@@ -259,7 +259,7 @@ export default function AdjustmentsClient({
       Boolean(selectedProductId) ||
       Boolean(selectedPurchaseOrderNumber) ||
       Boolean(selectedImportNumber) ||
-      isArchivedValue !== undefined ||
+      isArchivedValue ||
       Boolean(invNumberValue) ||
       Boolean(rollNumberValue) ||
       Boolean(dyeLotValue) ||

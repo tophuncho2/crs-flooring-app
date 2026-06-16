@@ -366,9 +366,10 @@ export async function listAdjustmentsForListView(
   if (purchaseOrderNumbers && purchaseOrderNumbers.length > 0) {
     inventoryWhere.purchaseOrderNumber = { in: [...purchaseOrderNumbers] }
   }
-  if (args.filters.isArchived !== undefined) {
-    inventoryWhere.isArchived = args.filters.isArchived
-  }
+  // Default to active (non-archived) parent inventory when the filter is
+  // absent — mirrors the inventory list's `buildListViewWhere`. Only an
+  // explicit `isArchived: true` surfaces archived rows.
+  inventoryWhere.isArchived = args.filters.isArchived === true
   if (Object.keys(inventoryWhere).length > 0) {
     where.inventory = { is: inventoryWhere }
   }

@@ -178,8 +178,8 @@ export default function InventoryClient({
   const selectedImportNumber = filters.importNumber?.[0] ?? null
   const locationValue = filters.location?.[0] ?? ""
   const archivedRaw = filters.isArchived?.[0]
-  const isArchivedValue =
-    archivedRaw === "true" ? true : archivedRaw === "false" ? false : undefined
+  // Defaults to Active (`false`) — there is no "All" state; absent means active.
+  const isArchivedValue = archivedRaw === "true"
 
   // --- Per-field identity search bars ---
   const invNumberValue = filters.invNumber?.[0] ?? ""
@@ -276,11 +276,8 @@ export default function InventoryClient({
   )
 
   const handleArchivedChange = useCallback(
-    (next: boolean | undefined) => {
-      onFilterChange(
-        "isArchived",
-        next === undefined ? [] : [next ? "true" : "false"],
-      )
+    (next: boolean) => {
+      onFilterChange("isArchived", [next ? "true" : "false"])
     },
     [onFilterChange],
   )
@@ -310,7 +307,7 @@ export default function InventoryClient({
     ) {
       return true
     }
-    if (isArchivedValue !== undefined) return true
+    if (isArchivedValue) return true
     return false
   }, [
     selectedWarehouseId,
