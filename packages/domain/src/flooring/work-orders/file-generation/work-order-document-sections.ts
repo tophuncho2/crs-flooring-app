@@ -184,36 +184,27 @@ export function renderWorkOrderAdjustments(
   options: { includeInventoryDetail?: boolean } = {},
 ): string {
   // includeInventoryDetail (default true → Picking Ticket): the warehouse view
-  // shows where stock came from and the balance change, so every adjustment is
-  // flattened into its own row labeled with its parent product name (the leading
-  // column). The Slip (false) is a customer-facing summary — Product / Quantity
-  // only — and collapses each material item's adjustments into ONE row,
-  // summing Quantity.
+  // adds the Dyelot/Roll# and before→after Adjustment + Location columns. The
+  // Slip (false) is the customer-facing summary — Product / Quantity only.
+  // BOTH views render the same structure: one row per adjustment grouped by
+  // product, each group closed by a summed subtotal row. The only difference is
+  // which columns show.
   const includeInventoryDetail = options.includeInventoryDetail ?? true
-  let renderedRows: string
-  if (includeInventoryDetail) {
-    const itemsWithAdjustments = items.filter((item) => item.inventoryAdjustments.length > 0)
-    if (itemsWithAdjustments.length === 0) {
-      return ""
-    }
-    // One product group at a time: its adjustment rows, then a summed subtotal
-    // row (Quantity) under a rule. Every group gets a subtotal for
-    // visual consistency, even single-adjustment groups. Never a grand total.
-    renderedRows = itemsWithAdjustments
-      .map((item) => {
-        const adjustmentRows = item.inventoryAdjustments
-          .map((adj) => renderAdjustmentRow({ adj, productName: item.productName }, true))
-          .join("\n")
-        return `${adjustmentRows}\n${renderPickingTicketSubtotalRow(item)}`
-      })
-      .join("\n")
-  } else {
-    const itemsWithAdjustments = items.filter((item) => item.inventoryAdjustments.length > 0)
-    if (itemsWithAdjustments.length === 0) {
-      return ""
-    }
-    renderedRows = itemsWithAdjustments.map(renderSummedSlipItemRow).join("\n")
+  const itemsWithAdjustments = items.filter((item) => item.inventoryAdjustments.length > 0)
+  if (itemsWithAdjustments.length === 0) {
+    return ""
   }
+  // One product group at a time: its adjustment rows, then a summed subtotal
+  // row (Quantity) under a rule. Every group gets a subtotal for visual
+  // consistency, even single-adjustment groups. Never a grand total.
+  const renderedRows = itemsWithAdjustments
+    .map((item) => {
+      const adjustmentRows = item.inventoryAdjustments
+        .map((adj) => renderAdjustmentRow({ adj, productName: item.productName }, includeInventoryDetail))
+        .join("\n")
+      return `${adjustmentRows}\n${renderSubtotalRow(item, includeInventoryDetail)}`
+    })
+    .join("\n")
   const headCells = includeInventoryDetail
     ? `<th>Product</th>
       <th>Dyelot</th>
@@ -275,35 +266,23 @@ function renderAdjustmentRow(
 }
 
 /**
- * Slip-only: one collapsed row per material item — Product / Quantity, with
- * Quantity summed across all of the item's adjustments.
+ * A per-product-group subtotal row appended beneath the group's adjustment
+ * rows. The Quantity cell carries the group sum under a rule (`.subtotal-cell`
+ * border-top); every other cell is empty. Mirrors `renderAdjustmentRow`'s
+ * column layout — six cells on the Picking Ticket (includeInventoryDetail),
+ * two on the Slip (Product / Quantity).
  */
-function renderSummedSlipItemRow(item: WorkOrderFileMaterialItemProjection): string {
+function renderSubtotalRow(
+  item: WorkOrderFileMaterialItemProjection,
+  includeInventoryDetail: boolean,
+): string {
   const { quantity, stockUnitAbbrev } = sumAssignmentQuantities(item.inventoryAdjustments)
+  const leadDetailCells = includeInventoryDetail ? "\n  <td></td>\n  <td></td>" : ""
+  const trailDetailCells = includeInventoryDetail ? "\n  <td></td>\n  <td></td>" : ""
   return `
 <tr>
-  <td>${escapeOrEmpty(item.productName)}</td>
-  <td class="cl-num">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
-</tr>
-`.trim()
-}
-
-/**
- * Picking-Ticket-only: a per-product-group subtotal row appended beneath the
- * group's adjustment rows. Empty Product/Dyelot/Roll#/Adjustment/Location cells;
- * the Quantity cell carries the group sum under a rule (`.subtotal-cell`
- * border-top). Mirrors the 6-column adjustment-row layout.
- */
-function renderPickingTicketSubtotalRow(item: WorkOrderFileMaterialItemProjection): string {
-  const { quantity, stockUnitAbbrev } = sumAssignmentQuantities(item.inventoryAdjustments)
-  return `
-<tr>
-  <td></td>
-  <td></td>
-  <td></td>
-  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
-  <td></td>
-  <td></td>
+  <td></td>${leadDetailCells}
+  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>${trailDetailCells}
 </tr>
 `.trim()
 }

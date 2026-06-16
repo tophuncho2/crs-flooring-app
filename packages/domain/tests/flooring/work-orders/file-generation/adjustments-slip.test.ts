@@ -3,7 +3,7 @@ import { buildWorkOrderSlipHtml } from "../../../../src/flooring/work-orders/fil
 import { renderWorkOrderAdjustments } from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
 import { makeAdjustment, makeFileGenInput, makeMaterialItem } from "./_fixtures.js"
 
-// Slip = the customer-facing, collapsed variant.
+// Slip = the customer-facing variant (Product / Quantity columns only).
 function slipTable(items: ReturnType<typeof makeMaterialItem>[]): string {
   return renderWorkOrderAdjustments(items, { includeInventoryDetail: false })
 }
@@ -29,8 +29,8 @@ describe("slip — header is Product / Quantity only", () => {
   })
 })
 
-describe("slip — collapsed to one row per material item", () => {
-  it("emits a single row for an item with many adjustments", () => {
+describe("slip — one row per adjustment + a subtotal (mirrors the picking ticket)", () => {
+  it("emits N detail rows + 1 subtotal row for an item with N adjustments", () => {
     const item = makeMaterialItem({
       productName: "Shaw Carpet",
       inventoryAdjustments: [
@@ -41,11 +41,11 @@ describe("slip — collapsed to one row per material item", () => {
     })
     const html = slipTable([item])
 
-    // <tr> count = 1 header + 1 collapsed item row
-    expect(count(html, "<tr>")).toBe(2)
+    // <tr> count = 1 header + 3 detail + 1 subtotal = 5
+    expect(count(html, "<tr>")).toBe(5)
     expect(html).toContain("<td>Shaw Carpet</td>")
-    // summed quantity (17), no per-adjustment breakdown
-    expect(html).toContain('<td class="cl-num">17 rolls</td>')
+    // summed quantity (17) under a subtotal-cell rule
+    expect(html).toContain('<td class="cl-num subtotal-cell">17 rolls</td>')
   })
 })
 
@@ -74,35 +74,38 @@ describe("slip — no warehouse detail leaks into the output", () => {
   })
 })
 
-describe("slip — no subtotal rows", () => {
-  it("never renders a subtotal-cell row", () => {
+describe("slip — per-group subtotal row", () => {
+  it("renders exactly one subtotal-cell per product group", () => {
     const html = slipTable([
       makeMaterialItem({
         inventoryAdjustments: [makeAdjustment({ id: "a1" }), makeAdjustment({ id: "a2" })],
       }),
     ])
     // Match the rendered cell, not the bare class (which also appears as a CSS rule).
-    expect(html).not.toContain('<td class="cl-num subtotal-cell">')
+    expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(1)
   })
 })
 
 describe("slip — wired through the full builder", () => {
-  it("buildWorkOrderSlipHtml collapses and omits detail", () => {
+  it("buildWorkOrderSlipHtml lists each adjustment, subtotals, and omits detail", () => {
     const input = makeFileGenInput({
       materialItems: [
         makeMaterialItem({
           productName: "Vinyl Plank",
           inventoryAdjustments: [
-            makeAdjustment({ quantity: "3", location: "LOC-LEAK" }),
-            makeAdjustment({ quantity: "7", location: "LOC-LEAK" }),
+            makeAdjustment({ id: "a1", quantity: "3", location: "LOC-LEAK" }),
+            makeAdjustment({ id: "a2", quantity: "7", location: "LOC-LEAK" }),
           ],
         }),
       ],
     })
     const html = buildWorkOrderSlipHtml(input)
     expect(html).toContain("<td>Vinyl Plank</td>")
-    expect(html).toContain('<td class="cl-num">10 rolls</td>')
+    // each adjustment on its own row, then the summed subtotal under a rule
+    expect(html).toContain('<td class="cl-num">3 rolls</td>')
+    expect(html).toContain('<td class="cl-num">7 rolls</td>')
+    expect(html).toContain('<td class="cl-num subtotal-cell">10 rolls</td>')
+    // warehouse-only detail still never leaks onto the slip
     expect(html).not.toContain("LOC-LEAK")
-    expect(html).not.toContain('<td class="cl-num subtotal-cell">')
   })
 })

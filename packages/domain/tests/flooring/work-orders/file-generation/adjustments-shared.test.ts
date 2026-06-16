@@ -11,7 +11,7 @@ const slip = (items: Items) => renderWorkOrderAdjustments(items, { includeInvent
 
 // A single material item whose adjustments carry the given (quantity, unit)
 // pairs and no coverage — used to observe sum formatting through the slip's
-// collapsed Quantity cell in isolation.
+// per-group subtotal cell in isolation.
 function slipQtyOnly(quantities: string[], stockUnitAbbrev = ""): string {
   return slip([
     makeMaterialItem({
@@ -61,7 +61,7 @@ describe("both sections — items without adjustments are filtered out", () => {
 })
 
 describe("both sections — summed totals are identical (shared sumItemTotals)", () => {
-  it("the slip's collapsed total equals the picking ticket's subtotal", () => {
+  it("the slip's subtotal equals the picking ticket's subtotal", () => {
     const item = makeMaterialItem({
       inventoryAdjustments: [
         makeAdjustment({ id: "a1", quantity: "10", stockUnitAbbrev: "rolls" }),
@@ -69,10 +69,9 @@ describe("both sections — summed totals are identical (shared sumItemTotals)",
       ],
     })
 
-    // Picking ticket: under a subtotal-cell rule.
+    // Both views close the group with the same number under a subtotal-cell rule.
     expect(picking([item])).toContain('<td class="cl-num subtotal-cell">15 rolls</td>')
-    // Slip: the same number in the plain collapsed row.
-    expect(slip([item])).toContain('<td class="cl-num">15 rolls</td>')
+    expect(slip([item])).toContain('<td class="cl-num subtotal-cell">15 rolls</td>')
   })
 
   it("picks the unit abbrev from the first adjustment that carries one", () => {
@@ -82,33 +81,33 @@ describe("both sections — summed totals are identical (shared sumItemTotals)",
         makeAdjustment({ id: "a2", quantity: "2", stockUnitAbbrev: "boxes" }),
       ],
     })
-    expect(slip([item])).toContain('<td class="cl-num">3 boxes</td>')
+    expect(slip([item])).toContain('<td class="cl-num subtotal-cell">3 boxes</td>')
   })
 })
 
 describe("both sections — sumDecimalStrings formatting (via rendered totals)", () => {
   it("trims trailing zeros and dot: 10.00 → 10", () => {
-    expect(slipQtyOnly(["10.00"])).toContain('<td class="cl-num">10</td>')
+    expect(slipQtyOnly(["10.00"])).toContain('<td class="cl-num subtotal-cell">10</td>')
   })
 
   it("trims to a single decimal: 10.50 → 10.5", () => {
-    expect(slipQtyOnly(["10.50"])).toContain('<td class="cl-num">10.5</td>')
+    expect(slipQtyOnly(["10.50"])).toContain('<td class="cl-num subtotal-cell">10.5</td>')
   })
 
   it("keeps significant decimals: 0.25 stays 0.25", () => {
-    expect(slipQtyOnly(["0.25"])).toContain('<td class="cl-num">0.25</td>')
+    expect(slipQtyOnly(["0.25"])).toContain('<td class="cl-num subtotal-cell">0.25</td>')
   })
 
   it("skips empty values when summing", () => {
-    expect(slipQtyOnly(["10", "", ""])).toContain('<td class="cl-num">10</td>')
+    expect(slipQtyOnly(["10", "", ""])).toContain('<td class="cl-num subtotal-cell">10</td>')
   })
 
   it("rounds the summed total to two decimals: 0.1 + 0.2 → 0.3", () => {
-    expect(slipQtyOnly(["0.1", "0.2"])).toContain('<td class="cl-num">0.3</td>')
+    expect(slipQtyOnly(["0.1", "0.2"])).toContain('<td class="cl-num subtotal-cell">0.3</td>')
   })
 
   it("renders the empty-cell placeholder when nothing is summable", () => {
-    expect(slipQtyOnly(["", ""])).toContain(`<td class="cl-num">${EMPTY_CELL}</td>`)
+    expect(slipQtyOnly(["", ""])).toContain(`<td class="cl-num subtotal-cell">${EMPTY_CELL}</td>`)
   })
 })
 
