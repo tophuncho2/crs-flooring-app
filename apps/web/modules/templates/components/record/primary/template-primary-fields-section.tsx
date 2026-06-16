@@ -11,6 +11,7 @@ import {
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
+  formatEasternDateTime,
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
@@ -40,6 +41,8 @@ export type TemplatePrimaryDetail = {
   jobTypeName: string | null
   warehouseId: string | null
   warehouseName: string
+  createdAt: string
+  updatedAt: string
 }
 
 /**
@@ -169,6 +172,19 @@ export function TemplatePrimaryFieldsSection({
             maxLength={TEMPLATE_INTERNAL_NOTES_MAX}
             rows={4}
           />
+        </FormField>
+      </CellAt>
+
+      {/* Bottom row: read-only created / updated timestamps, mirroring the
+          work-orders record view's Created / Updated cell pair. */}
+      <CellAt col={1} row={6} colSpan={2}>
+        <FormField label="Created">
+          <StaticFieldValue>{detail ? formatEasternDateTime(detail.createdAt) || "—" : "—"}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={3} row={6} colSpan={2}>
+        <FormField label="Updated">
+          <StaticFieldValue>{detail ? formatEasternDateTime(detail.updatedAt) || "—" : "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
     </FieldSection>

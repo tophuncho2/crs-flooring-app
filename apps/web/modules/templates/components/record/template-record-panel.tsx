@@ -91,6 +91,8 @@ export function TemplateRecordPanel({
                     jobTypeName: primary.record.jobTypeName,
                     warehouseId: primary.record.warehouseId,
                     warehouseName: primary.record.warehouseName,
+                    createdAt: primary.record.createdAt,
+                    updatedAt: primary.record.updatedAt,
                   }}
                   disabled={primary.primarySection.isSaving}
                   onFieldChange={(field, value) => {

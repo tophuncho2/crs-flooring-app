@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import type { TemplateListRow } from "@builders/domain"
+import { formatEasternDateTime, type TemplateListRow } from "@builders/domain"
 
 /**
  * Per-cell renderer for the templates list `DataTable`. Switches on
@@ -28,6 +28,10 @@ export function renderTemplateRowCell(
       return <span className="tabular-nums">{row.itemsCount}</span>
     case "templateNumber":
       return <span className="font-medium">{row.templateNumber}</span>
+    case "createdAt":
+      return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
+    case "updatedAt":
+      return <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
     default:
       return "-"
   }

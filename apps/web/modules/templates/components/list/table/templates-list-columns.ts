@@ -16,4 +16,6 @@ export const TEMPLATES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<TemplateListR
   { key: "description", label: "Description" },
   { key: "items", label: "Items", align: "end" },
   { key: "templateNumber", label: "Template #" },
+  { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
 ]
