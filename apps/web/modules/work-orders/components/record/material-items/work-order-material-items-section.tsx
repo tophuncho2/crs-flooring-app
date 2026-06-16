@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import type { InventoryRow } from "@builders/domain"
-import { NumberCell, TextCell } from "@/engines/record-view"
+import { NumberCell, RecordItemSection, TextCell } from "@/engines/record-view"
 import { useExpandableRowsToggle } from "@/engines/record-view"
 import { Grid, GridEmpty, type GridLayout } from "@/engines/record-view"
 import { ExpandableRow, UnsavedParentMessage } from "@/engines/record-view"
@@ -12,13 +12,12 @@ import { ProductCategoryPicker } from "@/modules/products/components/picker/prod
 import {
   type EnrichedInventoryAdjustmentRow,
   type WorkOrderDetail,
-  type WorkOrderMaterialItemRow,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
   sumAssignmentQuantities,
 } from "@builders/domain"
-import {
-  useWorkOrderMaterialItemsSection,
-  type WorkOrderMaterialItemLocal,
+import type {
+  WorkOrderMaterialItemLocal,
+  WorkOrderMaterialItemsSectionController,
 } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { buildCurrentRecordEntryPath, buildInventoryRecordHref } from "@/hooks/navigation"
 import {
@@ -26,7 +25,7 @@ import {
   inventoryRowFromAdjustment,
 } from "@/modules/inventory/components/record/adjustments/adjustment-create-modal"
 import { WorkOrderAdjustmentRow } from "./work-order-adjustment-row"
-import { MaterialItemsSectionHeader } from "./material-items-section-header"
+import { MaterialItemsExpandToggle } from "./toolbar-controls"
 import { MaterialItemRemoveButton } from "./row-controls"
 
 /**
@@ -52,24 +51,14 @@ const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> =
 
 export function WorkOrderMaterialItemsSection({
   workOrder,
-  materialItems,
   adjustmentsByWorkOrderItemId,
-  publishMaterialItems,
-  publishWorkOrder,
+  section,
 }: {
   workOrder: WorkOrderDetail
-  materialItems: WorkOrderMaterialItemRow[]
   adjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]>
-  publishMaterialItems: (rows: WorkOrderMaterialItemRow[]) => void
-  publishWorkOrder: (record: WorkOrderDetail) => void
+  /** Section controller, instantiated in the panel and registered for dirty tracking. */
+  section: WorkOrderMaterialItemsSectionController
 }) {
-  const section = useWorkOrderMaterialItemsSection({
-    workOrder,
-    materialItems,
-    publishMaterialItems,
-    publishWorkOrder,
-  })
-
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -253,64 +242,88 @@ export function WorkOrderMaterialItemsSection({
     return null
   }
 
-  const sectionError = section.error ? section.error.message : section.noticeError || null
-
   return (
     <>
-    <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-      <MaterialItemsSectionHeader
-        itemsCount={section.items.length}
-        isSaving={section.isSaving}
-        isDirty={section.isDirty}
-        hasConflict={section.hasConflict}
+      <RecordItemSection
+        title="Material Items"
+        // `item` sections default these off — unlock the managed Save/Discard path
+        // and the add action so the sub-header renders the controls that used to
+        // live in the bespoke ActionHeader.
+        capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
         noticeMessage={section.noticeMessage}
-        error={sectionError || null}
-        allExpanded={allExpanded}
-        onToggleAll={toggleAll}
-        onDiscard={() => section.discard()}
-        onSave={() => void section.save()}
-        onAddItem={section.addItem}
-      />
-
-      <Grid<WorkOrderMaterialItemLocal>
-        rows={section.items}
-        layout={WORK_ORDER_MATERIAL_ITEMS_LAYOUT}
-        empty={<GridEmpty>No material items yet.</GridEmpty>}
-        renderRow={(row) => {
-          const isExpanded = allExpanded
-          const adjustments = adjustmentsByWorkOrderItemId[row.id] ?? []
-          return (
-            <Fragment>
-              <ExpandableRow<WorkOrderMaterialItemLocal>
-                parentRow={row}
-                parentLayout={WORK_ORDER_MATERIAL_ITEMS_LAYOUT}
-                expanded={isExpanded}
-                renderParentCell={renderParentCell}
-                renderParentControl={renderParentControl}
-                accentTone="sky"
-              >
-                {isExpanded ? (
-                  isLocalOnlyRecordRow(row.id) ? (
-                    <UnsavedParentMessage>
-                      Save this material item to add adjustments.
-                    </UnsavedParentMessage>
-                  ) : (
-                    <WorkOrderAdjustmentRow
-                      workOrderItemId={row.id}
-                      serverRows={adjustments}
-                      onOpenEdit={handleOpenEdit}
-                      onCreateNew={handleCreateNew}
-                      onDuplicate={handleDuplicate}
-                      isSectionBusy={sectionBusy}
-                    />
-                  )
-                ) : null}
-              </ExpandableRow>
-            </Fragment>
-          )
+        noticeError={section.noticeError}
+        subHeader={{
+          statusLeading: (
+            <div className="flex items-center gap-2">
+              <MaterialItemsExpandToggle
+                itemsCount={section.items.length}
+                allExpanded={allExpanded}
+                onToggle={toggleAll}
+              />
+              <span className="inline-flex items-center rounded-xl border border-[rgba(58,58,58,0.72)] bg-[var(--panel-hover)] px-3 py-2 text-sm text-[var(--foreground)]/75">
+                {section.items.length} item{section.items.length === 1 ? "" : "s"}
+              </span>
+            </div>
+          ),
+          isDirty: section.isDirty,
+          isSaving: section.isSaving,
+          hasConflict: section.hasConflict,
+          onSave: () => void section.save(),
+          onDiscard: () => section.discard(),
+          saveLabel: "Save Material Items",
+          savingLabel: "Saving Material Items...",
+          discardLabel: "Discard",
+          error: section.error ? section.error.message : null,
+          actions: [
+            {
+              key: "add",
+              label: "+ Add Material Item",
+              kind: "add-row",
+              onClick: section.addItem,
+              disabled: section.isSaving,
+            },
+          ],
         }}
-      />
-    </div>
+      >
+        <Grid<WorkOrderMaterialItemLocal>
+          rows={section.items}
+          layout={WORK_ORDER_MATERIAL_ITEMS_LAYOUT}
+          empty={<GridEmpty>No material items yet.</GridEmpty>}
+          renderRow={(row) => {
+            const isExpanded = allExpanded
+            const adjustments = adjustmentsByWorkOrderItemId[row.id] ?? []
+            return (
+              <Fragment>
+                <ExpandableRow<WorkOrderMaterialItemLocal>
+                  parentRow={row}
+                  parentLayout={WORK_ORDER_MATERIAL_ITEMS_LAYOUT}
+                  expanded={isExpanded}
+                  renderParentCell={renderParentCell}
+                  renderParentControl={renderParentControl}
+                  accentTone="sky"
+                >
+                  {isExpanded ? (
+                    isLocalOnlyRecordRow(row.id) ? (
+                      <UnsavedParentMessage>
+                        Save this material item to add adjustments.
+                      </UnsavedParentMessage>
+                    ) : (
+                      <WorkOrderAdjustmentRow
+                        workOrderItemId={row.id}
+                        serverRows={adjustments}
+                        onOpenEdit={handleOpenEdit}
+                        onCreateNew={handleCreateNew}
+                        onDuplicate={handleDuplicate}
+                        isSectionBusy={sectionBusy}
+                      />
+                    )
+                  ) : null}
+                </ExpandableRow>
+              </Fragment>
+            )
+          }}
+        />
+      </RecordItemSection>
 
       {modalRequest ? (
         <AdjustmentCreateModal

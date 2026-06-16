@@ -13,6 +13,7 @@ import type {
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
 import { useWorkOrderPrimarySection } from "@/modules/work-orders/controllers/record/primary/use-work-order-primary-section"
+import { useWorkOrderMaterialItemsSection } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { WorkOrderPrimaryFieldsSection } from "./primary/work-order-primary-fields-section"
 import { workOrderPrimarySectionActions } from "./primary/toolbar-controls/work-order-primary-section-actions"
 import { WorkOrderMaterialItemsSection } from "./material-items/work-order-material-items-section"
@@ -38,6 +39,15 @@ export function WorkOrderRecordPanel({
   // + product-lock). Editing an existing adjustment still happens on the inventory
   // record view; returning here reloads fresh the same way.
   const adjustmentsByWorkOrderItemId = initialAdjustmentsByWorkOrderItemId
+
+  // Lifted to the panel so its dirty state registers with the multi-section
+  // close-guard (matches the primary slot + the templates material-items precedent).
+  const materialItemsSection = useWorkOrderMaterialItemsSection({
+    workOrder: controller.record,
+    materialItems,
+    publishMaterialItems: setMaterialItems,
+    publishWorkOrder: controller.publishRecord,
+  })
 
   const primaryActions = workOrderPrimarySectionActions({
     onSave: () => void controller.primarySection.save(),
@@ -146,13 +156,13 @@ export function WorkOrderRecordPanel({
             key: "material-items",
             type: "item",
             order: 10,
+            dirtyLabel: "material items",
+            controller: materialItemsSection,
             render: () => (
               <WorkOrderMaterialItemsSection
                 workOrder={controller.record}
-                materialItems={materialItems}
                 adjustmentsByWorkOrderItemId={adjustmentsByWorkOrderItemId}
-                publishMaterialItems={setMaterialItems}
-                publishWorkOrder={controller.publishRecord}
+                section={materialItemsSection}
               />
             ),
           },

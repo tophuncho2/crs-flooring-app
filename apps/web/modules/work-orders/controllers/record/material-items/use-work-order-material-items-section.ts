@@ -41,3 +41,8 @@ export function useWorkOrderMaterialItemsSection({
     setProductSnapshot: rows.setProductSnapshot,
   }
 }
+
+/** Public surface of the material-items section controller, lifted to the panel. */
+export type WorkOrderMaterialItemsSectionController = ReturnType<
+  typeof useWorkOrderMaterialItemsSection
+>

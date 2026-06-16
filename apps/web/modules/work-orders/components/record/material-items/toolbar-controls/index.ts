@@ -1,5 +1,3 @@
-export { materialItemsSectionActions } from "./material-items-section-actions"
-export type { MaterialItemsSectionActionsInput } from "./material-items-section-actions"
 export { MaterialItemsExpandToggle } from "./material-items-expand-toggle"
 export type { MaterialItemsExpandToggleProps } from "./material-items-expand-toggle"
 export { AdjustmentRowToolbar } from "./sub-controls"
