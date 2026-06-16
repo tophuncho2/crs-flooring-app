@@ -42,7 +42,8 @@ describe("slip — one row per adjustment + a subtotal (mirrors the picking tick
     const html = slipTable([item])
 
     // <tr> count = 1 header + 3 detail + 1 subtotal = 5
-    expect(count(html, "<tr>")).toBe(5)
+    // (prefix needle: the subtotal row carries class="group-end")
+    expect(count(html, "<tr")).toBe(5)
     expect(html).toContain("<td>Shaw Carpet</td>")
     // summed quantity (17) under a subtotal-cell rule
     expect(html).toContain('<td class="cl-num subtotal-cell">17 rolls</td>')

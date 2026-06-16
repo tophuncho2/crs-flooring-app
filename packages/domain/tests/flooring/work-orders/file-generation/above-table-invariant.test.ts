@@ -67,6 +67,7 @@ describe("work-order documents — above the adjustments table", () => {
         .wo-print-root .flat-rows tbody tr:nth-child(even) { background: #f0f0f0; }
         .wo-print-root .flat-rows .cl-num { text-align: right; }
         .wo-print-root .flat-rows .subtotal-cell { border-top: 1px solid #111; padding-top: 3px; }
+        .wo-print-root .flat-rows tr.group-end td { border-bottom: 1px solid #111; }
         .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
         .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
         .wo-print-root .page-brand { justify-self: start; }

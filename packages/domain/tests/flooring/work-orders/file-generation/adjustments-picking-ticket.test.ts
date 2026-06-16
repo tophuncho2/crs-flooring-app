@@ -41,7 +41,8 @@ describe("picking ticket — one row per adjustment (not collapsed)", () => {
     const html = pickingTable([item])
 
     // <tr> count = 1 header + 3 detail + 1 subtotal = 5
-    expect(count(html, "<tr>")).toBe(5)
+    // (prefix needle: the subtotal row carries class="group-end")
+    expect(count(html, "<tr")).toBe(5)
     // exactly one subtotal row (one subtotal cell — Quantity only)
     expect(count(html, '<td class="cl-num subtotal-cell">')).toBe(1)
   })
