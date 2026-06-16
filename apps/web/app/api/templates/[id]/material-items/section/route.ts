@@ -37,7 +37,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       { requireExpectedUpdatedAt: true },
     )
 
-    const currentSnapshot = await getTemplateById(id)
+    const currentSnapshot = await getTemplateById(id, { withNeighbors: false })
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,

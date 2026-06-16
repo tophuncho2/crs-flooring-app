@@ -18,6 +18,16 @@ export type TemplateListRow = {
   updatedAt: string
 }
 
+/**
+ * An adjacent template in the global template-number sequence
+ * (`templateNumberInt`). Carries only `id` — the record-view stepper navigates
+ * straight to the neighbor record by number; it does not drive the
+ * MC→Property→Template cascade. Null at the ends of the sequence.
+ */
+export type TemplateNeighbor = {
+  id: string
+}
+
 export type TemplateDetail = TemplateListRow & {
   internalNotes: string
   installerInstructions: string
@@ -27,6 +37,13 @@ export type TemplateDetail = TemplateListRow & {
   propertyPostalCode: string
   propertyInstructions: string
   items: TemplateMaterialItemRow[]
+  /**
+   * Neighbors by global template-number order (`templateNumberInt`), ignoring
+   * property/MC filters — powers the record-view shell stepper (◀ TP-# ▶). Null
+   * when the current row is at the start/end of the sequence.
+   */
+  previousTemplate: TemplateNeighbor | null
+  nextTemplate: TemplateNeighbor | null
 }
 
 export type TemplateOption = {

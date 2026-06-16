@@ -3,8 +3,19 @@ import type { TemplateMaterialItemRow } from "./material-items/types.js"
 import type {
   TemplateDetail,
   TemplateListRow,
+  TemplateNeighbor,
   TemplateOption,
 } from "./types.js"
+
+type TemplateNeighbors = {
+  previousTemplate: TemplateNeighbor | null
+  nextTemplate: TemplateNeighbor | null
+}
+
+const NO_TEMPLATE_NEIGHBORS: TemplateNeighbors = {
+  previousTemplate: null,
+  nextTemplate: null,
+}
 
 type TemplateListInput = {
   id: string
@@ -57,7 +68,10 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
   }
 }
 
-export function normalizeTemplate(template: TemplateDetailInput): TemplateDetail {
+export function normalizeTemplate(
+  template: TemplateDetailInput,
+  neighbors: TemplateNeighbors = NO_TEMPLATE_NEIGHBORS,
+): TemplateDetail {
   const base = normalizeTemplateListRow(template)
   const items: TemplateMaterialItemRow[] = template.items.map(normalizeTemplateMaterialItem)
   return {
@@ -70,6 +84,8 @@ export function normalizeTemplate(template: TemplateDetailInput): TemplateDetail
     propertyPostalCode: template.property.postalCode ?? "",
     propertyInstructions: template.property.instructions ?? "",
     items,
+    previousTemplate: neighbors.previousTemplate,
+    nextTemplate: neighbors.nextTemplate,
   }
 }
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { normalizeTemplateListRow } from "../../../src/management/templates/normalizers.js"
+import {
+  normalizeTemplate,
+  normalizeTemplateListRow,
+} from "../../../src/management/templates/normalizers.js"
 
 describe("normalizeTemplateListRow management company", () => {
   const base = {
@@ -28,5 +31,49 @@ describe("normalizeTemplateListRow management company", () => {
     const row = normalizeTemplateListRow({ ...base, property: { name: "Maple Court", managementCompany: null } })
     expect(row.managementCompanyId).toBeNull()
     expect(row.managementCompanyName).toBeNull()
+  })
+})
+
+describe("normalizeTemplate neighbors", () => {
+  const detailBase = {
+    id: "tpl-1",
+    templateNumber: "TP-2",
+    unitType: "2BR",
+    description: null,
+    propertyId: "prop-1",
+    property: {
+      name: "Maple Court",
+      managementCompany: { id: "mc-1", name: "Acme" },
+      streetAddress: null,
+      city: null,
+      state: null,
+      postalCode: null,
+      instructions: null,
+    },
+    jobTypeId: null,
+    jobType: null,
+    warehouseId: null,
+    warehouse: null,
+    _count: { items: 0 },
+    internalNotes: null,
+    installerInstructions: null,
+    items: [],
+    createdAt: "2026-06-08T00:00:00.000Z",
+    updatedAt: "2026-06-08T00:00:00.000Z",
+  }
+
+  it("defaults both neighbors to null when none are supplied", () => {
+    const detail = normalizeTemplate(detailBase)
+    expect(detail.previousTemplate).toBeNull()
+    expect(detail.nextTemplate).toBeNull()
+  })
+
+  it("passes through supplied neighbors", () => {
+    const detail = normalizeTemplate(detailBase, {
+      previousTemplate: { id: "tpl-prev" },
+      nextTemplate: { id: "tpl-next" },
+    })
+    expect(detail.previousTemplate).toEqual({ id: "tpl-prev" })
+    expect(detail.nextTemplate).toEqual({ id: "tpl-next" })
   })
 })

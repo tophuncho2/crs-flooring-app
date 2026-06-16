@@ -48,6 +48,9 @@ const templateListSelect = {
 
 const templateDetailSelect = {
   ...templateListSelect,
+  // The numeric sort key (generated column) — read here so the detail loader can
+  // resolve the adjacent rows for the record-view shell stepper.
+  templateNumberInt: true,
   internalNotes: true,
   installerInstructions: true,
   property: {
@@ -213,8 +216,58 @@ export async function searchTemplateOptions(
   return { items: page.map(normalizeTemplateOption), hasMore }
 }
 
+type TemplateNeighbors = {
+  previousTemplate: { id: string } | null
+  nextTemplate: { id: string } | null
+}
+
+const NO_TEMPLATE_NEIGHBORS: TemplateNeighbors = {
+  previousTemplate: null,
+  nextTemplate: null,
+}
+
+/**
+ * Resolve the template rows immediately before/after the given numeric sort key
+ * in the global template-number order (`templateNumberInt`). Powers the
+ * record-view shell stepper — deliberately global: no property / MC scoping, the
+ * stepper walks the raw number line. Two single-row lookups on the
+ * `templateNumberInt` index. Both null when the key is null (no generated value
+ * yet) or the row is at the sequence's edge.
+ */
+async function getTemplateNeighbors(
+  templateNumberInt: number | null,
+  client: TemplatesDbClient = db,
+): Promise<TemplateNeighbors> {
+  if (templateNumberInt === null) return NO_TEMPLATE_NEIGHBORS
+
+  const [previous, next] = await Promise.all([
+    client.flooringTemplate.findFirst({
+      where: { templateNumberInt: { lt: templateNumberInt } },
+      orderBy: { templateNumberInt: "desc" },
+      select: { id: true },
+    }),
+    client.flooringTemplate.findFirst({
+      where: { templateNumberInt: { gt: templateNumberInt } },
+      orderBy: { templateNumberInt: "asc" },
+      select: { id: true },
+    }),
+  ])
+
+  return {
+    previousTemplate: previous ? { id: previous.id } : null,
+    nextTemplate: next ? { id: next.id } : null,
+  }
+}
+
+/**
+ * Read the full template detail. By default it also resolves the adjacent rows
+ * for the record-view shell stepper; pass `{ withNeighbors: false }` on paths
+ * that only read a snapshot (e.g. the delete conflict check) to skip the two
+ * extra lookups.
+ */
 export async function getTemplateById(
   id: string,
+  options: { withNeighbors?: boolean } = {},
   client: TemplatesDbClient = db,
 ): Promise<TemplateDetail> {
   const template = await client.flooringTemplate.findUniqueOrThrow({
@@ -222,7 +275,12 @@ export async function getTemplateById(
     select: templateDetailSelect,
   })
 
-  return normalizeTemplate(template)
+  const neighbors =
+    options.withNeighbors === false
+      ? NO_TEMPLATE_NEIGHBORS
+      : await getTemplateNeighbors(template.templateNumberInt, client)
+
+  return normalizeTemplate(template, neighbors)
 }
 
 export async function countTemplates(

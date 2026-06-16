@@ -35,7 +35,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       requireExpectedUpdatedAt: true,
     })
 
-    const currentSnapshot = await getTemplateById(id)
+    const currentSnapshot = await getTemplateById(id, { withNeighbors: false })
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,
@@ -52,7 +52,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     })
     if (receipt.replay) return receipt.replay
 
-    const result = await withMutationTelemetry(
+    await withMutationTelemetry(
       access,
       {
         message: "Template primary section replaced",
@@ -64,7 +64,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       () => updateTemplateUseCase(id, input),
     )
 
-    const responseBody = { template: result }
+    // Re-read with neighbors so the response carries the stepper's prev/next
+    // (mirrors the material-items section route); the use-case return omits them.
+    const detail = await getTemplateById(id)
+    const responseBody = { template: detail }
     await finalizeMutationReceipt({
       scope: "templates.primary.section.replace",
       access,

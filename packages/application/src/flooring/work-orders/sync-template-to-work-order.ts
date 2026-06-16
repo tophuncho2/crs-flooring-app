@@ -35,7 +35,7 @@ export async function syncTemplateToWorkOrderUseCase(
 
     let template
     try {
-      template = await getTemplateById(input.templateId, c)
+      template = await getTemplateById(input.templateId, { withNeighbors: false }, c)
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         throw new WorkOrderExecutionError({
