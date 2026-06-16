@@ -176,7 +176,13 @@ export async function listTemplateOptions(
 
 export type TemplateOptionsSearchArgs = {
   search?: string
-  propertyId: string
+  /** Scope to a single property. Optional — when absent the search is unscoped. */
+  propertyId?: string
+  /**
+   * Scope to all properties under a management company. Only consulted when
+   * `propertyId` is absent (a specific property already implies its MC).
+   */
+  managementCompanyId?: string
   skip?: number
   take: number
 }
@@ -190,7 +196,14 @@ export async function searchTemplateOptions(
   args: TemplateOptionsSearchArgs,
   client: TemplatesDbClient = db,
 ): Promise<TemplateOptionsSearchResult> {
-  const clauses: Prisma.FlooringTemplateWhereInput[] = [{ propertyId: args.propertyId }]
+  const clauses: Prisma.FlooringTemplateWhereInput[] = []
+  // Property scope wins; otherwise fall back to the MC scope via the property
+  // relation. Neither set → unscoped (lists all templates, paginated).
+  if (args.propertyId) {
+    clauses.push({ propertyId: args.propertyId })
+  } else if (args.managementCompanyId) {
+    clauses.push({ property: { managementCompanyId: args.managementCompanyId } })
+  }
   if (args.search) {
     clauses.push({
       OR: [

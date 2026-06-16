@@ -348,6 +348,7 @@ export default function WorkOrdersClient({
                   value={selectedTemplateId}
                   selectedLabel={templateLabel}
                   propertyId={selectedPropertyId}
+                  managementCompanyId={selectedMgmtCoId}
                   onChange={handleTemplateChange}
                   initialOptions={initialTemplateOptions}
                 />

@@ -18,10 +18,25 @@ export type TemplatePickerProps = {
    */
   onOptionSelected?: (option: TemplateOption | null) => void
   /**
-   * Required filter — templates dropdown is property-scoped. When null the
-   * picker is rendered disabled with a "Select a property first" placeholder.
+   * Property scope. When `requireProperty` is true (the default, used by the
+   * WO record form) a null value renders the picker disabled with a "Select a
+   * property first" placeholder. When `requireProperty` is false (the list
+   * filter chip) null just means "no property scope".
    */
   propertyId: string | null
+  /**
+   * MC scope, consulted only when no `propertyId` is set (a property already
+   * implies its MC). Lets the list filter narrow templates to an MC's
+   * properties before any specific property is chosen.
+   */
+  managementCompanyId?: string | null
+  /**
+   * When true (default), the picker is property-gated: disabled until a
+   * property is selected — the WO record form's contract. Set false to make
+   * the picker always selectable and fetch standalone (the list filter chip),
+   * scoped by whatever propertyId/managementCompanyId is passed.
+   */
+  requireProperty?: boolean
   /**
    * Pre-resolved label for the current `value`. Lets the trigger render the
    * selected template's label even when it isn't in the latest server result.
@@ -57,6 +72,8 @@ export function TemplatePicker({
   onChange,
   onOptionSelected,
   propertyId,
+  managementCompanyId = null,
+  requireProperty = true,
   selectedLabel = null,
   placeholder = "Select a template",
   disabledPlaceholder = "Select a property first",
@@ -71,20 +88,24 @@ export function TemplatePicker({
   initialOptions,
 }: TemplatePickerProps) {
   const propertyKey = propertyId ?? null
-  const enabled = propertyId !== null && !disabled
+  const mgmtCoKey = managementCompanyId ?? null
+  // Gated mode (record form): disabled until a property is picked. Standalone
+  // mode (list filter): always selectable, fetches with whatever scope it has.
+  const enabled = requireProperty ? propertyId !== null && !disabled : !disabled
 
   const bucketKey = useMemo(
-    () => [...TEMPLATE_OPTIONS_QUERY_KEY, propertyKey] as const,
-    [propertyKey],
+    () => [...TEMPLATE_OPTIONS_QUERY_KEY, propertyKey, mgmtCoKey] as const,
+    [propertyKey, mgmtCoKey],
   )
 
   const pagedSearchFn = useCallback(
     (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchTemplateOptionsRequest(search, signal, {
-        propertyId: propertyId ?? "",
+        propertyId: propertyId ?? undefined,
+        managementCompanyId: managementCompanyId ?? undefined,
         skip,
       }),
-    [propertyId],
+    [propertyId, managementCompanyId],
   )
 
   const controller = useAsyncRichDropdownController<TemplateOption>({
@@ -131,7 +152,7 @@ export function TemplatePicker({
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
       clearLabel={clearLabel}
-      disabled={disabled || !propertyId}
+      disabled={disabled || (requireProperty && !propertyId)}
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}

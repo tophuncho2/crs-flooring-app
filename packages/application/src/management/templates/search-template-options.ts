@@ -3,7 +3,10 @@ import type { TemplateOption } from "@builders/domain"
 
 export type SearchTemplateOptionsInput = {
   search?: string
-  propertyId: string
+  /** Scope to a single property. Optional — absent means unscoped. */
+  propertyId?: string
+  /** Scope to an MC's properties. Only used when `propertyId` is absent. */
+  managementCompanyId?: string
   skip?: number
   take?: number
 }
@@ -23,5 +26,11 @@ export async function searchTemplateOptionsUseCase(
   const requested = Math.floor(input.take ?? OPTIONS_DEFAULT_TAKE)
   const take = Math.max(1, Math.min(OPTIONS_MAX_TAKE, requested))
   const skip = Math.max(0, Math.floor(input.skip ?? 0))
-  return searchTemplateOptions({ search, propertyId: input.propertyId, skip, take })
+  return searchTemplateOptions({
+    search,
+    propertyId: input.propertyId,
+    managementCompanyId: input.managementCompanyId,
+    skip,
+    take,
+  })
 }

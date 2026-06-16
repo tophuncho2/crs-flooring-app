@@ -258,14 +258,18 @@ export function validateListTemplatesQuery(
 
 const templateOptionsQuerySchema = z.object({
   search: z.string().optional(),
-  propertyId: z.string().min(1, "propertyId is required"),
+  // Both scopes optional: property wins, else MC scopes via the property
+  // relation, else the search is unscoped (lists all templates).
+  propertyId: z.string().optional(),
+  managementCompanyId: z.string().optional(),
   skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedTemplateOptionsQuery = {
   search?: string
-  propertyId: string
+  propertyId?: string
+  managementCompanyId?: string
   skip: number
   take: number
 }
@@ -289,9 +293,12 @@ export function validateTemplateOptionsQuery(
 
   const parsed = parseResult.data
   const trimmedSearch = parsed.search?.trim()
+  const trimmedPropertyId = parsed.propertyId?.trim()
+  const trimmedManagementCompanyId = parsed.managementCompanyId?.trim()
   return {
     search: trimmedSearch ? trimmedSearch : undefined,
-    propertyId: parsed.propertyId.trim(),
+    propertyId: trimmedPropertyId ? trimmedPropertyId : undefined,
+    managementCompanyId: trimmedManagementCompanyId ? trimmedManagementCompanyId : undefined,
     skip: parsed.skip,
     take: parsed.take,
   }
