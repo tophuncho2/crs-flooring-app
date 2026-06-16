@@ -26,6 +26,8 @@ export function renderTemplateRowCell(
       return row.description || "-"
     case "items":
       return <span className="tabular-nums">{row.itemsCount}</span>
+    case "templateNumber":
+      return <span className="font-medium">{row.templateNumber}</span>
     default:
       return "-"
   }

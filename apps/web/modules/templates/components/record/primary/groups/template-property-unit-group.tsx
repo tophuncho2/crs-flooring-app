@@ -97,7 +97,7 @@ export function TemplatePropertyUnitGroup({
 
   return (
     <>
-      <CellAt col={1} row={1} colSpan={4}>
+      <CellAt col={1} row={2} colSpan={4}>
         <FormField
           label="Management Company"
           actions={
@@ -122,7 +122,7 @@ export function TemplatePropertyUnitGroup({
           <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={2} colSpan={4}>
+      <CellAt col={1} row={3} colSpan={4}>
         <FormField
           label="Property"
           required
@@ -174,21 +174,21 @@ export function TemplatePropertyUnitGroup({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} row={3} colSpan={2}>
+      <CellAt col={1} row={4} colSpan={2}>
         <FormField label="Property Address">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{addressDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={3} row={3} colSpan={2}>
+      <CellAt col={3} row={4} colSpan={2}>
         <FormField label="Property Instructions">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{instructionsDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={4} colSpan={2}>
+      <CellAt col={1} row={5} colSpan={2}>
         <FormField
           label="Unit Type"
           required

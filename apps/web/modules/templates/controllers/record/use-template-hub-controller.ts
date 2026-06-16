@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
-import type { TemplateDetail } from "@builders/domain"
+import type { TemplateDetail, TemplateNeighbor } from "@builders/domain"
 import {
   useCascadePickerController,
   type CascadePickerController,
@@ -31,6 +31,8 @@ export type TemplateHubController = {
   templateError: string | null
   // ===== Actions =====
   newTemplate: () => void
+  /** Step the record view to an adjacent template (by template number). */
+  stepToTemplate: (neighbor: TemplateNeighbor) => void
 }
 
 /**
@@ -129,11 +131,23 @@ export function useTemplateHubController(
     router.push(`/dashboard/templates/new?${params.toString()}`)
   }, [propertyId, router])
 
+  // Step the record view to an adjacent template by number. Setting only the
+  // template id re-keys the detail query so the neighbor loads; MC/Property are
+  // left untouched here. The seed-on-load effect above then syncs the pickers to
+  // the stepped-to record (existing load behavior, keeps pickers consistent).
+  const stepToTemplate = useCallback(
+    (neighbor: TemplateNeighbor) => {
+      seed({ template: { id: neighbor.id, label: null } })
+    },
+    [seed],
+  )
+
   return {
     cascade,
     templateDetail,
     isTemplateLoading,
     templateError,
     newTemplate,
+    stepToTemplate,
   }
 }

@@ -2,6 +2,7 @@
 
 import {
   RecordDetailClientScaffold,
+  RecordStepperPortal,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
 import type { TemplateDetail } from "@builders/domain"
@@ -51,7 +52,7 @@ function TemplateHubView({
   page: RecordDetailClientScaffoldContext
   controller: TemplateHubController
 }) {
-  const { templateDetail, isTemplateLoading, templateError, newTemplate } = controller
+  const { templateDetail, isTemplateLoading, templateError, newTemplate, stepToTemplate } = controller
 
   if (templateError) {
     return <div className={PROMPT_CARD_CLASS}>{templateError}</div>
@@ -62,12 +63,25 @@ function TemplateHubView({
   if (!templateDetail) {
     return null
   }
+  const { previousTemplate, nextTemplate } = templateDetail
   return (
-    <TemplateRecordPanel
-      key={templateDetail.id}
-      page={page}
-      template={templateDetail}
-      onNewTemplate={newTemplate}
-    />
+    <>
+      {/* Top-bar stepper — walks the global template-number line. Mounted here
+          (not in the keyed panel below) so it survives the panel's per-step
+          remount and holds its label steady across the neighbor load. */}
+      <RecordStepperPortal
+        label={templateDetail.templateNumber}
+        isDirty={page.isDirty}
+        discardMessage="This template has unsaved changes. Stepping to another template will discard them."
+        onPrevious={previousTemplate ? () => stepToTemplate(previousTemplate) : null}
+        onNext={nextTemplate ? () => stepToTemplate(nextTemplate) : null}
+      />
+      <TemplateRecordPanel
+        key={templateDetail.id}
+        page={page}
+        template={templateDetail}
+        onNewTemplate={newTemplate}
+      />
+    </>
   )
 }

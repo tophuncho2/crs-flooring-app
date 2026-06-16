@@ -26,6 +26,7 @@ import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group
  * without a server round-trip. Pass `null` from create flows.
  */
 export type TemplatePrimaryDetail = {
+  templateNumber: string
   propertyId: string
   propertyName: string
   propertyStreetAddress: string
@@ -72,6 +73,14 @@ export function TemplatePrimaryFieldsSection({
 
   return (
     <FieldSection gap="0.75rem">
+      {/* Template Number — dedicated top row, spanning two columns (mirrors the
+          work-orders record view's Work Order Number cell). Read-only display. */}
+      <CellAt col={1} row={1} colSpan={2}>
+        <FormField label="Template #">
+          <StaticFieldValue>{detail?.templateNumber ?? "—"}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+
       {/* Left column (cols 1–4): property cluster — MC, Property, Address +
           Instructions, Unit Type. */}
       <TemplatePropertyUnitGroup
@@ -85,8 +94,9 @@ export function TemplatePrimaryFieldsSection({
       />
 
       {/* Right column (cols 5–7, col 8 left empty): Warehouse + Job Type on top,
-          then the Description / Installer Instructions / Internal Notes stack. */}
-      <CellAt col={5} row={1} colSpan={2}>
+          then the Description / Installer Instructions / Internal Notes stack.
+          Shifted down one row to make room for the Template # top row. */}
+      <CellAt col={5} row={2} colSpan={2}>
         <FormField label="Warehouse">
           {editable ? (
             <WarehousePicker
@@ -101,7 +111,7 @@ export function TemplatePrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={7} row={1} colSpan={1}>
+      <CellAt col={7} row={2} colSpan={1}>
         <FormField label="Job Type">
           {editable ? (
             <JobTypePicker
@@ -117,7 +127,7 @@ export function TemplatePrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={5} row={2} colSpan={3}>
+      <CellAt col={5} row={3} colSpan={3}>
         <FormField
           label="Description"
           currentLength={editable ? draft.description.length : undefined}
@@ -131,7 +141,7 @@ export function TemplatePrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} row={3} colSpan={3}>
+      <CellAt col={5} row={4} colSpan={3}>
         <FormField
           label="Installer Instructions"
           currentLength={editable ? draft.installerInstructions.length : undefined}
@@ -146,7 +156,7 @@ export function TemplatePrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={5} row={4} colSpan={3}>
+      <CellAt col={5} row={5} colSpan={3}>
         <FormField
           label="Internal Notes"
           currentLength={editable ? draft.internalNotes.length : undefined}

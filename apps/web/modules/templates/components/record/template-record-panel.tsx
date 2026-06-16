@@ -77,6 +77,7 @@ export function TemplateRecordPanel({
                 <TemplatePrimaryFieldsSection
                   draft={primary.primarySection.localValue}
                   detail={{
+                    templateNumber: primary.record.templateNumber,
                     propertyId: primary.record.propertyId,
                     propertyName: primary.record.propertyName,
                     propertyStreetAddress: primary.record.propertyStreetAddress,
