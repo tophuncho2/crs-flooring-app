@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { RowOpenButton } from "@/engines/common"
+import { RecordOpenButton } from "@/engines/common"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
 import { DataTableSelectAllButton, DataTableSelectCheckbox } from "./select"
@@ -244,7 +244,7 @@ export function DataTable<TRow extends DataTableRow>({
                       {/* Flex gutter — a future overflow/options button drops in
                           beside the open button with no structural change. */}
                       <div className="flex items-center justify-center gap-2">
-                        <RowOpenButton
+                        <RecordOpenButton
                           onClick={() => onOpenRow(row)}
                           ariaLabel={getRowAriaLabel?.(row) ?? `Open ${row.id}`}
                         />

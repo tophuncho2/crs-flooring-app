@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Pencil, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
@@ -20,7 +20,7 @@ export type CellActionButtonProps = {
    * decides when to render and when to disable.
    */
   disabled?: boolean
-  /** Icon override. Defaults are set by the `CellOpenButton` / `CellAddButton` presets. */
+  /** Icon override. Defaults are set by the `RecordOpenButton` / `CellAddButton` presets. */
   icon?: ReactNode
   className?: string
 }
@@ -33,8 +33,8 @@ export type CellActionButtonProps = {
  * `onClick`. Routing/handlers are injected by the consumer — the engine carries
  * no navigation dependency.
  *
- * Prefer the `CellOpenButton` (pencil → open linked record) and `CellAddButton`
- * (plus → create linked record) presets below.
+ * Prefer the presets: `RecordOpenButton` (launch → open the linked record, in
+ * `record-open-button.tsx`) and `CellAddButton` (plus → create a linked record).
  */
 export function CellActionButton({
   onClick,
@@ -62,11 +62,6 @@ export function CellActionButton({
       {icon ?? null}
     </button>
   )
-}
-
-/** Pencil affordance — opens the field's linked record (MC / Property / Template). */
-export function CellOpenButton({ icon, ...props }: CellActionButtonProps) {
-  return <CellActionButton {...props} icon={icon ?? <Pencil size={14} aria-hidden="true" />} />
 }
 
 /** Plus affordance — creates a new linked record (e.g. "+ New property"). */

@@ -8,7 +8,7 @@ export type FormFieldProps = {
   label: string
   /**
    * Right-aligned label-row actions (e.g. open-record / add affordances from
-   * `CellOpenButton` / `CellAddButton`). Rendered opposite the label, after the
+   * `RecordOpenButton` / `CellAddButton`). Rendered opposite the label, after the
    * optional counter, so it never touches the value control or the grid footprint.
    */
   actions?: ReactNode

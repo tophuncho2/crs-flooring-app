@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   CellAddButton,
   CellAt,
-  CellOpenButton,
+  RecordOpenButton,
   DateCell,
   FieldSection,
   FormField,
@@ -55,7 +55,7 @@ export type { WorkOrderPrimaryDetail } from "./types"
  *
  * The "open MC / Property / Template" + "new property" affordances that used to
  * live in a group header now sit in each field's label-row `actions` slot via
- * the record-view `CellOpenButton` / `CellAddButton` primitives.
+ * the record-view `RecordOpenButton` / `CellAddButton` primitives.
  *
  * Cascade rules come from the shared engine (`@/engines/picker`
  * `applyPropertySelection` / `applyTemplateSelection`):
@@ -221,7 +221,7 @@ export function WorkOrderPrimaryFieldsSection({
         <FormField
           label="Management Company"
           actions={
-            <CellOpenButton
+            <RecordOpenButton
               ariaLabel="Open management company"
               title="Open management company"
               disabled={!managementCompanyValue}
@@ -248,7 +248,7 @@ export function WorkOrderPrimaryFieldsSection({
           required
           actions={
             <>
-              <CellOpenButton
+              <RecordOpenButton
                 ariaLabel="Open property"
                 title="Open property"
                 disabled={!propertyValue}
@@ -303,7 +303,7 @@ export function WorkOrderPrimaryFieldsSection({
         <FormField
           label="Template"
           actions={
-            <CellOpenButton
+            <RecordOpenButton
               ariaLabel="Open template record"
               title="Open template record"
               disabled={!templateValue}

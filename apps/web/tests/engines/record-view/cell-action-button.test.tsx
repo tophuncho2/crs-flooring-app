@@ -2,14 +2,14 @@
 
 import { afterEach, describe, it, expect, vi } from "vitest"
 import { cleanup, render } from "@testing-library/react"
-import { CellAddButton, CellOpenButton, FormField, TextCell } from "@/engines/record-view"
+import { CellAddButton, RecordOpenButton, FormField, TextCell } from "@/engines/record-view"
 
-describe("CellOpenButton / CellAddButton", () => {
+describe("RecordOpenButton / CellAddButton", () => {
   afterEach(() => cleanup())
 
   it("fires onClick when enabled", () => {
     const onClick = vi.fn()
-    const { getByRole } = render(<CellOpenButton ariaLabel="Open property" onClick={onClick} />)
+    const { getByRole } = render(<RecordOpenButton ariaLabel="Open property" onClick={onClick} />)
     getByRole("button", { name: "Open property" }).click()
     expect(onClick).toHaveBeenCalledTimes(1)
   })
@@ -30,7 +30,7 @@ describe("CellOpenButton / CellAddButton", () => {
   it("does not fire onClick when disabled", () => {
     const onClick = vi.fn()
     const { getByRole } = render(
-      <CellOpenButton ariaLabel="Open property" disabled onClick={onClick} />,
+      <RecordOpenButton ariaLabel="Open property" disabled onClick={onClick} />,
     )
     const button = getByRole("button", { name: "Open property" })
     expect(button.hasAttribute("disabled")).toBe(true)
@@ -44,7 +44,7 @@ describe("FormField actions slot", () => {
 
   it("renders label-row actions alongside the control", () => {
     const { getByRole, getByText } = render(
-      <FormField label="Property" actions={<CellOpenButton ariaLabel="Open property" onClick={vi.fn()} />}>
+      <FormField label="Property" actions={<RecordOpenButton ariaLabel="Open property" onClick={vi.fn()} />}>
         <TextCell editable={false} value="Maple Court" />
       </FormField>,
     )

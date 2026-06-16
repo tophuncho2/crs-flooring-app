@@ -1,9 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import { CellAt, FormField, StaticFieldValue, TextCell } from "@/engines/record-view"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import {
+  CellAddButton,
+  CellAt,
+  FormField,
+  RecordOpenButton,
+  StaticFieldValue,
+  TextCell,
+} from "@/engines/record-view"
 import type { PropertyJoinedFields } from "@/engines/record-view"
 import { applyPropertySelection } from "@/engines/picker"
+import {
+  buildCurrentRecordEntryPath,
+  buildPropertyRecordHref,
+  buildRecordCreateHref,
+  buildRecordDetailHref,
+} from "@/hooks/navigation/routes"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import {
   buildAddressBlock,
@@ -16,9 +30,9 @@ import type { TemplatePrimaryDetail } from "../template-primary-fields-section"
 /**
  * Property & Unit field cluster, emitted as invisible-grid cells (no visual
  * group chrome). Management Company is a read-only mirror of the picked
- * property's MC (templates no longer store their own); the MC / Property /
- * + New property nav buttons now live in the primary header's Options menu
- * (see `template-record-panel`).
+ * property's MC (templates no longer store their own). The open-record (launch)
+ * and + New property affordances live in each cell's label-row `actions` slot
+ * (`RecordOpenButton` / `CellAddButton`), mirroring the work-orders primary.
  *
  * Cascade rules come from the shared picker engine (`applyPropertySelection`):
  * picking a property back-fills its linked MC. `pickedMc` / `pickedPropertyLabel`
@@ -58,7 +72,17 @@ export function TemplatePropertyUnitGroup({
   }
 
   const managementCompanyLabel = pickedMc ? pickedMc.name : detail?.managementCompanyName ?? null
+  const managementCompanyId = pickedMc ? pickedMc.id : detail?.managementCompanyId ?? null
   const propertyLabel = pickedPropertyLabel ?? detail?.propertyName ?? null
+  // Open targets follow the live selection (draft propertyId, picked/saved MC).
+  const openPropertyId = propertyValue ?? detail?.propertyId ?? null
+
+  // Local nav for the cell open/add affordances (mirrors work-orders primary —
+  // routing is injected here, not threaded from the panel).
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
   const formattedAddress = propertyJoined
     ? buildAddressBlock({
@@ -74,12 +98,58 @@ export function TemplatePropertyUnitGroup({
   return (
     <>
       <CellAt col={1} row={1} colSpan={4}>
-        <FormField label="Management Company">
+        <FormField
+          label="Management Company"
+          actions={
+            <RecordOpenButton
+              ariaLabel="Open management company"
+              title="Open management company"
+              disabled={!managementCompanyId}
+              onClick={() => {
+                if (managementCompanyId) {
+                  router.push(
+                    buildRecordDetailHref(
+                      "/dashboard/management-companies",
+                      managementCompanyId,
+                      returnTo,
+                    ),
+                  )
+                }
+              }}
+            />
+          }
+        >
           <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
       <CellAt col={1} row={2} colSpan={4}>
-        <FormField label="Property" required>
+        <FormField
+          label="Property"
+          required
+          actions={
+            <>
+              <RecordOpenButton
+                ariaLabel="Open property"
+                title="Open property"
+                disabled={!openPropertyId}
+                onClick={() => {
+                  if (openPropertyId) {
+                    router.push(buildPropertyRecordHref(openPropertyId, managementCompanyId, returnTo))
+                  }
+                }}
+              />
+              {editable ? (
+                <CellAddButton
+                  ariaLabel="New property"
+                  title="New property"
+                  onClick={() =>
+                    router.push(buildRecordCreateHref("/dashboard/management-companies", { returnTo }))
+                  }
+                />
+              ) : null}
+            </>
+          }
+        >
           {editable ? (
             <PropertyPicker
               value={propertyValue}

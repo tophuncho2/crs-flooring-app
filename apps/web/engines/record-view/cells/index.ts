@@ -17,12 +17,14 @@ export * from "./checkbox-cell"
 export * from "./toggle-cell"
 export * from "./circular-commit-button"
 export * from "./row-action-button"
-// The cell action-button atom now lives in @/engines/common/controls so the
-// list-view engine can share it (list-view cannot import record-view). Re-exported
-// here to preserve record-view's public cell surface with zero consumer churn.
+// The cell action-button atom + presets live in @/engines/common/controls so the
+// list-view engine can share them (list-view cannot import record-view). Re-exported
+// here as record-view's public cell surface. `RecordOpenButton` is the canonical
+// launch (open-record) affordance shared with list-view rows; `CellAddButton` is
+// the create-new affordance.
 export {
   CellActionButton,
-  CellOpenButton,
+  RecordOpenButton,
   CellAddButton,
   type CellActionButtonProps,
 } from "@/engines/common"
