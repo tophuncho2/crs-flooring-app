@@ -217,7 +217,7 @@ export function WorkOrderPrimaryFieldsSection({
             value={draft.description}
             onChange={(value) => onFieldChange("description", value)}
             maxLength={WO_DESCRIPTION_MAX}
-            rows={2}
+            rows={1}
           />
         </FormField>
       </CellAt>
@@ -422,7 +422,7 @@ export function WorkOrderPrimaryFieldsSection({
             value={draft.installerInstructions}
             onChange={(value) => onFieldChange("installerInstructions", value)}
             maxLength={WO_INSTALLER_INSTRUCTIONS_MAX}
-            rows={2}
+            rows={1}
           />
         </FormField>
       </CellAt>
@@ -437,7 +437,7 @@ export function WorkOrderPrimaryFieldsSection({
             value={draft.internalNotes}
             onChange={(value) => onFieldChange("internalNotes", value)}
             maxLength={WO_INTERNAL_NOTES_MAX}
-            rows={2}
+            rows={1}
           />
         </FormField>
       </CellAt>
