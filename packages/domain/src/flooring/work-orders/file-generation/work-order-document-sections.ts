@@ -59,7 +59,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .empty-cell { color: #666; }
   .wo-print-root .page-frame { margin: 0; table-layout: fixed; }
   .wo-print-root .page-frame > thead { display: table-header-group; }
-  .wo-print-root .page-frame > thead > tr > td { border: 0; padding: 0.25in 0 0 0; }
+  .wo-print-root .page-frame > thead > tr > td { border: 0; padding: 0.5in 0 0 0; }
   .wo-print-root .page-frame > tbody > tr > td { border: 0; padding: 0; }
 `
 

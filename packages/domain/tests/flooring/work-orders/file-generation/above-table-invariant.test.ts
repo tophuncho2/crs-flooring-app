@@ -75,7 +75,7 @@ describe("work-order documents — above the adjustments table", () => {
         .wo-print-root .empty-cell { color: #666; }
         .wo-print-root .page-frame { margin: 0; table-layout: fixed; }
         .wo-print-root .page-frame > thead { display: table-header-group; }
-        .wo-print-root .page-frame > thead > tr > td { border: 0; padding: 0.25in 0 0 0; }
+        .wo-print-root .page-frame > thead > tr > td { border: 0; padding: 0.5in 0 0 0; }
         .wo-print-root .page-frame > tbody > tr > td { border: 0; padding: 0; }
       </style>
       <div class="wo-print-root">
