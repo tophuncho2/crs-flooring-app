@@ -1,5 +1,3 @@
-export { stagedInventorySectionActions } from "./staged-inventory-section-actions"
-export type { StagedInventorySectionActionsInput } from "./staged-inventory-section-actions"
 export { StagedInventoryExpandToggle } from "./staged-inventory-expand-toggle"
 export type { StagedInventoryExpandToggleProps } from "./staged-inventory-expand-toggle"
 export { SelectAllEligibleButton } from "./select-all-eligible-button"

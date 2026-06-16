@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo } from "react"
 import type { ReactNode } from "react"
-import { UnitCell } from "@/engines/record-view"
+import { RecordItemSection, UnitCell } from "@/engines/record-view"
 import { useExpandableRowsToggle } from "@/engines/record-view"
 import { ExpandableRow, UnsavedParentMessage } from "@/engines/record-view"
 import { Grid, GridEmpty } from "@/engines/record-view"
@@ -17,7 +17,7 @@ import { useImportStagedInventorySection } from "@/modules/imports/controllers/r
 import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
 import { FILTER_ROW_LAYOUT } from "./filter-row-layout"
 import { StagedInvRowSubGrid } from "./staged-inv-row-sub-grid"
-import { StagedInventorySectionHeader } from "./staged-inventory-section-header"
+import { StagedInventoryExpandToggle, StagedInventorySelectionCluster } from "./toolbar-controls"
 import { FilterRowRemoveButton } from "./row-controls"
 
 type FilterDraftRow = ImportFilterRowDraft & { id: string }
@@ -149,31 +149,92 @@ export function ImportStagedInventorySection({
     return null
   }
 
-  return (
-    <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-      <StagedInventorySectionHeader
-        filterRowsCount={drafts.length}
-        stagedRowsCount={totalStagedRowCount}
-        selectedCount={section.selectedIds.size}
-        eligibleSelectedCount={section.eligibleSelectedIds.length}
-        eligibleCount={section.eligibleCount}
-        canToggleSelection={section.canToggleSelection}
-        isSelectionActive={section.isSelectionActive}
-        isSaving={section.isSaving}
-        isDirty={section.isDirty}
-        isMarking={section.isMarking}
-        hasConflict={section.hasConflict}
-        allExpanded={allExpanded}
-        onToggleAll={toggleAll}
-        onToggleSelection={section.toggleAllEligible}
-        onAddFilterRow={section.addFilterRow}
-        onDiscard={() => section.discard()}
-        onSave={() => void section.save()}
-        onRunImport={() => void section.markForImport()}
-        noticeMessage={section.noticeMessage}
-        error={sectionError ?? section.markError ?? section.noticeError}
-      />
+  const selectedCount = section.selectedIds.size
+  const eligibleSelectedCount = section.eligibleSelectedIds.length
 
+  return (
+    <RecordItemSection
+      title="Staged Inventory"
+      // `item` sections default these off — unlock the managed Save/Discard
+      // path's status pill + the add action. Save/Discard themselves render as
+      // custom actions below (canManage:false) so they keep their extra
+      // conflict/marking/selection disable guards.
+      capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
+      noticeMessage={section.noticeMessage}
+      subHeader={{
+        canManage: false,
+        statusLeading: (
+          <span className="inline-flex items-center rounded-xl border border-[rgba(58,58,58,0.72)] bg-[var(--panel-hover)] px-3 py-2 text-sm text-[var(--foreground)]/75">
+            {drafts.length} filter row{drafts.length === 1 ? "" : "s"} · {totalStagedRowCount} staged row
+            {totalStagedRowCount === 1 ? "" : "s"}
+            {selectedCount > 0
+              ? ` · ${selectedCount} selected (${eligibleSelectedCount} eligible)`
+              : ""}
+          </span>
+        ),
+        isDirty: section.isDirty,
+        isSaving: section.isSaving,
+        hasConflict: section.hasConflict,
+        error: sectionError ?? section.markError ?? section.noticeError,
+        actionsLeading: (
+          <div className="flex items-center gap-2">
+            <StagedInventoryExpandToggle
+              itemsCount={drafts.length}
+              allExpanded={allExpanded}
+              onToggle={toggleAll}
+            />
+            <StagedInventorySelectionCluster
+              selection={{
+                isSelectionActive: section.isSelectionActive,
+                selectedCount,
+                eligibleCount: section.eligibleCount,
+                canToggleSelection: section.canToggleSelection,
+                onToggleSelection: section.toggleAllEligible,
+              }}
+              runImport={{
+                eligibleSelectedCount,
+                isMarking: section.isMarking,
+                isSaving: section.isSaving,
+                isDirty: section.isDirty,
+                onRunImport: () => void section.markForImport(),
+              }}
+            />
+          </div>
+        ),
+        actions: [
+          {
+            key: "save",
+            label: section.isSaving ? "Saving Rows..." : "Save Rows",
+            kind: "custom",
+            tone: "primary",
+            onClick: () => void section.save(),
+            disabled:
+              !section.isDirty ||
+              section.isSaving ||
+              section.hasConflict ||
+              section.isMarking ||
+              section.isSelectionActive,
+          },
+          {
+            key: "discard",
+            label: "Discard",
+            kind: "custom",
+            tone: "neutral",
+            onClick: () => section.discard(),
+            disabled:
+              !section.isDirty || section.isSaving || section.isMarking || section.isSelectionActive,
+          },
+          {
+            key: "add",
+            label: "Add Filter Row",
+            kind: "add-row",
+            tone: "neutral",
+            onClick: section.addFilterRow,
+            disabled: section.isSaving || section.isMarking || section.isSelectionActive,
+          },
+        ],
+      }}
+    >
       <Grid<FilterDraftRow>
         rows={drafts}
         layout={FILTER_ROW_LAYOUT}
@@ -220,6 +281,6 @@ export function ImportStagedInventorySection({
           )
         }}
       />
-    </div>
+    </RecordItemSection>
   )
 }
