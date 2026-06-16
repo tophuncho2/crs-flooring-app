@@ -9,14 +9,6 @@ export type UpdateInventoryInput = {
   isArchived?: boolean
 }
 
-export type DuplicateInventoryInput = {
-  rollNumber: string
-  note: string
-  startingStock: string
-  location: string
-  internalNotes: string
-}
-
 export type CreateInventoryInput = {
   productId: string
   warehouseId: string

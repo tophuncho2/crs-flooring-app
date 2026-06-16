@@ -223,24 +223,6 @@ export function buildContactLaborPaymentHref(
   return buildContactRecordHref({ contactId, laborPayment: laborPaymentId, returnTo })
 }
 
-const INVENTORY_DUPLICATE_BASE = "/dashboard/inventory/duplicate"
-
-/**
- * Open the "duplicate inventory" create form for a source row. Its own page
- * (mirrors the canonical `/dashboard/{module}/new` create flow) — the source
- * rides in `?sourceId=…` so the page can load it server-side for the read-only
- * reference panel. A successful create routes to the new item's record view.
- */
-export function buildInventoryDuplicateHref(options: {
-  sourceId: string
-  returnTo?: string | null
-}): string {
-  const searchParams = new URLSearchParams()
-  searchParams.set("sourceId", options.sourceId)
-  if (options.returnTo) searchParams.set("returnTo", options.returnTo)
-  return `${INVENTORY_DUPLICATE_BASE}?${searchParams.toString()}`
-}
-
 const INVENTORY_MERGE_BASE = "/dashboard/inventory/merge"
 
 /**

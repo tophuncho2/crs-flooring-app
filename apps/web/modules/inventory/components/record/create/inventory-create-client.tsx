@@ -11,28 +11,55 @@ import {
 } from "@/engines/record-view"
 import { buildInventoryRecordHref } from "@/hooks/navigation"
 import { getClientErrorMessage } from "@/transport"
-import { useInventoryCreateSection } from "@/modules/inventory/controllers/record/create/use-inventory-create-section"
+import {
+  useInventoryCreateSection,
+  type InventoryCreateForm,
+} from "@/modules/inventory/controllers/record/create/use-inventory-create-section"
 import { InventoryCreateFields } from "./inventory-create-fields"
 
 /** Dirty-section label surfaced in the scaffold's leave-guard message. */
 const CREATE_DIRTY_SECTION = "create"
 
 /**
- * The manual "create inventory row" flow as its own page (mirrors the duplicate
- * create flow — a create scaffold over a single section). The user picks a
- * product + warehouse and fills the editable fields; on success a brand-new
- * row's record page opens.
+ * Seed for the create form when opened from a source row (the "duplicate" entry
+ * point). Carries the draft field values plus the display-only picker labels +
+ * stock-unit suffix so the seeded product/warehouse triggers render immediately.
  */
-function InventoryCreatePanel({ page }: { page: RecordDetailClientScaffoldContext }) {
+export type InventoryCreateSeed = {
+  form: Partial<InventoryCreateForm>
+  productLabel: string | null
+  warehouseLabel: string | null
+  stockUnitAbbrev: string
+}
+
+/**
+ * The "create inventory row" flow as its own page (a create scaffold over a
+ * single section). The user picks a product + warehouse and fills the editable
+ * fields; on success a brand-new row's record page opens. When `seed` is
+ * supplied (opened from a row's Duplicate action) the form opens pre-filled from
+ * that row.
+ */
+function InventoryCreatePanel({
+  page,
+  seed,
+}: {
+  page: RecordDetailClientScaffoldContext
+  seed?: InventoryCreateSeed
+}) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
-  const create = useInventoryCreateSection({ clearError: () => setError(null) })
+  const create = useInventoryCreateSection({
+    clearError: () => setError(null),
+    initialSeed: seed?.form,
+  })
   const { form, setField, isDirty, canSubmit, isPending, commitCreate, resetToSeed } = create
 
   // Display-only snapshots for the picker triggers + starting-stock unit suffix.
-  const [productLabel, setProductLabel] = useState<string | null>(null)
-  const [warehouseLabel, setWarehouseLabel] = useState<string | null>(null)
-  const [stockUnitAbbrev, setStockUnitAbbrev] = useState<string>("")
+  // Seeded from the source row when duplicating so the triggers read correctly
+  // before the user touches the pickers.
+  const [productLabel, setProductLabel] = useState<string | null>(seed?.productLabel ?? null)
+  const [warehouseLabel, setWarehouseLabel] = useState<string | null>(seed?.warehouseLabel ?? null)
+  const [stockUnitAbbrev, setStockUnitAbbrev] = useState<string>(seed?.stockUnitAbbrev ?? "")
 
   // Register dirtiness with the page so the scaffold's leave-guard fires when
   // navigating away with unsaved edits.
@@ -107,14 +134,22 @@ function InventoryCreatePanel({ page }: { page: RecordDetailClientScaffoldContex
   )
 }
 
-export function InventoryCreateClient({ backHref }: { backHref: string }) {
+export function InventoryCreateClient({
+  backHref,
+  seed,
+  title = "New Inventory",
+}: {
+  backHref: string
+  seed?: InventoryCreateSeed
+  title?: string
+}) {
   return (
     <RecordCreateClientScaffold
-      title="New Inventory"
+      title={title}
       backHref={backHref}
       dirtyMessage="You have unsaved inventory changes. Leave this form without saving?"
     >
-      {(page) => <InventoryCreatePanel page={page} />}
+      {(page) => <InventoryCreatePanel page={page} seed={seed} />}
     </RecordCreateClientScaffold>
   )
 }

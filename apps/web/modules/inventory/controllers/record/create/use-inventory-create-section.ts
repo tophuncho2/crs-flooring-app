@@ -54,18 +54,30 @@ export type InventoryCreateSlice = {
 }
 
 /**
- * Create-inventory section slice for the standalone create page
- * (`/dashboard/inventory/new`). Owns the editable draft and the create
- * mutation. No optimistic-lock token — a create inserts a brand-new row rather
- * than mutating an existing one. Mirrors `useInventoryDuplicateSection`.
+ * Create-inventory section slice for the create page (`/dashboard/inventory/new`).
+ * Owns the editable draft and the create mutation. No optimistic-lock token — a
+ * create inserts a brand-new row rather than mutating an existing one.
+ *
+ * Opens blank for a fresh create, or pre-filled from `initialSeed` when the page
+ * is seeded from a source row (the "duplicate" entry point — `?sourceId=`). The
+ * seeded values become the draft's baseline, so the form opens clean (not dirty)
+ * and Discard returns to the seed rather than to empty.
  */
 export function useInventoryCreateSection({
   clearError,
+  initialSeed,
 }: {
   clearError: () => void
+  initialSeed?: Partial<InventoryCreateForm>
 }): InventoryCreateSlice {
-  const [form, setForm] = useState<InventoryCreateForm>(EMPTY_CREATE_FORM)
-  const [seed, setSeed] = useState<InventoryCreateForm>(EMPTY_CREATE_FORM)
+  const seedForm = useMemo<InventoryCreateForm>(
+    () => (initialSeed ? { ...EMPTY_CREATE_FORM, ...initialSeed } : EMPTY_CREATE_FORM),
+    // The page passes a stable seed for the lifetime of the form; recompute only
+    // if it identity-changes (it won't mid-edit).
+    [initialSeed],
+  )
+  const [form, setForm] = useState<InventoryCreateForm>(seedForm)
+  const [seed, setSeed] = useState<InventoryCreateForm>(seedForm)
 
   const reset = useCallback(() => {
     setForm(EMPTY_CREATE_FORM)

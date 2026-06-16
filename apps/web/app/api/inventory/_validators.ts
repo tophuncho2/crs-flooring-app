@@ -2,7 +2,6 @@ import { z } from "zod"
 import { InventoryExecutionError } from "@builders/application"
 import type {
   CreateInventoryInput,
-  DuplicateInventoryInput,
   InventoryListFilters,
   ListInventoryMergeCandidatesInput,
   MergeInventoryInput,
@@ -324,25 +323,6 @@ export function validateUpdateInventoryInput(body: Record<string, unknown>): Upd
     input.internalNotes = optionalBoundedString(body.internalNotes, INVENTORY_INTERNAL_NOTES_MAX, "internalNotes")
   if (body.isArchived !== undefined) input.isArchived = requireBoolean(body.isArchived, "isArchived")
   return input
-}
-
-/**
- * Shape validator for the duplicate-inventory action. All five editable fields
- * are coerced to strings (missing → ""); business rules (startingStock is a
- * positive number, length caps) run in the domain via the use case and surface
- * as a 422. Pasted columns are never accepted from the client — they're read
- * from the source row server-side.
- */
-export function validateDuplicateInventoryInput(
-  body: Record<string, unknown>,
-): DuplicateInventoryInput {
-  return {
-    rollNumber: optionalString(body.rollNumber, "rollNumber"),
-    note: optionalString(body.note, "note"),
-    startingStock: optionalString(body.startingStock, "startingStock"),
-    location: optionalString(body.location, "location"),
-    internalNotes: optionalString(body.internalNotes, "internalNotes"),
-  }
 }
 
 /**

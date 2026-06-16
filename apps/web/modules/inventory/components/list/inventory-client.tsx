@@ -476,6 +476,7 @@ export default function InventoryClient({
         onOpenInventory={(id) =>
           router.push(buildInventoryRecordHref({ inventoryId: id, returnTo }))
         }
+        onDuplicateInventory={(id) => openCreate({ sourceId: id })}
         pagination={
           <PaginateControls
             page={page}

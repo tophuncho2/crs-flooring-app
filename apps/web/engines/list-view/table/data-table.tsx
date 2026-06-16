@@ -13,10 +13,11 @@ const ALIGN_CLASS_NAME: Record<DataTableCellAlign, string> = {
 }
 
 const DEFAULT_SELECTION_WIDTH = 44
-// Leading "open" gutter width. Sized for one launch button today; the gutter is a
-// flex row so a future overflow/options button drops in beside it — bump this to
-// ~104 when that second button lands (two 40px targets + gap) for zero reflow.
+// Leading "open" gutter width. Sized for one launch button; when a consumer also
+// supplies {@link DataTableProps.rowActions} the gutter hosts a second (options)
+// button beside it, so it widens to fit two targets + gap for zero reflow.
 const DEFAULT_OPEN_WIDTH = 44
+const OPEN_WIDTH_WITH_ACTIONS = 88
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
@@ -78,6 +79,14 @@ export type DataTableProps<TRow extends DataTableRow> = {
    * Mutually exclusive with {@link onRowClick} per consumer.
    */
   onOpenRow?: (row: TRow) => void
+  /**
+   * Optional per-row action(s) rendered in the leading gutter beside the open
+   * button (e.g. an overflow/options menu). Pure pass-through `ReactNode` — the
+   * consumer owns the control. When set, the gutter renders even without
+   * {@link onOpenRow} and widens to host the extra target. The gutter cell stops
+   * click propagation so these controls never trip a row handler.
+   */
+  rowActions?: (row: TRow) => ReactNode
   /** Optional multi-select feature — see {@link DataTableSelection}. */
   selection?: DataTableSelection<TRow>
   /** Aria-label provider for interactive rows. */
@@ -105,6 +114,7 @@ export function DataTable<TRow extends DataTableRow>({
   renderCell,
   onRowClick,
   onOpenRow,
+  rowActions,
   selection,
   getRowAriaLabel,
   className,
@@ -118,7 +128,9 @@ export function DataTable<TRow extends DataTableRow>({
       }
     : onRowClick
   const interactive = Boolean(activateRow)
-  const hasOpenColumn = Boolean(onOpenRow)
+  const hasRowActions = Boolean(rowActions)
+  const hasOpenColumn = Boolean(onOpenRow) || hasRowActions
+  const openColumnWidth = hasRowActions ? OPEN_WIDTH_WITH_ACTIONS : DEFAULT_OPEN_WIDTH
   const totalColumns = columns.length + (selection ? 1 : 0) + (hasOpenColumn ? 1 : 0)
 
   return (
@@ -160,8 +172,8 @@ export function DataTable<TRow extends DataTableRow>({
                 </th>
               ) : null}
               {hasOpenColumn ? (
-                <th scope="col" style={{ width: DEFAULT_OPEN_WIDTH }} className="px-3 py-2">
-                  <span className="sr-only">Open</span>
+                <th scope="col" style={{ width: openColumnWidth }} className="px-3 py-2">
+                  <span className="sr-only">{hasRowActions ? "Actions" : "Open"}</span>
                 </th>
               ) : null}
               {columns.map((column) => (
@@ -234,20 +246,23 @@ export function DataTable<TRow extends DataTableRow>({
                       />
                     </td>
                   ) : null}
-                  {hasOpenColumn && onOpenRow ? (
+                  {hasOpenColumn ? (
                     <td
                       className="px-3 py-2"
                       // Keep gutter-button clicks off any row-level handler.
                       onClick={(event) => event.stopPropagation()}
                       onMouseDown={(event) => event.stopPropagation()}
                     >
-                      {/* Flex gutter — a future overflow/options button drops in
-                          beside the open button with no structural change. */}
+                      {/* Flex gutter — the open button and an optional row-actions
+                          control (e.g. an options menu) sit side by side. */}
                       <div className="flex items-center justify-center gap-2">
-                        <RecordOpenButton
-                          onClick={() => onOpenRow(row)}
-                          ariaLabel={getRowAriaLabel?.(row) ?? `Open ${row.id}`}
-                        />
+                        {onOpenRow ? (
+                          <RecordOpenButton
+                            onClick={() => onOpenRow(row)}
+                            ariaLabel={getRowAriaLabel?.(row) ?? `Open ${row.id}`}
+                          />
+                        ) : null}
+                        {rowActions?.(row)}
                       </div>
                     </td>
                   ) : null}

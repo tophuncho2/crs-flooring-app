@@ -24,7 +24,7 @@ import {
   type InventoryRecordWoSeed,
 } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { WarningNotice } from "@/engines/common"
-import { buildInventoryDuplicateHref } from "@/hooks/navigation"
+import { buildRecordCreateHref } from "@/hooks/navigation"
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-list"
 
@@ -32,8 +32,8 @@ import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-li
  * The inventory record view. ① editable inventory cells (primary — only Location
  * / Internal Notes / archive) · ② adjustments drilldown (a paginated list ⇄ the
  * embedded adjustment edit/create view, selection driven by the `?adjustment`
- * URL param the detail client owns). The "Duplicate" primary action navigates to
- * the standalone duplicate-create page (`/dashboard/inventory/duplicate`).
+ * URL param the detail client owns). The "Duplicate" primary action opens the
+ * inventory create form seeded from this row (`/dashboard/inventory/new?sourceId=`).
  * Mirrors the Management Company record view.
  */
 export function InventoryRecordView({
@@ -120,12 +120,12 @@ export function InventoryRecordView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAdjustmentId, editRow])
 
-  // "Duplicate" leaves the record for the standalone duplicate-create page,
-  // seeding it with this row as the source. Guard the navigation so unsaved
+  // "Duplicate" leaves the record for the inventory create form, seeded with
+  // this row as the source (`?sourceId=`). Guard the navigation so unsaved
   // primary edits prompt before we route away.
   const handleDuplicate = useCallback(() => {
     page.confirmNavigation(() => {
-      router.push(buildInventoryDuplicateHref({ sourceId: entry.id }))
+      router.push(buildRecordCreateHref("/dashboard/inventory", { params: { sourceId: entry.id } }))
     })
   }, [page, router, entry.id])
 
