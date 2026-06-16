@@ -20,7 +20,7 @@ export function LaborPaymentsTable({
       rows={rows}
       columns={LABOR_PAYMENTS_LIST_COLUMNS}
       empty="No labor payments match this search."
-      onRowClick={(row) => onOpenLaborPayment(row)}
+      onOpenRow={(row) => onOpenLaborPayment(row)}
       getRowAriaLabel={(row) => `Open labor payment for ${row.contactName}`}
       renderCell={renderLaborPaymentRowCell}
       footerSlot={pagination}

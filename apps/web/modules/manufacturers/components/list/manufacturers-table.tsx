@@ -20,7 +20,7 @@ export function ManufacturersTable({
       rows={rows}
       columns={MANUFACTURERS_LIST_COLUMNS}
       empty="No manufacturers found."
-      onRowClick={onOpen}
+      onOpenRow={onOpen}
       getRowAriaLabel={(row) => `Open manufacturer ${row.companyName}`}
       renderCell={renderManufacturerRowCell}
       footerSlot={pagination}

@@ -17,4 +17,12 @@ export * from "./checkbox-cell"
 export * from "./toggle-cell"
 export * from "./circular-commit-button"
 export * from "./row-action-button"
-export * from "./cell-action-button"
+// The cell action-button atom now lives in @/engines/common/controls so the
+// list-view engine can share it (list-view cannot import record-view). Re-exported
+// here to preserve record-view's public cell surface with zero consumer churn.
+export {
+  CellActionButton,
+  CellOpenButton,
+  CellAddButton,
+  type CellActionButtonProps,
+} from "@/engines/common"

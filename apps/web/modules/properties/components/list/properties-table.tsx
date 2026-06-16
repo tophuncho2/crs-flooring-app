@@ -20,7 +20,7 @@ export function PropertiesTable({
       rows={rows}
       columns={PROPERTIES_LIST_COLUMNS}
       empty="No properties match these filters."
-      onRowClick={(row) => onOpenProperty(row)}
+      onOpenRow={(row) => onOpenProperty(row)}
       getRowAriaLabel={(row) => `Open property ${row.name}`}
       renderCell={renderPropertyRowCell}
       footerSlot={pagination}

@@ -20,7 +20,7 @@ export function JobTypesTable({
       rows={rows}
       columns={JOB_TYPES_LIST_COLUMNS}
       empty="No job types match this search."
-      onRowClick={(row) => onOpenJobType(row)}
+      onOpenRow={(row) => onOpenJobType(row)}
       getRowAriaLabel={(row) => `Open job type ${row.name}`}
       renderCell={renderJobTypeRowCell}
       footerSlot={pagination}

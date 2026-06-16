@@ -22,7 +22,7 @@ export function ProductsTable({
       rows={rows}
       columns={PRODUCTS_LIST_COLUMNS}
       empty="No flooring products found."
-      onRowClick={(row) => onOpenProduct(row.id)}
+      onOpenRow={(row) => onOpenProduct(row.id)}
       getRowAriaLabel={(row) => `Open product ${row.name || row.style || row.id}`}
       renderCell={renderProductRowCell}
       footerSlot={pagination}

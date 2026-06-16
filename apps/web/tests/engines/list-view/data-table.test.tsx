@@ -102,3 +102,45 @@ describe("DataTable", () => {
     expect(queryByRole("button")).toBeNull()
   })
 })
+
+describe("DataTable — onOpenRow (leading open gutter)", () => {
+  afterEach(() => cleanup())
+
+  it("renders one leading open button per row that fires onOpenRow", async () => {
+    const user = userEvent.setup()
+    const onOpenRow = vi.fn()
+    const { getAllByRole } = render(
+      <DataTable
+        rows={ROWS}
+        columns={COLUMNS}
+        onOpenRow={onOpenRow}
+        getRowAriaLabel={(row) => `Open ${row.name}`}
+      />,
+    )
+    // One gutter button per row — and the rows themselves are NOT buttons
+    // (would be 2× this count if rows stayed interactive).
+    const buttons = getAllByRole("button")
+    expect(buttons).toHaveLength(ROWS.length)
+    await user.click(buttons[0])
+    expect(onOpenRow).toHaveBeenCalledWith(ROWS[0])
+  })
+
+  it("labels the open button via getRowAriaLabel", () => {
+    const { getByRole } = render(
+      <DataTable
+        rows={ROWS}
+        columns={COLUMNS}
+        onOpenRow={vi.fn()}
+        getRowAriaLabel={(row) => `Open ${row.name}`}
+      />,
+    )
+    expect(getByRole("button", { name: "Open Alpha" })).toBeTruthy()
+  })
+
+  it("renders an Open gutter column header", () => {
+    const { getByText } = render(
+      <DataTable rows={ROWS} columns={COLUMNS} onOpenRow={vi.fn()} />,
+    )
+    expect(getByText("Open")).toBeTruthy()
+  })
+})

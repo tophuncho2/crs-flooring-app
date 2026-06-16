@@ -75,7 +75,7 @@ export function TemplatesSectionList({ filters }: { filters: TemplatesListFilter
         columns={TEMPLATES_LIST_COLUMNS}
         renderCell={renderTemplateRowCell}
         empty="No templates yet."
-        onRowClick={(row) =>
+        onOpenRow={(row) =>
           router.push(
             buildTemplateHubHref({
               templateId: row.id,

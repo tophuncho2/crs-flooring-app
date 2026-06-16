@@ -20,7 +20,7 @@ export function TemplatesTable({
       rows={rows}
       columns={TEMPLATES_LIST_COLUMNS}
       empty="No templates match these filters."
-      onRowClick={(row) => onOpen(row)}
+      onOpenRow={(row) => onOpen(row)}
       getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
       renderCell={renderTemplateRowCell}
       footerSlot={pagination}

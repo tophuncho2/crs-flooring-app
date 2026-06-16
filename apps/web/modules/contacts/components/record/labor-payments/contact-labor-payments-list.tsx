@@ -89,7 +89,7 @@ export function ContactLaborPaymentsList({
         columns={LABOR_PAYMENTS_LIST_COLUMNS}
         renderCell={renderLaborPaymentRowCell}
         empty="No labor payments yet."
-        onRowClick={(row) => onSelect(row)}
+        onOpenRow={(row) => onSelect(row)}
         getRowAriaLabel={(row) => `Edit labor payment ${row.description || row.id}`}
         className="rounded-none! border-0! shadow-none!"
       />

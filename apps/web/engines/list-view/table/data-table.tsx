@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { RowOpenButton } from "@/engines/common"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
 import { DataTableSelectAllButton, DataTableSelectCheckbox } from "./select"
@@ -12,6 +13,10 @@ const ALIGN_CLASS_NAME: Record<DataTableCellAlign, string> = {
 }
 
 const DEFAULT_SELECTION_WIDTH = 44
+// Leading "open" gutter width. Sized for one launch button today; the gutter is a
+// flex row so a future overflow/options button drops in beside it — bump this to
+// ~104 when that second button lands (two 40px targets + gap) for zero reflow.
+const DEFAULT_OPEN_WIDTH = 44
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
@@ -57,11 +62,22 @@ export type DataTableProps<TRow extends DataTableRow> = {
   /** Per-cell renderer. Defaults to `column.render?.(row)` or
    *  `row[column.key]` as plain text. */
   renderCell?: (column: DataTableColumn<TRow>, row: TRow) => ReactNode
-  /** Optional per-row click handler. When set, rows render as
-   *  interactive (`role="button"`, Enter/Space activation, hover +
-   *  focus styling). Ignored when `selection` is set (row-click toggles
-   *  selection instead). */
+  /**
+   * Makes the whole row clickable (`role="button"`, Enter/Space activation, hover
+   * + focus styling). Ignored when `selection` is set (row-click toggles selection
+   * instead). Reserved for the *select / swap-reference* picker grids; openable
+   * record tables use {@link onOpenRow} instead, which renders a dedicated open
+   * gutter rather than co-opting the whole row.
+   */
   onRowClick?: (row: TRow) => void
+  /**
+   * Open affordance. When set, the table renders a fixed leading **action gutter**
+   * whose launch button opens the row's record; the row body itself stays inert
+   * (no row-click). The gutter is a flex row sized to also host a future
+   * overflow/options button beside the open button — see {@link DEFAULT_OPEN_WIDTH}.
+   * Mutually exclusive with {@link onRowClick} per consumer.
+   */
+  onOpenRow?: (row: TRow) => void
   /** Optional multi-select feature — see {@link DataTableSelection}. */
   selection?: DataTableSelection<TRow>
   /** Aria-label provider for interactive rows. */
@@ -88,6 +104,7 @@ export function DataTable<TRow extends DataTableRow>({
   footerSlot,
   renderCell,
   onRowClick,
+  onOpenRow,
   selection,
   getRowAriaLabel,
   className,
@@ -101,7 +118,8 @@ export function DataTable<TRow extends DataTableRow>({
       }
     : onRowClick
   const interactive = Boolean(activateRow)
-  const totalColumns = columns.length + (selection ? 1 : 0)
+  const hasOpenColumn = Boolean(onOpenRow)
+  const totalColumns = columns.length + (selection ? 1 : 0) + (hasOpenColumn ? 1 : 0)
 
   return (
     <div
@@ -139,6 +157,11 @@ export function DataTable<TRow extends DataTableRow>({
                   className="px-3 py-2"
                 >
                   <span className="sr-only">Select</span>
+                </th>
+              ) : null}
+              {hasOpenColumn ? (
+                <th scope="col" style={{ width: DEFAULT_OPEN_WIDTH }} className="px-3 py-2">
+                  <span className="sr-only">Open</span>
                 </th>
               ) : null}
               {columns.map((column) => (
@@ -209,6 +232,23 @@ export function DataTable<TRow extends DataTableRow>({
                         onChange={() => selection.onToggleRow(row.id)}
                         ariaLabel={getRowAriaLabel?.(row) ?? `Select ${row.id}`}
                       />
+                    </td>
+                  ) : null}
+                  {hasOpenColumn && onOpenRow ? (
+                    <td
+                      className="px-3 py-2"
+                      // Keep gutter-button clicks off any row-level handler.
+                      onClick={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                    >
+                      {/* Flex gutter — a future overflow/options button drops in
+                          beside the open button with no structural change. */}
+                      <div className="flex items-center justify-center gap-2">
+                        <RowOpenButton
+                          onClick={() => onOpenRow(row)}
+                          ariaLabel={getRowAriaLabel?.(row) ?? `Open ${row.id}`}
+                        />
+                      </div>
                     </td>
                   ) : null}
                   {columns.map((column) => (

@@ -20,7 +20,7 @@ export function WarehouseTable({
       rows={rows}
       columns={WAREHOUSE_LIST_COLUMNS}
       empty="No warehouses match these filters."
-      onRowClick={onOpen}
+      onOpenRow={onOpen}
       getRowAriaLabel={(row) => `Open warehouse ${row.name}`}
       renderCell={renderWarehouseRowCell}
       footerSlot={pagination}

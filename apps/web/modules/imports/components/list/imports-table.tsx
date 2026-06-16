@@ -24,7 +24,7 @@ export function ImportsTable({
       rows={rows}
       columns={IMPORTS_LIST_COLUMNS}
       empty="No imports logged yet."
-      onRowClick={(row) => onOpenImport(row.id)}
+      onOpenRow={(row) => onOpenImport(row.id)}
       getRowAriaLabel={(row) => `Open import ${formatImportNumber(row.importNumber)}`}
       renderCell={renderImportsRowCell}
       footerSlot={pagination}

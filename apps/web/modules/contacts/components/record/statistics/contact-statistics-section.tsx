@@ -73,7 +73,7 @@ export function ContactStatisticsSection({ contactId }: { contactId: string }) {
             columns={WORK_ORDERS_LIST_COLUMNS}
             renderCell={renderWorkOrderRowCell}
             empty={query.isLoading ? "Loading work orders…" : "No work orders yet."}
-            onRowClick={(row) =>
+            onOpenRow={(row) =>
               router.push(buildRecordDetailHref("/dashboard/work-orders", row.id, returnTo))
             }
             getRowAriaLabel={(row) => `Open work order ${row.workOrderNumber}`}

@@ -20,7 +20,7 @@ export function WorkOrdersTable({
       rows={rows}
       columns={WORK_ORDERS_LIST_COLUMNS}
       empty="No work orders match these filters."
-      onRowClick={(row) => onOpenWorkOrder(row.id)}
+      onOpenRow={(row) => onOpenWorkOrder(row.id)}
       getRowAriaLabel={(row) => `Open work order ${row.workOrderNumber}`}
       renderCell={renderWorkOrderRowCell}
       footerSlot={pagination}

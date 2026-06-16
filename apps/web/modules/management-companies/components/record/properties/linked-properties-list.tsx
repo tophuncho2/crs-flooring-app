@@ -105,7 +105,7 @@ export function LinkedPropertiesList({
         columns={PROPERTIES_SECTION_COLUMNS}
         renderCell={renderPropertyRowCell}
         empty="No linked properties yet."
-        onRowClick={(row) => onSelect(row.id)}
+        onOpenRow={(row) => onSelect(row.id)}
         getRowAriaLabel={(row) => `Open property ${row.name}`}
         className="rounded-none! border-0! shadow-none!"
       />

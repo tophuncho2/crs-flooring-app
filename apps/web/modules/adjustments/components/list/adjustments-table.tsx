@@ -20,7 +20,7 @@ export function AdjustmentsTable({
       rows={rows}
       columns={ADJUSTMENTS_LIST_COLUMNS}
       empty="No adjustments match these filters."
-      onRowClick={(row) => onOpenAdjustment(row)}
+      onOpenRow={(row) => onOpenAdjustment(row)}
       getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
       renderCell={renderAdjustmentsRowCell}
       footerSlot={pagination}

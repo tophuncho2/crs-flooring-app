@@ -20,7 +20,7 @@ export function ContactsTable({
       rows={rows}
       columns={CONTACTS_LIST_COLUMNS}
       empty="No contacts match this search."
-      onRowClick={(row) => onOpenContact(row)}
+      onOpenRow={(row) => onOpenContact(row)}
       getRowAriaLabel={(row) => `Open contact ${row.name}`}
       renderCell={renderContactRowCell}
       footerSlot={pagination}

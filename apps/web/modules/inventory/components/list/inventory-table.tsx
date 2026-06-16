@@ -20,7 +20,7 @@ export function InventoryTable({
       rows={rows}
       columns={INVENTORY_LIST_COLUMNS}
       empty="No inventory rows match these filters."
-      onRowClick={(row) => onOpenInventory(row.id)}
+      onOpenRow={(row) => onOpenInventory(row.id)}
       getRowAriaLabel={(row) => `Open inventory item ${row.inventoryNumber}`}
       renderCell={renderInventoryRowCell}
       footerSlot={pagination}

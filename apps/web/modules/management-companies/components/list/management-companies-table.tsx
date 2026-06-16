@@ -20,7 +20,7 @@ export function ManagementCompaniesTable({
       rows={rows}
       columns={MANAGEMENT_COMPANIES_LIST_COLUMNS}
       empty="No management companies match these filters."
-      onRowClick={(row) => onOpenCompany(row)}
+      onOpenRow={(row) => onOpenCompany(row)}
       getRowAriaLabel={(row) => `Open management company ${row.name}`}
       renderCell={renderManagementCompanyRowCell}
       footerSlot={pagination}
