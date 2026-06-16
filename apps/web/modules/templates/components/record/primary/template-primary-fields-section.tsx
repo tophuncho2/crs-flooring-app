@@ -28,7 +28,7 @@ import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group
  */
 export type TemplatePrimaryDetail = {
   templateNumber: string
-  propertyId: string
+  propertyId: string | null
   propertyName: string
   propertyStreetAddress: string
   propertyCity: string

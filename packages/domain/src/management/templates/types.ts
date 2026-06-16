@@ -5,7 +5,7 @@ export type TemplateListRow = {
   templateNumber: string
   unitType: string
   description: string
-  propertyId: string
+  propertyId: string | null
   propertyName: string
   managementCompanyId: string | null
   managementCompanyName: string | null

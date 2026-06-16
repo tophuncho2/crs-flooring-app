@@ -7,7 +7,6 @@ import {
 } from "@builders/db"
 import {
   TEMPLATE_SYNC_TEMPLATE_NOT_FOUND_MESSAGE,
-  TEMPLATE_SYNC_TEMPLATE_PROPERTY_REQUIRED_MESSAGE,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -48,14 +47,9 @@ export async function syncTemplateToWorkOrderUseCase(
       throw error
     }
 
-    if (!template.propertyId) {
-      throw new WorkOrderExecutionError({
-        code: "TEMPLATE_SYNC_TEMPLATE_INVALID",
-        message: TEMPLATE_SYNC_TEMPLATE_PROPERTY_REQUIRED_MESSAGE,
-        status: 400,
-        field: "propertyId",
-      })
-    }
+    // A template no longer needs a property to be synced. A property-less
+    // template materializes a property-less work order — the nullable template
+    // propertyId flows straight through to the work order's nullable propertyId.
 
     // A template no longer needs a warehouse to be synced. A null template
     // warehouse flows straight through to the work order's nullable warehouseId.

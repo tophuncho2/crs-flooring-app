@@ -1,7 +1,6 @@
 import { Prisma, updateTemplateRecord, withDatabaseTransaction } from "@builders/db"
 import {
   TEMPLATE_NOT_FOUND_MESSAGE,
-  TEMPLATE_PROPERTY_REQUIRED_MESSAGE,
   TEMPLATE_UNIT_TYPE_REQUIRED_MESSAGE,
 } from "@builders/domain"
 import { TemplateExecutionError } from "./errors.js"
@@ -15,15 +14,8 @@ export async function updateTemplateUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    if (input.propertyId !== undefined && !input.propertyId.trim()) {
-      throw new TemplateExecutionError({
-        code: "TEMPLATE_VALIDATION_FAILED",
-        message: TEMPLATE_PROPERTY_REQUIRED_MESSAGE,
-        status: 400,
-        field: "propertyId",
-      })
-    }
-
+    // Property is optional and freely clearable — passing `null` detaches it.
+    // Unit type, when supplied, must still be non-empty.
     if (input.unitType !== undefined && !input.unitType.trim()) {
       throw new TemplateExecutionError({
         code: "TEMPLATE_VALIDATION_FAILED",

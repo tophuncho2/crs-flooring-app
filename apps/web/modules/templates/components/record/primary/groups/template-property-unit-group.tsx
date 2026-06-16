@@ -125,7 +125,6 @@ export function TemplatePropertyUnitGroup({
       <CellAt col={1} row={3} colSpan={4}>
         <FormField
           label="Property"
-          required
           actions={
             <>
               <RecordOpenButton

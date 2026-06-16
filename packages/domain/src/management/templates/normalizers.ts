@@ -22,8 +22,8 @@ type TemplateListInput = {
   templateNumber: string
   unitType: string
   description: string | null
-  propertyId: string
-  property: { name: string; managementCompany: { id: string; name: string } | null }
+  propertyId: string | null
+  property: { name: string; managementCompany: { id: string; name: string } | null } | null
   jobTypeId: string | null
   jobType: { id: string; name: string } | null
   warehouseId: string | null
@@ -44,7 +44,7 @@ type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
     state: string | null
     postalCode: string | null
     instructions: string | null
-  }
+  } | null
   items: Array<Parameters<typeof normalizeTemplateMaterialItem>[0]>
 }
 
@@ -55,9 +55,9 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
     unitType: template.unitType,
     description: template.description ?? "",
     propertyId: template.propertyId,
-    propertyName: template.property.name,
-    managementCompanyId: template.property.managementCompany?.id ?? null,
-    managementCompanyName: template.property.managementCompany?.name ?? null,
+    propertyName: template.property?.name ?? "",
+    managementCompanyId: template.property?.managementCompany?.id ?? null,
+    managementCompanyName: template.property?.managementCompany?.name ?? null,
     jobTypeId: template.jobTypeId,
     jobTypeName: template.jobType?.name ?? null,
     warehouseId: template.warehouseId,
@@ -78,11 +78,11 @@ export function normalizeTemplate(
     ...base,
     internalNotes: template.internalNotes ?? "",
     installerInstructions: template.installerInstructions ?? "",
-    propertyStreetAddress: template.property.streetAddress ?? "",
-    propertyCity: template.property.city ?? "",
-    propertyState: template.property.state ?? "",
-    propertyPostalCode: template.property.postalCode ?? "",
-    propertyInstructions: template.property.instructions ?? "",
+    propertyStreetAddress: template.property?.streetAddress ?? "",
+    propertyCity: template.property?.city ?? "",
+    propertyState: template.property?.state ?? "",
+    propertyPostalCode: template.property?.postalCode ?? "",
+    propertyInstructions: template.property?.instructions ?? "",
     items,
     previousTemplate: neighbors.previousTemplate,
     nextTemplate: neighbors.nextTemplate,

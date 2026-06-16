@@ -5,7 +5,7 @@ import { normalizeTemplate, type TemplateDetail } from "@builders/domain"
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
 export type CreateTemplateRecordInput = {
-  propertyId: string
+  propertyId: string | null
   jobTypeId: string | null
   warehouseId: string | null
   unitType: string

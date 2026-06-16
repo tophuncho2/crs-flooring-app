@@ -84,7 +84,8 @@ export function validateCreateTemplateInput(
   body: Record<string, unknown>,
 ): CreateTemplateUseCaseInput {
   return {
-    propertyId: requireString(body.propertyId, "propertyId", failTemplate),
+    // Property is optional — a template always has an auto-generated number.
+    propertyId: optionalString(body.propertyId),
     jobTypeId: optionalString(body.jobTypeId),
     warehouseId: optionalString(body.warehouseId),
     unitType: requireBoundedString(body.unitType, TEMPLATE_UNIT_TYPE_MAX, "unitType", failTemplate),
@@ -109,7 +110,8 @@ export function validateUpdateTemplateInput(
 ): UpdateTemplateUseCaseInput {
   const input: UpdateTemplateUseCaseInput = {}
 
-  if ("propertyId" in body) input.propertyId = requireString(body.propertyId, "propertyId", failTemplate)
+  // Property is optional and may be cleared (null).
+  if ("propertyId" in body) input.propertyId = optionalString(body.propertyId)
   if ("jobTypeId" in body) input.jobTypeId = optionalString(body.jobTypeId)
   if ("warehouseId" in body) input.warehouseId = optionalString(body.warehouseId)
   if ("unitType" in body) {

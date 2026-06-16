@@ -92,7 +92,9 @@ export function useTemplateHubController(
       managementCompany: templateDetail.managementCompanyId
         ? { id: templateDetail.managementCompanyId, label: templateDetail.managementCompanyName }
         : null,
-      property: { id: templateDetail.propertyId, label: templateDetail.propertyName },
+      property: templateDetail.propertyId
+        ? { id: templateDetail.propertyId, label: templateDetail.propertyName }
+        : null,
       template: { id: templateDetail.id, label: templateDetail.unitType },
     })
   }, [templateDetail, seed])

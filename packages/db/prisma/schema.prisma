@@ -458,8 +458,8 @@ model FlooringTemplate {
   id                   String                     @id @default(uuid())
   templateNumber       String                     @unique @default(dbgenerated("('TP-'::text || (nextval('flooring_template_number_seq'::regclass))::text)")) @map("template_number")
   templateNumberInt    Int?                       @default(dbgenerated("(SUBSTRING(template_number FROM 4))::integer"))
-  propertyId           String
-  property             Property                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  propertyId           String?
+  property             Property?                  @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   jobTypeId            String?
   jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
   warehouseId          String?
