@@ -51,8 +51,8 @@ export function InventoryPrimaryFieldsSection({
   return (
     <div className="flex flex-col gap-4">
       <InventoryFieldGrid>
-        {/* Left column, top-down: Product · Warehouse · Location · Internal
-            Notes · Status · Inv# · Roll# · Dye Lot · Note */}
+        {/* Left column, top-down: Product · Warehouse · Location · Inv# · Roll#
+            · Dye Lot · Note · Internal Notes · Status */}
         <CellAt col={1} row={1} colSpan={4}>
           <ProductNameField value={record.productName} />
         </CellAt>
@@ -67,30 +67,30 @@ export function InventoryPrimaryFieldsSection({
           />
         </CellAt>
         <CellAt col={1} row={4} colSpan={4}>
+          <InventoryNumberField value={record.inventoryNumber} />
+        </CellAt>
+        <CellAt col={1} row={5} colSpan={4}>
+          <RollNumberReadOnlyField value={record.rollNumber} />
+        </CellAt>
+        <CellAt col={1} row={6} colSpan={4}>
+          <DyeLotReadOnlyField value={record.dyeLot} />
+        </CellAt>
+        <CellAt col={1} row={7} colSpan={4}>
+          <NoteReadOnlyField value={record.note} />
+        </CellAt>
+        <CellAt col={1} row={8} colSpan={4}>
           <InternalNotesField
             editable={editable}
             value={draft.internalNotes}
             onChange={(value) => onFieldChange("internalNotes", value)}
           />
         </CellAt>
-        <CellAt col={1} row={5} colSpan={4}>
+        <CellAt col={1} row={9} colSpan={4}>
           <StatusField
             editable={editable}
             value={draft.isArchived}
             onChange={(next) => onFieldChange("isArchived", next)}
           />
-        </CellAt>
-        <CellAt col={1} row={6} colSpan={4}>
-          <InventoryNumberField value={record.inventoryNumber} />
-        </CellAt>
-        <CellAt col={1} row={7} colSpan={4}>
-          <RollNumberReadOnlyField value={record.rollNumber} />
-        </CellAt>
-        <CellAt col={1} row={8} colSpan={4}>
-          <DyeLotReadOnlyField value={record.dyeLot} />
-        </CellAt>
-        <CellAt col={1} row={9} colSpan={4}>
-          <NoteReadOnlyField value={record.note} />
         </CellAt>
 
         {/* Right column (2 cols wide), aligned from Product down: Stock ·
@@ -120,7 +120,7 @@ export function InventoryPrimaryFieldsSection({
         <CellAt col={5} row={1} colSpan={2}>
           <CreatedAtField value={record.createdAt} />
         </CellAt>
-        <CellAt col={7} row={1} colSpan={2}>
+        <CellAt col={5} row={2} colSpan={2}>
           <UpdatedAtField value={record.updatedAt} />
         </CellAt>
         <CellAt col={1} row={2} colSpan={2}>

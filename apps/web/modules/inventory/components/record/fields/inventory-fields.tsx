@@ -1,6 +1,6 @@
 "use client"
 
-import { FormField, StaticFieldValue, TextCell, UnitCell } from "@/engines/record-view"
+import { FormField, StaticFieldValue, TextareaCell, TextCell, UnitCell } from "@/engines/record-view"
 import { StatusBadge } from "@/engines/common"
 import {
   formatEasternDateTime,
@@ -50,7 +50,13 @@ export function InternalNotesField({ editable, value, onChange }: TextFieldProps
       currentLength={editable ? value.length : undefined}
       maxLength={editable ? INVENTORY_INTERNAL_NOTES_MAX : undefined}
     >
-      <TextCell editable={editable} value={value} onChange={onChange} maxLength={INVENTORY_INTERNAL_NOTES_MAX} />
+      <TextareaCell
+        editable={editable}
+        value={value}
+        onChange={onChange}
+        maxLength={INVENTORY_INTERNAL_NOTES_MAX}
+        rows={1}
+      />
     </FormField>
   )
 }
