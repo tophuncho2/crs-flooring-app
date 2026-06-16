@@ -141,6 +141,7 @@ export function TemplatePrimaryFieldsSection({
             value={draft.description}
             onChange={(value) => onFieldChange("description", value)}
             maxLength={TEMPLATE_DESCRIPTION_MAX}
+            rows={1}
           />
         </FormField>
       </CellAt>
@@ -155,7 +156,7 @@ export function TemplatePrimaryFieldsSection({
             value={draft.installerInstructions}
             onChange={(value) => onFieldChange("installerInstructions", value)}
             maxLength={TEMPLATE_INSTALLER_INSTRUCTIONS_MAX}
-            rows={3}
+            rows={1}
           />
         </FormField>
       </CellAt>
@@ -170,7 +171,7 @@ export function TemplatePrimaryFieldsSection({
             value={draft.internalNotes}
             onChange={(value) => onFieldChange("internalNotes", value)}
             maxLength={TEMPLATE_INTERNAL_NOTES_MAX}
-            rows={4}
+            rows={1}
           />
         </FormField>
       </CellAt>
