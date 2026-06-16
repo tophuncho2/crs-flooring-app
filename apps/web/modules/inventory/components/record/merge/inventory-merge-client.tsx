@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation"
 import { DataTable, DebouncedSearchControl, PaginateControls } from "@/engines/list-view"
 import {
   RecordCreateClientScaffold,
+  RecordFieldSection,
   RecordReferenceHeader,
-  RecordSectionSubHeader,
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
 } from "@/engines/record-view"
@@ -91,7 +91,7 @@ function InventoryMergePanel({ page }: { page: RecordDetailClientScaffoldContext
   ]
 
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex flex-col gap-4">
       <RecordReferenceHeader page={page} label="Inventory to merge">
         {() => (
           <div className="flex flex-col gap-3">
@@ -173,24 +173,33 @@ function InventoryMergePanel({ page }: { page: RecordDetailClientScaffoldContext
         )}
       </RecordReferenceHeader>
 
-      <RecordSectionSubHeader
+      {/* Record-view engine field-section primitive — sub-header + grey body
+          surface, the standard form chrome (cf. the create form). Section
+          Save/Discard are hidden (`canManage={false}`); Back / Merge / Discard
+          ride in via `actions`. */}
+      <RecordFieldSection
+        title="Merge Inventory"
+        showHeader={false}
         canManage={false}
         isDirty={isDirty}
         isSaving={isPending}
         hasConflict={false}
         error={error}
+        onSave={() => undefined}
+        onDiscard={resetToSeed}
         actions={actions}
-      />
-      <InventoryMergeFields
-        form={form}
-        setField={setField}
-        setWarehouse={setWarehouse}
-        editable={!isPending}
-        productLabel={productLabel}
-        warehouseLabel={warehouseLabel}
-        stockUnitAbbrev={stockUnitAbbrev}
-        summedStartingStock={summedStartingStock}
-      />
+      >
+        <InventoryMergeFields
+          form={form}
+          setField={setField}
+          setWarehouse={setWarehouse}
+          editable={!isPending}
+          productLabel={productLabel}
+          warehouseLabel={warehouseLabel}
+          stockUnitAbbrev={stockUnitAbbrev}
+          summedStartingStock={summedStartingStock}
+        />
+      </RecordFieldSection>
     </div>
   )
 }
