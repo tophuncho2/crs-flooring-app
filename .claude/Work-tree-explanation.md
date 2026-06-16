@@ -10,6 +10,7 @@
 - [ ] dev-1
 - [ ] dev-2
 - [ ] dev-3
+- [ ] dev-4
 
 ## Main
 
@@ -30,7 +31,7 @@
 - [ ] Where those branches merge into
 - [ ] Always wait for green deploys before merging in a second or 3rd branch
 
-## Dev 1-3
+## Dev 1-4
 
 - [ ] do not have live deployments, only localhost
 - [ ] Shared DB with dev
@@ -40,7 +41,7 @@
 
 - [ ] User opens a branch from its dedicated, checked-out local folder
 - [ ] Worktrees are separated by checked-out local folders
-- [ ] Repo uses a `.bare` + per-branch-folder layout — a bare `.bare/` repo at the container root with one checked-out folder per branch (main/, staging/, dev/, dev-1..3)
+- [ ] Repo uses a `.bare` + per-branch-folder layout — a bare `.bare/` repo at the container root with one checked-out folder per branch (main/, staging/, dev/, dev-1..4)
 - [ ] 1 window per branch when working
 - [ ] Source control setup is good as is — don't mess it up. The two load-bearing invariants:
   - [ ] `.vscode/` is intentionally **local-only via `.git/info/exclude`** (not tracked, not in `.gitignore`) — never `git add` it, never move it into `.gitignore`, never commit it. This is what keeps each window's theme isolated to its branch.
