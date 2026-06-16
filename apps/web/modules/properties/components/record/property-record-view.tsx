@@ -163,12 +163,8 @@ export function PropertyRecordView({
     key: "templates",
     type: "item",
     order: 20,
-    render: (ctx) => (
-      <PropertyTemplatesSection
-        page={ctx.page}
-        managementCompany={linkedMc}
-        property={record}
-      />
+    render: () => (
+      <PropertyTemplatesSection managementCompany={linkedMc} property={record} />
     ),
   })
 
