@@ -62,16 +62,17 @@ function TemplateHubView({
   // (Re-selecting / swapping the active template in place has been removed.)
   return (
     <div className="flex flex-col gap-4">
-      <RecordReferenceHeader
-        page={page}
-        label="Template"
-        actions={() => <ReferenceHeaderAddButton label="+ Template" onClick={newTemplate} />}
-      >
+      <RecordReferenceHeader page={page}>
         {() => (
-          <TemplateRecordHeader
-            templateDetail={templateDetail}
-            templateLabel={cascade.templateLabel}
-          />
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <TemplateRecordHeader
+                templateDetail={templateDetail}
+                templateLabel={cascade.templateLabel}
+              />
+            </div>
+            <ReferenceHeaderAddButton label="+ Template" onClick={newTemplate} />
+          </div>
         )}
       </RecordReferenceHeader>
 
