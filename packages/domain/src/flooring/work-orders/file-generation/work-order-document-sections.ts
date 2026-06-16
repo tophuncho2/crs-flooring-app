@@ -40,6 +40,11 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .wo-top-table th, .wo-print-root .wo-top-table td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
   .wo-print-root .wo-top-table th { font-weight: 600; white-space: nowrap; padding-right: 16px; }
   .wo-print-root .wo-top-table tr.row-gap > th, .wo-print-root .wo-top-table tr.row-gap > td { padding-top: 12px; }
+  .wo-print-root .wo-mid { display: flex; align-items: flex-start; margin: 6px 0; }
+  .wo-print-root .wo-mid-left { flex: 0 0 58%; margin: 0; }
+  .wo-print-root .wo-mid-right { flex: 1 1 auto; margin: 8px 0; padding-left: 16px; border-left: 1px solid #ddd; }
+  .wo-print-root .wo-mid-left table, .wo-print-root .wo-mid-right table { margin: 0; }
+  .wo-print-root .wo-mid-right th { padding-right: 4px; }
   .wo-print-root .wo-top-grid { border-bottom: 1px solid #ddd; table-layout: fixed; width: 100%; }
   .wo-print-root .wo-top-grid th, .wo-print-root .wo-top-grid td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; overflow-wrap: break-word; }
   .wo-print-root .wo-top-grid th { font-weight: 600; white-space: nowrap; padding-right: 4px; }
@@ -136,12 +141,17 @@ ${body}
  * columns hug their content (width:1% + nowrap labels) so "Management Company"
  * never wraps.
  *
- * Order: Date · Warehouse · Job Type · Description (top grid) · Management
- * Company · Property (+ flat address beneath) · Unit Type · Unit Number ·
- * Vacancy · Property Instructions · Installer Instructions. Description /
- * address / instruction rows are omitted when their value is blank (the
- * Description grid cell is left empty); the address is the customAddress
- * override or the property's flat address line.
+ * Order: Date · Warehouse · Job Type · Description (top 2×2 grid). Below the
+ * grid a two-column flex band: the left column stacks Management Company ·
+ * Property (+ flat address beneath) · Property Instructions · Installer
+ * Instructions; a vertical divider (the right column's border-left) separates
+ * it from the right column — Unit Type · Unit Number · Vacancy — with tightened
+ * label→value padding. The band uses align-items:flex-start so the divider only
+ * runs as tall as the right column (ending at Vacancy) no matter how far the
+ * left column's instructions push downward. Description / address / instruction
+ * rows are omitted when their value is blank (the Description grid cell is left
+ * empty); the address is the customAddress override or the property's flat
+ * address line.
  */
 export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string {
   const warehouseParts = [
@@ -188,19 +198,29 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
     </tr>
   </tbody>
 </table>
-<table class="wo-top-table">
-  <colgroup>
-    <col style="width: 1%;" />
-    <col />
-  </colgroup>
-  <tbody>
-    <tr><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
-    <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${propertyAddressRow}
-    <tr class="row-gap"><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
-    <tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>
-    <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>${propertyInstructionsRow}${installerInstructionsRow}
-  </tbody>
-</table>
+<div class="wo-mid">
+  <table class="wo-top-table wo-mid-left">
+    <colgroup>
+      <col style="width: 1%;" />
+      <col />
+    </colgroup>
+    <tbody>
+      <tr><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
+      <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${propertyAddressRow}${propertyInstructionsRow}${installerInstructionsRow}
+    </tbody>
+  </table>
+  <table class="wo-top-table wo-mid-right">
+    <colgroup>
+      <col style="width: 1%;" />
+      <col />
+    </colgroup>
+    <tbody>
+      <tr><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
+      <tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>
+      <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>
+    </tbody>
+  </table>
+</div>
 `.trim()
 }
 
