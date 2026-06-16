@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import type { ProductOption, WarehouseOption } from "@builders/domain"
 import {
   RecordCreateClientScaffold,
-  RecordSectionSubHeader,
+  RecordFieldSection,
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
 } from "@/engines/record-view"
@@ -111,15 +111,23 @@ function InventoryCreatePanel({
   ]
 
   return (
-    <div className="flex flex-col gap-3 p-4">
-      <RecordSectionSubHeader
-        canManage={false}
-        isDirty={isDirty}
-        isSaving={isPending}
-        hasConflict={false}
-        error={error}
-        actions={actions}
-      />
+    // The record-view engine's field-section primitive — its sub-header +
+    // grey body surface (TableBleed + section body surface) is the standard
+    // form chrome every record-view form uses (cf. the work-orders create form).
+    // `canManage={false}` hides the section's own Save/Discard; the create flow's
+    // Back / Create / Discard ride in via `actions`.
+    <RecordFieldSection
+      title="New Inventory"
+      showHeader={false}
+      canManage={false}
+      isDirty={isDirty}
+      isSaving={isPending}
+      hasConflict={false}
+      error={error}
+      onSave={() => undefined}
+      onDiscard={resetToSeed}
+      actions={actions}
+    >
       <InventoryCreateFields
         form={form}
         setField={setField}
@@ -130,7 +138,7 @@ function InventoryCreatePanel({
         onProductSelected={handleProductSelected}
         onWarehouseSelected={handleWarehouseSelected}
       />
-    </div>
+    </RecordFieldSection>
   )
 }
 
