@@ -40,8 +40,8 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .wo-top-table th, .wo-print-root .wo-top-table td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
   .wo-print-root .wo-top-table th { font-weight: 600; white-space: nowrap; padding-right: 16px; }
   .wo-print-root .wo-top-table tr.row-gap > th, .wo-print-root .wo-top-table tr.row-gap > td { padding-top: 12px; }
-  .wo-print-root .wo-top-grid { border-bottom: 1px solid #ddd; }
-  .wo-print-root .wo-top-grid th, .wo-print-root .wo-top-grid td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
+  .wo-print-root .wo-top-grid { border-bottom: 1px solid #ddd; table-layout: fixed; width: 100%; }
+  .wo-print-root .wo-top-grid th, .wo-print-root .wo-top-grid td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; overflow-wrap: break-word; }
   .wo-print-root .wo-top-grid th { font-weight: 600; white-space: nowrap; padding-right: 4px; }
   .wo-print-root .property-info-table { table-layout: fixed; }
   .wo-print-root .property-info-table th { width: 14%; }
@@ -172,10 +172,10 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
   return `
 <table class="wo-top-grid">
   <colgroup>
-    <col style="width: 1%;" />
-    <col />
-    <col style="width: 1%;" />
-    <col />
+    <col style="width: 13%;" />
+    <col style="width: 37%;" />
+    <col style="width: 13%;" />
+    <col style="width: 37%;" />
   </colgroup>
   <tbody>
     <tr>
