@@ -258,7 +258,8 @@ model FlooringInventory {
   @@index([productId, fifoReceivedAt, rollNumber, id])
   @@index([warehouseId, importNumber])
   @@index([warehouseId, purchaseOrderNumber])
-  @@index([inventoryNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_inventory_number_trgm_idx")
+  // inventoryNumber search is an exact match on `inventoryNumberInt` (btree), so
+  // the number column no longer needs a trigram index.
   @@index([rollNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_rollNumber_trgm_idx")
   @@index([dyeLot(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_dyeLot_trgm_idx")
   @@index([note(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_note_trgm_idx")
@@ -567,7 +568,8 @@ model FlooringWorkOrder {
   // substring). Mirrors the FlooringInventory identity-search indexes.
   @@index([unitType(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_unitType_trgm_idx")
   @@index([unitNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_unitNumber_trgm_idx")
-  @@index([workOrderNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_work_order_number_trgm_idx")
+  // workOrderNumber search is an exact match on `workOrderNumberInt` (btree), so
+  // the number column no longer needs a trigram index.
   @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_description_trgm_idx")
   @@map("flooring_work_order")
 }

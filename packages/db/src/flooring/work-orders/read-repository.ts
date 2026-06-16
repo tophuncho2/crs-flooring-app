@@ -39,10 +39,12 @@ export type WorkOrdersListFilterMap = {
   warehouseId?: string[]
   jobTypeId?: string[]
   /**
-   * Per-column identity search — the list-view search bars. Each is an
-   * independent case-insensitive substring (ILIKE) match against its own
-   * column; single-element arrays matching the multi-value filter contract,
-   * and multiple set fields AND together to narrow.
+   * Per-column identity search — the list-view search bars. `unitType`,
+   * `unitNumber`, and `description` are case-insensitive substring (ILIKE)
+   * matches against their own column. `workOrderNumber` is the exception: it is
+   * an EXACT match on the numeric value (see `buildWorkOrdersWhere`) so the #
+   * bar lands the one row. Single-element arrays matching the multi-value filter
+   * contract; multiple set fields AND together to narrow.
    */
   unitType?: string[]
   unitNumber?: string[]
@@ -80,9 +82,17 @@ function buildWorkOrdersWhere(
   if (unitNumber) {
     andClauses.push({ unitNumber: { contains: unitNumber, mode: "insensitive" } })
   }
-  const workOrderNumber = filters?.workOrderNumber?.[0]
-  if (workOrderNumber) {
-    andClauses.push({ workOrderNumber: { contains: workOrderNumber, mode: "insensitive" } })
+  // Work-order number search is an EXACT match on the numeric value — the # bar
+  // finds the one row, so "12" matches WO-12 only, never WO-120 / WO-312. We
+  // match the generated integer column `workOrderNumberInt` (btree-indexed),
+  // which also lets the user type bare ("12") or prefixed ("WO-12") — non-digits
+  // are stripped. A non-numeric query matches nothing (sentinel -1; the
+  // work-order-number sequence is always positive).
+  const workOrderNumberRaw = filters?.workOrderNumber?.[0]
+  if (workOrderNumberRaw) {
+    const digits = workOrderNumberRaw.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    andClauses.push({ workOrderNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
   }
   const description = filters?.description?.[0]
   if (description) {

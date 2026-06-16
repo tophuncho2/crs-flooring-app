@@ -355,10 +355,12 @@ export type InventoryListViewOptions = {
     categoryId?: ReadonlyArray<string>
     productId?: ReadonlyArray<string>
     /**
-     * Per-field identity search — the four list-view search bars. Each is an
-     * independent case-insensitive substring (ILIKE) match against its own
-     * column; multiple set fields AND together to narrow. Backed by the
-     * per-column trigram indexes on `flooring_inventory`.
+     * Per-field identity search — the four list-view search bars; multiple set
+     * fields AND together to narrow. `rollNumber`/`dyeLot`/`note` are
+     * case-insensitive substring (ILIKE) matches backed by the per-column
+     * trigram indexes. `invNumber` is the exception: an EXACT match on the
+     * generated `inventoryNumberInt` (btree), so "12" finds INV-12 only — see
+     * `buildListViewWhere`.
      */
     invNumber?: string
     rollNumber?: string
@@ -403,15 +405,25 @@ function buildListViewWhere(
     clauses.push({ isArchived: false })
   }
 
-  // Per-field identity search — one independent ILIKE per filled search bar
+  // Per-field identity search — one independent clause per filled search bar
   // (`inventoryNumber`/`rollNumber`/`dyeLot`/`note`). Each pushes its own AND
   // clause so filling more than one bar narrows the result set. Location is
   // intentionally excluded; it has its own dedicated filter chip. Matching the
   // raw columns (instead of the denormalized `inventoryItem` blob) keeps the
   // "where is it" concern out of the "what is it" search.
+  //
+  // `inventoryNumber` is the exception: it is an EXACT match on the numeric
+  // value (not a substring) — the # bar finds the one row, so "12" matches
+  // INV-12 only, never INV-120 / INV-312. We match the generated integer column
+  // `inventoryNumberInt` (btree-indexed), which also lets the user type bare
+  // ("12") or prefixed ("INV-12") — non-digits are stripped. A non-numeric query
+  // matches nothing (sentinel -1; the inventory-number sequence is always
+  // positive). `rollNumber`/`dyeLot`/`note` stay substring ILIKE.
   const invNumber = options.filters?.invNumber?.trim() ?? ""
   if (invNumber.length > 0) {
-    clauses.push({ inventoryNumber: { contains: invNumber, mode: "insensitive" } })
+    const digits = invNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    clauses.push({ inventoryNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
   }
   const rollNumber = options.filters?.rollNumber?.trim() ?? ""
   if (rollNumber.length > 0) {
@@ -473,10 +485,10 @@ function buildListViewWhere(
  * avoids the lex-vs-numeric trap of the unpadded string format (`INV-10` <
  * `INV-2` lexically). `id ASC` is the stable tiebreak. Users are responsible
  * for archiving spent rows so the list stays scoped to live inventory.
- * Filters AND together — including the per-field identity search bars, each an
- * independent ILIKE on its own column (`inventoryNumber`, `rollNumber`,
- * `dyeLot`, `note`). Location lives on its own filter chip. Archived rows
- * hidden by default.
+ * Filters AND together — including the per-field identity search bars:
+ * `inventoryNumber` is an exact numeric match (`inventoryNumberInt`), while
+ * `rollNumber`/`dyeLot`/`note` are independent ILIKEs on their own columns.
+ * Location lives on its own filter chip. Archived rows hidden by default.
  *
  * Lives alongside `listInventory(filter?)` which is still used by the imports
  * record view's "live rows" section to fetch all rows for a given import.
@@ -558,9 +570,15 @@ export async function listInventoryMergeCandidates(
   if (args.warehouseId !== undefined) {
     conditions.push(Prisma.sql`"warehouseId" = ${args.warehouseId}`)
   }
+  // Exact numeric match on `inventoryNumberInt` (not a substring) — mirrors the
+  // list-view # bar so "12" finds INV-12 only. Digits stripped (bare or "INV-"
+  // prefixed both work); a non-numeric query matches nothing via the -1
+  // sentinel. `rollNumber`/`dyeLot`/`note` below stay substring ILIKE.
   const invNumber = args.invNumber?.trim() ?? ""
   if (invNumber.length > 0) {
-    conditions.push(Prisma.sql`"inventory_number" ILIKE ${`%${invNumber}%`}`)
+    const digits = invNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    conditions.push(Prisma.sql`"inventoryNumberInt" = ${Number.isInteger(parsed) ? parsed : -1}`)
   }
   const rollNumber = args.rollNumber?.trim() ?? ""
   if (rollNumber.length > 0) {
