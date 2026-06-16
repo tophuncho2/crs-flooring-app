@@ -93,19 +93,16 @@ export function InventoryPrimaryFieldsSection({
           <NoteReadOnlyField value={record.note} />
         </CellAt>
 
-        {/* Right column, aligned from Inv# down: Stock · Deducted · Starting ·
-            FIFO Received */}
-        <CellAt col={5} row={6} colSpan={4}>
+        {/* Right column (2 cols wide), aligned from Product down: Stock ·
+            Deducted · Starting Stock */}
+        <CellAt col={5} row={1} colSpan={2}>
           <StockBalanceField value={record.stockBalance} unitAbbrev={record.stockUnitAbbrev} />
         </CellAt>
-        <CellAt col={5} row={7} colSpan={4}>
+        <CellAt col={5} row={2} colSpan={2}>
           <NetDeductedField value={record.netDeducted} unitAbbrev={record.stockUnitAbbrev} />
         </CellAt>
-        <CellAt col={5} row={8} colSpan={4}>
+        <CellAt col={5} row={3} colSpan={2}>
           <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
-        </CellAt>
-        <CellAt col={5} row={9} colSpan={4}>
-          <FifoReceivedField value={record.fifoReceivedAt} />
         </CellAt>
       </InventoryFieldGrid>
 
@@ -114,20 +111,23 @@ export function InventoryPrimaryFieldsSection({
       <div className="border-t border-[var(--panel-border)]" />
 
       <InventoryFieldGrid>
-        <CellAt col={1} row={1} colSpan={4}>
+        <CellAt col={1} row={1} colSpan={2}>
           <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
         </CellAt>
-        <CellAt col={5} row={1} colSpan={4}>
+        <CellAt col={3} row={1} colSpan={2}>
           <ImportNumberField value={record.importNumber} />
         </CellAt>
-        <CellAt col={1} row={2} colSpan={4}>
+        <CellAt col={5} row={1} colSpan={2}>
           <CreatedAtField value={record.createdAt} />
         </CellAt>
-        <CellAt col={5} row={2} colSpan={4}>
+        <CellAt col={7} row={1} colSpan={2}>
           <UpdatedAtField value={record.updatedAt} />
         </CellAt>
-        <CellAt col={1} row={3} colSpan={4}>
+        <CellAt col={1} row={2} colSpan={2}>
           <MergedField wasMerged={record.wasMerged} />
+        </CellAt>
+        <CellAt col={3} row={2} colSpan={2}>
+          <FifoReceivedField value={record.fifoReceivedAt} />
         </CellAt>
       </InventoryFieldGrid>
     </div>
