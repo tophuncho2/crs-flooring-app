@@ -13,8 +13,8 @@ describe("validateWorkOrderForm — vacancy", () => {
     expect(validateWorkOrderForm({ ...baseForm, vacancy: "OCCUPIED" })).toBe("")
   })
 
-  it("rejects an empty vacancy (nothing chosen)", () => {
-    expect(validateWorkOrderForm({ ...baseForm, vacancy: "" })).toBe("Vacancy status is required")
+  it("accepts an empty vacancy (optional — nothing chosen)", () => {
+    expect(validateWorkOrderForm({ ...baseForm, vacancy: "" })).toBe("")
   })
 
   it("still requires a property first", () => {
