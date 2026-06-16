@@ -1,7 +1,7 @@
 export type WorkOrderListRow = {
   id: string
   workOrderNumber: string
-  propertyId: string
+  propertyId: string | null
   propertyName: string
   managementCompanyId: string | null
   managementCompanyName: string | null

@@ -527,8 +527,8 @@ model FlooringWarehouse {
 model FlooringWorkOrder {
   id                   String                     @id @default(uuid())
   workOrderNumber      String                     @unique @default(dbgenerated("('WO-'::text || (nextval('flooring_work_order_number_seq'::regclass))::text)")) @map("work_order_number")
-  propertyId           String
-  property             Property                   @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  propertyId           String?
+  property             Property?                  @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   templateId           String?
   template             FlooringTemplate?          @relation(fields: [templateId], references: [id], onDelete: SetNull)
   jobTypeId            String?

@@ -251,7 +251,6 @@ export function WorkOrderPrimaryFieldsSection({
       <CellAt col={1} row={3} colSpan={4}>
         <FormField
           label="Property"
-          required
           actions={
             <>
               <RecordOpenButton
@@ -333,6 +332,8 @@ export function WorkOrderPrimaryFieldsSection({
                 if (option) onFieldChange("unitType", option.unitType)
               }}
               propertyId={propertyValue}
+              managementCompanyId={managementCompanyValue}
+              requireProperty={false}
               selectedLabel={templateLabel}
               placeholder="—"
               ariaLabel="Template"

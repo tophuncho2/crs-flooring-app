@@ -402,7 +402,7 @@ export function AsyncRichDropdown({
                         >
                           <div className="flex items-center gap-2">
                             <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
-                              {option.title}
+                              {option.title || "No visible details"}
                             </span>
                             {option.meta ? (
                               <span className="shrink-0 text-xs tabular-nums text-[var(--foreground)]/55">

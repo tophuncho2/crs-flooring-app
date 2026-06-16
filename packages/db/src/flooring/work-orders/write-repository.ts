@@ -9,7 +9,7 @@ import { workOrderDetailSelect, type WorkOrdersDbClient } from "./shared.js"
 import { listWorkOrderMaterialItems } from "./material-items/read-repository.js"
 
 export type CreateWorkOrderRecordInput = {
-  propertyId: string
+  propertyId: string | null
   templateId: string | null
   jobTypeId: string | null
   warehouseId: string | null

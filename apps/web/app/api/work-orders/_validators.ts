@@ -102,7 +102,9 @@ export function validateCreateWorkOrderInput(
   body: Record<string, unknown>,
 ): CreateWorkOrderUseCaseInput {
   return {
-    propertyId: requireString(body.propertyId, "propertyId", failWorkOrder),
+    // Property is optional — a work order always has an auto-generated number,
+    // so a record is never empty even without a property.
+    propertyId: optionalString(body.propertyId),
     // Warehouse is optional — a work order may be created without one.
     warehouseId: optionalString(body.warehouseId),
     templateId: optionalString(body.templateId),
@@ -131,7 +133,8 @@ export function validateUpdateWorkOrderInput(
   const input: UpdateWorkOrderUseCaseInput = {}
 
   if ("propertyId" in body) {
-    input.propertyId = requireString(body.propertyId, "propertyId", failWorkOrder)
+    // Property is optional and may be cleared (null).
+    input.propertyId = optionalString(body.propertyId)
   }
   if ("warehouseId" in body) {
     // Warehouse is optional and may be cleared (null).

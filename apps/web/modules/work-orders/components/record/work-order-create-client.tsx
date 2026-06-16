@@ -28,9 +28,9 @@ function WorkOrderCreatePanel({
     page,
     createInitialValue: () => ({ ...EMPTY_WORK_ORDER_FORM }),
     createRecord: async (localValue) => {
-      // Gate on the shared form validator first (property + vacancy required)
-      // so the user sees an inline message instead of a server 400. The
-      // server validator still enforces the required keys as the source of truth.
+      // Gate on the shared form validator first (e.g. time-of-day shape) so the
+      // user sees an inline message instead of a server 400. The server
+      // validator still enforces the field rules as the source of truth.
       const validationError = validateWorkOrderPrimaryForm(localValue)
       if (validationError) {
         throw createRecordSectionError({
@@ -42,7 +42,7 @@ function WorkOrderCreatePanel({
       // Cast the partial-update shape to the create input shape.
       const updateInput = toUpdateWorkOrderInput(localValue)
       const payload = await createWorkOrderRequest({
-        propertyId: localValue.propertyId,
+        propertyId: localValue.propertyId || null,
         warehouseId: localValue.warehouseId,
         templateId: updateInput.templateId ?? null,
         jobTypeId: updateInput.jobTypeId ?? null,

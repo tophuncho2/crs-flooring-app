@@ -6,7 +6,7 @@
  */
 export type WorkOrderPrimaryDetail = {
   workOrderNumber: string
-  propertyId: string
+  propertyId: string | null
   propertyName: string
   propertyStreetAddress: string
   propertyCity: string

@@ -2,7 +2,8 @@ import { toDateInputValue } from "../../shared/date-format.js"
 import type { WorkOrderDetail, WorkOrderForm } from "./types.js"
 
 export function validateWorkOrderForm(input: WorkOrderForm) {
-  if (!input.propertyId) return "Property is required"
+  // Property is optional — a work order always has an auto-generated number,
+  // so a record is never empty even with no fields set.
   // Vacancy is optional — `""` (nothing chosen) is a valid resting state.
   if (input.timeOfDay !== "" && input.timeOfDay !== "AM" && input.timeOfDay !== "PM") {
     return "Time of day must be AM or PM"
@@ -12,7 +13,7 @@ export function validateWorkOrderForm(input: WorkOrderForm) {
 
 export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
   return {
-    propertyId: workOrder.propertyId,
+    propertyId: workOrder.propertyId ?? "",
     jobTypeId: workOrder.jobTypeId ?? "",
     templateId: workOrder.templateId ?? "",
     warehouseId: workOrder.warehouseId ?? "",

@@ -3,10 +3,7 @@ import {
   updateWorkOrderRecord,
   withDatabaseTransaction,
 } from "@builders/db"
-import {
-  WORK_ORDER_NOT_FOUND_MESSAGE,
-  WORK_ORDER_PROPERTY_REQUIRED_MESSAGE,
-} from "@builders/domain"
+import { WORK_ORDER_NOT_FOUND_MESSAGE } from "@builders/domain"
 import { WorkOrderExecutionError } from "./errors.js"
 import type { UpdateWorkOrderUseCaseInput, WorkOrderUseCaseResult } from "./types.js"
 
@@ -24,14 +21,7 @@ export async function updateWorkOrderUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    if (input.propertyId !== undefined && (input.propertyId === null || !input.propertyId.trim())) {
-      throw new WorkOrderExecutionError({
-        code: "WORK_ORDER_VALIDATION_FAILED",
-        message: WORK_ORDER_PROPERTY_REQUIRED_MESSAGE,
-        status: 400,
-        field: "propertyId",
-      })
-    }
+    // Property is optional and freely clearable — passing `null` detaches it.
 
     try {
       return await updateWorkOrderRecord(id, input, c)

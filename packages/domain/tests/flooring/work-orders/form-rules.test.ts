@@ -17,10 +17,8 @@ describe("validateWorkOrderForm — vacancy", () => {
     expect(validateWorkOrderForm({ ...baseForm, vacancy: "" })).toBe("")
   })
 
-  it("still requires a property first", () => {
-    expect(validateWorkOrderForm({ ...EMPTY_WORK_ORDER_FORM, vacancy: "VACANT" })).toBe(
-      "Property is required",
-    )
+  it("accepts a work order with no property (auto WO# means a record is never empty)", () => {
+    expect(validateWorkOrderForm({ ...EMPTY_WORK_ORDER_FORM, vacancy: "VACANT" })).toBe("")
   })
 })
 

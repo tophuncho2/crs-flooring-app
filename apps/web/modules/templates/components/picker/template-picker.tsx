@@ -61,7 +61,8 @@ function toDropdownOption(option: TemplateOption): AsyncRichDropdownOption {
   )
   return {
     id: option.id,
-    title: option.unitType || "—",
+    // Blank unit type falls through to the engine's "No visible details" fallback.
+    title: option.unitType,
     subtitles,
     meta: formatTemplateItemsCount(option.itemsCount),
   }

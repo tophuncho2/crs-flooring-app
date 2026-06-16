@@ -108,7 +108,7 @@ export function toUpdateWorkOrderInput(form: WorkOrderForm): UpdateWorkOrderUseC
     : null
 
   return {
-    propertyId: form.propertyId || undefined,
+    propertyId: form.propertyId || null,
     warehouseId: form.warehouseId || undefined,
     templateId: form.templateId || null,
     jobTypeId: form.jobTypeId || null,
