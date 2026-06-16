@@ -8,24 +8,12 @@ import { renderTemplateRowCell } from "../../list/table/templates-row-cell"
 /**
  * The selected template rendered as the same single row the list view shows
  * (list `DataTable` columns + cell renderer, display-only). The loaded
- * `TemplateDetail` is a superset of `TemplateListRow`, so the collapsed reference
- * header passes it straight through. Future column additions land here (and in
- * `TEMPLATES_LIST_COLUMNS`). When `onRowClick` is supplied the row is interactive
- * — the collapsed record header passes it to re-open the picker.
+ * `TemplateDetail` is a superset of `TemplateListRow`, so the reference header
+ * passes it straight through. Future column additions land here (and in
+ * `TEMPLATES_LIST_COLUMNS`).
  */
-export function TemplateReferenceRow({
-  template,
-  onRowClick,
-}: {
-  template: TemplateListRow
-  onRowClick?: () => void
-}) {
+export function TemplateReferenceRow({ template }: { template: TemplateListRow }) {
   return (
-    <DataTable
-      rows={[template]}
-      columns={TEMPLATES_LIST_COLUMNS}
-      renderCell={renderTemplateRowCell}
-      onRowClick={onRowClick ? () => onRowClick() : undefined}
-    />
+    <DataTable rows={[template]} columns={TEMPLATES_LIST_COLUMNS} renderCell={renderTemplateRowCell} />
   )
 }

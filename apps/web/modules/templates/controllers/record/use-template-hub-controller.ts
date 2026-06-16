@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
-import type { TemplateDetail, TemplateListRow, TemplateOption } from "@builders/domain"
+import type { TemplateDetail } from "@builders/domain"
 import {
   useCascadePickerController,
   type CascadePickerController,
@@ -23,21 +23,6 @@ const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
  */
 export type TemplateHubInitialSelections = CascadePickerInitialSelections
 
-/**
- * Map a clicked list row to the cascade controller's leaf-step option. The
- * templates picker grid surfaces full `TemplateListRow`s; the cascade controller
- * only needs the `TemplateOption` subset to record the selection + label.
- */
-export function toTemplateOption(row: TemplateListRow): TemplateOption {
-  return {
-    id: row.id,
-    unitType: row.unitType,
-    jobTypeName: row.jobTypeName,
-    description: row.description,
-    itemsCount: row.itemsCount,
-  }
-}
-
 export type TemplateHubController = {
   cascade: CascadePickerController
   /** Full record for the selected template, or null while none is loaded. */
@@ -45,7 +30,6 @@ export type TemplateHubController = {
   isTemplateLoading: boolean
   templateError: string | null
   // ===== Actions =====
-  clear: () => void
   newTemplate: () => void
 }
 
@@ -138,10 +122,6 @@ export function useTemplateHubController(
     returnToParam,
   ])
 
-  const clear = useCallback(() => {
-    cascade.reset()
-  }, [cascade])
-
   const newTemplate = useCallback(() => {
     const params = new URLSearchParams()
     if (propertyId) params.set("propertyId", propertyId)
@@ -154,7 +134,6 @@ export function useTemplateHubController(
     templateDetail,
     isTemplateLoading,
     templateError,
-    clear,
     newTemplate,
   }
 }
