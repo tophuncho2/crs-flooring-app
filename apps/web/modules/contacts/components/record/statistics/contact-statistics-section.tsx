@@ -11,7 +11,7 @@ import {
   MoneyCell,
   RecordItemSection,
 } from "@/engines/record-view"
-import { DataTable, PaginateControls } from "@/engines/list-view"
+import { DataTable } from "@/engines/list-view"
 import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation"
 import { WORK_ORDERS_LIST_COLUMNS } from "@/modules/work-orders/components/list/table/work-orders-list-columns"
 import { renderWorkOrderRowCell } from "@/modules/work-orders/components/list/table/work-orders-row-cell"
@@ -67,31 +67,26 @@ export function ContactStatisticsSection({ contactId }: { contactId: string }) {
       {query.isError ? (
         <p className="text-sm text-rose-400">Could not load work orders.</p>
       ) : (
-        <>
-          <DataTable<WorkOrderListRow>
-            rows={rows}
-            columns={WORK_ORDERS_LIST_COLUMNS}
-            renderCell={renderWorkOrderRowCell}
-            empty={query.isLoading ? "Loading work orders…" : "No work orders yet."}
-            onOpenRow={(row) =>
-              router.push(buildRecordDetailHref("/dashboard/work-orders", row.id, returnTo))
-            }
-            getRowAriaLabel={(row) => `Open work order ${row.workOrderNumber}`}
-          />
-          {totalPages > 1 ? (
-            <PaginateControls
-              page={page}
-              pageSize={SECTION_PAGE_SIZE}
-              totalItems={total}
-              totalPages={totalPages}
-              hasPreviousPage={page > 1}
-              hasNextPage={page < totalPages}
-              onPreviousPage={() => setPage((p) => Math.max(1, p - 1))}
-              onNextPage={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="border-t border-[var(--panel-border)]"
-            />
-          ) : null}
-        </>
+        <DataTable<WorkOrderListRow>
+          rows={rows}
+          columns={WORK_ORDERS_LIST_COLUMNS}
+          renderCell={renderWorkOrderRowCell}
+          empty={query.isLoading ? "Loading work orders…" : "No work orders yet."}
+          onOpenRow={(row) =>
+            router.push(buildRecordDetailHref("/dashboard/work-orders", row.id, returnTo))
+          }
+          getRowAriaLabel={(row) => `Open work order ${row.workOrderNumber}`}
+          pagination={{
+            page,
+            pageSize: SECTION_PAGE_SIZE,
+            totalItems: total,
+            totalPages,
+            hasPreviousPage: page > 1,
+            hasNextPage: page < totalPages,
+            onPreviousPage: () => setPage((p) => Math.max(1, p - 1)),
+            onNextPage: () => setPage((p) => Math.min(totalPages, p + 1)),
+          }}
+        />
       )}
     </RecordItemSection>
   )

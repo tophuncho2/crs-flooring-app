@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react"
 import { RecordOpenButton } from "@/engines/common"
+import type { PaginateContract } from "../toolbar/paginate/contracts/paginate-contract"
+import { PaginateControls } from "../toolbar/paginate/paginate-controls"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
 import { DataTableSelectAllButton, DataTableSelectCheckbox } from "./select"
@@ -58,7 +60,19 @@ export type DataTableProps<TRow extends DataTableRow> = {
   empty?: ReactNode
   /** Slot rendered above the table — typically toolbar content. */
   headerSlot?: ReactNode
-  /** Slot rendered below the table — typically pagination controls. */
+  /**
+   * Canonical pagination. When supplied, the engine renders `PaginateControls`
+   * in the footer **itself**, always-on (no `totalPages > 1` gate) — consumers
+   * hand the table the contract, not a pre-rendered control, which is what makes
+   * a paginated footer a guaranteed property of this surface rather than a
+   * per-module choice. Takes precedence over {@link footerSlot}.
+   */
+  pagination?: PaginateContract
+  /**
+   * Escape-hatch footer for the non-`PaginateContract` cases — cursor (`hasMore`)
+   * lists with no total count, or other custom footer chrome. Ignored when
+   * {@link pagination} is set.
+   */
   footerSlot?: ReactNode
   /** Per-cell renderer. Defaults to `column.render?.(row)` or
    *  `row[column.key]` as plain text. */
@@ -110,6 +124,7 @@ export function DataTable<TRow extends DataTableRow>({
   columns,
   empty,
   headerSlot,
+  pagination,
   footerSlot,
   renderCell,
   onRowClick,
@@ -288,7 +303,12 @@ export function DataTable<TRow extends DataTableRow>({
           </tbody>
         </table>
       </div>
-      {footerSlot ? (
+      {pagination ? (
+        // PaginateControls owns its own px-3 py-2 padding — no extra here.
+        <div className="border-t border-[var(--panel-border)]">
+          <PaginateControls {...pagination} />
+        </div>
+      ) : footerSlot ? (
         <div className="border-t border-[var(--panel-border)] px-3 py-2">{footerSlot}</div>
       ) : null}
     </div>
