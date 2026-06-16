@@ -1,5 +1,3 @@
 export * from "./select-dropdown"
 export * from "./async-rich-dropdown"
 export * from "./segmented-dropdown"
-export * from "./anchored-panel"
-export * from "./positioning/compute-popover-placement"

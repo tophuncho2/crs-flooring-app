@@ -1,5 +1,4 @@
 export * from "./record-action-buttons"
-export * from "./record-options-menu"
 export * from "./record-detail-page-shell"
 export * from "./record-stepper-portal"
 export * from "./record-entity-footer"

@@ -1,11 +1,12 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { Copy } from "lucide-react"
 import { DataTable } from "@/engines/list-view"
+import { RecordOptionsMenu } from "@/engines/common"
 import type { InventoryRow } from "@builders/domain"
 import { INVENTORY_LIST_COLUMNS } from "./table/inventory-list-columns"
 import { renderInventoryRowCell } from "./table/inventory-row-cell"
-import { InventoryRowOptionsMenu } from "./table/inventory-row-options-menu"
 
 export function InventoryTable({
   rows,
@@ -25,9 +26,16 @@ export function InventoryTable({
       empty="No inventory rows match these filters."
       onOpenRow={(row) => onOpenInventory(row.id)}
       rowActions={(row) => (
-        <InventoryRowOptionsMenu
-          onDuplicate={() => onDuplicateInventory(row.id)}
+        <RecordOptionsMenu
           ariaLabel={`Options for inventory item ${row.inventoryNumber}`}
+          items={[
+            {
+              key: "duplicate",
+              label: "Duplicate",
+              icon: <Copy size={14} aria-hidden="true" />,
+              onClick: () => onDuplicateInventory(row.id),
+            },
+          ]}
         />
       )}
       getRowAriaLabel={(row) => `Open inventory item ${row.inventoryNumber}`}

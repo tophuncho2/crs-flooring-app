@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { computePopoverPlacement } from "../positioning/compute-popover-placement"
+import { computePopoverPlacement } from "@/engines/common"
 import type { AsyncRichDropdownOption } from "./contracts/async-rich-dropdown-option"
 
 const TRIGGER_BASE_CLASS_NAME =

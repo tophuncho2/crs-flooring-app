@@ -1,2 +1,5 @@
 export * from "./cell-action-button"
 export * from "./record-open-button"
+export * from "./record-options-menu"
+export * from "./anchored-panel"
+export * from "./positioning/compute-popover-placement"
