@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
-  CellAddButton,
   CellAt,
   FormField,
   RecordOpenButton,
@@ -11,6 +10,7 @@ import {
   TextCell,
 } from "@/engines/record-view"
 import type { PropertyJoinedFields } from "@/engines/record-view"
+import { RecordOptionsMenu } from "@/engines/common"
 import { applyPropertySelection } from "@/engines/picker"
 import {
   buildCurrentRecordEntryPath,
@@ -19,9 +19,12 @@ import {
   buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
+import { PropertyHubQuickCreateModal } from "@/modules/management-companies/components/record/properties/property-hub-quick-create-modal"
 import {
   buildAddressBlock,
   TEMPLATE_UNIT_TYPE_MAX,
+  type ManagementCompanyDetail,
+  type PropertyDetailRecord,
   type PropertyOption,
   type TemplateForm,
 } from "@builders/domain"
@@ -61,6 +64,42 @@ export function TemplatePropertyUnitGroup({
 
   const [pickedPropertyLabel, setPickedPropertyLabel] = useState<string | null>(null)
   const [pickedMc, setPickedMc] = useState<{ id: string | null; name: string | null } | null>(null)
+  const [quickOpen, setQuickOpen] = useState(false)
+
+  // Apply a property option to the cell — the shared path for both the picker
+  // and the quick-create modal: cascade-fill the draft, snapshot the label/MC,
+  // and feed the read-only Address/Instructions mirror.
+  const selectProperty = (option: PropertyOption | null) => {
+    const patch = applyPropertySelection(option)
+    onFieldsChange({ propertyId: patch.propertyId ?? "" })
+    setPickedPropertyLabel(patch.propertyLabel ?? null)
+    setPickedMc({
+      id: option?.managementCompanyId ?? null,
+      name: option?.managementCompanyName ?? null,
+    })
+    onPropertyOption(option)
+  }
+
+  // Map a freshly created property record into a PropertyOption and fill the cell.
+  const handleQuickCreated = (
+    property: PropertyDetailRecord,
+    managementCompany: ManagementCompanyDetail | null,
+  ) => {
+    selectProperty({
+      id: property.id,
+      name: property.name,
+      address: property.fullAddress,
+      streetAddress: property.streetAddress,
+      city: property.city,
+      state: property.state,
+      postalCode: property.zip,
+      instructions: property.instructions,
+      managementCompanyId: managementCompany?.id ?? property.managementCompany?.id ?? null,
+      managementCompanyName:
+        managementCompany?.name ?? property.managementCompany?.name ?? null,
+    })
+    setQuickOpen(false)
+  }
 
   // Reset the picked snapshots during render when the bound detail changes, so
   // the next record's saved names show immediately (previous-value tracking).
@@ -155,12 +194,24 @@ export function TemplatePropertyUnitGroup({
                 }}
               />
               {editable ? (
-                <CellAddButton
+                <RecordOptionsMenu
                   ariaLabel="New property"
-                  title="New property"
-                  onClick={() =>
-                    router.push(buildRecordCreateHref("/dashboard/management-companies", { returnTo }))
-                  }
+                  heading="New property"
+                  items={[
+                    {
+                      key: "quick",
+                      label: "Quick form",
+                      onClick: () => setQuickOpen(true),
+                    },
+                    {
+                      key: "proper",
+                      label: "Proper form",
+                      onClick: () =>
+                        router.push(
+                          buildRecordCreateHref("/dashboard/management-companies", { returnTo }),
+                        ),
+                    },
+                  ]}
                 />
               ) : null}
             </>
@@ -170,17 +221,7 @@ export function TemplatePropertyUnitGroup({
             <PropertyPicker
               value={propertyValue}
               onChange={() => {}}
-              onOptionSelected={(option) => {
-                const patch = applyPropertySelection(option)
-                onFieldsChange({ propertyId: patch.propertyId ?? "" })
-                setPickedPropertyLabel(patch.propertyLabel ?? null)
-                // MC mirrors the chosen property (null when it has none).
-                setPickedMc({
-                  id: option?.managementCompanyId ?? null,
-                  name: option?.managementCompanyName ?? null,
-                })
-                onPropertyOption(option)
-              }}
+              onOptionSelected={selectProperty}
               selectedLabel={propertyLabel}
               placeholder="Select property"
               ariaLabel="Property"
@@ -204,6 +245,11 @@ export function TemplatePropertyUnitGroup({
           </StaticFieldValue>
         </FormField>
       </CellAt>
+      <PropertyHubQuickCreateModal
+        open={quickOpen}
+        onClose={() => setQuickOpen(false)}
+        onCreated={handleQuickCreated}
+      />
     </>
   )
 }

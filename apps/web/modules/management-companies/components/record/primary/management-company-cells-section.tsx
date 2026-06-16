@@ -65,6 +65,7 @@ export function ManagementCompanyCellsSection({
   form,
   editable,
   onFieldChange,
+  showContactAndAddress = true,
 }: {
   form: ManagementCompanyForm
   editable: boolean
@@ -72,6 +73,12 @@ export function ManagementCompanyCellsSection({
     field: K,
     value: ManagementCompanyForm[K],
   ) => void
+  /**
+   * Render the Phone, Email, and Address cells. Default `true` (full form). The
+   * quick-create modal passes `false` to trim the "create new MC" cells down to
+   * Company Name only.
+   */
+  showContactAndAddress?: boolean
 }) {
   const onText =
     <K extends keyof ManagementCompanyForm>(field: K) =>
@@ -92,41 +99,45 @@ export function ManagementCompanyCellsSection({
           ariaLabel="Company name"
         />
       </CellAt>
-      <CellAt col={1} colSpan={5}>
-        <FormField label="Phone">
-          {editable ? (
-            <PhoneCell
-              editable
-              value={form.phone}
-              onChange={onText("phone")}
-              ariaLabel="Phone"
+      {showContactAndAddress ? (
+        <>
+          <CellAt col={1} colSpan={5}>
+            <FormField label="Phone">
+              {editable ? (
+                <PhoneCell
+                  editable
+                  value={form.phone}
+                  onChange={onText("phone")}
+                  ariaLabel="Phone"
+                />
+              ) : (
+                <StaticFieldValue>{formatPhoneNumber(form.phone) || "—"}</StaticFieldValue>
+              )}
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={5}>
+            <CellTextField
+              label="Email"
+              editable={editable}
+              value={form.email}
+              onChange={onText("email")}
+              placeholder="Email"
+              ariaLabel="Email"
             />
-          ) : (
-            <StaticFieldValue>{formatPhoneNumber(form.phone) || "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={5}>
-        <CellTextField
-          label="Email"
-          editable={editable}
-          value={form.email}
-          onChange={onText("email")}
-          placeholder="Email"
-          ariaLabel="Email"
-        />
-      </CellAt>
-      <AddressEditCell
-        editable={editable}
-        colSpan={5}
-        value={{
-          streetAddress: form.streetAddress,
-          city: form.city,
-          state: form.state,
-          zip: form.zip,
-        }}
-        onChange={(field, value) => onFieldChange?.(field, value)}
-      />
+          </CellAt>
+          <AddressEditCell
+            editable={editable}
+            colSpan={5}
+            value={{
+              streetAddress: form.streetAddress,
+              city: form.city,
+              state: form.state,
+              zip: form.zip,
+            }}
+            onChange={(field, value) => onFieldChange?.(field, value)}
+          />
+        </>
+      ) : null}
     </FieldSection>
   )
 }

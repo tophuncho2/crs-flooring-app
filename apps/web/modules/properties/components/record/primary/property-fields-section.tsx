@@ -31,12 +31,18 @@ export function PropertyFieldsSection({
   editable,
   onFieldChange,
   ariaPrefix = "Property",
+  showContact = true,
 }: {
   draft: PropertyFieldsDraft
   editable: boolean
   onFieldChange: (field: keyof PropertyFieldsDraft, value: string) => void
   /** Prefix for the fields' aria-labels, e.g. "Property" → "Property phone". */
   ariaPrefix?: string
+  /**
+   * Render the Phone + Email cells. Default `true` (full form). The quick-create
+   * modal passes `false` to trim contact fields down to name/address/instructions.
+   */
+  showContact?: boolean
 }) {
   const onText = (field: keyof PropertyFieldsDraft) => (value: string) => onFieldChange(field, value)
 
@@ -53,27 +59,31 @@ export function PropertyFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={5}>
-        <FormField label="Phone">
-          <PhoneCell
-            editable={editable}
-            value={draft.phone}
-            onChange={onText("phone")}
-            ariaLabel={`${ariaPrefix} phone`}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={5}>
-        <FormField label="Email">
-          <TextCell
-            editable={editable}
-            value={draft.email}
-            onChange={onText("email")}
-            placeholder="Email"
-            ariaLabel={`${ariaPrefix} email`}
-          />
-        </FormField>
-      </CellAt>
+      {showContact ? (
+        <>
+          <CellAt col={1} colSpan={5}>
+            <FormField label="Phone">
+              <PhoneCell
+                editable={editable}
+                value={draft.phone}
+                onChange={onText("phone")}
+                ariaLabel={`${ariaPrefix} phone`}
+              />
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={5}>
+            <FormField label="Email">
+              <TextCell
+                editable={editable}
+                value={draft.email}
+                onChange={onText("email")}
+                placeholder="Email"
+                ariaLabel={`${ariaPrefix} email`}
+              />
+            </FormField>
+          </CellAt>
+        </>
+      ) : null}
       <AddressEditCell
         editable={editable}
         colSpan={5}

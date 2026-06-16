@@ -24,6 +24,7 @@ export function ManagementCompanySelectSection({
   disabled,
   onLink,
   onMcFieldChange,
+  compact = false,
 }: {
   value: PropertyHubCreateForm
   disabled: boolean
@@ -32,6 +33,11 @@ export function ManagementCompanySelectSection({
     field: K,
     next: ManagementCompanyForm[K],
   ) => void
+  /**
+   * Trim the "create new" cells to Company Name only (no phone/email/address).
+   * Used by the quick-create modal; the full hub page leaves this `false`.
+   */
+  compact?: boolean
 }) {
   const mode = deriveMcMode(value)
 
@@ -67,6 +73,7 @@ export function ManagementCompanySelectSection({
           form={value.mcForm}
           editable={!disabled && mode !== "link"}
           onFieldChange={onMcFieldChange}
+          showContactAndAddress={!compact}
         />
       </div>
     </div>

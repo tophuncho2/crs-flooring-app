@@ -50,7 +50,7 @@ export function deriveMcMode(local: PropertyHubCreateForm): PropertyHubMcMode {
   return "none"
 }
 
-function buildHubCreatePayload(local: PropertyHubCreateForm): CreatePropertyHubForm {
+export function buildHubCreatePayload(local: PropertyHubCreateForm): CreatePropertyHubForm {
   const managementCompany: CreatePropertyHubForm["managementCompany"] = local.mcLinkId
     ? { mode: "link", id: local.mcLinkId }
     : mcFieldsHaveAnyValue(local.mcForm)
