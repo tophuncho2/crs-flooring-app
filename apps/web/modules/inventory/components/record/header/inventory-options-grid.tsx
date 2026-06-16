@@ -5,16 +5,14 @@ import {
   DebouncedSearchControl,
   PaginateControls,
 } from "@/engines/list-view"
+import type { InventoryRow } from "@builders/domain"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import {
   INVENTORY_PICKER_PAGE_SIZE,
   type InventoryOptionsGridController,
 } from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
-import {
-  toInventoryOption,
-  type InventoryRecordSelectionController,
-} from "@/modules/inventory/controllers/record/use-inventory-record-selection"
+import { type InventoryRecordSelectionController } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
 import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
 
@@ -37,6 +35,9 @@ type InventoryOptionsGridSelection = Pick<
  * caller (the WO-create modal) can feed a local-state object — not only the URL
  * selection controller. `productEditable` locks the product master-filter to a
  * static label when false (the modal pins it to the WOMI's product).
+ *
+ * `onSelectInventory` receives the full clicked `InventoryRow` so callers can both
+ * seed a form and render the row back (the modal shows it as the selected item).
  */
 export function InventoryOptionsGrid({
   selection,
@@ -50,7 +51,7 @@ export function InventoryOptionsGrid({
   grid: InventoryOptionsGridController
   onSelectWarehouse: InventoryRecordSelectionController["selectWarehouse"]
   onSelectProduct: InventoryRecordSelectionController["selectProduct"]
-  onSelectInventory: InventoryRecordSelectionController["selectInventory"]
+  onSelectInventory: (row: InventoryRow) => void
   productEditable?: boolean
 }) {
   const { warehouseId, warehouseLabel, productId, productLabel } = selection
@@ -119,7 +120,7 @@ export function InventoryOptionsGrid({
         rows={grid.rows}
         columns={INVENTORY_LIST_COLUMNS}
         renderCell={renderInventoryRowCell}
-        onRowClick={(row) => onSelectInventory(toInventoryOption(row))}
+        onRowClick={(row) => onSelectInventory(row)}
         getRowAriaLabel={(row) => row.inventoryItem}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
         footerSlot={

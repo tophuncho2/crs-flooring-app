@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import type { InventoryOption } from "@builders/domain"
+import type { InventoryRow } from "@builders/domain"
 import { NumberCell, TextCell } from "@/engines/record-view"
 import { useExpandableRowsToggle } from "@/engines/record-view"
 import { Grid, GridEmpty, type GridLayout } from "@/engines/record-view"
@@ -21,7 +21,10 @@ import {
   type WorkOrderMaterialItemLocal,
 } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { buildCurrentRecordEntryPath, buildInventoryRecordHref } from "@/hooks/navigation"
-import { AdjustmentCreateModal } from "@/modules/inventory/components/record/adjustments/adjustment-create-modal"
+import {
+  AdjustmentCreateModal,
+  inventoryRowFromAdjustment,
+} from "@/modules/inventory/components/record/adjustments/adjustment-create-modal"
 import { WorkOrderAdjustmentRow } from "./work-order-adjustment-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import { MaterialItemRemoveButton } from "./row-controls"
@@ -34,7 +37,7 @@ type AdjustmentModalRequest = {
   workOrderItemId: string
   product: { id: string; name: string }
   materialItemNotes: string | null
-  initialInventory: InventoryOption | null
+  initialInventory: InventoryRow | null
 }
 
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
@@ -132,18 +135,7 @@ export function WorkOrderMaterialItemsSection({
         workOrderItemId,
         product: { id: item.productId, name: item.productName ?? "" },
         materialItemNotes: item.notes ?? null,
-        initialInventory: {
-          id: adjustment.inventoryId,
-          inventoryItem: adjustment.inventoryItem,
-          inventoryNumber: adjustment.inventoryNumber,
-          rollNumber: adjustment.rollNumber,
-          dyeLot: adjustment.dyeLot,
-          note: adjustment.inventoryNote,
-          warehouseId: adjustment.warehouseId,
-          location: adjustment.location,
-          stockBalance: "",
-          stockUnitAbbrev: adjustment.stockUnitAbbrev ?? "",
-        },
+        initialInventory: inventoryRowFromAdjustment(adjustment),
       })
     },
     [section.items],

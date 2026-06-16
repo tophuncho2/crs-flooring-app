@@ -1,12 +1,14 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import type { InventoryOption, WarehouseOption } from "@builders/domain"
+import type { InventoryRow, WarehouseOption } from "@builders/domain"
 
 /**
- * The four scope fields the picker grid reads, plus the picked option. Mirrors
- * the slice of `InventoryRecordSelectionController` that `InventoryOptionsGrid`
- * consumes — so the same grid renders against this local state.
+ * The four scope fields the picker grid reads, plus the picked row. Mirrors the
+ * slice of `InventoryRecordSelectionController` that `InventoryOptionsGrid`
+ * consumes — so the same grid renders against this local state. The picked value
+ * is the full `InventoryRow` so the modal can render it back as the selected
+ * list row (and seed the create form from it).
  */
 export type InventoryModalSelection = {
   warehouseId: string | null
@@ -15,11 +17,11 @@ export type InventoryModalSelection = {
   productLabel: string | null
   inventoryId: string | null
   inventoryLabel: string | null
-  /** The picked inventory option, or null until the operator chooses one. */
-  picked: InventoryOption | null
+  /** The picked inventory row, or null until the operator chooses one. */
+  picked: InventoryRow | null
   selectWarehouse: (option: WarehouseOption | null) => void
   selectProduct: (option: { id: string; name: string } | null) => void
-  selectInventory: (option: InventoryOption | null) => void
+  selectInventory: (row: InventoryRow | null) => void
 }
 
 /**
@@ -45,11 +47,11 @@ export function useInventoryModalSelection({
   productId: string | null
   productLabel: string | null
   /** Pre-selected inventory (the duplicate flow seeds the source row). */
-  initialInventory?: InventoryOption | null
+  initialInventory?: InventoryRow | null
 }): InventoryModalSelection {
   const [warehouseId, setWarehouseId] = useState(seedWarehouseId)
   const [warehouseLabel, setWarehouseLabel] = useState(seedWarehouseLabel)
-  const [picked, setPicked] = useState<InventoryOption | null>(initialInventory)
+  const [picked, setPicked] = useState<InventoryRow | null>(initialInventory)
 
   const selectWarehouse = useCallback((option: WarehouseOption | null) => {
     setWarehouseId(option?.id ?? null)
@@ -61,8 +63,8 @@ export function useInventoryModalSelection({
   // Product is locked to the WOMI product; nothing to change.
   const selectProduct = useCallback(() => {}, [])
 
-  const selectInventory = useCallback((option: InventoryOption | null) => {
-    setPicked(option)
+  const selectInventory = useCallback((row: InventoryRow | null) => {
+    setPicked(row)
   }, [])
 
   return {

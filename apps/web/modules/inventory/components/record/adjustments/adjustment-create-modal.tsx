@@ -2,15 +2,62 @@
 
 import { useEffect, useState } from "react"
 import { RecordModal } from "@/engines/record-view"
-import type { InventoryOption } from "@builders/domain"
+import { DataTable } from "@/engines/list-view"
+import type { EnrichedInventoryAdjustmentRow, InventoryRow } from "@builders/domain"
 import { useAdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 import { useInventoryModalSelection } from "../../../controllers/record/adjustments/use-inventory-modal-selection"
 import { HUB_CREATE_PICKER_CONFIG } from "../../../controllers/record/adjustments/form"
 import { useInventoryOptionsGrid } from "../../../controllers/record/header/use-inventory-options-grid"
 import { InventoryOptionsGrid } from "../header/inventory-options-grid"
+import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
+import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
 import { InventoryFieldGrid } from "../fields"
 import { AdjustmentPickerStack } from "./adjustment-picker-stack"
 import { AdjustmentEditFormFields } from "./adjustment-edit-form-fields"
+
+/**
+ * Build the inventory list row a duplicate's source adjustment represents, so the
+ * modal can render it as the selected row (and seed the create form). The
+ * adjustment carries the identity columns (inv# / roll# / dye / note / location /
+ * product / warehouse / unit); the import/PO/balance columns it doesn't track
+ * render as "—". `id` is the inventory's id (the row stands for the inventory item).
+ */
+export function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): InventoryRow {
+  return {
+    id: adj.inventoryId,
+    inventoryNumber: adj.inventoryNumber ?? "",
+    importEntryId: "",
+    importNumber: "",
+    purchaseOrderNumber: "",
+    productId: adj.productId,
+    productName: adj.productName,
+    categoryId: "",
+    categoryName: "",
+    categorySlug: adj.categorySlug,
+    stockUnitName: adj.stockUnitName ?? "",
+    stockUnitAbbrev: adj.stockUnitAbbrev ?? "",
+    sendUnitName: "",
+    sendUnitAbbrev: "",
+    rollPrefix: adj.rollPrefix ?? "",
+    rollNumber: adj.rollNumber ?? "",
+    dyeLot: adj.dyeLot ?? "",
+    warehouseId: adj.warehouseId,
+    warehouseName: adj.warehouseName,
+    warehouseNumber: "",
+    location: adj.location ?? "",
+    startingStock: "",
+    netDeducted: "",
+    stockBalance: "",
+    isArchived: false,
+    wasMerged: false,
+    note: adj.inventoryNote ?? "",
+    internalNotes: "",
+    inventoryItem: adj.inventoryItem,
+    fifoReceivedAt: "",
+    createdAt: "",
+    updatedAt: "",
+  }
+}
 
 export type AdjustmentCreateModalWorkOrder = {
   id: string
@@ -28,7 +75,7 @@ export type AdjustmentCreateModalProps = {
   product: { id: string; name: string }
   materialItemNotes?: string | null
   /** Duplicate flow: pre-select the source row's inventory (quantity stays blank). */
-  initialInventory?: InventoryOption | null
+  initialInventory?: InventoryRow | null
   /** Dismiss without creating (✕ / backdrop / Escape / Cancel). */
   onClose: () => void
   /** Fired after a successful create — the host closes the modal and reconciles (router.refresh). */
@@ -189,26 +236,29 @@ export function AdjustmentCreateModal({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {/* Selected inventory summary + swap affordance. */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--panel-border)] bg-[var(--subpanel-background)] px-4 py-2.5">
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium text-[var(--foreground)]">
-                {picked?.inventoryItem}
-              </div>
-              <div className="truncate text-xs text-[var(--foreground)]/60">
-                {[picked?.inventoryNumber, picked?.rollNumber, picked?.dyeLot]
-                  .filter(Boolean)
-                  .join(" · ") || "—"}
-              </div>
+          {/* Selected inventory rendered as the same single list row the grid
+              shows (horizontally scrollable), with a Change button to re-pick. */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/55">
+                Selected item
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsPicking(true)}
+                disabled={isSaving}
+                className="shrink-0 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:border-sky-500/45 hover:text-[var(--foreground)] disabled:opacity-50"
+              >
+                Change
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsPicking(true)}
-              disabled={isSaving}
-              className="shrink-0 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:border-sky-500/45 hover:text-[var(--foreground)] disabled:opacity-50"
-            >
-              Change
-            </button>
+            {picked ? (
+              <DataTable
+                rows={[picked]}
+                columns={INVENTORY_LIST_COLUMNS}
+                renderCell={renderInventoryRowCell}
+              />
+            ) : null}
           </div>
 
           {error ? (
