@@ -33,7 +33,7 @@ import type {
 
 export const WO_PRINT_STYLE_BLOCK = `
   @page { size: letter; margin: 0; }
-  .wo-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; padding: 0 0.25in 0.25in 0.25in; }
+  .wo-print-root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #111; font-size: 12px; padding: 0 0.25in 0.25in 0.25in; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .wo-print-root h2 { font-size: 14px; margin: 18px 0 6px 0; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
   .wo-print-root h3 { font-size: 12px; font-weight: 600; margin: 10px 0 4px 0; }
   .wo-print-root table { width: 100%; border-collapse: collapse; margin: 6px 0; }
@@ -48,6 +48,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .flat-rows th, .wo-print-root .flat-rows td { border: 0; padding: 3px 6px; font-size: 13px; text-align: left; vertical-align: top; white-space: nowrap; }
   .wo-print-root .flat-rows th:first-child, .wo-print-root .flat-rows td:first-child { width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
   .wo-print-root .flat-rows th { font-weight: 600; border-bottom: 1px solid #111; padding-bottom: 2px; }
+  .wo-print-root .flat-rows tbody tr:nth-child(even) { background: #f0f0f0; }
   .wo-print-root .flat-rows .cl-num { text-align: right; }
   .wo-print-root .flat-rows .subtotal-cell { border-top: 1px solid #111; padding-top: 3px; }
   .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
