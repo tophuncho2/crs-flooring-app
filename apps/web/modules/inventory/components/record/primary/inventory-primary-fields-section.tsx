@@ -3,6 +3,7 @@
 import type { InventoryForm, InventoryRow } from "@builders/domain"
 import { CellAt } from "@/engines/record-view"
 import {
+  CreatedAtField,
   DyeLotReadOnlyField,
   FifoReceivedField,
   ImportNumberField,
@@ -120,9 +121,12 @@ export function InventoryPrimaryFieldsSection({
           <ImportNumberField value={record.importNumber} />
         </CellAt>
         <CellAt col={1} row={2} colSpan={4}>
-          <UpdatedAtField value={record.updatedAt} />
+          <CreatedAtField value={record.createdAt} />
         </CellAt>
         <CellAt col={5} row={2} colSpan={4}>
+          <UpdatedAtField value={record.updatedAt} />
+        </CellAt>
+        <CellAt col={1} row={3} colSpan={4}>
           <MergedField wasMerged={record.wasMerged} />
         </CellAt>
       </InventoryFieldGrid>

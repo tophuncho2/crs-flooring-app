@@ -205,6 +205,10 @@ export function FifoReceivedField({ value }: { value: string }) {
   return <ReadonlyField label="FIFO Received" value={formatFifoReceivedAtEastern(value)} />
 }
 
+export function CreatedAtField({ value }: { value: string }) {
+  return <ReadonlyField label="Created" value={formatEasternDateTime(value)} />
+}
+
 export function UpdatedAtField({ value }: { value: string }) {
   return <ReadonlyField label="Updated" value={formatEasternDateTime(value)} />
 }
