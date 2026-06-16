@@ -97,7 +97,24 @@ export function TemplatePropertyUnitGroup({
 
   return (
     <>
-      <CellAt col={1} row={2} colSpan={4}>
+      {/* Unit Type — dedicated row directly beneath the Template # top row,
+          two columns wide. Required. */}
+      <CellAt col={1} row={2} colSpan={2}>
+        <FormField
+          label="Unit Type"
+          required
+          currentLength={editable ? draft.unitType.length : undefined}
+          maxLength={editable ? TEMPLATE_UNIT_TYPE_MAX : undefined}
+        >
+          <TextCell
+            editable={editable}
+            value={draft.unitType}
+            onChange={(value) => onFieldChange("unitType", value)}
+            maxLength={TEMPLATE_UNIT_TYPE_MAX}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={1} row={3} colSpan={4}>
         <FormField
           label="Management Company"
           actions={
@@ -122,7 +139,7 @@ export function TemplatePropertyUnitGroup({
           <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={3} colSpan={4}>
+      <CellAt col={1} row={4} colSpan={4}>
         <FormField
           label="Property"
           actions={
@@ -173,33 +190,18 @@ export function TemplatePropertyUnitGroup({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} row={4} colSpan={2}>
+      <CellAt col={1} row={5} colSpan={2}>
         <FormField label="Property Address">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{addressDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={3} row={4} colSpan={2}>
+      <CellAt col={3} row={5} colSpan={2}>
         <FormField label="Property Instructions">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{instructionsDisplay}</span>
           </StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={1} row={5} colSpan={2}>
-        <FormField
-          label="Unit Type"
-          required
-          currentLength={editable ? draft.unitType.length : undefined}
-          maxLength={editable ? TEMPLATE_UNIT_TYPE_MAX : undefined}
-        >
-          <TextCell
-            editable={editable}
-            value={draft.unitType}
-            onChange={(value) => onFieldChange("unitType", value)}
-            maxLength={TEMPLATE_UNIT_TYPE_MAX}
-          />
         </FormField>
       </CellAt>
     </>
