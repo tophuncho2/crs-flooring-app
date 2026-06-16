@@ -1,11 +1,9 @@
 "use client"
 
-import { FormField, StaticFieldValue, TextCell, UnitCell } from "@/engines/record-view"
-import { StatusBadge } from "@/engines/common"
+import { FormField, StaticFieldValue, StatusCell, TextCell, UnitCell } from "@/engines/record-view"
 import {
   formatEasternDateTime,
   formatFifoReceivedAtEastern,
-  formatInventoryQuantity,
   INVENTORY_DYE_LOT_MAX,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
@@ -155,16 +153,32 @@ function ReadonlyTextField({ label, value }: { label: string; value: string }) {
   )
 }
 
+function ReadonlyUnitField({
+  label,
+  value,
+  unitAbbrev,
+}: {
+  label: string
+  value: string
+  unitAbbrev: string
+}) {
+  return (
+    <FormField label={label}>
+      <UnitCell editable={false} value={value} unit={unitAbbrev} align="start" />
+    </FormField>
+  )
+}
+
 export function StockBalanceField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
-  return <ReadonlyTextField label="Stock" value={formatInventoryQuantity(value, unitAbbrev)} />
+  return <ReadonlyUnitField label="Stock" value={value} unitAbbrev={unitAbbrev} />
 }
 
 export function NetDeductedField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
-  return <ReadonlyTextField label="Deducted" value={formatInventoryQuantity(value, unitAbbrev)} />
+  return <ReadonlyUnitField label="Deducted" value={value} unitAbbrev={unitAbbrev} />
 }
 
 export function StartingStockReadonlyField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
-  return <ReadonlyTextField label="Starting" value={formatInventoryQuantity(value, unitAbbrev)} />
+  return <ReadonlyUnitField label="Starting" value={value} unitAbbrev={unitAbbrev} />
 }
 
 export function ProductNameField({ value }: { value: string }) {
@@ -199,9 +213,7 @@ export function MergedField({ wasMerged }: { wasMerged: boolean }) {
   return (
     <FormField label="Merged">
       {wasMerged ? (
-        <StatusBadge tone="warning" size="sm">
-          Merged
-        </StatusBadge>
+        <StatusCell editable={false} value="Merged" badgeTone="warning" />
       ) : (
         <StaticFieldValue>-</StaticFieldValue>
       )}
