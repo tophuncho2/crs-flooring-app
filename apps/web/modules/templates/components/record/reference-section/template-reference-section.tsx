@@ -115,7 +115,7 @@ export function TemplateReferenceSection({
             onSelectProperty={(option) =>
               propertySelectable ? cascade.selectProperty(option) : undefined
             }
-            onSelectTemplate={(row) =>
+            onOpenTemplate={(row) =>
               router.push(
                 buildTemplateHubHref({
                   templateId: row.id,

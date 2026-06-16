@@ -14,8 +14,9 @@ import { renderTemplateRowCell } from "../../list/table/templates-row-cell"
 
 /**
  * The templates reference-header picker grid: the Management Company + Property
- * scope pickers side by side over a 15-row paginated results table. Clicking a
- * row selects that template. The grid controller is owned by the record surface
+ * scope pickers side by side over a 15-row paginated results table. Each row
+ * carries a leading open-button gutter that opens that template (the row body
+ * itself is inert — no row-click). The grid controller is owned by the record surface
  * (so the reference header's Clear can reset its page) and passed in. Renders rows
  * through the shared `TEMPLATES_LIST_COLUMNS` + `renderTemplateRowCell` (same as
  * the list table and the reference row) so column changes propagate everywhere a
@@ -30,7 +31,7 @@ export function TemplateOptionsGrid({
   propertyPickerDisabled = false,
   onSelectManagementCompany,
   onSelectProperty,
-  onSelectTemplate,
+  onOpenTemplate,
 }: {
   cascade: CascadePickerController
   grid: TemplateOptionsGridController
@@ -45,7 +46,7 @@ export function TemplateOptionsGrid({
   propertyPickerDisabled?: boolean
   onSelectManagementCompany: (option: ManagementCompanyOption | null) => void
   onSelectProperty: (option: PropertyOption | null) => void
-  onSelectTemplate: (row: TemplateListRow) => void
+  onOpenTemplate: (row: TemplateListRow) => void
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -77,8 +78,8 @@ export function TemplateOptionsGrid({
         rows={grid.rows}
         columns={TEMPLATES_LIST_COLUMNS}
         renderCell={renderTemplateRowCell}
-        onRowClick={(row) => onSelectTemplate(row)}
-        getRowAriaLabel={(row) => `Select template ${row.templateNumber}`}
+        onOpenRow={(row) => onOpenTemplate(row)}
+        getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates match these filters."}
         footerSlot={
           <PaginateControls
