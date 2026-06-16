@@ -123,9 +123,7 @@ export function ManagementCompanyRecordView({
       key: "templates",
       type: "item",
       order: 20,
-      render: (ctx) => (
-        <ManagementCompanyTemplatesSection page={ctx.page} managementCompany={entry} />
-      ),
+      render: () => <ManagementCompanyTemplatesSection managementCompany={entry} />,
     },
   ]
 
