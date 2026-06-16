@@ -56,6 +56,14 @@ describe("work-order documents — above the adjustments table", () => {
         .wo-print-root .wo-top-table th, .wo-print-root .wo-top-table td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
         .wo-print-root .wo-top-table th { font-weight: 600; white-space: nowrap; padding-right: 16px; }
         .wo-print-root .wo-top-table tr.row-gap > th, .wo-print-root .wo-top-table tr.row-gap > td { padding-top: 12px; }
+        .wo-print-root .wo-mid { display: flex; align-items: flex-start; margin: 6px 0; }
+        .wo-print-root .wo-mid-left { flex: 0 0 58%; margin: 0; }
+        .wo-print-root .wo-mid-right { flex: 1 1 auto; margin: 8px 0; padding-left: 16px; border-left: 1px solid #ddd; }
+        .wo-print-root .wo-mid-left table, .wo-print-root .wo-mid-right table { margin: 0; }
+        .wo-print-root .wo-mid-right th { padding-right: 4px; }
+        .wo-print-root .wo-top-grid { border-bottom: 1px solid #ddd; table-layout: fixed; width: 100%; }
+        .wo-print-root .wo-top-grid th, .wo-print-root .wo-top-grid td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; overflow-wrap: break-word; }
+        .wo-print-root .wo-top-grid th { font-weight: 600; white-space: nowrap; padding-right: 4px; }
         .wo-print-root .property-info-table { table-layout: fixed; }
         .wo-print-root .property-info-table th { width: 14%; }
         .wo-print-root .property-info-table td { width: 26%; }
@@ -91,23 +99,48 @@ describe("work-order documents — above the adjustments table", () => {
         </thead>
         <tbody>
           <tr><td>
-      <table class="wo-top-table">
+      <table class="wo-top-grid">
         <colgroup>
-          <col style="width: 1%;" />
-          <col />
+          <col style="width: 13%;" />
+          <col style="width: 37%;" />
+          <col style="width: 13%;" />
+          <col style="width: 37%;" />
         </colgroup>
         <tbody>
-          <tr><th>Date</th><td>2026-06-08 - AM</td></tr>
-          <tr><th>Warehouse</th><td>North Warehouse - 5 Depot Rd, Round Rock, TX, 78664 - (512) 555-0100</td></tr>
-          <tr><th>Job Type</th><td>Turn</td></tr>
-          <tr class="row-gap"><th>Management Company</th><td>Cardinal Management</td></tr>
-          <tr><th>Property</th><td>Maple Court Apartments</td></tr>
-          <tr><th>Property Address</th><td>100 Maple St, Austin, TX, 78701</td></tr>
-          <tr class="row-gap"><th>Unit Type</th><td>2 Bed / 1 Bath</td></tr>
-          <tr><th>Unit Number</th><td>12B</td></tr>
-          <tr><th>Vacancy</th><td>Vacant</td></tr>
+          <tr>
+            <th>Date</th><td>2026-06-08 - AM</td>
+            <th>Warehouse</th><td>North Warehouse - 5 Depot Rd, Round Rock, TX, 78664 - (512) 555-0100</td>
+          </tr>
+          <tr>
+            <th>Job Type</th><td>Turn</td>
+            <th></th><td></td>
+          </tr>
         </tbody>
       </table>
+      <div class="wo-mid">
+        <table class="wo-top-table wo-mid-left">
+          <colgroup>
+            <col style="width: 1%;" />
+            <col />
+          </colgroup>
+          <tbody>
+            <tr><th>Management Company</th><td>Cardinal Management</td></tr>
+            <tr><th>Property</th><td>Maple Court Apartments</td></tr>
+          <tr><th>Property Address</th><td>100 Maple St, Austin, TX, 78701</td></tr>
+          </tbody>
+        </table>
+        <table class="wo-top-table wo-mid-right">
+          <colgroup>
+            <col style="width: 1%;" />
+            <col />
+          </colgroup>
+          <tbody>
+            <tr><th>Unit Type</th><td>2 Bed / 1 Bath</td></tr>
+            <tr><th>Unit Number</th><td>12B</td></tr>
+            <tr><th>Vacancy</th><td>Vacant</td></tr>
+          </tbody>
+        </table>
+      </div>
       "
     `)
   })
