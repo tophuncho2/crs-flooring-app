@@ -1,8 +1,6 @@
 "use client"
 
-import { type ReactNode } from "react"
-import { ActionHeader } from "@/engines/common"
-import { NumberCell, RowActionButton, TextCell } from "@/engines/record-view"
+import { NumberCell, RecordItemSection, RowActionButton, TextCell } from "@/engines/record-view"
 import { Grid, GridEmpty, type GridLayout } from "@/engines/record-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { type ProductOption, TEMPLATE_MATERIAL_ITEM_NOTES_MAX } from "@builders/domain"
@@ -37,9 +35,9 @@ export function TemplateMaterialItemsSection({
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
-  error?: ReactNode
-  noticeMessage?: ReactNode
-  noticeError?: ReactNode
+  error?: string | null
+  noticeMessage?: string
+  noticeError?: string
   onSave: () => void
   onDiscard: () => void
   onAddItem: () => void
@@ -51,41 +49,36 @@ export function TemplateMaterialItemsSection({
   const editable = !isSaving
 
   return (
-    <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-      <ActionHeader
-        title="Material Items"
-        summary={
-          <span>
-            {items.length} item{items.length === 1 ? "" : "s"}
-          </span>
-        }
-        actions={[
-          {
-            key: "save",
-            label: isSaving ? "Saving Material Items..." : "Save Material Items",
-            onClick: onSave,
-            kind: "primary",
-            disabled: !isDirty || isSaving || hasConflict,
-          },
-          {
-            key: "discard",
-            label: "Discard",
-            onClick: onDiscard,
-            kind: "secondary",
-            disabled: !isDirty || isSaving,
-          },
+    <RecordItemSection
+      title="Material Items"
+      // `item` sections default these off — unlock the managed Save/Discard path
+      // and the add action so the toolbar renders the controls that used to live
+      // in the ActionHeader.
+      capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
+      subHeader={{
+        summary: `${items.length} item${items.length === 1 ? "" : "s"}`,
+        isDirty,
+        isSaving,
+        hasConflict,
+        onSave,
+        onDiscard,
+        saveLabel: "Save Material Items",
+        savingLabel: "Saving Material Items...",
+        discardLabel: "Discard",
+        error,
+        actions: [
           {
             key: "add",
             label: "+ Add Material Item",
+            kind: "add-row",
             onClick: onAddItem,
-            kind: "secondary",
             disabled: isSaving,
           },
-        ]}
-        message={noticeMessage}
-        error={error ?? noticeError}
-      />
-
+        ],
+      }}
+    >
       <Grid<TemplateMaterialItemLocal>
         rows={items}
         layout={TEMPLATE_MATERIAL_ITEMS_LAYOUT}
@@ -160,6 +153,6 @@ export function TemplateMaterialItemsSection({
           return null
         }}
       />
-    </div>
+    </RecordItemSection>
   )
 }
