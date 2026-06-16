@@ -40,6 +40,8 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .wo-top-table th, .wo-print-root .wo-top-table td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
   .wo-print-root .wo-top-table th { font-weight: 600; white-space: nowrap; padding-right: 16px; }
   .wo-print-root .wo-top-table tr.row-gap > th, .wo-print-root .wo-top-table tr.row-gap > td { padding-top: 12px; }
+  .wo-print-root .wo-top-grid th, .wo-print-root .wo-top-grid td { border: 0; padding: 3px 8px; text-align: left; vertical-align: top; }
+  .wo-print-root .wo-top-grid th { font-weight: 600; white-space: nowrap; padding-right: 4px; }
   .wo-print-root .property-info-table { table-layout: fixed; }
   .wo-print-root .property-info-table th { width: 14%; }
   .wo-print-root .property-info-table td { width: 26%; }
@@ -127,14 +129,17 @@ ${body}
 /**
  * Shared work-order info stack, rendered above the adjustments table on BOTH
  * the Slip and the Picking Ticket (the two diverge only in the adjustments
- * table below). One continuous label/value table — no section heading. The
- * label column hugs its content (width:1% + nowrap labels) so "Management
- * Company" never wraps.
+ * table below). The top four fields sit in a 2×2 grid with tightened
+ * label→value padding — Date | Warehouse on row 1, Job Type | Description on
+ * row 2 — followed by a continuous label/value table for the rest. Label
+ * columns hug their content (width:1% + nowrap labels) so "Management Company"
+ * never wraps.
  *
- * Order: Warehouse · Job Type · Description · Management Company · Property
- * (+ flat address beneath) · Unit Type · Unit Number · Vacancy · Property
- * Instructions · Installer Instructions. Description / address / instruction
- * rows are omitted when their value is blank; the address is the customAddress
+ * Order: Date · Warehouse · Job Type · Description (top grid) · Management
+ * Company · Property (+ flat address beneath) · Unit Type · Unit Number ·
+ * Vacancy · Property Instructions · Installer Instructions. Description /
+ * address / instruction rows are omitted when their value is blank (the
+ * Description grid cell is left empty); the address is the customAddress
  * override or the property's flat address line.
  */
 export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string {
@@ -146,9 +151,11 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
   const warehouseCell = warehouseParts.length
     ? escapeHtml(warehouseParts.join(" - "))
     : `<span class="empty-cell">—</span>`
-  const descriptionRow = input.description
-    ? `\n    <tr><th>Description</th><td class="multiline">${escapeHtml(input.description)}</td></tr>`
-    : ""
+  // Description shares row 2 of the top grid, to the right of Job Type. When
+  // blank the cell pair is left empty so the grid keeps its shape.
+  const descriptionCells = input.description
+    ? `<th>Description</th><td class="multiline">${escapeHtml(input.description)}</td>`
+    : `<th></th><td></td>`
   // Property (or custom) address, flat text — labeled row beneath the Property
   // name.
   const propertyAddress = input.customAddress || buildAddressLine(input.property)
@@ -162,16 +169,31 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
     ? `\n    <tr><th>Installer Instructions</th><td class="multiline">${escapeHtml(input.installerInstructions)}</td></tr>`
     : ""
   return `
+<table class="wo-top-grid">
+  <colgroup>
+    <col style="width: 1%;" />
+    <col />
+    <col style="width: 1%;" />
+    <col />
+  </colgroup>
+  <tbody>
+    <tr>
+      <th>Date</th><td>${escapeOrEmpty(input.scheduledFor)} - ${formatTimeOfDay(input.timeOfDay)}</td>
+      <th>Warehouse</th><td>${warehouseCell}</td>
+    </tr>
+    <tr>
+      <th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td>
+      ${descriptionCells}
+    </tr>
+  </tbody>
+</table>
 <table class="wo-top-table">
   <colgroup>
     <col style="width: 1%;" />
     <col />
   </colgroup>
   <tbody>
-    <tr><th>Date</th><td>${escapeOrEmpty(input.scheduledFor)} - ${formatTimeOfDay(input.timeOfDay)}</td></tr>
-    <tr><th>Warehouse</th><td>${warehouseCell}</td></tr>
-    <tr><th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td></tr>${descriptionRow}
-    <tr class="row-gap"><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
+    <tr><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
     <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${propertyAddressRow}
     <tr class="row-gap"><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
     <tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>
