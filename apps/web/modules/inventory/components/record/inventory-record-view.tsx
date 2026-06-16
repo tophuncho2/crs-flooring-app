@@ -161,6 +161,7 @@ export function InventoryRecordView({
         >
           <InventoryPrimaryFieldsSection
             draft={primary.localValue}
+            record={record}
             warehouseName={record.warehouseName}
             // Lock the inventory fields while an adjustment is open below — the
             // operator is reading the inventory, not editing it.

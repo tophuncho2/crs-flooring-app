@@ -1,7 +1,11 @@
 "use client"
 
 import { FormField, StaticFieldValue, TextCell, UnitCell } from "@/engines/record-view"
+import { StatusBadge } from "@/engines/common"
 import {
+  formatEasternDateTime,
+  formatFifoReceivedAtEastern,
+  formatInventoryQuantity,
   INVENTORY_DYE_LOT_MAX,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
@@ -132,6 +136,75 @@ export function WarehousePickerField(props: WarehousePickerProps) {
   return (
     <FormField label="Warehouse">
       <WarehousePicker {...props} />
+    </FormField>
+  )
+}
+
+/**
+ * Read-only "reference" cells — the inventory table columns surfaced on the
+ * record view as display-only cells (uneditable for now). Each pulls straight
+ * from the persisted `InventoryRow` and is formatted to read identically to the
+ * inventory table row (same domain formatters the row renderer uses).
+ */
+
+function ReadonlyTextField({ label, value }: { label: string; value: string }) {
+  return (
+    <FormField label={label}>
+      <TextCell editable={false} value={value} />
+    </FormField>
+  )
+}
+
+export function StockBalanceField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
+  return <ReadonlyTextField label="Stock" value={formatInventoryQuantity(value, unitAbbrev)} />
+}
+
+export function NetDeductedField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
+  return <ReadonlyTextField label="Deducted" value={formatInventoryQuantity(value, unitAbbrev)} />
+}
+
+export function StartingStockReadonlyField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
+  return <ReadonlyTextField label="Starting" value={formatInventoryQuantity(value, unitAbbrev)} />
+}
+
+export function ProductNameField({ value }: { value: string }) {
+  return <ReadonlyTextField label="Product" value={value} />
+}
+
+export function InventoryNumberField({ value }: { value: string }) {
+  return <ReadonlyTextField label="Inv #" value={value} />
+}
+
+export function CategoryNameField({ value }: { value: string }) {
+  return <ReadonlyTextField label="Category" value={value} />
+}
+
+export function PurchaseOrderNumberField({ value }: { value: string }) {
+  return <ReadonlyTextField label="PO #" value={value} />
+}
+
+export function ImportNumberField({ value }: { value: string }) {
+  return <ReadonlyTextField label="Import #" value={value} />
+}
+
+export function FifoReceivedField({ value }: { value: string }) {
+  return <ReadonlyTextField label="FIFO Received" value={formatFifoReceivedAtEastern(value)} />
+}
+
+export function UpdatedAtField({ value }: { value: string }) {
+  return <ReadonlyTextField label="Updated" value={formatEasternDateTime(value)} />
+}
+
+export function MergedField({ wasMerged }: { wasMerged: boolean }) {
+  return (
+    <FormField label="Merged">
+      {wasMerged ? (
+        <StatusBadge tone="warning" size="sm">
+          Merged
+        </StatusBadge>
+      ) : (
+        <StaticFieldValue>-</StaticFieldValue>
+      )}
     </FormField>
   )
 }
