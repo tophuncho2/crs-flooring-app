@@ -9,10 +9,10 @@ import {
   listTemplatesRequest,
 } from "@/modules/templates/data/list-templates-request"
 
-/** Picker grid page size — small so the reference header stays compact. */
-export const TEMPLATE_PICKER_PAGE_SIZE = 15
+/** Section table page size — small so the record-view section stays compact. */
+export const TEMPLATE_SECTION_PAGE_SIZE = 15
 
-export type TemplateOptionsGridController = {
+export type TemplatesSectionTableController = {
   rows: ReadonlyArray<TemplateListRow>
   total: number
   page: number
@@ -29,16 +29,15 @@ export type TemplateOptionsGridController = {
 }
 
 /**
- * Local-state controller behind the templates reference-header picker grid.
- * Holds the current page in React state (NOT the URL — the picker's transient
- * page must not pollute the record-view URL) and fetches a page of
- * `TemplateListRow`s through the same list endpoint the templates list view uses
- * (`listTemplatesRequest`). The picked management company + property ride in as
- * filters (both optional — the grid lists across everything when none is picked);
- * any scope change resets to page 1. `enabled` gates the fetch so the query only
- * runs while the picker is open.
+ * Local-state controller behind the templates record-view section table. Holds
+ * the current page in React state (NOT the URL — the section's transient page
+ * must not pollute the record-view URL) and fetches a page of `TemplateListRow`s
+ * through the same list endpoint the templates list view uses
+ * (`listTemplatesRequest`). The scoped management company + property ride in as
+ * filters (both optional — the table lists across everything when none is set);
+ * any scope change resets to page 1. `enabled` gates the fetch.
  */
-export function useTemplateOptionsGrid({
+export function useTemplatesSectionTable({
   managementCompanyId,
   propertyId,
   enabled,
@@ -46,7 +45,7 @@ export function useTemplateOptionsGrid({
   managementCompanyId: string | null
   propertyId: string | null
   enabled: boolean
-}): TemplateOptionsGridController {
+}): TemplatesSectionTableController {
   const [page, setPage] = useState(1)
 
   // Re-scoping (different MC / property) returns to page 1. Reset during render
@@ -65,18 +64,18 @@ export function useTemplateOptionsGrid({
       ...(managementCompanyId ? { managementCompanyId: [managementCompanyId] } : {}),
       ...(propertyId ? { propertyId: [propertyId] } : {}),
     }
-    return { filters, page, pageSize: TEMPLATE_PICKER_PAGE_SIZE }
+    return { filters, page, pageSize: TEMPLATE_SECTION_PAGE_SIZE }
   }, [managementCompanyId, propertyId, page])
 
   const query = useQuery({
-    queryKey: [...TEMPLATES_LIST_QUERY_KEY, "picker", input],
+    queryKey: [...TEMPLATES_LIST_QUERY_KEY, "record-section", input],
     queryFn: () => listTemplatesRequest(input),
     enabled,
     placeholderData: keepPreviousData,
   })
 
   const total = query.data?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / TEMPLATE_PICKER_PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(total / TEMPLATE_SECTION_PAGE_SIZE))
   const rows = query.data?.rows ?? []
 
   const goToPrevious = useCallback(() => setPage((current) => Math.max(1, current - 1)), [])

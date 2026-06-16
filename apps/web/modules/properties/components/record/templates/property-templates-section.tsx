@@ -14,10 +14,10 @@ import { PropertyPicker } from "@/modules/properties/components/picker/property-
 import { TEMPLATES_LIST_COLUMNS } from "@/modules/templates/components/list/table/templates-list-columns"
 import { renderTemplateRowCell } from "@/modules/templates/components/list/table/templates-row-cell"
 import {
-  TEMPLATE_PICKER_PAGE_SIZE,
-  useTemplateOptionsGrid,
-} from "@/modules/templates/controllers/record/header/use-template-options-grid"
-import { useTemplateReferenceSection } from "@/modules/templates/controllers/record/use-template-reference-section"
+  TEMPLATE_SECTION_PAGE_SIZE,
+  useTemplatesSectionTable,
+} from "@/modules/templates/controllers/record/use-templates-section-table"
+import { useTemplatesSectionScope } from "@/modules/templates/controllers/record/use-templates-section-scope"
 
 /**
  * The Property record view's §2 templates section, on the canonical
@@ -40,14 +40,14 @@ export function PropertyTemplatesSection({
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const { cascade } = useTemplateReferenceSection({
+  const { cascade } = useTemplatesSectionScope({
     managementCompanyId: managementCompany?.id ?? null,
     managementCompanyLabel: managementCompany?.name ?? null,
     propertyId: property.id,
     propertyLabel: property.name,
   })
 
-  const grid = useTemplateOptionsGrid({
+  const grid = useTemplatesSectionTable({
     managementCompanyId: cascade.managementCompanyId,
     propertyId: cascade.propertyId,
     enabled: true,
@@ -128,7 +128,7 @@ export function PropertyTemplatesSection({
         footerSlot={
           <PaginateControls
             page={grid.page}
-            pageSize={TEMPLATE_PICKER_PAGE_SIZE}
+            pageSize={TEMPLATE_SECTION_PAGE_SIZE}
             totalItems={grid.total}
             totalPages={grid.totalPages}
             hasPreviousPage={grid.hasPrevious}
