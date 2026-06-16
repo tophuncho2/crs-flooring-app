@@ -48,7 +48,7 @@ export async function DELETE(request: Request, context: RouteContext) {
       requireExpectedUpdatedAt: true,
     })
 
-    const currentSnapshot = await getImportDetailById(id)
+    const currentSnapshot = await getImportDetailById(id, { withNeighbors: false })
     if (!currentSnapshot) {
       throw new ImportExecutionError({
         code: "IMPORT_NOT_FOUND",

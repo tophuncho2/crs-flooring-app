@@ -1,6 +1,7 @@
-import type { ImportDetail, ImportOption, ImportRow } from "@builders/domain"
+import type { ImportDetail, ImportNeighbor, ImportOption, ImportRow } from "@builders/domain"
 import type { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
+import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 import {
   importDetailSelect,
   importRowSelect,
@@ -35,11 +36,26 @@ export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
   }
 }
 
-export function normalizeImportDetail(row: ImportDetailPayload): ImportDetailRecord {
+type ImportNeighbors = {
+  previousImport: ImportNeighbor | null
+  nextImport: ImportNeighbor | null
+}
+
+const NO_IMPORT_NEIGHBORS: ImportNeighbors = {
+  previousImport: null,
+  nextImport: null,
+}
+
+export function normalizeImportDetail(
+  row: ImportDetailPayload,
+  neighbors: ImportNeighbors = NO_IMPORT_NEIGHBORS,
+): ImportDetailRecord {
   return {
     ...normalizeImportRow(row),
     stagedInventoryRows: row.stagedInventoryRows.map((entry) => ({ id: entry.id })),
     inventories: row.inventories.map((entry) => ({ id: entry.id })),
+    previousImport: neighbors.previousImport,
+    nextImport: neighbors.nextImport,
   }
 }
 
@@ -82,15 +98,62 @@ export async function getImportById(
   return row ? normalizeImportRow(row) : null
 }
 
+/**
+ * Resolve the import rows immediately before/after the given number in the
+ * global import-number order (`importNumber`). Powers the record-view shell
+ * stepper — deliberately global: no warehouse / manufacturer scoping, the
+ * stepper walks the raw number line. Two single-row lookups on the unique
+ * `importNumber` index. `importNumber` is a non-null autoincrement, so there is
+ * always a key to step from; both sides null only at the sequence's edges.
+ */
+async function getImportNeighbors(
+  importNumber: number,
+  client: ImportsDbClient = db,
+): Promise<ImportNeighbors> {
+  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+    "importNumber",
+    importNumber,
+  )
+  const [previous, next] = await Promise.all([
+    client.flooringImportEntry.findFirst({
+      ...previousQuery,
+      select: { id: true },
+    }),
+    client.flooringImportEntry.findFirst({
+      ...nextQuery,
+      select: { id: true },
+    }),
+  ])
+
+  return {
+    previousImport: previous ? { id: previous.id } : null,
+    nextImport: next ? { id: next.id } : null,
+  }
+}
+
+/**
+ * Read the full import detail. By default it also resolves the adjacent rows
+ * for the record-view shell stepper; pass `{ withNeighbors: false }` on paths
+ * that only read a snapshot (e.g. the delete conflict check) to skip the two
+ * extra lookups.
+ */
 export async function getImportDetailById(
   id: string,
+  options: { withNeighbors?: boolean } = {},
   client: ImportsDbClient = db,
 ): Promise<ImportDetailRecord | null> {
   const row = await client.flooringImportEntry.findUnique({
     where: { id },
     select: importDetailSelect,
   })
-  return row ? normalizeImportDetail(row) : null
+  if (!row) return null
+
+  const neighbors =
+    options.withNeighbors === false
+      ? NO_IMPORT_NEIGHBORS
+      : await getImportNeighbors(row.importNumber, client)
+
+  return normalizeImportDetail(row, neighbors)
 }
 
 export async function countImports(

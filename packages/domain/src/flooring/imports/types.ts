@@ -13,9 +13,25 @@ export type ImportRow = {
   updatedAt: string
 }
 
+/**
+ * An adjacent import in the global import-number sequence (`importNumber`).
+ * Carries only `id` — the record-view stepper navigates straight to the
+ * neighbor record by number. Null at the ends of the sequence.
+ */
+export type ImportNeighbor = {
+  id: string
+}
+
 export type ImportDetail = ImportRow & {
   stagedInventoryRows: ReadonlyArray<{ id: string }>
   inventories: ReadonlyArray<{ id: string }>
+  /**
+   * Neighbors by global import-number order (`importNumber`), ignoring any list
+   * filters — powers the record-view shell stepper (◀ IMP-# ▶). Null when the
+   * current row is at the start/end of the sequence.
+   */
+  previousImport: ImportNeighbor | null
+  nextImport: ImportNeighbor | null
 }
 
 export type ImportPrimaryForm = {
