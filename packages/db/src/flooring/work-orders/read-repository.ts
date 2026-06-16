@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
 import type { FlooringVacancyStatus, Prisma } from "../../generated/prisma/client.js"
+import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 import {
   normalizeWorkOrder,
   normalizeWorkOrderListRow,
@@ -8,6 +9,7 @@ import {
   type WorkOrderFileGenerationInput,
   type WorkOrderFileMaterialItemProjection,
   type WorkOrderListRow,
+  type WorkOrderNeighbor,
   type WorkOrderOption,
 } from "@builders/domain"
 import {
@@ -318,8 +320,60 @@ export async function getWorkOrderById(
   return normalizeWorkOrderListRow(workOrder)
 }
 
+type WorkOrderNeighbors = {
+  previousWorkOrder: WorkOrderNeighbor | null
+  nextWorkOrder: WorkOrderNeighbor | null
+}
+
+const NO_WORK_ORDER_NEIGHBORS: WorkOrderNeighbors = {
+  previousWorkOrder: null,
+  nextWorkOrder: null,
+}
+
+/**
+ * Resolve the work-order rows immediately before/after the given numeric sort
+ * key in the global work-order-number order (`workOrderNumberInt`). Powers the
+ * record-view shell stepper — deliberately global: no property / status / date
+ * scoping, the stepper walks the raw number line. Two single-row lookups on the
+ * `workOrderNumberInt` index. Both null when the key is null (no generated value
+ * yet) or the row is at the sequence's edge.
+ */
+async function getWorkOrderNeighbors(
+  workOrderNumberInt: number | null,
+  client: WorkOrdersDbClient = db,
+): Promise<WorkOrderNeighbors> {
+  if (workOrderNumberInt === null) return NO_WORK_ORDER_NEIGHBORS
+
+  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+    "workOrderNumberInt",
+    workOrderNumberInt,
+  )
+  const [previous, next] = await Promise.all([
+    client.flooringWorkOrder.findFirst({
+      ...previousQuery,
+      select: { id: true },
+    }),
+    client.flooringWorkOrder.findFirst({
+      ...nextQuery,
+      select: { id: true },
+    }),
+  ])
+
+  return {
+    previousWorkOrder: previous ? { id: previous.id } : null,
+    nextWorkOrder: next ? { id: next.id } : null,
+  }
+}
+
+/**
+ * Read the full work-order detail. By default it also resolves the adjacent
+ * rows for the record-view shell stepper; pass `{ withNeighbors: false }` on
+ * paths that only read a snapshot (e.g. the delete conflict check) to skip the
+ * two extra lookups.
+ */
 export async function getWorkOrderDetailById(
   id: string,
+  options: { withNeighbors?: boolean } = {},
   client: WorkOrdersDbClient = db,
 ): Promise<WorkOrderDetail> {
   const workOrder = await client.flooringWorkOrder.findUniqueOrThrow({
@@ -327,7 +381,12 @@ export async function getWorkOrderDetailById(
     select: workOrderDetailSelect,
   })
 
-  return normalizeWorkOrder(workOrder)
+  const neighbors =
+    options.withNeighbors === false
+      ? NO_WORK_ORDER_NEIGHBORS
+      : await getWorkOrderNeighbors(workOrder.workOrderNumberInt, client)
+
+  return normalizeWorkOrder(workOrder, neighbors)
 }
 
 export async function countWorkOrders(

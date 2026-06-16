@@ -1,4 +1,5 @@
 import { db } from "../../client.js"
+import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeTemplate,
@@ -253,15 +254,17 @@ async function getTemplateNeighbors(
 ): Promise<TemplateNeighbors> {
   if (templateNumberInt === null) return NO_TEMPLATE_NEIGHBORS
 
+  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+    "templateNumberInt",
+    templateNumberInt,
+  )
   const [previous, next] = await Promise.all([
     client.flooringTemplate.findFirst({
-      where: { templateNumberInt: { lt: templateNumberInt } },
-      orderBy: { templateNumberInt: "desc" },
+      ...previousQuery,
       select: { id: true },
     }),
     client.flooringTemplate.findFirst({
-      where: { templateNumberInt: { gt: templateNumberInt } },
-      orderBy: { templateNumberInt: "asc" },
+      ...nextQuery,
       select: { id: true },
     }),
   ])

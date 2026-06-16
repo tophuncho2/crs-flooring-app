@@ -40,6 +40,7 @@ export const workOrderListSelect = {
 export const workOrderDetailSelect = {
   id: true,
   workOrderNumber: true,
+  workOrderNumberInt: true,
   propertyId: true,
   property: {
     select: {

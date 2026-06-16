@@ -527,6 +527,7 @@ model FlooringWarehouse {
 model FlooringWorkOrder {
   id                   String                     @id @default(uuid())
   workOrderNumber      String                     @unique @default(dbgenerated("('WO-'::text || (nextval('flooring_work_order_number_seq'::regclass))::text)")) @map("work_order_number")
+  workOrderNumberInt   Int?                       @default(dbgenerated("(SUBSTRING(work_order_number FROM 4))::integer"))
   propertyId           String?
   property             Property?                  @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   templateId           String?
@@ -553,6 +554,7 @@ model FlooringWorkOrder {
   laborPayments        FlooringLaborPayment[]
 
   @@index([workOrderNumber])
+  @@index([workOrderNumberInt])
   @@index([statusId])
   @@index([propertyId])
   @@index([templateId])

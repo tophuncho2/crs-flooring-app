@@ -33,6 +33,15 @@ export type WorkOrdersForContactPage = {
   laborCostTotal: string
 }
 
+/**
+ * An adjacent work order in the global work-order-number sequence
+ * (`workOrderNumberInt`). Carries only `id` — the record-view stepper navigates
+ * straight to the neighbor record by number. Null at the ends of the sequence.
+ */
+export type WorkOrderNeighbor = {
+  id: string
+}
+
 export type WorkOrderDetail = WorkOrderListRow & {
   customAddress: string
   internalNotes: string
@@ -42,6 +51,13 @@ export type WorkOrderDetail = WorkOrderListRow & {
   propertyState: string
   propertyPostalCode: string
   propertyInstructions: string
+  /**
+   * Neighbors by global work-order-number order (`workOrderNumberInt`), ignoring
+   * any list filters — powers the record-view shell stepper (◀ WO-# ▶). Null
+   * when the current row is at the start/end of the sequence.
+   */
+  previousWorkOrder: WorkOrderNeighbor | null
+  nextWorkOrder: WorkOrderNeighbor | null
 }
 
 export type WorkOrderOption = {

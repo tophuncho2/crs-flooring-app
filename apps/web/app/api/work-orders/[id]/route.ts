@@ -52,7 +52,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       requireExpectedUpdatedAt: true,
     })
 
-    const currentSnapshot = await getWorkOrderDetailById(id)
+    const currentSnapshot = await getWorkOrderDetailById(id, { withNeighbors: false })
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,

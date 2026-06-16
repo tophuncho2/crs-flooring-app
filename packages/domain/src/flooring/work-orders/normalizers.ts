@@ -1,8 +1,19 @@
 import type {
   WorkOrderDetail,
   WorkOrderListRow,
+  WorkOrderNeighbor,
   WorkOrderOption,
 } from "./types.js"
+
+type WorkOrderNeighbors = {
+  previousWorkOrder: WorkOrderNeighbor | null
+  nextWorkOrder: WorkOrderNeighbor | null
+}
+
+const NO_WORK_ORDER_NEIGHBORS: WorkOrderNeighbors = {
+  previousWorkOrder: null,
+  nextWorkOrder: null,
+}
 
 type WorkOrderListInput = {
   id: string
@@ -73,7 +84,10 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
   }
 }
 
-export function normalizeWorkOrder(workOrder: WorkOrderDetailInput): WorkOrderDetail {
+export function normalizeWorkOrder(
+  workOrder: WorkOrderDetailInput,
+  neighbors: WorkOrderNeighbors = NO_WORK_ORDER_NEIGHBORS,
+): WorkOrderDetail {
   const base = normalizeWorkOrderListRow(workOrder)
   return {
     ...base,
@@ -85,6 +99,8 @@ export function normalizeWorkOrder(workOrder: WorkOrderDetailInput): WorkOrderDe
     propertyState: workOrder.property?.state ?? "",
     propertyPostalCode: workOrder.property?.postalCode ?? "",
     propertyInstructions: workOrder.property?.instructions ?? "",
+    previousWorkOrder: neighbors.previousWorkOrder,
+    nextWorkOrder: neighbors.nextWorkOrder,
   }
 }
 

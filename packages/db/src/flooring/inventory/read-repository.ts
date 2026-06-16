@@ -14,6 +14,7 @@ import type {
 } from "@builders/domain"
 import { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
+import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 import { normalizeEnrichedInventoryAdjustmentRow } from "./adjustments/read-repository.js"
 import {
   inventoryDetailSelect,
@@ -145,15 +146,17 @@ async function getInventoryNeighbors(
 ): Promise<InventoryNeighbors> {
   if (inventoryNumberInt === null) return NO_INVENTORY_NEIGHBORS
 
+  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+    "inventoryNumberInt",
+    inventoryNumberInt,
+  )
   const [previous, next] = await Promise.all([
     client.flooringInventory.findFirst({
-      where: { inventoryNumberInt: { lt: inventoryNumberInt } },
-      orderBy: { inventoryNumberInt: "desc" },
+      ...previousQuery,
       select: { id: true, warehouseId: true },
     }),
     client.flooringInventory.findFirst({
-      where: { inventoryNumberInt: { gt: inventoryNumberInt } },
-      orderBy: { inventoryNumberInt: "asc" },
+      ...nextQuery,
       select: { id: true, warehouseId: true },
     }),
   ])
