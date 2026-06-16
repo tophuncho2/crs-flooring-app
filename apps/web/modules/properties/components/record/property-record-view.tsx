@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   RecordDeleteDialog,
   RecordEntityFooter,
@@ -17,6 +18,7 @@ import {
   type ManagementCompanyOption,
   type PropertyDetailRecord,
 } from "@builders/domain"
+import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation/routes"
 import { usePropertyPrimarySection } from "@/modules/properties/controllers/record/use-property-primary-section"
 import { PropertyFieldsSection } from "./primary/property-fields-section"
 import { ManagementCompanyPickerSection } from "./primary/management-company-picker-section"
@@ -39,9 +41,8 @@ function toDisplayForm(option: ManagementCompanyOption): ManagementCompanyForm {
  * The standalone Property record view. ① the management company — a live MC
  * picker (Company-Name cell) with its Phone/Email/Address shown read-only, above
  * the editable property cells; picking a company is a dirty edit saved with the
- * property (the inline record-open affordance is temporarily removed pending the
- * rebase onto the `RecordOpenButton` primitive) — one section · ② the shared
- * templates reference section (always shown),
+ * property, and the `RecordOpenButton` on the label hands off to the MC record
+ * view — one section · ② the shared templates reference section (always shown),
  * with the property pre-seeded and locked — plus the MC when the property has one
  * — so only a template is choosable.
  *
@@ -58,6 +59,10 @@ export function PropertyRecordView({
   entry: PropertyDetailRecord
   managementCompany: ManagementCompanyDetail | null
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const controller = usePropertyPrimarySection({ page, entry })
   const primary = controller.primarySection
   const record = controller.record
@@ -77,6 +82,17 @@ export function PropertyRecordView({
   const selectManagementCompany = (option: ManagementCompanyOption | null) => {
     setMcDisplay(option ? toDisplayForm(option) : null)
     setMcLabel(option?.name ?? null)
+  }
+
+  const openManagementCompany = () => {
+    if (!selectedMcId) return
+    router.push(
+      buildRecordDetailHref(
+        "/dashboard/management-companies",
+        selectedMcId,
+        buildCurrentRecordEntryPath(pathname, searchParams),
+      ),
+    )
   }
 
   const sections: RecordPanelSectionConfig[] = [
@@ -115,6 +131,7 @@ export function PropertyRecordView({
               selectedLabel={mcLabel}
               display={mcDisplay}
               editable={!primary.isSaving}
+              onOpen={openManagementCompany}
             />
             <PropertyFieldsSection
               draft={primary.localValue}

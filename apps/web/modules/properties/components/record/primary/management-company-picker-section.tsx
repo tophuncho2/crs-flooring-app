@@ -6,6 +6,7 @@ import {
   CellAt,
   FieldSection,
   FormField,
+  RecordOpenButton,
   StaticFieldValue,
 } from "@/engines/record-view"
 import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
@@ -13,13 +14,10 @@ import { ManagementCompanyPicker } from "@/modules/management-companies/componen
 /**
  * The Property record view's §1 management-company block — always shown. The
  * Company-Name cell is the live MC picker (tracked by the property's primary
- * controller, so a pick is a dirty edit that saves with the property). Phone /
- * Email / Address always render read-only ("—" when empty) and refresh from
- * `display` when a new company is picked.
- *
- * NOTE: the inline record-open affordance is temporarily removed — this branch
- * predates the `RecordOpenButton` (launch ↗) primitive that retired
- * `CellOpenButton`. Re-add it on the label's `actions` slot after the rebase.
+ * controller, so a pick is a dirty edit that saves with the property). The
+ * `RecordOpenButton` (launch ↗) sits inline on the cell label and hands off to
+ * the selected MC's record view. Phone / Email / Address always render read-only
+ * ("—" when empty) and refresh from `display` when a new company is picked.
  */
 export function ManagementCompanyPickerSection({
   value,
@@ -28,6 +26,7 @@ export function ManagementCompanyPickerSection({
   selectedLabel,
   display,
   editable,
+  onOpen,
   initialOptions,
 }: {
   value: string | null
@@ -36,12 +35,24 @@ export function ManagementCompanyPickerSection({
   selectedLabel: string | null
   display: ManagementCompanyForm | null
   editable: boolean
+  onOpen: () => void
   initialOptions?: ManagementCompanyOption[]
 }) {
   return (
     <FieldSection gap="0.75rem">
       <CellAt col={1} colSpan={5}>
-        <FormField label="Company Name" required>
+        <FormField
+          label="Company Name"
+          required
+          actions={
+            <RecordOpenButton
+              ariaLabel="Open management company"
+              title="Open management company"
+              disabled={!value}
+              onClick={onOpen}
+            />
+          }
+        >
           <ManagementCompanyPicker
             value={value}
             onChange={onChange}
