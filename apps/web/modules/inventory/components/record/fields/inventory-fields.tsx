@@ -1,9 +1,11 @@
 "use client"
 
-import { FormField, StaticFieldValue, StatusCell, TextCell, UnitCell } from "@/engines/record-view"
+import { FormField, StaticFieldValue, TextCell, UnitCell } from "@/engines/record-view"
+import { StatusBadge } from "@/engines/common"
 import {
   formatEasternDateTime,
   formatFifoReceivedAtEastern,
+  formatInventoryQuantity,
   INVENTORY_DYE_LOT_MAX,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
@@ -141,82 +143,84 @@ export function WarehousePickerField(props: WarehousePickerProps) {
 /**
  * Read-only "reference" cells — the inventory table columns surfaced on the
  * record view as display-only cells (uneditable for now). Each pulls straight
- * from the persisted `InventoryRow` and is formatted to read identically to the
- * inventory table row (same domain formatters the row renderer uses).
+ * from the persisted `InventoryRow` and renders inside the engine's boxed
+ * read-only field UI (`StaticFieldValue`) — the same encasing treatment as
+ * `WarehouseStaticField` here and the MC property read-only cells. Values are
+ * formatted with the same domain formatters the inventory table row uses.
  */
 
-function ReadonlyTextField({ label, value }: { label: string; value: string }) {
+function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
     <FormField label={label}>
-      <TextCell editable={false} value={value} />
-    </FormField>
-  )
-}
-
-function ReadonlyUnitField({
-  label,
-  value,
-  unitAbbrev,
-}: {
-  label: string
-  value: string
-  unitAbbrev: string
-}) {
-  return (
-    <FormField label={label}>
-      <UnitCell editable={false} value={value} unit={unitAbbrev} align="start" />
+      <StaticFieldValue>{value || "—"}</StaticFieldValue>
     </FormField>
   )
 }
 
 export function StockBalanceField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
-  return <ReadonlyUnitField label="Stock" value={value} unitAbbrev={unitAbbrev} />
+  return <ReadonlyField label="Stock" value={formatInventoryQuantity(value, unitAbbrev)} />
 }
 
 export function NetDeductedField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
-  return <ReadonlyUnitField label="Deducted" value={value} unitAbbrev={unitAbbrev} />
+  return <ReadonlyField label="Deducted" value={formatInventoryQuantity(value, unitAbbrev)} />
 }
 
 export function StartingStockReadonlyField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
-  return <ReadonlyUnitField label="Starting" value={value} unitAbbrev={unitAbbrev} />
+  return <ReadonlyField label="Starting" value={formatInventoryQuantity(value, unitAbbrev)} />
 }
 
 export function ProductNameField({ value }: { value: string }) {
-  return <ReadonlyTextField label="Product" value={value} />
+  return <ReadonlyField label="Product" value={value} />
 }
 
 export function InventoryNumberField({ value }: { value: string }) {
-  return <ReadonlyTextField label="Inv #" value={value} />
+  return <ReadonlyField label="Inv #" value={value} />
+}
+
+export function RollNumberReadOnlyField({ value }: { value: string }) {
+  return <ReadonlyField label="Roll #" value={value} />
+}
+
+export function DyeLotReadOnlyField({ value }: { value: string }) {
+  return <ReadonlyField label="Dye Lot" value={value} />
+}
+
+export function NoteReadOnlyField({ value }: { value: string }) {
+  return <ReadonlyField label="Note" value={value} />
 }
 
 export function CategoryNameField({ value }: { value: string }) {
-  return <ReadonlyTextField label="Category" value={value} />
+  return <ReadonlyField label="Category" value={value} />
 }
 
 export function PurchaseOrderNumberField({ value }: { value: string }) {
-  return <ReadonlyTextField label="PO #" value={value} />
+  return <ReadonlyField label="PO #" value={value} />
 }
 
 export function ImportNumberField({ value }: { value: string }) {
-  return <ReadonlyTextField label="Import #" value={value} />
+  return <ReadonlyField label="Import #" value={value} />
 }
 
 export function FifoReceivedField({ value }: { value: string }) {
-  return <ReadonlyTextField label="FIFO Received" value={formatFifoReceivedAtEastern(value)} />
+  return <ReadonlyField label="FIFO Received" value={formatFifoReceivedAtEastern(value)} />
 }
 
 export function UpdatedAtField({ value }: { value: string }) {
-  return <ReadonlyTextField label="Updated" value={formatEasternDateTime(value)} />
+  return <ReadonlyField label="Updated" value={formatEasternDateTime(value)} />
 }
 
 export function MergedField({ wasMerged }: { wasMerged: boolean }) {
   return (
     <FormField label="Merged">
-      {wasMerged ? (
-        <StatusCell editable={false} value="Merged" badgeTone="warning" />
-      ) : (
-        <StaticFieldValue>-</StaticFieldValue>
-      )}
+      <StaticFieldValue>
+        {wasMerged ? (
+          <StatusBadge tone="warning" size="sm">
+            Merged
+          </StatusBadge>
+        ) : (
+          "—"
+        )}
+      </StaticFieldValue>
     </FormField>
   )
 }

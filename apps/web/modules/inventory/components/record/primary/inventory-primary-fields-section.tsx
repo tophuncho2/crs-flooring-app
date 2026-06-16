@@ -4,7 +4,7 @@ import type { InventoryForm, InventoryRow } from "@builders/domain"
 import { CellAt } from "@/engines/record-view"
 import {
   CategoryNameField,
-  DyeLotField,
+  DyeLotReadOnlyField,
   FifoReceivedField,
   ImportNumberField,
   InventoryFieldGrid,
@@ -13,18 +13,16 @@ import {
   LocationField,
   MergedField,
   NetDeductedField,
-  NoteField,
+  NoteReadOnlyField,
   ProductNameField,
   PurchaseOrderNumberField,
-  RollNumberField,
+  RollNumberReadOnlyField,
   StartingStockReadonlyField,
   StatusField,
   StockBalanceField,
   UpdatedAtField,
   WarehouseStaticField,
 } from "../fields"
-
-const NOOP = () => {}
 
 /**
  * The inventory "cells" grid for the record view's primary section, built on the
@@ -96,13 +94,13 @@ export function InventoryPrimaryFieldsSection({
           <InventoryNumberField value={record.inventoryNumber} />
         </CellAt>
         <CellAt col={5} row={3} colSpan={4}>
-          <RollNumberField editable={false} value={record.rollNumber} onChange={NOOP} />
+          <RollNumberReadOnlyField value={record.rollNumber} />
         </CellAt>
         <CellAt col={1} row={4} colSpan={4}>
-          <DyeLotField editable={false} value={record.dyeLot} onChange={NOOP} />
+          <DyeLotReadOnlyField value={record.dyeLot} />
         </CellAt>
         <CellAt col={5} row={4} colSpan={4}>
-          <NoteField editable={false} value={record.note} onChange={NOOP} />
+          <NoteReadOnlyField value={record.note} />
         </CellAt>
         <CellAt col={1} row={5} colSpan={4}>
           <CategoryNameField value={record.categoryName} />
