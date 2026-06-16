@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   RecordDetailClientScaffold,
@@ -36,6 +37,14 @@ export function WorkOrderDetailClient({
     const query = new URLSearchParams({ returnTo: backHref }).toString()
     router.push(`/dashboard/work-orders/${neighbor.id}?${query}`)
   }
+
+  // Warm the neighbor routes so stepping lands on already-fetched data — a step
+  // is a soft nav (the shell + stepper stay mounted), so with the page segment
+  // prefetched the swap is near-instant.
+  useEffect(() => {
+    if (previousWorkOrder) router.prefetch(`/dashboard/work-orders/${previousWorkOrder.id}`)
+    if (nextWorkOrder) router.prefetch(`/dashboard/work-orders/${nextWorkOrder.id}`)
+  }, [previousWorkOrder, nextWorkOrder, router])
 
   return (
     <RecordDetailClientScaffold
