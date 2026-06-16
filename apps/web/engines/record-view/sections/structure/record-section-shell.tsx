@@ -81,7 +81,9 @@ export function RecordSectionShell({
         {isOpen ? (
           <>
             {statusPanel}
-            <RecordFormNotices message={noticeMessage} error={noticeError} />
+            {statusPanel ? null : (
+              <RecordFormNotices message={noticeMessage} error={noticeError} />
+            )}
             <div
               data-record-section-type={sectionType}
               data-record-section-capabilities={capabilities ? JSON.stringify(capabilities) : undefined}

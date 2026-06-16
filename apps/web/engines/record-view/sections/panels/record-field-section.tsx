@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react"
 import type { RecordSectionError } from "@/types/record/section-error"
-import { RecordFormNotices } from "../../feedback/record-form-notices"
 import {
   joinRecordSectionClasses,
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
@@ -79,6 +78,8 @@ export function RecordFieldSection({
       capabilities={resolvedCapabilities}
       summary={summary}
       error={error ?? null}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
       isDirty={isDirty}
       isSaving={isSaving}
       hasConflict={hasConflict}
@@ -101,7 +102,6 @@ export function RecordFieldSection({
     return (
       <TableBleed variant="record">
         {actionPanel}
-        <RecordFormNotices message={noticeMessage} error={noticeError} />
         <div className={joinRecordSectionClasses("px-5 py-5 space-y-0", RECORD_SECTION_BODY_SURFACE_CLASS_NAME)}>
           {children}
         </div>
@@ -115,8 +115,6 @@ export function RecordFieldSection({
       metrics={metrics}
       bodyClassName="space-y-0"
       statusPanel={actionPanel}
-      noticeMessage={noticeMessage}
-      noticeError={noticeError}
       sectionType="field"
       capabilities={resolvedCapabilities}
     >

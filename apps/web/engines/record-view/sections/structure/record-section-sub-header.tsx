@@ -45,6 +45,8 @@ function renderActionButton(action: RecordSectionSubHeaderAction) {
 export type RecordSectionSubHeaderProps = {
   summary?: ReactNode
   error?: ReactNode | RecordSectionError | null
+  noticeMessage?: string
+  noticeError?: string
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -70,6 +72,8 @@ export type RecordSectionSubHeaderProps = {
 export function RecordSectionSubHeader({
   summary,
   error,
+  noticeMessage,
+  noticeError,
   isDirty,
   isSaving,
   hasConflict,
@@ -150,6 +154,8 @@ export function RecordSectionSubHeader({
     <RecordSectionActionPanel
       summary={resolvedCapabilities.supportsSummary ? summary : null}
       error={error ?? null}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
       status={statusContent}
       actions={managedActions}
     />

@@ -8,6 +8,7 @@ import {
   RECORD_SECTION_ITEM_SURFACE_CLASS_NAME,
 } from "../structure/record-section-tokens"
 import { RecordSectionErrorPanel } from "../../feedback"
+import { RecordFormNotices } from "../../feedback/record-form-notices"
 import type { RecordSectionError } from "../../contracts"
 
 export function RecordSectionStatusBadge({
@@ -48,12 +49,16 @@ export function RecordSectionActionPanel({
   status,
   actions,
   error,
+  noticeMessage,
+  noticeError,
   className,
 }: {
   summary?: ReactNode
   status?: ReactNode
   actions?: ReactNode
   error?: ReactNode | RecordSectionError
+  noticeMessage?: string
+  noticeError?: string
   className?: string
 }) {
   return (
@@ -79,15 +84,18 @@ export function RecordSectionActionPanel({
             </div>
           ) : null}
         </div>
-        {error ? (
-          <div className="lg:flex-1 lg:min-w-0 lg:mx-3 lg:text-center">
-            {typeof error === "object" && error !== null && "kind" in error ? (
-              <RecordSectionErrorPanel error={error as RecordSectionError} />
-            ) : (
-              <div className="rounded-xl border border-rose-500/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {error}
-              </div>
-            )}
+        {error || noticeMessage || noticeError ? (
+          <div className="space-y-3 lg:flex-1 lg:min-w-0 lg:mx-3 lg:text-center">
+            {error ? (
+              typeof error === "object" && error !== null && "kind" in error ? (
+                <RecordSectionErrorPanel error={error as RecordSectionError} />
+              ) : (
+                <div className="rounded-xl border border-rose-500/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
+                  {error}
+                </div>
+              )
+            ) : null}
+            <RecordFormNotices message={noticeMessage} error={noticeError} />
           </div>
         ) : null}
         {actions ? <div className="flex flex-wrap items-center gap-2 lg:justify-start">{actions}</div> : null}

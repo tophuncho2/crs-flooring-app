@@ -50,6 +50,8 @@ export function RecordItemSection({
       sectionType="item"
       capabilities={resolvedCapabilities}
       {...subHeader}
+      noticeMessage={noticeMessage}
+      noticeError={noticeError}
     />
   ) : undefined
 
