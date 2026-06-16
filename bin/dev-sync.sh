@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Cross-worktree sync — the /sync skill as a script.
+# Cross-worktree sync — the /dev-sync skill as a script.
 #
 # Brings the current worktree up to dev and verifies it, in one pass:
 #   fetch origin → merge origin/dev → bin/check.sh → push.
@@ -16,7 +16,7 @@
 # Aborts cleanly and pushes nothing on: wrong branch, dirty tree, fetch failure,
 # merge conflict, or failing checks.
 #
-# Run from a worktree root:  bash bin/sync.sh   (or: npm run sync)
+# Run from a worktree root:  bash bin/dev-sync.sh   (or: npm run dev-sync)
 
 set -uo pipefail   # NOT -e: we control flow per step and abort explicitly
 

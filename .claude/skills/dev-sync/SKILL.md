@@ -1,31 +1,33 @@
 ---
-name: sync
-description: Bring the current worktree up to dev and verify it in one pass — fetch origin, merge origin/dev, run the check gauntlet, then push only if green. Scoped to the dev-N sub-branches (dev-1, dev-2, …) and staging; refuses dev and main. Drives bin/sync.sh and reports the outcome. Explicit-only — invoke on /sync.
+name: dev-sync
+description: Bring the current worktree up to dev and verify it in one pass — fetch origin, merge origin/dev, run the check gauntlet, then push only if green. Scoped to the dev-N sub-branches (dev-1, dev-2, …) and staging; refuses dev and main. Drives bin/dev-sync.sh and reports the outcome. Explicit-only — invoke on /dev-sync.
 ---
 
-# /sync
+# /dev-sync
 
-`/sync` runs the cross-worktree sync cycle for the current branch: **fetch origin → merge `origin/dev` → `bin/check.sh` → push** (push only if the checks pass). It is the sibling of `/check` — where `/check` just verifies, `/sync` catches the worktree up to `dev`, verifies, and publishes. The script of record is `bin/sync.sh` (also `npm run sync`); this skill drives it and interprets the result.
+`/dev-sync` runs the cross-worktree sync cycle for the current branch: **fetch origin → merge `origin/dev` → `bin/check.sh` → push** (push only if the checks pass). It is the sibling of `/check` — where `/check` just verifies, `/dev-sync` catches the worktree up to `dev`, verifies, and publishes. The script of record is `bin/dev-sync.sh` (also `npm run dev-sync`); this skill drives it and interprets the result.
 
 Reach for it when a `dev-N` worktree has fallen behind `dev` and you want it current, checked, and pushed in one command.
+
+For a *rebase-style* catch-up (linear history instead of a merge), use the bin-only siblings `npm run dev-rebase` (rebase a `dev-N` branch onto `origin/dev`, force-push) and `npm run dev-rebase-finish <dev-N>` (run from `dev` to integrate it back). Those have no skill.
 
 ## Hard rules
 
 - **dev-N + staging only.** Runs on the `dev-N` sub-branches (`dev-1`, `dev-2`, … — matched by `^dev-[0-9]+$`, so future `dev-4/5` are covered) and on `staging` (dev → staging is a clean fast-forward ~99% of the time). On `dev`, push directly; on `main`, use `/promote`. The script enforces this guard — never bypass it.
 - **Check before push.** The gauntlet runs *before* the push, so a broken merge never reaches origin. Never reorder to push first.
 - **No auto-fix.** On a merge conflict or a failed check, report the cause and the recovery command, then stop. Do not resolve conflicts, edit code, or amend tests to make it pass.
-- **Do not commit user work.** The only commit `/sync` produces is git's own merge commit. Never `git add`/`git commit` the user's changes — a dirty tree aborts the sync by design.
-- **Explicit-only.** Trigger on the literal `/sync`. Not on "sync it", "catch up dev", "pull and check".
+- **Do not commit user work.** The only commit `/dev-sync` produces is git's own merge commit. Never `git add`/`git commit` the user's changes — a dirty tree aborts the sync by design.
+- **Explicit-only.** Trigger on the literal `/dev-sync`. Not on "sync it", "catch up dev", "pull and check".
 
 ## Step 1 — Run the sync
 
 From the current worktree root, run the script and let it stream:
 
 ```
-bash bin/sync.sh
+bash bin/dev-sync.sh
 ```
 
-(`npm run sync` is equivalent.) The script runs six steps in order — branch guard, clean-tree guard, `git fetch origin`, `git merge --no-edit origin/dev`, `bash bin/check.sh`, `git push` — and aborts at the first failure, pushing nothing.
+(`npm run dev-sync` is equivalent.) The script runs six steps in order — branch guard, clean-tree guard, `git fetch origin`, `git merge --no-edit origin/dev`, `bash bin/check.sh`, `git push` — and aborts at the first failure, pushing nothing.
 
 ## Step 2 — Interpret and report
 
@@ -40,7 +42,7 @@ Read the script's exit and its `═══ sync summary ═══` table, and cla
 ## Output block
 
 ```
-═══ sync — <branch> ═══
+═══ dev-sync — <branch> ═══
 guard   ✅ / ❌   <branch eligible? else why>
 clean   ✅ / ❌   <tree clean? else dirty>
 fetch   ✅ / ❌
@@ -58,5 +60,6 @@ Recovery (on abort): <the exact command to run next>
 - Does not resolve merge conflicts or edit code to make checks pass — it reports and stops.
 - Does not commit or stash the user's working changes; a dirty tree aborts by design.
 - Does not run migrations (the user runs those), and is not a promotion/rebase tool (→ `/promote`, `/rebase`).
-- Is not the build gauntlet itself — that's `/check` / `bin/check.sh`, which `/sync` invokes as one step.
-- Does not trigger on anything but the literal `/sync`.
+- Is not the build gauntlet itself — that's `/check` / `bin/check.sh`, which `/dev-sync` invokes as one step.
+- Is not the rebase-style flow — that's the bin-only `dev-rebase` / `dev-rebase-finish` (no skill).
+- Does not trigger on anything but the literal `/dev-sync`.
