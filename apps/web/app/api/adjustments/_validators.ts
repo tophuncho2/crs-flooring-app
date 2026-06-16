@@ -283,7 +283,6 @@ const listAdjustmentsQuerySchema = z.object({
   rollNumber: z.string().optional(),
   dyeLot: z.string().optional(),
   note: z.string().optional(),
-  archived: z.enum(["true", "false"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -336,11 +335,6 @@ export function validateAdjustmentsListQuery(
   if (rollNumber) filters.rollNumber = rollNumber
   if (dyeLot) filters.dyeLot = dyeLot
   if (note) filters.note = note
-
-  // Parent-inventory archive state.
-  const archived =
-    parsed.archived === "true" ? true : parsed.archived === "false" ? false : undefined
-  if (archived !== undefined) filters.isArchived = archived
 
   const hasAnyFilter = Object.keys(filters).length > 0
 

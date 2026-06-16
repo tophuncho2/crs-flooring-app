@@ -31,8 +31,7 @@ function readSearchParamArray(
 
 // Multi-value (repeated) filter params — entity-id chips + import-identity
 // chips (PO#/import#, matched against the parent inventory). Shared by parse +
-// build. `archived` (boolean) is handled separately below since its value type
-// isn't a plain `string[]`.
+// build.
 const MULTI_VALUE_FILTER_KEYS = [
   "warehouseId",
   "categoryId",
@@ -60,10 +59,6 @@ export function parseAdjustmentsListInputFromSearchParams(
     if (value.length > 0) filters[key] = value
   }
 
-  const archivedRaw = readSearchParam(searchParams, "archived")
-  if (archivedRaw === "true") filters.isArchived = true
-  else if (archivedRaw === "false") filters.isArchived = false
-
   const hasAnyFilter = Object.keys(filters).length > 0
 
   return {
@@ -83,8 +78,6 @@ function buildAdjustmentsListSearchString(input: ListInput<InventoryAdjustmentLi
     const value = input.filters?.[key]?.trim()
     if (value && value.length > 0) params.set(key, value)
   }
-  if (input.filters?.isArchived === true) params.set("archived", "true")
-  else if (input.filters?.isArchived === false) params.set("archived", "false")
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   return params.toString()

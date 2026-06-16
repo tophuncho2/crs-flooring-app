@@ -353,10 +353,9 @@ export async function listAdjustmentsForListView(
     where.inventoryNote = { contains: note, mode: "insensitive" }
   }
 
-  // Import-identity + archive chips target the parent inventory row (the
-  // adjustment carries no PO#/import#/archived of its own). Accumulate into one
-  // nested relation filter — mirrors the `where.product = { is: {...} }`
-  // category pattern above.
+  // Import-identity chips target the parent inventory row (the adjustment
+  // carries no PO#/import# of its own). Accumulate into one nested relation
+  // filter — mirrors the `where.product = { is: {...} }` category pattern above.
   const inventoryWhere: Prisma.FlooringInventoryWhereInput = {}
   const importNumbers = args.filters.importNumber
   if (importNumbers && importNumbers.length > 0) {
@@ -366,10 +365,6 @@ export async function listAdjustmentsForListView(
   if (purchaseOrderNumbers && purchaseOrderNumbers.length > 0) {
     inventoryWhere.purchaseOrderNumber = { in: [...purchaseOrderNumbers] }
   }
-  // Default to active (non-archived) parent inventory when the filter is
-  // absent — mirrors the inventory list's `buildListViewWhere`. Only an
-  // explicit `isArchived: true` surfaces archived rows.
-  inventoryWhere.isArchived = args.filters.isArchived === true
   if (Object.keys(inventoryWhere).length > 0) {
     where.inventory = { is: inventoryWhere }
   }

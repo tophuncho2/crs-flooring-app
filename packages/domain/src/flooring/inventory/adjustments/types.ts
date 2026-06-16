@@ -69,9 +69,6 @@ export type InventoryAdjustmentListFilters = {
   // its own). "Show all adjustments of inventory rows from this PO#/import#."
   importNumber?: ReadonlyArray<string>
   purchaseOrderNumber?: ReadonlyArray<string>
-  // Parent-inventory archive state, reached through the `inventory` relation
-  // (`true` = archived only, `false` = active only, undefined = all).
-  isArchived?: boolean
   // Per-field identity search — the four list-view search bars. Each is a
   // free-text ILIKE against its own frozen snapshot column
   // (`inventoryNumber`/`rollNumber`/`dyeLot`/`inventoryNote`); multiple set

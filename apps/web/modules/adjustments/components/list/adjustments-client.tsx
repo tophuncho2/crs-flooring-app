@@ -16,7 +16,6 @@ import { CategoryPicker } from "@/modules/categories/components/picker/category-
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
 import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
-import { ArchiveSegmentedControl } from "@/modules/inventory/components/list/toolbar-controls/archive-segmented-control"
 import { useRouter } from "next/navigation"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
 import { buildInventoryAdjustmentHref } from "@/hooks/navigation/routes"
@@ -32,7 +31,6 @@ const ADJUSTMENTS_FILTERABLE_FIELDS = [
   "productId",
   "importNumber",
   "purchaseOrderNumber",
-  "isArchived",
   "invNumber",
   "rollNumber",
   "dyeLot",
@@ -51,7 +49,6 @@ type EngineAdjustmentFilters = {
   productId?: ReadonlyArray<string>
   importNumber?: ReadonlyArray<string>
   purchaseOrderNumber?: ReadonlyArray<string>
-  isArchived?: ReadonlyArray<string>
   invNumber?: ReadonlyArray<string>
   rollNumber?: ReadonlyArray<string>
   dyeLot?: ReadonlyArray<string>
@@ -65,7 +62,6 @@ function toEngineFilters(app: InventoryAdjustmentListFilters): EngineAdjustmentF
   if (app.productId?.length) out.productId = app.productId
   if (app.importNumber?.length) out.importNumber = app.importNumber
   if (app.purchaseOrderNumber?.length) out.purchaseOrderNumber = app.purchaseOrderNumber
-  if (app.isArchived !== undefined) out.isArchived = [app.isArchived ? "true" : "false"]
   if (app.invNumber && app.invNumber.length > 0) out.invNumber = [app.invNumber]
   if (app.rollNumber && app.rollNumber.length > 0) out.rollNumber = [app.rollNumber]
   if (app.dyeLot && app.dyeLot.length > 0) out.dyeLot = [app.dyeLot]
@@ -80,9 +76,6 @@ function toAppFilters(engine: EngineAdjustmentFilters): InventoryAdjustmentListF
   if (engine.productId?.length) out.productId = engine.productId
   if (engine.importNumber?.length) out.importNumber = engine.importNumber
   if (engine.purchaseOrderNumber?.length) out.purchaseOrderNumber = engine.purchaseOrderNumber
-  const arch = engine.isArchived?.[0]
-  if (arch === "true") out.isArchived = true
-  else if (arch === "false") out.isArchived = false
   const invNumber = engine.invNumber?.[0]?.trim()
   if (invNumber) out.invNumber = invNumber
   const rollNumber = engine.rollNumber?.[0]?.trim()
@@ -162,9 +155,6 @@ export default function AdjustmentsClient({
   const selectedProductId = filters.productId?.[0] ?? null
   const selectedPurchaseOrderNumber = filters.purchaseOrderNumber?.[0] ?? null
   const selectedImportNumber = filters.importNumber?.[0] ?? null
-  const archivedRaw = filters.isArchived?.[0]
-  // Defaults to Active (`false`) — there is no "All" state; absent means active.
-  const isArchivedValue = archivedRaw === "true"
   const invNumberValue = filters.invNumber?.[0] ?? ""
   const rollNumberValue = filters.rollNumber?.[0] ?? ""
   const dyeLotValue = filters.dyeLot?.[0] ?? ""
@@ -235,13 +225,6 @@ export default function AdjustmentsClient({
     [onFilterChange],
   )
 
-  const handleArchivedChange = useCallback(
-    (next: boolean) => {
-      onFilterChange("isArchived", [next ? "true" : "false"])
-    },
-    [onFilterChange],
-  )
-
   // One handler for all four identity search bars — encodes the free-text value
   // as a 1-element array (or empty to clear).
   const handleTextFilterChange = useCallback(
@@ -259,7 +242,6 @@ export default function AdjustmentsClient({
       Boolean(selectedProductId) ||
       Boolean(selectedPurchaseOrderNumber) ||
       Boolean(selectedImportNumber) ||
-      isArchivedValue ||
       Boolean(invNumberValue) ||
       Boolean(rollNumberValue) ||
       Boolean(dyeLotValue) ||
@@ -270,7 +252,6 @@ export default function AdjustmentsClient({
       selectedProductId,
       selectedPurchaseOrderNumber,
       selectedImportNumber,
-      isArchivedValue,
       invNumberValue,
       rollNumberValue,
       dyeLotValue,
@@ -327,16 +308,9 @@ export default function AdjustmentsClient({
               </div>
             </ListToolbarCell>
 
-            {/* Archived (parent inventory) + Import (PO#/IMP# pickers) — the
-                import-identity + archive chips all target the parent inventory
-                row. PO# and IMP# are mutually exclusive. */}
+            {/* Import (PO#/IMP# pickers) — the import-identity chips target the
+                parent inventory row. PO# and IMP# are mutually exclusive. */}
             <ListToolbarCell className="self-start">
-              <ListToolbarTallCard label="Archived">
-                <ArchiveSegmentedControl
-                  value={isArchivedValue}
-                  onChange={handleArchivedChange}
-                />
-              </ListToolbarTallCard>
               <ListToolbarTallCard label="Import">
                 <div className="flex w-full flex-col gap-2">
                   <PurchaseOrderPicker
