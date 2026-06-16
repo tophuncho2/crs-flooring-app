@@ -1,7 +1,8 @@
 "use client"
 
-import { Fragment, useCallback } from "react"
+import { Fragment, useCallback, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import type { InventoryOption } from "@builders/domain"
 import { NumberCell, TextCell } from "@/engines/record-view"
 import { useExpandableRowsToggle } from "@/engines/record-view"
 import { Grid, GridEmpty, type GridLayout } from "@/engines/record-view"
@@ -20,9 +21,21 @@ import {
   type WorkOrderMaterialItemLocal,
 } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { buildCurrentRecordEntryPath, buildInventoryRecordHref } from "@/hooks/navigation"
+import { AdjustmentCreateModal } from "@/modules/inventory/components/record/adjustments/adjustment-create-modal"
 import { WorkOrderAdjustmentRow } from "./work-order-adjustment-row"
 import { MaterialItemsSectionHeader } from "./material-items-section-header"
 import { MaterialItemRemoveButton } from "./row-controls"
+
+/**
+ * An active "add adjustment" modal request for a single material item. `create`
+ * opens an empty form; `duplicate` pre-selects the source row's inventory.
+ */
+type AdjustmentModalRequest = {
+  workOrderItemId: string
+  product: { id: string; name: string }
+  materialItemNotes: string | null
+  initialInventory: InventoryOption | null
+}
 
 const WORK_ORDER_MATERIAL_ITEMS_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
   leadingControls: [{ key: "remove", kind: "actions", width: 56 }],
@@ -57,9 +70,14 @@ export function WorkOrderMaterialItemsSection({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  // Adjustments are created/edited on the inventory record view; `returnTo`
-  // brings the operator back to this work order afterwards.
+  // Editing an adjustment still opens it on the inventory record view; `returnTo`
+  // brings the operator back to this work order afterwards. (Create/duplicate now
+  // happen in-place via the modal below — no navigation.)
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
+
+  // The in-place "add adjustment" modal request (create or duplicate), or null
+  // when closed. Mounted conditionally so each open starts clean.
+  const [modalRequest, setModalRequest] = useState<AdjustmentModalRequest | null>(null)
 
   const sectionBusy = section.isSaving
 
@@ -88,57 +106,47 @@ export function WorkOrderMaterialItemsSection({
 
   const handleCreateNew = useCallback(
     (workOrderItemId: string) => {
-      // WO-create: open the inventory record view with the WO's warehouse
-      // pre-seeded and the WO link carried (product-filters the inventory
-      // picker + pre-links the adjustment). The operator picks the inventory
-      // item there; `?adjustment=new` opens the pre-linked create form once it
-      // resolves.
+      // WO-create: open the in-place modal seeded with this material item's
+      // product (the picker is filtered to it) and the WO link. The operator
+      // picks the inventory item and fills the form without leaving the WO.
       const item = section.items.find((i) => i.id === workOrderItemId)
-      router.push(
-        buildInventoryRecordHref({
-          warehouseId: workOrder.warehouseId,
-          warehouseLabel: workOrder.warehouseName,
-          workOrderId: workOrder.id,
-          workOrderItemId,
-          workOrderLabel: `#${workOrder.workOrderNumber}`,
-          productId: item?.productId ?? null,
-          productLabel: item?.productName ?? null,
-          materialItemLabel: item?.productName ?? null,
-          materialItemNotes: item?.notes ?? null,
-          adjustment: "new",
-          returnTo,
-        }),
-      )
+      if (!item?.productId) return
+      setModalRequest({
+        workOrderItemId,
+        product: { id: item.productId, name: item.productName ?? "" },
+        materialItemNotes: item.notes ?? null,
+        initialInventory: null,
+      })
     },
-    [router, returnTo, section.items, workOrder.id, workOrder.warehouseId, workOrder.warehouseName, workOrder.workOrderNumber],
+    [section.items],
   )
 
   const handleDuplicate = useCallback(
     (workOrderItemId: string, adjustment: EnrichedInventoryAdjustmentRow) => {
-      // "Duplicate": open the source row's inventory record pre-selected, with
-      // the WO link carried, and `?adjustment=new` so the pre-linked create form
-      // opens seeded from that inventory item. No use case fires — the operator
+      // "Duplicate": open the same modal pre-selected with the source row's
+      // inventory item (quantity stays blank). No use case fires — the operator
       // re-enters the quantity and saves to materialize it.
       const item = section.items.find((i) => i.id === workOrderItemId)
-      router.push(
-        buildInventoryRecordHref({
-          inventoryId: adjustment.inventoryId,
-          inventoryLabel: adjustment.inventoryItem,
+      if (!item?.productId) return
+      setModalRequest({
+        workOrderItemId,
+        product: { id: item.productId, name: item.productName ?? "" },
+        materialItemNotes: item.notes ?? null,
+        initialInventory: {
+          id: adjustment.inventoryId,
+          inventoryItem: adjustment.inventoryItem,
+          inventoryNumber: adjustment.inventoryNumber,
+          rollNumber: adjustment.rollNumber,
+          dyeLot: adjustment.dyeLot,
+          note: adjustment.inventoryNote,
           warehouseId: adjustment.warehouseId,
-          warehouseLabel: adjustment.warehouseName,
-          workOrderId: workOrder.id,
-          workOrderItemId,
-          workOrderLabel: `#${workOrder.workOrderNumber}`,
-          productId: item?.productId ?? null,
-          productLabel: item?.productName ?? null,
-          materialItemLabel: item?.productName ?? null,
-          materialItemNotes: item?.notes ?? null,
-          adjustment: "new",
-          returnTo,
-        }),
-      )
+          location: adjustment.location,
+          stockBalance: "",
+          stockUnitAbbrev: adjustment.stockUnitAbbrev ?? "",
+        },
+      })
     },
-    [router, returnTo, section.items, workOrder.id, workOrder.workOrderNumber],
+    [section.items],
   )
 
   function renderParentCell(
@@ -256,6 +264,7 @@ export function WorkOrderMaterialItemsSection({
   const sectionError = section.error ? section.error.message : section.noticeError || null
 
   return (
+    <>
     <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
       <MaterialItemsSectionHeader
         itemsCount={section.items.length}
@@ -310,5 +319,28 @@ export function WorkOrderMaterialItemsSection({
         }}
       />
     </div>
+
+      {modalRequest ? (
+        <AdjustmentCreateModal
+          workOrder={{
+            id: workOrder.id,
+            workOrderNumber: workOrder.workOrderNumber,
+            warehouseId: workOrder.warehouseId,
+            warehouseName: workOrder.warehouseName,
+          }}
+          workOrderItemId={modalRequest.workOrderItemId}
+          product={modalRequest.product}
+          materialItemNotes={modalRequest.materialItemNotes}
+          initialInventory={modalRequest.initialInventory}
+          onClose={() => setModalRequest(null)}
+          onCreated={() => {
+            // Reload the WO fresh so its per-WOMI adjustment set (+ Assignments
+            // total and product-lock) reflect the new row, then close.
+            setModalRequest(null)
+            router.refresh()
+          }}
+        />
+      ) : null}
+    </>
   )
 }

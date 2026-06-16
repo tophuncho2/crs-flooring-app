@@ -1,0 +1,228 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { RecordModal } from "@/engines/record-view"
+import type { InventoryOption } from "@builders/domain"
+import { useAdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
+import { useInventoryModalSelection } from "../../../controllers/record/adjustments/use-inventory-modal-selection"
+import { HUB_CREATE_PICKER_CONFIG } from "../../../controllers/record/adjustments/form"
+import { useInventoryOptionsGrid } from "../../../controllers/record/header/use-inventory-options-grid"
+import { InventoryOptionsGrid } from "../header/inventory-options-grid"
+import { InventoryFieldGrid } from "../fields"
+import { AdjustmentPickerStack } from "./adjustment-picker-stack"
+import { AdjustmentEditFormFields } from "./adjustment-edit-form-fields"
+
+export type AdjustmentCreateModalWorkOrder = {
+  id: string
+  workOrderNumber: string
+  /** Seeds the inventory picker's warehouse filter (editable; null lists all warehouses). */
+  warehouseId: string | null
+  warehouseName: string | null
+}
+
+export type AdjustmentCreateModalProps = {
+  workOrder: AdjustmentCreateModalWorkOrder
+  /** The material item the adjustment links to. */
+  workOrderItemId: string
+  /** Fixed product for the modal — the inventory picker is filtered to it. */
+  product: { id: string; name: string }
+  materialItemNotes?: string | null
+  /** Duplicate flow: pre-select the source row's inventory (quantity stays blank). */
+  initialInventory?: InventoryOption | null
+  /** Dismiss without creating (✕ / backdrop / Escape / Cancel). */
+  onClose: () => void
+  /** Fired after a successful create — the host closes the modal and reconciles (router.refresh). */
+  onCreated: () => void
+}
+
+/**
+ * The shared adjustment **create** form as a centered modal over the work-order
+ * record view, so the operator never leaves the WO to add an adjustment. It
+ * composes a local-state inventory picker (warehouse editable + product locked to
+ * the WOMI, over the same grid the inventory reference header uses) above the
+ * chrome-less adjustment form fields, driven by the shared
+ * `useAdjustmentEditController` in work-order scope.
+ *
+ * On create success the controller fires `onCreated` (then closes its panel); the
+ * host unmounts the modal and `router.refresh()`es so the WO reloads the fresh
+ * per-WOMI adjustment set. Editing an existing row still happens on the inventory
+ * record view — this modal is create/duplicate only.
+ *
+ * Mount it conditionally (only while a request is active) so each open starts
+ * from a clean controller + selection.
+ */
+export function AdjustmentCreateModal({
+  workOrder,
+  workOrderItemId,
+  product,
+  materialItemNotes,
+  initialInventory = null,
+  onClose,
+  onCreated,
+}: AdjustmentCreateModalProps) {
+  const selection = useInventoryModalSelection({
+    warehouseId: workOrder.warehouseId,
+    warehouseLabel: workOrder.warehouseName,
+    productId: product.id,
+    productLabel: product.name,
+    initialInventory,
+  })
+
+  // Re-open the picker grid to swap inventory; collapses to the form once an item
+  // is chosen. Starts open only when nothing is pre-selected.
+  const [isPicking, setIsPicking] = useState(initialInventory === null)
+
+  const grid = useInventoryOptionsGrid({
+    warehouseId: selection.warehouseId,
+    productFilterId: selection.productId,
+    enabled: isPicking,
+  })
+
+  const controller = useAdjustmentEditController({
+    scope: { kind: "work-order", workOrderId: workOrder.id },
+    canCreate: true,
+    // The WO reconciles by reloading fresh (router.refresh in onCreated), so the
+    // in-place publish patch is unused here.
+    publish: () => {},
+    onCreated,
+  })
+
+  const { picked } = selection
+
+  // Drive the create panel off the picked inventory. Picking (or swapping) an
+  // item re-seeds the form from that inventory + the fixed WO context; clearing
+  // it closes the panel. Keyed on the picked option only — typing in the form
+  // doesn't change `picked`, so the form isn't re-seeded out from under the user.
+  useEffect(() => {
+    if (!picked) {
+      controller.close()
+      return
+    }
+    controller.openPanel({
+      mode: "create",
+      pickerConfig: HUB_CREATE_PICKER_CONFIG,
+      seed: {
+        inventoryId: picked.id,
+        warehouseId: picked.warehouseId,
+        warehouseLabel: selection.warehouseLabel ?? workOrder.warehouseName ?? undefined,
+        inventoryItem: picked.inventoryItem,
+        inventoryNumber: picked.inventoryNumber,
+        inventoryRollNumber: picked.rollNumber,
+        inventoryDyeLot: picked.dyeLot,
+        inventoryNote: picked.note,
+        locationLabel: picked.location ?? undefined,
+        // Product is fixed to the WOMI's product (picker is filtered to it), so
+        // the WO pre-link always applies.
+        productId: product.id,
+        stockUnitAbbrev: picked.stockUnitAbbrev,
+        workOrderId: workOrder.id,
+        workOrderItemId,
+        workOrderLabel: `#${workOrder.workOrderNumber}`,
+        materialItemLabel: product.name,
+        materialItemNotes: materialItemNotes ?? undefined,
+      },
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked])
+
+  const { isDirty, canSave, isSaving, error } = controller
+  const showGrid = !picked || isPicking
+
+  const footer =
+    picked && !isPicking ? (
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isSaving}
+          className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:border-sky-500/45 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => controller.discard()}
+          disabled={!isDirty || isSaving}
+          className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:border-sky-500/45 disabled:opacity-50"
+        >
+          Discard
+        </button>
+        <button
+          type="button"
+          onClick={() => controller.save()}
+          disabled={!canSave || isSaving}
+          className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-sky-700 disabled:opacity-50"
+        >
+          {isSaving ? "Creating…" : "Create"}
+        </button>
+      </div>
+    ) : null
+
+  return (
+    <RecordModal open title="Add adjustment" onClose={onClose} footer={footer}>
+      {showGrid ? (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-[var(--foreground)]/70">
+            Choose the inventory item to adjust for{" "}
+            <span className="font-medium text-[var(--foreground)]">{product.name}</span>.
+          </p>
+          <InventoryOptionsGrid
+            selection={selection}
+            grid={grid}
+            productEditable={false}
+            onSelectWarehouse={selection.selectWarehouse}
+            onSelectProduct={selection.selectProduct}
+            onSelectInventory={(option) => {
+              selection.selectInventory(option)
+              setIsPicking(false)
+            }}
+          />
+          {picked ? (
+            <button
+              type="button"
+              onClick={() => setIsPicking(false)}
+              className="self-start text-xs font-medium text-sky-600 hover:text-sky-700"
+            >
+              Cancel re-pick
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {/* Selected inventory summary + swap affordance. */}
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--panel-border)] bg-[var(--subpanel-background)] px-4 py-2.5">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium text-[var(--foreground)]">
+                {picked?.inventoryItem}
+              </div>
+              <div className="truncate text-xs text-[var(--foreground)]/60">
+                {[picked?.inventoryNumber, picked?.rollNumber, picked?.dyeLot]
+                  .filter(Boolean)
+                  .join(" · ") || "—"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPicking(true)}
+              disabled={isSaving}
+              className="shrink-0 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:border-sky-500/45 hover:text-[var(--foreground)] disabled:opacity-50"
+            >
+              Change
+            </button>
+          </div>
+
+          {error ? (
+            <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 px-4 py-2.5 text-sm text-rose-600">
+              {error.message}
+            </div>
+          ) : null}
+
+          <InventoryFieldGrid>
+            <AdjustmentPickerStack controller={controller} />
+            <AdjustmentEditFormFields mode="create" adjustment={null} controller={controller} />
+          </InventoryFieldGrid>
+        </div>
+      )}
+    </RecordModal>
+  )
+}

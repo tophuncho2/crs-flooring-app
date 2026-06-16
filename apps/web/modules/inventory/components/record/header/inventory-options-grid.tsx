@@ -18,6 +18,12 @@ import {
 import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
 import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
 
+/** The slice of the selection controller the picker grid reads to render its scope pickers. */
+type InventoryOptionsGridSelection = Pick<
+  InventoryRecordSelectionController,
+  "warehouseId" | "warehouseLabel" | "productId" | "productLabel"
+>
+
 /**
  * The inventory reference-header picker grid: a warehouse picker + the four
  * identity search bars (Inv # / Roll # / Dye lot / Note) inline, over a 15-row
@@ -26,6 +32,11 @@ import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
  * read/reset its search bars) and passed in. Renders rows through the shared
  * `INVENTORY_LIST_COLUMNS` + `renderInventoryRowCell` (same as the list table and
  * the reference row) so column changes propagate to every place a row is shown.
+ *
+ * `selection` is read structurally (just the four scope fields), so a non-URL
+ * caller (the WO-create modal) can feed a local-state object — not only the URL
+ * selection controller. `productEditable` locks the product master-filter to a
+ * static label when false (the modal pins it to the WOMI's product).
  */
 export function InventoryOptionsGrid({
   selection,
@@ -33,12 +44,14 @@ export function InventoryOptionsGrid({
   onSelectWarehouse,
   onSelectProduct,
   onSelectInventory,
+  productEditable = true,
 }: {
-  selection: InventoryRecordSelectionController
+  selection: InventoryOptionsGridSelection
   grid: InventoryOptionsGridController
   onSelectWarehouse: InventoryRecordSelectionController["selectWarehouse"]
   onSelectProduct: InventoryRecordSelectionController["selectProduct"]
   onSelectInventory: InventoryRecordSelectionController["selectInventory"]
+  productEditable?: boolean
 }) {
   const { warehouseId, warehouseLabel, productId, productLabel } = selection
 
@@ -55,14 +68,24 @@ export function InventoryOptionsGrid({
           placeholder="Select warehouse"
           ariaLabel="Select warehouse"
         />
-        <ProductPicker
-          value={productId}
-          selectedLabel={productLabel}
-          onChange={() => {}}
-          onOptionSelected={onSelectProduct}
-          placeholder="All products"
-          ariaLabel="Filter inventory by product"
-        />
+        {productEditable ? (
+          <ProductPicker
+            value={productId}
+            selectedLabel={productLabel}
+            onChange={() => {}}
+            onOptionSelected={onSelectProduct}
+            placeholder="All products"
+            ariaLabel="Filter inventory by product"
+          />
+        ) : (
+          <div
+            className="flex items-center truncate rounded-md border border-[var(--panel-border)] bg-[var(--subpanel-background)] px-3 py-2 text-sm text-[var(--foreground)]/70"
+            aria-label="Product (locked)"
+            aria-readonly="true"
+          >
+            {productLabel ?? "Product"}
+          </div>
+        )}
       </div>
       {/* Identity search bars. */}
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">

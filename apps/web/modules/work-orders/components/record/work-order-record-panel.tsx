@@ -31,10 +31,13 @@ export function WorkOrderRecordPanel({
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
-  // Read-only per-WOMI display snapshot. Adjustments are now created/edited on
-  // the inventory record view; returning here reloads the work order fresh, so
-  // there's no in-place patching to do.
-  const [adjustmentsByWorkOrderItemId] = useState(initialAdjustmentsByWorkOrderItemId)
+  // Read-only per-WOMI display snapshot, read straight from server props (NOT
+  // frozen in state). Adjustments are created in-place via the material-items
+  // modal, then `router.refresh()` re-runs the loader — so the fresh enriched set
+  // flows back in through this prop and the section re-derives (Assignments total
+  // + product-lock). Editing an existing adjustment still happens on the inventory
+  // record view; returning here reloads fresh the same way.
+  const adjustmentsByWorkOrderItemId = initialAdjustmentsByWorkOrderItemId
 
   const primaryActions = workOrderPrimarySectionActions({
     onSave: () => void controller.primarySection.save(),
