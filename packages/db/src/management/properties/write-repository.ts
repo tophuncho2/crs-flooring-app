@@ -29,6 +29,7 @@ export type UpdatePropertyRecordInput = Partial<CreatePropertyRecordInput>
 
 const propertyDetailSelect = {
   id: true,
+  createdAt: true,
   updatedAt: true,
   name: true,
   streetAddress: true,

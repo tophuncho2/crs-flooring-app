@@ -14,6 +14,7 @@ type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
 
 const propertyListSelect = {
   id: true,
+  createdAt: true,
   updatedAt: true,
   name: true,
   streetAddress: true,
@@ -32,6 +33,7 @@ const propertyListSelect = {
 
 const propertyDetailSelect = {
   id: true,
+  createdAt: true,
   updatedAt: true,
   name: true,
   streetAddress: true,

@@ -17,4 +17,6 @@ export const PROPERTIES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<PropertyList
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
   { key: "templateCount", label: "Templates", align: "end" },
+  { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
 ]

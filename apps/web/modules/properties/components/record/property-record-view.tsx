@@ -3,15 +3,18 @@
 import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
+  FormField,
   RecordDeleteDialog,
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  StaticFieldValue,
   useRecordDeleteConfirmation,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
 import {
+  formatEasternDateTime,
   toManagementCompanyForm,
   type ManagementCompanyDetail,
   type ManagementCompanyForm,
@@ -141,6 +144,15 @@ export function PropertyRecordView({
                 primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
               }
             />
+            <div className="border-t border-[var(--panel-border)]" />
+            <div className="flex gap-6">
+              <FormField label="Created">
+                <StaticFieldValue>{formatEasternDateTime(entry.createdAt) || "—"}</StaticFieldValue>
+              </FormField>
+              <FormField label="Updated">
+                <StaticFieldValue>{formatEasternDateTime(entry.updatedAt) || "—"}</StaticFieldValue>
+              </FormField>
+            </div>
           </div>
         </RecordPrimarySectionInstance>
       ),

@@ -14,6 +14,7 @@ type ManagementCompaniesDbClient = PrismaClient | Prisma.TransactionClient
 
 const managementCompanyListSelect = {
   id: true,
+  createdAt: true,
   updatedAt: true,
   name: true,
   streetAddress: true,
@@ -29,6 +30,7 @@ const managementCompanyListSelect = {
 
 const managementCompanyDetailSelect = {
   id: true,
+  createdAt: true,
   updatedAt: true,
   name: true,
   streetAddress: true,

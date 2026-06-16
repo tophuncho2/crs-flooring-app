@@ -2,15 +2,17 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
+  FormField,
   RecordDeleteDialog,
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  StaticFieldValue,
   useRecordDeleteConfirmation,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import type { ManagementCompanyDetail } from "@builders/domain"
+import { formatEasternDateTime, type ManagementCompanyDetail } from "@builders/domain"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
@@ -84,13 +86,24 @@ export function ManagementCompanyRecordView({
           onDelete={deletion.requestDelete}
           deleteLabel="Delete Management Company"
         >
-          <ManagementCompanyCellsSection
-            form={primary.localValue}
-            editable={!primary.isSaving}
-            onFieldChange={(field, value) =>
-              primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
-            }
-          />
+          <div className="flex flex-col gap-4">
+            <ManagementCompanyCellsSection
+              form={primary.localValue}
+              editable={!primary.isSaving}
+              onFieldChange={(field, value) =>
+                primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
+              }
+            />
+            <div className="border-t border-[var(--panel-border)]" />
+            <div className="flex gap-6">
+              <FormField label="Created">
+                <StaticFieldValue>{formatEasternDateTime(entry.createdAt) || "—"}</StaticFieldValue>
+              </FormField>
+              <FormField label="Updated">
+                <StaticFieldValue>{formatEasternDateTime(entry.updatedAt) || "—"}</StaticFieldValue>
+              </FormField>
+            </div>
+          </div>
         </RecordPrimarySectionInstance>
       ),
     },

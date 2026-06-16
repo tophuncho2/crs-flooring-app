@@ -8,6 +8,7 @@ import {
 describe("normalizeProperty", () => {
   const base = {
     id: "prop-1",
+    createdAt: "2026-05-20T00:00:00.000Z",
     updatedAt: "2026-05-26T00:00:00.000Z",
     name: "Maple Court",
     streetAddress: "1 Main St",
@@ -27,6 +28,11 @@ describe("normalizeProperty", () => {
 
   it("passes through an already-string updatedAt", () => {
     expect(normalizeProperty(base).updatedAt).toBe("2026-05-26T00:00:00.000Z")
+  })
+
+  it("converts a Date createdAt to an ISO string", () => {
+    const result = normalizeProperty({ ...base, createdAt: new Date("2026-05-20T08:00:00.000Z") })
+    expect(result.createdAt).toBe("2026-05-20T08:00:00.000Z")
   })
 
   it("coalesces null address/contact fields to empty strings", () => {
@@ -73,6 +79,7 @@ describe("normalizePropertyListRow", () => {
   it("extracts templateCount from _count.templates", () => {
     const result = normalizePropertyListRow({
       id: "prop-1",
+      createdAt: "2026-05-20T00:00:00.000Z",
       updatedAt: "2026-05-26T00:00:00.000Z",
       name: "Maple Court",
       streetAddress: "1 Main St",

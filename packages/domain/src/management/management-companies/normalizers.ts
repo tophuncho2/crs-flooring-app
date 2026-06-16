@@ -8,6 +8,7 @@ import type {
 
 type ManagementCompanyDetailInput = {
   id: string
+  createdAt: Date | string
   updatedAt: Date | string
   name: string
   streetAddress: string | null
@@ -21,6 +22,7 @@ type ManagementCompanyDetailInput = {
 
 type ManagementCompanyListRowInput = {
   id: string
+  createdAt: Date | string
   updatedAt: Date | string
   name: string
   streetAddress: string | null
@@ -35,6 +37,7 @@ type ManagementCompanyListRowInput = {
 export function normalizeManagementCompany(company: ManagementCompanyDetailInput): ManagementCompanyDetail {
   return {
     id: company.id,
+    createdAt: company.createdAt instanceof Date ? company.createdAt.toISOString() : company.createdAt,
     updatedAt: company.updatedAt instanceof Date ? company.updatedAt.toISOString() : company.updatedAt,
     name: company.name,
     streetAddress: company.streetAddress ?? "",
@@ -51,6 +54,7 @@ export function normalizeManagementCompany(company: ManagementCompanyDetailInput
 export function normalizeManagementCompanyListRow(company: ManagementCompanyListRowInput): ManagementCompanyListRow {
   return {
     id: company.id,
+    createdAt: company.createdAt instanceof Date ? company.createdAt.toISOString() : company.createdAt,
     updatedAt: company.updatedAt instanceof Date ? company.updatedAt.toISOString() : company.updatedAt,
     name: company.name,
     streetAddress: company.streetAddress ?? "",

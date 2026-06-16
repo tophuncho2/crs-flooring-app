@@ -18,4 +18,6 @@ export const MANAGEMENT_COMPANIES_LIST_COLUMNS: ReadonlyArray<
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
   { key: "propertyCount", label: "Properties", align: "end" },
+  { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
 ]

@@ -8,6 +8,7 @@ import {
 describe("normalizeManagementCompany", () => {
   const base = {
     id: "mc-1",
+    createdAt: "2026-05-20T00:00:00.000Z",
     updatedAt: "2026-05-26T00:00:00.000Z",
     name: "Acme",
     streetAddress: "1 Main St",
@@ -25,6 +26,14 @@ describe("normalizeManagementCompany", () => {
       updatedAt: new Date("2026-05-26T12:00:00.000Z"),
     })
     expect(result.updatedAt).toBe("2026-05-26T12:00:00.000Z")
+  })
+
+  it("converts a Date createdAt to an ISO string", () => {
+    const result = normalizeManagementCompany({
+      ...base,
+      createdAt: new Date("2026-05-20T08:00:00.000Z"),
+    })
+    expect(result.createdAt).toBe("2026-05-20T08:00:00.000Z")
   })
 
   it("coalesces null fields, maps postalCode to zip, and builds the full address", () => {
@@ -48,6 +57,7 @@ describe("normalizeManagementCompanyListRow", () => {
   it("extracts propertyCount from _count.properties", () => {
     const result = normalizeManagementCompanyListRow({
       id: "mc-1",
+      createdAt: "2026-05-20T00:00:00.000Z",
       updatedAt: "2026-05-26T00:00:00.000Z",
       name: "Acme",
       streetAddress: "1 Main St",

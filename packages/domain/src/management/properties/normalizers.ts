@@ -4,6 +4,7 @@ import type { PropertyDetailRecord, PropertyListRow, PropertyOption } from "./ty
 
 type PropertyDetailInput = {
   id: string
+  createdAt: Date | string
   updatedAt: Date | string
   name: string
   streetAddress: string | null
@@ -18,6 +19,7 @@ type PropertyDetailInput = {
 
 type PropertyListRowInput = {
   id: string
+  createdAt: Date | string
   updatedAt: Date | string
   name: string
   streetAddress: string | null
@@ -46,6 +48,7 @@ type PropertyOptionInput = {
 export function normalizeProperty(property: PropertyDetailInput): PropertyDetailRecord {
   return {
     id: property.id,
+    createdAt: property.createdAt instanceof Date ? property.createdAt.toISOString() : property.createdAt,
     updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
     name: property.name,
     streetAddress: property.streetAddress ?? "",
@@ -63,6 +66,7 @@ export function normalizeProperty(property: PropertyDetailInput): PropertyDetail
 export function normalizePropertyListRow(property: PropertyListRowInput): PropertyListRow {
   return {
     id: property.id,
+    createdAt: property.createdAt instanceof Date ? property.createdAt.toISOString() : property.createdAt,
     updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
     name: property.name,
     streetAddress: property.streetAddress ?? "",

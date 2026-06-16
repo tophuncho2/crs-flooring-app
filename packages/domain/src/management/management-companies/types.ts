@@ -1,5 +1,6 @@
 export type ManagementCompanyDetail = {
   id: string
+  createdAt: string
   updatedAt: string
   name: string
   streetAddress: string
@@ -14,6 +15,7 @@ export type ManagementCompanyDetail = {
 
 export type ManagementCompanyListRow = {
   id: string
+  createdAt: string
   updatedAt: string
   name: string
   streetAddress: string

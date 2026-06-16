@@ -27,6 +27,7 @@ export type UpdateManagementCompanyRecordInput = Partial<CreateManagementCompany
 
 const managementCompanyDetailSelect = {
   id: true,
+  createdAt: true,
   updatedAt: true,
   name: true,
   streetAddress: true,

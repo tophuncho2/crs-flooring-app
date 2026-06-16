@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import { formatPhoneNumber, type ManagementCompanyListRow } from "@builders/domain"
+import { formatEasternDateTime, formatPhoneNumber, type ManagementCompanyListRow } from "@builders/domain"
 
 /**
  * Per-cell renderer for the management-companies list `DataTable`. Switches
@@ -28,6 +28,10 @@ export function renderManagementCompanyRowCell(
       return row.email || "-"
     case "propertyCount":
       return <span className="tabular-nums">{row.propertyCount}</span>
+    case "createdAt":
+      return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
+    case "updatedAt":
+      return <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
     default:
       return "-"
   }

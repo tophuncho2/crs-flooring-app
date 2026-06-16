@@ -5,6 +5,7 @@ export type PropertyManagementCompany = {
 
 export type PropertyDetailRecord = {
   id: string
+  createdAt: string
   updatedAt: string
   name: string
   streetAddress: string
@@ -20,6 +21,7 @@ export type PropertyDetailRecord = {
 
 export type PropertyListRow = {
   id: string
+  createdAt: string
   updatedAt: string
   name: string
   streetAddress: string
