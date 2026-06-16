@@ -2,13 +2,10 @@
 
 import {
   RecordDetailClientScaffold,
-  RecordReferenceHeader,
-  ReferenceHeaderAddButton,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
 import type { TemplateDetail } from "@builders/domain"
 import { TemplateRecordPanel } from "./template-record-panel"
-import { TemplateRecordHeader } from "./header/template-record-header"
 import {
   useTemplateHubController,
   type TemplateHubController,
@@ -16,11 +13,10 @@ import {
 } from "@/modules/templates/controllers/record/use-template-hub-controller"
 
 /**
- * The single templates page ("template hub"). The top section is the reference
- * header: a labeled card showing the selected template as its list row (display
- * only) with a "+ Template" action; the *editable* record (primary +
- * material-items sections) loads below. Opened from every template entry point
- * (list / MC / work-order / create) with the template pre-selected.
+ * The single templates page ("template hub"). Loads the *editable* record
+ * (primary + material-items sections) for the selected template; the primary
+ * section header carries the "+ Template" action. Opened from every template
+ * entry point (list / MC / work-order / create) with the template pre-selected.
  */
 export function TemplateHubClient({
   backHref,
@@ -55,36 +51,23 @@ function TemplateHubView({
   page: RecordDetailClientScaffoldContext
   controller: TemplateHubController
 }) {
-  const { cascade, templateDetail, isTemplateLoading, templateError, newTemplate } = controller
+  const { templateDetail, isTemplateLoading, templateError, newTemplate } = controller
 
-  // The reference header is display-only now — it shows the selected template as
-  // its list row and offers "+ Template"; the record below is always editable.
-  // (Re-selecting / swapping the active template in place has been removed.)
+  if (templateError) {
+    return <div className={PROMPT_CARD_CLASS}>{templateError}</div>
+  }
+  if (isTemplateLoading) {
+    return <div className={PROMPT_CARD_CLASS}>Loading template…</div>
+  }
+  if (!templateDetail) {
+    return null
+  }
   return (
-    <div className="flex flex-col gap-4">
-      <RecordReferenceHeader page={page}>
-        {() => (
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <TemplateRecordHeader
-                templateDetail={templateDetail}
-                templateLabel={cascade.templateLabel}
-              />
-            </div>
-            <ReferenceHeaderAddButton label="+ Template" onClick={newTemplate} />
-          </div>
-        )}
-      </RecordReferenceHeader>
-
-      <div>
-        {templateError ? (
-          <div className={PROMPT_CARD_CLASS}>{templateError}</div>
-        ) : isTemplateLoading ? (
-          <div className={PROMPT_CARD_CLASS}>Loading template…</div>
-        ) : templateDetail ? (
-          <TemplateRecordPanel key={templateDetail.id} page={page} template={templateDetail} />
-        ) : null}
-      </div>
-    </div>
+    <TemplateRecordPanel
+      key={templateDetail.id}
+      page={page}
+      template={templateDetail}
+      onNewTemplate={newTemplate}
+    />
   )
 }

@@ -26,9 +26,12 @@ import { TemplateRecordFooter } from "./footer"
 export function TemplateRecordPanel({
   page,
   template,
+  onNewTemplate,
 }: {
   page: RecordDetailClientScaffoldContext
   template: TemplateDetail
+  /** Start a fresh template create flow — surfaced as a primary-header action. */
+  onNewTemplate: () => void
 }) {
   const primary = useTemplatePrimarySection({ page, template })
   const materialItems = useTemplateMaterialItemsSection({
@@ -120,6 +123,12 @@ export function TemplateRecordPanel({
                     tone: "primary",
                     onClick: () => void syncToWorkOrder.sync(),
                     disabled: !canSync || syncToWorkOrder.isSyncing,
+                  },
+                  {
+                    key: "new-template",
+                    label: "+ Template",
+                    tone: "neutral",
+                    onClick: onNewTemplate,
                   },
                 ]}
                 actionsTrailing={<RecordOptionsMenu items={navItems} />}
