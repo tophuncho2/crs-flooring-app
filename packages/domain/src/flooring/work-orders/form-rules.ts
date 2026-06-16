@@ -3,10 +3,7 @@ import type { WorkOrderDetail, WorkOrderForm } from "./types.js"
 
 export function validateWorkOrderForm(input: WorkOrderForm) {
   if (!input.propertyId) return "Property is required"
-  // Vacancy is required — `""` (nothing chosen) and any non-enum value are rejected.
-  if (input.vacancy !== "VACANT" && input.vacancy !== "OCCUPIED") {
-    return "Vacancy status is required"
-  }
+  // Vacancy is optional — `""` (nothing chosen) is a valid resting state.
   if (input.timeOfDay !== "" && input.timeOfDay !== "AM" && input.timeOfDay !== "PM") {
     return "Time of day must be AM or PM"
   }

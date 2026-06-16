@@ -74,9 +74,9 @@ function optionalBoundedText(
   return value
 }
 
-function requiredVacancy(value: unknown): "VACANT" | "OCCUPIED" {
+function optionalVacancy(value: unknown): "VACANT" | "OCCUPIED" | null {
   if (value === "VACANT" || value === "OCCUPIED") return value
-  failWorkOrder("Vacancy status is required", "vacancy")
+  return null
 }
 
 function optionalTimeOfDay(value: unknown): "AM" | "PM" | null {
@@ -120,7 +120,7 @@ export function validateCreateWorkOrderInput(
       failWorkOrder,
     ),
     scheduledFor: optionalDate(body.scheduledFor, "scheduledFor"),
-    vacancy: requiredVacancy(body.vacancy),
+    vacancy: optionalVacancy(body.vacancy),
     timeOfDay: optionalTimeOfDay(body.timeOfDay),
   }
 }
@@ -156,7 +156,7 @@ export function validateUpdateWorkOrderInput(
     )
   }
   if ("scheduledFor" in body) input.scheduledFor = optionalDate(body.scheduledFor, "scheduledFor")
-  if ("vacancy" in body) input.vacancy = requiredVacancy(body.vacancy)
+  if ("vacancy" in body) input.vacancy = optionalVacancy(body.vacancy)
   if ("timeOfDay" in body) input.timeOfDay = optionalTimeOfDay(body.timeOfDay)
 
   return input

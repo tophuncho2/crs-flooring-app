@@ -365,7 +365,7 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
       <CellAt col={3} row={7} colSpan={2}>
-        <FormField label="Vacancy" required>
+        <FormField label="Vacancy">
           <SegmentedChoiceCell
             editable={editable}
             value={draft.vacancy}
