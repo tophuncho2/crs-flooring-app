@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   RecordDeleteDialog,
@@ -13,25 +14,37 @@ import {
 import {
   toManagementCompanyForm,
   type ManagementCompanyDetail,
+  type ManagementCompanyForm,
+  type ManagementCompanyOption,
   type PropertyDetailRecord,
 } from "@builders/domain"
-import {
-  buildCurrentRecordEntryPath,
-  buildRecordCreateHref,
-  buildRecordDetailHref,
-} from "@/hooks/navigation/routes"
+import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation/routes"
 import { usePropertyPrimarySection } from "@/modules/properties/controllers/record/use-property-primary-section"
 import { PropertyFieldsSection } from "./primary/property-fields-section"
-import { LinkedManagementCompanySection } from "./primary/linked-management-company-section"
-import { EmptyManagementCompanySection } from "./primary/empty-management-company-section"
+import { ManagementCompanyPickerSection } from "./primary/management-company-picker-section"
 import { PropertyTemplatesSection } from "./templates/property-templates-section"
 
+/** Hydrate the read-only contact cells from a freshly picked option. */
+function toDisplayForm(option: ManagementCompanyOption): ManagementCompanyForm {
+  return {
+    name: option.name,
+    streetAddress: option.streetAddress,
+    city: option.city,
+    state: option.state,
+    zip: option.zip,
+    phone: option.phone,
+    email: option.email,
+  }
+}
+
 /**
- * The standalone Property record view. ① the linked management company shown
- * read-only (hand-off to the MC record view) above the editable property cells —
- * one section · ② the shared templates reference section (always shown), with the
- * property pre-seeded and locked — plus the MC when the property has one — so only
- * a template is choosable.
+ * The standalone Property record view. ① the management company — a live MC
+ * picker (Company-Name cell) with its Phone/Email/Address shown read-only, above
+ * the editable property cells; picking a company is a dirty edit saved with the
+ * property, and the record-open primitive on the label hands off to the MC record
+ * view — one section · ② the shared templates reference section (always shown),
+ * with the property pre-seeded and locked — plus the MC when the property has one
+ * — so only a template is choosable.
  *
  * Reached by clicking a property anywhere (the properties list, the MC record
  * view's property list, the WO/template "✎ Property" buttons) — it no longer
@@ -56,27 +69,29 @@ export function PropertyRecordView({
   const deletion = useRecordDeleteConfirmation(controller.deleteRecord)
 
   const linkedMc = record.managementCompany
-  const mcForm = managementCompany ? toManagementCompanyForm(managementCompany) : null
+
+  // The picked MC id lives in the primary draft (dirty-tracked, saved with the
+  // property). The contact cells read from local display state, seeded from the
+  // server-loaded MC detail and refreshed when a different company is picked.
+  const selectedMcId = primary.localValue.managementCompanyId || null
+  const [mcDisplay, setMcDisplay] = useState<ManagementCompanyForm | null>(
+    managementCompany ? toManagementCompanyForm(managementCompany) : null,
+  )
+  const [mcLabel, setMcLabel] = useState<string | null>(linkedMc?.name ?? null)
+
+  const selectManagementCompany = (option: ManagementCompanyOption | null) => {
+    setMcDisplay(option ? toDisplayForm(option) : null)
+    setMcLabel(option?.name ?? null)
+  }
 
   const openManagementCompany = () => {
-    if (!linkedMc) return
+    if (!selectedMcId) return
     router.push(
       buildRecordDetailHref(
         "/dashboard/management-companies",
-        linkedMc.id,
+        selectedMcId,
         buildCurrentRecordEntryPath(pathname, searchParams),
       ),
-    )
-  }
-
-  // Orphan property (no company): hand off to the create-MC flow that links this
-  // property on save.
-  const linkManagementCompany = () => {
-    router.push(
-      buildRecordCreateHref("/dashboard/management-companies", {
-        returnTo: buildCurrentRecordEntryPath(pathname, searchParams),
-        params: { property: record.id },
-      }),
     )
   }
 
@@ -104,14 +119,20 @@ export function PropertyRecordView({
           deleteLabel="Delete Property"
         >
           <div className="flex flex-col gap-4">
-            {mcForm ? (
-              <LinkedManagementCompanySection
-                managementCompany={mcForm}
-                onOpen={openManagementCompany}
-              />
-            ) : (
-              <EmptyManagementCompanySection onLink={linkManagementCompany} />
-            )}
+            <ManagementCompanyPickerSection
+              value={selectedMcId}
+              onChange={(id) =>
+                primary.setLocalValue((previous) => ({
+                  ...previous,
+                  managementCompanyId: id ?? "",
+                }))
+              }
+              onOptionSelected={selectManagementCompany}
+              selectedLabel={mcLabel}
+              display={mcDisplay}
+              editable={!primary.isSaving}
+              onOpen={openManagementCompany}
+            />
             <PropertyFieldsSection
               draft={primary.localValue}
               editable={!primary.isSaving}

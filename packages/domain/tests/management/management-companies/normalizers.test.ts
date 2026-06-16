@@ -64,10 +64,28 @@ describe("normalizeManagementCompanyListRow", () => {
 })
 
 describe("normalizeManagementCompanyOption", () => {
-  it("returns just id and name", () => {
-    expect(normalizeManagementCompanyOption({ id: "mc-1", name: "Acme" })).toEqual({
+  it("maps id, name, contact + address fields and coalesces nulls", () => {
+    expect(
+      normalizeManagementCompanyOption({
+        id: "mc-1",
+        name: "Acme",
+        streetAddress: "1 Main St",
+        city: "Austin",
+        state: "TX",
+        postalCode: "78701",
+        phone: null,
+        email: null,
+      }),
+    ).toEqual({
       id: "mc-1",
       name: "Acme",
+      streetAddress: "1 Main St",
+      city: "Austin",
+      state: "TX",
+      zip: "78701",
+      phone: "",
+      email: "",
+      fullAddress: "1 Main St, Austin, TX, 78701",
     })
   })
 })

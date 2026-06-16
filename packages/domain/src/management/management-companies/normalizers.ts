@@ -64,6 +64,27 @@ export function normalizeManagementCompanyListRow(company: ManagementCompanyList
   }
 }
 
-export function normalizeManagementCompanyOption(company: { id: string; name: string }): ManagementCompanyOption {
-  return { id: company.id, name: company.name }
+type ManagementCompanyOptionInput = {
+  id: string
+  name: string
+  streetAddress: string | null
+  city: string | null
+  state: string | null
+  postalCode: string | null
+  phone: string | null
+  email: string | null
+}
+
+export function normalizeManagementCompanyOption(company: ManagementCompanyOptionInput): ManagementCompanyOption {
+  return {
+    id: company.id,
+    name: company.name,
+    streetAddress: company.streetAddress ?? "",
+    city: company.city ?? "",
+    state: company.state ?? "",
+    zip: company.postalCode ?? "",
+    phone: normalizePhoneNumber(company.phone ?? ""),
+    email: company.email ?? "",
+    fullAddress: buildAddressLine(company),
+  }
 }

@@ -10,7 +10,18 @@ import type {
 import { useCascadePickerController } from "@/engines/picker"
 
 function mc(overrides: Partial<ManagementCompanyOption> = {}): ManagementCompanyOption {
-  return { id: "mc-1", name: "Acme Property Mgmt", ...overrides }
+  return {
+    id: "mc-1",
+    name: "Acme Property Mgmt",
+    streetAddress: "",
+    city: "",
+    state: "",
+    zip: "",
+    phone: "",
+    email: "",
+    fullAddress: "",
+    ...overrides,
+  }
 }
 
 function property(overrides: Partial<PropertyOption> = {}): PropertyOption {

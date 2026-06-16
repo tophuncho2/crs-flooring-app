@@ -42,12 +42,26 @@ const managementCompanyDetailSelect = {
   },
 } as const
 
+// Picker option select — carries the contact/address columns so a freshly
+// picked company can hydrate its Phone/Email/Address cells without a detail
+// refetch (mirrors `propertyOptionSelect`).
+const managementCompanyOptionSelect = {
+  id: true,
+  name: true,
+  streetAddress: true,
+  city: true,
+  state: true,
+  postalCode: true,
+  phone: true,
+  email: true,
+} as const
+
 export async function listManagementCompanyOptions(
   client: ManagementCompaniesDbClient = db,
 ): Promise<ManagementCompanyOption[]> {
   const companies = await client.flooringManagementCompany.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true },
+    select: managementCompanyOptionSelect,
   })
 
   return companies.map(normalizeManagementCompanyOption)
@@ -144,7 +158,7 @@ export async function searchManagementCompanyOptions(
     orderBy: [{ name: "asc" }, { id: "asc" }],
     skip: args.skip ?? 0,
     take: args.take + 1,
-    select: { id: true, name: true },
+    select: managementCompanyOptionSelect,
   })
 
   const hasMore = rows.length > args.take

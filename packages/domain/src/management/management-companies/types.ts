@@ -29,6 +29,13 @@ export type ManagementCompanyListRow = {
 export type ManagementCompanyOption = {
   id: string
   name: string
+  streetAddress: string
+  city: string
+  state: string
+  zip: string
+  phone: string
+  email: string
+  fullAddress: string
 }
 
 export type ManagementCompanyForm = {
