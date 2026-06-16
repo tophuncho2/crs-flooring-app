@@ -6,6 +6,7 @@ import type { Contact, LaborPayment } from "@builders/domain"
 import {
   RecordDrilldownSection,
   RecordEntityFooter,
+  RecordItemSection,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
@@ -72,6 +73,13 @@ export function ContactRecordView({
     },
     [onSelectLaborPayment],
   )
+
+  // "+ Labor Payment" — drilldown into the create face. Mirrors the row-open
+  // path, but with no source row to remember.
+  const handleCreateLaborPayment = useCallback(() => {
+    setSelectedRow(null)
+    handleSelectLaborPayment(NEW_LABOR_PAYMENT_ID)
+  }, [handleSelectLaborPayment])
 
   // Cold deep-link (e.g. from the labor-payments ledger): the URL carries an id
   // but the row isn't in memory (may not be on the section's first page).
@@ -149,33 +157,58 @@ export function ContactRecordView({
       dirtyLabel: "labor payment",
       controller: { isDirty: embeddedDirty },
       render: (ctx) => (
-        <RecordDrilldownSection
-          page={ctx.page}
-          selectedId={selectedLaborPaymentId}
-          onSelect={handleSelectLaborPayment}
-          hideBackBar
-          renderList={(select) => (
-            <ContactLaborPaymentsList
-              contactId={entry.id}
-              onSelect={(row) => {
-                setSelectedRow(row)
-                select(row.id)
-              }}
-              onCreate={() => {
-                setSelectedRow(null)
-                select(NEW_LABOR_PAYMENT_ID)
-              }}
-            />
-          )}
-          renderDetail={(_id, onBack) => (
-            <EmbeddedLaborPaymentRecordView
-              controller={laborPayments.panel}
-              hostPage={ctx.page}
-              onBack={onBack}
-              onDirtyChange={setEmbeddedDirty}
-            />
-          )}
-        />
+        // Persistent section chrome: the blue "Labor Payments" header + grey
+        // body stay mounted across both faces — only the inner content swaps
+        // (the DataTable list ⇄ the embedded edit cells). In list mode the
+        // section toolbar carries "+ Labor Payment"; in edit mode it's empty
+        // and the embedded face supplies its own Save / Discard / Delete
+        // sub-header.
+        <RecordItemSection
+          title="Labor Payments"
+          subHeader={
+            selectedLaborPaymentId === null
+              ? {
+                  canManage: false,
+                  showStatus: false,
+                  isDirty: false,
+                  isSaving: false,
+                  hasConflict: false,
+                  actions: [
+                    {
+                      key: "add-labor-payment",
+                      label: "+ Labor Payment",
+                      tone: "primary",
+                      onClick: handleCreateLaborPayment,
+                    },
+                  ],
+                }
+              : undefined
+          }
+        >
+          <RecordDrilldownSection
+            page={ctx.page}
+            selectedId={selectedLaborPaymentId}
+            onSelect={handleSelectLaborPayment}
+            hideBackBar
+            renderList={(select) => (
+              <ContactLaborPaymentsList
+                contactId={entry.id}
+                onSelect={(row) => {
+                  setSelectedRow(row)
+                  select(row.id)
+                }}
+              />
+            )}
+            renderDetail={(_id, onBack) => (
+              <EmbeddedLaborPaymentRecordView
+                controller={laborPayments.panel}
+                hostPage={ctx.page}
+                onBack={onBack}
+                onDirtyChange={setEmbeddedDirty}
+              />
+            )}
+          />
+        </RecordItemSection>
       ),
     },
     {
