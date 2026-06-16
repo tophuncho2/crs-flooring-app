@@ -7,6 +7,7 @@ import type { EnrichedInventoryAdjustmentRow, InventoryDetail, InventoryForm } f
 import {
   RecordDrilldownSection,
   RecordEntityFooter,
+  RecordItemSection,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   type RecordDetailClientScaffoldContext,
@@ -81,6 +82,13 @@ export function InventoryRecordView({
     },
     [onSelectAdjustment],
   )
+
+  // "+ Adjustment" — drilldown into the create face. Mirrors the row-open path,
+  // but with no source row to remember.
+  const handleCreateAdjustment = useCallback(() => {
+    setSelectedRow(null)
+    handleSelectAdjustment(NEW_ADJUSTMENT_ID)
+  }, [handleSelectAdjustment])
 
   // Cold deep-link (e.g. from the adjustments ledger): the URL carries an
   // adjustment id but the row isn't in memory (it may not be on the list's
@@ -180,33 +188,57 @@ export function InventoryRecordView({
       dirtyLabel: "adjustment",
       controller: { isDirty: embeddedAdjustmentDirty },
       render: (ctx) => (
-        <RecordDrilldownSection
-          page={ctx.page}
-          selectedId={selectedAdjustmentId}
-          onSelect={handleSelectAdjustment}
-          hideBackBar
-          renderList={(select) => (
-            <InventoryAdjustmentsList
-              inventoryId={entry.id}
-              onSelect={(row) => {
-                setSelectedRow(row)
-                select(row.id)
-              }}
-              onCreate={() => {
-                setSelectedRow(null)
-                select(NEW_ADJUSTMENT_ID)
-              }}
-            />
-          )}
-          renderDetail={(_id, onBack) => (
-            <EmbeddedAdjustmentRecordView
-              controller={adjustments.panel}
-              hostPage={ctx.page}
-              onBack={onBack}
-              onDirtyChange={setEmbeddedAdjustmentDirty}
-            />
-          )}
-        />
+        // Persistent section chrome: the blue "Adjustments" header + grey body
+        // stay mounted across both faces — only the inner content swaps (the
+        // DataTable list ⇄ the embedded edit cells). In list mode the section
+        // toolbar carries "+ Adjustment"; in edit mode it's empty and the
+        // embedded face supplies its own Save / Discard / Delete sub-header.
+        <RecordItemSection
+          title="Adjustments"
+          subHeader={
+            selectedAdjustmentId === null
+              ? {
+                  canManage: false,
+                  showStatus: false,
+                  isDirty: false,
+                  isSaving: false,
+                  hasConflict: false,
+                  actions: [
+                    {
+                      key: "add-adjustment",
+                      label: "+ Adjustment",
+                      tone: "primary",
+                      onClick: handleCreateAdjustment,
+                    },
+                  ],
+                }
+              : undefined
+          }
+        >
+          <RecordDrilldownSection
+            page={ctx.page}
+            selectedId={selectedAdjustmentId}
+            onSelect={handleSelectAdjustment}
+            hideBackBar
+            renderList={(select) => (
+              <InventoryAdjustmentsList
+                inventoryId={entry.id}
+                onSelect={(row) => {
+                  setSelectedRow(row)
+                  select(row.id)
+                }}
+              />
+            )}
+            renderDetail={(_id, onBack) => (
+              <EmbeddedAdjustmentRecordView
+                controller={adjustments.panel}
+                hostPage={ctx.page}
+                onBack={onBack}
+                onDirtyChange={setEmbeddedAdjustmentDirty}
+              />
+            )}
+          />
+        </RecordItemSection>
       ),
     },
   ]

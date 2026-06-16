@@ -3,10 +3,8 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
-import { Grid, GridEmpty } from "@/engines/record-view"
-import { ActionHeader } from "@/engines/common"
-import type { HeaderAction } from "@/engines/common"
-import { INVENTORY_ADJUSTMENT_LAYOUT, renderAdjustmentReadOnlyCell } from "@/modules/adjustments"
+import { DataTable } from "@/engines/list-view"
+import { ADJUSTMENTS_LIST_COLUMNS, renderAdjustmentsRowCell } from "@/modules/adjustments"
 import {
   INVENTORY_ADJUSTMENTS_QUERY_KEY,
   inventoryAdjustmentsPageRequest,
@@ -14,18 +12,16 @@ import {
 
 const SECTION_PAGE_SIZE = 15
 
-const SECTION_CARD_CLASS =
-  "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
-
 const PAGER_BUTTON_CLASS =
   "inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 disabled:cursor-default disabled:opacity-40"
 
 /**
- * The list face of the inventory record view's adjustments drilldown section. A
- * `Grid` using the canonical {@link INVENTORY_ADJUSTMENT_LAYOUT} columns + the
- * shared `renderAdjustmentReadOnlyCell` — the same column set the work-orders
- * material-items adjustment grid renders. Row click drills into that
- * adjustment's embedded edit view; the header "+ Adjustment" opens create.
+ * The list face of the inventory record view's adjustments drilldown section — a
+ * list-view `DataTable` using the canonical {@link ADJUSTMENTS_LIST_COLUMNS} +
+ * the shared `renderAdjustmentsRowCell` (the same primitives the `/dashboard/
+ * adjustments` ledger renders). Each row opens via the leading `RecordOpenButton`
+ * (↗) launch gutter — the row body is inert. The persistent `RecordItemSection`
+ * chrome + "+ Adjustment" toolbar are owned by the host (`InventoryRecordView`).
  *
  * Paginated at {@link SECTION_PAGE_SIZE} per page. The page payload reports only
  * `hasMore` (no total), so the footer is a plain prev/next rather than a counted
@@ -34,11 +30,9 @@ const PAGER_BUTTON_CLASS =
 export function InventoryAdjustmentsList({
   inventoryId,
   onSelect,
-  onCreate,
 }: {
   inventoryId: string
   onSelect: (row: EnrichedInventoryAdjustmentRow) => void
-  onCreate: () => void
 }) {
   const [page, setPage] = useState(1)
 
@@ -55,67 +49,46 @@ export function InventoryAdjustmentsList({
 
   const rows = useMemo<EnrichedInventoryAdjustmentRow[]>(() => query.data?.rows ?? [], [query.data])
   const hasMore = query.data?.hasMore ?? false
-  const renderCell = useMemo(() => renderAdjustmentReadOnlyCell({}), [])
 
-  const headerActions: ReadonlyArray<HeaderAction> = [
-    { key: "add-adjustment", label: "+ Adjustment", kind: "primary", onClick: onCreate },
-  ]
-
-  if (query.isLoading) {
-    return (
-      <div className={SECTION_CARD_CLASS}>
-        <ActionHeader title="Adjustments" actions={headerActions} />
-        <p className="p-4 text-sm text-[var(--foreground)]/60">Loading adjustments…</p>
-      </div>
-    )
-  }
   if (query.isError) {
-    return (
-      <div className={SECTION_CARD_CLASS}>
-        <ActionHeader title="Adjustments" actions={headerActions} />
-        <p className="p-4 text-sm text-rose-400">Could not load adjustments.</p>
-      </div>
-    )
+    return <p className="text-sm text-rose-400">Could not load adjustments.</p>
   }
 
   const showPager = page > 1 || hasMore
 
   return (
-    <div className={SECTION_CARD_CLASS}>
-      <ActionHeader title="Adjustments" actions={headerActions} />
-      <div className="p-4">
-        <Grid<EnrichedInventoryAdjustmentRow>
-          rows={rows}
-          layout={INVENTORY_ADJUSTMENT_LAYOUT}
-          empty={<GridEmpty>No adjustments yet.</GridEmpty>}
-          renderCell={renderCell}
-          onRowClick={(row) => onSelect(row)}
-          getRowAriaLabel={(row) => `Edit adjustment ${row.adjustmentNumber}`}
-        />
-      </div>
-      {showPager ? (
-        <div className="flex items-center justify-between border-t border-[var(--panel-border)] px-4 py-2">
-          <span className="text-xs text-[var(--foreground)]/55">Page {page}</span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className={PAGER_BUTTON_CLASS}
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              ← Previous
-            </button>
-            <button
-              type="button"
-              className={PAGER_BUTTON_CLASS}
-              disabled={!hasMore}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next →
-            </button>
+    <DataTable<EnrichedInventoryAdjustmentRow>
+      rows={rows}
+      columns={ADJUSTMENTS_LIST_COLUMNS}
+      renderCell={renderAdjustmentsRowCell}
+      empty={query.isLoading ? "Loading adjustments…" : "No adjustments yet."}
+      onOpenRow={(row) => onSelect(row)}
+      getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
+      footerSlot={
+        showPager ? (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-[var(--foreground)]/55">Page {page}</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className={PAGER_BUTTON_CLASS}
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                ← Previous
+              </button>
+              <button
+                type="button"
+                className={PAGER_BUTTON_CLASS}
+                disabled={!hasMore}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next →
+              </button>
+            </div>
           </div>
-        </div>
-      ) : null}
-    </div>
+        ) : null
+      }
+    />
   )
 }
