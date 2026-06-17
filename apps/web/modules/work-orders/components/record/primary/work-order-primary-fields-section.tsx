@@ -24,6 +24,7 @@ import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-pi
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { PropertyCreateMenu } from "@/modules/properties/components/picker/property-create-menu"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
+import { TemplateCreateMenu } from "@/modules/templates/components/picker/template-create-menu"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   buildAddressBlock,
@@ -35,6 +36,7 @@ import {
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
   type PropertyOption,
+  type TemplateOption,
   type WorkOrderForm,
 } from "@builders/domain"
 import { TIME_OF_DAY_OPTIONS, VACANCY_OPTIONS } from "./helpers"
@@ -53,10 +55,10 @@ export type { WorkOrderPrimaryDetail } from "./types"
  * the management-company cell down, every field is a single 4-col stack on the
  * left, leaving the right half open.
  *
- * The "open MC / Property / Template" + "new property" affordances that used to
- * live in a group header now sit in each field's label-row `actions` slot: a
- * `RecordOpenButton` plus, on the Property cell, the shared `PropertyCreateMenu`
- * (⋮ → Quick form / Proper form).
+ * The "open MC / Property / Template" + "new" affordances that used to live in a
+ * group header now sit in each field's label-row `actions` slot: a
+ * `RecordOpenButton` plus, on the Property and Template cells, the shared
+ * `PropertyCreateMenu` / `TemplateCreateMenu` (⋮ → Quick form / Proper form).
  *
  * Cascade rules come from the shared engine (`@/engines/picker`
  * `applyPropertySelection` / `applyTemplateSelection`):
@@ -163,6 +165,16 @@ export function WorkOrderPrimaryFieldsSection({
       name: option?.managementCompanyName ?? null,
     })
     handlePropertyOption(option)
+  }
+
+  // Apply a template option to the cell — the shared path for both the picker and
+  // the quick-create menu. Mirrors the template's unit type into the WO draft
+  // (a WO-specific side-effect, not a cascade rule).
+  const handleTemplateSelected = (option: TemplateOption | null) => {
+    const patch = applyTemplateSelection(option)
+    onFieldChange("templateId", patch.templateId ?? "")
+    setPickedTemplateLabel(patch.templateLabel ?? null)
+    if (option) onFieldChange("unitType", option.unitType)
   }
 
   return (
@@ -308,29 +320,34 @@ export function WorkOrderPrimaryFieldsSection({
         <FormField
           label="Template"
           actions={
-            <RecordOpenButton
-              ariaLabel="Open template record"
-              title="Open template record"
-              disabled={!templateValue}
-              onClick={() => {
-                if (templateValue) {
-                  router.push(buildTemplateHubHref({ templateId: templateValue, returnTo }))
-                }
-              }}
-            />
+            <>
+              <RecordOpenButton
+                ariaLabel="Open template record"
+                title="Open template record"
+                disabled={!templateValue}
+                onClick={() => {
+                  if (templateValue) {
+                    router.push(buildTemplateHubHref({ templateId: templateValue, returnTo }))
+                  }
+                }}
+              />
+              {editable ? (
+                <TemplateCreateMenu
+                  returnTo={returnTo}
+                  initialProperty={
+                    propertyValue ? { id: propertyValue, label: propertyLabel } : null
+                  }
+                  onCreated={handleTemplateSelected}
+                />
+              ) : null}
+            </>
           }
         >
           {editable ? (
             <TemplatePicker
               value={templateValue}
               onChange={() => {}}
-              onOptionSelected={(option) => {
-                const patch = applyTemplateSelection(option)
-                onFieldChange("templateId", patch.templateId ?? "")
-                setPickedTemplateLabel(patch.templateLabel ?? null)
-                // WO-specific side-effect: mirror the template's unit type.
-                if (option) onFieldChange("unitType", option.unitType)
-              }}
+              onOptionSelected={handleTemplateSelected}
               propertyId={propertyValue}
               managementCompanyId={managementCompanyValue}
               requireProperty={false}
