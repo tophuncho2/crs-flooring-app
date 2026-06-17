@@ -21,7 +21,6 @@ export const adjustmentRowSelect = {
   product: { select: { name: true, style: true, color: true } },
   warehouseId: true,
   workOrderId: true,
-  workOrderItemId: true,
   before: true,
   quantity: true,
   after: true,
@@ -41,29 +40,16 @@ export type InventoryAdjustmentRowPayload = Prisma.FlooringInventoryAdjustmentGe
 
 /**
  * Inventory-side adjustment read shape: `adjustmentRowSelect` plus the linked
- * work-order's `workOrderNumber`, the linked work-order item's product name
- * parts, and the snapshot warehouse's `name`. Used only by
- * `inventoryDetailSelect` so the inventory side can render labels in the
- * adjustment row + side panel without a follow-up fetch. The work-orders
- * side still uses plain `adjustmentRowSelect`.
+ * work-order's `workOrderNumber` and the snapshot warehouse's `name`. Used by
+ * `inventoryDetailSelect` (and the WO Adjustments grid) so the row renders its
+ * labels without a follow-up fetch. Adjustments no longer link to a material
+ * item, so there is no work-order-item join.
  */
 export const enrichedInventoryAdjustmentRowSelect = {
   ...adjustmentRowSelect,
   workOrder: {
     select: {
       workOrderNumber: true,
-    },
-  },
-  workOrderItem: {
-    select: {
-      notes: true,
-      product: {
-        select: {
-          name: true,
-          style: true,
-          color: true,
-        },
-      },
     },
   },
   warehouse: {

@@ -1,5 +1,4 @@
 import { InventoryAdjustmentDomainError } from "../errors.js"
-import type { FlooringInventoryAdjustmentType } from "../types.js"
 
 const ARITHMETIC_TOLERANCE = 0.005
 
@@ -29,30 +28,6 @@ export function assertBeforeAfterInvariant(input: {
 }
 
 /**
- * Linkage + structural rules for an adjustment row. Applies to BOTH directions:
- * workOrderId / workOrderItemId are either both null or both set. An INCREASE
- * may now carry a work-order link (return-to-stock against a WO is supported);
- * direction no longer constrains linkage. `isWaste` is a reporting flag
- * orthogonal to direction and is allowed on either type.
- */
-export function assertAdjustmentLinkageRules(input: {
-  adjustmentType: FlooringInventoryAdjustmentType
-  workOrderId: string | null
-  workOrderItemId: string | null
-  isWaste?: boolean
-}): void {
-  const orderSet = input.workOrderId !== null && input.workOrderId !== ""
-  const itemSet = input.workOrderItemId !== null && input.workOrderItemId !== ""
-
-  if (orderSet !== itemSet) {
-    throw new InventoryAdjustmentDomainError("INVENTORY_ADJUSTMENT_LINKAGE_ASYMMETRY", {
-      workOrderId: input.workOrderId,
-      workOrderItemId: input.workOrderItemId,
-    })
-  }
-}
-
-/**
  * Invariant: an adjustment's warehouse is always its parent inventory's
  * warehouse — the two can never differ. The persisted `adjustment.warehouseId`
  * is derived from the inventory at create time; this guard asserts that
@@ -67,26 +42,6 @@ export function assertAdjustmentWarehouseMatchesInventory(input: {
     throw new InventoryAdjustmentDomainError("INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH", {
       adjustmentWarehouseId: input.adjustmentWarehouseId,
       inventoryWarehouseId: input.inventoryWarehouseId,
-    })
-  }
-}
-
-/**
- * Invariant: an adjustment references inventory of a fixed product, so when it
- * carries a WO link the linked material item must be for that same product. The
- * adjustment's product is derived from its parent inventory; this guard asserts
- * the linked work-order material item agrees. Enforced on both create (against
- * the chosen inventory's product) and update/relink (against the row's frozen
- * product) so the two paths share one source of truth.
- */
-export function assertAdjustmentLinkProductMatchesInventory(input: {
-  adjustmentProductId: string
-  materialItemProductId: string
-}): void {
-  if (input.adjustmentProductId !== input.materialItemProductId) {
-    throw new InventoryAdjustmentDomainError("INVENTORY_ADJUSTMENT_LINK_PRODUCT_MISMATCH", {
-      adjustmentProductId: input.adjustmentProductId,
-      materialItemProductId: input.materialItemProductId,
     })
   }
 }

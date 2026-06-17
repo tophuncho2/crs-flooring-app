@@ -131,8 +131,8 @@ const INVENTORY_RECORD_BASE = "/dashboard/inventory/record"
  * knows so those pickers seed immediately:
  *   - a list/ledger row passes `inventoryId` (+ optional `adjustment` to drill in),
  *   - a work-order passes the WO's `warehouseId` + the WO link seed
- *     (`workOrderId`/`workOrderItemId`/`productId`/labels) and lets the operator
- *     pick the inventory item there.
+ *     (`workOrderId`/`productId`/labels) and lets the operator pick the
+ *     inventory item there.
  * No args → the empty record view (pickers, no record).
  */
 export function buildInventoryRecordHref(options?: {
@@ -141,12 +141,9 @@ export function buildInventoryRecordHref(options?: {
   inventoryId?: string | null
   inventoryLabel?: string | null
   workOrderId?: string | null
-  workOrderItemId?: string | null
   workOrderLabel?: string | null
   productId?: string | null
   productLabel?: string | null
-  materialItemLabel?: string | null
-  materialItemNotes?: string | null
   adjustment?: string | null
   returnTo?: string | null
 }): string {
@@ -159,12 +156,9 @@ export function buildInventoryRecordHref(options?: {
   set("inventoryId", options?.inventoryId)
   set("inventoryLabel", options?.inventoryLabel)
   set("workOrderId", options?.workOrderId)
-  set("workOrderItemId", options?.workOrderItemId)
   set("workOrderLabel", options?.workOrderLabel)
   set("productId", options?.productId)
   set("productLabel", options?.productLabel)
-  set("materialItemLabel", options?.materialItemLabel)
-  set("materialItemNotes", options?.materialItemNotes)
   set("adjustment", options?.adjustment)
   set("returnTo", options?.returnTo)
 

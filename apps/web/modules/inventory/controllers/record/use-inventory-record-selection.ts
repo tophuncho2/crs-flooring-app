@@ -56,19 +56,16 @@ export function toInventoryOption(row: InventoryRow): InventoryOption {
 }
 
 /**
- * Work-order context carried when the record view is opened from a WO material
- * item. `productId` product-filters the inventory picker (the operator only
- * sees inventory matching the material item's product); the rest pre-links the
- * adjustment create form to the WO (still editable). Null when opened from the
- * inventory list/ledger.
+ * Work-order context carried when the record view is opened from a work order.
+ * `productId` product-filters the inventory picker (a starting search aid the
+ * operator can change); `workOrderId`/`workOrderLabel` pre-link the adjustment
+ * create form to the WO (still editable, any product). Null when opened from
+ * the inventory list/ledger.
  */
 export type InventoryRecordWoSeed = {
   workOrderId: string
-  workOrderItemId: string | null
   workOrderLabel: string | null
   productId: string | null
-  materialItemLabel: string | null
-  materialItemNotes: string | null
 }
 
 /**
@@ -306,9 +303,7 @@ export function useInventoryRecordSelection({
     inventoryId,
     inventoryLabel: inventoryLabel ?? inventory?.inventoryItem ?? null,
     productId,
-    // Fall back to the WO seed's material-item label (the product name) so the
-    // picker trigger renders on a fresh hand-off before any product search runs.
-    productLabel: productLabel ?? resolvedWoSeed?.materialItemLabel ?? null,
+    productLabel: productLabel ?? null,
     isAdjustmentFormMode: adjustment === NEW_ADJUSTMENT_ID,
     selectWarehouse,
     selectProduct,

@@ -7,19 +7,22 @@ import type {
  * Editable form values for the adjustment edit form. `inventoryId` is editable
  * only in create mode; saved rows treat it as immutable. Every other field —
  * `quantity`, the metadata trio (`location` / `notes` / `isWaste`), and the
- * `workOrderId` / `workOrderItemId` relink pair — is freely editable for the
- * row's whole lifecycle; there is no finalize/freeze.
+ * `workOrderId` relink — is freely editable for the row's whole lifecycle;
+ * there is no finalize/freeze.
  *
  * `adjustmentType` (INCREASE | DEDUCTION) is direction. It is freely editable
  * for the row's whole lifecycle in both the manual create flow and on saved
  * rows; flipping it re-flows the inventory's netDeducted + before/after chain.
+ *
+ * `workOrderId` links the adjustment to a work order (any product, any
+ * direction) — it no longer carries a material-item link.
  */
 export type AdjustmentEditForm = {
   inventoryId: string
   /**
    * The warehouse selected in the form as an inventory filter. The persisted
    * adjustment warehouse is always the chosen inventory's; this drives the
-   * inventory + location pickers and the WO-relink scope. Immutable on edit.
+   * inventory + location pickers. Immutable on edit.
    */
   warehouseId: string | null
   adjustmentType: FlooringInventoryAdjustmentType
@@ -33,20 +36,17 @@ export type AdjustmentEditForm = {
    */
   location: string
   workOrderId: string | null
-  workOrderItemId: string | null
 }
 
 /**
  * UI-only narrowing filter (free-text location) plus snapshot labels for
  * the picker triggers. None of these ship to the adjustment API — the
- * persisted row carries only `inventoryId` / `workOrderId` /
- * `workOrderItemId`. Local state lives outside `AdjustmentEditForm` so the
- * dirty check + mutation payload stay clean.
+ * persisted row carries only `inventoryId` / `workOrderId`. Local state lives
+ * outside `AdjustmentEditForm` so the dirty check + mutation payload stay clean.
  *
- * `pickedWorkOrderLabel` / `pickedWorkOrderItemLabel` keep the relink
- * pickers' triggers in sync with `form.workOrderId` / `workOrderItemId`
- * after the user picks a new option — otherwise the triggers would stay
- * pinned to the original adjustment's labels.
+ * `pickedWorkOrderLabel` keeps the relink picker's trigger in sync with
+ * `form.workOrderId` after the user picks a new option — otherwise the trigger
+ * would stay pinned to the original adjustment's label.
  */
 export type AdjustmentEditLocal = {
   locationFilter: string
@@ -64,16 +64,12 @@ export type AdjustmentEditLocal = {
   pickedInventoryNote: string
   pickedInventoryStockUnitAbbrev: string
   pickedWorkOrderLabel: string
-  pickedWorkOrderItemLabel: string
-  pickedWorkOrderItemNotes: string
 }
 
 /**
  * Per-context picker visibility/lock state for the shared sticky-header picker
  * stack. `hidden` skips the trigger; `locked` renders a disabled trigger
- * showing its seeded value; `editable` opens a body-takeover picker. The
- * material-item display is derived (read-only whenever a WO is linked), so it
- * has no entry here.
+ * showing its seeded value; `editable` opens a body-takeover picker.
  */
 export type PickerState = "hidden" | "locked" | "editable"
 export type AdjustmentPickerConfig = {
@@ -86,15 +82,14 @@ export type AdjustmentPickerConfig = {
 /**
  * Seed values for a create open-spec. Every field is optional; the controller
  * builds the initial form + picker-trigger labels from whatever the host
- * provides. `productId` fixes the inventory product (the inventory picker is
- * product-filtered, so all selectable inventory shares it) and scopes the
- * WO-relink picker + WOMI auto-resolve.
+ * provides. `productId` optionally pre-selects the inventory picker's product
+ * filter (the WO "create with matching product" affordance); when omitted the
+ * operator picks any product.
  */
 export type AdjustmentCreateSeed = {
   inventoryId?: string
   warehouseId?: string | null
   workOrderId?: string | null
-  workOrderItemId?: string | null
   productId?: string
   inventoryItem?: string
   inventoryNumber?: string | null
@@ -104,50 +99,31 @@ export type AdjustmentCreateSeed = {
   warehouseLabel?: string
   locationLabel?: string
   workOrderLabel?: string
-  materialItemLabel?: string
-  materialItemNotes?: string
   stockUnitAbbrev?: string | null
 }
 
 /**
- * Local "patch" emitted to the parent when a adjustment mutation completes.
- * Parents apply the patch to their adjustment snapshot (per-WOMI map on the
- * WO side, flat array on the inv side) to keep the section in sync
- * without a refetch.
- *
- * `workOrderItemId` is carried so the WO-side parent can route the patch
- * into the right WOMI bucket. The inv-side parent ignores it (its
- * snapshot is keyed by adjustment id).
- *
- * A `delete` carries a `reason`: `"removed"` is a genuine row deletion;
- * `"relink-move"` is the bucket-move half of a relink (delete-from-old +
- * upsert-into-new) and only matters to the WO-side per-WOMI snapshot. The
- * inv-side keeps the row (its `inventoryId` is unchanged), so it pops the
- * panel only on `"removed"`.
+ * Local "patch" emitted to the parent when an adjustment mutation completes.
+ * Parents apply the patch to their adjustment snapshot (a flat array keyed by
+ * adjustment id on both the WO Adjustments grid and the inventory side) to keep
+ * the section in sync without a refetch.
  */
 export type AdjustmentEditPatch =
-  | { kind: "upsert"; workOrderItemId: string | null; adjustment: InventoryAdjustmentRow }
-  | {
-      kind: "delete"
-      reason: "removed" | "relink-move"
-      workOrderItemId: string | null
-      adjustmentId: string
-    }
+  | { kind: "upsert"; adjustment: InventoryAdjustmentRow }
+  | { kind: "delete"; adjustmentId: string }
 
 export type AdjustmentEditMode = "create" | "edit"
 
 /**
- * Row shape the panel renders in edit mode. Widens `InventoryAdjustmentRow` with the
- * server-resolved labels the inventory record view already surfaces on
- * `EnrichedInventoryAdjustmentRow` (`workOrderNumber`, `workOrderItemProductLabel`,
- * `warehouseName`). Optional because mutation responses come back as plain
- * `InventoryAdjustmentRow` — callers (and the update-mutation handler) carry labels
- * forward from the prior snapshot.
+ * Row shape the panel renders in edit mode. Widens `InventoryAdjustmentRow` with
+ * the server-resolved labels the inventory record view already surfaces on
+ * `EnrichedInventoryAdjustmentRow` (`workOrderNumber`, `warehouseName`). Optional
+ * because mutation responses come back as plain `InventoryAdjustmentRow` —
+ * callers (and the update-mutation handler) carry labels forward from the prior
+ * snapshot.
  */
 export type AdjustmentEditRow = InventoryAdjustmentRow & {
   workOrderNumber?: string | null
-  workOrderItemProductLabel?: string | null
-  workOrderItemNotes?: string | null
   warehouseName?: string | null
 }
 
@@ -167,6 +143,5 @@ export type AdjustmentEditOpenSpec =
   | {
       mode: "edit"
       pickerConfig: AdjustmentPickerConfig
-      workOrderItemId: string | null
       adjustment: AdjustmentEditRow
     }

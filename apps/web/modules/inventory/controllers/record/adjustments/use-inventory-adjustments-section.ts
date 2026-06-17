@@ -52,18 +52,13 @@ export function useInventoryAdjustmentsSection({
         locationLabel: inventory.location,
         productId: inventory.productId,
         stockUnitAbbrev: inventory.stockUnitAbbrev,
-        // Pre-link the originating work order (editable) when opened from a WO —
-        // but only if the selected inventory still matches the WO's product. If
-        // the operator re-filtered product and picked a different-product item,
-        // the pre-link would be invalid (server enforces product match), so drop
-        // it rather than ride it to a create-time error.
-        ...(woSeed && woSeed.productId === inventory.productId
+        // Pre-link the originating work order (editable) when opened from a WO.
+        // Adjustments link to any work order regardless of product, so no
+        // product-match gate is needed.
+        ...(woSeed
           ? {
               workOrderId: woSeed.workOrderId,
-              workOrderItemId: woSeed.workOrderItemId,
               workOrderLabel: woSeed.workOrderLabel ?? undefined,
-              materialItemLabel: woSeed.materialItemLabel ?? undefined,
-              materialItemNotes: woSeed.materialItemNotes ?? undefined,
             }
           : {}),
       },
@@ -75,7 +70,6 @@ export function useInventoryAdjustmentsSection({
       panel.openPanel({
         mode: "edit",
         pickerConfig: EDIT_PICKER_CONFIG,
-        workOrderItemId: row.workOrderItemId,
         adjustment: row,
       })
     },

@@ -69,7 +69,6 @@ export function normalizeAdjustmentRow(
     }),
     warehouseId: row.warehouseId,
     workOrderId: row.workOrderId ?? null,
-    workOrderItemId: row.workOrderItemId ?? null,
     before: toDecimalStringOrNull(row.before),
     quantity: toDecimalString(row.quantity),
     after: toDecimalStringOrNull(row.after),
@@ -85,28 +84,17 @@ export function normalizeAdjustmentRow(
 }
 
 /**
- * Inventory-side adjustment normalizer. Calls `normalizeAdjustmentRow` for
- * the canonical fields and stamps the two server-resolved labels needed by
- * the inventory record-view side panel: `workOrderNumber` from the linked
- * work order, `workOrderItemProductLabel` from the linked work-order
- * item's product (via the pure `buildFlooringProductDisplayName` helper,
- * per the data-layer carve-out in `packages/db/CLAUDE.md`).
+ * Inventory-side adjustment normalizer. Calls `normalizeAdjustmentRow` for the
+ * canonical fields and stamps the server-resolved labels the record-view edit
+ * face + WO Adjustments grid expect: `workOrderNumber` from the linked work
+ * order and the snapshot `warehouseName`.
  */
 export function normalizeEnrichedInventoryAdjustmentRow(
   row: EnrichedInventoryAdjustmentRowPayload,
 ): EnrichedInventoryAdjustmentRow {
-  const product = row.workOrderItem?.product ?? null
   return {
     ...normalizeAdjustmentRow(row),
     workOrderNumber: row.workOrder?.workOrderNumber ?? null,
-    workOrderItemProductLabel: product
-      ? buildFlooringProductDisplayName({
-          name: product.name,
-          style: product.style,
-          color: product.color,
-        })
-      : null,
-    workOrderItemNotes: row.workOrderItem?.notes ?? null,
     warehouseName: row.warehouse.name,
   }
 }
@@ -206,45 +194,30 @@ export async function getInventoryParentContextForAdjustments(
 }
 
 // ---------------------------------------------------------------------------
-// WOMI-keyed reads (consumed by the WO record view loader). Only DEDUCTION
-// rows can have a WO link, so these queries naturally exclude INCREASE rows;
-// the explicit `adjustmentType: "DEDUCTION"` filter is a belt-and-braces
-// guarantee that survives any future schema relaxation.
+// Work-order-keyed read (consumed by the WO record view loader). Adjustments
+// link to a work order (any product), never to a material item, so the WO
+// Adjustments grid reads every adjustment on the WO and groups by the
+// adjustment's own product snapshot. Both DEDUCTION and INCREASE rows are
+// returned (an INCREASE may carry a WO link).
 // ---------------------------------------------------------------------------
 
-export async function listAdjustmentsForWorkOrderItem(
-  workOrderItemId: string,
-  client: InventoryAdjustmentDbClient = db,
-): Promise<EnrichedInventoryAdjustmentRow[]> {
-  const rows = await client.flooringInventoryAdjustment.findMany({
-    where: { workOrderItemId },
-    select: enrichedInventoryAdjustmentRowSelect,
-    orderBy: [
-      { quantity: "asc" },
-      { id: "asc" },
-    ],
-  })
-  return rows.map(normalizeEnrichedInventoryAdjustmentRow)
-}
-
 /**
- * Bulk variant of `listAdjustmentsForWorkOrderItem` — returns the flat row
- * set across many WOMI ids in one query, ordered identically. The SSR
- * loader for the WO record page calls this once and groups client-side so
- * every expandable adjustment row hydrates from initial data. Rows are
- * enriched (own warehouse name + WO number) so the grid renders the same
- * columns as the ledger; both DEDUCTION and INCREASE WO-linked rows are
- * returned (an INCREASE may now link a work order).
+ * Every adjustment linked to a work order, enriched (own warehouse name + WO
+ * number). Ordered `productName ASC, quantity ASC, id ASC` so the consumer can
+ * group by product into contiguous runs with a stable in-group order. The
+ * product label is derived from the live join, so the ORDER BY keys off
+ * `product.name` (the closest stable proxy; the consumer re-groups on the
+ * normalized `productId`/`productName`).
  */
-export async function listAdjustmentsForWorkOrderItemIds(
-  workOrderItemIds: string[],
+export async function listAdjustmentsForWorkOrder(
+  workOrderId: string,
   client: InventoryAdjustmentDbClient = db,
 ): Promise<EnrichedInventoryAdjustmentRow[]> {
-  if (workOrderItemIds.length === 0) return []
   const rows = await client.flooringInventoryAdjustment.findMany({
-    where: { workOrderItemId: { in: workOrderItemIds } },
+    where: { workOrderId },
     select: enrichedInventoryAdjustmentRowSelect,
     orderBy: [
+      { product: { name: "asc" } },
       { quantity: "asc" },
       { id: "asc" },
     ],

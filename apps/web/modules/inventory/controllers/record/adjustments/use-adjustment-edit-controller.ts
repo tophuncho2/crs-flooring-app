@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState } from "react"
 import type { InventoryAdjustmentRow, WorkOrderOption } from "@builders/domain"
 import type { AdjustmentScopeUrl } from "@/modules/adjustments/data/mutations"
 import { formatWorkOrderOptionTitle } from "@/modules/work-orders/components/picker/work-order-picker"
-import { searchWorkOrderMaterialItemOptionsRequest } from "@/modules/work-orders/data/work-order-material-item-options-request"
 import {
   EMPTY_FORM,
   EMPTY_LOCAL,
@@ -28,7 +27,7 @@ import type {
   AdjustmentEditLocal,
   AdjustmentEditPatch,
 } from "./types"
-import { createRecordSectionError, type RecordSectionError } from "@/types/record/section-error"
+import type { RecordSectionError } from "@/types/record/section-error"
 
 /**
  * Owns the edit lifecycle for an adjustment record: open/close, current
@@ -67,10 +66,10 @@ export function useAdjustmentEditController({
   /**
    * Optional override for post-create routing. When provided, the panel
    * closes after a successful create and the consumer routes the new
-   * row elsewhere (e.g. WO hands off to the inventory-hub edit panel).
+   * row elsewhere (e.g. the WO modal refreshes its Adjustments grid).
    * When omitted, the default in-place create→edit flip is preserved.
    */
-  onCreated?: (adjustment: InventoryAdjustmentRow, workOrderItemId: string | null) => void
+  onCreated?: (adjustment: InventoryAdjustmentRow) => void
 }) {
   const [open, setOpen] = useState<AdjustmentEditOpenSpec | null>(null)
   const [form, setForm] = useState<AdjustmentEditForm>(EMPTY_FORM)
@@ -164,99 +163,20 @@ export function useAdjustmentEditController({
     [],
   )
 
-  // Single atomic work-order commit for the relink flow. The material-item
-  // picker is gone: a adjustment's product is fixed and WOMIs are unique per
-  // (workOrder, product), so selecting a WO deterministically resolves the one
-  // matching material item — we fetch it and link it here, moving the form +
-  // trigger labels together in one path (mirrors `selectInventoryOption`).
-  //
-  // Sets the WO + label immediately, nulls the WOMI, then resolves the match.
-  // A stale-guard drops a resolve whose WO was superseded by a newer pick. The
-  // no-match branch is defensive only — the picker is pre-filtered to WOs that
-  // carry this product, so it shouldn't fire.
-  const selectWorkOrderOption = useCallback(
-    async (option: WorkOrderOption | null) => {
-      if (!option) {
-        setForm((prev) => ({ ...prev, workOrderId: null, workOrderItemId: null }))
-        setLocal((prev) => ({
-          ...prev,
-          pickedWorkOrderLabel: "",
-          pickedWorkOrderItemLabel: "",
-          pickedWorkOrderItemNotes: "",
-        }))
-        setError(null)
-        return
-      }
-
-      const workOrderId = option.id
-      setForm((prev) => ({ ...prev, workOrderId, workOrderItemId: null }))
-      setLocal((prev) => ({
-        ...prev,
-        pickedWorkOrderLabel: formatWorkOrderOptionTitle(option),
-        pickedWorkOrderItemLabel: "",
-        pickedWorkOrderItemNotes: "",
-      }))
+  // Work-order link select for the relink flow. Adjustments link to a work
+  // order (any product) with no material-item resolution — so this just sets
+  // `workOrderId` + the trigger label (or clears both on a null pick).
+  const selectWorkOrderOption = useCallback((option: WorkOrderOption | null) => {
+    if (!option) {
+      setForm((prev) => ({ ...prev, workOrderId: null }))
+      setLocal((prev) => ({ ...prev, pickedWorkOrderLabel: "" }))
       setError(null)
-
-      // Product is fixed per open (edit: the row's product; create: the seed's).
-      // Resolves the one matching WOMI on the chosen WO, in both modes.
-      if (!productId) return
-
-      try {
-        const matches = await searchWorkOrderMaterialItemOptionsRequest(
-          "",
-          undefined,
-          { workOrderId, productId, take: 1 },
-        )
-        const match = matches[0] ?? null
-        // Stale-guard: ignore a resolve whose WO was superseded by a newer pick.
-        setForm((prev) =>
-          prev.workOrderId === workOrderId
-            ? { ...prev, workOrderItemId: match?.id ?? null }
-            : prev,
-        )
-        if (match) {
-          setLocal((prev) => ({
-            ...prev,
-            pickedWorkOrderItemLabel: match.productName,
-            pickedWorkOrderItemNotes: match.notes,
-          }))
-        } else {
-          // Defensive — picker only lists WOs carrying this product. Revert the
-          // WO so the form stays link-symmetric and tell the user why.
-          const productName = open?.mode === "edit" ? open.adjustment.productName : "this product"
-          setForm((prev) =>
-            prev.workOrderId === workOrderId
-              ? { ...prev, workOrderId: null, workOrderItemId: null }
-              : prev,
-          )
-          setLocal((prev) => ({
-            ...prev,
-            pickedWorkOrderLabel: "",
-            pickedWorkOrderItemLabel: "",
-            pickedWorkOrderItemNotes: "",
-          }))
-          setError(
-            createRecordSectionError({
-              kind: "validation",
-              message: `This work order has no material item for ${productName}.`,
-              retryable: true,
-            }),
-          )
-        }
-      } catch (err) {
-        setError(
-          createRecordSectionError({
-            kind: "transport",
-            message: "Could not resolve the work order's material item.",
-            retryable: true,
-            details: { error: String(err) },
-          }),
-        )
-      }
-    },
-    [open, productId],
-  )
+      return
+    }
+    setForm((prev) => ({ ...prev, workOrderId: option.id }))
+    setLocal((prev) => ({ ...prev, pickedWorkOrderLabel: formatWorkOrderOptionTitle(option) }))
+    setError(null)
+  }, [])
 
   const createMutation = useCreateAdjustmentMutation({
     publish,
@@ -304,7 +224,6 @@ export function useAdjustmentEditController({
         if (!isEditValid(form) || !isDirty) return
         updateMutation.mutate(
           {
-            workOrderItemId: open.workOrderItemId,
             adjustment: open.adjustment,
             form,
           },
@@ -321,7 +240,6 @@ export function useAdjustmentEditController({
   const deleteAdjustment = useCallback(() => {
     if (!open || open.mode !== "edit" || isSaving) return Promise.resolve()
     return deleteMutation.mutateAsync({
-      workOrderItemId: open.workOrderItemId,
       adjustment: open.adjustment,
     })
   }, [open, isSaving, deleteMutation])

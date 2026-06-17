@@ -19,12 +19,6 @@ export type WorkOrderPickerProps = {
    */
   onOptionSelected?: (option: WorkOrderOption | null) => void
   /**
-   * Optional product scope. When set, only work orders carrying a material
-   * item for this product are listed. Note: the relink picker may still offer
-   * WOs without a matching item — supplying this just narrows the list.
-   */
-  productId?: string | null
-  /**
    * Pre-resolved label for the current `value`. Lets the trigger render
    * the selected WO's number even before any search runs.
    */
@@ -73,7 +67,6 @@ export function WorkOrderPicker({
   value,
   onChange,
   onOptionSelected,
-  productId = null,
   selectedLabel = null,
   placeholder = "Select work order",
   disabledPlaceholder = "Select work order",
@@ -89,22 +82,14 @@ export function WorkOrderPicker({
 }: WorkOrderPickerProps) {
   const enabled = !disabled
 
-  const bucketKey = useMemo(
-    () => [...WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY, productId ?? null] as const,
-    [productId],
-  )
-
   const pagedSearchFn = useCallback(
     (search: string, signal: AbortSignal | undefined, skip: number) =>
-      searchWorkOrderOptionsRequest(search, signal, {
-        ...(productId ? { productId } : {}),
-        skip,
-      }),
-    [productId],
+      searchWorkOrderOptionsRequest(search, signal, { skip }),
+    [],
   )
 
   const controller = useAsyncRichDropdownController<WorkOrderOption>({
-    bucketKey,
+    bucketKey: WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY,
     pagedSearchFn,
     initialOptions,
     enabled,

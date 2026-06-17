@@ -69,11 +69,12 @@ export type AdjustmentCreateModalWorkOrder = {
 
 export type AdjustmentCreateModalProps = {
   workOrder: AdjustmentCreateModalWorkOrder
-  /** The material item the adjustment links to. */
-  workOrderItemId: string
-  /** Fixed product for the modal — the inventory picker is filtered to it. */
-  product: { id: string; name: string }
-  materialItemNotes?: string | null
+  /**
+   * Optional starting product filter for the inventory picker — the WO row's
+   * "create with matching product" affordance seeds it; null lets the operator
+   * pick any product. Editable either way (adjustments link to any product).
+   */
+  product?: { id: string; name: string } | null
   /** Duplicate flow: pre-select the source row's inventory (quantity stays blank). */
   initialInventory?: InventoryRow | null
   /** Dismiss without creating (✕ / backdrop / Escape / Cancel). */
@@ -85,14 +86,15 @@ export type AdjustmentCreateModalProps = {
 /**
  * The shared adjustment **create** form as a centered modal over the work-order
  * record view, so the operator never leaves the WO to add an adjustment. It
- * composes a local-state inventory picker (warehouse editable + product locked to
- * the WOMI, over the same grid the inventory reference header uses) above the
- * chrome-less adjustment form fields, driven by the shared
- * `useAdjustmentEditController` in work-order scope.
+ * composes a local-state inventory picker (warehouse + product both editable,
+ * over the same grid the inventory reference header uses) above the chrome-less
+ * adjustment form fields, driven by the shared `useAdjustmentEditController` in
+ * work-order scope. The created adjustment links to this work order (any
+ * product).
  *
  * On create success the controller fires `onCreated` (then closes its panel); the
  * host unmounts the modal and `router.refresh()`es so the WO reloads the fresh
- * per-WOMI adjustment set. Editing an existing row still happens on the inventory
+ * Adjustments grid. Editing an existing row still happens on the inventory
  * record view — this modal is create/duplicate only.
  *
  * Mount it conditionally (only while a request is active) so each open starts
@@ -100,9 +102,7 @@ export type AdjustmentCreateModalProps = {
  */
 export function AdjustmentCreateModal({
   workOrder,
-  workOrderItemId,
-  product,
-  materialItemNotes,
+  product = null,
   initialInventory = null,
   onClose,
   onCreated,
@@ -110,8 +110,8 @@ export function AdjustmentCreateModal({
   const selection = useInventoryModalSelection({
     warehouseId: workOrder.warehouseId,
     warehouseLabel: workOrder.warehouseName,
-    productId: product.id,
-    productLabel: product.name,
+    productId: product?.id ?? null,
+    productLabel: product?.name ?? null,
     initialInventory,
   })
 
@@ -158,15 +158,12 @@ export function AdjustmentCreateModal({
         inventoryDyeLot: picked.dyeLot,
         inventoryNote: picked.note,
         locationLabel: picked.location ?? undefined,
-        // Product is fixed to the WOMI's product (picker is filtered to it), so
-        // the WO pre-link always applies.
-        productId: product.id,
+        // The adjustment's product is the chosen inventory's product; it links
+        // to this work order regardless of product.
+        productId: picked.productId,
         stockUnitAbbrev: picked.stockUnitAbbrev,
         workOrderId: workOrder.id,
-        workOrderItemId,
         workOrderLabel: `#${workOrder.workOrderNumber}`,
-        materialItemLabel: product.name,
-        materialItemNotes: materialItemNotes ?? undefined,
       },
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,13 +172,6 @@ export function AdjustmentCreateModal({
   const { canSave, isSaving, error } = controller
   const showGrid = !picked || isPicking
 
-  // Defense-in-depth: the grid is product-locked, but a pre-seeded inventory
-  // (duplicate flow) can bypass that filter. An adjustment's product is its
-  // inventory's product, so a picked roll for a different product than this
-  // material item would create a mismatch the server rejects — block Save and
-  // tell the operator to re-pick.
-  const productMismatch = Boolean(picked && picked.productId !== product.id)
-
   return (
     <QuickCreateModal
       open
@@ -189,25 +179,19 @@ export function AdjustmentCreateModal({
       widthClassName="max-w-5xl"
       onClose={onClose}
       onCreate={() => controller.save()}
-      canCreate={!showGrid && canSave && !productMismatch}
+      canCreate={!showGrid && canSave}
       isSaving={isSaving}
-      error={
-        error?.message ??
-        (productMismatch
-          ? `Selected inventory is a different product than ${product.name}. Re-pick an inventory item for this material item's product.`
-          : null)
-      }
+      error={error?.message ?? null}
     >
       {showGrid ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-[var(--foreground)]/70">
-            Choose the inventory item to adjust for{" "}
-            <span className="font-medium text-[var(--foreground)]">{product.name}</span>.
+            Choose the inventory item to adjust for this work order.
           </p>
           <InventoryOptionsGrid
             selection={selection}
             grid={grid}
-            productEditable={false}
+            productEditable
             onSelectWarehouse={selection.selectWarehouse}
             onSelectProduct={selection.selectProduct}
             onSelectInventory={(option) => {

@@ -9,8 +9,6 @@ const {
   recomputeAndPersistNetDeductedMock,
   validateAdjustmentPendingFormMock,
   describeAdjustmentPendingFormIssuesMock,
-  assertAdjustmentLinkageRulesMock,
-  assertAdjustmentLinkProductMatchesInventoryMock,
   assertAdjustmentWarehouseMatchesInventoryMock,
   buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStockMock,
@@ -35,8 +33,6 @@ const {
     recomputeAndPersistNetDeductedMock: vi.fn(),
     validateAdjustmentPendingFormMock: vi.fn(),
     describeAdjustmentPendingFormIssuesMock: vi.fn(),
-    assertAdjustmentLinkageRulesMock: vi.fn(),
-    assertAdjustmentLinkProductMatchesInventoryMock: vi.fn(),
     assertAdjustmentWarehouseMatchesInventoryMock: vi.fn(),
     buildPendingAdjustmentInventorySnapshotMock: vi.fn(),
     assertNetDeductedWithinStartingStockMock: vi.fn(),
@@ -58,8 +54,6 @@ vi.mock("@builders/domain", () => ({
   InventoryAdjustmentDomainError: InventoryAdjustmentDomainErrorClass,
   validateAdjustmentPendingForm: validateAdjustmentPendingFormMock,
   describeAdjustmentPendingFormIssues: describeAdjustmentPendingFormIssuesMock,
-  assertAdjustmentLinkageRules: assertAdjustmentLinkageRulesMock,
-  assertAdjustmentLinkProductMatchesInventory: assertAdjustmentLinkProductMatchesInventoryMock,
   assertAdjustmentWarehouseMatchesInventory: assertAdjustmentWarehouseMatchesInventoryMock,
   buildPendingAdjustmentInventorySnapshot: buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
@@ -69,16 +63,15 @@ import { createPendingAdjustmentUseCase } from "../../../../src/flooring/invento
 import { InventoryAdjustmentExecutionError } from "../../../../src/flooring/inventory/adjustments/errors.js"
 
 const WO_ID = "10000000-0000-4000-8000-000000000001"
-const WOMI_ID = "20000000-0000-4000-8000-000000000002"
 const INVENTORY_ID = "30000000-0000-4000-8000-000000000003"
 const ADJUSTMENT_ID = "40000000-0000-4000-8000-000000000004"
 
 // A WO-linked DEDUCTION create (the shape the work-orders record view sends).
+// Adjustments link to a work order (any product) — no material-item link.
 function cutVariantInput(overrides: Record<string, unknown> = {}) {
   return {
     adjustmentType: "DEDUCTION" as const,
     workOrderId: WO_ID,
-    workOrderItemId: WOMI_ID,
     inventoryId: INVENTORY_ID,
     quantity: "5",
     isWaste: false,
@@ -122,7 +115,7 @@ function inventoryContext(overrides: Record<string, unknown> = {}) {
 const INSERTED = { id: ADJUSTMENT_ID, quantity: "5.00" }
 const SNAPSHOT = { inventoryItem: "INV-5 · ROLL#R-1", snapshot: true }
 
-let tx: { flooringWorkOrderItem: { findUnique: ReturnType<typeof vi.fn> } }
+let tx: Record<string, unknown>
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
@@ -133,26 +126,15 @@ beforeEach(() => {
   recomputeAndPersistNetDeductedMock.mockReset()
   validateAdjustmentPendingFormMock.mockReset()
   describeAdjustmentPendingFormIssuesMock.mockReset()
-  assertAdjustmentLinkageRulesMock.mockReset()
-  assertAdjustmentLinkProductMatchesInventoryMock.mockReset()
   assertAdjustmentWarehouseMatchesInventoryMock.mockReset()
   buildPendingAdjustmentInventorySnapshotMock.mockReset()
   assertNetDeductedWithinStartingStockMock.mockReset()
 
-  tx = { flooringWorkOrderItem: { findUnique: vi.fn() } }
+  tx = {}
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb(tx))
 
-  // Default WOMI shares the inventory context's product ("prod-1") so the
-  // product-match invariant passes unless a test overrides it.
-  tx.flooringWorkOrderItem.findUnique.mockResolvedValue({
-    id: WOMI_ID,
-    workOrderId: WO_ID,
-    productId: "prod-1",
-  })
   validateAdjustmentPendingFormMock.mockReturnValue([])
   describeAdjustmentPendingFormIssuesMock.mockReturnValue("form issue")
-  assertAdjustmentLinkageRulesMock.mockReturnValue(undefined)
-  assertAdjustmentLinkProductMatchesInventoryMock.mockReturnValue(undefined)
   assertAdjustmentWarehouseMatchesInventoryMock.mockReturnValue(undefined)
   getInventoryParentContextForAdjustmentsMock.mockResolvedValue(inventoryContext())
   buildPendingAdjustmentInventorySnapshotMock.mockReturnValue(SNAPSHOT)
@@ -166,7 +148,7 @@ beforeEach(() => {
 
 describe("createPendingAdjustmentUseCase — WO-linked create", () => {
   describe("happy path", () => {
-    it("inserts a DEDUCTION with snapshot, recomputes netDeducted, returns the result", async () => {
+    it("inserts a DEDUCTION with the WO link + snapshot, recomputes netDeducted, returns the result", async () => {
       const result = await createPendingAdjustmentUseCase(cutVariantInput())
 
       expect(result).toEqual({
@@ -179,7 +161,6 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
         expect.objectContaining({
           adjustmentType: "DEDUCTION",
           workOrderId: WO_ID,
-          workOrderItemId: WOMI_ID,
           inventoryId: INVENTORY_ID,
           quantity: "5",
           isWaste: false,
@@ -193,6 +174,12 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
         }),
       )
       expect(recomputeAndPersistNetDeductedMock).toHaveBeenCalledWith(tx, [INVENTORY_ID])
+    })
+
+    it("does NOT validate the WO link against the inventory's product (any product may link)", async () => {
+      await createPendingAdjustmentUseCase(cutVariantInput())
+      // No material-item fetch / product-match guard exists anymore.
+      expect(insertPendingAdjustmentRowMock).toHaveBeenCalled()
     })
 
     it("locks the parent inventory before reading its context", async () => {
@@ -213,63 +200,11 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
   })
 
   describe("guards", () => {
-    it("throws INVENTORY_ADJUSTMENT_VALIDATION_FAILED (400) and never touches the WOMI when the form is invalid", async () => {
+    it("throws INVENTORY_ADJUSTMENT_VALIDATION_FAILED (400) when the form is invalid", async () => {
       validateAdjustmentPendingFormMock.mockReturnValue([{ code: "ADJUSTMENT_QUANTITY_REQUIRED" }])
 
       await expect(createPendingAdjustmentUseCase(cutVariantInput())).rejects.toMatchObject({
         code: "INVENTORY_ADJUSTMENT_VALIDATION_FAILED",
-        status: 400,
-      })
-      expect(tx.flooringWorkOrderItem.findUnique).not.toHaveBeenCalled()
-      expect(insertPendingAdjustmentRowMock).not.toHaveBeenCalled()
-    })
-
-    it("throws INVENTORY_ADJUSTMENT_NOT_FOUND (404) when the WOMI does not exist", async () => {
-      tx.flooringWorkOrderItem.findUnique.mockResolvedValue(null)
-
-      await expect(createPendingAdjustmentUseCase(cutVariantInput())).rejects.toMatchObject({
-        code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
-        status: 404,
-      })
-      expect(insertPendingAdjustmentRowMock).not.toHaveBeenCalled()
-    })
-
-    it("throws INVENTORY_ADJUSTMENT_SCOPE_MISMATCH (400) when the WOMI belongs to another work order", async () => {
-      tx.flooringWorkOrderItem.findUnique.mockResolvedValue({
-        id: WOMI_ID,
-        workOrderId: "different-wo",
-      })
-
-      await expect(createPendingAdjustmentUseCase(cutVariantInput())).rejects.toMatchObject({
-        code: "INVENTORY_ADJUSTMENT_SCOPE_MISMATCH",
-        status: 400,
-      })
-      expect(insertPendingAdjustmentRowMock).not.toHaveBeenCalled()
-    })
-
-    it("asserts the WO link product matches the chosen inventory's product", async () => {
-      await createPendingAdjustmentUseCase(cutVariantInput())
-      expect(assertAdjustmentLinkProductMatchesInventoryMock).toHaveBeenCalledWith({
-        adjustmentProductId: "prod-1",
-        materialItemProductId: "prod-1",
-      })
-    })
-
-    it("throws INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH (400) when the WOMI is for another product", async () => {
-      tx.flooringWorkOrderItem.findUnique.mockResolvedValue({
-        id: WOMI_ID,
-        workOrderId: WO_ID,
-        productId: "prod-other",
-      })
-      assertAdjustmentLinkProductMatchesInventoryMock.mockImplementation(() => {
-        throw new InventoryAdjustmentDomainErrorClass(
-          "INVENTORY_ADJUSTMENT_LINK_PRODUCT_MISMATCH",
-          { adjustmentProductId: "prod-1", materialItemProductId: "prod-other" },
-        )
-      })
-
-      await expect(createPendingAdjustmentUseCase(cutVariantInput())).rejects.toMatchObject({
-        code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH",
         status: 400,
       })
       expect(insertPendingAdjustmentRowMock).not.toHaveBeenCalled()
@@ -321,12 +256,10 @@ describe("createPendingAdjustmentUseCase — inventory create", () => {
       expect.objectContaining({
         adjustmentType: "INCREASE",
         workOrderId: null,
-        workOrderItemId: null,
         isWaste: false,
         quantity: "10",
       }),
     )
-    expect(tx.flooringWorkOrderItem.findUnique).not.toHaveBeenCalled()
   })
 
   it("inserts a manual INCREASE flagged as waste (isWaste honored on either direction)", async () => {
@@ -342,42 +275,20 @@ describe("createPendingAdjustmentUseCase — inventory create", () => {
       expect.objectContaining({
         adjustmentType: "INCREASE",
         workOrderId: null,
-        workOrderItemId: null,
         isWaste: true,
-      }),
-    )
-  })
-
-  it("inserts a manual DEDUCTION (recount-down) with no WO link", async () => {
-    await createPendingAdjustmentUseCase(
-      manualVariantInput({ adjustmentType: "DEDUCTION", quantity: "3" }),
-    )
-    expect(insertPendingAdjustmentRowMock).toHaveBeenCalledWith(
-      tx,
-      expect.objectContaining({
-        adjustmentType: "DEDUCTION",
-        workOrderId: null,
-        workOrderItemId: null,
       }),
     )
   })
 
   it("inserts a WO-linked manual INCREASE (return-to-stock against a work order)", async () => {
     await createPendingAdjustmentUseCase(
-      manualVariantInput({
-        adjustmentType: "INCREASE",
-        workOrderId: WO_ID,
-        workOrderItemId: WOMI_ID,
-      }),
+      manualVariantInput({ adjustmentType: "INCREASE", workOrderId: WO_ID }),
     )
-    // The WOMI scope is validated, then the row is inserted with both link columns.
-    expect(tx.flooringWorkOrderItem.findUnique).toHaveBeenCalled()
     expect(insertPendingAdjustmentRowMock).toHaveBeenCalledWith(
       tx,
       expect.objectContaining({
         adjustmentType: "INCREASE",
         workOrderId: WO_ID,
-        workOrderItemId: WOMI_ID,
       }),
     )
   })
@@ -390,7 +301,7 @@ describe("createPendingAdjustmentUseCase — inventory create", () => {
     })
   })
 
-  it("throws INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH (400) when the selected warehouse differs from the inventory's", async () => {
+  it("throws INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH (400) when the selected warehouse differs", async () => {
     assertAdjustmentWarehouseMatchesInventoryMock.mockImplementation(() => {
       throw new InventoryAdjustmentDomainErrorClass(
         "INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH",

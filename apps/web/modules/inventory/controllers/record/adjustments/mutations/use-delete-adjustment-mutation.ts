@@ -32,7 +32,7 @@ export function useDeleteAdjustmentMutation({
   setError,
 }: Deps) {
   return useMutation({
-    mutationFn: (input: { workOrderItemId: string | null; adjustment: InventoryAdjustmentRow }) =>
+    mutationFn: (input: { adjustment: InventoryAdjustmentRow }) =>
       deletePendingAdjustmentRequest({
         scope,
         adjustmentId: input.adjustment.id,
@@ -41,8 +41,6 @@ export function useDeleteAdjustmentMutation({
     onSuccess: (_response, variables) => {
       publish({
         kind: "delete",
-        reason: "removed",
-        workOrderItemId: variables.workOrderItemId,
         adjustmentId: variables.adjustment.id,
       })
       setOpen(null)

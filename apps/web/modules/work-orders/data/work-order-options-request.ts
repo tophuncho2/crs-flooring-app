@@ -13,7 +13,6 @@ export type WorkOrderOptionsPage = {
 }
 
 export type WorkOrderOptionsRequestArgs = {
-  productId?: string
   skip?: number
   take?: number
 }
@@ -25,7 +24,6 @@ export async function searchWorkOrderOptionsRequest(
 ): Promise<WorkOrderOptionsPage> {
   const params = new URLSearchParams()
   if (search) params.set("search", search)
-  if (args.productId) params.set("productId", args.productId)
   if (args.skip !== undefined && args.skip > 0) params.set("skip", String(args.skip))
   params.set("take", String(args.take ?? 20))
   const url = `/api/work-orders/options/search?${params.toString()}`

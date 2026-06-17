@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 import {
-  assertAdjustmentLinkageRules,
   assertAdjustmentWarehouseMatchesInventory,
   assertBeforeAfterInvariant,
 } from "../../../../src/flooring/inventory/adjustments/rules/adjustment-rules.js"
@@ -33,79 +32,6 @@ describe("assertBeforeAfterInvariant", () => {
     expect(() =>
       assertBeforeAfterInvariant({ before: "x", signedDelta: "3", after: "7" }),
     ).toThrow("INVENTORY_ADJUSTMENT_ARITHMETIC_MISMATCH")
-  })
-})
-
-describe("assertAdjustmentLinkageRules — DEDUCTION", () => {
-  it("accepts both-null and both-set", () => {
-    expect(() =>
-      assertAdjustmentLinkageRules({
-        adjustmentType: "DEDUCTION",
-        workOrderId: null,
-        workOrderItemId: null,
-      }),
-    ).not.toThrow()
-    expect(() =>
-      assertAdjustmentLinkageRules({
-        adjustmentType: "DEDUCTION",
-        workOrderId: "wo",
-        workOrderItemId: "womi",
-      }),
-    ).not.toThrow()
-  })
-
-  it("rejects a mixed pair", () => {
-    expect(() =>
-      assertAdjustmentLinkageRules({
-        adjustmentType: "DEDUCTION",
-        workOrderId: "wo",
-        workOrderItemId: null,
-      }),
-    ).toThrow("INVENTORY_ADJUSTMENT_LINKAGE_ASYMMETRY")
-  })
-})
-
-describe("assertAdjustmentLinkageRules — INCREASE", () => {
-  it("accepts a no-WO, no-waste INCREASE row", () => {
-    expect(() =>
-      assertAdjustmentLinkageRules({
-        adjustmentType: "INCREASE",
-        workOrderId: null,
-        workOrderItemId: null,
-        isWaste: false,
-      }),
-    ).not.toThrow()
-  })
-
-  it("accepts an INCREASE row with a WO link (return-to-stock against a WO)", () => {
-    expect(() =>
-      assertAdjustmentLinkageRules({
-        adjustmentType: "INCREASE",
-        workOrderId: "wo",
-        workOrderItemId: "womi",
-      }),
-    ).not.toThrow()
-  })
-
-  it("rejects a mixed INCREASE pair (asymmetric link)", () => {
-    expect(() =>
-      assertAdjustmentLinkageRules({
-        adjustmentType: "INCREASE",
-        workOrderId: "wo",
-        workOrderItemId: null,
-      }),
-    ).toThrow("INVENTORY_ADJUSTMENT_LINKAGE_ASYMMETRY")
-  })
-
-  it("accepts an INCREASE row flagged as waste (waste is orthogonal to direction)", () => {
-    expect(() =>
-      assertAdjustmentLinkageRules({
-        adjustmentType: "INCREASE",
-        workOrderId: null,
-        workOrderItemId: null,
-        isWaste: true,
-      }),
-    ).not.toThrow()
   })
 })
 

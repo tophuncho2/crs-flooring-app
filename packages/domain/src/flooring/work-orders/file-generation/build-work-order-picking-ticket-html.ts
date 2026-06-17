@@ -27,7 +27,7 @@ export function buildWorkOrderPickingTicketHtml(
 ): string {
   const body = [
     renderWorkOrderInfo(input),
-    renderWorkOrderAdjustments(input.materialItems),
+    renderWorkOrderAdjustments(input.adjustmentGroups),
   ].join("\n")
 
   return `<style>${WO_PRINT_STYLE_BLOCK}</style>

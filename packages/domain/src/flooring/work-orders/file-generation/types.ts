@@ -8,8 +8,9 @@
  * fields are read from the adjustment row's own snapshot columns, not
  * the joined inventory or product row.
  *
- * Only DEDUCTION adjustments with a WO link surface here — INCREASE rows
- * are never WO-linked and the join scopes by `workOrderId`.
+ * Only DEDUCTION adjustments surface here — the join scopes by `workOrderId`
+ * and filters to DEDUCTION. Adjustments are grouped by their OWN product
+ * snapshot (they no longer link to a material item).
  */
 
 export type WorkOrderFileAdjustmentProjection = {
@@ -34,15 +35,14 @@ export type WorkOrderFileAdjustmentProjection = {
   stockUnitAbbrev: string
 }
 
-export type WorkOrderFileMaterialItemProjection = {
-  id: string
+/**
+ * A product group of DEDUCTION adjustments on the work order. Grouped by the
+ * adjustment's own product snapshot — there is no material-item link. Drives
+ * one product block (rows + subtotal + divider) in the print adjustments table.
+ */
+export type WorkOrderFileProductAdjustmentGroup = {
   productName: string
-  quantity: string
-  // Send-unit snapshot from the WOMI row (suffix on the material item's
-  // quantity cell).
-  sendUnitAbbrev: string
-  notes: string
-  inventoryAdjustments: WorkOrderFileAdjustmentProjection[]
+  adjustments: WorkOrderFileAdjustmentProjection[]
 }
 
 export type WorkOrderFileGenerationInput = {
@@ -73,5 +73,5 @@ export type WorkOrderFileGenerationInput = {
     phone: string
   }
   jobTypeName: string
-  materialItems: WorkOrderFileMaterialItemProjection[]
+  adjustmentGroups: WorkOrderFileProductAdjustmentGroup[]
 }

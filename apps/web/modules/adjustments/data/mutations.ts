@@ -41,9 +41,9 @@ export type DeletePendingAdjustmentResponse = {
  * Single create path. The form always knows the chosen inventory id, so every
  * create — whether opened from the work-orders record view or the inventory
  * hub — posts to the inventory route. The body carries direction + amount +
- * waste + notes, plus the optional WO link (`workOrderId` + `workOrderItemId`,
- * both-or-neither; an INCREASE may link a WO) and the selected `warehouseId`
- * filter (the server asserts it matches the chosen inventory's warehouse).
+ * waste + notes, plus the optional `workOrderId` link (any product, any
+ * direction) and the selected `warehouseId` filter (the server asserts it
+ * matches the chosen inventory's warehouse).
  */
 export async function createAdjustmentRequest(args: {
   inventoryId: string
@@ -54,7 +54,6 @@ export async function createAdjustmentRequest(args: {
   location?: string | null
   warehouseId?: string | null
   workOrderId?: string | null
-  workOrderItemId?: string | null
 }) {
   const payload: Record<string, unknown> = {
     adjustmentType: args.adjustmentType,
@@ -64,10 +63,7 @@ export async function createAdjustmentRequest(args: {
     location: args.location ?? null,
   }
   if (args.warehouseId) payload.warehouseId = args.warehouseId
-  if (args.workOrderId && args.workOrderItemId) {
-    payload.workOrderId = args.workOrderId
-    payload.workOrderItemId = args.workOrderItemId
-  }
+  if (args.workOrderId) payload.workOrderId = args.workOrderId
   const body = withMutationMeta(payload)
   return requestJson<PendingAdjustmentMutationResponse>(
     `/api/inventory/${args.inventoryId}/adjustments`,
@@ -89,7 +85,7 @@ export async function updatePendingAdjustmentRequest(args: {
     isWaste?: boolean
     notes?: string
     location?: string | null
-    link?: { workOrderId: string | null; workOrderItemId: string | null }
+    link?: { workOrderId: string | null }
   }
 }) {
   const body = withMutationMeta(

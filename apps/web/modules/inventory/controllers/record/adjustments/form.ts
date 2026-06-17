@@ -42,7 +42,6 @@ export const EMPTY_FORM: AdjustmentEditForm = {
   notes: "",
   location: "",
   workOrderId: null,
-  workOrderItemId: null,
 }
 
 export const EMPTY_LOCAL: AdjustmentEditLocal = {
@@ -55,8 +54,6 @@ export const EMPTY_LOCAL: AdjustmentEditLocal = {
   pickedInventoryNote: "",
   pickedInventoryStockUnitAbbrev: "",
   pickedWorkOrderLabel: "",
-  pickedWorkOrderItemLabel: "",
-  pickedWorkOrderItemNotes: "",
 }
 
 export function buildEditForm(adjustment: InventoryAdjustmentRow): AdjustmentEditForm {
@@ -69,7 +66,6 @@ export function buildEditForm(adjustment: InventoryAdjustmentRow): AdjustmentEdi
     notes: adjustment.notes,
     location: adjustment.location ?? "",
     workOrderId: adjustment.workOrderId,
-    workOrderItemId: adjustment.workOrderItemId,
   }
 }
 
@@ -88,9 +84,6 @@ export function buildEditLocal(adjustment: AdjustmentEditRow): AdjustmentEditLoc
     pickedInventoryNote: adjustment.inventoryNote ?? "",
     pickedInventoryStockUnitAbbrev: adjustment.stockUnitAbbrev ?? "",
     pickedWorkOrderLabel: adjustment.workOrderNumber ? `#${adjustment.workOrderNumber}` : "",
-    pickedWorkOrderItemLabel:
-      adjustment.workOrderItemProductLabel ?? adjustment.productName ?? "",
-    pickedWorkOrderItemNotes: adjustment.workOrderItemNotes ?? "",
   }
 }
 
@@ -105,7 +98,6 @@ export function buildCreateForm(seed: AdjustmentCreateSeed): AdjustmentEditForm 
     // parent inventory's location as `locationLabel`.
     location: seed.locationLabel ?? "",
     workOrderId: seed.workOrderId ?? null,
-    workOrderItemId: seed.workOrderItemId ?? null,
   }
 }
 
@@ -120,8 +112,6 @@ export function buildCreateLocal(seed: AdjustmentCreateSeed): AdjustmentEditLoca
     pickedInventoryNote: seed.inventoryNote ?? "",
     pickedInventoryStockUnitAbbrev: seed.stockUnitAbbrev ?? "",
     pickedWorkOrderLabel: seed.workOrderLabel ?? "",
-    pickedWorkOrderItemLabel: seed.materialItemLabel ?? "",
-    pickedWorkOrderItemNotes: seed.materialItemNotes ?? "",
   }
 }
 
@@ -134,8 +124,7 @@ export function formIsDirty(current: AdjustmentEditForm, baseline: AdjustmentEdi
     current.isWaste !== baseline.isWaste ||
     current.notes !== baseline.notes ||
     current.location !== baseline.location ||
-    current.workOrderId !== baseline.workOrderId ||
-    current.workOrderItemId !== baseline.workOrderItemId
+    current.workOrderId !== baseline.workOrderId
   )
 }
 
@@ -144,9 +133,7 @@ export function isCreateValid(form: AdjustmentEditForm): boolean {
 }
 
 export function isEditValid(form: AdjustmentEditForm): boolean {
-  // Link symmetry mirrors the backend `assertAdjustmentLinkageSymmetry`: a WO and
-  // its material item are set together or not at all. Blocks saving the
-  // transient WO-set / WOMI-unresolved state during an auto-link.
-  const linkSymmetric = Boolean(form.workOrderId) === Boolean(form.workOrderItemId)
-  return form.quantity.trim() !== "" && linkSymmetric
+  // The WO link is a plain optional `workOrderId` (any product) — no symmetry
+  // constraint, so a non-empty quantity is the only edit requirement.
+  return form.quantity.trim() !== ""
 }

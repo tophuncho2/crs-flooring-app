@@ -41,11 +41,8 @@ export default async function InventoryRecordPage({
   const woSeed: InventoryRecordWoSeed | null = workOrderId
     ? {
         workOrderId,
-        workOrderItemId: readParam(resolved, "workOrderItemId") ?? null,
         workOrderLabel: readParam(resolved, "workOrderLabel") ?? null,
         productId: readParam(resolved, "productId") ?? null,
-        materialItemLabel: readParam(resolved, "materialItemLabel") ?? null,
-        materialItemNotes: readParam(resolved, "materialItemNotes") ?? null,
       }
     : null
 

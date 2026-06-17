@@ -28,18 +28,18 @@ export type InventoryModalSelection = {
  * A non-URL inventory selection for the WO-create adjustment modal. The
  * inventory record view's `useInventoryRecordSelection` lives in the URL (so the
  * record view stays shareable); the modal must NOT touch the WO's URL, so it
- * holds the warehouse filter + picked inventory in local React state instead.
+ * holds the warehouse + product filters + picked inventory in local React state.
  *
- * Product is fixed for the modal's lifetime (the WOMI's product — the picker is
- * product-filtered, so all selectable inventory shares it); `selectProduct` is a
- * no-op kept only to satisfy the grid's handler shape. Warehouse stays editable
- * (cross-warehouse sourcing); changing it clears the picked inventory.
+ * Warehouse and product are both editable (adjustments link to any work order
+ * regardless of product, so the operator picks the product each time — or starts
+ * from a seeded product on "create with matching product"). Changing either
+ * filter clears the picked inventory.
  */
 export function useInventoryModalSelection({
   warehouseId: seedWarehouseId,
   warehouseLabel: seedWarehouseLabel,
-  productId,
-  productLabel,
+  productId: seedProductId,
+  productLabel: seedProductLabel,
   initialInventory = null,
 }: {
   warehouseId: string | null
@@ -51,6 +51,8 @@ export function useInventoryModalSelection({
 }): InventoryModalSelection {
   const [warehouseId, setWarehouseId] = useState(seedWarehouseId)
   const [warehouseLabel, setWarehouseLabel] = useState(seedWarehouseLabel)
+  const [productId, setProductId] = useState(seedProductId)
+  const [productLabel, setProductLabel] = useState(seedProductLabel)
   const [picked, setPicked] = useState<InventoryRow | null>(initialInventory)
 
   const selectWarehouse = useCallback((option: WarehouseOption | null) => {
@@ -60,8 +62,12 @@ export function useInventoryModalSelection({
     setPicked(null)
   }, [])
 
-  // Product is locked to the WOMI product; nothing to change.
-  const selectProduct = useCallback(() => {}, [])
+  const selectProduct = useCallback((option: { id: string; name: string } | null) => {
+    setProductId(option?.id ?? null)
+    setProductLabel(option?.name ?? null)
+    // Re-scoping the product invalidates the picked inventory.
+    setPicked(null)
+  }, [])
 
   const selectInventory = useCallback((row: InventoryRow | null) => {
     setPicked(row)

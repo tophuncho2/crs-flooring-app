@@ -18,12 +18,12 @@ import { WorkOrderRecordPanel } from "./work-order-record-panel"
 export function WorkOrderDetailClient({
   initialWorkOrder,
   initialMaterialItems,
-  initialAdjustmentsByWorkOrderItemId,
+  initialAdjustmentsForWorkOrder,
   backHref,
 }: {
   initialWorkOrder: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
-  initialAdjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]>
+  initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
   backHref: string
 }) {
   const router = useRouter()
@@ -69,7 +69,7 @@ export function WorkOrderDetailClient({
             page={page}
             entry={initialWorkOrder}
             initialMaterialItems={initialMaterialItems}
-            initialAdjustmentsByWorkOrderItemId={initialAdjustmentsByWorkOrderItemId}
+            initialAdjustmentsForWorkOrder={initialAdjustmentsForWorkOrder}
           />
         </>
       )}

@@ -25,12 +25,10 @@ type Deps = {
    * Optional override for post-create routing. When provided, the
    * mutation publishes the patch, fires `onCreated`, and closes the
    * create panel — instead of the default in-place create→edit flip.
-   * The WO material-items section uses this to hand the new row off to
-   * the inventory hub's adjustment edit panel; the inventory hub uses it
-   * to pop back to the adjustments list. `workOrderItemId` is null when the
-   * created adjustment carries no WO link.
+   * The WO material-items section uses this to refresh its Adjustments grid;
+   * the inventory hub uses it to pop back to the adjustments list.
    */
-  onCreated?: (adjustment: InventoryAdjustmentRow, workOrderItemId: string | null) => void
+  onCreated?: (adjustment: InventoryAdjustmentRow) => void
 }
 
 /**
@@ -69,17 +67,14 @@ export function useCreateAdjustmentMutation({
         location: input.form.location,
         warehouseId: input.form.warehouseId,
         workOrderId: input.form.workOrderId,
-        workOrderItemId: input.form.workOrderItemId,
       }),
-    onSuccess: (response, variables) => {
-      const workOrderItemId = variables.form.workOrderItemId
+    onSuccess: (response) => {
       publish({
         kind: "upsert",
-        workOrderItemId,
         adjustment: response.adjustment,
       })
       if (onCreated) {
-        onCreated(response.adjustment, workOrderItemId)
+        onCreated(response.adjustment)
         setOpen(null)
         return
       }
@@ -89,7 +84,6 @@ export function useCreateAdjustmentMutation({
       setOpen({
         mode: "edit",
         pickerConfig: EDIT_PICKER_CONFIG,
-        workOrderItemId,
         adjustment: response.adjustment,
       })
     },

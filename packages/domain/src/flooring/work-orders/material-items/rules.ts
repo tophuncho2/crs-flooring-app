@@ -29,31 +29,6 @@ export function validateWorkOrderMaterialItemUpdateForm(
   return validateQuantity(input.quantity)
 }
 
-/**
- * The product stays editable until the item has linked inventory adjustments.
- * Once one exists, the product is locked — the WOMI carries product-derived
- * snapshots (`productName`, `sendUnitName`, `sendUnitAbbrev`) and its
- * adjustments scope their inventory by `workOrderItem.productId`. Changing the
- * product then would drift the snapshots and sever every adjustment → inventory
- * linkage; the row can only be deleted instead.
- *
- * Returns true when the caller is changing the product on an item that has
- * inventory adjustments. Ids are compared trimmed so whitespace noise can't
- * trigger a false positive. The caller supplies `hasInventoryAdjustments`
- * from an adjustment count (the application layer counts them before the write).
- */
-export function isWorkOrderMaterialItemProductChangeBlocked(
-  hasInventoryAdjustments: boolean,
-  currentProductId: string,
-  nextProductId: string,
-): boolean {
-  return hasInventoryAdjustments && currentProductId.trim() !== nextProductId.trim()
-}
-
-export function buildWorkOrderMaterialItemProductLockedMessage(): string {
-  return `Product cannot change once the item has linked inventory adjustments.`
-}
-
 // A product may be linked at most once per work order (enforced canonically
 // by the DB unique constraint). Surfaced when a save would create or leave a
 // second row for the same product.

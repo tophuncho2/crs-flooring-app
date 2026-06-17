@@ -4,13 +4,14 @@ export type AssignmentQuantityRow = {
 }
 
 /**
- * Totals a work order material item's ASSIGNMENTS — Σ of its linked DEDUCTION
- * adjustments' quantity, with the stock-unit suffix taken from the first row
- * that carries one (rows under one material item share units).
+ * Totals a product group's ASSIGNMENTS — Σ of its DEDUCTION adjustments'
+ * quantity, with the stock-unit suffix taken from the first row that carries one
+ * (adjustments of one product share units).
  *
  * Callers pass DEDUCTION rows only: an "assignment" is a DEDUCTION adjustment
- * linked to a WOMI. INCREASE rows may also carry a WO link but are NOT
- * assignments, so they must be filtered out by the caller.
+ * against a work order. INCREASE rows may also carry a WO link but are NOT
+ * assignments, so they must be filtered out by the caller. Used both by the
+ * WO Adjustments grid's per-product subtotal rows and by the print files.
  *
  * Returns "" for quantity when nothing summable is present (caller renders its
  * own "—"). Trailing zeros/dot trimmed: "10.00"→"10", "10.50"→"10.5", "0.25" stays.

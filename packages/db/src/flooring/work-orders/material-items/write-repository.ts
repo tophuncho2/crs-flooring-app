@@ -20,9 +20,10 @@ export type WriteWorkOrderMaterialItemCreateInput =
 
 /**
  * Wire-input shape for material-item updates. Always carries the mutable
- * quantity/notes. `product` is present only when the product changed (allowed
- * while the item has no cut logs); it carries the re-snapshotted send units
- * for the new product so the snapshot stays consistent with `productId`.
+ * quantity/notes. `product` is present only when the product changed (always
+ * allowed now that adjustments don't link to a material item); it carries the
+ * re-snapshotted send units for the new product so the snapshot stays
+ * consistent with `productId`.
  */
 export type WriteWorkOrderMaterialItemUpdateInput = {
   quantity: string
@@ -95,21 +96,13 @@ export async function updateWorkOrderMaterialItemRecord(
 }
 
 /**
- * Standalone delete. Nulls both link columns on any inventory adjustment
- * that referenced this WOMI, IN THE SAME transaction client, BEFORE the
- * WOMI delete fires. Schema's `onDelete: SetNull` would null
- * `workOrderItemId` automatically — but `workOrderId` would survive,
- * breaking `assertAdjustmentLinkageRules`. We null both together to keep
- * the linkage invariant.
+ * Standalone delete. Adjustments no longer link to a material item, so this is
+ * a plain row delete — nothing references the WOMI.
  */
 export async function deleteWorkOrderMaterialItemRecordById(
   id: string,
   client: WorkOrdersDbClient = db,
 ): Promise<void> {
-  await client.flooringInventoryAdjustment.updateMany({
-    where: { workOrderItemId: id },
-    data: { workOrderId: null, workOrderItemId: null },
-  })
   await client.flooringWorkOrderItem.delete({ where: { id } })
 }
 
@@ -126,12 +119,9 @@ export type ApplyWorkOrderMaterialItemsDiffResult = {
 }
 
 /**
- * Section-save diff applier. Mirrors templates' `applyTemplateMaterialItemsDiff`
- * with one addition: every WOMI in `deleted` has its linked inventory
- * adjustments' link columns nulled together (workOrderId AND
- * workOrderItemId) BEFORE the WOMI rows are deleted. This keeps
- * `assertAdjustmentLinkageRules` satisfied — the schema's
- * `onDelete: SetNull` would null only one of the two link columns.
+ * Section-save diff applier. Mirrors templates' `applyTemplateMaterialItemsDiff`.
+ * Adjustments no longer link to a material item, so deleting a WOMI is a plain
+ * row delete with no adjustment cleanup.
  */
 export async function applyWorkOrderMaterialItemsDiff(
   tx: Prisma.TransactionClient,
@@ -139,10 +129,6 @@ export async function applyWorkOrderMaterialItemsDiff(
 ): Promise<ApplyWorkOrderMaterialItemsDiffResult> {
   if (input.deleted.length > 0) {
     const deletedIds = input.deleted.map((d) => d.id)
-    await tx.flooringInventoryAdjustment.updateMany({
-      where: { workOrderItemId: { in: deletedIds } },
-      data: { workOrderId: null, workOrderItemId: null },
-    })
     await tx.flooringWorkOrderItem.deleteMany({
       where: { id: { in: deletedIds } },
     })

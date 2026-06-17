@@ -7,15 +7,9 @@ import { WorkOrderMaterialItemExecutionError } from "./errors.js"
 import type { DeleteWorkOrderMaterialItemUseCaseInput } from "./types.js"
 
 /**
- * Standalone WOMI delete. The data layer's
- * `deleteWorkOrderMaterialItemRecordById` nulls both linkage columns
- * (workOrderId AND workOrderItemId) on every previously-linked inventory
- * adjustment inside the same TX BEFORE the WOMI row delete fires —
- * preserves `assertAdjustmentLinkageRules`.
- *
- * Per locked sweep decision, WOMI delete is unblocked even when
- * adjustments reference it; the unlink is the cleanup mechanism. This use
- * case therefore has no domain-rule throw to catch.
+ * Standalone WOMI delete. Adjustments no longer link to a material item, so the
+ * data layer's `deleteWorkOrderMaterialItemRecordById` is a plain row delete —
+ * nothing references the WOMI and there is no domain-rule throw to catch.
  */
 export async function deleteWorkOrderMaterialItemUseCase(
   input: DeleteWorkOrderMaterialItemUseCaseInput,

@@ -26,7 +26,6 @@ export const BLANK_MATERIAL_ITEM_LOCAL_DEFAULTS: Omit<
   quantity: "",
   notes: "",
   categoryFilterId: null,
-  hasInventoryAdjustments: false,
 }
 
 export function createBlankMaterialItemLocal(id: string): WorkOrderMaterialItemLocal {
@@ -42,7 +41,6 @@ export function toLocalItem(row: WorkOrderMaterialItemRow): WorkOrderMaterialIte
     quantity: row.quantity,
     notes: row.notes,
     categoryFilterId: null,
-    hasInventoryAdjustments: row.hasInventoryAdjustments,
   }
 }
 

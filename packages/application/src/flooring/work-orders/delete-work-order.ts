@@ -3,15 +3,10 @@ import { WORK_ORDER_NOT_FOUND_MESSAGE } from "@builders/domain"
 import { WorkOrderExecutionError } from "./errors.js"
 
 /**
- * Deletes a work order. The WO row's `onDelete: Cascade` cascades to all
- * its WOMIs; each WOMI's `onDelete: SetNull` on the adjustment relation
- * nulls `workOrderItemId`, and the WO's own SetNull cascade nulls
- * `workOrderId`. So both link columns end up null together on every
- * previously-linked inventory adjustment — `assertAdjustmentLinkageRules`
- * is satisfied without any app-side null updates.
- *
- * Per locked decision: WO delete is unblocked even when adjustments
- * exist; the SetNull cascade is the unlink mechanism.
+ * Deletes a work order. The WO row's `onDelete: Cascade` cascades to all its
+ * WOMIs; the WO's own `onDelete: SetNull` on the adjustment relation nulls
+ * `workOrderId` on every previously-linked inventory adjustment. WO delete is
+ * unblocked even when adjustments exist; the SetNull cascade is the unlink.
  */
 export async function deleteWorkOrderUseCase(
   id: string,

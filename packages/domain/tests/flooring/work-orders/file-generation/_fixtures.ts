@@ -1,7 +1,7 @@
 import type {
   WorkOrderFileAdjustmentProjection,
   WorkOrderFileGenerationInput,
-  WorkOrderFileMaterialItemProjection,
+  WorkOrderFileProductAdjustmentGroup,
 } from "../../../../src/flooring/work-orders/file-generation/types.js"
 
 // Em-dash placeholder emitted by `escapeOrEmpty` / `renderUnitValue` for blank
@@ -37,28 +37,32 @@ const BASE: WorkOrderFileGenerationInput = {
     phone: "512-555-0100",
   },
   jobTypeName: "Turn",
-  materialItems: [],
+  adjustmentGroups: [],
 }
 
 /**
  * Fully-populated, valid `WorkOrderFileGenerationInput` for the file-generation
  * tests. Top-level keys are shallow-overridden; `property` and `warehouse` are
- * deep-merged so a case can override a single nested field without restating the
- * whole object. `materialItems` defaults to `[]` (the adjustments table is out
- * of scope for the above-the-table suite).
+ * deep-merged. The adjustments table groups by product — a case supplies its
+ * product groups via `adjustmentGroups` (or the legacy `materialItems` alias,
+ * one group per material item). Defaults to `[]` (table out of scope for the
+ * above-the-table suite).
  */
 export function makeFileGenInput(
   overrides: Partial<Omit<WorkOrderFileGenerationInput, "property" | "warehouse">> & {
     property?: Partial<WorkOrderFileGenerationInput["property"]>
     warehouse?: Partial<WorkOrderFileGenerationInput["warehouse"]>
+    /** Legacy alias — one group per "material item". */
+    materialItems?: WorkOrderFileProductAdjustmentGroup[]
   } = {},
 ): WorkOrderFileGenerationInput {
-  const { property, warehouse, ...rest } = overrides
+  const { property, warehouse, materialItems, adjustmentGroups, ...rest } = overrides
   return {
     ...BASE,
     ...rest,
     property: { ...BASE.property, ...property },
     warehouse: { ...BASE.warehouse, ...warehouse },
+    adjustmentGroups: adjustmentGroups ?? materialItems ?? BASE.adjustmentGroups,
   }
 }
 
@@ -82,17 +86,26 @@ export function makeAdjustment(
   }
 }
 
-/** Minimal material item carrying one adjustment, for cases that need the table present. */
+/**
+ * Minimal product group carrying one adjustment, for cases that need the table
+ * present. Named `makeMaterialItem` (and accepts the legacy `inventoryAdjustments`
+ * key) since each print group used to be a material item's adjustments — now it
+ * is the adjustment's own product group. Extra legacy keys (`id`, `quantity`,
+ * `sendUnitAbbrev`) are accepted and ignored.
+ */
 export function makeMaterialItem(
-  overrides: Partial<WorkOrderFileMaterialItemProjection> = {},
-): WorkOrderFileMaterialItemProjection {
+  overrides: {
+    productName?: string
+    adjustments?: WorkOrderFileAdjustmentProjection[]
+    inventoryAdjustments?: WorkOrderFileAdjustmentProjection[]
+    id?: string
+    quantity?: string
+    sendUnitAbbrev?: string
+    notes?: string
+  } = {},
+): WorkOrderFileProductAdjustmentGroup {
   return {
-    id: "item-1",
-    productName: "Shaw Carpet — Beige",
-    quantity: "10",
-    sendUnitAbbrev: "rolls",
-    notes: "",
-    inventoryAdjustments: [makeAdjustment()],
-    ...overrides,
+    productName: overrides.productName ?? "Shaw Carpet — Beige",
+    adjustments: overrides.adjustments ?? overrides.inventoryAdjustments ?? [makeAdjustment()],
   }
 }

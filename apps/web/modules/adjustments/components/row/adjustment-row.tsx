@@ -183,14 +183,6 @@ export function renderAdjustmentReadOnlyCell(
             ariaLabel={`${row.adjustmentNumber} work order number`}
           />
         )
-      case "workOrderItem":
-        return (
-          <TextCell
-            editable={false}
-            value={row.workOrderItemId ?? "—"}
-            ariaLabel={`${row.adjustmentNumber} material item`}
-          />
-        )
       case "createdAt":
         return (
           <TextCell

@@ -7,7 +7,7 @@ import {
   normalizeWorkOrderOption,
   type WorkOrderDetail,
   type WorkOrderFileGenerationInput,
-  type WorkOrderFileMaterialItemProjection,
+  type WorkOrderFileProductAdjustmentGroup,
   type WorkOrderListRow,
   type WorkOrderNeighbor,
   type WorkOrderOption,
@@ -269,13 +269,6 @@ export async function listWorkOrderOptions(
  */
 export type SearchWorkOrderOptionsInput = {
   search?: string
-  /**
-   * When set, only return work orders that already carry a material item for
-   * this product. Powers the cut-log relink picker: the cut log's product is
-   * fixed, and `@@unique([workOrderId, productId])` makes the matching WOMI
-   * deterministic, so the picker only offers WOs that can actually be linked.
-   */
-  productId?: string
   skip?: number
   take?: number
 }
@@ -295,9 +288,6 @@ export async function searchWorkOrderOptions(
   // Fetch take+1 to detect a next page without a separate count query.
   const workOrders = await client.flooringWorkOrder.findMany({
     where: {
-      ...(input.productId
-        ? { items: { some: { productId: input.productId } } }
-        : {}),
       ...(search.length > 0
         ? {
             OR: [
@@ -459,55 +449,45 @@ export async function getWorkOrderForFileGeneration(
         },
       },
       jobType: { select: { name: true } },
-      items: {
-        orderBy: { createdAt: "asc" as const },
-        select: {
-          id: true,
-          quantity: true,
-          sendUnitAbbrev: true,
-          notes: true,
-          product: {
-            select: {
-              name: true,
-            },
-          },
-          inventoryAdjustments: {
-            // Print views show only WO-linked DEDUCTION adjustments; INCREASE
-            // rows never have a WO link, so they're naturally excluded. The
-            // explicit filter is belt-and-braces.
-            where: { adjustmentType: "DEDUCTION" as const },
-            // Within each product (parent item) the rows run quantity-ascending,
-            // with id as a deterministic tiebreaker. Both keys are in the select.
-            orderBy: [
-              { quantity: "asc" as const },
-              { id: "asc" as const },
-            ],
-            select: {
-              id: true,
-              adjustmentNumber: true,
-              before: true,
-              quantity: true,
-              after: true,
-              isWaste: true,
-              notes: true,
-              dyeLot: true,
-              rollNumber: true,
-              location: true,
-              stockUnitAbbrev: true,
-            },
-          },
-        },
-      },
     },
   })
 
-  const materialItems: WorkOrderFileMaterialItemProjection[] = workOrder.items.map((item) => ({
-    id: item.id,
-    productName: item.product.name,
-    quantity: item.quantity == null ? "" : item.quantity.toString(),
-    sendUnitAbbrev: item.sendUnitAbbrev ?? "",
-    notes: item.notes ?? "",
-    inventoryAdjustments: item.inventoryAdjustments.map((adj) => ({
+  // Adjustments link to the work order (any product), not to a material item,
+  // so the print groups the WO's DEDUCTION adjustments by their own product
+  // snapshot. INCREASE rows never surface (explicit filter, belt-and-braces).
+  // Order by product name so the groups below form contiguous runs; within a
+  // product, quantity-ascending with id as a deterministic tiebreak.
+  const adjustments = await client.flooringInventoryAdjustment.findMany({
+    where: { workOrderId, adjustmentType: "DEDUCTION" as const },
+    orderBy: [
+      { product: { name: "asc" as const } },
+      { quantity: "asc" as const },
+      { id: "asc" as const },
+    ],
+    select: {
+      id: true,
+      adjustmentNumber: true,
+      before: true,
+      quantity: true,
+      after: true,
+      isWaste: true,
+      notes: true,
+      dyeLot: true,
+      rollNumber: true,
+      location: true,
+      stockUnitAbbrev: true,
+      productId: true,
+      product: { select: { name: true } },
+    },
+  })
+
+  // Group the ordered rows into product blocks. The ORDER BY keeps same-product
+  // rows contiguous, so a single pass that opens a new group whenever productId
+  // changes preserves the product-name ordering across groups.
+  const adjustmentGroups: WorkOrderFileProductAdjustmentGroup[] = []
+  let currentProductId: string | null = null
+  for (const adj of adjustments) {
+    const projection = {
       id: adj.id,
       adjustmentNumber: adj.adjustmentNumber,
       before: adj.before === null ? "" : adj.before.toString(),
@@ -519,8 +499,14 @@ export async function getWorkOrderForFileGeneration(
       rollNumber: adj.rollNumber ?? "",
       location: adj.location ?? "",
       stockUnitAbbrev: adj.stockUnitAbbrev ?? "",
-    })),
-  }))
+    }
+    if (adj.productId !== currentProductId) {
+      currentProductId = adj.productId
+      adjustmentGroups.push({ productName: adj.product.name, adjustments: [projection] })
+    } else {
+      adjustmentGroups[adjustmentGroups.length - 1]!.adjustments.push(projection)
+    }
+  }
 
   return {
     workOrderNumber: workOrder.workOrderNumber,
@@ -550,6 +536,6 @@ export async function getWorkOrderForFileGeneration(
       phone: workOrder.warehouse?.phone ?? "",
     },
     jobTypeName: workOrder.jobType?.name ?? "",
-    materialItems,
+    adjustmentGroups,
   }
 }

@@ -3,7 +3,7 @@ import {
   getWorkOrderDetailById,
   getWorkOrderForFileGeneration,
   isPrismaNotFoundError,
-  listAdjustmentsForWorkOrderItemIds,
+  listAdjustmentsForWorkOrder,
   listWorkOrderMaterialItems,
   type PrismaDetailPageResult,
 } from "@builders/db"
@@ -23,35 +23,32 @@ import type {
 export type WorkOrderDetailPageData = {
   workOrder: WorkOrderDetail
   materialItems: WorkOrderMaterialItemRow[]
-  adjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]>
+  /**
+   * Every adjustment linked to this work order (any product), flat and ordered
+   * product-name → quantity. The Adjustments grid groups it by product
+   * client-side. Material items (requested) and adjustments (outflow) are
+   * decoupled — there is no per-material-item bucketing.
+   */
+  adjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
 }
 
 export async function getWorkOrderDetailPageData(
   id: string,
 ): Promise<PrismaDetailPageResult<WorkOrderDetailPageData>> {
   try {
-    const [workOrder, materialItems] = await Promise.all([
+    const [workOrder, materialItems, adjustmentsForWorkOrder] = await Promise.all([
       getWorkOrderDetailById(id),
       listWorkOrderMaterialItems(id),
+      listAdjustmentsForWorkOrder(id),
     ])
 
     if (!workOrder) {
       return { ok: false, notFound: true }
     }
 
-    const adjustmentRows = await listAdjustmentsForWorkOrderItemIds(materialItems.map((mi) => mi.id))
-    const adjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]> = {}
-    for (const mi of materialItems) adjustmentsByWorkOrderItemId[mi.id] = []
-    for (const row of adjustmentRows) {
-      if (row.workOrderItemId === null) continue
-      const bucket = adjustmentsByWorkOrderItemId[row.workOrderItemId]
-      if (bucket === undefined) continue
-      bucket.push(row)
-    }
-
     return {
       ok: true,
-      data: { workOrder, materialItems, adjustmentsByWorkOrderItemId },
+      data: { workOrder, materialItems, adjustmentsForWorkOrder },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {

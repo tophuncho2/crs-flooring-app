@@ -376,7 +376,6 @@ const WO_OPTIONS_MAX_TAKE = 50
 
 const workOrderOptionsSearchQuerySchema = z.object({
   search: z.string().optional(),
-  productId: z.string().optional(),
   skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce
     .number()
@@ -388,7 +387,6 @@ const workOrderOptionsSearchQuerySchema = z.object({
 
 export type ValidatedWorkOrderOptionsSearchQuery = {
   search?: string
-  productId?: string
   skip: number
   take: number
 }
@@ -410,51 +408,9 @@ export function validateWorkOrderOptionsSearchQuery(
   }
   const parsed = parseResult.data
   const trimSearch = parsed.search?.trim()
-  const trimProductId = parsed.productId?.trim()
   return {
     ...(trimSearch ? { search: trimSearch } : {}),
-    ...(trimProductId ? { productId: trimProductId } : {}),
     skip: parsed.skip,
-    take: parsed.take,
-  }
-}
-
-const WOMI_OPTIONS_DEFAULT_TAKE = 50
-const WOMI_OPTIONS_MAX_TAKE = 100
-
-const workOrderMaterialItemOptionsQuerySchema = z.object({
-  productId: z.string().min(1, "productId is required"),
-  take: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(WOMI_OPTIONS_MAX_TAKE)
-    .default(WOMI_OPTIONS_DEFAULT_TAKE),
-})
-
-export type ValidatedWorkOrderMaterialItemOptionsQuery = {
-  productId: string
-  take: number
-}
-
-export function validateWorkOrderMaterialItemOptionsQuery(
-  searchParams: URLSearchParams,
-): ValidatedWorkOrderMaterialItemOptionsQuery {
-  const raw: Record<string, string> = {}
-  searchParams.forEach((value, key) => {
-    raw[key] = value
-  })
-  const parseResult = workOrderMaterialItemOptionsQuerySchema.safeParse(raw)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    failMaterialItem(
-      issue?.message ?? "Invalid material-item options query",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-  const parsed = parseResult.data
-  return {
-    productId: parsed.productId.trim(),
     take: parsed.take,
   }
 }

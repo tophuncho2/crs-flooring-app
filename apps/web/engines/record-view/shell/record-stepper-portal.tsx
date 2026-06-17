@@ -2,9 +2,9 @@
 
 import { useState, useSyncExternalStore } from "react"
 import { createPortal } from "react-dom"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ConfirmDialog } from "../dialogs/confirm-dialog"
 import { useRecordSwapGuard } from "../client/hooks/use-record-swap-guard"
+import { RecordStepper } from "./record-stepper"
 
 const SLOT_ID = "record-stepper-slot"
 
@@ -51,9 +51,6 @@ export type RecordStepperPortalProps = {
   discardMessage?: string
 }
 
-const STEP_BUTTON_CLASS_NAME =
-  "inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] text-[var(--foreground)]/80 transition hover:border-blue-500/40 hover:text-[var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--panel-border)] disabled:hover:text-[var(--foreground)]/80"
-
 /**
  * Record-view shell stepper: `◀ <label> ▶` painted into the global top bar's
  * `record-stepper-slot`, to the right of the mode notice. Walks the consumer
@@ -89,29 +86,13 @@ export function RecordStepperPortal({
 
   return createPortal(
     <>
-      <div className="inline-flex items-center gap-1 rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] p-1">
-        <button
-          type="button"
-          aria-label="Previous record"
-          disabled={onPrevious === null}
-          onClick={onPrevious ? () => guard(onPrevious) : undefined}
-          className={STEP_BUTTON_CLASS_NAME}
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <span className="min-w-[4rem] px-1 text-center text-sm font-medium text-[var(--foreground)]/80">
-          {displayLabel}
-        </span>
-        <button
-          type="button"
-          aria-label="Next record"
-          disabled={onNext === null}
-          onClick={onNext ? () => guard(onNext) : undefined}
-          className={STEP_BUTTON_CLASS_NAME}
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
+      <RecordStepper
+        label={displayLabel}
+        onPrevious={onPrevious ? () => guard(onPrevious) : null}
+        onNext={onNext ? () => guard(onNext) : null}
+        previousAriaLabel="Previous record"
+        nextAriaLabel="Next record"
+      />
       <ConfirmDialog {...dialogProps} />
     </>,
     target,

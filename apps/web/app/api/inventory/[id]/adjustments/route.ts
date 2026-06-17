@@ -108,7 +108,6 @@ export async function POST(request: Request, { params }: RouteContext) {
           inventoryId,
           warehouseId: input.warehouseId,
           workOrderId: input.workOrderId,
-          workOrderItemId: input.workOrderItemId,
           quantity: input.quantity,
           isWaste: input.isWaste,
           notes: input.notes,

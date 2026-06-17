@@ -8,19 +8,18 @@ export type AdjustmentMutationScope =
 /**
  * Single create flow. All adjustments are created through the inventory route
  * (`/api/inventory/[id]/adjustments`); the form knows the chosen inventory once
- * an inventory is picked. An adjustment may OPTIONALLY carry a WO link (both
- * `workOrderId` + `workOrderItemId` set, or both absent — an INCREASE may link
- * a work order). `warehouseId` (optional) is the warehouse selected in the form
- * as an inventory filter; when present it is asserted to equal the chosen
- * inventory's warehouse (the persisted warehouse is always the inventory's).
- * `isWaste` is a reporting flag allowed on either direction.
+ * an inventory is picked. An adjustment may OPTIONALLY carry a `workOrderId`
+ * link — any product, any direction; it never links to a material item.
+ * `warehouseId` (optional) is the warehouse selected in the form as an inventory
+ * filter; when present it is asserted to equal the chosen inventory's warehouse
+ * (the persisted warehouse is always the inventory's). `isWaste` is a reporting
+ * flag allowed on either direction.
  */
 export type CreatePendingAdjustmentInput = {
   adjustmentType: FlooringInventoryAdjustmentType
   inventoryId: string
   warehouseId?: string | null
   workOrderId?: string | null
-  workOrderItemId?: string | null
   quantity: string
   isWaste: boolean
   notes: string
@@ -49,8 +48,8 @@ export type UpdatePendingAdjustmentPatch = {
   isWaste?: boolean
   notes?: string
   location?: string | null
-  /** WO link, editable on either direction (both ids set, or both null). */
-  link?: { workOrderId: string | null; workOrderItemId: string | null }
+  /** WO link, editable on either direction (any product). `null` unlinks. */
+  link?: { workOrderId: string | null }
 }
 
 export type UpdatePendingAdjustmentInput = {

@@ -23,22 +23,21 @@ export function WorkOrderRecordPanel({
   page,
   entry,
   initialMaterialItems,
-  initialAdjustmentsByWorkOrderItemId,
+  initialAdjustmentsForWorkOrder,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WorkOrderDetail
   initialMaterialItems: WorkOrderMaterialItemRow[]
-  initialAdjustmentsByWorkOrderItemId: Record<string, EnrichedInventoryAdjustmentRow[]>
+  initialAdjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
 }) {
   const controller = useWorkOrderPrimarySection({ page, entry })
   const [materialItems, setMaterialItems] = useState(initialMaterialItems)
-  // Read-only per-WOMI display snapshot, read straight from server props (NOT
-  // frozen in state). Adjustments are created in-place via the material-items
-  // modal, then `router.refresh()` re-runs the loader — so the fresh enriched set
-  // flows back in through this prop and the section re-derives (Assignments total
-  // + product-lock). Editing an existing adjustment still happens on the inventory
-  // record view; returning here reloads fresh the same way.
-  const adjustmentsByWorkOrderItemId = initialAdjustmentsByWorkOrderItemId
+  // Read-only adjustments display snapshot, read straight from server props (NOT
+  // frozen in state). Adjustments are created in-place via the modal, then
+  // `router.refresh()` re-runs the loader — so the fresh enriched set flows back
+  // in through this prop and the Adjustments grid re-groups. Editing an existing
+  // adjustment happens on the inventory record view; returning here reloads fresh.
+  const adjustmentsForWorkOrder = initialAdjustmentsForWorkOrder
 
   // Lifted to the panel so its dirty state registers with the multi-section
   // close-guard (matches the primary slot + the templates material-items precedent).
@@ -161,7 +160,7 @@ export function WorkOrderRecordPanel({
             render: () => (
               <WorkOrderMaterialItemsSection
                 workOrder={controller.record}
-                adjustmentsByWorkOrderItemId={adjustmentsByWorkOrderItemId}
+                adjustmentsForWorkOrder={adjustmentsForWorkOrder}
                 section={materialItemsSection}
               />
             ),

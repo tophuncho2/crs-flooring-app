@@ -54,7 +54,6 @@ export type ValidatedCreateManualAdjustmentInput = {
   notes: string
   location: string | null
   workOrderId: string | null
-  workOrderItemId: string | null
   warehouseId: string | null
 }
 
@@ -62,10 +61,10 @@ export type ValidatedCreateManualAdjustmentInput = {
  * Manual adjustment create from the inventory hub. Used by
  * `POST /api/inventory/[id]/adjustments`. The parent inventory id rides on the
  * route path. The body carries direction + amount + waste + notes, and MAY
- * carry an optional WO link (`workOrderId` + `workOrderItemId`, both-or-neither)
- * — an INCREASE may now link a work order. `warehouseId` is the form's selected
- * warehouse filter; the use case asserts it matches the inventory's warehouse.
- * `isWaste` is a reporting flag allowed on either direction.
+ * carry an optional `workOrderId` link (any product, any direction — adjustments
+ * never link to a material item). `warehouseId` is the form's selected warehouse
+ * filter; the use case asserts it matches the inventory's warehouse. `isWaste`
+ * is a reporting flag allowed on either direction.
  */
 export function validateCreateManualAdjustmentInput(
   body: Record<string, unknown>,
@@ -74,7 +73,7 @@ export function validateCreateManualAdjustmentInput(
   if (rawType !== "INCREASE" && rawType !== "DEDUCTION") {
     failAdjustment("adjustmentType must be INCREASE or DEDUCTION", "adjustmentType")
   }
-  const link = parseOptionalAdjustmentLink(body.workOrderId, body.workOrderItemId)
+  const workOrderId = parseOptionalWorkOrderId(body.workOrderId)
   const warehouseId =
     body.warehouseId === undefined || body.warehouseId === null
       ? null
@@ -87,38 +86,21 @@ export function validateCreateManualAdjustmentInput(
     isWaste,
     notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
     location: location && location.trim() !== "" ? location : null,
-    workOrderId: link.workOrderId,
-    workOrderItemId: link.workOrderItemId,
+    workOrderId,
     warehouseId,
   }
 }
 
 /**
- * Shared parser for an optional WO link: both ids set, or both absent/null.
- * An asymmetric pair is a 400. Returns `{ null, null }` when the link is omitted.
+ * Shared parser for an optional `workOrderId` link. Returns `null` when omitted.
  */
-function parseOptionalAdjustmentLink(
-  rawWorkOrderId: unknown,
-  rawWorkOrderItemId: unknown,
-): { workOrderId: string | null; workOrderItemId: string | null } {
-  const hasWO = rawWorkOrderId !== undefined && rawWorkOrderId !== null
-  const hasWOMI = rawWorkOrderItemId !== undefined && rawWorkOrderItemId !== null
-  if (!hasWO && !hasWOMI) return { workOrderId: null, workOrderItemId: null }
-  if (hasWO !== hasWOMI) {
-    failAdjustment(
-      "workOrderId and workOrderItemId must both be set or both omitted",
-      "workOrderId",
-    )
-  }
-  return {
-    workOrderId: requireAdjustmentString(rawWorkOrderId, "workOrderId"),
-    workOrderItemId: requireAdjustmentString(rawWorkOrderItemId, "workOrderItemId"),
-  }
+function parseOptionalWorkOrderId(rawWorkOrderId: unknown): string | null {
+  if (rawWorkOrderId === undefined || rawWorkOrderId === null) return null
+  return requireAdjustmentString(rawWorkOrderId, "workOrderId")
 }
 
 export type ValidatedUpdatePendingAdjustmentLink = {
   workOrderId: string | null
-  workOrderItemId: string | null
 }
 
 export type ValidatedUpdatePendingAdjustmentPatch = {
@@ -137,33 +119,15 @@ export type ValidatedUpdatePendingAdjustmentInput = {
 function validateUpdatePendingAdjustmentLink(value: unknown): ValidatedUpdatePendingAdjustmentLink {
   const obj = requireAdjustmentObject(value, "patch.link")
   const rawWO = obj.workOrderId
-  const rawWOMI = obj.workOrderItemId
   if (rawWO !== null && typeof rawWO !== "string") {
     failAdjustment("patch.link.workOrderId must be a string or null", "patch.link.workOrderId")
-  }
-  if (rawWOMI !== null && typeof rawWOMI !== "string") {
-    failAdjustment("patch.link.workOrderItemId must be a string or null", "patch.link.workOrderItemId")
   }
   const workOrderId =
     rawWO === null
       ? null
       : (rawWO as string).trim() ||
         (failAdjustment("patch.link.workOrderId is required when present", "patch.link.workOrderId") as never)
-  const workOrderItemId =
-    rawWOMI === null
-      ? null
-      : (rawWOMI as string).trim() ||
-        (failAdjustment(
-          "patch.link.workOrderItemId is required when present",
-          "patch.link.workOrderItemId",
-        ) as never)
-  if ((workOrderId === null) !== (workOrderItemId === null)) {
-    failAdjustment(
-      "patch.link must set both workOrderId and workOrderItemId or both to null",
-      "patch.link",
-    )
-  }
-  return { workOrderId, workOrderItemId }
+  return { workOrderId }
 }
 
 export function validateUpdatePendingAdjustmentInput(

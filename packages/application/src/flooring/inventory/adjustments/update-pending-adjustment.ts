@@ -1,6 +1,5 @@
 import {
   Prisma,
-  db,
   getAdjustmentById,
   getPendingAdjustmentWithInventoryForMutation,
   lockInventoryForAdjustment,
@@ -11,8 +10,6 @@ import {
 } from "@builders/db"
 import {
   assertAdjustmentExpectedUpdatedAtMatches,
-  assertAdjustmentLinkageRules,
-  assertAdjustmentLinkProductMatchesInventory,
   assertNetDeductedWithinStartingStock,
   describeAdjustmentPendingFormIssues,
   InventoryAdjustmentDomainError,
@@ -29,50 +26,6 @@ export async function updatePendingAdjustmentUseCase(
   input: UpdatePendingAdjustmentInput,
   client?: Prisma.TransactionClient,
 ): Promise<AdjustmentMutationResult> {
-  let resolvedWomiTarget: {
-    workOrderId: string
-    workOrderItemId: string
-    productId: string
-  } | null = null
-  if (input.patch.link !== undefined && input.patch.link.workOrderId !== null) {
-    const womi = await db.flooringWorkOrderItem.findUnique({
-      where: { id: input.patch.link.workOrderItemId! },
-      select: {
-        id: true,
-        workOrderId: true,
-        productId: true,
-      },
-    })
-    if (!womi) {
-      throw new InventoryAdjustmentExecutionError({
-        code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
-        message: "Re-link target work-order material item not found",
-        status: 404,
-        payload: { workOrderItemId: input.patch.link.workOrderItemId },
-      })
-    }
-    if (womi.workOrderId !== input.patch.link.workOrderId) {
-      throw new InventoryAdjustmentExecutionError({
-        code: "INVENTORY_ADJUSTMENT_SCOPE_MISMATCH",
-        message:
-          "Re-link target material item does not belong to the provided work order",
-        status: 400,
-        payload: {
-          providedWorkOrderId: input.patch.link.workOrderId,
-          actualWorkOrderId: womi.workOrderId,
-        },
-      })
-    }
-    // The target work order's warehouse is intentionally NOT checked: an
-    // adjustment's warehouse follows its inventory, not the linked WO, so a
-    // WO with no warehouse (or a different one) is a valid relink target.
-    resolvedWomiTarget = {
-      workOrderId: womi.workOrderId,
-      workOrderItemId: womi.id,
-      productId: womi.productId,
-    }
-  }
-
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -91,28 +44,14 @@ export async function updatePendingAdjustmentUseCase(
       inventoryId: existing.inventoryId,
     })
 
-    // Every field — quantity, the metadata trio, and the WO link — is now
-    // freely editable for the whole lifecycle of the row; there is no
-    // finalize/freeze and `QUEUED` never occurs. Only the structural linkage
-    // symmetry (both ids set, or both null) is still enforced on a link patch.
+    // Every field — quantity, the metadata trio, and the WO link — is freely
+    // editable for the whole lifecycle of the row; there is no finalize/freeze
+    // and `QUEUED` never occurs. The WO link is a plain `workOrderId` (any
+    // product, any direction), so no linkage/product invariant applies.
     const mergedAdjustmentType =
       input.patch.adjustmentType !== undefined
         ? input.patch.adjustmentType
         : existing.adjustmentType
-    if (input.patch.link !== undefined || input.patch.adjustmentType !== undefined) {
-      assertAdjustmentLinkageRules({
-        adjustmentType: mergedAdjustmentType,
-        workOrderId:
-          input.patch.link !== undefined
-            ? input.patch.link.workOrderId
-            : existing.workOrderId,
-        workOrderItemId:
-          input.patch.link !== undefined
-            ? input.patch.link.workOrderItemId
-            : existing.workOrderItemId,
-        isWaste: input.patch.isWaste ?? existing.isWaste,
-      })
-    }
 
     try {
       assertAdjustmentExpectedUpdatedAtMatches({
@@ -134,34 +73,6 @@ export async function updatePendingAdjustmentUseCase(
         })
       }
       throw error
-    }
-
-    if (resolvedWomiTarget !== null) {
-      // Warehouse is intentionally NOT compared here — see the relink-target
-      // resolution above. Only the product must still match: an adjustment
-      // references inventory of a fixed product, so its WO link must point at
-      // a material item for that same product. Shares one domain rule with the
-      // create use case's authoritative guard.
-      try {
-        assertAdjustmentLinkProductMatchesInventory({
-          adjustmentProductId: existing.productId,
-          materialItemProductId: resolvedWomiTarget.productId,
-        })
-      } catch (error) {
-        if (
-          error instanceof InventoryAdjustmentDomainError &&
-          error.code === "INVENTORY_ADJUSTMENT_LINK_PRODUCT_MISMATCH"
-        ) {
-          throw new InventoryAdjustmentExecutionError({
-            code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH",
-            message:
-              "Re-link target material item is for a different product than the adjustment",
-            status: 400,
-            payload: error.detail,
-          })
-        }
-        throw error
-      }
     }
 
     const mergedQuantity =
@@ -201,7 +112,6 @@ export async function updatePendingAdjustmentUseCase(
     if (input.patch.location !== undefined) patch.location = input.patch.location
     if (input.patch.link !== undefined) {
       patch.workOrderId = input.patch.link.workOrderId
-      patch.workOrderItemId = input.patch.link.workOrderItemId
     }
 
     const written = await updatePendingAdjustmentRow(c, { id: existing.id, patch })

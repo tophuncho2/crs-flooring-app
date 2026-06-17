@@ -4,7 +4,7 @@ import { sumAssignmentQuantities } from "../material-items/assignments.js"
 import type {
   WorkOrderFileAdjustmentProjection,
   WorkOrderFileGenerationInput,
-  WorkOrderFileMaterialItemProjection,
+  WorkOrderFileProductAdjustmentGroup,
 } from "./types.js"
 
 /**
@@ -225,7 +225,7 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
 }
 
 export function renderWorkOrderAdjustments(
-  items: WorkOrderFileMaterialItemProjection[],
+  groups: WorkOrderFileProductAdjustmentGroup[],
   options: { includeInventoryDetail?: boolean } = {},
 ): string {
   // includeInventoryDetail (default true → Picking Ticket): the warehouse view
@@ -235,19 +235,19 @@ export function renderWorkOrderAdjustments(
   // product, each group closed by a summed subtotal row. The only difference is
   // which columns show.
   const includeInventoryDetail = options.includeInventoryDetail ?? true
-  const itemsWithAdjustments = items.filter((item) => item.inventoryAdjustments.length > 0)
-  if (itemsWithAdjustments.length === 0) {
+  const groupsWithAdjustments = groups.filter((group) => group.adjustments.length > 0)
+  if (groupsWithAdjustments.length === 0) {
     return ""
   }
   // One product group at a time: its adjustment rows, then a summed subtotal
   // row (Quantity) under a rule. Every group gets a subtotal for visual
   // consistency, even single-adjustment groups. Never a grand total.
-  const renderedRows = itemsWithAdjustments
-    .map((item) => {
-      const adjustmentRows = item.inventoryAdjustments
-        .map((adj) => renderAdjustmentRow({ adj, productName: item.productName }, includeInventoryDetail))
+  const renderedRows = groupsWithAdjustments
+    .map((group) => {
+      const adjustmentRows = group.adjustments
+        .map((adj) => renderAdjustmentRow({ adj, productName: group.productName }, includeInventoryDetail))
         .join("\n")
-      return `${adjustmentRows}\n${renderSubtotalRow(item, includeInventoryDetail)}`
+      return `${adjustmentRows}\n${renderSubtotalRow(group, includeInventoryDetail)}`
     })
     .join("\n")
   const headCells = includeInventoryDetail
@@ -323,10 +323,10 @@ function renderAdjustmentRow(
  * (`.flat-rows th`) supplies the top divider of the first group.
  */
 function renderSubtotalRow(
-  item: WorkOrderFileMaterialItemProjection,
+  group: WorkOrderFileProductAdjustmentGroup,
   includeInventoryDetail: boolean,
 ): string {
-  const { quantity, stockUnitAbbrev } = sumAssignmentQuantities(item.inventoryAdjustments)
+  const { quantity, stockUnitAbbrev } = sumAssignmentQuantities(group.adjustments)
   const leadDetailCells = includeInventoryDetail ? "\n  <td></td>\n  <td></td>" : ""
   const trailDetailCells = includeInventoryDetail ? "\n  <td></td>\n  <td></td>" : ""
   return `

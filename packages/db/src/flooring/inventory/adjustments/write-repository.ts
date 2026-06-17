@@ -38,16 +38,13 @@ export type PendingAdjustmentUnitSnapshot = {
 }
 
 export type InsertPendingAdjustmentRowInput = {
-  /** Direction of the adjustment. INCREASE may never carry a WO link. */
+  /** Direction of the adjustment. */
   adjustmentType: FlooringInventoryAdjustmentType
   /** Always positive in storage; direction lives in `adjustmentType`. */
   quantity: string
-  /** Required null on INCREASE rows. */
+  /** Optional work-order link (any product, any direction); `null` = unlinked. */
   workOrderId: string | null
-  /** Required null on INCREASE rows. */
-  workOrderItemId: string | null
   inventoryId: string
-  /** Required false on INCREASE rows. */
   isWaste: boolean
   /** Empty string accepted; persisted as null when blank. */
   notes: string
@@ -92,7 +89,6 @@ export async function insertPendingAdjustmentRow(
     data: {
       inventoryId: input.inventoryId,
       workOrderId: input.workOrderId,
-      workOrderItemId: input.workOrderItemId,
       adjustmentType: input.adjustmentType,
       quantity: input.quantity,
       isWaste: input.isWaste,
@@ -133,13 +129,11 @@ export type UpdatePendingAdjustmentRowPatch = {
    */
   location?: string | null
   /**
-   * WO/WOMI link edits. Both move together per `assertAdjustmentLinkageRules`
-   * (enforced by the use case before calling here). `null` disconnects the
-   * relation; a string id connects. Absent fields leave the relation
-   * untouched. Forbidden entirely on INCREASE rows.
+   * Work-order link edit. `null` disconnects the relation; a string id
+   * connects. Absent leaves the relation untouched. Any product / any
+   * direction may link a work order.
    */
   workOrderId?: string | null
-  workOrderItemId?: string | null
 }
 
 export type UpdatePendingAdjustmentRowInput = {
@@ -155,8 +149,7 @@ export type UpdatePendingAdjustmentRowInput = {
  * Writable in this primitive:
  *   - user-editable form fields: `quantity`, `adjustmentType`, `isWaste`,
  *     `notes`, `location`
- *   - link relations `workOrderId` / `workOrderItemId` (both-or-neither,
- *     allowed on either direction — enforced upstream)
+ *   - the `workOrderId` link relation (any product, any direction)
  *
  * Never written here: `inventoryId`, `status`, `isFinal`,
  * `before`, `after`, `finalSequence`, `adjustmentNumber`, `createdAt`,
@@ -182,12 +175,6 @@ export async function updatePendingAdjustmentRow(
       input.patch.workOrderId === null
         ? { disconnect: true }
         : { connect: { id: input.patch.workOrderId } }
-  }
-  if (input.patch.workOrderItemId !== undefined) {
-    data.workOrderItem =
-      input.patch.workOrderItemId === null
-        ? { disconnect: true }
-        : { connect: { id: input.patch.workOrderItemId } }
   }
   const updated =
     Object.keys(data).length > 0

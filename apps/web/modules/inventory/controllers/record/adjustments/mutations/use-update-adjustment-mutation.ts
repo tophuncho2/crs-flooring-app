@@ -30,11 +30,9 @@ type Deps = {
 /**
  * Update-pending mutation. Stays open on success and refreshes the form +
  * baseline to the server-fresh row. Mutation responses come back as plain
- * `InventoryAdjustmentRow` — the WO/WOMI labels (`workOrderNumber`,
- * `workOrderItemProductLabel`) and the warehouse label (`warehouseName`)
- * are carried forward from the prior snapshot so the panel's read-only
- * cells stay populated. A pending-edit can't change the WO link or the
- * warehouse snapshot, so those labels remain accurate.
+ * `InventoryAdjustmentRow` — the `workOrderNumber` + `warehouseName` labels are
+ * carried forward from the prior snapshot so the panel's read-only cells stay
+ * populated.
  */
 export function useUpdateAdjustmentMutation({
   scope,
@@ -46,7 +44,6 @@ export function useUpdateAdjustmentMutation({
 }: Deps) {
   return useMutation({
     mutationFn: (input: {
-      workOrderItemId: string | null
       adjustment: InventoryAdjustmentRow
       form: AdjustmentEditForm
     }) => {
@@ -54,9 +51,7 @@ export function useUpdateAdjustmentMutation({
       // metadata trio on every save; the link is sent only when it actually
       // changed. The server re-flows netDeducted + before/after for the whole
       // chain on the write.
-      const linkChanged =
-        input.form.workOrderId !== input.adjustment.workOrderId ||
-        input.form.workOrderItemId !== input.adjustment.workOrderItemId
+      const linkChanged = input.form.workOrderId !== input.adjustment.workOrderId
       return updatePendingAdjustmentRequest({
         scope,
         adjustmentId: input.adjustment.id,
@@ -67,36 +62,13 @@ export function useUpdateAdjustmentMutation({
           isWaste: input.form.isWaste,
           notes: input.form.notes,
           location: input.form.location,
-          ...(linkChanged
-            ? {
-                link: {
-                  workOrderId: input.form.workOrderId,
-                  workOrderItemId: input.form.workOrderItemId,
-                },
-              }
-            : {}),
+          ...(linkChanged ? { link: { workOrderId: input.form.workOrderId } } : {}),
         },
       })
     },
-    onSuccess: (response, variables) => {
-      // Bucket move: on the WO side, adjustments are grouped by WOMI id. A
-      // relink (`workOrderItemId` changed) needs to remove the row from
-      // the old bucket and add it to the new one. The inv-side publish is
-      // a cache-invalidation shim that ignores `workOrderItemId`, so the
-      // extra delete is a harmless no-op there.
-      const oldWomiId = variables.workOrderItemId
-      const newWomiId = response.adjustment.workOrderItemId
-      if (oldWomiId !== newWomiId) {
-        publish({
-          kind: "delete",
-          reason: "relink-move",
-          workOrderItemId: oldWomiId,
-          adjustmentId: response.adjustment.id,
-        })
-      }
+    onSuccess: (response) => {
       publish({
         kind: "upsert",
-        workOrderItemId: newWomiId,
         adjustment: response.adjustment,
       })
       const next = buildEditForm(response.adjustment)
@@ -105,15 +77,10 @@ export function useUpdateAdjustmentMutation({
       setOpen((prev) => ({
         mode: "edit",
         pickerConfig: prev?.pickerConfig ?? EDIT_PICKER_CONFIG,
-        workOrderItemId: newWomiId,
         adjustment: {
           ...response.adjustment,
           workOrderNumber:
             prev?.mode === "edit" ? (prev.adjustment.workOrderNumber ?? null) : null,
-          workOrderItemProductLabel:
-            prev?.mode === "edit"
-              ? (prev.adjustment.workOrderItemProductLabel ?? null)
-              : null,
           warehouseName:
             prev?.mode === "edit" ? (prev.adjustment.warehouseName ?? null) : null,
         },

@@ -8,8 +8,6 @@ import {
   withDatabaseTransaction,
 } from "@builders/db"
 import {
-  assertAdjustmentLinkageRules,
-  assertAdjustmentLinkProductMatchesInventory,
   assertAdjustmentWarehouseMatchesInventory,
   assertNetDeductedWithinStartingStock,
   buildPendingAdjustmentInventorySnapshot,
@@ -26,10 +24,9 @@ import type {
 
 /**
  * Create a pending inventory adjustment. INCREASE or DEDUCTION; may optionally
- * carry a WO link (both link columns set or both null — an INCREASE may link a
- * work order). When a link is present the WOMI is validated against the work
- * order. Locks the parent inventory row, recomputes `netDeducted`, and asserts
- * the ceiling invariant after the insert.
+ * carry a `workOrderId` link (any product, any direction — adjustments never
+ * link to a material item). Locks the parent inventory row, recomputes
+ * `netDeducted`, and asserts the ceiling invariant after the insert.
  */
 export async function createPendingAdjustmentUseCase(
   input: CreatePendingAdjustmentInput,
@@ -41,10 +38,10 @@ export async function createPendingAdjustmentUseCase(
     const quantity = input.quantity
     const notes = input.notes
     const adjustmentType: FlooringInventoryAdjustmentType = input.adjustmentType
-    // A WO link is optional and both-or-neither (the linkage symmetry rule
-    // below enforces it). An INCREASE may link a work order.
+    // An optional work-order link (any product, any direction). The work order
+    // is not validated against the inventory's product — adjustments fulfil a
+    // work order regardless of which products it requested.
     const workOrderId = input.workOrderId ?? null
-    const workOrderItemId = input.workOrderItemId ?? null
     const isWaste = input.isWaste
 
     const formIssues = validateAdjustmentPendingForm({
@@ -62,44 +59,6 @@ export async function createPendingAdjustmentUseCase(
       })
     }
 
-    // Validate the WOMI scope whenever a link is present (always for `cut`,
-    // optionally for a WO-linked `manual` create). The product-match invariant
-    // is asserted further down, once the parent inventory's product is loaded.
-    let linkedWomiProductId: string | null = null
-    if (workOrderItemId !== null && workOrderId !== null) {
-      const womi = await c.flooringWorkOrderItem.findUnique({
-        where: { id: workOrderItemId },
-        select: { id: true, workOrderId: true, productId: true },
-      })
-      if (!womi) {
-        throw new InventoryAdjustmentExecutionError({
-          code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
-          message: "Work order material item not found",
-          status: 404,
-        })
-      }
-      if (womi.workOrderId !== workOrderId) {
-        throw new InventoryAdjustmentExecutionError({
-          code: "INVENTORY_ADJUSTMENT_SCOPE_MISMATCH",
-          message: "Material item does not belong to this work order",
-          status: 400,
-          payload: {
-            providedWorkOrderId: workOrderId,
-            actualWorkOrderId: womi.workOrderId,
-          },
-        })
-      }
-      linkedWomiProductId = womi.productId
-    }
-
-    // Linkage symmetry: both link columns set or both null (either direction).
-    assertAdjustmentLinkageRules({
-      adjustmentType,
-      workOrderId,
-      workOrderItemId,
-      isWaste,
-    })
-
     await lockInventoryForAdjustment(c, input.inventoryId)
 
     const inventory = await getInventoryParentContextForAdjustments(c, input.inventoryId)
@@ -110,33 +69,6 @@ export async function createPendingAdjustmentUseCase(
         status: 404,
         payload: { inventoryId: input.inventoryId },
       })
-    }
-
-    // Invariant: an adjustment's product is its parent inventory's product, so a
-    // WO link must point at a material item for that same product. Asserted here
-    // (not in the WOMI block above) because it needs the inventory's product.
-    // The client picker scopes by product, but that is advisory only — this is
-    // the authoritative guard (mirrors the relink guard in the update use case).
-    if (linkedWomiProductId !== null) {
-      try {
-        assertAdjustmentLinkProductMatchesInventory({
-          adjustmentProductId: inventory.productId,
-          materialItemProductId: linkedWomiProductId,
-        })
-      } catch (error) {
-        if (
-          error instanceof InventoryAdjustmentDomainError &&
-          error.code === "INVENTORY_ADJUSTMENT_LINK_PRODUCT_MISMATCH"
-        ) {
-          throw new InventoryAdjustmentExecutionError({
-            code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH",
-            message: "Material item is for a different product than the chosen inventory",
-            status: 400,
-            payload: error.detail,
-          })
-        }
-        throw error
-      }
     }
 
     // Invariant: the persisted warehouse is always the inventory's. When the
@@ -167,7 +99,6 @@ export async function createPendingAdjustmentUseCase(
     const inserted = await insertPendingAdjustmentRow(c, {
       adjustmentType,
       workOrderId,
-      workOrderItemId,
       inventoryId: input.inventoryId,
       quantity,
       isWaste,

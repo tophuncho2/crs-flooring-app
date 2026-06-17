@@ -30,7 +30,7 @@ export function buildWorkOrderSlipHtml(
 ): string {
   const body = [
     renderWorkOrderInfo(input),
-    renderWorkOrderAdjustments(input.materialItems, { includeInventoryDetail: false }),
+    renderWorkOrderAdjustments(input.adjustmentGroups, { includeInventoryDetail: false }),
   ]
     .filter(Boolean)
     .join("\n")

@@ -20,7 +20,6 @@ export type InventoryAdjustmentRow = {
   productName: string
   warehouseId: string
   workOrderId: string | null
-  workOrderItemId: string | null
   before: string | null
   quantity: string
   after: string | null
@@ -43,13 +42,10 @@ export type InventoryAdjustmentPendingForm = {
 
 export type InventoryAdjustmentLinkUpdate = {
   workOrderId: string | null
-  workOrderItemId: string | null
 }
 
 export type EnrichedInventoryAdjustmentRow = InventoryAdjustmentRow & {
   workOrderNumber: string | null
-  workOrderItemProductLabel: string | null
-  workOrderItemNotes: string | null
   warehouseName: string
 }
 
