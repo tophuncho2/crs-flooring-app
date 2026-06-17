@@ -3,7 +3,6 @@ import { requireSessionUser } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
 import { getInventoryDetailPageData } from "@/modules/inventory/data/queries"
 import { InventoryDetailClient } from "@/modules/inventory/components/record/inventory-detail-client"
-import type { InventoryRecordWoSeed } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 
 function readParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -16,9 +15,8 @@ function readParam(
 /**
  * The inventory record view. The selected item rides in the query string
  * (`?inventoryId=…`), chosen by the Warehouse → Inventory pickers in the header.
- * Opened from the inventory list/ledger (with the item pre-selected) or from a
- * work-order material item (with the WO's warehouse pre-seeded + the WO link
- * carried in the `workOrder*` params, so the operator picks the item here).
+ * Opened from the inventory list/ledger with the item pre-selected, or empty
+ * with the operator picking warehouse → inventory in the header.
  */
 export default async function InventoryRecordPage({
   searchParams,
@@ -37,20 +35,10 @@ export default async function InventoryRecordPage({
     if (result.ok) initialInventory = result.data.inventory
   }
 
-  const workOrderId = readParam(resolved, "workOrderId")
-  const woSeed: InventoryRecordWoSeed | null = workOrderId
-    ? {
-        workOrderId,
-        workOrderLabel: readParam(resolved, "workOrderLabel") ?? null,
-        productId: readParam(resolved, "productId") ?? null,
-      }
-    : null
-
   return (
     <InventoryDetailClient
       backHref={resolveReturnTo(resolved?.returnTo, "/dashboard/inventory")}
       initialInventory={initialInventory}
-      woSeed={woSeed}
     />
   )
 }

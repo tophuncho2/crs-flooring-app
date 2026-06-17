@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback } from "react"
 import { parseAsString, useQueryStates } from "nuqs"
 import { useQuery } from "@tanstack/react-query"
 import type {
@@ -27,9 +27,9 @@ export const NEW_ADJUSTMENT_ID = "new"
 
 /**
  * On a header swap (warehouse / product / inventory) keep the create intent
- * ("new") alive so a WO hand-off — or an in-record "Add adjustment" — flows
- * straight into the form for the newly selected item with no second click; drop
- * a concrete edit drilldown id, which is meaningless on a different record.
+ * ("new") alive so an "+ Adjustment" entry (`?adjustment=new`) flows straight
+ * into the form for the newly selected item with no second click; drop a
+ * concrete edit drilldown id, which is meaningless on a different record.
  */
 function preserveCreateIntent(current: string | null): string | null {
   return current === NEW_ADJUSTMENT_ID ? NEW_ADJUSTMENT_ID : null
@@ -56,19 +56,6 @@ export function toInventoryOption(row: InventoryRow): InventoryOption {
 }
 
 /**
- * Work-order context carried when the record view is opened from a work order.
- * `productId` product-filters the inventory picker (a starting search aid the
- * operator can change); `workOrderId`/`workOrderLabel` pre-link the adjustment
- * create form to the WO (still editable, any product). Null when opened from
- * the inventory list/ledger.
- */
-export type InventoryRecordWoSeed = {
-  workOrderId: string
-  workOrderLabel: string | null
-  productId: string | null
-}
-
-/**
  * A point-in-time copy of the header's URL selection. Captured when the operator
  * begins re-picking an already-selected item so the reference header's "Discard"
  * action can atomically restore it (warehouse + product + inventory + the
@@ -91,9 +78,9 @@ export type InventoryRecordSelectionController = {
   inventoryLabel: string | null
   /**
    * The header product picker's selection — the master filter that narrows the
-   * inventory picker grid (and, downstream, the adjustment form's WO picker). On
-   * a WO hand-off the URL seeds it from the material item's product; otherwise
-   * the operator picks it to narrow their search.
+   * inventory picker grid (and, downstream, the adjustment form's WO picker).
+   * Seeded from the `?productId` URL param when present; otherwise the operator
+   * picks it to narrow their search.
    */
   productId: string | null
   productLabel: string | null
@@ -120,13 +107,12 @@ export type InventoryRecordSelectionController = {
   inventory: InventoryDetail | null
   isInventoryLoading: boolean
   inventoryError: string | null
-  woSeed: InventoryRecordWoSeed | null
   /**
    * The adjustment drilldown face of the record view lives in the URL alongside
    * the selection so switching inventory atomically discards a stale
    * `?adjustment` from the previous record (cleared inside the select* / clear
-   * actions, never on mount, so a WO hand-off's entry `?adjustment=new` survives
-   * until the operator manually re-picks).
+   * actions, never on mount, so an `?adjustment=new` entry survives until the
+   * operator manually re-picks).
    */
   adjustment: string | null
   setAdjustment: (adjustmentId: string | null) => void
@@ -145,7 +131,7 @@ const SELECTION_PARSERS = {
 /**
  * Owns the inventory record view's Warehouse → Inventory header selection. The
  * selection lives in the URL query string (so refresh / share / back stay
- * coherent and the WO hand-off seeds the pickers); changing the warehouse
+ * coherent and the header pickers seed from it); changing the warehouse
  * cascade-clears the inventory. Loads the full editable record client-side when
  * an inventory item is selected (mirrors the templates record view's
  * `useQuery(TEMPLATE_DETAIL_QUERY_KEY)` load), seeding from the SSR-prefetched
@@ -153,10 +139,8 @@ const SELECTION_PARSERS = {
  */
 export function useInventoryRecordSelection({
   initialInventory,
-  woSeed,
 }: {
   initialInventory?: InventoryDetail | null
-  woSeed?: InventoryRecordWoSeed | null
 }): InventoryRecordSelectionController {
   const [selection, setSelection] = useQueryStates(SELECTION_PARSERS, { history: "replace" })
 
@@ -210,7 +194,7 @@ export function useInventoryRecordSelection({
         inventoryId: option?.id ?? null,
         inventoryLabel: option?.inventoryItem ?? null,
         // Swapping the record discards a concrete drilldown but preserves the
-        // create intent, so a WO hand-off lands straight in the form.
+        // create intent, so an "+ Adjustment" entry lands straight in the form.
         adjustment: preserveCreateIntent(adjustment),
       })
     },
@@ -290,10 +274,6 @@ export function useInventoryRecordSelection({
         : "Failed to load inventory."
       : null
 
-  // The WO seed is fixed for the session (the WO context doesn't change as the
-  // operator browses inventory); keep its identity stable.
-  const resolvedWoSeed = useMemo(() => woSeed ?? null, [woSeed])
-
   return {
     warehouseId,
     // Fall back to the loaded record's labels so the picker triggers render the
@@ -314,7 +294,6 @@ export function useInventoryRecordSelection({
     inventory,
     isInventoryLoading,
     inventoryError,
-    woSeed: resolvedWoSeed,
     adjustment,
     setAdjustment,
   }

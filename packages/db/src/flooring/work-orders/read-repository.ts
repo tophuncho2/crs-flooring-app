@@ -2,6 +2,7 @@ import { db } from "../../client.js"
 import type { FlooringVacancyStatus, Prisma } from "../../generated/prisma/client.js"
 import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 import {
+  buildFlooringProductDisplayName,
   normalizeWorkOrder,
   normalizeWorkOrderListRow,
   normalizeWorkOrderOption,
@@ -455,12 +456,13 @@ export async function getWorkOrderForFileGeneration(
   // Adjustments link to the work order (any product), not to a material item,
   // so the print groups the WO's DEDUCTION adjustments by their own product
   // snapshot. INCREASE rows never surface (explicit filter, belt-and-braces).
-  // Order by product name so the groups below form contiguous runs; within a
-  // product, quantity-ascending with id as a deterministic tiebreak.
+  // Order by `productId` first so same-product rows are strictly contiguous —
+  // two distinct products that share a bare name can no longer interleave and
+  // split a block. Within a product, quantity-ascending with id as a tiebreak.
   const adjustments = await client.flooringInventoryAdjustment.findMany({
     where: { workOrderId, adjustmentType: "DEDUCTION" as const },
     orderBy: [
-      { product: { name: "asc" as const } },
+      { productId: "asc" as const },
       { quantity: "asc" as const },
       { id: "asc" as const },
     ],
@@ -477,13 +479,14 @@ export async function getWorkOrderForFileGeneration(
       location: true,
       stockUnitAbbrev: true,
       productId: true,
-      product: { select: { name: true } },
+      product: { select: { name: true, style: true, color: true } },
     },
   })
 
-  // Group the ordered rows into product blocks. The ORDER BY keeps same-product
-  // rows contiguous, so a single pass that opens a new group whenever productId
-  // changes preserves the product-name ordering across groups.
+  // Group the productId-ordered rows into product blocks (single pass; the order
+  // guarantees contiguity). Label each group with the COMPOSED display name
+  // (name + style + color) so the printed product header matches the WO record
+  // grid, then sort the groups by that label — mirroring the grid's groupByProduct.
   const adjustmentGroups: WorkOrderFileProductAdjustmentGroup[] = []
   let currentProductId: string | null = null
   for (const adj of adjustments) {
@@ -502,11 +505,17 @@ export async function getWorkOrderForFileGeneration(
     }
     if (adj.productId !== currentProductId) {
       currentProductId = adj.productId
-      adjustmentGroups.push({ productName: adj.product.name, adjustments: [projection] })
+      const productName = buildFlooringProductDisplayName({
+        name: adj.product.name,
+        style: adj.product.style,
+        color: adj.product.color,
+      })
+      adjustmentGroups.push({ productName, adjustments: [projection] })
     } else {
       adjustmentGroups[adjustmentGroups.length - 1]!.adjustments.push(projection)
     }
   }
+  adjustmentGroups.sort((a, b) => a.productName.localeCompare(b.productName))
 
   return {
     workOrderNumber: workOrder.workOrderNumber,

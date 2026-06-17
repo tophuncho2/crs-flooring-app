@@ -158,7 +158,11 @@ export function WorkOrderRecordPanel({
             dirtyLabel: "material items",
             controller: materialItemsSection,
             render: () => (
+              // key on the WO id so stepping ◀/▶ to a neighbor remounts the
+              // section — resetting its local Adjustments/Requested mode toggle
+              // rather than carrying the prior WO's view across the step.
               <WorkOrderMaterialItemsSection
+                key={controller.record.id}
                 workOrder={controller.record}
                 adjustmentsForWorkOrder={adjustmentsForWorkOrder}
                 section={materialItemsSection}

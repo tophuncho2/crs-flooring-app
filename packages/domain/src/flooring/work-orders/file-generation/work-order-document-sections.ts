@@ -1,6 +1,6 @@
 import { buildAddressLine } from "../../../shared/address/index.js"
 import { formatPhoneNumber } from "../../../shared/phone.js"
-import { sumAssignmentQuantities } from "../material-items/assignments.js"
+import { sumAdjustmentQuantities } from "../material-items/adjustment-quantities.js"
 import type {
   WorkOrderFileAdjustmentProjection,
   WorkOrderFileGenerationInput,
@@ -326,7 +326,7 @@ function renderSubtotalRow(
   group: WorkOrderFileProductAdjustmentGroup,
   includeInventoryDetail: boolean,
 ): string {
-  const { quantity, stockUnitAbbrev } = sumAssignmentQuantities(group.adjustments)
+  const { quantity, stockUnitAbbrev } = sumAdjustmentQuantities(group.adjustments)
   const leadDetailCells = includeInventoryDetail ? "\n  <td></td>\n  <td></td>" : ""
   const trailDetailCells = includeInventoryDetail ? "\n  <td></td>\n  <td></td>" : ""
   return `

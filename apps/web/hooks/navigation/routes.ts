@@ -130,9 +130,8 @@ const INVENTORY_RECORD_BASE = "/dashboard/inventory/record"
  * Warehouse → Inventory pickers in the header. Pass whatever the caller already
  * knows so those pickers seed immediately:
  *   - a list/ledger row passes `inventoryId` (+ optional `adjustment` to drill in),
- *   - a work-order passes the WO's `warehouseId` + the WO link seed
- *     (`workOrderId`/`productId`/labels) and lets the operator pick the
- *     inventory item there.
+ *   - the header pickers seed `warehouseId`/`productId` (+ labels) to narrow the
+ *     inventory grid.
  * No args → the empty record view (pickers, no record).
  */
 export function buildInventoryRecordHref(options?: {
@@ -140,8 +139,6 @@ export function buildInventoryRecordHref(options?: {
   warehouseLabel?: string | null
   inventoryId?: string | null
   inventoryLabel?: string | null
-  workOrderId?: string | null
-  workOrderLabel?: string | null
   productId?: string | null
   productLabel?: string | null
   adjustment?: string | null
@@ -155,8 +152,6 @@ export function buildInventoryRecordHref(options?: {
   set("warehouseLabel", options?.warehouseLabel)
   set("inventoryId", options?.inventoryId)
   set("inventoryLabel", options?.inventoryLabel)
-  set("workOrderId", options?.workOrderId)
-  set("workOrderLabel", options?.workOrderLabel)
   set("productId", options?.productId)
   set("productLabel", options?.productLabel)
   set("adjustment", options?.adjustment)

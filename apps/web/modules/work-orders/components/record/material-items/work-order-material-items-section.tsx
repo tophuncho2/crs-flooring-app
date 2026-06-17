@@ -73,13 +73,17 @@ export function WorkOrderMaterialItemsSection({
 
   const sectionBusy = section.isSaving
 
-  // Flipping away from a dirty Requested Material grid warns first (the edits are
-  // kept across the flip, but the operator is told they're unsaved). The
-  // Adjustments grid has no editable state, so flipping off it is always free.
+  // Flipping away from a dirty Requested Material grid warns first — but the flip
+  // KEEPS the edits (they persist until save or leaving the work order), so the
+  // copy is switch-flavored, not discard-flavored. The Adjustments grid has no
+  // editable state, so flipping off it is always free.
   const { guard, dialogProps } = useRecordSwapGuard({
     isDirty: mode === "requested" && section.isDirty,
+    title: "Switch view?",
     discardMessage:
-      "You have unsaved material-item changes. Switch views? Your edits stay until you leave the work order.",
+      "Requested Material has unsaved changes. Switch views? Your edits stay until you save or leave the work order.",
+    confirmLabel: "Switch & keep editing",
+    cancelLabel: "Stay here",
   })
 
   const flipMode = useCallback(() => {

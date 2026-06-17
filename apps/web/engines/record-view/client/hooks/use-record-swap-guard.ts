@@ -26,9 +26,21 @@ export type RecordSwapGuard = {
 export function useRecordSwapGuard({
   isDirty,
   discardMessage = DEFAULT_DISCARD_MESSAGE,
+  title = "Discard unsaved changes?",
+  confirmLabel = "Discard",
+  cancelLabel = "Keep editing",
 }: {
   isDirty: boolean
   discardMessage?: string
+  /**
+   * Override the dialog copy when the swap does NOT discard. The default copy
+   * suits a discarding swap (reference-header re-pick, shell stepper); a swap
+   * that keeps edits (e.g. the WO materials view flip) passes switch-flavored
+   * copy so the confirm button doesn't read "Discard".
+   */
+  title?: string
+  confirmLabel?: string
+  cancelLabel?: string
 }): RecordSwapGuard {
   const [pendingAction, setPendingAction] = useState<{ run: () => void } | null>(null)
 
@@ -42,10 +54,10 @@ export function useRecordSwapGuard({
 
   const dialogProps: ConfirmDialogProps = {
     open: pendingAction !== null,
-    title: "Discard unsaved changes?",
+    title,
     message: discardMessage,
-    confirmLabel: "Discard",
-    cancelLabel: "Keep editing",
+    confirmLabel,
+    cancelLabel,
     tone: "warning",
     onConfirm: () => {
       pendingAction?.run()

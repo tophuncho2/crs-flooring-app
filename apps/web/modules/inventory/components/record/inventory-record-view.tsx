@@ -20,10 +20,7 @@ import {
 import { EmbeddedAdjustmentRecordView } from "./adjustments/embedded-adjustment-record-view"
 import { useInventoryPrimarySection } from "@/modules/inventory/controllers/record/primary/use-inventory-primary-section"
 import { useInventoryAdjustmentsSection } from "@/modules/inventory/controllers/record/adjustments/use-inventory-adjustments-section"
-import {
-  NEW_ADJUSTMENT_ID,
-  type InventoryRecordWoSeed,
-} from "@/modules/inventory/controllers/record/use-inventory-record-selection"
+import { NEW_ADJUSTMENT_ID } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { WarningNotice } from "@/engines/common"
 import {
   buildInventoryRecordHref,
@@ -44,13 +41,11 @@ import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-li
 export function InventoryRecordView({
   page,
   entry,
-  woSeed,
   selectedAdjustmentId,
   onSelectAdjustment,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: InventoryDetail
-  woSeed?: InventoryRecordWoSeed | null
   selectedAdjustmentId: string | null
   onSelectAdjustment: (adjustmentId: string | null) => void
 }) {
@@ -70,7 +65,6 @@ export function InventoryRecordView({
   const adjustments = useInventoryAdjustmentsSection({
     inventory: record,
     onMutated: handleAdjustmentMutated,
-    woSeed,
   })
 
   const [embeddedAdjustmentDirty, setEmbeddedAdjustmentDirty] = useState(false)

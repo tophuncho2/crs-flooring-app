@@ -2,7 +2,7 @@
 
 import { useMemo, type ReactNode } from "react"
 import { Copy, Plus } from "lucide-react"
-import { sumAssignmentQuantities, type EnrichedInventoryAdjustmentRow } from "@builders/domain"
+import { sumAdjustmentQuantities, type EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { renderAdjustmentReadOnlyCell } from "@/modules/adjustments"
 import { Grid } from "@/engines/record-view"
 import { RecordOpenButton, RecordOptionsMenu } from "@/engines/common"
@@ -125,19 +125,35 @@ export function WorkOrderAdjustmentsGrid({
   return (
     <div className="space-y-5">
       {groups.map((group) => {
+        // Two per-product subtotals: deductions (outflow that fulfils the WO) and
+        // increases (inflow / returns). Both are by product. Deductions always
+        // show; the increases subtotal appears only when this product has any.
         const deductions = group.rows.filter((row) => row.adjustmentType === "DEDUCTION")
-        const { quantity, stockUnitAbbrev } = sumAssignmentQuantities(deductions)
+        const increases = group.rows.filter((row) => row.adjustmentType === "INCREASE")
+        const deductionTotal = sumAdjustmentQuantities(deductions)
+        const increaseTotal = sumAdjustmentQuantities(increases)
         return (
           <div key={group.productId} className="space-y-2 border-b border-[var(--panel-border)] pb-5 last:border-b-0 last:pb-0">
             <div className="flex items-center justify-between gap-3 px-1">
               <span className="text-sm font-semibold text-[var(--foreground)]">
                 {group.productName}
               </span>
-              <span className="text-xs uppercase tracking-wide text-[var(--foreground)]/55">
-                Subtotal{" "}
-                <span className="tabular-nums text-[var(--foreground)]/80">
-                  {quantity || "—"}
-                  {quantity && stockUnitAbbrev ? ` ${stockUnitAbbrev}` : ""}
+              <span className="flex items-center gap-4 text-xs uppercase tracking-wide text-[var(--foreground)]/55">
+                {increases.length > 0 ? (
+                  <span>
+                    Increases{" "}
+                    <span className="tabular-nums text-emerald-700/80">
+                      +{increaseTotal.quantity}
+                      {increaseTotal.quantity && increaseTotal.stockUnitAbbrev ? ` ${increaseTotal.stockUnitAbbrev}` : ""}
+                    </span>
+                  </span>
+                ) : null}
+                <span>
+                  Deductions{" "}
+                  <span className="tabular-nums text-[var(--foreground)]/80">
+                    {deductionTotal.quantity || "—"}
+                    {deductionTotal.quantity && deductionTotal.stockUnitAbbrev ? ` ${deductionTotal.stockUnitAbbrev}` : ""}
+                  </span>
                 </span>
               </span>
             </div>

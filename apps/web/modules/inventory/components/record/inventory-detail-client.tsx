@@ -9,7 +9,6 @@ import type { InventoryDetail } from "@builders/domain"
 import {
   useInventoryRecordSelection,
   type InventoryRecordSelectionController,
-  type InventoryRecordWoSeed,
 } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { InventoryRecordView } from "./inventory-record-view"
 
@@ -25,13 +24,11 @@ import { InventoryRecordView } from "./inventory-record-view"
 export function InventoryDetailClient({
   backHref,
   initialInventory,
-  woSeed,
 }: {
   backHref: string
   initialInventory?: InventoryDetail | null
-  woSeed?: InventoryRecordWoSeed | null
 }) {
-  const selection = useInventoryRecordSelection({ initialInventory, woSeed })
+  const selection = useInventoryRecordSelection({ initialInventory })
 
   // In form mode the surface is dedicated to creating an adjustment — title it
   // so while the create drilldown is open.
@@ -94,7 +91,6 @@ function InventoryRecordSurface({
           key={inventory.id}
           page={page}
           entry={inventory}
-          woSeed={selection.woSeed}
           selectedAdjustmentId={selection.adjustment}
           onSelectAdjustment={(id) => selection.setAdjustment(id)}
         />
