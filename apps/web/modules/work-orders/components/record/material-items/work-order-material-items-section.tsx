@@ -113,6 +113,7 @@ export function WorkOrderMaterialItemsSection({
       onNext={flipMode}
       previousAriaLabel="Show the other view"
       nextAriaLabel="Show the other view"
+      accent={MODE_ACCENT[mode]}
     />
   )
 
@@ -165,12 +166,6 @@ export function WorkOrderMaterialItemsSection({
         noticeError={section.noticeError}
         subHeader={subHeader}
       >
-        <div className={`flex items-center gap-2 border px-3 py-2 text-sm font-medium ${MODE_ACCENT[mode]}`}>
-          {mode === "adjustments"
-            ? "Adjustments — material pulled to fulfil this work order (outflow)."
-            : "Requested Material — what the customer requested (inbound)."}
-        </div>
-
         {mode === "adjustments" ? (
           <WorkOrderAdjustmentsGrid
             adjustments={adjustmentsForWorkOrder}

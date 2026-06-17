@@ -16,6 +16,8 @@ export type RecordStepperProps = {
   previousAriaLabel?: string
   /** Accessible label for the ▶ button. Defaults to "Next". */
   nextAriaLabel?: string
+  /** Accent classes for the container skin — border + bg — replacing the neutral panel skin when set. */
+  accent?: string
   className?: string
 }
 
@@ -33,13 +35,14 @@ export function RecordStepper({
   onNext,
   previousAriaLabel = "Previous",
   nextAriaLabel = "Next",
+  accent,
   className,
 }: RecordStepperProps) {
   return (
     <div
-      className={`inline-flex items-center gap-1 rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] p-1${
-        className ? ` ${className}` : ""
-      }`}
+      className={`inline-flex items-center gap-1 rounded-lg border p-1 ${
+        accent ?? "border-[var(--panel-border)] bg-[var(--panel-background)]"
+      }${className ? ` ${className}` : ""}`}
     >
       <button
         type="button"
