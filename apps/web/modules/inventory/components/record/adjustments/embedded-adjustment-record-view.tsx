@@ -111,21 +111,32 @@ export function EmbeddedAdjustmentRecordView({
       onClick: () => controller.save(),
       disabled: !canSave || isSaving,
     },
-    ...(onSplitAfterSave && splitSourceInventoryId
+    // One mode-dependent action: in create mode it saves the adjustment then
+    // routes to the seeded inventory create form; in edit mode (row already
+    // saved) it routes straight there, no re-save.
+    ...(splitSourceInventoryId && (isCreate ? onSplitAfterSave : onAddInventoryFromAdjustment)
       ? [
           {
-            key: "save-split",
-            label: "Save and split",
+            key: "add-inventory",
+            label: isCreate
+              ? "Save and add inventory from adjustment"
+              : "Add inventory from adjustment",
             tone: "neutral" as const,
-            onClick: () =>
-              controller.save({
-                onSaved: () =>
-                  onSplitAfterSave({
+            onClick: isCreate
+              ? () =>
+                  controller.save({
+                    onSaved: () =>
+                      onSplitAfterSave?.({
+                        inventoryId: splitSourceInventoryId,
+                        quantity: form.quantity,
+                      }),
+                  })
+              : () =>
+                  onAddInventoryFromAdjustment?.({
                     inventoryId: splitSourceInventoryId,
                     quantity: form.quantity,
                   }),
-              }),
-            disabled: !canSave || isSaving,
+            disabled: isCreate ? !canSave || isSaving : isSaving,
           },
         ]
       : []),
@@ -136,21 +147,6 @@ export function EmbeddedAdjustmentRecordView({
       onClick: () => controller.discard(),
       disabled: !isDirty || isSaving,
     },
-    ...(onAddInventoryFromAdjustment && adjustment
-      ? [
-          {
-            key: "add-inventory",
-            label: "Add inventory from adjustment",
-            tone: "neutral" as const,
-            onClick: () =>
-              onAddInventoryFromAdjustment({
-                inventoryId: adjustment.inventoryId,
-                quantity: form.quantity,
-              }),
-            disabled: isSaving,
-          },
-        ]
-      : []),
     ...(showDelete
       ? [
           {

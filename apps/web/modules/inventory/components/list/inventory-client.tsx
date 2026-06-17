@@ -478,9 +478,8 @@ export default function InventoryClient({
           router.push(buildInventoryRecordHref({ inventoryId: id, returnTo }))
         }
         onDuplicateInventory={(id) => openCreate({ sourceId: id })}
-        // Split off: open the record straight into the adjustment-create form
-        // (deduct first); "Save and split" there completes the split.
-        onSplitOffInventory={(id) =>
+        // Add Adjustment: open the record straight into the adjustment-create form.
+        onAddAdjustment={(id) =>
           router.push(
             buildInventoryRecordHref({ inventoryId: id, adjustment: NEW_ADJUSTMENT_ID, returnTo }),
           )

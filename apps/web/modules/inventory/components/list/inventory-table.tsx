@@ -1,6 +1,6 @@
 "use client"
 
-import { Copy, Split } from "lucide-react"
+import { Copy, Plus } from "lucide-react"
 import { DataTable, type PaginateContract } from "@/engines/list-view"
 import { RecordOptionsMenu } from "@/engines/common"
 import type { InventoryRow } from "@builders/domain"
@@ -11,14 +11,14 @@ export function InventoryTable({
   rows,
   onOpenInventory,
   onDuplicateInventory,
-  onSplitOffInventory,
+  onAddAdjustment,
   pagination,
 }: {
   rows: InventoryRow[]
   onOpenInventory: (id: string) => void
   onDuplicateInventory: (id: string) => void
-  /** Row ⋮ → "Split off": open the record in adjustment-create mode (split step 1). */
-  onSplitOffInventory: (id: string) => void
+  /** Row ⋮ → "Add Adjustment": open the record in adjustment-create mode. */
+  onAddAdjustment: (id: string) => void
   pagination?: PaginateContract
 }) {
   return (
@@ -38,10 +38,10 @@ export function InventoryTable({
               onClick: () => onDuplicateInventory(row.id),
             },
             {
-              key: "split-off",
-              label: "Split off",
-              icon: <Split size={14} aria-hidden="true" />,
-              onClick: () => onSplitOffInventory(row.id),
+              key: "add-adjustment",
+              label: "Add Adjustment",
+              icon: <Plus size={14} aria-hidden="true" />,
+              onClick: () => onAddAdjustment(row.id),
             },
           ]}
         />

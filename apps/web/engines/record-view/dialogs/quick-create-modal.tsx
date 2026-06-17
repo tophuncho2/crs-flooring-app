@@ -24,16 +24,6 @@ export type QuickCreateModalProps = {
   createLabel?: string
   /** Create button label while saving. Default `"Creating…"`. */
   creatingLabel?: string
-  /**
-   * Optional secondary action rendered between Cancel and Create (e.g. a
-   * "Save and split" that creates then routes elsewhere). The host owns its
-   * gating + handler; omit it for the plain Cancel/Create footer.
-   */
-  secondaryAction?: {
-    label: string
-    onClick: () => void
-    disabled?: boolean
-  }
   /** Max card width forwarded to `RecordModal`. Default `"max-w-2xl"`. */
   widthClassName?: string
 }
@@ -60,7 +50,6 @@ export function QuickCreateModal({
   error,
   createLabel = "Create",
   creatingLabel = "Creating…",
-  secondaryAction,
   widthClassName,
 }: QuickCreateModalProps) {
   const footer = (
@@ -76,16 +65,6 @@ export function QuickCreateModal({
       >
         Cancel
       </button>
-      {secondaryAction ? (
-        <button
-          type="button"
-          onClick={secondaryAction.onClick}
-          disabled={secondaryAction.disabled || isSaving}
-          className="rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)]/80 transition hover:border-sky-500/45 hover:text-[var(--foreground)] disabled:opacity-50"
-        >
-          {secondaryAction.label}
-        </button>
-      ) : null}
       <button
         type="button"
         onClick={onCreate}
