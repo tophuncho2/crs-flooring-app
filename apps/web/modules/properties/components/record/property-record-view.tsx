@@ -87,6 +87,16 @@ export function PropertyRecordView({
     setMcLabel(option?.name ?? null)
   }
 
+  // A quick/proper-created company fills the cell exactly like a picked one: link
+  // it in the dirty draft (saves with the property) and refresh the display cells.
+  const handleManagementCompanyCreated = (option: ManagementCompanyOption) => {
+    primary.setLocalValue((previous) => ({
+      ...previous,
+      managementCompanyId: option.id,
+    }))
+    selectManagementCompany(option)
+  }
+
   const openManagementCompany = () => {
     if (!selectedMcId) return
     router.push(
@@ -135,6 +145,8 @@ export function PropertyRecordView({
               display={mcDisplay}
               editable={!primary.isSaving}
               onOpen={openManagementCompany}
+              returnTo={buildCurrentRecordEntryPath(pathname, searchParams)}
+              onCreated={handleManagementCompanyCreated}
             />
             <div className="border-t border-[var(--panel-border)]" />
             <PropertyFieldsSection
