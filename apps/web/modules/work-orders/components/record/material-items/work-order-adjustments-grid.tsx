@@ -60,7 +60,7 @@ export type WorkOrderAdjustmentsGridProps = {
 /**
  * The work order's "Adjustments" view (outflow): every adjustment fulfilling
  * this WO, grouped by product into stacked blocks. Each block is the shared
- * ledger Grid (leading open ↗ + trailing options ⋮) closed by a per-product
+ * ledger Grid (leading open ↗ + options ⋮ gutter) closed by a per-product
  * Σ-quantity subtotal under a rule, with a divider between products — the same
  * shape as the print files. Read-only rows; edits open the inventory record view.
  */
