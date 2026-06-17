@@ -253,17 +253,20 @@ export function WorkOrderMaterialItemsSection({
         noticeMessage={section.noticeMessage}
         noticeError={section.noticeError}
         subHeader={{
+          // The show/hide-adjustments toggle sits in the actions cluster
+          // (rendered left of the toolbar) as the furthest-left button; the
+          // item-count badge stays in the right-aligned status cluster.
+          actionsLeading: (
+            <MaterialItemsExpandToggle
+              itemsCount={section.items.length}
+              allExpanded={allExpanded}
+              onToggle={toggleAll}
+            />
+          ),
           statusLeading: (
-            <div className="flex items-center gap-2">
-              <MaterialItemsExpandToggle
-                itemsCount={section.items.length}
-                allExpanded={allExpanded}
-                onToggle={toggleAll}
-              />
-              <span className="inline-flex items-center rounded-xl border border-[rgba(58,58,58,0.72)] bg-[var(--panel-hover)] px-3 py-2 text-sm text-[var(--foreground)]/75">
-                {section.items.length} item{section.items.length === 1 ? "" : "s"}
-              </span>
-            </div>
+            <span className="inline-flex items-center rounded-xl border border-[rgba(58,58,58,0.72)] bg-[var(--panel-hover)] px-3 py-2 text-sm text-[var(--foreground)]/75">
+              {section.items.length} item{section.items.length === 1 ? "" : "s"}
+            </span>
           ),
           isDirty: section.isDirty,
           isSaving: section.isSaving,
