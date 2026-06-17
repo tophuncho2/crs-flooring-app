@@ -8,13 +8,14 @@ import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
  * an operator scanning a WO sees every field the ledger surfaces — including
  * `location`, the decomposed inventory identity, type, warehouse, and WO #.
  * Rows are enriched (own warehouse name + WO number per row), correct under
- * cross-warehouse sourcing. A leading duplicate control is the only
- * work-orders-only affordance. The inventory record view keeps the slimmer
- * `INVENTORY_ADJUSTMENT_LAYOUT`.
+ * cross-warehouse sourcing. Each row carries a leading open (↗) gutter and a
+ * trailing options (⋮) menu — mirroring the inventory record view's adjustments
+ * drilldown; the row body itself is inert. The inventory record view keeps the
+ * slimmer `INVENTORY_ADJUSTMENT_LAYOUT`.
  */
 const C = ADJUSTMENT_COLUMN_DEFINITIONS
 export const WORK_ORDER_ADJUSTMENT_LAYOUT: GridLayout<EnrichedInventoryAdjustmentRow> = {
-  leadingControls: [{ key: "duplicate", kind: "actions", width: 56 }],
+  leadingControls: [{ key: "open", kind: "open", width: 56 }],
   dataColumns: [
     C.quantity,
     C.adjustment,
@@ -33,4 +34,5 @@ export const WORK_ORDER_ADJUSTMENT_LAYOUT: GridLayout<EnrichedInventoryAdjustmen
     C.createdAt,
     C.updatedAt,
   ],
+  trailingControls: [{ key: "options", kind: "actions", width: 56 }],
 }

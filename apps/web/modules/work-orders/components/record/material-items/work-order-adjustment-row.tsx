@@ -1,11 +1,12 @@
 "use client"
 
 import { useMemo, type ReactNode } from "react"
+import { Copy } from "lucide-react"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { renderAdjustmentReadOnlyCell } from "@/modules/adjustments"
 import { Grid, GridEmpty } from "@/engines/record-view"
+import { RecordOpenButton, RecordOptionsMenu } from "@/engines/common"
 import { AdjustmentRowToolbar } from "./toolbar-controls"
-import { AdjustmentDuplicateButton } from "./row-controls/sub-controls"
 import { WORK_ORDER_ADJUSTMENT_LAYOUT } from "./work-order-adjustment-row-layout"
 
 // Mirrors the server order in listAdjustmentsForWorkOrderItemIds
@@ -49,10 +50,11 @@ export type WorkOrderAdjustmentRowProps = {
 }
 
 /**
- * Per-WOMI adjustment display. Pure read-only — every row is a click target
- * that opens the canonical right-anchored edit panel. The panel owns the
- * full control stack (edit, save, finalize, void, delete); this component
- * is just the list view.
+ * Per-WOMI adjustment display. Pure read-only — the row body is inert; each
+ * row opens the canonical right-anchored edit panel via its leading open (↗)
+ * gutter, and exposes a trailing options (⋮) menu carrying the duplicate
+ * affordance. The panel owns the full control stack (edit, save, finalize,
+ * void, delete); this component is just the list view.
  */
 export function WorkOrderAdjustmentRow({
   workOrderItemId,
@@ -76,12 +78,32 @@ export function WorkOrderAdjustmentRow({
     control: { key: string; kind: string },
     row: EnrichedInventoryAdjustmentRow,
   ): ReactNode {
-    if (control.kind === "actions") {
+    if (control.kind === "open") {
       return (
-        <AdjustmentDuplicateButton
-          isPending={row.status === "PENDING"}
-          isSectionBusy={isSectionBusy}
-          onClick={() => onDuplicate(workOrderItemId, row)}
+        <RecordOpenButton
+          ariaLabel={`Edit adjustment ${row.adjustmentNumber}`}
+          title="Open this adjustment"
+          onClick={() => onOpenEdit(workOrderItemId, row)}
+        />
+      )
+    }
+    if (control.kind === "actions") {
+      // Duplicate opens a new create form pre-seeded with this row's inventory
+      // item (UI-only, no duplicate use case). Enabled only for PENDING rows;
+      // QUEUED / FINAL / VOID and any in-flight section save disable it.
+      const isPending = row.status === "PENDING"
+      return (
+        <RecordOptionsMenu
+          ariaLabel={`Options for adjustment ${row.adjustmentNumber}`}
+          items={[
+            {
+              key: "duplicate",
+              label: "Duplicate adjustment",
+              icon: <Copy size={14} aria-hidden="true" />,
+              onClick: () => onDuplicate(workOrderItemId, row),
+              disabled: !isPending || isSectionBusy,
+            },
+          ]}
         />
       )
     }
@@ -96,8 +118,6 @@ export function WorkOrderAdjustmentRow({
         empty={<GridEmpty>No adjustments yet.</GridEmpty>}
         renderCell={renderCell}
         renderControl={renderControl}
-        onRowClick={(row) => onOpenEdit(workOrderItemId, row)}
-        getRowAriaLabel={(row) => `Edit adjustment ${row.adjustmentNumber}`}
       />
 
       <AdjustmentRowToolbar
