@@ -1,7 +1,6 @@
 export type WorkOrderMaterialItemErrorCode =
   | "WORK_ORDER_MATERIAL_ITEM_VALIDATION_FAILED"
   | "WORK_ORDER_MATERIAL_ITEM_NOT_FOUND"
-  | "WORK_ORDER_MATERIAL_ITEM_DUPLICATE_PRODUCT"
 
 export class WorkOrderMaterialItemExecutionError extends Error {
   readonly code: WorkOrderMaterialItemErrorCode

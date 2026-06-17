@@ -13,9 +13,9 @@ import { MaterialItemRemoveButton } from "./row-controls"
 /**
  * "Requested Material" view (inbound): the customer-requested material items.
  * Product is freely editable (adjustments no longer link to a material item, so
- * a product change drifts nothing — the DB still blocks duplicate products on a
- * WO). The old per-item "Assignments" total is dropped: adjustments are
- * decoupled, so a material item carries no linked-adjustment sum.
+ * a product change drifts nothing) and the same product may be added more than
+ * once — there is no uniqueness rule. The old per-item "Assignments" total is
+ * dropped: adjustments are decoupled, so a material item carries no linked sum.
  */
 const REQUESTED_MATERIAL_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
   leadingControls: [{ key: "remove", kind: "actions", width: 56 }],

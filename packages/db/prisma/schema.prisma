@@ -493,7 +493,6 @@ model FlooringTemplateItem {
   notes          String?          @db.VarChar(30)
   createdAt      DateTime         @default(now())
 
-  @@unique([templateId, productId])
   @@index([templateId])
   @@index([templateId, createdAt])
   @@index([productId])
@@ -598,7 +597,6 @@ model FlooringWorkOrderItem {
   createdAt            DateTime                    @default(now())
   updatedAt            DateTime                    @updatedAt
 
-  @@unique([workOrderId, productId])
   @@index([workOrderId])
   @@index([workOrderId, createdAt])
   @@index([productId])

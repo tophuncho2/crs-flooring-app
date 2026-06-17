@@ -28,10 +28,3 @@ export function validateWorkOrderMaterialItemUpdateForm(
   if (!input.productId) return "Product is required"
   return validateQuantity(input.quantity)
 }
-
-// A product may be linked at most once per work order (enforced canonically
-// by the DB unique constraint). Surfaced when a save would create or leave a
-// second row for the same product.
-export function buildWorkOrderMaterialItemDuplicateProductMessage(): string {
-  return `This product is already on the work order. Each product can only be added once.`
-}

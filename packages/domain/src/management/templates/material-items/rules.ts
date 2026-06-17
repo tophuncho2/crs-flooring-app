@@ -11,10 +11,3 @@ export function validateTemplateMaterialItemForm(input: TemplateMaterialItemForm
   }
   return ""
 }
-
-// A product may be linked at most once per template (enforced canonically by
-// the DB unique constraint). Surfaced when a save would create or leave a
-// second row for the same product.
-export function buildTemplateMaterialItemDuplicateProductMessage(): string {
-  return `This product is already on the template. Each product can only be added once.`
-}
