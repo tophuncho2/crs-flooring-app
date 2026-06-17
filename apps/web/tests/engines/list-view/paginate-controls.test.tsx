@@ -3,7 +3,7 @@
 import { afterEach, describe, it, expect, vi } from "vitest"
 import { cleanup, render } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { PaginateControls } from "@/engines/list-view"
+import { PaginateControls } from "@/engines/list-view/toolbar/paginate/paginate-controls"
 
 const BASE = {
   page: 2,
