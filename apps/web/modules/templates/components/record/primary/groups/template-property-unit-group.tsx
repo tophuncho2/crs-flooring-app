@@ -10,21 +10,17 @@ import {
   TextCell,
 } from "@/engines/record-view"
 import type { PropertyJoinedFields } from "@/engines/record-view"
-import { RecordOptionsMenu } from "@/engines/common"
 import { applyPropertySelection } from "@/engines/picker"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
-  buildRecordCreateHref,
   buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
-import { PropertyHubQuickCreateModal } from "@/modules/management-companies/components/record/properties/property-hub-quick-create-modal"
+import { PropertyCreateMenu } from "@/modules/properties/components/picker/property-create-menu"
 import {
   buildAddressBlock,
   TEMPLATE_UNIT_TYPE_MAX,
-  type ManagementCompanyDetail,
-  type PropertyDetailRecord,
   type PropertyOption,
   type TemplateForm,
 } from "@builders/domain"
@@ -34,8 +30,9 @@ import type { TemplatePrimaryDetail } from "../template-primary-fields-section"
  * Property & Unit field cluster, emitted as invisible-grid cells (no visual
  * group chrome). Management Company is a read-only mirror of the picked
  * property's MC (templates no longer store their own). The open-record (launch)
- * and + New property affordances live in each cell's label-row `actions` slot
- * (`RecordOpenButton` / `CellAddButton`), mirroring the work-orders primary.
+ * and New property affordances live in each cell's label-row `actions` slot
+ * (`RecordOpenButton` / the shared `PropertyCreateMenu`), mirroring the
+ * work-orders primary.
  *
  * Cascade rules come from the shared picker engine (`applyPropertySelection`):
  * picking a property back-fills its linked MC. `pickedMc` / `pickedPropertyLabel`
@@ -64,7 +61,6 @@ export function TemplatePropertyUnitGroup({
 
   const [pickedPropertyLabel, setPickedPropertyLabel] = useState<string | null>(null)
   const [pickedMc, setPickedMc] = useState<{ id: string | null; name: string | null } | null>(null)
-  const [quickOpen, setQuickOpen] = useState(false)
 
   // Apply a property option to the cell — the shared path for both the picker
   // and the quick-create modal: cascade-fill the draft, snapshot the label/MC,
@@ -78,27 +74,6 @@ export function TemplatePropertyUnitGroup({
       name: option?.managementCompanyName ?? null,
     })
     onPropertyOption(option)
-  }
-
-  // Map a freshly created property record into a PropertyOption and fill the cell.
-  const handleQuickCreated = (
-    property: PropertyDetailRecord,
-    managementCompany: ManagementCompanyDetail | null,
-  ) => {
-    selectProperty({
-      id: property.id,
-      name: property.name,
-      address: property.fullAddress,
-      streetAddress: property.streetAddress,
-      city: property.city,
-      state: property.state,
-      postalCode: property.zip,
-      instructions: property.instructions,
-      managementCompanyId: managementCompany?.id ?? property.managementCompany?.id ?? null,
-      managementCompanyName:
-        managementCompany?.name ?? property.managementCompany?.name ?? null,
-    })
-    setQuickOpen(false)
   }
 
   // Reset the picked snapshots during render when the bound detail changes, so
@@ -194,25 +169,7 @@ export function TemplatePropertyUnitGroup({
                 }}
               />
               {editable ? (
-                <RecordOptionsMenu
-                  ariaLabel="New property"
-                  heading="New property"
-                  items={[
-                    {
-                      key: "quick",
-                      label: "Quick form",
-                      onClick: () => setQuickOpen(true),
-                    },
-                    {
-                      key: "proper",
-                      label: "Proper form",
-                      onClick: () =>
-                        router.push(
-                          buildRecordCreateHref("/dashboard/management-companies", { returnTo }),
-                        ),
-                    },
-                  ]}
-                />
+                <PropertyCreateMenu returnTo={returnTo} onCreated={selectProperty} />
               ) : null}
             </>
           }
@@ -245,11 +202,6 @@ export function TemplatePropertyUnitGroup({
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <PropertyHubQuickCreateModal
-        open={quickOpen}
-        onClose={() => setQuickOpen(false)}
-        onCreated={handleQuickCreated}
-      />
     </>
   )
 }

@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
-  CellAddButton,
   CellAt,
   RecordOpenButton,
   DateCell,
@@ -18,12 +17,12 @@ import { applyPropertySelection, applyTemplateSelection } from "@/engines/picker
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
-  buildRecordCreateHref,
   buildRecordDetailHref,
   buildTemplateHubHref,
 } from "@/hooks/navigation/routes"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
+import { PropertyCreateMenu } from "@/modules/properties/components/picker/property-create-menu"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
@@ -35,6 +34,7 @@ import {
   WO_INTERNAL_NOTES_MAX,
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
+  type PropertyOption,
   type WorkOrderForm,
 } from "@builders/domain"
 import { TIME_OF_DAY_OPTIONS, VACANCY_OPTIONS } from "./helpers"
@@ -54,8 +54,9 @@ export type { WorkOrderPrimaryDetail } from "./types"
  * left, leaving the right half open.
  *
  * The "open MC / Property / Template" + "new property" affordances that used to
- * live in a group header now sit in each field's label-row `actions` slot via
- * the record-view `RecordOpenButton` / `CellAddButton` primitives.
+ * live in a group header now sit in each field's label-row `actions` slot: a
+ * `RecordOpenButton` plus, on the Property cell, the shared `PropertyCreateMenu`
+ * (⋮ → Quick form / Proper form).
  *
  * Cascade rules come from the shared engine (`@/engines/picker`
  * `applyPropertySelection` / `applyTemplateSelection`):
@@ -144,6 +145,25 @@ export function WorkOrderPrimaryFieldsSection({
     : ""
   const addressDisplay = formattedAddress || "—"
   const instructionsDisplay = propertyJoined?.instructions || "—"
+
+  // Apply a property option to the cell — the shared path for both the picker and
+  // the quick-create menu: cascade-fill the draft (clearing the template),
+  // snapshot the labels + mirrored MC, and feed the Address/Instructions preview.
+  const handlePropertySelected = (option: PropertyOption | null) => {
+    const patch = applyPropertySelection(option)
+    onFieldsChange({
+      propertyId: patch.propertyId ?? "",
+      templateId: patch.templateId ?? "",
+    })
+    setPickedPropertyLabel(patch.propertyLabel ?? null)
+    setPickedTemplateLabel(patch.templateLabel ?? null)
+    // MC mirrors the chosen property (null when it has none).
+    setPickedMc({
+      id: option?.managementCompanyId ?? null,
+      name: option?.managementCompanyName ?? null,
+    })
+    handlePropertyOption(option)
+  }
 
   return (
     <FieldSection>
@@ -264,13 +284,7 @@ export function WorkOrderPrimaryFieldsSection({
                 }}
               />
               {editable ? (
-                <CellAddButton
-                  ariaLabel="New property"
-                  title="New property"
-                  onClick={() =>
-                    router.push(buildRecordCreateHref("/dashboard/management-companies", { returnTo }))
-                  }
-                />
+                <PropertyCreateMenu returnTo={returnTo} onCreated={handlePropertySelected} />
               ) : null}
             </>
           }
@@ -279,21 +293,7 @@ export function WorkOrderPrimaryFieldsSection({
             <PropertyPicker
               value={propertyValue}
               onChange={() => {}}
-              onOptionSelected={(option) => {
-                const patch = applyPropertySelection(option)
-                onFieldsChange({
-                  propertyId: patch.propertyId ?? "",
-                  templateId: patch.templateId ?? "",
-                })
-                setPickedPropertyLabel(patch.propertyLabel ?? null)
-                setPickedTemplateLabel(patch.templateLabel ?? null)
-                // MC mirrors the chosen property (null when it has none).
-                setPickedMc({
-                  id: option?.managementCompanyId ?? null,
-                  name: option?.managementCompanyName ?? null,
-                })
-                handlePropertyOption(option)
-              }}
+              onOptionSelected={handlePropertySelected}
               selectedLabel={propertyLabel}
               placeholder="Select property"
               ariaLabel="Property"
