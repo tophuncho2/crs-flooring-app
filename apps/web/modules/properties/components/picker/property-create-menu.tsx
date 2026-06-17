@@ -1,9 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { RecordOptionsMenu } from "@/engines/common"
-import { buildRecordCreateHref } from "@/hooks/navigation/routes"
+import { RecordCreateMenu } from "@/engines/common"
 import { PropertyHubQuickCreateModal } from "@/modules/management-companies/components/record/properties/property-hub-quick-create-modal"
 import type {
   ManagementCompanyDetail,
@@ -61,39 +58,22 @@ export function PropertyCreateMenu({
   /** Optional MC context to pre-link the quick modal's MC select. */
   initialManagementCompany?: { id: string; label: string | null } | null
 }) {
-  const router = useRouter()
-  const [quickOpen, setQuickOpen] = useState(false)
-
   return (
-    <>
-      <RecordOptionsMenu
-        ariaLabel="New property"
-        heading="New property"
-        items={[
-          {
-            key: "quick",
-            label: "Quick form",
-            onClick: () => setQuickOpen(true),
-          },
-          {
-            key: "proper",
-            label: "Proper form",
-            onClick: () =>
-              router.push(
-                buildRecordCreateHref("/dashboard/management-companies", { returnTo }),
-              ),
-          },
-        ]}
-      />
-      <PropertyHubQuickCreateModal
-        open={quickOpen}
-        onClose={() => setQuickOpen(false)}
-        initialManagementCompany={initialManagementCompany}
-        onCreated={(property, managementCompany) => {
-          onCreated(toPropertyOption(property, managementCompany))
-          setQuickOpen(false)
-        }}
-      />
-    </>
+    <RecordCreateMenu
+      heading="New property"
+      basePath="/dashboard/management-companies"
+      returnTo={returnTo}
+      renderModal={({ open, onClose }) => (
+        <PropertyHubQuickCreateModal
+          open={open}
+          onClose={onClose}
+          initialManagementCompany={initialManagementCompany}
+          onCreated={(property, managementCompany) => {
+            onCreated(toPropertyOption(property, managementCompany))
+            onClose()
+          }}
+        />
+      )}
+    />
   )
 }

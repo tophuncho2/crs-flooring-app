@@ -1,9 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { RecordOptionsMenu } from "@/engines/common"
-import { buildRecordCreateHref } from "@/hooks/navigation/routes"
+import { RecordCreateMenu } from "@/engines/common"
 import { ManagementCompanyQuickCreateModal } from "@/modules/management-companies/components/record/management-company-quick-create-modal"
 import type { ManagementCompanyDetail, ManagementCompanyOption } from "@builders/domain"
 
@@ -49,38 +46,21 @@ export function ManagementCompanyCreateMenu({
   /** Fired with the created company mapped to a `ManagementCompanyOption`. */
   onCreated: (option: ManagementCompanyOption) => void
 }) {
-  const router = useRouter()
-  const [quickOpen, setQuickOpen] = useState(false)
-
   return (
-    <>
-      <RecordOptionsMenu
-        ariaLabel="New management company"
-        heading="New management company"
-        items={[
-          {
-            key: "quick",
-            label: "Quick form",
-            onClick: () => setQuickOpen(true),
-          },
-          {
-            key: "proper",
-            label: "Proper form",
-            onClick: () =>
-              router.push(
-                buildRecordCreateHref("/dashboard/management-companies", { returnTo }),
-              ),
-          },
-        ]}
-      />
-      <ManagementCompanyQuickCreateModal
-        open={quickOpen}
-        onClose={() => setQuickOpen(false)}
-        onCreated={(managementCompany) => {
-          onCreated(toManagementCompanyOption(managementCompany))
-          setQuickOpen(false)
-        }}
-      />
-    </>
+    <RecordCreateMenu
+      heading="New management company"
+      basePath="/dashboard/management-companies"
+      returnTo={returnTo}
+      renderModal={({ open, onClose }) => (
+        <ManagementCompanyQuickCreateModal
+          open={open}
+          onClose={onClose}
+          onCreated={(managementCompany) => {
+            onCreated(toManagementCompanyOption(managementCompany))
+            onClose()
+          }}
+        />
+      )}
+    />
   )
 }

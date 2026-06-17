@@ -1,9 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { RecordOptionsMenu } from "@/engines/common"
-import { buildRecordCreateHref } from "@/hooks/navigation/routes"
+import { RecordCreateMenu } from "@/engines/common"
 import type { TemplateOption } from "@builders/domain"
 import { TemplateQuickCreateModal } from "@/modules/templates/components/record/template-quick-create-modal"
 
@@ -31,37 +28,22 @@ export function TemplateCreateMenu({
   /** The host's current property — the quick form scopes the new template to it. */
   initialProperty?: { id: string; label: string | null } | null
 }) {
-  const router = useRouter()
-  const [quickOpen, setQuickOpen] = useState(false)
-
   return (
-    <>
-      <RecordOptionsMenu
-        ariaLabel="New template"
-        heading="New template"
-        items={[
-          {
-            key: "quick",
-            label: "Quick form",
-            onClick: () => setQuickOpen(true),
-          },
-          {
-            key: "proper",
-            label: "Proper form",
-            onClick: () =>
-              router.push(buildRecordCreateHref("/dashboard/templates", { returnTo })),
-          },
-        ]}
-      />
-      <TemplateQuickCreateModal
-        open={quickOpen}
-        onClose={() => setQuickOpen(false)}
-        initialProperty={initialProperty}
-        onCreated={(option) => {
-          onCreated(option)
-          setQuickOpen(false)
-        }}
-      />
-    </>
+    <RecordCreateMenu
+      heading="New template"
+      basePath="/dashboard/templates"
+      returnTo={returnTo}
+      renderModal={({ open, onClose }) => (
+        <TemplateQuickCreateModal
+          open={open}
+          onClose={onClose}
+          initialProperty={initialProperty}
+          onCreated={(option) => {
+            onCreated(option)
+            onClose()
+          }}
+        />
+      )}
+    />
   )
 }
