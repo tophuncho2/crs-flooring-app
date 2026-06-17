@@ -4,10 +4,7 @@ import { DataTable, DebouncedSearchControl } from "@/engines/list-view"
 import type { InventoryRow } from "@builders/domain"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
-import {
-  INVENTORY_PICKER_PAGE_SIZE,
-  type InventoryOptionsGridController,
-} from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
+import { type InventoryOptionsGridController } from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
 import { type InventoryRecordSelectionController } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
 import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
@@ -119,16 +116,7 @@ export function InventoryOptionsGrid({
         onRowClick={(row) => onSelectInventory(row)}
         getRowAriaLabel={(row) => row.inventoryItem}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
-        pagination={{
-          page: grid.page,
-          pageSize: INVENTORY_PICKER_PAGE_SIZE,
-          totalItems: grid.total,
-          totalPages: grid.totalPages,
-          hasPreviousPage: grid.hasPrevious,
-          hasNextPage: grid.hasNext,
-          onPreviousPage: grid.goToPrevious,
-          onNextPage: grid.goToNext,
-        }}
+        pagination={grid.pagination}
       />
     </div>
   )

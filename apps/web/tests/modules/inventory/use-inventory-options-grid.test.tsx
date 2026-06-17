@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { describe, it, expect } from "vitest"
-import { renderHook, act } from "@testing-library/react"
+import { renderHook, act, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useInventoryOptionsGrid } from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
 
@@ -13,33 +13,48 @@ function makeWrapper() {
   }
 }
 
+/** Stub fetcher returning enough total to paginate (100 / 15 = 7 pages). */
+const stubRequest = async () => ({ rows: [], total: 100 })
+
 describe("useInventoryOptionsGrid", () => {
-  it("resets to the first page when an identity filter changes", () => {
-    // warehouseId null keeps the underlying query disabled — we're asserting the
-    // pure page/filter state machine, not the fetch.
+  it("resets to the first page when an identity filter changes", async () => {
     const { result } = renderHook(
-      () => useInventoryOptionsGrid({ warehouseId: null, productFilterId: null }),
+      () =>
+        useInventoryOptionsGrid({
+          warehouseId: null,
+          productFilterId: null,
+          enabled: true,
+          requestFn: stubRequest,
+        }),
       { wrapper: makeWrapper() },
     )
 
-    act(() => result.current.goToNext())
-    act(() => result.current.goToNext())
-    expect(result.current.page).toBe(3)
+    // Wait for the stub total to land so the engine derives >1 page.
+    await waitFor(() => expect(result.current.pagination.totalPages).toBe(7))
+
+    act(() => result.current.pagination.onNextPage())
+    act(() => result.current.pagination.onNextPage())
+    expect(result.current.pagination.page).toBe(3)
 
     act(() => result.current.setRollNumber("123"))
     expect(result.current.rollNumber).toBe("123")
-    expect(result.current.page).toBe(1)
+    expect(result.current.pagination.page).toBe(1)
   })
 
   it("does not advance below page 1", () => {
     const { result } = renderHook(
-      () => useInventoryOptionsGrid({ warehouseId: null, productFilterId: null }),
+      () =>
+        useInventoryOptionsGrid({
+          warehouseId: null,
+          productFilterId: null,
+          enabled: false,
+        }),
       { wrapper: makeWrapper() },
     )
 
-    expect(result.current.page).toBe(1)
-    expect(result.current.hasPrevious).toBe(false)
-    act(() => result.current.goToPrevious())
-    expect(result.current.page).toBe(1)
+    expect(result.current.pagination.page).toBe(1)
+    expect(result.current.pagination.hasPreviousPage).toBe(false)
+    act(() => result.current.pagination.onPreviousPage())
+    expect(result.current.pagination.page).toBe(1)
   })
 })

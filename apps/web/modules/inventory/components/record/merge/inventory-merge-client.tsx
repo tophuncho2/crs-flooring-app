@@ -14,7 +14,6 @@ import { buildInventoryRecordHref } from "@/hooks/navigation"
 import { getClientErrorMessage } from "@/transport"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import { useInventoryMergeSection } from "@/modules/inventory/controllers/record/merge/use-inventory-merge-section"
-import { INVENTORY_PICKER_PAGE_SIZE } from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
 import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
 import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
 import { InventoryMergeFields } from "./inventory-merge-fields"
@@ -150,16 +149,7 @@ function InventoryMergePanel({ page }: { page: RecordDetailClientScaffoldContext
                     canToggleSelection: !isPending,
                   }}
                   empty={grid.isLoading ? "Searching…" : (grid.error ?? "No matching inventory")}
-                  pagination={{
-                    page: grid.page,
-                    pageSize: INVENTORY_PICKER_PAGE_SIZE,
-                    totalItems: grid.total,
-                    totalPages: grid.totalPages,
-                    hasPreviousPage: grid.hasPrevious,
-                    hasNextPage: grid.hasNext,
-                    onPreviousPage: grid.goToPrevious,
-                    onNextPage: grid.goToNext,
-                  }}
+                  pagination={grid.pagination}
                 />
               </>
             ) : (

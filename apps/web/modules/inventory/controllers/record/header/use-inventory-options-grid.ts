@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import type { InventoryListFilters, ListInput, ListOutput } from "@builders/application"
 import type { InventoryRow } from "@builders/domain"
+import { useRecordSectionPagination, type PaginateContract } from "@/engines/list-view"
 import {
   INVENTORY_LIST_QUERY_KEY,
   listInventoryRequest,
@@ -14,18 +15,11 @@ export type InventoryOptionsGridRequest = (
   input: ListInput<InventoryListFilters>,
 ) => Promise<ListOutput<InventoryRow>>
 
-/** Picker grid page size — small so the reference header stays compact. */
-export const INVENTORY_PICKER_PAGE_SIZE = 15
-
 export type InventoryOptionsGridController = {
   rows: ReadonlyArray<InventoryRow>
   total: number
-  page: number
-  totalPages: number
-  hasPrevious: boolean
-  hasNext: boolean
-  goToPrevious: () => void
-  goToNext: () => void
+  /** Engine-derived pagination contract — wire straight into `DataTable`. */
+  pagination: PaginateContract
   invNumber: string
   rollNumber: string
   dyeLot: string
@@ -75,7 +69,7 @@ export function useInventoryOptionsGrid({
   const [rollNumber, setRollNumberState] = useState("")
   const [dyeLot, setDyeLotState] = useState("")
   const [note, setNoteState] = useState("")
-  const [page, setPage] = useState(1)
+  const pager = useRecordSectionPagination()
 
   // Re-scoping (different warehouse / WO product) returns to page 1. Reset during
   // render against the previous scope rather than in an effect — React applies
@@ -85,27 +79,27 @@ export function useInventoryOptionsGrid({
   const [prevScopeKey, setPrevScopeKey] = useState(scopeKey)
   if (scopeKey !== prevScopeKey) {
     setPrevScopeKey(scopeKey)
-    setPage(1)
+    pager.reset()
   }
 
   // Any identity filter change resets to the first page (mirrors the list-view
   // controller's behaviour).
   const setInvNumber = useCallback((value: string) => {
     setInvNumberState(value)
-    setPage(1)
-  }, [])
+    pager.reset()
+  }, [pager])
   const setRollNumber = useCallback((value: string) => {
     setRollNumberState(value)
-    setPage(1)
-  }, [])
+    pager.reset()
+  }, [pager])
   const setDyeLot = useCallback((value: string) => {
     setDyeLotState(value)
-    setPage(1)
-  }, [])
+    pager.reset()
+  }, [pager])
   const setNote = useCallback((value: string) => {
     setNoteState(value)
-    setPage(1)
-  }, [])
+    pager.reset()
+  }, [pager])
 
   const input = useMemo<ListInput<InventoryListFilters>>(() => {
     const filters: InventoryListFilters = {
@@ -116,8 +110,8 @@ export function useInventoryOptionsGrid({
       ...(dyeLot.trim() ? { dyeLot: dyeLot.trim() } : {}),
       ...(note.trim() ? { note: note.trim() } : {}),
     }
-    return { filters, page, pageSize: INVENTORY_PICKER_PAGE_SIZE }
-  }, [warehouseId, productFilterId, invNumber, rollNumber, dyeLot, note, page])
+    return { filters, page: pager.page, pageSize: pager.pageSize }
+  }, [warehouseId, productFilterId, invNumber, rollNumber, dyeLot, note, pager.page, pager.pageSize])
 
   const query = useQuery({
     queryKey: [...queryKey, "picker", input],
@@ -127,19 +121,15 @@ export function useInventoryOptionsGrid({
   })
 
   const total = query.data?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / INVENTORY_PICKER_PAGE_SIZE))
   const rows = query.data?.rows ?? []
-
-  const goToPrevious = useCallback(() => setPage((current) => Math.max(1, current - 1)), [])
-  const goToNext = useCallback(() => setPage((current) => current + 1), [])
 
   const reset = useCallback(() => {
     setInvNumberState("")
     setRollNumberState("")
     setDyeLotState("")
     setNoteState("")
-    setPage(1)
-  }, [])
+    pager.reset()
+  }, [pager])
 
   const hasSearch = Boolean(
     invNumber.trim() || rollNumber.trim() || dyeLot.trim() || note.trim(),
@@ -148,12 +138,7 @@ export function useInventoryOptionsGrid({
   return {
     rows,
     total,
-    page,
-    totalPages,
-    hasPrevious: page > 1,
-    hasNext: page < totalPages,
-    goToPrevious,
-    goToNext,
+    pagination: pager.toContract(total),
     invNumber,
     rollNumber,
     dyeLot,
