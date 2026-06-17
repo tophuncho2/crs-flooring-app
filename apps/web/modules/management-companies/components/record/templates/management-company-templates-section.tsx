@@ -91,7 +91,7 @@ export function ManagementCompanyTemplatesSection({
         renderCell={renderTemplateRowCell}
         onOpenRow={(row) => openTemplate(row)}
         getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
-        empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates match these filters."}
+        empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates for this company yet."}
         pagination={grid.pagination}
       />
     </RecordItemSection>
