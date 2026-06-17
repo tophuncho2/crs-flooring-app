@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { RecordModal } from "@/engines/record-view"
+import { QuickCreateModal } from "@/engines/record-view"
 import { DataTable } from "@/engines/list-view"
 import type { EnrichedInventoryAdjustmentRow, InventoryRow } from "@builders/domain"
 import { useAdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
@@ -172,41 +172,19 @@ export function AdjustmentCreateModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [picked])
 
-  const { isDirty, canSave, isSaving, error } = controller
+  const { canSave, isSaving, error } = controller
   const showGrid = !picked || isPicking
 
-  const footer =
-    picked && !isPicking ? (
-      <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isSaving}
-          className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:border-sky-500/45 disabled:opacity-50"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={() => controller.discard()}
-          disabled={!isDirty || isSaving}
-          className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:border-sky-500/45 disabled:opacity-50"
-        >
-          Discard
-        </button>
-        <button
-          type="button"
-          onClick={() => controller.save()}
-          disabled={!canSave || isSaving}
-          className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-sky-700 disabled:opacity-50"
-        >
-          {isSaving ? "Creating…" : "Create"}
-        </button>
-      </div>
-    ) : null
-
   return (
-    <RecordModal open title="Add adjustment" onClose={onClose} footer={footer}>
+    <QuickCreateModal
+      open
+      title="Add adjustment"
+      onClose={onClose}
+      onCreate={() => controller.save()}
+      canCreate={!showGrid && canSave}
+      isSaving={isSaving}
+      error={error?.message ?? null}
+    >
       {showGrid ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-[var(--foreground)]/70">
@@ -261,18 +239,12 @@ export function AdjustmentCreateModal({
             ) : null}
           </div>
 
-          {error ? (
-            <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 px-4 py-2.5 text-sm text-rose-600">
-              {error.message}
-            </div>
-          ) : null}
-
           <InventoryFieldGrid>
             <AdjustmentPickerStack controller={controller} />
             <AdjustmentEditFormFields mode="create" adjustment={null} controller={controller} />
           </InventoryFieldGrid>
         </div>
       )}
-    </RecordModal>
+    </QuickCreateModal>
   )
 }
