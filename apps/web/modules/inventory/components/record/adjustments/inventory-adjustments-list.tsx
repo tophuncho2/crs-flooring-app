@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { Split } from "lucide-react"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { DataTable } from "@/engines/list-view"
+import { RecordOptionsMenu } from "@/engines/common"
 import { ADJUSTMENTS_LIST_COLUMNS, renderAdjustmentsRowCell } from "@/modules/adjustments"
 import {
   INVENTORY_ADJUSTMENTS_QUERY_KEY,
@@ -30,9 +32,12 @@ const PAGER_BUTTON_CLASS =
 export function InventoryAdjustmentsList({
   inventoryId,
   onSelect,
+  onSplitOff,
 }: {
   inventoryId: string
   onSelect: (row: EnrichedInventoryAdjustmentRow) => void
+  /** Row ⋮ → "Add inventory from adjustment": open the split-off create form. */
+  onSplitOff: (row: EnrichedInventoryAdjustmentRow) => void
 }) {
   const [page, setPage] = useState(1)
 
@@ -63,6 +68,19 @@ export function InventoryAdjustmentsList({
       renderCell={renderAdjustmentsRowCell}
       empty={query.isLoading ? "Loading adjustments…" : "No adjustments yet."}
       onOpenRow={(row) => onSelect(row)}
+      rowActions={(row) => (
+        <RecordOptionsMenu
+          ariaLabel={`Options for adjustment ${row.adjustmentNumber}`}
+          items={[
+            {
+              key: "split-off",
+              label: "Add inventory from adjustment",
+              icon: <Split size={14} aria-hidden="true" />,
+              onClick: () => onSplitOff(row),
+            },
+          ]}
+        />
+      )}
       getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
       footerSlot={
         showPager ? (

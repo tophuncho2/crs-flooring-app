@@ -24,6 +24,18 @@ export type EmbeddedAdjustmentRecordViewProps = {
   onBack: () => void
   /** Bridge the controller's dirtiness up so the host section reflects it. */
   onDirtyChange?: (dirty: boolean) => void
+  /**
+   * When provided, a "Save and split" action saves/creates the adjustment then
+   * routes to the split-off inventory create form (seeded with `quantity`). The
+   * host owns the navigation so `returnTo` stays correct per surface.
+   */
+  onSplitAfterSave?: (args: { inventoryId: string; quantity: string }) => void
+  /**
+   * When provided (edit mode only), an "Add inventory from adjustment" action
+   * routes straight to the split-off create form seeded from the saved
+   * adjustment — no re-save.
+   */
+  onAddInventoryFromAdjustment?: (args: { inventoryId: string; quantity: string }) => void
 }
 
 /**
@@ -46,8 +58,10 @@ export function EmbeddedAdjustmentRecordView({
   hostPage,
   onBack,
   onDirtyChange,
+  onSplitAfterSave,
+  onAddInventoryFromAdjustment,
 }: EmbeddedAdjustmentRecordViewProps) {
-  const { open, isDirty, canSave, isSaving, error } = controller
+  const { open, form, isDirty, canSave, isSaving, error } = controller
 
   useEffect(() => {
     onDirtyChange?.(isDirty)
@@ -55,6 +69,14 @@ export function EmbeddedAdjustmentRecordView({
 
   const isCreate = open?.mode === "create"
   const adjustment = open?.mode === "edit" ? open.adjustment : null
+  // The inventory the split-off seeds from: the edited row's, or the create
+  // seed's parent inventory.
+  const splitSourceInventoryId =
+    open?.mode === "edit"
+      ? open.adjustment.inventoryId
+      : open?.mode === "create"
+        ? open.seed.inventoryId ?? null
+        : null
 
   const handleBack = () => hostPage.confirmNavigation(onBack)
 
@@ -89,6 +111,24 @@ export function EmbeddedAdjustmentRecordView({
       onClick: () => controller.save(),
       disabled: !canSave || isSaving,
     },
+    ...(onSplitAfterSave && splitSourceInventoryId
+      ? [
+          {
+            key: "save-split",
+            label: "Save and split",
+            tone: "neutral" as const,
+            onClick: () =>
+              controller.save({
+                onSaved: () =>
+                  onSplitAfterSave({
+                    inventoryId: splitSourceInventoryId,
+                    quantity: form.quantity,
+                  }),
+              }),
+            disabled: !canSave || isSaving,
+          },
+        ]
+      : []),
     {
       key: "discard",
       label: "Discard",
@@ -96,6 +136,21 @@ export function EmbeddedAdjustmentRecordView({
       onClick: () => controller.discard(),
       disabled: !isDirty || isSaving,
     },
+    ...(onAddInventoryFromAdjustment && adjustment
+      ? [
+          {
+            key: "add-inventory",
+            label: "Add inventory from adjustment",
+            tone: "neutral" as const,
+            onClick: () =>
+              onAddInventoryFromAdjustment({
+                inventoryId: adjustment.inventoryId,
+                quantity: form.quantity,
+              }),
+            disabled: isSaving,
+          },
+        ]
+      : []),
     ...(showDelete
       ? [
           {

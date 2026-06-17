@@ -186,6 +186,26 @@ export function buildInventoryAdjustmentHref(
   return buildInventoryRecordHref({ inventoryId, adjustment: adjustmentId, returnTo })
 }
 
+/**
+ * Open the inventory create flow in **split-off** mode, seeded from a source
+ * inventory row. Same create scaffold as new/duplicate — only the seed and the
+ * blue-header label differ: the form copies the source's identity (incl. roll #)
+ * and seeds Starting Stock from `quantity` (the adjustment amount split off,
+ * still editable). The single entry point shared by every "Split off" trigger
+ * (inventory list ⋮, adjustment-row ⋮, the adjustment edit toolbar, and the
+ * "Save and split" form action).
+ */
+export function buildInventorySplitOffHref(options: {
+  sourceInventoryId: string
+  quantity: string
+  returnTo?: string | null
+}) {
+  return buildRecordCreateHref("/dashboard/inventory", {
+    returnTo: options.returnTo,
+    params: { sourceId: options.sourceInventoryId, mode: "split-off", qty: options.quantity },
+  })
+}
+
 const CONTACTS_RECORD_BASE = "/dashboard/contacts"
 
 /** Sentinel `?laborPayment` value that opens the create face of the section. */

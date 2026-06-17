@@ -25,7 +25,11 @@ import {
   type InventoryRecordWoSeed,
 } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { WarningNotice } from "@/engines/common"
-import { buildRecordCreateHref } from "@/hooks/navigation"
+import {
+  buildInventoryRecordHref,
+  buildInventorySplitOffHref,
+  buildRecordCreateHref,
+} from "@/hooks/navigation"
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-list"
 
@@ -137,6 +141,32 @@ export function InventoryRecordView({
     })
   }, [page, router, entry.id])
 
+  // Split off: route to the inventory create form in split-off mode, seeded from
+  // the given inventory with Starting Stock = the split quantity. `returnTo`
+  // points back at the source inventory's record.
+  const goToSplitOff = useCallback(
+    ({ inventoryId, quantity }: { inventoryId: string; quantity: string }) => {
+      router.push(
+        buildInventorySplitOffHref({
+          sourceInventoryId: inventoryId,
+          quantity,
+          returnTo: buildInventoryRecordHref({ inventoryId }),
+        }),
+      )
+    },
+    [router],
+  )
+
+  // Guarded variant for entry points that may leave unsaved edits behind (the
+  // row ⋮ menu, the edit-toolbar button). "Save and split" skips the guard — it
+  // routes only after a successful save, when the form is already clean.
+  const confirmSplitOff = useCallback(
+    (args: { inventoryId: string; quantity: string }) => {
+      page.confirmNavigation(() => goToSplitOff(args))
+    },
+    [page, goToSplitOff],
+  )
+
   const sections: RecordPanelSectionConfig[] = [
     {
       key: "primary",
@@ -227,6 +257,9 @@ export function InventoryRecordView({
                   setSelectedRow(row)
                   select(row.id)
                 }}
+                onSplitOff={(row) =>
+                  confirmSplitOff({ inventoryId: row.inventoryId, quantity: row.quantity })
+                }
               />
             )}
             renderDetail={(_id, onBack) => (
@@ -235,6 +268,8 @@ export function InventoryRecordView({
                 hostPage={ctx.page}
                 onBack={onBack}
                 onDirtyChange={setEmbeddedAdjustmentDirty}
+                onSplitAfterSave={goToSplitOff}
+                onAddInventoryFromAdjustment={confirmSplitOff}
               />
             )}
           />

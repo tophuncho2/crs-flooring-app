@@ -16,6 +16,7 @@ import {
 } from "@/modules/inventory/data/list-inventory-request"
 import { useRouter } from "next/navigation"
 import { useInventoryListController } from "@/modules/inventory/controllers/list/use-inventory-list-controller"
+import { NEW_ADJUSTMENT_ID } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
 import { buildInventoryMergeHref, buildInventoryRecordHref } from "@/hooks/navigation"
 import { InventoryTable } from "./inventory-table"
@@ -477,6 +478,13 @@ export default function InventoryClient({
           router.push(buildInventoryRecordHref({ inventoryId: id, returnTo }))
         }
         onDuplicateInventory={(id) => openCreate({ sourceId: id })}
+        // Split off: open the record straight into the adjustment-create form
+        // (deduct first); "Save and split" there completes the split.
+        onSplitOffInventory={(id) =>
+          router.push(
+            buildInventoryRecordHref({ inventoryId: id, adjustment: NEW_ADJUSTMENT_ID, returnTo }),
+          )
+        }
         pagination={{
           page,
           pageSize,

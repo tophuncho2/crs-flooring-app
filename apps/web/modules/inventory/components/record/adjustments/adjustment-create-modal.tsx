@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { QuickCreateModal } from "@/engines/record-view"
 import { DataTable } from "@/engines/list-view"
+import { buildInventoryRecordHref, buildInventorySplitOffHref } from "@/hooks/navigation"
 import type { EnrichedInventoryAdjustmentRow, InventoryRow } from "@builders/domain"
 import { useAdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 import { useInventoryModalSelection } from "../../../controllers/record/adjustments/use-inventory-modal-selection"
@@ -107,6 +109,7 @@ export function AdjustmentCreateModal({
   onClose,
   onCreated,
 }: AdjustmentCreateModalProps) {
+  const router = useRouter()
   const selection = useInventoryModalSelection({
     warehouseId: workOrder.warehouseId,
     warehouseLabel: workOrder.warehouseName,
@@ -184,6 +187,25 @@ export function AdjustmentCreateModal({
       canCreate={!showGrid && canSave}
       isSaving={isSaving}
       error={error?.message ?? null}
+      secondaryAction={
+        picked
+          ? {
+              label: "Save and split",
+              onClick: () =>
+                controller.save({
+                  onSaved: () =>
+                    router.push(
+                      buildInventorySplitOffHref({
+                        sourceInventoryId: picked.id,
+                        quantity: controller.form.quantity,
+                        returnTo: buildInventoryRecordHref({ inventoryId: picked.id }),
+                      }),
+                    ),
+                }),
+              disabled: showGrid || !canSave,
+            }
+          : undefined
+      }
     >
       {showGrid ? (
         <div className="flex flex-col gap-3">

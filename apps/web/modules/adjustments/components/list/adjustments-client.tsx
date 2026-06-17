@@ -18,7 +18,7 @@ import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purch
 import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
 import { useRouter } from "next/navigation"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
-import { buildInventoryAdjustmentHref } from "@/hooks/navigation/routes"
+import { buildInventoryAdjustmentHref, buildInventorySplitOffHref } from "@/hooks/navigation/routes"
 import {
   ADJUSTMENTS_LIST_QUERY_KEY,
   listAdjustmentsRequest,
@@ -377,6 +377,15 @@ export default function AdjustmentsClient({
         rows={rows}
         onOpenAdjustment={(row) =>
           router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
+        }
+        onSplitOff={(row) =>
+          router.push(
+            buildInventorySplitOffHref({
+              sourceInventoryId: row.inventoryId,
+              quantity: row.quantity,
+              returnTo,
+            }),
+          )
         }
         pagination={{
           page,

@@ -286,23 +286,34 @@ export function useAdjustmentEditController({
     updateMutation.isPending ||
     deleteMutation.isPending
 
-  const save = useCallback(() => {
-    if (!open || isSaving) return
-    if (open.mode === "create") {
-      if (!isCreateValid(form)) return
-      // Unified create path: the form always carries the chosen inventory +
-      // (optional) WO link + warehouse filter; the mutation posts to the
-      // inventory route regardless of which surface opened the panel.
-      createMutation.mutate({ form })
-    } else {
-      if (!isEditValid(form) || !isDirty) return
-      updateMutation.mutate({
-        workOrderItemId: open.workOrderItemId,
-        adjustment: open.adjustment,
-        form,
-      })
-    }
-  }, [open, form, isDirty, isSaving, createMutation, updateMutation])
+  // `opts.onSaved` runs after a successful create/update (threaded as the
+  // per-call react-query `onSuccess`, so it fires after the hook-level success
+  // that publishes the patch). The "Save and split" action uses it to route to
+  // the split-off create form once the adjustment commits.
+  const save = useCallback(
+    (opts?: { onSaved?: () => void }) => {
+      if (!open || isSaving) return
+      const mutateOptions = opts?.onSaved ? { onSuccess: () => opts.onSaved?.() } : undefined
+      if (open.mode === "create") {
+        if (!isCreateValid(form)) return
+        // Unified create path: the form always carries the chosen inventory +
+        // (optional) WO link + warehouse filter; the mutation posts to the
+        // inventory route regardless of which surface opened the panel.
+        createMutation.mutate({ form }, mutateOptions)
+      } else {
+        if (!isEditValid(form) || !isDirty) return
+        updateMutation.mutate(
+          {
+            workOrderItemId: open.workOrderItemId,
+            adjustment: open.adjustment,
+            form,
+          },
+          mutateOptions,
+        )
+      }
+    },
+    [open, form, isDirty, isSaving, createMutation, updateMutation],
+  )
 
   // Returns a promise that resolves once the delete commits (and rejects on
   // error, with `onError` already having surfaced it) so the caller can sequence

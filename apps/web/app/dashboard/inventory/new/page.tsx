@@ -34,13 +34,18 @@ export default async function InventoryCreatePage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const backHref = resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/inventory")
   const sourceId = readParam(resolvedSearchParams, "sourceId")
+  // Split-off mode seeds Starting Stock from the adjustment quantity (carried in
+  // `qty`) rather than the source's live balance, and labels the blue header
+  // "Split off …". Everything else mirrors the duplicate seed.
+  const isSplitOff = readParam(resolvedSearchParams, "mode") === "split-off"
+  const splitQty = readParam(resolvedSearchParams, "qty")
 
   // Fresh create — no source to seed from.
   if (!sourceId) {
     return <InventoryCreateClient backHref={backHref} />
   }
 
-  // Seeded (duplicate) create — load the source row and pre-fill the form.
+  // Seeded create — load the source row and pre-fill the form (duplicate or split-off).
   const result = await getInventoryDetailPageData(sourceId)
   if (!result.ok) {
     if ("notFound" in result && result.notFound) notFound()
@@ -63,9 +68,11 @@ export default async function InventoryCreatePage({
       rollNumber: source.rollNumber,
       dyeLot: source.dyeLot,
       note: source.note,
-      // Seed starting stock from the source's current stock balance (not its
-      // original starting stock) so the copy carries the live quantity.
-      startingStock: source.stockBalance,
+      // Split-off: seed starting stock from the split quantity (the adjustment
+      // amount). Duplicate: seed from the source's live stock balance (not its
+      // original starting stock) so the copy carries the live quantity. Both
+      // remain editable on the form.
+      startingStock: isSplitOff ? (splitQty ?? "") : source.stockBalance,
       location: source.location,
       internalNotes: source.internalNotes,
     },
@@ -78,7 +85,7 @@ export default async function InventoryCreatePage({
     <InventoryCreateClient
       backHref={backHref}
       seed={seed}
-      title={`Duplicate ${source.inventoryItem}`}
+      title={`${isSplitOff ? "Split off" : "Duplicate"} ${source.inventoryItem}`}
     />
   )
 }
