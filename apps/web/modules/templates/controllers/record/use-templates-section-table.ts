@@ -1,26 +1,20 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import type { ListInput, TemplatesListFilters } from "@builders/application"
 import type { TemplateListRow } from "@builders/domain"
+import { useRecordSectionPagination, type PaginateContract } from "@/engines/list-view"
 import {
   TEMPLATES_LIST_QUERY_KEY,
   listTemplatesRequest,
 } from "@/modules/templates/data/list-templates-request"
 
-/** Section table page size — small so the record-view section stays compact. */
-export const TEMPLATE_SECTION_PAGE_SIZE = 15
-
 export type TemplatesSectionTableController = {
   rows: ReadonlyArray<TemplateListRow>
   total: number
-  page: number
-  totalPages: number
-  hasPrevious: boolean
-  hasNext: boolean
-  goToPrevious: () => void
-  goToNext: () => void
+  /** Engine-derived pagination contract — wire straight into `DataTable`. */
+  pagination: PaginateContract
   /** Return to page 1. */
   reset: () => void
   isLoading: boolean
@@ -29,13 +23,13 @@ export type TemplatesSectionTableController = {
 }
 
 /**
- * Local-state controller behind the templates record-view section table. Holds
- * the current page in React state (NOT the URL — the section's transient page
- * must not pollute the record-view URL) and fetches a page of `TemplateListRow`s
- * through the same list endpoint the templates list view uses
- * (`listTemplatesRequest`). The scoped management company + property ride in as
- * filters (both optional — the table lists across everything when none is set);
- * any scope change resets to page 1. `enabled` gates the fetch.
+ * Local-state controller behind the templates record-view section table. Page
+ * state, the `15` page size, and the pagination contract are owned by the engine
+ * (`useRecordSectionPagination`); this controller adds the scoped fetch through
+ * the same list endpoint the templates list view uses (`listTemplatesRequest`).
+ * The scoped management company + property ride in as filters (both optional —
+ * the table lists across everything when none is set); any scope change resets
+ * to page 1. `enabled` gates the fetch.
  */
 export function useTemplatesSectionTable({
   managementCompanyId,
@@ -46,7 +40,7 @@ export function useTemplatesSectionTable({
   propertyId: string | null
   enabled: boolean
 }): TemplatesSectionTableController {
-  const [page, setPage] = useState(1)
+  const pager = useRecordSectionPagination()
 
   // Re-scoping (different MC / property) returns to page 1. Reset during render
   // against the previous scope rather than in an effect — React applies it before
@@ -56,7 +50,7 @@ export function useTemplatesSectionTable({
   const [prevScopeKey, setPrevScopeKey] = useState(scopeKey)
   if (scopeKey !== prevScopeKey) {
     setPrevScopeKey(scopeKey)
-    setPage(1)
+    pager.reset()
   }
 
   const input = useMemo<ListInput<TemplatesListFilters>>(() => {
@@ -64,8 +58,8 @@ export function useTemplatesSectionTable({
       ...(managementCompanyId ? { managementCompanyId: [managementCompanyId] } : {}),
       ...(propertyId ? { propertyId: [propertyId] } : {}),
     }
-    return { filters, page, pageSize: TEMPLATE_SECTION_PAGE_SIZE }
-  }, [managementCompanyId, propertyId, page])
+    return { filters, page: pager.page, pageSize: pager.pageSize }
+  }, [managementCompanyId, propertyId, pager.page, pager.pageSize])
 
   const query = useQuery({
     queryKey: [...TEMPLATES_LIST_QUERY_KEY, "record-section", input],
@@ -75,24 +69,13 @@ export function useTemplatesSectionTable({
   })
 
   const total = query.data?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / TEMPLATE_SECTION_PAGE_SIZE))
   const rows = query.data?.rows ?? []
-
-  const goToPrevious = useCallback(() => setPage((current) => Math.max(1, current - 1)), [])
-  const goToNext = useCallback(() => setPage((current) => current + 1), [])
-
-  const reset = useCallback(() => setPage(1), [])
 
   return {
     rows,
     total,
-    page,
-    totalPages,
-    hasPrevious: page > 1,
-    hasNext: page < totalPages,
-    goToPrevious,
-    goToNext,
-    reset,
+    pagination: pager.toContract(total),
+    reset: pager.reset,
     isLoading: enabled && query.isLoading,
     isFetching: query.isFetching,
     error:

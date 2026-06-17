@@ -13,10 +13,7 @@ import { ManagementCompanyPicker } from "@/modules/management-companies/componen
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TEMPLATES_LIST_COLUMNS } from "@/modules/templates/components/list/table/templates-list-columns"
 import { renderTemplateRowCell } from "@/modules/templates/components/list/table/templates-row-cell"
-import {
-  TEMPLATE_SECTION_PAGE_SIZE,
-  useTemplatesSectionTable,
-} from "@/modules/templates/controllers/record/use-templates-section-table"
+import { useTemplatesSectionTable } from "@/modules/templates/controllers/record/use-templates-section-table"
 import { useTemplatesSectionScope } from "@/modules/templates/controllers/record/use-templates-section-scope"
 
 /**
@@ -135,16 +132,7 @@ export function ManagementCompanyTemplatesSection({
         onOpenRow={(row) => openTemplate(row)}
         getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates match these filters."}
-        pagination={{
-          page: grid.page,
-          pageSize: TEMPLATE_SECTION_PAGE_SIZE,
-          totalItems: grid.total,
-          totalPages: grid.totalPages,
-          hasPreviousPage: grid.hasPrevious,
-          hasNextPage: grid.hasNext,
-          onPreviousPage: grid.goToPrevious,
-          onNextPage: grid.goToNext,
-        }}
+        pagination={grid.pagination}
       />
     </RecordItemSection>
   )
