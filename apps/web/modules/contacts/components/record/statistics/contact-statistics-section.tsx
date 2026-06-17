@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import type { WorkOrderListRow } from "@builders/domain"
@@ -11,7 +11,7 @@ import {
   MoneyCell,
   RecordItemSection,
 } from "@/engines/record-view"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, useRecordSectionPagination } from "@/engines/list-view"
 import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation"
 import { WORK_ORDERS_LIST_COLUMNS } from "@/modules/work-orders/components/list/table/work-orders-list-columns"
 import { renderWorkOrderRowCell } from "@/modules/work-orders/components/list/table/work-orders-row-cell"
@@ -20,15 +20,13 @@ import {
   contactWorkOrdersSectionRequest,
 } from "@/modules/contacts/data/contact-work-orders-request"
 
-const SECTION_PAGE_SIZE = 15
-
 /**
  * Read-only Statistics section for the contact record view. ① the contact's
  * total labor cost (sum of ALL their labor payments) as a 2-col money cell ·
  * ② a paginated `DataTable` of the contact's work orders — the same columns the
  * work-order list renders. Clicking a row routes to that work order's record
- * view (with a `returnTo` back to this contact). Paginated at
- * {@link SECTION_PAGE_SIZE} rows per page. Mirrors `LinkedPropertiesList`.
+ * view (with a `returnTo` back to this contact). Pagination is engine-owned via
+ * {@link useRecordSectionPagination}. Mirrors `LinkedPropertiesList`.
  */
 export function ContactStatisticsSection({ contactId }: { contactId: string }) {
   const router = useRouter()
@@ -36,22 +34,16 @@ export function ContactStatisticsSection({ contactId }: { contactId: string }) {
   const searchParams = useSearchParams()
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
-  const [page, setPage] = useState(1)
+  const pager = useRecordSectionPagination()
 
   const query = useQuery({
-    queryKey: [...CONTACT_WORK_ORDERS_QUERY_KEY, contactId, page],
+    queryKey: [...CONTACT_WORK_ORDERS_QUERY_KEY, contactId, pager.page],
     queryFn: ({ signal }) =>
-      contactWorkOrdersSectionRequest(
-        contactId,
-        (page - 1) * SECTION_PAGE_SIZE,
-        SECTION_PAGE_SIZE,
-        signal,
-      ),
+      contactWorkOrdersSectionRequest(contactId, pager.skip, pager.pageSize, signal),
   })
 
   const rows = useMemo<WorkOrderListRow[]>(() => query.data?.rows ?? [], [query.data])
   const total = query.data?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / SECTION_PAGE_SIZE))
   const laborCostTotal = query.data?.laborCostTotal ?? ""
 
   return (
@@ -76,16 +68,7 @@ export function ContactStatisticsSection({ contactId }: { contactId: string }) {
             router.push(buildRecordDetailHref("/dashboard/work-orders", row.id, returnTo))
           }
           getRowAriaLabel={(row) => `Open work order ${row.workOrderNumber}`}
-          pagination={{
-            page,
-            pageSize: SECTION_PAGE_SIZE,
-            totalItems: total,
-            totalPages,
-            hasPreviousPage: page > 1,
-            hasNextPage: page < totalPages,
-            onPreviousPage: () => setPage((p) => Math.max(1, p - 1)),
-            onNextPage: () => setPage((p) => Math.min(totalPages, p + 1)),
-          }}
+          pagination={pager.toContract(total)}
         />
       )}
     </RecordItemSection>

@@ -1,11 +1,11 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import type { TemplatesListFilters } from "@builders/application"
 import type { TemplateListRow } from "@builders/domain"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, useRecordSectionPagination } from "@/engines/list-view"
 import { ActionHeader } from "@/engines/common"
 import {
   TEMPLATES_LIST_QUERY_KEY,
@@ -16,8 +16,6 @@ import {
 } from "@/modules/templates/components/list/table/templates-list-columns"
 import { renderTemplateRowCell } from "@/modules/templates/components/list/table/templates-row-cell"
 import { buildCurrentRecordEntryPath, buildTemplateHubHref } from "@/hooks/navigation/routes"
-
-const SECTION_PAGE_SIZE = 15
 
 const SECTION_CARD_CLASS =
   "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
@@ -36,16 +34,15 @@ export function TemplatesSectionList({ filters }: { filters: TemplatesListFilter
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
-  const [page, setPage] = useState(1)
+  const pager = useRecordSectionPagination()
 
   const query = useQuery({
-    queryKey: [...TEMPLATES_LIST_QUERY_KEY, "record-section", filters, page],
-    queryFn: () => listTemplatesRequest({ filters, page, pageSize: SECTION_PAGE_SIZE }),
+    queryKey: [...TEMPLATES_LIST_QUERY_KEY, "record-section", filters, pager.page],
+    queryFn: () => listTemplatesRequest({ filters, page: pager.page, pageSize: pager.pageSize }),
   })
 
   const rows = useMemo(() => query.data?.rows ?? [], [query.data])
   const total = query.data?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / SECTION_PAGE_SIZE))
 
   if (query.isLoading) {
     return (
@@ -90,16 +87,7 @@ export function TemplatesSectionList({ filters }: { filters: TemplatesListFilter
         }
         getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
         className="rounded-none! border-0! shadow-none!"
-        pagination={{
-          page,
-          pageSize: SECTION_PAGE_SIZE,
-          totalItems: total,
-          totalPages,
-          hasPreviousPage: page > 1,
-          hasNextPage: page < totalPages,
-          onPreviousPage: () => setPage((p) => Math.max(1, p - 1)),
-          onNextPage: () => setPage((p) => Math.min(totalPages, p + 1)),
-        }}
+        pagination={pager.toContract(total)}
       />
     </div>
   )

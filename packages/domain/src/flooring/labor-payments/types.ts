@@ -15,7 +15,7 @@ export type LaborPaymentListRow = LaborPayment
 
 export type LaborPaymentPage = {
   rows: LaborPaymentListRow[]
-  hasMore: boolean
+  total: number
 }
 
 export type LaborPaymentForm = {

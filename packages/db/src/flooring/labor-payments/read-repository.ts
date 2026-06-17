@@ -81,27 +81,32 @@ export type LaborPaymentsForContactPageOptions = {
 
 /**
  * Paginated read of one contact's labor payments. Powers the contact record
- * view's labor-payments section. Fetches `take + 1` to report `hasMore` without
- * a separate count query. Mirrors `listInventoryAdjustmentsPage`.
+ * view's labor-payments section. Counted (`total` via a parallel `count`) so the
+ * section drives the engine pagination contract. Mirrors
+ * `listWorkOrdersForContactPage` and the sibling `listLaborPaymentsForListView`.
  */
 export async function listLaborPaymentsForContactPage(
   options: LaborPaymentsForContactPageOptions,
   client: LaborPaymentsDbClient = db,
 ): Promise<LaborPaymentPage> {
-  const rows = await client.flooringLaborPayment.findMany({
-    where: { contactId: options.contactId },
-    include: laborPaymentInclude,
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    skip: options.skip,
-    take: options.take + 1,
-  })
+  const where: Prisma.FlooringLaborPaymentWhereInput = {
+    contactId: options.contactId,
+  }
 
-  const hasMore = rows.length > options.take
-  const page = hasMore ? rows.slice(0, options.take) : rows
+  const [total, rows] = await Promise.all([
+    client.flooringLaborPayment.count({ where }),
+    client.flooringLaborPayment.findMany({
+      where,
+      include: laborPaymentInclude,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: options.skip,
+      take: options.take,
+    }),
+  ])
 
   return {
-    rows: page.map(normalizeLaborPayment),
-    hasMore,
+    total,
+    rows: rows.map(normalizeLaborPayment),
   }
 }
 
