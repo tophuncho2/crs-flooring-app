@@ -11,6 +11,7 @@ const {
   assertAdjustmentExpectedUpdatedAtMatchesMock,
   assertAdjustmentLinkMutationAllowedMock,
   assertAdjustmentLinkageRulesMock,
+  assertAdjustmentLinkProductMatchesInventoryMock,
   assertAdjustmentMetaMutationAllowedMock,
   assertAdjustmentPendingMutationAllowedMock,
   assertNetDeductedWithinStartingStockMock,
@@ -39,6 +40,7 @@ const {
     assertAdjustmentExpectedUpdatedAtMatchesMock: vi.fn(),
     assertAdjustmentLinkMutationAllowedMock: vi.fn(),
     assertAdjustmentLinkageRulesMock: vi.fn(),
+    assertAdjustmentLinkProductMatchesInventoryMock: vi.fn(),
     assertAdjustmentMetaMutationAllowedMock: vi.fn(),
     assertAdjustmentPendingMutationAllowedMock: vi.fn(),
     assertNetDeductedWithinStartingStockMock: vi.fn(),
@@ -64,6 +66,7 @@ vi.mock("@builders/domain", () => ({
   assertAdjustmentExpectedUpdatedAtMatches: assertAdjustmentExpectedUpdatedAtMatchesMock,
   assertAdjustmentLinkMutationAllowed: assertAdjustmentLinkMutationAllowedMock,
   assertAdjustmentLinkageRules: assertAdjustmentLinkageRulesMock,
+  assertAdjustmentLinkProductMatchesInventory: assertAdjustmentLinkProductMatchesInventoryMock,
   assertAdjustmentMetaMutationAllowed: assertAdjustmentMetaMutationAllowedMock,
   assertAdjustmentPendingMutationAllowed: assertAdjustmentPendingMutationAllowedMock,
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
@@ -141,6 +144,7 @@ beforeEach(() => {
   assertAdjustmentExpectedUpdatedAtMatchesMock.mockReset()
   assertAdjustmentLinkMutationAllowedMock.mockReset()
   assertAdjustmentLinkageRulesMock.mockReset()
+  assertAdjustmentLinkProductMatchesInventoryMock.mockReset()
   assertAdjustmentMetaMutationAllowedMock.mockReset()
   assertAdjustmentPendingMutationAllowedMock.mockReset()
   assertNetDeductedWithinStartingStockMock.mockReset()
@@ -160,6 +164,7 @@ beforeEach(() => {
   assertAdjustmentExpectedUpdatedAtMatchesMock.mockReturnValue(undefined)
   assertAdjustmentLinkMutationAllowedMock.mockReturnValue(undefined)
   assertAdjustmentLinkageRulesMock.mockReturnValue(undefined)
+  assertAdjustmentLinkProductMatchesInventoryMock.mockReturnValue(undefined)
   assertAdjustmentMetaMutationAllowedMock.mockReturnValue(undefined)
   assertAdjustmentPendingMutationAllowedMock.mockReturnValue(undefined)
   assertNetDeductedWithinStartingStockMock.mockReturnValue(undefined)
@@ -399,12 +404,28 @@ describe("updatePendingAdjustmentUseCase", () => {
       )
     })
 
+    it("asserts the relink target's product matches the adjustment's frozen product", async () => {
+      await updatePendingAdjustmentUseCase(
+        input({ patch: { link: { workOrderId: NEW_WO, workOrderItemId: NEW_WOMI } } }),
+      )
+      expect(assertAdjustmentLinkProductMatchesInventoryMock).toHaveBeenCalledWith({
+        adjustmentProductId: PRODUCT_ID,
+        materialItemProductId: PRODUCT_ID,
+      })
+    })
+
     it("throws INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH (400) when the target WOMI is for another product", async () => {
       dbWomiFindUniqueMock.mockResolvedValue({
         id: NEW_WOMI,
         workOrderId: NEW_WO,
         productId: "prod-other",
         workOrder: { warehouseId: WAREHOUSE_ID },
+      })
+      assertAdjustmentLinkProductMatchesInventoryMock.mockImplementation(() => {
+        throw new InventoryAdjustmentDomainErrorClass(
+          "INVENTORY_ADJUSTMENT_LINK_PRODUCT_MISMATCH",
+          { adjustmentProductId: PRODUCT_ID, materialItemProductId: "prod-other" },
+        )
       })
 
       await expect(

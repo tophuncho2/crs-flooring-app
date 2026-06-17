@@ -120,11 +120,16 @@ export function WorkOrderMaterialItemsSection({
       // re-enters the quantity and saves to materialize it.
       const item = section.items.find((i) => i.id === workOrderItemId)
       if (!item?.productId) return
+      // Only pre-seed the source row's inventory when it is for THIS material
+      // item's product. A cross-product source would seed a mismatched roll
+      // (the picker is product-locked but a direct pre-seed bypasses that filter,
+      // and the server now rejects the mismatch), so force a fresh pick instead.
+      const sourceMatchesProduct = adjustment.productId === item.productId
       setModalRequest({
         workOrderItemId,
         product: { id: item.productId, name: item.productName ?? "" },
         materialItemNotes: item.notes ?? null,
-        initialInventory: inventoryRowFromAdjustment(adjustment),
+        initialInventory: sourceMatchesProduct ? inventoryRowFromAdjustment(adjustment) : null,
       })
     },
     [section.items],

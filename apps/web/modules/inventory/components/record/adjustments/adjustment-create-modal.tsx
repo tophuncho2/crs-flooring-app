@@ -175,6 +175,13 @@ export function AdjustmentCreateModal({
   const { canSave, isSaving, error } = controller
   const showGrid = !picked || isPicking
 
+  // Defense-in-depth: the grid is product-locked, but a pre-seeded inventory
+  // (duplicate flow) can bypass that filter. An adjustment's product is its
+  // inventory's product, so a picked roll for a different product than this
+  // material item would create a mismatch the server rejects — block Save and
+  // tell the operator to re-pick.
+  const productMismatch = Boolean(picked && picked.productId !== product.id)
+
   return (
     <QuickCreateModal
       open
@@ -182,9 +189,14 @@ export function AdjustmentCreateModal({
       widthClassName="max-w-5xl"
       onClose={onClose}
       onCreate={() => controller.save()}
-      canCreate={!showGrid && canSave}
+      canCreate={!showGrid && canSave && !productMismatch}
       isSaving={isSaving}
-      error={error?.message ?? null}
+      error={
+        error?.message ??
+        (productMismatch
+          ? `Selected inventory is a different product than ${product.name}. Re-pick an inventory item for this material item's product.`
+          : null)
+      }
     >
       {showGrid ? (
         <div className="flex flex-col gap-3">

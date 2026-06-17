@@ -12,6 +12,7 @@ import {
 import {
   assertAdjustmentExpectedUpdatedAtMatches,
   assertAdjustmentLinkageRules,
+  assertAdjustmentLinkProductMatchesInventory,
   assertNetDeductedWithinStartingStock,
   describeAdjustmentPendingFormIssues,
   InventoryAdjustmentDomainError,
@@ -139,18 +140,27 @@ export async function updatePendingAdjustmentUseCase(
       // Warehouse is intentionally NOT compared here — see the relink-target
       // resolution above. Only the product must still match: an adjustment
       // references inventory of a fixed product, so its WO link must point at
-      // a material item for that same product.
-      if (resolvedWomiTarget.productId !== existing.productId) {
-        throw new InventoryAdjustmentExecutionError({
-          code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH",
-          message:
-            "Re-link target material item is for a different product than the adjustment",
-          status: 400,
-          payload: {
-            adjustmentProductId: existing.productId,
-            targetProductId: resolvedWomiTarget.productId,
-          },
+      // a material item for that same product. Shares one domain rule with the
+      // create use case's authoritative guard.
+      try {
+        assertAdjustmentLinkProductMatchesInventory({
+          adjustmentProductId: existing.productId,
+          materialItemProductId: resolvedWomiTarget.productId,
         })
+      } catch (error) {
+        if (
+          error instanceof InventoryAdjustmentDomainError &&
+          error.code === "INVENTORY_ADJUSTMENT_LINK_PRODUCT_MISMATCH"
+        ) {
+          throw new InventoryAdjustmentExecutionError({
+            code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH",
+            message:
+              "Re-link target material item is for a different product than the adjustment",
+            status: 400,
+            payload: error.detail,
+          })
+        }
+        throw error
       }
     }
 

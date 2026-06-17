@@ -70,3 +70,23 @@ export function assertAdjustmentWarehouseMatchesInventory(input: {
     })
   }
 }
+
+/**
+ * Invariant: an adjustment references inventory of a fixed product, so when it
+ * carries a WO link the linked material item must be for that same product. The
+ * adjustment's product is derived from its parent inventory; this guard asserts
+ * the linked work-order material item agrees. Enforced on both create (against
+ * the chosen inventory's product) and update/relink (against the row's frozen
+ * product) so the two paths share one source of truth.
+ */
+export function assertAdjustmentLinkProductMatchesInventory(input: {
+  adjustmentProductId: string
+  materialItemProductId: string
+}): void {
+  if (input.adjustmentProductId !== input.materialItemProductId) {
+    throw new InventoryAdjustmentDomainError("INVENTORY_ADJUSTMENT_LINK_PRODUCT_MISMATCH", {
+      adjustmentProductId: input.adjustmentProductId,
+      materialItemProductId: input.materialItemProductId,
+    })
+  }
+}

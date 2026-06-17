@@ -10,6 +10,7 @@ const {
   validateAdjustmentPendingFormMock,
   describeAdjustmentPendingFormIssuesMock,
   assertAdjustmentLinkageRulesMock,
+  assertAdjustmentLinkProductMatchesInventoryMock,
   assertAdjustmentWarehouseMatchesInventoryMock,
   buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStockMock,
@@ -35,6 +36,7 @@ const {
     validateAdjustmentPendingFormMock: vi.fn(),
     describeAdjustmentPendingFormIssuesMock: vi.fn(),
     assertAdjustmentLinkageRulesMock: vi.fn(),
+    assertAdjustmentLinkProductMatchesInventoryMock: vi.fn(),
     assertAdjustmentWarehouseMatchesInventoryMock: vi.fn(),
     buildPendingAdjustmentInventorySnapshotMock: vi.fn(),
     assertNetDeductedWithinStartingStockMock: vi.fn(),
@@ -57,6 +59,7 @@ vi.mock("@builders/domain", () => ({
   validateAdjustmentPendingForm: validateAdjustmentPendingFormMock,
   describeAdjustmentPendingFormIssues: describeAdjustmentPendingFormIssuesMock,
   assertAdjustmentLinkageRules: assertAdjustmentLinkageRulesMock,
+  assertAdjustmentLinkProductMatchesInventory: assertAdjustmentLinkProductMatchesInventoryMock,
   assertAdjustmentWarehouseMatchesInventory: assertAdjustmentWarehouseMatchesInventoryMock,
   buildPendingAdjustmentInventorySnapshot: buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
@@ -131,6 +134,7 @@ beforeEach(() => {
   validateAdjustmentPendingFormMock.mockReset()
   describeAdjustmentPendingFormIssuesMock.mockReset()
   assertAdjustmentLinkageRulesMock.mockReset()
+  assertAdjustmentLinkProductMatchesInventoryMock.mockReset()
   assertAdjustmentWarehouseMatchesInventoryMock.mockReset()
   buildPendingAdjustmentInventorySnapshotMock.mockReset()
   assertNetDeductedWithinStartingStockMock.mockReset()
@@ -138,10 +142,17 @@ beforeEach(() => {
   tx = { flooringWorkOrderItem: { findUnique: vi.fn() } }
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb(tx))
 
-  tx.flooringWorkOrderItem.findUnique.mockResolvedValue({ id: WOMI_ID, workOrderId: WO_ID })
+  // Default WOMI shares the inventory context's product ("prod-1") so the
+  // product-match invariant passes unless a test overrides it.
+  tx.flooringWorkOrderItem.findUnique.mockResolvedValue({
+    id: WOMI_ID,
+    workOrderId: WO_ID,
+    productId: "prod-1",
+  })
   validateAdjustmentPendingFormMock.mockReturnValue([])
   describeAdjustmentPendingFormIssuesMock.mockReturnValue("form issue")
   assertAdjustmentLinkageRulesMock.mockReturnValue(undefined)
+  assertAdjustmentLinkProductMatchesInventoryMock.mockReturnValue(undefined)
   assertAdjustmentWarehouseMatchesInventoryMock.mockReturnValue(undefined)
   getInventoryParentContextForAdjustmentsMock.mockResolvedValue(inventoryContext())
   buildPendingAdjustmentInventorySnapshotMock.mockReturnValue(SNAPSHOT)
@@ -231,6 +242,34 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
 
       await expect(createPendingAdjustmentUseCase(cutVariantInput())).rejects.toMatchObject({
         code: "INVENTORY_ADJUSTMENT_SCOPE_MISMATCH",
+        status: 400,
+      })
+      expect(insertPendingAdjustmentRowMock).not.toHaveBeenCalled()
+    })
+
+    it("asserts the WO link product matches the chosen inventory's product", async () => {
+      await createPendingAdjustmentUseCase(cutVariantInput())
+      expect(assertAdjustmentLinkProductMatchesInventoryMock).toHaveBeenCalledWith({
+        adjustmentProductId: "prod-1",
+        materialItemProductId: "prod-1",
+      })
+    })
+
+    it("throws INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH (400) when the WOMI is for another product", async () => {
+      tx.flooringWorkOrderItem.findUnique.mockResolvedValue({
+        id: WOMI_ID,
+        workOrderId: WO_ID,
+        productId: "prod-other",
+      })
+      assertAdjustmentLinkProductMatchesInventoryMock.mockImplementation(() => {
+        throw new InventoryAdjustmentDomainErrorClass(
+          "INVENTORY_ADJUSTMENT_LINK_PRODUCT_MISMATCH",
+          { adjustmentProductId: "prod-1", materialItemProductId: "prod-other" },
+        )
+      })
+
+      await expect(createPendingAdjustmentUseCase(cutVariantInput())).rejects.toMatchObject({
+        code: "INVENTORY_ADJUSTMENT_LINK_SCOPE_MISMATCH",
         status: 400,
       })
       expect(insertPendingAdjustmentRowMock).not.toHaveBeenCalled()
