@@ -39,7 +39,8 @@ export default function TemplatesClient({
   initialSelectedManagementCompany?: ManagementCompanyOption | null
   initialSelectedProperty?: PropertyOption | null
 }) {
-  const { message, pageError, openCreate, openTemplate } = useTemplatesListController()
+  const { message, pageError, openCreate, openTemplate, syncTemplate, syncingId } =
+    useTemplatesListController()
 
   const {
     rows,
@@ -190,6 +191,8 @@ export default function TemplatesClient({
       <TemplatesTable
         rows={rows}
         onOpen={(row) => openTemplate(row)}
+        onSync={syncTemplate}
+        syncingId={syncingId}
         pagination={{
           page,
           pageSize,
