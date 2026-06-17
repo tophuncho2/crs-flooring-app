@@ -41,9 +41,10 @@ export type EmbeddedAdjustmentRecordViewProps = {
 /**
  * The adjustment edit/create face rendered **inside** a record-view drilldown.
  * Adjustments only ever appear in a record view as the inventory record view's
- * second section (the work-orders material-items section reuses this same
- * component for its inline per-WOMI editing) — so the record-view composition
- * lives here in `modules/inventory`, while `modules/adjustments` stays a pure
+ * second section (the work-orders section opens adjustments on the inventory
+ * record view, and creates them via its own modal) — so the record-view
+ * composition lives here in `modules/inventory`, while `modules/adjustments`
+ * stays a pure
  * primitives module (controller + form fields + pickers + columns) with no
  * record-view-engine dependency.
  *

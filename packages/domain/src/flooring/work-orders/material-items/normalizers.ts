@@ -1,6 +1,5 @@
 import type {
   WorkOrderItemStatus,
-  WorkOrderMaterialItemOption,
   WorkOrderMaterialItemRow,
 } from "./types.js"
 
@@ -34,24 +33,3 @@ export function normalizeWorkOrderMaterialItem(
   }
 }
 
-type WorkOrderMaterialItemOptionInput = {
-  id: string
-  productId: string
-  product: { name: string }
-  quantity: { toString(): string } | null
-  sendUnitAbbrev: string | null
-  notes: string | null
-}
-
-export function normalizeWorkOrderMaterialItemOption(
-  item: WorkOrderMaterialItemOptionInput,
-): WorkOrderMaterialItemOption {
-  return {
-    id: item.id,
-    productId: item.productId,
-    productName: item.product.name,
-    quantity: item.quantity == null ? "" : item.quantity.toString(),
-    sendUnitAbbrev: item.sendUnitAbbrev ?? "",
-    notes: item.notes ?? "",
-  }
-}

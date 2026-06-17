@@ -50,7 +50,6 @@ export function useInventoryAdjustmentsSection({
         inventoryDyeLot: inventory.dyeLot,
         inventoryNote: inventory.note,
         locationLabel: inventory.location,
-        productId: inventory.productId,
         stockUnitAbbrev: inventory.stockUnitAbbrev,
         // Pre-link the originating work order (editable) when opened from a WO.
         // Adjustments link to any work order regardless of product, so no

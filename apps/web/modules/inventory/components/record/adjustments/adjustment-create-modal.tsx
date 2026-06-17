@@ -158,9 +158,8 @@ export function AdjustmentCreateModal({
         inventoryDyeLot: picked.dyeLot,
         inventoryNote: picked.note,
         locationLabel: picked.location ?? undefined,
-        // The adjustment's product is the chosen inventory's product; it links
-        // to this work order regardless of product.
-        productId: picked.productId,
+        // The adjustment links to this work order regardless of product (its
+        // product is the chosen inventory's).
         stockUnitAbbrev: picked.stockUnitAbbrev,
         workOrderId: workOrder.id,
         workOrderLabel: `#${workOrder.workOrderNumber}`,

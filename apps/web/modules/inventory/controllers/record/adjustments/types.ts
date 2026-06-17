@@ -82,15 +82,12 @@ export type AdjustmentPickerConfig = {
 /**
  * Seed values for a create open-spec. Every field is optional; the controller
  * builds the initial form + picker-trigger labels from whatever the host
- * provides. `productId` optionally pre-selects the inventory picker's product
- * filter (the WO "create with matching product" affordance); when omitted the
- * operator picks any product.
+ * provides.
  */
 export type AdjustmentCreateSeed = {
   inventoryId?: string
   warehouseId?: string | null
   workOrderId?: string | null
-  productId?: string
   inventoryItem?: string
   inventoryNumber?: string | null
   inventoryRollNumber?: string | null

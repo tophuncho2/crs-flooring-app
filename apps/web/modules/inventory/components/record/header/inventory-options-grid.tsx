@@ -27,7 +27,8 @@ type InventoryOptionsGridSelection = Pick<
  * `selection` is read structurally (just the four scope fields), so a non-URL
  * caller (the WO-create modal) can feed a local-state object — not only the URL
  * selection controller. `productEditable` locks the product master-filter to a
- * static label when false (the modal pins it to the WOMI's product).
+ * static label when false (the inventory record view locks it to the selected
+ * inventory's product; the WO-create modal leaves it editable).
  *
  * `onSelectInventory` receives the full clicked `InventoryRow` so callers can both
  * seed a form and render the row back (the modal shows it as the selected item).

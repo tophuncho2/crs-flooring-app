@@ -47,8 +47,8 @@ const MODE_ACCENT: Record<SectionMode, string> = {
  * inline stepper:
  *   - Adjustments (default, amber) — the outflow that fulfils this WO, grouped
  *     by product with per-product subtotals. Read-only rows; create via modal.
- *   - Requested Material (sky) — the inbound customer request (WOMI rows),
- *     managed save/discard.
+ *   - Requested Material (sky) — the inbound customer request (material-item
+ *     rows), managed save/discard.
  *
  * Adjustments and material items are decoupled — an adjustment links to the work
  * order (any product), never to a material item. Flipping away from a dirty

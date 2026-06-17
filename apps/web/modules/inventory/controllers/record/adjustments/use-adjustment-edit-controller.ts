@@ -40,9 +40,8 @@ import type { RecordSectionError } from "@/types/record/section-error"
  * Scope-aware: `scope` drives the request URLs. WO callers pass
  * `{ kind: "work-order", workOrderId }`; inv callers pass
  * `{ kind: "inventory", inventoryId }`. `canCreate` gates whether the
- * create flow is reachable — WO callers pass true (with `warehouseId`
- * for the inventory picker); inv callers pass false (adjustments are only
- * created from WOMI rows in the UI).
+ * create flow is reachable — the WO modal (any inventory, any product) and the
+ * inventory hub (on that inventory) both pass true.
  *
  * Mutation success → `publish(patch)` so the parent updates its snapshot.
  * Behavior contract:
@@ -134,16 +133,8 @@ export function useAdjustmentEditController({
     return open.mode === "create" ? isCreateValid(form) : isEditValid(form) && isDirty
   }, [open, form, isDirty])
 
-  // Derived from the open spec: per-picker editable/locked/hidden state, and
-  // the fixed product id (inventory is single-product per open) used to scope
-  // the WO-relink picker + WOMI auto-resolve.
+  // Derived from the open spec: per-picker editable/locked/hidden state.
   const pickerConfig: AdjustmentPickerConfig | null = open?.pickerConfig ?? null
-  const productId =
-    open?.mode === "edit"
-      ? open.adjustment.productId
-      : open?.mode === "create"
-        ? (open.seed.productId ?? null)
-        : null
 
   const openPanel = useCallback(
     (spec: AdjustmentEditOpenSpec) => {
@@ -258,7 +249,6 @@ export function useAdjustmentEditController({
     open,
     form,
     local,
-    productId,
     pickerConfig,
     isDirty,
     canSave,
