@@ -1,7 +1,6 @@
 import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "../../../generated/prisma/client.js"
 import {
-  normalizeWorkOrderMaterialItem,
   type ItemSendUnitSnapshot,
   type WorkOrderMaterialItemCreateForm,
   type WorkOrderMaterialItemRow,
@@ -31,79 +30,11 @@ export type WriteWorkOrderMaterialItemUpdateInput = {
   product?: { productId: string } & ItemSendUnitSnapshot
 }
 
-const workOrderMaterialItemSelect = {
-  id: true,
-  productId: true,
-  product: { select: { name: true } },
-  quantity: true,
-  sendUnitName: true,
-  sendUnitAbbrev: true,
-  notes: true,
-  status: true,
-  sourceTemplateItemId: true,
-  createdAt: true,
-} as const
-
 // Quantity is optional: a blank string means "unset" and is stored as
 // NULL. A non-blank string is handed straight to Prisma, which coerces it
 // to Decimal.
 function toDecimal(value: string): Prisma.Decimal | string | null {
   return value.trim() ? value : null
-}
-
-export async function createWorkOrderMaterialItemRecord(
-  workOrderId: string,
-  input: WriteWorkOrderMaterialItemCreateInput,
-  client: WorkOrdersDbClient = db,
-): Promise<WorkOrderMaterialItemRow> {
-  const item = await client.flooringWorkOrderItem.create({
-    data: {
-      workOrderId,
-      productId: input.productId,
-      quantity: toDecimal(input.quantity),
-      sendUnitName: input.sendUnitName,
-      sendUnitAbbrev: input.sendUnitAbbrev,
-      notes: input.notes ? input.notes : null,
-    },
-    select: workOrderMaterialItemSelect,
-  })
-
-  return normalizeWorkOrderMaterialItem(item)
-}
-
-export async function updateWorkOrderMaterialItemRecord(
-  id: string,
-  input: WriteWorkOrderMaterialItemUpdateInput,
-  client: WorkOrdersDbClient = db,
-): Promise<WorkOrderMaterialItemRow> {
-  const item = await client.flooringWorkOrderItem.update({
-    where: { id },
-    data: {
-      quantity: toDecimal(input.quantity),
-      notes: input.notes ? input.notes : null,
-      ...(input.product
-        ? {
-            product: { connect: { id: input.product.productId } },
-            sendUnitName: input.product.sendUnitName,
-            sendUnitAbbrev: input.product.sendUnitAbbrev,
-          }
-        : {}),
-    },
-    select: workOrderMaterialItemSelect,
-  })
-
-  return normalizeWorkOrderMaterialItem(item)
-}
-
-/**
- * Standalone delete. Adjustments no longer link to a material item, so this is
- * a plain row delete — nothing references the WOMI.
- */
-export async function deleteWorkOrderMaterialItemRecordById(
-  id: string,
-  client: WorkOrdersDbClient = db,
-): Promise<void> {
-  await client.flooringWorkOrderItem.delete({ where: { id } })
 }
 
 export type ApplyWorkOrderMaterialItemsDiffInput = {

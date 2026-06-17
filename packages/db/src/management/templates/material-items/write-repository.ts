@@ -1,7 +1,6 @@
 import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "../../../generated/prisma/client.js"
 import {
-  normalizeTemplateMaterialItem,
   type ItemSendUnitSnapshot,
   type TemplateMaterialItemForm,
   type TemplateMaterialItemRow,
@@ -19,69 +18,11 @@ type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 // across both modules.
 export type WriteTemplateMaterialItemInput = TemplateMaterialItemForm & ItemSendUnitSnapshot
 
-const templateMaterialItemSelect = {
-  id: true,
-  productId: true,
-  product: { select: { name: true, category: { select: { name: true } } } },
-  quantity: true,
-  sendUnitName: true,
-  sendUnitAbbrev: true,
-  notes: true,
-  createdAt: true,
-} as const
-
 // Quantity is optional: a blank string means "unset" and is stored as
 // NULL. A non-blank string is handed straight to Prisma, which coerces it
 // to Decimal.
 function toDecimal(value: string): Prisma.Decimal | string | null {
   return value.trim() ? value : null
-}
-
-export async function createTemplateMaterialItemRecord(
-  templateId: string,
-  input: WriteTemplateMaterialItemInput,
-  client: TemplatesDbClient = db,
-): Promise<TemplateMaterialItemRow> {
-  const item = await client.flooringTemplateItem.create({
-    data: {
-      templateId,
-      productId: input.productId,
-      quantity: toDecimal(input.quantity),
-      sendUnitName: input.sendUnitName,
-      sendUnitAbbrev: input.sendUnitAbbrev,
-      notes: input.notes ? input.notes : null,
-    },
-    select: templateMaterialItemSelect,
-  })
-
-  return normalizeTemplateMaterialItem(item)
-}
-
-export async function updateTemplateMaterialItemRecord(
-  id: string,
-  input: WriteTemplateMaterialItemInput,
-  client: TemplatesDbClient = db,
-): Promise<TemplateMaterialItemRow> {
-  const item = await client.flooringTemplateItem.update({
-    where: { id },
-    data: {
-      productId: input.productId,
-      quantity: toDecimal(input.quantity),
-      sendUnitName: input.sendUnitName,
-      sendUnitAbbrev: input.sendUnitAbbrev,
-      notes: input.notes ? input.notes : null,
-    },
-    select: templateMaterialItemSelect,
-  })
-
-  return normalizeTemplateMaterialItem(item)
-}
-
-export async function deleteTemplateMaterialItemRecordById(
-  id: string,
-  client: TemplatesDbClient = db,
-): Promise<void> {
-  await client.flooringTemplateItem.delete({ where: { id } })
 }
 
 export type ApplyTemplateMaterialItemsDiffInput = {
