@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls, DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { WorkOrdersListFilters } from "@builders/application"
 import type {
   JobTypeOption,
@@ -404,18 +404,16 @@ export default function WorkOrdersClient({
       <WorkOrdersTable
         rows={rows}
         onOpenWorkOrder={openWorkOrder}
-        pagination={
-          <PaginateControls
-            page={page}
-            pageSize={pageSize}
-            totalItems={total}
-            totalPages={totalPages}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-          />
-        }
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
       />
     </div>
   )

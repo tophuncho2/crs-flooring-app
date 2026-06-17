@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { ContactsListFilters } from "@builders/application"
 import {
   LIST_CONTACTS_PAGE_SIZE,
@@ -119,18 +119,16 @@ export default function ContactsClient({
       <ContactsTable
         rows={rows}
         onOpenContact={(row) => openContact(row.id)}
-        pagination={
-          <PaginateControls
-            page={page}
-            pageSize={pageSize}
-            totalItems={total}
-            totalPages={totalPages}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-          />
-        }
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
       />
     </div>
   )

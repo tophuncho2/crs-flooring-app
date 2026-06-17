@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { ManufacturersListFilters } from "@builders/application"
 import {
   LIST_MANUFACTURERS_PAGE_SIZE,
@@ -97,18 +97,16 @@ export default function ManufacturersClient({
       <ManufacturersTable
         rows={rows}
         onOpen={(row) => openManufacturer(row.id)}
-        pagination={
-          <PaginateControls
-            page={page}
-            pageSize={pageSize}
-            totalItems={total}
-            totalPages={totalPages}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-          />
-        }
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
       />
     </div>
   )

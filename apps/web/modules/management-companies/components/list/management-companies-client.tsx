@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls, ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { ManagementCompaniesListFilters } from "@builders/application"
 import {
   LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
@@ -153,18 +153,16 @@ export default function ManagementCompaniesClient({
       <ManagementCompaniesTable
         rows={rows}
         onOpenCompany={(row) => openManagementCompany(row.id)}
-        pagination={
-          <PaginateControls
-            page={page}
-            pageSize={pageSize}
-            totalItems={total}
-            totalPages={totalPages}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-          />
-        }
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
       />
     </div>
   )

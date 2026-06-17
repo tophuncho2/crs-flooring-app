@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { PaginateControls, ListRowCount, ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListToolbarTallCard, DebouncedSearchControl, ClearAllFiltersButton, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { ListRowCount, ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListToolbarTallCard, DebouncedSearchControl, ClearAllFiltersButton, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -378,18 +378,16 @@ export default function AdjustmentsClient({
         onOpenAdjustment={(row) =>
           router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
         }
-        pagination={
-          <PaginateControls
-            page={page}
-            pageSize={pageSize}
-            totalItems={total}
-            totalPages={totalPages}
-            hasPreviousPage={hasPreviousPage}
-            hasNextPage={hasNextPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
-          />
-        }
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
       />
     </div>
   )

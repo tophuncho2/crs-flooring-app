@@ -1,7 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { LaborPaymentListRow } from "@builders/domain"
 import { LABOR_PAYMENTS_LIST_COLUMNS } from "./table/labor-payments-list-columns"
 import { renderLaborPaymentRowCell } from "./table/labor-payments-row-cell"
@@ -13,7 +12,7 @@ export function LaborPaymentsTable({
 }: {
   rows: LaborPaymentListRow[]
   onOpenLaborPayment: (row: LaborPaymentListRow) => void
-  pagination?: ReactNode
+  pagination?: PaginateContract
 }) {
   return (
     <DataTable<LaborPaymentListRow>
@@ -23,7 +22,7 @@ export function LaborPaymentsTable({
       onOpenRow={(row) => onOpenLaborPayment(row)}
       getRowAriaLabel={(row) => `Open labor payment for ${row.contactName}`}
       renderCell={renderLaborPaymentRowCell}
-      footerSlot={pagination}
+      pagination={pagination}
     />
   )
 }

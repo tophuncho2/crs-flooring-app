@@ -1,8 +1,7 @@
 "use client"
 
-import type { ReactNode } from "react"
 import { Copy } from "lucide-react"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import { RecordOptionsMenu } from "@/engines/common"
 import type { InventoryRow } from "@builders/domain"
 import { INVENTORY_LIST_COLUMNS } from "./table/inventory-list-columns"
@@ -17,7 +16,7 @@ export function InventoryTable({
   rows: InventoryRow[]
   onOpenInventory: (id: string) => void
   onDuplicateInventory: (id: string) => void
-  pagination?: ReactNode
+  pagination?: PaginateContract
 }) {
   return (
     <DataTable<InventoryRow>
@@ -40,7 +39,7 @@ export function InventoryTable({
       )}
       getRowAriaLabel={(row) => `Open inventory item ${row.inventoryNumber}`}
       renderCell={renderInventoryRowCell}
-      footerSlot={pagination}
+      pagination={pagination}
     />
   )
 }

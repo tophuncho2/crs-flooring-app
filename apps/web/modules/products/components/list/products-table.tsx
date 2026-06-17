@@ -1,7 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { ProductListRow } from "@builders/domain"
 import { PRODUCTS_LIST_COLUMNS } from "./table/products-list-columns"
 import { renderProductRowCell } from "./table/products-row-cell"
@@ -9,7 +8,7 @@ import { renderProductRowCell } from "./table/products-row-cell"
 export type ProductsTableProps = {
   rows: ProductListRow[]
   onOpenProduct: (id: string) => void
-  pagination?: ReactNode
+  pagination?: PaginateContract
 }
 
 export function ProductsTable({
@@ -25,7 +24,7 @@ export function ProductsTable({
       onOpenRow={(row) => onOpenProduct(row.id)}
       getRowAriaLabel={(row) => `Open product ${row.name || row.style || row.id}`}
       renderCell={renderProductRowCell}
-      footerSlot={pagination}
+      pagination={pagination}
     />
   )
 }

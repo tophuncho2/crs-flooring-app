@@ -1,7 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { ManufacturerListRow } from "@builders/domain"
 import { MANUFACTURERS_LIST_COLUMNS } from "./table/manufacturers-list-columns"
 import { renderManufacturerRowCell } from "./table/manufacturers-row-cell"
@@ -13,7 +12,7 @@ export function ManufacturersTable({
 }: {
   rows: ManufacturerListRow[]
   onOpen: (row: ManufacturerListRow) => void
-  pagination?: ReactNode
+  pagination?: PaginateContract
 }) {
   return (
     <DataTable<ManufacturerListRow>
@@ -23,7 +22,7 @@ export function ManufacturersTable({
       onOpenRow={onOpen}
       getRowAriaLabel={(row) => `Open manufacturer ${row.companyName}`}
       renderCell={renderManufacturerRowCell}
-      footerSlot={pagination}
+      pagination={pagination}
     />
   )
 }

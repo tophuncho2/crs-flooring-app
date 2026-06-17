@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import type { PropertyManagementCompany, TemplateListRow } from "@builders/domain"
-import { DataTable, PaginateControls } from "@/engines/list-view"
+import { DataTable } from "@/engines/list-view"
 import { RecordItemSection } from "@/engines/record-view"
 import {
   buildCurrentRecordEntryPath,
@@ -125,18 +125,16 @@ export function PropertyTemplatesSection({
         onOpenRow={(row) => openTemplate(row)}
         getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates for this property yet."}
-        footerSlot={
-          <PaginateControls
-            page={grid.page}
-            pageSize={TEMPLATE_SECTION_PAGE_SIZE}
-            totalItems={grid.total}
-            totalPages={grid.totalPages}
-            hasPreviousPage={grid.hasPrevious}
-            hasNextPage={grid.hasNext}
-            onPreviousPage={grid.goToPrevious}
-            onNextPage={grid.goToNext}
-          />
-        }
+        pagination={{
+          page: grid.page,
+          pageSize: TEMPLATE_SECTION_PAGE_SIZE,
+          totalItems: grid.total,
+          totalPages: grid.totalPages,
+          hasPreviousPage: grid.hasPrevious,
+          hasNextPage: grid.hasNext,
+          onPreviousPage: grid.goToPrevious,
+          onNextPage: grid.goToNext,
+        }}
       />
     </RecordItemSection>
   )

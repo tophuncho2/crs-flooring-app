@@ -1,7 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { PropertyListRow } from "@builders/domain"
 import { PROPERTIES_LIST_COLUMNS } from "./table/properties-list-columns"
 import { renderPropertyRowCell } from "./table/properties-row-cell"
@@ -13,7 +12,7 @@ export function PropertiesTable({
 }: {
   rows: PropertyListRow[]
   onOpenProperty: (row: PropertyListRow) => void
-  pagination?: ReactNode
+  pagination?: PaginateContract
 }) {
   return (
     <DataTable<PropertyListRow>
@@ -23,7 +22,7 @@ export function PropertiesTable({
       onOpenRow={(row) => onOpenProperty(row)}
       getRowAriaLabel={(row) => `Open property ${row.name}`}
       renderCell={renderPropertyRowCell}
-      footerSlot={pagination}
+      pagination={pagination}
     />
   )
 }

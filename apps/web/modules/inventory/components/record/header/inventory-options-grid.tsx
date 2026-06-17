@@ -1,10 +1,6 @@
 "use client"
 
-import {
-  DataTable,
-  DebouncedSearchControl,
-  PaginateControls,
-} from "@/engines/list-view"
+import { DataTable, DebouncedSearchControl } from "@/engines/list-view"
 import type { InventoryRow } from "@builders/domain"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
@@ -123,18 +119,16 @@ export function InventoryOptionsGrid({
         onRowClick={(row) => onSelectInventory(row)}
         getRowAriaLabel={(row) => row.inventoryItem}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
-        footerSlot={
-          <PaginateControls
-            page={grid.page}
-            pageSize={INVENTORY_PICKER_PAGE_SIZE}
-            totalItems={grid.total}
-            totalPages={grid.totalPages}
-            hasPreviousPage={grid.hasPrevious}
-            hasNextPage={grid.hasNext}
-            onPreviousPage={grid.goToPrevious}
-            onNextPage={grid.goToNext}
-          />
-        }
+        pagination={{
+          page: grid.page,
+          pageSize: INVENTORY_PICKER_PAGE_SIZE,
+          totalItems: grid.total,
+          totalPages: grid.totalPages,
+          hasPreviousPage: grid.hasPrevious,
+          hasNextPage: grid.hasNext,
+          onPreviousPage: grid.goToPrevious,
+          onNextPage: grid.goToNext,
+        }}
       />
     </div>
   )

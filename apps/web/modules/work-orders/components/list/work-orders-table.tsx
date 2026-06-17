@@ -1,7 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { WorkOrderListRow } from "@builders/domain"
 import { WORK_ORDERS_LIST_COLUMNS } from "./table/work-orders-list-columns"
 import { renderWorkOrderRowCell } from "./table/work-orders-row-cell"
@@ -13,7 +12,7 @@ export function WorkOrdersTable({
 }: {
   rows: WorkOrderListRow[]
   onOpenWorkOrder: (id: string) => void
-  pagination?: ReactNode
+  pagination?: PaginateContract
 }) {
   return (
     <DataTable<WorkOrderListRow>
@@ -23,7 +22,7 @@ export function WorkOrdersTable({
       onOpenRow={(row) => onOpenWorkOrder(row.id)}
       getRowAriaLabel={(row) => `Open work order ${row.workOrderNumber}`}
       renderCell={renderWorkOrderRowCell}
-      footerSlot={pagination}
+      pagination={pagination}
     />
   )
 }

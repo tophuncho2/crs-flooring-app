@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { PropertyListRow } from "@builders/domain"
-import { DataTable, PaginateControls } from "@/engines/list-view"
+import { DataTable } from "@/engines/list-view"
 import { RecordItemSection } from "@/engines/record-view"
 import {
   PROPERTIES_LIST_QUERY_KEY,
@@ -83,20 +83,16 @@ export function LinkedPropertiesList({
         }
         onOpenRow={(row) => onSelect(row.id)}
         getRowAriaLabel={(row) => `Open property ${row.name}`}
-        footerSlot={
-          totalPages > 1 ? (
-            <PaginateControls
-              page={page}
-              pageSize={SECTION_PAGE_SIZE}
-              totalItems={total}
-              totalPages={totalPages}
-              hasPreviousPage={page > 1}
-              hasNextPage={page < totalPages}
-              onPreviousPage={() => setPage((p) => Math.max(1, p - 1))}
-              onNextPage={() => setPage((p) => Math.min(totalPages, p + 1))}
-            />
-          ) : null
-        }
+        pagination={{
+          page,
+          pageSize: SECTION_PAGE_SIZE,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage: page > 1,
+          hasNextPage: page < totalPages,
+          onPreviousPage: () => setPage((p) => Math.max(1, p - 1)),
+          onNextPage: () => setPage((p) => Math.min(totalPages, p + 1)),
+        }}
       />
     </RecordItemSection>
   )

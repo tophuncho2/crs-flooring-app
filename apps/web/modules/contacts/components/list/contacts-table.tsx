@@ -1,7 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { ContactListRow } from "@builders/domain"
 import { CONTACTS_LIST_COLUMNS } from "./table/contacts-list-columns"
 import { renderContactRowCell } from "./table/contacts-row-cell"
@@ -13,7 +12,7 @@ export function ContactsTable({
 }: {
   rows: ContactListRow[]
   onOpenContact: (row: ContactListRow) => void
-  pagination?: ReactNode
+  pagination?: PaginateContract
 }) {
   return (
     <DataTable<ContactListRow>
@@ -23,7 +22,7 @@ export function ContactsTable({
       onOpenRow={(row) => onOpenContact(row)}
       getRowAriaLabel={(row) => `Open contact ${row.name}`}
       renderCell={renderContactRowCell}
-      footerSlot={pagination}
+      pagination={pagination}
     />
   )
 }

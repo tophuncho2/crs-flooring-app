@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { DataTable, DebouncedSearchControl, PaginateControls } from "@/engines/list-view"
+import { DataTable, DebouncedSearchControl } from "@/engines/list-view"
 import {
   RecordCreateClientScaffold,
   RecordFieldSection,
@@ -150,18 +150,16 @@ function InventoryMergePanel({ page }: { page: RecordDetailClientScaffoldContext
                     canToggleSelection: !isPending,
                   }}
                   empty={grid.isLoading ? "Searching…" : (grid.error ?? "No matching inventory")}
-                  footerSlot={
-                    <PaginateControls
-                      page={grid.page}
-                      pageSize={INVENTORY_PICKER_PAGE_SIZE}
-                      totalItems={grid.total}
-                      totalPages={grid.totalPages}
-                      hasPreviousPage={grid.hasPrevious}
-                      hasNextPage={grid.hasNext}
-                      onPreviousPage={grid.goToPrevious}
-                      onNextPage={grid.goToNext}
-                    />
-                  }
+                  pagination={{
+                    page: grid.page,
+                    pageSize: INVENTORY_PICKER_PAGE_SIZE,
+                    totalItems: grid.total,
+                    totalPages: grid.totalPages,
+                    hasPreviousPage: grid.hasPrevious,
+                    hasNextPage: grid.hasNext,
+                    onPreviousPage: grid.goToPrevious,
+                    onNextPage: grid.goToNext,
+                  }}
                 />
               </>
             ) : (

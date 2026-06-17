@@ -1,7 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { WarehouseListRow } from "@builders/domain"
 import { WAREHOUSE_LIST_COLUMNS } from "./table/warehouse-list-columns"
 import { renderWarehouseRowCell } from "./table/warehouse-row-cell"
@@ -13,7 +12,7 @@ export function WarehouseTable({
 }: {
   rows: WarehouseListRow[]
   onOpen: (row: WarehouseListRow) => void
-  pagination?: ReactNode
+  pagination?: PaginateContract
 }) {
   return (
     <DataTable<WarehouseListRow>
@@ -23,7 +22,7 @@ export function WarehouseTable({
       onOpenRow={onOpen}
       getRowAriaLabel={(row) => `Open warehouse ${row.name}`}
       renderCell={renderWarehouseRowCell}
-      footerSlot={pagination}
+      pagination={pagination}
     />
   )
 }

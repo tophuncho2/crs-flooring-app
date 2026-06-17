@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import type { TemplatesListFilters } from "@builders/application"
 import type { TemplateListRow } from "@builders/domain"
-import { DataTable, PaginateControls } from "@/engines/list-view"
+import { DataTable } from "@/engines/list-view"
 import { ActionHeader } from "@/engines/common"
 import {
   TEMPLATES_LIST_QUERY_KEY,
@@ -90,20 +90,17 @@ export function TemplatesSectionList({ filters }: { filters: TemplatesListFilter
         }
         getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
         className="rounded-none! border-0! shadow-none!"
+        pagination={{
+          page,
+          pageSize: SECTION_PAGE_SIZE,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage: page > 1,
+          hasNextPage: page < totalPages,
+          onPreviousPage: () => setPage((p) => Math.max(1, p - 1)),
+          onNextPage: () => setPage((p) => Math.min(totalPages, p + 1)),
+        }}
       />
-      {totalPages > 1 ? (
-        <PaginateControls
-          page={page}
-          pageSize={SECTION_PAGE_SIZE}
-          totalItems={total}
-          totalPages={totalPages}
-          hasPreviousPage={page > 1}
-          hasNextPage={page < totalPages}
-          onPreviousPage={() => setPage((p) => Math.max(1, p - 1))}
-          onNextPage={() => setPage((p) => Math.min(totalPages, p + 1))}
-          className="border-t border-[var(--panel-border)]"
-        />
-      ) : null}
     </div>
   )
 }

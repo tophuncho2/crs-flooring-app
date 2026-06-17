@@ -1,7 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { DataTable } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { TemplateListRow } from "@builders/domain"
 import { TEMPLATES_LIST_COLUMNS } from "./table/templates-list-columns"
 import { renderTemplateRowCell } from "./table/templates-row-cell"
@@ -13,7 +12,7 @@ export function TemplatesTable({
 }: {
   rows: TemplateListRow[]
   onOpen: (row: TemplateListRow) => void
-  pagination?: ReactNode
+  pagination?: PaginateContract
 }) {
   return (
     <DataTable<TemplateListRow>
@@ -23,7 +22,7 @@ export function TemplatesTable({
       onOpenRow={(row) => onOpen(row)}
       getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
       renderCell={renderTemplateRowCell}
-      footerSlot={pagination}
+      pagination={pagination}
     />
   )
 }
