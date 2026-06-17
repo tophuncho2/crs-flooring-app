@@ -29,15 +29,12 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
-// Multi-value (repeated) filter params — entity-id chips + import-identity
-// chips (PO#/import#, matched against the parent inventory). Shared by parse +
+// Multi-value (repeated) filter params — entity-id chips. Shared by parse +
 // build.
 const MULTI_VALUE_FILTER_KEYS = [
   "warehouseId",
   "categoryId",
   "productId",
-  "importNumber",
-  "purchaseOrderNumber",
 ] as const
 // Scalar free-text filter params — the four identity search bars. Shared by
 // parse + build so the URL contract stays in one place.

@@ -326,22 +326,6 @@ export async function listAdjustmentsForListView(
     where.inventoryNote = { contains: note, mode: "insensitive" }
   }
 
-  // Import-identity chips target the parent inventory row (the adjustment
-  // carries no PO#/import# of its own). Accumulate into one nested relation
-  // filter — mirrors the `where.product = { is: {...} }` category pattern above.
-  const inventoryWhere: Prisma.FlooringInventoryWhereInput = {}
-  const importNumbers = args.filters.importNumber
-  if (importNumbers && importNumbers.length > 0) {
-    inventoryWhere.importNumber = { in: [...importNumbers] }
-  }
-  const purchaseOrderNumbers = args.filters.purchaseOrderNumber
-  if (purchaseOrderNumbers && purchaseOrderNumbers.length > 0) {
-    inventoryWhere.purchaseOrderNumber = { in: [...purchaseOrderNumbers] }
-  }
-  if (Object.keys(inventoryWhere).length > 0) {
-    where.inventory = { is: inventoryWhere }
-  }
-
   const skip = (args.page - 1) * args.pageSize
 
   const [rows, total] = await Promise.all([

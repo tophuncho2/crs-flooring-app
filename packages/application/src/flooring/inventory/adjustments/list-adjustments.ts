@@ -30,8 +30,6 @@ export async function listAdjustmentsUseCase(
   const warehouseId = normalizeIds(input.filters?.warehouseId)
   const categoryId = normalizeIds(input.filters?.categoryId)
   const productId = normalizeIds(input.filters?.productId)
-  const importNumber = normalizeIds(input.filters?.importNumber)
-  const purchaseOrderNumber = normalizeIds(input.filters?.purchaseOrderNumber)
   const invNumber = input.filters?.invNumber?.trim() || undefined
   const rollNumber = input.filters?.rollNumber?.trim() || undefined
   const dyeLot = input.filters?.dyeLot?.trim() || undefined
@@ -42,8 +40,6 @@ export async function listAdjustmentsUseCase(
       ...(warehouseId ? { warehouseId } : {}),
       ...(categoryId ? { categoryId } : {}),
       ...(productId ? { productId } : {}),
-      ...(importNumber ? { importNumber } : {}),
-      ...(purchaseOrderNumber ? { purchaseOrderNumber } : {}),
       ...(invNumber ? { invNumber } : {}),
       ...(rollNumber ? { rollNumber } : {}),
       ...(dyeLot ? { dyeLot } : {}),

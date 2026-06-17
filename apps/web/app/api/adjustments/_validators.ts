@@ -224,10 +224,6 @@ const ADJUSTMENTS_MULTI_VALUE_FILTER_KEYS = [
   "warehouseId",
   "categoryId",
   "productId",
-  // Import-identity chips — repeated params, matched against the parent
-  // inventory row in the data layer (the adjustment carries no PO#/import#).
-  "importNumber",
-  "purchaseOrderNumber",
 ] as const
 type AdjustmentsMultiValueFilterKey = (typeof ADJUSTMENTS_MULTI_VALUE_FILTER_KEYS)[number]
 
