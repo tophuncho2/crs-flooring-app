@@ -405,6 +405,13 @@ function buildListViewWhere(
     clauses.push({ isArchived: false })
   }
 
+  // Merged rows are ALWAYS hidden from the list (no opt-in toggle, unlike
+  // archived). They survive only as the target of an adjustment's "open
+  // inventory" link, which goes through `getInventoryById`/`getInventoryDetailById`
+  // (unfiltered by id). This also filters the record-view reference-header
+  // options grid, which defaults to this read.
+  clauses.push({ wasMerged: false })
+
   // Per-field identity search — one independent clause per filled search bar
   // (`inventoryNumber`/`rollNumber`/`dyeLot`/`note`). Each pushes its own AND
   // clause so filling more than one bar narrows the result set. Location is
@@ -657,6 +664,7 @@ export async function searchInventoryLocationsForWarehouse(
   const conditions: Prisma.Sql[] = [
     Prisma.sql`"warehouseId" = ${args.warehouseId}`,
     Prisma.sql`"isArchived" = false`,
+    Prisma.sql`"wasMerged" = false`,
     Prisma.sql`"location" IS NOT NULL`,
     Prisma.sql`length(trim("location")) > 0`,
   ]
@@ -706,6 +714,7 @@ export async function searchInventoryPurchaseOrderNumbers(
   client: InventoryDbClient = db,
 ): Promise<InventoryPurchaseOrderSearchResult> {
   const conditions: Prisma.Sql[] = [
+    Prisma.sql`"wasMerged" = false`,
     Prisma.sql`"purchaseOrderNumber" IS NOT NULL`,
     Prisma.sql`length(trim("purchaseOrderNumber")) > 0`,
   ]
@@ -756,6 +765,7 @@ export async function searchInventoryImportNumbers(
   client: InventoryDbClient = db,
 ): Promise<InventoryImportNumberSearchResult> {
   const conditions: Prisma.Sql[] = [
+    Prisma.sql`"wasMerged" = false`,
     Prisma.sql`"importNumber" IS NOT NULL`,
     Prisma.sql`length(trim("importNumber")) > 0`,
   ]

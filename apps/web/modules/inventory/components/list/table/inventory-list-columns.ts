@@ -23,5 +23,4 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
   { key: "importNumber", label: "Import #" },
   { key: "fifoReceivedAt", label: "FIFO Received" },
   { key: "updatedAt", label: "Updated" },
-  { key: "wasMerged", label: "Merged", align: "center" },
 ]
