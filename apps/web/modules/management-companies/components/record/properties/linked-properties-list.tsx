@@ -64,7 +64,6 @@ export function LinkedPropertiesList({
         isDirty: false,
         isSaving: false,
         hasConflict: false,
-        summary: `${total} ${total === 1 ? "property" : "properties"}`,
         actions: [
           { key: "add-property", label: "+ Property", tone: "primary", onClick: onCreate },
         ],
