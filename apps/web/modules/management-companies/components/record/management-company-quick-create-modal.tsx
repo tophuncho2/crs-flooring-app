@@ -7,12 +7,11 @@ import { useManagementCompanyQuickCreate } from "@/modules/management-companies/
 
 /**
  * The management-company **quick create** form mounted in a modal inside a record
- * view — the lean counterpart to the full `/dashboard/management-companies/new`
- * page. Reuses the shared `ManagementCompanyCellsSection` with
- * `showContactAndAddress={false}`, so the modal trims down to the required Company
- * Name cell only. Creates via `/api/management-companies`, then hands the created
- * `ManagementCompanyDetail` back through `onCreated` so the host fills the
- * originating cell — no navigation.
+ * view — the modal counterpart to the full `/dashboard/management-companies/new`
+ * page. Reuses the shared `ManagementCompanyCellsSection` with its full field set
+ * (Company Name + Phone / Email / Address). Creates via `/api/management-companies`,
+ * then hands the created `ManagementCompanyDetail` back through `onCreated` so the
+ * host fills the originating cell — no navigation.
  *
  * Mount it conditionally (only while open) so each open starts from a clean
  * controller snapshot.
@@ -52,7 +51,6 @@ export function ManagementCompanyQuickCreateModal({
         onFieldChange={(field, value) =>
           controller.setLocalValue((prev) => ({ ...prev, [field]: value }))
         }
-        showContactAndAddress={false}
       />
     </QuickCreateModal>
   )
