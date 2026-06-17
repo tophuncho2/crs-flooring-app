@@ -9,8 +9,6 @@ import {
   buildRecordCreateHref,
   buildTemplateHubHref,
 } from "@/hooks/navigation/routes"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
-import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { TEMPLATES_LIST_COLUMNS } from "@/modules/templates/components/list/table/templates-list-columns"
 import { renderTemplateRowCell } from "@/modules/templates/components/list/table/templates-row-cell"
 import { useTemplatesSectionTable } from "@/modules/templates/controllers/record/use-templates-section-table"
@@ -18,13 +16,11 @@ import { useTemplatesSectionScope } from "@/modules/templates/controllers/record
 
 /**
  * The Property record view's §2 templates section, on the canonical
- * `RecordItemSection` chrome (persistent blue header). The MC + Property scope
- * pickers ride in the section sub-header beside "+ Template"; the body is a
- * paginated list-view `DataTable` over the shared templates columns. The property
- * is seeded + **locked**, and the management company is seeded + locked when the
- * property has one (empty for an orphan). Both pickers are read-only here — the
- * operator only browses the property's templates and clicks a row to open that
- * template's hub.
+ * `RecordItemSection` chrome (persistent blue header). The body is a paginated
+ * list-view `DataTable` over the shared templates columns, scoped (via
+ * `useTemplatesSectionScope`) to the seeded property — and its management company,
+ * when it has one. The operator only browses the property's templates and clicks a
+ * row to open that template's hub; "+ Template" opens a fresh create form.
  */
 export function PropertyTemplatesSection({
   managementCompany,
@@ -80,31 +76,6 @@ export function PropertyTemplatesSection({
         isDirty: false,
         isSaving: false,
         hasConflict: false,
-        actionsLeading: (
-          // Scope pickers: both locked to the seeded property (and its company,
-          // when present). They show the fixed scope; the list can't be re-scoped.
-          <div className="flex flex-wrap items-center gap-2">
-            <ManagementCompanyPicker
-              value={cascade.managementCompanyId}
-              selectedLabel={cascade.managementCompanyLabel}
-              onChange={() => {}}
-              onOptionSelected={() => {}}
-              disabled
-              placeholder="No company"
-              ariaLabel="Management company"
-            />
-            <PropertyPicker
-              value={cascade.propertyId}
-              selectedLabel={cascade.propertyLabel}
-              managementCompanyId={cascade.managementCompanyId}
-              onChange={() => {}}
-              onOptionSelected={() => {}}
-              disabled
-              placeholder="Select property"
-              ariaLabel="Property"
-            />
-          </div>
-        ),
         actions: [
           {
             key: "add-template",
