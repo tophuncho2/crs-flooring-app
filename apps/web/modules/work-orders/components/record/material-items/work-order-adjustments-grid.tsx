@@ -114,7 +114,7 @@ export function WorkOrderAdjustmentsGrid({
                 ) : null}
                 <span>
                   Deductions{" "}
-                  <span className="tabular-nums text-[var(--foreground)]/80">
+                  <span className="tabular-nums text-rose-800/80">
                     {deductionTotal.quantity || "—"}
                     {deductionTotal.quantity && deductionTotal.stockUnitAbbrev ? ` ${deductionTotal.stockUnitAbbrev}` : ""}
                   </span>

@@ -35,7 +35,11 @@ export function renderAdjustmentsRowCell(
       return row.location || "-"
     case "quantity":
       return (
-        <span className="tabular-nums">
+        <span
+          className={`tabular-nums ${
+            row.adjustmentType === "INCREASE" ? "text-emerald-700" : "text-rose-800"
+          }`}
+        >
           {formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.stockUnitAbbrev ?? "")}
         </span>
       )
