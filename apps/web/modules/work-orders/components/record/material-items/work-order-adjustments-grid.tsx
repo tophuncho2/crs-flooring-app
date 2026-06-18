@@ -56,6 +56,8 @@ export type WorkOrderAdjustmentsGridProps = {
   onDuplicate: (adjustment: EnrichedInventoryAdjustmentRow) => void
   /** Navigate to the split-off create form seeded from this row's inventory. */
   onSplitOff: (adjustment: EnrichedInventoryAdjustmentRow) => void
+  /** Open the delete confirm for this row (PENDING only; deletes the adjustment). */
+  onDelete: (adjustment: EnrichedInventoryAdjustmentRow) => void
   /** True while a section save / mutation is in flight — disables row options. */
   isBusy: boolean
 }
@@ -74,6 +76,7 @@ export function WorkOrderAdjustmentsGrid({
   onCreateWithProduct,
   onDuplicate,
   onSplitOff,
+  onDelete,
   isBusy,
 }: WorkOrderAdjustmentsGridProps) {
   const groups = useMemo(() => groupByProduct(adjustments), [adjustments])
@@ -130,7 +133,7 @@ export function WorkOrderAdjustmentsGrid({
               rowActions={(row) =>
                 renderAdjustmentRowActions(
                   row,
-                  { onSplitOff, onCreateWithProduct, onDuplicate },
+                  { onSplitOff, onCreateWithProduct, onDuplicate, onDelete },
                   isBusy,
                 )
               }

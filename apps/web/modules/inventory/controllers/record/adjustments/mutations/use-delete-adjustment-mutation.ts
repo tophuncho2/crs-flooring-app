@@ -1,36 +1,29 @@
 "use client"
 
-import type { Dispatch, SetStateAction } from "react"
-import {
-  normalizeRecordSectionError,
-  type RecordSectionError,
-} from "@/types/record/section-error"
 import { useMutation } from "@tanstack/react-query"
 import type { InventoryAdjustmentRow } from "@builders/domain"
 import {
   deletePendingAdjustmentRequest,
   type AdjustmentScopeUrl,
 } from "@/modules/adjustments/data/mutations"
-import type { AdjustmentEditOpenSpec, AdjustmentEditPatch } from "../types"
 
 type Deps = {
   scope: AdjustmentScopeUrl
-  publish: (patch: AdjustmentEditPatch) => void
-  setOpen: Dispatch<SetStateAction<AdjustmentEditOpenSpec | null>>
-  setError: Dispatch<SetStateAction<RecordSectionError | null>>
+  /** Fired after a successful delete with the removed row's id. */
+  onDeleted?: (deletedId: string) => void
+  /** Fired on failure with the raw error (host decides how to surface it). */
+  onError?: (error: unknown) => void
 }
 
 /**
- * Delete-pending mutation. Allowed only on PENDING rows (server-enforced);
- * closes the panel on success and emits a "delete" patch so the parent
- * removes the row from its snapshot.
+ * The one delete-pending mutation, shared by every surface that removes a PENDING
+ * adjustment: the record-view edit panel, the inventory record adjustments list,
+ * and the work-order record adjustments grid. Scope-aware (work-order vs inventory
+ * route); deletion is server-enforced to PENDING rows. Behaviour beyond the
+ * request — clearing edit state, refreshing a list, reconciling balances — is the
+ * host's via `onDeleted` / `onError`, so the hook stays surface-agnostic.
  */
-export function useDeleteAdjustmentMutation({
-  scope,
-  publish,
-  setOpen,
-  setError,
-}: Deps) {
+export function useDeleteAdjustmentMutation({ scope, onDeleted, onError }: Deps) {
   return useMutation({
     mutationFn: (input: { adjustment: InventoryAdjustmentRow }) =>
       deletePendingAdjustmentRequest({
@@ -38,15 +31,7 @@ export function useDeleteAdjustmentMutation({
         adjustmentId: input.adjustment.id,
         expectedUpdatedAt: input.adjustment.updatedAt,
       }),
-    onSuccess: (_response, variables) => {
-      publish({
-        kind: "delete",
-        adjustmentId: variables.adjustment.id,
-      })
-      setOpen(null)
-    },
-    onError: (err: unknown) => {
-      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to delete adjustment" }))
-    },
+    onSuccess: (_response, variables) => onDeleted?.(variables.adjustment.id),
+    onError: (error: unknown) => onError?.(error),
   })
 }

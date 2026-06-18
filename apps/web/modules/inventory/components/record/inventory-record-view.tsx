@@ -270,6 +270,7 @@ export function InventoryRecordView({
                   confirmSplitOff({ inventoryId: row.inventoryId, quantity: row.quantity })
                 }
                 onDuplicate={(row) => setCreateModal({ source: row })}
+                onDeleted={handleAdjustmentMutated}
               />
             )}
             renderDetail={(_id, onBack) => (

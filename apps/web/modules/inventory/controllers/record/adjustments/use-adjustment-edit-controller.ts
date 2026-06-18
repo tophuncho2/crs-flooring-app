@@ -27,7 +27,10 @@ import type {
   AdjustmentEditLocal,
   AdjustmentEditPatch,
 } from "./types"
-import type { RecordSectionError } from "@/types/record/section-error"
+import {
+  normalizeRecordSectionError,
+  type RecordSectionError,
+} from "@/types/record/section-error"
 
 /**
  * Owns the edit lifecycle for an adjustment record: open/close, current
@@ -187,9 +190,14 @@ export function useAdjustmentEditController({
   })
   const deleteMutation = useDeleteAdjustmentMutation({
     scope,
-    publish,
-    setOpen,
-    setError,
+    onDeleted: (deletedId) => {
+      // Emit a "delete" patch so the parent drops the row from its snapshot, then
+      // close the edit panel.
+      publish({ kind: "delete", adjustmentId: deletedId })
+      setOpen(null)
+    },
+    onError: (err) =>
+      setError(normalizeRecordSectionError(err, { defaultMessage: "Failed to delete adjustment" })),
   })
 
   const isSaving =

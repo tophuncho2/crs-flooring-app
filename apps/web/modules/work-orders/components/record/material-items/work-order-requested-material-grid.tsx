@@ -8,7 +8,10 @@ import type {
   WorkOrderMaterialItemLocal,
   WorkOrderMaterialItemsSectionController,
 } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
-import { MaterialItemRemoveButton } from "./row-controls"
+import {
+  MaterialItemCreateAdjustmentButton,
+  MaterialItemRemoveButton,
+} from "./row-controls"
 
 /**
  * "Requested Material" view (inbound): the customer-requested material items.
@@ -18,7 +21,10 @@ import { MaterialItemRemoveButton } from "./row-controls"
  * dropped: adjustments are decoupled, so a material item carries no linked sum.
  */
 const REQUESTED_MATERIAL_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
-  leadingControls: [{ key: "remove", kind: "actions", width: 56 }],
+  leadingControls: [
+    { key: "remove", kind: "actions", width: 56 },
+    { key: "create-adjustment", kind: "actions", width: 56 },
+  ],
   dataColumns: [
     { key: "product", label: "Product", minWidth: 260, grow: 2 },
     { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
@@ -28,8 +34,11 @@ const REQUESTED_MATERIAL_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
 
 export function WorkOrderRequestedMaterialGrid({
   section,
+  onCreateAdjustment,
 }: {
   section: WorkOrderMaterialItemsSectionController
+  /** Open the adjustment create modal pre-filtered to this row's product. */
+  onCreateAdjustment: (item: WorkOrderMaterialItemLocal) => void
 }) {
   const editable = !section.isSaving
 
@@ -84,15 +93,24 @@ export function WorkOrderRequestedMaterialGrid({
   }
 
   function renderControl(control: { key: string; kind: string }, item: WorkOrderMaterialItemLocal) {
-    if (control.kind === "actions") {
-      return (
-        <MaterialItemRemoveButton
-          editable={editable}
-          onClick={() => section.removeItem(item.id)}
-        />
-      )
+    switch (control.key) {
+      case "remove":
+        return (
+          <MaterialItemRemoveButton
+            editable={editable}
+            onClick={() => section.removeItem(item.id)}
+          />
+        )
+      case "create-adjustment":
+        return (
+          <MaterialItemCreateAdjustmentButton
+            enabled={Boolean(item.productId)}
+            onClick={() => onCreateAdjustment(item)}
+          />
+        )
+      default:
+        return null
     }
-    return null
   }
 
   return (

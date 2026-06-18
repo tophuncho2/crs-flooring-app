@@ -5,10 +5,17 @@ import { useQuery } from "@tanstack/react-query"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { DataTable } from "@/engines/list-view"
 import {
+  RecordDeleteDialog,
+  buildDeleteConfirmationMessage,
+  useRecordDeleteConfirmation,
+} from "@/engines/record-view"
+import { getClientErrorMessage } from "@/transport"
+import {
   ADJUSTMENTS_LIST_COLUMNS,
   renderAdjustmentRowActions,
   renderAdjustmentsRowCell,
 } from "@/modules/adjustments"
+import { useDeleteAdjustmentMutation } from "@/modules/inventory/controllers/record/adjustments/mutations"
 import {
   INVENTORY_ADJUSTMENTS_QUERY_KEY,
   inventoryAdjustmentsPageRequest,
@@ -34,6 +41,7 @@ export function InventoryAdjustmentsList({
   onSelect,
   onSplitOff,
   onDuplicate,
+  onDeleted,
 }: {
   inventoryId: string
   onSelect: (row: EnrichedInventoryAdjustmentRow) => void
@@ -41,8 +49,32 @@ export function InventoryAdjustmentsList({
   onSplitOff: (row: EnrichedInventoryAdjustmentRow) => void
   /** Row ⋮ → "Duplicate adjustment": open the create modal seeded from the row (PENDING only). */
   onDuplicate?: (row: EnrichedInventoryAdjustmentRow) => void
+  /** Strong-reconcile callback fired after a row delete commits (balances + caches). */
+  onDeleted?: () => void
 }) {
   const [page, setPage] = useState(1)
+  const [pendingDelete, setPendingDelete] = useState<EnrichedInventoryAdjustmentRow | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const deleteMutation = useDeleteAdjustmentMutation({
+    scope: { kind: "inventory", inventoryId },
+    onDeleted: () => {
+      setPendingDelete(null)
+      onDeleted?.()
+    },
+    onError: (err) =>
+      setDeleteError(getClientErrorMessage(err, "Failed to delete adjustment")),
+  })
+
+  const del = useRecordDeleteConfirmation(async () => {
+    if (!pendingDelete) return
+    setDeleteError(null)
+    try {
+      await deleteMutation.mutateAsync({ adjustment: pendingDelete })
+    } catch {
+      // Surfaced inline via `deleteError` (the mutation's onError).
+    }
+  })
 
   const query = useQuery({
     queryKey: [...INVENTORY_ADJUSTMENTS_QUERY_KEY, inventoryId, "record-section", page],
@@ -63,21 +95,42 @@ export function InventoryAdjustmentsList({
   }
 
   return (
-    <DataTable<EnrichedInventoryAdjustmentRow>
-      rows={rows}
-      columns={ADJUSTMENTS_LIST_COLUMNS}
-      renderCell={renderAdjustmentsRowCell}
-      empty={query.isLoading ? "Loading adjustments…" : "No adjustments yet."}
-      onOpenRow={(row) => onSelect(row)}
-      rowActions={(row) => renderAdjustmentRowActions(row, { onSplitOff, onDuplicate })}
-      getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
-      cursorPagination={{
-        page,
-        hasPreviousPage: page > 1,
-        hasNextPage: hasMore,
-        onPreviousPage: () => setPage((p) => Math.max(1, p - 1)),
-        onNextPage: () => setPage((p) => p + 1),
-      }}
-    />
+    <>
+      {deleteError ? <p className="mb-2 text-sm text-rose-400">{deleteError}</p> : null}
+      <DataTable<EnrichedInventoryAdjustmentRow>
+        rows={rows}
+        columns={ADJUSTMENTS_LIST_COLUMNS}
+        renderCell={renderAdjustmentsRowCell}
+        empty={query.isLoading ? "Loading adjustments…" : "No adjustments yet."}
+        onOpenRow={(row) => onSelect(row)}
+        rowActions={(row) =>
+          renderAdjustmentRowActions(row, {
+            onSplitOff,
+            onDuplicate,
+            onDelete: (target) => {
+              setDeleteError(null)
+              setPendingDelete(target)
+              del.requestDelete()
+            },
+          })
+        }
+        getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
+        cursorPagination={{
+          page,
+          hasPreviousPage: page > 1,
+          hasNextPage: hasMore,
+          onPreviousPage: () => setPage((p) => Math.max(1, p - 1)),
+          onNextPage: () => setPage((p) => p + 1),
+        }}
+      />
+      <RecordDeleteDialog
+        open={del.isOpen}
+        isDeleting={del.isDeleting}
+        title="Delete adjustment?"
+        message={buildDeleteConfirmationMessage("adjustment")}
+        onConfirm={del.confirmDelete}
+        onCancel={del.cancelDelete}
+      />
+    </>
   )
 }

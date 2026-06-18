@@ -5,16 +5,21 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import type { EnrichedInventoryAdjustmentRow, WorkOrderDetail } from "@builders/domain"
 import {
   ConfirmDialog,
+  RecordDeleteDialog,
   RecordItemSection,
   RecordStepper,
+  buildDeleteConfirmationMessage,
+  useRecordDeleteConfirmation,
   useRecordSwapGuard,
 } from "@/engines/record-view"
+import { getClientErrorMessage } from "@/transport"
 import {
   buildCurrentRecordEntryPath,
   buildInventoryRecordHref,
   buildInventorySplitOffHref,
 } from "@/hooks/navigation"
 import { WorkOrderAdjustmentCreateModal } from "@/modules/inventory/components/record/adjustments/work-order-adjustment-create-modal"
+import { useDeleteAdjustmentMutation } from "@/modules/inventory/controllers/record/adjustments/mutations"
 import { useAdjustmentReconcile } from "@/modules/adjustments"
 import type { WorkOrderMaterialItemsSectionController } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { WorkOrderAdjustmentsGrid } from "./work-order-adjustments-grid"
@@ -79,8 +84,39 @@ export function WorkOrderMaterialItemsSection({
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
   const reconcileAdjustments = useAdjustmentReconcile()
 
-  const [mode, setMode] = useState<SectionMode>("adjustments")
+  // Default to Adjustments, but honor `?view=requested` so an external entry
+  // (template → work-order sync) can land directly on the Requested Material
+  // view. Read once at mount: the section is keyed on the record id upstream, so
+  // stepping to a neighbor remounts and re-reads, and a later same-record nav
+  // doesn't yank the view out from under an in-progress edit.
+  const [mode, setMode] = useState<SectionMode>(
+    searchParams.get("view") === "requested" ? "requested" : "adjustments",
+  )
   const [modalRequest, setModalRequest] = useState<AdjustmentModalRequest | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<EnrichedInventoryAdjustmentRow | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  // Row ⋮ → "Delete adjustment". Scoped to this work order; the canonical delete
+  // mutation reconciles balances + caches via `reconcileAdjustments` on success.
+  const deleteMutation = useDeleteAdjustmentMutation({
+    scope: { kind: "work-order", workOrderId: workOrder.id },
+    onDeleted: () => {
+      setPendingDelete(null)
+      reconcileAdjustments()
+    },
+    onError: (err) =>
+      setDeleteError(getClientErrorMessage(err, "Failed to delete adjustment")),
+  })
+
+  const deleteConfirm = useRecordDeleteConfirmation(async () => {
+    if (!pendingDelete) return
+    setDeleteError(null)
+    try {
+      await deleteMutation.mutateAsync({ adjustment: pendingDelete })
+    } catch {
+      // Surfaced inline via `deleteError` (the mutation's onError).
+    }
+  })
 
   const sectionBusy = section.isSaving
 
@@ -202,14 +238,37 @@ export function WorkOrderMaterialItemsSection({
             onCreateWithProduct={(product) => setModalRequest({ product, source: null })}
             onDuplicate={(adjustment) => setModalRequest({ product: null, source: adjustment })}
             onSplitOff={handleSplitOff}
+            onDelete={(adjustment) => {
+              setDeleteError(null)
+              setPendingDelete(adjustment)
+              deleteConfirm.requestDelete()
+            }}
             isBusy={sectionBusy}
           />
         ) : (
-          <WorkOrderRequestedMaterialGrid section={section} />
+          <WorkOrderRequestedMaterialGrid
+            section={section}
+            onCreateAdjustment={(item) =>
+              setModalRequest({
+                product: { id: item.productId, name: item.productName },
+                source: null,
+              })
+            }
+          />
         )}
       </RecordItemSection>
 
       <ConfirmDialog {...dialogProps} />
+
+      <RecordDeleteDialog
+        open={deleteConfirm.isOpen}
+        isDeleting={deleteConfirm.isDeleting}
+        title="Delete adjustment?"
+        message={buildDeleteConfirmationMessage("adjustment")}
+        onConfirm={deleteConfirm.confirmDelete}
+        onCancel={deleteConfirm.cancelDelete}
+      />
+      {deleteError ? <p className="px-1 text-sm text-rose-400">{deleteError}</p> : null}
 
       {modalRequest ? (
         <WorkOrderAdjustmentCreateModal
@@ -227,6 +286,10 @@ export function WorkOrderMaterialItemsSection({
             // Adjustments grid plus the inventory balances + ledger the new row
             // touches, wherever they're mounted.
             setModalRequest(null)
+            // Surface the outflow just created — flip to the Adjustments view so
+            // the new row is visible (a create launched from a Requested row would
+            // otherwise leave the user looking at the Requested grid).
+            setMode("adjustments")
             reconcileAdjustments()
           }}
         />

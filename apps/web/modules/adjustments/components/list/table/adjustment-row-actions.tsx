@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Copy, Plus, Split } from "lucide-react"
+import { Copy, Plus, Split, Trash2 } from "lucide-react"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { RecordOptionsMenu, type RecordOptionsMenuItem } from "@/engines/common"
 
@@ -18,14 +18,22 @@ export type AdjustmentRowActionHandlers = {
   onCreateWithProduct?: (product: { id: string; name: string }) => void
   /** "Duplicate adjustment" — pre-seed create with the row's inventory (PENDING rows only). */
   onDuplicate?: (row: EnrichedInventoryAdjustmentRow) => void
+  /**
+   * "Delete adjustment" — remove the row (PENDING rows only). Wired ONLY by the
+   * record-view tables (inventory record list + work-order record grid); the
+   * standalone `/dashboard/adjustments` ledger omits it, so the item never shows
+   * there. The host owns the confirm prompt + the delete mutation.
+   */
+  onDelete?: (row: EnrichedInventoryAdjustmentRow) => void
 }
 
 /**
  * Build the shared adjustment row ⋮ options menu, in canonical order
- * (split-off → create-matching → duplicate). Each item is included only when its
- * handler is supplied; `isBusy` disables every item and Duplicate additionally
- * requires `row.status === "PENDING"`. Returns `null` when no handler applies (no
- * menu rendered). Designed to slot straight into `DataTable`'s `rowActions`.
+ * (split-off → create-matching → duplicate → delete). Each item is included only
+ * when its handler is supplied; `isBusy` disables every item and Duplicate +
+ * Delete additionally require `row.status === "PENDING"`. Returns `null` when no
+ * handler applies (no menu rendered). Designed to slot straight into `DataTable`'s
+ * `rowActions`.
  */
 export function renderAdjustmentRowActions(
   row: EnrichedInventoryAdjustmentRow,
@@ -58,6 +66,15 @@ export function renderAdjustmentRowActions(
       label: "Duplicate adjustment",
       icon: <Copy size={14} aria-hidden="true" />,
       onClick: () => handlers.onDuplicate?.(row),
+      disabled: row.status !== "PENDING" || isBusy,
+    })
+  }
+  if (handlers.onDelete) {
+    items.push({
+      key: "delete",
+      label: "Delete adjustment",
+      icon: <Trash2 size={14} aria-hidden="true" />,
+      onClick: () => handlers.onDelete?.(row),
       disabled: row.status !== "PENDING" || isBusy,
     })
   }
