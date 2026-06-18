@@ -187,3 +187,40 @@ describe("WorkOrderAdjustmentsGrid — requested-only groups + create affordance
     expect(screen.queryByText("Create with matching product")).toBeNull()
   })
 })
+
+describe("WorkOrderAdjustmentsGrid — within-group sort (newest first)", () => {
+  afterEach(cleanup)
+
+  it("renders the newest adjustment above the oldest within a product group", () => {
+    const { container } = renderGrid({
+      adjustments: [
+        adjustment({
+          id: "adj-old",
+          adjustmentNumber: "ADJ-OLD",
+          createdAt: "2026-01-01T00:00:00.000Z",
+        }),
+        adjustment({
+          id: "adj-new",
+          adjustmentNumber: "ADJ-NEW",
+          createdAt: "2026-03-01T00:00:00.000Z",
+        }),
+      ],
+    })
+    const text = container.textContent ?? ""
+    expect(text.indexOf("ADJ-NEW")).toBeGreaterThanOrEqual(0)
+    expect(text.indexOf("ADJ-NEW")).toBeLessThan(text.indexOf("ADJ-OLD"))
+  })
+
+  it("breaks createdAt ties by id descending", () => {
+    const at = "2026-02-01T00:00:00.000Z"
+    const { container } = renderGrid({
+      adjustments: [
+        adjustment({ id: "adj-a", adjustmentNumber: "ADJ-A", createdAt: at }),
+        adjustment({ id: "adj-b", adjustmentNumber: "ADJ-B", createdAt: at }),
+      ],
+    })
+    const text = container.textContent ?? ""
+    // Equal createdAt → id desc → "adj-b" (ADJ-B) leads "adj-a" (ADJ-A).
+    expect(text.indexOf("ADJ-B")).toBeLessThan(text.indexOf("ADJ-A"))
+  })
+})

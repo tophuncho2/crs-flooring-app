@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { Plus } from "lucide-react"
 import {
+  compareAdjustmentsByRecency,
   sumAdjustmentQuantities,
   type EnrichedInventoryAdjustmentRow,
   type WorkOrderMaterialItemRow,
@@ -28,8 +29,9 @@ type ProductGroup = {
  * Adjustments are folded in first, so a product carrying adjustments keeps the
  * adjustment's own product snapshot for the name; requested-only products fall
  * back to the material-item name and render with no rows. Within a group the rows
- * run quantity-ascending (id tiebreak); the groups run product-name ascending.
- * Mirrors the print Slip / Picking Ticket grouping.
+ * run newest-first (`createdAt` desc, id tiebreak) via `compareAdjustmentsByRecency`
+ * — matching the inventory/standalone ledger order; the groups run product-name
+ * ascending.
  */
 function groupByProduct(
   adjustments: ReadonlyArray<EnrichedInventoryAdjustmentRow>,
@@ -48,12 +50,7 @@ function groupByProduct(
   }
   for (const adj of adjustments) ensure(adj.productId, adj.productName).rows.push(adj)
   for (const item of requestedItems) ensure(item.productId, item.productName)
-  for (const group of groups) {
-    group.rows.sort((a, b) => {
-      const byQuantity = Number(a.quantity) - Number(b.quantity)
-      return byQuantity !== 0 ? byQuantity : a.id.localeCompare(b.id)
-    })
-  }
+  for (const group of groups) group.rows.sort(compareAdjustmentsByRecency)
   groups.sort((a, b) => a.productName.localeCompare(b.productName))
   return groups
 }
