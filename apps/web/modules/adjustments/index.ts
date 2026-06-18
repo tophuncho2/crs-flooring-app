@@ -6,13 +6,7 @@
 // controller, form fields, picker stack) lives in `modules/inventory`
 // (adjustments only ever appear in a record view as the inventory record view's
 // second section, which the work-orders material-items section reuses).
-export {
-  ADJUSTMENT_COLUMN_DEFINITIONS,
-  INVENTORY_ADJUSTMENT_LAYOUT,
-  formatAdjustmentTimestamp,
-  renderAdjustmentReadOnlyCell,
-  type AdjustmentReadOnlyRenderOptions,
-} from "./components/row"
+export { formatAdjustmentTimestamp } from "./components/row"
 export { ADJUSTMENTS_LIST_COLUMNS } from "./components/list/table/adjustments-list-columns"
 export { renderAdjustmentsRowCell } from "./components/list/table/adjustments-row-cell"
 export {
