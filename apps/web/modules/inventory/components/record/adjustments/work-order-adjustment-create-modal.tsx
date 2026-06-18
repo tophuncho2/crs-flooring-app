@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react"
 import { QuickCreateModal } from "@/engines/record-view"
-import { DataTable } from "@/engines/list-view"
 import type { EnrichedInventoryAdjustmentRow, InventoryRow } from "@builders/domain"
 import { useAdjustmentCreateForm } from "../../../controllers/record/adjustments/use-adjustment-create-form"
 import { useInventoryModalSelection } from "../../../controllers/record/adjustments/use-inventory-modal-selection"
@@ -10,8 +9,7 @@ import { HUB_CREATE_PICKER_CONFIG } from "../../../controllers/record/adjustment
 import type { AdjustmentCreateSeed } from "../../../controllers/record/adjustments/types"
 import { useInventoryOptionsGrid } from "../../../controllers/record/header/use-inventory-options-grid"
 import { InventoryOptionsGrid } from "../header/inventory-options-grid"
-import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
-import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
+import { AdjustmentInventoryIdentityRow } from "./adjustment-inventory-identity-row"
 import { AdjustmentRecordFields } from "./adjustment-record-fields"
 
 /**
@@ -197,29 +195,14 @@ export function WorkOrderAdjustmentCreateModal({
       ) : (
         <div className="flex flex-col gap-4">
           {/* Selected inventory rendered as the same single list row the grid
-              shows (horizontally scrollable), with a Change button to re-pick. */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground)]/55">
-                Selected item
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsPicking(true)}
-                disabled={isSaving}
-                className="shrink-0 rounded-md border border-[var(--panel-border)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/80 transition hover:border-sky-500/45 hover:text-[var(--foreground)] disabled:opacity-50"
-              >
-                Change
-              </button>
-            </div>
-            {picked ? (
-              <DataTable
-                rows={[picked]}
-                columns={INVENTORY_LIST_COLUMNS}
-                renderCell={renderInventoryRowCell}
-              />
-            ) : null}
-          </div>
+              shows, with a Change button to re-pick (open flow). */}
+          {picked ? (
+            <AdjustmentInventoryIdentityRow
+              row={picked}
+              onChange={() => setIsPicking(true)}
+              disabled={isSaving}
+            />
+          ) : null}
 
           <AdjustmentRecordFields controller={controller} mode="create" adjustment={null} />
         </div>

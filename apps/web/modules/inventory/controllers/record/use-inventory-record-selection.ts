@@ -84,8 +84,6 @@ export type InventoryRecordSelectionController = {
    */
   productId: string | null
   productLabel: string | null
-  /** True while the record view is in "add adjustment" mode (`?adjustment=new`). */
-  isAdjustmentFormMode: boolean
   selectWarehouse: (option: WarehouseOption | null) => void
   selectProduct: (option: ProductOption | null) => void
   selectInventory: (option: InventoryOption | null) => void
@@ -284,7 +282,6 @@ export function useInventoryRecordSelection({
     inventoryLabel: inventoryLabel ?? inventory?.inventoryItem ?? null,
     productId,
     productLabel: productLabel ?? null,
-    isAdjustmentFormMode: adjustment === NEW_ADJUSTMENT_ID,
     selectWarehouse,
     selectProduct,
     selectInventory,

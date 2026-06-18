@@ -35,7 +35,6 @@ vi.mock(
   () => ({
     useInventoryAdjustmentsSection: () => ({
       panel: { close: vi.fn() },
-      openCreate: vi.fn(),
       openEdit: vi.fn(),
     }),
   }),

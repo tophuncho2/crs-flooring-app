@@ -30,13 +30,9 @@ export function InventoryDetailClient({
 }) {
   const selection = useInventoryRecordSelection({ initialInventory })
 
-  // In form mode the surface is dedicated to creating an adjustment — title it
-  // so while the create drilldown is open.
-  const title = selection.isAdjustmentFormMode ? "Add adjustment" : "Inventory Hub"
-
   return (
     <RecordDetailClientScaffold
-      title={title}
+      title="Inventory Hub"
       backHref={backHref}
       dirtyMessage="You have unsaved inventory changes. Leave without saving?"
       headerVariant="section"

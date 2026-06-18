@@ -71,11 +71,12 @@ export function InventoryRecordView({
   const [embeddedAdjustmentDirty, setEmbeddedAdjustmentDirty] = useState(false)
   const [selectedRow, setSelectedRow] = useState<EnrichedInventoryAdjustmentRow | null>(null)
 
-  // Row ⋮ "Duplicate adjustment" opens a create modal locked to this inventory
-  // (no picker grid), seeded from the source row. Null while closed.
-  const [duplicateSource, setDuplicateSource] = useState<EnrichedInventoryAdjustmentRow | null>(
-    null,
-  )
+  // "+ Adjustment" / row ⋮ "Duplicate" open the create modal locked to this
+  // inventory (no picker grid). `source` null = blank create; a row = duplicate
+  // (seeds the work-order link). Null while closed.
+  const [createModal, setCreateModal] = useState<{
+    source: EnrichedInventoryAdjustmentRow | null
+  } | null>(null)
 
   // Clear the bridged embedded-dirty flag as we leave the embedded adjustment,
   // so backing out of a (clean or discarded) adjustment doesn't leave the
@@ -88,12 +89,16 @@ export function InventoryRecordView({
     [onSelectAdjustment],
   )
 
-  // "+ Adjustment" — drilldown into the create face. Mirrors the row-open path,
-  // but with no source row to remember.
-  const handleCreateAdjustment = useCallback(() => {
-    setSelectedRow(null)
-    handleSelectAdjustment(NEW_ADJUSTMENT_ID)
-  }, [handleSelectAdjustment])
+  // The inventory list's "Add Adjustment" row action cold-deep-links here with
+  // `?adjustment=new`. Translate that one-shot create intent into the modal, then
+  // clear the param so the drilldown shows the list under the modal (and a refresh
+  // won't reopen it).
+  useEffect(() => {
+    if (selectedAdjustmentId === NEW_ADJUSTMENT_ID) {
+      setCreateModal({ source: null })
+      handleSelectAdjustment(null)
+    }
+  }, [selectedAdjustmentId, handleSelectAdjustment])
 
   // Cold deep-link (e.g. from the adjustments ledger): the URL carries an
   // adjustment id but the row isn't in memory (it may not be on the list's
@@ -117,14 +122,14 @@ export function InventoryRecordView({
         ? byIdQuery.data
         : null
 
-  // Drive the shared adjustment controller from the URL selection. Keyed on the
-  // selection + resolved row (NOT `controller.open`) so a mutation's same-row
-  // refresh inside the controller is never clobbered.
+  // Drive the shared adjustment controller from the URL selection — edit only;
+  // create is the modal now. Keyed on the selection + resolved row (NOT
+  // `controller.open`) so a mutation's same-row refresh inside the controller is
+  // never clobbered. `NEW_ADJUSTMENT_ID` is the create sentinel (translated to the
+  // modal above), so it keeps the panel closed.
   useEffect(() => {
-    if (selectedAdjustmentId === null) {
+    if (selectedAdjustmentId === null || selectedAdjustmentId === NEW_ADJUSTMENT_ID) {
       adjustments.panel.close()
-    } else if (selectedAdjustmentId === NEW_ADJUSTMENT_ID) {
-      adjustments.openCreate()
     } else if (editRow) {
       adjustments.openEdit(editRow)
     }
@@ -239,7 +244,7 @@ export function InventoryRecordView({
                       key: "add-adjustment",
                       label: "+ Adjustment",
                       tone: "primary",
-                      onClick: handleCreateAdjustment,
+                      onClick: () => setCreateModal({ source: null }),
                     },
                   ],
                 }
@@ -248,7 +253,9 @@ export function InventoryRecordView({
         >
           <RecordDrilldownSection
             page={ctx.page}
-            selectedId={selectedAdjustmentId}
+            // Mask the create sentinel so the drilldown never renders a detail
+            // face for "new" — it shows the list while the modal opens above.
+            selectedId={selectedAdjustmentId === NEW_ADJUSTMENT_ID ? null : selectedAdjustmentId}
             onSelect={handleSelectAdjustment}
             hideBackBar
             renderList={(select) => (
@@ -261,7 +268,7 @@ export function InventoryRecordView({
                 onSplitOff={(row) =>
                   confirmSplitOff({ inventoryId: row.inventoryId, quantity: row.quantity })
                 }
-                onDuplicate={(row) => setDuplicateSource(row)}
+                onDuplicate={(row) => setCreateModal({ source: row })}
               />
             )}
             renderDetail={(_id, onBack) => (
@@ -270,7 +277,6 @@ export function InventoryRecordView({
                 hostPage={ctx.page}
                 onBack={onBack}
                 onDirtyChange={setEmbeddedAdjustmentDirty}
-                onSplitAfterSave={goToSplitOff}
                 onAddInventoryFromAdjustment={confirmSplitOff}
               />
             )}
@@ -295,13 +301,13 @@ export function InventoryRecordView({
         deleteLabel="Delete Inventory"
         confirmTitle="Delete inventory?"
       />
-      {duplicateSource ? (
+      {createModal ? (
         <InventoryAdjustmentCreateModal
           inventory={record}
-          source={duplicateSource}
-          onClose={() => setDuplicateSource(null)}
+          source={createModal.source}
+          onClose={() => setCreateModal(null)}
           onCreated={() => {
-            setDuplicateSource(null)
+            setCreateModal(null)
             handleAdjustmentMutated()
           }}
         />
