@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import {
   formatAdjustmentTransition,
@@ -35,13 +36,9 @@ export function renderAdjustmentsRowCell(
       return row.location || "-"
     case "quantity":
       return (
-        <span
-          className={`tabular-nums ${
-            row.adjustmentType === "INCREASE" ? "text-emerald-700" : "text-rose-800"
-          }`}
-        >
+        <CellChip tone={row.adjustmentType === "INCREASE" ? "success" : "error"}>
           {formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.stockUnitAbbrev ?? "")}
-        </span>
+        </CellChip>
       )
     case "adjustment": {
       const transition = formatAdjustmentTransition(row.before, row.after, row.stockUnitAbbrev ?? "")
