@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { QuickCreateModal } from "@/engines/record-view"
 import type { EnrichedInventoryAdjustmentRow, InventoryRow } from "@builders/domain"
 import { useAdjustmentCreateForm } from "../../../controllers/record/adjustments/use-adjustment-create-form"
@@ -8,6 +9,10 @@ import { useInventoryModalSelection } from "../../../controllers/record/adjustme
 import { HUB_CREATE_PICKER_CONFIG } from "../../../controllers/record/adjustments/form"
 import type { AdjustmentCreateSeed } from "../../../controllers/record/adjustments/types"
 import { useInventoryOptionsGrid } from "../../../controllers/record/header/use-inventory-options-grid"
+import {
+  INVENTORY_DETAIL_QUERY_KEY,
+  inventoryDetailRequest,
+} from "../../../data/inventory-detail-request"
 import { InventoryOptionsGrid } from "../header/inventory-options-grid"
 import { AdjustmentInventoryIdentityRow } from "./adjustment-inventory-identity-row"
 import { AdjustmentRecordFields } from "./adjustment-record-fields"
@@ -121,6 +126,24 @@ export function WorkOrderAdjustmentCreateModal({
 
   const { picked } = selection
 
+  // Duplicate seeds a *synthesized* row off the adjustment, which can't carry the
+  // inventory's balance / import columns (the adjustment row doesn't track them) —
+  // so the identity strip would show them blank. Fetch the real row by id and
+  // render that instead. No-op for blank create (`initialInventory` null): there
+  // the grid-picked row already carries those columns. Shares the record view's
+  // detail cache via `INVENTORY_DETAIL_QUERY_KEY`.
+  const duplicateInventoryId = initialInventory?.id ?? null
+  const detailQuery = useQuery({
+    enabled: duplicateInventoryId !== null,
+    queryKey: [...INVENTORY_DETAIL_QUERY_KEY, duplicateInventoryId],
+    queryFn: ({ signal }) => inventoryDetailRequest(duplicateInventoryId as string, signal),
+  })
+
+  // Prefer the fetched full row, but only while it still matches the picked item
+  // (a re-pick swaps `picked` to a real grid row that already has the columns).
+  const identityRow =
+    detailQuery.data && detailQuery.data.id === picked?.id ? detailQuery.data : picked
+
   // Seed the shared create core off the picked inventory + the fixed WO context.
   // Memoized on `picked` only — typing in the form doesn't change `picked`, so the
   // form isn't re-seeded out from under the user; null until something is picked.
@@ -196,9 +219,9 @@ export function WorkOrderAdjustmentCreateModal({
         <div className="flex flex-col gap-4">
           {/* Selected inventory rendered as the same single list row the grid
               shows, with a Change button to re-pick (open flow). */}
-          {picked ? (
+          {identityRow ? (
             <AdjustmentInventoryIdentityRow
-              row={picked}
+              row={identityRow}
               onChange={() => setIsPicking(true)}
               disabled={isSaving}
             />
