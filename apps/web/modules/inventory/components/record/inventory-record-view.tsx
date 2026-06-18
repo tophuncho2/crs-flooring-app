@@ -245,7 +245,6 @@ export function InventoryRecordView({
                     {
                       key: "add-adjustment",
                       label: "+ Adjustment",
-                      tone: "primary",
                       onClick: () => setCreateModal({ source: null }),
                     },
                   ],
