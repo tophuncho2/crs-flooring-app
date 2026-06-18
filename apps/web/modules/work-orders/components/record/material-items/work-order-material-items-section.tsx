@@ -9,7 +9,11 @@ import {
   RecordStepper,
   useRecordSwapGuard,
 } from "@/engines/record-view"
-import { buildCurrentRecordEntryPath, buildInventoryRecordHref } from "@/hooks/navigation"
+import {
+  buildCurrentRecordEntryPath,
+  buildInventoryRecordHref,
+  buildInventorySplitOffHref,
+} from "@/hooks/navigation"
 import {
   AdjustmentCreateModal,
   inventoryRowFromAdjustment,
@@ -106,6 +110,21 @@ export function WorkOrderMaterialItemsSection({
     [router, returnTo],
   )
 
+  // "Add inventory from adjustment" — same destination as the ledger + inventory
+  // record view: the split-off create form seeded from this row's inventory.
+  const handleSplitOff = useCallback(
+    (adjustment: EnrichedInventoryAdjustmentRow) => {
+      router.push(
+        buildInventorySplitOffHref({
+          sourceInventoryId: adjustment.inventoryId,
+          quantity: adjustment.quantity,
+          returnTo,
+        }),
+      )
+    },
+    [router, returnTo],
+  )
+
   const stepper = (
     <RecordStepper
       label={MODE_LABEL[mode]}
@@ -174,6 +193,7 @@ export function WorkOrderMaterialItemsSection({
             onDuplicate={(adjustment) =>
               setModalRequest({ product: null, initialInventory: inventoryRowFromAdjustment(adjustment) })
             }
+            onSplitOff={handleSplitOff}
             isBusy={sectionBusy}
           />
         ) : (

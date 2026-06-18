@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Split } from "lucide-react"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { DataTable } from "@/engines/list-view"
-import { RecordOptionsMenu } from "@/engines/common"
-import { ADJUSTMENTS_LIST_COLUMNS, renderAdjustmentsRowCell } from "@/modules/adjustments"
+import {
+  ADJUSTMENTS_LIST_COLUMNS,
+  renderAdjustmentRowActions,
+  renderAdjustmentsRowCell,
+} from "@/modules/adjustments"
 import {
   INVENTORY_ADJUSTMENTS_QUERY_KEY,
   inventoryAdjustmentsPageRequest,
@@ -68,19 +70,7 @@ export function InventoryAdjustmentsList({
       renderCell={renderAdjustmentsRowCell}
       empty={query.isLoading ? "Loading adjustments…" : "No adjustments yet."}
       onOpenRow={(row) => onSelect(row)}
-      rowActions={(row) => (
-        <RecordOptionsMenu
-          ariaLabel={`Options for adjustment ${row.adjustmentNumber}`}
-          items={[
-            {
-              key: "split-off",
-              label: "Add inventory from adjustment",
-              icon: <Split size={14} aria-hidden="true" />,
-              onClick: () => onSplitOff(row),
-            },
-          ]}
-        />
-      )}
+      rowActions={(row) => renderAdjustmentRowActions(row, { onSplitOff })}
       getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
       footerSlot={
         showPager ? (

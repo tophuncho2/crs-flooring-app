@@ -1,11 +1,10 @@
 "use client"
 
-import { Split } from "lucide-react"
 import { DataTable, type PaginateContract } from "@/engines/list-view"
-import { RecordOptionsMenu } from "@/engines/common"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { ADJUSTMENTS_LIST_COLUMNS } from "./table/adjustments-list-columns"
 import { renderAdjustmentsRowCell } from "./table/adjustments-row-cell"
+import { renderAdjustmentRowActions } from "./table/adjustment-row-actions"
 
 export function AdjustmentsTable({
   rows,
@@ -25,19 +24,7 @@ export function AdjustmentsTable({
       columns={ADJUSTMENTS_LIST_COLUMNS}
       empty="No adjustments match these filters."
       onOpenRow={(row) => onOpenAdjustment(row)}
-      rowActions={(row) => (
-        <RecordOptionsMenu
-          ariaLabel={`Options for adjustment ${row.adjustmentNumber}`}
-          items={[
-            {
-              key: "split-off",
-              label: "Add inventory from adjustment",
-              icon: <Split size={14} aria-hidden="true" />,
-              onClick: () => onSplitOff(row),
-            },
-          ]}
-        />
-      )}
+      rowActions={(row) => renderAdjustmentRowActions(row, { onSplitOff })}
       getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
       renderCell={renderAdjustmentsRowCell}
       pagination={pagination}

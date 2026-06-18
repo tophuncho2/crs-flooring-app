@@ -1,11 +1,13 @@
 "use client"
 
 import { useMemo } from "react"
-import { Copy, Plus } from "lucide-react"
 import { sumAdjustmentQuantities, type EnrichedInventoryAdjustmentRow } from "@builders/domain"
-import { ADJUSTMENTS_LIST_COLUMNS, renderAdjustmentsRowCell } from "@/modules/adjustments"
+import {
+  ADJUSTMENTS_LIST_COLUMNS,
+  renderAdjustmentRowActions,
+  renderAdjustmentsRowCell,
+} from "@/modules/adjustments"
 import { DataTable } from "@/engines/list-view"
-import { RecordOptionsMenu } from "@/engines/common"
 
 type ProductGroup = {
   productId: string
@@ -52,6 +54,8 @@ export type WorkOrderAdjustmentsGridProps = {
   onCreateWithProduct: (product: { id: string; name: string }) => void
   /** Open the create modal pre-seeded with this row's inventory item. */
   onDuplicate: (adjustment: EnrichedInventoryAdjustmentRow) => void
+  /** Navigate to the split-off create form seeded from this row's inventory. */
+  onSplitOff: (adjustment: EnrichedInventoryAdjustmentRow) => void
   /** True while a section save / mutation is in flight — disables row options. */
   isBusy: boolean
 }
@@ -69,6 +73,7 @@ export function WorkOrderAdjustmentsGrid({
   onOpenEdit,
   onCreateWithProduct,
   onDuplicate,
+  onSplitOff,
   isBusy,
 }: WorkOrderAdjustmentsGridProps) {
   const groups = useMemo(() => groupByProduct(adjustments), [adjustments])
@@ -122,27 +127,13 @@ export function WorkOrderAdjustmentsGrid({
               renderCell={renderAdjustmentsRowCell}
               onOpenRow={(row) => onOpenEdit(row)}
               getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
-              rowActions={(row) => (
-                <RecordOptionsMenu
-                  ariaLabel={`Options for adjustment ${row.adjustmentNumber}`}
-                  items={[
-                    {
-                      key: "create-matching",
-                      label: "Create with matching product",
-                      icon: <Plus size={14} aria-hidden="true" />,
-                      onClick: () => onCreateWithProduct({ id: row.productId, name: row.productName }),
-                      disabled: isBusy,
-                    },
-                    {
-                      key: "duplicate",
-                      label: "Duplicate adjustment",
-                      icon: <Copy size={14} aria-hidden="true" />,
-                      onClick: () => onDuplicate(row),
-                      disabled: row.status !== "PENDING" || isBusy,
-                    },
-                  ]}
-                />
-              )}
+              rowActions={(row) =>
+                renderAdjustmentRowActions(
+                  row,
+                  { onSplitOff, onCreateWithProduct, onDuplicate },
+                  isBusy,
+                )
+              }
             />
           </div>
         )

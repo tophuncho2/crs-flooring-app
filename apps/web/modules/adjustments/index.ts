@@ -10,6 +10,10 @@ export { formatAdjustmentTimestamp } from "./components/row"
 export { ADJUSTMENTS_LIST_COLUMNS } from "./components/list/table/adjustments-list-columns"
 export { renderAdjustmentsRowCell } from "./components/list/table/adjustments-row-cell"
 export {
+  renderAdjustmentRowActions,
+  type AdjustmentRowActionHandlers,
+} from "./components/list/table/adjustment-row-actions"
+export {
   createAdjustmentRequest,
   updatePendingAdjustmentRequest,
   deletePendingAdjustmentRequest,
