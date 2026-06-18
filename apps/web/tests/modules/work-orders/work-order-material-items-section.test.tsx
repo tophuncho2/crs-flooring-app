@@ -21,6 +21,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type {
   EnrichedInventoryAdjustmentRow,
   WorkOrderDetail,
+  WorkOrderMaterialItemRow,
 } from "@builders/domain"
 import type { WorkOrderMaterialItemsSectionController } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import type { WorkOrderMaterialItemLocal } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
@@ -142,14 +143,32 @@ function sectionController(
   } as unknown as WorkOrderMaterialItemsSectionController
 }
 
+function materialItemRow(overrides: Partial<WorkOrderMaterialItemRow> = {}): WorkOrderMaterialItemRow {
+  return {
+    id: "mir-1",
+    productId: "prod-1",
+    productName: "Berber Carpet",
+    quantity: "8",
+    sendUnitName: "square foot",
+    sendUnitAbbrev: "sqft",
+    notes: "",
+    status: "IDLE",
+    sourceTemplateItemId: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  }
+}
+
 function renderSection({
   view = "",
   section = sectionController(),
   adjustments = [] as EnrichedInventoryAdjustmentRow[],
+  materialItems = [] as WorkOrderMaterialItemRow[],
 }: {
   view?: string
   section?: WorkOrderMaterialItemsSectionController
   adjustments?: EnrichedInventoryAdjustmentRow[]
+  materialItems?: WorkOrderMaterialItemRow[]
 } = {}) {
   searchParamsValue = view
   const queryClient = new QueryClient({
@@ -160,6 +179,7 @@ function renderSection({
       <WorkOrderMaterialItemsSection
         workOrder={workOrder()}
         adjustmentsForWorkOrder={adjustments}
+        materialItems={materialItems}
         section={section}
       />
     </QueryClientProvider>,
@@ -183,6 +203,15 @@ describe("WorkOrderMaterialItemsSection", () => {
     renderSection({ view: "view=requested" })
     expect(screen.getByRole("button", { name: "+ Add Material Item" })).toBeTruthy()
     expect(screen.queryByRole("button", { name: "+ Add Adjustment" })).toBeNull()
+  })
+
+  it("surfaces the per-product Requested total in the Adjustments view", () => {
+    renderSection({
+      adjustments: [adjustment()],
+      materialItems: [materialItemRow({ quantity: "8", sendUnitAbbrev: "sqft" })],
+    })
+    expect(screen.getByText("Requested")).toBeTruthy()
+    expect(screen.getByText("8 sqft")).toBeTruthy()
   })
 
   it("Part 2: a requested row's create-adjustment control opens the modal seeded with the product", async () => {

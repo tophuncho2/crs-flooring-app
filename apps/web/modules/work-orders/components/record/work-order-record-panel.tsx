@@ -179,6 +179,7 @@ export function WorkOrderRecordPanel({
                 key={controller.record.id}
                 workOrder={controller.record}
                 adjustmentsForWorkOrder={adjustmentsForWorkOrder}
+                materialItems={materialItems}
                 section={materialItemsSection}
               />
             ),

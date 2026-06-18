@@ -1,7 +1,11 @@
 "use client"
 
 import { useMemo } from "react"
-import { sumAdjustmentQuantities, type EnrichedInventoryAdjustmentRow } from "@builders/domain"
+import {
+  sumAdjustmentQuantities,
+  type EnrichedInventoryAdjustmentRow,
+  type WorkOrderMaterialItemRow,
+} from "@builders/domain"
 import {
   ADJUSTMENTS_LIST_COLUMNS,
   renderAdjustmentRowActions,
@@ -48,6 +52,12 @@ function groupByProduct(
 export type WorkOrderAdjustmentsGridProps = {
   /** Every adjustment on this work order (any product), enriched per row. */
   adjustments: ReadonlyArray<EnrichedInventoryAdjustmentRow>
+  /**
+   * The WO's persisted requested-material items. Used only to total requested
+   * quantity per product (correlated by `productId` — adjustments and material
+   * items carry no link) for the group header's "Requested" subtotal.
+   */
+  requestedItems: ReadonlyArray<WorkOrderMaterialItemRow>
   /** Open a saved adjustment on the inventory record view. */
   onOpenEdit: (adjustment: EnrichedInventoryAdjustmentRow) => void
   /** Open the create modal pre-filtered to this product (still changeable). */
@@ -72,6 +82,7 @@ export type WorkOrderAdjustmentsGridProps = {
  */
 export function WorkOrderAdjustmentsGrid({
   adjustments,
+  requestedItems,
   onOpenEdit,
   onCreateWithProduct,
   onDuplicate,
@@ -80,6 +91,28 @@ export function WorkOrderAdjustmentsGrid({
   isBusy,
 }: WorkOrderAdjustmentsGridProps) {
   const groups = useMemo(() => groupByProduct(adjustments), [adjustments])
+
+  // Per-product requested-material total, keyed by productId. Reuses the same
+  // sum helper as the adjustment subtotals (and the print views) by mapping each
+  // item's send unit into the `stockUnitAbbrev` slot the helper reads.
+  const requestedByProduct = useMemo(() => {
+    const byProduct = new Map<string, WorkOrderMaterialItemRow[]>()
+    for (const item of requestedItems) {
+      const list = byProduct.get(item.productId)
+      if (list) list.push(item)
+      else byProduct.set(item.productId, [item])
+    }
+    const totals = new Map<string, { quantity: string; stockUnitAbbrev: string }>()
+    for (const [productId, items] of byProduct) {
+      totals.set(
+        productId,
+        sumAdjustmentQuantities(
+          items.map((item) => ({ quantity: item.quantity, stockUnitAbbrev: item.sendUnitAbbrev })),
+        ),
+      )
+    }
+    return totals
+  }, [requestedItems])
 
   if (adjustments.length === 0) {
     return (
@@ -99,6 +132,7 @@ export function WorkOrderAdjustmentsGrid({
         const increases = group.rows.filter((row) => row.adjustmentType === "INCREASE")
         const deductionTotal = sumAdjustmentQuantities(deductions)
         const increaseTotal = sumAdjustmentQuantities(increases)
+        const requestedTotal = requestedByProduct.get(group.productId)
         return (
           <div key={group.productId} className="space-y-2 border-b border-[var(--panel-border)] pb-5 last:border-b-0 last:pb-0">
             <div className="flex items-center justify-between gap-3 px-1">
@@ -106,6 +140,19 @@ export function WorkOrderAdjustmentsGrid({
                 {group.productName}
               </span>
               <span className="flex items-center gap-4 text-xs uppercase tracking-wide text-[var(--foreground)]/55">
+                {/* Requested material total (sky) — the customer's requested
+                    quantity for this product, correlated by productId. Sits left
+                    of the adjustment subtotals; shows "—" when this product has
+                    no requested material. */}
+                <span>
+                  Requested{" "}
+                  <span className="tabular-nums text-sky-700/80">
+                    {requestedTotal?.quantity || "—"}
+                    {requestedTotal?.quantity && requestedTotal.stockUnitAbbrev
+                      ? ` ${requestedTotal.stockUnitAbbrev}`
+                      : ""}
+                  </span>
+                </span>
                 {increases.length > 0 ? (
                   <span>
                     Increases{" "}

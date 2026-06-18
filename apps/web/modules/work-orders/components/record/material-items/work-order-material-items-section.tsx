@@ -2,7 +2,11 @@
 
 import { useCallback, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import type { EnrichedInventoryAdjustmentRow, WorkOrderDetail } from "@builders/domain"
+import type {
+  EnrichedInventoryAdjustmentRow,
+  WorkOrderDetail,
+  WorkOrderMaterialItemRow,
+} from "@builders/domain"
 import {
   ConfirmDialog,
   RecordDeleteDialog,
@@ -72,10 +76,13 @@ const MODE_TIP: Record<SectionMode, string> = {
 export function WorkOrderMaterialItemsSection({
   workOrder,
   adjustmentsForWorkOrder,
+  materialItems,
   section,
 }: {
   workOrder: WorkOrderDetail
   adjustmentsForWorkOrder: EnrichedInventoryAdjustmentRow[]
+  /** Persisted requested-material items — feeds the Adjustments view's per-product "Requested" subtotal. */
+  materialItems: WorkOrderMaterialItemRow[]
   section: WorkOrderMaterialItemsSectionController
 }) {
   const router = useRouter()
@@ -234,6 +241,7 @@ export function WorkOrderMaterialItemsSection({
         {mode === "adjustments" ? (
           <WorkOrderAdjustmentsGrid
             adjustments={adjustmentsForWorkOrder}
+            requestedItems={materialItems}
             onOpenEdit={handleOpenEdit}
             onCreateWithProduct={(product) => setModalRequest({ product, source: null })}
             onDuplicate={(adjustment) => setModalRequest({ product: null, source: adjustment })}
