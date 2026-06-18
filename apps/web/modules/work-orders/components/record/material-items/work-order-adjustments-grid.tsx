@@ -12,6 +12,7 @@ import {
   renderAdjustmentsRowCell,
 } from "@/modules/adjustments"
 import { DataTable } from "@/engines/list-view"
+import { CellAddButton } from "@/engines/common"
 
 type ProductGroup = {
   productId: string
@@ -20,25 +21,32 @@ type ProductGroup = {
 }
 
 /**
- * Group the flat WO-adjustment set by product (the adjustment's own product
- * snapshot — adjustments no longer link to a material item). Within a group the
- * rows run quantity-ascending (id tiebreak); the groups run product-name
- * ascending. Mirrors the print Slip / Picking Ticket grouping.
+ * Group by product over the union of adjustments AND requested-material items, so
+ * a product with requested material but zero adjustments still gets a header (its
+ * Requested total + the create affordance) before any adjustment exists.
+ * Adjustments are folded in first, so a product carrying adjustments keeps the
+ * adjustment's own product snapshot for the name; requested-only products fall
+ * back to the material-item name and render with no rows. Within a group the rows
+ * run quantity-ascending (id tiebreak); the groups run product-name ascending.
+ * Mirrors the print Slip / Picking Ticket grouping.
  */
 function groupByProduct(
   adjustments: ReadonlyArray<EnrichedInventoryAdjustmentRow>,
+  requestedItems: ReadonlyArray<WorkOrderMaterialItemRow>,
 ): ProductGroup[] {
   const groups: ProductGroup[] = []
   const byId = new Map<string, ProductGroup>()
-  for (const adj of adjustments) {
-    let group = byId.get(adj.productId)
+  const ensure = (productId: string, productName: string) => {
+    let group = byId.get(productId)
     if (!group) {
-      group = { productId: adj.productId, productName: adj.productName, rows: [] }
-      byId.set(adj.productId, group)
+      group = { productId, productName, rows: [] }
+      byId.set(productId, group)
       groups.push(group)
     }
-    group.rows.push(adj)
+    return group
   }
+  for (const adj of adjustments) ensure(adj.productId, adj.productName).rows.push(adj)
+  for (const item of requestedItems) ensure(item.productId, item.productName)
   for (const group of groups) {
     group.rows.sort((a, b) => {
       const byQuantity = Number(a.quantity) - Number(b.quantity)
@@ -90,7 +98,10 @@ export function WorkOrderAdjustmentsGrid({
   onDelete,
   isBusy,
 }: WorkOrderAdjustmentsGridProps) {
-  const groups = useMemo(() => groupByProduct(adjustments), [adjustments])
+  const groups = useMemo(
+    () => groupByProduct(adjustments, requestedItems),
+    [adjustments, requestedItems],
+  )
 
   // Per-product requested-material total, keyed by productId. Reuses the same
   // sum helper as the adjustment subtotals (and the print views) by mapping each
@@ -114,7 +125,7 @@ export function WorkOrderAdjustmentsGrid({
     return totals
   }, [requestedItems])
 
-  if (adjustments.length === 0) {
+  if (adjustments.length === 0 && requestedItems.length === 0) {
     return (
       <div className="border border-[var(--panel-border)] bg-[var(--panel-border)]/5 px-4 py-8 text-center text-sm text-[var(--foreground)]/65">
         No adjustments on this work order yet. Use “Add Adjustment” to pull material.
@@ -136,16 +147,31 @@ export function WorkOrderAdjustmentsGrid({
         return (
           <div key={group.productId} className="space-y-2 border-b border-[var(--panel-border)] pb-5 last:border-b-0 last:pb-0">
             <div className="flex items-center justify-between gap-3 px-1">
-              <span className="text-sm font-semibold text-[var(--foreground)]">
-                {group.productName}
+              {/* Create affordance (+) sits left of the product name — the
+                  obvious "start an adjustment for this product" action, and the
+                  only create entry point for a requested-only group (no rows, so
+                  no row ⋮ menu). Opens the create modal pre-filtered to this
+                  product. */}
+              <span className="flex items-center gap-2">
+                <CellAddButton
+                  onClick={() =>
+                    onCreateWithProduct({ id: group.productId, name: group.productName })
+                  }
+                  ariaLabel={`Create adjustment with ${group.productName}`}
+                  title="Create with matching product"
+                  disabled={isBusy}
+                />
+                <span className="text-sm font-semibold text-[var(--foreground)]">
+                  {group.productName}
+                </span>
               </span>
-              <span className="flex items-center gap-4 text-xs uppercase tracking-wide text-[var(--foreground)]/55">
+              <span className="flex items-center gap-4 text-sm uppercase tracking-wide text-[var(--foreground)]/55">
                 {/* Requested material total (sky) — the customer's requested
                     quantity for this product, correlated by productId. Sits left
                     of the adjustment subtotals; shows "—" when this product has
                     no requested material. */}
                 <span>
-                  Requested{" "}
+                  <span className="font-bold">Requested</span>{" "}
                   <span className="tabular-nums text-sky-700/80">
                     {requestedTotal?.quantity || "—"}
                     {requestedTotal?.quantity && requestedTotal.stockUnitAbbrev
@@ -155,7 +181,7 @@ export function WorkOrderAdjustmentsGrid({
                 </span>
                 {increases.length > 0 ? (
                   <span>
-                    Increases{" "}
+                    <span className="font-bold">Increases</span>{" "}
                     <span className="tabular-nums text-emerald-700/80">
                       +{increaseTotal.quantity}
                       {increaseTotal.quantity && increaseTotal.stockUnitAbbrev ? ` ${increaseTotal.stockUnitAbbrev}` : ""}
@@ -163,7 +189,7 @@ export function WorkOrderAdjustmentsGrid({
                   </span>
                 ) : null}
                 <span>
-                  Deductions{" "}
+                  <span className="font-bold">Deductions</span>{" "}
                   <span className="tabular-nums text-rose-800/80">
                     {deductionTotal.quantity || "—"}
                     {deductionTotal.quantity && deductionTotal.stockUnitAbbrev ? ` ${deductionTotal.stockUnitAbbrev}` : ""}
@@ -171,20 +197,22 @@ export function WorkOrderAdjustmentsGrid({
                 </span>
               </span>
             </div>
-            <DataTable<EnrichedInventoryAdjustmentRow>
-              rows={group.rows}
-              columns={ADJUSTMENTS_LIST_COLUMNS}
-              renderCell={renderAdjustmentsRowCell}
-              onOpenRow={(row) => onOpenEdit(row)}
-              getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
-              rowActions={(row) =>
-                renderAdjustmentRowActions(
-                  row,
-                  { onSplitOff, onCreateWithProduct, onDuplicate, onDelete },
-                  isBusy,
-                )
-              }
-            />
+            {group.rows.length > 0 ? (
+              <DataTable<EnrichedInventoryAdjustmentRow>
+                rows={group.rows}
+                columns={ADJUSTMENTS_LIST_COLUMNS}
+                renderCell={renderAdjustmentsRowCell}
+                onOpenRow={(row) => onOpenEdit(row)}
+                getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
+                rowActions={(row) =>
+                  renderAdjustmentRowActions(
+                    row,
+                    { onSplitOff, onDuplicate, onDelete },
+                    isBusy,
+                  )
+                }
+              />
+            ) : null}
           </div>
         )
       })}

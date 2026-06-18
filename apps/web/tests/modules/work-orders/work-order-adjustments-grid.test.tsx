@@ -8,7 +8,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type {
   EnrichedInventoryAdjustmentRow,
@@ -69,9 +69,11 @@ function materialItem(overrides: Partial<WorkOrderMaterialItemRow> = {}): WorkOr
 function renderGrid({
   adjustments = [adjustment()],
   requestedItems = [] as WorkOrderMaterialItemRow[],
+  onCreateWithProduct = vi.fn(),
 }: {
   adjustments?: EnrichedInventoryAdjustmentRow[]
   requestedItems?: WorkOrderMaterialItemRow[]
+  onCreateWithProduct?: (product: { id: string; name: string }) => void
 } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
@@ -82,7 +84,7 @@ function renderGrid({
         adjustments={adjustments}
         requestedItems={requestedItems}
         onOpenEdit={vi.fn()}
-        onCreateWithProduct={vi.fn()}
+        onCreateWithProduct={onCreateWithProduct}
         onDuplicate={vi.fn()}
         onSplitOff={vi.fn()}
         onDelete={vi.fn()}
@@ -118,12 +120,23 @@ describe("WorkOrderAdjustmentsGrid — Requested subtotal", () => {
     expect(screen.getByText("—")).toBeTruthy()
   })
 
-  it("only totals requested items matching the group's product", () => {
+  it("correlates requested totals to each product group, not across products", () => {
+    // The adjustment is for prod-1; the requested item is for a different product.
+    // Each product gets its own group: prod-1's Requested stays "—" (no matching
+    // requested), and the other product's 99 sqft renders only in its own group.
     renderGrid({
-      requestedItems: [materialItem({ productId: "prod-OTHER", quantity: "99" })],
+      requestedItems: [
+        materialItem({ productId: "prod-OTHER", productName: "Vinyl Plank", quantity: "99" }),
+      ],
     })
-    expect(screen.queryByText("99 sqft")).toBeNull()
-    expect(screen.getByText("—")).toBeTruthy()
+    // "Berber Carpet" appears in both its group header and the adjustment row cell.
+    expect(screen.getAllByText("Berber Carpet").length).toBeGreaterThan(0)
+    expect(screen.getByText("Vinyl Plank")).toBeTruthy()
+    // prod-1 group has no matching requested material (its Requested shows "—",
+    // alongside the requested-only group's empty Deductions)…
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0)
+    // …and the other product's requested total renders in its own group.
+    expect(screen.getByText("99 sqft")).toBeTruthy()
   })
 
   it("renders Requested to the left of Deductions", () => {
@@ -131,5 +144,46 @@ describe("WorkOrderAdjustmentsGrid — Requested subtotal", () => {
     const text = container.textContent ?? ""
     expect(text.indexOf("Requested")).toBeGreaterThanOrEqual(0)
     expect(text.indexOf("Requested")).toBeLessThan(text.indexOf("Deductions"))
+  })
+})
+
+describe("WorkOrderAdjustmentsGrid — requested-only groups + create affordance", () => {
+  afterEach(cleanup)
+
+  it("renders a header + Requested total for a product with requested material but no adjustments", () => {
+    renderGrid({ adjustments: [], requestedItems: [materialItem({ quantity: "8" })] })
+    // Header for the requested-only product, with its Requested total…
+    expect(screen.getByText("Berber Carpet")).toBeTruthy()
+    expect(screen.getByText("Requested")).toBeTruthy()
+    expect(screen.getByText("8 sqft")).toBeTruthy()
+    // …Deductions shows the em-dash (no adjustment rows)…
+    expect(screen.getByText("—")).toBeTruthy()
+    // …and there is no adjustment row / DataTable for the group.
+    expect(screen.queryByLabelText(/Open adjustment/)).toBeNull()
+  })
+
+  it("shows the empty placeholder only when both adjustments and requested material are empty", () => {
+    renderGrid({ adjustments: [], requestedItems: [] })
+    expect(screen.getByText(/No adjustments on this work order yet/)).toBeTruthy()
+
+    cleanup()
+    renderGrid({ adjustments: [], requestedItems: [materialItem()] })
+    expect(screen.queryByText(/No adjustments on this work order yet/)).toBeNull()
+  })
+
+  it("calls onCreateWithProduct with the group's product when the header + is clicked", () => {
+    const onCreateWithProduct = vi.fn()
+    renderGrid({ adjustments: [], requestedItems: [materialItem()], onCreateWithProduct })
+    fireEvent.click(screen.getByLabelText("Create adjustment with Berber Carpet"))
+    expect(onCreateWithProduct).toHaveBeenCalledWith({ id: "prod-1", name: "Berber Carpet" })
+  })
+
+  it("no longer lists 'Create with matching product' in an adjustment row's options menu", () => {
+    renderGrid({ adjustments: [adjustment()] })
+    // Open the row ⋮ menu — the split-off action proves the menu is open…
+    fireEvent.click(screen.getByLabelText("Options for adjustment ADJ-1"))
+    expect(screen.getByText("Add inventory from adjustment")).toBeTruthy()
+    // …and the create action no longer lives there (it moved to the group header).
+    expect(screen.queryByText("Create with matching product")).toBeNull()
   })
 })
