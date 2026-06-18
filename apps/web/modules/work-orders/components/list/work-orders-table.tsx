@@ -2,8 +2,11 @@
 
 import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { WorkOrderListRow } from "@builders/domain"
-import { WORK_ORDERS_LIST_COLUMNS } from "./table/work-orders-list-columns"
-import { renderWorkOrderRowCell } from "./table/work-orders-row-cell"
+import {
+  WORK_ORDERS_LIST_COLUMNS,
+  renderWorkOrderRowCell,
+  renderWorkOrderRowActions,
+} from "@/modules/work-orders"
 
 export function WorkOrdersTable({
   rows,
@@ -22,6 +25,7 @@ export function WorkOrdersTable({
       onOpenRow={(row) => onOpenWorkOrder(row.id)}
       getRowAriaLabel={(row) => `Open work order ${row.workOrderNumber}`}
       renderCell={renderWorkOrderRowCell}
+      rowActions={(row) => renderWorkOrderRowActions(row)}
       pagination={pagination}
     />
   )

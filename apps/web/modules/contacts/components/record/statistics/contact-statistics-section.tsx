@@ -13,8 +13,11 @@ import {
 } from "@/engines/record-view"
 import { DataTable, useRecordSectionPagination } from "@/engines/list-view"
 import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation"
-import { WORK_ORDERS_LIST_COLUMNS } from "@/modules/work-orders/components/list/table/work-orders-list-columns"
-import { renderWorkOrderRowCell } from "@/modules/work-orders/components/list/table/work-orders-row-cell"
+import {
+  WORK_ORDERS_LIST_COLUMNS,
+  renderWorkOrderRowCell,
+  renderWorkOrderRowActions,
+} from "@/modules/work-orders"
 import {
   CONTACT_WORK_ORDERS_QUERY_KEY,
   contactWorkOrdersSectionRequest,
@@ -63,6 +66,7 @@ export function ContactStatisticsSection({ contactId }: { contactId: string }) {
           rows={rows}
           columns={WORK_ORDERS_LIST_COLUMNS}
           renderCell={renderWorkOrderRowCell}
+          rowActions={(row) => renderWorkOrderRowActions(row)}
           empty={query.isLoading ? "Loading work orders…" : "No work orders yet."}
           onOpenRow={(row) =>
             router.push(buildRecordDetailHref("/dashboard/work-orders", row.id, returnTo))
