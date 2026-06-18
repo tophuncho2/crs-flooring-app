@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import type { InventoryDetail } from "@builders/domain"
 import type { InventoryDetailRecord } from "@builders/db"
 import { useInventoryListMutations } from "@/modules/inventory/controllers/list/use-inventory-list-mutations"
@@ -115,16 +115,29 @@ export function useInventoryCreateSection({
   const { createInventory } = useInventoryListMutations()
   const isPending = createInventory.isPending
 
+  // Synchronous in-flight latch. `isPending` (react-query) flips on the next
+  // render, so two clicks in one paint frame both pass the `disabled` gate and
+  // fire two `.mutate()` calls — each with its own random idempotency key — and
+  // the server inserts two rows. The ref short-circuits the second call in the
+  // same tick. Mirrors the record-view engine controller's `savingRef`.
+  const inFlightRef = useRef(false)
+
   const commitCreate = useCallback(
     ({ onSuccess, onError }: CommitInventoryCreateCallbacks) => {
+      if (inFlightRef.current) return
+      inFlightRef.current = true
       createInventory.mutate(
         { input: form },
         {
           onSuccess: (response) => {
+            inFlightRef.current = false
             const detail = response.inventory as InventoryDetailRecord
             onSuccess?.(detail as InventoryDetail)
           },
-          onError: (err) => onError?.(err),
+          onError: (err) => {
+            inFlightRef.current = false
+            onError?.(err)
+          },
         },
       )
     },

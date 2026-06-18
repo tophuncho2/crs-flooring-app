@@ -339,13 +339,6 @@ export async function getInventoryDeleteState(
   }
 }
 
-export async function countInventoriesByProductId(
-  productId: string,
-  client: InventoryDbClient = db,
-): Promise<number> {
-  return client.flooringInventory.count({ where: { productId } })
-}
-
 // --- List view read (paginated, server-side filtered) ---
 
 export type InventoryListViewOptions = {

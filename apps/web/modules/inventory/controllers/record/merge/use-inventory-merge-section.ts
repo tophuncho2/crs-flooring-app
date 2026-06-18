@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import type { InventoryDetail, InventoryRow, ProductOption } from "@builders/domain"
 import type { InventoryDetailRecord } from "@builders/db"
 import { useInventoryListMutations } from "@/modules/inventory/controllers/list/use-inventory-list-mutations"
@@ -198,8 +198,15 @@ export function useInventoryMergeSection({
   const { mergeInventory } = useInventoryListMutations()
   const isPending = mergeInventory.isPending
 
+  // Synchronous in-flight latch — same rationale as the create section: guards a
+  // same-paint-frame double-click that would otherwise fire two `.mutate()` calls
+  // (two random idempotency keys) and consolidate twice, doubling the balance.
+  const inFlightRef = useRef(false)
+
   const commitMerge = useCallback(
     ({ onSuccess, onError }: CommitInventoryMergeCallbacks) => {
+      if (inFlightRef.current) return
+      inFlightRef.current = true
       mergeInventory.mutate(
         {
           input: {
@@ -215,10 +222,14 @@ export function useInventoryMergeSection({
         },
         {
           onSuccess: (response) => {
+            inFlightRef.current = false
             const detail = response.inventory as InventoryDetailRecord
             onSuccess?.(detail as InventoryDetail)
           },
-          onError: (err) => onError?.(err),
+          onError: (err) => {
+            inFlightRef.current = false
+            onError?.(err)
+          },
         },
       )
     },
