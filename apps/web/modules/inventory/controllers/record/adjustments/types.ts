@@ -97,6 +97,12 @@ export type AdjustmentCreateSeed = {
   locationLabel?: string
   workOrderLabel?: string
   stockUnitAbbrev?: string | null
+  // Adjustment field values — seeded by the duplicate flow off the source row;
+  // omitted (undefined) for a blank create, where they fall back to EMPTY_FORM.
+  quantity?: string
+  adjustmentType?: FlooringInventoryAdjustmentType
+  isWaste?: boolean
+  notes?: string
 }
 
 /**

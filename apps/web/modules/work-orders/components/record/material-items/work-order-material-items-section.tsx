@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import type { EnrichedInventoryAdjustmentRow, InventoryRow, WorkOrderDetail } from "@builders/domain"
+import type { EnrichedInventoryAdjustmentRow, WorkOrderDetail } from "@builders/domain"
 import {
   ConfirmDialog,
   RecordItemSection,
@@ -14,10 +14,7 @@ import {
   buildInventoryRecordHref,
   buildInventorySplitOffHref,
 } from "@/hooks/navigation"
-import {
-  WorkOrderAdjustmentCreateModal,
-  inventoryRowFromAdjustment,
-} from "@/modules/inventory/components/record/adjustments/work-order-adjustment-create-modal"
+import { WorkOrderAdjustmentCreateModal } from "@/modules/inventory/components/record/adjustments/work-order-adjustment-create-modal"
 import type { WorkOrderMaterialItemsSectionController } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { WorkOrderAdjustmentsGrid } from "./work-order-adjustments-grid"
 import { WorkOrderRequestedMaterialGrid } from "./work-order-requested-material-grid"
@@ -27,12 +24,13 @@ type SectionMode = "adjustments" | "requested"
 
 /**
  * An "add adjustment" modal request. `product` optionally pre-filters the
- * inventory picker (still changeable); `initialInventory` pre-seeds the
- * duplicate flow. Both null ⇒ a blank section-level add.
+ * inventory picker (still changeable); `source` is the row being duplicated
+ * (pre-selects its inventory + seeds the adjustment values). Both null ⇒ a blank
+ * section-level add.
  */
 type AdjustmentModalRequest = {
   product: { id: string; name: string } | null
-  initialInventory: InventoryRow | null
+  source: EnrichedInventoryAdjustmentRow | null
 }
 
 const MODE_LABEL: Record<SectionMode, string> = {
@@ -170,7 +168,7 @@ export function WorkOrderMaterialItemsSection({
               key: "add-adjustment",
               label: "+ Add Adjustment",
               kind: "add-row" as const,
-              onClick: () => setModalRequest({ product: null, initialInventory: null }),
+              onClick: () => setModalRequest({ product: null, source: null }),
               disabled: section.isSaving,
             },
           ],
@@ -189,10 +187,8 @@ export function WorkOrderMaterialItemsSection({
           <WorkOrderAdjustmentsGrid
             adjustments={adjustmentsForWorkOrder}
             onOpenEdit={handleOpenEdit}
-            onCreateWithProduct={(product) => setModalRequest({ product, initialInventory: null })}
-            onDuplicate={(adjustment) =>
-              setModalRequest({ product: null, initialInventory: inventoryRowFromAdjustment(adjustment) })
-            }
+            onCreateWithProduct={(product) => setModalRequest({ product, source: null })}
+            onDuplicate={(adjustment) => setModalRequest({ product: null, source: adjustment })}
             onSplitOff={handleSplitOff}
             isBusy={sectionBusy}
           />
@@ -212,7 +208,7 @@ export function WorkOrderMaterialItemsSection({
             warehouseName: workOrder.warehouseName,
           }}
           product={modalRequest.product}
-          initialInventory={modalRequest.initialInventory}
+          source={modalRequest.source}
           onClose={() => setModalRequest(null)}
           onCreated={() => {
             // Reload the WO fresh so the Adjustments grid reflects the new row.

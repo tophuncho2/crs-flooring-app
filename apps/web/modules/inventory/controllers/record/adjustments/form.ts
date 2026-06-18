@@ -98,6 +98,12 @@ export function buildCreateForm(seed: AdjustmentCreateSeed): AdjustmentEditForm 
     // parent inventory's location as `locationLabel`.
     location: seed.locationLabel ?? "",
     workOrderId: seed.workOrderId ?? null,
+    // Adjustment values — the duplicate flow carries these from the source row;
+    // a blank create leaves them undefined → EMPTY_FORM defaults.
+    quantity: seed.quantity ?? EMPTY_FORM.quantity,
+    adjustmentType: seed.adjustmentType ?? EMPTY_FORM.adjustmentType,
+    isWaste: seed.isWaste ?? EMPTY_FORM.isWaste,
+    notes: seed.notes ?? EMPTY_FORM.notes,
   }
 }
 

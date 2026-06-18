@@ -7,7 +7,8 @@
  * the inventory create route. Two entry points share one shell, varying by the
  * injected `source` only:
  *   - blank create ("+ Adjustment" / the list deep-link) — no work-order seed;
- *   - duplicate (row ⋮) — seeds the source row's work-order link, quantity blank.
+ *   - duplicate (row ⋮) — seeds the source row's work-order link + adjustment
+ *     values (quantity / type / notes / waste).
  *
  * Only the network boundary (`createAdjustmentRequest`) is mocked; the real
  * controller (`useAdjustmentCreateForm`) + form cells run.
@@ -120,29 +121,43 @@ describe("InventoryAdjustmentCreateModal", () => {
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
   })
 
-  it("duplicate: seeds the source work-order link, quantity starts blank", async () => {
+  it("duplicate: seeds the source work-order link + adjustment values (qty / type / notes / waste)", async () => {
     createAdjustmentRequestMock.mockResolvedValue({
       adjustment: {},
       inventoryId: "inv-1",
-      netDeducted: "3",
+      netDeducted: "7",
     })
     const user = userEvent.setup()
     const source = {
       workOrderId: "wo-9",
       workOrderNumber: "1234",
+      quantity: "7",
+      adjustmentType: "INCREASE",
+      isWaste: true,
+      notes: "scrap from cut",
     } as EnrichedInventoryAdjustmentRow
     const { onCreated } = renderModal(source)
 
     expect(screen.getByText("Duplicate adjustment")).toBeTruthy()
-    const quantity = screen.getByLabelText("Adjustment quantity") as HTMLInputElement
-    expect(quantity.value).toBe("")
+    // Quantity + notes are pre-seeded from the source (not blank).
+    expect((screen.getByLabelText("Adjustment quantity") as HTMLInputElement).value).toBe("7")
+    expect((screen.getByLabelText("Adjustment notes") as HTMLInputElement).value).toBe(
+      "scrap from cut",
+    )
 
-    await user.type(quantity, "3")
+    // Create straight away — the seeded quantity already makes the form valid.
     await user.click(screen.getByRole("button", { name: "Create" }))
 
     await waitFor(() => expect(createAdjustmentRequestMock).toHaveBeenCalledTimes(1))
     expect(createAdjustmentRequestMock).toHaveBeenCalledWith(
-      expect.objectContaining({ inventoryId: "inv-1", quantity: "3", workOrderId: "wo-9" }),
+      expect.objectContaining({
+        inventoryId: "inv-1",
+        quantity: "7",
+        workOrderId: "wo-9",
+        adjustmentType: "INCREASE",
+        isWaste: true,
+        notes: "scrap from cut",
+      }),
     )
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
   })

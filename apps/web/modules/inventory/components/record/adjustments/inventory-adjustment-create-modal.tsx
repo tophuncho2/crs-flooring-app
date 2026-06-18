@@ -13,8 +13,9 @@ export type InventoryAdjustmentCreateModalProps = {
   /** The record you're on — the adjustment is always locked to this inventory. */
   inventory: InventoryDetail
   /**
-   * The row being duplicated — seeds the work-order link; quantity stays blank.
-   * Null for a blank create ("+ Adjustment" / the list deep-link).
+   * The row being duplicated — seeds the work-order link plus the adjustment
+   * values (quantity / type / notes / waste). Null for a blank create
+   * ("+ Adjustment" / the list deep-link).
    */
   source?: EnrichedInventoryAdjustmentRow | null
   /** Dismiss without creating (✕ / backdrop / Escape / Cancel). */
@@ -30,8 +31,9 @@ export type InventoryAdjustmentCreateModalProps = {
  * fixed seed (warehouse / inventory / location locked, same as the old embedded
  * create face) and renders a **read-only** identity row above the shared
  * {@link AdjustmentRecordFields} — no picker grid. A `source` (duplicate)
- * additionally seeds its work-order link; quantity always starts blank. The
- * work-order picker stays editable (adjustments link to any work order).
+ * additionally seeds its work-order link + adjustment values (quantity / type /
+ * notes / waste). The work-order picker stays editable (adjustments link to any
+ * work order).
  *
  * Mount it conditionally (only while a request is active) so each open starts from
  * a clean controller.
@@ -59,6 +61,12 @@ export function InventoryAdjustmentCreateModal({
       stockUnitAbbrev: inventory.stockUnitAbbrev,
       workOrderId: source?.workOrderId ?? null,
       workOrderLabel: source?.workOrderNumber ? `#${source.workOrderNumber}` : undefined,
+      // Duplicate carries the source row's adjustment values forward; a blank
+      // create (no source) leaves them undefined → form defaults.
+      quantity: source?.quantity,
+      adjustmentType: source?.adjustmentType,
+      isWaste: source?.isWaste,
+      notes: source?.notes,
     }),
     [inventory, source],
   )

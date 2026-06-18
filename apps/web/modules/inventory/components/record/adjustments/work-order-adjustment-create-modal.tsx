@@ -19,12 +19,13 @@ import { AdjustmentRecordFields } from "./adjustment-record-fields"
 
 /**
  * Build the inventory list row a duplicate's source adjustment represents, so the
- * modal can render it as the selected row (and seed the create form). The
- * adjustment carries the identity columns (inv# / roll# / dye / note / location /
- * product / warehouse / unit); the import/PO/balance columns it doesn't track
- * render as "—". `id` is the inventory's id (the row stands for the inventory item).
+ * modal can pre-select it. The adjustment carries the identity columns (inv# /
+ * roll# / dye / note / location / product / warehouse / unit); the import/PO/
+ * balance columns it doesn't track stay blank — the modal fetches the real row by
+ * id to fill them (see `detailQuery`). `id` is the inventory's id (the row stands
+ * for the inventory item).
  */
-export function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): InventoryRow {
+function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): InventoryRow {
   return {
     id: adj.inventoryId,
     inventoryNumber: adj.inventoryNumber ?? "",
@@ -77,8 +78,12 @@ export type WorkOrderAdjustmentCreateModalProps = {
    * pick any product. Editable either way (adjustments link to any product).
    */
   product?: { id: string; name: string } | null
-  /** Duplicate flow: pre-select the source row's inventory (quantity stays blank). */
-  initialInventory?: InventoryRow | null
+  /**
+   * Duplicate flow: the source adjustment row. Pre-selects its inventory and
+   * seeds the adjustment values (quantity / type / notes / waste). Null for a
+   * blank / create-with-product flow (the picker grid opens instead).
+   */
+  source?: EnrichedInventoryAdjustmentRow | null
   /** Dismiss without creating (✕ / backdrop / Escape / Cancel). */
   onClose: () => void
   /** Fired after a successful create — the host closes the modal and reconciles (router.refresh). */
@@ -102,10 +107,17 @@ export type WorkOrderAdjustmentCreateModalProps = {
 export function WorkOrderAdjustmentCreateModal({
   workOrder,
   product = null,
-  initialInventory = null,
+  source = null,
   onClose,
   onCreated,
 }: WorkOrderAdjustmentCreateModalProps) {
+  // Duplicate pre-selects the source row's inventory; the synthesized row carries
+  // identity only — the real balance/import columns are fetched below.
+  const initialInventory = useMemo(
+    () => (source ? inventoryRowFromAdjustment(source) : null),
+    [source],
+  )
+
   const selection = useInventoryModalSelection({
     warehouseId: workOrder.warehouseId,
     warehouseLabel: workOrder.warehouseName,
@@ -149,6 +161,10 @@ export function WorkOrderAdjustmentCreateModal({
   // form isn't re-seeded out from under the user; null until something is picked.
   const seed = useMemo<AdjustmentCreateSeed | null>(() => {
     if (!picked) return null
+    // Carry the source row's adjustment values only while the picked item is
+    // still the duplicate's inventory — a "Change" re-pick to a different item
+    // starts a fresh (blank) adjustment.
+    const dup = source && picked.id === source.inventoryId ? source : null
     return {
       inventoryId: picked.id,
       warehouseId: picked.warehouseId,
@@ -164,6 +180,12 @@ export function WorkOrderAdjustmentCreateModal({
       // product is the chosen inventory's).
       workOrderId: workOrder.id,
       workOrderLabel: `#${workOrder.workOrderNumber}`,
+      // Duplicate carries the source adjustment's values forward; a blank /
+      // re-picked create leaves them undefined → form defaults.
+      quantity: dup?.quantity,
+      adjustmentType: dup?.adjustmentType,
+      isWaste: dup?.isWaste,
+      notes: dup?.notes,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [picked])
