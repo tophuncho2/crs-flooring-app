@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import type { EnrichedInventoryAdjustmentRow, InventoryDetail, InventoryForm } from "@builders/domain"
 import {
   RecordDrilldownSection,
@@ -20,6 +20,7 @@ import {
 import { EmbeddedAdjustmentRecordView } from "./adjustments/embedded-adjustment-record-view"
 import { useInventoryPrimarySection } from "@/modules/inventory/controllers/record/primary/use-inventory-primary-section"
 import { useInventoryAdjustmentsSection } from "@/modules/inventory/controllers/record/adjustments/use-inventory-adjustments-section"
+import { useAdjustmentReconcile } from "@/modules/adjustments"
 import { NEW_ADJUSTMENT_ID } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { WarningNotice } from "@/engines/common"
 import {
@@ -55,13 +56,14 @@ export function InventoryRecordView({
   const primary = controller.primarySection
   const record = controller.record
 
-  const queryClient = useQueryClient()
+  // Strong reconcile: invalidate every adjustment-affected cache + refresh the
+  // server surfaces, then re-fetch this record for its live balance chain (held
+  // outside react-query by the record-detail controller).
+  const reconcileAdjustments = useAdjustmentReconcile()
   const handleAdjustmentMutated = useCallback(() => {
-    void queryClient.invalidateQueries({
-      queryKey: [...INVENTORY_ADJUSTMENTS_QUERY_KEY, entry.id],
-    })
+    reconcileAdjustments()
     void controller.refreshRecord()
-  }, [queryClient, entry.id, controller])
+  }, [reconcileAdjustments, controller])
 
   const adjustments = useInventoryAdjustmentsSection({
     inventory: record,

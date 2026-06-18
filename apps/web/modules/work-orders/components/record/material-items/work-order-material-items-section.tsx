@@ -15,6 +15,7 @@ import {
   buildInventorySplitOffHref,
 } from "@/hooks/navigation"
 import { WorkOrderAdjustmentCreateModal } from "@/modules/inventory/components/record/adjustments/work-order-adjustment-create-modal"
+import { useAdjustmentReconcile } from "@/modules/adjustments"
 import type { WorkOrderMaterialItemsSectionController } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { WorkOrderAdjustmentsGrid } from "./work-order-adjustments-grid"
 import { WorkOrderRequestedMaterialGrid } from "./work-order-requested-material-grid"
@@ -69,6 +70,7 @@ export function WorkOrderMaterialItemsSection({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
+  const reconcileAdjustments = useAdjustmentReconcile()
 
   const [mode, setMode] = useState<SectionMode>("adjustments")
   const [modalRequest, setModalRequest] = useState<AdjustmentModalRequest | null>(null)
@@ -211,9 +213,11 @@ export function WorkOrderMaterialItemsSection({
           source={modalRequest.source}
           onClose={() => setModalRequest(null)}
           onCreated={() => {
-            // Reload the WO fresh so the Adjustments grid reflects the new row.
+            // Close immediately, then strong-reconcile: refreshes this WO's
+            // Adjustments grid plus the inventory balances + ledger the new row
+            // touches, wherever they're mounted.
             setModalRequest(null)
-            router.refresh()
+            reconcileAdjustments()
           }}
         />
       ) : null}
