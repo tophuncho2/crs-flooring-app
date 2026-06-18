@@ -45,6 +45,13 @@ const MODE_ACCENT: Record<SectionMode, string> = {
   requested: "border-sky-500/60 bg-sky-500/10 text-sky-800",
 }
 
+// Red instruction shown under the stepper so the two-view nature is discoverable
+// (each side serves a distinct purpose; the other view is one stepper click away).
+const MODE_TIP: Record<SectionMode, string> = {
+  adjustments: "Use this section to Manage Adjustments",
+  requested: "Use this section to Plan Adjustments",
+}
+
 /**
  * The work order's single materials section, toggled between two grids by an
  * inline stepper:
@@ -126,14 +133,17 @@ export function WorkOrderMaterialItemsSection({
   )
 
   const stepper = (
-    <RecordStepper
-      label={MODE_LABEL[mode]}
-      onPrevious={flipMode}
-      onNext={flipMode}
-      previousAriaLabel="Show the other view"
-      nextAriaLabel="Show the other view"
-      accent={MODE_ACCENT[mode]}
-    />
+    <div className="flex flex-col items-start gap-1">
+      <RecordStepper
+        label={MODE_LABEL[mode]}
+        onPrevious={flipMode}
+        onNext={flipMode}
+        previousAriaLabel="Show the other view"
+        nextAriaLabel="Show the other view"
+        accent={MODE_ACCENT[mode]}
+      />
+      <p className="px-1 text-xs font-medium text-rose-600">{MODE_TIP[mode]}</p>
+    </div>
   )
 
   const subHeader =
