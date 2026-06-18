@@ -81,13 +81,13 @@ export function WorkOrderRecordPanel({
       },
     },
     {
-      key: "print-requested-materials",
-      label: "Requested Materials",
+      key: "print-plan-file",
+      label: "Plan File",
       tone: "neutral",
       onClick: () => {
         if (typeof window !== "undefined") {
           window.open(
-            `/print/work-orders/${workOrderId}/requested-materials`,
+            `/print/work-orders/${workOrderId}/plan-file`,
             "_blank",
             "noopener,noreferrer",
           )

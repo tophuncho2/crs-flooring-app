@@ -3,7 +3,7 @@ import { ClipboardList, FileText, Printer } from "lucide-react"
 import type { WorkOrderListRow } from "@builders/domain"
 import { RecordOptionsMenu, type RecordOptionsMenuItem } from "@/engines/common"
 
-type WorkOrderPrintKind = "picking-ticket" | "slip" | "requested-materials"
+type WorkOrderPrintKind = "picking-ticket" | "slip" | "plan-file"
 
 /**
  * Open one of the work order's on-demand print views in a new tab. URLs mirror
@@ -36,10 +36,10 @@ export function renderWorkOrderRowActions(row: WorkOrderListRow): ReactNode {
       onClick: () => openWorkOrderPrint(row.id, "slip"),
     },
     {
-      key: "print-requested-materials",
-      label: "Requested Materials",
+      key: "print-plan-file",
+      label: "Plan File",
       icon: <ClipboardList size={14} aria-hidden="true" />,
-      onClick: () => openWorkOrderPrint(row.id, "requested-materials"),
+      onClick: () => openWorkOrderPrint(row.id, "plan-file"),
     },
   ]
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { buildWorkOrderRequestedMaterialsHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-requested-materials-html.js"
+import { buildWorkOrderPlanFileHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-plan-file-html.js"
 import {
   renderWorkOrderMaterialItems,
-  renderWorkOrderRequestedMaterialsHeader,
+  renderWorkOrderPlanFileHeader,
 } from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
 import { makeFileGenInput, makeMaterialItemGroup, makeMaterialItemRow } from "./_fixtures.js"
 
@@ -10,19 +10,19 @@ function count(haystack: string, needle: string): number {
   return haystack.split(needle).length - 1
 }
 
-describe("requested-materials — header tag", () => {
-  it("carries the 'Requested Materials' tag (not the other view titles)", () => {
-    const html = renderWorkOrderRequestedMaterialsHeader(makeFileGenInput(), null)
-    expect(html).toContain('<span class="page-tag">Requested Materials</span>')
+describe("plan-file — header tag", () => {
+  it("carries the 'Plan File' tag (not the other view titles)", () => {
+    const html = renderWorkOrderPlanFileHeader(makeFileGenInput(), null)
+    expect(html).toContain('<span class="page-tag">Plan File</span>')
     expect(html).not.toContain("Picking Ticket")
     expect(html).not.toContain('page-tag">Work Order<')
   })
 })
 
-describe("requested-materials — table columns", () => {
+describe("plan-file — table columns", () => {
   const html = renderWorkOrderMaterialItems([makeMaterialItemGroup()])
 
-  it("renders the three Requested Materials columns", () => {
+  it("renders the three Plan File columns", () => {
     expect(html).toContain("<th>Product</th>")
     expect(html).toContain('<th class="cl-num">Qty / Unit</th>')
     expect(html).toContain("<th>Notes</th>")
@@ -36,7 +36,7 @@ describe("requested-materials — table columns", () => {
   })
 })
 
-describe("requested-materials — grouping + subtotal", () => {
+describe("plan-file — grouping + subtotal", () => {
   it("emits N item rows + 1 subtotal row for a group with N items", () => {
     const group = makeMaterialItemGroup({
       productName: "Shaw Carpet",
@@ -71,8 +71,8 @@ describe("requested-materials — grouping + subtotal", () => {
   })
 })
 
-describe("requested-materials — wired through the full builder", () => {
-  it("buildWorkOrderRequestedMaterialsHtml renders the header, info, and material items", () => {
+describe("plan-file — wired through the full builder", () => {
+  it("buildWorkOrderPlanFileHtml renders the header, info, and material items", () => {
     const input = makeFileGenInput({
       workOrderNumber: "WO-7777",
       materialItemGroups: [
@@ -85,8 +85,8 @@ describe("requested-materials — wired through the full builder", () => {
         }),
       ],
     })
-    const html = buildWorkOrderRequestedMaterialsHtml(input)
-    expect(html).toContain('<span class="page-tag">Requested Materials</span>')
+    const html = buildWorkOrderPlanFileHtml(input)
+    expect(html).toContain('<span class="page-tag">Plan File</span>')
     expect(html).toContain('<span class="page-number">WO-7777</span>')
     expect(html).toContain("<td>Vinyl Plank</td>")
     expect(html).toContain('<td class="cl-num subtotal-cell">10 SF</td>')

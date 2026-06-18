@@ -4,14 +4,14 @@ import {
   renderPageFrame,
   renderWorkOrderInfo,
   renderWorkOrderMaterialItems,
-  renderWorkOrderRequestedMaterialsHeader,
+  renderWorkOrderPlanFileHeader,
 } from "./work-order-document-sections.js"
 
 /**
- * The "Requested Materials" document, rendered as a self-contained HTML
+ * The "Plan File" document, rendered as a self-contained HTML
  * fragment for the on-demand print view:
  *
- *   - Header: logo (left) · centered "Requested Materials" tag · work-order
+ *   - Header: logo (left) · centered "Plan File" tag · work-order
  *     number (right) — identical to the Slip / Picking Ticket header
  *   - The same info stack as the Slip (`renderWorkOrderInfo`)
  *   - The work order's requested material items (Product / Qty · Unit / Notes),
@@ -21,7 +21,7 @@ import {
  * Returns a `<style>` + `.wo-print-root` fragment to inject into the print
  * page; no `<html>`/`<body>` (those come from the Next root layout).
  */
-export function buildWorkOrderRequestedMaterialsHtml(
+export function buildWorkOrderPlanFileHtml(
   input: WorkOrderFileGenerationInput,
   options: { logoUrl?: string | null } = {},
 ): string {
@@ -34,6 +34,6 @@ export function buildWorkOrderRequestedMaterialsHtml(
 
   return `<style>${WO_PRINT_STYLE_BLOCK}</style>
 <div class="wo-print-root">
-${renderPageFrame(renderWorkOrderRequestedMaterialsHeader(input, options.logoUrl), body)}
+${renderPageFrame(renderWorkOrderPlanFileHeader(input, options.logoUrl), body)}
 </div>`
 }

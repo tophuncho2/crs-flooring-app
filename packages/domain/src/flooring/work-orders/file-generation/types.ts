@@ -47,7 +47,7 @@ export type WorkOrderFileProductAdjustmentGroup = {
 
 /**
  * A single requested material item on the work order, projected for the
- * "Requested Materials" print view. `unitAbbrev` is the send-unit snapshot
+ * "Plan File" print view. `unitAbbrev` is the send-unit snapshot
  * (empty string when null); `notes` the item's free-text note (empty when blank).
  */
 export type WorkOrderFileMaterialItemProjection = {

@@ -61,9 +61,9 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .flat-rows .cl-num { text-align: right; }
   .wo-print-root .flat-rows .subtotal-cell { border-top: 1px solid #111; padding-top: 3px; }
   .wo-print-root .flat-rows tr.group-end td { border-bottom: 1px solid #111; }
-  .wo-print-root .flat-rows.requested-materials { table-layout: fixed; }
-  .wo-print-root .flat-rows.requested-materials th, .wo-print-root .flat-rows.requested-materials td { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
-  .wo-print-root .flat-rows.requested-materials .cl-num { white-space: nowrap; }
+  .wo-print-root .flat-rows.plan-file { table-layout: fixed; }
+  .wo-print-root .flat-rows.plan-file th, .wo-print-root .flat-rows.plan-file td { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+  .wo-print-root .flat-rows.plan-file .cl-num { white-space: nowrap; }
   .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
   .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
   .wo-print-root .page-brand { justify-self: start; }
@@ -114,11 +114,11 @@ export function renderWorkOrderPickingTicketHeader(
   return renderDocumentHeader(input, "Picking Ticket", logoUrl)
 }
 
-export function renderWorkOrderRequestedMaterialsHeader(
+export function renderWorkOrderPlanFileHeader(
   input: WorkOrderFileGenerationInput,
   logoUrl?: string | null,
 ): string {
-  return renderDocumentHeader(input, "Requested Materials", logoUrl)
+  return renderDocumentHeader(input, "Plan File", logoUrl)
 }
 
 // Wraps the document so the header repeats on every printed page. The header
@@ -285,14 +285,14 @@ export function renderWorkOrderAdjustments(
 }
 
 /**
- * Requested Materials body — the WO's material items grouped by product
+ * Plan File body — the WO's material items grouped by product
  * (one block per product, sorted upstream by composed display name), mirroring
  * {@link renderWorkOrderAdjustments}. Three columns: Product · Notes · Qty / Unit.
  * Each group renders one row per item then a summed-quantity subtotal row under a
  * rule (`group-end`/`subtotal-cell`), reusing the adjustments table chrome
  * (`flat-rows`) for identical styling. Unlike the adjustment tables (one greedy
  * first column, the rest nowrap), this view has TWO wrapping text columns
- * (Product + Notes), so it adds the `requested-materials` modifier: a fixed table
+ * (Product + Notes), so it adds the `plan-file` modifier: a fixed table
  * layout with an explicit colgroup so each column gets a stable width and both
  * text columns wrap cleanly — mirroring the `wo-top-grid` fixed-layout precedent.
  * Empty groups are skipped; returns "" when nothing is requested.
@@ -313,7 +313,7 @@ export function renderWorkOrderMaterialItems(
     })
     .join("\n")
   return `
-<table class="flat-rows requested-materials">
+<table class="flat-rows plan-file">
   <colgroup>
     <col style="width: 50%;" />
     <col style="width: 35%;" />
@@ -350,7 +350,7 @@ function renderMaterialItemRow({
 }
 
 /**
- * Per-product-group subtotal row for the Requested Materials table — the Qty
+ * Per-product-group subtotal row for the Plan File table — the Qty
  * cell carries the summed quantity under a rule; Product and Notes are empty.
  * Mirrors {@link renderSubtotalRow}. Reuses {@link sumAdjustmentQuantities} by
  * mapping each item to its `{ quantity, stockUnitAbbrev }` shape (the unit suffix

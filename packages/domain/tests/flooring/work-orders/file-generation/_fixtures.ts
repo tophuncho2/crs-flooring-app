@@ -113,7 +113,7 @@ export function makeMaterialItem(
   }
 }
 
-/** Minimal requested-material-item row for the Requested Materials table. */
+/** Minimal requested-material-item row for the Plan File table. */
 export function makeMaterialItemRow(
   overrides: Partial<WorkOrderFileMaterialItemProjection> = {},
 ): WorkOrderFileMaterialItemProjection {
