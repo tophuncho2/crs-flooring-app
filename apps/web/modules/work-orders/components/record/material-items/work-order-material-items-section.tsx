@@ -15,9 +15,9 @@ import {
   buildInventorySplitOffHref,
 } from "@/hooks/navigation"
 import {
-  AdjustmentCreateModal,
+  WorkOrderAdjustmentCreateModal,
   inventoryRowFromAdjustment,
-} from "@/modules/inventory/components/record/adjustments/adjustment-create-modal"
+} from "@/modules/inventory/components/record/adjustments/work-order-adjustment-create-modal"
 import type { WorkOrderMaterialItemsSectionController } from "@/modules/work-orders/controllers/record/material-items/use-work-order-material-items-section"
 import { WorkOrderAdjustmentsGrid } from "./work-order-adjustments-grid"
 import { WorkOrderRequestedMaterialGrid } from "./work-order-requested-material-grid"
@@ -204,7 +204,7 @@ export function WorkOrderMaterialItemsSection({
       <ConfirmDialog {...dialogProps} />
 
       {modalRequest ? (
-        <AdjustmentCreateModal
+        <WorkOrderAdjustmentCreateModal
           workOrder={{
             id: workOrder.id,
             workOrderNumber: workOrder.workOrderNumber,

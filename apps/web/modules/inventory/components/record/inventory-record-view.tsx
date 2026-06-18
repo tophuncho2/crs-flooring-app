@@ -29,6 +29,10 @@ import {
 } from "@/hooks/navigation"
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-list"
+import {
+  InventoryAdjustmentCreateModal,
+  type InventoryAdjustmentCreateRequest,
+} from "./adjustments/inventory-adjustment-create-modal"
 
 /**
  * The inventory record view. ① editable inventory cells (primary — only Location
@@ -69,6 +73,12 @@ export function InventoryRecordView({
 
   const [embeddedAdjustmentDirty, setEmbeddedAdjustmentDirty] = useState(false)
   const [selectedRow, setSelectedRow] = useState<EnrichedInventoryAdjustmentRow | null>(null)
+
+  // Row ⋮ "Create with matching product" / "Duplicate adjustment" open a create
+  // modal locked to this inventory (no picker grid). Null while closed.
+  const [adjustmentModal, setAdjustmentModal] = useState<InventoryAdjustmentCreateRequest | null>(
+    null,
+  )
 
   // Clear the bridged embedded-dirty flag as we leave the embedded adjustment,
   // so backing out of a (clean or discarded) adjustment doesn't leave the
@@ -254,6 +264,8 @@ export function InventoryRecordView({
                 onSplitOff={(row) =>
                   confirmSplitOff({ inventoryId: row.inventoryId, quantity: row.quantity })
                 }
+                onCreateWithProduct={() => setAdjustmentModal({ kind: "create" })}
+                onDuplicate={(row) => setAdjustmentModal({ kind: "duplicate", source: row })}
               />
             )}
             renderDetail={(_id, onBack) => (
@@ -287,6 +299,17 @@ export function InventoryRecordView({
         deleteLabel="Delete Inventory"
         confirmTitle="Delete inventory?"
       />
+      {adjustmentModal ? (
+        <InventoryAdjustmentCreateModal
+          inventory={record}
+          request={adjustmentModal}
+          onClose={() => setAdjustmentModal(null)}
+          onCreated={() => {
+            setAdjustmentModal(null)
+            handleAdjustmentMutated()
+          }}
+        />
+      ) : null}
     </>
   )
 }

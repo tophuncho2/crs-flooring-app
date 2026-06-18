@@ -1,19 +1,18 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useMemo, useState } from "react"
 import { QuickCreateModal } from "@/engines/record-view"
 import { DataTable } from "@/engines/list-view"
 import type { EnrichedInventoryAdjustmentRow, InventoryRow } from "@builders/domain"
-import { useAdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
+import { useAdjustmentCreateForm } from "../../../controllers/record/adjustments/use-adjustment-create-form"
 import { useInventoryModalSelection } from "../../../controllers/record/adjustments/use-inventory-modal-selection"
 import { HUB_CREATE_PICKER_CONFIG } from "../../../controllers/record/adjustments/form"
+import type { AdjustmentCreateSeed } from "../../../controllers/record/adjustments/types"
 import { useInventoryOptionsGrid } from "../../../controllers/record/header/use-inventory-options-grid"
 import { InventoryOptionsGrid } from "../header/inventory-options-grid"
 import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
 import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
-import { InventoryFieldGrid } from "../fields"
-import { AdjustmentPickerStack } from "./adjustment-picker-stack"
-import { AdjustmentEditFormFields } from "./adjustment-edit-form-fields"
+import { AdjustmentRecordFields } from "./adjustment-record-fields"
 
 /**
  * Build the inventory list row a duplicate's source adjustment represents, so the
@@ -67,7 +66,7 @@ export type AdjustmentCreateModalWorkOrder = {
   warehouseName: string | null
 }
 
-export type AdjustmentCreateModalProps = {
+export type WorkOrderAdjustmentCreateModalProps = {
   workOrder: AdjustmentCreateModalWorkOrder
   /**
    * Optional starting product filter for the inventory picker — the WO row's
@@ -84,29 +83,26 @@ export type AdjustmentCreateModalProps = {
 }
 
 /**
- * The shared adjustment **create** form as a centered modal over the work-order
- * record view, so the operator never leaves the WO to add an adjustment. It
- * composes a local-state inventory picker (warehouse + product both editable,
- * over the same grid the inventory reference header uses) above the chrome-less
- * adjustment form fields, driven by the shared `useAdjustmentEditController` in
- * work-order scope. The created adjustment links to this work order (any
- * product).
+ * The work-order **shell** over the shared adjustment create core. The work order
+ * picks inventory cross-warehouse, so this shell owns a local-state inventory
+ * picker grid (warehouse + product both editable) above the shared form body; the
+ * created adjustment links to this work order (any product).
  *
- * On create success the controller fires `onCreated` (then closes its panel); the
- * host unmounts the modal and `router.refresh()`es so the WO reloads the fresh
- * Adjustments grid. Editing an existing row still happens on the inventory
- * record view — this modal is create/duplicate only.
+ * Variation lives here, not in the shared core: only this surface shows the
+ * picker grid. The inventory record view's shell locks inventory instead. Both
+ * inject the same four pieces into {@link useAdjustmentCreateForm} — scope, seed,
+ * pickerConfig, onCreated — and render {@link AdjustmentRecordFields}.
  *
  * Mount it conditionally (only while a request is active) so each open starts
  * from a clean controller + selection.
  */
-export function AdjustmentCreateModal({
+export function WorkOrderAdjustmentCreateModal({
   workOrder,
   product = null,
   initialInventory = null,
   onClose,
   onCreated,
-}: AdjustmentCreateModalProps) {
+}: WorkOrderAdjustmentCreateModalProps) {
   const selection = useInventoryModalSelection({
     warehouseId: workOrder.warehouseId,
     warehouseLabel: workOrder.warehouseName,
@@ -125,48 +121,38 @@ export function AdjustmentCreateModal({
     enabled: isPicking,
   })
 
-  const controller = useAdjustmentEditController({
-    scope: { kind: "work-order", workOrderId: workOrder.id },
-    canCreate: true,
-    // The WO reconciles by reloading fresh (router.refresh in onCreated), so the
-    // in-place publish patch is unused here.
-    publish: () => {},
-    onCreated,
-  })
-
   const { picked } = selection
 
-  // Drive the create panel off the picked inventory. Picking (or swapping) an
-  // item re-seeds the form from that inventory + the fixed WO context; clearing
-  // it closes the panel. Keyed on the picked option only — typing in the form
-  // doesn't change `picked`, so the form isn't re-seeded out from under the user.
-  useEffect(() => {
-    if (!picked) {
-      controller.close()
-      return
+  // Seed the shared create core off the picked inventory + the fixed WO context.
+  // Memoized on `picked` only — typing in the form doesn't change `picked`, so the
+  // form isn't re-seeded out from under the user; null until something is picked.
+  const seed = useMemo<AdjustmentCreateSeed | null>(() => {
+    if (!picked) return null
+    return {
+      inventoryId: picked.id,
+      warehouseId: picked.warehouseId,
+      warehouseLabel: selection.warehouseLabel ?? workOrder.warehouseName ?? undefined,
+      inventoryItem: picked.inventoryItem,
+      inventoryNumber: picked.inventoryNumber,
+      inventoryRollNumber: picked.rollNumber,
+      inventoryDyeLot: picked.dyeLot,
+      inventoryNote: picked.note,
+      locationLabel: picked.location ?? undefined,
+      stockUnitAbbrev: picked.stockUnitAbbrev,
+      // The adjustment links to this work order regardless of product (its
+      // product is the chosen inventory's).
+      workOrderId: workOrder.id,
+      workOrderLabel: `#${workOrder.workOrderNumber}`,
     }
-    controller.openPanel({
-      mode: "create",
-      pickerConfig: HUB_CREATE_PICKER_CONFIG,
-      seed: {
-        inventoryId: picked.id,
-        warehouseId: picked.warehouseId,
-        warehouseLabel: selection.warehouseLabel ?? workOrder.warehouseName ?? undefined,
-        inventoryItem: picked.inventoryItem,
-        inventoryNumber: picked.inventoryNumber,
-        inventoryRollNumber: picked.rollNumber,
-        inventoryDyeLot: picked.dyeLot,
-        inventoryNote: picked.note,
-        locationLabel: picked.location ?? undefined,
-        // The adjustment links to this work order regardless of product (its
-        // product is the chosen inventory's).
-        stockUnitAbbrev: picked.stockUnitAbbrev,
-        workOrderId: workOrder.id,
-        workOrderLabel: `#${workOrder.workOrderNumber}`,
-      },
-    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [picked])
+
+  const controller = useAdjustmentCreateForm({
+    scope: { kind: "work-order", workOrderId: workOrder.id },
+    seed,
+    pickerConfig: HUB_CREATE_PICKER_CONFIG,
+    onCreated,
+  })
 
   const { canSave, isSaving, error } = controller
   const showGrid = !picked || isPicking
@@ -235,10 +221,7 @@ export function AdjustmentCreateModal({
             ) : null}
           </div>
 
-          <InventoryFieldGrid>
-            <AdjustmentPickerStack controller={controller} />
-            <AdjustmentEditFormFields mode="create" adjustment={null} controller={controller} />
-          </InventoryFieldGrid>
+          <AdjustmentRecordFields controller={controller} mode="create" adjustment={null} />
         </div>
       )}
     </QuickCreateModal>

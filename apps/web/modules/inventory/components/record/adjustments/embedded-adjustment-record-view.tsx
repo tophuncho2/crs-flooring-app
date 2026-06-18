@@ -10,9 +10,7 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordSectionSubHeaderAction,
 } from "@/engines/record-view"
-import { AdjustmentEditFormFields } from "./adjustment-edit-form-fields"
-import { AdjustmentPickerStack } from "./adjustment-picker-stack"
-import { InventoryFieldGrid } from "../fields"
+import { AdjustmentRecordFields } from "./adjustment-record-fields"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 
 export type EmbeddedAdjustmentRecordViewProps = {
@@ -180,14 +178,11 @@ export function EmbeddedAdjustmentRecordView({
         actions={actions}
       />
       <div className={`px-5 py-5 ${RECORD_SECTION_BODY_SURFACE_CLASS_NAME}`}>
-        <InventoryFieldGrid>
-          <AdjustmentPickerStack controller={controller} />
-          <AdjustmentEditFormFields
-            mode={isCreate ? "create" : "edit"}
-            adjustment={adjustment}
-            controller={controller}
-          />
-        </InventoryFieldGrid>
+        <AdjustmentRecordFields
+          controller={controller}
+          mode={isCreate ? "create" : "edit"}
+          adjustment={adjustment}
+        />
       </div>
       <RecordDeleteDialog
         open={del.isOpen}
