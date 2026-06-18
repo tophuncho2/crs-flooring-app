@@ -43,7 +43,9 @@ export function useTemplatesListController() {
       setPageError("")
       try {
         const result = await syncTemplateToWorkOrderRequest(templateId)
-        router.push(`/dashboard/work-orders/${result.workOrder.id}`)
+        // Open straight into the Requested Material view (the materials this sync
+        // created) — same as the record-view sync (`useTemplateSyncToWorkOrder`).
+        router.push(`/dashboard/work-orders/${result.workOrder.id}?view=requested`)
       } catch (error) {
         setPageError(error instanceof Error ? error.message : "Sync failed. Try again.")
         setSyncingId(null)

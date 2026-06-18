@@ -57,7 +57,6 @@ export function InventoryAdjustmentsList({
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const deleteMutation = useDeleteAdjustmentMutation({
-    scope: { kind: "inventory", inventoryId },
     onDeleted: () => {
       setPendingDelete(null)
       onDeleted?.()

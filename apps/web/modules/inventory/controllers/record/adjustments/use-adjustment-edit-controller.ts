@@ -189,7 +189,6 @@ export function useAdjustmentEditController({
     setError,
   })
   const deleteMutation = useDeleteAdjustmentMutation({
-    scope,
     onDeleted: (deletedId) => {
       // Emit a "delete" patch so the parent drops the row from its snapshot, then
       // close the edit panel.

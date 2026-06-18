@@ -228,7 +228,7 @@ describe("WorkOrderMaterialItemsSection", () => {
     expect(modal.textContent).toContain("product:Berber Carpet")
   })
 
-  it("Part 3: row ⋮ → Delete adjustment → confirm fires the work-order-scoped delete", async () => {
+  it("Part 3: row ⋮ → Delete adjustment → confirm deletes via the row's inventory route", async () => {
     deletePendingAdjustmentRequestMock.mockResolvedValue({
       deletedId: "adj-1",
       inventoryId: "inv-1",
@@ -243,9 +243,11 @@ describe("WorkOrderMaterialItemsSection", () => {
     await user.click(screen.getByRole("button", { name: "Delete" }))
 
     await waitFor(() => expect(deletePendingAdjustmentRequestMock).toHaveBeenCalledTimes(1))
+    // Deletes via the adjustment's own INVENTORY route — there is no
+    // work-order-scoped adjustment route (regression guard: WO scope 404'd).
     expect(deletePendingAdjustmentRequestMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        scope: { kind: "work-order", workOrderId: "wo-1" },
+        scope: { kind: "inventory", inventoryId: "inv-1" },
         adjustmentId: "adj-1",
         expectedUpdatedAt: "2026-01-02T00:00:00.000Z",
       }),

@@ -106,7 +106,6 @@ export function WorkOrderMaterialItemsSection({
   // Row ⋮ → "Delete adjustment". Scoped to this work order; the canonical delete
   // mutation reconciles balances + caches via `reconcileAdjustments` on success.
   const deleteMutation = useDeleteAdjustmentMutation({
-    scope: { kind: "work-order", workOrderId: workOrder.id },
     onDeleted: () => {
       setPendingDelete(null)
       reconcileAdjustments()

@@ -2,13 +2,9 @@
 
 import { useMutation } from "@tanstack/react-query"
 import type { InventoryAdjustmentRow } from "@builders/domain"
-import {
-  deletePendingAdjustmentRequest,
-  type AdjustmentScopeUrl,
-} from "@/modules/adjustments/data/mutations"
+import { deletePendingAdjustmentRequest } from "@/modules/adjustments/data/mutations"
 
 type Deps = {
-  scope: AdjustmentScopeUrl
   /** Fired after a successful delete with the removed row's id. */
   onDeleted?: (deletedId: string) => void
   /** Fired on failure with the raw error (host decides how to surface it). */
@@ -18,16 +14,17 @@ type Deps = {
 /**
  * The one delete-pending mutation, shared by every surface that removes a PENDING
  * adjustment: the record-view edit panel, the inventory record adjustments list,
- * and the work-order record adjustments grid. Scope-aware (work-order vs inventory
- * route); deletion is server-enforced to PENDING rows. Behaviour beyond the
- * request — clearing edit state, refreshing a list, reconciling balances — is the
- * host's via `onDeleted` / `onError`, so the hook stays surface-agnostic.
+ * and the work-order record adjustments grid. Every delete targets the row's own
+ * **inventory** route — the sole adjustment-mutation surface (mirrors create,
+ * which always posts to the inventory route); there is no work-order-scoped
+ * adjustment route. Behaviour beyond the request — clearing edit state, refreshing
+ * a list, reconciling balances — is the host's via `onDeleted` / `onError`.
  */
-export function useDeleteAdjustmentMutation({ scope, onDeleted, onError }: Deps) {
+export function useDeleteAdjustmentMutation({ onDeleted, onError }: Deps = {}) {
   return useMutation({
     mutationFn: (input: { adjustment: InventoryAdjustmentRow }) =>
       deletePendingAdjustmentRequest({
-        scope,
+        scope: { kind: "inventory", inventoryId: input.adjustment.inventoryId },
         adjustmentId: input.adjustment.id,
         expectedUpdatedAt: input.adjustment.updatedAt,
       }),
