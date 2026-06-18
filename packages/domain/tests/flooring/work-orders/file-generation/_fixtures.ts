@@ -1,7 +1,9 @@
 import type {
   WorkOrderFileAdjustmentProjection,
   WorkOrderFileGenerationInput,
+  WorkOrderFileMaterialItemProjection,
   WorkOrderFileProductAdjustmentGroup,
+  WorkOrderFileProductMaterialItemGroup,
 } from "../../../../src/flooring/work-orders/file-generation/types.js"
 
 // Em-dash placeholder emitted by `escapeOrEmpty` / `renderUnitValue` for blank
@@ -38,6 +40,7 @@ const BASE: WorkOrderFileGenerationInput = {
   },
   jobTypeName: "Turn",
   adjustmentGroups: [],
+  materialItemGroups: [],
 }
 
 /**
@@ -107,5 +110,31 @@ export function makeMaterialItem(
   return {
     productName: overrides.productName ?? "Shaw Carpet — Beige",
     adjustments: overrides.adjustments ?? overrides.inventoryAdjustments ?? [makeAdjustment()],
+  }
+}
+
+/** Minimal requested-material-item row for the Requested Materials table. */
+export function makeMaterialItemRow(
+  overrides: Partial<WorkOrderFileMaterialItemProjection> = {},
+): WorkOrderFileMaterialItemProjection {
+  return {
+    id: "mi-1",
+    quantity: "10",
+    unitAbbrev: "SF",
+    notes: "",
+    ...overrides,
+  }
+}
+
+/** Minimal material-item product group carrying one item, for table-present cases. */
+export function makeMaterialItemGroup(
+  overrides: {
+    productName?: string
+    materialItems?: WorkOrderFileMaterialItemProjection[]
+  } = {},
+): WorkOrderFileProductMaterialItemGroup {
+  return {
+    productName: overrides.productName ?? "Shaw Carpet — Beige",
+    materialItems: overrides.materialItems ?? [makeMaterialItemRow()],
   }
 }

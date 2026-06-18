@@ -9,6 +9,7 @@ import {
   type WorkOrderDetail,
   type WorkOrderFileGenerationInput,
   type WorkOrderFileProductAdjustmentGroup,
+  type WorkOrderFileProductMaterialItemGroup,
   type WorkOrderListRow,
   type WorkOrderNeighbor,
   type WorkOrderOption,
@@ -517,6 +518,50 @@ export async function getWorkOrderForFileGeneration(
   }
   adjustmentGroups.sort((a, b) => a.productName.localeCompare(b.productName))
 
+  // Requested material items — every item on the WO (no status filter), grouped
+  // by product exactly like the adjustments above: productId-ordered for strict
+  // contiguity, quantity-ascending with id tiebreak, single-pass blocks labeled
+  // with the composed display name, groups sorted by that label.
+  const materialItems = await client.flooringWorkOrderItem.findMany({
+    where: { workOrderId },
+    orderBy: [
+      { productId: "asc" as const },
+      { quantity: "asc" as const },
+      { id: "asc" as const },
+    ],
+    select: {
+      id: true,
+      quantity: true,
+      sendUnitAbbrev: true,
+      notes: true,
+      productId: true,
+      product: { select: { name: true, style: true, color: true } },
+    },
+  })
+
+  const materialItemGroups: WorkOrderFileProductMaterialItemGroup[] = []
+  let currentMaterialProductId: string | null = null
+  for (const item of materialItems) {
+    const projection = {
+      id: item.id,
+      quantity: item.quantity === null ? "" : item.quantity.toString(),
+      unitAbbrev: item.sendUnitAbbrev ?? "",
+      notes: item.notes ?? "",
+    }
+    if (item.productId !== currentMaterialProductId) {
+      currentMaterialProductId = item.productId
+      const productName = buildFlooringProductDisplayName({
+        name: item.product.name,
+        style: item.product.style,
+        color: item.product.color,
+      })
+      materialItemGroups.push({ productName, materialItems: [projection] })
+    } else {
+      materialItemGroups[materialItemGroups.length - 1]!.materialItems.push(projection)
+    }
+  }
+  materialItemGroups.sort((a, b) => a.productName.localeCompare(b.productName))
+
   return {
     workOrderNumber: workOrder.workOrderNumber,
     scheduledFor: workOrder.scheduledFor === null ? "" : workOrder.scheduledFor.toISOString().slice(0, 10),
@@ -546,5 +591,6 @@ export async function getWorkOrderForFileGeneration(
     },
     jobTypeName: workOrder.jobType?.name ?? "",
     adjustmentGroups,
+    materialItemGroups,
   }
 }

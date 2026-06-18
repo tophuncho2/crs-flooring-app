@@ -45,6 +45,29 @@ export type WorkOrderFileProductAdjustmentGroup = {
   adjustments: WorkOrderFileAdjustmentProjection[]
 }
 
+/**
+ * A single requested material item on the work order, projected for the
+ * "Requested Materials" print view. `unitAbbrev` is the send-unit snapshot
+ * (empty string when null); `notes` the item's free-text note (empty when blank).
+ */
+export type WorkOrderFileMaterialItemProjection = {
+  id: string
+  quantity: string
+  unitAbbrev: string
+  notes: string
+}
+
+/**
+ * A product group of requested material items on the work order, grouped by the
+ * item's product (composed display name), mirroring the adjustment grouping.
+ * Drives one product block (rows + subtotal + divider) in the Requested
+ * Materials print table.
+ */
+export type WorkOrderFileProductMaterialItemGroup = {
+  productName: string
+  materialItems: WorkOrderFileMaterialItemProjection[]
+}
+
 export type WorkOrderFileGenerationInput = {
   workOrderNumber: string
   scheduledFor: string
@@ -74,4 +97,5 @@ export type WorkOrderFileGenerationInput = {
   }
   jobTypeName: string
   adjustmentGroups: WorkOrderFileProductAdjustmentGroup[]
+  materialItemGroups: WorkOrderFileProductMaterialItemGroup[]
 }

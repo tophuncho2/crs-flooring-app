@@ -80,6 +80,20 @@ export function WorkOrderRecordPanel({
         }
       },
     },
+    {
+      key: "print-requested-materials",
+      label: "Requested Materials",
+      tone: "neutral",
+      onClick: () => {
+        if (typeof window !== "undefined") {
+          window.open(
+            `/print/work-orders/${workOrderId}/requested-materials`,
+            "_blank",
+            "noopener,noreferrer",
+          )
+        }
+      },
+    },
   ]
 
   return (

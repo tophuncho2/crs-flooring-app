@@ -5,6 +5,7 @@ import type {
   WorkOrderFileAdjustmentProjection,
   WorkOrderFileGenerationInput,
   WorkOrderFileProductAdjustmentGroup,
+  WorkOrderFileProductMaterialItemGroup,
 } from "./types.js"
 
 /**
@@ -60,6 +61,7 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .flat-rows .cl-num { text-align: right; }
   .wo-print-root .flat-rows .subtotal-cell { border-top: 1px solid #111; padding-top: 3px; }
   .wo-print-root .flat-rows tr.group-end td { border-bottom: 1px solid #111; }
+  .wo-print-root .flat-rows td.note-cell { white-space: normal; overflow-wrap: anywhere; }
   .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
   .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
   .wo-print-root .page-brand { justify-self: start; }
@@ -108,6 +110,13 @@ export function renderWorkOrderPickingTicketHeader(
   logoUrl?: string | null,
 ): string {
   return renderDocumentHeader(input, "Picking Ticket", logoUrl)
+}
+
+export function renderWorkOrderRequestedMaterialsHeader(
+  input: WorkOrderFileGenerationInput,
+  logoUrl?: string | null,
+): string {
+  return renderDocumentHeader(input, "Requested Materials", logoUrl)
 }
 
 // Wraps the document so the header repeats on every printed page. The header
@@ -270,6 +279,82 @@ export function renderWorkOrderAdjustments(
     ${renderedRows}
   </tbody>
 </table>
+`.trim()
+}
+
+/**
+ * Requested Materials body — the WO's material items grouped by product
+ * (one block per product, sorted upstream by composed display name), mirroring
+ * {@link renderWorkOrderAdjustments}. Three columns: Product · Qty / Unit · Notes.
+ * Each group renders one row per item then a summed-quantity subtotal row under a
+ * rule (`group-end`/`subtotal-cell`), reusing the adjustments table chrome
+ * (`flat-rows`) for identical styling. Empty groups are skipped; returns "" when
+ * nothing is requested.
+ */
+export function renderWorkOrderMaterialItems(
+  groups: WorkOrderFileProductMaterialItemGroup[],
+): string {
+  const groupsWithItems = groups.filter((group) => group.materialItems.length > 0)
+  if (groupsWithItems.length === 0) {
+    return ""
+  }
+  const renderedRows = groupsWithItems
+    .map((group) => {
+      const itemRows = group.materialItems
+        .map((item) => renderMaterialItemRow({ item, productName: group.productName }))
+        .join("\n")
+      return `${itemRows}\n${renderMaterialItemSubtotalRow(group)}`
+    })
+    .join("\n")
+  return `
+<table class="flat-rows">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th class="cl-num">Qty / Unit</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${renderedRows}
+  </tbody>
+</table>
+`.trim()
+}
+
+function renderMaterialItemRow({
+  item,
+  productName,
+}: {
+  item: WorkOrderFileProductMaterialItemGroup["materialItems"][number]
+  productName: string
+}): string {
+  return `
+<tr>
+  <td>${escapeOrEmpty(productName)}</td>
+  <td class="cl-num">${renderUnitValue(item.quantity, item.unitAbbrev)}</td>
+  <td class="note-cell">${escapeOrEmpty(item.notes)}</td>
+</tr>
+`.trim()
+}
+
+/**
+ * Per-product-group subtotal row for the Requested Materials table — the Qty
+ * cell carries the summed quantity under a rule; Product and Notes are empty.
+ * Mirrors {@link renderSubtotalRow}. Reuses {@link sumAdjustmentQuantities} by
+ * mapping each item to its `{ quantity, stockUnitAbbrev }` shape (the unit suffix
+ * is taken from the first item that carries one).
+ */
+function renderMaterialItemSubtotalRow(group: WorkOrderFileProductMaterialItemGroup): string {
+  const { quantity, stockUnitAbbrev } = sumAdjustmentQuantities(
+    group.materialItems.map((item) => ({ quantity: item.quantity, stockUnitAbbrev: item.unitAbbrev })),
+  )
+  return `
+<tr class="group-end">
+  <td></td>
+  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
+  <td></td>
+</tr>
 `.trim()
 }
 
