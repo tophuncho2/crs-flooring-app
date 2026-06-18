@@ -61,7 +61,9 @@ export const WO_PRINT_STYLE_BLOCK = `
   .wo-print-root .flat-rows .cl-num { text-align: right; }
   .wo-print-root .flat-rows .subtotal-cell { border-top: 1px solid #111; padding-top: 3px; }
   .wo-print-root .flat-rows tr.group-end td { border-bottom: 1px solid #111; }
-  .wo-print-root .flat-rows td.note-cell { white-space: normal; overflow-wrap: anywhere; }
+  .wo-print-root .flat-rows.requested-materials { table-layout: fixed; }
+  .wo-print-root .flat-rows.requested-materials th, .wo-print-root .flat-rows.requested-materials td { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+  .wo-print-root .flat-rows.requested-materials .cl-num { white-space: nowrap; }
   .wo-print-root .page-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 0 0 14px 0; }
   .wo-print-root .page-header > span { font-size: 16px; font-weight: 600; }
   .wo-print-root .page-brand { justify-self: start; }
@@ -285,11 +287,15 @@ export function renderWorkOrderAdjustments(
 /**
  * Requested Materials body — the WO's material items grouped by product
  * (one block per product, sorted upstream by composed display name), mirroring
- * {@link renderWorkOrderAdjustments}. Three columns: Product · Qty / Unit · Notes.
+ * {@link renderWorkOrderAdjustments}. Three columns: Product · Notes · Qty / Unit.
  * Each group renders one row per item then a summed-quantity subtotal row under a
  * rule (`group-end`/`subtotal-cell`), reusing the adjustments table chrome
- * (`flat-rows`) for identical styling. Empty groups are skipped; returns "" when
- * nothing is requested.
+ * (`flat-rows`) for identical styling. Unlike the adjustment tables (one greedy
+ * first column, the rest nowrap), this view has TWO wrapping text columns
+ * (Product + Notes), so it adds the `requested-materials` modifier: a fixed table
+ * layout with an explicit colgroup so each column gets a stable width and both
+ * text columns wrap cleanly — mirroring the `wo-top-grid` fixed-layout precedent.
+ * Empty groups are skipped; returns "" when nothing is requested.
  */
 export function renderWorkOrderMaterialItems(
   groups: WorkOrderFileProductMaterialItemGroup[],
@@ -307,12 +313,17 @@ export function renderWorkOrderMaterialItems(
     })
     .join("\n")
   return `
-<table class="flat-rows">
+<table class="flat-rows requested-materials">
+  <colgroup>
+    <col style="width: 50%;" />
+    <col style="width: 35%;" />
+    <col style="width: 15%;" />
+  </colgroup>
   <thead>
     <tr>
       <th>Product</th>
-      <th class="cl-num">Qty / Unit</th>
       <th>Notes</th>
+      <th class="cl-num">Qty / Unit</th>
     </tr>
   </thead>
   <tbody>
@@ -332,8 +343,8 @@ function renderMaterialItemRow({
   return `
 <tr>
   <td>${escapeOrEmpty(productName)}</td>
+  <td>${escapeOrEmpty(item.notes)}</td>
   <td class="cl-num">${renderUnitValue(item.quantity, item.unitAbbrev)}</td>
-  <td class="note-cell">${escapeOrEmpty(item.notes)}</td>
 </tr>
 `.trim()
 }
@@ -352,8 +363,8 @@ function renderMaterialItemSubtotalRow(group: WorkOrderFileProductMaterialItemGr
   return `
 <tr class="group-end">
   <td></td>
-  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
   <td></td>
+  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
 </tr>
 `.trim()
 }

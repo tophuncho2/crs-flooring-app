@@ -53,7 +53,7 @@ describe("requested-materials — grouping + subtotal", () => {
     expect(html).toContain("<td>Shaw Carpet</td>")
     // qty + unit per row, notes rendered, summed quantity (17) under the rule
     expect(html).toContain('<td class="cl-num">10 SF</td>')
-    expect(html).toContain('<td class="note-cell">rush</td>')
+    expect(html).toContain("<td>rush</td>")
     expect(html).toContain('<td class="cl-num subtotal-cell">17 SF</td>')
   })
 
