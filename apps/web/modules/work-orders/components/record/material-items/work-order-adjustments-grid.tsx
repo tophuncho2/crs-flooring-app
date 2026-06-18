@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { Plus } from "lucide-react"
 import {
   sumAdjustmentQuantities,
   type EnrichedInventoryAdjustmentRow,
@@ -160,12 +161,14 @@ export function WorkOrderAdjustmentsGrid({
                   ariaLabel={`Create adjustment with ${group.productName}`}
                   title="Create with matching product"
                   disabled={isBusy}
+                  className="h-8 w-8"
+                  icon={<Plus size={18} aria-hidden="true" />}
                 />
-                <span className="text-sm font-semibold text-[var(--foreground)]">
+                <span className="text-base font-semibold text-[var(--foreground)]">
                   {group.productName}
                 </span>
               </span>
-              <span className="flex items-center gap-4 text-sm uppercase tracking-wide text-[var(--foreground)]/55">
+              <span className="flex items-center gap-4 text-base uppercase tracking-wide text-[var(--foreground)]/55">
                 {/* Requested material total (sky) — the customer's requested
                     quantity for this product, correlated by productId. Sits left
                     of the adjustment subtotals; shows "—" when this product has
