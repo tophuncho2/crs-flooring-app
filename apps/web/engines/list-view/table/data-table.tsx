@@ -2,7 +2,11 @@
 
 import type { ReactNode } from "react"
 import { RecordOpenButton } from "@/engines/common"
-import type { PaginateContract } from "../toolbar/paginate/contracts/paginate-contract"
+import type {
+  CursorPaginateContract,
+  PaginateContract,
+} from "../toolbar/paginate/contracts/paginate-contract"
+import { CursorPaginateControls } from "../toolbar/paginate/cursor-paginate-controls"
 import { PaginateControls } from "../toolbar/paginate/paginate-controls"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
@@ -69,9 +73,16 @@ export type DataTableProps<TRow extends DataTableRow> = {
    */
   pagination?: PaginateContract
   /**
-   * Escape-hatch footer for the non-`PaginateContract` cases — cursor (`hasMore`)
-   * lists with no total count, or other custom footer chrome. Ignored when
-   * {@link pagination} is set.
+   * Cursor pagination for `hasMore` lists with no total count. Like
+   * {@link pagination}, the engine renders the always-on footer **itself** from
+   * the contract — the consumer never hand-renders one — so a cursor footer is
+   * a guaranteed property of the surface. Lower precedence than
+   * {@link pagination}, higher than {@link footerSlot}.
+   */
+  cursorPagination?: CursorPaginateContract
+  /**
+   * Escape-hatch footer for bespoke footer chrome that fits neither
+   * {@link pagination} nor {@link cursorPagination}. Ignored when either is set.
    */
   footerSlot?: ReactNode
   /** Per-cell renderer. Defaults to `column.render?.(row)` or
@@ -125,6 +136,7 @@ export function DataTable<TRow extends DataTableRow>({
   empty,
   headerSlot,
   pagination,
+  cursorPagination,
   footerSlot,
   renderCell,
   onRowClick,
@@ -307,6 +319,11 @@ export function DataTable<TRow extends DataTableRow>({
         // PaginateControls owns its own px-3 py-2 padding — no extra here.
         <div className="border-t border-[var(--panel-border)]">
           <PaginateControls {...pagination} />
+        </div>
+      ) : cursorPagination ? (
+        // CursorPaginateControls owns its own px-3 py-2 padding — no extra here.
+        <div className="border-t border-[var(--panel-border)]">
+          <CursorPaginateControls {...cursorPagination} />
         </div>
       ) : footerSlot ? (
         <div className="border-t border-[var(--panel-border)] px-3 py-2">{footerSlot}</div>

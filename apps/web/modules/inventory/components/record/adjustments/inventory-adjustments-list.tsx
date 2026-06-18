@@ -16,9 +16,6 @@ import {
 
 const SECTION_PAGE_SIZE = 15
 
-const PAGER_BUTTON_CLASS =
-  "inline-flex cursor-pointer items-center rounded-md border border-[var(--panel-border)] bg-transparent px-2.5 py-1 text-xs font-medium text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 disabled:cursor-default disabled:opacity-40"
-
 /**
  * The list face of the inventory record view's adjustments drilldown section — a
  * list-view `DataTable` using the canonical {@link ADJUSTMENTS_LIST_COLUMNS} +
@@ -28,8 +25,9 @@ const PAGER_BUTTON_CLASS =
  * chrome + "+ Adjustment" toolbar are owned by the host (`InventoryRecordView`).
  *
  * Paginated at {@link SECTION_PAGE_SIZE} per page. The page payload reports only
- * `hasMore` (no total), so the footer is a plain prev/next rather than a counted
- * pager.
+ * `hasMore` (no total), so it drives the engine's cursor pager
+ * (`DataTable cursorPagination`) — an always-on prev/next footer (visible from
+ * page one, Next disabled when there's no more) — rather than a counted pager.
  */
 export function InventoryAdjustmentsList({
   inventoryId,
@@ -64,8 +62,6 @@ export function InventoryAdjustmentsList({
     return <p className="text-sm text-rose-400">Could not load adjustments.</p>
   }
 
-  const showPager = page > 1 || hasMore
-
   return (
     <DataTable<EnrichedInventoryAdjustmentRow>
       rows={rows}
@@ -75,31 +71,13 @@ export function InventoryAdjustmentsList({
       onOpenRow={(row) => onSelect(row)}
       rowActions={(row) => renderAdjustmentRowActions(row, { onSplitOff, onDuplicate })}
       getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
-      footerSlot={
-        showPager ? (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-[var(--foreground)]/55">Page {page}</span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className={PAGER_BUTTON_CLASS}
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                ← Previous
-              </button>
-              <button
-                type="button"
-                className={PAGER_BUTTON_CLASS}
-                disabled={!hasMore}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next →
-              </button>
-            </div>
-          </div>
-        ) : null
-      }
+      cursorPagination={{
+        page,
+        hasPreviousPage: page > 1,
+        hasNextPage: hasMore,
+        onPreviousPage: () => setPage((p) => Math.max(1, p - 1)),
+        onNextPage: () => setPage((p) => p + 1),
+      }}
     />
   )
 }
