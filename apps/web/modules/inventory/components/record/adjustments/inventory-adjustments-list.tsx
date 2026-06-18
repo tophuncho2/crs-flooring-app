@@ -35,15 +35,12 @@ export function InventoryAdjustmentsList({
   inventoryId,
   onSelect,
   onSplitOff,
-  onCreateWithProduct,
   onDuplicate,
 }: {
   inventoryId: string
   onSelect: (row: EnrichedInventoryAdjustmentRow) => void
   /** Row ⋮ → "Add inventory from adjustment": open the split-off create form. */
   onSplitOff: (row: EnrichedInventoryAdjustmentRow) => void
-  /** Row ⋮ → "Create with matching product": open the create modal on this inventory. */
-  onCreateWithProduct?: (product: { id: string; name: string }) => void
   /** Row ⋮ → "Duplicate adjustment": open the create modal seeded from the row (PENDING only). */
   onDuplicate?: (row: EnrichedInventoryAdjustmentRow) => void
 }) {
@@ -76,9 +73,7 @@ export function InventoryAdjustmentsList({
       renderCell={renderAdjustmentsRowCell}
       empty={query.isLoading ? "Loading adjustments…" : "No adjustments yet."}
       onOpenRow={(row) => onSelect(row)}
-      rowActions={(row) =>
-        renderAdjustmentRowActions(row, { onSplitOff, onCreateWithProduct, onDuplicate })
-      }
+      rowActions={(row) => renderAdjustmentRowActions(row, { onSplitOff, onDuplicate })}
       getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
       footerSlot={
         showPager ? (

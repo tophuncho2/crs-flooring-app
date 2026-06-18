@@ -8,21 +8,11 @@ import { HUB_CREATE_PICKER_CONFIG } from "../../../controllers/record/adjustment
 import type { AdjustmentCreateSeed } from "../../../controllers/record/adjustments/types"
 import { AdjustmentRecordFields } from "./adjustment-record-fields"
 
-/**
- * What opened the inventory-side create modal:
- *   - `create`    → "Create with matching product" (a fresh adjustment on this item).
- *   - `duplicate` → "Duplicate adjustment" (seed the source row's work-order link;
- *                   quantity stays blank, like the work-order modal's duplicate).
- * Both lock the inventory to the record you're on — there is no picker grid.
- */
-export type InventoryAdjustmentCreateRequest =
-  | { kind: "create" }
-  | { kind: "duplicate"; source: EnrichedInventoryAdjustmentRow }
-
 export type InventoryAdjustmentCreateModalProps = {
   /** The record you're on — the adjustment is always locked to this inventory. */
   inventory: InventoryDetail
-  request: InventoryAdjustmentCreateRequest
+  /** The row being duplicated — seeds the work-order link; quantity stays blank. */
+  source: EnrichedInventoryAdjustmentRow
   /** Dismiss without creating (✕ / backdrop / Escape / Cancel). */
   onClose: () => void
   /** Fired after a successful create — the host closes the modal and reconciles. */
@@ -30,28 +20,28 @@ export type InventoryAdjustmentCreateModalProps = {
 }
 
 /**
- * The inventory record view's **shell** over the shared adjustment create core.
- * The inventory item is always the record you're on, so this shell injects a
- * fixed seed (warehouse / inventory / location locked, same as the embedded "+
- * Adjustment" face) and renders only the shared {@link AdjustmentRecordFields} —
- * no picker grid. Duplicate additionally carries the source row's work-order
- * link. The work-order picker stays editable (adjustments link to any work order).
+ * The inventory record view's **shell** over the shared adjustment create core,
+ * for the row ⋮ "Duplicate adjustment" action. The inventory item is always the
+ * record you're on, so this shell injects a fixed seed (warehouse / inventory /
+ * location locked, same as the embedded "+ Adjustment" face) plus the source
+ * row's work-order link, and renders only the shared {@link AdjustmentRecordFields}
+ * — no picker grid. Quantity stays blank (like the work-order modal's duplicate);
+ * the work-order picker stays editable (adjustments link to any work order).
  *
- * Mount it conditionally (only while a request is active) so each open starts from
+ * Mount it conditionally (only while a source is active) so each open starts from
  * a clean controller.
  */
 export function InventoryAdjustmentCreateModal({
   inventory,
-  request,
+  source,
   onClose,
   onCreated,
 }: InventoryAdjustmentCreateModalProps) {
-  // Fixed seed off the locked inventory (mirrors the embedded create face). For a
-  // duplicate, layer in the source row's work-order link. Stable across renders so
-  // the panel opens once.
-  const seed = useMemo<AdjustmentCreateSeed>(() => {
-    const source = request.kind === "duplicate" ? request.source : null
-    return {
+  // Fixed seed off the locked inventory (mirrors the embedded create face), plus
+  // the source row's work-order link. Stable across renders so the panel opens
+  // once.
+  const seed = useMemo<AdjustmentCreateSeed>(
+    () => ({
       inventoryId: inventory.id,
       warehouseId: inventory.warehouseId,
       warehouseLabel: inventory.warehouseName,
@@ -62,10 +52,11 @@ export function InventoryAdjustmentCreateModal({
       inventoryNote: inventory.note,
       locationLabel: inventory.location,
       stockUnitAbbrev: inventory.stockUnitAbbrev,
-      workOrderId: source?.workOrderId ?? null,
-      workOrderLabel: source?.workOrderNumber ? `#${source.workOrderNumber}` : undefined,
-    }
-  }, [inventory, request])
+      workOrderId: source.workOrderId,
+      workOrderLabel: source.workOrderNumber ? `#${source.workOrderNumber}` : undefined,
+    }),
+    [inventory, source],
+  )
 
   const controller = useAdjustmentCreateForm({
     scope: { kind: "inventory", inventoryId: inventory.id },
@@ -79,7 +70,7 @@ export function InventoryAdjustmentCreateModal({
   return (
     <QuickCreateModal
       open
-      title="Add adjustment"
+      title="Duplicate adjustment"
       widthClassName="max-w-3xl"
       onClose={onClose}
       onCreate={() => controller.save()}

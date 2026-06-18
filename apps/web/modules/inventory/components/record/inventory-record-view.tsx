@@ -29,10 +29,7 @@ import {
 } from "@/hooks/navigation"
 import { InventoryPrimaryFieldsSection } from "./primary/inventory-primary-fields-section"
 import { InventoryAdjustmentsList } from "./adjustments/inventory-adjustments-list"
-import {
-  InventoryAdjustmentCreateModal,
-  type InventoryAdjustmentCreateRequest,
-} from "./adjustments/inventory-adjustment-create-modal"
+import { InventoryAdjustmentCreateModal } from "./adjustments/inventory-adjustment-create-modal"
 
 /**
  * The inventory record view. ① editable inventory cells (primary — only Location
@@ -74,9 +71,9 @@ export function InventoryRecordView({
   const [embeddedAdjustmentDirty, setEmbeddedAdjustmentDirty] = useState(false)
   const [selectedRow, setSelectedRow] = useState<EnrichedInventoryAdjustmentRow | null>(null)
 
-  // Row ⋮ "Create with matching product" / "Duplicate adjustment" open a create
-  // modal locked to this inventory (no picker grid). Null while closed.
-  const [adjustmentModal, setAdjustmentModal] = useState<InventoryAdjustmentCreateRequest | null>(
+  // Row ⋮ "Duplicate adjustment" opens a create modal locked to this inventory
+  // (no picker grid), seeded from the source row. Null while closed.
+  const [duplicateSource, setDuplicateSource] = useState<EnrichedInventoryAdjustmentRow | null>(
     null,
   )
 
@@ -264,8 +261,7 @@ export function InventoryRecordView({
                 onSplitOff={(row) =>
                   confirmSplitOff({ inventoryId: row.inventoryId, quantity: row.quantity })
                 }
-                onCreateWithProduct={() => setAdjustmentModal({ kind: "create" })}
-                onDuplicate={(row) => setAdjustmentModal({ kind: "duplicate", source: row })}
+                onDuplicate={(row) => setDuplicateSource(row)}
               />
             )}
             renderDetail={(_id, onBack) => (
@@ -299,13 +295,13 @@ export function InventoryRecordView({
         deleteLabel="Delete Inventory"
         confirmTitle="Delete inventory?"
       />
-      {adjustmentModal ? (
+      {duplicateSource ? (
         <InventoryAdjustmentCreateModal
           inventory={record}
-          request={adjustmentModal}
-          onClose={() => setAdjustmentModal(null)}
+          source={duplicateSource}
+          onClose={() => setDuplicateSource(null)}
           onCreated={() => {
-            setAdjustmentModal(null)
+            setDuplicateSource(null)
             handleAdjustmentMutated()
           }}
         />
