@@ -18,13 +18,12 @@ import { useRouter } from "next/navigation"
 import { useInventoryListController } from "@/modules/inventory/controllers/list/use-inventory-list-controller"
 import { NEW_ADJUSTMENT_ID } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
-import { buildInventoryMergeHref, buildInventoryRecordHref } from "@/hooks/navigation"
+import { buildInventoryRecordHref } from "@/hooks/navigation"
 import { InventoryTable } from "./inventory-table"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
 import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
 import { AddInventoryButton } from "./toolbar-controls/add-inventory-button"
-import { MergeInventoryButton } from "./toolbar-controls/merge-inventory-button"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
@@ -461,12 +460,10 @@ export default function InventoryClient({
                 list views' "+ New" button); `self-start` keeps it top-aligned
                 in the tall toolbar. */}
             <ListToolbarCell className="ml-auto self-start">
-              <div className="flex flex-col gap-2">
-                <AddInventoryButton onClick={() => openCreate()} />
-                <MergeInventoryButton
-                  onClick={() => router.push(buildInventoryMergeHref({ returnTo }))}
-                />
-              </div>
+              {/* Merge retired from the UI (2026-06-18) pending the inventory-
+                  costing work — the MergeInventoryButton + /dashboard/inventory/
+                  merge page + /api/inventory/merge stay dormant for easy re-add. */}
+              <AddInventoryButton onClick={() => openCreate()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
