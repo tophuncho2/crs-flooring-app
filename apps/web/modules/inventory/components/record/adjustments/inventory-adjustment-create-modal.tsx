@@ -84,7 +84,7 @@ export function InventoryAdjustmentCreateModal({
     <QuickCreateModal
       open
       title={source ? "Duplicate adjustment" : "Add adjustment"}
-      widthClassName="max-w-3xl"
+      widthClassName="max-w-5xl"
       onClose={onClose}
       onCreate={() => controller.save()}
       canCreate={canSave}

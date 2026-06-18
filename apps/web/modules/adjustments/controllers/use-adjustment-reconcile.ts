@@ -32,6 +32,10 @@ export function useAdjustmentReconcile() {
   const router = useRouter()
 
   return useCallback(() => {
+    // Bare roots on purpose: prefix-matching also marks the option-search pickers
+    // stale (inventory locations/import-numbers/POs/merge-candidates, the WO picker),
+    // but those have no active observer here so they only lazy-refetch on next use —
+    // the freshness guarantee is worth the negligible collateral.
     void queryClient.invalidateQueries({ queryKey: ["inventory"] })
     void queryClient.invalidateQueries({ queryKey: ["adjustments"] })
     void queryClient.invalidateQueries({ queryKey: ["work-orders"] })
