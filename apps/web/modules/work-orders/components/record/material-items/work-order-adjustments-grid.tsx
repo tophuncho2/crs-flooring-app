@@ -1,12 +1,11 @@
 "use client"
 
-import { useMemo, type ReactNode } from "react"
+import { useMemo } from "react"
 import { Copy, Plus } from "lucide-react"
 import { sumAdjustmentQuantities, type EnrichedInventoryAdjustmentRow } from "@builders/domain"
-import { renderAdjustmentReadOnlyCell } from "@/modules/adjustments"
-import { Grid } from "@/engines/record-view"
-import { RecordOpenButton, RecordOptionsMenu } from "@/engines/common"
-import { WORK_ORDER_ADJUSTMENT_LAYOUT } from "./work-order-adjustment-row-layout"
+import { ADJUSTMENTS_LIST_COLUMNS, renderAdjustmentsRowCell } from "@/modules/adjustments"
+import { DataTable } from "@/engines/list-view"
+import { RecordOptionsMenu } from "@/engines/common"
 
 type ProductGroup = {
   productId: string
@@ -60,9 +59,10 @@ export type WorkOrderAdjustmentsGridProps = {
 /**
  * The work order's "Adjustments" view (outflow): every adjustment fulfilling
  * this WO, grouped by product into stacked blocks. Each block is the shared
- * ledger Grid (leading open ↗ + options ⋮ gutter) closed by a per-product
- * Σ-quantity subtotal under a rule, with a divider between products — the same
- * shape as the print files. Read-only rows; edits open the inventory record view.
+ * ledger DataTable (open ↗ + options ⋮ paired in the leading gutter) closed by a
+ * per-product Σ-quantity subtotal under a rule, with a divider between products —
+ * the same shape, and the same row rendering, as the standalone adjustments
+ * ledger. Read-only rows; edits open the inventory record view.
  */
 export function WorkOrderAdjustmentsGrid({
   adjustments,
@@ -72,47 +72,6 @@ export function WorkOrderAdjustmentsGrid({
   isBusy,
 }: WorkOrderAdjustmentsGridProps) {
   const groups = useMemo(() => groupByProduct(adjustments), [adjustments])
-  const renderCell = useMemo(() => renderAdjustmentReadOnlyCell({}), [])
-
-  function renderControl(
-    control: { key: string; kind: string },
-    row: EnrichedInventoryAdjustmentRow,
-  ): ReactNode {
-    if (control.kind === "open") {
-      return (
-        <RecordOpenButton
-          ariaLabel={`Open adjustment ${row.adjustmentNumber}`}
-          title="Open this adjustment"
-          onClick={() => onOpenEdit(row)}
-        />
-      )
-    }
-    if (control.kind === "actions") {
-      const isPending = row.status === "PENDING"
-      return (
-        <RecordOptionsMenu
-          ariaLabel={`Options for adjustment ${row.adjustmentNumber}`}
-          items={[
-            {
-              key: "create-matching",
-              label: "Create with matching product",
-              icon: <Plus size={14} aria-hidden="true" />,
-              onClick: () => onCreateWithProduct({ id: row.productId, name: row.productName }),
-              disabled: isBusy,
-            },
-            {
-              key: "duplicate",
-              label: "Duplicate adjustment",
-              icon: <Copy size={14} aria-hidden="true" />,
-              onClick: () => onDuplicate(row),
-              disabled: !isPending || isBusy,
-            },
-          ]}
-        />
-      )
-    }
-    return null
-  }
 
   if (adjustments.length === 0) {
     return (
@@ -157,11 +116,33 @@ export function WorkOrderAdjustmentsGrid({
                 </span>
               </span>
             </div>
-            <Grid<EnrichedInventoryAdjustmentRow>
+            <DataTable<EnrichedInventoryAdjustmentRow>
               rows={group.rows}
-              layout={WORK_ORDER_ADJUSTMENT_LAYOUT}
-              renderCell={renderCell}
-              renderControl={renderControl}
+              columns={ADJUSTMENTS_LIST_COLUMNS}
+              renderCell={renderAdjustmentsRowCell}
+              onOpenRow={(row) => onOpenEdit(row)}
+              getRowAriaLabel={(row) => `Open adjustment ${row.adjustmentNumber}`}
+              rowActions={(row) => (
+                <RecordOptionsMenu
+                  ariaLabel={`Options for adjustment ${row.adjustmentNumber}`}
+                  items={[
+                    {
+                      key: "create-matching",
+                      label: "Create with matching product",
+                      icon: <Plus size={14} aria-hidden="true" />,
+                      onClick: () => onCreateWithProduct({ id: row.productId, name: row.productName }),
+                      disabled: isBusy,
+                    },
+                    {
+                      key: "duplicate",
+                      label: "Duplicate adjustment",
+                      icon: <Copy size={14} aria-hidden="true" />,
+                      onClick: () => onDuplicate(row),
+                      disabled: row.status !== "PENDING" || isBusy,
+                    },
+                  ]}
+                />
+              )}
             />
           </div>
         )

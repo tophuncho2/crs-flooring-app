@@ -48,8 +48,9 @@ export const ADJUSTMENT_COLUMN_DEFINITIONS = {
  * (the inventory section always feeds enriched rows). `workOrderNumber` is the
  * enriched per-row WO label, correct under cross-warehouse sourcing.
  *
- * The work-orders material-items section keeps its own `WORK_ORDER_ADJUSTMENT_LAYOUT`
- * (same column set, plus a leading duplicate control).
+ * The work-orders material-items section renders its read-only adjustments on the
+ * list-view `DataTable` instead (reusing `ADJUSTMENTS_LIST_COLUMNS`); only this
+ * inventory record-view section still uses the record-view `Grid` layout.
  */
 export const INVENTORY_ADJUSTMENT_LAYOUT: GridLayout<InventoryAdjustmentRow> = {
   dataColumns: [
