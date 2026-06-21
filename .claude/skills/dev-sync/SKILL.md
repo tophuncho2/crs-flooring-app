@@ -9,8 +9,6 @@ description: Bring the current worktree up to dev and verify it in one pass — 
 
 Reach for it when a `dev-N` worktree has fallen behind `dev` and you want it current, checked, and pushed in one command.
 
-For a *rebase-style* catch-up (linear history instead of a merge), use the bin-only siblings `npm run dev-rebase` (rebase a `dev-N` branch onto `origin/dev`, force-push) and `npm run dev-rebase-finish <dev-N>` (run from `dev` to integrate it back). Those have no skill.
-
 ## Hard rules
 
 - **dev-N + staging only.** Runs on the `dev-N` sub-branches (`dev-1`, `dev-2`, … — matched by `^dev-[0-9]+$`, so future `dev-4/5` are covered) and on `staging` (dev → staging is a clean fast-forward ~99% of the time). On `dev`, push directly; on `main`, use `/promote`. The script enforces this guard — never bypass it.
@@ -35,7 +33,7 @@ Read the script's exit and its `═══ sync summary ═══` table, and cla
 
 - **guard-abort** — not on a `dev-N` branch or `staging`. Report the branch and point to the right tool (`dev` → push directly, `main` → `/promote`).
 - **dirty-tree abort** — uncommitted changes. Tell the user to commit or stash, then re-run.
-- **conflict-abort** — `origin/dev` conflicts with the branch. The merge was aborted and the tree restored; the user resolves manually (or rebases) before re-running.
+- **conflict-abort** — `origin/dev` conflicts with the branch. The merge was aborted and the tree restored; the user resolves manually before re-running.
 - **check-fail** — the merge landed locally but checks failed, so nothing was pushed. Surface the failing gauntlet step and the recovery line: fix and re-run, or `git reset --hard origin/<branch>` to unwind.
 - **synced** — merged, checked, pushed; `origin/<branch>` advanced.
 
@@ -59,7 +57,6 @@ Recovery (on abort): <the exact command to run next>
 - Does not run on `dev` (push directly) or `main` (→ `/promote`); the guard refuses both.
 - Does not resolve merge conflicts or edit code to make checks pass — it reports and stops.
 - Does not commit or stash the user's working changes; a dirty tree aborts by design.
-- Does not run migrations (the user runs those), and is not a promotion/rebase tool (→ `/promote`, `/rebase`).
+- Does not run migrations (the user runs those), and is not a promotion tool (→ `/promote`).
 - Is not the build gauntlet itself — that's `/check` / `bin/check.sh`, which `/dev-sync` invokes as one step.
-- Is not the rebase-style flow — that's the bin-only `dev-rebase` / `dev-rebase-finish` (no skill).
 - Does not trigger on anything but the literal `/dev-sync`.
