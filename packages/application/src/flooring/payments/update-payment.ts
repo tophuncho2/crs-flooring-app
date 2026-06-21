@@ -1,0 +1,52 @@
+import { Prisma, updatePaymentRecord, withDatabaseTransaction } from "@builders/db"
+import { PAYMENT_NOT_FOUND_MESSAGE, isValidMoneyAmount } from "@builders/domain"
+import { PaymentExecutionError } from "./errors.js"
+import type { PaymentUseCaseResult, UpdatePaymentUseCaseInput } from "./types.js"
+
+export async function updatePaymentUseCase(
+  id: string,
+  input: UpdatePaymentUseCaseInput,
+  client?: Prisma.TransactionClient,
+): Promise<PaymentUseCaseResult> {
+  return withDatabaseTransaction(async (tx) => {
+    const c = client ?? tx
+
+    if (input.amount !== undefined) {
+      const raw = input.amount.trim()
+      if (!isValidMoneyAmount(raw) || Number(raw) <= 0) {
+        throw new PaymentExecutionError({
+          code: "PAYMENT_VALIDATION_FAILED",
+          message: "Amount must be greater than zero.",
+          status: 400,
+          field: "amount",
+        })
+      }
+    }
+
+    if (
+      input.direction !== undefined &&
+      input.direction !== "INFLOW" &&
+      input.direction !== "OUTFLOW"
+    ) {
+      throw new PaymentExecutionError({
+        code: "PAYMENT_VALIDATION_FAILED",
+        message: "Direction (inflow or outflow) is required.",
+        status: 400,
+        field: "direction",
+      })
+    }
+
+    try {
+      return await updatePaymentRecord(id, input, c)
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        throw new PaymentExecutionError({
+          code: "PAYMENT_NOT_FOUND",
+          message: PAYMENT_NOT_FOUND_MESSAGE,
+          status: 404,
+        })
+      }
+      throw error
+    }
+  })
+}

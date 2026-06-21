@@ -3,9 +3,17 @@
 import { RequestJsonError } from "@/transport/http"
 import type { MutationMeta, MutationRequest } from "@/server/http/route-policy"
 
-export function createMutationMeta(expectedUpdatedAt?: string): MutationMeta {
+// `idempotencyKey` defaults to a fresh UUID, but callers can pass a STABLE key
+// they hold across retries of one submit intent. Per-call random keys are the
+// known double-submit bug: a retried create lands a second row. A create form
+// should generate one key per intent and reuse it (see the payments record
+// controller); guarded mutations (update/delete) can keep the default.
+export function createMutationMeta(
+  expectedUpdatedAt?: string,
+  idempotencyKey?: string,
+): MutationMeta {
   return {
-    idempotencyKey: crypto.randomUUID(),
+    idempotencyKey: idempotencyKey ?? crypto.randomUUID(),
     ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}),
   }
 }
@@ -13,10 +21,11 @@ export function createMutationMeta(expectedUpdatedAt?: string): MutationMeta {
 export function withMutationMeta<T extends Record<string, unknown>>(
   value: T,
   expectedUpdatedAt?: string,
+  idempotencyKey?: string,
 ): MutationRequest<T> {
   return {
     ...value,
-    mutation: createMutationMeta(expectedUpdatedAt),
+    mutation: createMutationMeta(expectedUpdatedAt, idempotencyKey),
   }
 }
 
