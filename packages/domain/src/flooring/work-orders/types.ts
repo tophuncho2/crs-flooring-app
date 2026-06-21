@@ -23,17 +23,6 @@ export type WorkOrderListRow = {
 }
 
 /**
- * One page of a contact's work orders for the contact record-view Statistics
- * section, plus the contact's total labor cost (a money string, summed over ALL
- * the contact's labor payments — broader than the listed work orders).
- */
-export type WorkOrdersForContactPage = {
-  rows: WorkOrderListRow[]
-  total: number
-  laborCostTotal: string
-}
-
-/**
  * An adjacent work order in the global work-order-number sequence
  * (`workOrderNumberInt`). Carries only `id` — the record-view stepper navigates
  * straight to the neighbor record by number. Null at the ends of the sequence.

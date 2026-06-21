@@ -204,44 +204,6 @@ export async function listWorkOrders(
   return workOrders.map(normalizeWorkOrderListRow)
 }
 
-export type WorkOrdersForContactPageOptions = {
-  contactId: string
-  skip: number
-  take: number
-}
-
-/**
- * Paginated read of one contact's work orders for the contact record-view
- * Statistics section. A work order belongs to the contact when it has at least
- * one labor payment for that contact (the `some` relation filter dedupes at the
- * work-order level). Rows reuse `workOrderListSelect` + `normalizeWorkOrderListRow`
- * so they are identical to the work-order list view.
- */
-export async function listWorkOrdersForContactPage(
-  options: WorkOrdersForContactPageOptions,
-  client: WorkOrdersDbClient = db,
-): Promise<{ rows: WorkOrderListRow[]; total: number }> {
-  const where: Prisma.FlooringWorkOrderWhereInput = {
-    laborPayments: { some: { contactId: options.contactId } },
-  }
-
-  const [total, rows] = await Promise.all([
-    client.flooringWorkOrder.count({ where }),
-    client.flooringWorkOrder.findMany({
-      where,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      select: workOrderListSelect,
-      skip: options.skip,
-      take: options.take,
-    }),
-  ])
-
-  return {
-    total,
-    rows: rows.map(normalizeWorkOrderListRow),
-  }
-}
-
 const workOrderOptionSelect = {
   id: true,
   workOrderNumber: true,

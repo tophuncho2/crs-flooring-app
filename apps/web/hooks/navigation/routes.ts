@@ -195,43 +195,6 @@ export function buildInventorySplitOffHref(options: {
   })
 }
 
-const CONTACTS_RECORD_BASE = "/dashboard/contacts"
-
-/** Sentinel `?laborPayment` value that opens the create face of the section. */
-export const NEW_LABOR_PAYMENT_ID = "new"
-
-/**
- * Open a contact's record view at `/dashboard/contacts/{id}`. An optional
- * `laborPayment` rides in the query string (`?laborPayment=<id|"new">`) to drill
- * the labor-payments section into a specific row (edit) or the create face.
- */
-export function buildContactRecordHref(options: {
-  contactId: string
-  laborPayment?: string | null
-  returnTo?: string | null
-}): string {
-  const searchParams = new URLSearchParams()
-  if (options.laborPayment) searchParams.set("laborPayment", options.laborPayment)
-  if (options.returnTo) searchParams.set("returnTo", options.returnTo)
-  const query = searchParams.toString()
-  const path = `${CONTACTS_RECORD_BASE}/${options.contactId}`
-  return query ? `${path}?${query}` : path
-}
-
-/**
- * Open a labor payment inside its contact's record view, drilled into the
- * labor-payments section at that row (`?laborPayment=<id>`). The single entry
- * point for "open a labor payment" — used by the labor-payments ledger row
- * click. The record view resolves the row by id when it isn't on the first page.
- */
-export function buildContactLaborPaymentHref(
-  contactId: string,
-  laborPaymentId: string,
-  returnTo?: string | null,
-) {
-  return buildContactRecordHref({ contactId, laborPayment: laborPaymentId, returnTo })
-}
-
 export function resolveRecordEntryReturnTo(
   returnTo: string | string[] | undefined,
   fallbackHref: string,
