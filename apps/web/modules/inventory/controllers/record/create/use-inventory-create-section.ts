@@ -18,6 +18,8 @@ export type InventoryCreateForm = {
   dyeLot: string
   note: string
   startingStock: string
+  cost: string
+  freight: string
   location: string
   internalNotes: string
 }
@@ -29,6 +31,8 @@ const EMPTY_CREATE_FORM: InventoryCreateForm = {
   dyeLot: "",
   note: "",
   startingStock: "",
+  cost: "",
+  freight: "",
   location: "",
   internalNotes: "",
 }
@@ -102,6 +106,8 @@ export function useInventoryCreateSection({
       form.dyeLot !== seed.dyeLot ||
       form.note !== seed.note ||
       form.startingStock !== seed.startingStock ||
+      form.cost !== seed.cost ||
+      form.freight !== seed.freight ||
       form.location !== seed.location ||
       form.internalNotes !== seed.internalNotes,
     [form, seed],

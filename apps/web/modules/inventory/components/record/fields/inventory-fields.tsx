@@ -1,11 +1,19 @@
 "use client"
 
-import { FormField, StaticFieldValue, TextareaCell, TextCell, UnitCell } from "@/engines/record-view"
+import {
+  FormField,
+  MoneyCell,
+  StaticFieldValue,
+  TextareaCell,
+  TextCell,
+  UnitCell,
+} from "@/engines/record-view"
 import { StatusBadge } from "@/engines/common"
 import {
   formatEasternDateTime,
   formatFifoReceivedAtEastern,
   formatInventoryQuantity,
+  formatMoney,
   INVENTORY_DYE_LOT_MAX,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
@@ -106,6 +114,22 @@ export function StartingStockField({
   )
 }
 
+export function CostField({ editable, value, onChange }: TextFieldProps) {
+  return (
+    <FormField label="Cost">
+      <MoneyCell editable={editable} value={value} onChange={onChange} ariaLabel="Cost" />
+    </FormField>
+  )
+}
+
+export function FreightField({ editable, value, onChange }: TextFieldProps) {
+  return (
+    <FormField label="Freight">
+      <MoneyCell editable={editable} value={value} onChange={onChange} ariaLabel="Freight" />
+    </FormField>
+  )
+}
+
 export function StatusField({
   editable,
   value,
@@ -173,6 +197,14 @@ export function NetDeductedField({ value, unitAbbrev }: { value: string; unitAbb
 
 export function StartingStockReadonlyField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
   return <ReadonlyField label="Starting" value={formatInventoryQuantity(value, unitAbbrev)} />
+}
+
+export function CostReadonlyField({ value }: { value: string }) {
+  return <ReadonlyField label="Cost" value={formatMoney(value)} />
+}
+
+export function FreightReadonlyField({ value }: { value: string }) {
+  return <ReadonlyField label="Freight" value={formatMoney(value)} />
 }
 
 export function ProductNameField({ value }: { value: string }) {

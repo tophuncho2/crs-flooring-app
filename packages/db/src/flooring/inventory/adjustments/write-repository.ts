@@ -61,6 +61,14 @@ export type InsertPendingAdjustmentRowInput = {
    * never re-snapped by update-pending.
    */
   location: string | null
+  /**
+   * Derived money share of the parent inventory's cost/freight attributable to
+   * this adjustment's quantity. Stamped unsigned at insert; `null` when the
+   * parent has no cost/freight. The +/− sign is derived from `adjustmentType`
+   * at display, never stored.
+   */
+  cost: string | null
+  freight: string | null
 }
 
 /**
@@ -105,6 +113,8 @@ export async function insertPendingAdjustmentRow(
       productId: input.inventorySnapshot.productId,
       warehouseId: input.inventorySnapshot.warehouseId,
       location: input.location,
+      cost: input.cost,
+      freight: input.freight,
     },
     select: adjustmentRowSelect,
   })

@@ -1,3 +1,4 @@
+import { isValidMoneyAmount, normalizeMoneyAmount } from "../../shared/money.js"
 import {
   INVENTORY_DYE_LOT_MAX,
   INVENTORY_INTERNAL_NOTES_MAX,
@@ -20,6 +21,8 @@ export type CreateInventoryEdits = {
   dyeLot: string
   note: string
   startingStock: string
+  cost: string
+  freight: string
   location: string
   internalNotes: string
 }
@@ -57,6 +60,8 @@ export type CreatedInventoryInsertFields = {
   warehouseId: string
   location: string | null
   startingStock: string
+  cost: string | null
+  freight: string | null
   netDeducted: "0"
   isArchived: false
 }
@@ -67,6 +72,8 @@ export type InventoryCreateIssueCode =
   | "STARTING_STOCK_REQUIRED"
   | "STARTING_STOCK_INVALID"
   | "STARTING_STOCK_NOT_POSITIVE"
+  | "COST_INVALID"
+  | "FREIGHT_INVALID"
   | "ROLL_NUMBER_TOO_LONG"
   | "DYE_LOT_TOO_LONG"
   | "NOTE_TOO_LONG"
@@ -104,6 +111,16 @@ export function validateCreateInventoryEdits(
     }
   }
 
+  // Cost/freight are optional money figures — only validated when present.
+  const cost = edits.cost.trim()
+  if (cost.length > 0 && !isValidMoneyAmount(cost)) {
+    issues.push({ code: "COST_INVALID" })
+  }
+  const freight = edits.freight.trim()
+  if (freight.length > 0 && !isValidMoneyAmount(freight)) {
+    issues.push({ code: "FREIGHT_INVALID" })
+  }
+
   if (edits.rollNumber.trim().length > INVENTORY_ROLL_NUMBER_MAX) {
     issues.push({ code: "ROLL_NUMBER_TOO_LONG" })
   }
@@ -129,6 +146,8 @@ const INVENTORY_CREATE_ISSUE_COPY: Record<InventoryCreateIssueCode, string> = {
   STARTING_STOCK_REQUIRED: "Starting stock is required.",
   STARTING_STOCK_INVALID: "Starting stock must be a number.",
   STARTING_STOCK_NOT_POSITIVE: "Starting stock must be greater than zero.",
+  COST_INVALID: "Cost must be a valid dollar amount.",
+  FREIGHT_INVALID: "Freight must be a valid dollar amount.",
   ROLL_NUMBER_TOO_LONG: `Roll number must be ${INVENTORY_ROLL_NUMBER_MAX} characters or fewer.`,
   DYE_LOT_TOO_LONG: `Dye lot must be ${INVENTORY_DYE_LOT_MAX} characters or fewer.`,
   NOTE_TOO_LONG: `Note must be ${INVENTORY_NOTE_MAX} characters or fewer.`,
@@ -164,6 +183,8 @@ export function buildCreatedInventoryInsert(
     warehouseId: edits.warehouseId,
     location: emptyToNull(edits.location),
     startingStock: edits.startingStock.trim(),
+    cost: edits.cost.trim() === "" ? null : normalizeMoneyAmount(edits.cost),
+    freight: edits.freight.trim() === "" ? null : normalizeMoneyAmount(edits.freight),
     netDeducted: "0",
     isArchived: false,
   }

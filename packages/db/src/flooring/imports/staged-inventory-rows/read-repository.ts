@@ -46,6 +46,8 @@ export function normalizeStagedInventoryRow(
     warehouseNumber: String(row.warehouse.number),
     location: row.location ?? "",
     startingStock: toDecimalString(row.startingStock),
+    cost: toDecimalString(row.cost),
+    freight: toDecimalString(row.freight),
     status: row.status,
     isImported: row.isImported,
     note: row.note ?? "",

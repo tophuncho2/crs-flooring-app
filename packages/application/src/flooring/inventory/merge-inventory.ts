@@ -116,6 +116,10 @@ export async function mergeInventoryUseCase(
       dyeLot: input.dyeLot,
       note: input.note,
       startingStock,
+      // Merge does not aggregate source cost/freight (out of scope); the merged
+      // row starts with null money figures.
+      cost: "",
+      freight: "",
       location: input.location,
       internalNotes: input.internalNotes,
     }

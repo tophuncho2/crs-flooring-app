@@ -95,6 +95,8 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     warehouseNumber: String(payload.warehouse.number),
     location: payload.location ?? "",
     startingStock: toDecimalString(payload.startingStock),
+    cost: toDecimalString(payload.cost),
+    freight: toDecimalString(payload.freight),
     netDeducted: toDecimalString(payload.netDeducted),
     stockBalance: toInventoryFixedString(balanceNum),
     isArchived: payload.isArchived,

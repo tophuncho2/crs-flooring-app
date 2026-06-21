@@ -1,5 +1,7 @@
 export const INVENTORY_IMMUTABLE_FIELDS = [
   "startingStock",
+  "cost",
+  "freight",
   "importEntryId",
   "productId",
   "categorySlug",

@@ -16,6 +16,8 @@ export type CreateInventoryInput = {
   dyeLot: string
   note: string
   startingStock: string
+  cost: string
+  freight: string
   location: string
   internalNotes: string
 }

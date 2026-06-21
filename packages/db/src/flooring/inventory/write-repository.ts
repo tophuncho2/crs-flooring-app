@@ -61,6 +61,8 @@ export type MaterializeInventoryRowFields = {
   warehouseId: string
   location: string | null
   startingStock: Prisma.Decimal | string | number
+  cost: Prisma.Decimal | string | number | null
+  freight: Prisma.Decimal | string | number | null
   fifoReceivedAt: Date
 }
 
@@ -207,6 +209,8 @@ export type InsertInventoryRowInput = {
   warehouseId: string
   location: string | null
   startingStock: Prisma.Decimal | string | number
+  cost: Prisma.Decimal | string | number | null
+  freight: Prisma.Decimal | string | number | null
   netDeducted: Prisma.Decimal | string | number
   isArchived: boolean
   fifoReceivedAt: Date
@@ -247,6 +251,8 @@ export async function insertInventoryRow(
       warehouseId: input.warehouseId,
       location: input.location,
       startingStock: input.startingStock,
+      cost: input.cost,
+      freight: input.freight,
       netDeducted: input.netDeducted,
       isArchived: input.isArchived,
       fifoReceivedAt: input.fifoReceivedAt,
@@ -347,6 +353,8 @@ export async function materializeStagedRowsToInventory(
       warehouseId: row.warehouseId,
       location: row.location,
       startingStock: row.startingStock,
+      cost: row.cost,
+      freight: row.freight,
       fifoReceivedAt: row.fifoReceivedAt,
     }),
   )

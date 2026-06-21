@@ -15,6 +15,8 @@ function edits(overrides: Partial<CreateInventoryEdits> = {}): CreateInventoryEd
     dyeLot: "DYE-9",
     note: "first roll",
     startingStock: "100",
+    cost: "",
+    freight: "",
     location: "",
     internalNotes: "",
     ...overrides,
@@ -83,6 +85,17 @@ describe("validateCreateInventoryEdits", () => {
       { code: "INTERNAL_NOTES_TOO_LONG" },
     ])
   })
+
+  it("accepts blank or valid cost/freight, flags malformed money", () => {
+    expect(validateCreateInventoryEdits(edits({ cost: "", freight: "" }))).toEqual([])
+    expect(validateCreateInventoryEdits(edits({ cost: "12.50", freight: "3" }))).toEqual([])
+    expect(validateCreateInventoryEdits(edits({ cost: "abc" }))).toEqual([
+      { code: "COST_INVALID" },
+    ])
+    expect(validateCreateInventoryEdits(edits({ freight: "-5" }))).toEqual([
+      { code: "FREIGHT_INVALID" },
+    ])
+  })
 })
 
 describe("buildCreatedInventoryInsert", () => {
@@ -130,5 +143,12 @@ describe("buildCreatedInventoryInsert", () => {
   it("trims the edited starting stock", () => {
     const fields = buildCreatedInventoryInsert(product(), edits({ startingStock: " 42.50 " }))
     expect(fields.startingStock).toBe("42.50")
+  })
+
+  it("normalizes cost/freight to fixed-scale money, blank → null", () => {
+    expect(buildCreatedInventoryInsert(product(), edits({ cost: "", freight: "" })).cost).toBeNull()
+    const fields = buildCreatedInventoryInsert(product(), edits({ cost: "12.5", freight: "300" }))
+    expect(fields.cost).toBe("12.50")
+    expect(fields.freight).toBe("300.00")
   })
 })

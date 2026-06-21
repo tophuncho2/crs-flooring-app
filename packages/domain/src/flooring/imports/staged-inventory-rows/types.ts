@@ -20,6 +20,8 @@ export type StagedInventoryRow = {
   warehouseNumber: string
   location: string
   startingStock: string
+  cost: string
+  freight: string
   status: FlooringStagedRowStatus
   isImported: boolean
   note: string

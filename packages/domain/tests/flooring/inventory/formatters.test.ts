@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   composeInventoryItem,
   composeRollNumberDisplay,
+  formatSignedAdjustmentMoney,
   parseInventoryDecimal,
   toInventoryFixedString,
 } from "../../../src/flooring/inventory/formatters.js"
@@ -28,6 +29,22 @@ describe("toInventoryFixedString", () => {
   it("rounds at the .005 boundary as JS toFixed does", () => {
     // (1.005).toFixed(2) === "1.00" due to float representation — pin reality, not math.
     expect(toInventoryFixedString(1.005)).toBe("1.00")
+  })
+})
+
+describe("formatSignedAdjustmentMoney", () => {
+  it("prefixes + for INCREASE and − (U+2212) for DEDUCTION", () => {
+    expect(formatSignedAdjustmentMoney("10.00", "INCREASE")).toBe("+$10.00")
+    expect(formatSignedAdjustmentMoney("10.00", "DEDUCTION")).toBe("−$10.00")
+  })
+
+  it("normalizes the amount through the money standard", () => {
+    expect(formatSignedAdjustmentMoney("10.5", "INCREASE")).toBe("+$10.50")
+  })
+
+  it("returns the placeholder '—' when the amount is absent", () => {
+    expect(formatSignedAdjustmentMoney(null, "INCREASE")).toBe("—")
+    expect(formatSignedAdjustmentMoney("", "DEDUCTION")).toBe("—")
   })
 })
 

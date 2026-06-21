@@ -23,6 +23,8 @@ export type InventoryAdjustmentRow = {
   before: string | null
   quantity: string
   after: string | null
+  cost: string | null
+  freight: string | null
   stockUnitName: string | null
   stockUnitAbbrev: string | null
   adjustmentType: FlooringInventoryAdjustmentType
@@ -74,6 +76,8 @@ export type InventoryAdjustmentParentContext = {
   inventoryId: string
   inventoryItem: string
   startingStock: string
+  cost: string | null
+  freight: string | null
   currentNetDeducted: string
   categorySlug: string
   stockUnitName: string | null

@@ -1,4 +1,5 @@
 import { formatEasternDateTime } from "../../shared/date-format.js"
+import { formatMoney } from "../../shared/money.js"
 import type { FlooringInventoryAdjustmentType } from "./adjustments/types.js"
 
 export function parseInventoryDecimal(value: string): number {
@@ -30,6 +31,21 @@ export function formatSignedAdjustmentQuantity(
   unitLabel: string,
 ): string {
   return `${adjustmentSign(adjustmentType)}${formatInventoryQuantity(quantity, unitLabel)}`
+}
+
+/**
+ * A money figure (cost/freight) with its adjustment direction sign prefixed,
+ * e.g. `+$12.34` / `−$12.34`. Returns `"—"` when the amount is absent so the
+ * list cell renders a plain placeholder instead of a signed/tinted chip.
+ */
+export function formatSignedAdjustmentMoney(
+  amount: string | null,
+  adjustmentType: FlooringInventoryAdjustmentType,
+): string {
+  if (amount == null || amount === "") return "—"
+  const money = formatMoney(amount)
+  if (money === "") return "—"
+  return `${adjustmentSign(adjustmentType)}${money}`
 }
 
 /**

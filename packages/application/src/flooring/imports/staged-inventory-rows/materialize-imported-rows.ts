@@ -67,6 +67,8 @@ export async function materializeImportedStagedRowsUseCase(
       warehouseId: row.warehouseId,
       location: row.location,
       startingStock: row.startingStock.toString(),
+      cost: row.cost,
+      freight: row.freight,
       fifoReceivedAt,
     }))
 

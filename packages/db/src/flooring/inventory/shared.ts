@@ -38,6 +38,8 @@ export const inventoryRowSelect = {
   warehouse: { select: { id: true, name: true, number: true } },
   location: true,
   startingStock: true,
+  cost: true,
+  freight: true,
   netDeducted: true,
   isArchived: true,
   wasMerged: true,

@@ -11,6 +11,7 @@ import {
   assertAdjustmentWarehouseMatchesInventory,
   assertNetDeductedWithinStartingStock,
   buildPendingAdjustmentInventorySnapshot,
+  computeAdjustmentMoneyShare,
   describeAdjustmentPendingFormIssues,
   InventoryAdjustmentDomainError,
   validateAdjustmentPendingForm,
@@ -96,6 +97,13 @@ export async function createPendingAdjustmentUseCase(
       }
     }
 
+    // Derive the unsigned cost/freight share of the parent inventory's money
+    // figures attributable to this adjustment's quantity. Null when the parent
+    // carries no cost/freight. The +/− sign is derived from `adjustmentType` at
+    // display, never stored.
+    const cost = computeAdjustmentMoneyShare(inventory.cost, inventory.startingStock, quantity)
+    const freight = computeAdjustmentMoneyShare(inventory.freight, inventory.startingStock, quantity)
+
     const inserted = await insertPendingAdjustmentRow(c, {
       adjustmentType,
       workOrderId,
@@ -103,6 +111,8 @@ export async function createPendingAdjustmentUseCase(
       quantity,
       isWaste,
       notes,
+      cost,
+      freight,
       unitSnapshot: {
         stockUnitName: inventory.stockUnitName,
         stockUnitAbbrev: inventory.stockUnitAbbrev,

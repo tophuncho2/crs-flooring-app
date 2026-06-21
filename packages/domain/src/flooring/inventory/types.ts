@@ -29,6 +29,8 @@ export type InventoryRow = {
   warehouseNumber: string
   location: string
   startingStock: string
+  cost: string
+  freight: string
   netDeducted: string
   stockBalance: string
   isArchived: boolean

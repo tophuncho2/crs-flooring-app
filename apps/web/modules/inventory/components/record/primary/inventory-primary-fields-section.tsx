@@ -3,9 +3,11 @@
 import type { InventoryForm, InventoryRow } from "@builders/domain"
 import { CellAt } from "@/engines/record-view"
 import {
+  CostReadonlyField,
   CreatedAtField,
   DyeLotReadOnlyField,
   FifoReceivedField,
+  FreightReadonlyField,
   ImportNumberField,
   InventoryFieldGrid,
   InventoryNumberField,
@@ -103,6 +105,12 @@ export function InventoryPrimaryFieldsSection({
         </CellAt>
         <CellAt col={5} row={3} colSpan={2}>
           <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
+        </CellAt>
+        <CellAt col={5} row={4} colSpan={2}>
+          <CostReadonlyField value={record.cost} />
+        </CellAt>
+        <CellAt col={5} row={5} colSpan={2}>
+          <FreightReadonlyField value={record.freight} />
         </CellAt>
       </InventoryFieldGrid>
 

@@ -36,6 +36,8 @@ function adjustment(overrides: Partial<EnrichedInventoryAdjustmentRow> = {}): En
     before: "100",
     quantity: "5",
     after: "95",
+    cost: "10.00",
+    freight: "2.50",
     stockUnitName: "square foot",
     stockUnitAbbrev: "sqft",
     adjustmentType: "DEDUCTION",

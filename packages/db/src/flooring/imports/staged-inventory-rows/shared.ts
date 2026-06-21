@@ -49,6 +49,8 @@ export const stagedInventoryRowSelect = {
   warehouse: { select: { id: true, name: true, number: true } },
   location: true,
   startingStock: true,
+  cost: true,
+  freight: true,
   stockUnitName: true,
   stockUnitAbbrev: true,
   isImported: true,

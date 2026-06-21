@@ -24,6 +24,8 @@ export const adjustmentRowSelect = {
   before: true,
   quantity: true,
   after: true,
+  cost: true,
+  freight: true,
   stockUnitName: true,
   stockUnitAbbrev: true,
   adjustmentType: true,

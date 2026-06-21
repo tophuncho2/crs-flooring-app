@@ -12,6 +12,7 @@ const {
   assertAdjustmentWarehouseMatchesInventoryMock,
   buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStockMock,
+  computeAdjustmentMoneyShareMock,
   InventoryAdjustmentDomainErrorClass,
 } = vi.hoisted(() => {
   class InventoryAdjustmentDomainError extends Error {
@@ -36,6 +37,7 @@ const {
     assertAdjustmentWarehouseMatchesInventoryMock: vi.fn(),
     buildPendingAdjustmentInventorySnapshotMock: vi.fn(),
     assertNetDeductedWithinStartingStockMock: vi.fn(),
+    computeAdjustmentMoneyShareMock: vi.fn(),
     InventoryAdjustmentDomainErrorClass: InventoryAdjustmentDomainError,
   }
 })
@@ -57,6 +59,7 @@ vi.mock("@builders/domain", () => ({
   assertAdjustmentWarehouseMatchesInventory: assertAdjustmentWarehouseMatchesInventoryMock,
   buildPendingAdjustmentInventorySnapshot: buildPendingAdjustmentInventorySnapshotMock,
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
+  computeAdjustmentMoneyShare: computeAdjustmentMoneyShareMock,
 }))
 
 import { createPendingAdjustmentUseCase } from "../../../../src/flooring/inventory/adjustments/create-pending-adjustment.js"
@@ -96,6 +99,8 @@ function manualVariantInput(overrides: Record<string, unknown> = {}) {
 function inventoryContext(overrides: Record<string, unknown> = {}) {
   return {
     startingStock: "100.00",
+    cost: "200.00",
+    freight: "50.00",
     categorySlug: "vinyl-plank",
     stockUnitName: "Square Foot",
     stockUnitAbbrev: "sf",
@@ -129,6 +134,18 @@ beforeEach(() => {
   assertAdjustmentWarehouseMatchesInventoryMock.mockReset()
   buildPendingAdjustmentInventorySnapshotMock.mockReset()
   assertNetDeductedWithinStartingStockMock.mockReset()
+  computeAdjustmentMoneyShareMock.mockReset()
+  // Faithful stand-in for the pure domain helper: total × qty / startingStock,
+  // null when the total is absent or the divisor is zero.
+  computeAdjustmentMoneyShareMock.mockImplementation(
+    (total: string | null, startingStock: string, quantity: string) => {
+      if (total == null || total.trim() === "") return null
+      const divisor = Number(startingStock)
+      if (!Number.isFinite(divisor) || divisor === 0) return null
+      const share = (Number(total) * Number(quantity)) / divisor
+      return Number.isFinite(share) ? share.toFixed(2) : null
+    },
+  )
 
   tx = {}
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb(tx))
@@ -165,6 +182,9 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
           quantity: "5",
           isWaste: false,
           inventorySnapshot: SNAPSHOT,
+          // Derived unsigned money share: cost 200 × 5 / 100 = 10.00, freight 50 × 5 / 100 = 2.50.
+          cost: "10.00",
+          freight: "2.50",
           // User-owned: comes from the input ("Bay 7"), not the parent inventory ("A1").
           location: "Bay 7",
           unitSnapshot: {

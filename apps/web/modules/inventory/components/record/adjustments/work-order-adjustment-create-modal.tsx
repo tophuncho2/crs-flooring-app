@@ -49,6 +49,8 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     warehouseNumber: "",
     location: adj.location ?? "",
     startingStock: "",
+    cost: "",
+    freight: "",
     netDeducted: "",
     stockBalance: "",
     isArchived: false,

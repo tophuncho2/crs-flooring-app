@@ -343,6 +343,8 @@ export function validateCreateInventoryInput(
     dyeLot: optionalString(body.dyeLot, "dyeLot"),
     note: optionalString(body.note, "note"),
     startingStock: optionalString(body.startingStock, "startingStock"),
+    cost: optionalString(body.cost, "cost"),
+    freight: optionalString(body.freight, "freight"),
     location: optionalString(body.location, "location"),
     internalNotes: optionalString(body.internalNotes, "internalNotes"),
   }
