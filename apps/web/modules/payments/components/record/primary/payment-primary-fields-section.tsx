@@ -11,31 +11,44 @@ import {
   TextCell,
   TextareaCell,
 } from "@/engines/record-view"
-import { formatEasternDateTime, type FlooringPaymentDirection } from "@builders/domain"
-import type { PaymentRecordController } from "@/modules/payments/controllers/record/use-payment-record-controller"
+import {
+  formatEasternDateTime,
+  type FlooringPaymentDirection,
+  type PaymentForm,
+} from "@builders/domain"
 
 const DIRECTION_OPTIONS = [
   { value: "INFLOW", label: "Inflow", tone: "success" as const },
   { value: "OUTFLOW", label: "Outflow", tone: "error" as const },
 ]
 
-export function PaymentRecordFormFields({
-  controller,
+/**
+ * The payment primary-section fields. Data-injected per the engine convention:
+ * the panel owns the draft + dirty/save state (single-section controller) and
+ * hands this component `draft` / `editable` / `onFieldChange`. `createdAt` /
+ * `updatedAt` are only supplied on the edit face (omitted on create).
+ */
+export function PaymentPrimaryFieldsSection({
+  draft,
+  editable,
+  onFieldChange,
+  createdAt,
+  updatedAt,
 }: {
-  controller: PaymentRecordController
+  draft: PaymentForm
+  editable: boolean
+  onFieldChange: <K extends keyof PaymentForm>(field: K, value: PaymentForm[K]) => void
+  createdAt?: string
+  updatedAt?: string
 }) {
-  const { open, form, isSaving, setField } = controller
-  const editable = !isSaving
-  const payment = open.mode === "edit" ? open.payment : null
-
   return (
     <FieldSection gap="0.75rem">
       <CellAt col={1} colSpan={1}>
         <FormField label="Amount" required>
           <MoneyCell
             editable={editable}
-            value={form.amount}
-            onChange={(next) => setField("amount", next)}
+            value={draft.amount}
+            onChange={(next) => onFieldChange("amount", next)}
             ariaLabel="Amount"
           />
         </FormField>
@@ -44,8 +57,8 @@ export function PaymentRecordFormFields({
         <FormField label="Direction" required>
           <SegmentedChoiceCell
             editable={editable}
-            value={form.direction}
-            onChange={(next) => setField("direction", next as FlooringPaymentDirection)}
+            value={draft.direction}
+            onChange={(next) => onFieldChange("direction", next as FlooringPaymentDirection)}
             options={DIRECTION_OPTIONS}
             ariaLabel="Direction"
           />
@@ -55,8 +68,8 @@ export function PaymentRecordFormFields({
         <FormField label="Type">
           <TextCell
             editable={editable}
-            value={form.paymentType}
-            onChange={(next) => setField("paymentType", next)}
+            value={draft.paymentType}
+            onChange={(next) => onFieldChange("paymentType", next)}
             placeholder="e.g. deposit, invoice"
             ariaLabel="Payment type"
           />
@@ -66,8 +79,8 @@ export function PaymentRecordFormFields({
         <FormField label="Method">
           <TextCell
             editable={editable}
-            value={form.paymentMethod}
-            onChange={(next) => setField("paymentMethod", next)}
+            value={draft.paymentMethod}
+            onChange={(next) => onFieldChange("paymentMethod", next)}
             placeholder="e.g. check, ACH, card"
             ariaLabel="Payment method"
           />
@@ -77,8 +90,8 @@ export function PaymentRecordFormFields({
         <FormField label="Date">
           <DateCell
             editable={editable}
-            value={form.paymentDate}
-            onChange={(next) => setField("paymentDate", next)}
+            value={draft.paymentDate}
+            onChange={(next) => onFieldChange("paymentDate", next)}
             ariaLabel="Payment date"
           />
         </FormField>
@@ -87,26 +100,24 @@ export function PaymentRecordFormFields({
         <FormField label="Memo">
           <TextareaCell
             editable={editable}
-            value={form.memo}
-            onChange={(next) => setField("memo", next)}
+            value={draft.memo}
+            onChange={(next) => onFieldChange("memo", next)}
             placeholder="Memo"
             ariaLabel="Memo"
           />
         </FormField>
       </CellAt>
-      {payment ? (
+      {createdAt ? (
         <>
           <CellAt col={1} colSpan={2}>
             <FormField label="Created">
-              <StaticFieldValue>
-                {formatEasternDateTime(payment.createdAt) || "—"}
-              </StaticFieldValue>
+              <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
           <CellAt col={3} colSpan={2}>
             <FormField label="Updated">
               <StaticFieldValue>
-                {formatEasternDateTime(payment.updatedAt) || "—"}
+                {updatedAt ? formatEasternDateTime(updatedAt) || "—" : "—"}
               </StaticFieldValue>
             </FormField>
           </CellAt>
