@@ -19,6 +19,5 @@
 ## Notes
 
 - [ ] The user role/status gating will be applied to catalog tables as well.
-- [ ] Add `createdBy` and `updatedBy` columns to catalog tables; pattern will be shared elsewhere later.
 - [ ] Entities type link should allow multiple types.
 - [ ] Planned payments will be linked to templates as well; goes through with the sync.
