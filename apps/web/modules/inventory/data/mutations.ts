@@ -5,7 +5,6 @@ import { withMutationMeta } from "@/transport/mutation"
 import type { InventoryDetailRecord, InventoryRecord } from "@builders/db"
 import type {
   CreateInventoryInput,
-  MergeInventoryInput,
   UpdateInventoryInput,
 } from "@builders/application"
 
@@ -23,14 +22,6 @@ export async function updateInventoryRequest(
 
 export async function createInventoryRequest(input: CreateInventoryInput) {
   return requestJson<{ inventory: InventoryDetailRecord }>(`/api/inventory`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(withMutationMeta(input)),
-  })
-}
-
-export async function mergeInventoryRequest(input: MergeInventoryInput) {
-  return requestJson<{ inventory: InventoryDetailRecord }>(`/api/inventory/merge`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta(input)),

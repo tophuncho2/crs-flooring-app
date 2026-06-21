@@ -3,13 +3,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   CreateInventoryInput,
-  MergeInventoryInput,
   UpdateInventoryInput,
 } from "@builders/application"
 import {
   createInventoryRequest,
   deleteInventoryRequest,
-  mergeInventoryRequest,
   updateInventoryRequest,
 } from "@/modules/inventory/data/mutations"
 import { INVENTORY_LIST_QUERY_KEY } from "@/modules/inventory/data/list-inventory-request"
@@ -17,7 +15,6 @@ import { INVENTORY_LIST_QUERY_KEY } from "@/modules/inventory/data/list-inventor
 type UpdateArgs = { id: string; input: UpdateInventoryInput; revisionKey: string }
 type DeleteArgs = { id: string; updatedAt: string }
 type CreateArgs = { input: CreateInventoryInput }
-type MergeArgs = { input: MergeInventoryInput }
 
 export function useInventoryListMutations() {
   const queryClient = useQueryClient()
@@ -40,10 +37,5 @@ export function useInventoryListMutations() {
     onSuccess: invalidateList,
   })
 
-  const mergeInventory = useMutation({
-    mutationFn: ({ input }: MergeArgs) => mergeInventoryRequest(input),
-    onSuccess: invalidateList,
-  })
-
-  return { updateInventory, deleteInventory, createInventory, mergeInventory }
+  return { updateInventory, deleteInventory, createInventory }
 }

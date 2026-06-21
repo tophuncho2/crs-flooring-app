@@ -10,7 +10,7 @@ import {
   listInventoryRequest,
 } from "@/modules/inventory/data/list-inventory-request"
 
-/** A list-shaped fetcher the grid can page through (list read or merge candidates). */
+/** A list-shaped fetcher the grid can page through (the inventory list read, or any injected variant). */
 export type InventoryOptionsGridRequest = (
   input: ListInput<InventoryListFilters>,
 ) => Promise<ListOutput<InventoryRow>>
@@ -42,9 +42,9 @@ export type InventoryOptionsGridController = {
  * Holds the four identity search bars + the current page in React state (NOT the
  * URL — the picker's transient search/page must not pollute the record-view
  * URL), and fetches a page of `InventoryRow`s. By default it uses the same list
- * endpoint the inventory list view uses (`listInventoryRequest`); the merge
- * picker injects `requestFn`/`queryKey` to page through the merge-candidate
- * endpoint instead (zero-balance + already-merged rows excluded). Warehouse + the
+ * endpoint the inventory list view uses (`listInventoryRequest`); a caller may
+ * inject `requestFn`/`queryKey` to page through a different fetcher instead.
+ * Warehouse + the
  * optional WO product ride in as filters (both optional — the grid lists across
  * all warehouses when none is picked); any filter change resets to page 1.
  * `enabled` gates the fetch so the query only runs while the picker is open (the

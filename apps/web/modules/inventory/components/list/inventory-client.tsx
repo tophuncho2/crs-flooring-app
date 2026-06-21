@@ -460,9 +460,6 @@ export default function InventoryClient({
                 list views' "+ New" button); `self-start` keeps it top-aligned
                 in the tall toolbar. */}
             <ListToolbarCell className="ml-auto self-start">
-              {/* Merge retired from the UI (2026-06-18) pending the inventory-
-                  costing work — the MergeInventoryButton + /dashboard/inventory/
-                  merge page + /api/inventory/merge stay dormant for easy re-add. */}
               <AddInventoryButton onClick={() => openCreate()} />
             </ListToolbarCell>
           </ListToolbar>
