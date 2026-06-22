@@ -102,10 +102,9 @@ describe("buildCreatedInventoryInsert", () => {
   it("stamps product snapshot columns, applies edits, and drops all import provenance", () => {
     const fields = buildCreatedInventoryInsert(product(), edits())
 
-    // No import / staged-row / PO provenance for a manual create.
+    // No import / staged-row provenance for a manual create.
     expect(fields.importEntryId).toBeNull()
     expect(fields.sourceStagedRowId).toBeNull()
-    expect(fields.purchaseOrderNumber).toBeNull()
 
     // Snapshot columns from the product.
     expect(fields.productId).toBe("p-1")

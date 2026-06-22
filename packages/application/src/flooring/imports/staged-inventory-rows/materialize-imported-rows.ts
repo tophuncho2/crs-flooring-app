@@ -47,7 +47,6 @@ export async function materializeImportedStagedRowsUseCase(
       id: randomUUID(),
       sourceStagedRowId: row.id,
       importEntryId: payload.importEntryId,
-      purchaseOrderNumber: row.importEntry.purchaseOrderNumber ?? null,
       productId: row.productId,
       categorySlug: row.product.category.slug,
       categoryName: row.product.category.name,

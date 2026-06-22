@@ -212,7 +212,6 @@ model FlooringInventory {
   importEntry            FlooringImportEntry? @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
   sourceStagedRowId      String?              @unique
   sourceStagedRow        FlooringImportStagedInventoryRow? @relation(fields: [sourceStagedRowId], references: [id], onDelete: SetNull)
-  purchaseOrderNumber    String?
   productId              String
   product                FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
   categorySlug           String
@@ -247,7 +246,6 @@ model FlooringInventory {
   @@index([isArchived])
   @@index([wasMerged])
   @@index([productId, createdAt, rollNumber, id])
-  @@index([purchaseOrderNumber])
   // inventoryNumber search is an exact match on `inventoryNumberInt` (btree), so
   // the number column no longer needs a trigram index.
   @@index([rollNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_rollNumber_trgm_idx")

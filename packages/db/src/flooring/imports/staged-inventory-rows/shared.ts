@@ -9,7 +9,6 @@ export const stagedInventoryRowSelect = {
     select: {
       id: true,
       importNumber: true,
-      purchaseOrderNumber: true,
     },
   },
   filterRowId: true,

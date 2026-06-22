@@ -47,12 +47,12 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
  * carve-out, this is a data-layer normalizer reusing pure domain
  * formatters/computations; it MUST NOT call domain rules that throw.
  *
- * Snapshot columns (`categoryName`, `purchaseOrderNumber`) are surfaced
- * as-is; the worker writes them at materialize time. `importNumber` is the
- * exception — it is derived from the live `importEntry` join (the snapshot
- * column has been dropped) so it always reflects the linked import's number.
- * `productName` is the exception — it is now derived from
- * the live `product` join (not the snapshot column) so product edits propagate.
+ * The `categoryName` snapshot column is surfaced as-is; the worker writes it at
+ * materialize time. `importNumber` and `purchaseOrderNumber` are derived from
+ * the live `importEntry` join (their snapshot columns have been dropped) so they
+ * always reflect the linked import — including PO# edits made after materialize.
+ * `productName` is likewise derived from the live `product` join (not a snapshot
+ * column) so product edits propagate.
  */
 export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRecord {
   // Read the categorySlug snapshot column, not the joined product.category.slug.
@@ -70,7 +70,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     inventoryNumber: payload.inventoryNumber,
     importEntryId: payload.importEntryId ?? "",
     importNumber: payload.importEntry?.importNumber ?? null,
-    purchaseOrderNumber: payload.purchaseOrderNumber ?? "",
+    purchaseOrderNumber: payload.importEntry?.purchaseOrderNumber ?? "",
     productId: payload.productId,
     // Live product label via the joined product (style/color fall back to the
     // composed name). The `productName` snapshot column has been dropped; the
@@ -367,9 +367,10 @@ export type InventoryListViewOptions = {
      */
     importNumber?: ReadonlyArray<string>
     /**
-     * Purchase-order-number snapshot match (still a `flooring_inventory` column,
-     * unlike `importNumber`). Filters rows whose snapshot equals any value in
-     * the array.
+     * Purchase-order-number match. Resolved through the `importEntry` relation
+     * (`flooring_import_entry.purchaseOrderNumber`) — the inventory snapshot
+     * column has been dropped. Filters rows whose linked import PO# equals any
+     * value in the array.
      */
     purchaseOrderNumber?: ReadonlyArray<string>
     /**
@@ -480,7 +481,11 @@ function buildListViewWhere(
 
   const purchaseOrderNumbers = options.filters?.purchaseOrderNumber
   if (purchaseOrderNumbers && purchaseOrderNumbers.length > 0) {
-    clauses.push({ purchaseOrderNumber: { in: [...purchaseOrderNumbers] } })
+    // PO# lives on the linked import entry (the inventory snapshot column was
+    // dropped); filter through the relation.
+    clauses.push({
+      importEntry: { is: { purchaseOrderNumber: { in: [...purchaseOrderNumbers] } } },
+    })
   }
 
   if (clauses.length === 0) return undefined
@@ -593,33 +598,42 @@ export type InventoryPurchaseOrderSearchResult = {
 }
 
 /**
- * Distinct import PO# snapshot values for the inventory list-view PO# filter
- * chip. Global (not warehouse-scoped) and archive-agnostic — every distinct
- * `purchaseOrderNumber` is selectable regardless of the Status chip. Excludes
- * NULL/whitespace-only values. Optional ILIKE on the search term. Sorted ASC,
- * deduped at the SQL layer.
+ * Distinct import PO# values for the inventory list-view PO# filter chip.
+ * Resolved through the `importEntry` relation
+ * (`flooring_import_entry.purchaseOrderNumber`) — the inventory snapshot column
+ * has been dropped. Global (not warehouse-scoped) and archive-agnostic — every
+ * distinct linked PO# is selectable regardless of the Status chip. PO# is
+ * nullable on the entry too, so NULL/whitespace-only values are still excluded.
+ * Optional ILIKE on the search term. Sorted ASC, deduped at the SQL layer.
  */
 export async function searchInventoryPurchaseOrderNumbers(
   args: InventoryPurchaseOrderSearchArgs,
   client: InventoryDbClient = db,
 ): Promise<InventoryPurchaseOrderSearchResult> {
   const conditions: Prisma.Sql[] = [
-    Prisma.sql`"wasMerged" = false`,
-    Prisma.sql`"purchaseOrderNumber" IS NOT NULL`,
-    Prisma.sql`length(trim("purchaseOrderNumber")) > 0`,
+    Prisma.sql`fi."wasMerged" = false`,
+    Prisma.sql`ie."purchaseOrderNumber" IS NOT NULL`,
+    Prisma.sql`length(trim(ie."purchaseOrderNumber")) > 0`,
   ]
   const trimmed = args.search?.trim() ?? ""
   if (trimmed.length > 0) {
-    conditions.push(Prisma.sql`"purchaseOrderNumber" ILIKE ${`%${trimmed}%`}`)
+    conditions.push(Prisma.sql`ie."purchaseOrderNumber" ILIKE ${`%${trimmed}%`}`)
   }
   const whereClause = Prisma.join(conditions, " AND ")
 
   // Fetch take+1 (offset by skip) to detect a next page without a count query.
+  // Distinct is wrapped in a subquery so the ORDER BY references the plain
+  // alias; the JOIN to the import entry is the source of truth now that the
+  // snapshot column is gone.
   const skip = Math.max(0, Math.floor(args.skip ?? 0))
   const rows = await client.$queryRaw<{ purchaseOrderNumber: string }[]>(Prisma.sql`
-    SELECT DISTINCT "purchaseOrderNumber"
-    FROM "flooring_inventory"
-    WHERE ${whereClause}
+    SELECT "purchaseOrderNumber"
+    FROM (
+      SELECT DISTINCT ie."purchaseOrderNumber" AS "purchaseOrderNumber"
+      FROM "flooring_inventory" fi
+      JOIN "flooring_import_entry" ie ON fi."importEntryId" = ie."id"
+      WHERE ${whereClause}
+    ) AS sub
     ORDER BY "purchaseOrderNumber" ASC
     LIMIT ${args.take + 1} OFFSET ${skip}
   `)

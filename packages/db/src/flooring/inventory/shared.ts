@@ -7,8 +7,7 @@ export const inventoryRowSelect = {
   id: true,
   inventoryNumber: true,
   importEntryId: true,
-  importEntry: { select: { importNumber: true } },
-  purchaseOrderNumber: true,
+  importEntry: { select: { importNumber: true, purchaseOrderNumber: true } },
   productId: true,
   product: {
     select: {

@@ -174,11 +174,11 @@ describe("materializeImportedStagedRowsUseCase", () => {
       expect(callArgs.inventoryRowsToCreate).toHaveLength(1)
 
       const created = callArgs.inventoryRowsToCreate[0]!
-      // From importEntry — purchaseOrderNumber passthrough. importNumber is no
-      // longer stamped by the worker (derived from the importEntry join at read
-      // time now that the snapshot column is dropped).
+      // Neither importNumber nor purchaseOrderNumber is stamped by the worker
+      // any longer — both are derived from the importEntry join at read time now
+      // that their snapshot columns are dropped. Only the FK is stamped.
       expect(created.importNumber).toBeUndefined()
-      expect(created.purchaseOrderNumber).toBe("PO-2026-1")
+      expect(created.purchaseOrderNumber).toBeUndefined()
       expect(created.importEntryId).toBe(IMPORT_ID)
       // From product — only the FK is stamped; the product name is no longer
       // snapshotted (rendered from the live `product` join at read time).
@@ -235,30 +235,6 @@ describe("materializeImportedStagedRowsUseCase", () => {
         inventoryRowsToCreate: Array<Record<string, unknown>>
       }).inventoryRowsToCreate[0]!
       expect(created.warehouseId).toBe("wh-staged-original")
-    })
-
-    it("purchaseOrderNumber falls back to null when import entry's value is null", async () => {
-      listStagedInventoryForMaterializationMock.mockResolvedValue([
-        loadedRow({
-          importEntry: {
-            id: IMPORT_ID,
-            importNumber: 99,
-            purchaseOrderNumber: null,
-            warehouseId: "wh-staged-snapshot",
-          },
-        }),
-      ])
-      materializeStagedRowsToInventoryMock.mockResolvedValue({
-        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
-        materializedStagedRowIds: [ROW_ID_A],
-      })
-
-      await materializeImportedStagedRowsUseCase(payload())
-
-      const created = (materializeStagedRowsToInventoryMock.mock.calls[0]?.[1] as {
-        inventoryRowsToCreate: Array<Record<string, unknown>>
-      }).inventoryRowsToCreate[0]!
-      expect(created.purchaseOrderNumber).toBeNull()
     })
 
     it("assigns a unique id to each created inventory row in a batch", async () => {
