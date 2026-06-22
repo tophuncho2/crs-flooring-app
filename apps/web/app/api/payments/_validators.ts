@@ -85,9 +85,10 @@ export function validateUpdatePaymentInput(
   return input
 }
 
-// --- List query validator (no filters this slice — page/pageSize only) ---
+// --- List query validator (exact payment-number search + page/pageSize) ---
 
 const listPaymentsQuerySchema = z.object({
+  paymentNumber: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -115,8 +116,11 @@ export function validateListPaymentsQuery(
   }
 
   const parsed = parseResult.data
+  const paymentNumber = parsed.paymentNumber?.trim()
+  const filters: PaymentsListFilters = {}
+  if (paymentNumber) filters.paymentNumber = paymentNumber
   return {
-    filters: {},
+    filters,
     page: parsed.page,
     pageSize: parsed.pageSize,
   }

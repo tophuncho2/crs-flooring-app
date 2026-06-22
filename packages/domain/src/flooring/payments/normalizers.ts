@@ -4,6 +4,7 @@ import type { FlooringPaymentDirection, Payment } from "./types.js"
 type PaymentInput = {
   id: string
   paymentNumber: string
+  paymentNumberInt?: number | null
   amount: { toString(): string }
   direction: FlooringPaymentDirection
   paymentDate: Date | string | null
@@ -20,6 +21,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
   return {
     id: payment.id,
     paymentNumber: payment.paymentNumber,
+    paymentNumberInt: payment.paymentNumberInt ?? undefined,
     amount: normalizeMoneyAmount(payment.amount.toString()),
     direction: payment.direction,
     paymentDate: toIso(payment.paymentDate),

@@ -8,6 +8,7 @@ export type FlooringPaymentDirection = "INFLOW" | "OUTFLOW"
 export type Payment = {
   id: string
   paymentNumber: string
+  paymentNumberInt?: number
   amount: string
   direction: FlooringPaymentDirection
   paymentDate: string
@@ -16,6 +17,25 @@ export type Payment = {
 }
 
 export type PaymentListRow = Payment
+
+/**
+ * An adjacent payment in the global payment-number sequence
+ * (`paymentNumberInt`). Carries only `id` — the record-view stepper navigates
+ * straight to the neighbor record by number. Null at the ends of the sequence.
+ */
+export type PaymentNeighbor = {
+  id: string
+}
+
+export type PaymentDetail = Payment & {
+  /**
+   * Neighbors by global payment-number order (`paymentNumberInt`), ignoring any
+   * list filters — powers the record-view shell stepper (◀ PAY-# ▶). Null when
+   * the current row is at the start/end of the sequence.
+   */
+  previousPayment: PaymentNeighbor | null
+  nextPayment: PaymentNeighbor | null
+}
 
 export type PaymentPage = {
   rows: PaymentListRow[]
@@ -42,5 +62,8 @@ export function toPaymentForm(payment: Payment): PaymentForm {
   }
 }
 
-// No FK / entity filtering this slice — the list is unfiltered (newest-first).
-export type PaymentListFilters = Record<string, never>
+// Per-field identity search. `paymentNumber` is a free-text bar matched exactly
+// against the generated `paymentNumberInt` column (digits stripped server-side).
+export type PaymentListFilters = {
+  paymentNumber?: string
+}

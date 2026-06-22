@@ -1,5 +1,5 @@
-import type { Payment } from "@builders/domain"
-import { getPaymentUseCase } from "@builders/application"
+import type { PaymentDetail } from "@builders/domain"
+import { getPaymentDetailUseCase } from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
@@ -26,9 +26,9 @@ export default async function FlooringPaymentRecordPage({
     return <PaymentCreateClient backHref={backHref} />
   }
 
-  let initialPayment: Payment
+  let initialPayment: PaymentDetail
   try {
-    initialPayment = await getPaymentUseCase(paymentId)
+    initialPayment = await getPaymentDetailUseCase(paymentId)
   } catch (error) {
     return (
       <DashboardErrorState

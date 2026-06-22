@@ -16,8 +16,13 @@ export function parsePaymentsListInputFromSearchParams(
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
+  const paymentNumber = (readSearchParam(searchParams, "paymentNumber") ?? "").trim()
+
+  const filters: PaymentsListFilters = {}
+  if (paymentNumber.length > 0) filters.paymentNumber = paymentNumber
+
   return {
-    filters: {},
+    filters,
     page,
     pageSize: LIST_PAYMENTS_PAGE_SIZE,
   }
@@ -25,6 +30,8 @@ export function parsePaymentsListInputFromSearchParams(
 
 export function buildPaymentsListSearchString(input: ListInput<PaymentsListFilters>): string {
   const params = new URLSearchParams()
+  const paymentNumber = input.filters?.paymentNumber?.trim()
+  if (paymentNumber && paymentNumber.length > 0) params.set("paymentNumber", paymentNumber)
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   return params.toString()

@@ -16,9 +16,12 @@ export async function listPaymentsUseCase(
   const requestedPageSize = Math.floor(input.pageSize || LIST_PAYMENTS_PAGE_SIZE)
   const pageSize = Math.max(1, Math.min(LIST_PAYMENTS_MAX_PAGE_SIZE, requestedPageSize))
 
+  const paymentNumber = input.filters?.paymentNumber?.trim() || undefined
+
   const { rows, total } = await listPaymentsForListView({
     skip: (page - 1) * pageSize,
     take: pageSize,
+    paymentNumber,
   })
 
   return { rows, total }
