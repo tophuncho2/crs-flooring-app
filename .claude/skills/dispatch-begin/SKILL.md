@@ -1,6 +1,6 @@
 ---
 name: dispatch-begin
-description: Open a dispatching session. Read-only recon that discovers the dev-N sub-branches dynamically (no hardcoded count) and reports how far ahead/behind each is relative to dev, plus per-worktree dirty state, so you know the lay of the land before splitting work with /dispatch. Mirrors the read-only guardrails of /promote and /dev-sync — never fetches, merges, pushes, or mutates anything. Explicit-only — invoke on /dispatch-begin.
+description: Open a dispatching session. Read-only recon that discovers the dev-N sub-branches dynamically (no hardcoded count) and reports how far ahead/behind each is relative to dev, plus per-worktree dirty state, so you know the lay of the land before splitting work with /dispatch. Then previews the next move — building the checklist /dispatch will split (talked through together, or dropped in finished) — and flags any work items that look like they'd collide on the same file. Mirrors the read-only guardrails of /promote and /dev-sync — never fetches, merges, pushes, or mutates anything. Explicit-only — invoke on /dispatch-begin.
 ---
 
 # /dispatch-begin
@@ -25,6 +25,8 @@ Bare repo + worktrees, not a single checkout:
 - **Discover dev-N dynamically.** Enumerate branches from `refs/heads/dev-[0-9]+`; never assume the count (`dev-4`, `dev-5`, … must appear automatically).
 - **Compare every branch to `dev`.** `dev` is the base all sub-branches fork from. Report behind-dev and ahead-of-dev counts per branch.
 - **Recon only — don't dispatch.** This skill reports state and hands off to `/dispatch`. It does not read code, build a file-ownership map, or write briefs.
+- **Name the next move, don't start it.** After the recon, tell the user what typically comes next: building the checklist that `/dispatch` will split. It **varies** — sometimes you talk the checklist through together first, sometimes the user drops a finished checklist into `/dispatch` in one prompt. Say both are fine and let the user steer.
+- **Flag overlap early.** If, while the checklist is being discussed, two work items look like they'd touch the same file/module/layer (a collision `/dispatch`'s partition would have to resolve), surface it the moment you sense it — don't wait for `/dispatch`. You don't read code here, so flag it as a heads-up, not a verdict.
 - **Explicit-only.** Trigger on the literal `/dispatch-begin`. Not on "start dispatching", "begin a dispatch session", "check the branches".
 
 ## Step 1 — Discover the dev-N branches
@@ -77,7 +79,10 @@ dev-3   | ../dev-3   | 0          | 0            | clean  | <h> <subject>
 dev-4   | ../dev-4   | 5          | 0            | clean  | <h> <subject>
 
 TL;DR: <N> dev-N branches. <free / busy summary — which are clean & in sync vs ahead/behind/dirty>.
-Next: /dispatch <the work> to split it across the free branches (no two touch the same file).
+Next: build the checklist, then /dispatch <the work> to split it across the free branches.
+  - We can talk the checklist through together first, OR you can drop a finished
+    checklist straight into /dispatch — either works. Your call.
+  - As we shape it, I'll flag any two items that look like they'd hit the same file.
 Notes: behind-dev branches catch up with /dev-sync (the user runs it); merges are the user's.
 ```
 
