@@ -362,8 +362,8 @@ model FlooringInventoryAdjustment {
   before                 Decimal?                          @db.Decimal(12, 2)
   quantity               Decimal                           @db.Decimal(12, 2)
   after                  Decimal?                          @db.Decimal(12, 2)
-  cost                   Decimal?                          @db.Decimal(12, 2)
-  freight                Decimal?                          @db.Decimal(12, 2)
+  cost                   Decimal?                          @db.Decimal(12, 3)
+  freight                Decimal?                          @db.Decimal(12, 3)
   stockUnitName          String?
   stockUnitAbbrev        String?
   adjustmentType         FlooringInventoryAdjustmentType   @default(DEDUCTION)

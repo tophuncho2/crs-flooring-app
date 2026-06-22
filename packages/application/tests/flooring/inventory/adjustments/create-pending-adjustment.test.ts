@@ -135,14 +135,15 @@ beforeEach(() => {
   assertNetDeductedWithinStartingStockMock.mockReset()
   computeAdjustmentMoneyShareMock.mockReset()
   // Faithful stand-in for the pure domain helper: total × qty / startingStock,
-  // null when the total is absent or the divisor is zero.
+  // null when the total is absent or the divisor is zero. Adjustment money is the
+  // 3dp standard (`normalizeAdjustmentMoneyAmount`), so the stand-in mirrors 3dp.
   computeAdjustmentMoneyShareMock.mockImplementation(
     (total: string | null, startingStock: string, quantity: string) => {
       if (total == null || total.trim() === "") return null
       const divisor = Number(startingStock)
       if (!Number.isFinite(divisor) || divisor === 0) return null
       const share = (Number(total) * Number(quantity)) / divisor
-      return Number.isFinite(share) ? share.toFixed(2) : null
+      return Number.isFinite(share) ? share.toFixed(3) : null
     },
   )
 
@@ -181,9 +182,9 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
           quantity: "5",
           isWaste: false,
           inventorySnapshot: SNAPSHOT,
-          // Derived unsigned money share: cost 200 × 5 / 100 = 10.00, freight 50 × 5 / 100 = 2.50.
-          cost: "10.00",
-          freight: "2.50",
+          // Derived unsigned money share (3dp): cost 200 × 5 / 100 = 10.000, freight 50 × 5 / 100 = 2.500.
+          cost: "10.000",
+          freight: "2.500",
           // User-owned: comes from the input ("Bay 7"), not the parent inventory ("A1").
           location: "Bay 7",
           unitSnapshot: {

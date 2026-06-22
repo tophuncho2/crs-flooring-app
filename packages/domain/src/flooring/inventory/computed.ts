@@ -1,10 +1,10 @@
-import { normalizeMoneyAmount } from "../../shared/money.js"
+import { normalizeAdjustmentMoneyAmount } from "./adjustments/money.js"
 import { parseInventoryDecimal } from "./formatters.js"
 
 /**
  * The share of a parent inventory money figure (cost or freight) attributable to
  * an adjustment of `quantity` units: `total × quantity / startingStock`, rounded
- * to the money scale and returned **unsigned** (the +/− sign is derived from the
+ * to the 3dp adjustment money scale and returned **unsigned** (the +/− sign is derived from the
  * adjustment type at display). Returns `null` when `total` is absent or
  * `startingStock` is zero/garbage (no divisor) so callers persist null, not 0.
  */
@@ -18,7 +18,7 @@ export function computeAdjustmentMoneyShare(
   if (starting === 0) return null
   const share = (parseInventoryDecimal(total) * parseInventoryDecimal(quantity)) / starting
   if (!Number.isFinite(share)) return null
-  const normalized = normalizeMoneyAmount(share)
+  const normalized = normalizeAdjustmentMoneyAmount(share)
   return normalized === "" ? null : normalized
 }
 
