@@ -5,8 +5,13 @@ import type { CreatePaymentUseCaseInput, PaymentUseCaseResult } from "./types.js
 
 export async function createPaymentUseCase(
   input: CreatePaymentUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<PaymentUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createPaymentUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -24,6 +29,9 @@ export async function createPaymentUseCase(
       })
     }
 
-    return await createPaymentRecord(input, c)
+    return await createPaymentRecord(
+      { ...input, createdBy: actorEmail, updatedBy: actorEmail },
+      c,
+    )
   })
 }

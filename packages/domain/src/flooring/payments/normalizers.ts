@@ -10,6 +10,8 @@ type PaymentInput = {
   paymentDate: Date | string | null
   createdAt: Date | string
   updatedAt: Date | string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 function toIso(value: Date | string | null): string {
@@ -27,5 +29,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
     paymentDate: toIso(payment.paymentDate),
     createdAt: toIso(payment.createdAt),
     updatedAt: toIso(payment.updatedAt),
+    createdBy: payment.createdBy,
+    updatedBy: payment.updatedBy,
   }
 }

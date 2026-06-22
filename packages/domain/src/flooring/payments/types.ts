@@ -14,6 +14,8 @@ export type Payment = {
   paymentDate: string
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 export type PaymentListRow = Payment

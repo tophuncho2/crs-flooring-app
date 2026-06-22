@@ -82,7 +82,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringPayment",
         entityId: id,
       },
-      () => updatePaymentUseCase(id, input),
+      () => updatePaymentUseCase(id, input, access.user.email),
     )
 
     const responseBody = { payment: result }

@@ -418,6 +418,8 @@ model FlooringPayment {
   paymentDate      DateTime?
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
+  createdBy        String?
+  updatedBy        String?
 
   @@index([paymentNumber])
   @@index([paymentNumberInt])

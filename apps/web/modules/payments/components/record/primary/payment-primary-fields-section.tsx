@@ -33,6 +33,8 @@ export function PaymentPrimaryFieldsSection({
   onFieldChange,
   createdAt,
   updatedAt,
+  createdBy,
+  updatedBy,
 }: {
   paymentNumber?: string
   draft: PaymentForm
@@ -40,6 +42,8 @@ export function PaymentPrimaryFieldsSection({
   onFieldChange: <K extends keyof PaymentForm>(field: K, value: PaymentForm[K]) => void
   createdAt?: string
   updatedAt?: string
+  createdBy?: string | null
+  updatedBy?: string | null
 }) {
   return (
     <FieldSection gap="0.75rem">
@@ -93,6 +97,16 @@ export function PaymentPrimaryFieldsSection({
           <CellAt col={1} colSpan={2}>
             <FormField label="Created">
               <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={2}>
+            <FormField label="Updated by">
+              <StaticFieldValue>{updatedBy ?? "—"}</StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={2}>
+            <FormField label="Created by">
+              <StaticFieldValue>{createdBy ?? "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
         </>

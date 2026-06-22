@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         route: "/api/payments",
         entityType: "flooringPayment",
       },
-      () => createPaymentUseCase(input),
+      () => createPaymentUseCase(input, access.user.email),
     )
 
     const responseBody = { payment: result }

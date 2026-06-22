@@ -13,9 +13,16 @@ export type CreatePaymentRecordInput = {
   amount: string
   direction: FlooringPaymentDirection
   paymentDate?: string
+  createdBy: string
+  updatedBy: string
 }
 
-export type UpdatePaymentRecordInput = Partial<CreatePaymentRecordInput>
+export type UpdatePaymentRecordInput = {
+  amount?: string
+  direction?: FlooringPaymentDirection
+  paymentDate?: string
+  updatedBy: string
+}
 
 function optionalDate(value: string | undefined): Date | null | undefined {
   if (value === undefined) return undefined
@@ -34,6 +41,8 @@ export async function createPaymentRecord(
       amount: normalizeMoneyAmount(input.amount),
       direction: input.direction,
       paymentDate: optionalDate(input.paymentDate) ?? null,
+      createdBy: input.createdBy,
+      updatedBy: input.updatedBy,
     },
   })
   return normalizePayment(payment)
@@ -44,7 +53,7 @@ export async function updatePaymentRecord(
   input: UpdatePaymentRecordInput,
   client: PaymentsDbClient = db,
 ): Promise<Payment> {
-  const data: Prisma.FlooringPaymentUpdateInput = {}
+  const data: Prisma.FlooringPaymentUpdateInput = { updatedBy: input.updatedBy }
   if (input.amount !== undefined) data.amount = normalizeMoneyAmount(input.amount)
   if (input.direction !== undefined) data.direction = input.direction
   if (input.paymentDate !== undefined) data.paymentDate = optionalDate(input.paymentDate)

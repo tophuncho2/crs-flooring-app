@@ -51,6 +51,8 @@ export function PaymentRecordPanel({
             }
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
+            createdBy={record.createdBy}
+            updatedBy={record.updatedBy}
           />
         </RecordPrimarySectionInstance>
       ),
