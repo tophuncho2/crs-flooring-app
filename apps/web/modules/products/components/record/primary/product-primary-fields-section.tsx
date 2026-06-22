@@ -128,7 +128,7 @@ export function ProductPrimaryFieldsSection({
       </CellAt>
       <CellAt col={1} row={4} colSpan={4}>
         <FormField
-          label="Naming Addon"
+          label="Naming Add-on"
           currentLength={editable ? draft.productNamingAddon.length : undefined}
           maxLength={editable ? PRODUCT_NAMING_ADDON_MAX : undefined}
         >

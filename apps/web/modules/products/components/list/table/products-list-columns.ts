@@ -5,7 +5,7 @@ export const PRODUCTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ProductListRow
   { key: "category", label: "Category" },
   { key: "style", label: "Style" },
   { key: "color", label: "Color" },
-  { key: "productNamingAddon", label: "Naming Addon" },
+  { key: "productNamingAddon", label: "Naming Add-on" },
   { key: "manufacturer", label: "Manufacturer" },
   { key: "name", label: "Product" },
   { key: "coveragePerUnit", label: "Coverage / Unit", align: "end" },
