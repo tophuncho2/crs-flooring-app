@@ -53,6 +53,8 @@ export function JobTypeRecordPanel({
             }
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
+            createdBy={record.createdBy}
+            updatedBy={record.updatedBy}
           />
         </RecordPrimarySectionInstance>
       ),

@@ -7,4 +7,6 @@ export const JOB_TYPES_LIST_COLUMNS: ReadonlyArray<
   { key: "name", label: "Name" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
+  { key: "createdBy", label: "Created by" },
+  { key: "updatedBy", label: "Updated by" },
 ]

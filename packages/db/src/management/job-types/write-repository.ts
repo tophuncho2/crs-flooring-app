@@ -6,16 +6,25 @@ type JobTypesDbClient = PrismaClient | Prisma.TransactionClient
 
 export type CreateJobTypeRecordInput = {
   name: string
+  createdBy: string
+  updatedBy: string
 }
 
-export type UpdateJobTypeRecordInput = Partial<CreateJobTypeRecordInput>
+export type UpdateJobTypeRecordInput = {
+  name?: string
+  updatedBy: string
+}
 
 export async function createJobTypeRecord(
   input: CreateJobTypeRecordInput,
   client: JobTypesDbClient = db,
 ): Promise<JobType> {
   const jobType = await client.flooringJobType.create({
-    data: { name: input.name.trim() },
+    data: {
+      name: input.name.trim(),
+      createdBy: input.createdBy,
+      updatedBy: input.updatedBy,
+    },
   })
   return normalizeJobType(jobType)
 }
@@ -25,7 +34,7 @@ export async function updateJobTypeRecord(
   input: UpdateJobTypeRecordInput,
   client: JobTypesDbClient = db,
 ): Promise<JobType> {
-  const data: Prisma.FlooringJobTypeUpdateInput = {}
+  const data: Prisma.FlooringJobTypeUpdateInput = { updatedBy: input.updatedBy }
   if (input.name !== undefined) data.name = input.name.trim()
 
   const jobType = await client.flooringJobType.update({

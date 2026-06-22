@@ -11,8 +11,13 @@ import type { JobTypeUseCaseResult, UpdateJobTypeUseCaseInput } from "./types.js
 export async function updateJobTypeUseCase(
   id: string,
   input: UpdateJobTypeUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<JobTypeUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updateJobTypeUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -26,7 +31,7 @@ export async function updateJobTypeUseCase(
     }
 
     try {
-      return await updateJobTypeRecord(id, input, c)
+      return await updateJobTypeRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
       if (isP2002(error, "name")) {
         throw new JobTypeExecutionError({

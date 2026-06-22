@@ -5,6 +5,8 @@ type JobTypeInput = {
   name: string
   createdAt: Date | string
   updatedAt: Date | string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 export function normalizeJobType(jobType: JobTypeInput): JobType {
@@ -13,6 +15,8 @@ export function normalizeJobType(jobType: JobTypeInput): JobType {
     name: jobType.name,
     createdAt: jobType.createdAt instanceof Date ? jobType.createdAt.toISOString() : jobType.createdAt,
     updatedAt: jobType.updatedAt instanceof Date ? jobType.updatedAt.toISOString() : jobType.updatedAt,
+    createdBy: jobType.createdBy,
+    updatedBy: jobType.updatedBy,
   }
 }
 

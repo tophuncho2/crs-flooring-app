@@ -65,7 +65,7 @@ export async function POST(request: Request) {
         route: "/api/job-types",
         entityType: "flooringJobType",
       },
-      () => createJobTypeUseCase(input),
+      () => createJobTypeUseCase(input, access.user.email),
     )
 
     const responseBody = { jobType: result }

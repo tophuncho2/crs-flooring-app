@@ -62,7 +62,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringJobType",
         entityId: id,
       },
-      () => updateJobTypeUseCase(id, input),
+      () => updateJobTypeUseCase(id, input, access.user.email),
     )
 
     const responseBody = { jobType: result }

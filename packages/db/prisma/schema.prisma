@@ -395,6 +395,8 @@ model FlooringJobType {
   name       String              @unique
   createdAt  DateTime            @default(now())
   updatedAt  DateTime            @updatedAt
+  createdBy  String?
+  updatedBy  String?
   templates  FlooringTemplate[]
   workOrders FlooringWorkOrder[]
 

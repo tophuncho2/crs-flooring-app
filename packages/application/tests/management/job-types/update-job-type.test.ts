@@ -29,18 +29,19 @@ import { updateJobTypeUseCase } from "../../../src/management/job-types/update-j
 import { JobTypeExecutionError } from "../../../src/management/job-types/errors.js"
 
 const ID = "jt-1"
+const ACTOR = "user@x.com"
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   updateJobTypeRecordMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  updateJobTypeRecordMock.mockResolvedValue({ id: ID, name: "Renamed" })
+  updateJobTypeRecordMock.mockResolvedValue({ id: ID, name: "Renamed", updatedBy: ACTOR })
 })
 
 describe("updateJobTypeUseCase", () => {
   it("rejects a blank name (when provided) with 400 and never updates", async () => {
-    await expect(updateJobTypeUseCase(ID, { name: "   " })).rejects.toMatchObject({
+    await expect(updateJobTypeUseCase(ID, { name: "   " }, ACTOR)).rejects.toMatchObject({
       code: "JOB_TYPE_VALIDATION_FAILED",
       status: 400,
       field: "name",
@@ -48,17 +49,33 @@ describe("updateJobTypeUseCase", () => {
     expect(updateJobTypeRecordMock).not.toHaveBeenCalled()
   })
 
+  it("rejects a blank actor email and never updates", async () => {
+    await expect(updateJobTypeUseCase(ID, { name: "Renamed" }, "   ")).rejects.toThrowError(
+      /actorEmail/,
+    )
+    expect(updateJobTypeRecordMock).not.toHaveBeenCalled()
+  })
+
   it("returns the updated record on success", async () => {
-    const updated = { id: ID, name: "Renamed" }
+    const updated = { id: ID, name: "Renamed", updatedBy: ACTOR }
     updateJobTypeRecordMock.mockResolvedValue(updated)
-    expect(await updateJobTypeUseCase(ID, { name: "Renamed" })).toBe(updated)
+    expect(await updateJobTypeUseCase(ID, { name: "Renamed" }, ACTOR)).toBe(updated)
+  })
+
+  it("stamps the actor email as updatedBy", async () => {
+    await updateJobTypeUseCase(ID, { name: "Renamed" }, ACTOR)
+    expect(updateJobTypeRecordMock).toHaveBeenCalledWith(
+      ID,
+      { name: "Renamed", updatedBy: ACTOR },
+      expect.anything(),
+    )
   })
 
   it("maps a P2002 name violation to a 409 conflict", async () => {
     updateJobTypeRecordMock.mockRejectedValue(
       new PrismaKnownError("dup", { code: "P2002", meta: { target: ["name"] } }),
     )
-    await expect(updateJobTypeUseCase(ID, { name: "Renamed" })).rejects.toMatchObject({
+    await expect(updateJobTypeUseCase(ID, { name: "Renamed" }, ACTOR)).rejects.toMatchObject({
       code: "JOB_TYPE_NAME_CONFLICT",
       status: 409,
     })
@@ -66,7 +83,7 @@ describe("updateJobTypeUseCase", () => {
 
   it("maps a P2025 to a 404 not-found", async () => {
     updateJobTypeRecordMock.mockRejectedValue(new PrismaKnownError("missing", { code: "P2025" }))
-    await expect(updateJobTypeUseCase(ID, { name: "Renamed" })).rejects.toMatchObject({
+    await expect(updateJobTypeUseCase(ID, { name: "Renamed" }, ACTOR)).rejects.toMatchObject({
       code: "JOB_TYPE_NOT_FOUND",
       status: 404,
     })
@@ -74,8 +91,8 @@ describe("updateJobTypeUseCase", () => {
 
   it("re-throws unexpected database errors unchanged", async () => {
     updateJobTypeRecordMock.mockRejectedValue(new Error("boom"))
-    await expect(updateJobTypeUseCase(ID, { name: "Renamed" })).rejects.toThrowError("boom")
-    await expect(updateJobTypeUseCase(ID, { name: "Renamed" })).rejects.not.toBeInstanceOf(
+    await expect(updateJobTypeUseCase(ID, { name: "Renamed" }, ACTOR)).rejects.toThrowError("boom")
+    await expect(updateJobTypeUseCase(ID, { name: "Renamed" }, ACTOR)).rejects.not.toBeInstanceOf(
       JobTypeExecutionError,
     )
   })

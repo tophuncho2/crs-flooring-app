@@ -9,9 +9,11 @@ export type JobTypePrimaryFieldsSectionProps = {
   draft: JobTypeForm
   editable: boolean
   onFieldChange: (field: keyof JobTypeForm, value: string) => void
-  /** Read-only timestamps shown in the detail view; omit in the create flow. */
+  /** Read-only timestamps + actor emails shown in the detail view; omit in the create flow. */
   createdAt?: string | null
   updatedAt?: string | null
+  createdBy?: string | null
+  updatedBy?: string | null
 }
 
 export function JobTypePrimaryFieldsSection({
@@ -20,6 +22,8 @@ export function JobTypePrimaryFieldsSection({
   onFieldChange,
   createdAt,
   updatedAt,
+  createdBy,
+  updatedBy,
 }: JobTypePrimaryFieldsSectionProps) {
   const showTimestamps = createdAt !== undefined || updatedAt !== undefined
 
@@ -46,6 +50,16 @@ export function JobTypePrimaryFieldsSection({
           <CellAt col={1} colSpan={2}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(updatedAt ?? null) || "—"}</StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={2}>
+            <FormField label="Created by">
+              <StaticFieldValue>{createdBy ?? "—"}</StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={2}>
+            <FormField label="Updated by">
+              <StaticFieldValue>{updatedBy ?? "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
         </>

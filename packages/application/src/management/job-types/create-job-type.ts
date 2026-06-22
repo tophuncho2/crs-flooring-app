@@ -9,8 +9,13 @@ import type { CreateJobTypeUseCaseInput, JobTypeUseCaseResult } from "./types.js
 
 export async function createJobTypeUseCase(
   input: CreateJobTypeUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<JobTypeUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createJobTypeUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -24,7 +29,10 @@ export async function createJobTypeUseCase(
     }
 
     try {
-      return await createJobTypeRecord(input, c)
+      return await createJobTypeRecord(
+        { ...input, createdBy: actorEmail, updatedBy: actorEmail },
+        c,
+      )
     } catch (error) {
       if (isP2002(error, "name")) {
         throw new JobTypeExecutionError({

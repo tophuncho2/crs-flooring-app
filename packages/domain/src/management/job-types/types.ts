@@ -3,6 +3,8 @@ export type JobType = {
   name: string
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 export type JobTypeListRow = JobType
