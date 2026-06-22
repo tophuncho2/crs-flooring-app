@@ -7,3 +7,7 @@ This is a personal to-do list / scratchpad. It is **not** a file we reference ev
 - [ ] createdAt / updatedAt & createdBy / updatedBy
 - [ ] row #, and  stepper in record view
 - [ ] print view checkbox config
+- [ ] inventory and adjustments indexes and queries
+- [ ] work orders new `address` column
+- [ ] adjustments stepper within record view section
+- [ ] products / uom & entities epic plan
