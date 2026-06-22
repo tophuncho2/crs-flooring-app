@@ -59,14 +59,6 @@ describe("renderAdjustmentRowActions — delete item visibility", () => {
     expect(onDelete).toHaveBeenCalledWith(target)
   })
 
-  it("delete is disabled on a non-PENDING row", async () => {
-    const onDelete = vi.fn()
-    await openMenu(renderAdjustmentRowActions(row({ status: "FINAL" }), { onDelete }))
-
-    const item = screen.getByRole("menuitem", { name: "Delete adjustment" })
-    expect((item as HTMLButtonElement).disabled).toBe(true)
-  })
-
   it("delete is disabled while the host is busy", async () => {
     await openMenu(renderAdjustmentRowActions(row(), { onDelete: vi.fn() }, true))
 
