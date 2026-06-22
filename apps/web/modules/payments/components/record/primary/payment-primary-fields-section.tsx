@@ -8,8 +8,6 @@ import {
   MoneyCell,
   SegmentedChoiceCell,
   StaticFieldValue,
-  TextCell,
-  TextareaCell,
 } from "@/engines/record-view"
 import {
   formatEasternDateTime,
@@ -74,45 +72,12 @@ export function PaymentPrimaryFieldsSection({
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={2}>
-        <FormField label="Type">
-          <TextCell
-            editable={editable}
-            value={draft.paymentType}
-            onChange={(next) => onFieldChange("paymentType", next)}
-            placeholder="e.g. deposit, invoice"
-            ariaLabel="Payment type"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={3} colSpan={2}>
-        <FormField label="Method">
-          <TextCell
-            editable={editable}
-            value={draft.paymentMethod}
-            onChange={(next) => onFieldChange("paymentMethod", next)}
-            placeholder="e.g. check, ACH, card"
-            ariaLabel="Payment method"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={2}>
         <FormField label="Date">
           <DateCell
             editable={editable}
             value={draft.paymentDate}
             onChange={(next) => onFieldChange("paymentDate", next)}
             ariaLabel="Payment date"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Memo">
-          <TextareaCell
-            editable={editable}
-            value={draft.memo}
-            onChange={(next) => onFieldChange("memo", next)}
-            placeholder="Memo"
-            ariaLabel="Memo"
           />
         </FormField>
       </CellAt>

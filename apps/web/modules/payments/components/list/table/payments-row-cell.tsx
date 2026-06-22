@@ -25,18 +25,12 @@ export function renderPaymentRowCell(
       )
     case "direction":
       return <span>{row.direction === "INFLOW" ? "Inflow" : "Outflow"}</span>
-    case "paymentType":
-      return <span>{row.paymentType || "—"}</span>
-    case "paymentMethod":
-      return <span>{row.paymentMethod || "—"}</span>
     case "paymentDate":
       return (
         <span className="tabular-nums">
           {row.paymentDate ? formatStableDate(row.paymentDate) : "—"}
         </span>
       )
-    case "memo":
-      return <span>{row.memo || "—"}</span>
     case "createdAt":
       return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
     default:

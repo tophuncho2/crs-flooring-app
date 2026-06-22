@@ -10,10 +10,7 @@ export type Payment = {
   paymentNumber: string
   amount: string
   direction: FlooringPaymentDirection
-  paymentType: string
-  paymentMethod: string
   paymentDate: string
-  memo: string
   createdAt: string
   updatedAt: string
 }
@@ -28,29 +25,20 @@ export type PaymentPage = {
 export type PaymentForm = {
   amount: string
   direction: FlooringPaymentDirection
-  paymentType: string
-  paymentMethod: string
   paymentDate: string
-  memo: string
 }
 
 export const EMPTY_PAYMENT_FORM: PaymentForm = {
   amount: "",
   direction: "INFLOW",
-  paymentType: "",
-  paymentMethod: "",
   paymentDate: "",
-  memo: "",
 }
 
 export function toPaymentForm(payment: Payment): PaymentForm {
   return {
     amount: payment.amount,
     direction: payment.direction,
-    paymentType: payment.paymentType,
-    paymentMethod: payment.paymentMethod,
     paymentDate: payment.paymentDate,
-    memo: payment.memo,
   }
 }
 

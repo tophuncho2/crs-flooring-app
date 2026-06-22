@@ -6,10 +6,7 @@ type PaymentInput = {
   paymentNumber: string
   amount: { toString(): string }
   direction: FlooringPaymentDirection
-  paymentType: string | null
-  paymentMethod: string | null
   paymentDate: Date | string | null
-  memo: string | null
   createdAt: Date | string
   updatedAt: Date | string
 }
@@ -25,10 +22,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
     paymentNumber: payment.paymentNumber,
     amount: normalizeMoneyAmount(payment.amount.toString()),
     direction: payment.direction,
-    paymentType: payment.paymentType ?? "",
-    paymentMethod: payment.paymentMethod ?? "",
     paymentDate: toIso(payment.paymentDate),
-    memo: payment.memo ?? "",
     createdAt: toIso(payment.createdAt),
     updatedAt: toIso(payment.updatedAt),
   }

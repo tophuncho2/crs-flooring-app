@@ -71,10 +71,7 @@ export function validateCreatePaymentInput(
   return {
     amount: requireAmount(body.amount, "amount"),
     direction: requireDirection(body.direction, "direction"),
-    paymentType: optionalString(body.paymentType, "paymentType"),
-    paymentMethod: optionalString(body.paymentMethod, "paymentMethod"),
     paymentDate: optionalString(body.paymentDate, "paymentDate"),
-    memo: optionalString(body.memo, "memo"),
   }
 }
 
@@ -84,12 +81,7 @@ export function validateUpdatePaymentInput(
   const input: UpdatePaymentUseCaseInput = {}
   if ("amount" in body) input.amount = optionalAmount(body.amount, "amount")
   if ("direction" in body) input.direction = optionalDirection(body.direction, "direction")
-  if ("paymentType" in body) input.paymentType = optionalString(body.paymentType, "paymentType")
-  if ("paymentMethod" in body) {
-    input.paymentMethod = optionalString(body.paymentMethod, "paymentMethod")
-  }
   if ("paymentDate" in body) input.paymentDate = optionalString(body.paymentDate, "paymentDate")
-  if ("memo" in body) input.memo = optionalString(body.memo, "memo")
   return input
 }
 

@@ -439,10 +439,7 @@ model FlooringPayment {
   paymentNumber String                   @unique @default(dbgenerated("('PAY-'::text || (nextval('flooring_payment_number_seq'::regclass))::text)"))
   amount        Decimal                  @db.Decimal(12, 2) // unsigned; direction carries the sign
   direction     FlooringPaymentDirection
-  paymentType   String?
-  paymentMethod String?
   paymentDate   DateTime?
-  memo          String?
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt
 

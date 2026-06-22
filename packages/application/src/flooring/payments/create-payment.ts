@@ -13,10 +13,7 @@ export async function createPaymentUseCase(
     const issues = validatePaymentForm({
       amount: input.amount ?? "",
       direction: input.direction,
-      paymentType: "",
-      paymentMethod: "",
       paymentDate: "",
-      memo: "",
     })
     if (issues.length > 0) {
       throw new PaymentExecutionError({
