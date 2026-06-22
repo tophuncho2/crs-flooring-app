@@ -2,8 +2,8 @@ import type { ReactNode } from "react"
 import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import {
-  formatCurrencyValue,
   formatEasternDateTime,
+  formatSignedPaymentAmount,
   formatStableDate,
   type PaymentListRow,
 } from "@builders/domain"
@@ -16,11 +16,11 @@ export function renderPaymentRowCell(
     case "paymentNumber":
       return <span className="font-medium tabular-nums">{row.paymentNumber}</span>
     case "amount":
-      // The colored chip reads `direction` directly — green inflow, red outflow
-      // (mirrors the adjustments amount chip; no sign math).
+      // The figure is prefixed with its direction sign (+ inflow / − outflow) and
+      // the chip tone reads `direction` directly — mirrors the adjustments amount chip.
       return (
         <CellChip tone={row.direction === "INFLOW" ? "success" : "error"}>
-          {formatCurrencyValue(row.amount)}
+          {formatSignedPaymentAmount(row.amount, row.direction)}
         </CellChip>
       )
     case "direction":

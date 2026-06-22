@@ -1,4 +1,4 @@
-import { normalizeMoneyAmount } from "../../shared/money.js"
+import { formatMoney, normalizeMoneyAmount } from "../../shared/money.js"
 import type { FlooringPaymentDirection } from "./types.js"
 
 /**
@@ -16,4 +16,24 @@ export function signedPaymentAmount(
   const normalized = normalizeMoneyAmount(amount)
   if (normalized === "" || normalized === "0.00") return normalized
   return direction === "OUTFLOW" ? `-${normalized}` : normalized
+}
+
+/** Display sign for a payment direction: `+` for INFLOW, `−` (U+2212) for OUTFLOW. */
+export function paymentDirectionSign(direction: FlooringPaymentDirection): "+" | "−" {
+  return direction === "OUTFLOW" ? "−" : "+"
+}
+
+/**
+ * A payment amount with its direction sign prefixed, e.g. `+$1,234.00` / `−$50.00`.
+ * Returns `"—"` when the amount is absent so the cell renders a plain placeholder.
+ * Mirrors `formatSignedAdjustmentMoney`; the two converge in the enum-unification sweep.
+ */
+export function formatSignedPaymentAmount(
+  amount: string | null,
+  direction: FlooringPaymentDirection,
+): string {
+  if (amount == null || amount === "") return "—"
+  const money = formatMoney(amount)
+  if (money === "") return "—"
+  return `${paymentDirectionSign(direction)}${money}`
 }
