@@ -63,8 +63,6 @@ function existingRow(overrides: Record<string, unknown> = {}) {
     id: ADJUSTMENT_ID,
     workOrderId: WO_ID,
     inventoryId: INVENTORY_ID,
-    status: "PENDING",
-    isFinal: false,
     adjustmentType: "DEDUCTION",
     updatedAt: UPDATED_AT,
     ...overrides,
@@ -146,17 +144,6 @@ describe("deletePendingAdjustmentUseCase", () => {
         status: 404,
       })
       expect(deletePendingAdjustmentRowMock).not.toHaveBeenCalled()
-    })
-
-    it("deletes a once-finalized row too (no freeze any more)", async () => {
-      getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
-        found({ status: "FINAL", isFinal: true }),
-      )
-
-      const result = await deletePendingAdjustmentUseCase(input())
-
-      expect(result.deletedId).toBe(ADJUSTMENT_ID)
-      expect(deletePendingAdjustmentRowMock).toHaveBeenCalledWith({ tx: true }, { id: ADJUSTMENT_ID })
     })
 
     it("throws INVENTORY_ADJUSTMENT_STALE (409) when the OCC token does not match", async () => {

@@ -1,6 +1,5 @@
 export {
   type InventoryAdjustmentRow,
-  type InventoryAdjustmentStatus,
   type EnrichedInventoryAdjustmentRow,
 } from "./adjustments/types.js"
 

@@ -6,7 +6,6 @@ import {
   type InventoryAdjustmentListFilters,
   type InventoryAdjustmentParentContext,
   type InventoryAdjustmentRow,
-  type InventoryAdjustmentStatus,
 } from "@builders/domain"
 import { db } from "../../../client.js"
 import {
@@ -44,7 +43,6 @@ function toDecimalStringOrNull(
 export function normalizeAdjustmentRow(
   row: InventoryAdjustmentRowPayload,
 ): InventoryAdjustmentRecord {
-  const status: InventoryAdjustmentStatus = row.status
   const adjustmentType: FlooringInventoryAdjustmentType = row.adjustmentType
   return {
     id: row.id,
@@ -77,7 +75,6 @@ export function normalizeAdjustmentRow(
     stockUnitName: row.stockUnitName ?? null,
     stockUnitAbbrev: row.stockUnitAbbrev ?? null,
     adjustmentType,
-    status,
     isWaste: row.isWaste,
     notes: row.notes ?? "",
     createdAt: row.createdAt.toISOString(),

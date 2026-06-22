@@ -29,7 +29,6 @@ export const adjustmentRowSelect = {
   stockUnitName: true,
   stockUnitAbbrev: true,
   adjustmentType: true,
-  status: true,
   isWaste: true,
   notes: true,
   createdAt: true,

@@ -79,12 +79,6 @@ enum FlooringStagedRowStatus {
   IMPORTED
 }
 
-enum FlooringInventoryAdjustmentStatus {
-  PENDING
-  QUEUED
-  FINAL
-}
-
 enum FlooringInventoryAdjustmentType {
   INCREASE
   DEDUCTION
@@ -382,25 +376,17 @@ model FlooringInventoryAdjustment {
   stockUnitName          String?
   stockUnitAbbrev        String?
   adjustmentType         FlooringInventoryAdjustmentType   @default(DEDUCTION)
-  status                 FlooringInventoryAdjustmentStatus @default(PENDING)
-  isFinal                Boolean                           @default(false)
-  finalSequence          Int?
   isWaste                Boolean                           @default(false)
   notes                  String?                           @db.VarChar(30)
   createdAt         DateTime                          @default(now())
   updatedAt         DateTime                          @updatedAt
 
-  @@unique([inventoryId, finalSequence])
   @@index([adjustmentNumber])
   @@index([inventoryId])
   @@index([productId])
   @@index([warehouseId])
   @@index([workOrderId])
-  @@index([inventoryId, status])
-  @@index([inventoryId, isFinal])
-  @@index([inventoryId, adjustmentType, isFinal], map: "flooring_inv_adj_hub_filter_idx")
-  @@index([status])
-  @@index([status, isFinal])
+  @@index([inventoryId, adjustmentType], map: "flooring_inv_adj_hub_filter_idx")
   // Adjustments ledger list view: warehouse-filtered + createdAt/id keyset sort,
   // all-warehouses createdAt/id sort, and inventoryItem substring search
   // (pg_trgm already enabled). inventoryItem is immutable post-create, so the

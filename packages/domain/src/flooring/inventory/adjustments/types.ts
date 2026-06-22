@@ -1,7 +1,3 @@
-export type FlooringInventoryAdjustmentStatus = "PENDING" | "QUEUED" | "FINAL"
-
-export type InventoryAdjustmentStatus = FlooringInventoryAdjustmentStatus
-
 export type FlooringInventoryAdjustmentType = "INCREASE" | "DEDUCTION"
 
 export type InventoryAdjustmentRow = {
@@ -28,7 +24,6 @@ export type InventoryAdjustmentRow = {
   stockUnitName: string | null
   stockUnitAbbrev: string | null
   adjustmentType: FlooringInventoryAdjustmentType
-  status: FlooringInventoryAdjustmentStatus
   isWaste: boolean
   notes: string
   createdAt: string

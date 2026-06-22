@@ -72,8 +72,6 @@ function existingRow(overrides: Record<string, unknown> = {}) {
     id: ADJUSTMENT_ID,
     workOrderId: WO_ID,
     inventoryId: INVENTORY_ID,
-    status: "PENDING",
-    isFinal: false,
     adjustmentType: "DEDUCTION",
     updatedAt: UPDATED_AT,
     quantity: "5",
@@ -194,24 +192,6 @@ describe("updatePendingAdjustmentUseCase", () => {
   })
 
   describe("always editable", () => {
-    it("accepts a quantity + metadata patch on a once-finalized row (no freeze any more)", async () => {
-      getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(
-        found({ adjustment: { status: "FINAL", isFinal: true } }),
-      )
-
-      await updatePendingAdjustmentUseCase(
-        input({ patch: { quantity: "3", isWaste: true, notes: "rework", location: "Bay 7" } }),
-      )
-
-      expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
-        { tx: true },
-        {
-          id: ADJUSTMENT_ID,
-          patch: { quantity: "3", isWaste: true, notes: "rework", location: "Bay 7" },
-        },
-      )
-    })
-
     it("flips direction: writes adjustmentType and validates against the merged type", async () => {
       await updatePendingAdjustmentUseCase(input({ patch: { adjustmentType: "INCREASE" } }))
 

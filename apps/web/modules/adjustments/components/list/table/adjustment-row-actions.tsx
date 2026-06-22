@@ -16,10 +16,10 @@ export type AdjustmentRowActionHandlers = {
   onSplitOff?: (row: EnrichedInventoryAdjustmentRow) => void
   /** "Create with matching product" — open create pre-filtered to the row's product. */
   onCreateWithProduct?: (product: { id: string; name: string }) => void
-  /** "Duplicate adjustment" — pre-seed create with the row's inventory (PENDING rows only). */
+  /** "Duplicate adjustment" — pre-seed create with the row's inventory. */
   onDuplicate?: (row: EnrichedInventoryAdjustmentRow) => void
   /**
-   * "Delete adjustment" — remove the row (PENDING rows only). Wired ONLY by the
+   * "Delete adjustment" — remove the row. Wired ONLY by the
    * record-view tables (inventory record list + work-order record grid); the
    * standalone `/dashboard/adjustments` ledger omits it, so the item never shows
    * there. The host owns the confirm prompt + the delete mutation.
@@ -30,8 +30,8 @@ export type AdjustmentRowActionHandlers = {
 /**
  * Build the shared adjustment row ⋮ options menu, in canonical order
  * (split-off → create-matching → duplicate → delete). Each item is included only
- * when its handler is supplied; `isBusy` disables every item and Duplicate +
- * Delete additionally require `row.status === "PENDING"`. Returns `null` when no
+ * when its handler is supplied; `isBusy` disables every item while a mutation is
+ * in flight. Returns `null` when no
  * handler applies (no menu rendered). Designed to slot straight into `DataTable`'s
  * `rowActions`.
  */
@@ -66,7 +66,7 @@ export function renderAdjustmentRowActions(
       label: "Duplicate adjustment",
       icon: <Copy size={14} aria-hidden="true" />,
       onClick: () => handlers.onDuplicate?.(row),
-      disabled: row.status !== "PENDING" || isBusy,
+      disabled: isBusy,
     })
   }
   if (handlers.onDelete) {
@@ -75,7 +75,7 @@ export function renderAdjustmentRowActions(
       label: "Delete adjustment",
       icon: <Trash2 size={14} aria-hidden="true" />,
       onClick: () => handlers.onDelete?.(row),
-      disabled: row.status !== "PENDING" || isBusy,
+      disabled: isBusy,
     })
   }
 

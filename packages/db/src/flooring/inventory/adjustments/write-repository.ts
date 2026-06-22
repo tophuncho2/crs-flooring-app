@@ -85,9 +85,7 @@ export type InsertPendingAdjustmentRowInput = {
  * `before` / `after` are left null here; the caller immediately runs
  * `recomputeAndPersistNetDeducted`, which replays the inventory's whole chain
  * in `createdAt` order and stamps `before`/`after` on every row (including this
- * one). The vestigial `finalSequence` / `isFinal` / `status` columns stay at
- * their schema defaults (null / false / PENDING) — they're no longer read.
- * `adjustmentNumber` is DB-generated via the sequence default.
+ * one). `adjustmentNumber` is DB-generated via the sequence default.
  */
 export async function insertPendingAdjustmentRow(
   tx: Prisma.TransactionClient,
@@ -153,17 +151,16 @@ export type UpdatePendingAdjustmentRowInput = {
 
 /**
  * Single-row update for the synchronous update flow. Caller has read the
- * row + parent inventory, asserted PENDING status + OCC + linkage rules,
- * and locked the parent inventory FOR UPDATE.
+ * row + parent inventory, asserted OCC + linkage rules, and locked the
+ * parent inventory FOR UPDATE.
  *
  * Writable in this primitive:
  *   - user-editable form fields: `quantity`, `adjustmentType`, `isWaste`,
  *     `notes`, `location`
  *   - the `workOrderId` link relation (any product, any direction)
  *
- * Never written here: `inventoryId`, `status`, `isFinal`,
- * `before`, `after`, `finalSequence`, `adjustmentNumber`, `createdAt`,
- * `inventoryItem`, the 5 inventory-identity snapshot primitives, and the
+ * Never written here: `inventoryId`, `before`, `after`, `adjustmentNumber`,
+ * `createdAt`, `inventoryItem`, the 5 inventory-identity snapshot primitives, and the
  * stock unit-snapshot fields. Empty-patch calls return the row as-is.
  */
 export async function updatePendingAdjustmentRow(
@@ -206,8 +203,8 @@ export type DeletePendingAdjustmentRowInput = {
 
 /**
  * Single-row delete for the synchronous delete flow. Caller has read the
- * row, asserted PENDING status (so finals can't be deleted) + OCC, and
- * locked the parent inventory FOR UPDATE. Pure persistence call.
+ * row, asserted OCC, and locked the parent inventory FOR UPDATE. Pure
+ * persistence call — any adjustment is freely deletable.
  */
 export async function deletePendingAdjustmentRow(
   tx: Prisma.TransactionClient,
