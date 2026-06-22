@@ -39,25 +39,6 @@ export function buildProductDeleteBlockedMessage(counts: ProductDeleteCounts): s
 }
 
 /**
- * Resolve the manufacturer display name for a product.
- *
- * Rule: products show the manufacturer's company name. If the company name is
- * empty (rare — usually means a seeded manufacturer with only an agent on file),
- * fall back to the value stored on the product row itself (a historical snapshot
- * of the company name at create time). Agent name is NEVER a fallback.
- */
-export function resolveProductManufacturerName(input: {
-  companyName: string | null | undefined
-  storedManufacturerName: string | null | undefined
-}): string | null {
-  const company = input.companyName?.trim()
-  if (company) return company
-  const stored = input.storedManufacturerName?.trim()
-  if (stored) return stored
-  return null
-}
-
-/**
  * True if two product names would collide under the case-insensitive uniqueness rule.
  */
 export function isProductNameConflict(a: string, b: string): boolean {

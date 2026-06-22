@@ -9,7 +9,6 @@ import {
 import {
   ProductExecutionError,
   buildStoredFlooringProductName,
-  resolveProductManufacturerName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
 import type { ProductResult, UpdateProductInput } from "./types.js"
@@ -42,12 +41,9 @@ export async function updateProductUseCase(
     const nextNote = "note" in input ? input.note : current.note || null
     const nameAffected = "style" in input || "color" in input || "note" in input
 
-    let manufacturerName: string | null | undefined
     if ("manufacturerId" in input) {
       const nextManufacturerId = input.manufacturerId
-      if (nextManufacturerId === null || nextManufacturerId === undefined) {
-        manufacturerName = null
-      } else {
+      if (nextManufacturerId !== null && nextManufacturerId !== undefined) {
         const manufacturer = await getManufacturerById(nextManufacturerId, c)
         if (!manufacturer) {
           throw new ProductExecutionError({
@@ -57,16 +53,11 @@ export async function updateProductUseCase(
             field: "manufacturerId",
           })
         }
-        manufacturerName = resolveProductManufacturerName({
-          companyName: manufacturer.companyName,
-          storedManufacturerName: null,
-        })
       }
     }
 
     const patch: Parameters<typeof updateProduct>[1] = {}
     if ("manufacturerId" in input) patch.manufacturerId = input.manufacturerId
-    if (manufacturerName !== undefined) patch.manufacturerName = manufacturerName
     if ("style" in input) patch.style = input.style
     if ("color" in input) patch.color = input.color
     if ("coveragePerUnit" in input) patch.coveragePerUnit = input.coveragePerUnit

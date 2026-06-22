@@ -8,7 +8,6 @@ describe("normalizeProductRow", () => {
       name: "Carpet - Plush - Sand",
       categoryId: "cat-1",
       manufacturerId: "mfg-1",
-      manufacturerName: "stale manufacturer name",
       style: "Plush",
       color: "Sand",
       note: null,
@@ -30,13 +29,12 @@ describe("normalizeProductRow", () => {
     expect(normalized.manufacturerName).toBe("Acme Flooring")
   })
 
-  it("falls back to stored manufacturerName when companyName is missing (never agentName)", () => {
+  it("surfaces an empty manufacturer name when the manufacturer link is null", () => {
     const normalized = normalizeProductRow({
       id: "prod-2",
       name: "Carpet - Plush - Sand",
       categoryId: "cat-1",
       manufacturerId: null,
-      manufacturerName: "Legacy Co",
       style: "Plush",
       color: "Sand",
       note: null,
@@ -52,6 +50,6 @@ describe("normalizeProductRow", () => {
       manufacturer: null,
     })
 
-    expect(normalized.manufacturerName).toBe("Legacy Co")
+    expect(normalized.manufacturerName).toBe("")
   })
 })

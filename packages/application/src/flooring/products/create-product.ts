@@ -10,7 +10,6 @@ import {
   ProductExecutionError,
   buildProductUnitSnapshotsFromCategory,
   buildStoredFlooringProductName,
-  resolveProductManufacturerName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
 import type { CreateProductInput, ProductResult } from "./types.js"
@@ -32,7 +31,6 @@ export async function createProductUseCase(
       })
     }
 
-    let manufacturerName: string | null = null
     if (input.manufacturerId) {
       const manufacturer = await getManufacturerById(input.manufacturerId, c)
       if (!manufacturer) {
@@ -43,10 +41,6 @@ export async function createProductUseCase(
           field: "manufacturerId",
         })
       }
-      manufacturerName = resolveProductManufacturerName({
-        companyName: manufacturer.companyName,
-        storedManufacturerName: null,
-      })
     }
 
     const name = buildStoredFlooringProductName({
@@ -85,7 +79,6 @@ export async function createProductUseCase(
           name,
           categoryId: input.categoryId,
           manufacturerId: input.manufacturerId,
-          manufacturerName,
           style: input.style,
           color: input.color,
           coveragePerUnit: input.coveragePerUnit,

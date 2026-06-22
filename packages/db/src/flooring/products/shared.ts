@@ -13,7 +13,6 @@ export const productRowSelect = {
   name: true,
   categoryId: true,
   manufacturerId: true,
-  manufacturerName: true,
   style: true,
   color: true,
   sendUnitName: true,

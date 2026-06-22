@@ -5,11 +5,10 @@ import { normalizeProductRow, type ProductRecord } from "./read-repository.js"
 
 // --- Input types ---
 //
-// `name` and `manufacturerName` are pre-resolved by the application use case:
-// - `name` is computed from `buildStoredFlooringProductName({ categoryName, style, color })`
-// - `manufacturerName` is the resolved display name from the selected manufacturer row
-// Keeping the data layer free of name-building and FK-lookup logic maintains the
-// "persistence only" rule for packages/db.
+// `name` is pre-resolved by the application use case from
+// `buildStoredFlooringProductName({ categoryName, style, color })`. Keeping the
+// data layer free of name-building logic maintains the "persistence only" rule
+// for packages/db.
 //
 // The unit-of-measure snapshot fields (sendUnit/stockUnit × Name/Abbrev) are
 // pre-computed by the application use case via
@@ -21,7 +20,6 @@ export type CreateProductInput = {
   name: string
   categoryId: string
   manufacturerId: string | null
-  manufacturerName: string | null
   style: string | null
   color: string | null
   // Mutable reference value (mutable on create AND update). Canonical decimal
@@ -60,7 +58,6 @@ export async function createProduct(
       name: input.name,
       categoryId: input.categoryId,
       manufacturerId: input.manufacturerId,
-      manufacturerName: input.manufacturerName,
       style: input.style,
       color: input.color,
       coveragePerUnit: input.coveragePerUnit,
@@ -83,7 +80,6 @@ export async function updateProduct(
   const data: Prisma.FlooringProductUncheckedUpdateInput = {}
   if (input.name !== undefined) data.name = input.name
   if (input.manufacturerId !== undefined) data.manufacturerId = input.manufacturerId
-  if (input.manufacturerName !== undefined) data.manufacturerName = input.manufacturerName
   if (input.style !== undefined) data.style = input.style
   if (input.color !== undefined) data.color = input.color
   if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
