@@ -1,10 +1,10 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 import {
   ListToolbar,
+  ListToolbarBottomRow,
   ListToolbarCell,
-  ListRowCount,
   DebouncedSearchControl,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
@@ -17,6 +17,9 @@ import {
 } from "@/modules/payments/data/list-payments-request"
 import { usePaymentsListController } from "@/modules/payments/controllers/list/use-payments-list-controller"
 import { PaymentsTable } from "./payments-table"
+import { AddPaymentButton } from "./toolbar-controls/add-payment-button"
+import { PaymentsClearAll } from "./toolbar-controls/sub-controls/payments-clear-all"
+import { PaymentsRowCount } from "./toolbar-controls/sub-controls/payments-row-count"
 
 const PAYMENTS_FILTERABLE_FIELDS = ["paymentNumber", "amount"] as const
 
@@ -72,6 +75,7 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
     goToPreviousPage,
     goToNextPage,
     onFilterChange,
+    onClearAllFilters,
   } = useFetchListController<PaymentListRow, EnginePaymentsFilters>({
     mode: "fetch",
     queryKey: [...PAYMENTS_LIST_QUERY_KEY],
@@ -96,6 +100,15 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
     [onFilterChange],
   )
 
+  const hasActiveFilters = useMemo(
+    () => Boolean(paymentNumberValue || amountValue),
+    [paymentNumberValue, amountValue],
+  )
+
+  const handleClearAll = useCallback(() => {
+    onClearAllFilters()
+  }, [onClearAllFilters])
+
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -104,34 +117,38 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
             Payments
           </span>
         </div>
+        {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
+            the encased card's top edge (rounded-tl-none seam). */}
         <ListToolbar className="pt-0" showDivider={false}>
+          {/* Per-field search bars + (Clear all | row count) — encased card
+              attached to the tab above. Each bar matches exact on its own
+              identity column. */}
           <ListToolbarCell>
-            <ListRowCount count={rows.length} total={total} label="payments" />
+            <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
+              <DebouncedSearchControl
+                value={paymentNumberValue}
+                onCommit={(next) => handleTextFilterChange("paymentNumber", next)}
+                placeholder="Payment #"
+                ariaLabel="Search payments by payment number"
+              />
+              <DebouncedSearchControl
+                value={amountValue}
+                onCommit={(next) => handleTextFilterChange("amount", next)}
+                placeholder="Amount"
+                ariaLabel="Search payments by amount"
+              />
+              <ListToolbarBottomRow
+                left={<PaymentsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
+                right={<PaymentsRowCount count={rows.length} total={total} />}
+              />
+            </div>
           </ListToolbarCell>
 
-          <ListToolbarCell>
-            <DebouncedSearchControl
-              value={paymentNumberValue}
-              onCommit={(next) => handleTextFilterChange("paymentNumber", next)}
-              placeholder="Payment #"
-              ariaLabel="Search payments by payment number"
-            />
-            <DebouncedSearchControl
-              value={amountValue}
-              onCommit={(next) => handleTextFilterChange("amount", next)}
-              placeholder="Amount"
-              ariaLabel="Search payments by amount"
-            />
-          </ListToolbarCell>
-
-          <ListToolbarCell className="ml-auto">
-            <button
-              type="button"
-              onClick={openCreate}
-              className="rounded-md border border-[var(--panel-border)] bg-emerald-500/15 px-3 py-1.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-500/25"
-            >
-              + Payment
-            </button>
+          {/* Far-right create action — opens the manual create-payment form.
+              `ml-auto` pushes it to the right edge; `self-start` keeps it
+              top-aligned in the tall toolbar. */}
+          <ListToolbarCell className="ml-auto self-start">
+            <AddPaymentButton onClick={openCreate} />
           </ListToolbarCell>
         </ListToolbar>
       </div>
