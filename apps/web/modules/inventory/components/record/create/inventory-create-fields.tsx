@@ -102,7 +102,7 @@ export function InventoryCreateFields({
         />
       </CellAt>
 
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} row={3} colSpan={4}>
         <RollNumberField
           editable={editable}
           value={form.rollNumber}
@@ -110,18 +110,18 @@ export function InventoryCreateFields({
         />
       </CellAt>
 
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} row={4} colSpan={4}>
         <DyeLotField
           editable={editable}
           value={form.dyeLot}
           onChange={(value) => setField("dyeLot", value)}
         />
       </CellAt>
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} row={5} colSpan={4}>
         <NoteField editable={editable} value={form.note} onChange={(value) => setField("note", value)} />
       </CellAt>
 
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} row={6} colSpan={4}>
         <InternalNotesField
           editable={editable}
           value={form.internalNotes}
