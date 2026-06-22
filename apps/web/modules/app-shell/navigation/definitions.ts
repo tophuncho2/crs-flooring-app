@@ -1,4 +1,4 @@
-export type FlooringNavGroupId = "management" | "operations" | "catalog"
+export type FlooringNavGroupId = "management" | "operations" | "accounting" | "catalog"
 
 export type FlooringNavGroup = {
   id: FlooringNavGroupId
@@ -8,6 +8,7 @@ export type FlooringNavGroup = {
 export const FLOORING_NAV_GROUPS: FlooringNavGroup[] = [
   { id: "management", label: "Management" },
   { id: "operations", label: "Operations" },
+  { id: "accounting", label: "Accounting" },
   { id: "catalog", label: "Catalog" },
 ]
 
@@ -29,7 +30,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
     group: "management",
   },
   { slug: "flooring-adjustments", name: "Adjustments", href: "/dashboard/adjustments", group: "operations" },
-  { slug: "flooring-payments", name: "Payments", href: "/dashboard/payments", group: "operations" },
+  { slug: "flooring-payments", name: "Payments", href: "/dashboard/payments", group: "accounting" },
   { slug: "flooring-inventory", name: "Inventory", href: "/dashboard/inventory", group: "operations" },
   { slug: "flooring-imports", name: "Imports", href: "/dashboard/imports", group: "operations" },
   { slug: "products", name: "Products", href: "/dashboard/products", group: "operations" },
