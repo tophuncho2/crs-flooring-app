@@ -15,7 +15,6 @@ const workOrderMaterialItemSelect = {
   sendUnitName: true,
   sendUnitAbbrev: true,
   notes: true,
-  status: true,
   sourceTemplateItemId: true,
   createdAt: true,
 } as const

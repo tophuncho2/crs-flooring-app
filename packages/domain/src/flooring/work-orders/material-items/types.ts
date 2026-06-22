@@ -1,5 +1,3 @@
-export type WorkOrderItemStatus = "IDLE" | "FINALIZING" | "FAILED"
-
 export type WorkOrderMaterialItemRow = {
   id: string
   productId: string
@@ -8,7 +6,6 @@ export type WorkOrderMaterialItemRow = {
   sendUnitName: string
   sendUnitAbbrev: string
   notes: string
-  status: WorkOrderItemStatus
   sourceTemplateItemId: string | null
   createdAt: string
 }

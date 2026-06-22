@@ -84,12 +84,6 @@ enum FlooringInventoryAdjustmentType {
   DEDUCTION
 }
 
-enum FlooringWorkOrderItemStatus {
-  IDLE
-  FINALIZING
-  FAILED
-}
-
 enum FlooringPaymentDirection {
   INFLOW
   OUTFLOW
@@ -570,7 +564,6 @@ model FlooringWorkOrderItem {
   sendUnitName         String?
   sendUnitAbbrev       String?
   notes                String?                     @db.VarChar(30)
-  status               FlooringWorkOrderItemStatus @default(IDLE)
   createdAt            DateTime                    @default(now())
   updatedAt            DateTime                    @updatedAt
 
