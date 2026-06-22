@@ -75,9 +75,6 @@ export function ProductPrimaryFieldsSection({
   const stockUnitDisplay = categoryReadOnly
     ? formatUnit(product.stockUnitName, product.stockUnitAbbrev)
     : formatUnit(selectedCategory?.stockUnit, selectedCategory?.stockUnitAbbrev)
-  const sendUnitDisplay = categoryReadOnly
-    ? formatUnit(product.sendUnitName, product.sendUnitAbbrev)
-    : formatUnit(selectedCategory?.sendUnit, selectedCategory?.sendUnitAbbrev)
   const coverageUnitAbbrev = categoryReadOnly
     ? product.stockUnitAbbrev
     : selectedCategory?.stockUnitAbbrev ?? ""
@@ -163,11 +160,6 @@ export function ProductPrimaryFieldsSection({
       <CellAt col={5} row={3} colSpan={2}>
         <FormField label="Stock Unit">
           <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={4} colSpan={2}>
-        <FormField label="Send Unit">
-          <StaticFieldValue>{sendUnitDisplay}</StaticFieldValue>
         </FormField>
       </CellAt>
       <CellAt col={5} row={2} colSpan={2}>

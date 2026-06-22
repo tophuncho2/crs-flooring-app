@@ -27,8 +27,6 @@ export function renderProductRowCell(
       return row.note || "-"
     case "stockUnit":
       return formatUnit(row.stockUnitName, row.stockUnitAbbrev)
-    case "sendUnit":
-      return formatUnit(row.sendUnitName, row.sendUnitAbbrev)
     case "coveragePerUnit":
       return row.coveragePerUnit
         ? `${row.coveragePerUnit} ${row.stockUnitAbbrev}`.trim()

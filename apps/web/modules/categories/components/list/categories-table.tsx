@@ -5,7 +5,6 @@ import type { CategoryRow } from "../../types"
 
 const CATEGORIES_LIST_COLUMNS: DataTableColumn<CategoryRow>[] = [
   { key: "name", label: "Category" },
-  { key: "sendUnit", label: "Send Unit" },
   { key: "stockUnit", label: "Stock Unit" },
 ]
 
@@ -23,8 +22,6 @@ export function CategoriesTable({ rows }: CategoriesTableProps) {
         switch (column.key) {
           case "name":
             return <span className="font-medium">{row.name}</span>
-          case "sendUnit":
-            return row.sendUnit || "-"
           case "stockUnit":
             return row.stockUnit || "-"
           default:
