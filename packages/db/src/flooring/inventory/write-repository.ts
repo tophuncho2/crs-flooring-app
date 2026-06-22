@@ -1,5 +1,4 @@
 import { Prisma } from "../../generated/prisma/client.js"
-import { composeInventoryItem } from "@builders/domain"
 import { db } from "../../client.js"
 import { type InventoryDbClient } from "./shared.js"
 import { getInventoryById, type InventoryRecord } from "./read-repository.js"
@@ -29,7 +28,7 @@ export async function lockInventoryRow(
  * path, consumed exclusively via `materializeStagedRowsToInventory` and
  * `MaterializeStagedRowsToInventoryInput` below. The snapshot columns
  * (`categoryName`, `categorySlug`, the stock + send unit fields,
- * `importNumber`, `purchaseOrderNumber`, `inventoryItem`) are stamped at
+ * `importNumber`, `purchaseOrderNumber`) are stamped at
  * materialize time from the linked product + import entry and are
  * immutable post-create; the `isProductCategoryChangeBlocked` product lock
  * keeps the joined source consistent with the snapshots for the lifetime of
@@ -49,15 +48,13 @@ export type MaterializeInventoryRowFields = {
   /**
    * Display prefix for the roll number (column default `'ROLL#'`). Worker
    * materialize copies it verbatim from the source staged row so the
-   * inventory row inherits the same prefix. Read by `composeInventoryItem`
-   * when building the `inventoryItem` denorm column.
+   * inventory row inherits the same prefix.
    */
   rollPrefix: string
   rollNumber: string | null
   dyeLot: string | null
   note: string | null
   internalNotes: string | null
-  inventoryItem: string
   warehouseId: string
   location: string | null
   startingStock: Prisma.Decimal | string | number
@@ -68,10 +65,7 @@ export type MaterializeInventoryRowFields = {
 
 /**
  * Update input — editable subset only. Mirrors domain.editability
- * INVENTORY_EDITABLE_FIELDS plus `inventoryItem` (server-recomputed by the
- * application's update use case via `composeInventoryItem` in the same
- * transaction whenever a source field — rollNumber, dyeLot, location,
- * note — changes). Snapshot columns (categoryName, importNumber,
+ * INVENTORY_EDITABLE_FIELDS. Snapshot columns (categoryName, importNumber,
  * purchaseOrderNumber) and the warehouse FK are not in this
  * shape — `warehouseId` is set-on-insert by the materialize worker and
  * never patched afterward.
@@ -82,7 +76,6 @@ export type UpdateInventoryRecordInput = {
   location?: string | null
   note?: string | null
   internalNotes?: string | null
-  inventoryItem?: string
   isArchived?: boolean
 }
 
@@ -104,7 +97,6 @@ function buildUpdateData(
   if (input.location !== undefined) data.location = input.location
   if (input.note !== undefined) data.note = input.note
   if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes
-  if (input.inventoryItem !== undefined) data.inventoryItem = input.inventoryItem
   if (input.isArchived !== undefined) data.isArchived = input.isArchived
   return data
 }
@@ -163,8 +155,7 @@ export async function deleteInventoryRecordById(
  * Scalar column set for inserting a single inventory row directly (the
  * "duplicate inventory item" use case — the only non-worker construction
  * path). Excludes the DB-managed columns: `id`, `inventoryNumber` /
- * `inventoryNumberInt` (sequence/computed), `inventoryItem` (composed here
- * post-insert) and `updatedAt`. `createdAt` is optional: omitted, it falls to
+ * `inventoryNumberInt` (sequence/computed) and `updatedAt`. `createdAt` is optional: omitted, it falls to
  * the DB `@default(now())` (the duplicate path); supplied, the caller can pin
  * it (the manual-create path stamps `createdAt` and `fifoReceivedAt` from one
  * timestamp so they match exactly). The caller pastes the snapshot columns,
@@ -199,12 +190,8 @@ export type InsertInventoryRowInput = {
 }
 
 /**
- * Insert a single inventory row and return the normalized record. A single
- * `create` returns the sequence-assigned `inventoryNumber`, so we compose the
- * denormalized `inventoryItem` from the final values (same pure domain
- * composer the worker materialize path uses) and write it back in the same
- * transaction. The caller must provide a transaction client so the insert +
- * compose-update commit atomically.
+ * Insert a single inventory row and return the normalized record. The caller
+ * must provide a transaction client.
  */
 export async function insertInventoryRow(
   tx: Prisma.TransactionClient,
@@ -228,7 +215,6 @@ export async function insertInventoryRow(
       dyeLot: input.dyeLot,
       note: input.note,
       internalNotes: input.internalNotes,
-      inventoryItem: "",
       warehouseId: input.warehouseId,
       location: input.location,
       startingStock: input.startingStock,
@@ -239,19 +225,6 @@ export async function insertInventoryRow(
       fifoReceivedAt: input.fifoReceivedAt,
       ...(input.createdAt ? { createdAt: input.createdAt } : {}),
     },
-    select: { id: true, inventoryNumber: true },
-  })
-
-  const inventoryItem = composeInventoryItem({
-    inventoryNumber: created.inventoryNumber,
-    rollPrefix: input.rollPrefix,
-    rollNumber: input.rollNumber ?? "",
-    dyeLot: input.dyeLot ?? "",
-    note: input.note ?? "",
-  })
-  await tx.flooringInventory.update({
-    where: { id: created.id },
-    data: { inventoryItem },
     select: { id: true },
   })
 
@@ -275,7 +248,7 @@ export async function insertInventoryRow(
  *    Postgres). Pre-assignment also lets the caller correlate inserts with
  *    their source staged rows for the secondary `updateMany`.
  *  - Caller computed every per-row field (categoryName, unit
- *    snapshots, importNumber, purchaseOrderNumber, inventoryItem,
+ *    snapshots, importNumber, purchaseOrderNumber,
  *    fifoReceivedAt, etc.) — this primitive does no field math.
  *  - Caller has already transitioned the source staged rows from DRAFT to
  *    QUEUED via `markStagedRowsForImport`. The status-flip below targets
@@ -330,7 +303,6 @@ export async function materializeStagedRowsToInventory(
       dyeLot: row.dyeLot,
       note: row.note,
       internalNotes: row.internalNotes,
-      inventoryItem: row.inventoryItem,
       warehouseId: row.warehouseId,
       location: row.location,
       startingStock: row.startingStock,
@@ -341,35 +313,13 @@ export async function materializeStagedRowsToInventory(
   )
   await tx.flooringInventory.createMany({ data: createData, skipDuplicates: false })
 
-  // Step 2 — re-read the created rows to surface DB-assigned inventoryNumbers.
+  // Step 2 — re-read the created rows to surface DB-assigned inventoryNumbers
+  // for the return value.
   const createdIds = input.inventoryRowsToCreate.map((row) => row.id)
   const createdRows = await tx.flooringInventory.findMany({
     where: { id: { in: createdIds } },
     select: { id: true, inventoryNumber: true },
   })
-
-  // Step 2.5 — compose `inventoryItem` per row now that inventoryNumber is
-  // sequence-assigned. The composer is a pure domain helper (carve-out per
-  // packages/db/CLAUDE.md). Caller wrote `""` as a placeholder during the
-  // bulk insert; we update each row in-place. Single materialization path =
-  // single composition path; no other inventory-create surface exists.
-  const inputById = new Map(input.inventoryRowsToCreate.map((row) => [row.id, row]))
-  for (const created of createdRows) {
-    const source = inputById.get(created.id)
-    if (!source) continue
-    const inventoryItem = composeInventoryItem({
-      inventoryNumber: created.inventoryNumber,
-      rollPrefix: source.rollPrefix,
-      rollNumber: source.rollNumber ?? "",
-      dyeLot: source.dyeLot ?? "",
-      note: source.note ?? "",
-    })
-    await tx.flooringInventory.update({
-      where: { id: created.id },
-      data: { inventoryItem },
-      select: { id: true },
-    })
-  }
 
   // Step 3 — flip the source staged rows to IMPORTED. WHERE narrows to QUEUED
   // so any row that drifted state is left alone (caller error, surfaces as a

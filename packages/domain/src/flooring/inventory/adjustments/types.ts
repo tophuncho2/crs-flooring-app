@@ -4,7 +4,6 @@ export type InventoryAdjustmentRow = {
   id: string
   adjustmentNumber: string
   inventoryId: string
-  inventoryItem: string
   inventoryNumber: string | null
   rollPrefix: string | null
   rollNumber: string | null
@@ -69,7 +68,6 @@ export type InventoryAdjustmentListFilters = {
 
 export type InventoryAdjustmentParentContext = {
   inventoryId: string
-  inventoryItem: string
   startingStock: string
   cost: string | null
   freight: string | null

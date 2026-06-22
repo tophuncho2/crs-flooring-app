@@ -12,7 +12,6 @@ describe("adjustment edit — four-column inventory identity", () => {
   it("buildCreateLocal maps the four seed columns into the picked identity locals", () => {
     const seed: AdjustmentCreateSeed = {
       inventoryId: "inv-1",
-      inventoryItem: "100 · R-7 · D9",
       inventoryNumber: "100",
       inventoryRollNumber: "R-7",
       inventoryDyeLot: "D9",
@@ -22,7 +21,6 @@ describe("adjustment edit — four-column inventory identity", () => {
 
     const local = buildCreateLocal(seed)
 
-    expect(local.pickedInventoryItem).toBe("100 · R-7 · D9")
     expect(local.pickedInventoryNumber).toBe("100")
     expect(local.pickedInventoryRollNumber).toBe("R-7")
     expect(local.pickedInventoryDyeLot).toBe("D9")
@@ -40,7 +38,6 @@ describe("adjustment edit — four-column inventory identity", () => {
 
   it("buildEditLocal reads the adjustment row columns, mapping inventoryNote -> pickedInventoryNote", () => {
     const adjustment = {
-      inventoryItem: "200 · R-3 · D1",
       inventoryNumber: "200",
       rollNumber: "R-3",
       dyeLot: "D1",
@@ -52,7 +49,6 @@ describe("adjustment edit — four-column inventory identity", () => {
 
     const local = buildEditLocal(adjustment)
 
-    expect(local.pickedInventoryItem).toBe("200 · R-3 · D1")
     expect(local.pickedInventoryNumber).toBe("200")
     expect(local.pickedInventoryRollNumber).toBe("R-3")
     expect(local.pickedInventoryDyeLot).toBe("D1")
@@ -61,7 +57,6 @@ describe("adjustment edit — four-column inventory identity", () => {
 
   it("buildEditLocal tolerates null identity columns", () => {
     const adjustment = {
-      inventoryItem: "",
       inventoryNumber: null,
       rollNumber: null,
       dyeLot: null,

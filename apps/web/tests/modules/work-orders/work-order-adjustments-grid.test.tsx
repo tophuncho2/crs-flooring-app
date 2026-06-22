@@ -21,7 +21,6 @@ function adjustment(overrides: Partial<EnrichedInventoryAdjustmentRow> = {}): En
     id: "adj-1",
     adjustmentNumber: "ADJ-1",
     inventoryId: "inv-1",
-    inventoryItem: "Berber R12",
     inventoryNumber: "INV-1",
     rollPrefix: "R",
     rollNumber: "12",

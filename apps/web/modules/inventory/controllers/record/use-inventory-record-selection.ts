@@ -43,7 +43,6 @@ function preserveCreateIntent(current: string | null): string | null {
 export function toInventoryOption(row: InventoryRow): InventoryOption {
   return {
     id: row.id,
-    inventoryItem: row.inventoryItem,
     inventoryNumber: row.inventoryNumber,
     rollNumber: row.rollNumber,
     dyeLot: row.dyeLot,
@@ -190,7 +189,7 @@ export function useInventoryRecordSelection({
         // A picked inventory carries its own warehouse — keep the header in sync.
         ...(option ? { warehouseId: option.warehouseId } : {}),
         inventoryId: option?.id ?? null,
-        inventoryLabel: option?.inventoryItem ?? null,
+        inventoryLabel: option?.inventoryNumber ?? null,
         // Swapping the record discards a concrete drilldown but preserves the
         // create intent, so an "+ Adjustment" entry lands straight in the form.
         adjustment: preserveCreateIntent(adjustment),
@@ -275,11 +274,11 @@ export function useInventoryRecordSelection({
   return {
     warehouseId,
     // Fall back to the loaded record's labels so the picker triggers render the
-    // warehouse name / inventory item string even when the entry URL carried
+    // warehouse name / inventory number even when the entry URL carried
     // only the ids (e.g. the list row click passes `inventoryId` alone).
     warehouseLabel: warehouseLabel ?? inventory?.warehouseName ?? null,
     inventoryId,
-    inventoryLabel: inventoryLabel ?? inventory?.inventoryItem ?? null,
+    inventoryLabel: inventoryLabel ?? inventory?.inventoryNumber ?? null,
     productId,
     productLabel: productLabel ?? null,
     selectWarehouse,

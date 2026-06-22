@@ -79,7 +79,7 @@ export function useInventoryModalSelection({
     productId,
     productLabel,
     inventoryId: picked?.id ?? null,
-    inventoryLabel: picked?.inventoryItem ?? null,
+    inventoryLabel: picked?.inventoryNumber ?? null,
     picked,
     selectWarehouse,
     selectProduct,

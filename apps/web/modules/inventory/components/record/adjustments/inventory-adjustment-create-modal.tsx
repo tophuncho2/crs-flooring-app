@@ -52,7 +52,6 @@ export function InventoryAdjustmentCreateModal({
       inventoryId: inventory.id,
       warehouseId: inventory.warehouseId,
       warehouseLabel: inventory.warehouseName,
-      inventoryItem: inventory.inventoryItem,
       inventoryNumber: inventory.inventoryNumber,
       inventoryRollNumber: inventory.rollNumber,
       inventoryDyeLot: inventory.dyeLot,

@@ -118,7 +118,6 @@ export async function createPendingAdjustmentUseCase(
         stockUnitAbbrev: inventory.stockUnitAbbrev,
       },
       inventorySnapshot: buildPendingAdjustmentInventorySnapshot({
-        inventoryItem: inventory.inventoryItem,
         categorySlug: inventory.categorySlug,
         inventoryNumber: inventory.inventoryNumber,
         rollPrefix: inventory.rollPrefix,

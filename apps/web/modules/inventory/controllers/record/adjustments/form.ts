@@ -47,7 +47,6 @@ export const EMPTY_FORM: AdjustmentEditForm = {
 export const EMPTY_LOCAL: AdjustmentEditLocal = {
   locationFilter: "",
   pickedWarehouseLabel: "",
-  pickedInventoryItem: "",
   pickedInventoryNumber: "",
   pickedInventoryRollNumber: "",
   pickedInventoryDyeLot: "",
@@ -77,7 +76,6 @@ export function buildEditLocal(adjustment: AdjustmentEditRow): AdjustmentEditLoc
   return {
     locationFilter: adjustment.location ?? "",
     pickedWarehouseLabel: adjustment.warehouseName ?? "",
-    pickedInventoryItem: adjustment.inventoryItem ?? "",
     pickedInventoryNumber: adjustment.inventoryNumber ?? "",
     pickedInventoryRollNumber: adjustment.rollNumber ?? "",
     pickedInventoryDyeLot: adjustment.dyeLot ?? "",
@@ -111,7 +109,6 @@ export function buildCreateLocal(seed: AdjustmentCreateSeed): AdjustmentEditLoca
   return {
     locationFilter: seed.locationLabel ?? "",
     pickedWarehouseLabel: seed.warehouseLabel ?? "",
-    pickedInventoryItem: seed.inventoryItem ?? "",
     pickedInventoryNumber: seed.inventoryNumber ?? "",
     pickedInventoryRollNumber: seed.inventoryRollNumber ?? "",
     pickedInventoryDyeLot: seed.inventoryDyeLot ?? "",

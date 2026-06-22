@@ -6,7 +6,6 @@ export const adjustmentRowSelect = {
   id: true,
   adjustmentNumber: true,
   inventoryId: true,
-  inventoryItem: true,
   inventoryNumber: true,
   rollPrefix: true,
   rollNumber: true,

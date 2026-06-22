@@ -104,7 +104,6 @@ function inventoryContext(overrides: Record<string, unknown> = {}) {
     categorySlug: "vinyl-plank",
     stockUnitName: "Square Foot",
     stockUnitAbbrev: "sf",
-    inventoryItem: "INV-5 · ROLL#R-1",
     inventoryNumber: "INV-5",
     rollPrefix: "ROLL#",
     rollNumber: "R-1",
@@ -118,7 +117,7 @@ function inventoryContext(overrides: Record<string, unknown> = {}) {
 }
 
 const INSERTED = { id: ADJUSTMENT_ID, quantity: "5.00" }
-const SNAPSHOT = { inventoryItem: "INV-5 · ROLL#R-1", snapshot: true }
+const SNAPSHOT = { snapshot: true }
 
 let tx: Record<string, unknown>
 

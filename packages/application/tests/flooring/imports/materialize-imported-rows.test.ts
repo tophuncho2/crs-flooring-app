@@ -199,8 +199,6 @@ describe("materializeImportedStagedRowsUseCase", () => {
       expect(created.startingStock).toBe("12.50")
       // internalNotes always null (user-only column, never seeded by worker).
       expect(created.internalNotes).toBeNull()
-      // inventoryItem stays "" (data layer composes after sequence assignment).
-      expect(created.inventoryItem).toBe("")
       // fifoReceivedAt is a Date (current time).
       expect(created.fifoReceivedAt).toBeInstanceOf(Date)
       // sourceStagedRowId points back to the staged row.

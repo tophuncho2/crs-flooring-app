@@ -36,7 +36,6 @@ export type InventoryRow = {
   wasMerged: boolean
   note: string
   internalNotes: string
-  inventoryItem: string
   fifoReceivedAt: string
   createdAt: string
   updatedAt: string
@@ -115,10 +114,8 @@ export type InventoryFormOptions = {
 
 export type InventoryOption = {
   id: string
-  inventoryItem: string
-  // Raw identity columns — kept alongside the denormalized `inventoryItem` blob
-  // so side-panel pickers can render/seed the four-column identity (inv# / roll# /
-  // dye lot / note) instead of one string.
+  // Raw identity columns — side-panel pickers render/seed the four-column
+  // identity (inv# / roll# / dye lot / note).
   inventoryNumber: string | null
   rollNumber: string | null
   dyeLot: string | null

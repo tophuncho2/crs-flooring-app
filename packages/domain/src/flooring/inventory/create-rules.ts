@@ -9,7 +9,7 @@ import {
 
 // Default roll prefix stamped on a fresh inventory row. Mirrors the
 // `flooring_inventory.roll_prefix` schema default; passed explicitly so the
-// data layer can compose `inventoryItem` without re-reading a default.
+// data layer doesn't re-read a default.
 export const DEFAULT_ROLL_PREFIX = "ROLL#"
 
 // User-editable fields for the manual "create single inventory row" form. The

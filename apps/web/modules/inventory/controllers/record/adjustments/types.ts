@@ -51,12 +51,6 @@ export type AdjustmentEditForm = {
 export type AdjustmentEditLocal = {
   locationFilter: string
   pickedWarehouseLabel: string
-  /**
-   * Denormalized one-line identity of the picked inventory. Kept for the
-   * picker's "Clear selection" row + selected-label; the four-field identity
-   * display below is driven by the per-column values.
-   */
-  pickedInventoryItem: string
   /** Per-column identity of the picked inventory (inv# / roll# / dye lot / note). */
   pickedInventoryNumber: string
   pickedInventoryRollNumber: string
@@ -88,7 +82,6 @@ export type AdjustmentCreateSeed = {
   inventoryId?: string
   warehouseId?: string | null
   workOrderId?: string | null
-  inventoryItem?: string
   inventoryNumber?: string | null
   inventoryRollNumber?: string | null
   inventoryDyeLot?: string | null

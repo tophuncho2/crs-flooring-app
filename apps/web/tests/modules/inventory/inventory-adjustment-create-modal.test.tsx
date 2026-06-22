@@ -63,7 +63,6 @@ function inventory(): InventoryDetail {
     wasMerged: false,
     note: "",
     internalNotes: "",
-    inventoryItem: "Berber Carpet R12",
     fifoReceivedAt: "",
     createdAt: "",
     updatedAt: "",

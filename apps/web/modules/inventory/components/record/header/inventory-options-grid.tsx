@@ -115,7 +115,7 @@ export function InventoryOptionsGrid({
         columns={INVENTORY_LIST_COLUMNS}
         renderCell={renderInventoryRowCell}
         onRowClick={(row) => onSelectInventory(row)}
-        getRowAriaLabel={(row) => row.inventoryItem}
+        getRowAriaLabel={(row) => row.inventoryNumber}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
         pagination={grid.pagination}
       />

@@ -34,8 +34,8 @@ function toDecimalStringOrNull(
  * columns surface as strings; nullable columns preserve null instead of
  * coercing to "".
  *
- * Frozen-at-create snapshots on the adjustment row: `inventoryItem`,
- * `categorySlug`, `inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`,
+ * Frozen-at-create snapshots on the adjustment row: `categorySlug`,
+ * `inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`,
  * `inventoryNote`, and the stock unit-of-measure labels. Stamped once at
  * insert, never mutated. (`location` is separate — user-owned free text,
  * editable through update; not a parent mirror.)
@@ -48,7 +48,6 @@ export function normalizeAdjustmentRow(
     id: row.id,
     adjustmentNumber: row.adjustmentNumber,
     inventoryId: row.inventoryId,
-    inventoryItem: row.inventoryItem,
     inventoryNumber: row.inventoryNumber ?? null,
     rollPrefix: row.rollPrefix ?? null,
     rollNumber: row.rollNumber ?? null,
@@ -136,8 +135,8 @@ export async function getEnrichedInventoryAdjustmentById(
  *   - `categorySlug` — stamped on the adjustment at create.
  *   - Stock unit-of-measure labels — stamped on the adjustment at create
  *     (frozen thereafter).
- *   - The 5 inventory-identity primitives + the composed `inventoryItem`
- *     — stamped on the adjustment at create (frozen thereafter).
+ *   - The 5 inventory-identity primitives — stamped on the adjustment at
+ *     create (frozen thereafter).
  *   - `productId` / `warehouseId` — stamped on the adjustment at create
  *     (frozen thereafter); FKs used for joins and to filter the adjustment
  *     edit panel's link pickers. The product label is derived from the
@@ -156,7 +155,6 @@ export async function getInventoryParentContextForAdjustments(
     where: { id: inventoryId },
     select: {
       id: true,
-      inventoryItem: true,
       inventoryNumber: true,
       rollPrefix: true,
       rollNumber: true,
@@ -177,7 +175,6 @@ export async function getInventoryParentContextForAdjustments(
   if (!row) return null
   return {
     inventoryId: row.id,
-    inventoryItem: row.inventoryItem,
     startingStock: row.startingStock.toString(),
     cost: toDecimalStringOrNull(row.cost),
     freight: toDecimalStringOrNull(row.freight),
@@ -410,7 +407,6 @@ export async function getPendingAdjustmentWithInventoryForMutation(
       inventory: {
         select: {
           id: true,
-          inventoryItem: true,
           inventoryNumber: true,
           rollPrefix: true,
           rollNumber: true,
@@ -436,7 +432,6 @@ export async function getPendingAdjustmentWithInventoryForMutation(
     adjustment: normalizeAdjustmentRow(adjustmentPayload),
     inventory: {
       inventoryId: inv.id,
-      inventoryItem: inv.inventoryItem,
       startingStock: inv.startingStock.toString(),
       cost: toDecimalStringOrNull(inv.cost),
       freight: toDecimalStringOrNull(inv.freight),

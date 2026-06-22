@@ -50,10 +50,9 @@ export type InsertPendingAdjustmentRowInput = {
   notes: string
   unitSnapshot: PendingAdjustmentUnitSnapshot
   /**
-   * Identity snapshot from the parent inventory: the composed
-   * `inventoryItem` string + `categorySlug` + the 5 underlying primitives
-   * (`inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`,
-   * `inventoryNote`). Stamped at insert and frozen — never re-stamped.
+   * Identity snapshot from the parent inventory: `categorySlug` + the 5
+   * underlying primitives (`inventoryNumber`, `rollPrefix`, `rollNumber`,
+   * `dyeLot`, `inventoryNote`). Stamped at insert and frozen — never re-stamped.
    */
   inventorySnapshot: PendingAdjustmentInventorySnapshot
   /**
@@ -78,8 +77,8 @@ export type InsertPendingAdjustmentRowInput = {
  * persistence call — no business rules, no invariant checks (those run in
  * the use case before/after via the domain).
  *
- * Stamps the two stock unit-snapshot fields, the nine identity-snapshot fields
- * (`inventoryItem`, `categorySlug`, the 5 identity primitives, plus
+ * Stamps the two stock unit-snapshot fields, the eight identity-snapshot fields
+ * (`categorySlug`, the 5 identity primitives, plus
  * `productId` / `warehouseId`), and the user-owned `location` from the input.
  *
  * `before` / `after` are left null here; the caller immediately runs
@@ -101,7 +100,6 @@ export async function insertPendingAdjustmentRow(
       notes: input.notes ? input.notes : null,
       stockUnitName: input.unitSnapshot.stockUnitName,
       stockUnitAbbrev: input.unitSnapshot.stockUnitAbbrev,
-      inventoryItem: input.inventorySnapshot.inventoryItem,
       categorySlug: input.inventorySnapshot.categorySlug,
       inventoryNumber: input.inventorySnapshot.inventoryNumber,
       rollPrefix: input.inventorySnapshot.rollPrefix,
@@ -160,7 +158,7 @@ export type UpdatePendingAdjustmentRowInput = {
  *   - the `workOrderId` link relation (any product, any direction)
  *
  * Never written here: `inventoryId`, `before`, `after`, `adjustmentNumber`,
- * `createdAt`, `inventoryItem`, the 5 inventory-identity snapshot primitives, and the
+ * `createdAt`, the 5 inventory-identity snapshot primitives, and the
  * stock unit-snapshot fields. Empty-patch calls return the row as-is.
  */
 export async function updatePendingAdjustmentRow(

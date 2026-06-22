@@ -62,31 +62,10 @@ export function formatAdjustmentTransition(
   return `${formatInventoryQuantity(before, unitLabel)} → ${formatInventoryQuantity(after, unitLabel)}`
 }
 
-export type ComposeInventoryItemInput = {
-  inventoryNumber: string
-  rollPrefix: string
-  rollNumber: string
-  dyeLot: string
-  note: string
-}
-
-const INVENTORY_ITEM_SEPARATOR = " · "
-
 export function composeRollNumberDisplay(prefix: string, number: string): string {
   const trimmed = number.trim()
   if (trimmed.length === 0) return ""
   return `${prefix}${trimmed}`
-}
-
-export function composeInventoryItem(input: ComposeInventoryItemInput): string {
-  const rollDisplay = composeRollNumberDisplay(input.rollPrefix, input.rollNumber)
-  const parts = [
-    input.inventoryNumber,
-    rollDisplay,
-    input.dyeLot,
-    input.note,
-  ]
-  return parts.filter((part) => part.length > 0).join(INVENTORY_ITEM_SEPARATOR)
 }
 
 export function formatFifoReceivedAtEastern(value: Date | string): string {

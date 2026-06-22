@@ -6,7 +6,6 @@ import {
   withDatabaseTransaction,
   type UpdateInventoryRecordInput as DbUpdateInventoryInput,
 } from "@builders/db"
-import { composeInventoryItem } from "@builders/domain"
 import { InventoryExecutionError } from "./errors.js"
 import type { InventoryResult, UpdateInventoryInput } from "./types.js"
 
@@ -65,15 +64,7 @@ export async function updateInventoryUseCase(
           ? null
           : current.internalNotes
 
-    const inventoryItem = composeInventoryItem({
-      inventoryNumber: current.inventoryNumber,
-      rollPrefix: current.rollPrefix,
-      rollNumber: effectiveRollNumber ?? "",
-      dyeLot: effectiveDyeLot ?? "",
-      note: effectiveNote ?? "",
-    })
-
-    const dbInput: DbUpdateInventoryInput = { inventoryItem }
+    const dbInput: DbUpdateInventoryInput = {}
     if (input.rollNumber !== undefined) dbInput.rollNumber = effectiveRollNumber
     if (input.dyeLot !== undefined) dbInput.dyeLot = effectiveDyeLot
     if (input.location !== undefined) dbInput.location = effectiveLocation

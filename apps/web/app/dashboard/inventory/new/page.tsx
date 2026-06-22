@@ -85,7 +85,7 @@ export default async function InventoryCreatePage({
     <InventoryCreateClient
       backHref={backHref}
       seed={seed}
-      title={`${isSplitOff ? "Split off" : "Duplicate"} ${source.inventoryItem}`}
+      title={isSplitOff ? "Split off" : "Duplicate"}
     />
   )
 }

@@ -5,13 +5,11 @@ const {
   lockInventoryRowMock,
   getInventoryByIdMock,
   updateInventoryRecordMock,
-  composeInventoryItemMock,
 } = vi.hoisted(() => ({
   withDatabaseTransactionMock: vi.fn(),
   lockInventoryRowMock: vi.fn(),
   getInventoryByIdMock: vi.fn(),
   updateInventoryRecordMock: vi.fn(),
-  composeInventoryItemMock: vi.fn(),
 }))
 
 vi.mock("@builders/db", () => ({
@@ -20,10 +18,6 @@ vi.mock("@builders/db", () => ({
   lockInventoryRow: lockInventoryRowMock,
   getInventoryById: getInventoryByIdMock,
   updateInventoryRecord: updateInventoryRecordMock,
-}))
-
-vi.mock("@builders/domain", () => ({
-  composeInventoryItem: composeInventoryItemMock,
 }))
 
 import { updateInventoryUseCase } from "../../../src/flooring/inventory/update-inventory.js"
@@ -54,75 +48,49 @@ beforeEach(() => {
   lockInventoryRowMock.mockReset()
   getInventoryByIdMock.mockReset()
   updateInventoryRecordMock.mockReset()
-  composeInventoryItemMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
     cb({ tx: true }),
   )
-  composeInventoryItemMock.mockReturnValue("COMPOSED")
   updateInventoryRecordMock.mockResolvedValue(UPDATED_RECORD)
 })
 
 describe("updateInventoryUseCase", () => {
   describe("happy path", () => {
-    it("recomposes inventoryItem from post-patch values and writes only touched fields", async () => {
+    it("writes only the touched fields", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
       const result = await updateInventoryUseCase(INVENTORY_ID, { dyeLot: "NEW-DYE" })
 
       expect(result).toBe(UPDATED_RECORD)
-      // Composer fed effective (post-patch) values; rollNumber/note untouched
-      // come from current, dyeLot is the patched value. location + internalNotes
-      // are NOT part of the inventoryItem formula.
-      expect(composeInventoryItemMock).toHaveBeenCalledWith({
-        inventoryNumber: "INV-5",
-        rollPrefix: "ROLL#",
-        rollNumber: "R-1",
-        dyeLot: "NEW-DYE",
-        note: "n",
-      })
-      // Write input carries the recomposed item + only the patched key.
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        { inventoryItem: "COMPOSED", dyeLot: "NEW-DYE" },
+        { dyeLot: "NEW-DYE" },
         expect.anything(),
       )
     })
 
-    it("trims an empty-string patch to null and feeds the composer an empty part", async () => {
+    it("trims an empty-string patch to null", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
       await updateInventoryUseCase(INVENTORY_ID, { dyeLot: "   " })
 
-      expect(composeInventoryItemMock).toHaveBeenCalledWith(
-        expect.objectContaining({ dyeLot: "" }),
-      )
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        { inventoryItem: "COMPOSED", dyeLot: null },
+        { dyeLot: null },
         expect.anything(),
       )
     })
 
-    it("leaves untouched fields out of the write input but always writes inventoryItem", async () => {
+    it("writes an empty input when no fields are patched", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
       await updateInventoryUseCase(INVENTORY_ID, {})
 
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        { inventoryItem: "COMPOSED" },
+        {},
         expect.anything(),
-      )
-    })
-
-    it("treats a current empty-string field as null when no patch is supplied", async () => {
-      getInventoryByIdMock.mockResolvedValue(currentRow({ note: "" }))
-
-      await updateInventoryUseCase(INVENTORY_ID, {})
-
-      expect(composeInventoryItemMock).toHaveBeenCalledWith(
-        expect.objectContaining({ note: "" }),
       )
     })
 
@@ -133,7 +101,7 @@ describe("updateInventoryUseCase", () => {
 
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        { inventoryItem: "COMPOSED", isArchived: true },
+        { isArchived: true },
         expect.anything(),
       )
     })

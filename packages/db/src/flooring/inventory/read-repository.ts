@@ -47,10 +47,9 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
  * carve-out, this is a data-layer normalizer reusing pure domain
  * formatters/computations; it MUST NOT call domain rules that throw.
  *
- * Snapshot columns (`categoryName`, `importNumber`, `purchaseOrderNumber`,
- * `inventoryItem`) are surfaced as-is; the worker writes them at materialize
- * time and the inventory update use case recomputes `inventoryItem` whenever a
- * source field changes. `productName` is the exception — it is now derived from
+ * Snapshot columns (`categoryName`, `importNumber`, `purchaseOrderNumber`)
+ * are surfaced as-is; the worker writes them at materialize time.
+ * `productName` is the exception — it is now derived from
  * the live `product` join (not the snapshot column) so product edits propagate.
  */
 export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRecord {
@@ -103,7 +102,6 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     wasMerged: payload.wasMerged,
     note: payload.note ?? "",
     internalNotes: payload.internalNotes ?? "",
-    inventoryItem: payload.inventoryItem,
     fifoReceivedAt: payload.fifoReceivedAt.toISOString(),
     createdAt: payload.createdAt.toISOString(),
     updatedAt: payload.updatedAt.toISOString(),
@@ -411,8 +409,8 @@ function buildListViewWhere(
   // (`inventoryNumber`/`rollNumber`/`dyeLot`/`note`). Each pushes its own AND
   // clause so filling more than one bar narrows the result set. Location is
   // intentionally excluded; it has its own dedicated filter chip. Matching the
-  // raw columns (instead of the denormalized `inventoryItem` blob) keeps the
-  // "where is it" concern out of the "what is it" search.
+  // raw identity columns keeps the "where is it" concern out of the
+  // "what is it" search.
   //
   // `inventoryNumber` is the exception: it is an EXACT match on the numeric
   // value (not a substring) — the # bar finds the one row, so "12" matches

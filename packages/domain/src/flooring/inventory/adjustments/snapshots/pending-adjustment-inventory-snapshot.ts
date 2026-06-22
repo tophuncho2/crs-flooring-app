@@ -1,5 +1,4 @@
 export type PendingAdjustmentInventorySnapshot = {
-  inventoryItem: string
   categorySlug: string
   inventoryNumber: string | null
   rollPrefix: string | null
@@ -14,7 +13,6 @@ export function buildPendingAdjustmentInventorySnapshot(
   inv: PendingAdjustmentInventorySnapshot,
 ): PendingAdjustmentInventorySnapshot {
   return {
-    inventoryItem: inv.inventoryItem,
     categorySlug: inv.categorySlug,
     inventoryNumber: inv.inventoryNumber,
     rollPrefix: inv.rollPrefix,

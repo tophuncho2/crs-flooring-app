@@ -63,7 +63,6 @@ export async function materializeImportedStagedRowsUseCase(
       dyeLot: row.dyeLot,
       note: row.note,
       internalNotes: null,
-      inventoryItem: "",
       warehouseId: row.warehouseId,
       location: row.location,
       startingStock: row.startingStock.toString(),

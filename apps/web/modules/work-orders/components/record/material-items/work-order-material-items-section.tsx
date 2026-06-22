@@ -148,7 +148,7 @@ export function WorkOrderMaterialItemsSection({
       router.push(
         buildInventoryRecordHref({
           inventoryId: adjustment.inventoryId,
-          inventoryLabel: adjustment.inventoryItem,
+          inventoryLabel: adjustment.inventoryNumber,
           warehouseId: adjustment.warehouseId,
           warehouseLabel: adjustment.warehouseName,
           adjustment: adjustment.id,

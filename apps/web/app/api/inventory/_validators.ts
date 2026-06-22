@@ -305,10 +305,8 @@ export function validateListInventoryQuery(
 }
 
 export function validateUpdateInventoryInput(body: Record<string, unknown>): UpdateInventoryInput {
-  // `inventoryItem` is server-recomputed (composeInventoryItem) inside the
-  // update use case; never accepted from the client. `warehouseId` is
-  // set-on-insert by the materialize worker and silently stripped here if
-  // a stale client posts it.
+  // `warehouseId` is set-on-insert by the materialize worker and silently
+  // stripped here if a stale client posts it.
   const input: UpdateInventoryInput = {}
   if (body.rollNumber !== undefined)
     input.rollNumber = optionalBoundedString(body.rollNumber, INVENTORY_ROLL_NUMBER_MAX, "rollNumber")
