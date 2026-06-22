@@ -11,7 +11,7 @@ Reach for it when a `dev-N` worktree has fallen behind `dev` and you want it cur
 
 ## Hard rules
 
-- **dev-N + staging only.** Runs on the `dev-N` sub-branches (`dev-1`, `dev-2`, … — matched by `^dev-[0-9]+$`, so future `dev-4/5` are covered) and on `staging` (dev → staging is a clean fast-forward ~99% of the time). On `dev`, push directly; on `main`, use `/promote`. The script enforces this guard — never bypass it.
+- **dev-N + staging only.** Runs on the `dev-N` sub-branches (`dev-1`, `dev-2`, … — matched by `^dev-[0-9]+$`, so future `dev-4/5` are covered) and on `staging` (dev → staging is a clean fast-forward ~99% of the time). On `dev`, push directly; on `main`, use `/diff-merge`. The script enforces this guard — never bypass it.
 - **Check before push.** The gauntlet runs *before* the push, so a broken merge never reaches origin. Never reorder to push first.
 - **No auto-fix.** On a merge conflict or a failed check, report the cause and the recovery command, then stop. Do not resolve conflicts, edit code, or amend tests to make it pass.
 - **Do not commit user work.** The only commit `/dev-sync` produces is git's own merge commit. Never `git add`/`git commit` the user's changes — a dirty tree aborts the sync by design.
@@ -31,7 +31,7 @@ bash bin/dev-sync.sh
 
 Read the script's exit and its `═══ sync summary ═══` table, and classify the outcome:
 
-- **guard-abort** — not on a `dev-N` branch or `staging`. Report the branch and point to the right tool (`dev` → push directly, `main` → `/promote`).
+- **guard-abort** — not on a `dev-N` branch or `staging`. Report the branch and point to the right tool (`dev` → push directly, `main` → `/diff-merge`).
 - **dirty-tree abort** — uncommitted changes. Tell the user to commit or stash, then re-run.
 - **conflict-abort** — `origin/dev` conflicts with the branch. The merge was aborted and the tree restored; the user resolves manually before re-running.
 - **check-fail** — the merge landed locally but checks failed, so nothing was pushed. Surface the failing gauntlet step and the recovery line: fix and re-run, or `git reset --hard origin/<branch>` to unwind.
@@ -54,9 +54,9 @@ Recovery (on abort): <the exact command to run next>
 
 ## What this skill does NOT do
 
-- Does not run on `dev` (push directly) or `main` (→ `/promote`); the guard refuses both.
+- Does not run on `dev` (push directly) or `main` (→ `/diff-merge`); the guard refuses both.
 - Does not resolve merge conflicts or edit code to make checks pass — it reports and stops.
 - Does not commit or stash the user's working changes; a dirty tree aborts by design.
-- Does not run migrations (the user runs those), and is not a promotion tool (→ `/promote`).
+- Does not run migrations (the user runs those), and is not a promotion tool (→ `/diff-merge`).
 - Is not the build gauntlet itself — that's `/check` / `bin/check.sh`, which `/dev-sync` invokes as one step.
 - Does not trigger on anything but the literal `/dev-sync`.
