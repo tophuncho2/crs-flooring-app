@@ -29,7 +29,6 @@ export type WorkOrdersListFilters = {
   // arrays). From-only ⇒ on/after; To-only ⇒ on/before; same date ⇒ that day.
   scheduledForStart?: string[]
   scheduledForEnd?: string[]
-  statusId?: string[]
 }
 
 export async function listWorkOrdersUseCase(

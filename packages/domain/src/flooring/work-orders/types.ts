@@ -12,8 +12,6 @@ export type WorkOrderListRow = {
   warehouseName: string
   unitNumber: string
   unitType: string
-  statusId: string | null
-  statusName: string | null
   vacancy: "VACANT" | "OCCUPIED" | null
   timeOfDay: "AM" | "PM" | null
   scheduledFor: string
@@ -70,7 +68,6 @@ export type WorkOrderForm = {
   internalNotes: string
   installerInstructions: string
   scheduledFor: string
-  statusId: string
   vacancy: "VACANT" | "OCCUPIED" | ""
   timeOfDay: "AM" | "PM" | ""
 }
@@ -87,7 +84,6 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   internalNotes: "",
   installerInstructions: "",
   scheduledFor: "",
-  statusId: "",
   vacancy: "",
   timeOfDay: "",
 }

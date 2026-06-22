@@ -61,7 +61,6 @@ export type WorkOrdersListFilterMap = {
    */
   scheduledForStart?: string[]
   scheduledForEnd?: string[]
-  statusId?: string[]
 }
 
 export type WorkOrdersListArgs = {
@@ -119,9 +118,6 @@ function buildWorkOrdersWhere(
   if (filters?.vacancy?.length) {
     andClauses.push({ vacancy: { in: filters.vacancy as FlooringVacancyStatus[] } })
   }
-  if (filters?.statusId?.length) {
-    andClauses.push({ statusId: { in: filters.statusId } })
-  }
 
   // scheduledFor date range. `@db.Date` values are stored UTC-midnight, so the
   // picked `YYYY-MM-DD` bounds are pinned to UTC midnight too: an inclusive
@@ -164,7 +160,6 @@ function buildWorkOrdersOrderBy(
     scheduledFor: { scheduledFor: direction },
     unitNumber: { unitNumber: direction },
     unitType: { unitType: direction },
-    status: { status: { name: direction } },
   }
 
   if (sort?.isGroupingEnabled) {

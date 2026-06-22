@@ -5,14 +5,12 @@ async function main() {
     { seedSystemUsers },
     { seedUnitOfMeasures },
     { seedCategories },
-    { seedWorkOrderStatuses },
   ] = await Promise.all([
     import("@builders/db"),
     import("bcrypt"),
     import("./system-user-seed.js"),
     import("./seed-unit-of-measures.js"),
     import("./seed-categories.js"),
-    import("./seed-work-order-statuses.js"),
   ])
 
   const prisma = createPrismaClient()
@@ -29,10 +27,6 @@ async function main() {
 
     console.log("Seeding categories...")
     await seedCategories({ prisma })
-    console.log("Done.")
-
-    console.log("Seeding work order statuses...")
-    await seedWorkOrderStatuses({ prisma })
     console.log("Done.")
   } finally {
     await prisma.$disconnect()

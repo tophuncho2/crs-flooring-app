@@ -504,8 +504,6 @@ model FlooringWorkOrder {
   jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
   warehouseId          String?
   warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  statusId             String?                    @map("status_id")
-  status               FlooringWorkOrderStatus?   @relation(fields: [statusId], references: [id], onDelete: SetNull)
   vacancy              FlooringVacancyStatus?
   timeOfDay            FlooringTimeOfDay?
   scheduledFor         DateTime?                  @db.Date
@@ -522,7 +520,6 @@ model FlooringWorkOrder {
 
   @@index([workOrderNumber])
   @@index([workOrderNumberInt])
-  @@index([statusId])
   @@index([propertyId])
   @@index([templateId])
   @@index([jobTypeId])
@@ -538,19 +535,6 @@ model FlooringWorkOrder {
   // the number column no longer needs a trigram index.
   @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_description_trgm_idx")
   @@map("flooring_work_order")
-}
-
-model FlooringWorkOrderStatus {
-  id         String              @id @default(uuid())
-  slug       String              @unique
-  name       String              @unique
-  sortOrder  Int                 @default(0)
-  createdAt  DateTime            @default(now())
-  updatedAt  DateTime            @updatedAt
-  workOrders FlooringWorkOrder[]
-
-  @@index([name])
-  @@map("flooring_work_order_status")
 }
 
 model FlooringWorkOrderItem {

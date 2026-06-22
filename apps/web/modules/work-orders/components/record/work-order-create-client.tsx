@@ -46,7 +46,6 @@ function WorkOrderCreatePanel({
         warehouseId: localValue.warehouseId,
         templateId: updateInput.templateId ?? null,
         jobTypeId: updateInput.jobTypeId ?? null,
-        statusId: updateInput.statusId ?? null,
         unitNumber: updateInput.unitNumber,
         unitType: updateInput.unitType,
         customAddress: updateInput.customAddress,

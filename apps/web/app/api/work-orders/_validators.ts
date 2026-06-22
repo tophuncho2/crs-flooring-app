@@ -109,7 +109,6 @@ export function validateCreateWorkOrderInput(
     warehouseId: optionalString(body.warehouseId),
     templateId: optionalString(body.templateId),
     jobTypeId: optionalString(body.jobTypeId),
-    statusId: optionalString(body.statusId),
     unitNumber: optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder),
     unitType: optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder),
     customAddress: optionalBoundedText(body.customAddress, WO_CUSTOM_ADDRESS_MAX, "customAddress", failWorkOrder),
@@ -142,7 +141,6 @@ export function validateUpdateWorkOrderInput(
   }
   if ("templateId" in body) input.templateId = optionalString(body.templateId)
   if ("jobTypeId" in body) input.jobTypeId = optionalString(body.jobTypeId)
-  if ("statusId" in body) input.statusId = optionalString(body.statusId)
   if ("unitNumber" in body) input.unitNumber = optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder)
   if ("unitType" in body) input.unitType = optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder)
   if ("customAddress" in body) input.customAddress = optionalBoundedText(body.customAddress, WO_CUSTOM_ADDRESS_MAX, "customAddress", failWorkOrder)
@@ -261,7 +259,6 @@ const ID_FILTER_KEYS = [
   "templateId",
   "warehouseId",
   "jobTypeId",
-  "statusId",
 ] as const
 
 type IdFilterKey = (typeof ID_FILTER_KEYS)[number]

@@ -27,8 +27,6 @@ type WorkOrderListInput = {
   warehouse: { name: string } | null
   unitNumber: string | null
   unitType: string | null
-  statusId: string | null
-  status: { id: string; name: string } | null
   vacancy: "VACANT" | "OCCUPIED" | null
   timeOfDay: "AM" | "PM" | null
   scheduledFor: Date | string | null
@@ -73,8 +71,6 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     warehouseName: workOrder.warehouse?.name ?? "",
     unitNumber: workOrder.unitNumber ?? "",
     unitType: workOrder.unitType ?? "",
-    statusId: workOrder.statusId,
-    statusName: workOrder.status?.name ?? null,
     vacancy: workOrder.vacancy,
     timeOfDay: workOrder.timeOfDay,
     scheduledFor: toIsoDate(workOrder.scheduledFor),

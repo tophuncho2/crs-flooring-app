@@ -14,8 +14,6 @@ describe("normalizeWorkOrderListRow management company", () => {
     warehouse: null,
     unitNumber: null,
     unitType: null,
-    statusId: null,
-    status: null,
     vacancy: null,
     timeOfDay: null,
     scheduledFor: null,
