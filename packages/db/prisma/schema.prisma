@@ -420,6 +420,7 @@ model FlooringPayment {
 
   @@index([paymentNumber])
   @@index([paymentNumberInt])
+  @@index([amount])
   @@index([createdAt, id])
   @@map("flooring_payment")
 }

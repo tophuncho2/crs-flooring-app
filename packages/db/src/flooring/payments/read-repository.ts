@@ -2,6 +2,7 @@ import { db } from "../../client.js"
 import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
+  normalizeMoneyAmount,
   normalizePayment,
   type Payment,
   type PaymentDetail,
@@ -17,6 +18,9 @@ export type PaymentListViewOptions = {
   // Exact payment-number search — free text, digits parsed to match the
   // generated `paymentNumberInt` column.
   paymentNumber?: string
+  // Exact amount search — free text canonicalized via `normalizeMoneyAmount`
+  // and matched against the `amount` column.
+  amount?: string
 }
 
 type PaymentNeighbors = {
@@ -44,6 +48,14 @@ function buildPaymentListWhere(
     const digits = paymentNumber.replace(/\D/g, "")
     const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
     where.paymentNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
+  }
+  const amount = options.amount?.trim() ?? ""
+  if (amount.length > 0) {
+    // `normalizeMoneyAmount` canonicalizes to `X.XX`, or returns "" for garbage.
+    // Fall back to the impossible sentinel `-1` (amount is unsigned) so an
+    // unparseable input returns no rows rather than all.
+    const normalized = normalizeMoneyAmount(amount)
+    where.amount = { equals: normalized.length > 0 ? normalized : "-1" }
   }
   return where
 }

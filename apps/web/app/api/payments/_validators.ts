@@ -89,6 +89,7 @@ export function validateUpdatePaymentInput(
 
 const listPaymentsQuerySchema = z.object({
   paymentNumber: z.string().optional(),
+  amount: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -117,8 +118,10 @@ export function validateListPaymentsQuery(
 
   const parsed = parseResult.data
   const paymentNumber = parsed.paymentNumber?.trim()
+  const amount = parsed.amount?.trim()
   const filters: PaymentsListFilters = {}
   if (paymentNumber) filters.paymentNumber = paymentNumber
+  if (amount) filters.amount = amount
   return {
     filters,
     page: parsed.page,

@@ -64,6 +64,9 @@ export function toPaymentForm(payment: Payment): PaymentForm {
 
 // Per-field identity search. `paymentNumber` is a free-text bar matched exactly
 // against the generated `paymentNumberInt` column (digits stripped server-side).
+// `amount` is a free-text bar matched exactly against the `amount` column
+// (parsed/canonicalized via `normalizeMoneyAmount` server-side).
 export type PaymentListFilters = {
   paymentNumber?: string
+  amount?: string
 }

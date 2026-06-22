@@ -17,11 +17,13 @@ export async function listPaymentsUseCase(
   const pageSize = Math.max(1, Math.min(LIST_PAYMENTS_MAX_PAGE_SIZE, requestedPageSize))
 
   const paymentNumber = input.filters?.paymentNumber?.trim() || undefined
+  const amount = input.filters?.amount?.trim() || undefined
 
   const { rows, total } = await listPaymentsForListView({
     skip: (page - 1) * pageSize,
     take: pageSize,
     paymentNumber,
+    amount,
   })
 
   return { rows, total }
