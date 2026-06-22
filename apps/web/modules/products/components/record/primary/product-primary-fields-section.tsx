@@ -17,7 +17,7 @@ import {
   type ProductCreateForm,
 } from "@builders/domain"
 
-const PRODUCT_NOTE_MAX = 80
+const PRODUCT_NAMING_ADDON_MAX = 80
 
 function formatUnit(name: string | null | undefined, abbrev: string | null | undefined) {
   if (!name) return "—"
@@ -33,7 +33,7 @@ function formatUnit(name: string | null | undefined, abbrev: string | null | und
  *
  * `categoryReadOnly` renders Category as a static value (immutable
  * post-create; enforced at the type/validator/domain layers). `fieldsReadOnly`
- * renders the remaining identity/spec cells (manufacturer, style, color, note)
+ * renders the remaining identity/spec cells (manufacturer, style, color, naming addon)
  * read-only too — set on the record view, left false on the create flow.
  */
 export function ProductPrimaryFieldsSection({
@@ -128,18 +128,18 @@ export function ProductPrimaryFieldsSection({
       </CellAt>
       <CellAt col={1} row={4} colSpan={4}>
         <FormField
-          label="Note"
-          currentLength={editable ? draft.note.length : undefined}
-          maxLength={editable ? PRODUCT_NOTE_MAX : undefined}
+          label="Naming Addon"
+          currentLength={editable ? draft.productNamingAddon.length : undefined}
+          maxLength={editable ? PRODUCT_NAMING_ADDON_MAX : undefined}
         >
           {fieldsReadOnly ? (
-            <StaticFieldValue>{draft.note || "—"}</StaticFieldValue>
+            <StaticFieldValue>{draft.productNamingAddon || "—"}</StaticFieldValue>
           ) : (
             <TextCell
               editable={editable}
-              value={draft.note}
-              onChange={(value) => onFieldChange("note", value)}
-              maxLength={PRODUCT_NOTE_MAX}
+              value={draft.productNamingAddon}
+              onChange={(value) => onFieldChange("productNamingAddon", value)}
+              maxLength={PRODUCT_NAMING_ADDON_MAX}
             />
           )}
         </FormField>

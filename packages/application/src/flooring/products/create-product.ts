@@ -47,7 +47,7 @@ export async function createProductUseCase(
       categoryName: category.name,
       style: input.style,
       color: input.color,
-      note: input.note,
+      productNamingAddon: input.productNamingAddon,
     })
 
     if (await productNameExists(name, { client: c })) {
@@ -82,7 +82,7 @@ export async function createProductUseCase(
           style: input.style,
           color: input.color,
           coveragePerUnit: input.coveragePerUnit,
-          note: input.note,
+          productNamingAddon: input.productNamingAddon,
           ...snapshot,
         },
         c,

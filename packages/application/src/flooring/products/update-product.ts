@@ -38,8 +38,12 @@ export async function updateProductUseCase(
 
     const nextStyle = "style" in input ? input.style : current.style || null
     const nextColor = "color" in input ? input.color : current.color || null
-    const nextNote = "note" in input ? input.note : current.note || null
-    const nameAffected = "style" in input || "color" in input || "note" in input
+    const nextProductNamingAddon =
+      "productNamingAddon" in input
+        ? input.productNamingAddon
+        : current.productNamingAddon || null
+    const nameAffected =
+      "style" in input || "color" in input || "productNamingAddon" in input
 
     if ("manufacturerId" in input) {
       const nextManufacturerId = input.manufacturerId
@@ -61,14 +65,14 @@ export async function updateProductUseCase(
     if ("style" in input) patch.style = input.style
     if ("color" in input) patch.color = input.color
     if ("coveragePerUnit" in input) patch.coveragePerUnit = input.coveragePerUnit
-    if ("note" in input) patch.note = input.note
+    if ("productNamingAddon" in input) patch.productNamingAddon = input.productNamingAddon
 
     if (nameAffected) {
       const name = buildStoredFlooringProductName({
         categoryName,
         style: nextStyle,
         color: nextColor,
-        note: nextNote,
+        productNamingAddon: nextProductNamingAddon,
       })
       if (name !== current.name) {
         if (await productNameExists(name, { excludeId: id, client: c })) {

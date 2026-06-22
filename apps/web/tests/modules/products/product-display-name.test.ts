@@ -16,6 +16,17 @@ describe("product display naming", () => {
     ).toBe("Carpet - Plush - Sand")
   })
 
+  it("appends the naming addon as the final segment of the stored name", () => {
+    expect(
+      buildStoredFlooringProductName({
+        categoryName: "Carpet",
+        style: "Plush",
+        color: "Sand",
+        productNamingAddon: "Roll 7",
+      }),
+    ).toBe("Carpet - Plush - Sand - Roll 7")
+  })
+
   it("prefers the persisted product name for display", () => {
     expect(
       buildFlooringProductDisplayName({

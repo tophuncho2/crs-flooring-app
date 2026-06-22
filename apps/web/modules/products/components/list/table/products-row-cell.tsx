@@ -23,8 +23,8 @@ export function renderProductRowCell(
       return row.style || "-"
     case "color":
       return row.color || "-"
-    case "note":
-      return row.note || "-"
+    case "productNamingAddon":
+      return row.productNamingAddon || "-"
     case "stockUnit":
       return formatUnit(row.stockUnitName, row.stockUnitAbbrev)
     case "coveragePerUnit":

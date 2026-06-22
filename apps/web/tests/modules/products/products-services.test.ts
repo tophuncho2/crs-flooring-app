@@ -10,7 +10,7 @@ describe("normalizeProductRow", () => {
       manufacturerId: "mfg-1",
       style: "Plush",
       color: "Sand",
-      note: null,
+      productNamingAddon: null,
       createdAt: new Date("2026-03-18T00:00:00Z"),
       updatedAt: new Date("2026-03-18T00:00:00Z"),
       category: {
@@ -37,7 +37,7 @@ describe("normalizeProductRow", () => {
       manufacturerId: null,
       style: "Plush",
       color: "Sand",
-      note: null,
+      productNamingAddon: null,
       createdAt: new Date("2026-03-18T00:00:00Z"),
       updatedAt: new Date("2026-03-18T00:00:00Z"),
       category: {

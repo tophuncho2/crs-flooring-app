@@ -32,7 +32,7 @@ export type ProductRow = {
   // on it yet) — stored as a string here; the read normalizer converts the
   // Decimal column to a string and "" when null.
   coveragePerUnit: string
-  note: string
+  productNamingAddon: string
   createdAt: string
   updatedAt: string
   category: ProductRowCategory
@@ -54,7 +54,7 @@ export type ProductCreateForm = {
   color: string
   // Mutable on create AND update — not an immutable snapshot. Empty string clears it.
   coveragePerUnit: string
-  note: string
+  productNamingAddon: string
 }
 
 // Update form — categoryId is omitted: it's immutable post-create (it drives
@@ -88,7 +88,7 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   style: "",
   color: "",
   coveragePerUnit: "",
-  note: "",
+  productNamingAddon: "",
 }
 
 export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
@@ -97,6 +97,6 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     style: row.style,
     color: row.color,
     coveragePerUnit: row.coveragePerUnit,
-    note: row.note,
+    productNamingAddon: row.productNamingAddon,
   }
 }

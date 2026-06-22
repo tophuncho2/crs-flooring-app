@@ -12,7 +12,7 @@ export type CreateProductInput = {
   // Mutable on create AND update. Canonical decimal string (mirrors inventory
   // `startingStock`); Prisma coerces it to the Decimal column. null clears it.
   coveragePerUnit: string | null
-  note: string | null
+  productNamingAddon: string | null
 }
 
 // Update form omits `categoryId` — immutable post-create. Mirrors the domain

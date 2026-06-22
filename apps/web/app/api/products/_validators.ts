@@ -46,7 +46,7 @@ function parseSharedFields(body: Record<string, unknown>) {
     style: parseOptionalString(body.style),
     color: parseOptionalString(body.color),
     coveragePerUnit: parseCoveragePerUnit(body.coveragePerUnit),
-    note: parseOptionalString(body.note),
+    productNamingAddon: parseOptionalString(body.productNamingAddon),
   }
 }
 

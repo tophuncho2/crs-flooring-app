@@ -31,7 +31,7 @@ const EMPTY_PRODUCT: ProductRecord = {
   stockUnitName: "",
   stockUnitAbbrev: "",
   coveragePerUnit: "",
-  note: "",
+  productNamingAddon: "",
   createdAt: "",
   updatedAt: "",
   category: {

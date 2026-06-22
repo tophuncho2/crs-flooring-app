@@ -26,7 +26,7 @@ export type CreateProductInput = {
   // string off the wire (mirrors inventory `startingStock`); Prisma coerces it
   // to the Decimal column on write.
   coveragePerUnit: string | null
-  note: string | null
+  productNamingAddon: string | null
   sendUnitName: string | null
   sendUnitAbbrev: string | null
   stockUnitName: string | null
@@ -61,7 +61,7 @@ export async function createProduct(
       style: input.style,
       color: input.color,
       coveragePerUnit: input.coveragePerUnit,
-      note: input.note,
+      productNamingAddon: input.productNamingAddon,
       sendUnitName: input.sendUnitName,
       sendUnitAbbrev: input.sendUnitAbbrev,
       stockUnitName: input.stockUnitName,
@@ -83,7 +83,7 @@ export async function updateProduct(
   if (input.style !== undefined) data.style = input.style
   if (input.color !== undefined) data.color = input.color
   if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
-  if (input.note !== undefined) data.note = input.note
+  if (input.productNamingAddon !== undefined) data.productNamingAddon = input.productNamingAddon
 
   const row = await client.flooringProduct.update({
     where: { id },

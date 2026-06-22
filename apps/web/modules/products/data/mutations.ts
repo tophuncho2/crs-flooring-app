@@ -10,7 +10,7 @@ export type ProductRequestInput = {
   manufacturerId: string
   style: string
   color: string
-  note: string
+  productNamingAddon: string
 }
 
 function toCreateRequestBody(input: ProductRequestInput): Record<string, unknown> {

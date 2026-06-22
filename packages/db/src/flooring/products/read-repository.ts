@@ -36,7 +36,7 @@ export type ProductRecord = {
   stockUnitName: string
   stockUnitAbbrev: string
   coveragePerUnit: string
-  note: string
+  productNamingAddon: string
   createdAt: string
   updatedAt: string
   category: ProductRecordCategory
@@ -88,7 +88,7 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     stockUnitName: product.stockUnitName ?? "",
     stockUnitAbbrev: product.stockUnitAbbrev ?? "",
     coveragePerUnit: product.coveragePerUnit?.toString() ?? "",
-    note: product.note ?? "",
+    productNamingAddon: product.productNamingAddon ?? "",
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
     category: {
