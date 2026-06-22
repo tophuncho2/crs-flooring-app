@@ -8,7 +8,6 @@ import {
 function row(overrides: Partial<WarehouseRow> = {}): WarehouseRow {
   return {
     id: "wh-1",
-    number: 1,
     name: "Main Depot",
     streetAddress: "1 Main St",
     city: "Austin",

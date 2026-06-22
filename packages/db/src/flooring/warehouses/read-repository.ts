@@ -19,7 +19,6 @@ import {
 
 export type WarehouseRecord = {
   id: string
-  number: number
   name: string
   streetAddress: string
   city: string
@@ -39,7 +38,6 @@ export type WarehouseDetailRecord = WarehouseRecord
 export function normalizeWarehouseRow(row: WarehouseRowPayload): WarehouseRecord {
   return {
     id: row.id,
-    number: row.number,
     name: row.name,
     streetAddress: row.streetAddress ?? "",
     city: row.city ?? "",
@@ -138,15 +136,6 @@ export async function warehouseNameExists(
   return Boolean(existing)
 }
 
-export async function getExistingWarehouseNumbers(
-  client: WarehousesDbClient = db,
-): Promise<number[]> {
-  const rows = await client.flooringWarehouse.findMany({
-    select: { number: true },
-  })
-  return rows.map((r) => r.number)
-}
-
 // --- List-view read ---
 
 export type WarehouseListViewOptions = {
@@ -163,7 +152,6 @@ export type WarehouseListViewResult = {
 function normalizeWarehouseListRow(row: WarehouseListRowPayload): WarehouseListRow {
   return {
     id: row.id,
-    number: row.number,
     name: row.name,
     streetAddress: row.streetAddress ?? "",
     city: row.city ?? "",

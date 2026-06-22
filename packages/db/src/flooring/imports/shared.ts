@@ -8,7 +8,7 @@ export const importRowSelect = {
   purchaseOrderNumber: true,
   internalNotes: true,
   warehouseId: true,
-  warehouse: { select: { id: true, name: true, number: true } },
+  warehouse: { select: { id: true, name: true } },
   manufacturerId: true,
   manufacturer: { select: { id: true, companyName: true } },
   _count: { select: { stagedInventoryRows: true, inventories: true } },

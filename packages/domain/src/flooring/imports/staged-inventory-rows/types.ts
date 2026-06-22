@@ -17,7 +17,6 @@ export type StagedInventoryRow = {
   dyeLot: string
   warehouseId: string
   warehouseName: string
-  warehouseNumber: string
   location: string
   startingStock: string
   cost: string

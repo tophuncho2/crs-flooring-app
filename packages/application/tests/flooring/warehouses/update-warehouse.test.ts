@@ -47,9 +47,9 @@ beforeEach(() => {
   updateWarehouseMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  getWarehouseByIdMock.mockResolvedValue({ id: ID, number: 1, name: "Main Depot" })
+  getWarehouseByIdMock.mockResolvedValue({ id: ID, name: "Main Depot" })
   warehouseNameExistsMock.mockResolvedValue(false)
-  updateWarehouseMock.mockResolvedValue({ id: ID, number: 1, name: "Renamed Depot" })
+  updateWarehouseMock.mockResolvedValue({ id: ID, name: "Renamed Depot" })
 })
 
 describe("updateWarehouseUseCase", () => {
@@ -97,7 +97,7 @@ describe("updateWarehouseUseCase", () => {
   })
 
   it("returns the updated record on success", async () => {
-    const updated = { id: ID, number: 1, name: "Renamed Depot" }
+    const updated = { id: ID, name: "Renamed Depot" }
     updateWarehouseMock.mockResolvedValue(updated)
     expect(await updateWarehouseUseCase(ID, { name: "Renamed Depot" })).toBe(updated)
   })

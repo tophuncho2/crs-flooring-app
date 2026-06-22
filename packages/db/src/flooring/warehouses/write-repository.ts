@@ -21,7 +21,6 @@ function normalizeNullablePhone(value: string | null | undefined): string | null
 // --- Input types ---
 
 export type CreateWarehouseInput = {
-  number: number
   name: string
   streetAddress: string | null
   city: string | null
@@ -47,7 +46,6 @@ export async function createWarehouse(
 ): Promise<WarehouseRecord> {
   const row = await client.flooringWarehouse.create({
     data: {
-      number: input.number,
       name: input.name,
       streetAddress: input.streetAddress,
       city: input.city,

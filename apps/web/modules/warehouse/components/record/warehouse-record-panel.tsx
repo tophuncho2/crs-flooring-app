@@ -51,7 +51,6 @@ export function WarehouseRecordPanel({
             onFieldChange={(field, value) =>
               primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
             }
-            number={record.number}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
           />

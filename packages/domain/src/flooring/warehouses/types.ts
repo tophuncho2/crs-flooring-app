@@ -1,6 +1,5 @@
 export type WarehouseRow = {
   id: string
-  number: number
   name: string
   streetAddress: string
   city: string

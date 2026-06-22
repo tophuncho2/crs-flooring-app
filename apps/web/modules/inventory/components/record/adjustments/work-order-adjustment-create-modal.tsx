@@ -46,7 +46,6 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     dyeLot: adj.dyeLot ?? "",
     warehouseId: adj.warehouseId,
     warehouseName: adj.warehouseName,
-    warehouseNumber: "",
     location: adj.location ?? "",
     startingStock: "",
     cost: "",

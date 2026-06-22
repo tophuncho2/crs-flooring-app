@@ -43,7 +43,6 @@ export function normalizeStagedInventoryRow(
     dyeLot: row.dyeLot ?? "",
     warehouseId: row.warehouseId,
     warehouseName: row.warehouse.name,
-    warehouseNumber: String(row.warehouse.number),
     location: row.location ?? "",
     startingStock: toDecimalString(row.startingStock),
     cost: toDecimalString(row.cost),

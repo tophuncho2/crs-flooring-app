@@ -54,7 +54,6 @@ function inventory(): InventoryDetail {
     dyeLot: "DL-3",
     warehouseId: "wh-1",
     warehouseName: "Main Warehouse",
-    warehouseNumber: "1",
     location: "A1",
     startingStock: "100",
     netDeducted: "0",

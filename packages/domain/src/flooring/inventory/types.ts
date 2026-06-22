@@ -25,7 +25,6 @@ export type InventoryRow = {
   dyeLot: string
   warehouseId: string
   warehouseName: string
-  warehouseNumber: string
   location: string
   startingStock: string
   cost: string
@@ -92,7 +91,6 @@ export type InventoryProductOption = {
 export type InventoryWarehouseOption = {
   id: string
   name: string
-  number: number
 }
 
 export type InventoryCategoryOption = {

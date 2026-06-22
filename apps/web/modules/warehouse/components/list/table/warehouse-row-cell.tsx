@@ -7,8 +7,6 @@ export function renderWarehouseRowCell(
   row: WarehouseListRow,
 ): ReactNode {
   switch (column.key) {
-    case "number":
-      return <span className="tabular-nums">{row.number}</span>
     case "name":
       return <span className="font-medium">{row.name}</span>
     case "streetAddress":

@@ -23,7 +23,6 @@ export type WarehousePrimaryFieldsSectionProps = {
   editable: boolean
   onFieldChange: (field: keyof WarehouseForm, value: string) => void
   /** Read-only summary shown in the detail view; omit in the create flow. */
-  number?: number
   createdAt?: string
   updatedAt?: string
 }
@@ -32,11 +31,10 @@ export function WarehousePrimaryFieldsSection({
   draft,
   editable,
   onFieldChange,
-  number,
   createdAt,
   updatedAt,
 }: WarehousePrimaryFieldsSectionProps) {
-  const showSummary = number !== undefined
+  const showSummary = createdAt !== undefined || updatedAt !== undefined
 
   return (
     <FieldSection gap="0.75rem">
@@ -75,11 +73,6 @@ export function WarehousePrimaryFieldsSection({
       />
       {showSummary ? (
         <>
-          <CellAt col={1} colSpan={5}>
-            <FormField label="Warehouse #">
-              <StaticFieldValue>{number ?? "—"}</StaticFieldValue>
-            </FormField>
-          </CellAt>
           <CellAt col={1} colSpan={5}>
             <FormField label="Created">
               <StaticFieldValue>{formatDate(createdAt ?? "")}</StaticFieldValue>

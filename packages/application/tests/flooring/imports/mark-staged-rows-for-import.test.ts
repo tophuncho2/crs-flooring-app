@@ -60,7 +60,6 @@ function readyStagedRow(overrides: Record<string, unknown> = {}) {
     dyeLot: "",
     warehouseId: "wh-1",
     warehouseName: "Main",
-    warehouseNumber: "1",
     location: "",
     startingStock: "5",
     status: "DRAFT" as const,

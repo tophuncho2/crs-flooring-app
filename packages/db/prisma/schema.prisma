@@ -475,7 +475,6 @@ model FlooringTemplateItem {
 
 model FlooringWarehouse {
   id                  String                             @id @default(uuid())
-  number              Int                                @unique
   name                String                             @unique
   streetAddress       String?
   city                String?

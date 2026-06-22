@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const {
   withDatabaseTransactionMock,
   warehouseNameExistsMock,
-  getExistingWarehouseNumbersMock,
   createWarehouseMock,
   PrismaKnownError,
 } = vi.hoisted(() => {
@@ -19,7 +18,6 @@ const {
   return {
     withDatabaseTransactionMock: vi.fn(),
     warehouseNameExistsMock: vi.fn(),
-    getExistingWarehouseNumbersMock: vi.fn(),
     createWarehouseMock: vi.fn(),
     PrismaKnownError,
   }
@@ -31,7 +29,6 @@ vi.mock("@builders/db", () => ({
     err?.code === "P2002" && (err?.meta?.target?.includes?.(field) ?? false),
   withDatabaseTransaction: withDatabaseTransactionMock,
   warehouseNameExists: warehouseNameExistsMock,
-  getExistingWarehouseNumbers: getExistingWarehouseNumbersMock,
   createWarehouse: createWarehouseMock,
 }))
 
@@ -53,37 +50,34 @@ function input(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   warehouseNameExistsMock.mockReset()
-  getExistingWarehouseNumbersMock.mockReset()
   createWarehouseMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
   warehouseNameExistsMock.mockResolvedValue(false)
-  getExistingWarehouseNumbersMock.mockResolvedValue([])
-  createWarehouseMock.mockResolvedValue({ id: "wh-1", number: 1, name: "Main Depot" })
+  createWarehouseMock.mockResolvedValue({ id: "wh-1", name: "Main Depot" })
 })
 
 describe("createWarehouseUseCase", () => {
-  it("rejects a duplicate name with 409 before assigning a number or inserting", async () => {
+  it("rejects a duplicate name with 409 before inserting", async () => {
     warehouseNameExistsMock.mockResolvedValue(true)
     await expect(createWarehouseUseCase(input() as never)).rejects.toMatchObject({
       code: "WAREHOUSE_NAME_CONFLICT",
       status: 409,
       field: "name",
     })
-    expect(getExistingWarehouseNumbersMock).not.toHaveBeenCalled()
     expect(createWarehouseMock).not.toHaveBeenCalled()
   })
 
-  it("assigns the next number from the existing set and returns the created record", async () => {
-    getExistingWarehouseNumbersMock.mockResolvedValue([1, 2, 3])
-    const created = { id: "wh-9", number: 4, name: "Main Depot" }
+  it("inserts the warehouse once and returns the created record", async () => {
+    const created = { id: "wh-9", name: "Main Depot" }
     createWarehouseMock.mockResolvedValue(created)
 
     const result = await createWarehouseUseCase(input() as never)
 
     expect(result).toBe(created)
+    expect(createWarehouseMock).toHaveBeenCalledTimes(1)
     expect(createWarehouseMock).toHaveBeenCalledWith(
-      expect.objectContaining({ number: 4, name: "Main Depot" }),
+      expect.objectContaining({ name: "Main Depot" }),
       expect.anything(),
     )
   })
@@ -96,32 +90,6 @@ describe("createWarehouseUseCase", () => {
       code: "WAREHOUSE_NAME_CONFLICT",
       status: 409,
     })
-  })
-
-  it("retries once when the number races on the first attempt, then succeeds", async () => {
-    const created = { id: "wh-9", number: 2, name: "Main Depot" }
-    createWarehouseMock
-      .mockRejectedValueOnce(
-        new PrismaKnownError("dup", { code: "P2002", meta: { target: ["number"] } }),
-      )
-      .mockResolvedValueOnce(created)
-
-    const result = await createWarehouseUseCase(input() as never)
-
-    expect(result).toBe(created)
-    expect(getExistingWarehouseNumbersMock).toHaveBeenCalledTimes(2)
-    expect(createWarehouseMock).toHaveBeenCalledTimes(2)
-  })
-
-  it("gives up with WAREHOUSE_NUMBER_CONFLICT when the number races on both attempts", async () => {
-    createWarehouseMock.mockRejectedValue(
-      new PrismaKnownError("dup", { code: "P2002", meta: { target: ["number"] } }),
-    )
-    await expect(createWarehouseUseCase(input() as never)).rejects.toMatchObject({
-      code: "WAREHOUSE_NUMBER_CONFLICT",
-      status: 409,
-    })
-    expect(createWarehouseMock).toHaveBeenCalledTimes(2)
   })
 
   it("re-throws unexpected database errors unchanged", async () => {

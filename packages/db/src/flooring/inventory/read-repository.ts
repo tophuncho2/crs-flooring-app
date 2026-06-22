@@ -91,7 +91,6 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     dyeLot: payload.dyeLot ?? "",
     warehouseId: payload.warehouseId,
     warehouseName: payload.warehouse.name,
-    warehouseNumber: String(payload.warehouse.number),
     location: payload.location ?? "",
     startingStock: toDecimalString(payload.startingStock),
     cost: toDecimalString(payload.cost),
@@ -697,8 +696,8 @@ export async function listInventoryOptions(
       orderBy: { name: "asc" },
     }),
     client.flooringWarehouse.findMany({
-      select: { id: true, name: true, number: true },
-      orderBy: { number: "asc" },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
     }),
     client.flooringCategory.findMany({
       select: { id: true, name: true },
