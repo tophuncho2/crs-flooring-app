@@ -12,7 +12,6 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "stockUnitAbbrev",
   "sendUnitName",
   "sendUnitAbbrev",
-  "fifoReceivedAt",
   "warehouseId",
   "rollNumber",
   "dyeLot",

@@ -11,7 +11,6 @@ import {
 import { StatusBadge } from "@/engines/common"
 import {
   formatEasternDateTime,
-  formatFifoReceivedAtEastern,
   formatInventoryQuantity,
   formatMoney,
   INVENTORY_DYE_LOT_MAX,
@@ -237,10 +236,6 @@ export function PurchaseOrderNumberField({ value }: { value: string }) {
 
 export function ImportNumberField({ value }: { value: string }) {
   return <ReadonlyField label="Import #" value={value} />
-}
-
-export function FifoReceivedField({ value }: { value: string }) {
-  return <ReadonlyField label="FIFO Received" value={formatFifoReceivedAtEastern(value)} />
 }
 
 export function CreatedAtField({ value }: { value: string }) {

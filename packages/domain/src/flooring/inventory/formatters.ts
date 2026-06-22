@@ -1,4 +1,3 @@
-import { formatEasternDateTime } from "../../shared/date-format.js"
 import { formatMoney } from "../../shared/money.js"
 import type { FlooringInventoryAdjustmentType } from "./adjustments/types.js"
 
@@ -66,8 +65,4 @@ export function composeRollNumberDisplay(prefix: string, number: string): string
   const trimmed = number.trim()
   if (trimmed.length === 0) return ""
   return `${prefix}${trimmed}`
-}
-
-export function formatFifoReceivedAtEastern(value: Date | string): string {
-  return formatEasternDateTime(value)
 }

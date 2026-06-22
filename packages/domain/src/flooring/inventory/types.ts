@@ -35,7 +35,6 @@ export type InventoryRow = {
   wasMerged: boolean
   note: string
   internalNotes: string
-  fifoReceivedAt: string
   createdAt: string
   updatedAt: string
 }

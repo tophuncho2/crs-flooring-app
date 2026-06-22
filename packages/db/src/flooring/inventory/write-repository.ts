@@ -60,7 +60,6 @@ export type MaterializeInventoryRowFields = {
   startingStock: Prisma.Decimal | string | number
   cost: Prisma.Decimal | string | number | null
   freight: Prisma.Decimal | string | number | null
-  fifoReceivedAt: Date
 }
 
 /**
@@ -152,9 +151,8 @@ export async function deleteInventoryRecordById(
  * path). Excludes the DB-managed columns: `id`, `inventoryNumber` /
  * `inventoryNumberInt` (sequence/computed) and `updatedAt`. `createdAt` is optional: omitted, it falls to
  * the DB `@default(now())` (the duplicate path); supplied, the caller can pin
- * it (the manual-create path stamps `createdAt` and `fifoReceivedAt` from one
- * timestamp so they match exactly). The caller pastes the snapshot columns,
- * drops import provenance to null, and stamps `fifoReceivedAt`.
+ * it (the manual-create path stamps `createdAt` to the creation instant). The
+ * caller pastes the snapshot columns and drops import provenance to null.
  */
 export type InsertInventoryRowInput = {
   importEntryId: string | null
@@ -180,7 +178,6 @@ export type InsertInventoryRowInput = {
   freight: Prisma.Decimal | string | number | null
   netDeducted: Prisma.Decimal | string | number
   isArchived: boolean
-  fifoReceivedAt: Date
   createdAt?: Date
 }
 
@@ -217,7 +214,6 @@ export async function insertInventoryRow(
       freight: input.freight,
       netDeducted: input.netDeducted,
       isArchived: input.isArchived,
-      fifoReceivedAt: input.fifoReceivedAt,
       ...(input.createdAt ? { createdAt: input.createdAt } : {}),
     },
     select: { id: true },
@@ -243,8 +239,8 @@ export async function insertInventoryRow(
  *    Postgres). Pre-assignment also lets the caller correlate inserts with
  *    their source staged rows for the secondary `updateMany`.
  *  - Caller computed every per-row field (categoryName, unit
- *    snapshots, importNumber, purchaseOrderNumber,
- *    fifoReceivedAt, etc.) — this primitive does no field math.
+ *    snapshots, importNumber, purchaseOrderNumber, etc.) — this primitive
+ *    does no field math. `createdAt` is DB-defaulted (`@default(now())`).
  *  - Caller has already transitioned the source staged rows from DRAFT to
  *    QUEUED via `markStagedRowsForImport`. The status-flip below targets
  *    QUEUED → IMPORTED defensively (rows in any other state are skipped by
@@ -303,7 +299,6 @@ export async function materializeStagedRowsToInventory(
       startingStock: row.startingStock,
       cost: row.cost,
       freight: row.freight,
-      fifoReceivedAt: row.fifoReceivedAt,
     }),
   )
   await tx.flooringInventory.createMany({ data: createData, skipDuplicates: false })

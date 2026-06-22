@@ -60,13 +60,11 @@ export async function createInventoryUseCase(
       input,
     )
 
-    // Stamp createdAt and fifoReceivedAt from the same instant so the row's
-    // FIFO position matches its creation time exactly.
+    // Pin createdAt to the creation instant — it's the row's FIFO position.
     const now = new Date()
     return insertInventoryRow(c, {
       ...fields,
       createdAt: now,
-      fifoReceivedAt: now,
     })
   })
 }

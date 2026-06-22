@@ -41,8 +41,6 @@ export async function materializeImportedStagedRowsUseCase(
       })
     }
 
-    const fifoReceivedAt = new Date()
-
     const inventoryRowsToCreate: Array<
       MaterializeInventoryRowFields & { id: string; sourceStagedRowId: string }
     > = loadedRows.map((row) => ({
@@ -68,7 +66,6 @@ export async function materializeImportedStagedRowsUseCase(
       startingStock: row.startingStock.toString(),
       cost: row.cost,
       freight: row.freight,
-      fifoReceivedAt,
     }))
 
     const result = await materializeStagedRowsToInventory(c, {

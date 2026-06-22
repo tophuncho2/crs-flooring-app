@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
 import {
   formatEasternDateTime,
-  formatFifoReceivedAtEastern,
   formatInventoryQuantity,
   type InventoryRow,
 } from "@builders/domain"
@@ -55,8 +54,8 @@ export function renderInventoryRowCell(
       return row.purchaseOrderNumber || "-"
     case "importNumber":
       return row.importNumber || "-"
-    case "fifoReceivedAt":
-      return formatFifoReceivedAtEastern(row.fifoReceivedAt)
+    case "createdAt":
+      return formatEasternDateTime(row.createdAt) || "—"
     case "updatedAt":
       return formatEasternDateTime(row.updatedAt) || "—"
     default:

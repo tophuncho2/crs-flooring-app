@@ -62,7 +62,6 @@ function inventory(): InventoryDetail {
     wasMerged: false,
     note: "",
     internalNotes: "",
-    fifoReceivedAt: "",
     createdAt: "",
     updatedAt: "",
     inventoryAdjustments: [],

@@ -101,7 +101,6 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     wasMerged: payload.wasMerged,
     note: payload.note ?? "",
     internalNotes: payload.internalNotes ?? "",
-    fifoReceivedAt: payload.fifoReceivedAt.toISOString(),
     createdAt: payload.createdAt.toISOString(),
     updatedAt: payload.updatedAt.toISOString(),
   }
@@ -186,7 +185,7 @@ export async function listInventory(
   const rows = await client.flooringInventory.findMany({
     where: buildListWhere(filter),
     select: inventoryRowSelect,
-    orderBy: [{ fifoReceivedAt: "asc" }, { rollNumber: "asc" }, { id: "asc" }],
+    orderBy: [{ createdAt: "asc" }, { rollNumber: "asc" }, { id: "asc" }],
   })
   return rows.map(normalizeInventoryRow)
 }

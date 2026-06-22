@@ -6,7 +6,6 @@ import {
   CostReadonlyField,
   CreatedAtField,
   DyeLotReadOnlyField,
-  FifoReceivedField,
   FreightReadonlyField,
   ImportNumberField,
   InventoryFieldGrid,
@@ -133,9 +132,6 @@ export function InventoryPrimaryFieldsSection({
         </CellAt>
         <CellAt col={1} row={2} colSpan={2}>
           <MergedField wasMerged={record.wasMerged} />
-        </CellAt>
-        <CellAt col={3} row={2} colSpan={2}>
-          <FifoReceivedField value={record.fifoReceivedAt} />
         </CellAt>
       </InventoryFieldGrid>
     </div>

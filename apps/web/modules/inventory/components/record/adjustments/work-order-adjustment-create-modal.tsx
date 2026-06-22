@@ -56,7 +56,6 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     wasMerged: false,
     note: adj.inventoryNote ?? "",
     internalNotes: "",
-    fifoReceivedAt: "",
     createdAt: "",
     updatedAt: "",
   }

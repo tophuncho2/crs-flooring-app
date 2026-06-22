@@ -83,7 +83,7 @@ beforeEach(() => {
 
 describe("createInventoryUseCase", () => {
   describe("happy path", () => {
-    it("reads product + warehouse, builds the insert, and stamps createdAt === fifoReceivedAt", async () => {
+    it("reads product + warehouse, builds the insert, and stamps createdAt", async () => {
       const result = await createInventoryUseCase(input())
 
       expect(result).toBe(CREATED_RECORD)
@@ -102,10 +102,8 @@ describe("createInventoryUseCase", () => {
 
       const insertArg = insertInventoryRowMock.mock.calls[0]![1] as Record<string, unknown>
       expect(insertArg).toMatchObject(BUILT_FIELDS)
+      // createdAt is stamped to the creation instant — the row's FIFO position.
       expect(insertArg.createdAt).toBeInstanceOf(Date)
-      expect(insertArg.fifoReceivedAt).toBeInstanceOf(Date)
-      // Both stamped from one instant so FIFO position matches creation time.
-      expect(insertArg.createdAt).toBe(insertArg.fifoReceivedAt)
     })
   })
 
