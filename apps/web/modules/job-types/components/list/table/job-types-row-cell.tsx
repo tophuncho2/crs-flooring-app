@@ -7,6 +7,8 @@ export function renderJobTypeRowCell(
   row: JobTypeListRow,
 ): ReactNode {
   switch (column.key) {
+    case "jobTypeNumber":
+      return <span className="font-medium tabular-nums">{row.jobTypeNumber}</span>
     case "name":
       return <span className="font-medium">{row.name}</span>
     case "createdAt":

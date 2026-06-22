@@ -21,11 +21,13 @@ export function parseJobTypesListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<JobTypesListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
+  const jobTypeNumberRaw = (readSearchParam(searchParams, "jobTypeNumber") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
   return {
     search: searchRaw || undefined,
+    filters: jobTypeNumberRaw ? { jobTypeNumber: jobTypeNumberRaw } : undefined,
     page,
     pageSize: LIST_JOB_TYPES_PAGE_SIZE,
   }
@@ -36,6 +38,8 @@ export function buildJobTypesListSearchString(
 ): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
+  const jobTypeNumber = input.filters?.jobTypeNumber?.trim()
+  if (jobTypeNumber) params.set("jobTypeNumber", jobTypeNumber)
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   return params.toString()

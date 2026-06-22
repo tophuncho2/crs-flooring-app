@@ -1,5 +1,6 @@
 export type JobType = {
   id: string
+  jobTypeNumber: string
   name: string
   createdAt: string
   updatedAt: string

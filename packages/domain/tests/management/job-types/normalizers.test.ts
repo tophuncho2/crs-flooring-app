@@ -9,6 +9,7 @@ describe("normalizeJobType", () => {
     expect(
       normalizeJobType({
         id: "jt-1",
+        jobTypeNumber: "JT-1",
         name: "Install",
         createdAt: new Date("2026-05-26T01:02:03.000Z"),
         updatedAt: new Date("2026-05-27T04:05:06.000Z"),
@@ -17,6 +18,7 @@ describe("normalizeJobType", () => {
       }),
     ).toEqual({
       id: "jt-1",
+      jobTypeNumber: "JT-1",
       name: "Install",
       createdAt: "2026-05-26T01:02:03.000Z",
       updatedAt: "2026-05-27T04:05:06.000Z",
@@ -29,6 +31,7 @@ describe("normalizeJobType", () => {
     expect(
       normalizeJobType({
         id: "jt-2",
+        jobTypeNumber: "JT-2",
         name: "Repair",
         createdAt: "2026-05-26T00:00:00.000Z",
         updatedAt: "2026-05-26T00:00:00.000Z",
@@ -37,6 +40,7 @@ describe("normalizeJobType", () => {
       }),
     ).toEqual({
       id: "jt-2",
+      jobTypeNumber: "JT-2",
       name: "Repair",
       createdAt: "2026-05-26T00:00:00.000Z",
       updatedAt: "2026-05-26T00:00:00.000Z",

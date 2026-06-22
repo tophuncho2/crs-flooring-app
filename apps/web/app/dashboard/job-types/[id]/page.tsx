@@ -39,6 +39,8 @@ export default async function JobTypeDetailPage({
     <JobTypeDetailClient
       initialJobType={result.data.jobType}
       stats={result.data.stats}
+      previousJobTypeId={result.data.previousJobTypeId}
+      nextJobTypeId={result.data.nextJobTypeId}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/job-types")}
     />
   )

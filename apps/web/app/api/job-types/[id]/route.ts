@@ -1,5 +1,5 @@
-import { deleteJobTypeUseCase } from "@builders/application"
-import { getJobTypeById } from "@builders/db"
+import { deleteJobTypeUseCase, JobTypeExecutionError } from "@builders/application"
+import { getJobTypeById, getJobTypeDetailById } from "@builders/db"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
@@ -27,7 +27,14 @@ export async function GET(request: Request, { params }: RouteContext) {
   try {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
-    const jobType = await getJobTypeById(id)
+    const jobType = await getJobTypeDetailById(id, { withNeighbors: true })
+    if (!jobType) {
+      throw new JobTypeExecutionError({
+        code: "JOB_TYPE_NOT_FOUND",
+        message: "Job type not found",
+        status: 404,
+      })
+    }
     return routeJson(access, { jobType })
   } catch (error) {
     return routeError(access, error)

@@ -389,16 +389,20 @@ model FlooringInventoryAdjustment {
 }
 
 model FlooringJobType {
-  id         String              @id @default(uuid())
-  name       String              @unique
-  createdAt  DateTime            @default(now())
-  updatedAt  DateTime            @updatedAt
-  createdBy  String?
-  updatedBy  String?
-  templates  FlooringTemplate[]
-  workOrders FlooringWorkOrder[]
+  id               String              @id @default(uuid())
+  jobTypeNumber    String              @unique @default(dbgenerated("('JT-'::text || (nextval('flooring_job_type_number_seq'::regclass))::text)")) @map("job_type_number")
+  jobTypeNumberInt Int?                @default(dbgenerated("(SUBSTRING(job_type_number FROM 4))::integer"))
+  name             String              @unique
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  createdBy        String?
+  updatedBy        String?
+  templates        FlooringTemplate[]
+  workOrders       FlooringWorkOrder[]
 
   @@index([name])
+  @@index([jobTypeNumber])
+  @@index([jobTypeNumberInt])
   @@map("flooring_job_type")
 }
 

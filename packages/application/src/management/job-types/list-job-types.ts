@@ -6,7 +6,10 @@ import {
 import { listJobTypesForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
-export type JobTypesListFilters = Record<string, never>
+export type JobTypesListFilters = {
+  // Exact JT-number search (matches `jobTypeNumberInt`); accepts "7" or "JT-7".
+  jobTypeNumber?: string
+}
 
 export async function listJobTypesUseCase(
   input: ListInput<JobTypesListFilters>,
@@ -19,9 +22,11 @@ export async function listJobTypesUseCase(
   )
 
   const search = input.search?.trim() || undefined
+  const jobTypeNumber = input.filters?.jobTypeNumber?.trim() || undefined
 
   const { rows, total } = await listJobTypesForListView({
     search,
+    jobTypeNumber,
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

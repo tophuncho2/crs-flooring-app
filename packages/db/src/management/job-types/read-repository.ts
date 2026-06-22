@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
+import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 import {
   normalizeJobType,
   normalizeJobTypeOption,
@@ -11,6 +12,21 @@ import {
 
 type JobTypesDbClient = PrismaClient | Prisma.TransactionClient
 
+// Adjacent job-type ids in the global JT-number order — powers the record-view
+// shell stepper. Both null at the sequence edges (or when the row carries no
+// generated int yet).
+export type JobTypeNeighbors = {
+  previousJobType: { id: string } | null
+  nextJobType: { id: string } | null
+}
+
+export const NO_JOB_TYPE_NEIGHBORS: JobTypeNeighbors = {
+  previousJobType: null,
+  nextJobType: null,
+}
+
+export type JobTypeDetailRecord = JobType & JobTypeNeighbors
+
 export async function listJobTypes(client: JobTypesDbClient = db): Promise<JobType[]> {
   const jobTypes = await client.flooringJobType.findMany({
     orderBy: { name: "asc" },
@@ -20,6 +36,7 @@ export async function listJobTypes(client: JobTypesDbClient = db): Promise<JobTy
 
 export type JobTypeListViewOptions = {
   search?: string
+  jobTypeNumber?: string
   skip: number
   take: number
 }
@@ -33,9 +50,21 @@ export async function listJobTypesForListView(
   options: JobTypeListViewOptions,
   client: JobTypesDbClient = db,
 ): Promise<JobTypeListViewResult> {
-  const where: Prisma.FlooringJobTypeWhereInput | undefined = options.search
-    ? { name: { contains: options.search, mode: "insensitive" } }
-    : undefined
+  const clauses: Prisma.FlooringJobTypeWhereInput[] = []
+  if (options.search) {
+    clauses.push({ name: { contains: options.search, mode: "insensitive" } })
+  }
+  // JT-number bar: EXACT match on the generated int (btree), mirroring the
+  // warehouse store-# bar. Strip non-digits so "7" or "JT-7" both resolve to 7;
+  // a non-numeric query hits the -1 sentinel (the sequence is always positive)
+  // so it matches nothing.
+  const jobTypeNumber = options.jobTypeNumber?.trim()
+  if (jobTypeNumber) {
+    const digits = jobTypeNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    clauses.push({ jobTypeNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+  }
+  const where = clauses.length > 0 ? { AND: clauses } : undefined
 
   const [total, rows] = await Promise.all([
     client.flooringJobType.count({ where }),
@@ -91,6 +120,48 @@ export async function getJobTypeById(
     where: { id },
   })
   return normalizeJobType(jobType)
+}
+
+/**
+ * Resolve the job-type rows immediately before/after the given numeric sort key
+ * in the global JT-number order (`jobTypeNumberInt`). Powers the record-view
+ * shell stepper — deliberately global (no scoping), two single-row lookups on
+ * the `jobTypeNumberInt` index. Both null when the key is null (no generated
+ * value yet) or the row sits at the sequence edge.
+ */
+async function getJobTypeNeighbors(
+  jobTypeNumberInt: number | null,
+  client: JobTypesDbClient = db,
+): Promise<JobTypeNeighbors> {
+  if (jobTypeNumberInt === null) return NO_JOB_TYPE_NEIGHBORS
+
+  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+    "jobTypeNumberInt",
+    jobTypeNumberInt,
+  )
+  const [previous, next] = await Promise.all([
+    client.flooringJobType.findFirst({ ...previousQuery, select: { id: true } }),
+    client.flooringJobType.findFirst({ ...nextQuery, select: { id: true } }),
+  ])
+
+  return {
+    previousJobType: previous ? { id: previous.id } : null,
+    nextJobType: next ? { id: next.id } : null,
+  }
+}
+
+export async function getJobTypeDetailById(
+  id: string,
+  options: { withNeighbors?: boolean } = {},
+  client: JobTypesDbClient = db,
+): Promise<JobTypeDetailRecord | null> {
+  const row = await client.flooringJobType.findUnique({ where: { id } })
+  if (!row) return null
+  const neighbors =
+    options.withNeighbors === false
+      ? NO_JOB_TYPE_NEIGHBORS
+      : await getJobTypeNeighbors(row.jobTypeNumberInt, client)
+  return { ...normalizeJobType(row), ...neighbors }
 }
 
 export async function countJobTypes(client: JobTypesDbClient = db): Promise<number> {

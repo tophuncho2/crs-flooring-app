@@ -47,6 +47,7 @@ export function validateUpdateJobTypeInput(
 
 const listJobTypesQuerySchema = z.object({
   q: z.string().optional(),
+  jobTypeNumber: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -76,9 +77,12 @@ export function validateListJobTypesQuery(
   const parsed = parseResult.data
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
+  const trimmedJobTypeNumber = parsed.jobTypeNumber?.trim()
+  const jobTypeNumber = trimmedJobTypeNumber ? trimmedJobTypeNumber : undefined
 
   return {
     search,
+    filters: { jobTypeNumber },
     page: parsed.page,
     pageSize: parsed.pageSize,
   }

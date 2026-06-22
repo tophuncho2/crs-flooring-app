@@ -13,6 +13,7 @@ import { listJobTypesUseCase } from "../../../src/management/job-types/list-job-
 function callArgs() {
   return listJobTypesForListViewMock.mock.calls[0]![0] as {
     search?: string
+    jobTypeNumber?: string
     skip: number
     take: number
   }
@@ -40,6 +41,14 @@ describe("listJobTypesUseCase", () => {
     listJobTypesForListViewMock.mockClear()
     await listJobTypesUseCase({ search: "   " } as never)
     expect(callArgs().search).toBeUndefined()
+  })
+
+  it("threads a trimmed jobTypeNumber filter through and drops a blank one", async () => {
+    await listJobTypesUseCase({ filters: { jobTypeNumber: "  7  " } } as never)
+    expect(callArgs().jobTypeNumber).toBe("7")
+    listJobTypesForListViewMock.mockClear()
+    await listJobTypesUseCase({ filters: { jobTypeNumber: "   " } } as never)
+    expect(callArgs().jobTypeNumber).toBeUndefined()
   })
 
   it("returns the repository rows and total", async () => {

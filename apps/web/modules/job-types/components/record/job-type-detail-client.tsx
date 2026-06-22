@@ -8,10 +8,14 @@ export function JobTypeDetailClient({
   initialJobType,
   stats,
   backHref,
+  previousJobTypeId,
+  nextJobTypeId,
 }: {
   initialJobType: JobType
   stats: JobTypeStats
   backHref: string
+  previousJobTypeId: string | null
+  nextJobTypeId: string | null
 }) {
   return (
     <RecordDetailClientScaffold
@@ -20,7 +24,15 @@ export function JobTypeDetailClient({
       headerVariant="section"
       dirtyMessage="You have unsaved job type changes. Leave this page without saving?"
     >
-      {(page) => <JobTypeRecordPanel page={page} entry={initialJobType} stats={stats} />}
+      {(page) => (
+        <JobTypeRecordPanel
+          page={page}
+          entry={initialJobType}
+          stats={stats}
+          previousJobTypeId={previousJobTypeId}
+          nextJobTypeId={nextJobTypeId}
+        />
+      )}
     </RecordDetailClientScaffold>
   )
 }
