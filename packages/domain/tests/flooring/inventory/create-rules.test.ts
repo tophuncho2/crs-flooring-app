@@ -105,7 +105,6 @@ describe("buildCreatedInventoryInsert", () => {
     // No import / staged-row / PO provenance for a manual create.
     expect(fields.importEntryId).toBeNull()
     expect(fields.sourceStagedRowId).toBeNull()
-    expect(fields.importNumber).toBeNull()
     expect(fields.purchaseOrderNumber).toBeNull()
 
     // Snapshot columns from the product.

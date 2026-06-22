@@ -30,7 +30,7 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     id: adj.inventoryId,
     inventoryNumber: adj.inventoryNumber ?? "",
     importEntryId: "",
-    importNumber: "",
+    importNumber: null,
     purchaseOrderNumber: "",
     productId: adj.productId,
     productName: adj.productName,

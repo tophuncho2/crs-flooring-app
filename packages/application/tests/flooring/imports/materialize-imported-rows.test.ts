@@ -174,8 +174,10 @@ describe("materializeImportedStagedRowsUseCase", () => {
       expect(callArgs.inventoryRowsToCreate).toHaveLength(1)
 
       const created = callArgs.inventoryRowsToCreate[0]!
-      // From importEntry — importNumber stringified, purchaseOrderNumber passthrough.
-      expect(created.importNumber).toBe("42")
+      // From importEntry — purchaseOrderNumber passthrough. importNumber is no
+      // longer stamped by the worker (derived from the importEntry join at read
+      // time now that the snapshot column is dropped).
+      expect(created.importNumber).toBeUndefined()
       expect(created.purchaseOrderNumber).toBe("PO-2026-1")
       expect(created.importEntryId).toBe(IMPORT_ID)
       // From product — only the FK is stamped; the product name is no longer
@@ -257,7 +259,6 @@ describe("materializeImportedStagedRowsUseCase", () => {
         inventoryRowsToCreate: Array<Record<string, unknown>>
       }).inventoryRowsToCreate[0]!
       expect(created.purchaseOrderNumber).toBeNull()
-      expect(created.importNumber).toBe("99")
     })
 
     it("assigns a unique id to each created inventory row in a batch", async () => {

@@ -234,8 +234,8 @@ export function PurchaseOrderNumberField({ value }: { value: string }) {
   return <ReadonlyField label="PO #" value={value} />
 }
 
-export function ImportNumberField({ value }: { value: string }) {
-  return <ReadonlyField label="Import #" value={value} />
+export function ImportNumberField({ value }: { value: number | null }) {
+  return <ReadonlyField label="Import #" value={value != null ? String(value) : "-"} />
 }
 
 export function CreatedAtField({ value }: { value: string }) {

@@ -9,7 +9,7 @@ export type InventoryRow = {
   id: string
   inventoryNumber: string
   importEntryId: string
-  importNumber: string
+  importNumber: number | null
   purchaseOrderNumber: string
   productId: string
   productName: string

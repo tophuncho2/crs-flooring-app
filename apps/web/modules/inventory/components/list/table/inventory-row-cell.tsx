@@ -53,7 +53,7 @@ export function renderInventoryRowCell(
     case "purchaseOrderNumber":
       return row.purchaseOrderNumber || "-"
     case "importNumber":
-      return row.importNumber || "-"
+      return row.importNumber != null ? String(row.importNumber) : "-"
     case "createdAt":
       return formatEasternDateTime(row.createdAt) || "—"
     case "updatedAt":

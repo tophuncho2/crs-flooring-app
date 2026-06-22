@@ -10,10 +10,6 @@ export function toInventoryFixedString(value: number): string {
   return value.toFixed(2)
 }
 
-export function formatInventoryImportNumber(value: string): string {
-  return value ? `IMP-${value}` : "-"
-}
-
 export function formatInventoryQuantity(value: string, unitLabel: string): string {
   return `${value} ${unitLabel}`.trim()
 }

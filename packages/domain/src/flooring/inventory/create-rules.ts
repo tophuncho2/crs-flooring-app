@@ -43,7 +43,6 @@ export type CreateInventoryProductSnapshot = {
 export type CreatedInventoryInsertFields = {
   importEntryId: null
   sourceStagedRowId: null
-  importNumber: null
   purchaseOrderNumber: null
   productId: string
   categorySlug: string
@@ -166,7 +165,6 @@ export function buildCreatedInventoryInsert(
   return {
     importEntryId: null,
     sourceStagedRowId: null,
-    importNumber: null,
     purchaseOrderNumber: null,
     productId: edits.productId,
     categorySlug: product.categorySlug,

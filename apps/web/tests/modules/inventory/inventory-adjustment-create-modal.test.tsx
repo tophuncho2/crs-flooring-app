@@ -38,7 +38,7 @@ function inventory(): InventoryDetail {
     id: "inv-1",
     inventoryNumber: "INV-1",
     importEntryId: "",
-    importNumber: "",
+    importNumber: null,
     purchaseOrderNumber: "",
     productId: "prod-1",
     productName: "Berber Carpet",

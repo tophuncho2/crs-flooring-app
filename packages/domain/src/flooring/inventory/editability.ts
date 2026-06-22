@@ -6,7 +6,6 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "productId",
   "categorySlug",
   "categoryName",
-  "importNumber",
   "purchaseOrderNumber",
   "stockUnitName",
   "stockUnitAbbrev",

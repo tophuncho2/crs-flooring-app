@@ -47,8 +47,10 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
  * carve-out, this is a data-layer normalizer reusing pure domain
  * formatters/computations; it MUST NOT call domain rules that throw.
  *
- * Snapshot columns (`categoryName`, `importNumber`, `purchaseOrderNumber`)
- * are surfaced as-is; the worker writes them at materialize time.
+ * Snapshot columns (`categoryName`, `purchaseOrderNumber`) are surfaced
+ * as-is; the worker writes them at materialize time. `importNumber` is the
+ * exception — it is derived from the live `importEntry` join (the snapshot
+ * column has been dropped) so it always reflects the linked import's number.
  * `productName` is the exception — it is now derived from
  * the live `product` join (not the snapshot column) so product edits propagate.
  */
@@ -67,7 +69,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     id: payload.id,
     inventoryNumber: payload.inventoryNumber,
     importEntryId: payload.importEntryId ?? "",
-    importNumber: payload.importNumber ?? "",
+    importNumber: payload.importEntry?.importNumber ?? null,
     purchaseOrderNumber: payload.purchaseOrderNumber ?? "",
     productId: payload.productId,
     // Live product label via the joined product (style/color fall back to the
@@ -358,12 +360,17 @@ export type InventoryListViewOptions = {
     dyeLot?: string
     note?: string
     /**
-     * Import-number snapshot match (`flooring_inventory.importNumber` = the
-     * stringified `Int` stamped at materialize time). Filters rows whose
-     * snapshot equals any value in the array.
+     * Import-number match. Resolved through the `importEntry` relation
+     * (`flooring_import_entry.importNumber`, an `Int`) — the inventory snapshot
+     * column has been dropped. Chip values arrive as strings; rows whose linked
+     * import number equals any parseable value in the array are kept.
      */
     importNumber?: ReadonlyArray<string>
-    /** Purchase-order-number snapshot match (same shape as `importNumber`). */
+    /**
+     * Purchase-order-number snapshot match (still a `flooring_inventory` column,
+     * unlike `importNumber`). Filters rows whose snapshot equals any value in
+     * the array.
+     */
     purchaseOrderNumber?: ReadonlyArray<string>
     /**
      * `true` = show archived, `false` = hide archived. When undefined the
@@ -462,7 +469,13 @@ function buildListViewWhere(
 
   const importNumbers = options.filters?.importNumber
   if (importNumbers && importNumbers.length > 0) {
-    clauses.push({ importNumber: { in: [...importNumbers] } })
+    // Import number lives on the linked import entry (the inventory snapshot
+    // column was dropped). Chip values are strings; coerce to the entry's Int
+    // and filter through the relation.
+    const nums = importNumbers.map(Number).filter(Number.isInteger)
+    if (nums.length > 0) {
+      clauses.push({ importEntry: { is: { importNumber: { in: nums } } } })
+    }
   }
 
   const purchaseOrderNumbers = options.filters?.purchaseOrderNumber
@@ -630,47 +643,46 @@ export type InventoryImportNumberSearchResult = {
 }
 
 /**
- * Distinct import # snapshot values for the inventory list-view Import # filter
- * chip. Global (not warehouse-scoped) and archive-agnostic — every distinct
- * `importNumber` is selectable regardless of the Status chip. Excludes
- * NULL/whitespace-only values. Optional ILIKE on the search term. Ordered
- * numerically (the column is a stringified autoincrement Int snapshot, so a
- * lexical sort would render 1, 10, 2…). Deduped at the SQL layer.
+ * Distinct import # values for the inventory list-view Import # filter chip.
+ * Resolved through the `importEntry` relation (`flooring_import_entry.importNumber`,
+ * an `Int`) — the inventory snapshot column has been dropped. Global (not
+ * warehouse-scoped) and archive-agnostic — every distinct linked import number
+ * is selectable regardless of the Status chip. Optional ILIKE matches the
+ * number's text form. Ordered numerically on the native Int. Deduped at the SQL
+ * layer. The picker contract stays `{ value: string }`, so the Int is
+ * stringified out.
  */
 export async function searchInventoryImportNumbers(
   args: InventoryImportNumberSearchArgs,
   client: InventoryDbClient = db,
 ): Promise<InventoryImportNumberSearchResult> {
-  const conditions: Prisma.Sql[] = [
-    Prisma.sql`"wasMerged" = false`,
-    Prisma.sql`"importNumber" IS NOT NULL`,
-    Prisma.sql`length(trim("importNumber")) > 0`,
-  ]
+  const conditions: Prisma.Sql[] = [Prisma.sql`fi."wasMerged" = false`]
   const trimmed = args.search?.trim() ?? ""
   if (trimmed.length > 0) {
-    conditions.push(Prisma.sql`"importNumber" ILIKE ${`%${trimmed}%`}`)
+    conditions.push(Prisma.sql`ie."importNumber"::text ILIKE ${`%${trimmed}%`}`)
   }
   const whereClause = Prisma.join(conditions, " AND ")
 
   // Fetch take+1 (offset by skip) to detect a next page without a count query.
-  // Distinct is wrapped in a subquery so the numeric (`::int`) ORDER BY is
-  // valid — Postgres requires SELECT DISTINCT ordering expressions to appear in
-  // the select list, which a derived cast can't.
+  // Distinct is wrapped in a subquery so the ORDER BY references the plain
+  // alias; the JOIN to the import entry is the source of truth now that the
+  // snapshot column is gone.
   const skip = Math.max(0, Math.floor(args.skip ?? 0))
-  const rows = await client.$queryRaw<{ importNumber: string }[]>(Prisma.sql`
+  const rows = await client.$queryRaw<{ importNumber: number }[]>(Prisma.sql`
     SELECT "importNumber"
     FROM (
-      SELECT DISTINCT "importNumber"
-      FROM "flooring_inventory"
+      SELECT DISTINCT ie."importNumber" AS "importNumber"
+      FROM "flooring_inventory" fi
+      JOIN "flooring_import_entry" ie ON fi."importEntryId" = ie."id"
       WHERE ${whereClause}
     ) AS sub
-    ORDER BY "importNumber"::int ASC
+    ORDER BY "importNumber" ASC
     LIMIT ${args.take + 1} OFFSET ${skip}
   `)
 
   const hasMore = rows.length > args.take
   const page = hasMore ? rows.slice(0, args.take) : rows
-  return { items: page.map((row) => ({ value: row.importNumber })), hasMore }
+  return { items: page.map((row) => ({ value: String(row.importNumber) })), hasMore }
 }
 
 export async function listInventoryOptions(

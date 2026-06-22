@@ -28,7 +28,7 @@ export async function lockInventoryRow(
  * path, consumed exclusively via `materializeStagedRowsToInventory` and
  * `MaterializeStagedRowsToInventoryInput` below. The snapshot columns
  * (`categoryName`, `categorySlug`, the stock + send unit fields,
- * `importNumber`, `purchaseOrderNumber`) are stamped at
+ * `purchaseOrderNumber`) are stamped at
  * materialize time from the linked product + import entry and are
  * immutable post-create; the `isProductCategoryChangeBlocked` product lock
  * keeps the joined source consistent with the snapshots for the lifetime of
@@ -36,7 +36,6 @@ export async function lockInventoryRow(
  */
 export type MaterializeInventoryRowFields = {
   importEntryId: string | null
-  importNumber: string | null
   purchaseOrderNumber: string | null
   productId: string
   categorySlug: string
@@ -64,7 +63,7 @@ export type MaterializeInventoryRowFields = {
 
 /**
  * Update input — editable subset only. Mirrors domain.editability
- * INVENTORY_EDITABLE_FIELDS. Snapshot columns (categoryName, importNumber,
+ * INVENTORY_EDITABLE_FIELDS. Snapshot columns (categoryName,
  * purchaseOrderNumber), the warehouse FK, and the identity columns
  * (rollNumber, dyeLot, note) are not in this shape — `warehouseId` is
  * set-on-insert by the materialize worker and identity columns are
@@ -157,7 +156,6 @@ export async function deleteInventoryRecordById(
 export type InsertInventoryRowInput = {
   importEntryId: string | null
   sourceStagedRowId: string | null
-  importNumber: string | null
   purchaseOrderNumber: string | null
   productId: string
   categorySlug: string
@@ -193,7 +191,6 @@ export async function insertInventoryRow(
     data: {
       importEntryId: input.importEntryId,
       sourceStagedRowId: input.sourceStagedRowId,
-      importNumber: input.importNumber,
       purchaseOrderNumber: input.purchaseOrderNumber,
       productId: input.productId,
       categorySlug: input.categorySlug,
@@ -239,7 +236,7 @@ export async function insertInventoryRow(
  *    Postgres). Pre-assignment also lets the caller correlate inserts with
  *    their source staged rows for the secondary `updateMany`.
  *  - Caller computed every per-row field (categoryName, unit
- *    snapshots, importNumber, purchaseOrderNumber, etc.) — this primitive
+ *    snapshots, purchaseOrderNumber, etc.) — this primitive
  *    does no field math. `createdAt` is DB-defaulted (`@default(now())`).
  *  - Caller has already transitioned the source staged rows from DRAFT to
  *    QUEUED via `markStagedRowsForImport`. The status-flip below targets
@@ -280,7 +277,6 @@ export async function materializeStagedRowsToInventory(
       id: row.id,
       sourceStagedRowId: row.sourceStagedRowId,
       importEntryId: row.importEntryId,
-      importNumber: row.importNumber,
       purchaseOrderNumber: row.purchaseOrderNumber,
       productId: row.productId,
       categorySlug: row.categorySlug,
