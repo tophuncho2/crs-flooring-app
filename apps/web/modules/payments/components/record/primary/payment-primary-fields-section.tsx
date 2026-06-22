@@ -29,12 +29,14 @@ const DIRECTION_OPTIONS = [
  * `updatedAt` are only supplied on the edit face (omitted on create).
  */
 export function PaymentPrimaryFieldsSection({
+  paymentNumber,
   draft,
   editable,
   onFieldChange,
   createdAt,
   updatedAt,
 }: {
+  paymentNumber?: string
   draft: PaymentForm
   editable: boolean
   onFieldChange: <K extends keyof PaymentForm>(field: K, value: PaymentForm[K]) => void
@@ -43,6 +45,13 @@ export function PaymentPrimaryFieldsSection({
 }) {
   return (
     <FieldSection gap="0.75rem">
+      {paymentNumber ? (
+        <CellAt col={1} colSpan={2}>
+          <FormField label="Payment #">
+            <StaticFieldValue>{paymentNumber}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
       <CellAt col={1} colSpan={1}>
         <FormField label="Amount" required>
           <MoneyCell

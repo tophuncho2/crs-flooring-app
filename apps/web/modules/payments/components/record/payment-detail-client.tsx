@@ -13,7 +13,7 @@ export function PaymentDetailClient({
 }) {
   return (
     <RecordDetailClientScaffold
-      title={`Payment ${initialPayment.paymentNumber}`}
+      title="Payments Hub"
       backHref={backHref}
       headerVariant="section"
       dirtyMessage="You have unsaved payment changes. Leave this page without saving?"

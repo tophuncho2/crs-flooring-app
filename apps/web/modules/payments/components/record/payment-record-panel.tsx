@@ -43,6 +43,7 @@ export function PaymentRecordPanel({
           onDiscard={primary.discard}
         >
           <PaymentPrimaryFieldsSection
+            paymentNumber={record.paymentNumber}
             draft={primary.localValue}
             editable={!primary.isSaving}
             onFieldChange={(field, value) =>
