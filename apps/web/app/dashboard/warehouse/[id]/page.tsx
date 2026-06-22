@@ -39,6 +39,8 @@ export default async function WarehouseDetailPage({
     <WarehouseDetailClient
       initialWarehouse={result.data.warehouse}
       stats={result.data.stats}
+      previousWarehouseId={result.data.previousWarehouseId}
+      nextWarehouseId={result.data.nextWarehouseId}
       backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/warehouse")}
     />
   )

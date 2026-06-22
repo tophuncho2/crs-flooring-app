@@ -4,6 +4,8 @@ export type WarehousesDbClient = PrismaClient | Prisma.TransactionClient
 
 export const warehouseRowSelect = {
   id: true,
+  warehouseNumber: true,
+  warehouseNumberInt: true,
   name: true,
   streetAddress: true,
   city: true,
@@ -23,6 +25,7 @@ export const warehouseDetailSelect = warehouseRowSelect
 
 export const warehouseListRowSelect = {
   id: true,
+  warehouseNumber: true,
   name: true,
   streetAddress: true,
   city: true,

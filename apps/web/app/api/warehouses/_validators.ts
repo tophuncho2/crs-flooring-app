@@ -40,6 +40,7 @@ export function validateWarehouseInput(body: Record<string, unknown>): CreateWar
 
 const listWarehousesQuerySchema = z.object({
   q: z.string().optional(),
+  storeNumber: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -71,9 +72,12 @@ export function validateListWarehousesQuery(
   const parsed = parseResult.data
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
+  const trimmedStoreNumber = parsed.storeNumber?.trim()
+  const storeNumber = trimmedStoreNumber ? trimmedStoreNumber : undefined
 
   return {
     search,
+    filters: { storeNumber },
     page: parsed.page,
     pageSize: parsed.pageSize,
   }

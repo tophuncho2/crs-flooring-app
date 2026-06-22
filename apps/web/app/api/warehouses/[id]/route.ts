@@ -1,5 +1,5 @@
 import { deleteWarehouseUseCase, WarehouseExecutionError } from "@builders/application"
-import { getWarehouseById } from "@builders/db"
+import { getWarehouseById, getWarehouseDetailById } from "@builders/db"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
@@ -25,7 +25,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   try {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
-    const warehouse = await getWarehouseById(id)
+    const warehouse = await getWarehouseDetailById(id, { withNeighbors: true })
     if (!warehouse) {
       throw new WarehouseExecutionError({
         code: "WAREHOUSE_NOT_FOUND",

@@ -39,6 +39,7 @@ export default async function FlooringWarehousePage({
     <HydrationBoundary state={dehydrate(queryClient)}>
       <WarehouseClient
         initialSearchQuery={initialInput.search ?? ""}
+        initialStoreNumber={initialInput.filters?.storeNumber ?? ""}
         initialPage={initialInput.page}
       />
     </HydrationBoundary>

@@ -12,6 +12,7 @@ export const LIST_WAREHOUSES_MAX_PAGE_SIZE = 200
 // list row is expected.
 export type WarehouseListRow = {
   id: string
+  warehouseNumber: string
   name: string
   streetAddress: string
   city: string

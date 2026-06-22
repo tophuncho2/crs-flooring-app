@@ -6,7 +6,10 @@ import {
 import { listWarehousesForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
-export type WarehousesListFilters = Record<string, never>
+export type WarehousesListFilters = {
+  // Exact store-number search (matches `warehouseNumberInt`); accepts "7" or "STORE-7".
+  storeNumber?: string
+}
 
 export async function listWarehousesUseCase(
   input: ListInput<WarehousesListFilters>,
@@ -16,9 +19,11 @@ export async function listWarehousesUseCase(
   const pageSize = Math.max(1, Math.min(LIST_WAREHOUSES_MAX_PAGE_SIZE, requestedPageSize))
 
   const search = input.search?.trim() || undefined
+  const storeNumber = input.filters?.storeNumber?.trim() || undefined
 
   const { rows, total } = await listWarehousesForListView({
     search,
+    storeNumber,
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

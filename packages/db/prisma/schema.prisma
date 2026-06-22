@@ -472,6 +472,8 @@ model FlooringTemplateItem {
 
 model FlooringWarehouse {
   id                  String                             @id @default(uuid())
+  warehouseNumber     String                             @unique @default(dbgenerated("('STORE-'::text || (nextval('flooring_warehouse_number_seq'::regclass))::text)")) @map("warehouse_number")
+  warehouseNumberInt  Int?                               @default(dbgenerated("(SUBSTRING(warehouse_number FROM 7))::integer"))
   name                String                             @unique
   streetAddress       String?
   city                String?
@@ -487,6 +489,8 @@ model FlooringWarehouse {
   workOrders           FlooringWorkOrder[]
   templates            FlooringTemplate[]
 
+  @@index([warehouseNumber])
+  @@index([warehouseNumberInt])
   @@map("flooring_warehouse")
 }
 

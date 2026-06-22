@@ -1,9 +1,11 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import {
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  RecordStepperPortal,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
@@ -16,11 +18,16 @@ export function WarehouseRecordPanel({
   page,
   entry,
   stats,
+  previousWarehouseId,
+  nextWarehouseId,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: WarehouseRow
   stats: WarehouseStats
+  previousWarehouseId: string | null
+  nextWarehouseId: string | null
 }) {
+  const router = useRouter()
   const controller = useWarehousePrimarySection({ page, entry })
   const primary = controller.primarySection
   const record = controller.record
@@ -51,6 +58,7 @@ export function WarehouseRecordPanel({
             onFieldChange={(field, value) =>
               primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
             }
+            warehouseNumber={record.warehouseNumber}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
           />
@@ -67,6 +75,24 @@ export function WarehouseRecordPanel({
 
   return (
     <>
+      {/* Walks the global STORE-number line (◀ STORE-n ▶) from the top bar.
+          Warehouse detail is a per-id page, so a step router-navigates to the
+          neighbor's page; the portal's dirty guard prompts first when edited. */}
+      <RecordStepperPortal
+        label={entry.warehouseNumber}
+        isDirty={page.isDirty}
+        discardMessage="This warehouse has unsaved changes. Stepping to another warehouse will discard them."
+        onPrevious={
+          previousWarehouseId
+            ? () => router.push(`/dashboard/warehouse/${previousWarehouseId}`)
+            : null
+        }
+        onNext={
+          nextWarehouseId
+            ? () => router.push(`/dashboard/warehouse/${nextWarehouseId}`)
+            : null
+        }
+      />
       <RecordMultiSectionPanel page={page} sections={sections} />
       <RecordEntityFooter
         onClose={page.closePage}

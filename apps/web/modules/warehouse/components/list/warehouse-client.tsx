@@ -1,8 +1,15 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
-import type { WarehousesListFilters } from "@builders/application"
+import {
+  ListToolbar,
+  ListToolbarBottomRow,
+  ListToolbarCell,
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+  DebouncedSearchControl,
+} from "@/engines/list-view"
+import type { ListInput, WarehousesListFilters } from "@builders/application"
 import {
   LIST_WAREHOUSES_PAGE_SIZE,
   type WarehouseListRow,
@@ -18,21 +25,52 @@ import { WarehouseListSearch } from "./toolbar-controls/warehouse-list-search"
 import { WarehouseClearAll } from "./toolbar-controls/sub-controls/warehouse-clear-all"
 import { WarehouseRowCount } from "./toolbar-controls/sub-controls/warehouse-row-count"
 
+// The engine's filter map carries `string[]` only — wrap the scalar store-number
+// search in a 1-element array, mirroring the inventory `# bar` pattern.
+type EngineWarehouseFilters = {
+  storeNumber?: ReadonlyArray<string>
+}
+
+const WAREHOUSE_FILTERABLE_FIELDS = ["storeNumber"] as const
+
+function toEngineFilters(app: WarehousesListFilters): EngineWarehouseFilters {
+  return app.storeNumber ? { storeNumber: [app.storeNumber] } : {}
+}
+
+function toAppFilters(engine: EngineWarehouseFilters): WarehousesListFilters {
+  const storeNumber = engine.storeNumber?.[0]?.trim()
+  return storeNumber ? { storeNumber } : {}
+}
+
 export type WarehouseClientProps = {
   initialSearchQuery: string
+  initialStoreNumber: string
   initialPage: number
 }
 
 export default function WarehouseClient({
   initialSearchQuery,
+  initialStoreNumber,
   initialPage,
 }: WarehouseClientProps) {
   const { openCreate, openWarehouse } = useWarehouseListController()
+
+  // The engine's filter map carries `string[]` only — translate to the typed
+  // scalar `WarehousesListFilters` at the listFn boundary.
+  const adaptedListFn = useCallback(
+    (input: ListInput<EngineWarehouseFilters>) =>
+      listWarehousesRequest({
+        ...input,
+        filters: input.filters ? toAppFilters(input.filters) : undefined,
+      }),
+    [],
+  )
 
   const {
     rows,
     total,
     searchQuery,
+    filters,
     page,
     pageSize,
     totalPages,
@@ -41,25 +79,39 @@ export default function WarehouseClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
-  } = useFetchListController<WarehouseListRow, WarehousesListFilters>({
+    onFilterChange,
+    onClearAllFilters,
+  } = useFetchListController<WarehouseListRow, EngineWarehouseFilters>({
     mode: "fetch",
     queryKey: [...WAREHOUSE_LIST_QUERY_KEY],
-    listFn: listWarehousesRequest,
+    listFn: adaptedListFn,
     initialSearchQuery,
     initialPage,
+    initialFilters: toEngineFilters(initialStoreNumber ? { storeNumber: initialStoreNumber } : {}),
     pageSize: LIST_WAREHOUSES_PAGE_SIZE,
+    filterableFields: WAREHOUSE_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  const hasActiveFilters = useMemo(
-    () => searchQuery.trim().length > 0,
-    [searchQuery],
+  const storeNumberValue = filters.storeNumber?.[0] ?? ""
+
+  const handleStoreNumberChange = useCallback(
+    (next: string) => {
+      const trimmed = next.trim()
+      onFilterChange("storeNumber", trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
   )
 
-  const handleClearAll = useCallback(
-    () => onSearchQueryChange(""),
-    [onSearchQueryChange],
+  const hasActiveFilters = useMemo(
+    () => searchQuery.trim().length > 0 || storeNumberValue.trim().length > 0,
+    [searchQuery, storeNumberValue],
   )
+
+  const handleClearAll = useCallback(() => {
+    onSearchQueryChange("")
+    onClearAllFilters()
+  }, [onSearchQueryChange, onClearAllFilters])
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -76,6 +128,12 @@ export default function WarehouseClient({
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <WarehouseListSearch query={searchQuery} onQueryChange={onSearchQueryChange} />
+                <DebouncedSearchControl
+                  value={storeNumberValue}
+                  onCommit={handleStoreNumberChange}
+                  placeholder="Store #"
+                  ariaLabel="Search warehouses by store number"
+                />
                 <ListToolbarBottomRow
                   left={<WarehouseClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
                   right={<WarehouseRowCount count={rows.length} total={total} />}

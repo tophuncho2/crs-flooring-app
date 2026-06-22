@@ -22,6 +22,8 @@ export type WarehousePrimaryFieldsSectionProps = {
   draft: WarehouseForm
   editable: boolean
   onFieldChange: (field: keyof WarehouseForm, value: string) => void
+  /** Read-only STORE-N number shown in the detail view; omit in the create flow (DB-generated). */
+  warehouseNumber?: string
   /** Read-only summary shown in the detail view; omit in the create flow. */
   createdAt?: string
   updatedAt?: string
@@ -31,6 +33,7 @@ export function WarehousePrimaryFieldsSection({
   draft,
   editable,
   onFieldChange,
+  warehouseNumber,
   createdAt,
   updatedAt,
 }: WarehousePrimaryFieldsSectionProps) {
@@ -38,6 +41,13 @@ export function WarehousePrimaryFieldsSection({
 
   return (
     <FieldSection gap="0.75rem">
+      {warehouseNumber ? (
+        <CellAt col={1} colSpan={5}>
+          <FormField label="Store #">
+            <StaticFieldValue>{warehouseNumber}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
       <CellAt col={1} colSpan={5}>
         <FormField label="Warehouse Name" required>
           <TextCell

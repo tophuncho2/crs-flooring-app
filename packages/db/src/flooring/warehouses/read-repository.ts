@@ -5,8 +5,11 @@ import {
   type WarehouseListRow,
   type WarehouseStats,
 } from "@builders/domain"
+import type { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
+import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 import {
+  type WarehouseDetailPayload,
   type WarehouseListRowPayload,
   type WarehouseRowPayload,
   type WarehousesDbClient,
@@ -19,6 +22,7 @@ import {
 
 export type WarehouseRecord = {
   id: string
+  warehouseNumber: string
   name: string
   streetAddress: string
   city: string
@@ -31,13 +35,27 @@ export type WarehouseRecord = {
   updatedAt: string
 }
 
-export type WarehouseDetailRecord = WarehouseRecord
+// Adjacent warehouse ids in the global STORE-number order — powers the
+// record-view shell stepper. Both null at the sequence edges (or when the row
+// carries no generated int yet).
+export type WarehouseNeighbors = {
+  previousWarehouse: { id: string } | null
+  nextWarehouse: { id: string } | null
+}
+
+export const NO_WAREHOUSE_NEIGHBORS: WarehouseNeighbors = {
+  previousWarehouse: null,
+  nextWarehouse: null,
+}
+
+export type WarehouseDetailRecord = WarehouseRecord & WarehouseNeighbors
 
 // --- Normalizers ---
 
 export function normalizeWarehouseRow(row: WarehouseRowPayload): WarehouseRecord {
   return {
     id: row.id,
+    warehouseNumber: row.warehouseNumber,
     name: row.name,
     streetAddress: row.streetAddress ?? "",
     city: row.city ?? "",
@@ -110,15 +128,60 @@ export async function getWarehouseById(
   return row ? normalizeWarehouseRow(row) : null
 }
 
+export function normalizeWarehouseDetail(
+  row: WarehouseDetailPayload,
+  neighbors: WarehouseNeighbors = NO_WAREHOUSE_NEIGHBORS,
+): WarehouseDetailRecord {
+  return {
+    ...normalizeWarehouseRow(row),
+    previousWarehouse: neighbors.previousWarehouse,
+    nextWarehouse: neighbors.nextWarehouse,
+  }
+}
+
+/**
+ * Resolve the warehouse rows immediately before/after the given numeric sort
+ * key in the global STORE-number order (`warehouseNumberInt`). Powers the
+ * record-view shell stepper — deliberately global (no scoping), two single-row
+ * lookups on the `warehouseNumberInt` index. Both null when the key is null
+ * (no generated value yet) or the row sits at the sequence edge.
+ */
+async function getWarehouseNeighbors(
+  warehouseNumberInt: number | null,
+  client: WarehousesDbClient = db,
+): Promise<WarehouseNeighbors> {
+  if (warehouseNumberInt === null) return NO_WAREHOUSE_NEIGHBORS
+
+  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+    "warehouseNumberInt",
+    warehouseNumberInt,
+  )
+  const [previous, next] = await Promise.all([
+    client.flooringWarehouse.findFirst({ ...previousQuery, select: { id: true } }),
+    client.flooringWarehouse.findFirst({ ...nextQuery, select: { id: true } }),
+  ])
+
+  return {
+    previousWarehouse: previous ? { id: previous.id } : null,
+    nextWarehouse: next ? { id: next.id } : null,
+  }
+}
+
 export async function getWarehouseDetailById(
   id: string,
+  options: { withNeighbors?: boolean } = {},
   client: WarehousesDbClient = db,
 ): Promise<WarehouseDetailRecord | null> {
   const row = await client.flooringWarehouse.findUnique({
     where: { id },
     select: warehouseDetailSelect,
   })
-  return row ? normalizeWarehouseRow(row) : null
+  if (!row) return null
+  const neighbors =
+    options.withNeighbors === false
+      ? NO_WAREHOUSE_NEIGHBORS
+      : await getWarehouseNeighbors(row.warehouseNumberInt, client)
+  return normalizeWarehouseDetail(row, neighbors)
 }
 
 export async function warehouseNameExists(
@@ -140,6 +203,7 @@ export async function warehouseNameExists(
 
 export type WarehouseListViewOptions = {
   search?: string
+  storeNumber?: string
   skip: number
   take: number
 }
@@ -152,6 +216,7 @@ export type WarehouseListViewResult = {
 function normalizeWarehouseListRow(row: WarehouseListRowPayload): WarehouseListRow {
   return {
     id: row.id,
+    warehouseNumber: row.warehouseNumber,
     name: row.name,
     streetAddress: row.streetAddress ?? "",
     city: row.city ?? "",
@@ -168,9 +233,21 @@ export async function listWarehousesForListView(
   options: WarehouseListViewOptions,
   client: WarehousesDbClient = db,
 ): Promise<WarehouseListViewResult> {
-  const where = options.search
-    ? { name: { contains: options.search, mode: "insensitive" as const } }
-    : undefined
+  const clauses: Prisma.FlooringWarehouseWhereInput[] = []
+  if (options.search) {
+    clauses.push({ name: { contains: options.search, mode: "insensitive" } })
+  }
+  // Store-number bar: EXACT match on the generated int (btree), mirroring the
+  // inventory `# bar`. Strip non-digits so "7" or "STORE-7" both resolve to 7;
+  // a non-numeric query hits the -1 sentinel (the sequence is always positive)
+  // so it matches nothing.
+  const storeNumber = options.storeNumber?.trim()
+  if (storeNumber) {
+    const digits = storeNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    clauses.push({ warehouseNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+  }
+  const where = clauses.length > 0 ? { AND: clauses } : undefined
 
   const [total, rows] = await Promise.all([
     client.flooringWarehouse.count({ where }),

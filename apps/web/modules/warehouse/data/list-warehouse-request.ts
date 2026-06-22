@@ -21,11 +21,13 @@ export function parseWarehousesListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<WarehousesListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
+  const storeNumberRaw = (readSearchParam(searchParams, "storeNumber") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
   return {
     search: searchRaw || undefined,
+    filters: storeNumberRaw ? { storeNumber: storeNumberRaw } : undefined,
     page,
     pageSize: LIST_WAREHOUSES_PAGE_SIZE,
   }
@@ -36,6 +38,8 @@ export function buildWarehousesListSearchString(
 ): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
+  const storeNumber = input.filters?.storeNumber?.trim()
+  if (storeNumber) params.set("storeNumber", storeNumber)
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   return params.toString()
