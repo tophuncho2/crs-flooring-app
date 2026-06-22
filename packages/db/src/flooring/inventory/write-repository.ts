@@ -66,15 +66,13 @@ export type MaterializeInventoryRowFields = {
 /**
  * Update input — editable subset only. Mirrors domain.editability
  * INVENTORY_EDITABLE_FIELDS. Snapshot columns (categoryName, importNumber,
- * purchaseOrderNumber) and the warehouse FK are not in this
- * shape — `warehouseId` is set-on-insert by the materialize worker and
- * never patched afterward.
+ * purchaseOrderNumber), the warehouse FK, and the identity columns
+ * (rollNumber, dyeLot, note) are not in this shape — `warehouseId` is
+ * set-on-insert by the materialize worker and identity columns are
+ * set-on-create only; none are ever patched afterward.
  */
 export type UpdateInventoryRecordInput = {
-  rollNumber?: string | null
-  dyeLot?: string | null
   location?: string | null
-  note?: string | null
   internalNotes?: string | null
   isArchived?: boolean
 }
@@ -92,10 +90,7 @@ function buildUpdateData(
   input: UpdateInventoryRecordInput,
 ): Prisma.FlooringInventoryUpdateInput {
   const data: Prisma.FlooringInventoryUpdateInput = {}
-  if (input.rollNumber !== undefined) data.rollNumber = input.rollNumber
-  if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
   if (input.location !== undefined) data.location = input.location
-  if (input.note !== undefined) data.note = input.note
   if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes
   if (input.isArchived !== undefined) data.isArchived = input.isArchived
   return data

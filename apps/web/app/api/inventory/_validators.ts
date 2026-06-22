@@ -7,11 +7,8 @@ import type {
 } from "@builders/application"
 import type { ListInput } from "@builders/application"
 import {
-  INVENTORY_DYE_LOT_MAX,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
-  INVENTORY_NOTE_MAX,
-  INVENTORY_ROLL_NUMBER_MAX,
   LIST_INVENTORY_MAX_PAGE_SIZE,
   LIST_INVENTORY_PAGE_SIZE,
 } from "@builders/domain"
@@ -308,13 +305,8 @@ export function validateUpdateInventoryInput(body: Record<string, unknown>): Upd
   // `warehouseId` is set-on-insert by the materialize worker and silently
   // stripped here if a stale client posts it.
   const input: UpdateInventoryInput = {}
-  if (body.rollNumber !== undefined)
-    input.rollNumber = optionalBoundedString(body.rollNumber, INVENTORY_ROLL_NUMBER_MAX, "rollNumber")
-  if (body.dyeLot !== undefined)
-    input.dyeLot = optionalBoundedString(body.dyeLot, INVENTORY_DYE_LOT_MAX, "dyeLot")
   if (body.location !== undefined)
     input.location = optionalBoundedString(body.location, INVENTORY_LOCATION_MAX, "location")
-  if (body.note !== undefined) input.note = optionalBoundedString(body.note, INVENTORY_NOTE_MAX, "note")
   if (body.internalNotes !== undefined)
     input.internalNotes = optionalBoundedString(body.internalNotes, INVENTORY_INTERNAL_NOTES_MAX, "internalNotes")
   if (body.isArchived !== undefined) input.isArchived = requireBoolean(body.isArchived, "isArchived")

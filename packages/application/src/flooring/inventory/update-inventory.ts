@@ -33,30 +33,12 @@ export async function updateInventoryUseCase(
       })
     }
 
-    const effectiveRollNumber =
-      input.rollNumber !== undefined
-        ? emptyToNull(input.rollNumber)
-        : current.rollNumber === ""
-          ? null
-          : current.rollNumber
-    const effectiveDyeLot =
-      input.dyeLot !== undefined
-        ? emptyToNull(input.dyeLot)
-        : current.dyeLot === ""
-          ? null
-          : current.dyeLot
     const effectiveLocation =
       input.location !== undefined
         ? emptyToNull(input.location)
         : current.location === ""
           ? null
           : current.location
-    const effectiveNote =
-      input.note !== undefined
-        ? emptyToNull(input.note)
-        : current.note === ""
-          ? null
-          : current.note
     const effectiveInternalNotes =
       input.internalNotes !== undefined
         ? emptyToNull(input.internalNotes)
@@ -65,10 +47,7 @@ export async function updateInventoryUseCase(
           : current.internalNotes
 
     const dbInput: DbUpdateInventoryInput = {}
-    if (input.rollNumber !== undefined) dbInput.rollNumber = effectiveRollNumber
-    if (input.dyeLot !== undefined) dbInput.dyeLot = effectiveDyeLot
     if (input.location !== undefined) dbInput.location = effectiveLocation
-    if (input.note !== undefined) dbInput.note = effectiveNote
     if (input.internalNotes !== undefined) dbInput.internalNotes = effectiveInternalNotes
     if (input.isArchived !== undefined) dbInput.isArchived = input.isArchived
 

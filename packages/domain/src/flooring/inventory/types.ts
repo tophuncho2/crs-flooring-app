@@ -64,20 +64,14 @@ export type InventoryDetail = InventoryRow & {
 }
 
 export type InventoryForm = {
-  rollNumber: string
-  dyeLot: string
   location: string
-  note: string
   internalNotes: string
   isArchived: boolean
 }
 
 export function toInventoryForm(row: InventoryRow): InventoryForm {
   return {
-    rollNumber: row.rollNumber,
-    dyeLot: row.dyeLot,
     location: row.location,
-    note: row.note,
     internalNotes: row.internalNotes,
     isArchived: row.isArchived,
   }

@@ -60,12 +60,12 @@ describe("updateInventoryUseCase", () => {
     it("writes only the touched fields", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
-      const result = await updateInventoryUseCase(INVENTORY_ID, { dyeLot: "NEW-DYE" })
+      const result = await updateInventoryUseCase(INVENTORY_ID, { location: "B2" })
 
       expect(result).toBe(UPDATED_RECORD)
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        { dyeLot: "NEW-DYE" },
+        { location: "B2" },
         expect.anything(),
       )
     })
@@ -73,11 +73,11 @@ describe("updateInventoryUseCase", () => {
     it("trims an empty-string patch to null", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
-      await updateInventoryUseCase(INVENTORY_ID, { dyeLot: "   " })
+      await updateInventoryUseCase(INVENTORY_ID, { location: "   " })
 
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        { dyeLot: null },
+        { location: null },
         expect.anything(),
       )
     })
@@ -109,7 +109,7 @@ describe("updateInventoryUseCase", () => {
     it("acquires the FOR UPDATE lock before reading the row", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
-      await updateInventoryUseCase(INVENTORY_ID, { dyeLot: "X" })
+      await updateInventoryUseCase(INVENTORY_ID, { location: "X" })
 
       const lockOrder = lockInventoryRowMock.mock.invocationCallOrder[0]!
       const readOrder = getInventoryByIdMock.mock.invocationCallOrder[0]!
@@ -122,7 +122,7 @@ describe("updateInventoryUseCase", () => {
       getInventoryByIdMock.mockResolvedValue(null)
 
       try {
-        await updateInventoryUseCase(INVENTORY_ID, { dyeLot: "X" })
+        await updateInventoryUseCase(INVENTORY_ID, { location: "X" })
         expect.fail("Expected throw")
       } catch (error) {
         if (!(error instanceof InventoryExecutionError)) throw error

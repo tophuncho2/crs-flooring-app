@@ -14,13 +14,13 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "sendUnitAbbrev",
   "fifoReceivedAt",
   "warehouseId",
+  "rollNumber",
+  "dyeLot",
+  "note",
 ] as const
 
 export const INVENTORY_EDITABLE_FIELDS = [
-  "rollNumber",
-  "dyeLot",
   "location",
-  "note",
   "internalNotes",
   "isArchived",
 ] as const
