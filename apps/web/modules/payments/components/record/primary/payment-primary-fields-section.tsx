@@ -60,7 +60,7 @@ export function PaymentPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={2} colSpan={3}>
+      <CellAt col={2} colSpan={1}>
         <FormField label="Direction" required>
           <SegmentedChoiceCell
             editable={editable}
@@ -84,15 +84,15 @@ export function PaymentPrimaryFieldsSection({
       {createdAt ? (
         <>
           <CellAt col={1} colSpan={2}>
-            <FormField label="Created">
-              <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={3} colSpan={2}>
             <FormField label="Updated">
               <StaticFieldValue>
                 {updatedAt ? formatEasternDateTime(updatedAt) || "—" : "—"}
               </StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={2}>
+            <FormField label="Created">
+              <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
         </>
