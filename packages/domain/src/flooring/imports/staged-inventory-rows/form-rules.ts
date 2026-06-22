@@ -1,3 +1,4 @@
+import { isValidMoneyAmount } from "../../../shared/money.js"
 import type { StagedInventoryForm } from "./types.js"
 import {
   STAGED_INVENTORY_ROW_DYE_LOT_MAX,
@@ -9,6 +10,8 @@ import {
 export type StagedInventoryValidationIssue =
   | { code: "STAGED_STARTING_STOCK_INVALID"; value: string }
   | { code: "STAGED_STARTING_STOCK_NEGATIVE"; value: string }
+  | { code: "STAGED_COST_INVALID"; value: string }
+  | { code: "STAGED_FREIGHT_INVALID"; value: string }
   | { code: "STAGED_ROLL_NUMBER_TOO_LONG"; value: string }
   | { code: "STAGED_DYE_LOT_TOO_LONG"; value: string }
   | { code: "STAGED_LOCATION_TOO_LONG"; value: string }
@@ -24,6 +27,16 @@ export function validateStagedInventoryForm(
     issues.push({ code: "STAGED_STARTING_STOCK_INVALID", value: input.startingStock })
   } else if (Number(raw) < 0) {
     issues.push({ code: "STAGED_STARTING_STOCK_NEGATIVE", value: input.startingStock })
+  }
+
+  // Cost/freight are optional money figures — only validated when present.
+  const cost = input.cost.trim()
+  if (cost.length > 0 && !isValidMoneyAmount(cost)) {
+    issues.push({ code: "STAGED_COST_INVALID", value: input.cost })
+  }
+  const freight = input.freight.trim()
+  if (freight.length > 0 && !isValidMoneyAmount(freight)) {
+    issues.push({ code: "STAGED_FREIGHT_INVALID", value: input.freight })
   }
 
   if (input.rollNumber.length > STAGED_INVENTORY_ROW_ROLL_NUMBER_MAX) {
@@ -50,6 +63,10 @@ export function describeStagedInventoryValidationIssue(
       return "Starting stock must be a number."
     case "STAGED_STARTING_STOCK_NEGATIVE":
       return "Starting stock cannot be negative."
+    case "STAGED_COST_INVALID":
+      return "Cost must be a valid dollar amount."
+    case "STAGED_FREIGHT_INVALID":
+      return "Freight must be a valid dollar amount."
     case "STAGED_ROLL_NUMBER_TOO_LONG":
       return `Roll number must be ${STAGED_INVENTORY_ROW_ROLL_NUMBER_MAX} characters or fewer.`
     case "STAGED_DYE_LOT_TOO_LONG":

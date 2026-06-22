@@ -41,7 +41,7 @@ import type {
  *  4. Per-row update each `filters.modified`.
  *  5. Build `rowTempIdMap` from `rows.added`; `createMany` staged rows
  *     (snapshots already resolved by the application layer).
- *  6. Per-row update each `rows.modified` — only the 5 user-editable
+ *  6. Per-row update each `rows.modified` — only the 7 user-editable
  *     fields are honored by the existing update-data builder.
  *  7. Reload post-state for both slices.
  *  8. Return both lists + both tempId maps.
@@ -97,6 +97,8 @@ function buildStagedRowUpdateData(
   if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
   if (input.location !== undefined) data.location = input.location
   if (input.startingStock !== undefined) data.startingStock = input.startingStock
+  if (input.cost !== undefined) data.cost = input.cost
+  if (input.freight !== undefined) data.freight = input.freight
   if (input.note !== undefined) data.note = input.note
   return data
 }
@@ -168,12 +170,14 @@ export async function applyImportStagedInventorySectionDiff(
         dyeLot: draft.input.dyeLot,
         location: draft.input.location,
         startingStock: draft.input.startingStock,
+        cost: draft.input.cost,
+        freight: draft.input.freight,
         note: draft.input.note,
       })),
     })
   }
 
-  // Step 6 — per-row update staged rows (5 user-editable fields only).
+  // Step 6 — per-row update staged rows (7 user-editable fields only).
   for (const update of input.rows.modified) {
     const data = buildStagedRowUpdateData(update.input)
     if (Object.keys(data).length === 0) continue

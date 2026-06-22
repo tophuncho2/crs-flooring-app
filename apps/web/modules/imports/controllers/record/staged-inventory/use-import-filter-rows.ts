@@ -55,6 +55,8 @@ function toRowDiffForm(draft: ImportStagedRowDraft) {
   return {
     rollNumber: draft.rollNumber,
     startingStock: draft.startingStock,
+    cost: draft.cost,
+    freight: draft.freight,
     dyeLot: draft.dyeLot,
     location: draft.location,
     note: draft.note,
@@ -79,6 +81,8 @@ function rowFormIsDirty(
   return (
     draft.rollNumber !== server.rollNumber ||
     draft.startingStock !== server.startingStock ||
+    draft.cost !== server.cost ||
+    draft.freight !== server.freight ||
     draft.dyeLot !== server.dyeLot ||
     draft.location !== server.location ||
     draft.note !== server.note
@@ -408,7 +412,7 @@ export function useImportFilterRows({
   const setStagedRowField = useCallback(
     <K extends keyof Pick<
       ImportStagedRowDraft,
-      "rollNumber" | "startingStock" | "dyeLot" | "location" | "note"
+      "rollNumber" | "startingStock" | "cost" | "freight" | "dyeLot" | "location" | "note"
     >>(
       filterClientId: string,
       rowClientId: string,

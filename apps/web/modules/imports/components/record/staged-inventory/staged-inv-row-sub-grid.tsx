@@ -8,7 +8,7 @@ import type {
 import { StatusBadge } from "@/engines/common"
 import type { BadgeTone } from "@/engines/common"
 import { Grid, GridEmpty } from "@/engines/record-view"
-import { TextCell, UnitCell } from "@/engines/record-view"
+import { MoneyCell, TextCell, UnitCell } from "@/engines/record-view"
 import { isLocalOnlyRecordRow } from "@/engines/record-view"
 import type { ImportStagedRowDraft } from "@/modules/imports/controllers/record/drafts"
 import { STAGED_INV_ROW_LAYOUT, type StagedInvGridRow } from "./staged-inv-row-layout"
@@ -54,7 +54,7 @@ export type StagedInvRowSubGridProps = {
   onSetField: (
     filterClientId: string,
     rowClientId: string,
-    field: "rollNumber" | "startingStock" | "dyeLot" | "location" | "note",
+    field: "rollNumber" | "startingStock" | "cost" | "freight" | "dyeLot" | "location" | "note",
     value: string,
   ) => void
   onToggleSelection: (rowId: string) => void
@@ -62,7 +62,7 @@ export type StagedInvRowSubGridProps = {
 
 /**
  * Per-filter-row staged-inventory sub-grid. DRAFT rows are inline
- * editable (5 user fields); QUEUED/IMPORTED rows are read-only.
+ * editable (7 user fields); QUEUED/IMPORTED rows are read-only.
  * Duplicate + delete are local-only ops that mutate the section's
  * nested draft list — the combined section diff carries everything to
  * the server in one PATCH on Save.
@@ -118,6 +118,24 @@ export function StagedInvRowSubGrid({
             }
             unit={draft.stockUnitAbbrev || filterRow.stockUnitAbbrev || "unit"}
             ariaLabel="Starting stock"
+          />
+        )
+      case "cost":
+        return (
+          <MoneyCell
+            editable={editable}
+            value={draft.cost}
+            onChange={(next) => onSetField(filterClientId, draft.clientId, "cost", next)}
+            ariaLabel="Cost"
+          />
+        )
+      case "freight":
+        return (
+          <MoneyCell
+            editable={editable}
+            value={draft.freight}
+            onChange={(next) => onSetField(filterClientId, draft.clientId, "freight", next)}
+            ariaLabel="Freight"
           />
         )
       case "dyeLot":

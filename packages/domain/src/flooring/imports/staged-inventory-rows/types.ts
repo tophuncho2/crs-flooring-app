@@ -34,6 +34,8 @@ export type StagedInventoryForm = {
   dyeLot: string
   location: string
   startingStock: string
+  cost: string
+  freight: string
   note: string
 }
 
@@ -42,6 +44,8 @@ export const EMPTY_STAGED_INVENTORY_FORM: StagedInventoryForm = {
   dyeLot: "",
   location: "",
   startingStock: "",
+  cost: "",
+  freight: "",
   note: "",
 }
 
@@ -51,6 +55,8 @@ export function toStagedInventoryForm(row: StagedInventoryRow): StagedInventoryF
     dyeLot: row.dyeLot,
     location: row.location,
     startingStock: row.startingStock,
+    cost: row.cost,
+    freight: row.freight,
     note: row.note,
   }
 }

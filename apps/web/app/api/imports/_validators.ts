@@ -116,6 +116,8 @@ function shapeStagedForm(raw: unknown, path: string): StagedInventoryForm {
     dyeLot: optionalStagedString(form.dyeLot, `${path}.dyeLot`),
     location: optionalStagedString(form.location, `${path}.location`),
     startingStock: requireStagedString(form.startingStock, `${path}.startingStock`),
+    cost: optionalStagedString(form.cost, `${path}.cost`),
+    freight: optionalStagedString(form.freight, `${path}.freight`),
     note: optionalStagedString(form.note, `${path}.note`),
   }
 }

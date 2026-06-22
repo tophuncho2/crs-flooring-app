@@ -11,6 +11,7 @@ import {
 } from "@builders/db"
 import {
   assignDraftIds,
+  normalizeMoneyAmount,
   describeStagedInventoryFilterDiffIssues,
   describeStagedInventoryFilterValidationIssues,
   describeStagedInventoryRowDiffIssues,
@@ -29,6 +30,15 @@ import type {
 type StockUnitSnapshot = {
   stockUnitName: string | null
   stockUnitAbbrev: string | null
+}
+
+/**
+ * Cost/freight are optional money figures. Empty string → null; otherwise
+ * normalized to the canonical Decimal(12,2) string at this boundary (money
+ * standard). Forms are pre-validated by `validateStagedInventoryForm`.
+ */
+function toStagedMoneyOrNull(value: string): string | null {
+  return value.trim() === "" ? null : normalizeMoneyAmount(value)
 }
 
 export async function saveImportStagedInventorySectionUseCase(
@@ -193,6 +203,8 @@ export async function saveImportStagedInventorySectionUseCase(
           dyeLot: draft.form.dyeLot || null,
           location: draft.form.location || null,
           startingStock: draft.form.startingStock,
+          cost: toStagedMoneyOrNull(draft.form.cost),
+          freight: toStagedMoneyOrNull(draft.form.freight),
           note: draft.form.note || null,
         },
         _needsExistingFilterSnapshot: !snapshot,
@@ -283,6 +295,8 @@ export async function saveImportStagedInventorySectionUseCase(
             dyeLot: update.form.dyeLot || null,
             location: update.form.location || null,
             startingStock: update.form.startingStock,
+            cost: toStagedMoneyOrNull(update.form.cost),
+            freight: toStagedMoneyOrNull(update.form.freight),
             note: update.form.note || null,
           },
         })),

@@ -14,6 +14,8 @@ function form(overrides: Partial<StagedInventoryForm> = {}): StagedInventoryForm
     dyeLot: "",
     location: "",
     startingStock: "5",
+    cost: "",
+    freight: "",
     note: "",
     ...overrides,
   }
@@ -79,5 +81,25 @@ describe("validateStagedInventoryForm", () => {
         form({ note: "x".repeat(STAGED_INVENTORY_ROW_NOTE_MAX + 1) }),
       ).map((i) => i.code),
     ).toContain("STAGED_NOTE_TOO_LONG")
+  })
+
+  it("accepts empty cost/freight (optional money figures)", () => {
+    expect(validateStagedInventoryForm(form({ cost: "", freight: "" }))).toEqual([])
+  })
+
+  it("accepts valid cost/freight amounts", () => {
+    expect(validateStagedInventoryForm(form({ cost: "12.34", freight: "5" }))).toEqual([])
+  })
+
+  it("flags an invalid cost amount", () => {
+    expect(
+      validateStagedInventoryForm(form({ cost: "abc" })).map((i) => i.code),
+    ).toContain("STAGED_COST_INVALID")
+  })
+
+  it("flags an invalid freight amount", () => {
+    expect(
+      validateStagedInventoryForm(form({ freight: "1.2.3" })).map((i) => i.code),
+    ).toContain("STAGED_FREIGHT_INVALID")
   })
 })

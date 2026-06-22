@@ -8,7 +8,8 @@ export type StagedInvGridRow = {
 
 /**
  * Per-filter-row staged-inventory sub-grid layout. DRAFT rows render
- * editable cells (rollNumber, dyeLot, location, startingStock, note);
+ * editable cells (rollNumber, dyeLot, location, startingStock, cost,
+ * freight, note);
  * QUEUED / IMPORTED rows render the same columns read-only. The status
  * column sits left of the data so a row's lifecycle phase is the first
  * cue a user sees.
@@ -30,6 +31,8 @@ export const STAGED_INV_ROW_LAYOUT: GridLayout<StagedInvGridRow> = {
       grow: 0,
       align: "center",
     },
+    { key: "cost", label: "Cost", kind: "number", minWidth: 132, grow: 0, align: "center" },
+    { key: "freight", label: "Freight", kind: "number", minWidth: 132, grow: 0, align: "center" },
     { key: "dyeLot", label: "Dye Lot", minWidth: 124, grow: 0 },
     { key: "location", label: "Location", minWidth: 140, grow: 0 },
     { key: "note", label: "Note", minWidth: 240, grow: 1.2 },

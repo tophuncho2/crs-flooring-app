@@ -37,6 +37,8 @@ export type ImportStagedRowDraft = {
   clientId: string
   rollNumber: string
   startingStock: string
+  cost: string
+  freight: string
   dyeLot: string
   location: string
   note: string
@@ -53,6 +55,8 @@ export function toImportStagedRowDraft(row: StagedInventoryRow): ImportStagedRow
     clientId: row.id,
     rollNumber: row.rollNumber,
     startingStock: row.startingStock,
+    cost: row.cost,
+    freight: row.freight,
     dyeLot: row.dyeLot,
     location: row.location,
     note: row.note,
@@ -71,6 +75,8 @@ export function createImportStagedRowDraft(
     clientId: createLocalRecordRowId("import-staged-row"),
     rollNumber: "",
     startingStock: "",
+    cost: "",
+    freight: "",
     dyeLot: "",
     location: "",
     note: "",
@@ -89,6 +95,8 @@ export function duplicateImportStagedRowDraft(
     clientId: createLocalRecordRowId("import-staged-row"),
     rollNumber: source.rollNumber,
     startingStock: source.startingStock,
+    cost: source.cost,
+    freight: source.freight,
     dyeLot: source.dyeLot,
     location: source.location,
     note: source.note,
@@ -109,6 +117,8 @@ export function validateImportStagedRowDrafts(
     const issues = validateStagedInventoryForm({
       rollNumber: draft.rollNumber,
       startingStock: draft.startingStock,
+      cost: draft.cost,
+      freight: draft.freight,
       dyeLot: draft.dyeLot,
       location: draft.location,
       note: draft.note,

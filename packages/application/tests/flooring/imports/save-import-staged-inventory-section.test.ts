@@ -48,6 +48,8 @@ type RowForm = {
   dyeLot: string
   location: string
   startingStock: string
+  cost: string
+  freight: string
   note: string
 }
 
@@ -65,6 +67,8 @@ function rowForm(overrides: Partial<RowForm> = {}): RowForm {
     dyeLot: "",
     location: "",
     startingStock: "5",
+    cost: "",
+    freight: "",
     note: "",
     ...overrides,
   }
@@ -491,6 +495,36 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
     expect(input.location).toBeNull()
     expect(input.note).toBeNull()
     expect(input.startingStock).toBe("5")
+    expect(input.cost).toBeNull()
+    expect(input.freight).toBeNull()
+  })
+
+  it("normalizes present cost/freight to canonical money strings on added staged rows", async () => {
+    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
+      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1", hasChildren: false },
+    ])
+    listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([])
+    getProductByIdMock.mockResolvedValueOnce(fakeProduct({ id: "product-1" }))
+
+    await saveImportStagedInventorySectionUseCase({
+      importEntryId: IMPORT_ID,
+      diff: {
+        filters: { added: [], modified: [], deleted: [] },
+        rows: {
+          added: [
+            { tempId: "tmp", filterRowId: "filter-1", form: rowForm({ cost: "12.5", freight: "3" }) },
+          ],
+          modified: [],
+          deleted: [],
+        },
+      },
+    })
+
+    const input = (applyImportStagedInventorySectionDiffMock.mock.calls[0]?.[1] as {
+      rows: { added: Array<{ input: Record<string, unknown> }> }
+    }).rows.added[0]!.input
+    expect(input.cost).toBe("12.50")
+    expect(input.freight).toBe("3.00")
   })
 
   it("normalizes empty form strings to null on modified staged rows", async () => {

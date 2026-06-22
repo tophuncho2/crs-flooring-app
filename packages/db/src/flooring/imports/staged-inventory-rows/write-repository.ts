@@ -28,6 +28,8 @@ export type CreateStagedInventoryRecordInput = {
   dyeLot: string | null
   location: string | null
   startingStock: Prisma.Decimal | string | number
+  cost: Prisma.Decimal | string | number | null
+  freight: Prisma.Decimal | string | number | null
   note: string | null
 }
 
@@ -44,6 +46,8 @@ export type UpdateStagedInventoryRecordInput = {
   dyeLot?: string | null
   location?: string | null
   startingStock?: Prisma.Decimal | string | number
+  cost?: Prisma.Decimal | string | number | null
+  freight?: Prisma.Decimal | string | number | null
   note?: string | null
   isImported?: boolean
 }
@@ -64,6 +68,8 @@ export async function createStagedInventoryRecord(
       dyeLot: input.dyeLot,
       location: input.location,
       startingStock: input.startingStock,
+      cost: input.cost,
+      freight: input.freight,
       note: input.note,
     },
     select: { id: true },
@@ -83,6 +89,8 @@ function buildUpdateData(
   if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
   if (input.location !== undefined) data.location = input.location
   if (input.startingStock !== undefined) data.startingStock = input.startingStock
+  if (input.cost !== undefined) data.cost = input.cost
+  if (input.freight !== undefined) data.freight = input.freight
   if (input.note !== undefined) data.note = input.note
   if (input.isImported !== undefined) data.isImported = input.isImported
   return data
