@@ -11,7 +11,8 @@ import {
 export type ImportNumberPickerProps = {
   /**
    * Selected value bound to the inventory filter — the stringified `Int`
-   * from `FlooringImportEntry.importNumber` (matches the inventory snapshot).
+   * from `FlooringImportEntry.importNumber` (the value the inventory list's
+   * import# filter resolves through the import-entry link).
    */
   value: string | null
   onChange: (next: string | null) => void

@@ -8,8 +8,9 @@ import { requestJson } from "@/transport/http"
 export const INVENTORY_LIST_QUERY_KEY = ["inventory", "list"] as const
 
 // Multi-value filter keys shared by parse + build. ID-shaped keys
-// (`warehouseId`/`categoryId`/`productId`) and the inventory snapshot strings
-// (`importNumber`/`purchaseOrderNumber` — picker chips) all encode as
+// (`warehouseId`/`categoryId`/`productId`) and the import#/PO# picker-chip
+// strings (`importNumber` resolves through the import-entry link;
+// `purchaseOrderNumber` is still an inventory snapshot column) all encode as
 // repeated URL params with the same wire shape, so they share this list.
 const MULTI_VALUE_FILTER_KEYS = [
   "warehouseId",
