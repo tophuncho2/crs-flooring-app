@@ -121,6 +121,8 @@ model Property {
   instructions        String?
   createdAt           DateTime                   @default(now())
   updatedAt           DateTime                   @updatedAt
+  createdBy           String?
+  updatedBy           String?
   workOrders          FlooringWorkOrder[]
   templates           FlooringTemplate[]
 

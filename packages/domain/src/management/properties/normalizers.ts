@@ -30,6 +30,8 @@ type PropertyDetailInput = {
   phone: string | null
   email: string | null
   instructions: string | null
+  createdBy: string | null
+  updatedBy: string | null
   managementCompany: { id: string; name: string } | null
 }
 
@@ -45,6 +47,8 @@ type PropertyListRowInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
+  createdBy: string | null
+  updatedBy: string | null
   managementCompany: { id: string; name: string } | null
   _count: { templates: number }
 }
@@ -80,6 +84,8 @@ export function normalizeProperty(
     email: property.email ?? "",
     instructions: property.instructions ?? "",
     fullAddress: buildAddressLine(property),
+    createdBy: property.createdBy ?? null,
+    updatedBy: property.updatedBy ?? null,
     managementCompany: property.managementCompany,
     previousProperty: neighbors.previousProperty,
     nextProperty: neighbors.nextProperty,
@@ -100,6 +106,8 @@ export function normalizePropertyListRow(property: PropertyListRowInput): Proper
     phone: normalizePhoneNumber(property.phone ?? ""),
     email: property.email ?? "",
     fullAddress: buildAddressLine(property),
+    createdBy: property.createdBy ?? null,
+    updatedBy: property.updatedBy ?? null,
     managementCompany: property.managementCompany,
     templateCount: property._count.templates,
   }

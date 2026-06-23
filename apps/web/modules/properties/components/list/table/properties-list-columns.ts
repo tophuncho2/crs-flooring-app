@@ -20,4 +20,6 @@ export const PROPERTIES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<PropertyList
   { key: "propertyNumber", label: "PROP #" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
+  { key: "createdBy", label: "Created by" },
+  { key: "updatedBy", label: "Updated by" },
 ]

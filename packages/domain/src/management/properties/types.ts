@@ -26,6 +26,8 @@ export type PropertyDetailRecord = {
   email: string
   instructions: string
   fullAddress: string
+  createdBy: string | null
+  updatedBy: string | null
   managementCompany: PropertyManagementCompany | null
   /**
    * Neighbors by global property-number order (`propertyNumberInt`), ignoring
@@ -49,6 +51,8 @@ export type PropertyListRow = {
   phone: string
   email: string
   fullAddress: string
+  createdBy: string | null
+  updatedBy: string | null
   managementCompany: PropertyManagementCompany | null
   templateCount: number
 }

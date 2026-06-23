@@ -16,6 +16,8 @@ vi.mock("@builders/db", () => ({
 import { createPropertyUseCase } from "../../../src/management/properties/create-property.js"
 import { PropertyExecutionError } from "../../../src/management/properties/errors.js"
 
+const ACTOR = "actor@example.com"
+
 function input(overrides: Record<string, unknown> = {}) {
   return {
     managementCompanyId: null,
@@ -44,6 +46,8 @@ function detail(overrides: Record<string, unknown> = {}) {
     email: "",
     instructions: "",
     fullAddress: "",
+    createdBy: null,
+    updatedBy: null,
     managementCompany: null,
     ...overrides,
   }
@@ -58,8 +62,17 @@ beforeEach(() => {
 })
 
 describe("createPropertyUseCase", () => {
+  it("rejects a blank actorEmail before touching the database", async () => {
+    await expect(createPropertyUseCase(input() as never, "   ")).rejects.toThrowError(
+      /actorEmail/,
+    )
+    expect(createPropertyRecordMock).not.toHaveBeenCalled()
+  })
+
   it("rejects a blank name with 400 and never touches the database", async () => {
-    await expect(createPropertyUseCase(input({ name: "   " }) as never)).rejects.toMatchObject({
+    await expect(
+      createPropertyUseCase(input({ name: "   " }) as never, ACTOR),
+    ).rejects.toMatchObject({
       code: "PROPERTY_VALIDATION_FAILED",
       status: 400,
       field: "name",
@@ -67,23 +80,23 @@ describe("createPropertyUseCase", () => {
     expect(createPropertyRecordMock).not.toHaveBeenCalled()
   })
 
-  it("persists the record and returns it", async () => {
+  it("persists the record, stamping createdBy/updatedBy, and returns it", async () => {
     const created = detail({ id: "prop-9" })
     createPropertyRecordMock.mockResolvedValue(created)
 
-    const result = await createPropertyUseCase(input({ name: "Maple Court" }) as never)
+    const result = await createPropertyUseCase(input({ name: "Maple Court" }) as never, ACTOR)
 
     expect(result).toBe(created)
     expect(createPropertyRecordMock).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "Maple Court" }),
+      expect.objectContaining({ name: "Maple Court", createdBy: ACTOR, updatedBy: ACTOR }),
       expect.anything(),
     )
   })
 
   it("re-throws unexpected database errors unchanged", async () => {
     createPropertyRecordMock.mockRejectedValue(new Error("boom"))
-    await expect(createPropertyUseCase(input() as never)).rejects.toThrowError("boom")
-    await expect(createPropertyUseCase(input() as never)).rejects.not.toBeInstanceOf(
+    await expect(createPropertyUseCase(input() as never, ACTOR)).rejects.toThrowError("boom")
+    await expect(createPropertyUseCase(input() as never, ACTOR)).rejects.not.toBeInstanceOf(
       PropertyExecutionError,
     )
   })

@@ -23,9 +23,14 @@ export type CreatePropertyRecordInput = {
   phone: string | null
   email: string | null
   instructions?: string | null
+  createdBy: string
+  updatedBy: string
 }
 
-export type UpdatePropertyRecordInput = Partial<CreatePropertyRecordInput>
+// `createdBy` is immutable post-create; `updatedBy` is always stamped on edit.
+export type UpdatePropertyRecordInput = Partial<
+  Omit<CreatePropertyRecordInput, "createdBy" | "updatedBy">
+> & { updatedBy: string }
 
 const propertyDetailSelect = {
   id: true,
@@ -40,6 +45,8 @@ const propertyDetailSelect = {
   phone: true,
   email: true,
   instructions: true,
+  createdBy: true,
+  updatedBy: true,
   managementCompany: {
     select: { id: true, name: true },
   },

@@ -10,8 +10,13 @@ import type { PropertyUseCaseResult, UpdatePropertyUseCaseInput } from "./types.
 export async function updatePropertyUseCase(
   id: string,
   input: UpdatePropertyUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<PropertyUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updatePropertyUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -25,7 +30,7 @@ export async function updatePropertyUseCase(
     }
 
     try {
-      return await updatePropertyRecord(id, input, c)
+      return await updatePropertyRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         throw new PropertyExecutionError({

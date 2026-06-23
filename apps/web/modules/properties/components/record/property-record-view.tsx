@@ -182,6 +182,12 @@ export function PropertyRecordView({
               <FormField label="Updated">
                 <StaticFieldValue>{formatEasternDateTime(entry.updatedAt) || "—"}</StaticFieldValue>
               </FormField>
+              <FormField label="Created by">
+                <StaticFieldValue>{entry.createdBy ?? "—"}</StaticFieldValue>
+              </FormField>
+              <FormField label="Updated by">
+                <StaticFieldValue>{entry.updatedBy ?? "—"}</StaticFieldValue>
+              </FormField>
             </div>
           </div>
         </RecordPrimarySectionInstance>

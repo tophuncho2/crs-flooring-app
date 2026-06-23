@@ -27,6 +27,8 @@ const propertyListSelect = {
   postalCode: true,
   phone: true,
   email: true,
+  createdBy: true,
+  updatedBy: true,
   managementCompany: {
     select: { id: true, name: true },
   },
@@ -51,6 +53,8 @@ const propertyDetailSelect = {
   phone: true,
   email: true,
   instructions: true,
+  createdBy: true,
+  updatedBy: true,
   managementCompany: {
     select: { id: true, name: true },
   },

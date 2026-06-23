@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         route: "/api/properties",
         entityType: "flooringProperty",
       },
-      () => createPropertyUseCase(input),
+      () => createPropertyUseCase(input, access.user.email),
     )
 
     const responseBody = { property: result }

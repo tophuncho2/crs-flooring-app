@@ -5,8 +5,13 @@ import type { CreatePropertyUseCaseInput, PropertyUseCaseResult } from "./types.
 
 export async function createPropertyUseCase(
   input: CreatePropertyUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<PropertyUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createPropertyUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -19,6 +24,9 @@ export async function createPropertyUseCase(
       })
     }
 
-    return await createPropertyRecord(input, c)
+    return await createPropertyRecord(
+      { ...input, createdBy: actorEmail, updatedBy: actorEmail },
+      c,
+    )
   })
 }

@@ -61,7 +61,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringProperty",
         entityId: id,
       },
-      () => updatePropertyUseCase(id, input),
+      () => updatePropertyUseCase(id, input, access.user.email),
     )
 
     const responseBody = { property: result }

@@ -84,8 +84,13 @@ function toDomainForm(input: CreatePropertyHubUseCaseInput): CreatePropertyHubFo
 
 export async function createPropertyHubUseCase(
   input: CreatePropertyHubUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<CreatePropertyHubUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createPropertyHubUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -135,6 +140,8 @@ export async function createPropertyHubUseCase(
           phone: input.property.fields.phone,
           email: input.property.fields.email,
           instructions: input.property.fields.instructions,
+          createdBy: actorEmail,
+          updatedBy: actorEmail,
         },
         c,
       )
@@ -143,7 +150,7 @@ export async function createPropertyHubUseCase(
       // domain rule guarantees an MC action accompanies a property link.
       property = await updatePropertyRecord(
         input.property.id,
-        { managementCompanyId: managementCompany?.id ?? null },
+        { managementCompanyId: managementCompany?.id ?? null, updatedBy: actorEmail },
         c,
       )
     }

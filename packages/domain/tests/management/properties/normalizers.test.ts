@@ -19,6 +19,8 @@ describe("normalizeProperty", () => {
     phone: "555-1212",
     email: "a@b.com",
     instructions: "Gate 1234",
+    createdBy: "creator@example.com",
+    updatedBy: "editor@example.com",
     managementCompany: { id: "mc-1", name: "Acme" },
   }
 
@@ -79,6 +81,16 @@ describe("normalizeProperty", () => {
     expect(normalizeProperty(base).propertyNumber).toBe("PROP-1")
   })
 
+  it("passes the actor emails through, coalescing missing ones to null", () => {
+    const result = normalizeProperty(base)
+    expect(result.createdBy).toBe("creator@example.com")
+    expect(result.updatedBy).toBe("editor@example.com")
+
+    const blank = normalizeProperty({ ...base, createdBy: null, updatedBy: null })
+    expect(blank.createdBy).toBeNull()
+    expect(blank.updatedBy).toBeNull()
+  })
+
   it("defaults the stepper neighbors to null when none are given", () => {
     const result = normalizeProperty(base)
     expect(result.previousProperty).toBeNull()
@@ -109,12 +121,16 @@ describe("normalizePropertyListRow", () => {
       postalCode: "78701",
       phone: null,
       email: null,
+      createdBy: "creator@example.com",
+      updatedBy: null,
       managementCompany: null,
       _count: { templates: 4 },
     })
     expect(result.propertyNumber).toBe("PROP-1")
     expect(result.templateCount).toBe(4)
     expect(result.fullAddress).toBe("1 Main St, Austin, TX, 78701")
+    expect(result.createdBy).toBe("creator@example.com")
+    expect(result.updatedBy).toBeNull()
   })
 })
 
