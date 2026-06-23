@@ -1,21 +1,13 @@
-import type { WarehouseRecord } from "@builders/db"
+import type {
+  CreateWarehouseInput as CreateWarehouseRecordInput,
+  UpdateWarehouseInput as UpdateWarehouseRecordInput,
+  WarehouseRecord,
+} from "@builders/db"
 
-export type CreateWarehouseInput = {
-  name: string
-  streetAddress: string | null
-  city: string | null
-  state: string | null
-  postalCode: string | null
-  phone: string | null
-}
-
-export type UpdateWarehouseInput = {
-  name?: string
-  streetAddress?: string | null
-  city?: string | null
-  state?: string | null
-  postalCode?: string | null
-  phone?: string | null
-}
+// The actor email (createdBy/updatedBy) is server-derived, threaded as an explicit
+// `actorEmail` param — NOT part of the user-supplied input envelope. Strip the actor
+// fields off the db input types here so the use-case inputs stay the validated subset.
+export type CreateWarehouseInput = Omit<CreateWarehouseRecordInput, "createdBy" | "updatedBy">
+export type UpdateWarehouseInput = Omit<UpdateWarehouseRecordInput, "updatedBy">
 
 export type WarehouseResult = WarehouseRecord
