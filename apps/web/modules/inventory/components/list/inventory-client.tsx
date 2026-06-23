@@ -390,40 +390,12 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* Status: own labeled card, hugging its natural 2-row height
-                (self-start) rather than stretching to the tall column. */}
-            <ListToolbarCell className="self-start">
-              <ListToolbarTallCard label="Status">
-                <ArchiveSegmentedControl
-                  value={isArchivedValue}
-                  onChange={handleArchivedChange}
-                />
-              </ListToolbarTallCard>
-              {/* Import: PO# and Import # share one encased card. They're
-                  mutually exclusive (selecting one clears the other). */}
-              <ListToolbarTallCard label="Import">
-                <div className="flex w-full flex-col gap-2">
-                  <PurchaseOrderPicker
-                    value={selectedPurchaseOrderNumber}
-                    onChange={handlePurchaseOrderChange}
-                    placeholder="PO#"
-                    ariaLabel="Filter inventory by import PO number"
-                  />
-                  <ImportNumberPicker
-                    value={selectedImportNumber}
-                    onChange={handleImportNumberChange}
-                    placeholder="IMP#"
-                    ariaLabel="Filter inventory by import number"
-                  />
-                </div>
-              </ListToolbarTallCard>
-            </ListToolbarCell>
-
             {/* One encased card: Warehouse, Location, Category, Product stacked
                 together. The warehouse pick gates Location (the picker renders
                 disabled until a warehouse is picked); a warehouse change
                 cascades a clear into Location via handleWarehouseChange. Product
-                is category-scoped (category change cascades the product clear). */}
+                is category-scoped (category change cascades the product clear).
+                Sits immediately to the right of the search bars. */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <WarehouseFilterChip
@@ -453,6 +425,40 @@ export default function InventoryClient({
                   onChange={handleProductChange}
                 />
               </div>
+            </ListToolbarCell>
+
+            {/* Import: PO# and Import # share one encased card. They're
+                mutually exclusive (selecting one clears the other). Sits to the
+                right of the Warehouse/Location/Category/Product card. */}
+            <ListToolbarCell className="self-start">
+              <ListToolbarTallCard label="Import">
+                <div className="flex w-full flex-col gap-2">
+                  <PurchaseOrderPicker
+                    value={selectedPurchaseOrderNumber}
+                    onChange={handlePurchaseOrderChange}
+                    placeholder="PO#"
+                    ariaLabel="Filter inventory by import PO number"
+                  />
+                  <ImportNumberPicker
+                    value={selectedImportNumber}
+                    onChange={handleImportNumberChange}
+                    placeholder="IMP#"
+                    ariaLabel="Filter inventory by import number"
+                  />
+                </div>
+              </ListToolbarTallCard>
+            </ListToolbarCell>
+
+            {/* Status: own labeled card, hugging its natural 2-row height
+                (self-start) rather than stretching to the tall column. Sits to
+                the right of the Import card. */}
+            <ListToolbarCell className="self-start">
+              <ListToolbarTallCard label="Status">
+                <ArchiveSegmentedControl
+                  value={isArchivedValue}
+                  onChange={handleArchivedChange}
+                />
+              </ListToolbarTallCard>
             </ListToolbarCell>
 
             {/* Far-right create action — opens the manual create-inventory
