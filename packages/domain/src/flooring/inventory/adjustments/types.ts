@@ -56,14 +56,34 @@ export type InventoryAdjustmentListFilters = {
   // direct `productId` match. Mirrors the inventory list chips.
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
-  // Per-field identity search — the four list-view search bars. Each is a
-  // free-text ILIKE against its own frozen snapshot column
-  // (`inventoryNumber`/`rollNumber`/`dyeLot`/`inventoryNote`); multiple set
-  // fields AND together to narrow.
+  // Per-field identity search — the list-view search bars. `adjNumber`/`invNumber`
+  // are exact integer matches on the generated `adjustmentNumberInt`/
+  // `inventoryNumberInt` columns ("12" → ADJ-12/INV-12 only). `rollNumber`/
+  // `dyeLot`/`note` are free-text ILIKE against their own frozen snapshot column
+  // (`rollNumber`/`dyeLot`/`inventoryNote`). Multiple set fields AND together.
+  adjNumber?: string
   invNumber?: string
   rollNumber?: string
   dyeLot?: string
   note?: string
+}
+
+/**
+ * Prev/next adjustment in a single parent inventory's ledger, walked by the
+ * record-view Adjustments-section stepper. The ledger is chronological
+ * (`createdAt DESC, id DESC`), so neighbors are a keyset step over that order
+ * scoped to `inventoryId` — NOT the numeric `adjustmentNumberInt` sequence.
+ * `adjustmentNumber` labels the stepper; `id` drives the in-place select. Null
+ * at the ledger ends.
+ */
+export type InventoryAdjustmentNeighbor = {
+  id: string
+  adjustmentNumber: string
+}
+
+export type InventoryAdjustmentNeighbors = {
+  previousAdjustment: InventoryAdjustmentNeighbor | null
+  nextAdjustment: InventoryAdjustmentNeighbor | null
 }
 
 export type InventoryAdjustmentParentContext = {

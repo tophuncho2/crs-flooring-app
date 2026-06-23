@@ -5,17 +5,21 @@ import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import type { EnrichedInventoryAdjustmentRow, InventoryDetail, InventoryForm } from "@builders/domain"
 import {
+  ConfirmDialog,
   RecordDrilldownSection,
   RecordEntityFooter,
   RecordItemSection,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  RecordStepper,
+  useRecordSwapGuard,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
 import {
   INVENTORY_ADJUSTMENTS_QUERY_KEY,
   inventoryAdjustmentByIdRequest,
+  inventoryAdjustmentNeighborsRequest,
 } from "@/modules/inventory/data/inventory-adjustments-request"
 import { EmbeddedAdjustmentRecordView } from "./adjustments/embedded-adjustment-record-view"
 import { useInventoryPrimarySection } from "@/modules/inventory/controllers/record/primary/use-inventory-primary-section"
@@ -123,6 +127,50 @@ export function InventoryRecordView({
       : byIdQuery.data && byIdQuery.data.id === selectedAdjustmentId
         ? byIdQuery.data
         : null
+
+  // Per-parent stepper: walk prev/next adjustments of THIS inventory in ledger
+  // order (createdAt desc, id desc), crossing page boundaries. Neighbors are
+  // server-computed and scoped to the inventory; fetched whenever an adjustment
+  // is open (never for the create sentinel).
+  const stepperEnabled =
+    selectedAdjustmentId !== null && selectedAdjustmentId !== NEW_ADJUSTMENT_ID
+  const neighborsQuery = useQuery({
+    enabled: stepperEnabled,
+    queryKey: [...INVENTORY_ADJUSTMENTS_QUERY_KEY, entry.id, "neighbors", selectedAdjustmentId],
+    queryFn: ({ signal }) =>
+      inventoryAdjustmentNeighborsRequest(entry.id, selectedAdjustmentId as string, signal),
+  })
+  const previousAdjustment = stepperEnabled
+    ? (neighborsQuery.data?.previousAdjustment ?? null)
+    : null
+  const nextAdjustment = stepperEnabled
+    ? (neighborsQuery.data?.nextAdjustment ?? null)
+    : null
+
+  // A step is an in-place record swap; if the open adjustment has unsaved edits,
+  // defer behind the discard prompt (mirrors the inventory shell stepper).
+  const { guard: stepGuard, dialogProps: stepDialogProps } = useRecordSwapGuard({
+    isDirty: embeddedAdjustmentDirty,
+    discardMessage:
+      "This adjustment has unsaved changes. Stepping to another adjustment will discard them.",
+  })
+  const stepTo = useCallback(
+    (id: string) => stepGuard(() => handleSelectAdjustment(id)),
+    [stepGuard, handleSelectAdjustment],
+  )
+
+  // ◀ ADJ-# ▶ — flips to the parent inventory's prev/next adjustment in place.
+  // Arrows disable at the ledger ends (null neighbor) and while the neighbor
+  // lookup is in flight.
+  const adjustmentStepper = (
+    <RecordStepper
+      label={editRow?.adjustmentNumber ?? ""}
+      onPrevious={previousAdjustment ? () => stepTo(previousAdjustment.id) : null}
+      onNext={nextAdjustment ? () => stepTo(nextAdjustment.id) : null}
+      previousAriaLabel="Previous adjustment"
+      nextAriaLabel="Next adjustment"
+    />
+  )
 
   // Drive the shared adjustment controller from the URL selection — edit only;
   // create is the modal now. Keyed on the selection + resolved row (NOT
@@ -274,13 +322,16 @@ export function InventoryRecordView({
               />
             )}
             renderDetail={(_id, onBack) => (
-              <EmbeddedAdjustmentRecordView
-                controller={adjustments.panel}
-                hostPage={ctx.page}
-                onBack={onBack}
-                onDirtyChange={setEmbeddedAdjustmentDirty}
-                onAddInventoryFromAdjustment={confirmSplitOff}
-              />
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-start">{adjustmentStepper}</div>
+                <EmbeddedAdjustmentRecordView
+                  controller={adjustments.panel}
+                  hostPage={ctx.page}
+                  onBack={onBack}
+                  onDirtyChange={setEmbeddedAdjustmentDirty}
+                  onAddInventoryFromAdjustment={confirmSplitOff}
+                />
+              </div>
             )}
           />
         </RecordItemSection>
@@ -314,6 +365,7 @@ export function InventoryRecordView({
           }}
         />
       ) : null}
+      <ConfirmDialog {...stepDialogProps} />
     </>
   )
 }

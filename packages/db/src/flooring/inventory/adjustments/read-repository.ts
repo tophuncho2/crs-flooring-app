@@ -4,6 +4,7 @@ import {
   type EnrichedInventoryAdjustmentRow,
   type FlooringInventoryAdjustmentType,
   type InventoryAdjustmentListFilters,
+  type InventoryAdjustmentNeighbors,
   type InventoryAdjustmentParentContext,
   type InventoryAdjustmentRow,
 } from "@builders/domain"
@@ -261,6 +262,71 @@ export async function listInventoryAdjustmentsPage(
   return { rows: page.map(normalizeEnrichedInventoryAdjustmentRow), hasMore }
 }
 
+export type InventoryAdjustmentNeighborsResult = InventoryAdjustmentNeighbors & {
+  /** The cursor row's parent — lets the use case assert the requested scope. */
+  inventoryId: string
+}
+
+/**
+ * Prev/next neighbors of one adjustment within its parent inventory's ledger,
+ * powering the record-view Adjustments-section stepper. The ledger order is
+ * `createdAt DESC, id DESC` (newest-first — see `listInventoryAdjustmentsPage`),
+ * so neighbors are a keyset step over that order scoped to `inventoryId`, NOT
+ * the numeric `adjustmentNumberInt` sequence used by the inventory shell stepper.
+ *
+ *   - previous (◀): the row ABOVE — newer, the smallest `(createdAt, id)` that is
+ *     still strictly greater than the cursor.
+ *   - next (▶): the row BELOW — older, the largest `(createdAt, id)` strictly less
+ *     than the cursor.
+ *
+ * The `(createdAt, id)` tuple compare is OR-decomposed (Prisma has no row-value
+ * comparator). Returns `null` when the adjustment id does not exist.
+ */
+export async function getAdjustmentNeighbors(
+  adjustmentId: string,
+  client: InventoryAdjustmentDbClient = db,
+): Promise<InventoryAdjustmentNeighborsResult | null> {
+  const cursor = await client.flooringInventoryAdjustment.findUnique({
+    where: { id: adjustmentId },
+    select: { id: true, inventoryId: true, createdAt: true },
+  })
+  if (!cursor) return null
+
+  const neighborSelect = { id: true, adjustmentNumber: true } as const
+  const [previous, next] = await Promise.all([
+    // ◀ newer: smallest (createdAt, id) strictly greater than the cursor.
+    client.flooringInventoryAdjustment.findFirst({
+      where: {
+        inventoryId: cursor.inventoryId,
+        OR: [
+          { createdAt: { gt: cursor.createdAt } },
+          { createdAt: cursor.createdAt, id: { gt: cursor.id } },
+        ],
+      },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: neighborSelect,
+    }),
+    // ▶ older: largest (createdAt, id) strictly less than the cursor.
+    client.flooringInventoryAdjustment.findFirst({
+      where: {
+        inventoryId: cursor.inventoryId,
+        OR: [
+          { createdAt: { lt: cursor.createdAt } },
+          { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+        ],
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: neighborSelect,
+    }),
+  ])
+
+  return {
+    inventoryId: cursor.inventoryId,
+    previousAdjustment: previous,
+    nextAdjustment: next,
+  }
+}
+
 /**
  * Global adjustments ledger read powering the standalone list view. Unlike
  * `listInventoryAdjustmentsPage` this is NOT scoped to one inventory:
@@ -268,11 +334,13 @@ export async function listInventoryAdjustmentsPage(
  *   - `filters.categoryId` — optional IN match via the live `product.categoryId`
  *     relation; `filters.productId` — optional IN match on the `productId`
  *     snapshot. Both mirror the inventory list chips.
- *   - `filters.invNumber`/`rollNumber`/`dyeLot`/`note` — per-field identity
- *     search bars. Each is an independent case-insensitive substring (ILIKE)
- *     match on its own frozen snapshot column (`inventoryNumber`/`rollNumber`/
- *     `dyeLot`/`inventoryNote`), AND'd together. Backed by the per-column
- *     trigram indexes on `flooring_inventory_adjustment`.
+ *   - `filters.adjNumber`/`invNumber` — exact numeric matches on the generated
+ *     `adjustmentNumberInt`/`inventoryNumberInt` btree columns (digits stripped
+ *     from the query); "12" finds ADJ-12/INV-12 only.
+ *   - `filters.rollNumber`/`dyeLot`/`note` — case-insensitive substring (ILIKE)
+ *     matches on their own frozen snapshot columns (`rollNumber`/`dyeLot`/
+ *     `inventoryNote`), backed by the per-column trigram indexes. All search
+ *     filters AND together.
  *   - Sort: `createdAt DESC, id DESC` — a stable newest-first ledger order
  *     so freshly created (pending) rows surface at the top rather than
  *     being grouped deep under an inventory item.
@@ -307,11 +375,24 @@ export async function listAdjustmentsForListView(
     where.productId = { in: [...productIds] }
   }
 
-  // Per-field identity search — one independent ILIKE per filled search bar,
-  // each against its own frozen snapshot column (note maps to `inventoryNote`).
+  // Per-field identity search. adj#/inv# are EXACT numeric matches on the
+  // generated integer columns (`adjustmentNumberInt`/`inventoryNumberInt`,
+  // btree) — "12" finds INV-12 only, never INV-120/INV-312 — mirroring the
+  // inventory list. The user may type bare ("12") or prefixed ("INV-12"/"ADJ-12");
+  // non-digits are stripped, and a non-numeric query matches nothing via the -1
+  // sentinel (both sequences are always positive). roll#/dye/note stay substring
+  // ILIKE against their own frozen snapshot column (note maps to `inventoryNote`).
+  const adjNumber = args.filters.adjNumber?.trim()
+  if (adjNumber) {
+    const digits = adjNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    where.adjustmentNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
+  }
   const invNumber = args.filters.invNumber?.trim()
   if (invNumber) {
-    where.inventoryNumber = { contains: invNumber, mode: "insensitive" }
+    const digits = invNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    where.inventoryNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
   }
   const rollNumber = args.filters.rollNumber?.trim()
   if (rollNumber) {

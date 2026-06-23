@@ -217,8 +217,9 @@ export function validateAdjustmentsPageQuery(
 
 // --- Standalone adjustments ledger list query validator (GET /api/adjustments) ---
 // Warehouse, category, and product are multi-value chip filters (parsed off the
-// raw params via getAll). The four identity search bars (`invNumber`/`rollNumber`/
-// `dyeLot`/`note`) each ILIKE their own frozen snapshot column in the data layer.
+// raw params via getAll). The identity search bars: `adjNumber`/`invNumber` are
+// exact integer matches on the generated number columns; `rollNumber`/`dyeLot`/
+// `note` ILIKE their own frozen snapshot column in the data layer.
 
 const ADJUSTMENTS_MULTI_VALUE_FILTER_KEYS = [
   "warehouseId",
@@ -239,6 +240,7 @@ function readAdjustmentsMultiValue(searchParams: URLSearchParams, key: string): 
 }
 
 const listAdjustmentsQuerySchema = z.object({
+  adjNumber: z.string().optional(),
   invNumber: z.string().optional(),
   rollNumber: z.string().optional(),
   dyeLot: z.string().optional(),
@@ -276,6 +278,7 @@ export function validateAdjustmentsListQuery(
     const t = value?.trim()
     return t && t.length > 0 ? t : undefined
   }
+  const adjNumber = trim(parsed.adjNumber)
   const invNumber = trim(parsed.invNumber)
   const rollNumber = trim(parsed.rollNumber)
   const dyeLot = trim(parsed.dyeLot)
@@ -291,6 +294,7 @@ export function validateAdjustmentsListQuery(
   for (const [key, values] of multiValueEntries) {
     if (values.length > 0) filters[key] = values
   }
+  if (adjNumber) filters.adjNumber = adjNumber
   if (invNumber) filters.invNumber = invNumber
   if (rollNumber) filters.rollNumber = rollNumber
   if (dyeLot) filters.dyeLot = dyeLot

@@ -36,9 +36,10 @@ const MULTI_VALUE_FILTER_KEYS = [
   "categoryId",
   "productId",
 ] as const
-// Scalar free-text filter params — the four identity search bars. Shared by
-// parse + build so the URL contract stays in one place.
-const TEXT_FILTER_KEYS = ["invNumber", "rollNumber", "dyeLot", "note"] as const
+// Scalar free-text filter params — the identity search bars. Shared by parse +
+// build so the URL contract stays in one place. (adjNumber/invNumber resolve to
+// exact integer matches server-side; roll/dye/note stay substring.)
+const TEXT_FILTER_KEYS = ["adjNumber", "invNumber", "rollNumber", "dyeLot", "note"] as const
 
 export function parseAdjustmentsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,

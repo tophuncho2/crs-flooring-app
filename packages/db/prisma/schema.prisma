@@ -354,6 +354,8 @@ model FlooringImportEntry {
 model FlooringInventoryAdjustment {
   id                String                            @id @default(uuid())
   adjustmentNumber  String                            @unique @default(dbgenerated("('ADJ-'::text || (nextval('flooring_inventory_adjustment_number_seq'::regclass))::text)"))
+  adjustmentNumberInt Int?                            @default(dbgenerated("(SUBSTRING(\"adjustmentNumber\" FROM 5))::integer"))
+  inventoryNumberInt  Int?                            @default(dbgenerated("(SUBSTRING(\"inventoryNumber\" FROM 5))::integer"))
   inventoryId       String
   inventory         FlooringInventory                 @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   inventoryNumber   String?
@@ -383,6 +385,8 @@ model FlooringInventoryAdjustment {
   updatedAt         DateTime                          @updatedAt
 
   @@index([adjustmentNumber])
+  @@index([adjustmentNumberInt])
+  @@index([inventoryNumberInt])
   @@index([inventoryId])
   @@index([productId])
   @@index([warehouseId])
@@ -392,11 +396,11 @@ model FlooringInventoryAdjustment {
   // and all-warehouses createdAt/id sort.
   @@index([warehouseId, createdAt, id])
   @@index([createdAt, id])
-  // Per-field identity search on the frozen snapshot columns (the list-view
-  // toolbar's 4 search bars ILIKE each column independently). All four are
-  // immutable post-create, so these GIN indexes are insert-only — mirrors the
-  // flooring_inventory identity trgm indexes.
-  @@index([inventoryNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_adjustment_inventoryNumber_trgm_idx")
+  // Per-field identity search on the frozen snapshot columns. adj#/inv# search
+  // are exact matches on the generated `adjustmentNumberInt`/`inventoryNumberInt`
+  // (btree, above), so those number columns need no trigram index. roll#/dye/note
+  // stay substring ILIKE — each immutable post-create, so these GIN indexes are
+  // insert-only, mirroring the flooring_inventory identity trgm indexes.
   @@index([rollNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_adjustment_rollNumber_trgm_idx")
   @@index([dyeLot(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_adjustment_dyeLot_trgm_idx")
   @@index([inventoryNote(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_adjustment_inventoryNote_trgm_idx")

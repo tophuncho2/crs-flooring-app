@@ -27,6 +27,7 @@ const ADJUSTMENTS_FILTERABLE_FIELDS = [
   "warehouseId",
   "categoryId",
   "productId",
+  "adjNumber",
   "invNumber",
   "rollNumber",
   "dyeLot",
@@ -35,14 +36,15 @@ const ADJUSTMENTS_FILTERABLE_FIELDS = [
 
 /**
  * Engine-side filter shape: the list-view engine's filter map carries `string[]`
- * only. The four identity search bars are free-text scalars, so we encode them
- * as 1-element arrays here and translate back to the typed
+ * only. The identity search bars are free-text scalars, so we encode them as
+ * 1-element arrays here and translate back to the typed
  * `InventoryAdjustmentListFilters` at the listFn boundary.
  */
 type EngineAdjustmentFilters = {
   warehouseId?: ReadonlyArray<string>
   categoryId?: ReadonlyArray<string>
   productId?: ReadonlyArray<string>
+  adjNumber?: ReadonlyArray<string>
   invNumber?: ReadonlyArray<string>
   rollNumber?: ReadonlyArray<string>
   dyeLot?: ReadonlyArray<string>
@@ -54,6 +56,7 @@ function toEngineFilters(app: InventoryAdjustmentListFilters): EngineAdjustmentF
   if (app.warehouseId?.length) out.warehouseId = app.warehouseId
   if (app.categoryId?.length) out.categoryId = app.categoryId
   if (app.productId?.length) out.productId = app.productId
+  if (app.adjNumber && app.adjNumber.length > 0) out.adjNumber = [app.adjNumber]
   if (app.invNumber && app.invNumber.length > 0) out.invNumber = [app.invNumber]
   if (app.rollNumber && app.rollNumber.length > 0) out.rollNumber = [app.rollNumber]
   if (app.dyeLot && app.dyeLot.length > 0) out.dyeLot = [app.dyeLot]
@@ -66,6 +69,8 @@ function toAppFilters(engine: EngineAdjustmentFilters): InventoryAdjustmentListF
   if (engine.warehouseId?.length) out.warehouseId = engine.warehouseId
   if (engine.categoryId?.length) out.categoryId = engine.categoryId
   if (engine.productId?.length) out.productId = engine.productId
+  const adjNumber = engine.adjNumber?.[0]?.trim()
+  if (adjNumber) out.adjNumber = adjNumber
   const invNumber = engine.invNumber?.[0]?.trim()
   if (invNumber) out.invNumber = invNumber
   const rollNumber = engine.rollNumber?.[0]?.trim()
@@ -143,6 +148,7 @@ export default function AdjustmentsClient({
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
   const selectedCategoryId = filters.categoryId?.[0] ?? null
   const selectedProductId = filters.productId?.[0] ?? null
+  const adjNumberValue = filters.adjNumber?.[0] ?? ""
   const invNumberValue = filters.invNumber?.[0] ?? ""
   const rollNumberValue = filters.rollNumber?.[0] ?? ""
   const dyeLotValue = filters.dyeLot?.[0] ?? ""
@@ -198,7 +204,7 @@ export default function AdjustmentsClient({
   // One handler for all four identity search bars — encodes the free-text value
   // as a 1-element array (or empty to clear).
   const handleTextFilterChange = useCallback(
-    (key: "invNumber" | "rollNumber" | "dyeLot" | "note", next: string) => {
+    (key: "adjNumber" | "invNumber" | "rollNumber" | "dyeLot" | "note", next: string) => {
       const trimmed = next.trim()
       onFilterChange(key, trimmed.length > 0 ? [trimmed] : [])
     },
@@ -210,6 +216,7 @@ export default function AdjustmentsClient({
       Boolean(selectedWarehouseId) ||
       Boolean(selectedCategoryId) ||
       Boolean(selectedProductId) ||
+      Boolean(adjNumberValue) ||
       Boolean(invNumberValue) ||
       Boolean(rollNumberValue) ||
       Boolean(dyeLotValue) ||
@@ -218,6 +225,7 @@ export default function AdjustmentsClient({
       selectedWarehouseId,
       selectedCategoryId,
       selectedProductId,
+      adjNumberValue,
       invNumberValue,
       rollNumberValue,
       dyeLotValue,
@@ -241,6 +249,12 @@ export default function AdjustmentsClient({
           <ListToolbar className="pt-0" showDivider={false}>
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
+                <DebouncedSearchControl
+                  value={adjNumberValue}
+                  onCommit={(next) => handleTextFilterChange("adjNumber", next)}
+                  placeholder="Adj #"
+                  ariaLabel="Search adjustments by adjustment number"
+                />
                 <DebouncedSearchControl
                   value={rollNumberValue}
                   onCommit={(next) => handleTextFilterChange("rollNumber", next)}

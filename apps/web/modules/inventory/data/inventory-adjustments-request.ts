@@ -3,6 +3,7 @@
 import type {
   EnrichedInventoryAdjustmentPage,
   EnrichedInventoryAdjustmentRow,
+  InventoryAdjustmentNeighbors,
 } from "@builders/domain"
 import { requestJson } from "@/transport/http"
 
@@ -51,4 +52,26 @@ export async function inventoryAdjustmentByIdRequest(
     },
   )
   return result.adjustment
+}
+
+/**
+ * Prev/next neighbors of an adjustment within its parent inventory's ledger
+ * (chronological, crossing page boundaries). Powers the record-view
+ * Adjustments-section stepper. Each neighbor is `{ id, adjustmentNumber }` or
+ * null at the ends.
+ */
+export async function inventoryAdjustmentNeighborsRequest(
+  inventoryId: string,
+  adjustmentId: string,
+  signal?: AbortSignal,
+): Promise<InventoryAdjustmentNeighbors> {
+  const result = await requestJson<{ neighbors: InventoryAdjustmentNeighbors }>(
+    `/api/inventory/${inventoryId}/adjustments/${adjustmentId}/neighbors`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal,
+    },
+  )
+  return result.neighbors
 }
