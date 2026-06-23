@@ -56,6 +56,8 @@ function inventory(): InventoryDetail {
     warehouseName: "Main Warehouse",
     location: "A1",
     startingStock: "100",
+    cost: "",
+    freight: "",
     netDeducted: "0",
     stockBalance: "100",
     isArchived: false,
