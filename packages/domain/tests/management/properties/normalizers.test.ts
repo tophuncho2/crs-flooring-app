@@ -8,6 +8,7 @@ import {
 describe("normalizeProperty", () => {
   const base = {
     id: "prop-1",
+    propertyNumber: "PROP-1",
     createdAt: "2026-05-20T00:00:00.000Z",
     updatedAt: "2026-05-26T00:00:00.000Z",
     name: "Maple Court",
@@ -73,12 +74,32 @@ describe("normalizeProperty", () => {
     expect(normalizeProperty(base).managementCompany).toEqual({ id: "mc-1", name: "Acme" })
     expect(normalizeProperty({ ...base, managementCompany: null }).managementCompany).toBeNull()
   })
+
+  it("passes the property number through", () => {
+    expect(normalizeProperty(base).propertyNumber).toBe("PROP-1")
+  })
+
+  it("defaults the stepper neighbors to null when none are given", () => {
+    const result = normalizeProperty(base)
+    expect(result.previousProperty).toBeNull()
+    expect(result.nextProperty).toBeNull()
+  })
+
+  it("folds provided previous/next neighbors into the record", () => {
+    const result = normalizeProperty(base, {
+      previousProperty: { id: "prop-0" },
+      nextProperty: { id: "prop-2" },
+    })
+    expect(result.previousProperty).toEqual({ id: "prop-0" })
+    expect(result.nextProperty).toEqual({ id: "prop-2" })
+  })
 })
 
 describe("normalizePropertyListRow", () => {
   it("extracts templateCount from _count.templates", () => {
     const result = normalizePropertyListRow({
       id: "prop-1",
+      propertyNumber: "PROP-1",
       createdAt: "2026-05-20T00:00:00.000Z",
       updatedAt: "2026-05-26T00:00:00.000Z",
       name: "Maple Court",
@@ -91,6 +112,7 @@ describe("normalizePropertyListRow", () => {
       managementCompany: null,
       _count: { templates: 4 },
     })
+    expect(result.propertyNumber).toBe("PROP-1")
     expect(result.templateCount).toBe(4)
     expect(result.fullAddress).toBe("1 Main St, Austin, TX, 78701")
   })

@@ -13,7 +13,11 @@ import { listPropertiesUseCase } from "../../../src/management/properties/list-p
 function callArgs() {
   return listPropertiesForListViewMock.mock.calls[0]![0] as {
     search?: string
-    filters?: { managementCompanyId?: ReadonlyArray<string>; state?: ReadonlyArray<string> }
+    filters?: {
+      propNumber?: string
+      managementCompanyId?: ReadonlyArray<string>
+      state?: ReadonlyArray<string>
+    }
     skip: number
     take: number
   }
@@ -51,6 +55,14 @@ describe("listPropertiesUseCase", () => {
     listPropertiesForListViewMock.mockClear()
     await listPropertiesUseCase({ search: "   " })
     expect(callArgs().search).toBeUndefined()
+  })
+
+  it("trims the property number filter and drops a blank one", async () => {
+    await listPropertiesUseCase({ filters: { propNumber: "  5  " } })
+    expect(callArgs().filters).toEqual({ propNumber: "5" })
+    listPropertiesForListViewMock.mockClear()
+    await listPropertiesUseCase({ filters: { propNumber: "   " } })
+    expect(callArgs().filters).toBeUndefined()
   })
 
   it("trims and de-duplicates management company id filters", async () => {
