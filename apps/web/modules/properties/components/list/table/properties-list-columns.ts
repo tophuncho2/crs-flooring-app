@@ -9,7 +9,6 @@ import type { PropertyListRow } from "@builders/domain"
  */
 export const PROPERTIES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<PropertyListRow>> = [
   { key: "name", label: "Property" },
-  { key: "propertyNumber", label: "PROP #" },
   { key: "managementCompany", label: "Management Company" },
   { key: "streetAddress", label: "Street" },
   { key: "city", label: "City" },
@@ -18,6 +17,7 @@ export const PROPERTIES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<PropertyList
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
   { key: "templateCount", label: "Templates", align: "end" },
+  { key: "propertyNumber", label: "PROP #" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
 ]
