@@ -2,18 +2,22 @@ import { db } from "../../client.js"
 import { Prisma } from "../../generated/prisma/client.js"
 import type { PrismaClient } from "../../generated/prisma/client.js"
 import {
+  NO_PROPERTY_NEIGHBORS,
   normalizeProperty,
   normalizePropertyListRow,
   normalizePropertyOption,
   type PropertyDetailRecord,
   type PropertyListRow,
+  type PropertyNeighbors,
   type PropertyOption,
 } from "@builders/domain"
+import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 
 type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
 
 const propertyListSelect = {
   id: true,
+  propertyNumber: true,
   createdAt: true,
   updatedAt: true,
   name: true,
@@ -33,6 +37,10 @@ const propertyListSelect = {
 
 const propertyDetailSelect = {
   id: true,
+  propertyNumber: true,
+  // The numeric sort key (generated column) — read here so the detail loader can
+  // resolve the adjacent rows for the record-view shell stepper.
+  propertyNumberInt: true,
   createdAt: true,
   updatedAt: true,
   name: true,
@@ -74,8 +82,50 @@ export async function listPropertyOptions(
   return properties.map(normalizePropertyOption)
 }
 
+/**
+ * Resolve the property rows immediately before/after the given numeric sort key
+ * in the global property-number order (`propertyNumberInt`). Powers the
+ * record-view shell stepper — deliberately global: no MC / state scoping, the
+ * stepper walks the raw number line. Two single-row lookups on the
+ * `propertyNumberInt` index. Both null when the key is null (no generated value
+ * yet) or the row is at the sequence's edge.
+ */
+async function getPropertyNeighbors(
+  propertyNumberInt: number | null,
+  client: PropertiesDbClient = db,
+): Promise<PropertyNeighbors> {
+  if (propertyNumberInt === null) return NO_PROPERTY_NEIGHBORS
+
+  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+    "propertyNumberInt",
+    propertyNumberInt,
+  )
+  const [previous, next] = await Promise.all([
+    client.property.findFirst({
+      ...previousQuery,
+      select: { id: true },
+    }),
+    client.property.findFirst({
+      ...nextQuery,
+      select: { id: true },
+    }),
+  ])
+
+  return {
+    previousProperty: previous ? { id: previous.id } : null,
+    nextProperty: next ? { id: next.id } : null,
+  }
+}
+
+/**
+ * Read the full property detail. By default it also resolves the adjacent rows
+ * for the record-view shell stepper; pass `{ withNeighbors: false }` on paths
+ * that only read a snapshot (e.g. the update/delete conflict check) to skip the
+ * two extra lookups.
+ */
 export async function getPropertyById(
   id: string,
+  options: { withNeighbors?: boolean } = {},
   client: PropertiesDbClient = db,
 ): Promise<PropertyDetailRecord> {
   const property = await client.property.findUniqueOrThrow({
@@ -83,7 +133,12 @@ export async function getPropertyById(
     select: propertyDetailSelect,
   })
 
-  return normalizeProperty(property)
+  const neighbors =
+    options.withNeighbors === false
+      ? NO_PROPERTY_NEIGHBORS
+      : await getPropertyNeighbors(property.propertyNumberInt, client)
+
+  return normalizeProperty(property, neighbors)
 }
 
 export async function countTemplatesByPropertyId(
@@ -96,6 +151,11 @@ export async function countTemplatesByPropertyId(
 export type PropertyListViewOptions = {
   search?: string
   filters?: {
+    /**
+     * Exact match on the generated `propertyNumberInt` (btree) — the toolbar's
+     * PROP-# bar. Non-digits are stripped, so "5" and "PROP-5" both find PROP-5.
+     */
+    propNumber?: string
     managementCompanyId?: ReadonlyArray<string>
     state?: ReadonlyArray<string>
   }
@@ -115,6 +175,15 @@ function buildListViewWhere(
 
   if (options.search) {
     clauses.push({ name: { contains: options.search, mode: "insensitive" } })
+  }
+
+  // Exact identity search on the generated int — strip non-digits, parse, match.
+  // No digits → -1 sentinel so a junk term returns no rows (never all rows).
+  const propNumber = options.filters?.propNumber?.trim() ?? ""
+  if (propNumber.length > 0) {
+    const digits = propNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    clauses.push({ propertyNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
   }
 
   const managementCompanyIds = options.filters?.managementCompanyId

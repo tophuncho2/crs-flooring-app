@@ -95,6 +95,7 @@ export function validateUpdatePropertyInput(
 
 const listPropertiesQuerySchema = z.object({
   q: z.string().optional(),
+  propNumber: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -123,6 +124,9 @@ export function validateListPropertiesQuery(
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
 
+  const trimmedPropNumber = parsed.propNumber?.trim()
+  const propNumber = trimmedPropNumber ? trimmedPropNumber : undefined
+
   const managementCompanyIdRaw = searchParams.getAll("managementCompanyId")
   const managementCompanyId = Array.from(
     new Set(
@@ -142,8 +146,9 @@ export function validateListPropertiesQuery(
   )
 
   const filters =
-    managementCompanyId.length > 0 || state.length > 0
+    propNumber || managementCompanyId.length > 0 || state.length > 0
       ? {
+          ...(propNumber ? { propNumber } : {}),
           ...(managementCompanyId.length > 0 ? { managementCompanyId } : {}),
           ...(state.length > 0 ? { state } : {}),
         }

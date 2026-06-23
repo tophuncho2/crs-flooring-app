@@ -1,9 +1,25 @@
 import { buildAddressLine } from "../../shared/address/index.js"
 import { normalizePhoneNumber } from "../../shared/phone.js"
-import type { PropertyDetailRecord, PropertyListRow, PropertyOption } from "./types.js"
+import type {
+  PropertyDetailRecord,
+  PropertyListRow,
+  PropertyNeighbor,
+  PropertyOption,
+} from "./types.js"
+
+export type PropertyNeighbors = {
+  previousProperty: PropertyNeighbor | null
+  nextProperty: PropertyNeighbor | null
+}
+
+export const NO_PROPERTY_NEIGHBORS: PropertyNeighbors = {
+  previousProperty: null,
+  nextProperty: null,
+}
 
 type PropertyDetailInput = {
   id: string
+  propertyNumber: string
   createdAt: Date | string
   updatedAt: Date | string
   name: string
@@ -19,6 +35,7 @@ type PropertyDetailInput = {
 
 type PropertyListRowInput = {
   id: string
+  propertyNumber: string
   createdAt: Date | string
   updatedAt: Date | string
   name: string
@@ -45,9 +62,13 @@ type PropertyOptionInput = {
   managementCompany?: { name: string } | null
 }
 
-export function normalizeProperty(property: PropertyDetailInput): PropertyDetailRecord {
+export function normalizeProperty(
+  property: PropertyDetailInput,
+  neighbors: PropertyNeighbors = NO_PROPERTY_NEIGHBORS,
+): PropertyDetailRecord {
   return {
     id: property.id,
+    propertyNumber: property.propertyNumber,
     createdAt: property.createdAt instanceof Date ? property.createdAt.toISOString() : property.createdAt,
     updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
     name: property.name,
@@ -60,12 +81,15 @@ export function normalizeProperty(property: PropertyDetailInput): PropertyDetail
     instructions: property.instructions ?? "",
     fullAddress: buildAddressLine(property),
     managementCompany: property.managementCompany,
+    previousProperty: neighbors.previousProperty,
+    nextProperty: neighbors.nextProperty,
   }
 }
 
 export function normalizePropertyListRow(property: PropertyListRowInput): PropertyListRow {
   return {
     id: property.id,
+    propertyNumber: property.propertyNumber,
     createdAt: property.createdAt instanceof Date ? property.createdAt.toISOString() : property.createdAt,
     updatedAt: property.updatedAt instanceof Date ? property.updatedAt.toISOString() : property.updatedAt,
     name: property.name,

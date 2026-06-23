@@ -107,6 +107,8 @@ model FlooringManagementCompany {
 
 model Property {
   id                  String                     @id @default(uuid())
+  propertyNumber      String                     @unique @default(dbgenerated("('PROP-'::text || (nextval('property_hub_number_seq'::regclass))::text)")) @map("property_number")
+  propertyNumberInt   Int?                       @default(dbgenerated("(SUBSTRING(property_number FROM 6))::integer"))
   managementCompanyId String?
   managementCompany   FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
   name                String
@@ -124,6 +126,8 @@ model Property {
 
   @@index([managementCompanyId])
   @@index([name])
+  @@index([propertyNumber])
+  @@index([propertyNumberInt])
   @@map("property_hub")
 }
 

@@ -8,6 +8,7 @@ import { listPropertiesForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type PropertiesListFilters = {
+  propNumber?: string
   managementCompanyId?: ReadonlyArray<string>
   state?: ReadonlyArray<string>
 }
@@ -30,12 +31,14 @@ export async function listPropertiesUseCase(
   const pageSize = Math.max(1, Math.min(LIST_PROPERTIES_MAX_PAGE_SIZE, requestedPageSize))
 
   const search = input.search?.trim() || undefined
+  const propNumber = input.filters?.propNumber?.trim() || undefined
   const managementCompanyId = normalizeManagementCompanyIds(input.filters?.managementCompanyId)
   const state = normalizeStateCodeFilter(input.filters?.state)
 
   const filters =
-    managementCompanyId || state
+    propNumber || managementCompanyId || state
       ? {
+          ...(propNumber ? { propNumber } : {}),
           ...(managementCompanyId ? { managementCompanyId } : {}),
           ...(state ? { state } : {}),
         }

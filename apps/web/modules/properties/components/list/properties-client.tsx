@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
-import type { PropertiesListFilters } from "@builders/application"
+import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import type { ListInput, PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
   normalizeAddressState,
@@ -24,7 +24,33 @@ import { PropertiesListSearch } from "./toolbar-controls/properties-list-search"
 import { PropertiesClearAll } from "./toolbar-controls/sub-controls/properties-clear-all"
 import { PropertiesRowCount } from "./toolbar-controls/sub-controls/properties-row-count"
 
-const PROPERTIES_FILTERABLE_FIELDS = ["managementCompanyId", "state"] as const
+const PROPERTIES_FILTERABLE_FIELDS = ["propNumber", "managementCompanyId", "state"] as const
+
+// The list-view engine stores every filter value as `string[]`. The app filter
+// type carries scalars (`propNumber`) alongside arrays, so we bridge the two
+// the same way inventory does: an all-array engine view + adapters at the edge.
+type EnginePropertiesFilters = {
+  propNumber?: ReadonlyArray<string>
+  managementCompanyId?: ReadonlyArray<string>
+  state?: ReadonlyArray<string>
+}
+
+function toEngineFilters(app: PropertiesListFilters): EnginePropertiesFilters {
+  const out: EnginePropertiesFilters = {}
+  if (app.propNumber && app.propNumber.length > 0) out.propNumber = [app.propNumber]
+  if (app.managementCompanyId?.length) out.managementCompanyId = app.managementCompanyId
+  if (app.state?.length) out.state = app.state
+  return out
+}
+
+function toAppFilters(engine: EnginePropertiesFilters): PropertiesListFilters {
+  const out: PropertiesListFilters = {}
+  const propNumber = engine.propNumber?.[0]?.trim()
+  if (propNumber) out.propNumber = propNumber
+  if (engine.managementCompanyId?.length) out.managementCompanyId = engine.managementCompanyId
+  if (engine.state?.length) out.state = engine.state
+  return out
+}
 
 export type PropertiesClientProps = {
   initialSearchQuery: string
@@ -43,6 +69,16 @@ export default function PropertiesClient({
 }: PropertiesClientProps) {
   const { message, pageError } = usePropertiesListController()
   const router = useRouter()
+
+  // Convert the engine's all-array filters back to the app shape before fetch.
+  const adaptedListFn = useCallback(
+    (input: ListInput<EnginePropertiesFilters>) =>
+      listPropertiesRequest({
+        ...input,
+        filters: input.filters ? toAppFilters(input.filters) : undefined,
+      }),
+    [],
+  )
   // Properties have no record page of their own — a row opens its management
   // company's record view drilled into the property (or the MC create flow when
   // the property has no MC). `returnTo` brings the user back to this list.
@@ -63,21 +99,30 @@ export default function PropertiesClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useFetchListController<PropertyListRow, PropertiesListFilters>({
+  } = useFetchListController<PropertyListRow, EnginePropertiesFilters>({
     mode: "fetch",
     queryKey: [...PROPERTIES_LIST_QUERY_KEY],
-    listFn: listPropertiesRequest,
+    listFn: adaptedListFn,
     initialSearchQuery,
     initialPage,
-    initialFilters,
+    initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_PROPERTIES_PAGE_SIZE,
     tableKey: "properties-main",
     filterableFields: PROPERTIES_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  const selectedManagementCompanyId =
-    (filters as PropertiesListFilters).managementCompanyId?.[0] ?? null
+  const propNumberValue = filters.propNumber?.[0] ?? ""
+
+  const handlePropNumberChange = useCallback(
+    (next: string) => {
+      const trimmed = next.trim()
+      onFilterChange("propNumber", trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
+  const selectedManagementCompanyId = filters.managementCompanyId?.[0] ?? null
 
   const selectedManagementCompanyLabel = useMemo(() => {
     if (!selectedManagementCompanyId) return null
@@ -102,8 +147,7 @@ export default function PropertiesClient({
     [onFilterChange],
   )
 
-  const selectedState =
-    (filters as PropertiesListFilters).state?.[0] ?? null
+  const selectedState = filters.state?.[0] ?? null
 
   const handleStateChange = useCallback(
     (next: string | null) => {
@@ -115,10 +159,11 @@ export default function PropertiesClient({
 
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
+    if (propNumberValue.trim().length > 0) return true
     if (selectedManagementCompanyId) return true
     if (selectedState) return true
     return false
-  }, [searchQuery, selectedManagementCompanyId, selectedState])
+  }, [searchQuery, propNumberValue, selectedManagementCompanyId, selectedState])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -155,6 +200,12 @@ export default function PropertiesClient({
                 <PropertiesListSearch
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
+                />
+                <DebouncedSearchControl
+                  value={propNumberValue}
+                  onCommit={handlePropNumberChange}
+                  placeholder="PROP #"
+                  ariaLabel="Search properties by property number"
                 />
                 <StateSearchControl
                   value={selectedState}

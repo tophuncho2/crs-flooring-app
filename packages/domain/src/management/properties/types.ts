@@ -3,8 +3,18 @@ export type PropertyManagementCompany = {
   name: string
 }
 
+/**
+ * An adjacent property in the global property-number sequence
+ * (`propertyNumberInt`). Carries only `id` — the record-view stepper navigates
+ * straight to the neighbor record by number. Null at the ends of the sequence.
+ */
+export type PropertyNeighbor = {
+  id: string
+}
+
 export type PropertyDetailRecord = {
   id: string
+  propertyNumber: string
   createdAt: string
   updatedAt: string
   name: string
@@ -17,10 +27,18 @@ export type PropertyDetailRecord = {
   instructions: string
   fullAddress: string
   managementCompany: PropertyManagementCompany | null
+  /**
+   * Neighbors by global property-number order (`propertyNumberInt`), ignoring
+   * MC/state filters — powers the record-view shell stepper (◀ PROP-# ▶). Null
+   * when the current row is at the start/end of the sequence.
+   */
+  previousProperty: PropertyNeighbor | null
+  nextProperty: PropertyNeighbor | null
 }
 
 export type PropertyListRow = {
   id: string
+  propertyNumber: string
   createdAt: string
   updatedAt: string
   name: string

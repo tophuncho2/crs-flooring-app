@@ -8,6 +8,7 @@ import {
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  RecordStepperPortal,
   StaticFieldValue,
   useRecordDeleteConfirmation,
   type RecordDetailClientScaffoldContext,
@@ -21,7 +22,11 @@ import {
   type ManagementCompanyOption,
   type PropertyDetailRecord,
 } from "@builders/domain"
-import { buildCurrentRecordEntryPath, buildRecordDetailHref } from "@/hooks/navigation/routes"
+import {
+  buildCurrentRecordEntryPath,
+  buildPropertyRecordHref,
+  buildRecordDetailHref,
+} from "@/hooks/navigation/routes"
 import { usePropertyPrimarySection } from "@/modules/properties/controllers/record/use-property-primary-section"
 import { PropertyFieldsSection } from "./primary/property-fields-section"
 import { ManagementCompanyPickerSection } from "./primary/management-company-picker-section"
@@ -72,6 +77,16 @@ export function PropertyRecordView({
   const deletion = useRecordDeleteConfirmation(controller.deleteRecord)
 
   const linkedMc = record.managementCompany
+
+  // Record-view shell stepper (◀ PROP-# ▶). Properties live on a true SSR record
+  // page, so stepping to a neighbor is a `router.push` of `?propertyId=` (which
+  // re-runs the server loader for the neighbor + its MC). The existing `returnTo`
+  // is preserved so "back" still lands on the original list across steps.
+  const returnToParam = searchParams.get("returnTo")
+  const stepPrevious = entry.previousProperty
+  const stepNext = entry.nextProperty
+  const stepTo = (id: string) =>
+    router.push(buildPropertyRecordHref(id, null, returnToParam))
 
   // The picked MC id lives in the primary draft (dirty-tracked, saved with the
   // property). The contact cells read from local display state, seeded from the
@@ -158,6 +173,9 @@ export function PropertyRecordView({
             />
             <div className="border-t border-[var(--panel-border)]" />
             <div className="flex gap-6">
+              <FormField label="Property #">
+                <StaticFieldValue>{entry.propertyNumber}</StaticFieldValue>
+              </FormField>
               <FormField label="Created">
                 <StaticFieldValue>{formatEasternDateTime(entry.createdAt) || "—"}</StaticFieldValue>
               </FormField>
@@ -182,6 +200,13 @@ export function PropertyRecordView({
 
   return (
     <>
+      <RecordStepperPortal
+        label={entry.propertyNumber}
+        isDirty={page.isDirty}
+        discardMessage="This property has unsaved changes. Stepping to another property will discard them."
+        onPrevious={stepPrevious ? () => stepTo(stepPrevious.id) : null}
+        onNext={stepNext ? () => stepTo(stepNext.id) : null}
+      />
       <RecordMultiSectionPanel page={page} sections={sections} />
       <RecordEntityFooter onClose={page.closePage} />
       <RecordDeleteDialog

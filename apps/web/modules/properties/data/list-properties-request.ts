@@ -34,6 +34,8 @@ export function parsePropertiesListInputFromSearchParams(
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
+  const propNumber = (readSearchParam(searchParams, "propNumber") ?? "").trim()
+
   const managementCompanyId = Array.from(
     new Set(readSearchParamArray(searchParams, "managementCompanyId")),
   )
@@ -47,8 +49,9 @@ export function parsePropertiesListInputFromSearchParams(
   )
 
   const filters =
-    managementCompanyId.length > 0 || state.length > 0
+    propNumber.length > 0 || managementCompanyId.length > 0 || state.length > 0
       ? {
+          ...(propNumber.length > 0 ? { propNumber } : {}),
           ...(managementCompanyId.length > 0 ? { managementCompanyId } : {}),
           ...(state.length > 0 ? { state } : {}),
         }
@@ -67,6 +70,7 @@ function buildPropertiesListSearchString(
 ): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
+  if (input.filters?.propNumber) params.set("propNumber", input.filters.propNumber)
   for (const id of input.filters?.managementCompanyId ?? []) {
     params.append("managementCompanyId", id)
   }
