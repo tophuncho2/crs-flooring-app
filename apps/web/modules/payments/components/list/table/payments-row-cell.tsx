@@ -35,6 +35,10 @@ export function renderPaymentRowCell(
       return <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
     case "createdAt":
       return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
+    case "createdBy":
+      return <span>{row.createdBy ?? "—"}</span>
+    case "updatedBy":
+      return <span>{row.updatedBy ?? "—"}</span>
     default:
       return "-"
   }
