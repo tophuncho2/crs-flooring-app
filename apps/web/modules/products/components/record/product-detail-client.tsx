@@ -4,7 +4,7 @@ import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import type { CategoryRecord, ProductRecord } from "@builders/db"
+import type { CategoryRecord, ProductDetailRecord } from "@builders/db"
 import type { ProductStats } from "@builders/domain"
 import { ProductRecordPanel } from "./product-record-panel"
 
@@ -14,7 +14,7 @@ export function ProductDetailClient({
   stats,
   backHref,
 }: {
-  initialProduct: ProductRecord
+  initialProduct: ProductDetailRecord
   categoryOptions: CategoryRecord[]
   stats: ProductStats
   backHref: string

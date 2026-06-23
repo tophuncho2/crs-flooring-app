@@ -7,6 +7,7 @@ import { listProductsForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type ProductsListFilters = {
+  prodNumber?: string
   categoryId?: ReadonlyArray<string>
 }
 
@@ -28,11 +29,20 @@ export async function listProductsUseCase(
   const pageSize = Math.max(1, Math.min(LIST_PRODUCTS_MAX_PAGE_SIZE, requestedPageSize))
 
   const search = input.search?.trim() || undefined
+  const prodNumber = input.filters?.prodNumber?.trim() || undefined
   const categoryId = normalizeCategoryIds(input.filters?.categoryId)
+
+  const filters =
+    prodNumber || categoryId
+      ? {
+          ...(prodNumber ? { prodNumber } : {}),
+          ...(categoryId ? { categoryId } : {}),
+        }
+      : undefined
 
   const { rows, total } = await listProductsForListView({
     search,
-    filters: categoryId ? { categoryId } : undefined,
+    filters,
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

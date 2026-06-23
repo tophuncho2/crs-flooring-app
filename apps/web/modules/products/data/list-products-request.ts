@@ -34,6 +34,7 @@ export function parseProductsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<ProductsListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
+  const prodNumberRaw = (readSearchParam(searchParams, "prodNumber") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
@@ -43,7 +44,13 @@ export function parseProductsListInputFromSearchParams(
 
   return {
     search: searchRaw || undefined,
-    filters: categoryId.length > 0 ? { categoryId } : undefined,
+    filters:
+      prodNumberRaw || categoryId.length > 0
+        ? {
+            ...(prodNumberRaw ? { prodNumber: prodNumberRaw } : {}),
+            ...(categoryId.length > 0 ? { categoryId } : {}),
+          }
+        : undefined,
     page,
     pageSize: LIST_PRODUCTS_PAGE_SIZE,
   }
@@ -54,6 +61,7 @@ export function buildProductsListSearchString(
 ): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
+  if (input.filters?.prodNumber) params.set("prodNumber", input.filters.prodNumber)
   for (const id of input.filters?.categoryId ?? []) {
     params.append("categoryId", id)
   }

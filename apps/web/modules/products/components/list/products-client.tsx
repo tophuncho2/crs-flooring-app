@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
-import type { ProductsListFilters } from "@builders/application"
+import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import type { ListInput, ProductsListFilters } from "@builders/application"
 import {
   LIST_PRODUCTS_PAGE_SIZE,
   type CategoryOption,
@@ -20,7 +20,31 @@ import { ProductsListSearch } from "./toolbar-controls/products-list-search"
 import { ProductsClearAll } from "./toolbar-controls/sub-controls/products-clear-all"
 import { ProductsRowCount } from "./toolbar-controls/sub-controls/products-row-count"
 
-const PRODUCTS_FILTERABLE_FIELDS = ["categoryId"] as const
+const PRODUCTS_FILTERABLE_FIELDS = ["prodNumber", "categoryId"] as const
+
+// The list-view engine stores every filter value as `string[]`. The app filter
+// type carries a scalar (`prodNumber`) alongside the `categoryId` array, so we
+// bridge the two the same way properties does: an all-array engine view +
+// adapters at the edge.
+type EngineProductsFilters = {
+  prodNumber?: ReadonlyArray<string>
+  categoryId?: ReadonlyArray<string>
+}
+
+function toEngineFilters(app: ProductsListFilters): EngineProductsFilters {
+  const out: EngineProductsFilters = {}
+  if (app.prodNumber && app.prodNumber.length > 0) out.prodNumber = [app.prodNumber]
+  if (app.categoryId?.length) out.categoryId = app.categoryId
+  return out
+}
+
+function toAppFilters(engine: EngineProductsFilters): ProductsListFilters {
+  const out: ProductsListFilters = {}
+  const prodNumber = engine.prodNumber?.[0]?.trim()
+  if (prodNumber) out.prodNumber = prodNumber
+  if (engine.categoryId?.length) out.categoryId = engine.categoryId
+  return out
+}
 
 export type ProductsClientProps = {
   initialSearchQuery: string
@@ -39,6 +63,16 @@ export default function ProductsClient({
 }: ProductsClientProps) {
   const { message, pageError, openCreate, openProduct } = useProductsListController()
 
+  // Convert the engine's all-array filters back to the app shape before fetch.
+  const adaptedListFn = useCallback(
+    (input: ListInput<EngineProductsFilters>) =>
+      listProductsRequest({
+        ...input,
+        filters: input.filters ? toAppFilters(input.filters) : undefined,
+      }),
+    [],
+  )
+
   const {
     rows,
     total,
@@ -54,21 +88,31 @@ export default function ProductsClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useFetchListController<ProductListRow, ProductsListFilters>({
+  } = useFetchListController<ProductListRow, EngineProductsFilters>({
     mode: "fetch",
     queryKey: [...PRODUCTS_LIST_QUERY_KEY],
-    listFn: listProductsRequest,
+    listFn: adaptedListFn,
     initialSearchQuery,
     initialPage,
-    initialFilters,
+    initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_PRODUCTS_PAGE_SIZE,
     tableKey: "products-main",
     filterableFields: PRODUCTS_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
+  const prodNumberValue = filters.prodNumber?.[0] ?? ""
+
+  const handleProdNumberChange = useCallback(
+    (next: string) => {
+      const trimmed = next.trim()
+      onFilterChange("prodNumber", trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
   const selectedCategoryId = useMemo(() => {
-    const ids = (filters as ProductsListFilters).categoryId
+    const ids = filters.categoryId
     return ids && ids.length > 0 ? ids[0] : null
   }, [filters])
 
@@ -99,9 +143,10 @@ export default function ProductsClient({
 
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
+    if (prodNumberValue.trim().length > 0) return true
     if (selectedCategoryId) return true
     return false
-  }, [searchQuery, selectedCategoryId])
+  }, [searchQuery, prodNumberValue, selectedCategoryId])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -141,6 +186,12 @@ export default function ProductsClient({
                 <ProductsListSearch
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
+                />
+                <DebouncedSearchControl
+                  value={prodNumberValue}
+                  onCommit={handleProdNumberChange}
+                  placeholder="PROD #"
+                  ariaLabel="Search products by product number"
                 />
                 <ListToolbarBottomRow
                   left={<ProductsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}

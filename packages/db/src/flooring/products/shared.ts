@@ -10,6 +10,7 @@ export type ProductsDbClient = PrismaClient | Prisma.TransactionClient
 // — it carries IDs only. Reads are flat, single-table for the unit data.
 export const productRowSelect = {
   id: true,
+  productNumber: true,
   name: true,
   categoryId: true,
   manufacturerId: true,
@@ -42,10 +43,13 @@ export const productRowSelect = {
   },
 } as const
 
-// Detail shape is the same as row — products have no sub-collections today.
-// Kept distinct in the type system so future additions (e.g., inventory snapshot)
-// don't force churn through every call site.
-export const productDetailSelect = productRowSelect
+// Detail shape extends row with `productNumberInt` — the generated numeric sort
+// key the record-view stepper reads to resolve prev/next neighbors. The list
+// view doesn't need it, so it stays off `productRowSelect`.
+export const productDetailSelect = {
+  ...productRowSelect,
+  productNumberInt: true,
+} as const
 
 // Skinny shape for picker dropdowns. Includes `categoryId` so consumers can
 // implement category-scoped product filtering in row pickers without an
@@ -66,5 +70,5 @@ export const productOptionSelect = {
 } as const
 
 export type ProductRowPayload = Prisma.FlooringProductGetPayload<{ select: typeof productRowSelect }>
-export type ProductDetailPayload = ProductRowPayload
+export type ProductDetailPayload = Prisma.FlooringProductGetPayload<{ select: typeof productDetailSelect }>
 export type ProductOptionPayload = Prisma.FlooringProductGetPayload<{ select: typeof productOptionSelect }>

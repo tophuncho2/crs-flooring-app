@@ -178,6 +178,14 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
+      {/* Read-only canonical PROD-N number — detail view only (empty on create). */}
+      {product.productNumber ? (
+        <CellAt col={5} row={4} colSpan={2}>
+          <FormField label="PROD #">
+            <StaticFieldValue>{product.productNumber}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
       {product.createdAt ? (
         <>
           <CellAt col={1} row={5} colSpan={4}>

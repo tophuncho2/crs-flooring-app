@@ -14,6 +14,9 @@ export type ProductRowCategory = {
 
 export type ProductRow = {
   id: string
+  // Canonical human-facing record number ("PROD-1"), sequence-backed + generated
+  // at the DB. Mirrors propertyNumber / jobTypeNumber / inventoryNumber.
+  productNumber: string
   name: string
   categoryId: string
   manufacturerId: string

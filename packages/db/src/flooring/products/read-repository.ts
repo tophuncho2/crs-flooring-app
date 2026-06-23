@@ -6,12 +6,15 @@ import {
   type CategoryRecord,
 } from "../categories/read-repository.js"
 import {
+  productDetailSelect,
   productOptionSelect,
   productRowSelect,
+  type ProductDetailPayload,
   type ProductOptionPayload,
   type ProductRowPayload,
   type ProductsDbClient,
 } from "./shared.js"
+import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 
 // --- Record types ---
 
@@ -25,6 +28,7 @@ export type ProductRecordCategory = {
 
 export type ProductRecord = {
   id: string
+  productNumber: string
   name: string
   categoryId: string
   manufacturerId: string
@@ -44,7 +48,23 @@ export type ProductRecord = {
   category: ProductRecordCategory
 }
 
-export type ProductDetailRecord = ProductRecord
+// Record-view shell stepper neighbors — the product rows immediately
+// before/after this one in the global productNumberInt order. Mirrors the
+// property/job-type neighbor shape. Products has no domain normalizers.ts, so
+// these live here in the data layer alongside the row normalizer.
+export type ProductNeighbor = { id: string }
+
+export type ProductNeighbors = {
+  previousProduct: ProductNeighbor | null
+  nextProduct: ProductNeighbor | null
+}
+
+export const NO_PRODUCT_NEIGHBORS: ProductNeighbors = {
+  previousProduct: null,
+  nextProduct: null,
+}
+
+export type ProductDetailRecord = ProductRecord & ProductNeighbors
 
 export type ProductOptionRecord = {
   id: string
@@ -75,6 +95,7 @@ export type ProductDeleteStateResult = {
 export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
   return {
     id: product.id,
+    productNumber: product.productNumber,
     name: product.name,
     categoryId: product.categoryId,
     manufacturerId: product.manufacturerId ?? "",
@@ -105,8 +126,49 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
   }
 }
 
-export function normalizeProductDetail(product: ProductRowPayload): ProductDetailRecord {
-  return normalizeProductRow(product)
+export function normalizeProductDetail(
+  product: ProductDetailPayload,
+  neighbors: ProductNeighbors = NO_PRODUCT_NEIGHBORS,
+): ProductDetailRecord {
+  return {
+    ...normalizeProductRow(product),
+    previousProduct: neighbors.previousProduct,
+    nextProduct: neighbors.nextProduct,
+  }
+}
+
+/**
+ * Resolve the product rows immediately before/after the given numeric sort key
+ * in the global product-number order (`productNumberInt`). Powers the
+ * record-view shell stepper — deliberately global: the stepper walks the raw
+ * number line. Two single-row lookups on the `productNumberInt` index. Both
+ * null when the key is null (no generated value yet) or at the sequence's edge.
+ */
+async function getProductNeighbors(
+  productNumberInt: number | null,
+  client: ProductsDbClient = db,
+): Promise<ProductNeighbors> {
+  if (productNumberInt === null) return NO_PRODUCT_NEIGHBORS
+
+  const { previous: previousQuery, next: nextQuery } = numberNeighborQueries(
+    "productNumberInt",
+    productNumberInt,
+  )
+  const [previous, next] = await Promise.all([
+    client.flooringProduct.findFirst({
+      ...previousQuery,
+      select: { id: true },
+    }),
+    client.flooringProduct.findFirst({
+      ...nextQuery,
+      select: { id: true },
+    }),
+  ])
+
+  return {
+    previousProduct: previous ? { id: previous.id } : null,
+    nextProduct: next ? { id: next.id } : null,
+  }
 }
 
 export function normalizeProductOption(product: ProductOptionPayload): ProductOptionRecord {
@@ -144,15 +206,29 @@ export async function getProductById(
   return row ? normalizeProductRow(row) : null
 }
 
+/**
+ * Read the full product detail. By default it also resolves the adjacent rows
+ * for the record-view shell stepper; pass `{ withNeighbors: false }` on paths
+ * that only read a snapshot (e.g. the update/delete conflict check) to skip the
+ * two extra lookups.
+ */
 export async function getProductDetailById(
   id: string,
+  options: { withNeighbors?: boolean } = {},
   client: ProductsDbClient = db,
 ): Promise<ProductDetailRecord | null> {
   const row = await client.flooringProduct.findUnique({
     where: { id },
-    select: productRowSelect,
+    select: productDetailSelect,
   })
-  return row ? normalizeProductDetail(row) : null
+  if (!row) return null
+
+  const neighbors =
+    options.withNeighbors === false
+      ? NO_PRODUCT_NEIGHBORS
+      : await getProductNeighbors(row.productNumberInt, client)
+
+  return normalizeProductDetail(row, neighbors)
 }
 
 // Read-only totals for the product record-view "Statistics" section. Kept
@@ -241,7 +317,14 @@ export async function getProductFormOptions(
 
 export type ProductListViewOptions = {
   search?: string
-  filters?: { categoryId?: ReadonlyArray<string> }
+  filters?: {
+    /**
+     * Exact match on the generated `productNumberInt` (btree) — the toolbar's
+     * PROD-# bar. Non-digits are stripped, so "5" and "PROD-5" both find PROD-5.
+     */
+    prodNumber?: string
+    categoryId?: ReadonlyArray<string>
+  }
   skip: number
   take: number
 }
@@ -258,6 +341,15 @@ function buildListViewWhere(
 
   if (options.search) {
     clauses.push({ name: { contains: options.search, mode: "insensitive" } })
+  }
+
+  // Exact identity search on the generated int — strip non-digits, parse, match.
+  // No digits → -1 sentinel so a junk term returns no rows (never all rows).
+  const prodNumber = options.filters?.prodNumber?.trim() ?? ""
+  if (prodNumber.length > 0) {
+    const digits = prodNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    clauses.push({ productNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
   }
 
   const categoryIds = options.filters?.categoryId

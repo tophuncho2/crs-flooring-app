@@ -31,6 +31,8 @@ export function renderProductRowCell(
       return row.coveragePerUnit
         ? `${row.coveragePerUnit} ${row.stockUnitAbbrev}`.trim()
         : "-"
+    case "productNumber":
+      return <span className="tabular-nums">{row.productNumber}</span>
     case "createdAt":
       return (
         <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>

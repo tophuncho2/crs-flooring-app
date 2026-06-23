@@ -20,6 +20,9 @@ import { ProductPrimaryFieldsSection } from "./primary/product-primary-fields-se
 
 const EMPTY_PRODUCT: ProductRecord = {
   id: "new",
+  // Empty on create — the canonical PROD-N is DB-generated at insert. The
+  // read-only PROD # field + record stepper key off this and stay hidden when "".
+  productNumber: "",
   name: "",
   categoryId: "",
   manufacturerId: "",

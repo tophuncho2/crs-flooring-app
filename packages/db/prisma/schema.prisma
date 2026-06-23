@@ -183,6 +183,8 @@ model FlooringManufacturer {
 
 model FlooringProduct {
   id                               String                             @id @default(uuid())
+  productNumber                    String                             @unique @default(dbgenerated("('PROD-'::text || (nextval('flooring_product_number_seq'::regclass))::text)")) @map("product_number")
+  productNumberInt                 Int?                               @default(dbgenerated("(SUBSTRING(product_number FROM 6))::integer"))
   name                             String                             @default("")
   categoryId                       String
   category                         FlooringCategory                   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -209,6 +211,8 @@ model FlooringProduct {
 
   @@index([manufacturerId])
   @@index([name])
+  @@index([productNumber])
+  @@index([productNumberInt])
   @@map("flooring_product")
 }
 
