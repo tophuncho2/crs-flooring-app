@@ -390,13 +390,12 @@ export default function InventoryClient({
               </div>
             </ListToolbarCell>
 
-            {/* One encased card: Warehouse, Location, Category, Product stacked
-                together. The warehouse pick gates Location (the picker renders
-                disabled until a warehouse is picked); a warehouse change
-                cascades a clear into Location via handleWarehouseChange. Product
-                is category-scoped (category change cascades the product clear).
-                Sits immediately to the right of the search bars. */}
-            <ListToolbarCell>
+            {/* Warehouse + Location encased card. The warehouse pick gates
+                Location (the picker renders disabled until a warehouse is
+                picked); a warehouse change cascades a clear into Location via
+                handleWarehouseChange. Sits immediately to the right of the
+                search bars. */}
+            <ListToolbarCell className="self-start">
               <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <WarehouseFilterChip
                   value={selectedWarehouseId}
@@ -412,6 +411,14 @@ export default function InventoryClient({
                   disabledPlaceholder="Select warehouse first"
                   ariaLabel="Filter inventory by location"
                 />
+              </div>
+            </ListToolbarCell>
+
+            {/* Category + Product encased card. Product is category-scoped (a
+                category change cascades the product clear). Sits to the right of
+                the Warehouse/Location card. */}
+            <ListToolbarCell className="self-start">
+              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
                 <CategoryFilterChip
                   value={selectedCategoryId}
                   selectedLabel={categoryLabel}
