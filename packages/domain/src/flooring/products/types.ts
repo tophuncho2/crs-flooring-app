@@ -35,6 +35,11 @@ export type ProductRow = {
   productNamingAddon: string
   createdAt: string
   updatedAt: string
+  // Actor-email snapshots: WHO created / last-updated the row. Plain nullable
+  // strings (no FK), null on historical rows. Mirrors job-types / payments /
+  // warehouse.
+  createdBy: string | null
+  updatedBy: string | null
   category: ProductRowCategory
 }
 

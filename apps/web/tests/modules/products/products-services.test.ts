@@ -13,6 +13,8 @@ describe("normalizeProductRow", () => {
       productNamingAddon: null,
       createdAt: new Date("2026-03-18T00:00:00Z"),
       updatedAt: new Date("2026-03-18T00:00:00Z"),
+      createdBy: "creator@example.com",
+      updatedBy: "editor@example.com",
       category: {
         id: "cat-1",
         slug: "carpet",
@@ -27,6 +29,8 @@ describe("normalizeProductRow", () => {
     })
 
     expect(normalized.manufacturerName).toBe("Acme Flooring")
+    expect(normalized.createdBy).toBe("creator@example.com")
+    expect(normalized.updatedBy).toBe("editor@example.com")
   })
 
   it("surfaces an empty manufacturer name when the manufacturer link is null", () => {
@@ -40,6 +44,8 @@ describe("normalizeProductRow", () => {
       productNamingAddon: null,
       createdAt: new Date("2026-03-18T00:00:00Z"),
       updatedAt: new Date("2026-03-18T00:00:00Z"),
+      createdBy: null,
+      updatedBy: null,
       category: {
         id: "cat-1",
         slug: "carpet",
@@ -51,5 +57,7 @@ describe("normalizeProductRow", () => {
     })
 
     expect(normalized.manufacturerName).toBe("")
+    expect(normalized.createdBy).toBeNull()
+    expect(normalized.updatedBy).toBeNull()
   })
 })

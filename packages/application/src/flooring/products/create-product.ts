@@ -16,8 +16,13 @@ import type { CreateProductInput, ProductResult } from "./types.js"
 
 export async function createProductUseCase(
   input: CreateProductInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<ProductResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createProductUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -84,6 +89,8 @@ export async function createProductUseCase(
           coveragePerUnit: input.coveragePerUnit,
           productNamingAddon: input.productNamingAddon,
           ...snapshot,
+          createdBy: actorEmail,
+          updatedBy: actorEmail,
         },
         c,
       )

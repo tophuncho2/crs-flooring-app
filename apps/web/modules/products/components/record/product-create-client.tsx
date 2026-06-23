@@ -34,6 +34,8 @@ const EMPTY_PRODUCT: ProductRecord = {
   productNamingAddon: "",
   createdAt: "",
   updatedAt: "",
+  createdBy: null,
+  updatedBy: null,
   category: {
     id: "",
     slug: "",

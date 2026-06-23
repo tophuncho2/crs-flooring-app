@@ -39,6 +39,8 @@ export type ProductRecord = {
   productNamingAddon: string
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
   category: ProductRecordCategory
 }
 
@@ -91,6 +93,8 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     productNamingAddon: product.productNamingAddon ?? "",
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
+    createdBy: product.createdBy ?? null,
+    updatedBy: product.updatedBy ?? null,
     category: {
       id: product.category.id,
       slug: product.category.slug,

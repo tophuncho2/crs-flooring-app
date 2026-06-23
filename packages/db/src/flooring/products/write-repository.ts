@@ -31,6 +31,10 @@ export type CreateProductInput = {
   sendUnitAbbrev: string | null
   stockUnitName: string | null
   stockUnitAbbrev: string | null
+  // Actor-email snapshots — server-assigned from the authenticated user, not off
+  // the wire. Both stamped on create; `updatedBy` flips on every update.
+  createdBy: string
+  updatedBy: string
 }
 
 // `categoryId` and the unit-snapshot fields are immutable post-create —
@@ -44,8 +48,13 @@ type ImmutableProductFields =
   | "sendUnitAbbrev"
   | "stockUnitName"
   | "stockUnitAbbrev"
+  | "createdBy"
 
-export type UpdateProductInput = Partial<Omit<CreateProductInput, ImmutableProductFields>>
+// `updatedBy` is required on every update (always stamped with the actor email),
+// so it's carried explicitly rather than left optional in the `Partial<…>`.
+export type UpdateProductInput = Partial<
+  Omit<CreateProductInput, ImmutableProductFields | "updatedBy">
+> & { updatedBy: string }
 
 // --- Writes ---
 
@@ -66,6 +75,8 @@ export async function createProduct(
       sendUnitAbbrev: input.sendUnitAbbrev,
       stockUnitName: input.stockUnitName,
       stockUnitAbbrev: input.stockUnitAbbrev,
+      createdBy: input.createdBy,
+      updatedBy: input.updatedBy,
     },
     select: productRowSelect,
   })
@@ -77,7 +88,7 @@ export async function updateProduct(
   input: UpdateProductInput,
   client: ProductsDbClient = db,
 ): Promise<ProductRecord> {
-  const data: Prisma.FlooringProductUncheckedUpdateInput = {}
+  const data: Prisma.FlooringProductUncheckedUpdateInput = { updatedBy: input.updatedBy }
   if (input.name !== undefined) data.name = input.name
   if (input.manufacturerId !== undefined) data.manufacturerId = input.manufacturerId
   if (input.style !== undefined) data.style = input.style

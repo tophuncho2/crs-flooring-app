@@ -23,6 +23,8 @@ export const productRowSelect = {
   productNamingAddon: true,
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
   category: {
     select: {
       id: true,

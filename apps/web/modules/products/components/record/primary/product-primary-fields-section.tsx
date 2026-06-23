@@ -179,13 +179,32 @@ export function ProductPrimaryFieldsSection({
         </FormField>
       </CellAt>
       {product.createdAt ? (
-        <CellAt col={1} row={5} colSpan={4}>
-          <FormField label="Created">
-            <StaticFieldValue>
-              {formatEasternDateTime(product.createdAt) || "—"}
-            </StaticFieldValue>
-          </FormField>
-        </CellAt>
+        <>
+          <CellAt col={1} row={5} colSpan={4}>
+            <FormField label="Created">
+              <StaticFieldValue>
+                {formatEasternDateTime(product.createdAt) || "—"}
+              </StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={5} row={5} colSpan={4}>
+            <FormField label="Updated">
+              <StaticFieldValue>
+                {formatEasternDateTime(product.updatedAt) || "—"}
+              </StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={1} row={6} colSpan={4}>
+            <FormField label="Created by">
+              <StaticFieldValue>{product.createdBy ?? "—"}</StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={5} row={6} colSpan={4}>
+            <FormField label="Updated by">
+              <StaticFieldValue>{product.updatedBy ?? "—"}</StaticFieldValue>
+            </FormField>
+          </CellAt>
+        </>
       ) : null}
     </FieldSection>
   )

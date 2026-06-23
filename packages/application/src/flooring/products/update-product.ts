@@ -16,8 +16,13 @@ import type { ProductResult, UpdateProductInput } from "./types.js"
 export async function updateProductUseCase(
   id: string,
   input: UpdateProductInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<ProductResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updateProductUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -60,7 +65,7 @@ export async function updateProductUseCase(
       }
     }
 
-    const patch: Parameters<typeof updateProduct>[1] = {}
+    const patch: Parameters<typeof updateProduct>[1] = { updatedBy: actorEmail }
     if ("manufacturerId" in input) patch.manufacturerId = input.manufacturerId
     if ("style" in input) patch.style = input.style
     if ("color" in input) patch.color = input.color
