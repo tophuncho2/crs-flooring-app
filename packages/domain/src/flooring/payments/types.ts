@@ -1,4 +1,4 @@
-export type FlooringPaymentDirection = "INFLOW" | "OUTFLOW"
+export type FlooringPaymentDirection = "REVENUE" | "EXPENSE"
 
 /**
  * A standalone payment row. `amount` is the unsigned currency-of-record string
@@ -52,7 +52,7 @@ export type PaymentForm = {
 
 export const EMPTY_PAYMENT_FORM: PaymentForm = {
   amount: "",
-  direction: "INFLOW",
+  direction: "REVENUE",
   paymentDate: "",
 }
 

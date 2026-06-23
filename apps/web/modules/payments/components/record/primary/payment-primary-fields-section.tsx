@@ -16,8 +16,8 @@ import {
 } from "@builders/domain"
 
 const DIRECTION_OPTIONS = [
-  { value: "INFLOW", label: "Inflow", tone: "success" as const },
-  { value: "OUTFLOW", label: "Outflow", tone: "error" as const },
+  { value: "REVENUE", label: "Revenue", tone: "success" as const },
+  { value: "EXPENSE", label: "Expense", tone: "error" as const },
 ]
 
 /**

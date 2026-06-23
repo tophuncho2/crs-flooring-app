@@ -16,15 +16,15 @@ export function renderPaymentRowCell(
     case "paymentNumber":
       return <span className="font-medium tabular-nums">{row.paymentNumber}</span>
     case "amount":
-      // The figure is prefixed with its direction sign (+ inflow / − outflow) and
+      // The figure is prefixed with its direction sign (+ revenue / − expense) and
       // the chip tone reads `direction` directly — mirrors the adjustments amount chip.
       return (
-        <CellChip tone={row.direction === "INFLOW" ? "success" : "error"}>
+        <CellChip tone={row.direction === "REVENUE" ? "success" : "error"}>
           {formatSignedPaymentAmount(row.amount, row.direction)}
         </CellChip>
       )
     case "direction":
-      return <span>{row.direction === "INFLOW" ? "Inflow" : "Outflow"}</span>
+      return <span>{row.direction === "REVENUE" ? "Revenue" : "Expense"}</span>
     case "paymentDate":
       return (
         <span className="tabular-nums">

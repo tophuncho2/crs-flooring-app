@@ -2,7 +2,7 @@ import { formatMoney, normalizeMoneyAmount } from "../../shared/money.js"
 import type { FlooringPaymentDirection } from "./types.js"
 
 /**
- * Canonical signed mapping for a payment amount: OUTFLOW → negative, INFLOW →
+ * Canonical signed mapping for a payment amount: EXPENSE → negative, REVENUE →
  * positive. Returns a fixed-scale-2 string (or `""` for empty/garbage input).
  *
  * Amounts are stored unsigned with the sign living in `direction`; this helper
@@ -15,12 +15,12 @@ export function signedPaymentAmount(
 ): string {
   const normalized = normalizeMoneyAmount(amount)
   if (normalized === "" || normalized === "0.00") return normalized
-  return direction === "OUTFLOW" ? `-${normalized}` : normalized
+  return direction === "EXPENSE" ? `-${normalized}` : normalized
 }
 
-/** Display sign for a payment direction: `+` for INFLOW, `−` (U+2212) for OUTFLOW. */
+/** Display sign for a payment direction: `+` for REVENUE, `−` (U+2212) for EXPENSE. */
 export function paymentDirectionSign(direction: FlooringPaymentDirection): "+" | "−" {
-  return direction === "OUTFLOW" ? "−" : "+"
+  return direction === "EXPENSE" ? "−" : "+"
 }
 
 /**

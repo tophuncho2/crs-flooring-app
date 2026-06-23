@@ -30,12 +30,12 @@ export async function updatePaymentUseCase(
 
     if (
       input.direction !== undefined &&
-      input.direction !== "INFLOW" &&
-      input.direction !== "OUTFLOW"
+      input.direction !== "REVENUE" &&
+      input.direction !== "EXPENSE"
     ) {
       throw new PaymentExecutionError({
         code: "PAYMENT_VALIDATION_FAILED",
-        message: "Direction (inflow or outflow) is required.",
+        message: "Direction (revenue or expense) is required.",
         status: 400,
         field: "direction",
       })

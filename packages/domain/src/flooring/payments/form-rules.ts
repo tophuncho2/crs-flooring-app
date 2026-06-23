@@ -19,7 +19,7 @@ export function validatePaymentForm(input: PaymentForm): PaymentFormIssue[] {
     issues.push({ code: "PAYMENT_AMOUNT_NOT_POSITIVE", value: input.amount })
   }
 
-  if (input.direction !== "INFLOW" && input.direction !== "OUTFLOW") {
+  if (input.direction !== "REVENUE" && input.direction !== "EXPENSE") {
     issues.push({ code: "PAYMENT_DIRECTION_REQUIRED" })
   }
 
@@ -35,7 +35,7 @@ export function describePaymentFormIssue(issue: PaymentFormIssue): string {
     case "PAYMENT_AMOUNT_NOT_POSITIVE":
       return "Amount must be greater than zero."
     case "PAYMENT_DIRECTION_REQUIRED":
-      return "Direction (inflow or outflow) is required."
+      return "Direction (revenue or expense) is required."
   }
 }
 

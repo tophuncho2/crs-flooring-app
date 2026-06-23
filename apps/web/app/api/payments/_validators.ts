@@ -30,8 +30,8 @@ function optionalString(value: unknown, field: string): string | undefined {
 }
 
 function requireDirection(value: unknown, field: string): FlooringPaymentDirection {
-  if (value === "INFLOW" || value === "OUTFLOW") return value
-  fail(`${field} must be INFLOW or OUTFLOW`, field)
+  if (value === "REVENUE" || value === "EXPENSE") return value
+  fail(`${field} must be REVENUE or EXPENSE`, field)
 }
 
 function optionalDirection(value: unknown, field: string): FlooringPaymentDirection | undefined {
