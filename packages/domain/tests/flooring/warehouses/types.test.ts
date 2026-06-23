@@ -18,6 +18,8 @@ function row(overrides: Partial<WarehouseRow> = {}): WarehouseRow {
     workOrdersCount: 0,
     createdAt: "2026-05-26T00:00:00.000Z",
     updatedAt: "2026-05-26T00:00:00.000Z",
+    createdBy: null,
+    updatedBy: null,
     ...overrides,
   }
 }

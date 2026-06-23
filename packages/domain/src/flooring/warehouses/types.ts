@@ -11,6 +11,8 @@ export type WarehouseRow = {
   workOrdersCount: number
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 // Slim option shape consumed by the canonical WarehousePicker (server-side

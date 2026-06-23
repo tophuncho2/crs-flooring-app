@@ -27,6 +27,8 @@ export type CreateWarehouseInput = {
   state: string | null
   postalCode: string | null
   phone: string | null
+  createdBy: string
+  updatedBy: string
 }
 
 export type UpdateWarehouseInput = {
@@ -36,6 +38,7 @@ export type UpdateWarehouseInput = {
   state?: string | null
   postalCode?: string | null
   phone?: string | null
+  updatedBy: string
 }
 
 // --- Warehouse writes (single-entity) ---
@@ -52,6 +55,8 @@ export async function createWarehouse(
       state: prepareState(input.state),
       postalCode: input.postalCode,
       phone: normalizeNullablePhone(input.phone),
+      createdBy: input.createdBy,
+      updatedBy: input.updatedBy,
     },
     select: warehouseRowSelect,
   })
@@ -63,7 +68,7 @@ export async function updateWarehouse(
   input: UpdateWarehouseInput,
   client: WarehousesDbClient = db,
 ): Promise<WarehouseRecord> {
-  const data: Prisma.FlooringWarehouseUpdateInput = {}
+  const data: Prisma.FlooringWarehouseUpdateInput = { updatedBy: input.updatedBy }
   if (input.name !== undefined) data.name = input.name
   if (input.streetAddress !== undefined) data.streetAddress = input.streetAddress
   if (input.city !== undefined) data.city = input.city

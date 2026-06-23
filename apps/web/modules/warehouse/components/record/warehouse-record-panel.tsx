@@ -61,6 +61,8 @@ export function WarehouseRecordPanel({
             warehouseNumber={record.warehouseNumber}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
+            createdBy={record.createdBy}
+            updatedBy={record.updatedBy}
           />
         </RecordPrimarySectionInstance>
       ),

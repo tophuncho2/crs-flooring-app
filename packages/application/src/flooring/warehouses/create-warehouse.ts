@@ -10,8 +10,13 @@ import type { CreateWarehouseInput, WarehouseResult } from "./types.js"
 
 export async function createWarehouseUseCase(
   input: CreateWarehouseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<WarehouseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createWarehouseUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -33,6 +38,8 @@ export async function createWarehouseUseCase(
           state: input.state,
           postalCode: input.postalCode,
           phone: input.phone,
+          createdBy: actorEmail,
+          updatedBy: actorEmail,
         },
         c,
       )

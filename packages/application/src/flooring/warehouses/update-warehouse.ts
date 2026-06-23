@@ -12,8 +12,13 @@ import type { UpdateWarehouseInput, WarehouseResult } from "./types.js"
 export async function updateWarehouseUseCase(
   id: string,
   input: UpdateWarehouseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<WarehouseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updateWarehouseUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -38,7 +43,7 @@ export async function updateWarehouseUseCase(
     }
 
     try {
-      return await updateWarehouse(id, input, c)
+      return await updateWarehouse(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
       if (isP2002(error, "name")) {
         throw new WarehouseExecutionError({

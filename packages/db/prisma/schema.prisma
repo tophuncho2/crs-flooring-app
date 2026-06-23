@@ -488,6 +488,8 @@ model FlooringWarehouse {
   phone               String?
   createdAt           DateTime                           @default(now())
   updatedAt           DateTime                           @updatedAt
+  createdBy           String?
+  updatedBy           String?
   imports             FlooringImportEntry[]
   stagedInventoryRows FlooringImportStagedInventoryRow[]
   inventories          FlooringInventory[]

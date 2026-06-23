@@ -12,4 +12,6 @@ export const WAREHOUSE_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WarehouseList
   { key: "workOrdersCount", label: "Work Orders", align: "end" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
+  { key: "createdBy", label: "Created by" },
+  { key: "updatedBy", label: "Updated by" },
 ]

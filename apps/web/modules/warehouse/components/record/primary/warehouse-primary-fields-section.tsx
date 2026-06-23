@@ -20,6 +20,8 @@ export type WarehousePrimaryFieldsSectionProps = {
   /** Read-only summary shown in the detail view; omit in the create flow. */
   createdAt?: string
   updatedAt?: string
+  createdBy?: string | null
+  updatedBy?: string | null
 }
 
 export function WarehousePrimaryFieldsSection({
@@ -29,6 +31,8 @@ export function WarehousePrimaryFieldsSection({
   warehouseNumber,
   createdAt,
   updatedAt,
+  createdBy,
+  updatedBy,
 }: WarehousePrimaryFieldsSectionProps) {
   const showSummary = createdAt !== undefined || updatedAt !== undefined
 
@@ -84,6 +88,16 @@ export function WarehousePrimaryFieldsSection({
           <CellAt col={1} colSpan={5}>
             <FormField label="Updated">
               <StaticFieldValue>{formatEasternDateTime(updatedAt) || "—"}</StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={5}>
+            <FormField label="Created by">
+              <StaticFieldValue>{createdBy ?? "—"}</StaticFieldValue>
+            </FormField>
+          </CellAt>
+          <CellAt col={1} colSpan={5}>
+            <FormField label="Updated by">
+              <StaticFieldValue>{updatedBy ?? "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
         </>

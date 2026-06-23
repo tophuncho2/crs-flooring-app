@@ -14,6 +14,8 @@ export const warehouseRowSelect = {
   phone: true,
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
   _count: {
     select: {
       workOrders: true,
@@ -34,6 +36,8 @@ export const warehouseListRowSelect = {
   phone: true,
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
   _count: {
     select: {
       workOrders: true,

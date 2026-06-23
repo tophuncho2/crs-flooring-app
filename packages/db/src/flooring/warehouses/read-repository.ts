@@ -33,6 +33,8 @@ export type WarehouseRecord = {
   workOrdersCount: number
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 // Adjacent warehouse ids in the global STORE-number order — powers the
@@ -66,6 +68,8 @@ export function normalizeWarehouseRow(row: WarehouseRowPayload): WarehouseRecord
     workOrdersCount: row._count.workOrders,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    createdBy: row.createdBy,
+    updatedBy: row.updatedBy,
   }
 }
 
@@ -226,6 +230,8 @@ function normalizeWarehouseListRow(row: WarehouseListRowPayload): WarehouseListR
     workOrdersCount: row._count.workOrders,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    createdBy: row.createdBy,
+    updatedBy: row.updatedBy,
   }
 }
 

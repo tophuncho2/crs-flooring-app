@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         route: "/api/warehouses",
         entityType: "flooringWarehouse",
       },
-      () => createWarehouseUseCase(input),
+      () => createWarehouseUseCase(input, access.user.email),
     )
 
     const responseBody = { warehouse }

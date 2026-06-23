@@ -68,7 +68,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringWarehouse",
         entityId: id,
       },
-      () => updateWarehouseUseCase(id, input),
+      () => updateWarehouseUseCase(id, input, access.user.email),
     )
 
     const responseBody = {
