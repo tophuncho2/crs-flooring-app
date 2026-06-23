@@ -323,6 +323,10 @@ export type ProductListViewOptions = {
      * PROD-# bar. Non-digits are stripped, so "5" and "PROD-5" both find PROD-5.
      */
     prodNumber?: string
+    /** Substring (case-insensitive) matches on the free-text attribute columns. */
+    color?: string
+    style?: string
+    namingAddon?: string
     categoryId?: ReadonlyArray<string>
   }
   skip: number
@@ -350,6 +354,22 @@ function buildListViewWhere(
     const digits = prodNumber.replace(/\D/g, "")
     const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
     clauses.push({ productNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
+  }
+
+  // Substring identity searches on the free-text attribute columns (trgm GIN).
+  const color = options.filters?.color?.trim() ?? ""
+  if (color.length > 0) {
+    clauses.push({ color: { contains: color, mode: "insensitive" } })
+  }
+
+  const style = options.filters?.style?.trim() ?? ""
+  if (style.length > 0) {
+    clauses.push({ style: { contains: style, mode: "insensitive" } })
+  }
+
+  const namingAddon = options.filters?.namingAddon?.trim() ?? ""
+  if (namingAddon.length > 0) {
+    clauses.push({ productNamingAddon: { contains: namingAddon, mode: "insensitive" } })
   }
 
   const categoryIds = options.filters?.categoryId

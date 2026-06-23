@@ -213,6 +213,9 @@ model FlooringProduct {
   @@index([name])
   @@index([productNumber])
   @@index([productNumberInt])
+  @@index([style(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_product_style_trgm_idx")
+  @@index([color(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_product_color_trgm_idx")
+  @@index([productNamingAddon(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_product_productNamingAddon_trgm_idx")
   @@map("flooring_product")
 }
 

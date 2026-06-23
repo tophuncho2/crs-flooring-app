@@ -35,6 +35,9 @@ export function parseProductsListInputFromSearchParams(
 ): ListInput<ProductsListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
   const prodNumberRaw = (readSearchParam(searchParams, "prodNumber") ?? "").trim()
+  const colorRaw = (readSearchParam(searchParams, "color") ?? "").trim()
+  const styleRaw = (readSearchParam(searchParams, "style") ?? "").trim()
+  const namingAddonRaw = (readSearchParam(searchParams, "namingAddon") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
@@ -45,9 +48,12 @@ export function parseProductsListInputFromSearchParams(
   return {
     search: searchRaw || undefined,
     filters:
-      prodNumberRaw || categoryId.length > 0
+      prodNumberRaw || colorRaw || styleRaw || namingAddonRaw || categoryId.length > 0
         ? {
             ...(prodNumberRaw ? { prodNumber: prodNumberRaw } : {}),
+            ...(colorRaw ? { color: colorRaw } : {}),
+            ...(styleRaw ? { style: styleRaw } : {}),
+            ...(namingAddonRaw ? { namingAddon: namingAddonRaw } : {}),
             ...(categoryId.length > 0 ? { categoryId } : {}),
           }
         : undefined,
@@ -62,6 +68,9 @@ export function buildProductsListSearchString(
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
   if (input.filters?.prodNumber) params.set("prodNumber", input.filters.prodNumber)
+  if (input.filters?.color) params.set("color", input.filters.color)
+  if (input.filters?.style) params.set("style", input.filters.style)
+  if (input.filters?.namingAddon) params.set("namingAddon", input.filters.namingAddon)
   for (const id of input.filters?.categoryId ?? []) {
     params.append("categoryId", id)
   }

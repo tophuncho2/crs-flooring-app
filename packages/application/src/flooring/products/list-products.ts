@@ -8,6 +8,9 @@ import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type ProductsListFilters = {
   prodNumber?: string
+  color?: string
+  style?: string
+  namingAddon?: string
   categoryId?: ReadonlyArray<string>
 }
 
@@ -30,12 +33,18 @@ export async function listProductsUseCase(
 
   const search = input.search?.trim() || undefined
   const prodNumber = input.filters?.prodNumber?.trim() || undefined
+  const color = input.filters?.color?.trim() || undefined
+  const style = input.filters?.style?.trim() || undefined
+  const namingAddon = input.filters?.namingAddon?.trim() || undefined
   const categoryId = normalizeCategoryIds(input.filters?.categoryId)
 
   const filters =
-    prodNumber || categoryId
+    prodNumber || color || style || namingAddon || categoryId
       ? {
           ...(prodNumber ? { prodNumber } : {}),
+          ...(color ? { color } : {}),
+          ...(style ? { style } : {}),
+          ...(namingAddon ? { namingAddon } : {}),
           ...(categoryId ? { categoryId } : {}),
         }
       : undefined

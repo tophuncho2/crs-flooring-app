@@ -15,6 +15,9 @@ function callArgs() {
     search?: string
     filters?: {
       prodNumber?: string
+      color?: string
+      style?: string
+      namingAddon?: string
       categoryId?: ReadonlyArray<string>
     }
     skip: number
@@ -64,18 +67,64 @@ describe("listProductsUseCase", () => {
     expect(callArgs().filters).toBeUndefined()
   })
 
+  it("trims the color filter and drops a blank one", async () => {
+    await listProductsUseCase({ filters: { color: "  Beige  " } })
+    expect(callArgs().filters).toEqual({ color: "Beige" })
+    listProductsForListViewMock.mockClear()
+    await listProductsUseCase({ filters: { color: "   " } })
+    expect(callArgs().filters).toBeUndefined()
+  })
+
+  it("trims the style filter and drops a blank one", async () => {
+    await listProductsUseCase({ filters: { style: "  Plank  " } })
+    expect(callArgs().filters).toEqual({ style: "Plank" })
+    listProductsForListViewMock.mockClear()
+    await listProductsUseCase({ filters: { style: "   " } })
+    expect(callArgs().filters).toBeUndefined()
+  })
+
+  it("trims the naming addon filter and drops a blank one", async () => {
+    await listProductsUseCase({ filters: { namingAddon: "  XL  " } })
+    expect(callArgs().filters).toEqual({ namingAddon: "XL" })
+    listProductsForListViewMock.mockClear()
+    await listProductsUseCase({ filters: { namingAddon: "   " } })
+    expect(callArgs().filters).toBeUndefined()
+  })
+
   it("trims and de-duplicates category id filters", async () => {
     await listProductsUseCase({ filters: { categoryId: [" cat-1 ", "cat-1", "cat-2", "  "] } })
     expect(callArgs().filters).toEqual({ categoryId: ["cat-1", "cat-2"] })
   })
 
-  it("combines product number and category id filters", async () => {
-    await listProductsUseCase({ filters: { prodNumber: "7", categoryId: ["cat-1"] } })
-    expect(callArgs().filters).toEqual({ prodNumber: "7", categoryId: ["cat-1"] })
+  it("combines product number, text, and category id filters", async () => {
+    await listProductsUseCase({
+      filters: {
+        prodNumber: "7",
+        color: "Beige",
+        style: "Plank",
+        namingAddon: "XL",
+        categoryId: ["cat-1"],
+      },
+    })
+    expect(callArgs().filters).toEqual({
+      prodNumber: "7",
+      color: "Beige",
+      style: "Plank",
+      namingAddon: "XL",
+      categoryId: ["cat-1"],
+    })
   })
 
   it("omits filters entirely when none survive normalization", async () => {
-    await listProductsUseCase({ filters: { prodNumber: "  ", categoryId: ["  "] } })
+    await listProductsUseCase({
+      filters: {
+        prodNumber: "  ",
+        color: "  ",
+        style: "  ",
+        namingAddon: "  ",
+        categoryId: ["  "],
+      },
+    })
     expect(callArgs().filters).toBeUndefined()
   })
 

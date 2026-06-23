@@ -106,6 +106,9 @@ export function validateUpdateProductInput(
 const listProductsQuerySchema = z.object({
   q: z.string().optional(),
   prodNumber: z.string().optional(),
+  color: z.string().optional(),
+  style: z.string().optional(),
+  namingAddon: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -140,6 +143,10 @@ export function validateListProductsQuery(
   const trimmedProdNumber = parsed.prodNumber?.trim()
   const prodNumber = trimmedProdNumber ? trimmedProdNumber : undefined
 
+  const color = parsed.color?.trim() || undefined
+  const style = parsed.style?.trim() || undefined
+  const namingAddon = parsed.namingAddon?.trim() || undefined
+
   const categoryIdRaw = searchParams.getAll("categoryId")
   const categoryId = Array.from(
     new Set(
@@ -152,9 +159,12 @@ export function validateListProductsQuery(
   return {
     search,
     filters:
-      prodNumber || categoryId.length > 0
+      prodNumber || color || style || namingAddon || categoryId.length > 0
         ? {
             ...(prodNumber ? { prodNumber } : {}),
+            ...(color ? { color } : {}),
+            ...(style ? { style } : {}),
+            ...(namingAddon ? { namingAddon } : {}),
             ...(categoryId.length > 0 ? { categoryId } : {}),
           }
         : undefined,

@@ -20,20 +20,32 @@ import { ProductsListSearch } from "./toolbar-controls/products-list-search"
 import { ProductsClearAll } from "./toolbar-controls/sub-controls/products-clear-all"
 import { ProductsRowCount } from "./toolbar-controls/sub-controls/products-row-count"
 
-const PRODUCTS_FILTERABLE_FIELDS = ["prodNumber", "categoryId"] as const
+const PRODUCTS_FILTERABLE_FIELDS = [
+  "prodNumber",
+  "color",
+  "style",
+  "namingAddon",
+  "categoryId",
+] as const
 
 // The list-view engine stores every filter value as `string[]`. The app filter
-// type carries a scalar (`prodNumber`) alongside the `categoryId` array, so we
-// bridge the two the same way properties does: an all-array engine view +
-// adapters at the edge.
+// type carries scalars (`prodNumber`/`color`/`style`/`namingAddon`) alongside the
+// `categoryId` array, so we bridge the two the same way properties does: an
+// all-array engine view + adapters at the edge.
 type EngineProductsFilters = {
   prodNumber?: ReadonlyArray<string>
+  color?: ReadonlyArray<string>
+  style?: ReadonlyArray<string>
+  namingAddon?: ReadonlyArray<string>
   categoryId?: ReadonlyArray<string>
 }
 
 function toEngineFilters(app: ProductsListFilters): EngineProductsFilters {
   const out: EngineProductsFilters = {}
   if (app.prodNumber && app.prodNumber.length > 0) out.prodNumber = [app.prodNumber]
+  if (app.color && app.color.length > 0) out.color = [app.color]
+  if (app.style && app.style.length > 0) out.style = [app.style]
+  if (app.namingAddon && app.namingAddon.length > 0) out.namingAddon = [app.namingAddon]
   if (app.categoryId?.length) out.categoryId = app.categoryId
   return out
 }
@@ -42,6 +54,12 @@ function toAppFilters(engine: EngineProductsFilters): ProductsListFilters {
   const out: ProductsListFilters = {}
   const prodNumber = engine.prodNumber?.[0]?.trim()
   if (prodNumber) out.prodNumber = prodNumber
+  const color = engine.color?.[0]?.trim()
+  if (color) out.color = color
+  const style = engine.style?.[0]?.trim()
+  if (style) out.style = style
+  const namingAddon = engine.namingAddon?.[0]?.trim()
+  if (namingAddon) out.namingAddon = namingAddon
   if (engine.categoryId?.length) out.categoryId = engine.categoryId
   return out
 }
@@ -102,11 +120,38 @@ export default function ProductsClient({
   })
 
   const prodNumberValue = filters.prodNumber?.[0] ?? ""
+  const colorValue = filters.color?.[0] ?? ""
+  const styleValue = filters.style?.[0] ?? ""
+  const namingAddonValue = filters.namingAddon?.[0] ?? ""
 
   const handleProdNumberChange = useCallback(
     (next: string) => {
       const trimmed = next.trim()
       onFilterChange("prodNumber", trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
+  const handleColorChange = useCallback(
+    (next: string) => {
+      const trimmed = next.trim()
+      onFilterChange("color", trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
+  const handleStyleChange = useCallback(
+    (next: string) => {
+      const trimmed = next.trim()
+      onFilterChange("style", trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
+  const handleNamingAddonChange = useCallback(
+    (next: string) => {
+      const trimmed = next.trim()
+      onFilterChange("namingAddon", trimmed.length > 0 ? [trimmed] : [])
     },
     [onFilterChange],
   )
@@ -144,9 +189,19 @@ export default function ProductsClient({
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (prodNumberValue.trim().length > 0) return true
+    if (colorValue.trim().length > 0) return true
+    if (styleValue.trim().length > 0) return true
+    if (namingAddonValue.trim().length > 0) return true
     if (selectedCategoryId) return true
     return false
-  }, [searchQuery, prodNumberValue, selectedCategoryId])
+  }, [
+    searchQuery,
+    prodNumberValue,
+    colorValue,
+    styleValue,
+    namingAddonValue,
+    selectedCategoryId,
+  ])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -192,6 +247,24 @@ export default function ProductsClient({
                   onCommit={handleProdNumberChange}
                   placeholder="PROD #"
                   ariaLabel="Search products by product number"
+                />
+                <DebouncedSearchControl
+                  value={colorValue}
+                  onCommit={handleColorChange}
+                  placeholder="Color"
+                  ariaLabel="Search products by color"
+                />
+                <DebouncedSearchControl
+                  value={styleValue}
+                  onCommit={handleStyleChange}
+                  placeholder="Style"
+                  ariaLabel="Search products by style"
+                />
+                <DebouncedSearchControl
+                  value={namingAddonValue}
+                  onCommit={handleNamingAddonChange}
+                  placeholder="Naming addon"
+                  ariaLabel="Search products by naming addon"
                 />
                 <ListToolbarBottomRow
                   left={<ProductsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
