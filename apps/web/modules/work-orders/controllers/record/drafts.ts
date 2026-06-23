@@ -48,7 +48,7 @@ export function toUpdateWorkOrderInput(form: WorkOrderForm): UpdateWorkOrderUseC
 
   return {
     propertyId: form.propertyId || null,
-    warehouseId: form.warehouseId || undefined,
+    warehouseId: form.warehouseId || null,
     templateId: form.templateId || null,
     jobTypeId: form.jobTypeId || null,
     unitNumber: form.unitNumber,
