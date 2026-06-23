@@ -36,7 +36,6 @@ const WORK_ORDERS_ALLOWED_SORT_FIELDS = [
   "scheduledFor",
   "property",
   "managementCompany",
-  "workOrderNumber",
 ] as const
 
 export default function WorkOrdersClient({

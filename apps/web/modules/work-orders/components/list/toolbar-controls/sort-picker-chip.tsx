@@ -8,7 +8,6 @@ export type SortPickerField =
   | "scheduledFor"
   | "property"
   | "managementCompany"
-  | "workOrderNumber"
 
 export type SortPickerChipProps = {
   field: SortPickerField
@@ -21,7 +20,6 @@ const FIELD_LABEL: Record<SortPickerField, string> = {
   scheduledFor: "Scheduled date",
   property: "Property",
   managementCompany: "Management company",
-  workOrderNumber: "WO #",
 }
 
 const FIELD_SHORT: Record<SortPickerField, string> = {
@@ -29,7 +27,6 @@ const FIELD_SHORT: Record<SortPickerField, string> = {
   scheduledFor: "Scheduled",
   property: "Property",
   managementCompany: "Mgmt co",
-  workOrderNumber: "WO #",
 }
 
 // Direction labels read naturally per field (desc = ascendingLabel's opposite).
@@ -38,7 +35,6 @@ const DIRECTION_LABELS: Record<SortPickerField, { asc: string; desc: string }> =
   scheduledFor: { asc: "Earliest", desc: "Latest" },
   property: { asc: "A–Z", desc: "Z–A" },
   managementCompany: { asc: "A–Z", desc: "Z–A" },
-  workOrderNumber: { asc: "Asc", desc: "Desc" },
 }
 
 const FIELDS: SortPickerField[] = [
@@ -46,7 +42,6 @@ const FIELDS: SortPickerField[] = [
   "scheduledFor",
   "property",
   "managementCompany",
-  "workOrderNumber",
 ]
 
 // Matches the picker dropdown triggers (rich-dropdown) so toolbar chips align.

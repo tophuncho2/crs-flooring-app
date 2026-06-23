@@ -39,7 +39,6 @@ const WORK_ORDERS_LIST_SORT_FIELDS = [
   "scheduledFor",
   "property",
   "managementCompany",
-  "workOrderNumber",
 ] as const satisfies readonly string[]
 
 function readSearchParam(
