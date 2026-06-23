@@ -438,7 +438,7 @@ export default function InventoryClient({
                 mutually exclusive (selecting one clears the other). Sits to the
                 right of the Warehouse/Location/Category/Product card. */}
             <ListToolbarCell className="self-start">
-              <ListToolbarTallCard label="Import">
+              <ListToolbarTallCard>
                 <div className="flex w-full flex-col gap-2">
                   <PurchaseOrderPicker
                     value={selectedPurchaseOrderNumber}
@@ -460,7 +460,7 @@ export default function InventoryClient({
                 (self-start) rather than stretching to the tall column. Sits to
                 the right of the Import card. */}
             <ListToolbarCell className="self-start">
-              <ListToolbarTallCard label="Status">
+              <ListToolbarTallCard>
                 <ArchiveSegmentedControl
                   value={isArchivedValue}
                   onChange={handleArchivedChange}
