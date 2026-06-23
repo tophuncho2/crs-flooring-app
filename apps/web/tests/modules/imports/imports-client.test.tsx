@@ -50,16 +50,14 @@ function renderImportsClient({
   rows,
   total = rows.length,
   initialSearchQuery = "",
-  initialIsAscendingSort = true,
-  initialGroupField = null,
   initialPage = 1,
+  initialFilters = {},
 }: {
   rows: ImportRow[]
   total?: number
   initialSearchQuery?: string
-  initialIsAscendingSort?: boolean
-  initialGroupField?: string | null
   initialPage?: number
+  initialFilters?: ImportsListFilters
 }) {
   listImportsRequestMock.mockResolvedValue({ rows, total })
   const queryClient = new QueryClient({
@@ -70,9 +68,9 @@ function renderImportsClient({
       <QueryClientProvider client={queryClient}>
         <ImportsClient
           initialSearchQuery={initialSearchQuery}
-          initialIsAscendingSort={initialIsAscendingSort}
-          initialGroupField={initialGroupField}
           initialPage={initialPage}
+          initialFilters={initialFilters}
+          initialWarehouseOptions={[]}
         />
       </QueryClientProvider>
     </NuqsTestingAdapter>,

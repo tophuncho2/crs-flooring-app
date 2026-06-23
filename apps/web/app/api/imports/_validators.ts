@@ -296,6 +296,7 @@ export function validateImportStagedInventorySectionDiffBody(
 
 const listImportsQuerySchema = z.object({
   q: z.string().optional(),
+  impNumber: z.string().optional(),
   grouped: z.enum(["0", "1"]).optional(),
   groups: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -330,6 +331,7 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
   const parsed = parseResult.data
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
+  const impNumber = parsed.impNumber?.trim() || undefined
 
   const firstGroupKey =
     parsed.grouped === "1"
@@ -351,7 +353,13 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
 
   return {
     search,
-    filters: warehouseId.length > 0 ? { warehouseId } : undefined,
+    filters:
+      impNumber || warehouseId.length > 0
+        ? {
+            ...(impNumber ? { impNumber } : {}),
+            ...(warehouseId.length > 0 ? { warehouseId } : {}),
+          }
+        : undefined,
     group: groupField ? { field: groupField } : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,

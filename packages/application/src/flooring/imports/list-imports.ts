@@ -9,6 +9,7 @@ import { listImportsForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type ImportsListFilters = {
+  impNumber?: string
   warehouseId?: ReadonlyArray<string>
 }
 
@@ -38,11 +39,20 @@ export async function listImportsUseCase(
     : null
 
   const search = input.search?.trim() || undefined
+  const impNumber = input.filters?.impNumber?.trim() || undefined
   const warehouseId = normalizeWarehouseIds(input.filters?.warehouseId)
+
+  const filters =
+    impNumber || warehouseId
+      ? {
+          ...(impNumber ? { impNumber } : {}),
+          ...(warehouseId ? { warehouseId } : {}),
+        }
+      : undefined
 
   const { rows, total } = await listImportsForListView({
     search,
-    filters: warehouseId ? { warehouseId } : undefined,
+    filters,
     group,
     skip: (page - 1) * pageSize,
     take: pageSize,

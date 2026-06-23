@@ -28,6 +28,7 @@ export function parseImportsListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<ImportsListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
+  const impNumberRaw = (readSearchParam(searchParams, "impNumber") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
@@ -37,7 +38,13 @@ export function parseImportsListInputFromSearchParams(
 
   return {
     search: searchRaw || undefined,
-    filters: warehouseId.length > 0 ? { warehouseId } : undefined,
+    filters:
+      impNumberRaw || warehouseId.length > 0
+        ? {
+            ...(impNumberRaw ? { impNumber: impNumberRaw } : {}),
+            ...(warehouseId.length > 0 ? { warehouseId } : {}),
+          }
+        : undefined,
     page,
     pageSize: LIST_IMPORTS_PAGE_SIZE,
   }
@@ -46,6 +53,7 @@ export function parseImportsListInputFromSearchParams(
 export function buildImportsListSearchString(input: ListInput<ImportsListFilters>): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
+  if (input.filters?.impNumber) params.set("impNumber", input.filters.impNumber)
   for (const id of input.filters?.warehouseId ?? []) {
     params.append("warehouseId", id)
   }

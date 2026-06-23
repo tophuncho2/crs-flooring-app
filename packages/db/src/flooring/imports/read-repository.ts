@@ -167,7 +167,14 @@ export type ImportListGroupField = "warehouse" | "manufacturer"
 
 export type ImportListViewOptions = {
   search?: string
-  filters?: { warehouseId?: ReadonlyArray<string> }
+  filters?: {
+    /**
+     * Exact match on `importNumber` (the `@unique` btree int) — the toolbar's
+     * IMP-# bar. Non-digits are stripped, so "5" and "IMP-5" both find IMP-5.
+     */
+    impNumber?: string
+    warehouseId?: ReadonlyArray<string>
+  }
   group: { field: ImportListGroupField } | null
   skip: number
   take: number
@@ -190,6 +197,15 @@ function buildListViewWhere(
     clauses.push({
       purchaseOrderNumber: { contains: trimmed, mode: "insensitive" },
     })
+  }
+
+  // Exact identity search on the int — strip non-digits, parse, match. No
+  // digits → -1 sentinel so a junk term returns no rows (never all rows).
+  const impNumber = options.filters?.impNumber?.trim() ?? ""
+  if (impNumber.length > 0) {
+    const digits = impNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    clauses.push({ importNumber: { equals: Number.isInteger(parsed) ? parsed : -1 } })
   }
 
   const warehouseIds = options.filters?.warehouseId

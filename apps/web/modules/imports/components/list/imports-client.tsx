@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
-import type { ImportsListFilters } from "@builders/application"
+import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import type { ImportsListFilters, ListInput } from "@builders/application"
 import {
   LIST_IMPORTS_PAGE_SIZE,
   type ImportRow,
@@ -20,7 +20,31 @@ import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 import { ImportsClearAll } from "./toolbar-controls/sub-controls/imports-clear-all"
 import { ImportsRowCount } from "./toolbar-controls/sub-controls/imports-row-count"
 
-const IMPORTS_FILTERABLE_FIELDS = ["warehouseId"] as const
+const IMPORTS_FILTERABLE_FIELDS = ["impNumber", "warehouseId"] as const
+
+// The list-view engine stores every filter value as `string[]`. The app filter
+// type carries a scalar (`impNumber`) alongside the `warehouseId` array, so we
+// bridge the two the same way products does: an all-array engine view +
+// adapters at the edge.
+type EngineImportsFilters = {
+  impNumber?: ReadonlyArray<string>
+  warehouseId?: ReadonlyArray<string>
+}
+
+function toEngineFilters(app: ImportsListFilters): EngineImportsFilters {
+  const out: EngineImportsFilters = {}
+  if (app.impNumber && app.impNumber.length > 0) out.impNumber = [app.impNumber]
+  if (app.warehouseId?.length) out.warehouseId = app.warehouseId
+  return out
+}
+
+function toAppFilters(engine: EngineImportsFilters): ImportsListFilters {
+  const out: ImportsListFilters = {}
+  const impNumber = engine.impNumber?.[0]?.trim()
+  if (impNumber) out.impNumber = impNumber
+  if (engine.warehouseId?.length) out.warehouseId = engine.warehouseId
+  return out
+}
 
 export default function ImportsClient({
   initialSearchQuery,
@@ -37,6 +61,16 @@ export default function ImportsClient({
 }) {
   const { message, pageError, openCreate, openImport } = useImportsListController()
 
+  // Convert the engine's all-array filters back to the app shape before fetch.
+  const adaptedListFn = useCallback(
+    (input: ListInput<EngineImportsFilters>) =>
+      listImportsRequest({
+        ...input,
+        filters: input.filters ? toAppFilters(input.filters) : undefined,
+      }),
+    [],
+  )
+
   const {
     rows,
     total,
@@ -52,20 +86,30 @@ export default function ImportsClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useFetchListController<ImportRow, ImportsListFilters>({
+  } = useFetchListController<ImportRow, EngineImportsFilters>({
     mode: "fetch",
     queryKey: [...IMPORTS_LIST_QUERY_KEY],
-    listFn: listImportsRequest,
+    listFn: adaptedListFn,
     initialSearchQuery,
     initialPage,
-    initialFilters,
+    initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_IMPORTS_PAGE_SIZE,
     filterableFields: IMPORTS_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
+  const impNumberValue = filters.impNumber?.[0] ?? ""
+
+  const handleImpNumberChange = useCallback(
+    (next: string) => {
+      const trimmed = next.trim()
+      onFilterChange("impNumber", trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
   const selectedWarehouseId = useMemo(() => {
-    const ids = (filters as ImportsListFilters).warehouseId
+    const ids = filters.warehouseId
     return ids && ids.length > 0 ? ids[0] : null
   }, [filters])
 
@@ -85,9 +129,10 @@ export default function ImportsClient({
 
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
+    if (impNumberValue.trim().length > 0) return true
     if (selectedWarehouseId) return true
     return false
-  }, [searchQuery, selectedWarehouseId])
+  }, [searchQuery, impNumberValue, selectedWarehouseId])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -133,6 +178,12 @@ export default function ImportsClient({
                 <ImportsListSearch
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
+                />
+                <DebouncedSearchControl
+                  value={impNumberValue}
+                  onCommit={handleImpNumberChange}
+                  placeholder="IMP #"
+                  ariaLabel="Search imports by import number"
                 />
                 <ListToolbarBottomRow
                   left={<ImportsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
