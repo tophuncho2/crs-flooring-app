@@ -11,6 +11,12 @@ export type TemplateMaterialItemRow = {
   sendUnitAbbrev: string
   notes: string
   createdAt: string
+  updatedAt: string
+  // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
+  // updatedBy on edit). Null on historical rows. Carried on the row but not
+  // surfaced in the section table — DB-only by design.
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 export type TemplateMaterialItemForm = {

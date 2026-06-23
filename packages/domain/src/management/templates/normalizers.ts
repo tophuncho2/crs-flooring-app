@@ -31,6 +31,8 @@ type TemplateListInput = {
   _count: { items: number }
   createdAt: Date | string
   updatedAt: Date | string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
@@ -65,6 +67,8 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
     itemsCount: template._count.items,
     createdAt: template.createdAt instanceof Date ? template.createdAt.toISOString() : template.createdAt,
     updatedAt: template.updatedAt instanceof Date ? template.updatedAt.toISOString() : template.updatedAt,
+    createdBy: template.createdBy ?? null,
+    updatedBy: template.updatedBy ?? null,
   }
 }
 

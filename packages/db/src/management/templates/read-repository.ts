@@ -45,6 +45,8 @@ const templateListSelect = {
   _count: { select: { items: true } },
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
 } as const
 
 const templateDetailSelect = {
@@ -75,6 +77,9 @@ const templateDetailSelect = {
       sendUnitAbbrev: true,
       notes: true,
       createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
     },
     orderBy: { createdAt: "asc" as const },
   },

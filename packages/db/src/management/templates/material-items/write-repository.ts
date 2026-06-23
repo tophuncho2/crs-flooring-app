@@ -27,6 +27,10 @@ function toDecimal(value: string): Prisma.Decimal | string | null {
 
 export type ApplyTemplateMaterialItemsDiffInput = {
   templateId: string
+  // Actor email stamped on every written item: createdBy+updatedBy on added
+  // rows, updatedBy on modified rows. A separate guarded param, never user
+  // input — mirrors the parent template's create/update stamping.
+  actorEmail: string
   added: Array<{ id: string; tempId: string; input: WriteTemplateMaterialItemInput }>
   modified: Array<{ id: string; input: WriteTemplateMaterialItemInput }>
   deleted: Array<{ id: string }>
@@ -62,6 +66,8 @@ export async function applyTemplateMaterialItemsDiff(
         sendUnitName: draft.input.sendUnitName,
         sendUnitAbbrev: draft.input.sendUnitAbbrev,
         notes: draft.input.notes ? draft.input.notes : null,
+        createdBy: input.actorEmail,
+        updatedBy: input.actorEmail,
       })),
     })
   }
@@ -75,6 +81,7 @@ export async function applyTemplateMaterialItemsDiff(
         sendUnitName: update.input.sendUnitName,
         sendUnitAbbrev: update.input.sendUnitAbbrev,
         notes: update.input.notes ? update.input.notes : null,
+        updatedBy: input.actorEmail,
       },
     })
   }

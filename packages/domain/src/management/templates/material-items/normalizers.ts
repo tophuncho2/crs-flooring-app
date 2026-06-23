@@ -9,6 +9,9 @@ type TemplateMaterialItemInput = {
   sendUnitAbbrev: string | null
   notes: string | null
   createdAt: Date | string
+  updatedAt: Date | string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 export function normalizeTemplateMaterialItem(item: TemplateMaterialItemInput): TemplateMaterialItemRow {
@@ -22,5 +25,8 @@ export function normalizeTemplateMaterialItem(item: TemplateMaterialItemInput): 
     sendUnitAbbrev: item.sendUnitAbbrev ?? "",
     notes: item.notes ?? "",
     createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : item.createdAt,
+    updatedAt: item.updatedAt instanceof Date ? item.updatedAt.toISOString() : item.updatedAt,
+    createdBy: item.createdBy ?? null,
+    updatedBy: item.updatedBy ?? null,
   }
 }

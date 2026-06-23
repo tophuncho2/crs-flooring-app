@@ -9,8 +9,13 @@ import type { TemplateUseCaseResult, UpdateTemplateUseCaseInput } from "./types.
 export async function updateTemplateUseCase(
   id: string,
   input: UpdateTemplateUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<TemplateUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updateTemplateUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -26,7 +31,7 @@ export async function updateTemplateUseCase(
     }
 
     try {
-      return await updateTemplateRecord(id, input, c)
+      return await updateTemplateRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         throw new TemplateExecutionError({

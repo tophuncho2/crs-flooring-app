@@ -19,8 +19,13 @@ import type {
 
 export async function saveTemplateMaterialItemsSectionUseCase(
   input: SaveTemplateMaterialItemsSectionUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SaveTemplateMaterialItemsSectionUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("saveTemplateMaterialItemsSectionUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -82,6 +87,7 @@ export async function saveTemplateMaterialItemsSectionUseCase(
 
     return await applyTemplateMaterialItemsDiff(c, {
       templateId: input.templateId,
+      actorEmail,
       added: addedWithIds.map((draft) => ({
         id: draft.id,
         tempId: draft.tempId,

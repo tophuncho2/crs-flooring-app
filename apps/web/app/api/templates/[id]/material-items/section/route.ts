@@ -63,7 +63,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringTemplate",
         entityId: id,
       },
-      () => saveTemplateMaterialItemsSectionUseCase({ templateId: id, diff }),
+      () => saveTemplateMaterialItemsSectionUseCase({ templateId: id, diff }, access.user.email),
     )
 
     const detail = await getTemplateById(id)

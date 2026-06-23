@@ -19,6 +19,8 @@ describe("normalizeTemplateListRow management company", () => {
     _count: { items: 0 },
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",
+    createdBy: "creator@example.com",
+    updatedBy: "editor@example.com",
   }
 
   it("sources the management company id + name from the linked property", () => {
@@ -31,6 +33,16 @@ describe("normalizeTemplateListRow management company", () => {
     const row = normalizeTemplateListRow({ ...base, property: { name: "Maple Court", managementCompany: null } })
     expect(row.managementCompanyId).toBeNull()
     expect(row.managementCompanyName).toBeNull()
+  })
+
+  it("passes the actor emails through, coalescing missing ones to null", () => {
+    const row = normalizeTemplateListRow(base)
+    expect(row.createdBy).toBe("creator@example.com")
+    expect(row.updatedBy).toBe("editor@example.com")
+
+    const blank = normalizeTemplateListRow({ ...base, createdBy: null, updatedBy: null })
+    expect(blank.createdBy).toBeNull()
+    expect(blank.updatedBy).toBeNull()
   })
 })
 
@@ -60,6 +72,8 @@ describe("normalizeTemplate neighbors", () => {
     items: [],
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",
+    createdBy: "creator@example.com",
+    updatedBy: "editor@example.com",
   }
 
   it("defaults both neighbors to null when none are supplied", () => {

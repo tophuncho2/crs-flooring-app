@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         route: "/api/templates",
         entityType: "flooringTemplate",
       },
-      () => createTemplateUseCase(input),
+      () => createTemplateUseCase(input, access.user.email),
     )
 
     const responseBody = { template: result }

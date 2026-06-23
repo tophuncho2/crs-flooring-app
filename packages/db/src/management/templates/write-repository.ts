@@ -12,9 +12,14 @@ export type CreateTemplateRecordInput = {
   description?: string | null
   internalNotes?: string | null
   installerInstructions?: string | null
+  createdBy: string
+  updatedBy: string
 }
 
-export type UpdateTemplateRecordInput = Partial<CreateTemplateRecordInput>
+// `createdBy` is immutable post-create; `updatedBy` is always stamped on edit.
+export type UpdateTemplateRecordInput = Partial<
+  Omit<CreateTemplateRecordInput, "createdBy" | "updatedBy">
+> & { updatedBy: string }
 
 const templateDetailSelect = {
   id: true,
@@ -42,6 +47,8 @@ const templateDetailSelect = {
   _count: { select: { items: true } },
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
   items: {
     select: {
       id: true,
@@ -52,6 +59,9 @@ const templateDetailSelect = {
       sendUnitAbbrev: true,
       notes: true,
       createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
     },
     orderBy: { createdAt: "asc" as const },
   },

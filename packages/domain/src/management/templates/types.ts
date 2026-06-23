@@ -16,6 +16,11 @@ export type TemplateListRow = {
   itemsCount: number
   createdAt: string
   updatedAt: string
+  // Actor-email snapshots: WHO created / last-updated the row. Plain nullable
+  // strings (no FK), null on historical rows. Mirrors job-types / payments /
+  // warehouse / products / properties.
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 /**

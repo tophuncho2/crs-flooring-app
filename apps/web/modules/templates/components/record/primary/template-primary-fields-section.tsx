@@ -43,6 +43,8 @@ export type TemplatePrimaryDetail = {
   warehouseName: string
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 /**
@@ -186,6 +188,19 @@ export function TemplatePrimaryFieldsSection({
       <CellAt col={3} row={6} colSpan={2}>
         <FormField label="Updated">
           <StaticFieldValue>{detail ? formatEasternDateTime(detail.updatedAt) || "—" : "—"}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+
+      {/* Actor row: read-only created-by / updated-by emails (the WHO behind the
+          timestamps above). Null on historical rows → em-dash. */}
+      <CellAt col={1} row={7} colSpan={2}>
+        <FormField label="Created by">
+          <StaticFieldValue>{detail?.createdBy ?? "—"}</StaticFieldValue>
+        </FormField>
+      </CellAt>
+      <CellAt col={3} row={7} colSpan={2}>
+        <FormField label="Updated by">
+          <StaticFieldValue>{detail?.updatedBy ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
     </FieldSection>

@@ -61,7 +61,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringTemplate",
         entityId: id,
       },
-      () => updateTemplateUseCase(id, input),
+      () => updateTemplateUseCase(id, input, access.user.email),
     )
 
     // Re-read with neighbors so the response carries the stepper's prev/next

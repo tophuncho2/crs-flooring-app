@@ -459,6 +459,8 @@ model FlooringTemplate {
   installerInstructions String?                   @db.VarChar(250)
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
+  createdBy            String?
+  updatedBy            String?
   items                FlooringTemplateItem[]
   workOrders           FlooringWorkOrder[]
 
@@ -484,6 +486,9 @@ model FlooringTemplateItem {
   sendUnitAbbrev String?
   notes          String?          @db.VarChar(30)
   createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  createdBy      String?
+  updatedBy      String?
 
   @@index([templateId])
   @@index([templateId, createdAt])

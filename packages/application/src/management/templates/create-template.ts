@@ -5,8 +5,13 @@ import type { CreateTemplateUseCaseInput, TemplateUseCaseResult } from "./types.
 
 export async function createTemplateUseCase(
   input: CreateTemplateUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<TemplateUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createTemplateUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -21,6 +26,6 @@ export async function createTemplateUseCase(
       })
     }
 
-    return createTemplateRecord(input, c)
+    return createTemplateRecord({ ...input, createdBy: actorEmail, updatedBy: actorEmail }, c)
   })
 }

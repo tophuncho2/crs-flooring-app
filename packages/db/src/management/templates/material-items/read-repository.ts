@@ -13,6 +13,9 @@ const templateMaterialItemSelect = {
   sendUnitAbbrev: true,
   notes: true,
   createdAt: true,
+  updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
 } as const
 
 export async function listTemplateMaterialItems(
