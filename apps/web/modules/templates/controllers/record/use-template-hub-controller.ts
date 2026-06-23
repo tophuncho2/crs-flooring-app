@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import type { TemplateDetail, TemplateNeighbor } from "@builders/domain"
 import {
@@ -14,8 +14,6 @@ import {
   TEMPLATE_DETAIL_QUERY_KEY,
   fetchTemplateDetailRequest,
 } from "@/modules/templates/data/template-detail-request"
-
-const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
 
 /**
  * Cascade preset threaded in from the hub page's search params (deep links +
@@ -30,7 +28,6 @@ export type TemplateHubController = {
   isTemplateLoading: boolean
   templateError: string | null
   // ===== Actions =====
-  newTemplate: () => void
   /** Step the record view to an adjacent template (by template number). */
   stepToTemplate: (neighbor: TemplateNeighbor) => void
 }
@@ -51,12 +48,11 @@ export function useTemplateHubController(
   } = {},
 ): TemplateHubController {
   const { initialSelections, initialTemplate } = options
-  const router = useRouter()
   const searchParams = useSearchParams()
   const returnToParam = searchParams.get("returnTo")
   const cascade = useCascadePickerController({ initialSelections })
 
-  const { propertyId, templateId } = cascade
+  const { templateId } = cascade
 
   const templateQuery = useQuery({
     queryKey: [...TEMPLATE_DETAIL_QUERY_KEY, templateId],
@@ -126,13 +122,6 @@ export function useTemplateHubController(
     returnToParam,
   ])
 
-  const newTemplate = useCallback(() => {
-    const params = new URLSearchParams()
-    if (propertyId) params.set("propertyId", propertyId)
-    params.set("returnTo", TEMPLATE_HUB_BASE)
-    router.push(`/dashboard/templates/new?${params.toString()}`)
-  }, [propertyId, router])
-
   // Step the record view to an adjacent template by number. Setting only the
   // template id re-keys the detail query so the neighbor loads; MC/Property are
   // left untouched here. The seed-on-load effect above then syncs the pickers to
@@ -149,7 +138,6 @@ export function useTemplateHubController(
     templateDetail,
     isTemplateLoading,
     templateError,
-    newTemplate,
     stepToTemplate,
   }
 }

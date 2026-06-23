@@ -15,9 +15,9 @@ import {
 
 /**
  * The single templates page ("template hub"). Loads the *editable* record
- * (primary + material-items sections) for the selected template; the primary
- * section header carries the "+ Template" action. Opened from every template
- * entry point (list / MC / work-order / create) with the template pre-selected.
+ * (primary + material-items sections) for the selected template. Opened from
+ * every template entry point (list / MC / work-order / create) with the
+ * template pre-selected.
  */
 export function TemplateHubClient({
   backHref,
@@ -52,7 +52,7 @@ function TemplateHubView({
   page: RecordDetailClientScaffoldContext
   controller: TemplateHubController
 }) {
-  const { templateDetail, isTemplateLoading, templateError, newTemplate, stepToTemplate } = controller
+  const { templateDetail, isTemplateLoading, templateError, stepToTemplate } = controller
 
   if (templateError) {
     return <div className={PROMPT_CARD_CLASS}>{templateError}</div>
@@ -80,7 +80,6 @@ function TemplateHubView({
         key={templateDetail.id}
         page={page}
         template={templateDetail}
-        onNewTemplate={newTemplate}
       />
     </>
   )
