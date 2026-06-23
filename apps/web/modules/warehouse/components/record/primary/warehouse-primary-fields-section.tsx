@@ -1,6 +1,6 @@
 "use client"
 
-import type { WarehouseForm } from "@builders/domain"
+import { formatEasternDateTime, type WarehouseForm } from "@builders/domain"
 import {
   AddressEditCell,
   CellAt,
@@ -10,13 +10,6 @@ import {
   StaticFieldValue,
   TextCell,
 } from "@/engines/record-view"
-
-function formatDate(value: string) {
-  if (!value) return "—"
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toISOString().slice(0, 10)
-}
 
 export type WarehousePrimaryFieldsSectionProps = {
   draft: WarehouseForm
@@ -85,12 +78,12 @@ export function WarehousePrimaryFieldsSection({
         <>
           <CellAt col={1} colSpan={5}>
             <FormField label="Created">
-              <StaticFieldValue>{formatDate(createdAt ?? "")}</StaticFieldValue>
+              <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
           <CellAt col={1} colSpan={5}>
             <FormField label="Updated">
-              <StaticFieldValue>{formatDate(updatedAt ?? "")}</StaticFieldValue>
+              <StaticFieldValue>{formatEasternDateTime(updatedAt) || "—"}</StaticFieldValue>
             </FormField>
           </CellAt>
         </>

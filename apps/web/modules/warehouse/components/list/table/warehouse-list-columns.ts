@@ -10,4 +10,6 @@ export const WAREHOUSE_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WarehouseList
   { key: "postalCode", label: "Postal Code" },
   { key: "phone", label: "Store Phone" },
   { key: "workOrdersCount", label: "Work Orders", align: "end" },
+  { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
 ]

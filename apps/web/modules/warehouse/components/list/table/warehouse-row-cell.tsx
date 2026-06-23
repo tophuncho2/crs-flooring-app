@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import { formatPhoneNumber, type WarehouseListRow } from "@builders/domain"
+import { formatEasternDateTime, formatPhoneNumber, type WarehouseListRow } from "@builders/domain"
 
 export function renderWarehouseRowCell(
   column: DataTableColumn<WarehouseListRow>,
@@ -23,6 +23,10 @@ export function renderWarehouseRowCell(
       return <span>{formatPhoneNumber(row.phone ?? "") || "—"}</span>
     case "workOrdersCount":
       return <span className="tabular-nums">{row.workOrdersCount}</span>
+    case "createdAt":
+      return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
+    case "updatedAt":
+      return <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
     default:
       return "-"
   }
