@@ -64,4 +64,15 @@ describe("updateEntityUseCase", () => {
       status: 404,
     })
   })
+
+  it("maps a bad typeId FK violation (P2003) to a 400", async () => {
+    updateEntityRecordMock.mockRejectedValue(new PrismaKnownError("fk", { code: "P2003" }))
+    await expect(
+      updateEntityUseCase(ID, { typeIds: ["missing"] } as never),
+    ).rejects.toMatchObject({
+      code: "ENTITY_INVALID_TYPE",
+      status: 400,
+      field: "typeIds",
+    })
+  })
 })

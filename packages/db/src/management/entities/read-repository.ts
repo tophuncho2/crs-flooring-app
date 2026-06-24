@@ -13,13 +13,14 @@ import {
 type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
 
 // Linked entity-types, slimmed to what the chip/picker render. Ordered by type
-// name so chips render in a stable, alphabetical order.
-const entityTypesSelect = {
+// name so chips render in a stable, alphabetical order. Exported so the write
+// repository reuses the exact same shape (single source of truth).
+export const entityTypesSelect = {
   select: {
     entityType: { select: { id: true, type: true, color: true } },
   },
   orderBy: { entityType: { type: "asc" } },
-} as const
+} as const satisfies Prisma.Entity$entityTypesArgs
 
 const entityListSelect = {
   id: true,

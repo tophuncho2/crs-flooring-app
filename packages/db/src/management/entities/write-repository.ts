@@ -1,6 +1,7 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import { normalizeEntity, normalizePhoneNumber, type EntityDetail } from "@builders/domain"
+import { entityTypesSelect } from "./read-repository.js"
 
 type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -41,12 +42,7 @@ const entityDetailSelect = {
   _count: {
     select: { properties: true },
   },
-  entityTypes: {
-    select: {
-      entityType: { select: { id: true, type: true, color: true } },
-    },
-    orderBy: { entityType: { type: "asc" } },
-  },
+  entityTypes: entityTypesSelect,
 } as const satisfies Prisma.EntitySelect
 
 export async function createEntityRecord(
