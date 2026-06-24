@@ -46,7 +46,7 @@ export function PropertyFieldsSection({
    */
   showContact?: boolean
   /**
-   * Optional cell placed to the right of the Name field (col 6, spanning 3/8).
+   * Optional cell placed to the right of the Name field (col 6, spanning 2/8).
    * The record view drops the read-only Property # here; the hub forms omit it.
    */
   nameRowTrailing?: ReactNode
@@ -67,7 +67,7 @@ export function PropertyFieldsSection({
         </FormField>
       </CellAt>
       {nameRowTrailing ? (
-        <CellAt col={6} colSpan={3}>
+        <CellAt col={6} colSpan={2}>
           {nameRowTrailing}
         </CellAt>
       ) : null}
