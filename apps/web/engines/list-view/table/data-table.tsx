@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react"
 import { RecordOpenButton } from "@/engines/common"
 import type {
   CursorPaginateContract,
@@ -114,6 +115,18 @@ export type DataTableProps<TRow extends DataTableRow> = {
   rowActions?: (row: TRow) => ReactNode
   /** Optional multi-select feature — see {@link DataTableSelection}. */
   selection?: DataTableSelection<TRow>
+  /**
+   * Active server-side sort. When a column is `sortable` and matches
+   * `sort.field`, its header caret reflects the direction; other sortable
+   * headers show an idle ⇅. Null/absent → no active sort indicator.
+   */
+  sort?: { field: string; direction: "asc" | "desc" } | null
+  /**
+   * Called with a sortable column's `key` when its header is clicked. The
+   * caller owns the field→direction mapping (e.g. flip when already active,
+   * else select with a sensible default). Sortable headers are inert without it.
+   */
+  onSort?: (key: string) => void
   /** Aria-label provider for interactive rows. */
   getRowAriaLabel?: (row: TRow) => string
   className?: string
@@ -143,6 +156,8 @@ export function DataTable<TRow extends DataTableRow>({
   onOpenRow,
   rowActions,
   selection,
+  sort,
+  onSort,
   getRowAriaLabel,
   className,
 }: DataTableProps<TRow>) {
@@ -203,18 +218,63 @@ export function DataTable<TRow extends DataTableRow>({
                   <span className="sr-only">{hasRowActions ? "Actions" : "Open"}</span>
                 </th>
               ) : null}
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  scope="col"
-                  className={joinClassNames(
-                    "whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
-                    ALIGN_CLASS_NAME[column.align ?? "start"],
-                  )}
-                >
-                  {column.label}
-                </th>
-              ))}
+              {columns.map((column) => {
+                const isSortable = Boolean(column.sortable && onSort)
+                const isActiveSort = isSortable && sort?.field === column.key
+                return (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    aria-sort={
+                      isActiveSort
+                        ? sort?.direction === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : undefined
+                    }
+                    className={joinClassNames(
+                      "whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
+                      ALIGN_CLASS_NAME[column.align ?? "start"],
+                    )}
+                  >
+                    {isSortable ? (
+                      <button
+                        type="button"
+                        onClick={() => onSort?.(column.key)}
+                        aria-label={`Sort by ${column.label}${
+                          isActiveSort
+                            ? sort?.direction === "asc"
+                              ? " (ascending)"
+                              : " (descending)"
+                            : ""
+                        }`}
+                        className={joinClassNames(
+                          "inline-flex items-center gap-1 rounded transition hover:text-[var(--foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40",
+                          column.align === "end" ? "flex-row-reverse" : undefined,
+                          isActiveSort ? "text-[var(--foreground)]" : undefined,
+                        )}
+                      >
+                        <span>{column.label}</span>
+                        {isActiveSort ? (
+                          sort?.direction === "asc" ? (
+                            <ChevronUp size={13} aria-hidden="true" />
+                          ) : (
+                            <ChevronDown size={13} aria-hidden="true" />
+                          )
+                        ) : (
+                          <ChevronsUpDown
+                            size={13}
+                            aria-hidden="true"
+                            className="opacity-40"
+                          />
+                        )}
+                      </button>
+                    ) : (
+                      column.label
+                    )}
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>

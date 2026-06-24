@@ -81,6 +81,7 @@ export async function listInventoryUseCase(
 
   const { rows, total } = await listInventoryForListView({
     filters,
+    ...(input.sort ? { sort: input.sort } : {}),
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

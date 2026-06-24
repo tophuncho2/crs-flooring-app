@@ -45,6 +45,13 @@ function readSearchParamArray(
 // parse + build so the URL contract stays in one place.
 const TEXT_FILTER_KEYS = ["invNumber", "rollNumber", "dyeLot", "note"] as const
 
+/**
+ * Sort fields recognised by the inventory list. Mirrors the API validator enum
+ * and the sortable column headers; `createdAt` is the default. Row# is
+ * intentionally not sortable. Any other value falls back to `createdAt`.
+ */
+const INVENTORY_LIST_SORT_FIELDS = ["createdAt", "location", "stockBalance"] as const
+
 export function parseInventoryListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<InventoryListFilters> {
@@ -70,7 +77,16 @@ export function parseInventoryListInputFromSearchParams(
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
+  const direction = readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc"
+  const sortFieldRaw = readSearchParam(searchParams, "sortField")
+  const field = INVENTORY_LIST_SORT_FIELDS.includes(
+    sortFieldRaw as (typeof INVENTORY_LIST_SORT_FIELDS)[number],
+  )
+    ? (sortFieldRaw as string)
+    : "createdAt"
+
   return {
+    sort: { field, direction },
     filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
     page,
     pageSize: LIST_INVENTORY_PAGE_SIZE,
@@ -81,6 +97,8 @@ export function buildInventoryListSearchString(
   input: ListInput<InventoryListFilters>,
 ): string {
   const params = new URLSearchParams()
+  if (input.sort?.direction) params.set("sort", input.sort.direction)
+  if (input.sort?.field) params.set("sortField", input.sort.field)
   for (const key of MULTI_VALUE_FILTER_KEYS) {
     const values = (input.filters?.[key] ?? []) as ReadonlyArray<string>
     for (const id of values) params.append(key, id)

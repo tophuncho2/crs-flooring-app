@@ -12,6 +12,8 @@ export function InventoryTable({
   onOpenInventory,
   onDuplicateInventory,
   onAddAdjustment,
+  sort,
+  onSort,
   pagination,
 }: {
   rows: InventoryRow[]
@@ -19,6 +21,10 @@ export function InventoryTable({
   onDuplicateInventory: (id: string) => void
   /** Row ⋮ → "Add Adjustment": open the record in adjustment-create mode. */
   onAddAdjustment: (id: string) => void
+  /** Active server-side sort (drives the header carets). */
+  sort?: { field: string; direction: "asc" | "desc" } | null
+  /** Header click → re-sort by that column key. */
+  onSort?: (key: string) => void
   pagination?: PaginateContract
 }) {
   return (
@@ -26,6 +32,8 @@ export function InventoryTable({
       rows={rows}
       columns={INVENTORY_LIST_COLUMNS}
       empty="No inventory rows match these filters."
+      sort={sort}
+      onSort={onSort}
       onOpenRow={(row) => onOpenInventory(row.id)}
       rowActions={(row) => (
         <RecordOptionsMenu

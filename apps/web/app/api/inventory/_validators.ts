@@ -224,6 +224,12 @@ const listInventoryQuerySchema = z.object({
   note: z.string().optional(),
   location: z.string().optional(),
   archived: z.enum(["true", "false"]).optional(),
+  // Sort: direction + field. `createdAt` is the default; row# is intentionally
+  // not a sortable field (chronological `createdAt` is the canonical time key).
+  // `stockBalance` is the displayed quantity (sorted server-side on the
+  // generated `stockQuantity` column in the read repository).
+  sort: z.enum(["asc", "desc"]).default("desc"),
+  sortField: z.enum(["createdAt", "location", "stockBalance"]).default("createdAt"),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -295,6 +301,7 @@ export function validateListInventoryQuery(
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
   return {
+    sort: { field: parsed.sortField, direction: parsed.sort },
     filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,

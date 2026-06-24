@@ -380,8 +380,21 @@ export type InventoryListViewOptions = {
      */
     isArchived?: boolean
   }
+  sort?: InventoryListViewSort
   skip: number
   take: number
+}
+
+export type InventoryListViewSort = {
+  /**
+   * Primary sort column. `createdAt` (the default) falls through to the
+   * tiebreaker; `location` is nullable so it is ordered explicitly with nulls
+   * last; `stockBalance` (the displayed quantity) sorts on the generated
+   * `stockQuantity` column. Row# (`inventoryNumber`) is intentionally not
+   * sortable.
+   */
+  field?: string
+  direction: "asc" | "desc"
 }
 
 export type InventoryListViewResult = {
@@ -494,13 +507,39 @@ function buildListViewWhere(
 }
 
 /**
+ * Builds the inventory list-view `orderBy`. Default sort is `createdAt DESC`
+ * (newest first); `id` is the stable tiebreak in the same direction. The
+ * user-selectable fields are `createdAt`, `location` (nullable → nulls last),
+ * and `stockBalance` (the displayed quantity, sorted on the generated
+ * `stockQuantity` column). Row# (`inventoryNumber`) is intentionally NOT
+ * sortable — chronological `createdAt` is the canonical time key.
+ */
+function buildInventoryListViewOrderBy(
+  sort: InventoryListViewSort | undefined,
+): Prisma.FlooringInventoryOrderByWithRelationInput[] {
+  const direction: Prisma.SortOrder = sort?.direction ?? "desc"
+  const orderBy: Prisma.FlooringInventoryOrderByWithRelationInput[] = []
+
+  // Primary user-selected field. `createdAt` is the default and is covered by the
+  // tiebreaker append below.
+  if (sort?.field === "location") {
+    orderBy.push({ location: { sort: direction, nulls: "last" } })
+  } else if (sort?.field === "stockBalance") {
+    orderBy.push({ stockQuantity: direction })
+  }
+
+  orderBy.push({ createdAt: direction })
+  orderBy.push({ id: direction })
+  return orderBy
+}
+
+/**
  * Server-side paginated read for the inventory list view. Default sort is
- * `inventoryNumberInt ASC` — a flat ascending inventory-number order across
- * all products (no product grouping). The int sort key is the stored
- * generated column derived from `inventoryNumber`'s numeric tail, which
- * avoids the lex-vs-numeric trap of the unpadded string format (`INV-10` <
- * `INV-2` lexically). `id ASC` is the stable tiebreak. Users are responsible
- * for archiving spent rows so the list stays scoped to live inventory.
+ * `createdAt DESC` — newest rows first — with `id` as the stable tiebreak.
+ * Users can re-sort by `createdAt`, `location`, or `stockBalance` (quantity)
+ * via the column headers; row# is intentionally not sortable. See
+ * {@link buildInventoryListViewOrderBy}. Users are responsible for archiving
+ * spent rows so the list stays scoped to live inventory.
  * Filters AND together — including the per-field identity search bars:
  * `inventoryNumber` is an exact numeric match (`inventoryNumberInt`), while
  * `rollNumber`/`dyeLot`/`note` are independent ILIKEs on their own columns.
@@ -514,10 +553,7 @@ export async function listInventoryForListView(
   client: InventoryDbClient = db,
 ): Promise<InventoryListViewResult> {
   const where = buildListViewWhere(options)
-  const orderBy: Prisma.FlooringInventoryOrderByWithRelationInput[] = [
-    { inventoryNumberInt: "asc" },
-    { id: "asc" },
-  ]
+  const orderBy = buildInventoryListViewOrderBy(options.sort)
 
   const [total, rows] = await Promise.all([
     client.flooringInventory.count({ where }),

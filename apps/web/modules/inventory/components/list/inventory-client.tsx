@@ -46,6 +46,22 @@ const INVENTORY_FILTERABLE_FIELDS = [
 ] as const
 
 /**
+ * Server-side sortable columns. Mirrors the API validator enum + the sortable
+ * `INVENTORY_LIST_COLUMNS` headers. `createdAt` is the default; row# is
+ * intentionally not sortable. `stockBalance` is the displayed quantity (sorted
+ * on the generated `stockQuantity` column server-side).
+ */
+const INVENTORY_ALLOWED_SORT_FIELDS = ["createdAt", "location", "stockBalance"] as const
+
+/**
+ * Default direction when first selecting a column: locations read naturally
+ * A→Z; created date + quantity default to newest/highest first.
+ */
+function defaultSortDirection(field: string): "asc" | "desc" {
+  return field === "location" ? "asc" : "desc"
+}
+
+/**
  * Engine-side filter shape: the list-view engine's filter map only carries
  * `string[]` values (one per filterable field). For the inventory list's
  * non-array filters — `location` (free text) and `isArchived` (boolean) — we
@@ -148,6 +164,7 @@ export default function InventoryClient({
     rows,
     total,
     filters,
+    sort,
     page,
     pageSize,
     totalPages,
@@ -155,6 +172,8 @@ export default function InventoryClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    onSortChange,
+    onToggleSortDirection,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<InventoryRow, EngineInventoryFilters>({
@@ -162,13 +181,25 @@ export default function InventoryClient({
     queryKey: [...INVENTORY_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
+    initialSort: { field: "createdAt", direction: "desc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_INVENTORY_PAGE_SIZE,
     tableKey: "inventory-main",
     filterableFields: INVENTORY_FILTERABLE_FIELDS,
+    allowedSortFields: INVENTORY_ALLOWED_SORT_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
+
+  // Column-header sort: flip direction when the active column is re-clicked,
+  // else switch field with a sensible default direction.
+  const handleSort = useCallback(
+    (key: string) => {
+      if (sort?.field === key) onToggleSortDirection()
+      else onSortChange({ field: key, direction: defaultSortDirection(key) })
+    },
+    [sort, onSortChange, onToggleSortDirection],
+  )
 
   // --- Resolve currently-selected values from the engine's filter map ---
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
@@ -491,6 +522,8 @@ export default function InventoryClient({
             buildInventoryRecordHref({ inventoryId: id, adjustment: NEW_ADJUSTMENT_ID, returnTo }),
           )
         }
+        sort={sort}
+        onSort={handleSort}
         pagination={{
           page,
           pageSize,

@@ -16,6 +16,13 @@ export type DataTableColumn<TRow> = {
   label: string
   align?: DataTableCellAlign
   /**
+   * When true, the header renders as a sort button (caret affordance) and
+   * clicking it calls `DataTableProps.onSort(column.key)`. Inert unless the
+   * table is also given an `onSort` handler. The caller maps the column key to
+   * a server sort field + direction. Off by default.
+   */
+  sortable?: boolean
+  /**
    * Optional per-column renderer. Receives the row and returns the cell
    * body. If omitted, the table renders `row[column.key]` as plain
    * text.

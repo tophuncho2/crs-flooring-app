@@ -28,6 +28,10 @@ export type InventoryOptionsGridController = {
   setRollNumber: (value: string) => void
   setDyeLot: (value: string) => void
   setNote: (value: string) => void
+  /** Active server-side sort (drives the DataTable header carets). */
+  sort: { field: string; direction: "asc" | "desc" }
+  /** Header click → re-sort by that column key (flips if already active). */
+  setSort: (key: string) => void
   /** True when any of the four identity search bars holds a value. */
   hasSearch: boolean
   /** Clear all four search bars and return to page 1. */
@@ -69,6 +73,10 @@ export function useInventoryOptionsGrid({
   const [rollNumber, setRollNumberState] = useState("")
   const [dyeLot, setDyeLotState] = useState("")
   const [note, setNoteState] = useState("")
+  const [sort, setSortState] = useState<{ field: string; direction: "asc" | "desc" }>({
+    field: "createdAt",
+    direction: "desc",
+  })
   const pager = useRecordSectionPagination()
 
   // Re-scoping (different warehouse / WO product) returns to page 1. Reset during
@@ -101,6 +109,17 @@ export function useInventoryOptionsGrid({
     pager.reset()
   }, [pager])
 
+  // Column-header sort: flip direction when the active column is re-clicked,
+  // else switch field with a sensible default direction. Resets to page 1.
+  const setSort = useCallback((key: string) => {
+    setSortState((prev) =>
+      prev.field === key
+        ? { field: key, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { field: key, direction: key === "location" ? "asc" : "desc" },
+    )
+    pager.reset()
+  }, [pager])
+
   const input = useMemo<ListInput<InventoryListFilters>>(() => {
     const filters: InventoryListFilters = {
       ...(warehouseId ? { warehouseId: [warehouseId] } : {}),
@@ -110,8 +129,8 @@ export function useInventoryOptionsGrid({
       ...(dyeLot.trim() ? { dyeLot: dyeLot.trim() } : {}),
       ...(note.trim() ? { note: note.trim() } : {}),
     }
-    return { filters, page: pager.page, pageSize: pager.pageSize }
-  }, [warehouseId, productFilterId, invNumber, rollNumber, dyeLot, note, pager.page, pager.pageSize])
+    return { sort, filters, page: pager.page, pageSize: pager.pageSize }
+  }, [warehouseId, productFilterId, invNumber, rollNumber, dyeLot, note, sort, pager.page, pager.pageSize])
 
   const query = useQuery({
     queryKey: [...queryKey, "picker", input],
@@ -147,6 +166,8 @@ export function useInventoryOptionsGrid({
     setRollNumber,
     setDyeLot,
     setNote,
+    sort,
+    setSort,
     hasSearch,
     reset,
     isLoading: enabled && query.isLoading,
