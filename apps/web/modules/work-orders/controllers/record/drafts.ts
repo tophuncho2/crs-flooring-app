@@ -18,7 +18,6 @@ export type PropertyOption = {
 }
 export type WarehouseOption = { id: string; name: string }
 export type JobTypeOption = { id: string; name: string }
-export type EntityOption = { id: string; name: string }
 export type ProductOption = {
   id: string
   label: string
@@ -26,7 +25,6 @@ export type ProductOption = {
   sendUnitAbbrev: string
   stockUnitAbbrev: string
 }
-export type CategoryOption = { id: string; label: string }
 
 export function validateWorkOrderPrimaryForm(input: WorkOrderForm): string {
   return domainValidateWorkOrderForm(input)

@@ -8,7 +8,7 @@
 
 ## Properties
 
-- [ ] A property belongs to exactly one management company at a time — it can never be linked to two at once.
+- [ ] A property belongs to exactly one entity at a time — it can never be linked to two at once.
 
 ## Inventory
 
