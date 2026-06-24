@@ -20,7 +20,7 @@ import { SegmentedDropdown } from "@/engines/picker"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
 import { AdjustmentPickerStack } from "./adjustment-picker-stack"
-import { InventoryFieldGrid } from "../fields"
+import { InventoryFieldGrid, WarehouseStaticField } from "../fields"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 import type { AdjustmentEditRow } from "../../../controllers/record/adjustments/types"
 
@@ -52,9 +52,9 @@ const WASTE_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
  *
  * **edit** (the embedded record-view face) — this component owns the full layout:
  * a centered `RecordColumnBreak` above a `RecordSectionDivider` and a Created /
- * Updated footer. Left flank pairs Adjustment # | Color and Quantity | Type, then
- * the before→after Adjustment transition; right flank = Work order / Location /
- * Notes / Waste.
+ * Updated footer. Left flank pairs Adjustment # | Color, Quantity | Type, and
+ * Location | Warehouse (the source inventory's warehouse, read-only), then the
+ * before→after Adjustment transition; right flank = Work order / Notes / Waste.
  *
  * Every field is freely editable (only disabled mid-save); flipping the type
  * re-flows the before→after transition server-side on each save.
@@ -186,17 +186,8 @@ export function AdjustmentEditFormFields({
             <CellAt col={5} row={1} colSpan={4}>{colorField}</CellAt>
             <CellAt col={1} row={2} colSpan={4}>{quantityField}</CellAt>
             <CellAt col={5} row={2} colSpan={4}>{typeField}</CellAt>
-            <CellAt col={1} row={3} colSpan={8}>
-              <FormField label="Adjustment">
-                <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
-              </FormField>
-            </CellAt>
-          </InventoryFieldGrid>
-        }
-        right={
-          <InventoryFieldGrid>
-            <AdjustmentPickerStack controller={controller} colSpan={8} />
-            <CellAt col={1} colSpan={8}>
+            {/* Location (editable) beside the read-only source Warehouse */}
+            <CellAt col={1} row={3} colSpan={4}>
               <FormField
                 label="Location"
                 currentLength={editable ? form.location.length : undefined}
@@ -212,6 +203,19 @@ export function AdjustmentEditFormFields({
                 />
               </FormField>
             </CellAt>
+            <CellAt col={5} row={3} colSpan={4}>
+              <WarehouseStaticField warehouseName={adjustment.warehouseName ?? null} />
+            </CellAt>
+            <CellAt col={1} row={4} colSpan={8}>
+              <FormField label="Adjustment">
+                <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          </InventoryFieldGrid>
+        }
+        right={
+          <InventoryFieldGrid>
+            <AdjustmentPickerStack controller={controller} colSpan={8} />
             <CellAt col={1} colSpan={8}>{notesField}</CellAt>
             <CellAt col={1} colSpan={8}>{wasteField}</CellAt>
           </InventoryFieldGrid>
