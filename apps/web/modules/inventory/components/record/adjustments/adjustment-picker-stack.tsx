@@ -8,6 +8,9 @@ import type { AdjustmentEditController } from "../../../controllers/record/adjus
 
 export type AdjustmentPickerStackProps = {
   controller: AdjustmentEditController
+  /** Cell width in the host grid. Defaults to 4 (half the stacked 8-col grid);
+   *  the split edit layout passes 8 to fill its flank. */
+  colSpan?: number
 }
 
 /**
@@ -20,7 +23,7 @@ export type AdjustmentPickerStackProps = {
  * per-context `pickerConfig.workOrder` is `hidden`; `editable` / `locked`
  * decide whether the WO picker is interactive.
  */
-export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps) {
+export function AdjustmentPickerStack({ controller, colSpan = 4 }: AdjustmentPickerStackProps) {
   const { pickerConfig, isSaving, form, local } = controller
   const router = useRouter()
   const pathname = usePathname()
@@ -31,7 +34,7 @@ export function AdjustmentPickerStack({ controller }: AdjustmentPickerStackProps
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
   return (
-    <CellAt col={1} colSpan={4}>
+    <CellAt col={1} colSpan={colSpan}>
       <FormField
         label="Work order"
         actions={

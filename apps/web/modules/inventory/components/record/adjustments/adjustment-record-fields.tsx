@@ -15,19 +15,25 @@ export type AdjustmentRecordFieldsProps = {
 }
 
 /**
- * The shared adjustment **form body** — the work-order picker cell stacked above
- * the editable adjustment cells, inside the shared record-view field grid. This
- * is the reusable core every create/edit surface composes: the inventory record
- * view's embedded drilldown face, the work-order create modal, and the inventory
- * create modal all render exactly these cells. Variation (locked vs. open
- * inventory selection, the surrounding chrome) lives in each host; the cells do
- * not change shape between them.
+ * The shared adjustment **form body** — the reusable core every create/edit
+ * surface composes: the inventory record view's embedded drilldown face, the
+ * work-order create modal, and the inventory create modal.
+ *
+ * Two layouts, picked by mode:
+ *  - **create** (the modals) — the work-order picker cell stacked above the
+ *    editable cells inside one `InventoryFieldGrid`, a single narrow column.
+ *  - **edit** (the embedded record-view face) — `AdjustmentEditFormFields` owns a
+ *    centered `RecordColumnBreak` + `RecordSectionDivider` layout and renders its
+ *    own picker cell into the left flank.
  */
 export function AdjustmentRecordFields({
   controller,
   mode,
   adjustment = null,
 }: AdjustmentRecordFieldsProps) {
+  if (mode === "edit" && adjustment) {
+    return <AdjustmentEditFormFields mode="edit" adjustment={adjustment} controller={controller} />
+  }
   return (
     <InventoryFieldGrid>
       <AdjustmentPickerStack controller={controller} />

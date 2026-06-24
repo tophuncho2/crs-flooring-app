@@ -8,6 +8,8 @@ import {
 import {
   CellAt,
   FormField,
+  RecordColumnBreak,
+  RecordSectionDivider,
   SegmentedChoiceCell,
   StaticFieldValue,
   TextCell,
@@ -17,6 +19,8 @@ import {
 import { SegmentedDropdown } from "@/engines/picker"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
+import { AdjustmentPickerStack } from "./adjustment-picker-stack"
+import { InventoryFieldGrid } from "../fields"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 import type { AdjustmentEditRow } from "../../../controllers/record/adjustments/types"
 
@@ -39,16 +43,21 @@ const WASTE_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
 ]
 
 /**
- * The adjustment's own facts, rendered as bare `<CellAt>` cells for the shared
- * record-view field grid supplied by the host (`EmbeddedAdjustmentRecordView`) —
- * no group chrome. The work-order cells live in `AdjustmentPickerStack`, ahead of
- * these in the same grid.
+ * The adjustment's own facts.
  *
- * Single full-width stack in both modes: Location, Quantity, Type. Create stops
- * there with Notes then Waste; edit inserts the before→after Adjustment transition
- * under Type, then Notes / Waste, then the Created / Updated timestamps, and
- * unlocks Location. Every field is freely editable (only disabled mid-save);
- * flipping the type re-flows the before→after transition server-side on each save.
+ * **create** (modals) — bare `<CellAt>` cells for the host's single
+ * `InventoryFieldGrid` (the work-order cell sits ahead of these via
+ * `AdjustmentPickerStack`): Location, Quantity, Type, Color, Notes, Waste, each a
+ * half-width (`colSpan={4}`) stacked cell.
+ *
+ * **edit** (the embedded record-view face) — this component owns the full layout:
+ * a centered `RecordColumnBreak` (left flank = Work order / Adjustment # /
+ * Location / Notes / Waste; right flank = Quantity / Type / Color / the before→
+ * after Adjustment transition) above a `RecordSectionDivider` and a Created /
+ * Updated footer. Flank cells fill their flank (`colSpan={8}`).
+ *
+ * Every field is freely editable (only disabled mid-save); flipping the type
+ * re-flows the before→after transition server-side on each save.
  */
 export function AdjustmentEditFormFields({
   mode,
@@ -65,8 +74,12 @@ export function AdjustmentEditFormFields({
   // only disabled while a save is in flight.
   const editable = !isSaving
 
+  // Create stacks half-width cells in the host's 8-col grid; edit fills each
+  // RecordColumnBreak flank (its own 8-col grid).
+  const span = mode === "edit" ? 8 : 4
+
   const wasteCell = (
-    <CellAt col={1} colSpan={4}>
+    <CellAt col={1} colSpan={span}>
       <FormField label="Waste">
         <SegmentedChoiceCell
           editable={editable}
@@ -80,7 +93,7 @@ export function AdjustmentEditFormFields({
   )
 
   const typeCell = (
-    <CellAt col={1} colSpan={4}>
+    <CellAt col={1} colSpan={span}>
       <FormField label="Type">
         <SegmentedDropdown
           value={form.adjustmentType}
@@ -98,7 +111,7 @@ export function AdjustmentEditFormFields({
   )
 
   const colorCell = (
-    <CellAt col={1} colSpan={4}>
+    <CellAt col={1} colSpan={span}>
       <FormField label="Color">
         <PaletteColorDropdown
           value={form.color}
@@ -111,7 +124,7 @@ export function AdjustmentEditFormFields({
   )
 
   const quantityCell = (
-    <CellAt col={1} colSpan={4}>
+    <CellAt col={1} colSpan={span}>
       <FormField label="Quantity" required>
         <UnitCell
           editable={editable}
@@ -126,7 +139,7 @@ export function AdjustmentEditFormFields({
   )
 
   const notesCell = (
-    <CellAt col={1} colSpan={4}>
+    <CellAt col={1} colSpan={span}>
       <FormField
         label="Notes"
         currentLength={editable ? form.notes.length : undefined}
@@ -149,7 +162,7 @@ export function AdjustmentEditFormFields({
       <>
         {/* Seeded from the parent inventory's location and locked during create.
             Becomes editable once the row exists (edit branch below). */}
-        <CellAt col={1} colSpan={4}>
+        <CellAt col={1} colSpan={span}>
           <FormField label="Location">
             <TextCell
               editable={false}
@@ -172,48 +185,60 @@ export function AdjustmentEditFormFields({
   const transition = formatAdjustmentTransition(adjustment.before, adjustment.after, stockUnit) ?? EMPTY_CELL
 
   return (
-    <>
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Adjustment #">
-          <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
-        <FormField
-          label="Location"
-          currentLength={editable ? form.location.length : undefined}
-          maxLength={editable ? INVENTORY_LOCATION_MAX : undefined}
-        >
-          <TextCell
-            editable={editable}
-            value={form.location}
-            onChange={(next) => controller.setField("location", next)}
-            placeholder="Location"
-            ariaLabel="Adjustment location"
-            maxLength={INVENTORY_LOCATION_MAX}
-          />
-        </FormField>
-      </CellAt>
-      {quantityCell}
-      {typeCell}
-      {colorCell}
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Adjustment">
-          <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      {notesCell}
-      {wasteCell}
-      <CellAt col={1} colSpan={4}>
+    <div className="flex flex-col gap-4">
+      <RecordColumnBreak
+        left={
+          <InventoryFieldGrid>
+            <AdjustmentPickerStack controller={controller} colSpan={span} />
+            <CellAt col={1} colSpan={span}>
+              <FormField label="Adjustment #">
+                <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={span}>
+              <FormField
+                label="Location"
+                currentLength={editable ? form.location.length : undefined}
+                maxLength={editable ? INVENTORY_LOCATION_MAX : undefined}
+              >
+                <TextCell
+                  editable={editable}
+                  value={form.location}
+                  onChange={(next) => controller.setField("location", next)}
+                  placeholder="Location"
+                  ariaLabel="Adjustment location"
+                  maxLength={INVENTORY_LOCATION_MAX}
+                />
+              </FormField>
+            </CellAt>
+            {notesCell}
+            {wasteCell}
+          </InventoryFieldGrid>
+        }
+        right={
+          <InventoryFieldGrid>
+            {quantityCell}
+            {typeCell}
+            {colorCell}
+            <CellAt col={1} colSpan={span}>
+              <FormField label="Adjustment">
+                <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          </InventoryFieldGrid>
+        }
+      />
+
+      <RecordSectionDivider />
+
+      <div className="flex gap-6">
         <FormField label="Created">
           <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.createdAt)}</StaticFieldValue>
         </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={4}>
         <FormField label="Updated">
           <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.updatedAt)}</StaticFieldValue>
         </FormField>
-      </CellAt>
-    </>
+      </div>
+    </div>
   )
 }
