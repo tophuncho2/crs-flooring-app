@@ -1,6 +1,6 @@
 "use client"
 
-import { DataTable, type PaginateContract } from "@/engines/list-view"
+import { DataTable, type DataTableColumnFilter, type PaginateContract } from "@/engines/list-view"
 import type { WorkOrderListRow } from "@builders/domain"
 import {
   WORK_ORDERS_LIST_COLUMNS,
@@ -13,6 +13,7 @@ export function WorkOrdersTable({
   onOpenWorkOrder,
   sort,
   onSort,
+  columnFilters,
   pagination,
 }: {
   rows: WorkOrderListRow[]
@@ -21,6 +22,8 @@ export function WorkOrdersTable({
   sort?: { field: string; direction: "asc" | "desc" } | null
   /** Header click → re-sort by that column key. */
   onSort?: (key: string) => void
+  /** Per-column header filters (e.g. the Date funnel). */
+  columnFilters?: Record<string, DataTableColumnFilter>
   pagination?: PaginateContract
 }) {
   return (
@@ -30,6 +33,7 @@ export function WorkOrdersTable({
       empty="No work orders match these filters."
       sort={sort}
       onSort={onSort}
+      columnFilters={columnFilters}
       onOpenRow={(row) => onOpenWorkOrder(row.id)}
       getRowAriaLabel={(row) => `Open work order ${row.workOrderNumber}`}
       renderCell={renderWorkOrderRowCell}

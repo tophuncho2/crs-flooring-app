@@ -23,7 +23,7 @@ import { AddWorkOrderButton } from "./toolbar-controls/add-work-order-button"
 import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
-import { ScheduledForFilterChip } from "./toolbar-controls/scheduled-for-filter-chip"
+import { ScheduledForFilterBody } from "./toolbar-controls/scheduled-for-filter-body"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
@@ -258,6 +258,24 @@ export default function WorkOrdersClient({
     [onFilterChange],
   )
 
+  // Column-header filters (DataTable). The Date column hosts the scheduled-for
+  // range filter in its header funnel — the toolbar chip is retired.
+  const columnFilters = useMemo(
+    () => ({
+      scheduledFor: {
+        active: Boolean(selectedScheduledStart || selectedScheduledEnd),
+        render: () => (
+          <ScheduledForFilterBody
+            start={selectedScheduledStart}
+            end={selectedScheduledEnd}
+            onChange={handleScheduledForChange}
+          />
+        ),
+      },
+    }),
+    [selectedScheduledStart, selectedScheduledEnd, handleScheduledForChange],
+  )
+
   const hasActiveFilters = useMemo(() => {
     if (
       unitTypeValue ||
@@ -417,16 +435,9 @@ export default function WorkOrdersClient({
               </div>
             </ListToolbarCell>
 
-            {/* Scheduled-for date filter. Sorting now lives on the DataTable
-                column headers (Date / Entity / Property / Created). */}
-            <ListToolbarCell>
-              <ScheduledForFilterChip
-                start={selectedScheduledStart}
-                end={selectedScheduledEnd}
-                onChange={handleScheduledForChange}
-              />
-            </ListToolbarCell>
-
+            {/* Scheduled-for date filter + sorting both now live on the DataTable
+                column headers (Date funnel + Date / Entity / Property / Created
+                sort carets) — the toolbar chips are retired. */}
             <ListToolbarCell className="ml-auto">
               <AddWorkOrderButton onClick={() => openCreate()} />
             </ListToolbarCell>
@@ -439,6 +450,7 @@ export default function WorkOrdersClient({
         onOpenWorkOrder={openWorkOrder}
         sort={tableSort}
         onSort={handleSort}
+        columnFilters={columnFilters}
         pagination={{
           page,
           pageSize,

@@ -1,7 +1,6 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react"
 import { RecordOpenButton } from "@/engines/common"
 import type {
   CursorPaginateContract,
@@ -11,6 +10,7 @@ import { CursorPaginateControls } from "../toolbar/paginate/cursor-paginate-cont
 import { PaginateControls } from "../toolbar/paginate/paginate-controls"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
+import { DataTableHeaderCell, type DataTableColumnFilter } from "./data-table-header-cell"
 import { DataTableSelectAllButton, DataTableSelectCheckbox } from "./select"
 
 const ALIGN_CLASS_NAME: Record<DataTableCellAlign, string> = {
@@ -127,6 +127,14 @@ export type DataTableProps<TRow extends DataTableRow> = {
    * else select with a sensible default). Sortable headers are inert without it.
    */
   onSort?: (key: string) => void
+  /**
+   * Per-column header filters, keyed by `column.key`. A column with an entry
+   * grows a funnel affordance in its header that opens an anchored popover
+   * hosting the consumer-supplied filter body — see {@link DataTableColumnFilter}.
+   * The engine owns the affordance + popover chrome; the consumer owns the body
+   * and its state. Absent → no funnel.
+   */
+  columnFilters?: Record<string, DataTableColumnFilter>
   /** Aria-label provider for interactive rows. */
   getRowAriaLabel?: (row: TRow) => string
   className?: string
@@ -158,6 +166,7 @@ export function DataTable<TRow extends DataTableRow>({
   selection,
   sort,
   onSort,
+  columnFilters,
   getRowAriaLabel,
   className,
 }: DataTableProps<TRow>) {
@@ -218,74 +227,15 @@ export function DataTable<TRow extends DataTableRow>({
                   <span className="sr-only">{hasRowActions ? "Actions" : "Open"}</span>
                 </th>
               ) : null}
-              {columns.map((column) => {
-                const isSortable = Boolean(column.sortable && onSort)
-                const isActiveSort = isSortable && sort?.field === column.key
-                return (
-                  <th
-                    key={column.key}
-                    scope="col"
-                    aria-sort={
-                      isActiveSort
-                        ? sort?.direction === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : undefined
-                    }
-                    className={joinClassNames(
-                      "whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
-                      ALIGN_CLASS_NAME[column.align ?? "start"],
-                    )}
-                  >
-                    {isSortable ? (
-                      <button
-                        type="button"
-                        onClick={() => onSort?.(column.key)}
-                        aria-label={`Sort by ${column.label}${
-                          isActiveSort
-                            ? sort?.direction === "asc"
-                              ? " (ascending)"
-                              : " (descending)"
-                            : ""
-                        }`}
-                        className={joinClassNames(
-                          "inline-flex items-center gap-1 rounded transition hover:text-[var(--foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40",
-                          column.align === "end" ? "flex-row-reverse" : undefined,
-                          isActiveSort ? "text-[var(--foreground)]" : undefined,
-                        )}
-                      >
-                        <span>{column.label}</span>
-                        {isActiveSort ? (
-                          sort?.direction === "asc" ? (
-                            <ChevronUp
-                              size={15}
-                              strokeWidth={2.5}
-                              aria-hidden="true"
-                              className="text-sky-500"
-                            />
-                          ) : (
-                            <ChevronDown
-                              size={15}
-                              strokeWidth={2.5}
-                              aria-hidden="true"
-                              className="text-sky-500"
-                            />
-                          )
-                        ) : (
-                          <ChevronsUpDown
-                            size={15}
-                            strokeWidth={2.5}
-                            aria-hidden="true"
-                            className="opacity-60"
-                          />
-                        )}
-                      </button>
-                    ) : (
-                      column.label
-                    )}
-                  </th>
-                )
-              })}
+              {columns.map((column) => (
+                <DataTableHeaderCell<TRow>
+                  key={column.key}
+                  column={column}
+                  sort={sort}
+                  onSort={onSort}
+                  filter={columnFilters?.[column.key]}
+                />
+              ))}
             </tr>
           </thead>
           <tbody>
