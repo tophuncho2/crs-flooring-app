@@ -63,6 +63,9 @@ export async function markStagedRowsForImportRequest(
 ) {
   return requestJson<{
     batch: { markedRowIds: string[]; outboxEventId: string; wasDuplicate: boolean }
+    // Fresh parent detail (updatedAt/updatedBy stamped by the mark) so the
+    // client can resync the record's OCC token. Null only if the row vanished.
+    import: ImportDetailRecord | null
   }>(`/api/imports/${importId}/staged-inventory-rows/mark-for-import`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

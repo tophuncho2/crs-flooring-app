@@ -207,12 +207,18 @@ export function useImportFilterRows({
   stagedRows,
   publishFilterRows,
   publishStagedRows,
+  publishRecord,
 }: {
   record: ImportDetail
   filterRows: StagedInventoryFilterRow[]
   stagedRows: StagedInventoryRow[]
   publishFilterRows: (rows: StagedInventoryFilterRow[]) => void
   publishStagedRows: (rows: StagedInventoryRow[]) => void
+  // Pushes the bumped parent import (new updatedAt/updatedBy) back into the
+  // shared record. A section save now stamps the parent (aggregate-root actor),
+  // so without this the OCC token (record.updatedAt) goes stale and the next
+  // save 409s. Mirrors work-orders' material-items `publishWorkOrder`.
+  publishRecord: (record: ImportDetail) => void
 }) {
   const saveSectionMutation = useSaveImportStagedInventorySectionMutation({
     importId: record.id,
@@ -275,6 +281,9 @@ export function useImportFilterRows({
       const sortedFilters = [...response.filterRows].sort(byCreatedAtDesc)
       publishFilterRows(sortedFilters)
       publishStagedRows(response.stagedRows)
+      // Resync the shared record so the next save's OCC token is current —
+      // the server stamped the parent's updatedAt/updatedBy on this save.
+      if (response.import) publishRecord(response.import)
 
       const nextServer: SectionServerValue = {
         filterRows: sortedFilters,

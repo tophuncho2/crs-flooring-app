@@ -23,6 +23,7 @@ export function useImportStagedInventorySection({
   publishFilterRows,
   publishStagedRows,
   publishMarkedForImport,
+  publishRecord,
 }: {
   record: ImportDetail
   filterRows: StagedInventoryFilterRow[]
@@ -34,6 +35,12 @@ export function useImportStagedInventorySection({
    * Receives the ids the worker accepted (DRAFT → QUEUED).
    */
   publishMarkedForImport: (markedIds: string[]) => void
+  /**
+   * Pushes the bumped parent import back into the shared record. Both the
+   * section save and mark-for-import now stamp the parent (aggregate-root
+   * actor), so the OCC token (record.updatedAt) must resync after either.
+   */
+  publishRecord: (record: ImportDetail) => void
 }) {
   const filters = useImportFilterRows({
     record,
@@ -41,12 +48,14 @@ export function useImportStagedInventorySection({
     stagedRows,
     publishFilterRows,
     publishStagedRows,
+    publishRecord,
   })
 
   const selection = useImportStagedRowSelection({
     importId: record.id,
     stagedRows,
     publishMarkedForImport,
+    publishRecord,
     isSectionDirty: filters.section.isDirty,
     isSectionBusy: filters.section.isSaving,
   })

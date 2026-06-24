@@ -1,4 +1,5 @@
 import { markStagedRowsForImportUseCase } from "@builders/application"
+import { getImportDetailById } from "@builders/db"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
 import {
@@ -52,7 +53,11 @@ export async function POST(request: Request, context: RouteContext) {
       () => markStagedRowsForImportUseCase(id, input.stagedRowIds, requestedBy),
     )
 
-    const responseBody = { batch: result }
+    // Marking stamps the parent import (aggregate-root actor), bumping its
+    // updatedAt/updatedBy. Return the fresh detail so the client can resync the
+    // shared record's OCC token — otherwise the next section/primary save 409s.
+    const detail = await getImportDetailById(id)
+    const responseBody = { batch: result, import: detail }
     await finalizeMutationReceipt({
       scope: "imports.staged-inventory-rows.mark-for-import",
       access,

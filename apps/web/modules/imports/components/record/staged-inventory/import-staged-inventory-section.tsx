@@ -29,6 +29,7 @@ export function ImportStagedInventorySection({
   publishFilterRows,
   publishStagedRows,
   publishMarkedForImport,
+  publishRecord,
 }: {
   record: ImportDetail
   filterRows: StagedInventoryFilterRow[]
@@ -36,6 +37,7 @@ export function ImportStagedInventorySection({
   publishFilterRows: (rows: StagedInventoryFilterRow[]) => void
   publishStagedRows: (rows: StagedInventoryRow[]) => void
   publishMarkedForImport: (markedIds: string[]) => void
+  publishRecord: (record: ImportDetail) => void
 }) {
   const section = useImportStagedInventorySection({
     record,
@@ -44,6 +46,7 @@ export function ImportStagedInventorySection({
     publishFilterRows,
     publishStagedRows,
     publishMarkedForImport,
+    publishRecord,
   })
 
   // --- Server-snapshot lookups (for read-only computed fields + locks) ---

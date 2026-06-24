@@ -102,6 +102,7 @@ export function ImportRecordPanel({
                 publishFilterRows={setFilterRows}
                 publishStagedRows={setStagedRows}
                 publishMarkedForImport={handleMarkedForImport}
+                publishRecord={controller.publishRecord}
               />
             ),
           },
