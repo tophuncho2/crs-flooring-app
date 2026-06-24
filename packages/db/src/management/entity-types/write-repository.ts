@@ -1,19 +1,19 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { normalizeEntityType, type EntityType, type EntityTypeColor } from "@builders/domain"
+import { normalizeEntityType, type EntityType, type PaletteColor } from "@builders/domain"
 
 type EntityTypesDbClient = PrismaClient | Prisma.TransactionClient
 
 export type CreateEntityTypeRecordInput = {
   type: string
-  color: EntityTypeColor
+  color: PaletteColor
   createdBy: string
   updatedBy: string
 }
 
 export type UpdateEntityTypeRecordInput = {
   type?: string
-  color?: EntityTypeColor
+  color?: PaletteColor
   updatedBy: string
 }
 

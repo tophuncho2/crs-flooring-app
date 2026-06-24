@@ -13,6 +13,7 @@ export function validateWorkOrderForm(input: WorkOrderForm) {
 
 export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
   return {
+    color: workOrder.color,
     propertyId: workOrder.propertyId ?? "",
     jobTypeId: workOrder.jobTypeId ?? "",
     templateId: workOrder.templateId ?? "",

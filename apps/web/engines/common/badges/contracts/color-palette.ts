@@ -1,28 +1,17 @@
 // Non-semantic palette: plain colors with NO meaning in code (unlike the
 // semantic `CellTone` vocabulary — success/warning/error…). A user picks a color
-// purely as a visual tag. This is the presentation sibling of the domain palette
-// value object (packages/domain/src/management/entity-types/palette.ts) and the
-// Prisma enum `FlooringEntityTypeColor`: SAME string keys, kept in sync by hand.
+// purely as a visual tag. The color SET + type are the SHARED domain value object
+// (packages/domain/src/shared/palette.ts, Prisma enum `PaletteColor`); this file
+// is the PRESENTATION sibling — the Tailwind class + display label per color —
+// and re-exports the domain values/type so engine consumers have one import.
 //
 // Deliberately separate from `TONE_CLASS_NAME` so the "plain colors, no meaning"
 // requirement never leaks into the semantic tone system.
 
-export const PALETTE_COLOR_VALUES = [
-  "SLATE",
-  "RED",
-  "AMBER",
-  "ORANGE",
-  "LIME",
-  "GREEN",
-  "TEAL",
-  "CYAN",
-  "BLUE",
-  "VIOLET",
-  "PINK",
-  "ROSE",
-] as const
+import { PALETTE_COLOR_VALUES, type PaletteColor } from "@builders/domain"
 
-export type PaletteColor = (typeof PALETTE_COLOR_VALUES)[number]
+export { PALETTE_COLOR_VALUES }
+export type { PaletteColor }
 
 // Chip className per palette color — bordered, tinted, same shape language as
 // the `CellChip` tone classes (border-/35, bg-/10, text-/700) but keyed by the

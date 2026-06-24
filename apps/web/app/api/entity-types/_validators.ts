@@ -7,11 +7,11 @@ import type {
   UpdateEntityTypeUseCaseInput,
 } from "@builders/application"
 import {
-  ENTITY_TYPE_COLOR_INVALID_MESSAGE,
   LIST_ENTITY_TYPES_MAX_PAGE_SIZE,
   LIST_ENTITY_TYPES_PAGE_SIZE,
-  isEntityTypeColor,
-  type EntityTypeColor,
+  PALETTE_COLOR_INVALID_MESSAGE,
+  isPaletteColor,
+  type PaletteColor,
 } from "@builders/domain"
 
 function fail(message: string, field?: string): never {
@@ -30,8 +30,8 @@ function requireString(value: unknown, field: string): string {
   return trimmed
 }
 
-function requireColor(value: unknown): EntityTypeColor {
-  if (!isEntityTypeColor(value)) fail(ENTITY_TYPE_COLOR_INVALID_MESSAGE, "color")
+function requireColor(value: unknown): PaletteColor {
+  if (!isPaletteColor(value)) fail(PALETTE_COLOR_INVALID_MESSAGE, "color")
   return value
 }
 

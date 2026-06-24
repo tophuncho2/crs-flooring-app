@@ -45,6 +45,7 @@ export function toUpdateWorkOrderInput(form: WorkOrderForm): UpdateWorkOrderUseC
     : null
 
   return {
+    color: form.color,
     propertyId: form.propertyId || null,
     warehouseId: form.warehouseId || null,
     templateId: form.templateId || null,

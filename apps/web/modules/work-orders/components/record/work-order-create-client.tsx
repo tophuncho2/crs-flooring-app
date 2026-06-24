@@ -42,6 +42,7 @@ function WorkOrderCreatePanel({
       // Cast the partial-update shape to the create input shape.
       const updateInput = toUpdateWorkOrderInput(localValue)
       const payload = await createWorkOrderRequest({
+        color: localValue.color,
         propertyId: localValue.propertyId || null,
         warehouseId: localValue.warehouseId,
         templateId: updateInput.templateId ?? null,

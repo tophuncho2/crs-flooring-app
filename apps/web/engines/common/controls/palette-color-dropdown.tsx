@@ -1,25 +1,25 @@
 "use client"
 
 import { useState } from "react"
+import { CellChip } from "../badges/cell-chip"
 import {
-  AnchoredPanel,
-  CellChip,
   PALETTE_COLOR_VALUES,
   PALETTE_LABEL,
-} from "@/engines/common"
-import type { EntityTypeColor } from "@builders/domain"
+  type PaletteColor,
+} from "../badges/contracts/color-palette"
+import { AnchoredPanel } from "./anchored-panel"
 
-// Module-local swatch dropdown for the non-semantic entity-type palette. The
-// shared SelectDropdown (picker engine) has no swatch slot, so the palette
-// *widget* is built here per the "build module-local where the engine falls
-// short" convention. The popover *chrome* (portal, placement/flip, outside-click
-// + Escape) is the engine's `AnchoredPanel` — mirrors the products category
-// picker. It composes the reused `CellChip` (paletteColor) for the trigger
-// preview and each option swatch. Read-only mode renders the static chip.
+// Shared swatch dropdown for the non-semantic palette. The picker engine's
+// SelectDropdown has no swatch slot, so the palette *widget* lives here in the
+// common engine and is consumed by every module that tags a record with a color
+// (entity types, work orders, …). The popover *chrome* (portal, placement/flip,
+// outside-click + Escape) is the engine's `AnchoredPanel`. It composes the
+// reused `CellChip` (paletteColor) for the trigger preview and each option
+// swatch. Read-only mode renders the static chip.
 export type PaletteColorDropdownProps = {
-  value: EntityTypeColor
+  value: PaletteColor
   editable: boolean
-  onChange: (value: EntityTypeColor) => void
+  onChange: (value: PaletteColor) => void
   ariaLabel?: string
 }
 

@@ -542,6 +542,7 @@ model FlooringWorkOrder {
   warehouse            FlooringWarehouse?         @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   vacancy              FlooringVacancyStatus?
   timeOfDay            FlooringTimeOfDay?
+  color                PaletteColor               @default(SLATE)
   scheduledFor         DateTime?                  @db.Date
   unitNumber           String?                    @db.VarChar(30)
   unitType             String?                    @db.VarChar(40)
@@ -618,11 +619,11 @@ model QueueOutboxEvent {
   @@map("queue_outbox_event")
 }
 
-// Non-semantic palette colors for entity types. User-assigned, meaningless in
-// code — purely a visual tag. Kept in sync with the domain palette value object
-// (packages/domain/src/management/entity-types/palette.ts) and the UI class map
-// (apps/web/engines/common/badges/contracts/color-palette.ts).
-enum FlooringEntityTypeColor {
+// Shared non-semantic palette colors. User-assigned, meaningless in code — purely
+// a visual tag, used across modules (entity types, work orders, …). Kept in sync
+// with the domain palette value object (packages/domain/src/shared/palette.ts) and
+// the UI class map (apps/web/engines/common/badges/contracts/color-palette.ts).
+enum PaletteColor {
   SLATE
   RED
   AMBER
@@ -647,7 +648,7 @@ model FlooringEntityType {
   entityTypeNumber    String                  @unique @default(dbgenerated("('ET-'::text || (nextval('flooring_entity_type_number_seq'::regclass))::text)")) @map("entity_type_number")
   entityTypeNumberInt Int?                    @default(dbgenerated("(SUBSTRING(entity_type_number FROM 4))::integer"))
   type                String                  @db.VarChar(30)
-  color               FlooringEntityTypeColor @default(SLATE)
+  color               PaletteColor            @default(SLATE)
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
   createdBy           String?

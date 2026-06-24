@@ -1,3 +1,4 @@
+import type { PaletteColor } from "../../shared/palette.js"
 import type {
   WorkOrderDetail,
   WorkOrderListRow,
@@ -18,6 +19,7 @@ const NO_WORK_ORDER_NEIGHBORS: WorkOrderNeighbors = {
 type WorkOrderListInput = {
   id: string
   workOrderNumber: string
+  color: PaletteColor
   propertyId: string | null
   property: { name: string; entity: { id: string; entity: string } | null } | null
   jobTypeId: string | null
@@ -60,6 +62,7 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
   return {
     id: workOrder.id,
     workOrderNumber: workOrder.workOrderNumber,
+    color: workOrder.color,
     propertyId: workOrder.propertyId,
     propertyName: workOrder.property?.name ?? "",
     entityId: workOrder.property?.entity?.id ?? null,

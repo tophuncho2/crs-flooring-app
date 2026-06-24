@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import { formatEasternDateTime, formatStableDate, type WorkOrderListRow } from "@builders/domain"
 
@@ -13,7 +14,7 @@ export function renderWorkOrderRowCell(
 ): ReactNode {
   switch (column.key) {
     case "workOrderNumber":
-      return <span className="font-medium">{row.workOrderNumber}</span>
+      return <CellChip paletteColor={row.color}>{row.workOrderNumber}</CellChip>
     case "scheduledFor":
       return row.scheduledFor ? formatStableDate(row.scheduledFor) : "-"
     case "timeOfDay":

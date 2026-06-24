@@ -11,6 +11,8 @@ import type {
   WorkOrdersListFilters,
 } from "@builders/application"
 import {
+  DEFAULT_PALETTE_COLOR,
+  PALETTE_COLOR_INVALID_MESSAGE,
   WO_CUSTOM_ADDRESS_MAX,
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
@@ -18,6 +20,8 @@ import {
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
   WORK_ORDER_MATERIAL_ITEM_NOTES_MAX,
+  isPaletteColor,
+  type PaletteColor,
   type WorkOrderMaterialItemCreateForm,
   type WorkOrderMaterialItemUpdateForm,
   type WorkOrderMaterialItemsDiff,
@@ -74,6 +78,19 @@ function optionalBoundedText(
   return value
 }
 
+// Palette color. Required-with-default on create (the form always carries a
+// color; a missing value falls back to the shared default rather than failing),
+// and strictly validated when present on update.
+function requireColor(value: unknown): PaletteColor {
+  if (!isPaletteColor(value)) failWorkOrder(PALETTE_COLOR_INVALID_MESSAGE, "color")
+  return value
+}
+
+function colorOrDefault(value: unknown): PaletteColor {
+  if (value === undefined || value === null) return DEFAULT_PALETTE_COLOR
+  return requireColor(value)
+}
+
 function optionalVacancy(value: unknown): "VACANT" | "OCCUPIED" | null {
   if (value === "VACANT" || value === "OCCUPIED") return value
   return null
@@ -102,6 +119,7 @@ export function validateCreateWorkOrderInput(
   body: Record<string, unknown>,
 ): CreateWorkOrderUseCaseInput {
   return {
+    color: colorOrDefault(body.color),
     // Property is optional — a work order always has an auto-generated number,
     // so a record is never empty even without a property.
     propertyId: optionalString(body.propertyId),
@@ -131,6 +149,7 @@ export function validateUpdateWorkOrderInput(
 ): UpdateWorkOrderUseCaseInput {
   const input: UpdateWorkOrderUseCaseInput = {}
 
+  if ("color" in body) input.color = requireColor(body.color)
   if ("propertyId" in body) {
     // Property is optional and may be cleared (null).
     input.propertyId = optionalString(body.propertyId)

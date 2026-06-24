@@ -2,6 +2,7 @@ import { db } from "../../client.js"
 import type { Prisma } from "../../generated/prisma/client.js"
 import {
   normalizeWorkOrder,
+  type PaletteColor,
   type WorkOrderDetail,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -9,6 +10,8 @@ import { workOrderDetailSelect, type WorkOrdersDbClient } from "./shared.js"
 import { listWorkOrderMaterialItems } from "./material-items/read-repository.js"
 
 export type CreateWorkOrderRecordInput = {
+  // Non-null column (DB default SLATE) — optional on input, never cleared to null.
+  color?: PaletteColor
   propertyId: string | null
   templateId: string | null
   jobTypeId: string | null

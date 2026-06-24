@@ -3,14 +3,14 @@
 import { TextCell } from "@/engines/record-view"
 import { FieldSection, FormField, StaticFieldValue } from "@/engines/record-view"
 import { CellAt } from "@/engines/record-view"
-import { formatEasternDateTime, type EntityTypeColor, type EntityTypeForm } from "@builders/domain"
-import { PaletteColorDropdown } from "./palette-color-dropdown"
+import { PaletteColorDropdown } from "@/engines/common"
+import { formatEasternDateTime, type PaletteColor, type EntityTypeForm } from "@builders/domain"
 
 export type EntityTypePrimaryFieldsSectionProps = {
   draft: EntityTypeForm
   editable: boolean
   onTypeChange: (value: string) => void
-  onColorChange: (value: EntityTypeColor) => void
+  onColorChange: (value: PaletteColor) => void
   /** Read-only ET-N number shown in the detail view; omit in the create flow (DB-generated). */
   entityTypeNumber?: string
   /** Read-only timestamps + actor emails shown in the detail view; omit in the create flow. */

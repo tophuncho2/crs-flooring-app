@@ -11,6 +11,7 @@ export type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 export const workOrderListSelect = {
   id: true,
   workOrderNumber: true,
+  color: true,
   propertyId: true,
   property: {
     select: { name: true, entity: { select: { id: true, entity: true } } },
@@ -39,6 +40,7 @@ export const workOrderDetailSelect = {
   id: true,
   workOrderNumber: true,
   workOrderNumberInt: true,
+  color: true,
   propertyId: true,
   property: {
     select: {

@@ -1,6 +1,9 @@
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
+
 export type WorkOrderListRow = {
   id: string
   workOrderNumber: string
+  color: PaletteColor
   propertyId: string | null
   propertyName: string
   entityId: string | null
@@ -57,6 +60,7 @@ export type WorkOrderOption = {
 }
 
 export type WorkOrderForm = {
+  color: PaletteColor
   propertyId: string
   jobTypeId: string
   templateId: string
@@ -73,6 +77,7 @@ export type WorkOrderForm = {
 }
 
 export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
+  color: DEFAULT_PALETTE_COLOR,
   propertyId: "",
   jobTypeId: "",
   templateId: "",

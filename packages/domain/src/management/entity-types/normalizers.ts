@@ -1,11 +1,11 @@
 import type { EntityType } from "./types.js"
-import type { EntityTypeColor } from "./palette.js"
+import type { PaletteColor } from "../../shared/palette.js"
 
 type EntityTypeInput = {
   id: string
   entityTypeNumber: string
   type: string
-  color: EntityTypeColor
+  color: PaletteColor
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
