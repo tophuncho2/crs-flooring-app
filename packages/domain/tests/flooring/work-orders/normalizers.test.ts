@@ -5,6 +5,7 @@ describe("normalizeWorkOrderListRow entity", () => {
   const base = {
     id: "wo-1",
     workOrderNumber: "WO-1",
+    color: "BLUE" as const,
     propertyId: "prop-1",
     property: { name: "Maple Court", entity: { id: "entity-1", entity: "Acme" } },
     jobTypeId: null,
@@ -32,5 +33,9 @@ describe("normalizeWorkOrderListRow entity", () => {
     const row = normalizeWorkOrderListRow({ ...base, property: { name: "Maple Court", entity: null } })
     expect(row.entityId).toBeNull()
     expect(row.entityName).toBeNull()
+  })
+
+  it("passes the palette color through unchanged", () => {
+    expect(normalizeWorkOrderListRow(base).color).toBe("BLUE")
   })
 })
