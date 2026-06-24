@@ -53,7 +53,7 @@ export async function POST(request: Request) {
         route: "/api/imports",
         entityType: "flooringImportEntry",
       },
-      () => createImportUseCase(input),
+      () => createImportUseCase(input, access.user.email),
     )
 
     const responseBody = { import: result }

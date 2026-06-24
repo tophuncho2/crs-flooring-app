@@ -7,6 +7,7 @@ import {
   listFilterRowDiffSummariesByImport,
   listStagedInventoryRowDiffSummariesByImport,
   lockImportRow,
+  stampImportActor,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
@@ -43,8 +44,13 @@ function toStagedMoneyOrNull(value: string): string | null {
 
 export async function saveImportStagedInventorySectionUseCase(
   input: SaveImportStagedInventorySectionInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SaveImportStagedInventorySectionResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("saveImportStagedInventorySectionUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -257,6 +263,12 @@ export async function saveImportStagedInventorySectionUseCase(
         entry.input.stockUnitAbbrev = snapshot.stockUnitAbbrev
       }
     }
+
+    // Aggregate-root actor: a successful section save (even an empty diff)
+    // stamps the parent import's `updatedBy`/`updatedAt`. Runs after all
+    // validation so a rejected save leaves the parent untouched (the touch
+    // rolls back with the transaction).
+    await stampImportActor(c, input.importEntryId, actorEmail)
 
     return applyImportStagedInventorySectionDiff(c, {
       importEntryId: input.importEntryId,

@@ -34,8 +34,13 @@ function toPrimaryForm(input: UpdateImportInput, current: ImportPrimaryForm): Im
 export async function updateImportUseCase(
   id: string,
   input: UpdateImportInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<ImportResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updateImportUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -95,7 +100,7 @@ export async function updateImportUseCase(
       }
     }
 
-    const dbInput: DbUpdateImportInput = {}
+    const dbInput: DbUpdateImportInput = { updatedBy: actorEmail }
     if (input.purchaseOrderNumber !== undefined) dbInput.purchaseOrderNumber = emptyToNull(input.purchaseOrderNumber)
     if (input.internalNotes !== undefined) dbInput.internalNotes = emptyToNull(input.internalNotes)
     if (input.warehouseId !== undefined) {

@@ -15,8 +15,13 @@ function emptyToNull(value: string): string | null {
 
 export async function createImportUseCase(
   input: CreateImportInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<ImportResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createImportUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -48,6 +53,8 @@ export async function createImportUseCase(
         internalNotes: emptyToNull(input.internalNotes),
         warehouseId: input.warehouseId,
         manufacturerId: emptyToNull(input.manufacturerId),
+        createdBy: actorEmail,
+        updatedBy: actorEmail,
       },
       c,
     )

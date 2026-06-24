@@ -66,7 +66,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         entityType: "flooringImportEntry",
         entityId: id,
       },
-      () => updateImportUseCase(id, input),
+      () => updateImportUseCase(id, input, access.user.email),
     )
 
     // Client controller expects ImportDetailRecord (row + id-pointer arrays for

@@ -33,6 +33,8 @@ export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
     liveInventoryRowsCount: row._count.inventories,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    createdBy: row.createdBy ?? "",
+    updatedBy: row.updatedBy ?? "",
   }
 }
 

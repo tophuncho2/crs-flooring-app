@@ -13,22 +13,47 @@ export async function lockImportRow(
 }
 
 /**
+ * Aggregate-root actor touch. The import is the aggregate root; its staged /
+ * filter rows carry no actor of their own, so any HUMAN mutation to a child row
+ * stamps the parent's `updatedBy` here (Prisma `@updatedAt` bumps `updatedAt`).
+ * Callers MUST already hold the parent lock (`lockImportRow`) in the same
+ * transaction. The worker materialize path deliberately does NOT call this.
+ */
+export async function stampImportActor(
+  tx: Prisma.TransactionClient,
+  importEntryId: string,
+  actorEmail: string,
+): Promise<void> {
+  await tx.flooringImportEntry.update({
+    where: { id: importEntryId },
+    data: { updatedBy: actorEmail },
+    select: { id: true },
+  })
+}
+
+/**
  * Create input — the worker / import-creation use case pre-resolves every FK
  * and passes scalar ids. `warehouseId` is required (schema-side); `manufacturerId`
- * is nullable.
+ * is nullable. `createdBy`/`updatedBy` are the actor email, stamped by the
+ * application layer (aggregate-root actor — see `stampImportActor`).
  */
 export type CreateImportRecordInput = {
   purchaseOrderNumber: string | null
   internalNotes: string | null
   warehouseId: string
   manufacturerId: string | null
+  createdBy: string
+  updatedBy: string
 }
 
 /**
- * Update input — partial of the user-editable subset. Mirrors
- * `IMPORT_USER_EDITABLE_FIELDS` in the domain.
+ * Update input — partial of the user-editable subset (mirrors
+ * `IMPORT_USER_EDITABLE_FIELDS` in the domain) plus an always-present
+ * `updatedBy` actor stamp. `createdBy` is immutable post-create.
  */
-export type UpdateImportRecordInput = Partial<CreateImportRecordInput>
+export type UpdateImportRecordInput = Partial<
+  Omit<CreateImportRecordInput, "createdBy" | "updatedBy">
+> & { updatedBy: string }
 
 export async function createImportRecord(
   input: CreateImportRecordInput,
@@ -42,6 +67,8 @@ export async function createImportRecord(
       manufacturer: input.manufacturerId
         ? { connect: { id: input.manufacturerId } }
         : undefined,
+      createdBy: input.createdBy,
+      updatedBy: input.updatedBy,
     },
     select: { id: true },
   })
@@ -55,7 +82,10 @@ export async function updateImportRecord(
   input: UpdateImportRecordInput,
   client: ImportsDbClient = db,
 ): Promise<ImportRecord> {
-  const data: Prisma.FlooringImportEntryUpdateInput = {}
+  // `updatedBy` is always stamped (aggregate-root actor), so the update always
+  // runs — even when no user-editable field changed, the actor + `updatedAt`
+  // must move.
+  const data: Prisma.FlooringImportEntryUpdateInput = { updatedBy: input.updatedBy }
   if (input.purchaseOrderNumber !== undefined) data.purchaseOrderNumber = input.purchaseOrderNumber
   if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes
   if (input.warehouseId !== undefined) {
@@ -67,13 +97,11 @@ export async function updateImportRecord(
       : { disconnect: true }
   }
 
-  if (Object.keys(data).length > 0) {
-    await client.flooringImportEntry.update({
-      where: { id },
-      data,
-      select: { id: true },
-    })
-  }
+  await client.flooringImportEntry.update({
+    where: { id },
+    data,
+    select: { id: true },
+  })
 
   const record = await getImportById(id, client)
   if (!record) throw new Error(`updateImportRecord: import ${id} not found after update`)

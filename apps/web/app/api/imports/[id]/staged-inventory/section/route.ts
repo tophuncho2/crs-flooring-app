@@ -71,7 +71,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         entityType: "flooringImportEntry",
         entityId: id,
       },
-      () => saveImportStagedInventorySectionUseCase({ importEntryId: id, diff }),
+      () => saveImportStagedInventorySectionUseCase({ importEntryId: id, diff }, access.user.email),
     )
 
     // Refresh parent detail post-save so the controller can reconcile the

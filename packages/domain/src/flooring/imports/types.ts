@@ -11,6 +11,8 @@ export type ImportRow = {
   liveInventoryRowsCount: number
   createdAt: string
   updatedAt: string
+  createdBy: string
+  updatedBy: string
 }
 
 /**

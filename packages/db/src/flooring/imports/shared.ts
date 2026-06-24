@@ -14,6 +14,8 @@ export const importRowSelect = {
   _count: { select: { stagedInventoryRows: true, inventories: true } },
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
 } as const satisfies Prisma.FlooringImportEntrySelect
 
 export const importDetailSelect = {

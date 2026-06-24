@@ -5,6 +5,7 @@ import {
   listStagedInventoryByImport,
   lockImportRow,
   markStagedRowsForImport,
+  stampImportActor,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
@@ -74,6 +75,12 @@ export async function markStagedRowsForImportUseCase(
         payload: { skippedRowIds: result.skippedRowIds },
       })
     }
+
+    // Aggregate-root actor: queuing rows for import is a human mutation of the
+    // import, so stamp the parent's `updatedBy` with the requester. (The later
+    // worker materialize that flips QUEUED->IMPORTED is system-driven and does
+    // NOT stamp.)
+    await stampImportActor(c, importEntryId, requestedBy.userEmail)
 
     const requestedAt = new Date().toISOString()
     const sortedRowIds = [...result.markedRowIds].sort()
