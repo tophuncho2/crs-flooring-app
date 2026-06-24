@@ -23,7 +23,7 @@ import { authenticateCredentialsUseCase } from "../../src/auth/authenticate-cred
 const verifiedUser = {
   id: "u1",
   email: "user@test.com",
-  role: "ADMIN",
+  rank: "DEVELOPER",
   password: "hashed",
   isVerified: true,
 }
@@ -43,7 +43,7 @@ describe("authenticateCredentialsUseCase", () => {
 
     expect(result).toEqual({
       outcome: "ok",
-      user: { id: "u1", email: "user@test.com", role: "ADMIN", isVerified: true },
+      user: { id: "u1", email: "user@test.com", rank: "DEVELOPER", isVerified: true },
     })
     expect(findUserByEmailMock).toHaveBeenCalledWith("user@test.com")
     expect(recordUserLoginActivityMock).toHaveBeenCalledWith({ userId: "u1", userEmail: "user@test.com" })

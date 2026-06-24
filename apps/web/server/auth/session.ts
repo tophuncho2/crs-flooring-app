@@ -1,4 +1,4 @@
-import type { Role } from "@builders/db"
+import type { UserRank } from "@builders/db"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { getAuthOptions } from "@/server/auth/auth-options"
@@ -6,7 +6,7 @@ import { getAuthOptions } from "@/server/auth/auth-options"
 export type SessionUser = {
   id: string
   email: string
-  role: Role
+  rank: UserRank
   isVerified: boolean
 }
 
@@ -14,14 +14,14 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const session = await getServerSession(getAuthOptions())
   const { user } = session ?? {}
 
-  if (!user?.id || !user.email || !user.role) {
+  if (!user?.id || !user.email || !user.rank) {
     return null
   }
 
   return {
     id: user.id,
     email: user.email,
-    role: user.role,
+    rank: user.rank,
     isVerified: user.isVerified,
   }
 }

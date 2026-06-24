@@ -13,6 +13,7 @@ import {
   Factory,
   FolderTree,
   Hammer,
+  History,
   LayoutTemplate,
   Package,
   PanelLeftOpen,
@@ -20,6 +21,7 @@ import {
   SlidersHorizontal,
   Tags,
   Upload,
+  Users,
   Warehouse,
   type LucideIcon,
 } from "lucide-react"
@@ -55,14 +57,16 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "flooring-warehouse": Warehouse,
   "flooring-unit-of-measures": Ruler,
   "flooring-categories": FolderTree,
+  "flooring-users": Users,
+  "flooring-user-activity": History,
 }
 
 type NavRailProps = {
   email: string
-  role: string
+  rank: string
 }
 
-export default function NavRail({ email, role }: NavRailProps) {
+export default function NavRail({ email, rank }: NavRailProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -155,7 +159,7 @@ export default function NavRail({ email, role }: NavRailProps) {
 
         <div aria-hidden="true" className="mx-3 mb-1 border-t border-[var(--panel-border)]/70" />
         <div className="flex justify-center py-2">
-          <UserMenu email={email} role={role} />
+          <UserMenu email={email} rank={rank} />
         </div>
       </aside>
 

@@ -7,19 +7,18 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  CONTRACTOR
-  CUSTOMER
-  OWNER
-  ADMIN
-  BUILDER
+enum UserRank {
+  DEVELOPER
+  TIER_1
+  TIER_2
+  TIER_3
 }
 
 model User {
   id                     String                @id @default(uuid())
   email                  String                @unique
   password               String?
-  role                   Role                  @default(CUSTOMER)
+  rank                   UserRank              @default(TIER_3)
   isVerified             Boolean               @default(false)
   createdAt              DateTime              @default(now())
   activities             UserLoginActivity[]

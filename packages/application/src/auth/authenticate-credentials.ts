@@ -9,7 +9,7 @@ const DUMMY_PASSWORD_HASH = bcrypt.hashSync("invalid-password-placeholder", 10)
 export type AuthenticatedUser = {
   id: string
   email: string
-  role: string
+  rank: string
   isVerified: boolean
 }
 
@@ -49,7 +49,7 @@ export async function authenticateCredentialsUseCase(input: {
     user: {
       id: user.id,
       email: user.email,
-      role: user.role,
+      rank: user.rank,
       isVerified: user.isVerified,
     },
   }

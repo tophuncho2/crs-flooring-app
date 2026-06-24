@@ -17,13 +17,13 @@ describe("resolveSeededSystemUsers", () => {
     ).toEqual([
       {
         label: "admin",
-        role: "ADMIN",
+        rank: "DEVELOPER",
         email: "admin@test.com",
         password: "Admin-Seed-7Nw!4Qk2Lp",
       },
       {
         label: "builder",
-        role: "BUILDER",
+        rank: "DEVELOPER",
         email: "builder@test.com",
         password: "Builder-Seed-3Hv!8Tx5Mz",
       },

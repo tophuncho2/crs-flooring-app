@@ -1,4 +1,4 @@
-export type FlooringNavGroupId = "management" | "operations" | "accounting" | "catalog"
+export type FlooringNavGroupId = "management" | "operations" | "accounting" | "catalog" | "users"
 
 export type FlooringNavGroup = {
   id: FlooringNavGroupId
@@ -10,6 +10,7 @@ export const FLOORING_NAV_GROUPS: FlooringNavGroup[] = [
   { id: "operations", label: "Operations" },
   { id: "accounting", label: "Accounting" },
   { id: "catalog", label: "Catalog" },
+  { id: "users", label: "Users" },
 ]
 
 export type FlooringNavItem = {
@@ -40,6 +41,8 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-warehouse", name: "Warehouse", href: "/dashboard/warehouse", group: "catalog" },
   { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/unit-of-measures", group: "catalog" },
   { slug: "flooring-categories", name: "Categories", href: "/dashboard/categories", group: "catalog" },
+  { slug: "flooring-users", name: "Users", href: "/dashboard/users", group: "users" },
+  { slug: "flooring-user-activity", name: "Login Activity", href: "/dashboard/user-activity", group: "users" },
 ]
 
 // Persistent nav rail geometry — kept here so the rail and the dashboard layout

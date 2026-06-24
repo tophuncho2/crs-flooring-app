@@ -43,19 +43,19 @@ async function upsertOwnerUser({
     where: { email: normalizedEmail },
     update: {
       password: hashedPassword,
-      role: "OWNER",
+      rank: "TIER_1",
       isVerified: true,
     },
     create: {
       email: normalizedEmail,
       password: hashedPassword,
-      role: "OWNER",
+      rank: "TIER_1",
       isVerified: true,
     },
     select: {
       id: true,
       email: true,
-      role: true,
+      rank: true,
       isVerified: true,
     },
   })

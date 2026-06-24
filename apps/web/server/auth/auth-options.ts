@@ -1,7 +1,7 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { authenticateCredentialsUseCase } from "@builders/application"
-import { type Role } from "@builders/db"
+import { type UserRank } from "@builders/db"
 import { getAuthEnvironment } from "@/server/platform/env"
 import { logEvent } from "@/server/platform/logger"
 import { consumeRateLimit } from "@/server/platform/rate-limit"
@@ -106,7 +106,7 @@ export function getAuthOptions(): NextAuthOptions {
           return {
             id: result.user.id,
             email: result.user.email,
-            role: result.user.role as Role,
+            rank: result.user.rank as UserRank,
             isVerified: result.user.isVerified,
           }
         },
@@ -152,7 +152,7 @@ export function getAuthOptions(): NextAuthOptions {
         if (user) {
           token.id = user.id
           token.sub = user.id
-          token.role = user.role
+          token.rank = user.rank
           token.isVerified = user.isVerified
         }
         return token
@@ -160,7 +160,7 @@ export function getAuthOptions(): NextAuthOptions {
       async session({ session, token }) {
         if (session.user) {
           session.user.id = token.id ?? token.sub ?? ""
-          session.user.role = token.role as Role
+          session.user.rank = token.rank as UserRank
           session.user.isVerified = Boolean(token.isVerified)
         }
         return session

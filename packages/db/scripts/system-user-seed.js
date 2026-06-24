@@ -3,13 +3,13 @@ const OWNER_SLOT_COUNT = 10
 const SYSTEM_USER_DEFINITIONS = [
   {
     label: "admin",
-    role: "ADMIN",
+    rank: "DEVELOPER",
     emailEnvKey: "SEEDED_ADMIN_EMAIL",
     passwordEnvKey: "SEEDED_ADMIN_PASSWORD",
   },
   {
     label: "builder",
-    role: "BUILDER",
+    rank: "DEVELOPER",
     emailEnvKey: "SEEDED_BUILDER_EMAIL",
     passwordEnvKey: "SEEDED_BUILDER_PASSWORD",
   },
@@ -17,7 +17,7 @@ const SYSTEM_USER_DEFINITIONS = [
     const n = i + 1
     return {
       label: `owner-${n}`,
-      role: "OWNER",
+      rank: "TIER_1",
       emailEnvKey: `SEEDED_OWNER_${n}_EMAIL`,
       passwordEnvKey: `SEEDED_OWNER_${n}_PASSWORD`,
     }
@@ -56,7 +56,7 @@ function resolveSeededSystemUsers(env = process.env) {
     if (email && password.length >= 12) {
       users.push({
         label: definition.label,
-        role: definition.role,
+        rank: definition.rank,
         email,
         password,
       })
@@ -92,22 +92,22 @@ async function seedSystemUsers({
       where: { email: user.email },
       update: {
         password: hashedPassword,
-        role: user.role,
+        rank: user.rank,
         isVerified: true,
       },
       create: {
         email: user.email,
         password: hashedPassword,
-        role: user.role,
+        rank: user.rank,
         isVerified: true,
       },
     })
 
-    seededUsers.push({ email: user.email, role: user.role })
+    seededUsers.push({ email: user.email, rank: user.rank })
   }
 
   logger.log(
-    `Seeded system users: ${seededUsers.map((user) => `${user.role}:${user.email}`).join(", ")}`,
+    `Seeded system users: ${seededUsers.map((user) => `${user.rank}:${user.email}`).join(", ")}`,
   )
 
   return seededUsers

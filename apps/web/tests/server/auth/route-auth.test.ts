@@ -32,7 +32,7 @@ describe("authorizeRouteAccess", () => {
     getSessionUserMock.mockResolvedValue({
       id: "builder-1",
       email: "builder@test.com",
-      role: "BUILDER",
+      rank: "DEVELOPER",
       isVerified: false,
     })
 
@@ -49,7 +49,7 @@ describe("authorizeRouteAccess", () => {
     getSessionUserMock.mockResolvedValue({
       id: "builder-2",
       email: "pending@test.com",
-      role: "BUILDER",
+      rank: "DEVELOPER",
       isVerified: false,
     })
 
@@ -67,7 +67,7 @@ describe("authorizeRouteAccess", () => {
     getSessionUserMock.mockResolvedValue({
       id: "admin-1",
       email: "admin@test.com",
-      role: "ADMIN",
+      rank: "DEVELOPER",
       isVerified: true,
     })
 

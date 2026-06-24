@@ -6,7 +6,7 @@ export async function getDashboardLayoutUser(userId: string, db: DataAccessConte
     select: {
       id: true,
       email: true,
-      role: true,
+      rank: true,
       isVerified: true,
     },
   })

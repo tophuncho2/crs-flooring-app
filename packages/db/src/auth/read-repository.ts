@@ -6,7 +6,7 @@ type AuthDbClient = PrismaClient | Prisma.TransactionClient
 export type UserAuthRecord = {
   id: string
   email: string
-  role: string
+  rank: string
   password: string | null
   isVerified: boolean
 }
@@ -20,7 +20,7 @@ export async function findUserByEmail(
     select: {
       id: true,
       email: true,
-      role: true,
+      rank: true,
       password: true,
       isVerified: true,
     },

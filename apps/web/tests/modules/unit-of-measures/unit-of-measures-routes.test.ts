@@ -35,7 +35,7 @@ describe("unit-of-measures routes", () => {
       user: {
         id: "admin-1",
         email: "admin@test.com",
-        role: "ADMIN",
+        rank: "DEVELOPER",
         isVerified: true,
       },
     })

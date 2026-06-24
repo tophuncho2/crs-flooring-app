@@ -29,7 +29,7 @@ describe("upsertOwnerUser", () => {
     const upsert = vi.fn().mockResolvedValue({
       id: "owner-1",
       email: "owner@test.com",
-      role: "OWNER",
+      rank: "TIER_1",
       isVerified: true,
     })
     const logger = { log: vi.fn() }
@@ -51,7 +51,7 @@ describe("upsertOwnerUser", () => {
     ).resolves.toEqual({
       id: "owner-1",
       email: "owner@test.com",
-      role: "OWNER",
+      rank: "TIER_1",
       isVerified: true,
     })
 
@@ -60,19 +60,19 @@ describe("upsertOwnerUser", () => {
       where: { email: "owner@test.com" },
       update: {
         password: "hashed-password",
-        role: "OWNER",
+        rank: "TIER_1",
         isVerified: true,
       },
       create: {
         email: "owner@test.com",
         password: "hashed-password",
-        role: "OWNER",
+        rank: "TIER_1",
         isVerified: true,
       },
       select: {
         id: true,
         email: true,
-        role: true,
+        rank: true,
         isVerified: true,
       },
     })

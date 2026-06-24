@@ -8,7 +8,7 @@ const context = {
   user: {
     id: "owner-1",
     email: "owner@test.com",
-    role: "OWNER" as const,
+    rank: "TIER_1" as const,
     isVerified: true,
   },
 }

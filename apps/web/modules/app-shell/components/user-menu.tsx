@@ -7,10 +7,10 @@ import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/engines/common"
 
 type UserMenuProps = {
   email: string
-  role: string
+  rank: string
 }
 
-export default function UserMenu({ email, role }: UserMenuProps) {
+export default function UserMenu({ email, rank }: UserMenuProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)

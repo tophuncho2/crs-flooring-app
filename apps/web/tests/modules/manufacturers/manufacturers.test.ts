@@ -68,7 +68,7 @@ const routeAccess = {
   user: {
     id: "user-1",
     email: "builder@example.com",
-    role: "BUILDER",
+    rank: "DEVELOPER",
     isVerified: true,
     tools: [],
   },
