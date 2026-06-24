@@ -70,6 +70,7 @@ export function EntityCellsSection({
   showTypes = false,
   seedTypeRefs = [],
   onTypeIdsChange,
+  cellSpan = 5,
 }: {
   form: EntityForm
   editable: boolean
@@ -93,6 +94,13 @@ export function EntityCellsSection({
   seedTypeRefs?: EntityTypeRef[]
   /** Editable-types handler. When omitted, the picker renders read-only. */
   onTypeIdsChange?: (nextIds: string[]) => void
+  /**
+   * Width (in 8-col grid units) of the stacked left-column cells. Defaults to
+   * `5/8` (the historic layout that left room for the inline Types cell at col
+   * 6). The entity record view passes `8` so the cells fill the full left flank
+   * up to its column break (Types now lives on the break's right side).
+   */
+  cellSpan?: number
 }) {
   const onText =
     <K extends keyof EntityForm>(field: K) =>
@@ -102,7 +110,7 @@ export function EntityCellsSection({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={5}>
+      <CellAt col={1} colSpan={cellSpan}>
         <CellTextField
           label="Entity Name"
           required
@@ -127,7 +135,7 @@ export function EntityCellsSection({
       ) : null}
       {showContactAndAddress ? (
         <>
-          <CellAt col={1} colSpan={5}>
+          <CellAt col={1} colSpan={cellSpan}>
             <FormField label="Phone">
               {editable ? (
                 <PhoneCell
@@ -141,7 +149,7 @@ export function EntityCellsSection({
               )}
             </FormField>
           </CellAt>
-          <CellAt col={1} colSpan={5}>
+          <CellAt col={1} colSpan={cellSpan}>
             <CellTextField
               label="Email"
               editable={editable}
@@ -153,7 +161,7 @@ export function EntityCellsSection({
           </CellAt>
           <AddressEditCell
             editable={editable}
-            colSpan={5}
+            colSpan={cellSpan}
             value={{
               streetAddress: form.streetAddress,
               city: form.city,

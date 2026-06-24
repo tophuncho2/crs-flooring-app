@@ -2,6 +2,8 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
+  CellAt,
+  FieldSection,
   FormField,
   RecordColumnBreak,
   RecordDeleteDialog,
@@ -91,7 +93,6 @@ export function EntityRecordView({
         >
           <div className="flex flex-col gap-4">
             <RecordColumnBreak
-              split="right-narrow"
               left={
                 <EntityCellsSection
                   form={primary.localValue}
@@ -99,19 +100,24 @@ export function EntityRecordView({
                   onFieldChange={(field, value) =>
                     primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
                   }
+                  cellSpan={8}
                 />
               }
               right={
-                <FormField label="Types">
-                  <EntityTypesArrayPicker
-                    selectedIds={primary.localValue.typeIds}
-                    seedRefs={entry.types}
-                    editable={!primary.isSaving}
-                    onChange={(typeIds) =>
-                      primary.setLocalValue((previous) => ({ ...previous, typeIds }))
-                    }
-                  />
-                </FormField>
+                <FieldSection gap="0.75rem">
+                  <CellAt col={1} colSpan={4}>
+                    <FormField label="Types">
+                      <EntityTypesArrayPicker
+                        selectedIds={primary.localValue.typeIds}
+                        seedRefs={entry.types}
+                        editable={!primary.isSaving}
+                        onChange={(typeIds) =>
+                          primary.setLocalValue((previous) => ({ ...previous, typeIds }))
+                        }
+                      />
+                    </FormField>
+                  </CellAt>
+                </FieldSection>
               }
             />
             <RecordSectionDivider />
