@@ -10,7 +10,7 @@ import type { BadgeTone } from "@/engines/common"
 import { Grid, GridEmpty } from "@/engines/record-view"
 import { MoneyCell, TextCell, UnitCell } from "@/engines/record-view"
 import { isLocalOnlyRecordRow } from "@/engines/record-view"
-import type { ImportStagedRowDraft } from "@/modules/imports/controllers/record/drafts"
+import { resolveEffectiveStatus, type ImportStagedRowDraft } from "@/modules/imports/controllers/record/drafts"
 import { STAGED_INV_ROW_LAYOUT, type StagedInvGridRow } from "./staged-inv-row-layout"
 import {
   StagedRowDeleteButton,
@@ -95,7 +95,7 @@ export function StagedInvRowSubGrid({
   // Effective status = live server status for saved rows, else the draft's own
   // (local-only DRAFT rows aren't in the server map yet).
   const effectiveStatus = (draft: ImportStagedRowDraft): FlooringStagedRowStatus =>
-    serverStatusById.get(draft.clientId) ?? draft.status
+    resolveEffectiveStatus(serverStatusById, draft)
 
   const gridRows: StagedInvGridRow[] = useMemo(
     () => drafts.map((draft) => ({ id: draft.clientId, draft })),

@@ -23,6 +23,7 @@ import type {
 import {
   createImportFilterRowDraft,
   createImportStagedRowDraft,
+  createSectionRevisionKey,
   duplicateImportStagedRowDraft,
   toImportFilterRowDrafts,
   validateImportFilterRowDrafts,
@@ -35,13 +36,6 @@ import { useSaveImportStagedInventorySectionMutation } from "./mutations/use-sav
 type SectionServerValue = {
   filterRows: StagedInventoryFilterRow[]
   stagedRows: StagedInventoryRow[]
-}
-
-function createRevisionKey(record: ImportDetail, server: SectionServerValue) {
-  // Parent import's updatedAt is the OCC token; row counts tucked in so
-  // a count change (mark-for-import, etc.) flushes baselines without
-  // colliding with mid-edit drafts.
-  return `${record.updatedAt}:${server.filterRows.length}:${server.stagedRows.length}`
 }
 
 function toFilterDiffForm(draft: ImportFilterRowDraft) {
@@ -237,7 +231,7 @@ export function useImportFilterRows({
     recordId: record.id,
     sectionKey: "staged-inventory",
     serverValue,
-    serverRevisionKey: createRevisionKey(record, serverValue),
+    serverRevisionKey: createSectionRevisionKey(record, serverValue),
     createLocalValue: toImportFilterRowDrafts,
     persistDraft: false,
     policy: {
@@ -265,7 +259,7 @@ export function useImportFilterRows({
       if (noChanges) {
         return {
           serverValue: currentServer,
-          serverRevisionKey: createRevisionKey(record, currentServer),
+          serverRevisionKey: createSectionRevisionKey(record, currentServer),
           noticeMessage: "No changes to save",
         }
       }
@@ -290,7 +284,7 @@ export function useImportFilterRows({
       }
       return {
         serverValue: nextServer,
-        serverRevisionKey: createRevisionKey(response.import ?? record, nextServer),
+        serverRevisionKey: createSectionRevisionKey(response.import ?? record, nextServer),
         noticeMessage: "Staged inventory section saved",
       }
     },

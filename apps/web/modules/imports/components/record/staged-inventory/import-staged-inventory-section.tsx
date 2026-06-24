@@ -10,12 +10,11 @@ import { WarningNotice } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { isLocalOnlyRecordRow } from "@/engines/record-view"
 import type {
-  FlooringStagedRowStatus,
   StagedInventoryFilterRow,
   StagedInventoryRow,
 } from "@builders/domain"
 import type { useImportStagedInventorySection } from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
-import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
+import { buildServerStatusMap, type ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
 import { FILTER_ROW_LAYOUT } from "./filter-row-layout"
 import { StagedInvRowSubGrid } from "./staged-inv-row-sub-grid"
 import { StagedInventoryExpandToggle, StagedInventorySelectionCluster } from "./toolbar-controls"
@@ -50,11 +49,7 @@ export function ImportStagedInventorySection({
   // draft — status is read-only and the worker flips QUEUED → IMPORTED without
   // bumping the parent (so the section never rebases). Sourcing it here lets the
   // record controller's poll refresh the badge in place.
-  const serverStatusById = useMemo(() => {
-    const map = new Map<string, FlooringStagedRowStatus>()
-    for (const row of stagedRows) map.set(row.id, row.status)
-    return map
-  }, [stagedRows])
+  const serverStatusById = useMemo(() => buildServerStatusMap(stagedRows), [stagedRows])
 
   const drafts: FilterDraftRow[] = useMemo(
     () => section.localValue.map((row) => ({ ...row, id: row.clientId })),
@@ -108,6 +103,7 @@ export function ImportStagedInventorySection({
             value={draft.stockOrdered}
             onChange={(next) => section.setFilterField(draft.clientId, "stockOrdered", next)}
             unit={draft.stockUnitAbbrev || server?.stockUnitAbbrev || "unit"}
+            placeholder="—"
             ariaLabel="Stock ordered"
           />
         )

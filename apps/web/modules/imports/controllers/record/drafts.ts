@@ -33,6 +33,54 @@ export function validateImportPrimaryForm(input: ImportPrimaryForm): string {
   return issues.length > 0 ? issues[0].message : ""
 }
 
+// --- Staged-inventory section sync helpers (shared across the section controller + components) ---
+
+/** Server snapshot shape the staged-inventory section reconciles against. */
+type SectionServerSnapshot = {
+  filterRows: StagedInventoryFilterRow[]
+  stagedRows: StagedInventoryRow[]
+}
+
+/**
+ * Revision key for the staged-inventory section's record-scoped controller.
+ * The parent import's `updatedAt` is the OCC token; row counts are tucked in so
+ * a count change (add/remove, mark-for-import) flushes baselines without
+ * colliding with mid-edit drafts. Status flips intentionally DON'T change the
+ * key — the worker bumps a row QUEUED→IMPORTED without touching the parent, and
+ * rebasing on that would clobber in-progress DRAFT edits.
+ */
+export function createSectionRevisionKey(
+  record: ImportDetail,
+  server: SectionServerSnapshot,
+): string {
+  return `${record.updatedAt}:${server.filterRows.length}:${server.stagedRows.length}`
+}
+
+/**
+ * Live staged-row status per saved row id, sourced from the server snapshot.
+ * Read-only status lives here (not in the editable draft) so the record
+ * controller's queued→imported poll refreshes the badge + editability in place.
+ */
+export function buildServerStatusMap(
+  stagedRows: StagedInventoryRow[],
+): Map<string, FlooringStagedRowStatus> {
+  const map = new Map<string, FlooringStagedRowStatus>()
+  for (const row of stagedRows) map.set(row.id, row.status)
+  return map
+}
+
+/**
+ * Effective status for a staged-row draft: the live server status for saved
+ * rows, else the draft's own (local-only DRAFT rows aren't in the server map
+ * yet). Server always wins so a stale draft status can't mask a worker flip.
+ */
+export function resolveEffectiveStatus(
+  serverStatusById: Map<string, FlooringStagedRowStatus>,
+  draft: Pick<ImportStagedRowDraft, "clientId" | "status">,
+): FlooringStagedRowStatus {
+  return serverStatusById.get(draft.clientId) ?? draft.status
+}
+
 // --- Staged-row drafts (inline editing inside each filter row's expandable sub-grid) ---
 
 /**
