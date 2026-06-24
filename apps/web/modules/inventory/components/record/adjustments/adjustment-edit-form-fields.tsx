@@ -51,10 +51,10 @@ const WASTE_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
  * half-width (`colSpan={4}`) stacked cell.
  *
  * **edit** (the embedded record-view face) — this component owns the full layout:
- * a centered `RecordColumnBreak` (left flank = Work order / Adjustment # /
- * Location / Notes / Waste; right flank = Quantity / Type / Color / the before→
- * after Adjustment transition) above a `RecordSectionDivider` and a Created /
- * Updated footer. Flank cells fill their flank (`colSpan={8}`).
+ * a centered `RecordColumnBreak` above a `RecordSectionDivider` and a Created /
+ * Updated footer. Left flank = Work order / Location / Notes / Waste; right flank
+ * pairs Quantity | Type and Adjustment # | Color, then the before→after Adjustment
+ * transition.
  *
  * Every field is freely editable (only disabled mid-save); flipping the type
  * re-flows the before→after transition server-side on each save.
@@ -74,87 +74,75 @@ export function AdjustmentEditFormFields({
   // only disabled while a save is in flight.
   const editable = !isSaving
 
-  // Create stacks half-width cells in the host's 8-col grid; edit fills each
-  // RecordColumnBreak flank (its own 8-col grid).
-  const span = mode === "edit" ? 8 : 4
-
-  const wasteCell = (
-    <CellAt col={1} colSpan={span}>
-      <FormField label="Waste">
-        <SegmentedChoiceCell
-          editable={editable}
-          value={form.isWaste ? "WASTE" : "NON_WASTE"}
-          options={WASTE_OPTIONS}
-          ariaLabel="Waste flag"
-          onChange={(next) => controller.setField("isWaste", next === "WASTE")}
-        />
-      </FormField>
-    </CellAt>
+  // Inner field nodes (no positioning) — shared so create can stack them
+  // half-width and edit can pair / re-span them per flank.
+  const wasteField = (
+    <FormField label="Waste">
+      <SegmentedChoiceCell
+        editable={editable}
+        value={form.isWaste ? "WASTE" : "NON_WASTE"}
+        options={WASTE_OPTIONS}
+        ariaLabel="Waste flag"
+        onChange={(next) => controller.setField("isWaste", next === "WASTE")}
+      />
+    </FormField>
   )
 
-  const typeCell = (
-    <CellAt col={1} colSpan={span}>
-      <FormField label="Type">
-        <SegmentedDropdown
-          value={form.adjustmentType}
-          onChange={(next: string | null) => {
-            if (next === "INCREASE" || next === "DEDUCTION") {
-              controller.setField("adjustmentType", next)
-            }
-          }}
-          options={ADJUSTMENT_TYPE_OPTIONS}
-          ariaLabel="Adjustment type"
-          disabled={isSaving}
-        />
-      </FormField>
-    </CellAt>
+  const typeField = (
+    <FormField label="Type">
+      <SegmentedDropdown
+        value={form.adjustmentType}
+        onChange={(next: string | null) => {
+          if (next === "INCREASE" || next === "DEDUCTION") {
+            controller.setField("adjustmentType", next)
+          }
+        }}
+        options={ADJUSTMENT_TYPE_OPTIONS}
+        ariaLabel="Adjustment type"
+        disabled={isSaving}
+      />
+    </FormField>
   )
 
-  const colorCell = (
-    <CellAt col={1} colSpan={span}>
-      <FormField label="Color">
-        <PaletteColorDropdown
-          value={form.color}
-          editable={editable}
-          onChange={(color) => controller.setField("color", color)}
-          ariaLabel="Adjustment color"
-        />
-      </FormField>
-    </CellAt>
+  const colorField = (
+    <FormField label="Color">
+      <PaletteColorDropdown
+        value={form.color}
+        editable={editable}
+        onChange={(color) => controller.setField("color", color)}
+        ariaLabel="Adjustment color"
+      />
+    </FormField>
   )
 
-  const quantityCell = (
-    <CellAt col={1} colSpan={span}>
-      <FormField label="Quantity" required>
-        <UnitCell
-          editable={editable}
-          value={form.quantity}
-          onChange={(next) => controller.setField("quantity", next)}
-          unit={stockUnit}
-          placeholder="0"
-          ariaLabel="Adjustment quantity"
-        />
-      </FormField>
-    </CellAt>
+  const quantityField = (
+    <FormField label="Quantity" required>
+      <UnitCell
+        editable={editable}
+        value={form.quantity}
+        onChange={(next) => controller.setField("quantity", next)}
+        unit={stockUnit}
+        placeholder="0"
+        ariaLabel="Adjustment quantity"
+      />
+    </FormField>
   )
 
-  const notesCell = (
-    <CellAt col={1} colSpan={span}>
-      <FormField
-        label="Notes"
-        currentLength={editable ? form.notes.length : undefined}
-        maxLength={editable ? INVENTORY_ADJUSTMENT_NOTES_MAX : undefined}
-      >
-        <TextCell
-          editable={editable}
-          value={form.notes}
-          onChange={(next) => controller.setField("notes", next)}
-          placeholder="Notes"
-          ariaLabel="Adjustment notes"
-          maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
-        />
-      </FormField>
-    </CellAt>
+  const notesField = (
+    <FormField
+      label="Notes"
+      currentLength={editable ? form.notes.length : undefined}
+      maxLength={editable ? INVENTORY_ADJUSTMENT_NOTES_MAX : undefined}
+    >
+      <TextCell
+        editable={editable}
+        value={form.notes}
+        onChange={(next) => controller.setField("notes", next)}
+        placeholder="Notes"
+        ariaLabel="Adjustment notes"
+        maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
+      />
+    </FormField>
   )
 
   if (mode === "create" || !adjustment) {
@@ -162,7 +150,7 @@ export function AdjustmentEditFormFields({
       <>
         {/* Seeded from the parent inventory's location and locked during create.
             Becomes editable once the row exists (edit branch below). */}
-        <CellAt col={1} colSpan={span}>
+        <CellAt col={1} colSpan={4}>
           <FormField label="Location">
             <TextCell
               editable={false}
@@ -173,11 +161,11 @@ export function AdjustmentEditFormFields({
             />
           </FormField>
         </CellAt>
-        {quantityCell}
-        {typeCell}
-        {colorCell}
-        {notesCell}
-        {wasteCell}
+        <CellAt col={1} colSpan={4}>{quantityField}</CellAt>
+        <CellAt col={1} colSpan={4}>{typeField}</CellAt>
+        <CellAt col={1} colSpan={4}>{colorField}</CellAt>
+        <CellAt col={1} colSpan={4}>{notesField}</CellAt>
+        <CellAt col={1} colSpan={4}>{wasteField}</CellAt>
       </>
     )
   }
@@ -189,13 +177,8 @@ export function AdjustmentEditFormFields({
       <RecordColumnBreak
         left={
           <InventoryFieldGrid>
-            <AdjustmentPickerStack controller={controller} colSpan={span} />
-            <CellAt col={1} colSpan={span}>
-              <FormField label="Adjustment #">
-                <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
-              </FormField>
-            </CellAt>
-            <CellAt col={1} colSpan={span}>
+            <AdjustmentPickerStack controller={controller} colSpan={8} />
+            <CellAt col={1} colSpan={8}>
               <FormField
                 label="Location"
                 currentLength={editable ? form.location.length : undefined}
@@ -211,16 +194,22 @@ export function AdjustmentEditFormFields({
                 />
               </FormField>
             </CellAt>
-            {notesCell}
-            {wasteCell}
+            <CellAt col={1} colSpan={8}>{notesField}</CellAt>
+            <CellAt col={1} colSpan={8}>{wasteField}</CellAt>
           </InventoryFieldGrid>
         }
         right={
           <InventoryFieldGrid>
-            {quantityCell}
-            {typeCell}
-            {colorCell}
-            <CellAt col={1} colSpan={span}>
+            {/* Quantity | Type paired, then Adjustment # | Color paired */}
+            <CellAt col={1} row={1} colSpan={4}>{quantityField}</CellAt>
+            <CellAt col={5} row={1} colSpan={4}>{typeField}</CellAt>
+            <CellAt col={1} row={2} colSpan={4}>
+              <FormField label="Adjustment #">
+                <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={2} colSpan={4}>{colorField}</CellAt>
+            <CellAt col={1} row={3} colSpan={8}>
               <FormField label="Adjustment">
                 <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
               </FormField>
