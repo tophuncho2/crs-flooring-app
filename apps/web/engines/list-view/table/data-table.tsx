@@ -257,15 +257,26 @@ export function DataTable<TRow extends DataTableRow>({
                         <span>{column.label}</span>
                         {isActiveSort ? (
                           sort?.direction === "asc" ? (
-                            <ChevronUp size={13} aria-hidden="true" />
+                            <ChevronUp
+                              size={15}
+                              strokeWidth={2.5}
+                              aria-hidden="true"
+                              className="text-sky-500"
+                            />
                           ) : (
-                            <ChevronDown size={13} aria-hidden="true" />
+                            <ChevronDown
+                              size={15}
+                              strokeWidth={2.5}
+                              aria-hidden="true"
+                              className="text-sky-500"
+                            />
                           )
                         ) : (
                           <ChevronsUpDown
-                            size={13}
+                            size={15}
+                            strokeWidth={2.5}
                             aria-hidden="true"
-                            className="opacity-40"
+                            className="opacity-60"
                           />
                         )}
                       </button>

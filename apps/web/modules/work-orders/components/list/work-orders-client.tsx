@@ -24,7 +24,6 @@ import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { ScheduledForFilterChip } from "./toolbar-controls/scheduled-for-filter-chip"
-import { SortPickerChip, type SortPickerField } from "./toolbar-controls/sort-picker-chip"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
@@ -37,6 +36,27 @@ const WORK_ORDERS_ALLOWED_SORT_FIELDS = [
   "property",
   "entity",
 ] as const
+
+// Sortable DataTable column key ⇄ backend sort field (buildWorkOrdersOrderBy).
+// Two keys diverge from their backend field because the column key mirrors the
+// `WorkOrderListRow` field that `renderWorkOrderRowCell` switches on.
+const SORT_FIELD_BY_COLUMN: Record<string, string> = {
+  scheduledFor: "scheduledFor",
+  entityName: "entity",
+  propertyName: "property",
+  createdAt: "createdAt",
+}
+const COLUMN_BY_SORT_FIELD: Record<string, string> = {
+  scheduledFor: "scheduledFor",
+  entity: "entityName",
+  property: "propertyName",
+  createdAt: "createdAt",
+}
+
+function defaultSortDirection(field: string): "asc" | "desc" {
+  // Name columns read A–Z by default; date columns newest/latest first.
+  return field === "property" || field === "entity" ? "asc" : "desc"
+}
 
 export default function WorkOrdersClient({
   initialSearchQuery,
@@ -82,6 +102,7 @@ export default function WorkOrdersClient({
     goToPreviousPage,
     goToNextPage,
     onSortChange,
+    onToggleSortDirection,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<WorkOrderListRow, WorkOrdersListFilters>({
@@ -110,6 +131,24 @@ export default function WorkOrdersClient({
   const selectedVacancy = filters.vacancy?.[0] ?? null
   const selectedScheduledStart = filters.scheduledForStart?.[0] ?? null
   const selectedScheduledEnd = filters.scheduledForEnd?.[0] ?? null
+
+  // --- Column-header sort (DataTable) ---
+  // Header click maps the column key to its backend sort field, then flips
+  // direction when already active or selects a sensible default otherwise.
+  const handleSort = useCallback(
+    (key: string) => {
+      const field = SORT_FIELD_BY_COLUMN[key]
+      if (!field) return
+      if (sort?.field === field) onToggleSortDirection()
+      else onSortChange({ field, direction: defaultSortDirection(field) })
+    },
+    [sort, onSortChange, onToggleSortDirection],
+  )
+  // Reflect the active backend field back onto its column key so the right
+  // header caret lights up.
+  const tableSort = sort
+    ? { field: COLUMN_BY_SORT_FIELD[sort.field] ?? sort.field, direction: sort.direction }
+    : null
 
   // --- Per-column identity search bars ---
   const unitTypeValue = filters.unitType?.[0] ?? ""
@@ -378,18 +417,13 @@ export default function WorkOrdersClient({
               </div>
             </ListToolbarCell>
 
-            {/* Scheduled-for date filter (top) + sort picker (under it).
-                Sort picker: Created date or Scheduled date, each asc/desc. */}
+            {/* Scheduled-for date filter. Sorting now lives on the DataTable
+                column headers (Date / Entity / Property / Created). */}
             <ListToolbarCell>
               <ScheduledForFilterChip
                 start={selectedScheduledStart}
                 end={selectedScheduledEnd}
                 onChange={handleScheduledForChange}
-              />
-              <SortPickerChip
-                field={(sort?.field as SortPickerField) ?? "createdAt"}
-                direction={sort?.direction ?? "desc"}
-                onChange={onSortChange}
               />
             </ListToolbarCell>
 
@@ -403,6 +437,8 @@ export default function WorkOrdersClient({
       <WorkOrdersTable
         rows={rows}
         onOpenWorkOrder={openWorkOrder}
+        sort={tableSort}
+        onSort={handleSort}
         pagination={{
           page,
           pageSize,
