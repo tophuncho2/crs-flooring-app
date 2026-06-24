@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback } from "react"
-import type { ImportDetail, StagedInventoryRow } from "@builders/domain"
+import type { StagedInventoryRow } from "@builders/domain"
 import { useGatedBatchSelect } from "@/engines/record-view"
+import type { ImportReconcileResponse } from "../drafts"
 import { useMarkForImportMutation } from "./mutations/use-mark-for-import-mutation"
 
 /**
@@ -17,22 +18,22 @@ import { useMarkForImportMutation } from "./mutations/use-mark-for-import-mutati
 export function useImportStagedRowSelection({
   importId,
   stagedRows,
-  publishMarkedForImport,
-  publishRecord,
+  markRowsQueued,
+  reconcileAfterWrite,
   isSectionDirty,
   isSectionBusy,
 }: {
   importId: string
   stagedRows: StagedInventoryRow[]
-  publishMarkedForImport: (markedIds: string[]) => void
-  publishRecord: (record: ImportDetail) => void
+  markRowsQueued: (markedIds: string[]) => void
+  reconcileAfterWrite: (response: ImportReconcileResponse) => void
   isSectionDirty: boolean
   isSectionBusy: boolean
 }) {
   const markMutation = useMarkForImportMutation({
     importId,
-    publishMarkedForImport,
-    publishRecord,
+    markRowsQueued,
+    reconcileAfterWrite,
   })
 
   const performAction = useCallback(

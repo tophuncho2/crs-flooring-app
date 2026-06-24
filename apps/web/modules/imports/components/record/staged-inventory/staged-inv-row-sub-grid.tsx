@@ -44,6 +44,13 @@ function statusLabel(status: FlooringStagedRowStatus): string {
 export type StagedInvRowSubGridProps = {
   filterRow: StagedInventoryFilterRow
   drafts: ReadonlyArray<ImportStagedRowDraft>
+  /**
+   * Live server status per saved staged row id. Read-only status is sourced
+   * here (not from the draft) so the record controller's queued→imported poll
+   * refreshes the badge + editability without a section rebase. Local-only
+   * drafts are absent → fall back to the draft's own status (always DRAFT).
+   */
+  serverStatusById: Map<string, FlooringStagedRowStatus>
   selectedIds: Set<string>
   canToggleSelection: boolean
   isSectionBusy: boolean
@@ -73,6 +80,7 @@ export type StagedInvRowSubGridProps = {
 export function StagedInvRowSubGrid({
   filterRow,
   drafts,
+  serverStatusById,
   selectedIds,
   canToggleSelection,
   isSectionBusy,
@@ -84,6 +92,11 @@ export function StagedInvRowSubGrid({
 }: StagedInvRowSubGridProps) {
   const filterClientId = filterRow.id
 
+  // Effective status = live server status for saved rows, else the draft's own
+  // (local-only DRAFT rows aren't in the server map yet).
+  const effectiveStatus = (draft: ImportStagedRowDraft): FlooringStagedRowStatus =>
+    serverStatusById.get(draft.clientId) ?? draft.status
+
   const gridRows: StagedInvGridRow[] = useMemo(
     () => drafts.map((draft) => ({ id: draft.clientId, draft })),
     [drafts],
@@ -91,12 +104,11 @@ export function StagedInvRowSubGrid({
 
   function renderCell(column: { key: string }, gridRow: StagedInvGridRow): ReactNode {
     const { draft } = gridRow
-    const editable = draft.status === "DRAFT" && !isSectionBusy
+    const status = effectiveStatus(draft)
+    const editable = status === "DRAFT" && !isSectionBusy
     switch (column.key) {
       case "status":
-        return (
-          <StatusBadge tone={statusTone(draft.status)}>{statusLabel(draft.status)}</StatusBadge>
-        )
+        return <StatusBadge tone={statusTone(status)}>{statusLabel(status)}</StatusBadge>
       case "product":
         return draft.productName || "—"
       case "rollNumber":
@@ -175,7 +187,7 @@ export function StagedInvRowSubGrid({
     gridRow: StagedInvGridRow,
   ): ReactNode {
     const { draft } = gridRow
-    const isDraft = draft.status === "DRAFT"
+    const isDraft = effectiveStatus(draft) === "DRAFT"
     const isLocal = isLocalOnlyRecordRow(draft.clientId)
     if (control.kind === "selection") {
       // Mark-for-import operates on saved rows only — hide the

@@ -15,6 +15,19 @@ import { createLocalRecordRowId } from "@/engines/record-view"
 // Record-view files pass `entry` with id pointers — use ImportDetail shape.
 export type ImportRecordEntry = ImportDetail
 
+/**
+ * Single reconcile payload threaded through the imports record controller.
+ * Every import write (section save, mark-for-import) and the queued→imported
+ * poll hand their fresh server data to `reconcileAfterWrite`, which syncs the
+ * shared record's OCC token + the row arrays from this one shape. Each field
+ * is optional so callers reconcile only what they have.
+ */
+export type ImportReconcileResponse = {
+  import?: ImportDetail | null
+  filterRows?: StagedInventoryFilterRow[]
+  stagedRows?: StagedInventoryRow[]
+}
+
 export function validateImportPrimaryForm(input: ImportPrimaryForm): string {
   const issues = domainValidateImportPrimaryForm(input)
   return issues.length > 0 ? issues[0].message : ""

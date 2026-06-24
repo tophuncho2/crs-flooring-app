@@ -27,6 +27,7 @@ import {
   toImportFilterRowDrafts,
   validateImportFilterRowDrafts,
   type ImportFilterRowDraft,
+  type ImportReconcileResponse,
   type ImportStagedRowDraft,
 } from "@/modules/imports/controllers/record/drafts"
 import { useSaveImportStagedInventorySectionMutation } from "./mutations/use-save-import-staged-inventory-section-mutation"
@@ -205,20 +206,15 @@ export function useImportFilterRows({
   record,
   filterRows,
   stagedRows,
-  publishFilterRows,
-  publishStagedRows,
-  publishRecord,
+  reconcileAfterWrite,
 }: {
   record: ImportDetail
   filterRows: StagedInventoryFilterRow[]
   stagedRows: StagedInventoryRow[]
-  publishFilterRows: (rows: StagedInventoryFilterRow[]) => void
-  publishStagedRows: (rows: StagedInventoryRow[]) => void
-  // Pushes the bumped parent import (new updatedAt/updatedBy) back into the
-  // shared record. A section save now stamps the parent (aggregate-root actor),
-  // so without this the OCC token (record.updatedAt) goes stale and the next
-  // save 409s. Mirrors work-orders' material-items `publishWorkOrder`.
-  publishRecord: (record: ImportDetail) => void
+  // Single sync seam owned by the record controller. A section save stamps the
+  // parent (aggregate-root actor), so its response must resync the shared
+  // record's OCC token + the row arrays here — otherwise the next save 409s.
+  reconcileAfterWrite: (response: ImportReconcileResponse) => void
 }) {
   const saveSectionMutation = useSaveImportStagedInventorySectionMutation({
     importId: record.id,
@@ -279,11 +275,14 @@ export function useImportFilterRows({
         revisionKey: record.updatedAt,
       })
       const sortedFilters = [...response.filterRows].sort(byCreatedAtDesc)
-      publishFilterRows(sortedFilters)
-      publishStagedRows(response.stagedRows)
-      // Resync the shared record so the next save's OCC token is current —
-      // the server stamped the parent's updatedAt/updatedBy on this save.
-      if (response.import) publishRecord(response.import)
+      // Resync the shared record + row arrays through the one seam — the server
+      // stamped the parent's updatedAt/updatedBy on this save, so the OCC token
+      // must refresh or the next save 409s.
+      reconcileAfterWrite({
+        filterRows: sortedFilters,
+        stagedRows: response.stagedRows,
+        import: response.import,
+      })
 
       const nextServer: SectionServerValue = {
         filterRows: sortedFilters,

@@ -55,6 +55,18 @@ export async function updateImportStagedInventoryRequest(
   })
 }
 
+// --- Staged-inventory rows read (powers the queued→imported poll) ---
+
+export async function fetchImportStagedInventoryRequest(importId: string) {
+  return requestJson<{
+    filterRows: StagedInventoryFilterRecord[]
+    stagedRows: StagedInventoryRecord[]
+  }>(`/api/imports/${importId}/staged-inventory`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+}
+
 // --- Mark-for-import (worker trigger, 202-async producer) ---
 
 export async function markStagedRowsForImportRequest(

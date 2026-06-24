@@ -9,11 +9,11 @@ import { Grid, GridEmpty } from "@/engines/record-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { isLocalOnlyRecordRow } from "@/engines/record-view"
 import type {
-  ImportDetail,
+  FlooringStagedRowStatus,
   StagedInventoryFilterRow,
   StagedInventoryRow,
 } from "@builders/domain"
-import { useImportStagedInventorySection } from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
+import type { useImportStagedInventorySection } from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
 import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
 import { FILTER_ROW_LAYOUT } from "./filter-row-layout"
 import { StagedInvRowSubGrid } from "./staged-inv-row-sub-grid"
@@ -23,38 +23,30 @@ import { FilterRowRemoveButton } from "./row-controls"
 type FilterDraftRow = ImportFilterRowDraft & { id: string }
 
 export function ImportStagedInventorySection({
-  record,
+  section,
   filterRows,
   stagedRows,
-  publishFilterRows,
-  publishStagedRows,
-  publishMarkedForImport,
-  publishRecord,
 }: {
-  record: ImportDetail
+  section: ReturnType<typeof useImportStagedInventorySection>
   filterRows: StagedInventoryFilterRow[]
   stagedRows: StagedInventoryRow[]
-  publishFilterRows: (rows: StagedInventoryFilterRow[]) => void
-  publishStagedRows: (rows: StagedInventoryRow[]) => void
-  publishMarkedForImport: (markedIds: string[]) => void
-  publishRecord: (record: ImportDetail) => void
 }) {
-  const section = useImportStagedInventorySection({
-    record,
-    filterRows,
-    stagedRows,
-    publishFilterRows,
-    publishStagedRows,
-    publishMarkedForImport,
-    publishRecord,
-  })
-
   // --- Server-snapshot lookups (for read-only computed fields + locks) ---
   const serverFilterRowsById = useMemo(() => {
     const map = new Map<string, StagedInventoryFilterRow>()
     for (const row of filterRows) map.set(row.id, row)
     return map
   }, [filterRows])
+
+  // Live staged-row status comes from the server snapshot, NOT the editable
+  // draft — status is read-only and the worker flips QUEUED → IMPORTED without
+  // bumping the parent (so the section never rebases). Sourcing it here lets the
+  // record controller's poll refresh the badge in place.
+  const serverStatusById = useMemo(() => {
+    const map = new Map<string, FlooringStagedRowStatus>()
+    for (const row of stagedRows) map.set(row.id, row.status)
+    return map
+  }, [stagedRows])
 
   const drafts: FilterDraftRow[] = useMemo(
     () => section.localValue.map((row) => ({ ...row, id: row.clientId })),
@@ -260,6 +252,7 @@ export function ImportStagedInventorySection({
                     <StagedInvRowSubGrid
                       filterRow={server}
                       drafts={draft.stagedRows}
+                      serverStatusById={serverStatusById}
                       selectedIds={section.selectedIds}
                       canToggleSelection={section.canToggleSelection}
                       isSectionBusy={

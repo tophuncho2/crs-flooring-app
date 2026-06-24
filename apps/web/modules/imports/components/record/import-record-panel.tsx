@@ -1,6 +1,5 @@
 "use client"
 
-import { useCallback, useState } from "react"
 import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
@@ -9,7 +8,7 @@ import {
 import { ImportPrimaryFieldsSection } from "./primary/import-primary-fields-section"
 import { ImportStagedInventorySection } from "./staged-inventory/import-staged-inventory-section"
 import { ImportRecordFooter } from "./footer"
-import { useImportPrimarySection } from "@/modules/imports/controllers/record/primary/use-import-primary-section"
+import { useImportRecordController } from "@/modules/imports/controllers/record/use-import-record-controller"
 import type {
   ImportDetail,
   StagedInventoryFilterRow,
@@ -27,21 +26,12 @@ export function ImportRecordPanel({
   initialFilterRows: StagedInventoryFilterRow[]
   initialStagedRows: StagedInventoryRow[]
 }) {
-  const controller = useImportPrimarySection({ page, entry })
-
-  // Filter rows + staged rows live here so per-row mutations from the side
-  // panel can refresh both arrays in place without a list refetch.
-  const [filterRows, setFilterRows] = useState(initialFilterRows)
-  const [stagedRows, setStagedRows] = useState(initialStagedRows)
-
-  // Optimistic flip from mark-for-import: the worker accepted these ids,
-  // so flip them DRAFT → QUEUED in-place.
-  const handleMarkedForImport = useCallback((markedIds: string[]) => {
-    const set = new Set(markedIds)
-    setStagedRows((previous) =>
-      previous.map((row) => (set.has(row.id) ? { ...row, status: "QUEUED" as const } : row)),
-    )
-  }, [])
+  const controller = useImportRecordController({
+    page,
+    entry,
+    initialFilterRows,
+    initialStagedRows,
+  })
 
   return (
     <>
@@ -94,15 +84,19 @@ export function ImportRecordPanel({
             type: "item",
             order: 10,
             dirtyLabel: "staged inventory",
+            // Give the engine real visibility into this section's dirty/conflict
+            // state (it had none before) so the record-level guards treat it like
+            // any other section.
+            controller: {
+              isDirty: controller.stagedInventory.isDirty,
+              isSaving: controller.stagedInventory.isSaving,
+              hasConflict: controller.stagedInventory.hasConflict,
+            },
             render: () => (
               <ImportStagedInventorySection
-                record={controller.record}
-                filterRows={filterRows}
-                stagedRows={stagedRows}
-                publishFilterRows={setFilterRows}
-                publishStagedRows={setStagedRows}
-                publishMarkedForImport={handleMarkedForImport}
-                publishRecord={controller.publishRecord}
+                section={controller.stagedInventory}
+                filterRows={controller.filterRows}
+                stagedRows={controller.stagedRows}
               />
             ),
           },
