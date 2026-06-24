@@ -5,6 +5,8 @@ import {
   CellAt,
   FieldSection,
   FormField,
+  RecordColumnBreak,
+  RecordSectionDivider,
   StaticFieldValue,
   TextareaCell,
 } from "@/engines/record-view"
@@ -48,11 +50,13 @@ export type TemplatePrimaryDetail = {
 }
 
 /**
- * Composer for the templates primary section. Renders every field on the
- * record-view engine's invisible grid (`FieldSection` + `CellAt` + `FormField`),
- * single-column stacked — half-width controls up top, full-width read-only
- * property fields + textareas below. The former tab-card groups are gone; the
- * entity / Property / + New property nav buttons moved to the header Options menu.
+ * Composer for the templates primary section. Lays the fields across a centered
+ * `RecordColumnBreak`: the left flank holds the Template #, Unit Type, and the
+ * property cluster (entity / Property / Address / Instructions); the right flank
+ * holds Warehouse + Job Type and the Description / Installer Instructions /
+ * Internal Notes stack. A `RecordSectionDivider` then closes the section above a
+ * 2×2 Created / Updated (+ actor) footer. Each flank is its own `FieldSection`
+ * grid, so a tall side never drags the other's row spacing.
  */
 export function TemplatePrimaryFieldsSection({
   draft,
@@ -77,132 +81,132 @@ export function TemplatePrimaryFieldsSection({
   const jobTypeLabel = pickedJobTypeLabel ?? detail?.jobTypeName ?? null
 
   return (
-    <FieldSection gap="0.75rem">
-      {/* Template Number — dedicated top row, spanning two columns (mirrors the
-          work-orders record view's Work Order Number cell). Read-only display. */}
-      <CellAt col={1} row={1} colSpan={2}>
-        <FormField label="Template #">
-          <StaticFieldValue>{detail?.templateNumber ?? "—"}</StaticFieldValue>
-        </FormField>
-      </CellAt>
+    <div className="flex flex-col gap-4">
+      <RecordColumnBreak
+        left={
+          <FieldSection gap="0.75rem">
+            {/* Template Number — dedicated top row stamp. Read-only display. */}
+            <CellAt col={1} row={1} colSpan={2}>
+              <FormField label="Template #">
+                <StaticFieldValue>{detail?.templateNumber ?? "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
 
-      {/* Left column (cols 1–4): Unit Type (own row under Template #), then the
-          property cluster — entity, Property, Address + Instructions. */}
-      <TemplatePropertyUnitGroup
-        editable={editable}
-        draft={draft}
-        detail={detail}
-        propertyJoined={draft.propertyId ? propertyJoined : null}
-        onFieldChange={onFieldChange}
-        onFieldsChange={onFieldsChange}
-        onPropertyOption={handlePropertyOption}
+            {/* Unit Type, then the property cluster — entity, Property, Address +
+                Instructions — flowing down the break's left flank. */}
+            <TemplatePropertyUnitGroup
+              editable={editable}
+              draft={draft}
+              detail={detail}
+              propertyJoined={draft.propertyId ? propertyJoined : null}
+              onFieldChange={onFieldChange}
+              onFieldsChange={onFieldsChange}
+              onPropertyOption={handlePropertyOption}
+            />
+          </FieldSection>
+        }
+        right={
+          <FieldSection gap="0.75rem">
+            {/* Warehouse + Job Type on top, then the Description / Installer
+                Instructions / Internal Notes stack down the right flank. */}
+            <CellAt col={1} row={1} colSpan={4}>
+              <FormField label="Warehouse">
+                {editable ? (
+                  <WarehousePicker
+                    value={draft.warehouseId || null}
+                    onChange={(id) => onFieldChange("warehouseId", id ?? "")}
+                    selectedLabel={detail?.warehouseName || null}
+                    placeholder="No warehouse"
+                    ariaLabel="Warehouse"
+                  />
+                ) : (
+                  <StaticFieldValue>{detail?.warehouseName || "—"}</StaticFieldValue>
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={1} colSpan={4}>
+              <FormField label="Job Type">
+                {editable ? (
+                  <JobTypePicker
+                    value={draft.jobTypeId || null}
+                    onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
+                    onOptionSelected={(option) => setPickedJobTypeLabel(option?.name ?? null)}
+                    selectedLabel={jobTypeLabel}
+                    placeholder="No job type"
+                    ariaLabel="Job type"
+                  />
+                ) : (
+                  <StaticFieldValue>{jobTypeLabel ?? "—"}</StaticFieldValue>
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={2} colSpan={8}>
+              <FormField
+                label="Description"
+                currentLength={editable ? draft.description.length : undefined}
+                maxLength={editable ? TEMPLATE_DESCRIPTION_MAX : undefined}
+              >
+                <TextareaCell
+                  editable={editable}
+                  value={draft.description}
+                  onChange={(value) => onFieldChange("description", value)}
+                  maxLength={TEMPLATE_DESCRIPTION_MAX}
+                  rows={1}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={3} colSpan={8}>
+              <FormField
+                label="Installer Instructions"
+                currentLength={editable ? draft.installerInstructions.length : undefined}
+                maxLength={editable ? TEMPLATE_INSTALLER_INSTRUCTIONS_MAX : undefined}
+              >
+                <TextareaCell
+                  editable={editable}
+                  value={draft.installerInstructions}
+                  onChange={(value) => onFieldChange("installerInstructions", value)}
+                  maxLength={TEMPLATE_INSTALLER_INSTRUCTIONS_MAX}
+                  rows={1}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={4} colSpan={8}>
+              <FormField
+                label="Internal Notes"
+                currentLength={editable ? draft.internalNotes.length : undefined}
+                maxLength={editable ? TEMPLATE_INTERNAL_NOTES_MAX : undefined}
+              >
+                <TextareaCell
+                  editable={editable}
+                  value={draft.internalNotes}
+                  onChange={(value) => onFieldChange("internalNotes", value)}
+                  maxLength={TEMPLATE_INTERNAL_NOTES_MAX}
+                  rows={1}
+                />
+              </FormField>
+            </CellAt>
+          </FieldSection>
+        }
       />
 
-      {/* Right column (cols 5–7, col 8 left empty): Warehouse + Job Type on top,
-          then the Description / Installer Instructions / Internal Notes stack.
-          Shifted down to make room for the Template # + Unit Type top rows. */}
-      <CellAt col={5} row={3} colSpan={2}>
-        <FormField label="Warehouse">
-          {editable ? (
-            <WarehousePicker
-              value={draft.warehouseId || null}
-              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
-              selectedLabel={detail?.warehouseName || null}
-              placeholder="No warehouse"
-              ariaLabel="Warehouse"
-            />
-          ) : (
-            <StaticFieldValue>{detail?.warehouseName || "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={7} row={3} colSpan={1}>
-        <FormField label="Job Type">
-          {editable ? (
-            <JobTypePicker
-              value={draft.jobTypeId || null}
-              onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
-              onOptionSelected={(option) => setPickedJobTypeLabel(option?.name ?? null)}
-              selectedLabel={jobTypeLabel}
-              placeholder="No job type"
-              ariaLabel="Job type"
-            />
-          ) : (
-            <StaticFieldValue>{jobTypeLabel ?? "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={4} colSpan={3}>
-        <FormField
-          label="Description"
-          currentLength={editable ? draft.description.length : undefined}
-          maxLength={editable ? TEMPLATE_DESCRIPTION_MAX : undefined}
-        >
-          <TextareaCell
-            editable={editable}
-            value={draft.description}
-            onChange={(value) => onFieldChange("description", value)}
-            maxLength={TEMPLATE_DESCRIPTION_MAX}
-            rows={1}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={5} colSpan={3}>
-        <FormField
-          label="Installer Instructions"
-          currentLength={editable ? draft.installerInstructions.length : undefined}
-          maxLength={editable ? TEMPLATE_INSTALLER_INSTRUCTIONS_MAX : undefined}
-        >
-          <TextareaCell
-            editable={editable}
-            value={draft.installerInstructions}
-            onChange={(value) => onFieldChange("installerInstructions", value)}
-            maxLength={TEMPLATE_INSTALLER_INSTRUCTIONS_MAX}
-            rows={1}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={6} colSpan={3}>
-        <FormField
-          label="Internal Notes"
-          currentLength={editable ? draft.internalNotes.length : undefined}
-          maxLength={editable ? TEMPLATE_INTERNAL_NOTES_MAX : undefined}
-        >
-          <TextareaCell
-            editable={editable}
-            value={draft.internalNotes}
-            onChange={(value) => onFieldChange("internalNotes", value)}
-            maxLength={TEMPLATE_INTERNAL_NOTES_MAX}
-            rows={1}
-          />
-        </FormField>
-      </CellAt>
+      <RecordSectionDivider />
 
-      {/* Bottom row: read-only created / updated timestamps, mirroring the
-          work-orders record view's Created / Updated cell pair. */}
-      <CellAt col={1} row={6} colSpan={2}>
+      {/* Read-only created / updated timestamps + the actor emails behind them,
+          as a 2×2 footer. Null on historical / create-flow rows → em-dash. */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
         <FormField label="Created">
           <StaticFieldValue>{detail ? formatEasternDateTime(detail.createdAt) || "—" : "—"}</StaticFieldValue>
         </FormField>
-      </CellAt>
-      <CellAt col={3} row={6} colSpan={2}>
-        <FormField label="Updated">
-          <StaticFieldValue>{detail ? formatEasternDateTime(detail.updatedAt) || "—" : "—"}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-
-      {/* Actor row: read-only created-by / updated-by emails (the WHO behind the
-          timestamps above). Null on historical rows → em-dash. */}
-      <CellAt col={1} row={7} colSpan={2}>
         <FormField label="Created by">
           <StaticFieldValue>{detail?.createdBy ?? "—"}</StaticFieldValue>
         </FormField>
-      </CellAt>
-      <CellAt col={3} row={7} colSpan={2}>
+        <FormField label="Updated">
+          <StaticFieldValue>{detail ? formatEasternDateTime(detail.updatedAt) || "—" : "—"}</StaticFieldValue>
+        </FormField>
         <FormField label="Updated by">
           <StaticFieldValue>{detail?.updatedBy ?? "—"}</StaticFieldValue>
         </FormField>
-      </CellAt>
-    </FieldSection>
+      </div>
+    </div>
   )
 }

@@ -111,9 +111,9 @@ export function TemplatePropertyUnitGroup({
 
   return (
     <>
-      {/* Unit Type — dedicated row directly beneath the Template # top row,
-          two columns wide. Required. */}
-      <CellAt col={1} row={2} colSpan={2}>
+      {/* Unit Type — top row, to the right of the Template # stamp. Required.
+          Positioned within the column-break's left flank (own 8-col grid). */}
+      <CellAt col={3} row={1} colSpan={4}>
         <FormField
           label="Unit Type"
           required
@@ -128,7 +128,7 @@ export function TemplatePropertyUnitGroup({
           />
         </FormField>
       </CellAt>
-      <CellAt col={1} row={3} colSpan={4}>
+      <CellAt col={1} row={2} colSpan={8}>
         <FormField
           label="Entity"
           actions={
@@ -153,7 +153,7 @@ export function TemplatePropertyUnitGroup({
           <StaticFieldValue>{entityLabel ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} row={4} colSpan={4}>
+      <CellAt col={1} row={3} colSpan={8}>
         <FormField
           label="Property"
           actions={
@@ -188,14 +188,14 @@ export function TemplatePropertyUnitGroup({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} row={5} colSpan={2}>
+      <CellAt col={1} row={4} colSpan={4}>
         <FormField label="Property Address">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{addressDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={3} row={5} colSpan={2}>
+      <CellAt col={5} row={4} colSpan={4}>
         <FormField label="Property Instructions">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{instructionsDisplay}</span>
