@@ -201,6 +201,17 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
+            <CellAt col={5} row={1} colSpan={2}>
+              <FormField label="Vacancy">
+                <SegmentedChoiceCell
+                  editable={editable}
+                  value={draft.vacancy}
+                  options={VACANCY_OPTIONS}
+                  ariaLabel="Vacancy"
+                  onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
+                />
+              </FormField>
+            </CellAt>
             {/* Entity → Property cascade stack */}
             <CellAt col={1} row={2} colSpan={8}>
               <FormField
@@ -351,7 +362,7 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={8} colSpan={2}>
+            <CellAt col={5} row={7} colSpan={2}>
               <FormField
                 label="Unit Number"
                 currentLength={editable ? draft.unitNumber.length : undefined}
@@ -362,17 +373,6 @@ export function WorkOrderPrimaryFieldsSection({
                   value={draft.unitNumber}
                   onChange={(value) => onFieldChange("unitNumber", value)}
                   maxLength={WO_UNIT_NUMBER_MAX}
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={3} row={8} colSpan={2}>
-              <FormField label="Vacancy">
-                <SegmentedChoiceCell
-                  editable={editable}
-                  value={draft.vacancy}
-                  options={VACANCY_OPTIONS}
-                  ariaLabel="Vacancy"
-                  onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
                 />
               </FormField>
             </CellAt>
