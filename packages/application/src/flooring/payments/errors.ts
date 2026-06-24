@@ -1,4 +1,7 @@
-export type PaymentErrorCode = "PAYMENT_VALIDATION_FAILED" | "PAYMENT_NOT_FOUND"
+export type PaymentErrorCode =
+  | "PAYMENT_VALIDATION_FAILED"
+  | "PAYMENT_NOT_FOUND"
+  | "PAYMENT_LINK_INVALID"
 
 export class PaymentExecutionError extends Error {
   readonly code: PaymentErrorCode

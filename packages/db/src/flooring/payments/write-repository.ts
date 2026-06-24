@@ -1,4 +1,5 @@
 import { db } from "../../client.js"
+import { paymentLinksInclude, projectPaymentLinks } from "./payment-links.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeMoneyAmount,
@@ -13,6 +14,9 @@ export type CreatePaymentRecordInput = {
   amount: string
   direction: FlooringPaymentDirection
   paymentDate?: string
+  // Optional, single links. `null`/omitted = unlinked.
+  entityId?: string | null
+  workOrderId?: string | null
   createdBy: string
   updatedBy: string
 }
@@ -21,6 +25,9 @@ export type UpdatePaymentRecordInput = {
   amount?: string
   direction?: FlooringPaymentDirection
   paymentDate?: string
+  // Tri-state: `undefined` = leave as-is, `null` = clear the link, string = set.
+  entityId?: string | null
+  workOrderId?: string | null
   updatedBy: string
 }
 
@@ -41,11 +48,14 @@ export async function createPaymentRecord(
       amount: normalizeMoneyAmount(input.amount),
       direction: input.direction,
       paymentDate: optionalDate(input.paymentDate) ?? null,
+      entityId: input.entityId ?? null,
+      workOrderId: input.workOrderId ?? null,
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
     },
+    include: paymentLinksInclude,
   })
-  return normalizePayment(payment)
+  return normalizePayment({ ...payment, ...projectPaymentLinks(payment) })
 }
 
 export async function updatePaymentRecord(
@@ -53,16 +63,20 @@ export async function updatePaymentRecord(
   input: UpdatePaymentRecordInput,
   client: PaymentsDbClient = db,
 ): Promise<Payment> {
-  const data: Prisma.FlooringPaymentUpdateInput = { updatedBy: input.updatedBy }
+  // Unchecked input so the scalar FK columns can be set/cleared directly.
+  const data: Prisma.FlooringPaymentUncheckedUpdateInput = { updatedBy: input.updatedBy }
   if (input.amount !== undefined) data.amount = normalizeMoneyAmount(input.amount)
   if (input.direction !== undefined) data.direction = input.direction
   if (input.paymentDate !== undefined) data.paymentDate = optionalDate(input.paymentDate)
+  if (input.entityId !== undefined) data.entityId = input.entityId
+  if (input.workOrderId !== undefined) data.workOrderId = input.workOrderId
 
   const payment = await client.flooringPayment.update({
     where: { id },
     data,
+    include: paymentLinksInclude,
   })
-  return normalizePayment(payment)
+  return normalizePayment({ ...payment, ...projectPaymentLinks(payment) })
 }
 
 export async function deletePaymentRecordById(

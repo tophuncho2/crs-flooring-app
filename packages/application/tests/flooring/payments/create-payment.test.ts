@@ -1,12 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, createPaymentRecordMock } = vi.hoisted(() => ({
-  withDatabaseTransactionMock: vi.fn(),
-  createPaymentRecordMock: vi.fn(),
-}))
+const { withDatabaseTransactionMock, createPaymentRecordMock, PrismaKnownError } = vi.hoisted(() => {
+  class PrismaKnownError extends Error {
+    code: string
+    constructor(message: string, opts: { code: string }) {
+      super(message)
+      this.code = opts.code
+    }
+  }
+  return {
+    withDatabaseTransactionMock: vi.fn(),
+    createPaymentRecordMock: vi.fn(),
+    PrismaKnownError,
+  }
+})
 
 vi.mock("@builders/db", () => ({
-  Prisma: { PrismaClientKnownRequestError: class extends Error {} },
+  Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
   withDatabaseTransaction: withDatabaseTransactionMock,
   createPaymentRecord: createPaymentRecordMock,
 }))
@@ -57,6 +67,19 @@ describe("createPaymentUseCase", () => {
       { amount: "10.00", direction: "REVENUE", createdBy: ACTOR, updatedBy: ACTOR },
       expect.anything(),
     )
+  })
+
+  it("maps a P2003 (bad entity/work-order link) to a 400 link error", async () => {
+    createPaymentRecordMock.mockRejectedValue(new PrismaKnownError("fk", { code: "P2003" }))
+    await expect(
+      createPaymentUseCase(
+        { amount: "10.00", direction: "REVENUE", entityId: "missing" } as never,
+        ACTOR,
+      ),
+    ).rejects.toMatchObject({
+      code: "PAYMENT_LINK_INVALID",
+      status: 400,
+    })
   })
 
   it("re-throws unexpected database errors unchanged", async () => {

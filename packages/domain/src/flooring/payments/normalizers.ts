@@ -1,4 +1,5 @@
 import { normalizeMoneyAmount } from "../../shared/money.js"
+import type { EntityTypeRef } from "../../management/entities/types.js"
 import type { FlooringPaymentDirection, Payment } from "./types.js"
 
 type PaymentInput = {
@@ -8,6 +9,12 @@ type PaymentInput = {
   amount: { toString(): string }
   direction: FlooringPaymentDirection
   paymentDate: Date | string | null
+  entityId?: string | null
+  workOrderId?: string | null
+  /** Read-only hydration off the links (detail read only); absent on list rows. */
+  entityName?: string | null
+  workOrderLabel?: string | null
+  entityTypes?: EntityTypeRef[]
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -27,6 +34,11 @@ export function normalizePayment(payment: PaymentInput): Payment {
     amount: normalizeMoneyAmount(payment.amount.toString()),
     direction: payment.direction,
     paymentDate: toIso(payment.paymentDate),
+    entityId: payment.entityId ?? null,
+    workOrderId: payment.workOrderId ?? null,
+    entityName: payment.entityName ?? null,
+    workOrderLabel: payment.workOrderLabel ?? null,
+    entityTypes: payment.entityTypes ?? [],
     createdAt: toIso(payment.createdAt),
     updatedAt: toIso(payment.updatedAt),
     createdBy: payment.createdBy,

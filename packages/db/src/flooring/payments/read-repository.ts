@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
 import { numberNeighborQueries } from "../../shared/number-neighbors.js"
+import { paymentLinksInclude, projectPaymentLinks } from "./payment-links.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeMoneyAmount,
@@ -136,7 +137,10 @@ export async function getPaymentDetailById(
   options: { withNeighbors?: boolean } = {},
   client: PaymentsDbClient = db,
 ): Promise<PaymentDetail | null> {
-  const payment = await client.flooringPayment.findUnique({ where: { id } })
+  const payment = await client.flooringPayment.findUnique({
+    where: { id },
+    include: paymentLinksInclude,
+  })
   if (!payment) return null
 
   const neighbors =
@@ -145,7 +149,7 @@ export async function getPaymentDetailById(
       : await getPaymentNeighbors(payment.paymentNumberInt, client)
 
   return {
-    ...normalizePayment(payment),
+    ...normalizePayment({ ...payment, ...projectPaymentLinks(payment) }),
     previousPayment: neighbors.previousPayment,
     nextPayment: neighbors.nextPayment,
   }

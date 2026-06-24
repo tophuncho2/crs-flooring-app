@@ -75,6 +75,16 @@ describe("updatePaymentUseCase", () => {
     })
   })
 
+  it("maps a P2003 (bad entity/work-order link) to a 400 link error", async () => {
+    updatePaymentRecordMock.mockRejectedValue(new PrismaKnownError("fk", { code: "P2003" }))
+    await expect(
+      updatePaymentUseCase(ID, { entityId: "missing" }, ACTOR),
+    ).rejects.toMatchObject({
+      code: "PAYMENT_LINK_INVALID",
+      status: 400,
+    })
+  })
+
   it("re-throws unexpected database errors unchanged", async () => {
     updatePaymentRecordMock.mockRejectedValue(new Error("boom"))
     await expect(updatePaymentUseCase(ID, { amount: "10.00" }, ACTOR)).rejects.toThrowError("boom")

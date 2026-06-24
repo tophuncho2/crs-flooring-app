@@ -19,6 +19,8 @@ export async function createPaymentUseCase(
       amount: input.amount ?? "",
       direction: input.direction,
       paymentDate: "",
+      entityId: input.entityId ?? null,
+      workOrderId: input.workOrderId ?? null,
     })
     if (issues.length > 0) {
       throw new PaymentExecutionError({
@@ -29,9 +31,22 @@ export async function createPaymentUseCase(
       })
     }
 
-    return await createPaymentRecord(
-      { ...input, createdBy: actorEmail, updatedBy: actorEmail },
-      c,
-    )
+    try {
+      return await createPaymentRecord(
+        { ...input, createdBy: actorEmail, updatedBy: actorEmail },
+        c,
+      )
+    } catch (error) {
+      // A linked entity/work-order id that points at no row trips the FK (P2003).
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        throw new PaymentExecutionError({
+          code: "PAYMENT_LINK_INVALID",
+          message: "Linked work order or entity could not be found.",
+          status: 400,
+          field: "entityId",
+        })
+      }
+      throw error
+    }
   })
 }

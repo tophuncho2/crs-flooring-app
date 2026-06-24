@@ -51,6 +51,15 @@ export async function updatePaymentUseCase(
           status: 404,
         })
       }
+      // A linked entity/work-order id that points at no row trips the FK (P2003).
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        throw new PaymentExecutionError({
+          code: "PAYMENT_LINK_INVALID",
+          message: "Linked work order or entity could not be found.",
+          status: 400,
+          field: "entityId",
+        })
+      }
       throw error
     }
   })

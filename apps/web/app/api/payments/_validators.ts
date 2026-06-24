@@ -29,6 +29,17 @@ function optionalString(value: unknown, field: string): string | undefined {
   return (value as string).trim()
 }
 
+// Nullable link id: `undefined` = omitted (leave as-is on update), `null`/"" =
+// explicit clear (unlink), a non-empty string = set the link. Preserves the
+// distinction `optionalString` collapses, so a cleared picker actually unlinks.
+function optionalLinkId(value: unknown, field: string): string | null | undefined {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  if (typeof value !== "string") fail(`${field} must be a string`, field)
+  const trimmed = (value as string).trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 function requireDirection(value: unknown, field: string): FlooringPaymentDirection {
   if (value === "REVENUE" || value === "EXPENSE") return value
   fail(`${field} must be REVENUE or EXPENSE`, field)
@@ -72,6 +83,8 @@ export function validateCreatePaymentInput(
     amount: requireAmount(body.amount, "amount"),
     direction: requireDirection(body.direction, "direction"),
     paymentDate: optionalString(body.paymentDate, "paymentDate"),
+    entityId: optionalLinkId(body.entityId, "entityId"),
+    workOrderId: optionalLinkId(body.workOrderId, "workOrderId"),
   }
 }
 
@@ -82,6 +95,8 @@ export function validateUpdatePaymentInput(
   if ("amount" in body) input.amount = optionalAmount(body.amount, "amount")
   if ("direction" in body) input.direction = optionalDirection(body.direction, "direction")
   if ("paymentDate" in body) input.paymentDate = optionalString(body.paymentDate, "paymentDate")
+  if ("entityId" in body) input.entityId = optionalLinkId(body.entityId, "entityId")
+  if ("workOrderId" in body) input.workOrderId = optionalLinkId(body.workOrderId, "workOrderId")
   return input
 }
 

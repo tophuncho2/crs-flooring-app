@@ -49,6 +49,10 @@ export function PaymentRecordPanel({
             onFieldChange={(field, value) =>
               primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
             }
+            entityName={record.entityName}
+            workOrderLabel={record.workOrderLabel}
+            entityTypes={record.entityTypes}
+            linkedEntityId={record.entityId}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
             createdBy={record.createdBy}

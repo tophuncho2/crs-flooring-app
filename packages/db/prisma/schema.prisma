@@ -102,6 +102,7 @@ model Entity {
   updatedAt     DateTime            @updatedAt
   properties    Property[]
   entityTypes   EntityEntityType[]
+  payments      FlooringPayment[]
 
   @@map("entity")
 }
@@ -439,8 +440,10 @@ model FlooringJobType {
 }
 
 // Standalone single-entry payment ledger: REVENUE (money in) / EXPENSE (money out).
-// Self-contained — NO foreign keys this slice. Hard edit/delete is intentional for now;
-// immutability + reversal semantics arrive with the analytics slice of the epic.
+// Optional, single links to a work order and an entity (both nullable; a material
+// outflow links to import/inventory, never directly to a WO — so the WO link must
+// stay optional). Hard edit/delete is intentional for now; immutability + reversal
+// semantics arrive with the analytics slice of the epic.
 model FlooringPayment {
   id               String                   @id @default(uuid())
   paymentNumber    String                   @unique @default(dbgenerated("('PAY-'::text || (nextval('flooring_payment_number_seq'::regclass))::text)"))
@@ -448,6 +451,10 @@ model FlooringPayment {
   amount           Decimal                  @db.Decimal(12, 2) // unsigned; direction carries the sign
   direction        FlooringPaymentDirection
   paymentDate      DateTime?
+  entityId         String?
+  entity           Entity?                  @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  workOrderId      String?
+  workOrder        FlooringWorkOrder?       @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   createdBy        String?
@@ -456,6 +463,8 @@ model FlooringPayment {
   @@index([paymentNumber])
   @@index([paymentNumberInt])
   @@index([amount])
+  @@index([entityId])
+  @@index([workOrderId])
   @@index([createdAt, id])
   @@map("flooring_payment")
 }
@@ -569,6 +578,7 @@ model FlooringWorkOrder {
   updatedAt            DateTime                   @updatedAt
   items                FlooringWorkOrderItem[]
   inventoryAdjustments FlooringInventoryAdjustment[]
+  payments             FlooringPayment[]
 
   @@index([workOrderNumber])
   @@index([workOrderNumberInt])

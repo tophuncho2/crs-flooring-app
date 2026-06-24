@@ -1,9 +1,17 @@
+import type { EntityTypeRef } from "../../management/entities/types.js"
+
 export type FlooringPaymentDirection = "REVENUE" | "EXPENSE"
 
 /**
  * A standalone payment row. `amount` is the unsigned currency-of-record string
  * (the money standard); `direction` carries the sign. Nullable DB columns are
  * surfaced as empty strings so the UI never juggles `null`.
+ *
+ * `entityId` / `workOrderId` are the optional, single links to an entity and a
+ * work order (both `null` when unlinked). The `entityName` / `workOrderLabel` /
+ * `entityTypes` fields are READ-ONLY hydration off those links — projected by the
+ * detail read so the record-view pickers can show the current trigger label and
+ * the linked entity's type chips. They never round-trip on save.
  */
 export type Payment = {
   id: string
@@ -12,6 +20,11 @@ export type Payment = {
   amount: string
   direction: FlooringPaymentDirection
   paymentDate: string
+  entityId: string | null
+  workOrderId: string | null
+  entityName: string | null
+  workOrderLabel: string | null
+  entityTypes: EntityTypeRef[]
   createdAt: string
   updatedAt: string
   createdBy: string | null
@@ -48,12 +61,16 @@ export type PaymentForm = {
   amount: string
   direction: FlooringPaymentDirection
   paymentDate: string
+  entityId: string | null
+  workOrderId: string | null
 }
 
 export const EMPTY_PAYMENT_FORM: PaymentForm = {
   amount: "",
   direction: "REVENUE",
   paymentDate: "",
+  entityId: null,
+  workOrderId: null,
 }
 
 export function toPaymentForm(payment: Payment): PaymentForm {
@@ -61,6 +78,8 @@ export function toPaymentForm(payment: Payment): PaymentForm {
     amount: payment.amount,
     direction: payment.direction,
     paymentDate: payment.paymentDate,
+    entityId: payment.entityId,
+    workOrderId: payment.workOrderId,
   }
 }
 
