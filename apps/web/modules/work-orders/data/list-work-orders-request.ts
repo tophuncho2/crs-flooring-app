@@ -11,11 +11,11 @@ export const WORK_ORDERS_LIST_PAGE_SIZE = 50
 
 /**
  * Filterable field keys recognised by the work-orders list. Each ID
- * filter is a multi-value URL param (`?managementCompanyId=a&managementCompanyId=b`);
+ * filter is a multi-value URL param (`?entityId=a&entityId=b`);
  * the UI currently exposes single-select chips but the contract is multi-value.
  */
 export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [
-  "managementCompanyId",
+  "entityId",
   "propertyId",
   "templateId",
   "warehouseId",
@@ -38,7 +38,7 @@ const WORK_ORDERS_LIST_SORT_FIELDS = [
   "createdAt",
   "scheduledFor",
   "property",
-  "managementCompany",
+  "entity",
 ] as const satisfies readonly string[]
 
 function readSearchParam(

@@ -2,14 +2,14 @@
 
 import { ListRowCount } from "@/engines/list-view"
 
-export type ManagementCompaniesRowCountProps = {
+export type EntitiesRowCountProps = {
   count: number
   total: number
 }
 
-export function ManagementCompaniesRowCount({
+export function EntitiesRowCount({
   count,
   total,
-}: ManagementCompaniesRowCountProps) {
-  return <ListRowCount count={count} total={total} label="companies" />
+}: EntitiesRowCountProps) {
+  return <ListRowCount count={count} total={total} label="entities" />
 }

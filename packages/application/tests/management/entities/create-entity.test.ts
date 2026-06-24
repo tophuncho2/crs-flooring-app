@@ -1,24 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, createManagementCompanyRecordMock } = vi.hoisted(() => {
+const { withDatabaseTransactionMock, createEntityRecordMock } = vi.hoisted(() => {
   return {
     withDatabaseTransactionMock: vi.fn(),
-    createManagementCompanyRecordMock: vi.fn(),
+    createEntityRecordMock: vi.fn(),
   }
 })
 
 vi.mock("@builders/db", () => ({
   Prisma: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
-  createManagementCompanyRecord: createManagementCompanyRecordMock,
+  createEntityRecord: createEntityRecordMock,
 }))
 
-import { createManagementCompanyUseCase } from "../../../src/management/management-companies/create-management-company.js"
-import { ManagementCompanyExecutionError } from "../../../src/management/management-companies/errors.js"
+import { createEntityUseCase } from "../../../src/management/entities/create-entity.js"
+import { EntityExecutionError } from "../../../src/management/entities/errors.js"
 
 function input(overrides: Record<string, unknown> = {}) {
   return {
-    name: "Acme",
+    entity: "Acme",
     streetAddress: null,
     city: null,
     state: null,
@@ -31,33 +31,33 @@ function input(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
-  createManagementCompanyRecordMock.mockReset()
+  createEntityRecordMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  createManagementCompanyRecordMock.mockResolvedValue({ id: "mc-1", name: "Acme" })
+  createEntityRecordMock.mockResolvedValue({ id: "entity-1", entity: "Acme" })
 })
 
-describe("createManagementCompanyUseCase", () => {
+describe("createEntityUseCase", () => {
   it("rejects a blank name with 400 and never inserts", async () => {
-    await expect(createManagementCompanyUseCase(input({ name: "  " }) as never)).rejects.toMatchObject({
-      code: "MANAGEMENT_COMPANY_VALIDATION_FAILED",
+    await expect(createEntityUseCase(input({ entity: "  " }) as never)).rejects.toMatchObject({
+      code: "ENTITY_VALIDATION_FAILED",
       status: 400,
-      field: "name",
+      field: "entity",
     })
-    expect(createManagementCompanyRecordMock).not.toHaveBeenCalled()
+    expect(createEntityRecordMock).not.toHaveBeenCalled()
   })
 
   it("returns the created record on success", async () => {
-    const created = { id: "mc-9", name: "Acme" }
-    createManagementCompanyRecordMock.mockResolvedValue(created)
-    expect(await createManagementCompanyUseCase(input() as never)).toBe(created)
+    const created = { id: "entity-9", entity: "Acme" }
+    createEntityRecordMock.mockResolvedValue(created)
+    expect(await createEntityUseCase(input() as never)).toBe(created)
   })
 
   it("re-throws unexpected database errors unchanged", async () => {
-    createManagementCompanyRecordMock.mockRejectedValue(new Error("boom"))
-    await expect(createManagementCompanyUseCase(input() as never)).rejects.toThrowError("boom")
-    await expect(createManagementCompanyUseCase(input() as never)).rejects.not.toBeInstanceOf(
-      ManagementCompanyExecutionError,
+    createEntityRecordMock.mockRejectedValue(new Error("boom"))
+    await expect(createEntityUseCase(input() as never)).rejects.toThrowError("boom")
+    await expect(createEntityUseCase(input() as never)).rejects.not.toBeInstanceOf(
+      EntityExecutionError,
     )
   })
 })

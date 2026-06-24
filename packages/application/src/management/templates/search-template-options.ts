@@ -5,8 +5,8 @@ export type SearchTemplateOptionsInput = {
   search?: string
   /** Scope to a single property. Optional — absent means unscoped. */
   propertyId?: string
-  /** Scope to an MC's properties. Only used when `propertyId` is absent. */
-  managementCompanyId?: string
+  /** Scope to an entity's properties. Only used when `propertyId` is absent. */
+  entityId?: string
   skip?: number
   take?: number
 }
@@ -29,7 +29,7 @@ export async function searchTemplateOptionsUseCase(
   return searchTemplateOptions({
     search,
     propertyId: input.propertyId,
-    managementCompanyId: input.managementCompanyId,
+    entityId: input.entityId,
     skip,
     take,
   })

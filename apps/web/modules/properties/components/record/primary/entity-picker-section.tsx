@@ -1,6 +1,6 @@
 "use client"
 
-import { formatPhoneNumber, type ManagementCompanyForm, type ManagementCompanyOption } from "@builders/domain"
+import { formatPhoneNumber, type EntityForm, type EntityOption } from "@builders/domain"
 import {
   AddressEditCell,
   CellAt,
@@ -9,20 +9,20 @@ import {
   RecordOpenButton,
   StaticFieldValue,
 } from "@/engines/record-view"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
-import { ManagementCompanyCreateMenu } from "@/modules/management-companies/components/picker/management-company-create-menu"
+import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
+import { EntityCreateMenu } from "@/modules/entities/components/picker/entity-create-menu"
 
 /**
- * The Property record view's §1 management-company block — always shown. The
- * Company-Name cell is the live MC picker (tracked by the property's primary
+ * The Property record view's §1 entity block — always shown. The
+ * Company-Name cell is the live entity picker (tracked by the property's primary
  * controller, so a pick is a dirty edit that saves with the property). The
  * `RecordOpenButton` (launch ↗) sits inline on the cell label and hands off to
- * the selected MC's record view; the ⋮ `ManagementCompanyCreateMenu` beside it
+ * the selected entity's record view; the ⋮ `EntityCreateMenu` beside it
  * spins up a new company (quick modal or proper page) that fills the cell. Phone /
  * Email / Address always render read-only ("—" when empty) and refresh from
  * `display` when a new company is picked.
  */
-export function ManagementCompanyPickerSection({
+export function EntityPickerSection({
   value,
   onChange,
   onOptionSelected,
@@ -36,44 +36,44 @@ export function ManagementCompanyPickerSection({
 }: {
   value: string | null
   onChange: (id: string | null) => void
-  onOptionSelected: (option: ManagementCompanyOption | null) => void
+  onOptionSelected: (option: EntityOption | null) => void
   selectedLabel: string | null
-  display: ManagementCompanyForm | null
+  display: EntityForm | null
   editable: boolean
   onOpen: () => void
-  initialOptions?: ManagementCompanyOption[]
+  initialOptions?: EntityOption[]
   /** Record-entry path the create menu's proper-form route returns to. */
   returnTo: string
-  /** Fired with a freshly created company, mapped to a `ManagementCompanyOption`. */
-  onCreated: (option: ManagementCompanyOption) => void
+  /** Fired with a freshly created company, mapped to a `EntityOption`. */
+  onCreated: (option: EntityOption) => void
 }) {
   return (
     <FieldSection gap="0.75rem">
       <CellAt col={1} colSpan={5}>
         <FormField
-          label="Company Name"
+          label="Entity"
           required
           actions={
             <>
               <RecordOpenButton
-                ariaLabel="Open management company"
-                title="Open management company"
+                ariaLabel="Open entity"
+                title="Open entity"
                 disabled={!value}
                 onClick={onOpen}
               />
               {editable ? (
-                <ManagementCompanyCreateMenu returnTo={returnTo} onCreated={onCreated} />
+                <EntityCreateMenu returnTo={returnTo} onCreated={onCreated} />
               ) : null}
             </>
           }
         >
-          <ManagementCompanyPicker
+          <EntityPicker
             value={value}
             onChange={onChange}
             onOptionSelected={onOptionSelected}
             selectedLabel={selectedLabel}
-            placeholder="Select company"
-            ariaLabel="Company name"
+            placeholder="Select entity"
+            ariaLabel="Entity"
             disabled={!editable}
             initialOptions={initialOptions}
           />

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, updateManagementCompanyRecordMock, PrismaKnownError } = vi.hoisted(
+const { withDatabaseTransactionMock, updateEntityRecordMock, PrismaKnownError } = vi.hoisted(
   () => {
     class PrismaKnownError extends Error {
       code: string
@@ -13,7 +13,7 @@ const { withDatabaseTransactionMock, updateManagementCompanyRecordMock, PrismaKn
     }
     return {
       withDatabaseTransactionMock: vi.fn(),
-      updateManagementCompanyRecordMock: vi.fn(),
+      updateEntityRecordMock: vi.fn(),
       PrismaKnownError,
     }
   },
@@ -22,45 +22,45 @@ const { withDatabaseTransactionMock, updateManagementCompanyRecordMock, PrismaKn
 vi.mock("@builders/db", () => ({
   Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
   withDatabaseTransaction: withDatabaseTransactionMock,
-  updateManagementCompanyRecord: updateManagementCompanyRecordMock,
+  updateEntityRecord: updateEntityRecordMock,
 }))
 
-import { updateManagementCompanyUseCase } from "../../../src/management/management-companies/update-management-company.js"
+import { updateEntityUseCase } from "../../../src/management/entities/update-entity.js"
 
-const ID = "mc-1"
+const ID = "entity-1"
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
-  updateManagementCompanyRecordMock.mockReset()
+  updateEntityRecordMock.mockReset()
 
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
-  updateManagementCompanyRecordMock.mockResolvedValue({ id: ID, name: "Acme" })
+  updateEntityRecordMock.mockResolvedValue({ id: ID, entity: "Acme" })
 })
 
-describe("updateManagementCompanyUseCase", () => {
+describe("updateEntityUseCase", () => {
   it("skips name validation when name is omitted and forwards the input", async () => {
-    await updateManagementCompanyUseCase(ID, { phone: "555" } as never)
-    expect(updateManagementCompanyRecordMock).toHaveBeenCalledWith(ID, { phone: "555" }, expect.anything())
+    await updateEntityUseCase(ID, { phone: "555" } as never)
+    expect(updateEntityRecordMock).toHaveBeenCalledWith(ID, { phone: "555" }, expect.anything())
   })
 
   it("rejects a blank name when one is supplied", async () => {
-    await expect(updateManagementCompanyUseCase(ID, { name: "   " } as never)).rejects.toMatchObject({
-      code: "MANAGEMENT_COMPANY_VALIDATION_FAILED",
+    await expect(updateEntityUseCase(ID, { entity: "   " } as never)).rejects.toMatchObject({
+      code: "ENTITY_VALIDATION_FAILED",
       status: 400,
     })
-    expect(updateManagementCompanyRecordMock).not.toHaveBeenCalled()
+    expect(updateEntityRecordMock).not.toHaveBeenCalled()
   })
 
   it("returns the updated record on success", async () => {
-    const updated = { id: ID, name: "Renamed" }
-    updateManagementCompanyRecordMock.mockResolvedValue(updated)
-    expect(await updateManagementCompanyUseCase(ID, { name: "Renamed" } as never)).toBe(updated)
+    const updated = { id: ID, entity: "Renamed" }
+    updateEntityRecordMock.mockResolvedValue(updated)
+    expect(await updateEntityUseCase(ID, { entity: "Renamed" } as never)).toBe(updated)
   })
 
   it("maps a P2025 to a 404 not-found", async () => {
-    updateManagementCompanyRecordMock.mockRejectedValue(new PrismaKnownError("missing", { code: "P2025" }))
-    await expect(updateManagementCompanyUseCase(ID, { name: "Renamed" } as never)).rejects.toMatchObject({
-      code: "MANAGEMENT_COMPANY_NOT_FOUND",
+    updateEntityRecordMock.mockRejectedValue(new PrismaKnownError("missing", { code: "P2025" }))
+    await expect(updateEntityUseCase(ID, { entity: "Renamed" } as never)).rejects.toMatchObject({
+      code: "ENTITY_NOT_FOUND",
       status: 404,
     })
   })

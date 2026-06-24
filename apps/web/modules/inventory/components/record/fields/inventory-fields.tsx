@@ -174,7 +174,7 @@ export function WarehousePickerField(props: WarehousePickerProps) {
  * record view as display-only cells (uneditable for now). Each pulls straight
  * from the persisted `InventoryRow` and renders inside the engine's boxed
  * read-only field UI (`StaticFieldValue`) — the same encasing treatment as
- * `WarehouseStaticField` here and the MC property read-only cells. Values are
+ * `WarehouseStaticField` here and the entity property read-only cells. Values are
  * formatted with the same domain formatters the inventory table row uses.
  */
 

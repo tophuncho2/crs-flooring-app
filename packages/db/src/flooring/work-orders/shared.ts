@@ -13,7 +13,7 @@ export const workOrderListSelect = {
   workOrderNumber: true,
   propertyId: true,
   property: {
-    select: { name: true, managementCompany: { select: { id: true, name: true } } },
+    select: { name: true, entity: { select: { id: true, entity: true } } },
   },
   jobTypeId: true,
   jobType: { select: { id: true, name: true } },
@@ -43,7 +43,7 @@ export const workOrderDetailSelect = {
   property: {
     select: {
       name: true,
-      managementCompany: { select: { id: true, name: true } },
+      entity: { select: { id: true, entity: true } },
       streetAddress: true,
       city: true,
       state: true,

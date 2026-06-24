@@ -1,22 +1,22 @@
-export type ManagementCompanyErrorCode =
-  | "MANAGEMENT_COMPANY_VALIDATION_FAILED"
-  | "MANAGEMENT_COMPANY_NOT_FOUND"
+export type EntityErrorCode =
+  | "ENTITY_VALIDATION_FAILED"
+  | "ENTITY_NOT_FOUND"
 
-export class ManagementCompanyExecutionError extends Error {
-  readonly code: ManagementCompanyErrorCode
+export class EntityExecutionError extends Error {
+  readonly code: EntityErrorCode
   readonly status: number
   readonly field?: string
   readonly payload?: Record<string, unknown>
 
   constructor(input: {
-    code: ManagementCompanyErrorCode
+    code: EntityErrorCode
     message: string
     status: number
     field?: string
     payload?: Record<string, unknown>
   }) {
     super(input.message)
-    this.name = "ManagementCompanyExecutionError"
+    this.name = "EntityExecutionError"
     this.code = input.code
     this.status = input.status
     this.field = input.field

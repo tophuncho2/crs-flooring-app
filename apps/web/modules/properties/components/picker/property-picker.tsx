@@ -22,11 +22,11 @@ export type PropertyPickerProps = {
    */
   onOptionSelected?: (option: PropertyOption | null) => void
   /**
-   * Optional management-company filter. When set, only properties belonging
+   * Optional entity filter. When set, only properties belonging
    * to that company are returned. Also folded into the controller's bucket
    * key so React Query buckets results per filter.
    */
-  managementCompanyId?: string | null
+  entityId?: string | null
   /**
    * Pre-resolved label for the current `value`. Lets the trigger render the
    * selected property's name even when it isn't in the latest server result.
@@ -53,7 +53,7 @@ export function PropertyPicker({
   value,
   onChange,
   onOptionSelected,
-  managementCompanyId = null,
+  entityId = null,
   selectedLabel = null,
   placeholder = "Select a property",
   searchPlaceholder = "Search properties",
@@ -67,17 +67,17 @@ export function PropertyPicker({
   initialOptions,
 }: PropertyPickerProps) {
   const bucketKey = useMemo(
-    () => [...PROPERTY_OPTIONS_QUERY_KEY, managementCompanyId ?? null] as const,
-    [managementCompanyId],
+    () => [...PROPERTY_OPTIONS_QUERY_KEY, entityId ?? null] as const,
+    [entityId],
   )
 
   const pagedSearchFn = useCallback(
     (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchPropertyOptionsRequest(search, signal, {
-        managementCompanyId: managementCompanyId ?? undefined,
+        entityId: entityId ?? undefined,
         skip,
       }),
-    [managementCompanyId],
+    [entityId],
   )
 
   const controller = useAsyncRichDropdownController<PropertyOption>({

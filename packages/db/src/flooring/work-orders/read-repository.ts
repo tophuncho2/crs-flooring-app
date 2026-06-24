@@ -35,7 +35,7 @@ export type WorkOrdersListSort = {
  * preserves the upgrade path).
  */
 export type WorkOrdersListFilterMap = {
-  managementCompanyId?: string[]
+  entityId?: string[]
   propertyId?: string[]
   templateId?: string[]
   warehouseId?: string[]
@@ -100,8 +100,8 @@ function buildWorkOrdersWhere(
     andClauses.push({ description: { contains: description, mode: "insensitive" } })
   }
 
-  if (filters?.managementCompanyId?.length) {
-    andClauses.push({ property: { managementCompanyId: { in: filters.managementCompanyId } } })
+  if (filters?.entityId?.length) {
+    andClauses.push({ property: { entityId: { in: filters.entityId } } })
   }
   if (filters?.propertyId?.length) {
     andClauses.push({ propertyId: { in: filters.propertyId } })
@@ -154,7 +154,7 @@ function buildWorkOrdersOrderBy(
   const fieldMap: Record<string, Prisma.FlooringWorkOrderOrderByWithRelationInput> = {
     workOrderNumber: { workOrderNumber: direction },
     property: { property: { name: direction } },
-    managementCompany: { property: { managementCompany: { name: direction } } },
+    entity: { property: { entity: { entity: direction } } },
     jobType: { jobType: { name: direction } },
     warehouse: { warehouse: { name: direction } },
     scheduledFor: { scheduledFor: direction },
@@ -171,7 +171,7 @@ function buildWorkOrdersOrderBy(
   // Primary user-selected sort field. `createdAt` is the default and is covered
   // by the tiebreaker append below; `scheduledFor` is nullable, so order it
   // explicitly with nulls last in both directions. The remaining relation/scalar
-  // fields (workOrderNumber, property, managementCompany) reuse `fieldMap` so the
+  // fields (workOrderNumber, property, entity) reuse `fieldMap` so the
   // ordering shape stays a single source of truth.
   if (sort?.field === "scheduledFor") {
     appendUniqueOrderBy(orderBy, { scheduledFor: { sort: direction, nulls: "last" } })
@@ -389,7 +389,7 @@ export async function getWorkOrderForFileGeneration(
       property: {
         select: {
           name: true,
-          managementCompany: { select: { name: true } },
+          entity: { select: { entity: true } },
           streetAddress: true,
           city: true,
           state: true,
@@ -537,7 +537,7 @@ export async function getWorkOrderForFileGeneration(
       postalCode: workOrder.property?.postalCode ?? "",
       instructions: workOrder.property?.instructions ?? "",
     },
-    managementCompanyName: workOrder.property?.managementCompany?.name ?? "",
+    entityName: workOrder.property?.entity?.entity ?? "",
     warehouse: {
       name: workOrder.warehouse?.name ?? "",
       streetAddress: workOrder.warehouse?.streetAddress ?? "",

@@ -2,10 +2,10 @@ import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-
 import { notFound } from "next/navigation"
 import { requireSessionUser } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
-import { getManagementCompanyDetailPageData } from "@/modules/management-companies/data/queries"
-import { ManagementCompanyDetailClient } from "@/modules/management-companies/components/record/management-company-detail-client"
+import { getEntityDetailPageData } from "@/modules/entities/data/queries"
+import { EntityDetailClient } from "@/modules/entities/components/record/entity-detail-client"
 
-export default async function ManagementCompanyDetailPage({
+export default async function EntityDetailPage({
   params,
   searchParams,
 }: {
@@ -16,7 +16,7 @@ export default async function ManagementCompanyDetailPage({
 
   const { id } = await params
   const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const result = await getManagementCompanyDetailPageData(id)
+  const result = await getEntityDetailPageData(id)
 
   if (!result.ok) {
     if ("notFound" in result && result.notFound) {
@@ -37,9 +37,9 @@ export default async function ManagementCompanyDetailPage({
   }
 
   return (
-    <ManagementCompanyDetailClient
-      managementCompany={result.data.managementCompany}
-      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/management-companies")}
+    <EntityDetailClient
+      entity={result.data.entity}
+      backHref={resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/entities")}
     />
   )
 }

@@ -17,7 +17,7 @@ export type AddressEditCellProps = {
   onChange: (field: keyof AddressFieldsValue, value: string) => void
   editable?: boolean
   label?: string
-  /** Prefix for the inner inputs' aria-labels, e.g. "Management company". */
+  /** Prefix for the inner inputs' aria-labels, e.g. "Entity". */
   ariaPrefix?: string
   col?: number
   colSpan?: number
@@ -33,7 +33,7 @@ export type AddressEditCellProps = {
  *   value reads as a single tidy address instead of short values strewn across
  *   the row.
  *
- * Shared record-view composite — consumed by the property and management-company
+ * Shared record-view composite — consumed by the property and entity
  * hub forms.
  */
 export function AddressEditCell({

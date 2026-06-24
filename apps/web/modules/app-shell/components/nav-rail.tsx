@@ -42,7 +42,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "flooring-work-orders": ClipboardList,
   "flooring-templates": LayoutTemplate,
   "flooring-properties": Building2,
-  "flooring-management-companies": Briefcase,
+  "flooring-entities": Briefcase,
   "flooring-payments": DollarSign,
   "flooring-adjustments": SlidersHorizontal,
   "flooring-inventory": Boxes,

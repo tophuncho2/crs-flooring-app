@@ -1,6 +1,6 @@
-export type PropertyManagementCompany = {
+export type PropertyEntity = {
   id: string
-  name: string
+  entity: string
 }
 
 /**
@@ -28,10 +28,10 @@ export type PropertyDetailRecord = {
   fullAddress: string
   createdBy: string | null
   updatedBy: string | null
-  managementCompany: PropertyManagementCompany | null
+  entity: PropertyEntity | null
   /**
    * Neighbors by global property-number order (`propertyNumberInt`), ignoring
-   * MC/state filters — powers the record-view shell stepper (◀ PROP-# ▶). Null
+   * entity/state filters — powers the record-view shell stepper (◀ PROP-# ▶). Null
    * when the current row is at the start/end of the sequence.
    */
   previousProperty: PropertyNeighbor | null
@@ -53,7 +53,7 @@ export type PropertyListRow = {
   fullAddress: string
   createdBy: string | null
   updatedBy: string | null
-  managementCompany: PropertyManagementCompany | null
+  entity: PropertyEntity | null
   templateCount: number
 }
 
@@ -66,8 +66,8 @@ export type PropertyOption = {
   state: string
   postalCode: string
   instructions: string
-  managementCompanyId: string | null
-  managementCompanyName: string | null
+  entityId: string | null
+  entityName: string | null
 }
 
 export type PropertyPrimaryForm = {
@@ -79,7 +79,7 @@ export type PropertyPrimaryForm = {
   phone: string
   email: string
   instructions: string
-  managementCompanyId: string
+  entityId: string
 }
 
 export type PropertyTemplateDraft = {

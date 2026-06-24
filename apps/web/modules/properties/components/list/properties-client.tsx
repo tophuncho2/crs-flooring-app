@@ -6,7 +6,7 @@ import type { ListInput, PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
   normalizeAddressState,
-  type ManagementCompanyOption,
+  type EntityOption,
   type PropertyListRow,
 } from "@builders/domain"
 import {
@@ -19,26 +19,26 @@ import { useRouter } from "next/navigation"
 import { buildPropertyRecordHref, buildRecordCreateHref } from "@/hooks/navigation/routes"
 import { PropertiesTable } from "./properties-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
-import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
+import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertiesListSearch } from "./toolbar-controls/properties-list-search"
 import { PropertiesClearAll } from "./toolbar-controls/sub-controls/properties-clear-all"
 import { PropertiesRowCount } from "./toolbar-controls/sub-controls/properties-row-count"
 
-const PROPERTIES_FILTERABLE_FIELDS = ["propNumber", "managementCompanyId", "state"] as const
+const PROPERTIES_FILTERABLE_FIELDS = ["propNumber", "entityId", "state"] as const
 
 // The list-view engine stores every filter value as `string[]`. The app filter
 // type carries scalars (`propNumber`) alongside arrays, so we bridge the two
 // the same way inventory does: an all-array engine view + adapters at the edge.
 type EnginePropertiesFilters = {
   propNumber?: ReadonlyArray<string>
-  managementCompanyId?: ReadonlyArray<string>
+  entityId?: ReadonlyArray<string>
   state?: ReadonlyArray<string>
 }
 
 function toEngineFilters(app: PropertiesListFilters): EnginePropertiesFilters {
   const out: EnginePropertiesFilters = {}
   if (app.propNumber && app.propNumber.length > 0) out.propNumber = [app.propNumber]
-  if (app.managementCompanyId?.length) out.managementCompanyId = app.managementCompanyId
+  if (app.entityId?.length) out.entityId = app.entityId
   if (app.state?.length) out.state = app.state
   return out
 }
@@ -47,7 +47,7 @@ function toAppFilters(engine: EnginePropertiesFilters): PropertiesListFilters {
   const out: PropertiesListFilters = {}
   const propNumber = engine.propNumber?.[0]?.trim()
   if (propNumber) out.propNumber = propNumber
-  if (engine.managementCompanyId?.length) out.managementCompanyId = engine.managementCompanyId
+  if (engine.entityId?.length) out.entityId = engine.entityId
   if (engine.state?.length) out.state = engine.state
   return out
 }
@@ -56,16 +56,16 @@ export type PropertiesClientProps = {
   initialSearchQuery: string
   initialPage: number
   initialFilters: PropertiesListFilters
-  initialManagementCompanyOptions: ManagementCompanyOption[]
-  initialSelectedManagementCompany?: ManagementCompanyOption | null
+  initialEntityOptions: EntityOption[]
+  initialSelectedEntity?: EntityOption | null
 }
 
 export default function PropertiesClient({
   initialSearchQuery,
   initialPage,
   initialFilters,
-  initialManagementCompanyOptions,
-  initialSelectedManagementCompany = null,
+  initialEntityOptions,
+  initialSelectedEntity = null,
 }: PropertiesClientProps) {
   const { message, pageError } = usePropertiesListController()
   const router = useRouter()
@@ -80,8 +80,8 @@ export default function PropertiesClient({
     [],
   )
   // Properties have no record page of their own — a row opens its management
-  // company's record view drilled into the property (or the MC create flow when
-  // the property has no MC). `returnTo` brings the user back to this list.
+  // company's record view drilled into the property (or the entity create flow when
+  // the property has no entity). `returnTo` brings the user back to this list.
   const { returnTo } = useRecordEntryNavigation("/dashboard/properties")
 
   const {
@@ -122,27 +122,27 @@ export default function PropertiesClient({
     [onFilterChange],
   )
 
-  const selectedManagementCompanyId = filters.managementCompanyId?.[0] ?? null
+  const selectedEntityId = filters.entityId?.[0] ?? null
 
-  const selectedManagementCompanyLabel = useMemo(() => {
-    if (!selectedManagementCompanyId) return null
-    if (initialSelectedManagementCompany?.id === selectedManagementCompanyId) {
-      return initialSelectedManagementCompany.name
+  const selectedEntityLabel = useMemo(() => {
+    if (!selectedEntityId) return null
+    if (initialSelectedEntity?.id === selectedEntityId) {
+      return initialSelectedEntity.entity
     }
     return (
-      initialManagementCompanyOptions.find(
-        (option) => option.id === selectedManagementCompanyId,
-      )?.name ?? null
+      initialEntityOptions.find(
+        (option) => option.id === selectedEntityId,
+      )?.entity ?? null
     )
   }, [
-    selectedManagementCompanyId,
-    initialSelectedManagementCompany,
-    initialManagementCompanyOptions,
+    selectedEntityId,
+    initialSelectedEntity,
+    initialEntityOptions,
   ])
 
-  const handleManagementCompanyChange = useCallback(
+  const handleEntityChange = useCallback(
     (id: string | null) => {
-      onFilterChange("managementCompanyId", id ? [id] : [])
+      onFilterChange("entityId", id ? [id] : [])
     },
     [onFilterChange],
   )
@@ -160,10 +160,10 @@ export default function PropertiesClient({
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (propNumberValue.trim().length > 0) return true
-    if (selectedManagementCompanyId) return true
+    if (selectedEntityId) return true
     if (selectedState) return true
     return false
-  }, [searchQuery, propNumberValue, selectedManagementCompanyId, selectedState])
+  }, [searchQuery, propNumberValue, selectedEntityId, selectedState])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -220,18 +220,18 @@ export default function PropertiesClient({
             </ListToolbarCell>
 
             <ListToolbarCell>
-              <ManagementCompanyFilterChip
-                value={selectedManagementCompanyId}
-                selectedLabel={selectedManagementCompanyLabel}
-                onChange={handleManagementCompanyChange}
-                initialOptions={initialManagementCompanyOptions}
+              <EntityFilterChip
+                value={selectedEntityId}
+                selectedLabel={selectedEntityLabel}
+                onChange={handleEntityChange}
+                initialOptions={initialEntityOptions}
               />
             </ListToolbarCell>
 
             <ListToolbarCell className="ml-auto">
               <AddHubButton
                 onClick={() =>
-                  router.push(buildRecordCreateHref("/dashboard/management-companies", { returnTo }))
+                  router.push(buildRecordCreateHref("/dashboard/entities", { returnTo }))
                 }
               />
             </ListToolbarCell>
@@ -242,7 +242,7 @@ export default function PropertiesClient({
       <PropertiesTable
         rows={rows}
         onOpenProperty={(row) =>
-          router.push(buildPropertyRecordHref(row.id, row.managementCompany?.id ?? null, returnTo))
+          router.push(buildPropertyRecordHref(row.id, row.entity?.id ?? null, returnTo))
         }
         pagination={{
           page,

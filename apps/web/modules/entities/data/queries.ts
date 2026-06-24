@@ -1,21 +1,21 @@
 import {
   createPrismaPageLoadIssue,
-  getManagementCompanyById,
+  getEntityById,
   isPrismaNotFoundError,
   type PrismaDetailPageResult,
 } from "@builders/db"
 
-export { getManagementCompanyById }
+export { getEntityById }
 
-export async function getManagementCompanyDetailPageData(id: string): Promise<PrismaDetailPageResult<{
-  managementCompany: Awaited<ReturnType<typeof getManagementCompanyById>>
+export async function getEntityDetailPageData(id: string): Promise<PrismaDetailPageResult<{
+  entity: Awaited<ReturnType<typeof getEntityById>>
 }>> {
   try {
-    const managementCompany = await getManagementCompanyById(id)
+    const entity = await getEntityById(id)
 
     return {
       ok: true,
-      data: { managementCompany },
+      data: { entity },
     }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {
@@ -25,10 +25,10 @@ export async function getManagementCompanyDetailPageData(id: string): Promise<Pr
     return {
       ok: false,
       error: createPrismaPageLoadIssue(error, {
-        code: "MANAGEMENT_COMPANY_DETAIL_LOAD_FAILED",
-        title: "Management Company Unavailable",
-        message: "The app could not load this management company.",
-        detail: "The management company record could not be loaded.",
+        code: "ENTITY_DETAIL_LOAD_FAILED",
+        title: "Entity Unavailable",
+        message: "The app could not load this entity.",
+        detail: "The entity record could not be loaded.",
       }),
     }
   }

@@ -10,7 +10,7 @@ import type { TemplateListRow } from "@builders/domain"
 export const TEMPLATES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<TemplateListRow>> = [
   { key: "unitType", label: "Unit Type" },
   { key: "property", label: "Property" },
-  { key: "managementCompany", label: "Management Company" },
+  { key: "entity", label: "Entity" },
   { key: "jobType", label: "Job Type" },
   { key: "warehouse", label: "Warehouse" },
   { key: "description", label: "Description" },

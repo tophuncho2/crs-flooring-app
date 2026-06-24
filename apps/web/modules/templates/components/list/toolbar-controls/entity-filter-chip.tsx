@@ -1,38 +1,38 @@
 "use client"
 
-import type { ManagementCompanyOption } from "@builders/domain"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
+import type { EntityOption } from "@builders/domain"
+import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
 
-export type ManagementCompanyFilterChipProps = {
+export type EntityFilterChipProps = {
   value: string | null
   selectedLabel: string | null
   onChange: (id: string | null) => void
-  initialOptions?: ManagementCompanyOption[]
+  initialOptions?: EntityOption[]
 }
 
 /**
- * Templates list-view chip — narrows the table by management company AND
- * scopes the Property chip's picker. Cascade clearing of Property on MC
+ * Templates list-view chip — narrows the table by entity AND
+ * scopes the Property chip's picker. Cascade clearing of Property on entity
  * change is handled by the parent client.
  */
-export function ManagementCompanyFilterChip({
+export function EntityFilterChip({
   value,
   selectedLabel,
   onChange,
   initialOptions,
-}: ManagementCompanyFilterChipProps) {
+}: EntityFilterChipProps) {
   return (
     <div className="min-w-[14rem] max-w-[20rem]">
-      <ManagementCompanyPicker
+      <EntityPicker
         value={value}
         selectedLabel={selectedLabel}
         onChange={onChange}
         initialOptions={initialOptions}
-        placeholder="management company"
-        searchPlaceholder="Search companies"
-        emptyMessage="No companies match"
+        placeholder="entity"
+        searchPlaceholder="Search entities"
+        emptyMessage="No entities match"
         clearLabel="Clear filter"
-        ariaLabel="Filter templates by management company"
+        ariaLabel="Filter templates by entity"
       />
     </div>
   )

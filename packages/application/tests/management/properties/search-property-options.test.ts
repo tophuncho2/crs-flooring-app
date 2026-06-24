@@ -13,7 +13,7 @@ import { searchPropertyOptionsUseCase } from "../../../src/management/properties
 function callArgs() {
   return searchPropertyOptionsMock.mock.calls[0]![0] as {
     search?: string
-    managementCompanyId?: string
+    entityId?: string
     skip: number
     take: number
   }
@@ -43,9 +43,9 @@ describe("searchPropertyOptionsUseCase", () => {
     expect(callArgs().skip).toBe(0)
   })
 
-  it("trims search and management company id, dropping blanks", async () => {
-    await searchPropertyOptionsUseCase({ search: "  m ", managementCompanyId: "  " })
-    expect(callArgs()).toMatchObject({ search: "m", managementCompanyId: undefined })
+  it("trims search and entity id, dropping blanks", async () => {
+    await searchPropertyOptionsUseCase({ search: "  m ", entityId: "  " })
+    expect(callArgs()).toMatchObject({ search: "m", entityId: undefined })
   })
 
   it("passes through the repository result", async () => {

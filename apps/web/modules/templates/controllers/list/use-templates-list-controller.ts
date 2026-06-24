@@ -23,8 +23,8 @@ export function useTemplatesListController() {
           templateLabel: row.unitType,
           propertyId: row.propertyId,
           propertyLabel: row.propertyName,
-          managementCompanyId: row.managementCompanyId,
-          managementCompanyLabel: row.managementCompanyName,
+          entityId: row.entityId,
+          entityLabel: row.entityName,
           returnTo: templateNavigation.returnTo,
         }),
       )

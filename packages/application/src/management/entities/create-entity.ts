@@ -1,30 +1,30 @@
-import { Prisma, createManagementCompanyRecord, withDatabaseTransaction } from "@builders/db"
+import { Prisma, createEntityRecord, withDatabaseTransaction } from "@builders/db"
 import {
-  MANAGEMENT_COMPANY_NAME_REQUIRED_MESSAGE,
+  ENTITY_NAME_REQUIRED_MESSAGE,
   isBlankName,
 } from "@builders/domain"
-import { ManagementCompanyExecutionError } from "./errors.js"
+import { EntityExecutionError } from "./errors.js"
 import type {
-  CreateManagementCompanyUseCaseInput,
-  ManagementCompanyUseCaseResult,
+  CreateEntityUseCaseInput,
+  EntityUseCaseResult,
 } from "./types.js"
 
-export async function createManagementCompanyUseCase(
-  input: CreateManagementCompanyUseCaseInput,
+export async function createEntityUseCase(
+  input: CreateEntityUseCaseInput,
   client?: Prisma.TransactionClient,
-): Promise<ManagementCompanyUseCaseResult> {
+): Promise<EntityUseCaseResult> {
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    if (isBlankName(input.name)) {
-      throw new ManagementCompanyExecutionError({
-        code: "MANAGEMENT_COMPANY_VALIDATION_FAILED",
-        message: MANAGEMENT_COMPANY_NAME_REQUIRED_MESSAGE,
+    if (isBlankName(input.entity)) {
+      throw new EntityExecutionError({
+        code: "ENTITY_VALIDATION_FAILED",
+        message: ENTITY_NAME_REQUIRED_MESSAGE,
         status: 400,
-        field: "name",
+        field: "entity",
       })
     }
 
-    return await createManagementCompanyRecord(input, c)
+    return await createEntityRecord(input, c)
   })
 }

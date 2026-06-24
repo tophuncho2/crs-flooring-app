@@ -19,7 +19,7 @@ type WorkOrderListInput = {
   id: string
   workOrderNumber: string
   propertyId: string | null
-  property: { name: string; managementCompany: { id: string; name: string } | null } | null
+  property: { name: string; entity: { id: string; entity: string } | null } | null
   jobTypeId: string | null
   jobType: { id: string; name: string } | null
   templateId: string | null
@@ -41,7 +41,7 @@ type WorkOrderDetailInput = WorkOrderListInput & {
   installerInstructions: string | null
   property: {
     name: string
-    managementCompany: { id: string; name: string } | null
+    entity: { id: string; entity: string } | null
     streetAddress: string | null
     city: string | null
     state: string | null
@@ -62,8 +62,8 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     workOrderNumber: workOrder.workOrderNumber,
     propertyId: workOrder.propertyId,
     propertyName: workOrder.property?.name ?? "",
-    managementCompanyId: workOrder.property?.managementCompany?.id ?? null,
-    managementCompanyName: workOrder.property?.managementCompany?.name ?? null,
+    entityId: workOrder.property?.entity?.id ?? null,
+    entityName: workOrder.property?.entity?.entity ?? null,
     jobTypeId: workOrder.jobTypeId,
     jobTypeName: workOrder.jobType?.name ?? null,
     templateId: workOrder.templateId,

@@ -1,29 +1,29 @@
-import type { ManagementCompanyOption } from "@builders/domain"
+import type { EntityOption } from "@builders/domain"
 import { requestJson } from "@/transport/http"
 
-export const MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY = ["management-companies", "options"] as const
+export const ENTITY_OPTIONS_QUERY_KEY = ["entities", "options"] as const
 
-export type ManagementCompanyOptionsPage = {
-  items: ManagementCompanyOption[]
+export type EntityOptionsPage = {
+  items: EntityOption[]
   hasMore: boolean
 }
 
-export type ManagementCompanyOptionsRequestArgs = {
+export type EntityOptionsRequestArgs = {
   skip?: number
   take?: number
 }
 
-export async function searchManagementCompanyOptionsRequest(
+export async function searchEntityOptionsRequest(
   search: string,
   signal: AbortSignal | undefined,
-  args: ManagementCompanyOptionsRequestArgs = {},
-): Promise<ManagementCompanyOptionsPage> {
+  args: EntityOptionsRequestArgs = {},
+): Promise<EntityOptionsPage> {
   const params = new URLSearchParams()
   if (search) params.set("search", search)
   if (args.skip !== undefined && args.skip > 0) params.set("skip", String(args.skip))
   params.set("take", String(args.take ?? 50))
-  const url = `/api/management-companies/options?${params.toString()}`
-  return requestJson<ManagementCompanyOptionsPage>(url, {
+  const url = `/api/entities/options?${params.toString()}`
+  return requestJson<EntityOptionsPage>(url, {
     method: "GET",
     headers: { Accept: "application/json" },
     signal,

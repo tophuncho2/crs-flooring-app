@@ -1,7 +1,7 @@
 import {
   listCategories,
   listJobTypeOptions,
-  listManagementCompanyOptions,
+  listEntityOptions,
   listProductOptions,
   listPropertyOptions,
   listTemplateOptions,
@@ -17,7 +17,7 @@ import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-pol
  *  - properties (for the property picker)
  *  - warehouses (required field on the WO row)
  *  - jobTypes (optional; surfaces as a select)
- *  - managementCompanies (optional; surfaces as a select)
+ *  - entities (optional; surfaces as a select)
  *  - templates (optional; populates the "sync from template" picker)
  *  - products (powers the material-items product picker, filtered
  *    client-side by the chosen category)
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       properties,
       warehouses,
       jobTypes,
-      managementCompanies,
+      entities,
       templates,
       products,
       categories,
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
       listPropertyOptions(),
       listWarehouseOptions(),
       listJobTypeOptions(),
-      listManagementCompanyOptions(),
+      listEntityOptions(),
       listTemplateOptions(),
       listProductOptions(),
       listCategories(),
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
       properties,
       warehouses,
       jobTypes,
-      managementCompanies,
+      entities,
       templates,
       products,
       categories,

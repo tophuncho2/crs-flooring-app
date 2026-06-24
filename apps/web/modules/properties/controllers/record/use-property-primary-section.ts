@@ -17,7 +17,7 @@ import {
   updatePropertyRequest,
 } from "@/modules/properties/data/property-mutations"
 import { PROPERTIES_LIST_QUERY_KEY } from "@/modules/properties/data/list-properties-request"
-import { MANAGEMENT_COMPANIES_LIST_QUERY_KEY } from "@/modules/management-companies/data/list-management-companies-request"
+import { ENTITIES_LIST_QUERY_KEY } from "@/modules/entities/data/list-entities-request"
 
 export function usePropertyPrimarySection({
   page,
@@ -54,11 +54,11 @@ export function usePropertyPrimarySection({
     },
     deleteRecord: async (record) => {
       await deletePropertyRequest(record.id, record.updatedAt)
-      // Refresh the properties list (and the MC list's property counts) so the
+      // Refresh the properties list (and the entity list's property counts) so the
       // deleted property doesn't linger from cache.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: PROPERTIES_LIST_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: MANAGEMENT_COMPANIES_LIST_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: ENTITIES_LIST_QUERY_KEY }),
       ])
     },
     deleteErrorMessage: "Failed to delete property",

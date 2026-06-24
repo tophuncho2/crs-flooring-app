@@ -32,7 +32,7 @@ type PropertyDetailInput = {
   instructions: string | null
   createdBy: string | null
   updatedBy: string | null
-  managementCompany: { id: string; name: string } | null
+  entity: { id: string; entity: string } | null
 }
 
 type PropertyListRowInput = {
@@ -49,7 +49,7 @@ type PropertyListRowInput = {
   email: string | null
   createdBy: string | null
   updatedBy: string | null
-  managementCompany: { id: string; name: string } | null
+  entity: { id: string; entity: string } | null
   _count: { templates: number }
 }
 
@@ -62,8 +62,8 @@ type PropertyOptionInput = {
   state: string | null
   postalCode: string | null
   instructions: string | null
-  managementCompanyId: string | null
-  managementCompany?: { name: string } | null
+  entityId: string | null
+  entity?: { entity: string } | null
 }
 
 export function normalizeProperty(
@@ -86,7 +86,7 @@ export function normalizeProperty(
     fullAddress: buildAddressLine(property),
     createdBy: property.createdBy ?? null,
     updatedBy: property.updatedBy ?? null,
-    managementCompany: property.managementCompany,
+    entity: property.entity,
     previousProperty: neighbors.previousProperty,
     nextProperty: neighbors.nextProperty,
   }
@@ -108,7 +108,7 @@ export function normalizePropertyListRow(property: PropertyListRowInput): Proper
     fullAddress: buildAddressLine(property),
     createdBy: property.createdBy ?? null,
     updatedBy: property.updatedBy ?? null,
-    managementCompany: property.managementCompany,
+    entity: property.entity,
     templateCount: property._count.templates,
   }
 }
@@ -123,7 +123,7 @@ export function normalizePropertyOption(property: PropertyOptionInput): Property
     state: property.state ?? "",
     postalCode: property.postalCode ?? "",
     instructions: property.instructions ?? "",
-    managementCompanyId: property.managementCompanyId,
-    managementCompanyName: property.managementCompany?.name ?? null,
+    entityId: property.entityId,
+    entityName: property.entity?.entity ?? null,
   }
 }

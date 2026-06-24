@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-export function useManagementCompaniesListController() {
+export function useEntitiesListController() {
   const [message, setMessage] = useState("")
   const [pageError, setPageError] = useState("")
 

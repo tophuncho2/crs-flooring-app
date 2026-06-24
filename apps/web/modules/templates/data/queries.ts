@@ -8,7 +8,7 @@ import {
 export { getTemplateById }
 
 // All form-option fields are powered by async pickers
-// (PropertyPicker / ManagementCompanyPicker / JobTypePicker /
+// (PropertyPicker / EntityPicker / JobTypePicker /
 // WarehousePicker / CategoryPicker / ProductPicker) which call
 // /api/{...}/options on demand; read-only labels come from joined fields
 // on TemplateDetail and TemplateMaterialItemRow. No SSR pre-fetch of

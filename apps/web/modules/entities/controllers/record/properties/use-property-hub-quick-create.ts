@@ -3,16 +3,16 @@
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
-  EMPTY_MANAGEMENT_COMPANY_FORM,
+  EMPTY_ENTITY_FORM,
   EMPTY_PROPERTY_HUB_PROPERTY_FIELDS,
   validateCreatePropertyHubForm,
-  type ManagementCompanyDetail,
+  type EntityDetail,
   type PropertyDetailRecord,
 } from "@builders/domain"
-import { createPropertyHubRequest } from "@/modules/management-companies/data/properties/property-mutations"
+import { createPropertyHubRequest } from "@/modules/entities/data/properties/property-mutations"
 import { PROPERTIES_LIST_QUERY_KEY } from "@/modules/properties/data/list-properties-request"
-import { MANAGEMENT_COMPANIES_LIST_QUERY_KEY } from "@/modules/management-companies/data/list-management-companies-request"
-import { MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY } from "@/modules/management-companies/data/management-company-options-request"
+import { ENTITIES_LIST_QUERY_KEY } from "@/modules/entities/data/list-entities-request"
+import { ENTITY_OPTIONS_QUERY_KEY } from "@/modules/entities/data/entity-options-request"
 import {
   buildHubCreatePayload,
   type PropertyHubCreateForm,
@@ -20,7 +20,7 @@ import {
 
 export type PropertyHubQuickCreateResult = {
   property: PropertyDetailRecord | null
-  managementCompany: ManagementCompanyDetail | null
+  entity: EntityDetail | null
 }
 
 /**
@@ -32,17 +32,17 @@ export type PropertyHubQuickCreateResult = {
  * `/api/properties/hub` shape.
  */
 export function usePropertyHubQuickCreate({
-  initialManagementCompany,
+  initialEntity,
 }: {
-  /** Pre-link an existing MC (e.g. the record view already has one selected). */
-  initialManagementCompany?: { id: string; label: string | null } | null
+  /** Pre-link an existing entity (e.g. the record view already has one selected). */
+  initialEntity?: { id: string; label: string | null } | null
 } = {}) {
   const queryClient = useQueryClient()
 
   const [localValue, setLocalValue] = useState<PropertyHubCreateForm>(() => ({
-    mcLinkId: initialManagementCompany?.id ?? null,
-    mcLinkLabel: initialManagementCompany?.label ?? null,
-    mcForm: EMPTY_MANAGEMENT_COMPANY_FORM,
+    entityLinkId: initialEntity?.id ?? null,
+    entityLinkLabel: initialEntity?.label ?? null,
+    entityForm: EMPTY_ENTITY_FORM,
     propertyForm: EMPTY_PROPERTY_HUB_PROPERTY_FIELDS,
   }))
   const [isSaving, setIsSaving] = useState(false)
@@ -66,8 +66,8 @@ export function usePropertyHubQuickCreate({
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: PROPERTIES_LIST_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: MANAGEMENT_COMPANIES_LIST_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: ENTITIES_LIST_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: ENTITY_OPTIONS_QUERY_KEY }),
       ])
 
       return result

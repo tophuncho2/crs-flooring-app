@@ -5,7 +5,7 @@ import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListControl
 import type { TemplatesListFilters } from "@builders/application"
 import {
   LIST_TEMPLATES_PAGE_SIZE,
-  type ManagementCompanyOption,
+  type EntityOption,
   type PropertyOption,
   type TemplateListRow,
 } from "@builders/domain"
@@ -16,27 +16,27 @@ import {
 import { useTemplatesListController } from "@/modules/templates/controllers/list/use-templates-list-controller"
 import { TemplatesTable } from "./templates-table"
 import { AddTemplateButton } from "./toolbar-controls/add-template-button"
-import { ManagementCompanyFilterChip } from "./toolbar-controls/management-company-filter-chip"
+import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { TemplatesListSearch } from "./toolbar-controls/templates-list-search"
 import { TemplatesClearAll } from "./toolbar-controls/sub-controls/templates-clear-all"
 import { TemplatesRowCount } from "./toolbar-controls/sub-controls/templates-row-count"
 
-const TEMPLATES_FILTERABLE_FIELDS = ["managementCompanyId", "propertyId"] as const
+const TEMPLATES_FILTERABLE_FIELDS = ["entityId", "propertyId"] as const
 
 export default function TemplatesClient({
   initialSearchQuery,
   initialPage,
   initialFilters,
-  initialManagementCompanyOptions,
-  initialSelectedManagementCompany = null,
+  initialEntityOptions,
+  initialSelectedEntity = null,
   initialSelectedProperty = null,
 }: {
   initialSearchQuery: string
   initialPage: number
   initialFilters: TemplatesListFilters
-  initialManagementCompanyOptions: ManagementCompanyOption[]
-  initialSelectedManagementCompany?: ManagementCompanyOption | null
+  initialEntityOptions: EntityOption[]
+  initialSelectedEntity?: EntityOption | null
   initialSelectedProperty?: PropertyOption | null
 }) {
   const { message, pageError, openCreate, openTemplate, syncTemplate, syncingId } =
@@ -71,22 +71,22 @@ export default function TemplatesClient({
   })
 
   const filtersTyped = filters as TemplatesListFilters
-  const selectedManagementCompanyId = filtersTyped.managementCompanyId?.[0] ?? null
+  const selectedEntityId = filtersTyped.entityId?.[0] ?? null
   const selectedPropertyId = filtersTyped.propertyId?.[0] ?? null
 
-  const managementCompanyLabel = useMemo(() => {
-    if (!selectedManagementCompanyId) return null
-    if (initialSelectedManagementCompany?.id === selectedManagementCompanyId) {
-      return initialSelectedManagementCompany.name
+  const entityLabel = useMemo(() => {
+    if (!selectedEntityId) return null
+    if (initialSelectedEntity?.id === selectedEntityId) {
+      return initialSelectedEntity.entity
     }
     return (
-      initialManagementCompanyOptions.find((o) => o.id === selectedManagementCompanyId)
-        ?.name ?? null
+      initialEntityOptions.find((o) => o.id === selectedEntityId)
+        ?.entity ?? null
     )
   }, [
-    selectedManagementCompanyId,
-    initialSelectedManagementCompany,
-    initialManagementCompanyOptions,
+    selectedEntityId,
+    initialSelectedEntity,
+    initialEntityOptions,
   ])
 
   const propertyLabel = useMemo(() => {
@@ -96,10 +96,10 @@ export default function TemplatesClient({
       : null
   }, [selectedPropertyId, initialSelectedProperty])
 
-  // Cascade-clear: changing MC clears Property (its picker scope is gone).
-  const handleManagementCompanyChange = useCallback(
+  // Cascade-clear: changing entity clears Property (its picker scope is gone).
+  const handleEntityChange = useCallback(
     (id: string | null) => {
-      onFilterChange("managementCompanyId", id ? [id] : [])
+      onFilterChange("entityId", id ? [id] : [])
       onFilterChange("propertyId", [])
     },
     [onFilterChange],
@@ -114,9 +114,9 @@ export default function TemplatesClient({
 
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
-    if (selectedManagementCompanyId || selectedPropertyId) return true
+    if (selectedEntityId || selectedPropertyId) return true
     return false
-  }, [searchQuery, selectedManagementCompanyId, selectedPropertyId])
+  }, [searchQuery, selectedEntityId, selectedPropertyId])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -164,19 +164,19 @@ export default function TemplatesClient({
               </div>
             </ListToolbarCell>
 
-            {/* Management Company → Property: property is MC-scoped (MC change
-                cascades the property chip clear via handleManagementCompanyChange). */}
+            {/* Entity → Property: property is entity-scoped (entity change
+                cascades the property chip clear via handleEntityChange). */}
             <ListToolbarCell>
-              <ManagementCompanyFilterChip
-                value={selectedManagementCompanyId}
-                selectedLabel={managementCompanyLabel}
-                onChange={handleManagementCompanyChange}
-                initialOptions={initialManagementCompanyOptions}
+              <EntityFilterChip
+                value={selectedEntityId}
+                selectedLabel={entityLabel}
+                onChange={handleEntityChange}
+                initialOptions={initialEntityOptions}
               />
               <PropertyFilterChip
                 value={selectedPropertyId}
                 selectedLabel={propertyLabel}
-                managementCompanyId={selectedManagementCompanyId}
+                entityId={selectedEntityId}
                 onChange={handlePropertyChange}
               />
             </ListToolbarCell>

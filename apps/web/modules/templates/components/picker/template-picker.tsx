@@ -25,16 +25,16 @@ export type TemplatePickerProps = {
    */
   propertyId: string | null
   /**
-   * MC scope, consulted only when no `propertyId` is set (a property already
-   * implies its MC). Lets the list filter narrow templates to an MC's
+   * entity scope, consulted only when no `propertyId` is set (a property already
+   * implies its entity). Lets the list filter narrow templates to an entity's
    * properties before any specific property is chosen.
    */
-  managementCompanyId?: string | null
+  entityId?: string | null
   /**
    * When true (default), the picker is property-gated: disabled until a
    * property is selected — the WO record form's contract. Set false to make
    * the picker always selectable and fetch standalone (the list filter chip),
-   * scoped by whatever propertyId/managementCompanyId is passed.
+   * scoped by whatever propertyId/entityId is passed.
    */
   requireProperty?: boolean
   /**
@@ -73,7 +73,7 @@ export function TemplatePicker({
   onChange,
   onOptionSelected,
   propertyId,
-  managementCompanyId = null,
+  entityId = null,
   requireProperty = true,
   selectedLabel = null,
   placeholder = "Select a template",
@@ -89,24 +89,24 @@ export function TemplatePicker({
   initialOptions,
 }: TemplatePickerProps) {
   const propertyKey = propertyId ?? null
-  const mgmtCoKey = managementCompanyId ?? null
+  const entityKey = entityId ?? null
   // Gated mode (record form): disabled until a property is picked. Standalone
   // mode (list filter): always selectable, fetches with whatever scope it has.
   const enabled = requireProperty ? propertyId !== null && !disabled : !disabled
 
   const bucketKey = useMemo(
-    () => [...TEMPLATE_OPTIONS_QUERY_KEY, propertyKey, mgmtCoKey] as const,
-    [propertyKey, mgmtCoKey],
+    () => [...TEMPLATE_OPTIONS_QUERY_KEY, propertyKey, entityKey] as const,
+    [propertyKey, entityKey],
   )
 
   const pagedSearchFn = useCallback(
     (search: string, signal: AbortSignal | undefined, skip: number) =>
       searchTemplateOptionsRequest(search, signal, {
         propertyId: propertyId ?? undefined,
-        managementCompanyId: managementCompanyId ?? undefined,
+        entityId: entityId ?? undefined,
         skip,
       }),
-    [propertyId, managementCompanyId],
+    [propertyId, entityId],
   )
 
   const controller = useAsyncRichDropdownController<TemplateOption>({

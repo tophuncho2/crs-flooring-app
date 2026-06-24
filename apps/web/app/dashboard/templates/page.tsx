@@ -1,11 +1,11 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
   listTemplatesUseCase,
-  searchManagementCompanyOptionsUseCase,
+  searchEntityOptionsUseCase,
   searchPropertyOptionsUseCase,
 } from "@builders/application"
 import type {
-  ManagementCompanyOption,
+  EntityOption,
   PropertyOption,
 } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
@@ -40,32 +40,32 @@ export default async function TemplatesPage({
 
   const queryClient = new QueryClient()
 
-  let initialManagementCompanyOptions: ManagementCompanyOption[] = []
-  let initialSelectedManagementCompany: ManagementCompanyOption | null = null
+  let initialEntityOptions: EntityOption[] = []
+  let initialSelectedEntity: EntityOption | null = null
   let initialSelectedProperty: PropertyOption | null = null
 
   try {
-    const selectedManagementCompanyId =
-      initialInput.filters?.managementCompanyId?.[0] ?? null
+    const selectedEntityId =
+      initialInput.filters?.entityId?.[0] ?? null
     const selectedPropertyId = initialInput.filters?.propertyId?.[0] ?? null
 
-    const [, mcOptionsPage] = await Promise.all([
+    const [, entityOptionsPage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...TEMPLATES_LIST_QUERY_KEY, initialInput],
         queryFn: () => listTemplatesUseCase(initialInput),
       }),
-      searchManagementCompanyOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
+      searchEntityOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
-    initialManagementCompanyOptions = mcOptionsPage.items
+    initialEntityOptions = entityOptionsPage.items
 
-    if (selectedManagementCompanyId) {
-      initialSelectedManagementCompany = await resolveSelectedById(
-        selectedManagementCompanyId,
-        mcOptionsPage.items,
+    if (selectedEntityId) {
+      initialSelectedEntity = await resolveSelectedById(
+        selectedEntityId,
+        entityOptionsPage.items,
         async (id) => {
           const match = (
-            await searchManagementCompanyOptionsUseCase({ search: id, take: 1 })
+            await searchEntityOptionsUseCase({ search: id, take: 1 })
           ).items[0]
           return match && match.id === id ? match : null
         },
@@ -74,8 +74,8 @@ export default async function TemplatesPage({
 
     if (selectedPropertyId) {
       const propertiesPage = await searchPropertyOptionsUseCase({
-        ...(selectedManagementCompanyId
-          ? { managementCompanyId: selectedManagementCompanyId }
+        ...(selectedEntityId
+          ? { entityId: selectedEntityId }
           : {}),
         take: INITIAL_OPTIONS_TAKE,
       })
@@ -99,8 +99,8 @@ export default async function TemplatesPage({
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}
-        initialManagementCompanyOptions={initialManagementCompanyOptions}
-        initialSelectedManagementCompany={initialSelectedManagementCompany}
+        initialEntityOptions={initialEntityOptions}
+        initialSelectedEntity={initialSelectedEntity}
         initialSelectedProperty={initialSelectedProperty}
       />
     </HydrationBoundary>

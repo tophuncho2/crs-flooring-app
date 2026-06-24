@@ -7,7 +7,7 @@ import { requestJson } from "@/transport/http"
 
 export const TEMPLATES_LIST_QUERY_KEY = ["templates", "list"] as const
 
-const FILTER_KEYS = ["managementCompanyId", "propertyId"] as const
+const FILTER_KEYS = ["entityId", "propertyId"] as const
 type FilterKey = (typeof FILTER_KEYS)[number]
 
 function readSearchParam(

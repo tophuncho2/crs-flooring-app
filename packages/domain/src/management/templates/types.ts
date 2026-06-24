@@ -7,8 +7,8 @@ export type TemplateListRow = {
   description: string
   propertyId: string | null
   propertyName: string
-  managementCompanyId: string | null
-  managementCompanyName: string | null
+  entityId: string | null
+  entityName: string | null
   jobTypeId: string | null
   jobTypeName: string | null
   warehouseId: string | null
@@ -27,7 +27,7 @@ export type TemplateListRow = {
  * An adjacent template in the global template-number sequence
  * (`templateNumberInt`). Carries only `id` — the record-view stepper navigates
  * straight to the neighbor record by number; it does not drive the
- * MC→Property→Template cascade. Null at the ends of the sequence.
+ * entity→Property→Template cascade. Null at the ends of the sequence.
  */
 export type TemplateNeighbor = {
   id: string
@@ -44,7 +44,7 @@ export type TemplateDetail = TemplateListRow & {
   items: TemplateMaterialItemRow[]
   /**
    * Neighbors by global template-number order (`templateNumberInt`), ignoring
-   * property/MC filters — powers the record-view shell stepper (◀ TP-# ▶). Null
+   * property/entity filters — powers the record-view shell stepper (◀ TP-# ▶). Null
    * when the current row is at the start/end of the sequence.
    */
   previousTemplate: TemplateNeighbor | null

@@ -24,9 +24,9 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-templates", name: "Templates", href: "/dashboard/templates", group: "management" },
   { slug: "flooring-properties", name: "Properties", href: "/dashboard/properties", group: "management" },
   {
-    slug: "flooring-management-companies",
-    name: "Management Companies",
-    href: "/dashboard/management-companies",
+    slug: "flooring-entities",
+    name: "Entities",
+    href: "/dashboard/entities",
     group: "management",
   },
   { slug: "flooring-adjustments", name: "Adjustments", href: "/dashboard/adjustments", group: "operations" },

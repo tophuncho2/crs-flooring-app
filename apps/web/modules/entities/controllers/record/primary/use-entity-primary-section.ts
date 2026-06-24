@@ -6,34 +6,34 @@ import {
 } from "@/engines/record-view"
 import { createRecordSectionError } from "@/types/record/section-error"
 import {
-  toManagementCompanyForm,
-  validateManagementCompanyForm,
-  type ManagementCompanyDetail,
-  type ManagementCompanyForm,
+  toEntityForm,
+  validateEntityForm,
+  type EntityDetail,
+  type EntityForm,
 } from "@builders/domain"
 import {
-  deleteManagementCompanyRequest,
-  updateManagementCompanyRequest,
-} from "@/modules/management-companies/data/mutations"
+  deleteEntityRequest,
+  updateEntityRequest,
+} from "@/modules/entities/data/mutations"
 
-export function useMcPrimarySection({
+export function useEntityPrimarySection({
   page,
   entry,
 }: {
   page: RecordDetailClientScaffoldContext
-  entry: ManagementCompanyDetail
+  entry: EntityDetail
 }) {
-  return useSingleSectionRecordController<ManagementCompanyDetail, ManagementCompanyForm>({
+  return useSingleSectionRecordController<EntityDetail, EntityForm>({
     page,
-    scope: "management-companies",
+    scope: "entities",
     id: entry.id,
     initialRecord: entry,
-    detailUrl: `/api/management-companies/${entry.id}`,
-    payloadKey: "managementCompany",
-    createLocalValue: toManagementCompanyForm,
+    detailUrl: `/api/entities/${entry.id}`,
+    payloadKey: "entity",
+    createLocalValue: toEntityForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      const validationError = validateManagementCompanyForm(localValue)
+      const validationError = validateEntityForm(localValue)
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",
@@ -41,19 +41,19 @@ export function useMcPrimarySection({
           retryable: true,
         })
       }
-      const { managementCompany } = await updateManagementCompanyRequest(
+      const { entity } = await updateEntityRequest(
         record.id,
         localValue,
         record.updatedAt,
       )
       return {
-        serverValue: managementCompany,
-        noticeMessage: "Management company saved",
+        serverValue: entity,
+        noticeMessage: "Entity saved",
       }
     },
     deleteRecord: async (record) => {
-      await deleteManagementCompanyRequest(record.id, record.updatedAt)
+      await deleteEntityRequest(record.id, record.updatedAt)
     },
-    deleteErrorMessage: "Failed to delete management company",
+    deleteErrorMessage: "Failed to delete entity",
   })
 }

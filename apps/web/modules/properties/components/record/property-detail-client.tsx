@@ -4,16 +4,16 @@ import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import type { ManagementCompanyDetail, PropertyDetailRecord } from "@builders/domain"
+import type { EntityDetail, PropertyDetailRecord } from "@builders/domain"
 import { PropertyRecordView } from "./property-record-view"
 
 export function PropertyDetailClient({
   property,
-  managementCompany,
+  entity,
   backHref,
 }: {
   property: PropertyDetailRecord
-  managementCompany: ManagementCompanyDetail | null
+  entity: EntityDetail | null
   backHref: string
 }) {
   return (
@@ -27,7 +27,7 @@ export function PropertyDetailClient({
         <PropertyRecordView
           page={page}
           entry={property}
-          managementCompany={managementCompany}
+          entity={entity}
         />
       )}
     </RecordDetailClientScaffold>

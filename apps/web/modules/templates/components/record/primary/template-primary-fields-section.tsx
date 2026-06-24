@@ -35,8 +35,8 @@ export type TemplatePrimaryDetail = {
   propertyState: string
   propertyPostalCode: string
   propertyInstructions: string
-  managementCompanyId: string | null
-  managementCompanyName: string | null
+  entityId: string | null
+  entityName: string | null
   jobTypeId: string | null
   jobTypeName: string | null
   warehouseId: string | null
@@ -52,7 +52,7 @@ export type TemplatePrimaryDetail = {
  * record-view engine's invisible grid (`FieldSection` + `CellAt` + `FormField`),
  * single-column stacked — half-width controls up top, full-width read-only
  * property fields + textareas below. The former tab-card groups are gone; the
- * MC / Property / + New property nav buttons moved to the header Options menu.
+ * entity / Property / + New property nav buttons moved to the header Options menu.
  */
 export function TemplatePrimaryFieldsSection({
   draft,
@@ -65,7 +65,7 @@ export function TemplatePrimaryFieldsSection({
   detail: TemplatePrimaryDetail | null
   disabled: boolean
   onFieldChange: (field: keyof TemplateForm, value: string) => void
-  /** Multi-field setter — used by the property-unit cluster for the MC→Property cascade. */
+  /** Multi-field setter — used by the property-unit cluster for the entity→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
 }) {
   const editable = !disabled
@@ -87,7 +87,7 @@ export function TemplatePrimaryFieldsSection({
       </CellAt>
 
       {/* Left column (cols 1–4): Unit Type (own row under Template #), then the
-          property cluster — MC, Property, Address + Instructions. */}
+          property cluster — entity, Property, Address + Instructions. */}
       <TemplatePropertyUnitGroup
         editable={editable}
         draft={draft}

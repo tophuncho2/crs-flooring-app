@@ -18,7 +18,7 @@ function form(overrides: Partial<PropertyPrimaryForm> = {}): PropertyPrimaryForm
     phone: "",
     email: "",
     instructions: "",
-    managementCompanyId: "",
+    entityId: "",
     ...overrides,
   }
 }
@@ -36,7 +36,7 @@ function detail(overrides: Partial<PropertyDetailRecord> = {}): PropertyDetailRe
     email: "a@b.com",
     instructions: "Gate code 1234",
     fullAddress: "1 Main St, Austin, TX, 78701",
-    managementCompany: { id: "mc-1", name: "Acme" },
+    entity: { id: "entity-1", entity: "Acme" },
     ...overrides,
   }
 }
@@ -66,15 +66,15 @@ describe("toPropertyPrimaryForm", () => {
       phone: "555-1212",
       email: "a@b.com",
       instructions: "Gate code 1234",
-      managementCompanyId: "mc-1",
+      entityId: "entity-1",
     })
   })
 
-  it("uses the management company id when present", () => {
-    expect(toPropertyPrimaryForm(detail()).managementCompanyId).toBe("mc-1")
+  it("uses the entity id when present", () => {
+    expect(toPropertyPrimaryForm(detail()).entityId).toBe("entity-1")
   })
 
-  it("falls back to an empty string when there is no management company", () => {
-    expect(toPropertyPrimaryForm(detail({ managementCompany: null })).managementCompanyId).toBe("")
+  it("falls back to an empty string when there is no entity", () => {
+    expect(toPropertyPrimaryForm(detail({ entity: null })).entityId).toBe("")
   })
 })

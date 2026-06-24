@@ -4,14 +4,14 @@ import {
   normalizeTemplateListRow,
 } from "../../../src/management/templates/normalizers.js"
 
-describe("normalizeTemplateListRow management company", () => {
+describe("normalizeTemplateListRow entity", () => {
   const base = {
     id: "tpl-1",
     templateNumber: "TP-1",
     unitType: "2BR",
     description: null,
     propertyId: "prop-1",
-    property: { name: "Maple Court", managementCompany: { id: "mc-1", name: "Acme" } },
+    property: { name: "Maple Court", entity: { id: "entity-1", entity: "Acme" } },
     jobTypeId: null,
     jobType: null,
     warehouseId: null,
@@ -23,16 +23,16 @@ describe("normalizeTemplateListRow management company", () => {
     updatedBy: "editor@example.com",
   }
 
-  it("sources the management company id + name from the linked property", () => {
+  it("sources the entity id + name from the linked property", () => {
     const row = normalizeTemplateListRow(base)
-    expect(row.managementCompanyId).toBe("mc-1")
-    expect(row.managementCompanyName).toBe("Acme")
+    expect(row.entityId).toBe("entity-1")
+    expect(row.entityName).toBe("Acme")
   })
 
-  it("yields nulls when the linked property has no management company", () => {
-    const row = normalizeTemplateListRow({ ...base, property: { name: "Maple Court", managementCompany: null } })
-    expect(row.managementCompanyId).toBeNull()
-    expect(row.managementCompanyName).toBeNull()
+  it("yields nulls when the linked property has no entity", () => {
+    const row = normalizeTemplateListRow({ ...base, property: { name: "Maple Court", entity: null } })
+    expect(row.entityId).toBeNull()
+    expect(row.entityName).toBeNull()
   })
 
   it("passes the actor emails through, coalescing missing ones to null", () => {
@@ -55,7 +55,7 @@ describe("normalizeTemplate neighbors", () => {
     propertyId: "prop-1",
     property: {
       name: "Maple Court",
-      managementCompany: { id: "mc-1", name: "Acme" },
+      entity: { id: "entity-1", entity: "Acme" },
       streetAddress: null,
       city: null,
       state: null,

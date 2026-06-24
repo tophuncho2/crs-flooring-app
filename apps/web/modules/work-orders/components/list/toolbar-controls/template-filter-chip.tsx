@@ -12,10 +12,10 @@ export type TemplateFilterChipProps = {
    */
   propertyId: string | null
   /**
-   * Optional MC scope, used only when no property is set — narrows the
-   * dropdown to templates under that management company's properties.
+   * Optional entity scope, used only when no property is set — narrows the
+   * dropdown to templates under that entity's properties.
    */
-  managementCompanyId: string | null
+  entityId: string | null
   onChange: (id: string | null) => void
   initialOptions?: TemplateOption[]
 }
@@ -23,14 +23,14 @@ export type TemplateFilterChipProps = {
 /**
  * Work-order list-view chip — narrows the table to a single template.
  * Always selectable (`requireProperty={false}`); the dropdown options narrow
- * by whatever MC/property filter is active. A parent MC/property change still
+ * by whatever entity/property filter is active. A parent entity/property change still
  * cascades a template clear via the parent client.
  */
 export function TemplateFilterChip({
   value,
   selectedLabel,
   propertyId,
-  managementCompanyId,
+  entityId,
   onChange,
   initialOptions,
 }: TemplateFilterChipProps) {
@@ -40,7 +40,7 @@ export function TemplateFilterChip({
       selectedLabel={selectedLabel}
       onChange={onChange}
       propertyId={propertyId}
-      managementCompanyId={managementCompanyId}
+      entityId={entityId}
       requireProperty={false}
       initialOptions={initialOptions}
       placeholder="Template"

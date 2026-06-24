@@ -1,27 +1,27 @@
 import {
   Prisma,
-  createManagementCompanyRecord,
+  createEntityRecord,
   createPropertyRecord,
-  getManagementCompanyById,
+  getEntityById,
   updatePropertyRecord,
   withDatabaseTransaction,
-  type CreateManagementCompanyRecordInput,
+  type CreateEntityRecordInput,
 } from "@builders/db"
 import {
-  MANAGEMENT_COMPANY_NOT_FOUND_MESSAGE,
+  ENTITY_NOT_FOUND_MESSAGE,
   validateCreatePropertyHubForm,
   type CreatePropertyHubForm,
-  type ManagementCompanyDetail,
+  type EntityDetail,
   type PropertyDetailRecord,
 } from "@builders/domain"
-import { ManagementCompanyExecutionError } from "../management-companies/errors.js"
+import { EntityExecutionError } from "../entities/errors.js"
 import { PropertyExecutionError } from "./errors.js"
 
 export type CreatePropertyHubUseCaseInput = {
-  managementCompany:
+  entity:
     | { mode: "none" }
     | { mode: "link"; id: string }
-    | { mode: "create"; fields: CreateManagementCompanyRecordInput }
+    | { mode: "create"; fields: CreateEntityRecordInput }
   property:
     | { mode: "none" }
     | { mode: "link"; id: string }
@@ -42,25 +42,25 @@ export type CreatePropertyHubUseCaseInput = {
 
 export type CreatePropertyHubUseCaseResult = {
   property: PropertyDetailRecord | null
-  managementCompany: ManagementCompanyDetail | null
+  entity: EntityDetail | null
 }
 
 function toDomainForm(input: CreatePropertyHubUseCaseInput): CreatePropertyHubForm {
-  const managementCompany: CreatePropertyHubForm["managementCompany"] =
-    input.managementCompany.mode === "create"
+  const entity: CreatePropertyHubForm["entity"] =
+    input.entity.mode === "create"
       ? {
           mode: "create",
           fields: {
-            name: input.managementCompany.fields.name,
-            streetAddress: input.managementCompany.fields.streetAddress ?? "",
-            city: input.managementCompany.fields.city ?? "",
-            state: input.managementCompany.fields.state ?? "",
-            zip: input.managementCompany.fields.postalCode ?? "",
-            phone: input.managementCompany.fields.phone ?? "",
-            email: input.managementCompany.fields.email ?? "",
+            entity: input.entity.fields.entity,
+            streetAddress: input.entity.fields.streetAddress ?? "",
+            city: input.entity.fields.city ?? "",
+            state: input.entity.fields.state ?? "",
+            zip: input.entity.fields.postalCode ?? "",
+            phone: input.entity.fields.phone ?? "",
+            email: input.entity.fields.email ?? "",
           },
         }
-      : input.managementCompany
+      : input.entity
 
   const property: CreatePropertyHubForm["property"] =
     input.property.mode === "create"
@@ -79,7 +79,7 @@ function toDomainForm(input: CreatePropertyHubUseCaseInput): CreatePropertyHubFo
         }
       : input.property
 
-  return { managementCompany, property }
+  return { entity, property }
 }
 
 export async function createPropertyHubUseCase(
@@ -103,26 +103,26 @@ export async function createPropertyHubUseCase(
       })
     }
 
-    let managementCompany: ManagementCompanyDetail | null = null
-    if (input.managementCompany.mode === "link") {
+    let entity: EntityDetail | null = null
+    if (input.entity.mode === "link") {
       try {
-        managementCompany = await getManagementCompanyById(input.managementCompany.id, c)
+        entity = await getEntityById(input.entity.id, c)
       } catch (error) {
         if (
           error instanceof Prisma.PrismaClientKnownRequestError &&
           error.code === "P2025"
         ) {
-          throw new ManagementCompanyExecutionError({
-            code: "MANAGEMENT_COMPANY_NOT_FOUND",
-            message: MANAGEMENT_COMPANY_NOT_FOUND_MESSAGE,
+          throw new EntityExecutionError({
+            code: "ENTITY_NOT_FOUND",
+            message: ENTITY_NOT_FOUND_MESSAGE,
             status: 404,
           })
         }
         throw error
       }
-    } else if (input.managementCompany.mode === "create") {
-      managementCompany = await createManagementCompanyRecord(
-        input.managementCompany.fields,
+    } else if (input.entity.mode === "create") {
+      entity = await createEntityRecord(
+        input.entity.fields,
         c,
       )
     }
@@ -131,7 +131,7 @@ export async function createPropertyHubUseCase(
     if (input.property.mode === "create") {
       property = await createPropertyRecord(
         {
-          managementCompanyId: managementCompany?.id ?? null,
+          entityId: entity?.id ?? null,
           name: input.property.fields.name,
           streetAddress: input.property.fields.streetAddress,
           city: input.property.fields.city,
@@ -146,15 +146,15 @@ export async function createPropertyHubUseCase(
         c,
       )
     } else if (input.property.mode === "link") {
-      // Link an existing property to the resolved (created or linked) MC. The
-      // domain rule guarantees an MC action accompanies a property link.
+      // Link an existing property to the resolved (created or linked) entity. The
+      // domain rule guarantees an entity action accompanies a property link.
       property = await updatePropertyRecord(
         input.property.id,
-        { managementCompanyId: managementCompany?.id ?? null, updatedBy: actorEmail },
+        { entityId: entity?.id ?? null, updatedBy: actorEmail },
         c,
       )
     }
 
-    return { property, managementCompany }
+    return { property, entity }
   })
 }

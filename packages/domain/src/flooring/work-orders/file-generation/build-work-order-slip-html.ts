@@ -15,7 +15,7 @@ import {
  *   - Header: logo (left) · centered "Work Order" tag · work-order number +
  *     scheduled date (right)
  *   - Info stack (`renderWorkOrderInfo`, shared with the Picking Ticket):
- *     Warehouse / Job Type / Description / Management Company / Property (with
+ *     Warehouse / Job Type / Description / Entity / Property (with
  *     flat address beneath) / Unit Type / Unit Number / Vacancy / Property
  *     Instructions / Installer Instructions
  *   - Cut logs (slip variant: Product / Quantity only — no inventory

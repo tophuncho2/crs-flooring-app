@@ -190,7 +190,7 @@ export function validateTemplateMaterialItemsDiffInput(
 
 // --- List view query validator (search + filters + pagination) ---
 
-const TEMPLATES_FILTER_KEYS = ["managementCompanyId", "propertyId"] as const
+const TEMPLATES_FILTER_KEYS = ["entityId", "propertyId"] as const
 type TemplatesFilterKey = (typeof TEMPLATES_FILTER_KEYS)[number]
 
 const listTemplatesQuerySchema = z.object({
@@ -260,10 +260,10 @@ export function validateListTemplatesQuery(
 
 const templateOptionsQuerySchema = z.object({
   search: z.string().optional(),
-  // Both scopes optional: property wins, else MC scopes via the property
+  // Both scopes optional: property wins, else entity scopes via the property
   // relation, else the search is unscoped (lists all templates).
   propertyId: z.string().optional(),
-  managementCompanyId: z.string().optional(),
+  entityId: z.string().optional(),
   skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
@@ -271,7 +271,7 @@ const templateOptionsQuerySchema = z.object({
 export type ValidatedTemplateOptionsQuery = {
   search?: string
   propertyId?: string
-  managementCompanyId?: string
+  entityId?: string
   skip: number
   take: number
 }
@@ -296,11 +296,11 @@ export function validateTemplateOptionsQuery(
   const parsed = parseResult.data
   const trimmedSearch = parsed.search?.trim()
   const trimmedPropertyId = parsed.propertyId?.trim()
-  const trimmedManagementCompanyId = parsed.managementCompanyId?.trim()
+  const trimmedEntityId = parsed.entityId?.trim()
   return {
     search: trimmedSearch ? trimmedSearch : undefined,
     propertyId: trimmedPropertyId ? trimmedPropertyId : undefined,
-    managementCompanyId: trimmedManagementCompanyId ? trimmedManagementCompanyId : undefined,
+    entityId: trimmedEntityId ? trimmedEntityId : undefined,
     skip: parsed.skip,
     take: parsed.take,
   }

@@ -5,21 +5,21 @@ import { PropertyPicker } from "@/modules/properties/components/picker/property-
 export type PropertyFilterChipProps = {
   value: string | null
   selectedLabel: string | null
-  /** Optional management company scope — when set, narrows the picker. */
-  managementCompanyId: string | null
+  /** Optional entity scope — when set, narrows the picker. */
+  entityId: string | null
   onChange: (id: string | null) => void
 }
 
 /**
  * Templates list-view chip — narrows the table to a single property. The
- * Management Company chip (if active) scopes the picker's search results,
- * but Property is also independently filterable on the table without an MC
+ * Entity chip (if active) scopes the picker's search results,
+ * but Property is also independently filterable on the table without an entity
  * set.
  */
 export function PropertyFilterChip({
   value,
   selectedLabel,
-  managementCompanyId,
+  entityId,
   onChange,
 }: PropertyFilterChipProps) {
   return (
@@ -28,7 +28,7 @@ export function PropertyFilterChip({
         value={value}
         selectedLabel={selectedLabel}
         onChange={onChange}
-        managementCompanyId={managementCompanyId}
+        entityId={entityId}
         placeholder="Filter by property"
         searchPlaceholder="Search properties"
         emptyMessage="No properties match"

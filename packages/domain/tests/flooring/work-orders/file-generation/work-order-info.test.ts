@@ -13,8 +13,8 @@ describe("renderWorkOrderInfo — always-present rows", () => {
     expect(html).toContain("<th>Job Type</th><td>Turn</td>")
   })
 
-  it("renders the Management Company row", () => {
-    expect(html).toContain("<th>Management Company</th><td>Cardinal Management</td>")
+  it("renders the Entity row", () => {
+    expect(html).toContain("<th>Entity</th><td>Cardinal Management</td>")
   })
 
   it("renders the Property row", () => {

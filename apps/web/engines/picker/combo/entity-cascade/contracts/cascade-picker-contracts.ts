@@ -10,7 +10,7 @@ export type CascadeSelection = {
  * `null` clears it. No cascade side-effects (no downstream clear).
  */
 export type CascadePickerSeed = {
-  managementCompany?: CascadeSelection | null
+  entity?: CascadeSelection | null
   property?: CascadeSelection | null
   template?: CascadeSelection | null
 }

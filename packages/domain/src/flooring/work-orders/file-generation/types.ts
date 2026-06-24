@@ -86,7 +86,7 @@ export type WorkOrderFileGenerationInput = {
     postalCode: string
     instructions: string
   }
-  managementCompanyName: string
+  entityName: string
   warehouse: {
     name: string
     streetAddress: string

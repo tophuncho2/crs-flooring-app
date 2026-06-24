@@ -1,9 +1,9 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import {
   listPropertiesUseCase,
-  searchManagementCompanyOptionsUseCase,
+  searchEntityOptionsUseCase,
 } from "@builders/application"
-import type { ManagementCompanyOption } from "@builders/domain"
+import type { EntityOption } from "@builders/domain"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
 import PropertiesClient from "@/modules/properties/components/list/properties-client"
@@ -26,38 +26,38 @@ export default async function FlooringPropertiesPage({
 
   const queryClient = new QueryClient()
 
-  let initialManagementCompanyOptions: ManagementCompanyOption[] = []
-  let initialSelectedManagementCompany: ManagementCompanyOption | null = null
+  let initialEntityOptions: EntityOption[] = []
+  let initialSelectedEntity: EntityOption | null = null
 
   try {
-    const selectedManagementCompanyId =
-      initialInput.filters?.managementCompanyId?.[0] ?? null
+    const selectedEntityId =
+      initialInput.filters?.entityId?.[0] ?? null
 
     const [, optionsPage] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...PROPERTIES_LIST_QUERY_KEY, initialInput],
         queryFn: () => listPropertiesUseCase(initialInput),
       }),
-      searchManagementCompanyOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
+      searchEntityOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
-    initialManagementCompanyOptions = optionsPage.items
+    initialEntityOptions = optionsPage.items
 
-    if (selectedManagementCompanyId) {
+    if (selectedEntityId) {
       const seeded = optionsPage.items.find(
-        (option) => option.id === selectedManagementCompanyId,
+        (option) => option.id === selectedEntityId,
       )
       if (seeded) {
-        initialSelectedManagementCompany = seeded
+        initialSelectedEntity = seeded
       } else {
         const match = (
-          await searchManagementCompanyOptionsUseCase({
-            search: selectedManagementCompanyId,
+          await searchEntityOptionsUseCase({
+            search: selectedEntityId,
             take: 1,
           })
         ).items[0]
-        if (match && match.id === selectedManagementCompanyId) {
-          initialSelectedManagementCompany = match
+        if (match && match.id === selectedEntityId) {
+          initialSelectedEntity = match
         }
       }
     }
@@ -78,8 +78,8 @@ export default async function FlooringPropertiesPage({
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}
-        initialManagementCompanyOptions={initialManagementCompanyOptions}
-        initialSelectedManagementCompany={initialSelectedManagementCompany}
+        initialEntityOptions={initialEntityOptions}
+        initialSelectedEntity={initialSelectedEntity}
       />
     </HydrationBoundary>
   )

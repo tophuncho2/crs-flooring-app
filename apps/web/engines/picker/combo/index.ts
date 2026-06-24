@@ -1,1 +1,1 @@
-export * from "./management-cascade"
+export * from "./entity-cascade"

@@ -1,37 +1,37 @@
 "use client"
 
-import type { ManagementCompanyOption } from "@builders/domain"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
+import type { EntityOption } from "@builders/domain"
+import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
 
-export type ManagementCompanyFilterChipProps = {
+export type EntityFilterChipProps = {
   value: string | null
   selectedLabel: string | null
   onChange: (id: string | null) => void
-  initialOptions?: ManagementCompanyOption[]
+  initialOptions?: EntityOption[]
 }
 
 /**
  * Properties list-view chip — narrows the table to a single management
- * company. Renders the canonical `ManagementCompanyPicker` so the
+ * company. Renders the canonical `EntityPicker` so the
  * dropdown chrome + server-side search is shared with every other consumer.
  */
-export function ManagementCompanyFilterChip({
+export function EntityFilterChip({
   value,
   selectedLabel,
   onChange,
   initialOptions,
-}: ManagementCompanyFilterChipProps) {
+}: EntityFilterChipProps) {
   return (
-    <ManagementCompanyPicker
+    <EntityPicker
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}
       initialOptions={initialOptions}
-      placeholder="Management company"
-      searchPlaceholder="Search companies"
-      emptyMessage="No companies match"
+      placeholder="Entity"
+      searchPlaceholder="Search entities"
+      emptyMessage="No entities match"
       clearLabel="Clear filter"
-      ariaLabel="Filter properties by management company"
+      ariaLabel="Filter properties by entity"
     />
   )
 }

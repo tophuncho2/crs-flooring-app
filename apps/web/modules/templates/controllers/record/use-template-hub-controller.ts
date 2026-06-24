@@ -17,7 +17,7 @@ import {
 
 /**
  * Cascade preset threaded in from the hub page's search params (deep links +
- * the list / MC / work-order hand-offs). Re-uses the engine's selection shape.
+ * the list / entity / work-order hand-offs). Re-uses the engine's selection shape.
  */
 export type TemplateHubInitialSelections = CascadePickerInitialSelections
 
@@ -34,12 +34,12 @@ export type TemplateHubController = {
 
 /**
  * Controller for the template hub — the single templates page. Composes the
- * shared cascade picker (Management Company → Property → Template), loads the
+ * shared cascade picker (Entity → Property → Template), loads the
  * full editable template record when one is selected, pre-sets the pickers from
  * that loaded record, mirrors the selection into the URL (`?templateId=…`,
  * shallow), and owns the page-level actions. The reference-header UI drives the
- * cascade through standalone MC/Property pickers + a clickable templates table;
- * the cascade controller still owns clear-downstream + auto-link MC.
+ * cascade through standalone entity/Property pickers + a clickable templates table;
+ * the cascade controller still owns clear-downstream + auto-link entity.
  */
 export function useTemplateHubController(
   options: {
@@ -85,8 +85,8 @@ export function useTemplateHubController(
     if (seededRef.current === templateDetail.id) return
     seededRef.current = templateDetail.id
     seed({
-      managementCompany: templateDetail.managementCompanyId
-        ? { id: templateDetail.managementCompanyId, label: templateDetail.managementCompanyName }
+      entity: templateDetail.entityId
+        ? { id: templateDetail.entityId, label: templateDetail.entityName }
         : null,
       property: templateDetail.propertyId
         ? { id: templateDetail.propertyId, label: templateDetail.propertyName }
@@ -104,8 +104,8 @@ export function useTemplateHubController(
       templateLabel: cascade.templateLabel,
       propertyId: cascade.propertyId,
       propertyLabel: cascade.propertyLabel,
-      managementCompanyId: cascade.managementCompanyId,
-      managementCompanyLabel: cascade.managementCompanyLabel,
+      entityId: cascade.entityId,
+      entityLabel: cascade.entityLabel,
       returnTo: returnToParam,
     })
     const current = `${window.location.pathname}${window.location.search}`
@@ -117,13 +117,13 @@ export function useTemplateHubController(
     cascade.templateLabel,
     cascade.propertyId,
     cascade.propertyLabel,
-    cascade.managementCompanyId,
-    cascade.managementCompanyLabel,
+    cascade.entityId,
+    cascade.entityLabel,
     returnToParam,
   ])
 
   // Step the record view to an adjacent template by number. Setting only the
-  // template id re-keys the detail query so the neighbor loads; MC/Property are
+  // template id re-keys the detail query so the neighbor loads; entity/Property are
   // left untouched here. The seed-on-load effect above then syncs the pickers to
   // the stepped-to record (existing load behavior, keeps pickers consistent).
   const stepToTemplate = useCallback(

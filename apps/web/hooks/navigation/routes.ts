@@ -67,15 +67,15 @@ const PROPERTIES_RECORD_BASE = "/dashboard/properties/record"
  * standalone record view at `/dashboard/properties/record`, with the selected
  * property riding in the query string (`?propertyId=…`) — mirroring the
  * inventory record-view contract. The page resolves the property's management
- * company itself (rendered read-only with a button to the MC record view), so
- * the `managementCompanyId` arg is no longer needed for routing; it is kept in
+ * company itself (rendered read-only with a button to the entity record view), so
+ * the `entityId` arg is no longer needed for routing; it is kept in
  * the signature for call-site compatibility. Shared by every property entry
- * point (the list, the WO/template "✎ Property" buttons, the MC record view's
+ * point (the list, the WO/template "✎ Property" buttons, the entity record view's
  * property list).
  */
 export function buildPropertyRecordHref(
   propertyId: string,
-  _managementCompanyId?: string | null,
+  _entityId?: string | null,
   returnTo?: string | null,
 ) {
   const searchParams = new URLSearchParams()
@@ -90,10 +90,10 @@ const TEMPLATE_HUB_BASE = "/dashboard/templates/edit"
  * The single entry point for "open a template". Templates have no standalone
  * record page — they live on the template hub (`/dashboard/templates/edit`),
  * selected via `?templateId=`. Pass whatever the caller already knows
- * (property/MC ids + labels) so the cascade pickers seed immediately; a caller
+ * (property/entity ids + labels) so the cascade pickers seed immediately; a caller
  * with only the id is fine — the hub fills the pickers from the loaded template.
  * No args → the empty hub (the app-shell icon entry). Shared by the templates
- * list, the MC record view's templates section, a work-order's template arrow,
+ * list, the entity record view's templates section, a work-order's template arrow,
  * and the create-template success redirect.
  */
 export function buildTemplateHubHref(options?: {
@@ -101,8 +101,8 @@ export function buildTemplateHubHref(options?: {
   templateLabel?: string | null
   propertyId?: string | null
   propertyLabel?: string | null
-  managementCompanyId?: string | null
-  managementCompanyLabel?: string | null
+  entityId?: string | null
+  entityLabel?: string | null
   returnTo?: string | null
 }): string {
   const searchParams = new URLSearchParams()
@@ -113,8 +113,8 @@ export function buildTemplateHubHref(options?: {
   set("templateLabel", options?.templateLabel)
   set("propertyId", options?.propertyId)
   set("propertyLabel", options?.propertyLabel)
-  set("managementCompanyId", options?.managementCompanyId)
-  set("managementCompanyLabel", options?.managementCompanyLabel)
+  set("entityId", options?.entityId)
+  set("entityLabel", options?.entityLabel)
   set("returnTo", options?.returnTo)
 
   const query = searchParams.toString()

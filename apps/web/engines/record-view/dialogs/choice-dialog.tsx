@@ -27,8 +27,8 @@ export type ChoiceDialogProps = {
  * Modal two-choice dialog. Renders a backdrop + centered card with a title,
  * message, and two action buttons (a primary/recommended and a secondary). Used
  * to branch navigation when an action produced more than one sensible
- * destination — e.g. the management form creating both a management company and
- * a property: "Go to property" vs "Go to management company".
+ * destination — e.g. the management form creating both a entity and
+ * a property: "Go to property" vs "Go to entity".
  *
  * Pure UI: no business logic. The consumer owns the `open` flag and performs the
  * navigation in `onPrimary` / `onSecondary`. When `onCancel` is omitted the

@@ -3,16 +3,16 @@
 import { describe, it, expect } from "vitest"
 import { renderHook, act } from "@testing-library/react"
 import type {
-  ManagementCompanyOption,
+  EntityOption,
   PropertyOption,
   TemplateOption,
 } from "@builders/domain"
 import { useCascadePickerController } from "@/engines/picker"
 
-function mc(overrides: Partial<ManagementCompanyOption> = {}): ManagementCompanyOption {
+function entityOption(overrides: Partial<EntityOption> = {}): EntityOption {
   return {
-    id: "mc-1",
-    name: "Acme Property Mgmt",
+    id: "entity-1",
+    entity: "Acme Property Mgmt",
     streetAddress: "",
     city: "",
     state: "",
@@ -34,8 +34,8 @@ function property(overrides: Partial<PropertyOption> = {}): PropertyOption {
     state: "TX",
     postalCode: "78701",
     instructions: "",
-    managementCompanyId: "mc-1",
-    managementCompanyName: "Acme Property Mgmt",
+    entityId: "entity-1",
+    entityName: "Acme Property Mgmt",
     ...overrides,
   }
 }
@@ -52,38 +52,38 @@ function template(overrides: Partial<TemplateOption> = {}): TemplateOption {
 }
 
 describe("useCascadePickerController", () => {
-  it("auto-links the management company when a property carrying one is selected", () => {
+  it("auto-links the entity when a property carrying one is selected", () => {
     const { result } = renderHook(() => useCascadePickerController())
 
     act(() => result.current.selectProperty(property()))
 
     expect(result.current.propertyId).toBe("prop-1")
     expect(result.current.propertyLabel).toBe("Maple Court")
-    expect(result.current.managementCompanyId).toBe("mc-1")
-    expect(result.current.managementCompanyLabel).toBe("Acme Property Mgmt")
+    expect(result.current.entityId).toBe("entity-1")
+    expect(result.current.entityLabel).toBe("Acme Property Mgmt")
   })
 
-  it("leaves the management company empty when the property has no linked MC", () => {
+  it("leaves the entity empty when the property has no linked entity", () => {
     const { result } = renderHook(() => useCascadePickerController())
 
     act(() =>
       result.current.selectProperty(
-        property({ managementCompanyId: null, managementCompanyName: null }),
+        property({ entityId: null, entityName: null }),
       ),
     )
 
     expect(result.current.propertyId).toBe("prop-1")
-    expect(result.current.managementCompanyId).toBeNull()
-    expect(result.current.managementCompanyLabel).toBeNull()
+    expect(result.current.entityId).toBeNull()
+    expect(result.current.entityLabel).toBeNull()
   })
 
-  it("preserves an existing management company when the picked property shares it", () => {
+  it("preserves an existing entity when the picked property shares it", () => {
     const { result } = renderHook(() => useCascadePickerController())
 
-    act(() => result.current.selectManagementCompany(mc()))
+    act(() => result.current.selectEntity(entityOption()))
     act(() => result.current.selectProperty(property()))
 
-    expect(result.current.managementCompanyId).toBe("mc-1")
+    expect(result.current.entityId).toBe("entity-1")
     expect(result.current.propertyId).toBe("prop-1")
   })
 
@@ -100,15 +100,15 @@ describe("useCascadePickerController", () => {
     expect(result.current.templateLabel).toBeNull()
   })
 
-  it("clears property and template when the management company changes", () => {
+  it("clears property and template when the entity changes", () => {
     const { result } = renderHook(() => useCascadePickerController())
 
     act(() => result.current.selectProperty(property()))
     act(() => result.current.selectTemplate(template()))
 
-    act(() => result.current.selectManagementCompany(mc({ id: "mc-2", name: "Other MC" })))
+    act(() => result.current.selectEntity(entityOption({ id: "entity-2", entity: "Other Entity" })))
 
-    expect(result.current.managementCompanyId).toBe("mc-2")
+    expect(result.current.entityId).toBe("entity-2")
     expect(result.current.propertyId).toBeNull()
     expect(result.current.propertyLabel).toBeNull()
     expect(result.current.templateId).toBeNull()
@@ -119,14 +119,14 @@ describe("useCascadePickerController", () => {
 
     act(() =>
       result.current.seed({
-        managementCompany: { id: "mc-9", label: "Seeded MC" },
+        entity: { id: "entity-9", label: "Seeded Entity" },
         property: { id: "prop-9", label: "Seeded Property" },
         template: { id: "tmpl-9", label: "3BR" },
       }),
     )
 
-    expect(result.current.managementCompanyId).toBe("mc-9")
-    expect(result.current.managementCompanyLabel).toBe("Seeded MC")
+    expect(result.current.entityId).toBe("entity-9")
+    expect(result.current.entityLabel).toBe("Seeded Entity")
     expect(result.current.propertyId).toBe("prop-9")
     expect(result.current.propertyLabel).toBe("Seeded Property")
     expect(result.current.templateId).toBe("tmpl-9")
@@ -156,7 +156,7 @@ describe("useCascadePickerController", () => {
     act(() => result.current.reset())
 
     expect(result.current.hasSelections).toBe(false)
-    expect(result.current.managementCompanyId).toBeNull()
+    expect(result.current.entityId).toBeNull()
     expect(result.current.propertyId).toBeNull()
     expect(result.current.templateId).toBeNull()
   })

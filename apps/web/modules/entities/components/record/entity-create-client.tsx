@@ -7,18 +7,18 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import { useMcCreateSection } from "@/modules/management-companies/controllers/record/primary/use-mc-create-section"
-import { ManagementCompanyCellsSection } from "./primary/management-company-cells-section"
+import { useEntityCreateSection } from "@/modules/entities/controllers/record/primary/use-entity-create-section"
+import { EntityCellsSection } from "./primary/entity-cells-section"
 
 /**
- * The Management Company **create** view, reached when a property without an MC
+ * The Entity **create** view, reached when a property without an entity
  * is linked from the standalone property record view
- * (`/dashboard/management-companies/new?property=<id>`). §1 = MC cells (a blank,
- * creatable primary). Saving creates the MC and links the in-tow property
+ * (`/dashboard/entities/new?property=<id>`). §1 = entity cells (a blank,
+ * creatable primary). Saving creates the entity and links the in-tow property
  * atomically (the property rides in `propertyId`), then redirects to the linked
  * property's record view.
  */
-function ManagementCompanyCreatePanel({
+function EntityCreatePanel({
   page,
   propertyId,
   backHref,
@@ -27,7 +27,7 @@ function ManagementCompanyCreatePanel({
   propertyId: string
   backHref: string
 }) {
-  const controller = useMcCreateSection({ page, propertyId, backHref })
+  const controller = useEntityCreateSection({ page, propertyId, backHref })
   const primary = controller.primarySection
 
   const sections: RecordPanelSectionConfig[] = [
@@ -36,14 +36,14 @@ function ManagementCompanyCreatePanel({
       type: "field",
       order: 0,
       slot: "primary",
-      dirtyLabel: "management company",
+      dirtyLabel: "entity",
       controller: primary,
       render: () => (
         <RecordPrimarySectionInstance
-          title="Management Company"
+          title="Entity"
           showHeader={false}
-          saveLabel="Create Management Company"
-          savingLabel="Creating Management Company..."
+          saveLabel="Create Entity"
+          savingLabel="Creating Entity..."
           error={primary.error}
           noticeMessage={primary.noticeMessage}
           noticeError={primary.noticeError}
@@ -53,7 +53,7 @@ function ManagementCompanyCreatePanel({
           onSave={() => void primary.save()}
           onDiscard={primary.discard}
         >
-          <ManagementCompanyCellsSection
+          <EntityCellsSection
             form={primary.localValue}
             editable={!primary.isSaving}
             onFieldChange={(field, value) =>
@@ -68,7 +68,7 @@ function ManagementCompanyCreatePanel({
   return <RecordMultiSectionPanel page={page} sections={sections} />
 }
 
-export function ManagementCompanyCreateClient({
+export function EntityCreateClient({
   propertyId,
   backHref,
 }: {
@@ -77,13 +77,13 @@ export function ManagementCompanyCreateClient({
 }) {
   return (
     <RecordDetailClientScaffold
-      title="New Management Company"
+      title="New Entity"
       backHref={backHref}
-      dirtyMessage="You have unsaved management-company changes. Leave without saving?"
+      dirtyMessage="You have unsaved entity changes. Leave without saving?"
       headerVariant="section"
     >
       {(page: RecordDetailClientScaffoldContext) => (
-        <ManagementCompanyCreatePanel page={page} propertyId={propertyId} backHref={backHref} />
+        <EntityCreatePanel page={page} propertyId={propertyId} backHref={backHref} />
       )}
     </RecordDetailClientScaffold>
   )

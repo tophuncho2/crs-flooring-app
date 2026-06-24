@@ -42,7 +42,7 @@ import { InventoryAdjustmentCreateModal } from "./adjustments/inventory-adjustme
  * embedded adjustment edit/create view, selection driven by the `?adjustment`
  * URL param the detail client owns). The "Duplicate" primary action opens the
  * inventory create form seeded from this row (`/dashboard/inventory/new?sourceId=`).
- * Mirrors the Management Company record view.
+ * Mirrors the Entity record view.
  */
 export function InventoryRecordView({
   page,
@@ -86,7 +86,7 @@ export function InventoryRecordView({
 
   // Clear the bridged embedded-dirty flag as we leave the embedded adjustment,
   // so backing out of a (clean or discarded) adjustment doesn't leave the
-  // inventory page falsely dirty (mirrors the MC `handleSelectProperty` reset).
+  // inventory page falsely dirty (mirrors the entity `handleSelectProperty` reset).
   const handleSelectAdjustment = useCallback(
     (id: string | null) => {
       if (id === null) setEmbeddedAdjustmentDirty(false)

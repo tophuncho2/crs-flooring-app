@@ -1,16 +1,16 @@
 import { buildAddressLine } from "../../shared/address/index.js"
 import { normalizePhoneNumber } from "../../shared/phone.js"
 import type {
-  ManagementCompanyDetail,
-  ManagementCompanyListRow,
-  ManagementCompanyOption,
+  EntityDetail,
+  EntityListRow,
+  EntityOption,
 } from "./types.js"
 
-type ManagementCompanyDetailInput = {
+type EntityDetailInput = {
   id: string
   createdAt: Date | string
   updatedAt: Date | string
-  name: string
+  entity: string
   streetAddress: string | null
   city: string | null
   state: string | null
@@ -20,11 +20,11 @@ type ManagementCompanyDetailInput = {
   _count: { properties: number }
 }
 
-type ManagementCompanyListRowInput = {
+type EntityListRowInput = {
   id: string
   createdAt: Date | string
   updatedAt: Date | string
-  name: string
+  entity: string
   streetAddress: string | null
   city: string | null
   state: string | null
@@ -34,43 +34,43 @@ type ManagementCompanyListRowInput = {
   _count: { properties: number }
 }
 
-export function normalizeManagementCompany(company: ManagementCompanyDetailInput): ManagementCompanyDetail {
+export function normalizeEntity(entity: EntityDetailInput): EntityDetail {
   return {
-    id: company.id,
-    createdAt: company.createdAt instanceof Date ? company.createdAt.toISOString() : company.createdAt,
-    updatedAt: company.updatedAt instanceof Date ? company.updatedAt.toISOString() : company.updatedAt,
-    name: company.name,
-    streetAddress: company.streetAddress ?? "",
-    city: company.city ?? "",
-    state: company.state ?? "",
-    zip: company.postalCode ?? "",
-    phone: normalizePhoneNumber(company.phone ?? ""),
-    email: company.email ?? "",
-    fullAddress: buildAddressLine(company),
-    propertyCount: company._count.properties,
+    id: entity.id,
+    createdAt: entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt,
+    updatedAt: entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt,
+    entity: entity.entity,
+    streetAddress: entity.streetAddress ?? "",
+    city: entity.city ?? "",
+    state: entity.state ?? "",
+    zip: entity.postalCode ?? "",
+    phone: normalizePhoneNumber(entity.phone ?? ""),
+    email: entity.email ?? "",
+    fullAddress: buildAddressLine(entity),
+    propertyCount: entity._count.properties,
   }
 }
 
-export function normalizeManagementCompanyListRow(company: ManagementCompanyListRowInput): ManagementCompanyListRow {
+export function normalizeEntityListRow(entity: EntityListRowInput): EntityListRow {
   return {
-    id: company.id,
-    createdAt: company.createdAt instanceof Date ? company.createdAt.toISOString() : company.createdAt,
-    updatedAt: company.updatedAt instanceof Date ? company.updatedAt.toISOString() : company.updatedAt,
-    name: company.name,
-    streetAddress: company.streetAddress ?? "",
-    city: company.city ?? "",
-    state: company.state ?? "",
-    zip: company.postalCode ?? "",
-    phone: normalizePhoneNumber(company.phone ?? ""),
-    email: company.email ?? "",
-    fullAddress: buildAddressLine(company),
-    propertyCount: company._count.properties,
+    id: entity.id,
+    createdAt: entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt,
+    updatedAt: entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt,
+    entity: entity.entity,
+    streetAddress: entity.streetAddress ?? "",
+    city: entity.city ?? "",
+    state: entity.state ?? "",
+    zip: entity.postalCode ?? "",
+    phone: normalizePhoneNumber(entity.phone ?? ""),
+    email: entity.email ?? "",
+    fullAddress: buildAddressLine(entity),
+    propertyCount: entity._count.properties,
   }
 }
 
-type ManagementCompanyOptionInput = {
+type EntityOptionInput = {
   id: string
-  name: string
+  entity: string
   streetAddress: string | null
   city: string | null
   state: string | null
@@ -79,16 +79,16 @@ type ManagementCompanyOptionInput = {
   email: string | null
 }
 
-export function normalizeManagementCompanyOption(company: ManagementCompanyOptionInput): ManagementCompanyOption {
+export function normalizeEntityOption(entity: EntityOptionInput): EntityOption {
   return {
-    id: company.id,
-    name: company.name,
-    streetAddress: company.streetAddress ?? "",
-    city: company.city ?? "",
-    state: company.state ?? "",
-    zip: company.postalCode ?? "",
-    phone: normalizePhoneNumber(company.phone ?? ""),
-    email: company.email ?? "",
-    fullAddress: buildAddressLine(company),
+    id: entity.id,
+    entity: entity.entity,
+    streetAddress: entity.streetAddress ?? "",
+    city: entity.city ?? "",
+    state: entity.state ?? "",
+    zip: entity.postalCode ?? "",
+    phone: normalizePhoneNumber(entity.phone ?? ""),
+    email: entity.email ?? "",
+    fullAddress: buildAddressLine(entity),
   }
 }

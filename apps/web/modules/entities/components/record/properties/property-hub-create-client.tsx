@@ -6,11 +6,11 @@ import {
   RecordSingleSectionPanel,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import { EMPTY_MANAGEMENT_COMPANY_FORM } from "@builders/domain"
+import { EMPTY_ENTITY_FORM } from "@builders/domain"
 import { ActionHeader } from "@/engines/common"
-import { usePropertyHubCreateSection } from "@/modules/management-companies/controllers/record/properties/use-property-hub-create-section"
+import { usePropertyHubCreateSection } from "@/modules/entities/controllers/record/properties/use-property-hub-create-section"
 import { PropertyFieldsSection } from "@/modules/properties/components/record/primary/property-fields-section"
-import { ManagementCompanySelectSection } from "./primary/management-company-select-section"
+import { EntitySelectSection } from "./primary/entity-select-section"
 
 const SECTION_CARD_CLASS =
   "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
@@ -18,21 +18,21 @@ const SECTION_CARD_CLASS =
 /**
  * The unified property "hub" create form on the record-view engine — replaces
  * the retired hub side panel. One Create button over two groups: a management
- * company (link or create) and the property fields. Saving creates them
+ * entity (link or create) and the property fields. Saving creates them
  * atomically via `/api/properties/hub` and lands on the created record.
  */
-export type HubCreateManagementCompanySeed = { id: string; label: string | null }
+export type HubCreateEntitySeed = { id: string; label: string | null }
 
 function PropertyHubCreatePanel({
   page,
   backHref,
-  initialManagementCompany,
+  initialEntity,
 }: {
   page: RecordDetailClientScaffoldContext
   backHref: string
-  initialManagementCompany?: HubCreateManagementCompanySeed | null
+  initialEntity?: HubCreateEntitySeed | null
 }) {
-  const controller = usePropertyHubCreateSection({ page, backHref, initialManagementCompany })
+  const controller = usePropertyHubCreateSection({ page, backHref, initialEntity })
   const primary = controller.primarySection
   const editable = !primary.isSaving
 
@@ -46,7 +46,7 @@ function PropertyHubCreatePanel({
       savingLabel="Creating…"
     >
       <div className="space-y-4">
-        <ManagementCompanySelectSection
+        <EntitySelectSection
           value={primary.localValue}
           disabled={!editable}
           onLink={(option) =>
@@ -54,19 +54,19 @@ function PropertyHubCreatePanel({
               option
                 ? {
                     ...prev,
-                    mcLinkId: option.id,
-                    mcLinkLabel: option.name,
-                    mcForm: EMPTY_MANAGEMENT_COMPANY_FORM,
+                    entityLinkId: option.id,
+                    entityLinkLabel: option.entity,
+                    entityForm: EMPTY_ENTITY_FORM,
                   }
-                : { ...prev, mcLinkId: null, mcLinkLabel: null },
+                : { ...prev, entityLinkId: null, entityLinkLabel: null },
             )
           }
-          onMcFieldChange={(field, next) =>
+          onEntityFieldChange={(field, next) =>
             primary.setLocalValue((prev) => ({
               ...prev,
-              mcLinkId: null,
-              mcLinkLabel: null,
-              mcForm: { ...prev.mcForm, [field]: next },
+              entityLinkId: null,
+              entityLinkLabel: null,
+              entityForm: { ...prev.entityForm, [field]: next },
             }))
           }
         />
@@ -93,11 +93,11 @@ function PropertyHubCreatePanel({
       <ChoiceDialog
         open={controller.choiceDialog.open}
         title="Created"
-        message="The management company and property were both created. Where would you like to go?"
+        message="The entity and property were both created. Where would you like to go?"
         primaryLabel="Go to property"
         onPrimary={controller.choiceDialog.goToProperty}
-        secondaryLabel="Go to management company"
-        onSecondary={controller.choiceDialog.goToManagementCompany}
+        secondaryLabel="Go to entity"
+        onSecondary={controller.choiceDialog.goToEntity}
       />
     ) : null}
     </>
@@ -106,10 +106,10 @@ function PropertyHubCreatePanel({
 
 export function PropertyHubCreateClient({
   backHref,
-  initialManagementCompany,
+  initialEntity,
 }: {
   backHref: string
-  initialManagementCompany?: HubCreateManagementCompanySeed | null
+  initialEntity?: HubCreateEntitySeed | null
 }) {
   return (
     <RecordCreateClientScaffold
@@ -121,7 +121,7 @@ export function PropertyHubCreateClient({
         <PropertyHubCreatePanel
           page={page}
           backHref={backHref}
-          initialManagementCompany={initialManagementCompany}
+          initialEntity={initialEntity}
         />
       )}
     </RecordCreateClientScaffold>

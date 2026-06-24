@@ -16,8 +16,8 @@ export function renderPropertyRowCell(
       return <span className="font-medium">{row.name}</span>
     case "propertyNumber":
       return <span className="tabular-nums">{row.propertyNumber}</span>
-    case "managementCompany":
-      return row.managementCompany?.name ?? "-"
+    case "entity":
+      return row.entity?.entity ?? "-"
     case "streetAddress":
       return row.streetAddress || "-"
     case "city":

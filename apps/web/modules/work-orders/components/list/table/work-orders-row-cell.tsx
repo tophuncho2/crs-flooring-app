@@ -24,8 +24,8 @@ export function renderWorkOrderRowCell(
       return row.description || "-"
     case "propertyName":
       return row.propertyName || "-"
-    case "managementCompanyName":
-      return row.managementCompanyName || "-"
+    case "entityName":
+      return row.entityName || "-"
     case "jobTypeName":
       return row.jobTypeName || "-"
     case "vacancy":

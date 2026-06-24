@@ -16,10 +16,10 @@ import {
 } from "@/engines/record-view"
 import {
   formatEasternDateTime,
-  toManagementCompanyForm,
-  type ManagementCompanyDetail,
-  type ManagementCompanyForm,
-  type ManagementCompanyOption,
+  toEntityForm,
+  type EntityDetail,
+  type EntityForm,
+  type EntityOption,
   type PropertyDetailRecord,
 } from "@builders/domain"
 import {
@@ -29,13 +29,13 @@ import {
 } from "@/hooks/navigation/routes"
 import { usePropertyPrimarySection } from "@/modules/properties/controllers/record/use-property-primary-section"
 import { PropertyFieldsSection } from "./primary/property-fields-section"
-import { ManagementCompanyPickerSection } from "./primary/management-company-picker-section"
+import { EntityPickerSection } from "./primary/entity-picker-section"
 import { PropertyTemplatesSection } from "./templates/property-templates-section"
 
 /** Hydrate the read-only contact cells from a freshly picked option. */
-function toDisplayForm(option: ManagementCompanyOption): ManagementCompanyForm {
+function toDisplayForm(option: EntityOption): EntityForm {
   return {
-    name: option.name,
+    entity: option.entity,
     streetAddress: option.streetAddress,
     city: option.city,
     state: option.state,
@@ -46,26 +46,26 @@ function toDisplayForm(option: ManagementCompanyOption): ManagementCompanyForm {
 }
 
 /**
- * The standalone Property record view. ① the management company — a live MC
+ * The standalone Property record view. ① the entity — a live entity
  * picker (Company-Name cell) with its Phone/Email/Address shown read-only, above
  * the editable property cells; picking a company is a dirty edit saved with the
- * property, and the `RecordOpenButton` on the label hands off to the MC record
+ * property, and the `RecordOpenButton` on the label hands off to the entity record
  * view — one section · ② the shared templates reference section (always shown),
- * with the property pre-seeded and locked — plus the MC when the property has one
+ * with the property pre-seeded and locked — plus the entity when the property has one
  * — so only a template is choosable.
  *
- * Reached by clicking a property anywhere (the properties list, the MC record
+ * Reached by clicking a property anywhere (the properties list, the entity record
  * view's property list, the WO/template "✎ Property" buttons) — it no longer
- * embeds inside the MC record view.
+ * embeds inside the entity record view.
  */
 export function PropertyRecordView({
   page,
   entry,
-  managementCompany,
+  entity,
 }: {
   page: RecordDetailClientScaffoldContext
   entry: PropertyDetailRecord
-  managementCompany: ManagementCompanyDetail | null
+  entity: EntityDetail | null
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -76,11 +76,11 @@ export function PropertyRecordView({
   const record = controller.record
   const deletion = useRecordDeleteConfirmation(controller.deleteRecord)
 
-  const linkedMc = record.managementCompany
+  const linkedEntity = record.entity
 
   // Record-view shell stepper (◀ PROP-# ▶). Properties live on a true SSR record
   // page, so stepping to a neighbor is a `router.push` of `?propertyId=` (which
-  // re-runs the server loader for the neighbor + its MC). The existing `returnTo`
+  // re-runs the server loader for the neighbor + its entity). The existing `returnTo`
   // is preserved so "back" still lands on the original list across steps.
   const returnToParam = searchParams.get("returnTo")
   const stepPrevious = entry.previousProperty
@@ -88,36 +88,36 @@ export function PropertyRecordView({
   const stepTo = (id: string) =>
     router.push(buildPropertyRecordHref(id, null, returnToParam))
 
-  // The picked MC id lives in the primary draft (dirty-tracked, saved with the
+  // The picked entity id lives in the primary draft (dirty-tracked, saved with the
   // property). The contact cells read from local display state, seeded from the
-  // server-loaded MC detail and refreshed when a different company is picked.
-  const selectedMcId = primary.localValue.managementCompanyId || null
-  const [mcDisplay, setMcDisplay] = useState<ManagementCompanyForm | null>(
-    managementCompany ? toManagementCompanyForm(managementCompany) : null,
+  // server-loaded entity detail and refreshed when a different company is picked.
+  const selectedEntityId = primary.localValue.entityId || null
+  const [entityDisplay, setEntityDisplay] = useState<EntityForm | null>(
+    entity ? toEntityForm(entity) : null,
   )
-  const [mcLabel, setMcLabel] = useState<string | null>(linkedMc?.name ?? null)
+  const [entityLabel, setEntityLabel] = useState<string | null>(linkedEntity?.entity ?? null)
 
-  const selectManagementCompany = (option: ManagementCompanyOption | null) => {
-    setMcDisplay(option ? toDisplayForm(option) : null)
-    setMcLabel(option?.name ?? null)
+  const selectEntity = (option: EntityOption | null) => {
+    setEntityDisplay(option ? toDisplayForm(option) : null)
+    setEntityLabel(option?.entity ?? null)
   }
 
   // A quick/proper-created company fills the cell exactly like a picked one: link
   // it in the dirty draft (saves with the property) and refresh the display cells.
-  const handleManagementCompanyCreated = (option: ManagementCompanyOption) => {
+  const handleEntityCreated = (option: EntityOption) => {
     primary.setLocalValue((previous) => ({
       ...previous,
-      managementCompanyId: option.id,
+      entityId: option.id,
     }))
-    selectManagementCompany(option)
+    selectEntity(option)
   }
 
-  const openManagementCompany = () => {
-    if (!selectedMcId) return
+  const openEntity = () => {
+    if (!selectedEntityId) return
     router.push(
       buildRecordDetailHref(
-        "/dashboard/management-companies",
-        selectedMcId,
+        "/dashboard/entities",
+        selectedEntityId,
         buildCurrentRecordEntryPath(pathname, searchParams),
       ),
     )
@@ -147,21 +147,21 @@ export function PropertyRecordView({
           deleteLabel="Delete Property"
         >
           <div className="flex flex-col gap-4">
-            <ManagementCompanyPickerSection
-              value={selectedMcId}
+            <EntityPickerSection
+              value={selectedEntityId}
               onChange={(id) =>
                 primary.setLocalValue((previous) => ({
                   ...previous,
-                  managementCompanyId: id ?? "",
+                  entityId: id ?? "",
                 }))
               }
-              onOptionSelected={selectManagementCompany}
-              selectedLabel={mcLabel}
-              display={mcDisplay}
+              onOptionSelected={selectEntity}
+              selectedLabel={entityLabel}
+              display={entityDisplay}
               editable={!primary.isSaving}
-              onOpen={openManagementCompany}
+              onOpen={openEntity}
               returnTo={buildCurrentRecordEntryPath(pathname, searchParams)}
-              onCreated={handleManagementCompanyCreated}
+              onCreated={handleEntityCreated}
             />
             <div className="border-t border-[var(--panel-border)]" />
             <PropertyFieldsSection
@@ -200,7 +200,7 @@ export function PropertyRecordView({
     type: "item",
     order: 20,
     render: () => (
-      <PropertyTemplatesSection managementCompany={linkedMc} property={record} />
+      <PropertyTemplatesSection entity={linkedEntity} property={record} />
     ),
   })
 

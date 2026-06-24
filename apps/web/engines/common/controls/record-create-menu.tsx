@@ -28,9 +28,9 @@ export function RecordCreateMenu({
   ariaLabel,
   renderModal,
 }: {
-  /** Sticky header + default aria label, e.g. "New management company". */
+  /** Sticky header + default aria label, e.g. "New entity". */
   heading: string
-  /** Create-page base, e.g. "/dashboard/management-companies" → `{base}/new`. */
+  /** Create-page base, e.g. "/dashboard/entities" → `{base}/new`. */
   basePath: string
   /** Record-entry path the proper-form route returns to after create. */
   returnTo: string

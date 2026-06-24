@@ -1,51 +1,51 @@
 "use client"
 
 import { QuickCreateModal } from "@/engines/record-view"
-import type { ManagementCompanyDetail } from "@builders/domain"
-import { ManagementCompanyCellsSection } from "@/modules/management-companies/components/record/primary/management-company-cells-section"
-import { useManagementCompanyQuickCreate } from "@/modules/management-companies/controllers/record/use-management-company-quick-create"
+import type { EntityDetail } from "@builders/domain"
+import { EntityCellsSection } from "@/modules/entities/components/record/primary/entity-cells-section"
+import { useEntityQuickCreate } from "@/modules/entities/controllers/record/use-entity-quick-create"
 
 /**
- * The management-company **quick create** form mounted in a modal inside a record
- * view — the modal counterpart to the full `/dashboard/management-companies/new`
- * page. Reuses the shared `ManagementCompanyCellsSection` with its full field set
- * (Company Name + Phone / Email / Address). Creates via `/api/management-companies`,
- * then hands the created `ManagementCompanyDetail` back through `onCreated` so the
+ * The entity **quick create** form mounted in a modal inside a record
+ * view — the modal counterpart to the full `/dashboard/entities/new`
+ * page. Reuses the shared `EntityCellsSection` with its full field set
+ * (Entity Name + Phone / Email / Address). Creates via `/api/entities`,
+ * then hands the created `EntityDetail` back through `onCreated` so the
  * host fills the originating cell — no navigation.
  *
  * Mount it conditionally (only while open) so each open starts from a clean
  * controller snapshot.
  */
-export function ManagementCompanyQuickCreateModal({
+export function EntityQuickCreateModal({
   open,
   onClose,
   onCreated,
 }: {
   open: boolean
   onClose: () => void
-  onCreated: (managementCompany: ManagementCompanyDetail) => void
+  onCreated: (entity: EntityDetail) => void
 }) {
-  const controller = useManagementCompanyQuickCreate()
+  const controller = useEntityQuickCreate()
   const editable = !controller.isSaving
 
   async function handleCreate() {
     const result = await controller.save()
-    if (result?.managementCompany) {
-      onCreated(result.managementCompany)
+    if (result?.entity) {
+      onCreated(result.entity)
     }
   }
 
   return (
     <QuickCreateModal
       open={open}
-      title="New Management Company"
+      title="New Entity"
       onClose={onClose}
       onCreate={() => void handleCreate()}
       canCreate={controller.canCreate}
       isSaving={controller.isSaving}
       error={controller.error}
     >
-      <ManagementCompanyCellsSection
+      <EntityCellsSection
         form={controller.localValue}
         editable={editable}
         onFieldChange={(field, value) =>

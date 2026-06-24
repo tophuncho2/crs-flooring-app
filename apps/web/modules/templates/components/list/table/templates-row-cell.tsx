@@ -16,8 +16,8 @@ export function renderTemplateRowCell(
       return row.unitType || "-"
     case "property":
       return row.propertyName || "-"
-    case "managementCompany":
-      return row.managementCompanyName || "-"
+    case "entity":
+      return row.entityName || "-"
     case "jobType":
       return row.jobTypeName || "-"
     case "warehouse":

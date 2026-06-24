@@ -1,6 +1,6 @@
 import {
-  createManagementCompanyUseCase,
-  listManagementCompaniesUseCase,
+  createEntityUseCase,
+  listEntitiesUseCase,
 } from "@builders/application"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { CRUD_CREATE } from "@/server/http/rate-limit-presets"
@@ -13,21 +13,21 @@ import {
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
 import {
-  validateCreateManagementCompanyInput,
-  validateListManagementCompaniesQuery,
+  validateCreateEntityInput,
+  validateListEntitiesQuery,
 } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request)
   if (access instanceof Response) return access
 
-  const rateLimited = await enforceQueryRateLimit(request, access, "/api/management-companies")
+  const rateLimited = await enforceQueryRateLimit(request, access, "/api/entities")
   if (rateLimited) return rateLimited
 
   try {
     const url = new URL(request.url)
-    const input = validateListManagementCompaniesQuery(url.searchParams)
-    const result = await listManagementCompaniesUseCase(input)
+    const input = validateListEntitiesQuery(url.searchParams)
+    const result = await listEntitiesUseCase(input)
     return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
@@ -38,18 +38,18 @@ export async function POST(request: Request) {
   const access = await applyRoutePolicy(request, {
     rateLimit: {
       ...CRUD_CREATE,
-      scope: "managementCompanies.create",
-      route: "/api/management-companies",
+      scope: "entities.create",
+      route: "/api/entities",
     },
   })
   if (access instanceof Response) return access
 
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const { input, mutation } = parseMutationEnvelope(body, validateCreateManagementCompanyInput)
+    const { input, mutation } = parseMutationEnvelope(body, validateCreateEntityInput)
 
     const receipt = await enforceMutationReceipt({
-      scope: "managementCompanies.create",
+      scope: "entities.create",
       request,
       access,
       mutation,
@@ -60,17 +60,17 @@ export async function POST(request: Request) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Management company created",
-        action: "managementCompanies.create",
-        route: "/api/management-companies",
-        entityType: "flooringManagementCompany",
+        message: "Entity created",
+        action: "entities.create",
+        route: "/api/entities",
+        entityType: "entity",
       },
-      () => createManagementCompanyUseCase(input),
+      () => createEntityUseCase(input),
     )
 
-    const responseBody = { managementCompany: result }
+    const responseBody = { entity: result }
     await finalizeMutationReceipt({
-      scope: "managementCompanies.create",
+      scope: "entities.create",
       access,
       mutation,
       responseStatus: 201,

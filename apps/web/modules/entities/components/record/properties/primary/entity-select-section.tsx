@@ -1,59 +1,59 @@
 "use client"
 
-import type { ManagementCompanyForm, ManagementCompanyOption } from "@builders/domain"
+import type { EntityForm, EntityOption } from "@builders/domain"
 import { CellAt, FieldSection, FormField } from "@/engines/record-view"
 import { ActionHeader } from "@/engines/common"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
-import { ManagementCompanyCellsSection } from "@/modules/management-companies/components/record/primary/management-company-cells-section"
+import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
+import { EntityCellsSection } from "@/modules/entities/components/record/primary/entity-cells-section"
 import {
-  deriveMcMode,
+  deriveEntityMode,
   type PropertyHubCreateForm,
-} from "@/modules/management-companies/controllers/record/properties/use-property-hub-create-section"
+} from "@/modules/entities/controllers/record/properties/use-property-hub-create-section"
 
 const SECTION_CARD_CLASS =
   "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
 
 /**
- * The management-company half of the hub create form: link an existing company
+ * The entity half of the hub create form: link an existing entity
  * (picker) OR create a new one (cells). The two are mutually exclusive — picking
- * a link disables the create cells and vice-versa (the legacy `deriveMcMode`
- * rule). Leaving both empty creates the property with no company.
+ * a link disables the create cells and vice-versa (the legacy `deriveEntityMode`
+ * rule). Leaving both empty creates the property with no entity.
  */
-export function ManagementCompanySelectSection({
+export function EntitySelectSection({
   value,
   disabled,
   onLink,
-  onMcFieldChange,
+  onEntityFieldChange,
   compact = false,
 }: {
   value: PropertyHubCreateForm
   disabled: boolean
-  onLink: (option: ManagementCompanyOption | null) => void
-  onMcFieldChange: <K extends keyof ManagementCompanyForm>(
+  onLink: (option: EntityOption | null) => void
+  onEntityFieldChange: <K extends keyof EntityForm>(
     field: K,
-    next: ManagementCompanyForm[K],
+    next: EntityForm[K],
   ) => void
   /**
-   * Trim the "create new" cells to Company Name only (no phone/email/address).
+   * Trim the "create new" cells to Entity Name only (no phone/email/address).
    * Used by the quick-create modal; the full hub page leaves this `false`.
    */
   compact?: boolean
 }) {
-  const mode = deriveMcMode(value)
+  const mode = deriveEntityMode(value)
 
   return (
     <div className={SECTION_CARD_CLASS}>
-      <ActionHeader title="Management Company" />
+      <ActionHeader title="Entity" />
       <div className="space-y-4 p-4">
         <FieldSection gap="0.75rem">
           <CellAt col={1} colSpan={6}>
-            <FormField label="Link existing company" required>
-              <ManagementCompanyPicker
-                value={value.mcLinkId}
-                selectedLabel={value.mcLinkLabel}
+            <FormField label="Link existing entity" required>
+              <EntityPicker
+                value={value.entityLinkId}
+                selectedLabel={value.entityLinkLabel}
                 disabled={disabled || mode === "create"}
-                placeholder="Link an existing company"
-                ariaLabel="Link existing management company"
+                placeholder="Link an existing entity"
+                ariaLabel="Link existing entity"
                 onChange={(id) => {
                   if (!id) onLink(null)
                 }}
@@ -69,10 +69,10 @@ export function ManagementCompanySelectSection({
           or create new
         </p>
 
-        <ManagementCompanyCellsSection
-          form={value.mcForm}
+        <EntityCellsSection
+          form={value.entityForm}
           editable={!disabled && mode !== "link"}
-          onFieldChange={onMcFieldChange}
+          onFieldChange={onEntityFieldChange}
           showContactAndAddress={!compact}
         />
       </div>

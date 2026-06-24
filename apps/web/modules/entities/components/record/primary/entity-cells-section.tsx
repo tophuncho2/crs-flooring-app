@@ -1,6 +1,6 @@
 "use client"
 
-import { formatPhoneNumber, type ManagementCompanyForm } from "@builders/domain"
+import { formatPhoneNumber, type EntityForm } from "@builders/domain"
 import {
   AddressEditCell,
   CellAt,
@@ -12,7 +12,7 @@ import {
 } from "@/engines/record-view"
 
 /**
- * A single labeled text field in the MC cells grid. Editable renders the live
+ * A single labeled text field in the entity cells grid. Editable renders the live
  * `TextCell` input; read-only renders the boxed `StaticFieldValue` so the value
  * reads as a filled cell (matching the Address cell and the app-wide read-only
  * convention) rather than a bare line of text.
@@ -52,51 +52,51 @@ function CellTextField({
 }
 
 /**
- * The Management Company "cells" field grid — the shared §1 layout that renders
- * **identically** on the MC record view (editable, its own primary) and the
- * Property record view (read-only, the linked MC). Edit modality is the only
+ * The Entity "cells" field grid — the shared §1 layout that renders
+ * **identically** on the entity record view (editable, its own primary) and the
+ * Property record view (read-only, the linked entity). Edit modality is the only
  * difference; pass `editable` + `onFieldChange` to drive it. The section shell
  * (title / save chrome) is supplied by the consumer.
  *
- * Layout: Company Name · Phone · Email · Address stacked one-per-row, each
+ * Layout: Entity Name · Phone · Email · Address stacked one-per-row, each
  * spanning 5/8 columns (address cell included).
  */
-export function ManagementCompanyCellsSection({
+export function EntityCellsSection({
   form,
   editable,
   onFieldChange,
   showContactAndAddress = true,
 }: {
-  form: ManagementCompanyForm
+  form: EntityForm
   editable: boolean
-  onFieldChange?: <K extends keyof ManagementCompanyForm>(
+  onFieldChange?: <K extends keyof EntityForm>(
     field: K,
-    value: ManagementCompanyForm[K],
+    value: EntityForm[K],
   ) => void
   /**
    * Render the Phone, Email, and Address cells. Default `true` (full form). The
-   * quick-create modal passes `false` to trim the "create new MC" cells down to
-   * Company Name only.
+   * quick-create modal passes `false` to trim the "create new entity" cells down to
+   * Entity Name only.
    */
   showContactAndAddress?: boolean
 }) {
   const onText =
-    <K extends keyof ManagementCompanyForm>(field: K) =>
+    <K extends keyof EntityForm>(field: K) =>
     (value: string) => {
-      onFieldChange?.(field, value as ManagementCompanyForm[K])
+      onFieldChange?.(field, value as EntityForm[K])
     }
 
   return (
     <FieldSection gap="0.75rem">
       <CellAt col={1} colSpan={5}>
         <CellTextField
-          label="Company Name"
+          label="Entity Name"
           required
           editable={editable}
-          value={form.name}
-          onChange={onText("name")}
-          placeholder="Company name"
-          ariaLabel="Company name"
+          value={form.entity}
+          onChange={onText("entity")}
+          placeholder="Entity name"
+          ariaLabel="Entity name"
         />
       </CellAt>
       {showContactAndAddress ? (

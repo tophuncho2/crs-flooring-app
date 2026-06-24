@@ -29,8 +29,8 @@ const propertyListSelect = {
   email: true,
   createdBy: true,
   updatedBy: true,
-  managementCompany: {
-    select: { id: true, name: true },
+  entity: {
+    select: { id: true, entity: true },
   },
   _count: {
     select: { templates: true },
@@ -55,8 +55,8 @@ const propertyDetailSelect = {
   instructions: true,
   createdBy: true,
   updatedBy: true,
-  managementCompany: {
-    select: { id: true, name: true },
+  entity: {
+    select: { id: true, entity: true },
   },
 } as const
 
@@ -69,9 +69,9 @@ const propertyOptionSelect = {
   state: true,
   postalCode: true,
   instructions: true,
-  managementCompanyId: true,
-  managementCompany: {
-    select: { name: true },
+  entityId: true,
+  entity: {
+    select: { entity: true },
   },
 } as const
 
@@ -89,7 +89,7 @@ export async function listPropertyOptions(
 /**
  * Resolve the property rows immediately before/after the given numeric sort key
  * in the global property-number order (`propertyNumberInt`). Powers the
- * record-view shell stepper — deliberately global: no MC / state scoping, the
+ * record-view shell stepper — deliberately global: no entity / state scoping, the
  * stepper walks the raw number line. Two single-row lookups on the
  * `propertyNumberInt` index. Both null when the key is null (no generated value
  * yet) or the row is at the sequence's edge.
@@ -160,7 +160,7 @@ export type PropertyListViewOptions = {
      * PROP-# bar. Non-digits are stripped, so "5" and "PROP-5" both find PROP-5.
      */
     propNumber?: string
-    managementCompanyId?: ReadonlyArray<string>
+    entityId?: ReadonlyArray<string>
     state?: ReadonlyArray<string>
   }
   skip: number
@@ -190,9 +190,9 @@ function buildListViewWhere(
     clauses.push({ propertyNumberInt: { equals: Number.isInteger(parsed) ? parsed : -1 } })
   }
 
-  const managementCompanyIds = options.filters?.managementCompanyId
-  if (managementCompanyIds && managementCompanyIds.length > 0) {
-    clauses.push({ managementCompanyId: { in: [...managementCompanyIds] } })
+  const entityIds = options.filters?.entityId
+  if (entityIds && entityIds.length > 0) {
+    clauses.push({ entityId: { in: [...entityIds] } })
   }
 
   const stateCodes = options.filters?.state
@@ -230,7 +230,7 @@ export async function listPropertiesForListView(
 
 export type PropertyOptionsSearchArgs = {
   search?: string
-  managementCompanyId?: string
+  entityId?: string
   skip?: number
   take: number
 }
@@ -248,8 +248,8 @@ export async function searchPropertyOptions(
   if (args.search) {
     clauses.push({ name: { contains: args.search, mode: "insensitive" } })
   }
-  if (args.managementCompanyId) {
-    clauses.push({ managementCompanyId: args.managementCompanyId })
+  if (args.entityId) {
+    clauses.push({ entityId: args.entityId })
   }
   const where: Prisma.PropertyWhereInput | undefined =
     clauses.length === 0 ? undefined : clauses.length === 1 ? clauses[0] : { AND: clauses }

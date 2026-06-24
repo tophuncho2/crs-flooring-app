@@ -18,7 +18,7 @@ export type PropertyOption = {
 }
 export type WarehouseOption = { id: string; name: string }
 export type JobTypeOption = { id: string; name: string }
-export type ManagementCompanyOption = { id: string; name: string }
+export type EntityOption = { id: string; name: string }
 export type ProductOption = {
   id: string
   label: string

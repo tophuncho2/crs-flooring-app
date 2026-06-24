@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     const responseBody = {
       property: result.property,
-      managementCompany: result.managementCompany,
+      entity: result.entity,
     }
     await finalizeMutationReceipt({
       scope: "properties.hub.create",

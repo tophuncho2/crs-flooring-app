@@ -4,14 +4,14 @@ import { describe, expect, it } from "vitest"
 const ROOT = path.join(process.cwd(), "..", "..")
 
 describe("record view feature alignment", () => {
-  it("manufacturers and management-companies have no @/modules/shared/engines imports", async () => {
+  it("manufacturers and entities have no @/modules/shared/engines imports", async () => {
     const migratedDirs = [
       "apps/web/modules/manufacturers",
-      "apps/web/modules/management-companies",
+      "apps/web/modules/entities",
       "apps/web/app/dashboard/manufacturers",
-      "apps/web/app/dashboard/management-companies",
+      "apps/web/app/dashboard/entities",
       "apps/web/app/api/manufacturers",
-      "apps/web/app/api/management-companies",
+      "apps/web/app/api/entities",
     ]
 
     const { execSync } = await import("node:child_process")

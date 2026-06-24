@@ -9,11 +9,11 @@ import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type PropertiesListFilters = {
   propNumber?: string
-  managementCompanyId?: ReadonlyArray<string>
+  entityId?: ReadonlyArray<string>
   state?: ReadonlyArray<string>
 }
 
-function normalizeManagementCompanyIds(
+function normalizeEntityIds(
   raw: ReadonlyArray<string> | undefined,
 ): ReadonlyArray<string> | undefined {
   if (!raw || raw.length === 0) return undefined
@@ -32,14 +32,14 @@ export async function listPropertiesUseCase(
 
   const search = input.search?.trim() || undefined
   const propNumber = input.filters?.propNumber?.trim() || undefined
-  const managementCompanyId = normalizeManagementCompanyIds(input.filters?.managementCompanyId)
+  const entityId = normalizeEntityIds(input.filters?.entityId)
   const state = normalizeStateCodeFilter(input.filters?.state)
 
   const filters =
-    propNumber || managementCompanyId || state
+    propNumber || entityId || state
       ? {
           ...(propNumber ? { propNumber } : {}),
-          ...(managementCompanyId ? { managementCompanyId } : {}),
+          ...(entityId ? { entityId } : {}),
           ...(state ? { state } : {}),
         }
       : undefined

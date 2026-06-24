@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest"
 import {
-  toManagementCompanyForm,
-  validateManagementCompanyForm,
-} from "../../../src/management/management-companies/form-rules.js"
+  toEntityForm,
+  validateEntityForm,
+} from "../../../src/management/entities/form-rules.js"
 import type {
-  ManagementCompanyDetail,
-  ManagementCompanyForm,
-} from "../../../src/management/management-companies/types.js"
+  EntityDetail,
+  EntityForm,
+} from "../../../src/management/entities/types.js"
 
-function form(overrides: Partial<ManagementCompanyForm> = {}): ManagementCompanyForm {
+function form(overrides: Partial<EntityForm> = {}): EntityForm {
   return {
-    name: "Acme",
+    entity: "Acme",
     streetAddress: "",
     city: "",
     state: "",
@@ -21,11 +21,11 @@ function form(overrides: Partial<ManagementCompanyForm> = {}): ManagementCompany
   }
 }
 
-function detail(overrides: Partial<ManagementCompanyDetail> = {}): ManagementCompanyDetail {
+function detail(overrides: Partial<EntityDetail> = {}): EntityDetail {
   return {
-    id: "mc-1",
+    id: "entity-1",
     updatedAt: "2026-05-26T00:00:00.000Z",
-    name: "Acme",
+    entity: "Acme",
     streetAddress: "1 Main St",
     city: "Austin",
     state: "TX",
@@ -37,24 +37,24 @@ function detail(overrides: Partial<ManagementCompanyDetail> = {}): ManagementCom
   }
 }
 
-describe("validateManagementCompanyForm", () => {
+describe("validateEntityForm", () => {
   it("returns no error for a valid form", () => {
-    expect(validateManagementCompanyForm(form())).toBe("")
+    expect(validateEntityForm(form())).toBe("")
   })
 
   it("flags an empty name", () => {
-    expect(validateManagementCompanyForm(form({ name: "" }))).toBe("Company name is required")
+    expect(validateEntityForm(form({ entity: "" }))).toBe("Entity name is required")
   })
 
   it("flags a whitespace-only name", () => {
-    expect(validateManagementCompanyForm(form({ name: "   " }))).toBe("Company name is required")
+    expect(validateEntityForm(form({ entity: "   " }))).toBe("Entity name is required")
   })
 })
 
-describe("toManagementCompanyForm", () => {
+describe("toEntityForm", () => {
   it("copies every form field from the detail record", () => {
-    expect(toManagementCompanyForm(detail())).toEqual({
-      name: "Acme",
+    expect(toEntityForm(detail())).toEqual({
+      entity: "Acme",
       streetAddress: "1 Main St",
       city: "Austin",
       state: "TX",

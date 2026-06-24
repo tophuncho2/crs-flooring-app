@@ -15,7 +15,7 @@ function callArgs() {
     search?: string
     filters?: {
       propNumber?: string
-      managementCompanyId?: ReadonlyArray<string>
+      entityId?: ReadonlyArray<string>
       state?: ReadonlyArray<string>
     }
     skip: number
@@ -65,9 +65,9 @@ describe("listPropertiesUseCase", () => {
     expect(callArgs().filters).toBeUndefined()
   })
 
-  it("trims and de-duplicates management company id filters", async () => {
-    await listPropertiesUseCase({ filters: { managementCompanyId: [" mc-1 ", "mc-1", "mc-2", "  "] } })
-    expect(callArgs().filters).toEqual({ managementCompanyId: ["mc-1", "mc-2"] })
+  it("trims and de-duplicates entity id filters", async () => {
+    await listPropertiesUseCase({ filters: { entityId: [" entity-1 ", "entity-1", "entity-2", "  "] } })
+    expect(callArgs().filters).toEqual({ entityId: ["entity-1", "entity-2"] })
   })
 
   it("normalizes state filters and drops invalid codes", async () => {
@@ -76,7 +76,7 @@ describe("listPropertiesUseCase", () => {
   })
 
   it("omits filters entirely when none survive normalization", async () => {
-    await listPropertiesUseCase({ filters: { managementCompanyId: ["  "], state: ["123"] } })
+    await listPropertiesUseCase({ filters: { entityId: ["  "], state: ["123"] } })
     expect(callArgs().filters).toBeUndefined()
   })
 

@@ -29,7 +29,7 @@ const BASE: WorkOrderFileGenerationInput = {
     postalCode: "78701",
     instructions: "",
   },
-  managementCompanyName: "Cardinal Management",
+  entityName: "Cardinal Management",
   warehouse: {
     name: "North Warehouse",
     streetAddress: "5 Depot Rd",

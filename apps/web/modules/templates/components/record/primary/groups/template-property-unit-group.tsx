@@ -28,14 +28,14 @@ import type { TemplatePrimaryDetail } from "../template-primary-fields-section"
 
 /**
  * Property & Unit field cluster, emitted as invisible-grid cells (no visual
- * group chrome). Management Company is a read-only mirror of the picked
- * property's MC (templates no longer store their own). The open-record (launch)
+ * group chrome). Entity is a read-only mirror of the picked
+ * property's entity (templates no longer store their own). The open-record (launch)
  * and New property affordances live in each cell's label-row `actions` slot
  * (`RecordOpenButton` / the shared `PropertyCreateMenu`), mirroring the
  * work-orders primary.
  *
  * Cascade rules come from the shared picker engine (`applyPropertySelection`):
- * picking a property back-fills its linked MC. `pickedMc` / `pickedPropertyLabel`
+ * picking a property back-fills its linked entity. `pickedMc` / `pickedPropertyLabel`
  * snapshot the picked option so the cells follow a re-select before save; both
  * reset when the bound detail record changes.
  */
@@ -53,7 +53,7 @@ export function TemplatePropertyUnitGroup({
   detail: TemplatePrimaryDetail | null
   propertyJoined: PropertyJoinedFields | null
   onFieldChange: (field: keyof TemplateForm, value: string) => void
-  /** Multi-field setter — used for the MC→Property cascade. */
+  /** Multi-field setter — used for the entity→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
   onPropertyOption: (option: PropertyOption | null) => void
 }) {
@@ -63,15 +63,15 @@ export function TemplatePropertyUnitGroup({
   const [pickedMc, setPickedMc] = useState<{ id: string | null; name: string | null } | null>(null)
 
   // Apply a property option to the cell — the shared path for both the picker
-  // and the quick-create modal: cascade-fill the draft, snapshot the label/MC,
+  // and the quick-create modal: cascade-fill the draft, snapshot the label/entity,
   // and feed the read-only Address/Instructions mirror.
   const selectProperty = (option: PropertyOption | null) => {
     const patch = applyPropertySelection(option)
     onFieldsChange({ propertyId: patch.propertyId ?? "" })
     setPickedPropertyLabel(patch.propertyLabel ?? null)
     setPickedMc({
-      id: option?.managementCompanyId ?? null,
-      name: option?.managementCompanyName ?? null,
+      id: option?.entityId ?? null,
+      name: option?.entityName ?? null,
     })
     onPropertyOption(option)
   }
@@ -85,10 +85,10 @@ export function TemplatePropertyUnitGroup({
     setPickedMc(null)
   }
 
-  const managementCompanyLabel = pickedMc ? pickedMc.name : detail?.managementCompanyName ?? null
-  const managementCompanyId = pickedMc ? pickedMc.id : detail?.managementCompanyId ?? null
+  const entityLabel = pickedMc ? pickedMc.name : detail?.entityName ?? null
+  const entityId = pickedMc ? pickedMc.id : detail?.entityId ?? null
   const propertyLabel = pickedPropertyLabel ?? detail?.propertyName ?? null
-  // Open targets follow the live selection (draft propertyId, picked/saved MC).
+  // Open targets follow the live selection (draft propertyId, picked/saved entity).
   const openPropertyId = propertyValue ?? detail?.propertyId ?? null
 
   // Local nav for the cell open/add affordances (mirrors work-orders primary —
@@ -130,18 +130,18 @@ export function TemplatePropertyUnitGroup({
       </CellAt>
       <CellAt col={1} row={3} colSpan={4}>
         <FormField
-          label="Management Company"
+          label="Entity"
           actions={
             <RecordOpenButton
-              ariaLabel="Open management company"
-              title="Open management company"
-              disabled={!managementCompanyId}
+              ariaLabel="Open entity"
+              title="Open entity"
+              disabled={!entityId}
               onClick={() => {
-                if (managementCompanyId) {
+                if (entityId) {
                   router.push(
                     buildRecordDetailHref(
-                      "/dashboard/management-companies",
-                      managementCompanyId,
+                      "/dashboard/entities",
+                      entityId,
                       returnTo,
                     ),
                   )
@@ -150,7 +150,7 @@ export function TemplatePropertyUnitGroup({
             />
           }
         >
-          <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
+          <StaticFieldValue>{entityLabel ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
       <CellAt col={1} row={4} colSpan={4}>
@@ -164,7 +164,7 @@ export function TemplatePropertyUnitGroup({
                 disabled={!openPropertyId}
                 onClick={() => {
                   if (openPropertyId) {
-                    router.push(buildPropertyRecordHref(openPropertyId, managementCompanyId, returnTo))
+                    router.push(buildPropertyRecordHref(openPropertyId, entityId, returnTo))
                   }
                 }}
               />

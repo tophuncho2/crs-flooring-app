@@ -52,17 +52,17 @@ export type { WorkOrderPrimaryDetail } from "./types"
  * Notes card groupings are gone — every field flows as one continuous grid.
  *
  * Layout: schedule pickers sit two-up (2 cols each) across the left half; from
- * the management-company cell down, every field is a single 4-col stack on the
+ * the entity cell down, every field is a single 4-col stack on the
  * left, leaving the right half open.
  *
- * The "open MC / Property / Template" + "new" affordances that used to live in a
+ * The "open entity / Property / Template" + "new" affordances that used to live in a
  * group header now sit in each field's label-row `actions` slot: a
  * `RecordOpenButton` plus, on the Property and Template cells, the shared
  * `PropertyCreateMenu` / `TemplateCreateMenu` (⋮ → Quick form / Proper form).
  *
  * Cascade rules come from the shared engine (`@/engines/picker`
  * `applyPropertySelection` / `applyTemplateSelection`):
- *  - Property change/clear → clears templateId, back-fills the property's MC
+ *  - Property change/clear → clears templateId, back-fills the property's entity
  *  - Template change → no cascade
  *  - Template option-select also writes the template's unitType into the draft
  *    (WO-specific side-effect, not a cascade rule).
@@ -78,7 +78,7 @@ export function WorkOrderPrimaryFieldsSection({
   detail: WorkOrderPrimaryDetail | null
   disabled: boolean
   onFieldChange: <K extends keyof WorkOrderForm>(field: K, value: WorkOrderForm[K]) => void
-  /** Multi-field setter — used for the MC→Property→Template cascade. */
+  /** Multi-field setter — used for the entity→Property→Template cascade. */
   onFieldsChange: (patch: Partial<WorkOrderForm>) => void
 }) {
   const editable = !disabled
@@ -106,9 +106,9 @@ export function WorkOrderPrimaryFieldsSection({
     setPickedJobTypeLabel(null)
   }
 
-  // The management company is a read-only mirror of the selected property's MC
-  // (work orders no longer store their own). Track the picked property's MC id +
-  // name so the cell + "open MC" link follow a re-select before save.
+  // The entity is a read-only mirror of the selected property's entity
+  // (work orders no longer store their own). Track the picked property's entity id +
+  // name so the cell + "open entity" link follow a re-select before save.
   const [pickedPropertyLabel, setPickedPropertyLabel] = useState<string | null>(null)
   const [pickedTemplateLabel, setPickedTemplateLabel] = useState<string | null>(null)
   const [pickedMc, setPickedMc] = useState<{ id: string | null; name: string | null } | null>(null)
@@ -127,8 +127,8 @@ export function WorkOrderPrimaryFieldsSection({
 
   const warehouseLabel = pickedWarehouseLabel ?? detail?.warehouseName ?? null
   const jobTypeLabel = pickedJobTypeLabel ?? detail?.jobTypeName ?? null
-  const managementCompanyValue = pickedMc ? pickedMc.id : detail?.managementCompanyId ?? null
-  const managementCompanyLabel = pickedMc ? pickedMc.name : detail?.managementCompanyName ?? null
+  const entityValue = pickedMc ? pickedMc.id : detail?.entityId ?? null
+  const entityLabel = pickedMc ? pickedMc.name : detail?.entityName ?? null
   const propertyLabel = pickedPropertyLabel ?? detail?.propertyName ?? null
   const templateLabel = pickedTemplateLabel ?? (detail?.templateUnitType || null)
 
@@ -150,7 +150,7 @@ export function WorkOrderPrimaryFieldsSection({
 
   // Apply a property option to the cell — the shared path for both the picker and
   // the quick-create menu: cascade-fill the draft (clearing the template),
-  // snapshot the labels + mirrored MC, and feed the Address/Instructions preview.
+  // snapshot the labels + mirrored entity, and feed the Address/Instructions preview.
   const handlePropertySelected = (option: PropertyOption | null) => {
     const patch = applyPropertySelection(option)
     onFieldsChange({
@@ -159,10 +159,10 @@ export function WorkOrderPrimaryFieldsSection({
     })
     setPickedPropertyLabel(patch.propertyLabel ?? null)
     setPickedTemplateLabel(patch.templateLabel ?? null)
-    // MC mirrors the chosen property (null when it has none).
+    // entity mirrors the chosen property (null when it has none).
     setPickedMc({
-      id: option?.managementCompanyId ?? null,
-      name: option?.managementCompanyName ?? null,
+      id: option?.entityId ?? null,
+      name: option?.entityName ?? null,
     })
     handlePropertyOption(option)
   }
@@ -254,21 +254,21 @@ export function WorkOrderPrimaryFieldsSection({
         </FormField>
       </CellAt>
 
-      {/* Management company + property pair the schedule rows on the left */}
+      {/* Entity + property pair the schedule rows on the left */}
       <CellAt col={1} row={2} colSpan={4}>
         <FormField
-          label="Management Company"
+          label="Entity"
           actions={
             <RecordOpenButton
-              ariaLabel="Open management company"
-              title="Open management company"
-              disabled={!managementCompanyValue}
+              ariaLabel="Open entity"
+              title="Open entity"
+              disabled={!entityValue}
               onClick={() => {
-                if (managementCompanyValue) {
+                if (entityValue) {
                   router.push(
                     buildRecordDetailHref(
-                      "/dashboard/management-companies",
-                      managementCompanyValue,
+                      "/dashboard/entities",
+                      entityValue,
                       returnTo,
                     ),
                   )
@@ -277,7 +277,7 @@ export function WorkOrderPrimaryFieldsSection({
             />
           }
         >
-          <StaticFieldValue>{managementCompanyLabel ?? "—"}</StaticFieldValue>
+          <StaticFieldValue>{entityLabel ?? "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
       <CellAt col={1} row={3} colSpan={4}>
@@ -291,7 +291,7 @@ export function WorkOrderPrimaryFieldsSection({
                 disabled={!propertyValue}
                 onClick={() => {
                   if (propertyValue) {
-                    router.push(buildPropertyRecordHref(propertyValue, managementCompanyValue, returnTo))
+                    router.push(buildPropertyRecordHref(propertyValue, entityValue, returnTo))
                   }
                 }}
               />
@@ -349,7 +349,7 @@ export function WorkOrderPrimaryFieldsSection({
               onChange={() => {}}
               onOptionSelected={handleTemplateSelected}
               propertyId={propertyValue}
-              managementCompanyId={managementCompanyValue}
+              entityId={entityValue}
               requireProperty={false}
               selectedLabel={templateLabel}
               placeholder="—"

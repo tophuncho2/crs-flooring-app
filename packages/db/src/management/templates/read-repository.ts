@@ -19,7 +19,7 @@ type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
  * single-selects but the data layer is array-shaped throughout.
  */
 export type TemplatesListFilterMap = {
-  managementCompanyId?: ReadonlyArray<string>
+  entityId?: ReadonlyArray<string>
   propertyId?: ReadonlyArray<string>
 }
 
@@ -36,7 +36,7 @@ const templateListSelect = {
   description: true,
   propertyId: true,
   property: {
-    select: { name: true, managementCompany: { select: { id: true, name: true } } },
+    select: { name: true, entity: { select: { id: true, entity: true } } },
   },
   jobTypeId: true,
   jobType: { select: { id: true, name: true } },
@@ -59,7 +59,7 @@ const templateDetailSelect = {
   property: {
     select: {
       name: true,
-      managementCompany: { select: { id: true, name: true } },
+      entity: { select: { id: true, entity: true } },
       streetAddress: true,
       city: true,
       state: true,
@@ -88,8 +88,8 @@ const templateDetailSelect = {
 /**
  * List-view search mirrors the picker (`searchTemplateOptions`): OR-ILIKE
  * across unitType and description. Filters AND together via exact `IN (...)`
- * matches — propertyId on `FlooringTemplate` directly, managementCompanyId
- * through the linked property (templates no longer store their own MC).
+ * matches — propertyId on `FlooringTemplate` directly, entityId
+ * through the linked property (templates no longer store their own entity).
  */
 function buildTemplatesWhere(
   searchQuery: string | undefined,
@@ -107,9 +107,9 @@ function buildTemplatesWhere(
     })
   }
 
-  const managementCompanyIds = filters?.managementCompanyId
-  if (managementCompanyIds && managementCompanyIds.length > 0) {
-    clauses.push({ property: { managementCompanyId: { in: [...managementCompanyIds] } } })
+  const entityIds = filters?.entityId
+  if (entityIds && entityIds.length > 0) {
+    clauses.push({ property: { entityId: { in: [...entityIds] } } })
   }
 
   const propertyIds = filters?.propertyId
@@ -185,10 +185,10 @@ export type TemplateOptionsSearchArgs = {
   /** Scope to a single property. Optional — when absent the search is unscoped. */
   propertyId?: string
   /**
-   * Scope to all properties under a management company. Only consulted when
-   * `propertyId` is absent (a specific property already implies its MC).
+   * Scope to all properties under an entity. Only consulted when
+   * `propertyId` is absent (a specific property already implies its entity).
    */
-  managementCompanyId?: string
+  entityId?: string
   skip?: number
   take: number
 }
@@ -203,12 +203,12 @@ export async function searchTemplateOptions(
   client: TemplatesDbClient = db,
 ): Promise<TemplateOptionsSearchResult> {
   const clauses: Prisma.FlooringTemplateWhereInput[] = []
-  // Property scope wins; otherwise fall back to the MC scope via the property
-  // relation. Neither set → unscoped (lists all templates, paginated).
+  // Property scope wins; otherwise fall back to the entity scope via the
+  // property relation. Neither set → unscoped (lists all templates, paginated).
   if (args.propertyId) {
     clauses.push({ propertyId: args.propertyId })
-  } else if (args.managementCompanyId) {
-    clauses.push({ property: { managementCompanyId: args.managementCompanyId } })
+  } else if (args.entityId) {
+    clauses.push({ property: { entityId: args.entityId } })
   }
   if (args.search) {
     clauses.push({
@@ -248,7 +248,7 @@ const NO_TEMPLATE_NEIGHBORS: TemplateNeighbors = {
 /**
  * Resolve the template rows immediately before/after the given numeric sort key
  * in the global template-number order (`templateNumberInt`). Powers the
- * record-view shell stepper — deliberately global: no property / MC scoping, the
+ * record-view shell stepper — deliberately global: no property / entity scoping, the
  * stepper walks the raw number line. Two single-row lookups on the
  * `templateNumberInt` index. Both null when the key is null (no generated value
  * yet) or the row is at the sequence's edge.

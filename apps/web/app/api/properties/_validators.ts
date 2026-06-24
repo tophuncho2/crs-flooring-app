@@ -61,7 +61,7 @@ export function validateCreatePropertyInput(
   body: Record<string, unknown>,
 ): CreatePropertyUseCaseInput {
   return {
-    managementCompanyId: optionalString(body.managementCompanyId),
+    entityId: optionalString(body.entityId),
     name: requireString(body.name, "name"),
     streetAddress: optionalString(body.streetAddress),
     city: optionalString(body.city),
@@ -78,7 +78,7 @@ export function validateUpdatePropertyInput(
 ): UpdatePropertyUseCaseInput {
   const input: UpdatePropertyUseCaseInput = {}
 
-  if ("managementCompanyId" in body) input.managementCompanyId = optionalString(body.managementCompanyId)
+  if ("entityId" in body) input.entityId = optionalString(body.entityId)
   if ("name" in body) input.name = requireString(body.name, "name")
   if ("streetAddress" in body) input.streetAddress = optionalString(body.streetAddress)
   if ("city" in body) input.city = optionalString(body.city)
@@ -110,7 +110,7 @@ export function validateListPropertiesQuery(
 ): ListInput<PropertiesListFilters> {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
-    if (key === "managementCompanyId" || key === "state") return
+    if (key === "entityId" || key === "state") return
     raw[key] = value
   })
 
@@ -127,10 +127,10 @@ export function validateListPropertiesQuery(
   const trimmedPropNumber = parsed.propNumber?.trim()
   const propNumber = trimmedPropNumber ? trimmedPropNumber : undefined
 
-  const managementCompanyIdRaw = searchParams.getAll("managementCompanyId")
-  const managementCompanyId = Array.from(
+  const entityIdRaw = searchParams.getAll("entityId")
+  const entityId = Array.from(
     new Set(
-      managementCompanyIdRaw
+      entityIdRaw
         .map((entry) => entry.trim())
         .filter((entry) => entry.length > 0),
     ),
@@ -146,10 +146,10 @@ export function validateListPropertiesQuery(
   )
 
   const filters =
-    propNumber || managementCompanyId.length > 0 || state.length > 0
+    propNumber || entityId.length > 0 || state.length > 0
       ? {
           ...(propNumber ? { propNumber } : {}),
-          ...(managementCompanyId.length > 0 ? { managementCompanyId } : {}),
+          ...(entityId.length > 0 ? { entityId } : {}),
           ...(state.length > 0 ? { state } : {}),
         }
       : undefined
@@ -166,14 +166,14 @@ export function validateListPropertiesQuery(
 
 const propertyOptionsQuerySchema = z.object({
   search: z.string().optional(),
-  managementCompanyId: z.string().optional(),
+  entityId: z.string().optional(),
   skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
 export type ValidatedPropertyOptionsQuery = {
   search?: string
-  managementCompanyId?: string
+  entityId?: string
   skip: number
   take: number
 }
@@ -197,10 +197,10 @@ export function validatePropertyOptionsQuery(
 
   const parsed = parseResult.data
   const trimmedSearch = parsed.search?.trim()
-  const trimmedManagementCompanyId = parsed.managementCompanyId?.trim()
+  const trimmedEntityId = parsed.entityId?.trim()
   return {
     search: trimmedSearch ? trimmedSearch : undefined,
-    managementCompanyId: trimmedManagementCompanyId ? trimmedManagementCompanyId : undefined,
+    entityId: trimmedEntityId ? trimmedEntityId : undefined,
     skip: parsed.skip,
     take: parsed.take,
   }

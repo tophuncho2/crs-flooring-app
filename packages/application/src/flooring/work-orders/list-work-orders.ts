@@ -11,7 +11,7 @@ const MAX_PAGE_SIZE = 200
  * so the upgrade path stays simple).
  */
 export type WorkOrdersListFilters = {
-  managementCompanyId?: string[]
+  entityId?: string[]
   propertyId?: string[]
   templateId?: string[]
   warehouseId?: string[]

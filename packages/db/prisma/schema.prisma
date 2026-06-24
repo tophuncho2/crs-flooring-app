@@ -89,9 +89,9 @@ enum FlooringPaymentDirection {
   EXPENSE
 }
 
-model FlooringManagementCompany {
+model Entity {
   id            String              @id @default(uuid())
-  name          String
+  entity        String
   streetAddress String?
   city          String?
   state         String?
@@ -102,15 +102,15 @@ model FlooringManagementCompany {
   updatedAt     DateTime            @updatedAt
   properties    Property[]
 
-  @@map("flooring_management_company")
+  @@map("entity")
 }
 
 model Property {
   id                  String                     @id @default(uuid())
   propertyNumber      String                     @unique @default(dbgenerated("('PROP-'::text || (nextval('property_hub_number_seq'::regclass))::text)")) @map("property_number")
   propertyNumberInt   Int?                       @default(dbgenerated("(SUBSTRING(property_number FROM 6))::integer"))
-  managementCompanyId String?
-  managementCompany   FlooringManagementCompany? @relation(fields: [managementCompanyId], references: [id], onDelete: SetNull)
+  entityId            String?
+  entity              Entity?                    @relation(fields: [entityId], references: [id], onDelete: SetNull)
   name                String
   streetAddress       String?
   city                String?
@@ -126,7 +126,7 @@ model Property {
   workOrders          FlooringWorkOrder[]
   templates           FlooringTemplate[]
 
-  @@index([managementCompanyId])
+  @@index([entityId])
   @@index([name])
   @@index([propertyNumber])
   @@index([propertyNumberInt])

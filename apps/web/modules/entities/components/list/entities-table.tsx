@@ -1,27 +1,27 @@
 "use client"
 
 import { DataTable, type PaginateContract } from "@/engines/list-view"
-import type { ManagementCompanyListRow } from "@builders/domain"
-import { MANAGEMENT_COMPANIES_LIST_COLUMNS } from "./table/management-companies-list-columns"
-import { renderManagementCompanyRowCell } from "./table/management-companies-row-cell"
+import type { EntityListRow } from "@builders/domain"
+import { ENTITIES_LIST_COLUMNS } from "./table/entities-list-columns"
+import { renderEntityRowCell } from "./table/entities-row-cell"
 
-export function ManagementCompaniesTable({
+export function EntitiesTable({
   rows,
-  onOpenCompany,
+  onOpenEntity,
   pagination,
 }: {
-  rows: ManagementCompanyListRow[]
-  onOpenCompany: (row: ManagementCompanyListRow) => void
+  rows: EntityListRow[]
+  onOpenEntity: (row: EntityListRow) => void
   pagination?: PaginateContract
 }) {
   return (
-    <DataTable<ManagementCompanyListRow>
+    <DataTable<EntityListRow>
       rows={rows}
-      columns={MANAGEMENT_COMPANIES_LIST_COLUMNS}
-      empty="No management companies match these filters."
-      onOpenRow={(row) => onOpenCompany(row)}
-      getRowAriaLabel={(row) => `Open management company ${row.name}`}
-      renderCell={renderManagementCompanyRowCell}
+      columns={ENTITIES_LIST_COLUMNS}
+      empty="No entities match these filters."
+      onOpenRow={(row) => onOpenEntity(row)}
+      getRowAriaLabel={(row) => `Open entity ${row.entity}`}
+      renderCell={renderEntityRowCell}
       pagination={pagination}
     />
   )

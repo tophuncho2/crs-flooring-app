@@ -1,5 +1,5 @@
-import { deleteManagementCompanyUseCase } from "@builders/application"
-import { getManagementCompanyById } from "@builders/db"
+import { deleteEntityUseCase } from "@builders/application"
+import { getEntityById } from "@builders/db"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
 import { CRUD_DELETE } from "@/server/http/rate-limit-presets"
@@ -24,15 +24,15 @@ export async function GET(request: Request, { params }: RouteContext) {
   const rateLimited = await enforceQueryRateLimit(
     request,
     access,
-    "/api/management-companies/[id]",
+    "/api/entities/[id]",
   )
   if (rateLimited) return rateLimited
 
   try {
     const { id: rawId } = await params
     const id = parseUuidParam(rawId, "id")
-    const managementCompany = await getManagementCompanyById(id)
-    return routeJson(access, { managementCompany })
+    const entity = await getEntityById(id)
+    return routeJson(access, { entity })
   } catch (error) {
     return routeError(access, error)
   }
@@ -42,8 +42,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     rateLimit: {
       ...CRUD_DELETE,
-      scope: "managementCompanies.delete",
-      route: "/api/management-companies/[id]",
+      scope: "entities.delete",
+      route: "/api/entities/[id]",
     },
   })
   if (access instanceof Response) return access
@@ -56,16 +56,16 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       requireExpectedUpdatedAt: true,
     })
 
-    const currentSnapshot = await getManagementCompanyById(id)
+    const currentSnapshot = await getEntityById(id)
     assertExpectedUpdatedAt({
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,
-      snapshot: { managementCompany: currentSnapshot },
-      message: "Management company changed before delete completed. Refresh and try again.",
+      snapshot: { entity: currentSnapshot },
+      message: "Entity changed before delete completed. Refresh and try again.",
     })
 
     const receipt = await enforceMutationReceipt({
-      scope: "managementCompanies.delete",
+      scope: "entities.delete",
       request,
       access,
       mutation,
@@ -76,18 +76,18 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     await withMutationTelemetry(
       access,
       {
-        message: "Management company deleted",
-        action: "managementCompanies.delete",
-        route: "/api/management-companies/[id]",
-        entityType: "flooringManagementCompany",
+        message: "Entity deleted",
+        action: "entities.delete",
+        route: "/api/entities/[id]",
+        entityType: "entity",
         entityId: id,
       },
-      () => deleteManagementCompanyUseCase(id),
+      () => deleteEntityUseCase(id),
     )
 
     const responseBody = { ok: true as const }
     await finalizeMutationReceipt({
-      scope: "managementCompanies.delete",
+      scope: "entities.delete",
       access,
       mutation,
       responseStatus: 200,

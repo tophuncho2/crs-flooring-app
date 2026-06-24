@@ -3,13 +3,13 @@
 import { QuickCreateModal } from "@/engines/record-view"
 import { ActionHeader } from "@/engines/common"
 import {
-  EMPTY_MANAGEMENT_COMPANY_FORM,
-  type ManagementCompanyDetail,
+  EMPTY_ENTITY_FORM,
+  type EntityDetail,
   type PropertyDetailRecord,
 } from "@builders/domain"
-import { usePropertyHubQuickCreate } from "@/modules/management-companies/controllers/record/properties/use-property-hub-quick-create"
+import { usePropertyHubQuickCreate } from "@/modules/entities/controllers/record/properties/use-property-hub-quick-create"
 import { PropertyFieldsSection } from "@/modules/properties/components/record/primary/property-fields-section"
-import { ManagementCompanySelectSection } from "./primary/management-company-select-section"
+import { EntitySelectSection } from "./primary/entity-select-section"
 
 const SECTION_CARD_CLASS =
   "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
@@ -29,23 +29,23 @@ export function PropertyHubQuickCreateModal({
   open,
   onClose,
   onCreated,
-  initialManagementCompany,
+  initialEntity,
 }: {
   open: boolean
   onClose: () => void
   onCreated: (
     property: PropertyDetailRecord,
-    managementCompany: ManagementCompanyDetail | null,
+    entity: EntityDetail | null,
   ) => void
-  initialManagementCompany?: { id: string; label: string | null } | null
+  initialEntity?: { id: string; label: string | null } | null
 }) {
-  const controller = usePropertyHubQuickCreate({ initialManagementCompany })
+  const controller = usePropertyHubQuickCreate({ initialEntity })
   const editable = !controller.isSaving
 
   async function handleCreate() {
     const result = await controller.save()
     if (result?.property) {
-      onCreated(result.property, result.managementCompany)
+      onCreated(result.property, result.entity)
     }
   }
 
@@ -60,7 +60,7 @@ export function PropertyHubQuickCreateModal({
       error={controller.error}
     >
       <div className="space-y-4">
-        <ManagementCompanySelectSection
+        <EntitySelectSection
           value={controller.localValue}
           disabled={!editable}
           onLink={(option) =>
@@ -68,19 +68,19 @@ export function PropertyHubQuickCreateModal({
               option
                 ? {
                     ...prev,
-                    mcLinkId: option.id,
-                    mcLinkLabel: option.name,
-                    mcForm: EMPTY_MANAGEMENT_COMPANY_FORM,
+                    entityLinkId: option.id,
+                    entityLinkLabel: option.entity,
+                    entityForm: EMPTY_ENTITY_FORM,
                   }
-                : { ...prev, mcLinkId: null, mcLinkLabel: null },
+                : { ...prev, entityLinkId: null, entityLinkLabel: null },
             )
           }
-          onMcFieldChange={(field, next) =>
+          onEntityFieldChange={(field, next) =>
             controller.setLocalValue((prev) => ({
               ...prev,
-              mcLinkId: null,
-              mcLinkLabel: null,
-              mcForm: { ...prev.mcForm, [field]: next },
+              entityLinkId: null,
+              entityLinkLabel: null,
+              entityForm: { ...prev.entityForm, [field]: next },
             }))
           }
         />

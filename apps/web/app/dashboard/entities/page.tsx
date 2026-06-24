@@ -1,14 +1,14 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
-import { listManagementCompaniesUseCase } from "@builders/application"
+import { listEntitiesUseCase } from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
-import ManagementCompaniesClient from "@/modules/management-companies/components/list/management-companies-client"
+import EntitiesClient from "@/modules/entities/components/list/entities-client"
 import {
-  MANAGEMENT_COMPANIES_LIST_QUERY_KEY,
-  parseManagementCompaniesListInputFromSearchParams,
-} from "@/modules/management-companies/data/list-management-companies-request"
+  ENTITIES_LIST_QUERY_KEY,
+  parseEntitiesListInputFromSearchParams,
+} from "@/modules/entities/data/list-entities-request"
 
-export default async function ManagementCompaniesPage({
+export default async function EntitiesPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
@@ -16,7 +16,7 @@ export default async function ManagementCompaniesPage({
   await requireSessionUser()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
-  const initialInput = parseManagementCompaniesListInputFromSearchParams(resolvedSearchParams)
+  const initialInput = parseEntitiesListInputFromSearchParams(resolvedSearchParams)
 
   const queryClient = new QueryClient()
 
@@ -25,8 +25,8 @@ export default async function ManagementCompaniesPage({
   // try block — both required by the React Compiler lint rules.
   const load = await queryClient
     .prefetchQuery({
-      queryKey: [...MANAGEMENT_COMPANIES_LIST_QUERY_KEY, initialInput],
-      queryFn: () => listManagementCompaniesUseCase(initialInput),
+      queryKey: [...ENTITIES_LIST_QUERY_KEY, initialInput],
+      queryFn: () => listEntitiesUseCase(initialInput),
     })
     .then(
       () => ({ ok: true as const }),
@@ -36,17 +36,17 @@ export default async function ManagementCompaniesPage({
   if (!load.ok) {
     return (
       <DashboardErrorState
-        title="Management Companies Unavailable"
-        message="The app could not load the management companies list."
+        title="Entities Unavailable"
+        message="The app could not load the entities list."
         detail={load.error instanceof Error ? load.error.message : "Unknown error"}
-        errorCode="MANAGEMENT_COMPANY_LIST_LOAD_FAILED"
+        errorCode="ENTITY_LIST_LOAD_FAILED"
       />
     )
   }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ManagementCompaniesClient
+      <EntitiesClient
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}

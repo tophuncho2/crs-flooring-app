@@ -1,15 +1,15 @@
 import { requireSessionUser } from "@/server/auth/session"
 import { resolveRecordEntryReturnTo as resolveReturnTo } from "@/hooks/navigation"
-import { ManagementCompanyCreateClient } from "@/modules/management-companies/components/record/management-company-create-client"
-import { PropertyHubCreateClient } from "@/modules/management-companies/components/record/properties/property-hub-create-client"
+import { EntityCreateClient } from "@/modules/entities/components/record/entity-create-client"
+import { PropertyHubCreateClient } from "@/modules/entities/components/record/properties/property-hub-create-client"
 
 /**
- * The single create entry point for the MC ⇄ property pair. With a `?property`
- * id in tow this is the orphan-property → new-MC link flow (create the MC, link
+ * The single create entry point for the entity ⇄ property pair. With a `?property`
+ * id in tow this is the orphan-property → new-entity link flow (create the entity, link
  * the existing property); without one it's the unified hub create (a property,
- * optionally with a linked or newly-created MC).
+ * optionally with a linked or newly-created entity).
  */
-export default async function ManagementCompanyCreatePage({
+export default async function EntityCreatePage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
@@ -18,23 +18,23 @@ export default async function ManagementCompanyCreatePage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const propertyId =
     typeof resolvedSearchParams?.property === "string" ? resolvedSearchParams.property : undefined
-  const managementCompanyId =
-    typeof resolvedSearchParams?.managementCompanyId === "string"
-      ? resolvedSearchParams.managementCompanyId
+  const entityId =
+    typeof resolvedSearchParams?.entityId === "string"
+      ? resolvedSearchParams.entityId
       : undefined
-  const managementCompanyLabel =
-    typeof resolvedSearchParams?.managementCompanyLabel === "string"
-      ? resolvedSearchParams.managementCompanyLabel
+  const entityLabel =
+    typeof resolvedSearchParams?.entityLabel === "string"
+      ? resolvedSearchParams.entityLabel
       : null
   const backHref = resolveReturnTo(resolvedSearchParams?.returnTo, "/dashboard/properties")
 
   return propertyId ? (
-    <ManagementCompanyCreateClient propertyId={propertyId} backHref={backHref} />
+    <EntityCreateClient propertyId={propertyId} backHref={backHref} />
   ) : (
     <PropertyHubCreateClient
       backHref={backHref}
-      initialManagementCompany={
-        managementCompanyId ? { id: managementCompanyId, label: managementCompanyLabel } : null
+      initialEntity={
+        entityId ? { id: entityId, label: entityLabel } : null
       }
     />
   )

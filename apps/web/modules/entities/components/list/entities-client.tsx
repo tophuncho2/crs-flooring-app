@@ -2,43 +2,43 @@
 
 import { useCallback, useMemo } from "react"
 import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
-import type { ManagementCompaniesListFilters } from "@builders/application"
+import type { EntitiesListFilters } from "@builders/application"
 import {
-  LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
+  LIST_ENTITIES_PAGE_SIZE,
   normalizeAddressState,
-  type ManagementCompanyListRow,
+  type EntityListRow,
 } from "@builders/domain"
 import {
-  MANAGEMENT_COMPANIES_LIST_QUERY_KEY,
-  listManagementCompaniesRequest,
-} from "@/modules/management-companies/data/list-management-companies-request"
-import { useManagementCompaniesListController } from "@/modules/management-companies/controllers/list/use-management-companies-list-controller"
+  ENTITIES_LIST_QUERY_KEY,
+  listEntitiesRequest,
+} from "@/modules/entities/data/list-entities-request"
+import { useEntitiesListController } from "@/modules/entities/controllers/list/use-entities-list-controller"
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
 import { useRouter } from "next/navigation"
 import { buildRecordCreateHref } from "@/hooks/navigation/routes"
-import { ManagementCompaniesTable } from "./management-companies-table"
+import { EntitiesTable } from "./entities-table"
 import { AddHubButton } from "./toolbar-controls/add-hub-button"
-import { ManagementCompaniesListSearch } from "./toolbar-controls/management-companies-list-search"
-import { ManagementCompaniesClearAll } from "./toolbar-controls/sub-controls/management-companies-clear-all"
-import { ManagementCompaniesRowCount } from "./toolbar-controls/sub-controls/management-companies-row-count"
+import { EntitiesListSearch } from "./toolbar-controls/entities-list-search"
+import { EntitiesClearAll } from "./toolbar-controls/sub-controls/entities-clear-all"
+import { EntitiesRowCount } from "./toolbar-controls/sub-controls/entities-row-count"
 
-const MANAGEMENT_COMPANIES_FILTERABLE_FIELDS = ["state"] as const
+const ENTITIES_FILTERABLE_FIELDS = ["state"] as const
 
-export type ManagementCompaniesClientProps = {
+export type EntitiesClientProps = {
   initialSearchQuery: string
   initialPage: number
-  initialFilters: ManagementCompaniesListFilters
+  initialFilters: EntitiesListFilters
 }
 
-export default function ManagementCompaniesClient({
+export default function EntitiesClient({
   initialSearchQuery,
   initialPage,
   initialFilters,
-}: ManagementCompaniesClientProps) {
-  const { message, pageError } = useManagementCompaniesListController()
+}: EntitiesClientProps) {
+  const { message, pageError } = useEntitiesListController()
   const router = useRouter()
-  const { openRecord: openManagementCompany, returnTo } = useRecordEntryNavigation(
-    "/dashboard/management-companies",
+  const { openRecord: openEntity, returnTo } = useRecordEntryNavigation(
+    "/dashboard/entities",
   )
 
   const {
@@ -56,21 +56,21 @@ export default function ManagementCompaniesClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useFetchListController<ManagementCompanyListRow, ManagementCompaniesListFilters>({
+  } = useFetchListController<EntityListRow, EntitiesListFilters>({
     mode: "fetch",
-    queryKey: [...MANAGEMENT_COMPANIES_LIST_QUERY_KEY],
-    listFn: listManagementCompaniesRequest,
+    queryKey: [...ENTITIES_LIST_QUERY_KEY],
+    listFn: listEntitiesRequest,
     initialSearchQuery,
     initialPage,
     initialFilters,
-    pageSize: LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
-    tableKey: "management-companies-main",
-    filterableFields: MANAGEMENT_COMPANIES_FILTERABLE_FIELDS,
+    pageSize: LIST_ENTITIES_PAGE_SIZE,
+    tableKey: "entities-main",
+    filterableFields: ENTITIES_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
   const selectedState =
-    (filters as ManagementCompaniesListFilters).state?.[0] ?? null
+    (filters as EntitiesListFilters).state?.[0] ?? null
 
   const handleStateChange = useCallback(
     (next: string | null) => {
@@ -112,29 +112,29 @@ export default function ManagementCompaniesClient({
         <div>
           <div className="px-4 pt-3">
             <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Management Companies
+              Entities
             </span>
           </div>
           <ListToolbar className="pt-0" showDivider={false}>
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <ManagementCompaniesListSearch
+                <EntitiesListSearch
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
                 />
                 <StateSearchControl
                   value={selectedState}
                   onChange={handleStateChange}
-                  ariaLabel="Filter management companies by state"
+                  ariaLabel="Filter entities by state"
                 />
                 <ListToolbarBottomRow
                   left={
-                    <ManagementCompaniesClearAll
+                    <EntitiesClearAll
                       hasActive={hasActiveFilters}
                       onClick={handleClearAll}
                     />
                   }
-                  right={<ManagementCompaniesRowCount count={rows.length} total={total} />}
+                  right={<EntitiesRowCount count={rows.length} total={total} />}
                 />
               </div>
             </ListToolbarCell>
@@ -142,7 +142,7 @@ export default function ManagementCompaniesClient({
             <ListToolbarCell className="ml-auto">
               <AddHubButton
                 onClick={() =>
-                  router.push(buildRecordCreateHref("/dashboard/management-companies", { returnTo }))
+                  router.push(buildRecordCreateHref("/dashboard/entities", { returnTo }))
                 }
               />
             </ListToolbarCell>
@@ -150,9 +150,9 @@ export default function ManagementCompaniesClient({
         </div>
       </div>
 
-      <ManagementCompaniesTable
+      <EntitiesTable
         rows={rows}
-        onOpenCompany={(row) => openManagementCompany(row.id)}
+        onOpenEntity={(row) => openEntity(row.id)}
         pagination={{
           page,
           pageSize,

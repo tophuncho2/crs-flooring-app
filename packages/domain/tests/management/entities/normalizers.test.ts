@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest"
 import {
-  normalizeManagementCompany,
-  normalizeManagementCompanyListRow,
-  normalizeManagementCompanyOption,
-} from "../../../src/management/management-companies/normalizers.js"
+  normalizeEntity,
+  normalizeEntityListRow,
+  normalizeEntityOption,
+} from "../../../src/management/entities/normalizers.js"
 
-describe("normalizeManagementCompany", () => {
+describe("normalizeEntity", () => {
   const base = {
-    id: "mc-1",
+    id: "entity-1",
     createdAt: "2026-05-20T00:00:00.000Z",
     updatedAt: "2026-05-26T00:00:00.000Z",
-    name: "Acme",
+    entity: "Acme",
     streetAddress: "1 Main St",
     city: "Austin",
     state: "TX",
@@ -21,7 +21,7 @@ describe("normalizeManagementCompany", () => {
   }
 
   it("converts a Date updatedAt to an ISO string", () => {
-    const result = normalizeManagementCompany({
+    const result = normalizeEntity({
       ...base,
       updatedAt: new Date("2026-05-26T12:00:00.000Z"),
     })
@@ -29,7 +29,7 @@ describe("normalizeManagementCompany", () => {
   })
 
   it("converts a Date createdAt to an ISO string", () => {
-    const result = normalizeManagementCompany({
+    const result = normalizeEntity({
       ...base,
       createdAt: new Date("2026-05-20T08:00:00.000Z"),
     })
@@ -37,7 +37,7 @@ describe("normalizeManagementCompany", () => {
   })
 
   it("coalesces null fields, maps postalCode to zip, and builds the full address", () => {
-    const result = normalizeManagementCompany({
+    const result = normalizeEntity({
       ...base,
       streetAddress: null,
       phone: null,
@@ -53,13 +53,13 @@ describe("normalizeManagementCompany", () => {
   })
 })
 
-describe("normalizeManagementCompanyListRow", () => {
+describe("normalizeEntityListRow", () => {
   it("extracts propertyCount from _count.properties", () => {
-    const result = normalizeManagementCompanyListRow({
-      id: "mc-1",
+    const result = normalizeEntityListRow({
+      id: "entity-1",
       createdAt: "2026-05-20T00:00:00.000Z",
       updatedAt: "2026-05-26T00:00:00.000Z",
-      name: "Acme",
+      entity: "Acme",
       streetAddress: "1 Main St",
       city: "Austin",
       state: "TX",
@@ -73,12 +73,12 @@ describe("normalizeManagementCompanyListRow", () => {
   })
 })
 
-describe("normalizeManagementCompanyOption", () => {
-  it("maps id, name, contact + address fields and coalesces nulls", () => {
+describe("normalizeEntityOption", () => {
+  it("maps id, entity, contact + address fields and coalesces nulls", () => {
     expect(
-      normalizeManagementCompanyOption({
-        id: "mc-1",
-        name: "Acme",
+      normalizeEntityOption({
+        id: "entity-1",
+        entity: "Acme",
         streetAddress: "1 Main St",
         city: "Austin",
         state: "TX",
@@ -87,8 +87,8 @@ describe("normalizeManagementCompanyOption", () => {
         email: null,
       }),
     ).toEqual({
-      id: "mc-1",
-      name: "Acme",
+      id: "entity-1",
+      entity: "Acme",
       streetAddress: "1 Main St",
       city: "Austin",
       state: "TX",

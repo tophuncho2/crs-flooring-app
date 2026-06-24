@@ -15,32 +15,32 @@ import { useTemplatesSectionTable } from "@/modules/templates/controllers/record
 import { useTemplatesSectionScope } from "@/modules/templates/controllers/record/use-templates-section-scope"
 
 /**
- * The Management Company record view's §3 templates section, on the canonical
+ * The Entity record view's §3 templates section, on the canonical
  * `RecordItemSection` chrome (persistent blue header). The body is a paginated
  * list-view `DataTable` over the shared templates columns, scoped (via
- * `useTemplatesSectionScope`) to the seeded company — listing all of its templates.
+ * `useTemplatesSectionScope`) to the seeded entity — listing all of its templates.
  * "+ Template" opens a fresh create form; clicking a row routes to that template's
  * hub.
  *
  * Shares its scope + table controllers (`useTemplatesSectionScope` /
  * `useTemplatesSectionTable`) with the property record view's templates section.
  */
-export function ManagementCompanyTemplatesSection({
-  managementCompany,
+export function EntityTemplatesSection({
+  entity,
 }: {
-  managementCompany: { id: string; name: string }
+  entity: { id: string; entity: string }
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const { cascade } = useTemplatesSectionScope({
-    managementCompanyId: managementCompany.id,
-    managementCompanyLabel: managementCompany.name,
+    entityId: entity.id,
+    entityLabel: entity.entity,
   })
 
   const grid = useTemplatesSectionTable({
-    managementCompanyId: cascade.managementCompanyId,
+    entityId: cascade.entityId,
     propertyId: cascade.propertyId,
     enabled: true,
   })
@@ -59,8 +59,8 @@ export function ManagementCompanyTemplatesSection({
         templateLabel: row.unitType,
         propertyId: row.propertyId,
         propertyLabel: row.propertyName,
-        managementCompanyId: row.managementCompanyId,
-        managementCompanyLabel: row.managementCompanyName,
+        entityId: row.entityId,
+        entityLabel: row.entityName,
         returnTo,
       }),
     )
@@ -91,7 +91,7 @@ export function ManagementCompanyTemplatesSection({
         renderCell={renderTemplateRowCell}
         onOpenRow={(row) => openTemplate(row)}
         getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
-        empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates for this company yet."}
+        empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates for this entity yet."}
         pagination={grid.pagination}
       />
     </RecordItemSection>

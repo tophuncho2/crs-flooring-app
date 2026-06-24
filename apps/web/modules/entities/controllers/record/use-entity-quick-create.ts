@@ -3,40 +3,40 @@
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
-  EMPTY_MANAGEMENT_COMPANY_FORM,
-  validateManagementCompanyForm,
-  type ManagementCompanyDetail,
-  type ManagementCompanyForm,
+  EMPTY_ENTITY_FORM,
+  validateEntityForm,
+  type EntityDetail,
+  type EntityForm,
 } from "@builders/domain"
-import { createManagementCompanyRequest } from "@/modules/management-companies/data/mutations"
-import { MANAGEMENT_COMPANIES_LIST_QUERY_KEY } from "@/modules/management-companies/data/list-management-companies-request"
-import { MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY } from "@/modules/management-companies/data/management-company-options-request"
+import { createEntityRequest } from "@/modules/entities/data/mutations"
+import { ENTITIES_LIST_QUERY_KEY } from "@/modules/entities/data/list-entities-request"
+import { ENTITY_OPTIONS_QUERY_KEY } from "@/modules/entities/data/entity-options-request"
 
-export type ManagementCompanyQuickCreateResult = {
-  managementCompany: ManagementCompanyDetail | null
+export type EntityQuickCreateResult = {
+  entity: EntityDetail | null
 }
 
 /**
- * The modal-mounted controller for the lean MC quick-create: drives a single
- * {@link ManagementCompanyForm} (Company Name + optional contact/address), creates
- * via `/api/management-companies`, and — unlike the full create page — does **not**
- * navigate. It returns the created `ManagementCompanyDetail` so the host can fill
- * its originating cell, and invalidates the MC list + options queries so every
- * picker/list sees the new company.
+ * The modal-mounted controller for the lean entity quick-create: drives a single
+ * {@link EntityForm} (Entity Name + optional contact/address), creates
+ * via `/api/entities`, and — unlike the full create page — does **not**
+ * navigate. It returns the created `EntityDetail` so the host can fill
+ * its originating cell, and invalidates the entity list + options queries so every
+ * picker/list sees the new entity.
  */
-export function useManagementCompanyQuickCreate() {
+export function useEntityQuickCreate() {
   const queryClient = useQueryClient()
 
-  const [localValue, setLocalValue] = useState<ManagementCompanyForm>(
-    () => EMPTY_MANAGEMENT_COMPANY_FORM,
+  const [localValue, setLocalValue] = useState<EntityForm>(
+    () => EMPTY_ENTITY_FORM,
   )
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const canCreate = localValue.name.trim().length > 0
+  const canCreate = localValue.entity.trim().length > 0
 
-  async function save(): Promise<ManagementCompanyQuickCreateResult | null> {
-    const validationError = validateManagementCompanyForm(localValue)
+  async function save(): Promise<EntityQuickCreateResult | null> {
+    const validationError = validateEntityForm(localValue)
     if (validationError) {
       setError(validationError)
       return null
@@ -45,17 +45,17 @@ export function useManagementCompanyQuickCreate() {
     setIsSaving(true)
     setError(null)
     try {
-      const result = await createManagementCompanyRequest(localValue)
+      const result = await createEntityRequest(localValue)
 
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: MANAGEMENT_COMPANIES_LIST_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: ENTITIES_LIST_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: ENTITY_OPTIONS_QUERY_KEY }),
       ])
 
       return result
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : "Failed to create management company",
+        cause instanceof Error ? cause.message : "Failed to create entity",
       )
       return null
     } finally {

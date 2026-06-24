@@ -13,8 +13,8 @@ export type WorkOrderPrimaryDetail = {
   propertyState: string
   propertyPostalCode: string
   propertyInstructions: string
-  managementCompanyId: string | null
-  managementCompanyName: string | null
+  entityId: string | null
+  entityName: string | null
   templateId: string | null
   templateUnitType: string
   jobTypeId: string | null

@@ -11,7 +11,7 @@ export type AddHubButtonProps = {
 /**
  * Toolbar action: opens the unified hub side panel in create mode. Card-
  * style button sized to one toolbar row; the canonical (and only) entry
- * point for creating a management company + property pair from this list.
+ * point for creating a entity + property pair from this list.
  */
 export function AddHubButton({ onClick, disabled }: AddHubButtonProps) {
   return (
@@ -21,7 +21,7 @@ export function AddHubButton({ onClick, disabled }: AddHubButtonProps) {
       disabled={disabled ?? !onClick}
       className={BUTTON_CLASS_NAME}
     >
-      + Management
+      + Entity
     </button>
   )
 }

@@ -32,7 +32,7 @@ const templateDetailSelect = {
   property: {
     select: {
       name: true,
-      managementCompany: { select: { id: true, name: true } },
+      entity: { select: { id: true, entity: true } },
       streetAddress: true,
       city: true,
       state: true,

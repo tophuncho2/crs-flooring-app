@@ -1,16 +1,16 @@
 import type { DataTableColumn } from "@/engines/list-view"
-import type { ManagementCompanyListRow } from "@builders/domain"
+import type { EntityListRow } from "@builders/domain"
 
 /**
- * Column definitions for the management-companies list-view `DataTable`.
+ * Column definitions for the entities list-view `DataTable`.
  * Order is the visual left-to-right order. Track widths are computed by
  * the browser (`table-layout: auto`) — each column sizes to
  * `max(header label, widest cell)` and never wraps.
  */
-export const MANAGEMENT_COMPANIES_LIST_COLUMNS: ReadonlyArray<
-  DataTableColumn<ManagementCompanyListRow>
+export const ENTITIES_LIST_COLUMNS: ReadonlyArray<
+  DataTableColumn<EntityListRow>
 > = [
-  { key: "name", label: "Company" },
+  { key: "entity", label: "Entity" },
   { key: "streetAddress", label: "Street" },
   { key: "city", label: "City" },
   { key: "state", label: "State" },

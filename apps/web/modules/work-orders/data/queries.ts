@@ -15,7 +15,7 @@ import type {
 } from "@builders/domain"
 
 // All form-option fields are powered by async pickers
-// (PropertyPicker / ManagementCompanyPicker / TemplatePicker / ProductPicker /
+// (PropertyPicker / EntityPicker / TemplatePicker / ProductPicker /
 // CategoryPicker / JobTypePicker / WarehousePicker) which call /api/{...}/options
 // on demand; read-only labels come from joined fields on `WorkOrderDetail`
 // and `WorkOrderMaterialItemRow`. No SSR pre-fetch of options is required.

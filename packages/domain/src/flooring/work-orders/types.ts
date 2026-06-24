@@ -3,8 +3,8 @@ export type WorkOrderListRow = {
   workOrderNumber: string
   propertyId: string | null
   propertyName: string
-  managementCompanyId: string | null
-  managementCompanyName: string | null
+  entityId: string | null
+  entityName: string | null
   jobTypeId: string | null
   jobTypeName: string | null
   templateId: string | null

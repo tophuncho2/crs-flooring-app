@@ -1,37 +1,37 @@
 "use client"
 
-import type { ManagementCompanyOption } from "@builders/domain"
-import { ManagementCompanyPicker } from "@/modules/management-companies/components/picker/management-company-picker"
+import type { EntityOption } from "@builders/domain"
+import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
 
-export type MgmtCoFilterChipProps = {
+export type EntityFilterChipProps = {
   value: string | null
   selectedLabel: string | null
   onChange: (id: string | null) => void
-  initialOptions?: ManagementCompanyOption[]
+  initialOptions?: EntityOption[]
 }
 
 /**
  * Work-order list-view chip — narrows the table to a single management
  * company AND scopes the Property chip's picker. Cascade clearing of
- * Property + Template on mgmt-co change is handled by the parent client.
+ * Property + Template on entity change is handled by the parent client.
  */
-export function MgmtCoFilterChip({
+export function EntityFilterChip({
   value,
   selectedLabel,
   onChange,
   initialOptions,
-}: MgmtCoFilterChipProps) {
+}: EntityFilterChipProps) {
   return (
-    <ManagementCompanyPicker
+    <EntityPicker
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}
       initialOptions={initialOptions}
-      placeholder="Mgmt co"
-      searchPlaceholder="Search companies"
-      emptyMessage="No companies match"
+      placeholder="Entity"
+      searchPlaceholder="Search entities"
+      emptyMessage="No entities match"
       clearLabel="Clear filter"
-      ariaLabel="Filter work orders by management company"
+      ariaLabel="Filter work orders by entity"
     />
   )
 }

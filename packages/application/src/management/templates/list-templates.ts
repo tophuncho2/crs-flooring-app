@@ -7,7 +7,7 @@ import {
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type TemplatesListFilters = {
-  managementCompanyId?: ReadonlyArray<string>
+  entityId?: ReadonlyArray<string>
   propertyId?: ReadonlyArray<string>
 }
 
@@ -29,12 +29,12 @@ export async function listTemplatesUseCase(
   const pageSize = Math.max(1, Math.min(LIST_TEMPLATES_MAX_PAGE_SIZE, requestedPageSize))
 
   const search = input.search?.trim() || undefined
-  const managementCompanyId = normalizeIds(input.filters?.managementCompanyId)
+  const entityId = normalizeIds(input.filters?.entityId)
   const propertyId = normalizeIds(input.filters?.propertyId)
   const filters =
-    managementCompanyId || propertyId
+    entityId || propertyId
       ? {
-          ...(managementCompanyId ? { managementCompanyId } : {}),
+          ...(entityId ? { entityId } : {}),
           ...(propertyId ? { propertyId } : {}),
         }
       : undefined

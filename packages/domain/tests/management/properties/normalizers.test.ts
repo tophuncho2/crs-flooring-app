@@ -21,7 +21,7 @@ describe("normalizeProperty", () => {
     instructions: "Gate 1234",
     createdBy: "creator@example.com",
     updatedBy: "editor@example.com",
-    managementCompany: { id: "mc-1", name: "Acme" },
+    entity: { id: "entity-1", entity: "Acme" },
   }
 
   it("converts a Date updatedAt to an ISO string", () => {
@@ -72,9 +72,9 @@ describe("normalizeProperty", () => {
     expect(result.fullAddress).toBe("Austin, TX")
   })
 
-  it("passes the management company through unchanged", () => {
-    expect(normalizeProperty(base).managementCompany).toEqual({ id: "mc-1", name: "Acme" })
-    expect(normalizeProperty({ ...base, managementCompany: null }).managementCompany).toBeNull()
+  it("passes the entity through unchanged", () => {
+    expect(normalizeProperty(base).entity).toEqual({ id: "entity-1", entity: "Acme" })
+    expect(normalizeProperty({ ...base, entity: null }).entity).toBeNull()
   })
 
   it("passes the property number through", () => {
@@ -123,7 +123,7 @@ describe("normalizePropertyListRow", () => {
       email: null,
       createdBy: "creator@example.com",
       updatedBy: null,
-      managementCompany: null,
+      entity: null,
       _count: { templates: 4 },
     })
     expect(result.propertyNumber).toBe("PROP-1")
@@ -144,8 +144,8 @@ describe("normalizePropertyOption", () => {
       state: "TX",
       postalCode: null,
       instructions: null,
-      managementCompanyId: "mc-1",
-      managementCompany: { name: "Acme Property Mgmt" },
+      entityId: "entity-1",
+      entity: { entity: "Acme Property Mgmt" },
     })
     expect(result).toEqual({
       id: "prop-1",
@@ -156,12 +156,12 @@ describe("normalizePropertyOption", () => {
       state: "TX",
       postalCode: "",
       instructions: "",
-      managementCompanyId: "mc-1",
-      managementCompanyName: "Acme Property Mgmt",
+      entityId: "entity-1",
+      entityName: "Acme Property Mgmt",
     })
   })
 
-  it("coalesces a missing management company name to null", () => {
+  it("coalesces a missing entity name to null", () => {
     const result = normalizePropertyOption({
       id: "prop-1",
       name: "Maple Court",
@@ -170,12 +170,12 @@ describe("normalizePropertyOption", () => {
       state: "TX",
       postalCode: "78701",
       instructions: "Gate 1234",
-      managementCompanyId: null,
+      entityId: null,
     })
-    expect(result.managementCompanyName).toBeNull()
+    expect(result.entityName).toBeNull()
   })
 
-  it("keeps a null managementCompanyId", () => {
+  it("keeps a null entityId", () => {
     const result = normalizePropertyOption({
       id: "prop-1",
       name: "Maple Court",
@@ -184,8 +184,8 @@ describe("normalizePropertyOption", () => {
       state: "TX",
       postalCode: "78701",
       instructions: "Gate 1234",
-      managementCompanyId: null,
+      entityId: null,
     })
-    expect(result.managementCompanyId).toBeNull()
+    expect(result.entityId).toBeNull()
   })
 })

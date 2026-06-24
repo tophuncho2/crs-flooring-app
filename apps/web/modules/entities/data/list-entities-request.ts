@@ -1,11 +1,11 @@
 import type {
   ListInput,
   ListOutput,
-  ManagementCompaniesListFilters,
+  EntitiesListFilters,
 } from "@builders/application"
 import {
-  LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
-  type ManagementCompanyListRow,
+  LIST_ENTITIES_PAGE_SIZE,
+  type EntityListRow,
 } from "@builders/domain"
 import { requestJson } from "@/transport/http"
 
@@ -30,9 +30,9 @@ function readSearchParamArray(
     .filter((entry) => entry.length > 0)
 }
 
-export function parseManagementCompaniesListInputFromSearchParams(
+export function parseEntitiesListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
-): ListInput<ManagementCompaniesListFilters> {
+): ListInput<EntitiesListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
@@ -51,12 +51,12 @@ export function parseManagementCompaniesListInputFromSearchParams(
     search: searchRaw || undefined,
     filters,
     page,
-    pageSize: LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
+    pageSize: LIST_ENTITIES_PAGE_SIZE,
   }
 }
 
-function buildManagementCompaniesListSearchString(
-  input: ListInput<ManagementCompaniesListFilters>,
+function buildEntitiesListSearchString(
+  input: ListInput<EntitiesListFilters>,
 ): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
@@ -68,20 +68,20 @@ function buildManagementCompaniesListSearchString(
   return params.toString()
 }
 
-export async function listManagementCompaniesRequest(
-  input: ListInput<ManagementCompaniesListFilters>,
-): Promise<ListOutput<ManagementCompanyListRow>> {
-  const queryString = buildManagementCompaniesListSearchString(input)
+export async function listEntitiesRequest(
+  input: ListInput<EntitiesListFilters>,
+): Promise<ListOutput<EntityListRow>> {
+  const queryString = buildEntitiesListSearchString(input)
   const url = queryString
-    ? `/api/management-companies?${queryString}`
-    : "/api/management-companies"
-  return requestJson<ListOutput<ManagementCompanyListRow>>(url, {
+    ? `/api/entities?${queryString}`
+    : "/api/entities"
+  return requestJson<ListOutput<EntityListRow>>(url, {
     method: "GET",
     headers: { Accept: "application/json" },
   })
 }
 
-export const MANAGEMENT_COMPANIES_LIST_QUERY_KEY = [
-  "management-companies",
+export const ENTITIES_LIST_QUERY_KEY = [
+  "entities",
   "list",
 ] as const

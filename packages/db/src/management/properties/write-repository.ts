@@ -14,7 +14,7 @@ function normalizeNullablePhone(value: string | null | undefined): string | null
 }
 
 export type CreatePropertyRecordInput = {
-  managementCompanyId: string | null
+  entityId: string | null
   name: string
   streetAddress: string | null
   city: string | null
@@ -47,8 +47,8 @@ const propertyDetailSelect = {
   instructions: true,
   createdBy: true,
   updatedBy: true,
-  managementCompany: {
-    select: { id: true, name: true },
+  entity: {
+    select: { id: true, entity: true },
   },
 } as const
 

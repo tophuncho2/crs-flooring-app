@@ -16,7 +16,7 @@ export type WarehouseRow = {
 }
 
 // Slim option shape consumed by the canonical WarehousePicker (server-side
-// search). Mirrors the existing `ManagementCompanyOption` / `CategoryOption`
+// search). Mirrors the existing `EntityOption` / `CategoryOption`
 // pattern.
 export type WarehouseOption = {
   id: string

@@ -27,26 +27,26 @@ export type TemplatesSectionTableController = {
  * state, the `15` page size, and the pagination contract are owned by the engine
  * (`useRecordSectionPagination`); this controller adds the scoped fetch through
  * the same list endpoint the templates list view uses (`listTemplatesRequest`).
- * The scoped management company + property ride in as filters (both optional —
+ * The scoped entity + property ride in as filters (both optional —
  * the table lists across everything when none is set); any scope change resets
  * to page 1. `enabled` gates the fetch.
  */
 export function useTemplatesSectionTable({
-  managementCompanyId,
+  entityId,
   propertyId,
   enabled,
 }: {
-  managementCompanyId: string | null
+  entityId: string | null
   propertyId: string | null
   enabled: boolean
 }): TemplatesSectionTableController {
   const pager = useRecordSectionPagination()
 
-  // Re-scoping (different MC / property) returns to page 1. Reset during render
+  // Re-scoping (different entity / property) returns to page 1. Reset during render
   // against the previous scope rather than in an effect — React applies it before
   // paint with no extra commit (the recommended "adjust state when a prop
   // changes" pattern).
-  const scopeKey = `${managementCompanyId ?? ""}|${propertyId ?? ""}`
+  const scopeKey = `${entityId ?? ""}|${propertyId ?? ""}`
   const [prevScopeKey, setPrevScopeKey] = useState(scopeKey)
   if (scopeKey !== prevScopeKey) {
     setPrevScopeKey(scopeKey)
@@ -55,11 +55,11 @@ export function useTemplatesSectionTable({
 
   const input = useMemo<ListInput<TemplatesListFilters>>(() => {
     const filters: TemplatesListFilters = {
-      ...(managementCompanyId ? { managementCompanyId: [managementCompanyId] } : {}),
+      ...(entityId ? { entityId: [entityId] } : {}),
       ...(propertyId ? { propertyId: [propertyId] } : {}),
     }
     return { filters, page: pager.page, pageSize: pager.pageSize }
-  }, [managementCompanyId, propertyId, pager.page, pager.pageSize])
+  }, [entityId, propertyId, pager.page, pager.pageSize])
 
   const query = useQuery({
     queryKey: [...TEMPLATES_LIST_QUERY_KEY, "record-section", input],

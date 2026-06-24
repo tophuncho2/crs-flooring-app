@@ -12,37 +12,37 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
-import { formatEasternDateTime, type ManagementCompanyDetail } from "@builders/domain"
+import { formatEasternDateTime, type EntityDetail } from "@builders/domain"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
   buildRecordCreateHref,
 } from "@/hooks/navigation/routes"
-import { useMcPrimarySection } from "@/modules/management-companies/controllers/record/primary/use-mc-primary-section"
+import { useEntityPrimarySection } from "@/modules/entities/controllers/record/primary/use-entity-primary-section"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
-import { ManagementCompanyCellsSection } from "./primary/management-company-cells-section"
-import { ManagementCompanyTemplatesSection } from "./templates/management-company-templates-section"
+import { EntityCellsSection } from "./primary/entity-cells-section"
+import { EntityTemplatesSection } from "./templates/entity-templates-section"
 
 /**
- * The Management Company record view. ① editable MC cells (primary) · ② the
+ * The Entity record view. ① editable entity cells (primary) · ② the
  * linked-properties list — clicking a row **navigates** to that property's
  * standalone record view (no longer an inline drilldown); "+ Property" opens the
- * management form pre-linked to this company · ③ the shared templates reference
- * section, scoped to this MC (its picker locked) with a selectable Property
+ * management form pre-linked to this entity · ③ the shared templates reference
+ * section, scoped to this entity (its picker locked) with a selectable Property
  * filter, previewing a chosen template read-only.
  */
-export function ManagementCompanyRecordView({
+export function EntityRecordView({
   page,
   entry,
 }: {
   page: RecordDetailClientScaffoldContext
-  entry: ManagementCompanyDetail
+  entry: EntityDetail
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const controller = useMcPrimarySection({ page, entry })
+  const controller = useEntityPrimarySection({ page, entry })
   const primary = controller.primarySection
   const deletion = useRecordDeleteConfirmation(controller.deleteRecord)
 
@@ -53,12 +53,12 @@ export function ManagementCompanyRecordView({
   }
 
   // "+ Property" opens the single management form (the hub create flow),
-  // pre-linked to this company so the operator only fills the property fields.
+  // pre-linked to this entity so the operator only fills the property fields.
   const createProperty = () => {
     router.push(
-      buildRecordCreateHref("/dashboard/management-companies", {
+      buildRecordCreateHref("/dashboard/entities", {
         returnTo,
-        params: { managementCompanyId: entry.id, managementCompanyLabel: entry.name },
+        params: { entityId: entry.id, entityLabel: entry.entity },
       }),
     )
   }
@@ -69,11 +69,11 @@ export function ManagementCompanyRecordView({
       type: "field",
       order: 0,
       slot: "primary",
-      dirtyLabel: "management company",
+      dirtyLabel: "entity",
       controller: primary,
       render: () => (
         <RecordPrimarySectionInstance
-          title="Management Company"
+          title="Entity"
           showHeader={false}
           error={primary.error}
           noticeMessage={primary.noticeMessage}
@@ -84,10 +84,10 @@ export function ManagementCompanyRecordView({
           onSave={() => void primary.save()}
           onDiscard={primary.discard}
           onDelete={deletion.requestDelete}
-          deleteLabel="Delete Management Company"
+          deleteLabel="Delete Entity"
         >
           <div className="flex flex-col gap-4">
-            <ManagementCompanyCellsSection
+            <EntityCellsSection
               form={primary.localValue}
               editable={!primary.isSaving}
               onFieldChange={(field, value) =>
@@ -113,7 +113,7 @@ export function ManagementCompanyRecordView({
       order: 10,
       render: () => (
         <LinkedPropertiesList
-          managementCompanyId={entry.id}
+          entityId={entry.id}
           onSelect={openProperty}
           onCreate={createProperty}
         />
@@ -123,7 +123,7 @@ export function ManagementCompanyRecordView({
       key: "templates",
       type: "item",
       order: 20,
-      render: () => <ManagementCompanyTemplatesSection managementCompany={entry} />,
+      render: () => <EntityTemplatesSection entity={entry} />,
     },
   ]
 
@@ -134,12 +134,12 @@ export function ManagementCompanyRecordView({
       <RecordDeleteDialog
         open={deletion.isOpen}
         isDeleting={deletion.isDeleting}
-        title="Delete management company?"
+        title="Delete entity?"
         message={
           entry.propertyCount > 0
             ? `This will unlink ${entry.propertyCount} ${
                 entry.propertyCount === 1 ? "property" : "properties"
-              } from this management company. This cannot be undone.`
+              } from this entity. This cannot be undone.`
             : "This cannot be undone."
         }
         onConfirm={() => void deletion.confirmDelete()}

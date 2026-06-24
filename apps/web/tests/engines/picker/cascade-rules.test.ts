@@ -1,19 +1,19 @@
 import { describe, it, expect } from "vitest"
 import type {
-  ManagementCompanyOption,
+  EntityOption,
   PropertyOption,
   TemplateOption,
 } from "@builders/domain"
 import {
-  applyManagementCompanySelection,
+  applyEntitySelection,
   applyPropertySelection,
   applyTemplateSelection,
 } from "@/engines/picker"
 
-function mc(overrides: Partial<ManagementCompanyOption> = {}): ManagementCompanyOption {
+function entityOption(overrides: Partial<EntityOption> = {}): EntityOption {
   return {
-    id: "mc-1",
-    name: "Acme Property Mgmt",
+    id: "entity-1",
+    entity: "Acme Property Mgmt",
     streetAddress: "",
     city: "",
     state: "",
@@ -35,8 +35,8 @@ function property(overrides: Partial<PropertyOption> = {}): PropertyOption {
     state: "TX",
     postalCode: "78701",
     instructions: "",
-    managementCompanyId: "mc-1",
-    managementCompanyName: "Acme Property Mgmt",
+    entityId: "entity-1",
+    entityName: "Acme Property Mgmt",
     ...overrides,
   }
 }
@@ -52,11 +52,11 @@ function template(overrides: Partial<TemplateOption> = {}): TemplateOption {
   }
 }
 
-describe("applyManagementCompanySelection", () => {
-  it("sets the MC and clears every downstream step", () => {
-    expect(applyManagementCompanySelection(mc())).toEqual({
-      managementCompanyId: "mc-1",
-      managementCompanyLabel: "Acme Property Mgmt",
+describe("applyEntitySelection", () => {
+  it("sets the entity and clears every downstream step", () => {
+    expect(applyEntitySelection(entityOption())).toEqual({
+      entityId: "entity-1",
+      entityLabel: "Acme Property Mgmt",
       propertyId: null,
       propertyLabel: null,
       templateId: null,
@@ -64,10 +64,10 @@ describe("applyManagementCompanySelection", () => {
     })
   })
 
-  it("clears the MC (and downstream) when cleared", () => {
-    expect(applyManagementCompanySelection(null)).toEqual({
-      managementCompanyId: null,
-      managementCompanyLabel: null,
+  it("clears the entity (and downstream) when cleared", () => {
+    expect(applyEntitySelection(null)).toEqual({
+      entityId: null,
+      entityLabel: null,
       propertyId: null,
       propertyLabel: null,
       templateId: null,
@@ -77,20 +77,20 @@ describe("applyManagementCompanySelection", () => {
 })
 
 describe("applyPropertySelection", () => {
-  it("sets the property, clears the template, and back-fills the linked MC", () => {
+  it("sets the property, clears the template, and back-fills the linked entity", () => {
     expect(applyPropertySelection(property())).toEqual({
       propertyId: "prop-1",
       propertyLabel: "Maple Court",
-      managementCompanyId: "mc-1",
-      managementCompanyLabel: "Acme Property Mgmt",
+      entityId: "entity-1",
+      entityLabel: "Acme Property Mgmt",
       templateId: null,
       templateLabel: null,
     })
   })
 
-  it("omits the MC keys when the property has no linked MC (leaves prior MC untouched)", () => {
+  it("omits the entity keys when the property has no linked entity (leaves prior entity untouched)", () => {
     const patch = applyPropertySelection(
-      property({ managementCompanyId: null, managementCompanyName: null }),
+      property({ entityId: null, entityName: null }),
     )
     expect(patch).toEqual({
       propertyId: "prop-1",
@@ -98,8 +98,8 @@ describe("applyPropertySelection", () => {
       templateId: null,
       templateLabel: null,
     })
-    expect("managementCompanyId" in patch).toBe(false)
-    expect("managementCompanyLabel" in patch).toBe(false)
+    expect("entityId" in patch).toBe(false)
+    expect("entityLabel" in patch).toBe(false)
   })
 })
 

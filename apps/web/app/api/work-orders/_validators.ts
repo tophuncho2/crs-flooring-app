@@ -254,7 +254,7 @@ const WORK_ORDERS_LIST_DEFAULT_PAGE_SIZE = 50
 const WORK_ORDERS_LIST_MAX_PAGE_SIZE = 200
 
 const ID_FILTER_KEYS = [
-  "managementCompanyId",
+  "entityId",
   "propertyId",
   "templateId",
   "warehouseId",
@@ -283,7 +283,7 @@ const VACANCY_VALUES = ["VACANT", "OCCUPIED"] as const
 const listWorkOrdersQuerySchema = z.object({
   sort: z.enum(["asc", "desc"]).default("desc"),
   sortField: z
-    .enum(["createdAt", "scheduledFor", "property", "managementCompany", "workOrderNumber"])
+    .enum(["createdAt", "scheduledFor", "property", "entity", "workOrderNumber"])
     .default("createdAt"),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce

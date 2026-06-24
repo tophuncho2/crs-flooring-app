@@ -2,13 +2,13 @@
 
 import { useCallback, useState } from "react"
 import type {
-  ManagementCompanyOption,
+  EntityOption,
   PropertyOption,
   TemplateOption,
 } from "@builders/domain"
 import type { CascadePickerSeed } from "../contracts/cascade-picker-contracts"
 import {
-  applyManagementCompanySelection,
+  applyEntitySelection,
   applyPropertySelection,
   applyTemplateSelection,
   type CascadeSelectionPatch,
@@ -18,8 +18,8 @@ import {
  * Optional preset seeding each step's id + label (deep links / row hand-offs).
  */
 export type CascadePickerInitialSelections = {
-  managementCompanyId?: string | null
-  managementCompanyLabel?: string | null
+  entityId?: string | null
+  entityLabel?: string | null
   propertyId?: string | null
   propertyLabel?: string | null
   templateId?: string | null
@@ -28,15 +28,15 @@ export type CascadePickerInitialSelections = {
 
 export type CascadePickerController = {
   // ===== Selections =====
-  managementCompanyId: string | null
-  managementCompanyLabel: string | null
+  entityId: string | null
+  entityLabel: string | null
   propertyId: string | null
   propertyLabel: string | null
   templateId: string | null
   templateLabel: string | null
 
   // ===== Selection handlers =====
-  selectManagementCompany: (option: ManagementCompanyOption | null) => void
+  selectEntity: (option: EntityOption | null) => void
   selectProperty: (option: PropertyOption | null) => void
   selectTemplate: (option: TemplateOption | null) => void
   reset: () => void
@@ -48,7 +48,7 @@ export type CascadePickerController = {
 }
 
 /**
- * Stateful cascade selection controller for the Management Company → Property →
+ * Stateful cascade selection controller for the Entity → Property →
  * Template pickers. Owns the three id+label selections and applies the shared
  * cascade rules (`cascade-rules.ts`) on each selection. Used where the cascade
  * itself is the source of truth (the templates reference header); record-view
@@ -62,11 +62,11 @@ export function useCascadePickerController(
 ): CascadePickerController {
   const { initialSelections } = options
 
-  const [managementCompanyId, setManagementCompanyId] = useState<string | null>(
-    initialSelections?.managementCompanyId ?? null,
+  const [entityId, setEntityId] = useState<string | null>(
+    initialSelections?.entityId ?? null,
   )
-  const [managementCompanyLabel, setManagementCompanyLabel] = useState<string | null>(
-    initialSelections?.managementCompanyLabel ?? null,
+  const [entityLabel, setEntityLabel] = useState<string | null>(
+    initialSelections?.entityLabel ?? null,
   )
   const [propertyId, setPropertyId] = useState<string | null>(
     initialSelections?.propertyId ?? null,
@@ -82,20 +82,20 @@ export function useCascadePickerController(
   )
 
   // Apply a cascade patch to the selection state — an omitted key leaves its
-  // field untouched (how property→MC auto-link skips back-filling when absent).
+  // field untouched (how property→entity auto-link skips back-filling when absent).
   const applyPatch = useCallback((patch: CascadeSelectionPatch) => {
-    if (patch.managementCompanyId !== undefined) setManagementCompanyId(patch.managementCompanyId)
-    if (patch.managementCompanyLabel !== undefined)
-      setManagementCompanyLabel(patch.managementCompanyLabel)
+    if (patch.entityId !== undefined) setEntityId(patch.entityId)
+    if (patch.entityLabel !== undefined)
+      setEntityLabel(patch.entityLabel)
     if (patch.propertyId !== undefined) setPropertyId(patch.propertyId)
     if (patch.propertyLabel !== undefined) setPropertyLabel(patch.propertyLabel)
     if (patch.templateId !== undefined) setTemplateId(patch.templateId)
     if (patch.templateLabel !== undefined) setTemplateLabel(patch.templateLabel)
   }, [])
 
-  const selectManagementCompany = useCallback(
-    (option: ManagementCompanyOption | null) => {
-      applyPatch(applyManagementCompanySelection(option))
+  const selectEntity = useCallback(
+    (option: EntityOption | null) => {
+      applyPatch(applyEntitySelection(option))
     },
     [applyPatch],
   )
@@ -115,9 +115,9 @@ export function useCascadePickerController(
   )
 
   const seed = useCallback((selections: CascadePickerSeed) => {
-    if (selections.managementCompany !== undefined) {
-      setManagementCompanyId(selections.managementCompany?.id ?? null)
-      setManagementCompanyLabel(selections.managementCompany?.label ?? null)
+    if (selections.entity !== undefined) {
+      setEntityId(selections.entity?.id ?? null)
+      setEntityLabel(selections.entity?.label ?? null)
     }
     if (selections.property !== undefined) {
       setPropertyId(selections.property?.id ?? null)
@@ -130,8 +130,8 @@ export function useCascadePickerController(
   }, [])
 
   const reset = useCallback(() => {
-    setManagementCompanyId(null)
-    setManagementCompanyLabel(null)
+    setEntityId(null)
+    setEntityLabel(null)
     setPropertyId(null)
     setPropertyLabel(null)
     setTemplateId(null)
@@ -139,16 +139,16 @@ export function useCascadePickerController(
   }, [])
 
   const hasSelections =
-    managementCompanyId !== null || propertyId !== null || templateId !== null
+    entityId !== null || propertyId !== null || templateId !== null
 
   return {
-    managementCompanyId,
-    managementCompanyLabel,
+    entityId,
+    entityLabel,
     propertyId,
     propertyLabel,
     templateId,
     templateLabel,
-    selectManagementCompany,
+    selectEntity,
     selectProperty,
     selectTemplate,
     reset,

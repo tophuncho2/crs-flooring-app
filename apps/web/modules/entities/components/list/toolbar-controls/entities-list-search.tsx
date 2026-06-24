@@ -2,20 +2,20 @@
 
 import { SearchControl } from "@/engines/list-view"
 
-export type ManagementCompaniesListSearchProps = {
+export type EntitiesListSearchProps = {
   query: string
   onQueryChange: (next: string) => void
 }
 
-export function ManagementCompaniesListSearch({
+export function EntitiesListSearch({
   query,
   onQueryChange,
-}: ManagementCompaniesListSearchProps) {
+}: EntitiesListSearchProps) {
   return (
     <SearchControl
       query={query}
       onQueryChange={onQueryChange}
-      placeholder="Search company"
+      placeholder="Search entity"
     />
   )
 }

@@ -2,14 +2,14 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 import {
   listWorkOrdersUseCase,
   searchJobTypeOptionsUseCase,
-  searchManagementCompanyOptionsUseCase,
+  searchEntityOptionsUseCase,
   searchPropertyOptionsUseCase,
   searchTemplateOptionsUseCase,
   searchWarehouseOptionsUseCase,
 } from "@builders/application"
 import type {
   JobTypeOption,
-  ManagementCompanyOption,
+  EntityOption,
   PropertyOption,
   TemplateOption,
   WarehouseOption,
@@ -45,8 +45,8 @@ export default async function FlooringWorkOrdersPage({
 
   const queryClient = new QueryClient()
 
-  let initialMgmtCoOptions: ManagementCompanyOption[] = []
-  let initialSelectedMgmtCo: ManagementCompanyOption | null = null
+  let initialEntityOptions: EntityOption[] = []
+  let initialSelectedEntity: EntityOption | null = null
   let initialPropertyOptions: PropertyOption[] = []
   let initialSelectedProperty: PropertyOption | null = null
   let initialTemplateOptions: TemplateOption[] = []
@@ -57,28 +57,28 @@ export default async function FlooringWorkOrdersPage({
   let initialSelectedJobType: JobTypeOption | null = null
 
   try {
-    const selectedMgmtCoId = initialInput.filters?.managementCompanyId?.[0] ?? null
+    const selectedEntityId = initialInput.filters?.entityId?.[0] ?? null
     const selectedPropertyId = initialInput.filters?.propertyId?.[0] ?? null
     const selectedTemplateId = initialInput.filters?.templateId?.[0] ?? null
     const selectedWarehouseId = initialInput.filters?.warehouseId?.[0] ?? null
     const selectedJobTypeId = initialInput.filters?.jobTypeId?.[0] ?? null
 
-    const [, mgmtCoPage, propertyPage, warehousePage, jobTypeOptions] = await Promise.all([
+    const [, entityPage, propertyPage, warehousePage, jobTypeOptions] = await Promise.all([
       queryClient.prefetchQuery({
         queryKey: [...WORK_ORDERS_LIST_QUERY_KEY, initialInput],
         queryFn: () => listWorkOrdersUseCase(initialInput),
       }),
-      searchManagementCompanyOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
+      searchEntityOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
       searchPropertyOptionsUseCase({
         take: INITIAL_OPTIONS_TAKE,
-        ...(selectedMgmtCoId ? { managementCompanyId: selectedMgmtCoId } : {}),
+        ...(selectedEntityId ? { entityId: selectedEntityId } : {}),
       }),
       searchWarehouseOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
       searchJobTypeOptionsUseCase({ take: INITIAL_OPTIONS_TAKE }),
     ])
 
     const warehouseOptions = warehousePage.items
-    initialMgmtCoOptions = mgmtCoPage.items
+    initialEntityOptions = entityPage.items
     initialPropertyOptions = propertyPage.items
     initialWarehouseOptions = warehouseOptions
     initialJobTypeOptions = jobTypeOptions
@@ -92,13 +92,13 @@ export default async function FlooringWorkOrdersPage({
       initialTemplateOptions = templatePage.items
     }
 
-    if (selectedMgmtCoId) {
-      initialSelectedMgmtCo = await resolveSelectedById(
-        selectedMgmtCoId,
-        mgmtCoPage.items,
+    if (selectedEntityId) {
+      initialSelectedEntity = await resolveSelectedById(
+        selectedEntityId,
+        entityPage.items,
         async (id) => {
           const match = (
-            await searchManagementCompanyOptionsUseCase({ search: id, take: 1 })
+            await searchEntityOptionsUseCase({ search: id, take: 1 })
           ).items[0]
           return match && match.id === id ? match : null
         },
@@ -173,8 +173,8 @@ export default async function FlooringWorkOrdersPage({
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}
-        initialMgmtCoOptions={initialMgmtCoOptions}
-        initialSelectedMgmtCo={initialSelectedMgmtCo}
+        initialEntityOptions={initialEntityOptions}
+        initialSelectedEntity={initialSelectedEntity}
         initialPropertyOptions={initialPropertyOptions}
         initialSelectedProperty={initialSelectedProperty}
         initialTemplateOptions={initialTemplateOptions}

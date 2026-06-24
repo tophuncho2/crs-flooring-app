@@ -21,12 +21,12 @@ const SECTION_CARD_CLASS =
   "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
 
 /**
- * Templates section rendered inside a record-view (property or MC). A light
+ * Templates section rendered inside a record-view (property or entity). A light
  * section card (mirrors the work-orders material-items chrome) wrapping the
  * canonical columned `DataTable` — reusing the templates list-view columns and
  * cell renderer. Backed by the shared `listTemplatesRequest` (default order is
  * property-name A-Z → unitType), filtered by `propertyId` (property view) or
- * `managementCompanyId` (MC view). Row click opens the template record,
+ * `entityId` (entity view). Row click opens the template record,
  * threading the current page as `returnTo`.
  */
 export function TemplatesSectionList({ filters }: { filters: TemplatesListFilters }) {
@@ -79,8 +79,8 @@ export function TemplatesSectionList({ filters }: { filters: TemplatesListFilter
               templateLabel: row.unitType,
               propertyId: row.propertyId,
               propertyLabel: row.propertyName,
-              managementCompanyId: row.managementCompanyId,
-              managementCompanyLabel: row.managementCompanyName,
+              entityId: row.entityId,
+              entityLabel: row.entityName,
               returnTo,
             }),
           )

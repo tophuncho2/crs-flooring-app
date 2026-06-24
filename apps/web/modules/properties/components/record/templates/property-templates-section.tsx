@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import type { PropertyManagementCompany, TemplateListRow } from "@builders/domain"
+import type { PropertyEntity, TemplateListRow } from "@builders/domain"
 import { DataTable } from "@/engines/list-view"
 import { RecordItemSection } from "@/engines/record-view"
 import {
@@ -18,15 +18,15 @@ import { useTemplatesSectionScope } from "@/modules/templates/controllers/record
  * The Property record view's §2 templates section, on the canonical
  * `RecordItemSection` chrome (persistent blue header). The body is a paginated
  * list-view `DataTable` over the shared templates columns, scoped (via
- * `useTemplatesSectionScope`) to the seeded property — and its management company,
+ * `useTemplatesSectionScope`) to the seeded property — and its entity,
  * when it has one. The operator only browses the property's templates and clicks a
  * row to open that template's hub; "+ Template" opens a fresh create form.
  */
 export function PropertyTemplatesSection({
-  managementCompany,
+  entity,
   property,
 }: {
-  managementCompany: PropertyManagementCompany | null
+  entity: PropertyEntity | null
   property: { id: string; name: string }
 }) {
   const router = useRouter()
@@ -34,14 +34,14 @@ export function PropertyTemplatesSection({
   const searchParams = useSearchParams()
 
   const { cascade } = useTemplatesSectionScope({
-    managementCompanyId: managementCompany?.id ?? null,
-    managementCompanyLabel: managementCompany?.name ?? null,
+    entityId: entity?.id ?? null,
+    entityLabel: entity?.entity ?? null,
     propertyId: property.id,
     propertyLabel: property.name,
   })
 
   const grid = useTemplatesSectionTable({
-    managementCompanyId: cascade.managementCompanyId,
+    entityId: cascade.entityId,
     propertyId: cascade.propertyId,
     enabled: true,
   })
@@ -60,8 +60,8 @@ export function PropertyTemplatesSection({
         templateLabel: row.unitType,
         propertyId: row.propertyId,
         propertyLabel: row.propertyName,
-        managementCompanyId: row.managementCompanyId,
-        managementCompanyLabel: row.managementCompanyName,
+        entityId: row.entityId,
+        entityLabel: row.entityName,
         returnTo,
       }),
     )

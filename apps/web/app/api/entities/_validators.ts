@@ -1,20 +1,20 @@
 import { z } from "zod"
-import { ManagementCompanyExecutionError } from "@builders/application"
+import { EntityExecutionError } from "@builders/application"
 import type {
-  CreateManagementCompanyUseCaseInput,
+  CreateEntityUseCaseInput,
   ListInput,
-  ManagementCompaniesListFilters,
-  UpdateManagementCompanyUseCaseInput,
+  EntitiesListFilters,
+  UpdateEntityUseCaseInput,
 } from "@builders/application"
 import {
-  LIST_MANAGEMENT_COMPANIES_MAX_PAGE_SIZE,
-  LIST_MANAGEMENT_COMPANIES_PAGE_SIZE,
+  LIST_ENTITIES_MAX_PAGE_SIZE,
+  LIST_ENTITIES_PAGE_SIZE,
   normalizePhoneNumber,
 } from "@builders/domain"
 
 function fail(message: string, field?: string): never {
-  throw new ManagementCompanyExecutionError({
-    code: "MANAGEMENT_COMPANY_VALIDATION_FAILED",
+  throw new EntityExecutionError({
+    code: "ENTITY_VALIDATION_FAILED",
     message,
     status: 400,
     field,
@@ -57,11 +57,11 @@ function pickPostalCode(body: Record<string, unknown>): unknown {
   return undefined
 }
 
-export function validateCreateManagementCompanyInput(
+export function validateCreateEntityInput(
   body: Record<string, unknown>,
-): CreateManagementCompanyUseCaseInput {
+): CreateEntityUseCaseInput {
   return {
-    name: requireString(body.name, "name"),
+    entity: requireString(body.entity, "entity"),
     streetAddress: optionalString(body.streetAddress),
     city: optionalString(body.city),
     state: optionalState(body.state, "state"),
@@ -71,12 +71,12 @@ export function validateCreateManagementCompanyInput(
   }
 }
 
-export function validateUpdateManagementCompanyInput(
+export function validateUpdateEntityInput(
   body: Record<string, unknown>,
-): UpdateManagementCompanyUseCaseInput {
-  const input: UpdateManagementCompanyUseCaseInput = {}
+): UpdateEntityUseCaseInput {
+  const input: UpdateEntityUseCaseInput = {}
 
-  if ("name" in body) input.name = requireString(body.name, "name")
+  if ("entity" in body) input.entity = requireString(body.entity, "entity")
   if ("streetAddress" in body) input.streetAddress = optionalString(body.streetAddress)
   if ("city" in body) input.city = optionalString(body.city)
   if ("state" in body) input.state = optionalState(body.state, "state")
@@ -89,31 +89,31 @@ export function validateUpdateManagementCompanyInput(
 
 // --- List query validator ---
 
-const listManagementCompaniesQuerySchema = z.object({
+const listEntitiesQuerySchema = z.object({
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
     .int()
     .min(1)
-    .max(LIST_MANAGEMENT_COMPANIES_MAX_PAGE_SIZE)
-    .default(LIST_MANAGEMENT_COMPANIES_PAGE_SIZE),
+    .max(LIST_ENTITIES_MAX_PAGE_SIZE)
+    .default(LIST_ENTITIES_PAGE_SIZE),
 })
 
-export function validateListManagementCompaniesQuery(
+export function validateListEntitiesQuery(
   searchParams: URLSearchParams,
-): ListInput<ManagementCompaniesListFilters> {
+): ListInput<EntitiesListFilters> {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
     if (key === "state") return
     raw[key] = value
   })
 
-  const parseResult = listManagementCompaniesQuerySchema.safeParse(raw)
+  const parseResult = listEntitiesQuerySchema.safeParse(raw)
   if (!parseResult.success) {
     const issue = parseResult.error.issues[0]
     fail(
-      issue?.message ?? "Invalid management companies list query",
+      issue?.message ?? "Invalid entities list query",
       issue?.path[0] ? String(issue.path[0]) : undefined,
     )
   }
@@ -143,27 +143,27 @@ export function validateListManagementCompaniesQuery(
 
 // --- Options query validator ---
 
-const managementCompanyOptionsQuerySchema = z.object({
+const entityOptionsQuerySchema = z.object({
   search: z.string().optional(),
   skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
 
-export type ValidatedManagementCompanyOptionsQuery = {
+export type ValidatedEntityOptionsQuery = {
   search?: string
   skip: number
   take: number
 }
 
-export function validateManagementCompanyOptionsQuery(
+export function validateEntityOptionsQuery(
   searchParams: URLSearchParams,
-): ValidatedManagementCompanyOptionsQuery {
+): ValidatedEntityOptionsQuery {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
     raw[key] = value
   })
 
-  const parseResult = managementCompanyOptionsQuerySchema.safeParse(raw)
+  const parseResult = entityOptionsQuerySchema.safeParse(raw)
   if (!parseResult.success) {
     const issue = parseResult.error.issues[0]
     fail(

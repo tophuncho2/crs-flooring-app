@@ -2,11 +2,11 @@
 
 import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
-import type { ManagementCompanyDetail, ManagementCompanyForm } from "@builders/domain"
+import type { EntityDetail, EntityForm } from "@builders/domain"
 
-export async function createManagementCompanyRequest(input: ManagementCompanyForm) {
-  return requestJson<{ managementCompany: ManagementCompanyDetail }>(
-    "/api/management-companies",
+export async function createEntityRequest(input: EntityForm) {
+  return requestJson<{ entity: EntityDetail }>(
+    "/api/entities",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -15,13 +15,13 @@ export async function createManagementCompanyRequest(input: ManagementCompanyFor
   )
 }
 
-export async function updateManagementCompanyRequest(
+export async function updateEntityRequest(
   id: string,
-  input: ManagementCompanyForm,
+  input: EntityForm,
   revisionKey: string,
 ) {
-  return requestJson<{ managementCompany: ManagementCompanyDetail }>(
-    `/api/management-companies/${id}/primary/section`,
+  return requestJson<{ entity: EntityDetail }>(
+    `/api/entities/${id}/primary/section`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -30,8 +30,8 @@ export async function updateManagementCompanyRequest(
   )
 }
 
-export async function deleteManagementCompanyRequest(id: string, updatedAt: string) {
-  return requestJson<{ ok: true }>(`/api/management-companies/${id}`, {
+export async function deleteEntityRequest(id: string, updatedAt: string) {
+  return requestJson<{ ok: true }>(`/api/entities/${id}`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withMutationMeta({}, updatedAt)),

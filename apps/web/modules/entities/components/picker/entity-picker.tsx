@@ -1,14 +1,14 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import type { ManagementCompanyOption } from "@builders/domain"
+import type { EntityOption } from "@builders/domain"
 import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
 import {
-  MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY,
-  searchManagementCompanyOptionsRequest,
-} from "@/modules/management-companies/data/management-company-options-request"
+  ENTITY_OPTIONS_QUERY_KEY,
+  searchEntityOptionsRequest,
+} from "@/modules/entities/data/entity-options-request"
 
-export type ManagementCompanyPickerProps = {
+export type EntityPickerProps = {
   value: string | null
   onChange: (id: string | null) => void
   /**
@@ -19,10 +19,10 @@ export type ManagementCompanyPickerProps = {
    * Only fires when the option is present in the picker's current
    * search results; the picker does not refetch by id.
    */
-  onOptionSelected?: (option: ManagementCompanyOption | null) => void
+  onOptionSelected?: (option: EntityOption | null) => void
   /**
    * Pre-resolved label for the current `value`. Lets the trigger render the
-   * selected company's name even when it isn't in the latest server result.
+   * selected entity's name even when it isn't in the latest server result.
    */
   selectedLabel?: string | null
   placeholder?: string
@@ -35,20 +35,20 @@ export type ManagementCompanyPickerProps = {
   ariaLabel?: string
   className?: string
   /** Optional initial seed shown before the user types anything (e.g. SSR-loaded top 20). */
-  initialOptions?: ManagementCompanyOption[]
+  initialOptions?: EntityOption[]
 }
 
-function toDropdownOption(option: ManagementCompanyOption): AsyncRichDropdownOption {
-  return { id: option.id, title: option.name }
+function toDropdownOption(option: EntityOption): AsyncRichDropdownOption {
+  return { id: option.id, title: option.entity }
 }
 
-export function ManagementCompanyPicker({
+export function EntityPicker({
   value,
   onChange,
   onOptionSelected,
   selectedLabel = null,
-  placeholder = "Filter by company",
-  searchPlaceholder = "Search companies",
+  placeholder = "Filter by entity",
+  searchPlaceholder = "Search entities",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
   clearLabel = "Clear selection",
@@ -57,15 +57,15 @@ export function ManagementCompanyPicker({
   ariaLabel,
   className,
   initialOptions,
-}: ManagementCompanyPickerProps) {
+}: EntityPickerProps) {
   const pagedSearchFn = useCallback(
     (search: string, signal: AbortSignal | undefined, skip: number) =>
-      searchManagementCompanyOptionsRequest(search, signal, { skip }),
+      searchEntityOptionsRequest(search, signal, { skip }),
     [],
   )
 
-  const controller = useAsyncRichDropdownController<ManagementCompanyOption>({
-    bucketKey: MANAGEMENT_COMPANY_OPTIONS_QUERY_KEY,
+  const controller = useAsyncRichDropdownController<EntityOption>({
+    bucketKey: ENTITY_OPTIONS_QUERY_KEY,
     pagedSearchFn,
     initialOptions,
   })

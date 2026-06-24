@@ -6,21 +6,21 @@ import {
 } from "@/engines/record-view"
 import { createRecordSectionError } from "@/types/record/section-error"
 import {
-  EMPTY_MANAGEMENT_COMPANY_FORM,
-  validateManagementCompanyForm,
-  type ManagementCompanyForm,
+  EMPTY_ENTITY_FORM,
+  validateEntityForm,
+  type EntityForm,
 } from "@builders/domain"
-import { createPropertyHubRequest } from "@/modules/management-companies/data/properties/property-mutations"
+import { createPropertyHubRequest } from "@/modules/entities/data/properties/property-mutations"
 import { buildRecordDetailHref } from "@/hooks/navigation/routes"
 
 /**
- * Create-mode controller for the MC record view's primary section. Saving
- * creates the management company **and** links the property it was opened for —
- * atomically, via `/api/properties/hub` (`managementCompany: create` +
- * `property: link`). On success it redirects to the new MC's edit view drilled
+ * Create-mode controller for the entity record view's primary section. Saving
+ * creates the entity **and** links the property it was opened for —
+ * atomically, via `/api/properties/hub` (`entity: create` +
+ * `property: link`). On success it redirects to the new entity's edit view drilled
  * into that property.
  */
-export function useMcCreateSection({
+export function useEntityCreateSection({
   page,
   propertyId,
   backHref,
@@ -29,15 +29,15 @@ export function useMcCreateSection({
   propertyId: string
   backHref: string
 }) {
-  return useSingleSectionCreateController<ManagementCompanyForm>({
+  return useSingleSectionCreateController<EntityForm>({
     page,
     // Rendered through RecordMultiSectionPanel, which is the sole dirty-sections
     // writer; let it own that so the controller doesn't double-write and fight
-    // the panel (which loops). Mirrors useMcPrimarySection (edit).
+    // the panel (which loops). Mirrors useEntityPrimarySection (edit).
     manageDirtySections: false,
-    createInitialValue: () => EMPTY_MANAGEMENT_COMPANY_FORM,
+    createInitialValue: () => EMPTY_ENTITY_FORM,
     createRecord: async (localValue) => {
-      const validationError = validateManagementCompanyForm(localValue)
+      const validationError = validateEntityForm(localValue)
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",
@@ -46,29 +46,29 @@ export function useMcCreateSection({
         })
       }
 
-      const { managementCompany } = await createPropertyHubRequest({
-        managementCompany: { mode: "create", fields: localValue },
+      const { entity } = await createPropertyHubRequest({
+        entity: { mode: "create", fields: localValue },
         property: { mode: "link", id: propertyId },
       })
 
-      if (!managementCompany) {
+      if (!entity) {
         throw createRecordSectionError({
           kind: "transport",
-          message: "Management company was not created",
+          message: "Entity was not created",
           retryable: true,
         })
       }
 
       const detailHref = buildRecordDetailHref(
-        "/dashboard/management-companies",
-        managementCompany.id,
+        "/dashboard/entities",
+        entity.id,
         backHref,
       )
       const separator = detailHref.includes("?") ? "&" : "?"
 
       return {
         redirectTo: `${detailHref}${separator}property=${propertyId}`,
-        noticeMessage: "Management company created",
+        noticeMessage: "Entity created",
       }
     },
   })

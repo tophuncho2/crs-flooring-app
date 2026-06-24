@@ -22,8 +22,8 @@ export default async function TemplateHubPage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialSelections: TemplateHubInitialSelections = {
-    managementCompanyId: readParam(resolvedSearchParams, "managementCompanyId") ?? null,
-    managementCompanyLabel: readParam(resolvedSearchParams, "managementCompanyLabel") ?? null,
+    entityId: readParam(resolvedSearchParams, "entityId") ?? null,
+    entityLabel: readParam(resolvedSearchParams, "entityLabel") ?? null,
     propertyId: readParam(resolvedSearchParams, "propertyId") ?? null,
     propertyLabel: readParam(resolvedSearchParams, "propertyLabel") ?? null,
     templateId: readParam(resolvedSearchParams, "templateId") ?? null,

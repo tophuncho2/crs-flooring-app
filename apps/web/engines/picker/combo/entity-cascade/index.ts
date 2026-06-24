@@ -4,7 +4,7 @@ export {
   type CascadePickerInitialSelections,
 } from "./client/use-cascade-picker-controller"
 export {
-  applyManagementCompanySelection,
+  applyEntitySelection,
   applyPropertySelection,
   applyTemplateSelection,
   type CascadeSelectionPatch,

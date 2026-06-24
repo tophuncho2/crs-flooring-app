@@ -11,7 +11,7 @@ export function toPropertyPrimaryForm(property: PropertyDetailRecord): PropertyP
     phone: property.phone,
     email: property.email,
     instructions: property.instructions,
-    managementCompanyId: property.managementCompany?.id ?? "",
+    entityId: property.entity?.id ?? "",
   }
 }
 

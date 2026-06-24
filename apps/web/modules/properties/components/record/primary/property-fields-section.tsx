@@ -6,7 +6,7 @@ import { AddressEditCell, CellAt, FieldSection, FormField, PhoneCell, TextCell, 
 /**
  * The text/address fields rendered by this section — the shared subset common
  * to the property record view (`PropertyPrimaryForm`, which adds an unrendered
- * `managementCompanyId` that rides along on save) and the management hub create
+ * `entityId` that rides along on save) and the management hub create
  * form (`PropertyHubPropertyFields`). Both are assignable to this shape, so a
  * single component serves both instead of two hand-mirrored copies.
  */
@@ -19,8 +19,8 @@ export type PropertyFieldsDraft = Pick<
  * The editable property fields: name, contact, address, and instructions —
  * shared by the property record view's §1 and the management hub create form's
  * "Property" group. Chrome-free (just the field grid); each consumer supplies
- * its own section shell. The linked/selected management company is handled
- * outside this block, so the draft's `managementCompanyId` (record view) is
+ * its own section shell. The linked/selected entity is handled
+ * outside this block, so the draft's `entityId` (record view) is
  * left untouched here.
  *
  * Layout: every field stacked one-per-row at col 1, each spanning 5/8 columns,

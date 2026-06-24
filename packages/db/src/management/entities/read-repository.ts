@@ -2,21 +2,21 @@ import { db } from "../../client.js"
 import { Prisma } from "../../generated/prisma/client.js"
 import type { PrismaClient } from "../../generated/prisma/client.js"
 import {
-  normalizeManagementCompany,
-  normalizeManagementCompanyListRow,
-  normalizeManagementCompanyOption,
-  type ManagementCompanyDetail,
-  type ManagementCompanyListRow,
-  type ManagementCompanyOption,
+  normalizeEntity,
+  normalizeEntityListRow,
+  normalizeEntityOption,
+  type EntityDetail,
+  type EntityListRow,
+  type EntityOption,
 } from "@builders/domain"
 
-type ManagementCompaniesDbClient = PrismaClient | Prisma.TransactionClient
+type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
 
-const managementCompanyListSelect = {
+const entityListSelect = {
   id: true,
   createdAt: true,
   updatedAt: true,
-  name: true,
+  entity: true,
   streetAddress: true,
   city: true,
   state: true,
@@ -28,11 +28,11 @@ const managementCompanyListSelect = {
   },
 } as const
 
-const managementCompanyDetailSelect = {
+const entityDetailSelect = {
   id: true,
   createdAt: true,
   updatedAt: true,
-  name: true,
+  entity: true,
   streetAddress: true,
   city: true,
   state: true,
@@ -45,11 +45,11 @@ const managementCompanyDetailSelect = {
 } as const
 
 // Picker option select — carries the contact/address columns so a freshly
-// picked company can hydrate its Phone/Email/Address cells without a detail
+// picked entity can hydrate its Phone/Email/Address cells without a detail
 // refetch (mirrors `propertyOptionSelect`).
-const managementCompanyOptionSelect = {
+const entityOptionSelect = {
   id: true,
-  name: true,
+  entity: true,
   streetAddress: true,
   city: true,
   state: true,
@@ -58,48 +58,48 @@ const managementCompanyOptionSelect = {
   email: true,
 } as const
 
-export async function listManagementCompanyOptions(
-  client: ManagementCompaniesDbClient = db,
-): Promise<ManagementCompanyOption[]> {
-  const companies = await client.flooringManagementCompany.findMany({
-    orderBy: { name: "asc" },
-    select: managementCompanyOptionSelect,
+export async function listEntityOptions(
+  client: EntitiesDbClient = db,
+): Promise<EntityOption[]> {
+  const entities = await client.entity.findMany({
+    orderBy: { entity: "asc" },
+    select: entityOptionSelect,
   })
 
-  return companies.map(normalizeManagementCompanyOption)
+  return entities.map(normalizeEntityOption)
 }
 
-export async function getManagementCompanyById(
+export async function getEntityById(
   id: string,
-  client: ManagementCompaniesDbClient = db,
-): Promise<ManagementCompanyDetail> {
-  const company = await client.flooringManagementCompany.findUniqueOrThrow({
+  client: EntitiesDbClient = db,
+): Promise<EntityDetail> {
+  const entity = await client.entity.findUniqueOrThrow({
     where: { id },
-    select: managementCompanyDetailSelect,
+    select: entityDetailSelect,
   })
 
-  return normalizeManagementCompany(company)
+  return normalizeEntity(entity)
 }
 
-export type ManagementCompanyListViewOptions = {
+export type EntityListViewOptions = {
   search?: string
   filters?: { state?: ReadonlyArray<string> }
   skip: number
   take: number
 }
 
-export type ManagementCompanyListViewResult = {
-  rows: ManagementCompanyListRow[]
+export type EntityListViewResult = {
+  rows: EntityListRow[]
   total: number
 }
 
 function buildListViewWhere(
-  options: Pick<ManagementCompanyListViewOptions, "search" | "filters">,
-): Prisma.FlooringManagementCompanyWhereInput | undefined {
-  const clauses: Prisma.FlooringManagementCompanyWhereInput[] = []
+  options: Pick<EntityListViewOptions, "search" | "filters">,
+): Prisma.EntityWhereInput | undefined {
+  const clauses: Prisma.EntityWhereInput[] = []
 
   if (options.search) {
-    clauses.push({ name: { contains: options.search, mode: "insensitive" } })
+    clauses.push({ entity: { contains: options.search, mode: "insensitive" } })
   }
 
   const stateCodes = options.filters?.state
@@ -112,58 +112,58 @@ function buildListViewWhere(
   return { AND: clauses }
 }
 
-export async function listManagementCompaniesForListView(
-  options: ManagementCompanyListViewOptions,
-  client: ManagementCompaniesDbClient = db,
-): Promise<ManagementCompanyListViewResult> {
+export async function listEntitiesForListView(
+  options: EntityListViewOptions,
+  client: EntitiesDbClient = db,
+): Promise<EntityListViewResult> {
   const where = buildListViewWhere(options)
 
   const [total, rows] = await Promise.all([
-    client.flooringManagementCompany.count({ where }),
-    client.flooringManagementCompany.findMany({
+    client.entity.count({ where }),
+    client.entity.findMany({
       where,
-      orderBy: [{ name: "asc" }, { id: "asc" }],
+      orderBy: [{ entity: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,
-      select: managementCompanyListSelect,
+      select: entityListSelect,
     }),
   ])
 
   return {
     total,
-    rows: rows.map(normalizeManagementCompanyListRow),
+    rows: rows.map(normalizeEntityListRow),
   }
 }
 
-export type ManagementCompanyOptionsSearchArgs = {
+export type EntityOptionsSearchArgs = {
   search?: string
   skip?: number
   take: number
 }
 
-export type ManagementCompanyOptionsSearchResult = {
-  items: ManagementCompanyOption[]
+export type EntityOptionsSearchResult = {
+  items: EntityOption[]
   hasMore: boolean
 }
 
-export async function searchManagementCompanyOptions(
-  args: ManagementCompanyOptionsSearchArgs,
-  client: ManagementCompaniesDbClient = db,
-): Promise<ManagementCompanyOptionsSearchResult> {
+export async function searchEntityOptions(
+  args: EntityOptionsSearchArgs,
+  client: EntitiesDbClient = db,
+): Promise<EntityOptionsSearchResult> {
   const where = args.search
-    ? { name: { contains: args.search, mode: "insensitive" as const } }
+    ? { entity: { contains: args.search, mode: "insensitive" as const } }
     : undefined
 
   // Fetch take+1 to detect a next page without a separate count query.
-  const rows = await client.flooringManagementCompany.findMany({
+  const rows = await client.entity.findMany({
     where,
-    orderBy: [{ name: "asc" }, { id: "asc" }],
+    orderBy: [{ entity: "asc" }, { id: "asc" }],
     skip: args.skip ?? 0,
     take: args.take + 1,
-    select: managementCompanyOptionSelect,
+    select: entityOptionSelect,
   })
 
   const hasMore = rows.length > args.take
   const page = hasMore ? rows.slice(0, args.take) : rows
-  return { items: page.map(normalizeManagementCompanyOption), hasMore }
+  return { items: page.map(normalizeEntityOption), hasMore }
 }

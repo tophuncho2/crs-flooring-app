@@ -10,11 +10,11 @@ import {
   PROPERTY_HUB_NO_ACTIONS_MESSAGE,
   PROPERTY_NAME_REQUIRED_MESSAGE,
 } from "../../../src/management/properties/error-messages.js"
-import type { ManagementCompanyForm } from "../../../src/management/management-companies/types.js"
+import type { EntityForm } from "../../../src/management/entities/types.js"
 
-function mcFields(overrides: Partial<ManagementCompanyForm> = {}): ManagementCompanyForm {
+function entityFields(overrides: Partial<EntityForm> = {}): EntityForm {
   return {
-    name: "Acme",
+    entity: "Acme",
     streetAddress: "",
     city: "",
     state: "",
@@ -30,33 +30,33 @@ function propertyFields(overrides: Partial<PropertyHubPropertyFields> = {}): Pro
 }
 
 describe("validateCreatePropertyHubForm", () => {
-  it("rejects when neither a management company nor a property is being created", () => {
+  it("rejects when neither an entity nor a property is being created", () => {
     const form: CreatePropertyHubForm = {
-      managementCompany: { mode: "none" },
+      entity: { mode: "none" },
       property: { mode: "none" },
     }
     expect(validateCreatePropertyHubForm(form)).toBe(PROPERTY_HUB_NO_ACTIONS_MESSAGE)
   })
 
-  it("rejects linking a management company without also creating a property", () => {
+  it("rejects linking an entity without also creating a property", () => {
     const form: CreatePropertyHubForm = {
-      managementCompany: { mode: "link", id: "mc-1" },
+      entity: { mode: "link", id: "entity-1" },
       property: { mode: "none" },
     }
     expect(validateCreatePropertyHubForm(form)).toBe(PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE)
   })
 
-  it("delegates to the management-company validator when creating one", () => {
+  it("delegates to the entity validator when creating one", () => {
     const form: CreatePropertyHubForm = {
-      managementCompany: { mode: "create", fields: mcFields({ name: "  " }) },
+      entity: { mode: "create", fields: entityFields({ entity: "  " }) },
       property: { mode: "create", fields: propertyFields() },
     }
-    expect(validateCreatePropertyHubForm(form)).toBe("Company name is required")
+    expect(validateCreatePropertyHubForm(form)).toBe("Entity name is required")
   })
 
   it("rejects a blank property name when creating a property", () => {
     const form: CreatePropertyHubForm = {
-      managementCompany: { mode: "none" },
+      entity: { mode: "none" },
       property: { mode: "create", fields: propertyFields({ name: "   " }) },
     }
     expect(validateCreatePropertyHubForm(form)).toBe(PROPERTY_NAME_REQUIRED_MESSAGE)
@@ -64,31 +64,31 @@ describe("validateCreatePropertyHubForm", () => {
 
   it("accepts creating a property only", () => {
     const form: CreatePropertyHubForm = {
-      managementCompany: { mode: "none" },
+      entity: { mode: "none" },
       property: { mode: "create", fields: propertyFields() },
     }
     expect(validateCreatePropertyHubForm(form)).toBe("")
   })
 
-  it("accepts linking a management company while creating a property", () => {
+  it("accepts linking an entity while creating a property", () => {
     const form: CreatePropertyHubForm = {
-      managementCompany: { mode: "link", id: "mc-1" },
+      entity: { mode: "link", id: "entity-1" },
       property: { mode: "create", fields: propertyFields() },
     }
     expect(validateCreatePropertyHubForm(form)).toBe("")
   })
 
-  it("accepts creating both a management company and a property", () => {
+  it("accepts creating both an entity and a property", () => {
     const form: CreatePropertyHubForm = {
-      managementCompany: { mode: "create", fields: mcFields() },
+      entity: { mode: "create", fields: entityFields() },
       property: { mode: "create", fields: propertyFields() },
     }
     expect(validateCreatePropertyHubForm(form)).toBe("")
   })
 
-  it("accepts creating a management company only", () => {
+  it("accepts creating an entity only", () => {
     const form: CreatePropertyHubForm = {
-      managementCompany: { mode: "create", fields: mcFields() },
+      entity: { mode: "create", fields: entityFields() },
       property: { mode: "none" },
     }
     expect(validateCreatePropertyHubForm(form)).toBe("")

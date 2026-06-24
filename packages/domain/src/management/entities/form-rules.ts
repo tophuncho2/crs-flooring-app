@@ -1,21 +1,21 @@
 import { isBlankName } from "../../shared/name-rules.js"
-import type { ManagementCompanyDetail, ManagementCompanyForm } from "./types.js"
+import type { EntityDetail, EntityForm } from "./types.js"
 
-export function toManagementCompanyForm(company: ManagementCompanyDetail): ManagementCompanyForm {
+export function toEntityForm(entity: EntityDetail): EntityForm {
   return {
-    name: company.name,
-    streetAddress: company.streetAddress,
-    city: company.city,
-    state: company.state,
-    zip: company.zip,
-    phone: company.phone,
-    email: company.email,
+    entity: entity.entity,
+    streetAddress: entity.streetAddress,
+    city: entity.city,
+    state: entity.state,
+    zip: entity.zip,
+    phone: entity.phone,
+    email: entity.email,
   }
 }
 
-export function validateManagementCompanyForm(input: ManagementCompanyForm) {
-  if (isBlankName(input.name)) {
-    return "Company name is required"
+export function validateEntityForm(input: EntityForm) {
+  if (isBlankName(input.entity)) {
+    return "Entity name is required"
   }
 
   return ""

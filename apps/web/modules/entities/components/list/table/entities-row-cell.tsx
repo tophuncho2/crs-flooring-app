@@ -1,19 +1,19 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
-import { formatEasternDateTime, formatPhoneNumber, type ManagementCompanyListRow } from "@builders/domain"
+import { formatEasternDateTime, formatPhoneNumber, type EntityListRow } from "@builders/domain"
 
 /**
- * Per-cell renderer for the management-companies list `DataTable`. Switches
+ * Per-cell renderer for the entities list `DataTable`. Switches
  * on `column.key` and returns the cell body for that field on the given row.
- * Wired into `<DataTable renderCell={renderManagementCompanyRowCell} />`.
+ * Wired into `<DataTable renderCell={renderEntityRowCell} />`.
  */
-export function renderManagementCompanyRowCell(
-  column: DataTableColumn<ManagementCompanyListRow>,
-  row: ManagementCompanyListRow,
+export function renderEntityRowCell(
+  column: DataTableColumn<EntityListRow>,
+  row: EntityListRow,
 ): ReactNode {
   switch (column.key) {
-    case "name":
-      return <span className="font-medium">{row.name}</span>
+    case "entity":
+      return <span className="font-medium">{row.entity}</span>
     case "streetAddress":
       return row.streetAddress || "-"
     case "city":

@@ -20,7 +20,7 @@ const ACTOR = "actor@example.com"
 
 function input(overrides: Record<string, unknown> = {}) {
   return {
-    managementCompanyId: null,
+    entityId: null,
     name: "Maple Court",
     streetAddress: null,
     city: null,
@@ -48,7 +48,7 @@ function detail(overrides: Record<string, unknown> = {}) {
     fullAddress: "",
     createdBy: null,
     updatedBy: null,
-    managementCompany: null,
+    entity: null,
     ...overrides,
   }
 }

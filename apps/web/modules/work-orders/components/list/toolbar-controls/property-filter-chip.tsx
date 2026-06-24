@@ -6,8 +6,8 @@ import { PropertyPicker } from "@/modules/properties/components/picker/property-
 export type PropertyFilterChipProps = {
   value: string | null
   selectedLabel: string | null
-  /** Optional mgmt-co scope — when set, the picker narrows to that company. */
-  managementCompanyId?: string | null
+  /** Optional entity scope — when set, the picker narrows to that company. */
+  entityId?: string | null
   onChange: (id: string | null) => void
   initialOptions?: PropertyOption[]
 }
@@ -21,7 +21,7 @@ export type PropertyFilterChipProps = {
 export function PropertyFilterChip({
   value,
   selectedLabel,
-  managementCompanyId = null,
+  entityId = null,
   onChange,
   initialOptions,
 }: PropertyFilterChipProps) {
@@ -30,7 +30,7 @@ export function PropertyFilterChip({
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}
-      managementCompanyId={managementCompanyId}
+      entityId={entityId}
       initialOptions={initialOptions}
       placeholder="Property"
       searchPlaceholder="Search properties"

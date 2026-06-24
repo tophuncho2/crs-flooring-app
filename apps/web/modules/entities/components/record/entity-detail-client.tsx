@@ -4,25 +4,25 @@ import {
   RecordDetailClientScaffold,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
-import type { ManagementCompanyDetail } from "@builders/domain"
-import { ManagementCompanyRecordView } from "./management-company-record-view"
+import type { EntityDetail } from "@builders/domain"
+import { EntityRecordView } from "./entity-record-view"
 
-export function ManagementCompanyDetailClient({
-  managementCompany,
+export function EntityDetailClient({
+  entity,
   backHref,
 }: {
-  managementCompany: ManagementCompanyDetail
+  entity: EntityDetail
   backHref: string
 }) {
   return (
     <RecordDetailClientScaffold
-      title="Management Hub"
+      title="Entity Hub"
       backHref={backHref}
-      dirtyMessage="You have unsaved management-company changes. Leave without saving?"
+      dirtyMessage="You have unsaved entity changes. Leave without saving?"
       headerVariant="section"
     >
       {(page: RecordDetailClientScaffoldContext) => (
-        <ManagementCompanyRecordView page={page} entry={managementCompany} />
+        <EntityRecordView page={page} entry={entity} />
       )}
     </RecordDetailClientScaffold>
   )

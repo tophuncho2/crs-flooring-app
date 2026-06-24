@@ -1,9 +1,9 @@
 import type {
-  CreateManagementCompanyRecordInput,
-  UpdateManagementCompanyRecordInput,
+  CreateEntityRecordInput,
+  UpdateEntityRecordInput,
 } from "@builders/db"
-import type { ManagementCompanyDetail } from "@builders/domain"
+import type { EntityDetail } from "@builders/domain"
 
-export type CreateManagementCompanyUseCaseInput = CreateManagementCompanyRecordInput
-export type UpdateManagementCompanyUseCaseInput = UpdateManagementCompanyRecordInput
-export type ManagementCompanyUseCaseResult = ManagementCompanyDetail
+export type CreateEntityUseCaseInput = CreateEntityRecordInput
+export type UpdateEntityUseCaseInput = UpdateEntityRecordInput
+export type EntityUseCaseResult = EntityDetail

@@ -1,8 +1,8 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { normalizeManagementCompany, normalizePhoneNumber, type ManagementCompanyDetail } from "@builders/domain"
+import { normalizeEntity, normalizePhoneNumber, type EntityDetail } from "@builders/domain"
 
-type ManagementCompaniesDbClient = PrismaClient | Prisma.TransactionClient
+type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
 
 // Phone standard: persist the canonical digits-only form (defensive guard — the
 // API validator already normalized, but the data layer is the last gate).
@@ -13,8 +13,8 @@ function normalizeNullablePhone(value: string | null | undefined): string | null
   return normalizePhoneNumber(value) || null
 }
 
-export type CreateManagementCompanyRecordInput = {
-  name: string
+export type CreateEntityRecordInput = {
+  entity: string
   streetAddress: string | null
   city: string | null
   state: string | null
@@ -23,13 +23,13 @@ export type CreateManagementCompanyRecordInput = {
   email: string | null
 }
 
-export type UpdateManagementCompanyRecordInput = Partial<CreateManagementCompanyRecordInput>
+export type UpdateEntityRecordInput = Partial<CreateEntityRecordInput>
 
-const managementCompanyDetailSelect = {
+const entityDetailSelect = {
   id: true,
   createdAt: true,
   updatedAt: true,
-  name: true,
+  entity: true,
   streetAddress: true,
   city: true,
   state: true,
@@ -41,35 +41,35 @@ const managementCompanyDetailSelect = {
   },
 } as const
 
-export async function createManagementCompanyRecord(
-  input: CreateManagementCompanyRecordInput,
-  client: ManagementCompaniesDbClient = db,
-): Promise<ManagementCompanyDetail> {
-  const company = await client.flooringManagementCompany.create({
+export async function createEntityRecord(
+  input: CreateEntityRecordInput,
+  client: EntitiesDbClient = db,
+): Promise<EntityDetail> {
+  const entity = await client.entity.create({
     data: { ...input, phone: normalizeNullablePhone(input.phone) },
-    select: managementCompanyDetailSelect,
+    select: entityDetailSelect,
   })
 
-  return normalizeManagementCompany(company)
+  return normalizeEntity(entity)
 }
 
-export async function updateManagementCompanyRecord(
+export async function updateEntityRecord(
   id: string,
-  input: UpdateManagementCompanyRecordInput,
-  client: ManagementCompaniesDbClient = db,
-): Promise<ManagementCompanyDetail> {
-  const company = await client.flooringManagementCompany.update({
+  input: UpdateEntityRecordInput,
+  client: EntitiesDbClient = db,
+): Promise<EntityDetail> {
+  const entity = await client.entity.update({
     where: { id },
     data: { ...input, phone: normalizeNullablePhone(input.phone) },
-    select: managementCompanyDetailSelect,
+    select: entityDetailSelect,
   })
 
-  return normalizeManagementCompany(company)
+  return normalizeEntity(entity)
 }
 
-export async function deleteManagementCompanyRecordById(
+export async function deleteEntityRecordById(
   id: string,
-  client: ManagementCompaniesDbClient = db,
+  client: EntitiesDbClient = db,
 ): Promise<void> {
-  await client.flooringManagementCompany.delete({ where: { id } })
+  await client.entity.delete({ where: { id } })
 }

@@ -6,7 +6,7 @@ test.describe("templates smoke", () => {
 
   test("creates a template with an inline-new property and lands on the template hub", async ({ page }) => {
     const stamp = Date.now()
-    const companyName = `Smoke Tmpl MC ${stamp}`
+    const entityName = `Smoke Tmpl Entity ${stamp}`
     const propertyName = `Smoke Tmpl Property ${stamp}`
     const description = `Smoke Template ${stamp}`
 
@@ -18,13 +18,13 @@ test.describe("templates smoke", () => {
 
     await page.getByRole("button", { name: "New property" }).click()
 
-    await page.getByLabel("New company name").fill(companyName)
-    await page.getByLabel("New company phone").fill("555-0300")
-    await page.getByLabel("New company email").fill(`tmpl-mc-${stamp}@smoke.test`)
-    await page.getByLabel("New company street address").fill("5 Smoke MC Way")
-    await page.getByLabel("New company city").fill("Smoketown")
-    await page.getByLabel("New company state").fill("CA")
-    await page.getByLabel("New company zip").fill("90001")
+    await page.getByLabel("Entity name").fill(entityName)
+    await page.getByLabel("Phone", { exact: true }).fill("555-0300")
+    await page.getByLabel("Email", { exact: true }).fill(`tmpl-entity-${stamp}@smoke.test`)
+    await page.getByLabel("Street address", { exact: true }).fill("5 Smoke Entity Way")
+    await page.getByLabel("City", { exact: true }).fill("Smoketown")
+    await page.getByLabel("State", { exact: true }).fill("CA")
+    await page.getByLabel("Zip", { exact: true }).fill("90001")
 
     await page.getByLabel("Property name").fill(propertyName)
     await page.getByLabel("Property street address").fill("6 Smoke Property Ln")
@@ -37,12 +37,12 @@ test.describe("templates smoke", () => {
     await page.getByRole("button", { name: "Create", exact: true }).click()
 
     // After hub-create the panel closes and the Property picker on the form
-    // is auto-populated with the new property. The MC picker is too.
+    // is auto-populated with the new property. The Entity picker is too.
     await expect(page.getByRole("button", { name: "Property", exact: true })).toContainText(
       propertyName,
     )
-    await expect(page.getByRole("button", { name: "Management company" })).toContainText(
-      companyName,
+    await expect(page.getByRole("button", { name: "Entity" })).toContainText(
+      entityName,
     )
 
     await page.getByLabel("Description").fill(description)

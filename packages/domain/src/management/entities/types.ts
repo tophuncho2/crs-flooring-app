@@ -1,8 +1,8 @@
-export type ManagementCompanyDetail = {
+export type EntityDetail = {
   id: string
   createdAt: string
   updatedAt: string
-  name: string
+  entity: string
   streetAddress: string
   city: string
   state: string
@@ -13,11 +13,11 @@ export type ManagementCompanyDetail = {
   propertyCount: number
 }
 
-export type ManagementCompanyListRow = {
+export type EntityListRow = {
   id: string
   createdAt: string
   updatedAt: string
-  name: string
+  entity: string
   streetAddress: string
   city: string
   state: string
@@ -28,9 +28,9 @@ export type ManagementCompanyListRow = {
   propertyCount: number
 }
 
-export type ManagementCompanyOption = {
+export type EntityOption = {
   id: string
-  name: string
+  entity: string
   streetAddress: string
   city: string
   state: string
@@ -40,8 +40,8 @@ export type ManagementCompanyOption = {
   fullAddress: string
 }
 
-export type ManagementCompanyForm = {
-  name: string
+export type EntityForm = {
+  entity: string
   streetAddress: string
   city: string
   state: string
@@ -50,8 +50,8 @@ export type ManagementCompanyForm = {
   email: string
 }
 
-export const EMPTY_MANAGEMENT_COMPANY_FORM: ManagementCompanyForm = {
-  name: "",
+export const EMPTY_ENTITY_FORM: EntityForm = {
+  entity: "",
   streetAddress: "",
   city: "",
   state: "",

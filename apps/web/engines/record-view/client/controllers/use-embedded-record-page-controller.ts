@@ -7,7 +7,7 @@ const EMPTY_SUMMARY: RecordPageSummary = { metrics: [] }
 
 /**
  * Page controller for a record view rendered **embedded inside a section of
- * another record view** (e.g. a Property record view drilled into from the MC
+ * another record view** (e.g. a Property record view drilled into from the entity
  * record view's properties section).
  *
  * It reuses the host page's unsaved-changes guard + confirm dialog (so there is

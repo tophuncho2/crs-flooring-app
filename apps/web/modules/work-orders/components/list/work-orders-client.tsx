@@ -5,7 +5,7 @@ import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarC
 import type { WorkOrdersListFilters } from "@builders/application"
 import type {
   JobTypeOption,
-  ManagementCompanyOption,
+  EntityOption,
   PropertyOption,
   TemplateOption,
   WarehouseOption,
@@ -21,7 +21,7 @@ import { useWorkOrdersListController } from "@/modules/work-orders/controllers/l
 import { WorkOrdersTable } from "./work-orders-table"
 import { AddWorkOrderButton } from "./toolbar-controls/add-work-order-button"
 import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
-import { MgmtCoFilterChip } from "./toolbar-controls/mgmt-co-filter-chip"
+import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { ScheduledForFilterChip } from "./toolbar-controls/scheduled-for-filter-chip"
 import { SortPickerChip, type SortPickerField } from "./toolbar-controls/sort-picker-chip"
@@ -35,15 +35,15 @@ const WORK_ORDERS_ALLOWED_SORT_FIELDS = [
   "createdAt",
   "scheduledFor",
   "property",
-  "managementCompany",
+  "entity",
 ] as const
 
 export default function WorkOrdersClient({
   initialSearchQuery,
   initialPage,
   initialFilters,
-  initialMgmtCoOptions,
-  initialSelectedMgmtCo = null,
+  initialEntityOptions,
+  initialSelectedEntity = null,
   initialPropertyOptions,
   initialSelectedProperty = null,
   initialTemplateOptions,
@@ -56,8 +56,8 @@ export default function WorkOrdersClient({
   initialSearchQuery: string
   initialPage: number
   initialFilters: WorkOrdersListFilters
-  initialMgmtCoOptions: ManagementCompanyOption[]
-  initialSelectedMgmtCo?: ManagementCompanyOption | null
+  initialEntityOptions: EntityOption[]
+  initialSelectedEntity?: EntityOption | null
   initialPropertyOptions: PropertyOption[]
   initialSelectedProperty?: PropertyOption | null
   initialTemplateOptions: TemplateOption[]
@@ -102,7 +102,7 @@ export default function WorkOrdersClient({
   })
 
   // --- Selected values from the filter map ---
-  const selectedMgmtCoId = filters.managementCompanyId?.[0] ?? null
+  const selectedEntityId = filters.entityId?.[0] ?? null
   const selectedPropertyId = filters.propertyId?.[0] ?? null
   const selectedTemplateId = filters.templateId?.[0] ?? null
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
@@ -118,11 +118,11 @@ export default function WorkOrdersClient({
   const descriptionValue = filters.description?.[0] ?? ""
 
   // --- Selected-label snapshots (initial-seed + fallback to current options) ---
-  const mgmtCoLabel = useMemo(() => {
-    if (!selectedMgmtCoId) return null
-    if (initialSelectedMgmtCo?.id === selectedMgmtCoId) return initialSelectedMgmtCo.name
-    return initialMgmtCoOptions.find((o) => o.id === selectedMgmtCoId)?.name ?? null
-  }, [selectedMgmtCoId, initialSelectedMgmtCo, initialMgmtCoOptions])
+  const entityLabel = useMemo(() => {
+    if (!selectedEntityId) return null
+    if (initialSelectedEntity?.id === selectedEntityId) return initialSelectedEntity.entity
+    return initialEntityOptions.find((o) => o.id === selectedEntityId)?.entity ?? null
+  }, [selectedEntityId, initialSelectedEntity, initialEntityOptions])
 
   const propertyLabel = useMemo(() => {
     if (!selectedPropertyId) return null
@@ -152,7 +152,7 @@ export default function WorkOrdersClient({
   }, [selectedJobTypeId, initialSelectedJobType, initialJobTypeOptions])
 
   // --- Cascade-clear handlers ---
-  // Mgmt Co change → clear Property + Template (property-scoped chain).
+  // Entity change → clear Property + Template (property-scoped chain).
   // Property change → clear Template (template is property-scoped).
 
   const handleTextFilterChange = useCallback(
@@ -166,9 +166,9 @@ export default function WorkOrdersClient({
     [onFilterChange],
   )
 
-  const handleMgmtCoChange = useCallback(
+  const handleEntityChange = useCallback(
     (id: string | null) => {
-      onFilterChange("managementCompanyId", id ? [id] : [])
+      onFilterChange("entityId", id ? [id] : [])
       onFilterChange("propertyId", [])
       onFilterChange("templateId", [])
     },
@@ -229,7 +229,7 @@ export default function WorkOrdersClient({
       return true
     }
     if (
-      selectedMgmtCoId ||
+      selectedEntityId ||
       selectedPropertyId ||
       selectedTemplateId ||
       selectedWarehouseId ||
@@ -246,7 +246,7 @@ export default function WorkOrdersClient({
     unitNumberValue,
     workOrderNumberValue,
     descriptionValue,
-    selectedMgmtCoId,
+    selectedEntityId,
     selectedPropertyId,
     selectedTemplateId,
     selectedWarehouseId,
@@ -323,23 +323,23 @@ export default function WorkOrdersClient({
               </div>
             </ListToolbarCell>
 
-            {/* One encased card: Mgmt Co → Property → Template stacked together.
-                Property is mgmt-co-scoped and Template is property-scoped — a
-                mgmt-co change cascades the property + template chip clears
-                (handleMgmtCoChange); a property change cascades the template
+            {/* One encased card: Entity → Property → Template stacked together.
+                Property is entity-scoped and Template is property-scoped — a
+                entity change cascades the property + template chip clears
+                (handleEntityChange); a property change cascades the template
                 clear (handlePropertyChange). */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
-                <MgmtCoFilterChip
-                  value={selectedMgmtCoId}
-                  selectedLabel={mgmtCoLabel}
-                  onChange={handleMgmtCoChange}
-                  initialOptions={initialMgmtCoOptions}
+                <EntityFilterChip
+                  value={selectedEntityId}
+                  selectedLabel={entityLabel}
+                  onChange={handleEntityChange}
+                  initialOptions={initialEntityOptions}
                 />
                 <PropertyFilterChip
                   value={selectedPropertyId}
                   selectedLabel={propertyLabel}
-                  managementCompanyId={selectedMgmtCoId}
+                  entityId={selectedEntityId}
                   onChange={handlePropertyChange}
                   initialOptions={initialPropertyOptions}
                 />
@@ -347,7 +347,7 @@ export default function WorkOrdersClient({
                   value={selectedTemplateId}
                   selectedLabel={templateLabel}
                   propertyId={selectedPropertyId}
-                  managementCompanyId={selectedMgmtCoId}
+                  entityId={selectedEntityId}
                   onChange={handleTemplateChange}
                   initialOptions={initialTemplateOptions}
                 />

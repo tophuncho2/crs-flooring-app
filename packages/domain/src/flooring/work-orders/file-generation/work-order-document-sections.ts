@@ -149,11 +149,11 @@ ${body}
  * table below). The top four fields sit in a 2×2 grid with tightened
  * label→value padding — Date | Warehouse on row 1, Job Type | Description on
  * row 2 — followed by a continuous label/value table for the rest. Label
- * columns hug their content (width:1% + nowrap labels) so "Management Company"
+ * columns hug their content (width:1% + nowrap labels) so "Entity"
  * never wraps.
  *
  * Order: Date · Warehouse · Job Type · Description (top 2×2 grid). Below the
- * grid a two-column flex band: the left column stacks Management Company ·
+ * grid a two-column flex band: the left column stacks Entity ·
  * Property (+ flat address beneath) · Property Instructions · Installer
  * Instructions; a vertical divider (the right column's border-left) separates
  * it from the right column — Unit Type · Unit Number · Vacancy — with tightened
@@ -216,7 +216,7 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
       <col />
     </colgroup>
     <tbody>
-      <tr><th>Management Company</th><td>${escapeOrEmpty(input.managementCompanyName)}</td></tr>
+      <tr><th>Entity</th><td>${escapeOrEmpty(input.entityName)}</td></tr>
       <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${propertyAddressRow}${propertyInstructionsRow}${installerInstructionsRow}
     </tbody>
   </table>

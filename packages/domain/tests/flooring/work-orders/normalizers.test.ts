@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
 import { normalizeWorkOrderListRow } from "../../../src/flooring/work-orders/normalizers.js"
 
-describe("normalizeWorkOrderListRow management company", () => {
+describe("normalizeWorkOrderListRow entity", () => {
   const base = {
     id: "wo-1",
     workOrderNumber: "WO-1",
     propertyId: "prop-1",
-    property: { name: "Maple Court", managementCompany: { id: "mc-1", name: "Acme" } },
+    property: { name: "Maple Court", entity: { id: "entity-1", entity: "Acme" } },
     jobTypeId: null,
     jobType: null,
     templateId: null,
@@ -22,15 +22,15 @@ describe("normalizeWorkOrderListRow management company", () => {
     updatedAt: "2026-06-08T00:00:00.000Z",
   }
 
-  it("sources the management company id + name from the linked property", () => {
+  it("sources the entity id + name from the linked property", () => {
     const row = normalizeWorkOrderListRow(base)
-    expect(row.managementCompanyId).toBe("mc-1")
-    expect(row.managementCompanyName).toBe("Acme")
+    expect(row.entityId).toBe("entity-1")
+    expect(row.entityName).toBe("Acme")
   })
 
-  it("yields nulls when the linked property has no management company", () => {
-    const row = normalizeWorkOrderListRow({ ...base, property: { name: "Maple Court", managementCompany: null } })
-    expect(row.managementCompanyId).toBeNull()
-    expect(row.managementCompanyName).toBeNull()
+  it("yields nulls when the linked property has no entity", () => {
+    const row = normalizeWorkOrderListRow({ ...base, property: { name: "Maple Court", entity: null } })
+    expect(row.entityId).toBeNull()
+    expect(row.entityName).toBeNull()
   })
 })

@@ -1,5 +1,5 @@
-import type { ManagementCompanyForm } from "../management-companies/types.js"
-import { validateManagementCompanyForm } from "../management-companies/form-rules.js"
+import type { EntityForm } from "../entities/types.js"
+import { validateEntityForm } from "../entities/form-rules.js"
 import { isBlankName } from "../../shared/name-rules.js"
 import {
   PROPERTY_HUB_NO_ACTIONS_MESSAGE,
@@ -18,10 +18,10 @@ export type PropertyHubPropertyFields = {
   instructions: string
 }
 
-export type PropertyHubMcSelection =
+export type PropertyHubEntitySelection =
   | { mode: "none" }
   | { mode: "link"; id: string }
-  | { mode: "create"; fields: ManagementCompanyForm }
+  | { mode: "create"; fields: EntityForm }
 
 export type PropertyHubPropertySelection =
   | { mode: "none" }
@@ -29,7 +29,7 @@ export type PropertyHubPropertySelection =
   | { mode: "create"; fields: PropertyHubPropertyFields }
 
 export type CreatePropertyHubForm = {
-  managementCompany: PropertyHubMcSelection
+  entity: PropertyHubEntitySelection
   property: PropertyHubPropertySelection
 }
 
@@ -45,38 +45,38 @@ export const EMPTY_PROPERTY_HUB_PROPERTY_FIELDS: PropertyHubPropertyFields = {
 }
 
 export function validateCreatePropertyHubForm(form: CreatePropertyHubForm): string {
-  const hasMcCreate = form.managementCompany.mode === "create"
+  const hasEntityCreate = form.entity.mode === "create"
   const hasPropertyCreate = form.property.mode === "create"
 
-  // New flow: link an existing property to a (new or existing) management
-  // company. The property already exists, so the create-flow guards below don't
-  // apply — only require a real MC action to perform.
+  // New flow: link an existing property to a (new or existing) entity. The
+  // property already exists, so the create-flow guards below don't apply — only
+  // require a real entity action to perform.
   if (form.property.mode === "link") {
-    if (!form.property.id || form.managementCompany.mode === "none") {
+    if (!form.property.id || form.entity.mode === "none") {
       return PROPERTY_HUB_NO_ACTIONS_MESSAGE
     }
-    if (form.managementCompany.mode === "create") {
-      const mcError = validateManagementCompanyForm(form.managementCompany.fields)
-      if (mcError) return mcError
+    if (form.entity.mode === "create") {
+      const entityError = validateEntityForm(form.entity.fields)
+      if (entityError) return entityError
     }
     return ""
   }
 
   // Order matters: a "link" selection is not a "create", so the
   // link-requires-property case must be checked before the no-actions guard —
-  // otherwise "link an MC but create no property" would fall through to the
+  // otherwise "link an entity but create no property" would fall through to the
   // generic no-actions message instead of the specific one.
-  if (form.managementCompany.mode === "link" && !hasPropertyCreate) {
+  if (form.entity.mode === "link" && !hasPropertyCreate) {
     return PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE
   }
 
-  if (!hasMcCreate && !hasPropertyCreate) {
+  if (!hasEntityCreate && !hasPropertyCreate) {
     return PROPERTY_HUB_NO_ACTIONS_MESSAGE
   }
 
-  if (form.managementCompany.mode === "create") {
-    const mcError = validateManagementCompanyForm(form.managementCompany.fields)
-    if (mcError) return mcError
+  if (form.entity.mode === "create") {
+    const entityError = validateEntityForm(form.entity.fields)
+    if (entityError) return entityError
   }
 
   if (form.property.mode === "create" && isBlankName(form.property.fields.name)) {
