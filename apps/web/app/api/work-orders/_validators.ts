@@ -6,6 +6,7 @@ import {
 import type {
   CreateWorkOrderUseCaseInput,
   ListInput,
+  ListSort,
   SyncTemplateToWorkOrderInput,
   UpdateWorkOrderUseCaseInput,
   WorkOrdersListFilters,
@@ -300,6 +301,8 @@ type TextFilterKey = (typeof TEXT_FILTER_KEYS)[number]
 const VACANCY_VALUES = ["VACANT", "OCCUPIED"] as const
 
 const listWorkOrdersQuerySchema = z.object({
+  // Legacy single-sort pair — kept so old bookmarked links still resolve. The
+  // canonical input is the ordered `sorts` param, parsed separately below.
   sort: z.enum(["asc", "desc"]).default("desc"),
   sortField: z
     .enum(["createdAt", "scheduledFor", "property", "entity", "workOrderNumber"])
@@ -312,6 +315,27 @@ const listWorkOrdersQuerySchema = z.object({
     .max(WORK_ORDERS_LIST_MAX_PAGE_SIZE)
     .default(WORK_ORDERS_LIST_DEFAULT_PAGE_SIZE),
 })
+
+// UI-exposed sortable fields. `workOrderNumber` is intentionally excluded (WO#
+// is never user-sortable; createdAt is the canonical chronological key).
+const WORK_ORDERS_UI_SORT_FIELDS = ["createdAt", "scheduledFor", "property", "entity"] as const
+const WORK_ORDERS_MAX_SORT_LEVELS = 3
+
+/** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | null): ListSort[] {
+  if (!raw) return []
+  const allowed = new Set<string>(WORK_ORDERS_UI_SORT_FIELDS)
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !allowed.has(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "asc" ? "asc" : "desc" })
+    if (result.length >= WORK_ORDERS_MAX_SORT_LEVELS) break
+  }
+  return result
+}
 
 function readMultiValue(searchParams: URLSearchParams, key: string): string[] {
   return Array.from(
@@ -375,8 +399,14 @@ export function validateListWorkOrdersQuery(
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
+  // Canonical ordered sort via `sorts`; fall back to the legacy single pair.
+  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
+  const sorts: ListSort[] =
+    parsedSorts.length > 0 ? parsedSorts : [{ field: parsed.sortField, direction: parsed.sort }]
+
   return {
-    sort: { field: parsed.sortField, direction: parsed.sort },
+    sort: sorts[0],
+    sorts,
     ...(hasAnyFilter ? { filters: filterRecord } : {}),
     page: parsed.page,
     pageSize: parsed.pageSize,

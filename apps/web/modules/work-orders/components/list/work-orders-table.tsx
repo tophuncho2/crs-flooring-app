@@ -11,16 +11,16 @@ import {
 export function WorkOrdersTable({
   rows,
   onOpenWorkOrder,
-  sort,
+  sorts,
   onSort,
   columnFilters,
   pagination,
 }: {
   rows: WorkOrderListRow[]
   onOpenWorkOrder: (id: string) => void
-  /** Active server-side sort (drives the header carets). */
-  sort?: { field: string; direction: "asc" | "desc" } | null
-  /** Header click → re-sort by that column key. */
+  /** Active ordered sort (drives the header carets + priority badges). */
+  sorts?: ReadonlyArray<{ field: string; direction: "asc" | "desc" }>
+  /** Header click → re-sort by that column key (single-sort replace). */
   onSort?: (key: string) => void
   /** Per-column header filters (e.g. the Date funnel). */
   columnFilters?: Record<string, DataTableColumnFilter>
@@ -31,7 +31,7 @@ export function WorkOrdersTable({
       rows={rows}
       columns={WORK_ORDERS_LIST_COLUMNS}
       empty="No work orders match these filters."
-      sort={sort}
+      sorts={sorts}
       onSort={onSort}
       columnFilters={columnFilters}
       onOpenRow={(row) => onOpenWorkOrder(row.id)}

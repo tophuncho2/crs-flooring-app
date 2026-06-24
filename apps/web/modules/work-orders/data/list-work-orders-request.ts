@@ -1,5 +1,5 @@
 import type { WorkOrdersListFilters } from "@builders/application"
-import type { ListInput, ListOutput } from "@builders/application"
+import type { ListInput, ListOutput, ListSort } from "@builders/application"
 import type { WorkOrderListRow } from "@builders/domain"
 import { requestJson } from "@/transport/http"
 
@@ -41,6 +41,32 @@ const WORK_ORDERS_LIST_SORT_FIELDS = [
   "entity",
 ] as const satisfies readonly string[]
 
+/** Cap on user-selected sort columns — mirrors the engine + API + use case. */
+const WORK_ORDERS_MAX_SORT_LEVELS = 3
+
+function isAllowedSortField(value: string): boolean {
+  return (WORK_ORDERS_LIST_SORT_FIELDS as readonly string[]).includes(value)
+}
+
+/** Parse the ordered `?sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | undefined): ListSort[] {
+  if (!raw) return []
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !isAllowedSortField(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "asc" ? "asc" : "desc" })
+    if (result.length >= WORK_ORDERS_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
+function encodeSortsParam(sorts: readonly ListSort[]): string {
+  return sorts.map((entry) => `${entry.field}:${entry.direction}`).join(",")
+}
+
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
   key: string,
@@ -75,6 +101,20 @@ export function parseWorkOrdersListInputFromSearchParams(
 ): WorkOrdersListInput {
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
+
+  // Multi-column sort is canonical via `?sorts=`; fall back to the legacy
+  // single `?sort=&sortField=` pair so shared/bookmarked links still resolve.
+  const sorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
+  if (sorts.length > 0) {
+    return {
+      sort: sorts[0],
+      sorts,
+      filters: readFiltersFromSearchParams(searchParams),
+      page,
+      pageSize: WORK_ORDERS_LIST_PAGE_SIZE,
+    }
+  }
+
   const direction = readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc"
   const sortFieldRaw = readSearchParam(searchParams, "sortField")
   const field = WORK_ORDERS_LIST_SORT_FIELDS.includes(
@@ -82,8 +122,10 @@ export function parseWorkOrdersListInputFromSearchParams(
   )
     ? (sortFieldRaw as string)
     : "createdAt"
+  const fallbackSort: ListSort = { field, direction }
   return {
-    sort: { field, direction },
+    sort: fallbackSort,
+    sorts: [fallbackSort],
     filters: readFiltersFromSearchParams(searchParams),
     page,
     pageSize: WORK_ORDERS_LIST_PAGE_SIZE,
@@ -92,8 +134,9 @@ export function parseWorkOrdersListInputFromSearchParams(
 
 function buildSearchString(input: WorkOrdersListInput): string {
   const params = new URLSearchParams()
-  if (input.sort?.direction) params.set("sort", input.sort.direction)
-  if (input.sort?.field) params.set("sortField", input.sort.field)
+  // Encode the ordered sort list; a single `sort` is an array of one.
+  const sorts = input.sorts?.length ? input.sorts : input.sort ? [input.sort] : []
+  if (sorts.length > 0) params.set("sorts", encodeSortsParam(sorts))
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
   if (input.filters) {

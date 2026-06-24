@@ -1,4 +1,4 @@
-import type { ListGroup, ListInput, ListOutput, ListSort } from "@builders/application"
+import type { ListInput, ListOutput, ListSort } from "@builders/application"
 
 export type ListControllerUrlSyncMode = "history" | "router"
 
@@ -7,11 +7,16 @@ type ListControllerInputBase<TFilters> = {
   initialSearchQuery?: string
   initialSort?: ListSort
   initialFilters?: TFilters
-  initialGroupField?: string | null
   initialPage?: number
   pageSize?: number
   allowedSortFields?: readonly string[]
-  allowedGroupFields?: readonly string[]
+  /**
+   * Max simultaneous user-selected sort columns. Default `1` keeps the
+   * single-column behavior and URL (`?sort=&sortField=`) byte-identical. A
+   * value `> 1` opts the list into multi-column sort: an ordered `?sorts=` URL
+   * param, a `sorts` output array, and the `onSortsChange` handler.
+   */
+  maxSortLevels?: number
   /**
    * Declared filter keys for this list. Each key becomes a multi-value
    * URL query param (`?key=val1&key=val2`). The controller manages state
@@ -35,7 +40,6 @@ export type ListControllerSsrInput<TRow, TFilters = Record<string, never>> = Lis
   mode: "ssr"
   initialRows: TRow[]
   initialTotal: number
-  initialGroups?: ListGroup[]
   pagination?: ListControllerSsrPagination
 }
 

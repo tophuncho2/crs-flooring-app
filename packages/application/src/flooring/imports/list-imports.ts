@@ -1,9 +1,7 @@
 import {
-  LIST_IMPORTS_ALLOWED_GROUP_FIELDS,
   LIST_IMPORTS_MAX_PAGE_SIZE,
   LIST_IMPORTS_PAGE_SIZE,
   type ImportRow,
-  type ListImportsAllowedGroupField,
 } from "@builders/domain"
 import { listImportsForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
@@ -11,10 +9,6 @@ import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 export type ImportsListFilters = {
   impNumber?: string
   warehouseId?: ReadonlyArray<string>
-}
-
-function isAllowedGroupField(value: string): value is ListImportsAllowedGroupField {
-  return (LIST_IMPORTS_ALLOWED_GROUP_FIELDS as readonly string[]).includes(value)
 }
 
 function normalizeWarehouseIds(
@@ -34,10 +28,6 @@ export async function listImportsUseCase(
   const requestedPageSize = Math.floor(input.pageSize || LIST_IMPORTS_PAGE_SIZE)
   const pageSize = Math.max(1, Math.min(LIST_IMPORTS_MAX_PAGE_SIZE, requestedPageSize))
 
-  const group = input.group && isAllowedGroupField(input.group.field)
-    ? { field: input.group.field }
-    : null
-
   const search = input.search?.trim() || undefined
   const impNumber = input.filters?.impNumber?.trim() || undefined
   const warehouseId = normalizeWarehouseIds(input.filters?.warehouseId)
@@ -53,7 +43,6 @@ export async function listImportsUseCase(
   const { rows, total } = await listImportsForListView({
     search,
     filters,
-    group,
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

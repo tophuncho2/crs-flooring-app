@@ -33,10 +33,8 @@ describe("buildPageHrefWithSearchParams", () => {
         category: "cat-1",
         product: "prod-1",
         sort: "desc",
-        grouped: "1",
-        groups: "warehouse,product",
       }),
-    ).toBe("/dashboard/inventory?q=oak&status=final&warehouse=wh-2&category=cat-1&product=prod-1&sort=desc&grouped=1&groups=warehouse%2Cproduct&page=3")
+    ).toBe("/dashboard/inventory?q=oak&status=final&warehouse=wh-2&category=cat-1&product=prod-1&sort=desc&page=3")
   })
 
   it("preserves shared work-order filters across pages", () => {

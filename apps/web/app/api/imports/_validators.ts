@@ -10,7 +10,6 @@ import type { CreateImportInput, UpdateImportInput } from "@builders/application
 import {
   IMPORT_OPTIONS_DEFAULT_TAKE,
   IMPORT_OPTIONS_MAX_TAKE,
-  LIST_IMPORTS_ALLOWED_GROUP_FIELDS,
   LIST_IMPORTS_MAX_PAGE_SIZE,
   LIST_IMPORTS_PAGE_SIZE,
   MAX_MARK_FOR_IMPORT_ROWS,
@@ -299,8 +298,6 @@ export function validateImportStagedInventorySectionDiffBody(
 const listImportsQuerySchema = z.object({
   q: z.string().optional(),
   impNumber: z.string().optional(),
-  grouped: z.enum(["0", "1"]).optional(),
-  groups: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -309,8 +306,6 @@ const listImportsQuerySchema = z.object({
     .max(LIST_IMPORTS_MAX_PAGE_SIZE)
     .default(LIST_IMPORTS_PAGE_SIZE),
 })
-
-const ALLOWED_GROUP_SET = new Set<string>(LIST_IMPORTS_ALLOWED_GROUP_FIELDS)
 
 export function validateListImportsQuery(searchParams: URLSearchParams): ListInput<ImportsListFilters> {
   const raw: Record<string, string> = {}
@@ -335,15 +330,6 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
   const search = trimmedSearch ? trimmedSearch : undefined
   const impNumber = parsed.impNumber?.trim() || undefined
 
-  const firstGroupKey =
-    parsed.grouped === "1"
-      ? parsed.groups
-          ?.split(",")
-          .map((part) => part.trim())
-          .filter(Boolean)[0]
-      : undefined
-  const groupField = firstGroupKey && ALLOWED_GROUP_SET.has(firstGroupKey) ? firstGroupKey : undefined
-
   const warehouseIdRaw = searchParams.getAll("warehouseId")
   const warehouseId = Array.from(
     new Set(
@@ -362,7 +348,6 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
             ...(warehouseId.length > 0 ? { warehouseId } : {}),
           }
         : undefined,
-    group: groupField ? { field: groupField } : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,
   }

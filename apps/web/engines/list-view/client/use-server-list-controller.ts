@@ -16,6 +16,50 @@ import type {
 
 const SEARCH_DEBOUNCE_MS = 300
 
+// Multi-column sort URL codec. The ordered list is encoded as a single
+// `?sorts=field:dir,field:dir` param (highest priority first). Only consumers
+// that opt into multi-sort (`maxSortLevels > 1`) ever read/write it.
+function encodeSorts(sorts: ListSort[]): string {
+  return sorts.map((entry) => `${entry.field}:${entry.direction}`).join(",")
+}
+
+function parseSorts(
+  raw: string,
+  allowedSortFields: readonly string[] | undefined,
+  maxSortLevels: number,
+): ListSort[] {
+  if (!raw) return []
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, directionRaw] = token.split(":")
+    if (!field || seen.has(field)) continue
+    if (allowedSortFields && !allowedSortFields.includes(field)) continue
+    seen.add(field)
+    result.push({ field, direction: directionRaw === "asc" ? "asc" : "desc" })
+    if (result.length >= maxSortLevels) break
+  }
+  return result
+}
+
+/** Validate + de-dupe + cap an arbitrary sort list against a consumer's rules. */
+function normalizeSorts(
+  next: ListSort[],
+  allowedSortFields: readonly string[] | undefined,
+  maxSortLevels: number,
+): ListSort[] {
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const entry of next) {
+    if (seen.has(entry.field)) continue
+    if (allowedSortFields && !allowedSortFields.includes(entry.field)) continue
+    seen.add(entry.field)
+    result.push({ field: entry.field, direction: entry.direction === "asc" ? "asc" : "desc" })
+    if (result.length >= maxSortLevels) break
+  }
+  return result
+}
+
 function readFiltersFromSearchParams(
   searchParams: URLSearchParams | null,
   filterableFields: readonly string[] | undefined,
@@ -63,7 +107,6 @@ function buildNextSearchParams(
   next: {
     searchQuery: string
     isAscendingSort: boolean
-    groupField: string | null
     filters: ListFilterValueMap
     filterableFields: readonly string[] | undefined
   },
@@ -76,14 +119,6 @@ function buildNextSearchParams(
   else params.delete("q")
 
   params.set("sort", next.isAscendingSort ? "asc" : "desc")
-
-  if (next.groupField) {
-    params.set("grouped", "1")
-    params.set("groups", next.groupField)
-  } else {
-    params.set("grouped", "0")
-    params.delete("groups")
-  }
 
   return writeFiltersToSearchParams(params, next.filterableFields, next.filters)
 }
@@ -125,7 +160,6 @@ export function useSsrListController<TRow, TFilters>(
 
   const initialSort = input.initialSort ?? null
   const initialIsAscendingSort = initialSort ? initialSort.direction !== "desc" : true
-  const initialGroupField = input.initialGroupField ?? null
   const sortFieldKey = initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
   const filterableFields = input.filterableFields
   const urlSyncMode = input.urlSyncMode ?? "history"
@@ -136,7 +170,6 @@ export function useSsrListController<TRow, TFilters>(
 
   const [searchQuery, setSearchQuery] = useState(input.initialSearchQuery ?? "")
   const [isAscendingSort, setIsAscendingSort] = useState(initialIsAscendingSort)
-  const [groupField, setGroupField] = useState<string | null>(initialGroupField)
   const [filters, setFilters] = useState<ListFilterValueMap>(initialFiltersMap)
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -153,7 +186,6 @@ export function useSsrListController<TRow, TFilters>(
     (next: {
       searchQuery: string
       isAscendingSort: boolean
-      groupField: string | null
       filters: ListFilterValueMap
     }) => {
       if (!pathname) return
@@ -181,14 +213,14 @@ export function useSsrListController<TRow, TFilters>(
 
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     searchDebounceRef.current = setTimeout(() => {
-      writeUrl({ searchQuery, isAscendingSort, groupField, filters })
+      writeUrl({ searchQuery, isAscendingSort, filters })
       lastSyncedSearchQueryRef.current = searchQuery
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     }
-  }, [searchQuery, isAscendingSort, groupField, filters, writeUrl])
+  }, [searchQuery, isAscendingSort, filters, writeUrl])
 
   useEffect(() => {
     return () => {
@@ -203,38 +235,30 @@ export function useSsrListController<TRow, TFilters>(
   const onToggleSortDirection = useCallback(() => {
     setIsAscendingSort((prev) => {
       const next = !prev
-      writeUrl({ searchQuery, isAscendingSort: next, groupField, filters })
+      writeUrl({ searchQuery, isAscendingSort: next, filters })
       return next
     })
-  }, [filters, groupField, searchQuery, writeUrl])
+  }, [filters, searchQuery, writeUrl])
 
   const onSortChange = useCallback(
     (next: ListSort | null) => {
       if (!next) return
       const nextAsc = next.direction === "asc"
       setIsAscendingSort(nextAsc)
-      writeUrl({ searchQuery, isAscendingSort: nextAsc, groupField, filters })
+      writeUrl({ searchQuery, isAscendingSort: nextAsc, filters })
     },
-    [filters, groupField, searchQuery, writeUrl],
-  )
-
-  const onGroupFieldChange = useCallback(
-    (next: string | null) => {
-      setGroupField(next)
-      writeUrl({ searchQuery, isAscendingSort, groupField: next, filters })
-    },
-    [filters, isAscendingSort, searchQuery, writeUrl],
+    [filters, searchQuery, writeUrl],
   )
 
   const onFilterChange = useCallback(
     (key: string, values: string[]) => {
       setFilters((prev) => {
         const next: ListFilterValueMap = { ...prev, [key]: [...values] }
-        writeUrl({ searchQuery, isAscendingSort, groupField, filters: next })
+        writeUrl({ searchQuery, isAscendingSort, filters: next })
         return next
       })
     },
-    [groupField, isAscendingSort, searchQuery, writeUrl],
+    [isAscendingSort, searchQuery, writeUrl],
   )
 
   const onClearAllFilters = useCallback(() => {
@@ -242,8 +266,17 @@ export function useSsrListController<TRow, TFilters>(
     const next: ListFilterValueMap = {}
     for (const key of filterableFields) next[key] = []
     setFilters(next)
-    writeUrl({ searchQuery, isAscendingSort, groupField, filters: next })
-  }, [filterableFields, groupField, isAscendingSort, searchQuery, writeUrl])
+    writeUrl({ searchQuery, isAscendingSort, filters: next })
+  }, [filterableFields, isAscendingSort, searchQuery, writeUrl])
+
+  // SSR controller is single-sort only; expose the multi-sort surface as a
+  // pass-through for contract parity (degrades to replacing the single sort).
+  const onSortsChange = useCallback(
+    (next: ListSort[]) => {
+      if (next.length > 0) onSortChange(next[0])
+    },
+    [onSortChange],
+  )
 
   const pagination = input.pagination
   const initialPage = input.initialPage ?? 1
@@ -289,11 +322,12 @@ export function useSsrListController<TRow, TFilters>(
   return {
     rows: input.initialRows,
     total: totalItems,
-    groups: input.initialGroups,
 
     searchQuery,
     sort: sortFieldKey ? { field: sortFieldKey, direction: isAscendingSort ? "asc" : "desc" } : null,
-    groupField,
+    sorts: sortFieldKey
+      ? [{ field: sortFieldKey, direction: isAscendingSort ? "asc" : "desc" }]
+      : [],
     filters,
     page,
     pageSize,
@@ -302,7 +336,7 @@ export function useSsrListController<TRow, TFilters>(
     onSearchQueryChange,
     onSortChange,
     onToggleSortDirection,
-    onGroupFieldChange,
+    onSortsChange,
     onFilterChange,
     onClearAllFilters,
 
@@ -328,10 +362,13 @@ export function useFetchListController<TRow, TFilters>(
 
   const initialSearchQuery = input.initialSearchQuery ?? ""
   const initialDirection = input.initialSort?.direction ?? "asc"
-  const initialGroupValue = input.initialGroupField ?? ""
-  const initialGroupedToggle: "0" | "1" = input.initialGroupField ? "1" : "0"
   const initialPageValue = input.initialPage ?? 1
   const initialFieldKey = input.initialSort?.field ?? input.allowedSortFields?.[0] ?? ""
+  // Opt-in multi-column sort. `1` (default) keeps the single-sort behavior +
+  // URL byte-identical; `> 1` activates the ordered `?sorts=` param path.
+  const maxSortLevels = Math.max(1, Math.floor(input.maxSortLevels ?? 1))
+  const multiSort = maxSortLevels > 1
+  const allowedSortFields = input.allowedSortFields
   const filterableFields = input.filterableFields
   const declaredPageSize = input.pageSize ?? 50
   const consumerQueryKey = input.queryKey
@@ -360,14 +397,9 @@ export function useFetchListController<TRow, TFilters>(
   const sortFieldKey = input.allowedSortFields?.includes(sortFieldValue)
     ? sortFieldValue
     : initialFieldKey
-  const [groupedToggle, setGroupedToggle] = useQueryState(
-    "grouped",
-    parseAsStringEnum<"0" | "1">(["0", "1"]).withDefault(initialGroupedToggle),
-  )
-  const [groupFieldValue, setGroupFieldValue] = useQueryState(
-    "groups",
-    parseAsString.withDefault(initialGroupValue),
-  )
+  // Ordered multi-sort param. Inert for single-sort consumers — they never set
+  // it, so it stays out of the URL (nuqs only writes a non-default value).
+  const [sortsParam, setSortsParam] = useQueryState("sorts", parseAsString.withDefault(""))
   const [pageValue, setPageValue] = useQueryState(
     "page",
     parseAsInteger.withDefault(initialPageValue),
@@ -403,27 +435,38 @@ export function useFetchListController<TRow, TFilters>(
     [filterableFields],
   )
 
-  const isGroupingEnabled = groupedToggle === "1"
-  const groupFieldNormalized: string | null = isGroupingEnabled && groupFieldValue ? groupFieldValue : null
+  // Canonical ordered sort list. In multi-sort mode it is driven by the `sorts`
+  // param (falling back to `initialSort`); otherwise it mirrors the single
+  // `sortField`/`sort` params as an array of zero or one. Memoized on primitives
+  // so its identity (and the query key) stays stable across renders.
+  const sorts: ListSort[] = useMemo(() => {
+    if (multiSort) {
+      const parsed = parseSorts(sortsParam, allowedSortFields, maxSortLevels)
+      if (parsed.length > 0) return parsed
+      return initialFieldKey ? [{ field: initialFieldKey, direction: initialDirection }] : []
+    }
+    return sortFieldKey ? [{ field: sortFieldKey, direction: sortDirection }] : []
+  }, [
+    multiSort,
+    sortsParam,
+    allowedSortFields,
+    maxSortLevels,
+    initialFieldKey,
+    initialDirection,
+    sortFieldKey,
+    sortDirection,
+  ])
 
   const listInput: ListInput<TFilters> = useMemo(
     () => ({
       search: searchUrlValue?.trim() ? searchUrlValue.trim() : undefined,
-      sort: sortFieldKey ? { field: sortFieldKey, direction: sortDirection } : undefined,
+      sort: sorts[0],
+      ...(multiSort ? { sorts } : {}),
       filters: asTypedFilters<TFilters>(filters),
-      group: groupFieldNormalized ? { field: groupFieldNormalized } : undefined,
       page: pageValue,
       pageSize: declaredPageSize,
     }),
-    [
-      declaredPageSize,
-      filters,
-      groupFieldNormalized,
-      pageValue,
-      searchUrlValue,
-      sortDirection,
-      sortFieldKey,
-    ],
+    [declaredPageSize, filters, multiSort, pageValue, searchUrlValue, sorts],
   )
 
   const queryKey = useMemo(() => [...consumerQueryKey, listInput], [consumerQueryKey, listInput])
@@ -439,7 +482,6 @@ export function useFetchListController<TRow, TFilters>(
 
   const rows = queryResult.data?.rows ?? []
   const total = queryResult.data?.total ?? 0
-  const groups = queryResult.data?.groups
   const pageSize = listInput.pageSize
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const hasPreviousPage = pageValue > 1
@@ -459,36 +501,74 @@ export function useFetchListController<TRow, TFilters>(
   )
 
   const onToggleSortDirection = useCallback(() => {
+    if (multiSort) {
+      // Flip the primary (highest-priority) column; keep the rest of the chain.
+      const current = parseSorts(sortsParam, allowedSortFields, maxSortLevels)
+      const base =
+        current.length > 0
+          ? current
+          : initialFieldKey
+            ? [{ field: initialFieldKey, direction: initialDirection }]
+            : []
+      if (base.length === 0) return
+      const flipped: ListSort[] = [
+        { field: base[0].field, direction: base[0].direction === "asc" ? "desc" : "asc" },
+        ...base.slice(1),
+      ]
+      setSortsParam(encodeSorts(flipped))
+      if (pageValue !== 1) setPageValue(1)
+      return
+    }
     const nextDirection: "asc" | "desc" = sortDirection === "asc" ? "desc" : "asc"
     setSortDirection(nextDirection)
     if (pageValue !== 1) setPageValue(1)
-  }, [pageValue, setPageValue, setSortDirection, sortDirection])
+  }, [
+    allowedSortFields,
+    initialDirection,
+    initialFieldKey,
+    maxSortLevels,
+    multiSort,
+    pageValue,
+    setPageValue,
+    setSortDirection,
+    setSortsParam,
+    sortDirection,
+    sortsParam,
+  ])
 
   const onSortChange = useCallback(
     (next: ListSort | null) => {
       if (!next) return
-      if (next.field && input.allowedSortFields?.includes(next.field)) {
+      // Header-click path = replace with this single column.
+      if (multiSort) {
+        if (allowedSortFields && !allowedSortFields.includes(next.field)) return
+        setSortsParam(encodeSorts([{ field: next.field, direction: next.direction }]))
+        if (pageValue !== 1) setPageValue(1)
+        return
+      }
+      if (next.field && allowedSortFields?.includes(next.field)) {
         // Clear the param when it returns to the default field.
         setSortFieldValue(next.field === initialFieldKey ? null : next.field)
       }
       setSortDirection(next.direction)
       if (pageValue !== 1) setPageValue(1)
     },
-    [initialFieldKey, input.allowedSortFields, pageValue, setPageValue, setSortDirection, setSortFieldValue],
+    [allowedSortFields, initialFieldKey, multiSort, pageValue, setPageValue, setSortDirection, setSortFieldValue, setSortsParam],
   )
 
-  const onGroupFieldChange = useCallback(
-    (next: string | null) => {
-      if (next) {
-        setGroupedToggle("1")
-        setGroupFieldValue(next)
-      } else {
-        setGroupedToggle("0")
-        setGroupFieldValue(null)
+  const onSortsChange = useCallback(
+    (next: ListSort[]) => {
+      // Multi-sort menu path = set the full ordered list. On single-sort lists
+      // it degrades to replacing with the first entry.
+      if (!multiSort) {
+        if (next.length > 0) onSortChange(next[0])
+        return
       }
+      const cleaned = normalizeSorts(next, allowedSortFields, maxSortLevels)
+      setSortsParam(cleaned.length > 0 ? encodeSorts(cleaned) : null)
       if (pageValue !== 1) setPageValue(1)
     },
-    [pageValue, setGroupFieldValue, setGroupedToggle, setPageValue],
+    [allowedSortFields, maxSortLevels, multiSort, onSortChange, pageValue, setPageValue, setSortsParam],
   )
 
   const onFilterChange = useCallback(
@@ -533,11 +613,10 @@ export function useFetchListController<TRow, TFilters>(
   return {
     rows,
     total,
-    groups,
 
     searchQuery: searchInputValue,
-    sort: sortFieldKey ? { field: sortFieldKey, direction: sortDirection } : null,
-    groupField: groupFieldNormalized,
+    sort: sorts[0] ?? null,
+    sorts,
     filters,
     page: pageValue,
     pageSize,
@@ -546,7 +625,7 @@ export function useFetchListController<TRow, TFilters>(
     onSearchQueryChange,
     onSortChange,
     onToggleSortDirection,
-    onGroupFieldChange,
+    onSortsChange,
     onFilterChange,
     onClearAllFilters,
 

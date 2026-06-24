@@ -144,3 +144,56 @@ describe("DataTable — onOpenRow (leading open gutter)", () => {
     expect(getByText("Open")).toBeTruthy()
   })
 })
+
+describe("DataTable — sort headers", () => {
+  afterEach(() => cleanup())
+
+  const SORTABLE_COLUMNS: ReadonlyArray<DataTableColumn<Row>> = [
+    { key: "name", label: "Name", sortable: true },
+    { key: "status", label: "Status", sortable: true },
+  ]
+
+  it("reflects a single active sort with no priority badge", () => {
+    const { getByRole } = render(
+      <DataTable
+        rows={ROWS}
+        columns={SORTABLE_COLUMNS}
+        sort={{ field: "name", direction: "asc" }}
+        onSort={vi.fn()}
+      />,
+    )
+    const button = getByRole("button", { name: /Sort by Name/ })
+    expect(button.getAttribute("aria-label")).toContain("(ascending)")
+    expect(button.getAttribute("aria-label")).not.toContain("priority")
+  })
+
+  it("shows 1-based priority badges for a multi-column sort", () => {
+    const { getByRole } = render(
+      <DataTable
+        rows={ROWS}
+        columns={SORTABLE_COLUMNS}
+        sorts={[
+          { field: "status", direction: "desc" },
+          { field: "name", direction: "asc" },
+        ]}
+        onSort={vi.fn()}
+      />,
+    )
+    expect(getByRole("button", { name: /Sort by Status/ }).getAttribute("aria-label")).toContain(
+      "priority 1",
+    )
+    expect(getByRole("button", { name: /Sort by Name/ }).getAttribute("aria-label")).toContain(
+      "priority 2",
+    )
+  })
+
+  it("fires onSort with the column key on header click", async () => {
+    const user = userEvent.setup()
+    const onSort = vi.fn()
+    const { getByRole } = render(
+      <DataTable rows={ROWS} columns={SORTABLE_COLUMNS} sort={null} onSort={onSort} />,
+    )
+    await user.click(getByRole("button", { name: /Sort by Name/ }))
+    expect(onSort).toHaveBeenCalledWith("name")
+  })
+})

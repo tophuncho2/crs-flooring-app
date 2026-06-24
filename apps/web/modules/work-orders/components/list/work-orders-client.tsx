@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, SortMenu, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { WorkOrdersListFilters } from "@builders/application"
 import type {
   JobTypeOption,
@@ -35,6 +35,18 @@ const WORK_ORDERS_ALLOWED_SORT_FIELDS = [
   "scheduledFor",
   "property",
   "entity",
+] as const
+
+/** Max simultaneous sort columns surfaced by the toolbar Sort menu. */
+const WORK_ORDERS_MAX_SORT_LEVELS = 3
+
+// Columns offered by the Sort menu — keyed by backend sort field (what lands in
+// `sorts`), labelled to match the table headers.
+const WORK_ORDERS_SORT_OPTIONS = [
+  { key: "scheduledFor", label: "Date" },
+  { key: "entity", label: "Entity" },
+  { key: "property", label: "Property" },
+  { key: "createdAt", label: "Created" },
 ] as const
 
 // Sortable DataTable column key ⇄ backend sort field (buildWorkOrdersOrderBy).
@@ -94,6 +106,7 @@ export default function WorkOrdersClient({
     total,
     filters,
     sort,
+    sorts,
     page,
     pageSize,
     totalPages,
@@ -103,6 +116,7 @@ export default function WorkOrdersClient({
     goToNextPage,
     onSortChange,
     onToggleSortDirection,
+    onSortsChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<WorkOrderListRow, WorkOrdersListFilters>({
@@ -111,13 +125,12 @@ export default function WorkOrdersClient({
     listFn: listWorkOrdersRequest,
     initialSearchQuery,
     initialSort: { field: "createdAt", direction: "desc" },
-    initialGroupField: null,
     initialPage,
     initialFilters,
     pageSize: WORK_ORDERS_LIST_PAGE_SIZE,
     tableKey: "work-orders-main",
     allowedSortFields: WORK_ORDERS_ALLOWED_SORT_FIELDS,
-    allowedGroupFields: [],
+    maxSortLevels: WORK_ORDERS_MAX_SORT_LEVELS,
     filterableFields: WORK_ORDERS_LIST_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
@@ -144,11 +157,16 @@ export default function WorkOrdersClient({
     },
     [sort, onSortChange, onToggleSortDirection],
   )
-  // Reflect the active backend field back onto its column key so the right
-  // header caret lights up.
-  const tableSort = sort
-    ? { field: COLUMN_BY_SORT_FIELD[sort.field] ?? sort.field, direction: sort.direction }
-    : null
+  // Reflect each active backend field back onto its column key so the right
+  // header carets light up (with priority badges when more than one is active).
+  const tableSorts = useMemo(
+    () =>
+      sorts.map((entry) => ({
+        field: COLUMN_BY_SORT_FIELD[entry.field] ?? entry.field,
+        direction: entry.direction,
+      })),
+    [sorts],
+  )
 
   // --- Per-column identity search bars ---
   const unitTypeValue = filters.unitType?.[0] ?? ""
@@ -435,11 +453,19 @@ export default function WorkOrdersClient({
               </div>
             </ListToolbarCell>
 
-            {/* Scheduled-for date filter + sorting both now live on the DataTable
-                column headers (Date funnel + Date / Entity / Property / Created
-                sort carets) — the toolbar chips are retired. */}
+            {/* Scheduled-for date filter lives on the Date column header funnel.
+                Single-column sort is a header-caret click; the Sort menu here
+                composes the ordered multi-column chain (up to 3 levels). */}
             <ListToolbarCell className="ml-auto">
-              <AddWorkOrderButton onClick={() => openCreate()} />
+              <div className="flex items-center gap-2">
+                <SortMenu
+                  options={WORK_ORDERS_SORT_OPTIONS}
+                  value={sorts}
+                  maxLevels={WORK_ORDERS_MAX_SORT_LEVELS}
+                  onChange={onSortsChange}
+                />
+                <AddWorkOrderButton onClick={() => openCreate()} />
+              </div>
             </ListToolbarCell>
           </ListToolbar>
         </div>
@@ -448,7 +474,7 @@ export default function WorkOrdersClient({
       <WorkOrdersTable
         rows={rows}
         onOpenWorkOrder={openWorkOrder}
-        sort={tableSort}
+        sorts={tableSorts}
         onSort={handleSort}
         columnFilters={columnFilters}
         pagination={{

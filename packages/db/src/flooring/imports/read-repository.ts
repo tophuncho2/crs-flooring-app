@@ -165,8 +165,6 @@ export async function countImports(
   return client.flooringImportEntry.count({ where: buildListWhere(filter) })
 }
 
-export type ImportListGroupField = "warehouse" | "manufacturer"
-
 export type ImportListViewOptions = {
   search?: string
   filters?: {
@@ -177,7 +175,6 @@ export type ImportListViewOptions = {
     impNumber?: string
     warehouseId?: ReadonlyArray<string>
   }
-  group: { field: ImportListGroupField } | null
   skip: number
   take: number
 }
@@ -220,18 +217,8 @@ function buildListViewWhere(
   return { AND: clauses }
 }
 
-function buildListViewOrderBy(
-  group: ImportListViewOptions["group"],
-): Prisma.FlooringImportEntryOrderByWithRelationInput[] {
+function buildListViewOrderBy(): Prisma.FlooringImportEntryOrderByWithRelationInput[] {
   const orderBy: Prisma.FlooringImportEntryOrderByWithRelationInput[] = []
-
-  if (group) {
-    if (group.field === "warehouse") {
-      orderBy.push({ warehouse: { name: "asc" } })
-    } else if (group.field === "manufacturer") {
-      orderBy.push({ manufacturer: { companyName: "asc" } })
-    }
-  }
 
   // `importNumber` is the autoincrement int — monotonic per insert, so DESC
   // gives newest-first deterministically. `createdAt` would tie on rows
@@ -247,7 +234,7 @@ export async function listImportsForListView(
   client: ImportsDbClient = db,
 ): Promise<ImportListViewResult> {
   const where = buildListViewWhere(options)
-  const orderBy = buildListViewOrderBy(options.group)
+  const orderBy = buildListViewOrderBy()
 
   const [total, rows] = await Promise.all([
     client.flooringImportEntry.count({ where }),

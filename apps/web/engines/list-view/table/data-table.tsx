@@ -122,6 +122,13 @@ export type DataTableProps<TRow extends DataTableRow> = {
    */
   sort?: { field: string; direction: "asc" | "desc" } | null
   /**
+   * Active multi-column sort (highest priority first). When set, it supersedes
+   * {@link sort}: a sortable column matching an entry shows its caret, plus a
+   * priority badge (1, 2, 3…) when more than one column is active. Single-sort
+   * consumers can ignore this and pass {@link sort} alone.
+   */
+  sorts?: ReadonlyArray<{ field: string; direction: "asc" | "desc" }>
+  /**
    * Called with a sortable column's `key` when its header is clicked. The
    * caller owns the field→direction mapping (e.g. flip when already active,
    * else select with a sensible default). Sortable headers are inert without it.
@@ -165,11 +172,15 @@ export function DataTable<TRow extends DataTableRow>({
   rowActions,
   selection,
   sort,
+  sorts,
   onSort,
   columnFilters,
   getRowAriaLabel,
   className,
 }: DataTableProps<TRow>) {
+  // The ordered `sorts` list is canonical; a single `sort` is treated as a
+  // one-element list so single-sort consumers need no changes.
+  const effectiveSorts = sorts ?? (sort ? [sort] : [])
   const canToggleSelection = selection ? selection.canToggleSelection ?? true : false
   const isRowSelectable = (row: TRow) =>
     selection?.isRowSelectable ? selection.isRowSelectable(row) : true
@@ -231,7 +242,7 @@ export function DataTable<TRow extends DataTableRow>({
                 <DataTableHeaderCell<TRow>
                   key={column.key}
                   column={column}
-                  sort={sort}
+                  sorts={effectiveSorts}
                   onSort={onSort}
                   filter={columnFilters?.[column.key]}
                 />
