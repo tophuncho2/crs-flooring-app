@@ -66,29 +66,25 @@ export function InventoryPrimaryFieldsSection({
                 onChange={(next) => onFieldChange("color", next)}
               />
             </CellAt>
-            {/* Identity headline */}
-            <CellAt col={1} row={2} colSpan={8}>
-              <ProductNameField value={record.productName} />
-            </CellAt>
-            {/* Where it lives */}
-            <CellAt col={1} row={3} colSpan={4}>
+            {/* Warehouse | Roll # */}
+            <CellAt col={1} row={2} colSpan={4}>
               <WarehouseStaticField warehouseName={warehouseName} />
             </CellAt>
-            <CellAt col={5} row={3} colSpan={4}>
+            <CellAt col={5} row={2} colSpan={4}>
+              <RollNumberReadOnlyField value={record.rollNumber} />
+            </CellAt>
+            {/* Location | Dye Lot */}
+            <CellAt col={1} row={3} colSpan={4}>
               <LocationField
                 editable={editable}
                 value={draft.location}
                 onChange={(value) => onFieldChange("location", value)}
               />
             </CellAt>
-            {/* Roll # | Dye Lot */}
-            <CellAt col={1} row={4} colSpan={4}>
-              <RollNumberReadOnlyField value={record.rollNumber} />
-            </CellAt>
-            <CellAt col={5} row={4} colSpan={4}>
+            <CellAt col={5} row={3} colSpan={4}>
               <DyeLotReadOnlyField value={record.dyeLot} />
             </CellAt>
-            <CellAt col={1} row={5} colSpan={4}>
+            <CellAt col={1} row={4} colSpan={4}>
               <StatusField
                 editable={editable}
                 value={draft.isArchived}
@@ -96,10 +92,10 @@ export function InventoryPrimaryFieldsSection({
               />
             </CellAt>
             {/* Notes stack */}
-            <CellAt col={1} row={6} colSpan={8}>
+            <CellAt col={1} row={5} colSpan={8}>
               <NoteReadOnlyField value={record.note} />
             </CellAt>
-            <CellAt col={1} row={7} colSpan={8}>
+            <CellAt col={1} row={6} colSpan={8}>
               <InternalNotesField
                 editable={editable}
                 value={draft.internalNotes}
@@ -110,21 +106,24 @@ export function InventoryPrimaryFieldsSection({
         }
         right={
           <InventoryFieldGrid>
-            {/* Stock progression: Starting → current balance → net deducted */}
-            <CellAt col={1} row={1} colSpan={4}>
-              <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
+            {/* Identity headline */}
+            <CellAt col={1} row={1} colSpan={8}>
+              <ProductNameField value={record.productName} />
             </CellAt>
-            <CellAt col={5} row={1} colSpan={4}>
+            {/* Stock + money, stacked full-width below the product headline */}
+            <CellAt col={1} row={2} colSpan={8}>
               <StockBalanceField value={record.stockBalance} unitAbbrev={record.stockUnitAbbrev} />
             </CellAt>
-            <CellAt col={1} row={2} colSpan={4}>
+            <CellAt col={1} row={3} colSpan={8}>
+              <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
+            </CellAt>
+            <CellAt col={1} row={4} colSpan={8}>
               <NetDeductedField value={record.netDeducted} unitAbbrev={record.stockUnitAbbrev} />
             </CellAt>
-            {/* Money pair */}
-            <CellAt col={1} row={3} colSpan={4}>
+            <CellAt col={1} row={5} colSpan={8}>
               <CostReadonlyField value={record.cost} />
             </CellAt>
-            <CellAt col={5} row={3} colSpan={4}>
+            <CellAt col={1} row={6} colSpan={8}>
               <FreightReadonlyField value={record.freight} />
             </CellAt>
           </InventoryFieldGrid>
