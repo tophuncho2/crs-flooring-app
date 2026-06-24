@@ -3,10 +3,12 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   FormField,
+  RecordColumnBreak,
   RecordDeleteDialog,
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  RecordSectionDivider,
   StaticFieldValue,
   useRecordDeleteConfirmation,
   type RecordDetailClientScaffoldContext,
@@ -21,6 +23,7 @@ import {
 import { useEntityPrimarySection } from "@/modules/entities/controllers/record/primary/use-entity-primary-section"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
 import { EntityCellsSection } from "./primary/entity-cells-section"
+import { EntityTypesArrayPicker } from "./primary/entity-types-array-picker"
 import { EntityTemplatesSection } from "./templates/entity-templates-section"
 
 /**
@@ -87,19 +90,31 @@ export function EntityRecordView({
           deleteLabel="Delete Entity"
         >
           <div className="flex flex-col gap-4">
-            <EntityCellsSection
-              form={primary.localValue}
-              editable={!primary.isSaving}
-              onFieldChange={(field, value) =>
-                primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
+            <RecordColumnBreak
+              split="right-narrow"
+              left={
+                <EntityCellsSection
+                  form={primary.localValue}
+                  editable={!primary.isSaving}
+                  onFieldChange={(field, value) =>
+                    primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
+                  }
+                />
               }
-              showTypes
-              seedTypeRefs={entry.types}
-              onTypeIdsChange={(typeIds) =>
-                primary.setLocalValue((previous) => ({ ...previous, typeIds }))
+              right={
+                <FormField label="Types">
+                  <EntityTypesArrayPicker
+                    selectedIds={primary.localValue.typeIds}
+                    seedRefs={entry.types}
+                    editable={!primary.isSaving}
+                    onChange={(typeIds) =>
+                      primary.setLocalValue((previous) => ({ ...previous, typeIds }))
+                    }
+                  />
+                </FormField>
               }
             />
-            <div className="border-t border-[var(--panel-border)]" />
+            <RecordSectionDivider />
             <div className="flex gap-6">
               <FormField label="Created">
                 <StaticFieldValue>{formatEasternDateTime(entry.createdAt) || "—"}</StaticFieldValue>
