@@ -20,6 +20,7 @@ import {
   type EntityDetail,
   type EntityForm,
   type EntityOption,
+  type EntityTypeRef,
   type PropertyDetailRecord,
 } from "@builders/domain"
 import {
@@ -42,6 +43,9 @@ function toDisplayForm(option: EntityOption): EntityForm {
     zip: option.zip,
     phone: option.phone,
     email: option.email,
+    // Entity options don't carry their linked types; chips show only for the
+    // server-loaded linked entity (re-resolved on its own record view).
+    typeIds: [],
   }
 }
 
@@ -96,10 +100,16 @@ export function PropertyRecordView({
     entity ? toEntityForm(entity) : null,
   )
   const [entityLabel, setEntityLabel] = useState<string | null>(linkedEntity?.entity ?? null)
+  // The linked entity's type chips (read-only). Seeded from the server-loaded
+  // entity; cleared when a different entity is picked (options carry no types).
+  const [entityTypeRefs, setEntityTypeRefs] = useState<EntityTypeRef[]>(
+    entity?.types ?? [],
+  )
 
   const selectEntity = (option: EntityOption | null) => {
     setEntityDisplay(option ? toDisplayForm(option) : null)
     setEntityLabel(option?.entity ?? null)
+    setEntityTypeRefs([])
   }
 
   // A quick/proper-created company fills the cell exactly like a picked one: link
@@ -158,6 +168,7 @@ export function PropertyRecordView({
               onOptionSelected={selectEntity}
               selectedLabel={entityLabel}
               display={entityDisplay}
+              typeRefs={entityTypeRefs}
               editable={!primary.isSaving}
               onOpen={openEntity}
               returnTo={buildCurrentRecordEntryPath(pathname, searchParams)}

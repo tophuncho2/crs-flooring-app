@@ -17,6 +17,7 @@ function form(overrides: Partial<EntityForm> = {}): EntityForm {
     zip: "",
     phone: "",
     email: "",
+    typeIds: [],
     ...overrides,
   }
 }
@@ -33,6 +34,7 @@ function detail(overrides: Partial<EntityDetail> = {}): EntityDetail {
     phone: "555-1212",
     email: "a@b.com",
     fullAddress: "1 Main St, Austin, TX, 78701",
+    types: [{ id: "type-1", type: "Vendor", color: "SLATE" }],
     ...overrides,
   }
 }
@@ -61,6 +63,7 @@ describe("toEntityForm", () => {
       zip: "78701",
       phone: "555-1212",
       email: "a@b.com",
+      typeIds: ["type-1"],
     })
   })
 })

@@ -93,6 +93,11 @@ export function EntityRecordView({
               onFieldChange={(field, value) =>
                 primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
               }
+              showTypes
+              seedTypeRefs={entry.types}
+              onTypeIdsChange={(typeIds) =>
+                primary.setLocalValue((previous) => ({ ...previous, typeIds }))
+              }
             />
             <div className="border-t border-[var(--panel-border)]" />
             <div className="flex gap-6">

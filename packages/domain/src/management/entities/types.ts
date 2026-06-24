@@ -1,3 +1,12 @@
+import type { PaletteColor } from "../../shared/palette.js"
+
+/** A linked entity-type, slimmed to what the chip/picker need to render. */
+export type EntityTypeRef = {
+  id: string
+  type: string
+  color: PaletteColor
+}
+
 export type EntityDetail = {
   id: string
   createdAt: string
@@ -11,6 +20,7 @@ export type EntityDetail = {
   email: string
   fullAddress: string
   propertyCount: number
+  types: EntityTypeRef[]
 }
 
 export type EntityListRow = {
@@ -26,6 +36,7 @@ export type EntityListRow = {
   email: string
   fullAddress: string
   propertyCount: number
+  types: EntityTypeRef[]
 }
 
 export type EntityOption = {
@@ -48,6 +59,8 @@ export type EntityForm = {
   zip: string
   phone: string
   email: string
+  /** Ids of the entity-types linked to this entity (set semantics). */
+  typeIds: string[]
 }
 
 export const EMPTY_ENTITY_FORM: EntityForm = {
@@ -58,4 +71,5 @@ export const EMPTY_ENTITY_FORM: EntityForm = {
   zip: "",
   phone: "",
   email: "",
+  typeIds: [],
 }

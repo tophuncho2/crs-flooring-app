@@ -1,6 +1,6 @@
 "use client"
 
-import { formatPhoneNumber, type EntityForm } from "@builders/domain"
+import { formatPhoneNumber, type EntityForm, type EntityTypeRef } from "@builders/domain"
 import {
   AddressEditCell,
   CellAt,
@@ -10,6 +10,7 @@ import {
   StaticFieldValue,
   TextCell,
 } from "@/engines/record-view"
+import { EntityTypesArrayPicker } from "./entity-types-array-picker"
 
 /**
  * A single labeled text field in the entity cells grid. Editable renders the live
@@ -66,6 +67,9 @@ export function EntityCellsSection({
   editable,
   onFieldChange,
   showContactAndAddress = true,
+  showTypes = false,
+  seedTypeRefs = [],
+  onTypeIdsChange,
 }: {
   form: EntityForm
   editable: boolean
@@ -79,6 +83,16 @@ export function EntityCellsSection({
    * Entity Name only.
    */
   showContactAndAddress?: boolean
+  /**
+   * Render the entity-type array picker on the right half. Default `false`. The
+   * entity record view + standalone create form pass `true`; the quick-create and
+   * property-hub-create entity sub-forms leave it off.
+   */
+  showTypes?: boolean
+  /** The record's current type refs — seeds chip labels for the picker. */
+  seedTypeRefs?: EntityTypeRef[]
+  /** Editable-types handler. When omitted, the picker renders read-only. */
+  onTypeIdsChange?: (nextIds: string[]) => void
 }) {
   const onText =
     <K extends keyof EntityForm>(field: K) =>
@@ -99,6 +113,18 @@ export function EntityCellsSection({
           ariaLabel="Entity name"
         />
       </CellAt>
+      {showTypes ? (
+        <CellAt col={6} colSpan={3}>
+          <FormField label="Types">
+            <EntityTypesArrayPicker
+              selectedIds={form.typeIds}
+              seedRefs={seedTypeRefs}
+              editable={editable && Boolean(onTypeIdsChange)}
+              onChange={onTypeIdsChange}
+            />
+          </FormField>
+        </CellAt>
+      ) : null}
       {showContactAndAddress ? (
         <>
           <CellAt col={1} colSpan={5}>

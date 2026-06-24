@@ -1,7 +1,13 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import { numberNeighborQueries } from "../../shared/number-neighbors.js"
-import { normalizeEntityType, type EntityType, type EntityTypeListRow } from "@builders/domain"
+import {
+  normalizeEntityType,
+  normalizeEntityTypeOption,
+  type EntityType,
+  type EntityTypeListRow,
+  type EntityTypeOption,
+} from "@builders/domain"
 
 type EntityTypesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -129,4 +135,38 @@ export async function getEntityTypeDetailById(
 
 export async function countEntityTypes(client: EntityTypesDbClient = db): Promise<number> {
   return client.flooringEntityType.count()
+}
+
+export type EntityTypeOptionsSearchArgs = {
+  search?: string
+  skip?: number
+  take: number
+}
+
+export type EntityTypeOptionsSearchResult = {
+  items: EntityTypeOption[]
+  hasMore: boolean
+}
+
+// Paginated entity-type search for the array picker. Mirrors
+// `searchEntityOptions`: ILIKE on `type`, take+1 to detect a next page.
+export async function searchEntityTypeOptions(
+  args: EntityTypeOptionsSearchArgs,
+  client: EntityTypesDbClient = db,
+): Promise<EntityTypeOptionsSearchResult> {
+  const where = args.search
+    ? { type: { contains: args.search, mode: "insensitive" as const } }
+    : undefined
+
+  const rows = await client.flooringEntityType.findMany({
+    where,
+    orderBy: [{ type: "asc" }, { id: "asc" }],
+    skip: args.skip ?? 0,
+    take: args.take + 1,
+    select: { id: true, type: true, color: true },
+  })
+
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return { items: page.map(normalizeEntityTypeOption), hasMore }
 }

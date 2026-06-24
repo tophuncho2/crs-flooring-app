@@ -21,6 +21,8 @@ export type CreateEntityRecordInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
+  /** Entity-type ids to link. Omit (undefined) to link none on create. */
+  typeIds?: string[]
 }
 
 export type UpdateEntityRecordInput = Partial<CreateEntityRecordInput>
@@ -39,14 +41,27 @@ const entityDetailSelect = {
   _count: {
     select: { properties: true },
   },
-} as const
+  entityTypes: {
+    select: {
+      entityType: { select: { id: true, type: true, color: true } },
+    },
+    orderBy: { entityType: { type: "asc" } },
+  },
+} as const satisfies Prisma.EntitySelect
 
 export async function createEntityRecord(
   input: CreateEntityRecordInput,
   client: EntitiesDbClient = db,
 ): Promise<EntityDetail> {
+  const { typeIds, ...fields } = input
   const entity = await client.entity.create({
-    data: { ...input, phone: normalizeNullablePhone(input.phone) },
+    data: {
+      ...fields,
+      phone: normalizeNullablePhone(fields.phone),
+      ...(typeIds
+        ? { entityTypes: { create: typeIds.map((entityTypeId) => ({ entityTypeId })) } }
+        : {}),
+    },
     select: entityDetailSelect,
   })
 
@@ -58,9 +73,23 @@ export async function updateEntityRecord(
   input: UpdateEntityRecordInput,
   client: EntitiesDbClient = db,
 ): Promise<EntityDetail> {
+  const { typeIds, ...fields } = input
   const entity = await client.entity.update({
     where: { id },
-    data: { ...input, phone: normalizeNullablePhone(input.phone) },
+    data: {
+      ...fields,
+      phone: normalizeNullablePhone(fields.phone),
+      // Replace the link set wholesale when typeIds is provided (set semantics).
+      // deleteMany + create run inside Prisma's implicit per-call transaction.
+      ...(typeIds
+        ? {
+            entityTypes: {
+              deleteMany: {},
+              create: typeIds.map((entityTypeId) => ({ entityTypeId })),
+            },
+          }
+        : {}),
+    },
     select: entityDetailSelect,
   })
 

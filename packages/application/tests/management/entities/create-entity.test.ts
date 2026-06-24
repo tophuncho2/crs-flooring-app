@@ -1,14 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, createEntityRecordMock } = vi.hoisted(() => {
-  return {
-    withDatabaseTransactionMock: vi.fn(),
-    createEntityRecordMock: vi.fn(),
-  }
-})
+const { withDatabaseTransactionMock, createEntityRecordMock, PrismaKnownError } = vi.hoisted(
+  () => {
+    class PrismaKnownError extends Error {
+      code: string
+      meta?: { target?: string[] }
+      constructor(message: string, opts: { code: string; meta?: { target?: string[] } }) {
+        super(message)
+        this.code = opts.code
+        this.meta = opts.meta
+      }
+    }
+    return {
+      withDatabaseTransactionMock: vi.fn(),
+      createEntityRecordMock: vi.fn(),
+      PrismaKnownError,
+    }
+  },
+)
 
 vi.mock("@builders/db", () => ({
-  Prisma: {},
+  Prisma: { PrismaClientKnownRequestError: PrismaKnownError },
   withDatabaseTransaction: withDatabaseTransactionMock,
   createEntityRecord: createEntityRecordMock,
 }))
@@ -59,5 +71,14 @@ describe("createEntityUseCase", () => {
     await expect(createEntityUseCase(input() as never)).rejects.not.toBeInstanceOf(
       EntityExecutionError,
     )
+  })
+
+  it("maps a bad typeId FK violation (P2003) to a 400", async () => {
+    createEntityRecordMock.mockRejectedValue(new PrismaKnownError("fk", { code: "P2003" }))
+    await expect(createEntityUseCase(input() as never)).rejects.toMatchObject({
+      code: "ENTITY_INVALID_TYPE",
+      status: 400,
+      field: "typeIds",
+    })
   })
 })

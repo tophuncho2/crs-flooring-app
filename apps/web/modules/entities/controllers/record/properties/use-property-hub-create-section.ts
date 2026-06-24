@@ -40,7 +40,9 @@ export type PropertyHubCreateForm = {
 export type PropertyHubEntityMode = "none" | "link" | "create"
 
 function entityFieldsHaveAnyValue(form: EntityForm): boolean {
-  return Object.values(form).some((value) => value.trim().length > 0)
+  return Object.values(form).some((value) =>
+    Array.isArray(value) ? value.length > 0 : value.trim().length > 0,
+  )
 }
 
 /** Link wins; otherwise any typed entity field means "create"; otherwise none. */

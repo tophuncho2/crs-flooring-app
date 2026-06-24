@@ -1,10 +1,27 @@
 import { buildAddressLine } from "../../shared/address/index.js"
+import type { PaletteColor } from "../../shared/palette.js"
 import { normalizePhoneNumber } from "../../shared/phone.js"
 import type {
   EntityDetail,
   EntityListRow,
   EntityOption,
+  EntityTypeRef,
 } from "./types.js"
+
+/** Shape of the joined entity-type rows as selected by the read repository. */
+type EntityTypeLinkInput = {
+  entityType: { id: string; type: string; color: PaletteColor }
+}
+
+function normalizeEntityTypeRefs(
+  links: EntityTypeLinkInput[] | undefined,
+): EntityTypeRef[] {
+  return (links ?? []).map((link) => ({
+    id: link.entityType.id,
+    type: link.entityType.type,
+    color: link.entityType.color,
+  }))
+}
 
 type EntityDetailInput = {
   id: string
@@ -18,6 +35,7 @@ type EntityDetailInput = {
   phone: string | null
   email: string | null
   _count: { properties: number }
+  entityTypes?: EntityTypeLinkInput[]
 }
 
 type EntityListRowInput = {
@@ -32,6 +50,7 @@ type EntityListRowInput = {
   phone: string | null
   email: string | null
   _count: { properties: number }
+  entityTypes?: EntityTypeLinkInput[]
 }
 
 export function normalizeEntity(entity: EntityDetailInput): EntityDetail {
@@ -48,6 +67,7 @@ export function normalizeEntity(entity: EntityDetailInput): EntityDetail {
     email: entity.email ?? "",
     fullAddress: buildAddressLine(entity),
     propertyCount: entity._count.properties,
+    types: normalizeEntityTypeRefs(entity.entityTypes),
   }
 }
 
@@ -65,6 +85,7 @@ export function normalizeEntityListRow(entity: EntityListRowInput): EntityListRo
     email: entity.email ?? "",
     fullAddress: buildAddressLine(entity),
     propertyCount: entity._count.properties,
+    types: normalizeEntityTypeRefs(entity.entityTypes),
   }
 }
 

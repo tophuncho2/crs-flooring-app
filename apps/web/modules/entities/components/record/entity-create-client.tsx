@@ -59,6 +59,10 @@ function EntityCreatePanel({
             onFieldChange={(field, value) =>
               primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
             }
+            showTypes
+            onTypeIdsChange={(typeIds) =>
+              primary.setLocalValue((previous) => ({ ...previous, typeIds }))
+            }
           />
         </RecordPrimarySectionInstance>
       ),

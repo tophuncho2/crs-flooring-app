@@ -1,4 +1,4 @@
-import type { EntityType } from "./types.js"
+import type { EntityType, EntityTypeOption } from "./types.js"
 import type { PaletteColor } from "../../shared/palette.js"
 
 type EntityTypeInput = {
@@ -25,4 +25,12 @@ export function normalizeEntityType(entityType: EntityTypeInput): EntityType {
     createdBy: entityType.createdBy,
     updatedBy: entityType.updatedBy,
   }
+}
+
+export function normalizeEntityTypeOption(input: {
+  id: string
+  type: string
+  color: PaletteColor
+}): EntityTypeOption {
+  return { id: input.id, type: input.type, color: input.color }
 }

@@ -37,6 +37,15 @@ export async function updateEntityUseCase(
           status: 404,
         })
       }
+      // A typeId that points at no entity-type row trips the FK (P2003).
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        throw new EntityExecutionError({
+          code: "ENTITY_INVALID_TYPE",
+          message: "One or more entity types could not be found",
+          status: 400,
+          field: "typeIds",
+        })
+      }
       throw error
     }
   })

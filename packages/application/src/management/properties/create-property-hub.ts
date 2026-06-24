@@ -58,6 +58,7 @@ function toDomainForm(input: CreatePropertyHubUseCaseInput): CreatePropertyHubFo
             zip: input.entity.fields.postalCode ?? "",
             phone: input.entity.fields.phone ?? "",
             email: input.entity.fields.email ?? "",
+            typeIds: input.entity.fields.typeIds ?? [],
           },
         }
       : input.entity

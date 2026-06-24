@@ -12,6 +12,15 @@ import {
 
 type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
 
+// Linked entity-types, slimmed to what the chip/picker render. Ordered by type
+// name so chips render in a stable, alphabetical order.
+const entityTypesSelect = {
+  select: {
+    entityType: { select: { id: true, type: true, color: true } },
+  },
+  orderBy: { entityType: { type: "asc" } },
+} as const
+
 const entityListSelect = {
   id: true,
   createdAt: true,
@@ -26,6 +35,7 @@ const entityListSelect = {
   _count: {
     select: { properties: true },
   },
+  entityTypes: entityTypesSelect,
 } as const
 
 const entityDetailSelect = {
@@ -42,6 +52,7 @@ const entityDetailSelect = {
   _count: {
     select: { properties: true },
   },
+  entityTypes: entityTypesSelect,
 } as const
 
 // Picker option select — carries the contact/address columns so a freshly

@@ -13,6 +13,13 @@ export type EntityType = {
 
 export type EntityTypeListRow = EntityType
 
+/** Picker option — the slim shape the entity-type array picker renders. */
+export type EntityTypeOption = {
+  id: string
+  type: string
+  color: PaletteColor
+}
+
 export type EntityTypeForm = {
   type: string
   color: PaletteColor

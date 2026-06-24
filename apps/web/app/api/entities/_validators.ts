@@ -57,6 +57,20 @@ function pickPostalCode(body: Record<string, unknown>): unknown {
   return undefined
 }
 
+// Linked entity-type ids. Must be an array of non-empty strings; dedup'd to keep
+// set semantics. Referential validity (the ids point at real types) is the
+// data/application layer's job (FK → P2003 → 400).
+function requireTypeIds(value: unknown): string[] {
+  if (!Array.isArray(value)) fail("typeIds must be an array", "typeIds")
+  const ids = value.map((entry) => {
+    if (typeof entry !== "string" || !entry.trim()) {
+      fail("typeIds must be non-empty strings", "typeIds")
+    }
+    return (entry as string).trim()
+  })
+  return Array.from(new Set(ids))
+}
+
 export function validateCreateEntityInput(
   body: Record<string, unknown>,
 ): CreateEntityUseCaseInput {
@@ -68,6 +82,7 @@ export function validateCreateEntityInput(
     postalCode: optionalString(pickPostalCode(body)),
     phone: optionalPhone(body.phone),
     email: optionalString(body.email),
+    typeIds: "typeIds" in body ? requireTypeIds(body.typeIds) : [],
   }
 }
 
@@ -83,6 +98,7 @@ export function validateUpdateEntityInput(
   if ("zip" in body || "postalCode" in body) input.postalCode = optionalString(pickPostalCode(body))
   if ("phone" in body) input.phone = optionalPhone(body.phone)
   if ("email" in body) input.email = optionalString(body.email)
+  if ("typeIds" in body) input.typeIds = requireTypeIds(body.typeIds)
 
   return input
 }

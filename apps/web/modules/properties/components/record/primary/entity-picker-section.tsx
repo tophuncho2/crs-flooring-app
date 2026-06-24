@@ -1,6 +1,11 @@
 "use client"
 
-import { formatPhoneNumber, type EntityForm, type EntityOption } from "@builders/domain"
+import {
+  formatPhoneNumber,
+  type EntityForm,
+  type EntityOption,
+  type EntityTypeRef,
+} from "@builders/domain"
 import {
   AddressEditCell,
   CellAt,
@@ -11,6 +16,7 @@ import {
 } from "@/engines/record-view"
 import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
 import { EntityCreateMenu } from "@/modules/entities/components/picker/entity-create-menu"
+import { EntityTypesArrayPicker } from "@/modules/entities/components/record/primary/entity-types-array-picker"
 
 /**
  * The Property record view's §1 entity block — always shown. The
@@ -28,6 +34,7 @@ export function EntityPickerSection({
   onOptionSelected,
   selectedLabel,
   display,
+  typeRefs,
   editable,
   onOpen,
   initialOptions,
@@ -39,6 +46,8 @@ export function EntityPickerSection({
   onOptionSelected: (option: EntityOption | null) => void
   selectedLabel: string | null
   display: EntityForm | null
+  /** The linked entity's type(s), rendered read-only as palette chips. */
+  typeRefs: EntityTypeRef[]
   editable: boolean
   onOpen: () => void
   initialOptions?: EntityOption[]
@@ -77,6 +86,11 @@ export function EntityPickerSection({
             disabled={!editable}
             initialOptions={initialOptions}
           />
+        </FormField>
+      </CellAt>
+      <CellAt col={6} colSpan={3}>
+        <FormField label="Types">
+          <EntityTypesArrayPicker selectedIds={typeRefs.map((ref) => ref.id)} seedRefs={typeRefs} editable={false} />
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={5}>
