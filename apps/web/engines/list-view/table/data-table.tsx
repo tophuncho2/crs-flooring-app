@@ -10,7 +10,7 @@ import { CursorPaginateControls } from "../toolbar/paginate/cursor-paginate-cont
 import { PaginateControls } from "../toolbar/paginate/paginate-controls"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
-import { DataTableHeaderCell, type DataTableColumnFilter } from "./data-table-header-cell"
+import { DataTableHeaderCell } from "./data-table-header-cell"
 import { TableOptions, type TableOptionsConfig } from "./options"
 import { DataTableSelectAllButton, DataTableSelectCheckbox } from "./select"
 
@@ -136,14 +136,6 @@ export type DataTableProps<TRow extends DataTableRow> = {
    */
   onSort?: (key: string) => void
   /**
-   * Per-column header filters, keyed by `column.key`. A column with an entry
-   * grows a funnel affordance in its header that opens an anchored popover
-   * hosting the consumer-supplied filter body — see {@link DataTableColumnFilter}.
-   * The engine owns the affordance + popover chrome; the consumer owns the body
-   * and its state. Absent → no funnel.
-   */
-  columnFilters?: Record<string, DataTableColumnFilter>
-  /**
    * Table-options control rendered in the leading open-gutter header — an icon
    * trigger opening a tabbed popover (today: a "Sort" tab wrapping the multi-column
    * sort builder). Additive/opt-in; setting it force-renders the gutter header so
@@ -183,7 +175,6 @@ export function DataTable<TRow extends DataTableRow>({
   sort,
   sorts,
   onSort,
-  columnFilters,
   tableOptions,
   getRowAriaLabel,
   className,
@@ -262,7 +253,6 @@ export function DataTable<TRow extends DataTableRow>({
                   column={column}
                   sorts={effectiveSorts}
                   onSort={onSort}
-                  filter={columnFilters?.[column.key]}
                 />
               ))}
             </tr>
