@@ -25,10 +25,10 @@ const PRESET_CLASS_NAME =
  * on/before; same date in both ⇒ that single day. Bounds are emitted as
  * `YYYY-MM-DD`, compared UTC-pinned to match the date-only column.
  *
- * Pure body — no trigger/popover chrome of its own. Hosted in the `Date` column
- * header funnel via the DataTable `columnFilters` seam (the popover chrome +
- * anchoring come from the engine's `AnchoredPanel`). `normal-case`/`tracking-normal`
- * reset the header's uppercase styling for the inputs.
+ * Pure body — no trigger/popover chrome of its own. Hosted in the table's gutter
+ * TableOptions menu as the `Date` tab (the popover chrome + anchoring come from
+ * the engine's `AnchoredPanel`). `normal-case`/`tracking-normal` reset the
+ * surrounding uppercase styling for the inputs.
  */
 export function ScheduledForFilterBody({ start, end, onChange }: ScheduledForFilterBodyProps) {
   const isActive = Boolean(start || end)

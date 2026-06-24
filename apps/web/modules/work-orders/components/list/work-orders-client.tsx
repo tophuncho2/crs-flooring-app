@@ -168,29 +168,6 @@ export default function WorkOrdersClient({
     [sorts],
   )
 
-  // Multi-column sort now lives in the table's gutter TableOptions menu (the
-  // "Sort" tab), not a toolbar button. Single-column sort stays a header caret.
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      tabs: [
-        {
-          key: "sort",
-          label: "Sort",
-          active: sorts.length > 0,
-          render: () => (
-            <SortMenuBody
-              options={WORK_ORDERS_SORT_OPTIONS}
-              value={sorts}
-              maxLevels={WORK_ORDERS_MAX_SORT_LEVELS}
-              onChange={onSortsChange}
-            />
-          ),
-        },
-      ],
-    }),
-    [sorts, onSortsChange],
-  )
-
   // --- Per-column identity search bars ---
   const unitTypeValue = filters.unitType?.[0] ?? ""
   const unitNumberValue = filters.unitNumber?.[0] ?? ""
@@ -299,22 +276,47 @@ export default function WorkOrdersClient({
     [onFilterChange],
   )
 
-  // Column-header filters (DataTable). The Date column hosts the scheduled-for
-  // range filter in its header funnel — the toolbar chip is retired.
-  const columnFilters = useMemo(
+  // Table-level controls live in the table's gutter TableOptions menu: the
+  // "Sort" tab wraps the multi-column sort builder, the "Date" tab hosts the
+  // scheduled-for range filter (moved off the Date column header funnel — the
+  // toolbar chip was already retired). Single-column sort stays a header caret.
+  const tableOptions = useMemo<TableOptionsConfig>(
     () => ({
-      scheduledFor: {
-        active: Boolean(selectedScheduledStart || selectedScheduledEnd),
-        render: () => (
-          <ScheduledForFilterBody
-            start={selectedScheduledStart}
-            end={selectedScheduledEnd}
-            onChange={handleScheduledForChange}
-          />
-        ),
-      },
+      tabs: [
+        {
+          key: "sort",
+          label: "Sort",
+          active: sorts.length > 0,
+          render: () => (
+            <SortMenuBody
+              options={WORK_ORDERS_SORT_OPTIONS}
+              value={sorts}
+              maxLevels={WORK_ORDERS_MAX_SORT_LEVELS}
+              onChange={onSortsChange}
+            />
+          ),
+        },
+        {
+          key: "date",
+          label: "Date",
+          active: Boolean(selectedScheduledStart || selectedScheduledEnd),
+          render: () => (
+            <ScheduledForFilterBody
+              start={selectedScheduledStart}
+              end={selectedScheduledEnd}
+              onChange={handleScheduledForChange}
+            />
+          ),
+        },
+      ],
     }),
-    [selectedScheduledStart, selectedScheduledEnd, handleScheduledForChange],
+    [
+      sorts,
+      onSortsChange,
+      selectedScheduledStart,
+      selectedScheduledEnd,
+      handleScheduledForChange,
+    ],
   )
 
   const hasActiveFilters = useMemo(() => {
@@ -476,10 +478,9 @@ export default function WorkOrdersClient({
               </div>
             </ListToolbarCell>
 
-            {/* Scheduled-for date filter lives on the Date column header funnel.
-                Single-column sort is a header-caret click; the ordered
-                multi-column chain (up to 3 levels) lives in the table's gutter
-                TableOptions "Sort" tab. */}
+            {/* Scheduled-for date filter + multi-column sort both live in the
+                table's gutter TableOptions menu ("Date" and "Sort" tabs).
+                Single-column sort stays a header-caret click. */}
             <ListToolbarCell className="ml-auto">
               <AddWorkOrderButton onClick={() => openCreate()} />
             </ListToolbarCell>
@@ -493,7 +494,6 @@ export default function WorkOrdersClient({
         sorts={tableSorts}
         onSort={handleSort}
         tableOptions={tableOptions}
-        columnFilters={columnFilters}
         pagination={{
           page,
           pageSize,
