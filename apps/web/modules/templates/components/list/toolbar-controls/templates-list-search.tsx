@@ -1,21 +1,39 @@
 "use client"
 
-import { SearchControl } from "@/engines/list-view"
+import { DebouncedSearchControl } from "@/engines/list-view"
+
+export type TemplatesSearchField = "unitType" | "description"
 
 export type TemplatesListSearchProps = {
-  query: string
-  onQueryChange: (next: string) => void
+  unitType: string
+  description: string
+  onFieldChange: (field: TemplatesSearchField, next: string) => void
 }
 
+/**
+ * Two independent search bars — Unit Type and Description — each ILIKEs its own
+ * column (GIN trigram backed). Filling both narrows (AND). Mirrors the
+ * inventory per-field search pattern.
+ */
 export function TemplatesListSearch({
-  query,
-  onQueryChange,
+  unitType,
+  description,
+  onFieldChange,
 }: TemplatesListSearchProps) {
   return (
-    <SearchControl
-      query={query}
-      onQueryChange={onQueryChange}
-      placeholder="unit type, description"
-    />
+    <>
+      <DebouncedSearchControl
+        value={unitType}
+        onCommit={(next) => onFieldChange("unitType", next)}
+        placeholder="Unit type"
+        ariaLabel="Search templates by unit type"
+      />
+      <DebouncedSearchControl
+        value={description}
+        onCommit={(next) => onFieldChange("description", next)}
+        placeholder="Description"
+        ariaLabel="Search templates by description"
+      />
+    </>
   )
 }

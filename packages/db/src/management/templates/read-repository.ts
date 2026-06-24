@@ -21,10 +21,14 @@ type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 export type TemplatesListFilterMap = {
   entityId?: ReadonlyArray<string>
   propertyId?: ReadonlyArray<string>
+  // Per-column identity search bars — each a free-text ILIKE against its own
+  // column. Array-shaped (single-element) to ride the same engine URL wire
+  // format as the entity/property chips; setting both narrows (AND).
+  unitType?: ReadonlyArray<string>
+  description?: ReadonlyArray<string>
 }
 
 export type TemplatesListArgs = {
-  searchQuery?: string
   filters?: TemplatesListFilterMap
   pagination?: { skip: number; take: number }
 }
@@ -86,25 +90,27 @@ const templateDetailSelect = {
 } as const
 
 /**
- * List-view search mirrors the picker (`searchTemplateOptions`): OR-ILIKE
- * across unitType and description. Filters AND together via exact `IN (...)`
- * matches — propertyId on `FlooringTemplate` directly, entityId
- * through the linked property (templates no longer store their own entity).
+ * List-view search: one independent ILIKE-substring clause per filled search
+ * bar (Unit Type / Description), each backed by its own GIN trigram index.
+ * Setting both narrows (AND). Note this diverges from the picker
+ * (`searchTemplateOptions`), which keeps a single combined OR across the two
+ * columns. Chip filters AND together via exact `IN (...)` matches — propertyId
+ * on `FlooringTemplate` directly, entityId through the linked property
+ * (templates no longer store their own entity).
  */
 function buildTemplatesWhere(
-  searchQuery: string | undefined,
   filters: TemplatesListFilterMap | undefined,
 ): Prisma.FlooringTemplateWhereInput | undefined {
   const clauses: Prisma.FlooringTemplateWhereInput[] = []
 
-  const trimmed = searchQuery?.trim() ?? ""
-  if (trimmed.length > 0) {
-    clauses.push({
-      OR: [
-        { unitType: { contains: trimmed, mode: "insensitive" } },
-        { description: { contains: trimmed, mode: "insensitive" } },
-      ],
-    })
+  const unitType = filters?.unitType?.[0]?.trim() ?? ""
+  if (unitType.length > 0) {
+    clauses.push({ unitType: { contains: unitType, mode: "insensitive" } })
+  }
+
+  const description = filters?.description?.[0]?.trim() ?? ""
+  if (description.length > 0) {
+    clauses.push({ description: { contains: description, mode: "insensitive" } })
   }
 
   const entityIds = filters?.entityId
@@ -143,7 +149,7 @@ export async function listTemplates(
   client: TemplatesDbClient = db,
 ): Promise<TemplateListRow[]> {
   const templates = await client.flooringTemplate.findMany({
-    where: buildTemplatesWhere(args.searchQuery, args.filters),
+    where: buildTemplatesWhere(args.filters),
     orderBy: buildTemplatesOrderBy(),
     select: templateListSelect,
     ...(args.pagination ?? {}),
@@ -305,10 +311,10 @@ export async function getTemplateById(
 }
 
 export async function countTemplates(
-  args: { searchQuery?: string; filters?: TemplatesListFilterMap },
+  args: { filters?: TemplatesListFilterMap },
   client: TemplatesDbClient = db,
 ): Promise<number> {
   return client.flooringTemplate.count({
-    where: buildTemplatesWhere(args.searchQuery, args.filters),
+    where: buildTemplatesWhere(args.filters),
   })
 }

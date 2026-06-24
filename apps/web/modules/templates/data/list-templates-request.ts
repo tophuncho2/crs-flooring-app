@@ -7,7 +7,7 @@ import { requestJson } from "@/transport/http"
 
 export const TEMPLATES_LIST_QUERY_KEY = ["templates", "list"] as const
 
-const FILTER_KEYS = ["entityId", "propertyId"] as const
+const FILTER_KEYS = ["entityId", "propertyId", "unitType", "description"] as const
 type FilterKey = (typeof FILTER_KEYS)[number]
 
 function readSearchParam(
@@ -34,7 +34,6 @@ function readSearchParamArray(
 export function parseTemplatesListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<TemplatesListFilters> {
-  const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
@@ -46,7 +45,6 @@ export function parseTemplatesListInputFromSearchParams(
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
   return {
-    search: searchRaw || undefined,
     filters: hasAnyFilter ? (filterRecord as TemplatesListFilters) : undefined,
     page,
     pageSize: LIST_TEMPLATES_PAGE_SIZE,
@@ -57,7 +55,6 @@ function buildTemplatesListSearchString(
   input: ListInput<TemplatesListFilters>,
 ): string {
   const params = new URLSearchParams()
-  if (input.search) params.set("q", input.search)
   for (const key of FILTER_KEYS) {
     const values = (input.filters?.[key] ?? []) as ReadonlyArray<string>
     for (const id of values) params.append(key, id)

@@ -96,7 +96,6 @@ export default async function TemplatesPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <TemplatesClient
-        initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}
         initialEntityOptions={initialEntityOptions}

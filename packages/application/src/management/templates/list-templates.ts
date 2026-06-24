@@ -9,6 +9,11 @@ import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 export type TemplatesListFilters = {
   entityId?: ReadonlyArray<string>
   propertyId?: ReadonlyArray<string>
+  // Per-column identity search bars (Unit Type / Description). Array-shaped
+  // (single-element) so they ride the engine's filter wire format alongside the
+  // entity/property chips; each is a free-text ILIKE, both set narrows (AND).
+  unitType?: ReadonlyArray<string>
+  description?: ReadonlyArray<string>
 }
 
 function normalizeIds(
@@ -28,24 +33,26 @@ export async function listTemplatesUseCase(
   const requestedPageSize = Math.floor(input.pageSize || LIST_TEMPLATES_PAGE_SIZE)
   const pageSize = Math.max(1, Math.min(LIST_TEMPLATES_MAX_PAGE_SIZE, requestedPageSize))
 
-  const search = input.search?.trim() || undefined
   const entityId = normalizeIds(input.filters?.entityId)
   const propertyId = normalizeIds(input.filters?.propertyId)
+  const unitType = normalizeIds(input.filters?.unitType)
+  const description = normalizeIds(input.filters?.description)
   const filters =
-    entityId || propertyId
+    entityId || propertyId || unitType || description
       ? {
           ...(entityId ? { entityId } : {}),
           ...(propertyId ? { propertyId } : {}),
+          ...(unitType ? { unitType } : {}),
+          ...(description ? { description } : {}),
         }
       : undefined
 
   const [rows, total] = await Promise.all([
     listTemplates({
-      searchQuery: search,
       filters,
       pagination: { skip: (page - 1) * pageSize, take: pageSize },
     }),
-    countTemplates({ searchQuery: search, filters }),
+    countTemplates({ filters }),
   ])
 
   return { rows, total }

@@ -22,17 +22,20 @@ import { TemplatesListSearch } from "./toolbar-controls/templates-list-search"
 import { TemplatesClearAll } from "./toolbar-controls/sub-controls/templates-clear-all"
 import { TemplatesRowCount } from "./toolbar-controls/sub-controls/templates-row-count"
 
-const TEMPLATES_FILTERABLE_FIELDS = ["entityId", "propertyId"] as const
+const TEMPLATES_FILTERABLE_FIELDS = [
+  "entityId",
+  "propertyId",
+  "unitType",
+  "description",
+] as const
 
 export default function TemplatesClient({
-  initialSearchQuery,
   initialPage,
   initialFilters,
   initialEntityOptions,
   initialSelectedEntity = null,
   initialSelectedProperty = null,
 }: {
-  initialSearchQuery: string
   initialPage: number
   initialFilters: TemplatesListFilters
   initialEntityOptions: EntityOption[]
@@ -45,7 +48,6 @@ export default function TemplatesClient({
   const {
     rows,
     total,
-    searchQuery,
     filters,
     page,
     pageSize,
@@ -54,14 +56,12 @@ export default function TemplatesClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<TemplateListRow, TemplatesListFilters>({
     mode: "fetch",
     queryKey: [...TEMPLATES_LIST_QUERY_KEY],
     listFn: listTemplatesRequest,
-    initialSearchQuery,
     initialPage,
     initialFilters,
     pageSize: LIST_TEMPLATES_PAGE_SIZE,
@@ -73,6 +73,18 @@ export default function TemplatesClient({
   const filtersTyped = filters as TemplatesListFilters
   const selectedEntityId = filtersTyped.entityId?.[0] ?? null
   const selectedPropertyId = filtersTyped.propertyId?.[0] ?? null
+  const unitTypeValue = filtersTyped.unitType?.[0] ?? ""
+  const descriptionValue = filtersTyped.description?.[0] ?? ""
+
+  // Per-field text search bars — encode the scalar input as a single-element
+  // filter array (empty → cleared). Mirrors the entity/property chips.
+  const handleTextFilterChange = useCallback(
+    (field: "unitType" | "description", next: string) => {
+      const trimmed = next.trim()
+      onFilterChange(field, trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
 
   const entityLabel = useMemo(() => {
     if (!selectedEntityId) return null
@@ -113,15 +125,14 @@ export default function TemplatesClient({
   )
 
   const hasActiveFilters = useMemo(() => {
-    if (searchQuery.trim().length > 0) return true
+    if (unitTypeValue.length > 0 || descriptionValue.length > 0) return true
     if (selectedEntityId || selectedPropertyId) return true
     return false
-  }, [searchQuery, selectedEntityId, selectedPropertyId])
+  }, [unitTypeValue, descriptionValue, selectedEntityId, selectedPropertyId])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
-    onSearchQueryChange("")
-  }, [onClearAllFilters, onSearchQueryChange])
+  }, [onClearAllFilters])
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -154,8 +165,9 @@ export default function TemplatesClient({
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <TemplatesListSearch
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
+                  unitType={unitTypeValue}
+                  description={descriptionValue}
+                  onFieldChange={handleTextFilterChange}
                 />
                 <ListToolbarBottomRow
                   left={<TemplatesClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}

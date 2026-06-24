@@ -190,11 +190,15 @@ export function validateTemplateMaterialItemsDiffInput(
 
 // --- List view query validator (search + filters + pagination) ---
 
-const TEMPLATES_FILTER_KEYS = ["entityId", "propertyId"] as const
+const TEMPLATES_FILTER_KEYS = [
+  "entityId",
+  "propertyId",
+  "unitType",
+  "description",
+] as const
 type TemplatesFilterKey = (typeof TEMPLATES_FILTER_KEYS)[number]
 
 const listTemplatesQuerySchema = z.object({
-  q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -236,8 +240,6 @@ export function validateListTemplatesQuery(
   }
 
   const parsed = parseResult.data
-  const trimmedSearch = parsed.q?.trim()
-  const search = trimmedSearch ? trimmedSearch : undefined
 
   const filterEntries: Array<[TemplatesFilterKey, string[]]> = TEMPLATES_FILTER_KEYS.map(
     (key) => [key, readMultiValue(searchParams, key)],
@@ -249,7 +251,6 @@ export function validateListTemplatesQuery(
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
   return {
-    search,
     filters: hasAnyFilter ? (filterRecord as TemplatesListFilters) : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,

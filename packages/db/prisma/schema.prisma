@@ -477,7 +477,6 @@ model FlooringTemplate {
   items                FlooringTemplateItem[]
   workOrders           FlooringWorkOrder[]
 
-  @@index([templateNumber])
   @@index([templateNumberInt])
   @@index([propertyId])
   @@index([jobTypeId])
@@ -485,6 +484,11 @@ model FlooringTemplate {
   @@index([unitType])
   @@index([createdAt])
   @@index([updatedAt])
+  // GIN trigram indexes backing the list-view per-column search bars (ILIKE
+  // substring). Mirrors the FlooringWorkOrder unitType/description search indexes.
+  // The btree @@index([unitType]) above stays — it serves ORDER BY unitType.
+  @@index([unitType(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_template_unitType_trgm_idx")
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_template_description_trgm_idx")
   @@map("flooring_template")
 }
 
