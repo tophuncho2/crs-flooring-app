@@ -4,7 +4,9 @@ import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   CellAt,
+  RecordColumnBreak,
   RecordOpenButton,
+  RecordSectionDivider,
   DateCell,
   FieldSection,
   FormField,
@@ -47,15 +49,14 @@ import { usePropertyJoinedOverride } from "./use-property-joined-override"
 export type { WorkOrderPrimaryDetail } from "./types"
 
 /**
- * WO primary section, on the canonical record-view invisible grid. One
- * `FieldSection` (8-col `LayoutGrid`) places every cell with `CellAt`,
- * mirroring `products`/`properties`. The former Schedule / Property & Unit /
- * Notes card groupings are gone — every field flows as one continuous grid.
- *
- * Layout: the WO number sits top-left (row 1) with the palette Color swatch
- * directly beneath it (row 2). From the entity cell down, every left field is a
- * single 4-col stack; the schedule pickers sit two-up across the right half,
- * starting on row 3 so they pair with the entity/property stack.
+ * WO primary section, on the canonical record-view centered layout. A
+ * `RecordColumnBreak` splits the fields into two independent flanks, each its
+ * own 8-col `FieldSection`: the left flank holds the identity / property / unit
+ * cluster (WO number, Color, Entity, Property, addresses, Template, Unit
+ * Type/Number, Vacancy); the right flank holds schedule / config / notes
+ * (Warehouse, Job Type, Scheduled For, Time of Day, Description, Installer
+ * Instructions, Internal Notes). A `RecordSectionDivider` terminates the section
+ * above a read-only 2-cell Created / Updated footer (shown only on detail).
  *
  * The "open entity / Property / Template" + "new" affordances that used to live in a
  * group header now sit in each field's label-row `actions` slot: a
@@ -180,312 +181,317 @@ export function WorkOrderPrimaryFieldsSection({
   }
 
   return (
-    <FieldSection>
-      {/* Work Order Number — sits top-left, spanning two columns */}
-      <CellAt col={1} row={1} colSpan={2}>
-        <FormField label="Work Order Number">
-          <StaticFieldValue>{detail?.workOrderNumber ?? "—"}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      {/* Color — palette swatch directly below the WO number */}
-      <CellAt col={1} row={2} colSpan={2}>
-        <FormField label="Color">
-          <PaletteColorDropdown
-            value={draft.color}
-            editable={editable}
-            onChange={(color) => onFieldChange("color", color)}
-            ariaLabel="Work order color"
-          />
-        </FormField>
-      </CellAt>
-      {/* Schedule — pickers two-up across the right half */}
-      <CellAt col={5} row={3} colSpan={2}>
-        <FormField label="Warehouse">
-          {editable ? (
-            <WarehousePicker
-              value={draft.warehouseId || null}
-              onChange={(id) => onFieldChange("warehouseId", id ?? "")}
-              onOptionSelected={(option) => setPickedWarehouseLabel(option?.name ?? null)}
-              selectedLabel={warehouseLabel}
-              placeholder="Select warehouse"
-              ariaLabel="Warehouse"
-            />
-          ) : (
-            <StaticFieldValue>{warehouseLabel || "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={7} row={3} colSpan={1}>
-        <FormField label="Job Type">
-          {editable ? (
-            <JobTypePicker
-              value={draft.jobTypeId || null}
-              onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
-              onOptionSelected={(option) => setPickedJobTypeLabel(option?.name ?? null)}
-              selectedLabel={jobTypeLabel}
-              placeholder="—"
-              ariaLabel="Job type"
-            />
-          ) : (
-            <StaticFieldValue>{jobTypeLabel ?? "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={4} colSpan={2}>
-        <FormField label="Scheduled For">
-          <DateCell
-            editable={editable}
-            value={draft.scheduledFor}
-            onChange={(value) => onFieldChange("scheduledFor", value)}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={7} row={4} colSpan={1}>
-        <FormField label="Time of Day">
-          <SegmentedChoiceCell
-            editable={editable}
-            value={draft.timeOfDay}
-            options={TIME_OF_DAY_OPTIONS}
-            ariaLabel="Time of Day"
-            onChange={(value) => onFieldChange("timeOfDay", value as WorkOrderForm["timeOfDay"])}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={5} colSpan={3}>
-        <FormField
-          label="Description"
-          currentLength={editable ? draft.description.length : undefined}
-          maxLength={editable ? WO_DESCRIPTION_MAX : undefined}
-        >
-          <TextareaCell
-            editable={editable}
-            value={draft.description}
-            onChange={(value) => onFieldChange("description", value)}
-            maxLength={WO_DESCRIPTION_MAX}
-            rows={1}
-          />
-        </FormField>
-      </CellAt>
-
-      {/* Entity + property pair the schedule rows on the left */}
-      <CellAt col={1} row={3} colSpan={4}>
-        <FormField
-          label="Entity"
-          actions={
-            <RecordOpenButton
-              ariaLabel="Open entity"
-              title="Open entity"
-              disabled={!entityValue}
-              onClick={() => {
-                if (entityValue) {
-                  router.push(
-                    buildRecordDetailHref(
-                      "/dashboard/entities",
-                      entityValue,
-                      returnTo,
-                    ),
-                  )
-                }
-              }}
-            />
-          }
-        >
-          <StaticFieldValue>{entityLabel ?? "—"}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={1} row={4} colSpan={4}>
-        <FormField
-          label="Property"
-          actions={
-            <>
-              <RecordOpenButton
-                ariaLabel="Open property"
-                title="Open property"
-                disabled={!propertyValue}
-                onClick={() => {
-                  if (propertyValue) {
-                    router.push(buildPropertyRecordHref(propertyValue, entityValue, returnTo))
-                  }
-                }}
-              />
-              {editable ? (
-                <PropertyCreateMenu returnTo={returnTo} onCreated={handlePropertySelected} />
-              ) : null}
-            </>
-          }
-        >
-          {editable ? (
-            <PropertyPicker
-              value={propertyValue}
-              onChange={() => {}}
-              onOptionSelected={handlePropertySelected}
-              selectedLabel={propertyLabel}
-              placeholder="Select property"
-              ariaLabel="Property"
-            />
-          ) : (
-            <StaticFieldValue>{propertyLabel ?? "—"}</StaticFieldValue>
-          )}
-        </FormField>
-      </CellAt>
-      {/* Template → notes: single 4-col stack on the left, under Description */}
-      <CellAt col={1} row={7} colSpan={4}>
-        <FormField
-          label="Template"
-          actions={
-            <>
-              <RecordOpenButton
-                ariaLabel="Open template record"
-                title="Open template record"
-                disabled={!templateValue}
-                onClick={() => {
-                  if (templateValue) {
-                    router.push(buildTemplateHubHref({ templateId: templateValue, returnTo }))
-                  }
-                }}
-              />
-              {editable ? (
-                <TemplateCreateMenu
-                  returnTo={returnTo}
-                  initialProperty={
-                    propertyValue ? { id: propertyValue, label: propertyLabel } : null
-                  }
-                  onCreated={handleTemplateSelected}
+    <div className="flex flex-col gap-4">
+      <RecordColumnBreak
+        left={
+          <FieldSection gap="0.75rem">
+            {/* Work Order Number — top-left stamp, with the Color swatch beside it */}
+            <CellAt col={1} row={1} colSpan={2}>
+              <FormField label="Work Order Number">
+                <StaticFieldValue>{detail?.workOrderNumber ?? "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={3} row={1} colSpan={2}>
+              <FormField label="Color">
+                <PaletteColorDropdown
+                  value={draft.color}
+                  editable={editable}
+                  onChange={(color) => onFieldChange("color", color)}
+                  ariaLabel="Work order color"
                 />
-              ) : null}
-            </>
-          }
-        >
-          {editable ? (
-            <TemplatePicker
-              value={templateValue}
-              onChange={() => {}}
-              onOptionSelected={handleTemplateSelected}
-              propertyId={propertyValue}
-              entityId={entityValue}
-              requireProperty={false}
-              selectedLabel={templateLabel}
-              placeholder="—"
-              ariaLabel="Template"
-            />
-          ) : (
-            <StaticFieldValue>{templateLabel ?? "—"}</StaticFieldValue>
-          )}
+              </FormField>
+            </CellAt>
+            {/* Entity → Property cascade stack */}
+            <CellAt col={1} row={2} colSpan={8}>
+              <FormField
+                label="Entity"
+                actions={
+                  <RecordOpenButton
+                    ariaLabel="Open entity"
+                    title="Open entity"
+                    disabled={!entityValue}
+                    onClick={() => {
+                      if (entityValue) {
+                        router.push(
+                          buildRecordDetailHref(
+                            "/dashboard/entities",
+                            entityValue,
+                            returnTo,
+                          ),
+                        )
+                      }
+                    }}
+                  />
+                }
+              >
+                <StaticFieldValue>{entityLabel ?? "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={3} colSpan={8}>
+              <FormField
+                label="Property"
+                actions={
+                  <>
+                    <RecordOpenButton
+                      ariaLabel="Open property"
+                      title="Open property"
+                      disabled={!propertyValue}
+                      onClick={() => {
+                        if (propertyValue) {
+                          router.push(buildPropertyRecordHref(propertyValue, entityValue, returnTo))
+                        }
+                      }}
+                    />
+                    {editable ? (
+                      <PropertyCreateMenu returnTo={returnTo} onCreated={handlePropertySelected} />
+                    ) : null}
+                  </>
+                }
+              >
+                {editable ? (
+                  <PropertyPicker
+                    value={propertyValue}
+                    onChange={() => {}}
+                    onOptionSelected={handlePropertySelected}
+                    selectedLabel={propertyLabel}
+                    placeholder="Select property"
+                    ariaLabel="Property"
+                  />
+                ) : (
+                  <StaticFieldValue>{propertyLabel ?? "—"}</StaticFieldValue>
+                )}
+              </FormField>
+            </CellAt>
+            {/* Property address (left) + Custom address (right) */}
+            <CellAt col={1} row={4} colSpan={4}>
+              <FormField label="Property Address">
+                <StaticFieldValue>
+                  <span className="whitespace-pre-line">{addressDisplay}</span>
+                </StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={4} colSpan={4}>
+              <FormField
+                label="Custom Address"
+                currentLength={editable ? draft.customAddress.length : undefined}
+                maxLength={editable ? WO_CUSTOM_ADDRESS_MAX : undefined}
+              >
+                <TextareaCell
+                  editable={editable}
+                  value={draft.customAddress}
+                  onChange={(value) => onFieldChange("customAddress", value)}
+                  maxLength={WO_CUSTOM_ADDRESS_MAX}
+                  rows={2}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={5} colSpan={8}>
+              <FormField label="Property Instructions">
+                <StaticFieldValue>
+                  <span className="whitespace-pre-line">{instructionsDisplay}</span>
+                </StaticFieldValue>
+              </FormField>
+            </CellAt>
+            {/* Template → unit identity */}
+            <CellAt col={1} row={6} colSpan={8}>
+              <FormField
+                label="Template"
+                actions={
+                  <>
+                    <RecordOpenButton
+                      ariaLabel="Open template record"
+                      title="Open template record"
+                      disabled={!templateValue}
+                      onClick={() => {
+                        if (templateValue) {
+                          router.push(buildTemplateHubHref({ templateId: templateValue, returnTo }))
+                        }
+                      }}
+                    />
+                    {editable ? (
+                      <TemplateCreateMenu
+                        returnTo={returnTo}
+                        initialProperty={
+                          propertyValue ? { id: propertyValue, label: propertyLabel } : null
+                        }
+                        onCreated={handleTemplateSelected}
+                      />
+                    ) : null}
+                  </>
+                }
+              >
+                {editable ? (
+                  <TemplatePicker
+                    value={templateValue}
+                    onChange={() => {}}
+                    onOptionSelected={handleTemplateSelected}
+                    propertyId={propertyValue}
+                    entityId={entityValue}
+                    requireProperty={false}
+                    selectedLabel={templateLabel}
+                    placeholder="—"
+                    ariaLabel="Template"
+                  />
+                ) : (
+                  <StaticFieldValue>{templateLabel ?? "—"}</StaticFieldValue>
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={7} colSpan={4}>
+              <FormField
+                label="Unit Type"
+                currentLength={editable ? draft.unitType.length : undefined}
+                maxLength={editable ? WO_UNIT_TYPE_MAX : undefined}
+              >
+                <TextCell
+                  editable={editable}
+                  value={draft.unitType}
+                  onChange={(value) => onFieldChange("unitType", value)}
+                  maxLength={WO_UNIT_TYPE_MAX}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={8} colSpan={2}>
+              <FormField
+                label="Unit Number"
+                currentLength={editable ? draft.unitNumber.length : undefined}
+                maxLength={editable ? WO_UNIT_NUMBER_MAX : undefined}
+              >
+                <TextCell
+                  editable={editable}
+                  value={draft.unitNumber}
+                  onChange={(value) => onFieldChange("unitNumber", value)}
+                  maxLength={WO_UNIT_NUMBER_MAX}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={3} row={8} colSpan={2}>
+              <FormField label="Vacancy">
+                <SegmentedChoiceCell
+                  editable={editable}
+                  value={draft.vacancy}
+                  options={VACANCY_OPTIONS}
+                  ariaLabel="Vacancy"
+                  onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
+                />
+              </FormField>
+            </CellAt>
+          </FieldSection>
+        }
+        right={
+          <FieldSection gap="0.75rem">
+            {/* Schedule — Warehouse + Job Type top row */}
+            <CellAt col={1} row={1} colSpan={4}>
+              <FormField label="Warehouse">
+                {editable ? (
+                  <WarehousePicker
+                    value={draft.warehouseId || null}
+                    onChange={(id) => onFieldChange("warehouseId", id ?? "")}
+                    onOptionSelected={(option) => setPickedWarehouseLabel(option?.name ?? null)}
+                    selectedLabel={warehouseLabel}
+                    placeholder="Select warehouse"
+                    ariaLabel="Warehouse"
+                  />
+                ) : (
+                  <StaticFieldValue>{warehouseLabel || "—"}</StaticFieldValue>
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={1} colSpan={4}>
+              <FormField label="Job Type">
+                {editable ? (
+                  <JobTypePicker
+                    value={draft.jobTypeId || null}
+                    onChange={(id) => onFieldChange("jobTypeId", id ?? "")}
+                    onOptionSelected={(option) => setPickedJobTypeLabel(option?.name ?? null)}
+                    selectedLabel={jobTypeLabel}
+                    placeholder="—"
+                    ariaLabel="Job type"
+                  />
+                ) : (
+                  <StaticFieldValue>{jobTypeLabel ?? "—"}</StaticFieldValue>
+                )}
+              </FormField>
+            </CellAt>
+            {/* Scheduled For + Time of Day */}
+            <CellAt col={1} row={2} colSpan={4}>
+              <FormField label="Scheduled For">
+                <DateCell
+                  editable={editable}
+                  value={draft.scheduledFor}
+                  onChange={(value) => onFieldChange("scheduledFor", value)}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={2} colSpan={4}>
+              <FormField label="Time of Day">
+                <SegmentedChoiceCell
+                  editable={editable}
+                  value={draft.timeOfDay}
+                  options={TIME_OF_DAY_OPTIONS}
+                  ariaLabel="Time of Day"
+                  onChange={(value) => onFieldChange("timeOfDay", value as WorkOrderForm["timeOfDay"])}
+                />
+              </FormField>
+            </CellAt>
+            {/* Notes stack */}
+            <CellAt col={1} row={3} colSpan={8}>
+              <FormField
+                label="Description"
+                currentLength={editable ? draft.description.length : undefined}
+                maxLength={editable ? WO_DESCRIPTION_MAX : undefined}
+              >
+                <TextareaCell
+                  editable={editable}
+                  value={draft.description}
+                  onChange={(value) => onFieldChange("description", value)}
+                  maxLength={WO_DESCRIPTION_MAX}
+                  rows={1}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={4} colSpan={8}>
+              <FormField
+                label="Installer Instructions"
+                currentLength={editable ? draft.installerInstructions.length : undefined}
+                maxLength={editable ? WO_INSTALLER_INSTRUCTIONS_MAX : undefined}
+              >
+                <TextareaCell
+                  editable={editable}
+                  value={draft.installerInstructions}
+                  onChange={(value) => onFieldChange("installerInstructions", value)}
+                  maxLength={WO_INSTALLER_INSTRUCTIONS_MAX}
+                  rows={1}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={5} colSpan={8}>
+              <FormField
+                label="Internal Notes"
+                currentLength={editable ? draft.internalNotes.length : undefined}
+                maxLength={editable ? WO_INTERNAL_NOTES_MAX : undefined}
+              >
+                <TextareaCell
+                  editable={editable}
+                  value={draft.internalNotes}
+                  onChange={(value) => onFieldChange("internalNotes", value)}
+                  maxLength={WO_INTERNAL_NOTES_MAX}
+                  rows={1}
+                />
+              </FormField>
+            </CellAt>
+          </FieldSection>
+        }
+      />
+      <RecordSectionDivider />
+      <div className="flex gap-6">
+        <FormField label="Created">
+          <StaticFieldValue>{detail ? formatEasternDateTime(detail.createdAt) || "—" : "—"}</StaticFieldValue>
         </FormField>
-      </CellAt>
-      <CellAt col={1} row={8} colSpan={4}>
-        <FormField
-          label="Unit Type"
-          currentLength={editable ? draft.unitType.length : undefined}
-          maxLength={editable ? WO_UNIT_TYPE_MAX : undefined}
-        >
-          <TextCell
-            editable={editable}
-            value={draft.unitType}
-            onChange={(value) => onFieldChange("unitType", value)}
-            maxLength={WO_UNIT_TYPE_MAX}
-          />
+        <FormField label="Updated">
+          <StaticFieldValue>{detail ? formatEasternDateTime(detail.updatedAt) || "—" : "—"}</StaticFieldValue>
         </FormField>
-      </CellAt>
-      <CellAt col={1} row={9} colSpan={2}>
-        <FormField
-          label="Unit Number"
-          currentLength={editable ? draft.unitNumber.length : undefined}
-          maxLength={editable ? WO_UNIT_NUMBER_MAX : undefined}
-        >
-          <TextCell
-            editable={editable}
-            value={draft.unitNumber}
-            onChange={(value) => onFieldChange("unitNumber", value)}
-            maxLength={WO_UNIT_NUMBER_MAX}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={3} row={9} colSpan={2}>
-        <FormField label="Vacancy">
-          <SegmentedChoiceCell
-            editable={editable}
-            value={draft.vacancy}
-            options={VACANCY_OPTIONS}
-            ariaLabel="Vacancy"
-            onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
-          />
-        </FormField>
-      </CellAt>
-      {/* Property address + custom address sit to the left of Description */}
-      <CellAt col={1} row={5} colSpan={2}>
-        <FormField label="Property Address">
-          <StaticFieldValue>
-            <span className="whitespace-pre-line">{addressDisplay}</span>
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={1} row={6} colSpan={4}>
-        <FormField label="Property Instructions">
-          <StaticFieldValue>
-            <span className="whitespace-pre-line">{instructionsDisplay}</span>
-          </StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={3} row={5} colSpan={2}>
-        <FormField
-          label="Custom Address"
-          currentLength={editable ? draft.customAddress.length : undefined}
-          maxLength={editable ? WO_CUSTOM_ADDRESS_MAX : undefined}
-        >
-          <TextareaCell
-            editable={editable}
-            value={draft.customAddress}
-            onChange={(value) => onFieldChange("customAddress", value)}
-            maxLength={WO_CUSTOM_ADDRESS_MAX}
-            rows={2}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={6} colSpan={3}>
-        <FormField
-          label="Installer Instructions"
-          currentLength={editable ? draft.installerInstructions.length : undefined}
-          maxLength={editable ? WO_INSTALLER_INSTRUCTIONS_MAX : undefined}
-        >
-          <TextareaCell
-            editable={editable}
-            value={draft.installerInstructions}
-            onChange={(value) => onFieldChange("installerInstructions", value)}
-            maxLength={WO_INSTALLER_INSTRUCTIONS_MAX}
-            rows={1}
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={7} colSpan={3}>
-        <FormField
-          label="Internal Notes"
-          currentLength={editable ? draft.internalNotes.length : undefined}
-          maxLength={editable ? WO_INTERNAL_NOTES_MAX : undefined}
-        >
-          <TextareaCell
-            editable={editable}
-            value={draft.internalNotes}
-            onChange={(value) => onFieldChange("internalNotes", value)}
-            maxLength={WO_INTERNAL_NOTES_MAX}
-            rows={1}
-          />
-        </FormField>
-      </CellAt>
-      {detail ? (
-        <>
-          <CellAt col={1} row={10} colSpan={2}>
-            <FormField label="Created">
-              <StaticFieldValue>{formatEasternDateTime(detail.createdAt) || "—"}</StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={3} row={10} colSpan={2}>
-            <FormField label="Updated">
-              <StaticFieldValue>{formatEasternDateTime(detail.updatedAt) || "—"}</StaticFieldValue>
-            </FormField>
-          </CellAt>
-        </>
-      ) : null}
-    </FieldSection>
+      </div>
+    </div>
   )
 }
