@@ -1,6 +1,7 @@
 import type {
   FlooringInventoryAdjustmentType,
   InventoryAdjustmentRow,
+  PaletteColor,
 } from "@builders/domain"
 
 /**
@@ -29,6 +30,8 @@ export type AdjustmentEditForm = {
   quantity: string
   isWaste: boolean
   notes: string
+  /** Non-semantic palette tag; freely editable in create + edit. */
+  color: PaletteColor
   /**
    * Seeded from the parent inventory's location on create and locked (read-only)
    * while the form is in create mode. Once the row exists it is user-owned free
@@ -96,6 +99,7 @@ export type AdjustmentCreateSeed = {
   adjustmentType?: FlooringInventoryAdjustmentType
   isWaste?: boolean
   notes?: string
+  color?: PaletteColor
 }
 
 /**

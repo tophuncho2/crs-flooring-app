@@ -15,6 +15,7 @@ import {
   type SegmentedChoiceOption,
 } from "@/engines/record-view"
 import { SegmentedDropdown } from "@/engines/picker"
+import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { formatAdjustmentTimestamp } from "@/modules/adjustments/components/row/format-adjustment-timestamp"
 import type { AdjustmentEditController } from "../../../controllers/record/adjustments/use-adjustment-edit-controller"
 import type { AdjustmentEditRow } from "../../../controllers/record/adjustments/types"
@@ -96,6 +97,19 @@ export function AdjustmentEditFormFields({
     </CellAt>
   )
 
+  const colorCell = (
+    <CellAt col={1} colSpan={4}>
+      <FormField label="Color">
+        <PaletteColorDropdown
+          value={form.color}
+          editable={editable}
+          onChange={(color) => controller.setField("color", color)}
+          ariaLabel="Adjustment color"
+        />
+      </FormField>
+    </CellAt>
+  )
+
   const quantityCell = (
     <CellAt col={1} colSpan={4}>
       <FormField label="Quantity" required>
@@ -148,6 +162,7 @@ export function AdjustmentEditFormFields({
         </CellAt>
         {quantityCell}
         {typeCell}
+        {colorCell}
         {notesCell}
         {wasteCell}
       </>
@@ -158,6 +173,11 @@ export function AdjustmentEditFormFields({
 
   return (
     <>
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Adjustment #">
+          <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
+        </FormField>
+      </CellAt>
       <CellAt col={1} colSpan={4}>
         <FormField
           label="Location"
@@ -176,6 +196,7 @@ export function AdjustmentEditFormFields({
       </CellAt>
       {quantityCell}
       {typeCell}
+      {colorCell}
       <CellAt col={1} colSpan={4}>
         <FormField label="Adjustment">
           <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>

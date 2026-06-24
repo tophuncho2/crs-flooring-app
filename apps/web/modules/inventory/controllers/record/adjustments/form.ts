@@ -1,4 +1,4 @@
-import type { InventoryAdjustmentRow } from "@builders/domain"
+import { DEFAULT_PALETTE_COLOR, type InventoryAdjustmentRow } from "@builders/domain"
 import type {
   AdjustmentCreateSeed,
   AdjustmentEditForm,
@@ -40,6 +40,7 @@ export const EMPTY_FORM: AdjustmentEditForm = {
   quantity: "",
   isWaste: false,
   notes: "",
+  color: DEFAULT_PALETTE_COLOR,
   location: "",
   workOrderId: null,
 }
@@ -63,6 +64,7 @@ export function buildEditForm(adjustment: InventoryAdjustmentRow): AdjustmentEdi
     quantity: adjustment.quantity,
     isWaste: adjustment.isWaste,
     notes: adjustment.notes,
+    color: adjustment.color,
     location: adjustment.location ?? "",
     workOrderId: adjustment.workOrderId,
   }
@@ -102,6 +104,7 @@ export function buildCreateForm(seed: AdjustmentCreateSeed): AdjustmentEditForm 
     adjustmentType: seed.adjustmentType ?? EMPTY_FORM.adjustmentType,
     isWaste: seed.isWaste ?? EMPTY_FORM.isWaste,
     notes: seed.notes ?? EMPTY_FORM.notes,
+    color: seed.color ?? EMPTY_FORM.color,
   }
 }
 
@@ -126,6 +129,7 @@ export function formIsDirty(current: AdjustmentEditForm, baseline: AdjustmentEdi
     current.quantity !== baseline.quantity ||
     current.isWaste !== baseline.isWaste ||
     current.notes !== baseline.notes ||
+    current.color !== baseline.color ||
     current.location !== baseline.location ||
     current.workOrderId !== baseline.workOrderId
   )

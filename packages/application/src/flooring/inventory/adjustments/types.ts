@@ -1,5 +1,5 @@
 import type { InventoryAdjustmentRecord } from "@builders/db"
-import type { FlooringInventoryAdjustmentType } from "@builders/domain"
+import type { FlooringInventoryAdjustmentType, PaletteColor } from "@builders/domain"
 
 export type AdjustmentMutationScope =
   | { kind: "work-order"; workOrderId: string }
@@ -23,6 +23,8 @@ export type CreatePendingAdjustmentInput = {
   quantity: string
   isWaste: boolean
   notes: string
+  /** Non-semantic palette tag; omitted → DB default SLATE. */
+  color?: PaletteColor
   /** User-owned free-text location. Not seeded from the parent inventory. */
   location?: string | null
 }
@@ -48,6 +50,8 @@ export type UpdatePendingAdjustmentPatch = {
   isWaste?: boolean
   notes?: string
   location?: string | null
+  /** Non-semantic palette tag. Metadata only — never triggers a ledger recompute. */
+  color?: PaletteColor
   /** WO link, editable on either direction (any product). `null` unlinks. */
   link?: { workOrderId: string | null }
 }

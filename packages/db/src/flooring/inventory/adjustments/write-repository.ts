@@ -3,6 +3,7 @@ import {
   computeLedgerBeforeAfter,
   computeNetDeducted,
   type FlooringInventoryAdjustmentType,
+  type PaletteColor,
   type PendingAdjustmentInventorySnapshot,
 } from "@builders/domain"
 import {
@@ -48,6 +49,8 @@ export type InsertPendingAdjustmentRowInput = {
   isWaste: boolean
   /** Empty string accepted; persisted as null when blank. */
   notes: string
+  /** Non-semantic palette tag; omitted → DB default SLATE. */
+  color?: PaletteColor
   unitSnapshot: PendingAdjustmentUnitSnapshot
   /**
    * Identity snapshot from the parent inventory: `categorySlug` + the 5
@@ -98,6 +101,8 @@ export async function insertPendingAdjustmentRow(
       quantity: input.quantity,
       isWaste: input.isWaste,
       notes: input.notes ? input.notes : null,
+      // Omitted → Prisma applies the column default (SLATE).
+      ...(input.color !== undefined ? { color: input.color } : {}),
       stockUnitName: input.unitSnapshot.stockUnitName,
       stockUnitAbbrev: input.unitSnapshot.stockUnitAbbrev,
       categorySlug: input.inventorySnapshot.categorySlug,
@@ -129,6 +134,8 @@ export type UpdatePendingAdjustmentRowPatch = {
   isWaste?: boolean
   /** Empty string accepted; persisted as null when blank. */
   notes?: string
+  /** Non-semantic palette tag. Metadata only — never triggers a ledger recompute. */
+  color?: PaletteColor
   /**
    * User-owned free-text location. Written only when the patch carries it
    * (`null` clears it); never re-snapped from the parent inventory.
@@ -174,6 +181,7 @@ export async function updatePendingAdjustmentRow(
   if (input.patch.notes !== undefined) {
     data.notes = input.patch.notes ? input.patch.notes : null
   }
+  if (input.patch.color !== undefined) data.color = input.patch.color
   if (input.patch.location !== undefined) data.location = input.patch.location
   if (input.patch.workOrderId !== undefined) {
     data.workOrder =

@@ -111,6 +111,7 @@ export async function POST(request: Request, { params }: RouteContext) {
           quantity: input.quantity,
           isWaste: input.isWaste,
           notes: input.notes,
+          color: input.color,
           location: input.location,
         }),
     )

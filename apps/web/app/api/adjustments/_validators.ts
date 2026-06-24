@@ -2,13 +2,17 @@ import { z } from "zod"
 import { InventoryAdjustmentExecutionError } from "@builders/application"
 import type { ListInput } from "@builders/application"
 import {
+  DEFAULT_PALETTE_COLOR,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
   INVENTORY_ADJUSTMENTS_LIST_MAX_PAGE_SIZE,
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   INVENTORY_ADJUSTMENT_MAX_PAGE_SIZE,
   INVENTORY_ADJUSTMENT_PAGE_SIZE,
+  isPaletteColor,
+  PALETTE_COLOR_INVALID_MESSAGE,
   type InventoryAdjustmentListFilters,
+  type PaletteColor,
 } from "@builders/domain"
 
 // Adjustment mutations are one scope-aware use-case set called from two route
@@ -47,11 +51,25 @@ function requireAdjustmentObject(value: unknown, path: string): Record<string, u
   return value as Record<string, unknown>
 }
 
+// Palette color. Required-with-default on create (a missing value falls back to
+// the shared default rather than failing), and strictly validated when present
+// on update.
+function requireColor(value: unknown, field: string): PaletteColor {
+  if (!isPaletteColor(value)) failAdjustment(PALETTE_COLOR_INVALID_MESSAGE, field)
+  return value
+}
+
+function colorOrDefault(value: unknown): PaletteColor {
+  if (value === undefined || value === null) return DEFAULT_PALETTE_COLOR
+  return requireColor(value, "color")
+}
+
 export type ValidatedCreateManualAdjustmentInput = {
   adjustmentType: "INCREASE" | "DEDUCTION"
   quantity: string
   isWaste: boolean
   notes: string
+  color: PaletteColor
   location: string | null
   workOrderId: string | null
   warehouseId: string | null
@@ -85,6 +103,7 @@ export function validateCreateManualAdjustmentInput(
     quantity: requireAdjustmentString(body.quantity, "quantity"),
     isWaste,
     notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
+    color: colorOrDefault(body.color),
     location: location && location.trim() !== "" ? location : null,
     workOrderId,
     warehouseId,
@@ -108,6 +127,7 @@ export type ValidatedUpdatePendingAdjustmentPatch = {
   adjustmentType?: "INCREASE" | "DEDUCTION"
   isWaste?: boolean
   notes?: string
+  color?: PaletteColor
   location?: string | null
   link?: ValidatedUpdatePendingAdjustmentLink
 }
@@ -151,6 +171,9 @@ export function validateUpdatePendingAdjustmentInput(
   if ("isWaste" in patchBody && typeof patchBody.isWaste === "boolean") {
     patch.isWaste = patchBody.isWaste
   }
+  if ("color" in patchBody) {
+    patch.color = requireColor(patchBody.color, "patch.color")
+  }
   if ("notes" in patchBody) {
     const next = optionalBoundedAdjustmentText(patchBody.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "patch.notes")
     if (next !== null) patch.notes = next
@@ -165,7 +188,7 @@ export function validateUpdatePendingAdjustmentInput(
   }
   if (Object.keys(patch).length === 0) {
     failAdjustment(
-      "Patch must contain at least one of quantity, adjustmentType, isWaste, notes, location, or link",
+      "Patch must contain at least one of quantity, adjustmentType, isWaste, notes, color, location, or link",
       "patch",
     )
   }

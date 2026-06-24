@@ -77,6 +77,7 @@ export function normalizeAdjustmentRow(
     adjustmentType,
     isWaste: row.isWaste,
     notes: row.notes ?? "",
+    color: row.color,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }

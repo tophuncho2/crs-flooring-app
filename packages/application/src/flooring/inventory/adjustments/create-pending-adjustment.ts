@@ -111,6 +111,7 @@ export async function createPendingAdjustmentUseCase(
       quantity,
       isWaste,
       notes,
+      color: input.color,
       cost,
       freight,
       unitSnapshot: {

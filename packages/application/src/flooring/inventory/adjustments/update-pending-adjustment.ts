@@ -107,6 +107,8 @@ export async function updatePendingAdjustmentUseCase(
     }
     if (input.patch.isWaste !== undefined) patch.isWaste = input.patch.isWaste
     if (input.patch.notes !== undefined) patch.notes = input.patch.notes
+    // Non-semantic palette tag — metadata only, leaves the ledger chain untouched.
+    if (input.patch.color !== undefined) patch.color = input.patch.color
     // Location is user-owned free text — written only when the patch carries it,
     // never re-snapped from the parent inventory.
     if (input.patch.location !== undefined) patch.location = input.patch.location

@@ -5,6 +5,7 @@ import { withMutationMeta } from "@/transport/mutation"
 import type {
   FlooringInventoryAdjustmentType,
   InventoryAdjustmentRow,
+  PaletteColor,
 } from "@builders/domain"
 
 /**
@@ -51,6 +52,7 @@ export async function createAdjustmentRequest(args: {
   quantity: string
   isWaste: boolean
   notes: string
+  color: PaletteColor
   location?: string | null
   warehouseId?: string | null
   workOrderId?: string | null
@@ -60,6 +62,7 @@ export async function createAdjustmentRequest(args: {
     quantity: args.quantity,
     isWaste: args.isWaste,
     notes: args.notes,
+    color: args.color,
     location: args.location ?? null,
   }
   if (args.warehouseId) payload.warehouseId = args.warehouseId
@@ -84,6 +87,7 @@ export async function updatePendingAdjustmentRequest(args: {
     adjustmentType?: FlooringInventoryAdjustmentType
     isWaste?: boolean
     notes?: string
+    color?: PaletteColor
     location?: string | null
     link?: { workOrderId: string | null }
   }

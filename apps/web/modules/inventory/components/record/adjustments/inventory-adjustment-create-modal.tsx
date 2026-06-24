@@ -66,6 +66,7 @@ export function InventoryAdjustmentCreateModal({
       adjustmentType: source?.adjustmentType,
       isWaste: source?.isWaste,
       notes: source?.notes,
+      color: source?.color,
     }),
     [inventory, source],
   )

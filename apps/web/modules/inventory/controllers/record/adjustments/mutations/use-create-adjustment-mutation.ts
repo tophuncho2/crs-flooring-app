@@ -64,6 +64,7 @@ export function useCreateAdjustmentMutation({
         quantity: input.form.quantity,
         isWaste: input.form.isWaste,
         notes: input.form.notes,
+        color: input.form.color,
         location: input.form.location,
         warehouseId: input.form.warehouseId,
         workOrderId: input.form.workOrderId,

@@ -30,6 +30,7 @@ export const adjustmentRowSelect = {
   adjustmentType: true,
   isWaste: true,
   notes: true,
+  color: true,
   createdAt: true,
   updatedAt: true,
 } as const satisfies Prisma.FlooringInventoryAdjustmentSelect

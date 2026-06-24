@@ -20,7 +20,7 @@ export function renderAdjustmentsRowCell(
 ): ReactNode {
   switch (column.key) {
     case "adjustmentNumber":
-      return <span className="font-medium">{row.adjustmentNumber}</span>
+      return <CellChip paletteColor={row.color}>{row.adjustmentNumber}</CellChip>
     case "adjustmentType":
       return row.adjustmentType === "INCREASE" ? "Increase" : "Deduction"
     case "productName":

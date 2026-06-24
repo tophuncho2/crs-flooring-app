@@ -1,3 +1,5 @@
+import type { PaletteColor } from "../../../shared/palette.js"
+
 export type FlooringInventoryAdjustmentType = "INCREASE" | "DEDUCTION"
 
 export type InventoryAdjustmentRow = {
@@ -25,6 +27,7 @@ export type InventoryAdjustmentRow = {
   adjustmentType: FlooringInventoryAdjustmentType
   isWaste: boolean
   notes: string
+  color: PaletteColor
   createdAt: string
   updatedAt: string
 }
