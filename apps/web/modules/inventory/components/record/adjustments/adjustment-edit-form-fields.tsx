@@ -52,9 +52,9 @@ const WASTE_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
  *
  * **edit** (the embedded record-view face) — this component owns the full layout:
  * a centered `RecordColumnBreak` above a `RecordSectionDivider` and a Created /
- * Updated footer. Left flank = Work order / Location / Notes / Waste; right flank
- * pairs Quantity | Type and Adjustment # | Color, then the before→after Adjustment
- * transition.
+ * Updated footer. Left flank pairs Adjustment # | Color and Quantity | Type, then
+ * the before→after Adjustment transition; right flank = Work order / Location /
+ * Notes / Waste.
  *
  * Every field is freely editable (only disabled mid-save); flipping the type
  * re-flows the before→after transition server-side on each save.
@@ -177,6 +177,24 @@ export function AdjustmentEditFormFields({
       <RecordColumnBreak
         left={
           <InventoryFieldGrid>
+            {/* Adjustment # | Color paired, then Quantity | Type paired */}
+            <CellAt col={1} row={1} colSpan={4}>
+              <FormField label="Adjustment #">
+                <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={1} colSpan={4}>{colorField}</CellAt>
+            <CellAt col={1} row={2} colSpan={4}>{quantityField}</CellAt>
+            <CellAt col={5} row={2} colSpan={4}>{typeField}</CellAt>
+            <CellAt col={1} row={3} colSpan={8}>
+              <FormField label="Adjustment">
+                <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          </InventoryFieldGrid>
+        }
+        right={
+          <InventoryFieldGrid>
             <AdjustmentPickerStack controller={controller} colSpan={8} />
             <CellAt col={1} colSpan={8}>
               <FormField
@@ -196,24 +214,6 @@ export function AdjustmentEditFormFields({
             </CellAt>
             <CellAt col={1} colSpan={8}>{notesField}</CellAt>
             <CellAt col={1} colSpan={8}>{wasteField}</CellAt>
-          </InventoryFieldGrid>
-        }
-        right={
-          <InventoryFieldGrid>
-            {/* Quantity | Type paired, then Adjustment # | Color paired */}
-            <CellAt col={1} row={1} colSpan={4}>{quantityField}</CellAt>
-            <CellAt col={5} row={1} colSpan={4}>{typeField}</CellAt>
-            <CellAt col={1} row={2} colSpan={4}>
-              <FormField label="Adjustment #">
-                <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
-              </FormField>
-            </CellAt>
-            <CellAt col={5} row={2} colSpan={4}>{colorField}</CellAt>
-            <CellAt col={1} row={3} colSpan={8}>
-              <FormField label="Adjustment">
-                <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
-              </FormField>
-            </CellAt>
           </InventoryFieldGrid>
         }
       />
