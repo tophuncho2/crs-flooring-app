@@ -79,12 +79,13 @@ export async function listPaymentsForListView(
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: options.skip,
       take: options.take,
+      include: paymentLinksInclude,
     }),
   ])
 
   return {
     total,
-    rows: rows.map(normalizePayment),
+    rows: rows.map((row) => normalizePayment({ ...row, ...projectPaymentLinks(row) })),
   }
 }
 

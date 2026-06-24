@@ -4,6 +4,8 @@ import type { PaymentListRow } from "@builders/domain"
 export const PAYMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<PaymentListRow>> = [
   { key: "amount", label: "Amount", align: "end" },
   { key: "direction", label: "Direction" },
+  { key: "entity", label: "Entity" },
+  { key: "types", label: "Type(s)" },
   { key: "paymentDate", label: "Date" },
   { key: "paymentNumber", label: "Payment #" },
   { key: "updatedAt", label: "Updated" },
