@@ -76,6 +76,8 @@ export function ImportRecordPanel({
                   manufacturerName={controller.record.manufacturerName}
                   createdAt={controller.record.createdAt}
                   updatedAt={controller.record.updatedAt}
+                  createdBy={controller.record.createdBy}
+                  updatedBy={controller.record.updatedBy}
                   disabled={controller.primarySection.isSaving}
                   onFieldChange={(field, value) => {
                     controller.primarySection.setLocalValue((previous) => ({

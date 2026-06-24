@@ -35,6 +35,10 @@ export function renderImportsRowCell(
       return (
         <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
       )
+    case "createdBy":
+      return row.createdBy || "—"
+    case "updatedBy":
+      return row.updatedBy || "—"
     default:
       return "-"
   }

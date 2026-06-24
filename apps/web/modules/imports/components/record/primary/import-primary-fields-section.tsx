@@ -29,6 +29,8 @@ export function ImportPrimaryFieldsSection({
   manufacturerName,
   createdAt,
   updatedAt,
+  createdBy,
+  updatedBy,
   disabled,
   onFieldChange,
 }: {
@@ -36,9 +38,11 @@ export function ImportPrimaryFieldsSection({
   warehouseName: string | null
   manufacturerName: string | null
   // Present on the record view (existing import); omitted on the create flow,
-  // where there's no persisted row yet — the timestamp cells stay hidden.
+  // where there's no persisted row yet — the timestamp + actor cells stay hidden.
   createdAt?: string
   updatedAt?: string
+  createdBy?: string
+  updatedBy?: string
   disabled: boolean
   onFieldChange: (field: keyof ImportPrimaryForm, value: string) => void
 }) {
@@ -104,6 +108,13 @@ export function ImportPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
+      {createdBy !== undefined ? (
+        <CellAt col={3} colSpan={2}>
+          <FormField label="Created by">
+            <StaticFieldValue>{createdBy || "—"}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
       <CellAt col={1} colSpan={2}>
         <FormField
           label="Internal Notes"
@@ -119,6 +130,13 @@ export function ImportPrimaryFieldsSection({
           />
         </FormField>
       </CellAt>
+      {updatedBy !== undefined ? (
+        <CellAt col={3} colSpan={2}>
+          <FormField label="Updated by">
+            <StaticFieldValue>{updatedBy || "—"}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+      ) : null}
     </FieldSection>
   )
 }
