@@ -69,11 +69,12 @@ export function TableOptions({ config }: { config: TableOptionsConfig }) {
           aria-expanded={open}
           aria-label={config.ariaLabel ?? "Table options"}
           className={joinClassNames(
-            "relative inline-flex items-center rounded p-0.5 transition hover:text-[var(--foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40",
+            "relative inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-semibold uppercase tracking-[0.06em] transition hover:text-[var(--foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40",
             hasActive ? "text-sky-500" : "opacity-60",
           )}
         >
           <SlidersHorizontal size={14} strokeWidth={2.5} aria-hidden="true" />
+          Menu
           {hasActive ? (
             <span
               aria-hidden="true"
