@@ -55,43 +55,47 @@ export function InventoryPrimaryFieldsSection({
       <RecordColumnBreak
         left={
           <InventoryFieldGrid>
-            {/* Identity + editable cluster */}
-            <CellAt col={1} row={1} colSpan={8}>
-              <ProductNameField value={record.productName} />
-            </CellAt>
-            <CellAt col={1} row={2} colSpan={4}>
-              <WarehouseStaticField warehouseName={warehouseName} />
-            </CellAt>
-            <CellAt col={5} row={2} colSpan={4}>
-              <LocationField
-                editable={editable}
-                value={draft.location}
-                onChange={(value) => onFieldChange("location", value)}
-              />
-            </CellAt>
-            <CellAt col={1} row={3} colSpan={4}>
+            {/* Inv # beside the Color that recolors its chip, above the product headline */}
+            <CellAt col={1} row={1} colSpan={4}>
               <InventoryNumberField value={record.inventoryNumber} paletteColor={draft.color} />
             </CellAt>
-            <CellAt col={5} row={3} colSpan={4}>
-              <RollNumberReadOnlyField value={record.rollNumber} />
-            </CellAt>
-            <CellAt col={1} row={4} colSpan={4}>
-              <DyeLotReadOnlyField value={record.dyeLot} />
-            </CellAt>
-            <CellAt col={5} row={4} colSpan={4}>
-              <StatusField
-                editable={editable}
-                value={draft.isArchived}
-                onChange={(next) => onFieldChange("isArchived", next)}
-              />
-            </CellAt>
-            <CellAt col={1} row={5} colSpan={4}>
+            <CellAt col={5} row={1} colSpan={4}>
               <ColorField
                 editable={editable}
                 value={draft.color}
                 onChange={(next) => onFieldChange("color", next)}
               />
             </CellAt>
+            {/* Identity headline */}
+            <CellAt col={1} row={2} colSpan={8}>
+              <ProductNameField value={record.productName} />
+            </CellAt>
+            {/* Where it lives */}
+            <CellAt col={1} row={3} colSpan={4}>
+              <WarehouseStaticField warehouseName={warehouseName} />
+            </CellAt>
+            <CellAt col={5} row={3} colSpan={4}>
+              <LocationField
+                editable={editable}
+                value={draft.location}
+                onChange={(value) => onFieldChange("location", value)}
+              />
+            </CellAt>
+            {/* Roll # | Dye Lot */}
+            <CellAt col={1} row={4} colSpan={4}>
+              <RollNumberReadOnlyField value={record.rollNumber} />
+            </CellAt>
+            <CellAt col={5} row={4} colSpan={4}>
+              <DyeLotReadOnlyField value={record.dyeLot} />
+            </CellAt>
+            <CellAt col={1} row={5} colSpan={4}>
+              <StatusField
+                editable={editable}
+                value={draft.isArchived}
+                onChange={(next) => onFieldChange("isArchived", next)}
+              />
+            </CellAt>
+            {/* Notes stack */}
             <CellAt col={1} row={6} colSpan={8}>
               <NoteReadOnlyField value={record.note} />
             </CellAt>
@@ -106,20 +110,21 @@ export function InventoryPrimaryFieldsSection({
         }
         right={
           <InventoryFieldGrid>
-            {/* Stock + money numbers */}
+            {/* Stock progression: Starting → current balance → net deducted */}
             <CellAt col={1} row={1} colSpan={4}>
-              <StockBalanceField value={record.stockBalance} unitAbbrev={record.stockUnitAbbrev} />
-            </CellAt>
-            <CellAt col={5} row={1} colSpan={4}>
-              <NetDeductedField value={record.netDeducted} unitAbbrev={record.stockUnitAbbrev} />
-            </CellAt>
-            <CellAt col={1} row={2} colSpan={4}>
               <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
             </CellAt>
-            <CellAt col={5} row={2} colSpan={4}>
+            <CellAt col={5} row={1} colSpan={4}>
+              <StockBalanceField value={record.stockBalance} unitAbbrev={record.stockUnitAbbrev} />
+            </CellAt>
+            <CellAt col={1} row={2} colSpan={4}>
+              <NetDeductedField value={record.netDeducted} unitAbbrev={record.stockUnitAbbrev} />
+            </CellAt>
+            {/* Money pair */}
+            <CellAt col={1} row={3} colSpan={4}>
               <CostReadonlyField value={record.cost} />
             </CellAt>
-            <CellAt col={1} row={3} colSpan={4}>
+            <CellAt col={5} row={3} colSpan={4}>
               <FreightReadonlyField value={record.freight} />
             </CellAt>
           </InventoryFieldGrid>
