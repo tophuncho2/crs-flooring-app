@@ -8,7 +8,6 @@ import { requestJson } from "@/transport/http"
 export const TEMPLATES_LIST_QUERY_KEY = ["templates", "list"] as const
 
 const FILTER_KEYS = ["entityId", "propertyId", "unitType", "description"] as const
-type FilterKey = (typeof FILTER_KEYS)[number]
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
