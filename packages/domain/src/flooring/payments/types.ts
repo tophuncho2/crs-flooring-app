@@ -23,6 +23,9 @@ export type Payment = {
   entityId: string | null
   workOrderId: string | null
   entityName: string | null
+  // `workOrderNumber` is the bare WO-N (list column); `workOrderLabel` is the
+  // richer "#WO-N · property · unitType" string the record-view picker trigger reads.
+  workOrderNumber: string | null
   workOrderLabel: string | null
   entityTypes: EntityTypeRef[]
   createdAt: string

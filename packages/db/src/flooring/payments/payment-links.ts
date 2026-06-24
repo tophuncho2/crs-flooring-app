@@ -34,6 +34,7 @@ export type PaymentLinkRelations = {
 /** Project the included links into the flat read-only fields the normalizer reads. */
 export function projectPaymentLinks(row: PaymentLinkRelations): {
   entityName: string | null
+  workOrderNumber: string | null
   workOrderLabel: string | null
   entityTypes: EntityTypeRef[]
 } {
@@ -50,6 +51,7 @@ export function projectPaymentLinks(row: PaymentLinkRelations): {
     : null
   return {
     entityName: row.entity?.entity ?? null,
+    workOrderNumber: workOrder?.workOrderNumber ?? null,
     workOrderLabel,
     entityTypes,
   }

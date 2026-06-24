@@ -13,6 +13,7 @@ type PaymentInput = {
   workOrderId?: string | null
   /** Read-only hydration off the links (detail read only); absent on list rows. */
   entityName?: string | null
+  workOrderNumber?: string | null
   workOrderLabel?: string | null
   entityTypes?: EntityTypeRef[]
   createdAt: Date | string
@@ -37,6 +38,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
     entityId: payment.entityId ?? null,
     workOrderId: payment.workOrderId ?? null,
     entityName: payment.entityName ?? null,
+    workOrderNumber: payment.workOrderNumber ?? null,
     workOrderLabel: payment.workOrderLabel ?? null,
     entityTypes: payment.entityTypes ?? [],
     createdAt: toIso(payment.createdAt),

@@ -40,6 +40,8 @@ export function renderPaymentRowCell(
       ) : (
         "—"
       )
+    case "workOrder":
+      return <span className="tabular-nums">{row.workOrderNumber ?? "—"}</span>
     case "paymentDate":
       return (
         <span className="tabular-nums">
