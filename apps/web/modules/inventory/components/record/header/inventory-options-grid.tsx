@@ -1,12 +1,22 @@
 "use client"
 
-import { DataTable, DebouncedSearchControl } from "@/engines/list-view"
+import { useMemo } from "react"
+import {
+  DataTable,
+  DebouncedSearchControl,
+  SortMenuBody,
+  type TableOptionsConfig,
+} from "@/engines/list-view"
 import type { InventoryRow } from "@builders/domain"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import { type InventoryOptionsGridController } from "@/modules/inventory/controllers/record/header/use-inventory-options-grid"
 import { type InventoryRecordSelectionController } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
-import { INVENTORY_LIST_COLUMNS } from "../../list/table/inventory-list-columns"
+import {
+  INVENTORY_LIST_COLUMNS,
+  INVENTORY_MAX_SORT_LEVELS,
+  INVENTORY_SORT_OPTIONS,
+} from "../../list/table/inventory-list-columns"
 import { renderInventoryRowCell } from "../../list/table/inventory-row-cell"
 
 /** The slice of the selection controller the picker grid reads to render its scope pickers. */
@@ -49,6 +59,29 @@ export function InventoryOptionsGrid({
   productEditable?: boolean
 }) {
   const { warehouseId, warehouseLabel, productId, productLabel } = selection
+
+  // Same gutter Sort menu the inventory list uses — multi-column sort over the
+  // picker grid. Header clicks still do single-sort replace via `grid.setSort`.
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "sort",
+          label: "Sort",
+          active: grid.sorts.length > 0,
+          render: () => (
+            <SortMenuBody
+              options={INVENTORY_SORT_OPTIONS}
+              value={grid.sorts}
+              maxLevels={INVENTORY_MAX_SORT_LEVELS}
+              onChange={grid.onSortsChange}
+            />
+          ),
+        },
+      ],
+    }),
+    [grid.sorts, grid.onSortsChange],
+  )
 
   return (
     <div className="flex flex-col gap-3">
@@ -117,7 +150,9 @@ export function InventoryOptionsGrid({
         onRowClick={(row) => onSelectInventory(row)}
         getRowAriaLabel={(row) => row.inventoryNumber}
         sort={grid.sort}
+        sorts={grid.sorts}
         onSort={grid.setSort}
+        tableOptions={tableOptions}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
         pagination={grid.pagination}
       />

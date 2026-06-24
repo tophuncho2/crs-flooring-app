@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import type { InventoryListFilters, ListInput, ListOutput } from "@builders/application"
+import type { InventoryListFilters, ListInput, ListOutput, ListSort } from "@builders/application"
 import type { InventoryRow } from "@builders/domain"
 import { useRecordSectionPagination, type PaginateContract } from "@/engines/list-view"
 import {
@@ -14,6 +14,26 @@ import {
 export type InventoryOptionsGridRequest = (
   input: ListInput<InventoryListFilters>,
 ) => Promise<ListOutput<InventoryRow>>
+
+/** Sortable columns (mirrors the list); row# is intentionally not sortable. */
+const ALLOWED_SORT_FIELDS = new Set(["createdAt", "location", "stockBalance"])
+/** Max simultaneous sort columns — mirrors the list + use case. */
+const MAX_SORT_LEVELS = 3
+/** Default chain: newest first. */
+const DEFAULT_SORTS: ListSort[] = [{ field: "createdAt", direction: "desc" }]
+
+/** Dedupe by field, drop unknown fields, cap at {@link MAX_SORT_LEVELS}. */
+function normalizeSorts(next: readonly ListSort[]): ListSort[] {
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const entry of next) {
+    if (seen.has(entry.field) || !ALLOWED_SORT_FIELDS.has(entry.field)) continue
+    seen.add(entry.field)
+    result.push({ field: entry.field, direction: entry.direction })
+    if (result.length >= MAX_SORT_LEVELS) break
+  }
+  return result
+}
 
 export type InventoryOptionsGridController = {
   rows: ReadonlyArray<InventoryRow>
@@ -28,10 +48,14 @@ export type InventoryOptionsGridController = {
   setRollNumber: (value: string) => void
   setDyeLot: (value: string) => void
   setNote: (value: string) => void
-  /** Active server-side sort (drives the DataTable header carets). */
+  /** Active primary sort (= `sorts[0]`; drives the DataTable header carets). */
   sort: { field: string; direction: "asc" | "desc" }
-  /** Header click → re-sort by that column key (flips if already active). */
+  /** Active ordered multi-column sort (drives carets + priority badges). */
+  sorts: ListSort[]
+  /** Header click → single-sort replace by that column key (flips if primary). */
   setSort: (key: string) => void
+  /** Gutter Sort menu → set the full ordered chain (deduped + capped). */
+  onSortsChange: (next: ListSort[]) => void
   /** True when any of the four identity search bars holds a value. */
   hasSearch: boolean
   /** Clear all four search bars and return to page 1. */
@@ -73,10 +97,9 @@ export function useInventoryOptionsGrid({
   const [rollNumber, setRollNumberState] = useState("")
   const [dyeLot, setDyeLotState] = useState("")
   const [note, setNoteState] = useState("")
-  const [sort, setSortState] = useState<{ field: string; direction: "asc" | "desc" }>({
-    field: "createdAt",
-    direction: "desc",
-  })
+  const [sorts, setSorts] = useState<ListSort[]>(DEFAULT_SORTS)
+  // Primary entry drives the header carets; the chain composes the rest.
+  const sort = sorts[0] ?? DEFAULT_SORTS[0]
   const pager = useRecordSectionPagination()
 
   // Re-scoping (different warehouse / WO product) returns to page 1. Reset during
@@ -109,14 +132,22 @@ export function useInventoryOptionsGrid({
     pager.reset()
   }, [pager])
 
-  // Column-header sort: flip direction when the active column is re-clicked,
-  // else switch field with a sensible default direction. Resets to page 1.
+  // Column-header sort is a single-sort replace: flip direction when the clicked
+  // column is already the primary, else collapse the chain to just that column
+  // with a sensible default direction. Resets to page 1.
   const setSort = useCallback((key: string) => {
-    setSortState((prev) =>
-      prev.field === key
-        ? { field: key, direction: prev.direction === "asc" ? "desc" : "asc" }
-        : { field: key, direction: key === "location" ? "asc" : "desc" },
+    setSorts((prev) =>
+      prev[0]?.field === key
+        ? [{ field: key, direction: prev[0].direction === "asc" ? "desc" : "asc" }]
+        : [{ field: key, direction: key === "location" ? "asc" : "desc" }],
     )
+    pager.reset()
+  }, [pager])
+
+  // Gutter Sort menu: set the full ordered chain (deduped + capped). Resets to
+  // page 1 so a re-sort starts from the top.
+  const onSortsChange = useCallback((next: ListSort[]) => {
+    setSorts(normalizeSorts(next))
     pager.reset()
   }, [pager])
 
@@ -129,8 +160,8 @@ export function useInventoryOptionsGrid({
       ...(dyeLot.trim() ? { dyeLot: dyeLot.trim() } : {}),
       ...(note.trim() ? { note: note.trim() } : {}),
     }
-    return { sort, filters, page: pager.page, pageSize: pager.pageSize }
-  }, [warehouseId, productFilterId, invNumber, rollNumber, dyeLot, note, sort, pager.page, pager.pageSize])
+    return { sorts, filters, page: pager.page, pageSize: pager.pageSize }
+  }, [warehouseId, productFilterId, invNumber, rollNumber, dyeLot, note, sorts, pager.page, pager.pageSize])
 
   const query = useQuery({
     queryKey: [...queryKey, "picker", input],
@@ -167,7 +198,9 @@ export function useInventoryOptionsGrid({
     setDyeLot,
     setNote,
     sort,
+    sorts,
     setSort,
+    onSortsChange,
     hasSearch,
     reset,
     isLoading: enabled && query.isLoading,

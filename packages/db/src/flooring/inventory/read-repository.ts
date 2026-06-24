@@ -386,16 +386,21 @@ export type InventoryListViewOptions = {
   take: number
 }
 
-export type InventoryListViewSort = {
+export type InventoryListViewSortEntry = {
   /**
-   * Primary sort column. `createdAt` (the default) falls through to the
-   * tiebreaker; `location` is nullable so it is ordered explicitly with nulls
-   * last; `stockBalance` (the displayed quantity) sorts on the generated
+   * Sort column. `createdAt` (the default) falls through to the tiebreaker;
+   * `location` is nullable so it is ordered explicitly with nulls last;
+   * `stockBalance` (the displayed quantity) sorts on the generated
    * `stockQuantity` column. Row# (`inventoryNumber`) is intentionally not
    * sortable.
    */
-  field?: string
+  field: string
   direction: "asc" | "desc"
+}
+
+export type InventoryListViewSort = {
+  /** Ordered sort columns, highest priority first. */
+  entries: InventoryListViewSortEntry[]
 }
 
 export type InventoryListViewResult = {
@@ -507,30 +512,63 @@ function buildListViewWhere(
   return { AND: clauses }
 }
 
+function appendUniqueOrderBy<T>(values: T[], nextValue: T | null | undefined) {
+  if (!nextValue) return
+  const serialized = JSON.stringify(nextValue)
+  if (values.some((value) => JSON.stringify(value) === serialized)) return
+  values.push(nextValue)
+}
+
+// Single source of truth for how each sortable field maps to a Prisma orderBy
+// clause. `location` is nullable, so it is ordered explicitly with nulls last;
+// `stockBalance` (the displayed quantity) sorts on the generated `stockQuantity`
+// column. `createdAt` is intentionally omitted — it is the default and is
+// covered by the tiebreak. Returns `undefined` for unknown fields so the caller
+// can skip them.
+function inventoryFieldOrderBy(
+  field: string,
+  direction: Prisma.SortOrder,
+): Prisma.FlooringInventoryOrderByWithRelationInput | undefined {
+  switch (field) {
+    case "location":
+      return { location: { sort: direction, nulls: "last" } }
+    case "stockBalance":
+      return { stockQuantity: direction }
+    default:
+      return undefined
+  }
+}
+
 /**
  * Builds the inventory list-view `orderBy`. Default sort is `createdAt DESC`
  * (newest first); `id` is the stable tiebreak in the same direction. The
  * user-selectable fields are `createdAt`, `location` (nullable → nulls last),
  * and `stockBalance` (the displayed quantity, sorted on the generated
  * `stockQuantity` column). Row# (`inventoryNumber`) is intentionally NOT
- * sortable — chronological `createdAt` is the canonical time key.
+ * sortable — chronological `createdAt` is the canonical time key. Multiple
+ * columns compose an ordered chain (highest priority first), mirroring work
+ * orders.
  */
 function buildInventoryListViewOrderBy(
   sort: InventoryListViewSort | undefined,
 ): Prisma.FlooringInventoryOrderByWithRelationInput[] {
-  const direction: Prisma.SortOrder = sort?.direction ?? "desc"
+  const entries = sort?.entries ?? []
   const orderBy: Prisma.FlooringInventoryOrderByWithRelationInput[] = []
 
-  // Primary user-selected field. `createdAt` is the default and is covered by the
-  // tiebreaker append below.
-  if (sort?.field === "location") {
-    orderBy.push({ location: { sort: direction, nulls: "last" } })
-  } else if (sort?.field === "stockBalance") {
-    orderBy.push({ stockQuantity: direction })
+  // Apply the user-selected columns in priority order. Each is appended via
+  // `appendUniqueOrderBy`, so a repeated field (or one colliding with the
+  // tiebreak) collapses to its first occurrence.
+  for (const entry of entries) {
+    appendUniqueOrderBy(orderBy, inventoryFieldOrderBy(entry.field, entry.direction))
   }
 
-  orderBy.push({ createdAt: direction })
-  orderBy.push({ id: direction })
+  // Deterministic tiebreak. Its direction mirrors the highest-priority entry so
+  // the trailing `createdAt` order matches the leading column; with no entries
+  // it falls back to `desc` (the canonical newest-first default).
+  const tiebreakDirection: Prisma.SortOrder = entries[0]?.direction ?? "desc"
+  appendUniqueOrderBy(orderBy, { createdAt: tiebreakDirection })
+  appendUniqueOrderBy(orderBy, { id: tiebreakDirection })
+
   return orderBy
 }
 

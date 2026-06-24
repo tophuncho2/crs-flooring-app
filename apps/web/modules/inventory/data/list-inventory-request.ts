@@ -1,4 +1,4 @@
-import type { InventoryListFilters, ListInput, ListOutput } from "@builders/application"
+import type { InventoryListFilters, ListInput, ListOutput, ListSort } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
   type InventoryRow,
@@ -52,6 +52,32 @@ const TEXT_FILTER_KEYS = ["invNumber", "rollNumber", "dyeLot", "note"] as const
  */
 const INVENTORY_LIST_SORT_FIELDS = ["createdAt", "location", "stockBalance"] as const
 
+/** Cap on user-selected sort columns — mirrors the engine + API + use case. */
+const INVENTORY_MAX_SORT_LEVELS = 3
+
+function isAllowedSortField(value: string): boolean {
+  return (INVENTORY_LIST_SORT_FIELDS as readonly string[]).includes(value)
+}
+
+/** Parse the ordered `?sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | undefined): ListSort[] {
+  if (!raw) return []
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !isAllowedSortField(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "asc" ? "asc" : "desc" })
+    if (result.length >= INVENTORY_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
+function encodeSortsParam(sorts: readonly ListSort[]): string {
+  return sorts.map((entry) => `${entry.field}:${entry.direction}`).join(",")
+}
+
 export function parseInventoryListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<InventoryListFilters> {
@@ -77,6 +103,9 @@ export function parseInventoryListInputFromSearchParams(
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
+  // Ordered multi-column sort is canonical via `?sorts=`; fall back to the legacy
+  // single `?sort=`/`?sortField=` pair so old bookmarks keep working.
+  const sorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
   const direction = readSearchParam(searchParams, "sort") === "asc" ? "asc" : "desc"
   const sortFieldRaw = readSearchParam(searchParams, "sortField")
   const field = INVENTORY_LIST_SORT_FIELDS.includes(
@@ -84,9 +113,11 @@ export function parseInventoryListInputFromSearchParams(
   )
     ? (sortFieldRaw as string)
     : "createdAt"
+  const effectiveSorts: ListSort[] = sorts.length > 0 ? sorts : [{ field, direction }]
 
   return {
-    sort: { field, direction },
+    sort: effectiveSorts[0],
+    sorts: effectiveSorts,
     filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
     page,
     pageSize: LIST_INVENTORY_PAGE_SIZE,
@@ -97,8 +128,10 @@ export function buildInventoryListSearchString(
   input: ListInput<InventoryListFilters>,
 ): string {
   const params = new URLSearchParams()
-  if (input.sort?.direction) params.set("sort", input.sort.direction)
-  if (input.sort?.field) params.set("sortField", input.sort.field)
+  // Emit the ordered `?sorts=` param (canonical). Single-sort consumers and old
+  // bookmarks coerce through the same encoder so the wire shape stays uniform.
+  const sorts = input.sorts?.length ? input.sorts : input.sort ? [input.sort] : []
+  if (sorts.length > 0) params.set("sorts", encodeSortsParam(sorts))
   for (const key of MULTI_VALUE_FILTER_KEYS) {
     const values = (input.filters?.[key] ?? []) as ReadonlyArray<string>
     for (const id of values) params.append(key, id)

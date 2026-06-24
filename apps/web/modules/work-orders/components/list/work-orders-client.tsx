@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, SortMenu, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { WorkOrdersListFilters } from "@builders/application"
 import type {
   JobTypeOption,
@@ -166,6 +166,29 @@ export default function WorkOrdersClient({
         direction: entry.direction,
       })),
     [sorts],
+  )
+
+  // Multi-column sort now lives in the table's gutter TableOptions menu (the
+  // "Sort" tab), not a toolbar button. Single-column sort stays a header caret.
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "sort",
+          label: "Sort",
+          active: sorts.length > 0,
+          render: () => (
+            <SortMenuBody
+              options={WORK_ORDERS_SORT_OPTIONS}
+              value={sorts}
+              maxLevels={WORK_ORDERS_MAX_SORT_LEVELS}
+              onChange={onSortsChange}
+            />
+          ),
+        },
+      ],
+    }),
+    [sorts, onSortsChange],
   )
 
   // --- Per-column identity search bars ---
@@ -454,18 +477,11 @@ export default function WorkOrdersClient({
             </ListToolbarCell>
 
             {/* Scheduled-for date filter lives on the Date column header funnel.
-                Single-column sort is a header-caret click; the Sort menu here
-                composes the ordered multi-column chain (up to 3 levels). */}
+                Single-column sort is a header-caret click; the ordered
+                multi-column chain (up to 3 levels) lives in the table's gutter
+                TableOptions "Sort" tab. */}
             <ListToolbarCell className="ml-auto">
-              <div className="flex items-center gap-2">
-                <SortMenu
-                  options={WORK_ORDERS_SORT_OPTIONS}
-                  value={sorts}
-                  maxLevels={WORK_ORDERS_MAX_SORT_LEVELS}
-                  onChange={onSortsChange}
-                />
-                <AddWorkOrderButton onClick={() => openCreate()} />
-              </div>
+              <AddWorkOrderButton onClick={() => openCreate()} />
             </ListToolbarCell>
           </ListToolbar>
         </div>
@@ -476,6 +492,7 @@ export default function WorkOrdersClient({
         onOpenWorkOrder={openWorkOrder}
         sorts={tableSorts}
         onSort={handleSort}
+        tableOptions={tableOptions}
         columnFilters={columnFilters}
         pagination={{
           page,

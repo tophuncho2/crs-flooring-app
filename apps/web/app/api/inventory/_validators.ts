@@ -5,7 +5,7 @@ import type {
   InventoryListFilters,
   UpdateInventoryInput,
 } from "@builders/application"
-import type { ListInput } from "@builders/application"
+import type { ListInput, ListSort } from "@builders/application"
 import {
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
@@ -257,6 +257,27 @@ const listInventoryQuerySchema = z.object({
     .default(LIST_INVENTORY_PAGE_SIZE),
 })
 
+// UI-exposed sortable fields. Row# (`inventoryNumber`) is intentionally excluded
+// (chronological `createdAt` is the canonical time key).
+const INVENTORY_UI_SORT_FIELDS = ["createdAt", "location", "stockBalance"] as const
+const INVENTORY_MAX_SORT_LEVELS = 3
+
+/** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | null): ListSort[] {
+  if (!raw) return []
+  const allowed = new Set<string>(INVENTORY_UI_SORT_FIELDS)
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !allowed.has(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "asc" ? "asc" : "desc" })
+    if (result.length >= INVENTORY_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
 function readMultiValue(searchParams: URLSearchParams, key: string): string[] {
   return Array.from(
     new Set(
@@ -318,8 +339,14 @@ export function validateListInventoryQuery(
 
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
+  // Canonical ordered sort via `sorts`; fall back to the legacy single pair.
+  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
+  const sorts: ListSort[] =
+    parsedSorts.length > 0 ? parsedSorts : [{ field: parsed.sortField, direction: parsed.sort }]
+
   return {
-    sort: { field: parsed.sortField, direction: parsed.sort },
+    sort: sorts[0],
+    sorts,
     filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,

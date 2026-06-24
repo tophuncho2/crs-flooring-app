@@ -23,6 +23,9 @@ export type InventoryListFilters = {
   note?: string
 }
 
+/** Max simultaneous sort columns the inventory list composes (mirrors WO). */
+const MAX_SORT_LEVELS = 3
+
 function normalizeIds(
   raw: ReadonlyArray<string> | undefined,
 ): ReadonlyArray<string> | undefined {
@@ -79,9 +82,18 @@ export async function listInventoryUseCase(
         }
       : undefined
 
+  // Multi-column sort is canonical via `sorts`; a single `sort` is the legacy
+  // fallback (header-caret consumers, old bookmarks). Slice to the cap, then
+  // hand the repo the ordered entries.
+  const sortList = input.sorts ?? (input.sort ? [input.sort] : [])
+  const entries = sortList
+    .slice(0, MAX_SORT_LEVELS)
+    .map((entry) => ({ field: entry.field, direction: entry.direction }))
+  const sort = entries.length > 0 ? { entries } : undefined
+
   const { rows, total } = await listInventoryForListView({
     filters,
-    ...(input.sort ? { sort: input.sort } : {}),
+    ...(sort ? { sort } : {}),
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

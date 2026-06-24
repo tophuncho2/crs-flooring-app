@@ -3,7 +3,7 @@
 import { afterEach, describe, it, expect, vi } from "vitest"
 import { cleanup, render } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { SortMenu } from "@/engines/list-view"
+import { SortMenuBody } from "@/engines/list-view"
 
 const OPTIONS = [
   { key: "scheduledFor", label: "Date" },
@@ -12,36 +12,34 @@ const OPTIONS = [
   { key: "createdAt", label: "Created" },
 ]
 
-describe("SortMenu", () => {
+describe("SortMenuBody", () => {
   afterEach(() => cleanup())
 
-  it("shows the active-level count badge and opens the panel", async () => {
-    const user = userEvent.setup()
-    const { getByRole, getByText } = render(
-      <SortMenu
+  it("renders the sort builder body with the active level", () => {
+    const { getByText, getByLabelText } = render(
+      <SortMenuBody
         options={OPTIONS}
         value={[{ field: "scheduledFor", direction: "desc" }]}
         maxLevels={3}
         onChange={vi.fn()}
       />,
     )
-    expect(getByText("1")).toBeTruthy()
-    await user.click(getByRole("button", { name: "Sort" }))
     expect(getByText("Sort by")).toBeTruthy()
+    // The single active level exposes its direction toggle.
+    expect(getByLabelText("Toggle direction for Date")).toBeTruthy()
   })
 
   it("appends the first unused column via Add level", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    const { getByRole, getByText } = render(
-      <SortMenu
+    const { getByText } = render(
+      <SortMenuBody
         options={OPTIONS}
         value={[{ field: "scheduledFor", direction: "desc" }]}
         maxLevels={3}
         onChange={onChange}
       />,
     )
-    await user.click(getByRole("button", { name: "Sort" }))
     await user.click(getByText(/Add level/))
     expect(onChange).toHaveBeenCalledWith([
       { field: "scheduledFor", direction: "desc" },
@@ -52,8 +50,8 @@ describe("SortMenu", () => {
   it("removes a level", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    const { getByRole, getByLabelText } = render(
-      <SortMenu
+    const { getByLabelText } = render(
+      <SortMenuBody
         options={OPTIONS}
         value={[
           { field: "scheduledFor", direction: "desc" },
@@ -63,7 +61,6 @@ describe("SortMenu", () => {
         onChange={onChange}
       />,
     )
-    await user.click(getByRole("button", { name: "Sort" }))
     await user.click(getByLabelText("Remove Entity from sort"))
     expect(onChange).toHaveBeenCalledWith([{ field: "scheduledFor", direction: "desc" }])
   })
@@ -71,23 +68,36 @@ describe("SortMenu", () => {
   it("toggles a level's direction", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    const { getByRole, getByLabelText } = render(
-      <SortMenu
+    const { getByLabelText } = render(
+      <SortMenuBody
         options={OPTIONS}
         value={[{ field: "scheduledFor", direction: "desc" }]}
         maxLevels={3}
         onChange={onChange}
       />,
     )
-    await user.click(getByRole("button", { name: "Sort" }))
     await user.click(getByLabelText("Toggle direction for Date"))
     expect(onChange).toHaveBeenCalledWith([{ field: "scheduledFor", direction: "asc" }])
   })
 
-  it("hides Add level once the max is reached", async () => {
+  it("clears all levels", async () => {
     const user = userEvent.setup()
-    const { getByRole, queryByText } = render(
-      <SortMenu
+    const onChange = vi.fn()
+    const { getByText } = render(
+      <SortMenuBody
+        options={OPTIONS}
+        value={[{ field: "scheduledFor", direction: "desc" }]}
+        maxLevels={3}
+        onChange={onChange}
+      />,
+    )
+    await user.click(getByText("Clear"))
+    expect(onChange).toHaveBeenCalledWith([])
+  })
+
+  it("hides Add level once the max is reached", () => {
+    const { queryByText } = render(
+      <SortMenuBody
         options={OPTIONS}
         value={[
           { field: "scheduledFor", direction: "desc" },
@@ -97,7 +107,6 @@ describe("SortMenu", () => {
         onChange={vi.fn()}
       />,
     )
-    await user.click(getByRole("button", { name: "Sort" }))
     expect(queryByText(/Add level/)).toBeNull()
   })
 })

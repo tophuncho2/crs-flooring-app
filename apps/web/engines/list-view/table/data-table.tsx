@@ -11,6 +11,7 @@ import { PaginateControls } from "../toolbar/paginate/paginate-controls"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
 import { DataTableHeaderCell, type DataTableColumnFilter } from "./data-table-header-cell"
+import { TableOptions, type TableOptionsConfig } from "./options"
 import { DataTableSelectAllButton, DataTableSelectCheckbox } from "./select"
 
 const ALIGN_CLASS_NAME: Record<DataTableCellAlign, string> = {
@@ -142,6 +143,14 @@ export type DataTableProps<TRow extends DataTableRow> = {
    * and its state. Absent → no funnel.
    */
   columnFilters?: Record<string, DataTableColumnFilter>
+  /**
+   * Table-options control rendered in the leading open-gutter header — an icon
+   * trigger opening a tabbed popover (today: a "Sort" tab wrapping the multi-column
+   * sort builder). Additive/opt-in; setting it force-renders the gutter header so
+   * the trigger has a home even when the consumer passes no `onOpenRow`/`rowActions`.
+   * See {@link TableOptionsConfig}.
+   */
+  tableOptions?: TableOptionsConfig
   /** Aria-label provider for interactive rows. */
   getRowAriaLabel?: (row: TRow) => string
   className?: string
@@ -175,6 +184,7 @@ export function DataTable<TRow extends DataTableRow>({
   sorts,
   onSort,
   columnFilters,
+  tableOptions,
   getRowAriaLabel,
   className,
 }: DataTableProps<TRow>) {
@@ -191,7 +201,9 @@ export function DataTable<TRow extends DataTableRow>({
     : onRowClick
   const interactive = Boolean(activateRow)
   const hasRowActions = Boolean(rowActions)
-  const hasOpenColumn = Boolean(onOpenRow) || hasRowActions
+  // `tableOptions` force-renders the gutter header so its trigger has a home even
+  // when the consumer renders no per-row open/actions (e.g. the picker grid).
+  const hasOpenColumn = Boolean(onOpenRow) || hasRowActions || Boolean(tableOptions)
   const openColumnWidth = hasRowActions ? OPEN_WIDTH_WITH_ACTIONS : DEFAULT_OPEN_WIDTH
   const totalColumns = columns.length + (selection ? 1 : 0) + (hasOpenColumn ? 1 : 0)
 
@@ -235,7 +247,13 @@ export function DataTable<TRow extends DataTableRow>({
               ) : null}
               {hasOpenColumn ? (
                 <th scope="col" style={{ width: openColumnWidth }} className="px-3 py-2">
-                  <span className="sr-only">{hasRowActions ? "Actions" : "Open"}</span>
+                  {tableOptions ? (
+                    <span className="flex items-center justify-center">
+                      <TableOptions config={tableOptions} />
+                    </span>
+                  ) : (
+                    <span className="sr-only">{hasRowActions ? "Actions" : "Open"}</span>
+                  )}
                 </th>
               ) : null}
               {columns.map((column) => (

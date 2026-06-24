@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListToolbarTallCard, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl } from "@/engines/list-view"
+import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListToolbarTallCard, SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, type TableOptionsConfig } from "@/engines/list-view"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
@@ -20,6 +20,10 @@ import { NEW_ADJUSTMENT_ID } from "@/modules/inventory/controllers/record/use-in
 import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
 import { buildInventoryRecordHref } from "@/hooks/navigation"
 import { InventoryTable } from "./inventory-table"
+import {
+  INVENTORY_MAX_SORT_LEVELS,
+  INVENTORY_SORT_OPTIONS,
+} from "./table/inventory-list-columns"
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
 import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
@@ -165,6 +169,7 @@ export default function InventoryClient({
     total,
     filters,
     sort,
+    sorts,
     page,
     pageSize,
     totalPages,
@@ -174,6 +179,7 @@ export default function InventoryClient({
     goToNextPage,
     onSortChange,
     onToggleSortDirection,
+    onSortsChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<InventoryRow, EngineInventoryFilters>({
@@ -188,6 +194,7 @@ export default function InventoryClient({
     tableKey: "inventory-main",
     filterableFields: INVENTORY_FILTERABLE_FIELDS,
     allowedSortFields: INVENTORY_ALLOWED_SORT_FIELDS,
+    maxSortLevels: INVENTORY_MAX_SORT_LEVELS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
@@ -199,6 +206,30 @@ export default function InventoryClient({
       else onSortChange({ field: key, direction: defaultSortDirection(key) })
     },
     [sort, onSortChange, onToggleSortDirection],
+  )
+
+  // Multi-column sort lives in the table's gutter TableOptions menu (the "Sort"
+  // tab); single-column sort stays a header-caret click. Column keys match the
+  // backend sort fields, so `sorts` flows straight onto the header carets.
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "sort",
+          label: "Sort",
+          active: sorts.length > 0,
+          render: () => (
+            <SortMenuBody
+              options={INVENTORY_SORT_OPTIONS}
+              value={sorts}
+              maxLevels={INVENTORY_MAX_SORT_LEVELS}
+              onChange={onSortsChange}
+            />
+          ),
+        },
+      ],
+    }),
+    [sorts, onSortsChange],
   )
 
   // --- Resolve currently-selected values from the engine's filter map ---
@@ -523,7 +554,9 @@ export default function InventoryClient({
           )
         }
         sort={sort}
+        sorts={sorts}
         onSort={handleSort}
+        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,

@@ -29,3 +29,18 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
   { key: "createdAt", label: "Created", sortable: true },
   { key: "updatedAt", label: "Updated" },
 ]
+
+/**
+ * Columns offered by the gutter Sort menu — keyed by backend sort field (which
+ * matches the DataTable column key for inventory), labelled to match the headers.
+ * Single source of truth shared by the list client and the reference-header
+ * picker grid so the two menus never drift.
+ */
+export const INVENTORY_SORT_OPTIONS: ReadonlyArray<{ key: string; label: string }> = [
+  { key: "createdAt", label: "Created" },
+  { key: "location", label: "Location" },
+  { key: "stockBalance", label: "Stock" },
+]
+
+/** Max simultaneous sort columns — mirrors the API + use case. */
+export const INVENTORY_MAX_SORT_LEVELS = 3
