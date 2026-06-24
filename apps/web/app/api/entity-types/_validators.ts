@@ -1,0 +1,99 @@
+import { z } from "zod"
+import { EntityTypeExecutionError } from "@builders/application"
+import type {
+  CreateEntityTypeUseCaseInput,
+  EntityTypesListFilters,
+  ListInput,
+  UpdateEntityTypeUseCaseInput,
+} from "@builders/application"
+import {
+  ENTITY_TYPE_COLOR_INVALID_MESSAGE,
+  LIST_ENTITY_TYPES_MAX_PAGE_SIZE,
+  LIST_ENTITY_TYPES_PAGE_SIZE,
+  isEntityTypeColor,
+  type EntityTypeColor,
+} from "@builders/domain"
+
+function fail(message: string, field?: string): never {
+  throw new EntityTypeExecutionError({
+    code: "ENTITY_TYPE_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
+
+function requireString(value: unknown, field: string): string {
+  if (typeof value !== "string") fail(`${field} is required`, field)
+  const trimmed = (value as string).trim()
+  if (!trimmed) fail(`${field} is required`, field)
+  return trimmed
+}
+
+function requireColor(value: unknown): EntityTypeColor {
+  if (!isEntityTypeColor(value)) fail(ENTITY_TYPE_COLOR_INVALID_MESSAGE, "color")
+  return value
+}
+
+export function validateCreateEntityTypeInput(
+  body: Record<string, unknown>,
+): CreateEntityTypeUseCaseInput {
+  return {
+    type: requireString(body.type, "type"),
+    color: requireColor(body.color),
+  }
+}
+
+export function validateUpdateEntityTypeInput(
+  body: Record<string, unknown>,
+): UpdateEntityTypeUseCaseInput {
+  const input: UpdateEntityTypeUseCaseInput = {}
+  if ("type" in body) input.type = requireString(body.type, "type")
+  if ("color" in body) input.color = requireColor(body.color)
+  return input
+}
+
+// --- List query validator ---
+
+const listEntityTypesQuerySchema = z.object({
+  q: z.string().optional(),
+  entityTypeNumber: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(LIST_ENTITY_TYPES_MAX_PAGE_SIZE)
+    .default(LIST_ENTITY_TYPES_PAGE_SIZE),
+})
+
+export function validateListEntityTypesQuery(
+  searchParams: URLSearchParams,
+): ListInput<EntityTypesListFilters> {
+  const raw: Record<string, string> = {}
+  searchParams.forEach((value, key) => {
+    raw[key] = value
+  })
+
+  const parseResult = listEntityTypesQuerySchema.safeParse(raw)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    fail(
+      issue?.message ?? "Invalid entity types list query",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+
+  const parsed = parseResult.data
+  const trimmedSearch = parsed.q?.trim()
+  const search = trimmedSearch ? trimmedSearch : undefined
+  const trimmedEntityTypeNumber = parsed.entityTypeNumber?.trim()
+  const entityTypeNumber = trimmedEntityTypeNumber ? trimmedEntityTypeNumber : undefined
+
+  return {
+    search,
+    filters: { entityTypeNumber },
+    page: parsed.page,
+    pageSize: parsed.pageSize,
+  }
+}

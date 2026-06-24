@@ -616,3 +616,45 @@ model QueueOutboxEvent {
   @@map("queue_outbox_event")
 }
 
+// Non-semantic palette colors for entity types. User-assigned, meaningless in
+// code — purely a visual tag. Kept in sync with the domain palette value object
+// (packages/domain/src/management/entity-types/palette.ts) and the UI class map
+// (apps/web/engines/common/badges/contracts/color-palette.ts).
+enum FlooringEntityTypeColor {
+  SLATE
+  RED
+  AMBER
+  ORANGE
+  LIME
+  GREEN
+  TEAL
+  CYAN
+  BLUE
+  VIOLET
+  PINK
+  ROSE
+}
+
+// Standalone user-managed lookup row. Mirrors FlooringJobType's canonical ET-
+// numbered-record shape (sequence-backed `ET-N` string + generated int for
+// exact search + stepper), plus a non-semantic palette color and actor columns.
+// Self-contained — NO foreign keys this slice; linking entity types to other
+// models is a later step. Duplicate `type` values are allowed (no @unique).
+model FlooringEntityType {
+  id                  String                  @id @default(uuid())
+  entityTypeNumber    String                  @unique @default(dbgenerated("('ET-'::text || (nextval('flooring_entity_type_number_seq'::regclass))::text)")) @map("entity_type_number")
+  entityTypeNumberInt Int?                    @default(dbgenerated("(SUBSTRING(entity_type_number FROM 4))::integer"))
+  type                String                  @db.VarChar(30)
+  color               FlooringEntityTypeColor @default(SLATE)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  createdBy           String?
+  updatedBy           String?
+
+  @@index([type])
+  @@index([entityTypeNumber])
+  @@index([entityTypeNumberInt])
+  @@index([type(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_entity_type_type_trgm_idx")
+  @@map("flooring_entity_type")
+}
+
