@@ -35,7 +35,7 @@ import {
  * Layout: a centered `RecordColumnBreak` splits the fields into two flanks —
  * left = identity + editable cluster, right = the stock / money numbers — then a
  * `RecordSectionDivider` terminates the section above a read-only metadata band
- * (PO# / Import# / Merged / Created / Updated). Category is intentionally hidden.
+ * (Merged / Created / Updated). Category is intentionally hidden.
  */
 export function InventoryPrimaryFieldsSection({
   draft,
@@ -84,16 +84,15 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={5} row={3} colSpan={4}>
               <DyeLotReadOnlyField value={record.dyeLot} />
             </CellAt>
-            {/* Notes stack */}
             <CellAt col={1} row={4} colSpan={8}>
               <NoteReadOnlyField value={record.note} />
             </CellAt>
-            <CellAt col={1} row={5} colSpan={8}>
-              <InternalNotesField
-                editable={editable}
-                value={draft.internalNotes}
-                onChange={(value) => onFieldChange("internalNotes", value)}
-              />
+            {/* PO # | Import # */}
+            <CellAt col={1} row={5} colSpan={4}>
+              <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
+            </CellAt>
+            <CellAt col={5} row={5} colSpan={4}>
+              <ImportNumberField value={record.importNumber} />
             </CellAt>
           </InventoryFieldGrid>
         }
@@ -128,27 +127,28 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={5} row={4} colSpan={4}>
               <FreightReadonlyField value={record.freight} />
             </CellAt>
+            <CellAt col={1} row={5} colSpan={8}>
+              <InternalNotesField
+                editable={editable}
+                value={draft.internalNotes}
+                onChange={(value) => onFieldChange("internalNotes", value)}
+              />
+            </CellAt>
           </InventoryFieldGrid>
         }
       />
 
       <RecordSectionDivider />
 
-      {/* Read-only metadata band: PO# · Import# · Merged · Created · Updated */}
+      {/* Read-only metadata band: Merged · Created · Updated */}
       <InventoryFieldGrid>
         <CellAt col={1} row={1} colSpan={2}>
-          <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
-        </CellAt>
-        <CellAt col={3} row={1} colSpan={2}>
-          <ImportNumberField value={record.importNumber} />
-        </CellAt>
-        <CellAt col={5} row={1} colSpan={2}>
           <MergedField wasMerged={record.wasMerged} />
         </CellAt>
-        <CellAt col={1} row={2} colSpan={2}>
+        <CellAt col={3} row={1} colSpan={2}>
           <CreatedAtField value={record.createdAt} />
         </CellAt>
-        <CellAt col={3} row={2} colSpan={2}>
+        <CellAt col={5} row={1} colSpan={2}>
           <UpdatedAtField value={record.updatedAt} />
         </CellAt>
       </InventoryFieldGrid>
