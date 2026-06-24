@@ -4,10 +4,12 @@ import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   FormField,
+  RecordColumnBreak,
   RecordDeleteDialog,
   RecordEntityFooter,
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
+  RecordSectionDivider,
   RecordStepperPortal,
   StaticFieldValue,
   useRecordDeleteConfirmation,
@@ -157,44 +159,51 @@ export function PropertyRecordView({
           deleteLabel="Delete Property"
         >
           <div className="flex flex-col gap-4">
-            <EntityPickerSection
-              value={selectedEntityId}
-              onChange={(id) =>
-                primary.setLocalValue((previous) => ({
-                  ...previous,
-                  entityId: id ?? "",
-                }))
+            <RecordColumnBreak
+              left={
+                <EntityPickerSection
+                  value={selectedEntityId}
+                  onChange={(id) =>
+                    primary.setLocalValue((previous) => ({
+                      ...previous,
+                      entityId: id ?? "",
+                    }))
+                  }
+                  onOptionSelected={selectEntity}
+                  selectedLabel={entityLabel}
+                  display={entityDisplay}
+                  typeRefs={entityTypeRefs}
+                  editable={!primary.isSaving}
+                  onOpen={openEntity}
+                  returnTo={buildCurrentRecordEntryPath(pathname, searchParams)}
+                  onCreated={handleEntityCreated}
+                />
               }
-              onOptionSelected={selectEntity}
-              selectedLabel={entityLabel}
-              display={entityDisplay}
-              typeRefs={entityTypeRefs}
-              editable={!primary.isSaving}
-              onOpen={openEntity}
-              returnTo={buildCurrentRecordEntryPath(pathname, searchParams)}
-              onCreated={handleEntityCreated}
-            />
-            <div className="border-t border-[var(--panel-border)]" />
-            <PropertyFieldsSection
-              draft={primary.localValue}
-              editable={!primary.isSaving}
-              onFieldChange={(field, value) =>
-                primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
+              right={
+                <PropertyFieldsSection
+                  draft={primary.localValue}
+                  editable={!primary.isSaving}
+                  onFieldChange={(field, value) =>
+                    primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
+                  }
+                  nameRowTrailing={
+                    <FormField label="Property #">
+                      <StaticFieldValue>{entry.propertyNumber}</StaticFieldValue>
+                    </FormField>
+                  }
+                />
               }
             />
-            <div className="border-t border-[var(--panel-border)]" />
-            <div className="flex gap-6">
-              <FormField label="Property #">
-                <StaticFieldValue>{entry.propertyNumber}</StaticFieldValue>
-              </FormField>
+            <RecordSectionDivider />
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2">
               <FormField label="Created">
                 <StaticFieldValue>{formatEasternDateTime(entry.createdAt) || "—"}</StaticFieldValue>
               </FormField>
-              <FormField label="Updated">
-                <StaticFieldValue>{formatEasternDateTime(entry.updatedAt) || "—"}</StaticFieldValue>
-              </FormField>
               <FormField label="Created by">
                 <StaticFieldValue>{entry.createdBy ?? "—"}</StaticFieldValue>
+              </FormField>
+              <FormField label="Updated">
+                <StaticFieldValue>{formatEasternDateTime(entry.updatedAt) || "—"}</StaticFieldValue>
               </FormField>
               <FormField label="Updated by">
                 <StaticFieldValue>{entry.updatedBy ?? "—"}</StaticFieldValue>

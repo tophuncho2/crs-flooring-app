@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import type { PropertyPrimaryForm } from "@builders/domain"
 import { AddressEditCell, CellAt, FieldSection, FormField, PhoneCell, TextCell, TextareaCell } from "@/engines/record-view"
 
@@ -32,6 +33,7 @@ export function PropertyFieldsSection({
   onFieldChange,
   ariaPrefix = "Property",
   showContact = true,
+  nameRowTrailing,
 }: {
   draft: PropertyFieldsDraft
   editable: boolean
@@ -43,6 +45,11 @@ export function PropertyFieldsSection({
    * modal passes `false` to trim contact fields down to name/address/instructions.
    */
   showContact?: boolean
+  /**
+   * Optional cell placed to the right of the Name field (col 6, spanning 3/8).
+   * The record view drops the read-only Property # here; the hub forms omit it.
+   */
+  nameRowTrailing?: ReactNode
 }) {
   const onText = (field: keyof PropertyFieldsDraft) => (value: string) => onFieldChange(field, value)
 
@@ -59,6 +66,11 @@ export function PropertyFieldsSection({
           />
         </FormField>
       </CellAt>
+      {nameRowTrailing ? (
+        <CellAt col={6} colSpan={3}>
+          {nameRowTrailing}
+        </CellAt>
+      ) : null}
       {showContact ? (
         <>
           <CellAt col={1} colSpan={5}>
