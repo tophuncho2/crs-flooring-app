@@ -84,18 +84,11 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={5} row={3} colSpan={4}>
               <DyeLotReadOnlyField value={record.dyeLot} />
             </CellAt>
-            <CellAt col={1} row={4} colSpan={4}>
-              <StatusField
-                editable={editable}
-                value={draft.isArchived}
-                onChange={(next) => onFieldChange("isArchived", next)}
-              />
-            </CellAt>
             {/* Notes stack */}
-            <CellAt col={1} row={5} colSpan={8}>
+            <CellAt col={1} row={4} colSpan={8}>
               <NoteReadOnlyField value={record.note} />
             </CellAt>
-            <CellAt col={1} row={6} colSpan={8}>
+            <CellAt col={1} row={5} colSpan={8}>
               <InternalNotesField
                 editable={editable}
                 value={draft.internalNotes}
@@ -110,20 +103,29 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={1} row={1} colSpan={8}>
               <ProductNameField value={record.productName} />
             </CellAt>
-            {/* Stock + money, stacked full-width below the product headline */}
-            <CellAt col={1} row={2} colSpan={8}>
+            {/* Stock balance beside the archive status, then the rest stacked full-width */}
+            <CellAt col={1} row={2} colSpan={4}>
               <StockBalanceField value={record.stockBalance} unitAbbrev={record.stockUnitAbbrev} />
             </CellAt>
-            <CellAt col={1} row={3} colSpan={8}>
-              <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
+            <CellAt col={5} row={2} colSpan={4}>
+              <StatusField
+                editable={editable}
+                value={draft.isArchived}
+                onChange={(next) => onFieldChange("isArchived", next)}
+              />
             </CellAt>
-            <CellAt col={1} row={4} colSpan={8}>
+            {/* Deducted | Starting paired */}
+            <CellAt col={1} row={3} colSpan={4}>
               <NetDeductedField value={record.netDeducted} unitAbbrev={record.stockUnitAbbrev} />
             </CellAt>
-            <CellAt col={1} row={5} colSpan={8}>
+            <CellAt col={5} row={3} colSpan={4}>
+              <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
+            </CellAt>
+            {/* Cost | Freight paired */}
+            <CellAt col={1} row={4} colSpan={4}>
               <CostReadonlyField value={record.cost} />
             </CellAt>
-            <CellAt col={1} row={6} colSpan={8}>
+            <CellAt col={5} row={4} colSpan={4}>
               <FreightReadonlyField value={record.freight} />
             </CellAt>
           </InventoryFieldGrid>
