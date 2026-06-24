@@ -97,6 +97,7 @@ export function ImportRecordPanel({
                 section={controller.stagedInventory}
                 filterRows={controller.filterRows}
                 stagedRows={controller.stagedRows}
+                pollExhausted={controller.pollExhausted}
               />
             ),
           },

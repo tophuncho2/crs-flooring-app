@@ -6,6 +6,7 @@ import { RecordItemSection, UnitCell } from "@/engines/record-view"
 import { useExpandableRowsToggle } from "@/engines/record-view"
 import { ExpandableRow, UnsavedParentMessage } from "@/engines/record-view"
 import { Grid, GridEmpty } from "@/engines/record-view"
+import { WarningNotice } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { isLocalOnlyRecordRow } from "@/engines/record-view"
 import type {
@@ -26,10 +27,17 @@ export function ImportStagedInventorySection({
   section,
   filterRows,
   stagedRows,
+  pollExhausted,
 }: {
   section: ReturnType<typeof useImportStagedInventorySection>
   filterRows: StagedInventoryFilterRow[]
   stagedRows: StagedInventoryRow[]
+  /**
+   * The record controller's queued→imported poll gave up (bounded after ~2
+   * min) with rows still QUEUED — likely a stuck worker job. Surface a soft
+   * "refresh to check" hint rather than spinning forever.
+   */
+  pollExhausted: boolean
 }) {
   // --- Server-snapshot lookups (for read-only computed fields + locks) ---
   const serverFilterRowsById = useMemo(() => {
@@ -230,6 +238,11 @@ export function ImportStagedInventorySection({
         ],
       }}
     >
+      {pollExhausted ? (
+        <WarningNotice className="mb-3">
+          Some rows are still importing in the background. Refresh the page to check their status.
+        </WarningNotice>
+      ) : null}
       <Grid<FilterDraftRow>
         rows={drafts}
         layout={FILTER_ROW_LAYOUT}
