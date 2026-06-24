@@ -321,7 +321,7 @@ model FlooringImportStagedInventoryFilterRow {
   categoryFilter      FlooringCategory?                  @relation(fields: [categoryFilterId], references: [id], onDelete: Restrict)
   productId           String
   product             FlooringProduct                    @relation(fields: [productId], references: [id], onDelete: Restrict)
-  stockOrdered        Decimal                            @db.Decimal(12, 2)
+  stockOrdered        Decimal?                           @db.Decimal(12, 2)
   stockUnitName       String?
   stockUnitAbbrev     String?
   createdAt           DateTime                           @default(now())

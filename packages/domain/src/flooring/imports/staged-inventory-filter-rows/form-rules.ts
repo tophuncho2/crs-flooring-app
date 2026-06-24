@@ -14,11 +14,15 @@ export function validateStagedInventoryFilterForm(
     issues.push({ code: "FILTER_PRODUCT_REQUIRED" })
   }
 
+  // Stock ordered is optional — a blank value is a legitimate "not yet
+  // ordered" state. Only validate format/sign when a value is present.
   const raw = input.stockOrdered.trim()
-  if (raw.length === 0 || !Number.isFinite(Number(raw))) {
-    issues.push({ code: "FILTER_STOCK_ORDERED_INVALID", value: input.stockOrdered })
-  } else if (Number(raw) < 0) {
-    issues.push({ code: "FILTER_STOCK_ORDERED_NEGATIVE", value: input.stockOrdered })
+  if (raw.length > 0) {
+    if (!Number.isFinite(Number(raw))) {
+      issues.push({ code: "FILTER_STOCK_ORDERED_INVALID", value: input.stockOrdered })
+    } else if (Number(raw) < 0) {
+      issues.push({ code: "FILTER_STOCK_ORDERED_NEGATIVE", value: input.stockOrdered })
+    }
   }
 
   return issues

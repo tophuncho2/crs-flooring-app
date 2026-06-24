@@ -45,6 +45,12 @@ export function computeFilterRemainingStock(input: {
   stockOrdered: string
   childStartingStockSum: string
 }): string {
+  // Blank stock ordered means "not yet ordered" — there is nothing to
+  // compute remaining against, so remaining is blank too. (Guard before
+  // Number(), since Number("") is 0 and would compute a false remaining.)
+  if (input.stockOrdered.trim() === "") {
+    return ""
+  }
   const ordered = Number(input.stockOrdered)
   const sum = Number(input.childStartingStockSum)
   if (!Number.isFinite(ordered) || !Number.isFinite(sum)) {

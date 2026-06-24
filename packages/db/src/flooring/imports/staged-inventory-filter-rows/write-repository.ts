@@ -15,9 +15,21 @@ import {
 export type WriteStagedInventoryFilterRecordInput = {
   categoryFilterId: string | null
   productId: string
-  stockOrdered: Prisma.Decimal | string | number
+  stockOrdered: Prisma.Decimal | string | number | null
   stockUnitName: string | null
   stockUnitAbbrev: string | null
+}
+
+/**
+ * Stock ordered is optional. A blank string (or null/whitespace) is
+ * persisted as NULL — the column is nullable. Shared by both the per-row
+ * and section write repositories so the empty→null rule lives in one place.
+ */
+export function emptyToNullStockOrdered(
+  value: Prisma.Decimal | string | number | null,
+): Prisma.Decimal | string | number | null {
+  if (value === null || String(value).trim() === "") return null
+  return value
 }
 
 export async function createStagedInventoryFilterRecord(
@@ -32,7 +44,7 @@ export async function createStagedInventoryFilterRecord(
         ? { connect: { id: input.categoryFilterId } }
         : undefined,
       product: { connect: { id: input.productId } },
-      stockOrdered: input.stockOrdered,
+      stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
       stockUnitName: input.stockUnitName,
       stockUnitAbbrev: input.stockUnitAbbrev,
     },
@@ -55,7 +67,7 @@ function buildUpdateData(
       ? { connect: { id: input.categoryFilterId } }
       : { disconnect: true },
     product: { connect: { id: input.productId } },
-    stockOrdered: input.stockOrdered,
+    stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
     stockUnitName: input.stockUnitName,
     stockUnitAbbrev: input.stockUnitAbbrev,
   }

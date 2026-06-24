@@ -190,7 +190,9 @@ function shapeFilterForm(raw: unknown, path: string): StagedInventoryFilterForm 
   return {
     categoryFilterId: nullableFilterString(form.categoryFilterId, `${path}.categoryFilterId`),
     productId: requireFilterString(form.productId, `${path}.productId`),
-    stockOrdered: requireFilterString(form.stockOrdered, `${path}.stockOrdered`),
+    // Stock ordered is optional — accept missing/blank; "" carries "unset"
+    // through the domain form type (which is a plain string).
+    stockOrdered: nullableFilterString(form.stockOrdered, `${path}.stockOrdered`) ?? "",
   }
 }
 

@@ -3,7 +3,10 @@ import {
   listFilterRowsByImport,
   type StagedInventoryFilterRecord,
 } from "../staged-inventory-filter-rows/read-repository.js"
-import type { WriteStagedInventoryFilterRecordInput } from "../staged-inventory-filter-rows/write-repository.js"
+import {
+  emptyToNullStockOrdered,
+  type WriteStagedInventoryFilterRecordInput,
+} from "../staged-inventory-filter-rows/write-repository.js"
 import {
   listStagedInventoryByImport,
   type StagedInventoryRecord,
@@ -83,7 +86,7 @@ function buildFilterUpdateData(
       ? { connect: { id: input.categoryFilterId } }
       : { disconnect: true },
     product: { connect: { id: input.productId } },
-    stockOrdered: input.stockOrdered,
+    stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
     stockUnitName: input.stockUnitName,
     stockUnitAbbrev: input.stockUnitAbbrev,
   }
@@ -134,7 +137,7 @@ export async function applyImportStagedInventorySectionDiff(
         importEntryId: input.importEntryId,
         categoryFilterId: draft.input.categoryFilterId,
         productId: draft.input.productId,
-        stockOrdered: draft.input.stockOrdered,
+        stockOrdered: emptyToNullStockOrdered(draft.input.stockOrdered),
         stockUnitName: draft.input.stockUnitName,
         stockUnitAbbrev: draft.input.stockUnitAbbrev,
       })),
