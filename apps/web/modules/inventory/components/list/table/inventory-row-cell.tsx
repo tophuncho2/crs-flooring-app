@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
+import { CellChip } from "@/engines/common"
 import {
   formatEasternDateTime,
   formatInventoryQuantity,
@@ -18,7 +19,7 @@ export function renderInventoryRowCell(
 ): ReactNode {
   switch (column.key) {
     case "inventoryNumber":
-      return <span className="font-medium">{row.inventoryNumber}</span>
+      return <CellChip paletteColor={row.color}>{row.inventoryNumber}</CellChip>
     case "productName":
       return row.productName || "-"
     case "rollNumber":

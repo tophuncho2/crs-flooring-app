@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { QuickCreateModal } from "@/engines/record-view"
+import { DEFAULT_PALETTE_COLOR } from "@builders/domain"
 import type { EnrichedInventoryAdjustmentRow, InventoryRow } from "@builders/domain"
 import { useAdjustmentCreateForm } from "../../../controllers/record/adjustments/use-adjustment-create-form"
 import { useInventoryModalSelection } from "../../../controllers/record/adjustments/use-inventory-modal-selection"
@@ -56,6 +57,9 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     wasMerged: false,
     note: adj.inventoryNote ?? "",
     internalNotes: "",
+    // The adjustment row carries no parent inventory color (frozen snapshot, no
+    // join) — placeholder; the modal fetches the real row by id to fill it.
+    color: DEFAULT_PALETTE_COLOR,
     createdAt: "",
     updatedAt: "",
   }

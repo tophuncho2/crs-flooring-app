@@ -44,6 +44,7 @@ export const inventoryRowSelect = {
   wasMerged: true,
   note: true,
   internalNotes: true,
+  color: true,
   _count: { select: { inventoryAdjustments: true } },
   createdAt: true,
   updatedAt: true,

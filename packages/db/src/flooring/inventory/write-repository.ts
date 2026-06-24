@@ -1,4 +1,5 @@
 import { Prisma } from "../../generated/prisma/client.js"
+import type { PaletteColor } from "@builders/domain"
 import { db } from "../../client.js"
 import { type InventoryDbClient } from "./shared.js"
 import { getInventoryById, type InventoryRecord } from "./read-repository.js"
@@ -71,6 +72,8 @@ export type UpdateInventoryRecordInput = {
   location?: string | null
   internalNotes?: string | null
   isArchived?: boolean
+  /** Non-semantic palette tag. Metadata only — never triggers a recompute. */
+  color?: PaletteColor
 }
 
 /**
@@ -89,6 +92,7 @@ function buildUpdateData(
   if (input.location !== undefined) data.location = input.location
   if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes
   if (input.isArchived !== undefined) data.isArchived = input.isArchived
+  if (input.color !== undefined) data.color = input.color
   return data
 }
 

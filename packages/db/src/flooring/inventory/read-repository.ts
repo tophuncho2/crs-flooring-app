@@ -103,6 +103,7 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     wasMerged: payload.wasMerged,
     note: payload.note ?? "",
     internalNotes: payload.internalNotes ?? "",
+    color: payload.color,
     createdAt: payload.createdAt.toISOString(),
     updatedAt: payload.updatedAt.toISOString(),
   }

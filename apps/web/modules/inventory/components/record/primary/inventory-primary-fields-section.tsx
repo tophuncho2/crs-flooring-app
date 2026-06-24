@@ -1,8 +1,9 @@
 "use client"
 
-import type { InventoryForm, InventoryRow } from "@builders/domain"
+import type { InventoryForm, InventoryRow, PaletteColor } from "@builders/domain"
 import { CellAt } from "@/engines/record-view"
 import {
+  ColorField,
   CostReadonlyField,
   CreatedAtField,
   DyeLotReadOnlyField,
@@ -47,7 +48,7 @@ export function InventoryPrimaryFieldsSection({
   record: InventoryRow
   warehouseName: string | null
   editable: boolean
-  onFieldChange: (field: keyof InventoryForm, value: string | boolean) => void
+  onFieldChange: (field: keyof InventoryForm, value: string | boolean | PaletteColor) => void
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -68,7 +69,7 @@ export function InventoryPrimaryFieldsSection({
           />
         </CellAt>
         <CellAt col={1} row={4} colSpan={4}>
-          <InventoryNumberField value={record.inventoryNumber} />
+          <InventoryNumberField value={record.inventoryNumber} paletteColor={draft.color} />
         </CellAt>
         <CellAt col={1} row={5} colSpan={4}>
           <RollNumberReadOnlyField value={record.rollNumber} />
@@ -91,6 +92,13 @@ export function InventoryPrimaryFieldsSection({
             editable={editable}
             value={draft.isArchived}
             onChange={(next) => onFieldChange("isArchived", next)}
+          />
+        </CellAt>
+        <CellAt col={1} row={10} colSpan={4}>
+          <ColorField
+            editable={editable}
+            value={draft.color}
+            onChange={(next) => onFieldChange("color", next)}
           />
         </CellAt>
 

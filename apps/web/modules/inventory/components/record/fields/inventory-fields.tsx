@@ -8,7 +8,7 @@ import {
   TextCell,
   UnitCell,
 } from "@/engines/record-view"
-import { StatusBadge } from "@/engines/common"
+import { CellChip, PaletteColorDropdown, StatusBadge } from "@/engines/common"
 import {
   formatEasternDateTime,
   formatInventoryQuantity,
@@ -18,6 +18,7 @@ import {
   INVENTORY_LOCATION_MAX,
   INVENTORY_NOTE_MAX,
   INVENTORY_ROLL_NUMBER_MAX,
+  type PaletteColor,
 } from "@builders/domain"
 import { ProductPicker, type ProductPickerProps } from "@/modules/products/components/picker/product-picker"
 import { WarehousePicker, type WarehousePickerProps } from "@/modules/warehouse/components/picker/warehouse-picker"
@@ -145,6 +146,27 @@ export function StatusField({
   )
 }
 
+export function ColorField({
+  editable,
+  value,
+  onChange,
+}: {
+  editable: boolean
+  value: PaletteColor
+  onChange: (next: PaletteColor) => void
+}) {
+  return (
+    <FormField label="Color">
+      <PaletteColorDropdown
+        value={value}
+        editable={editable}
+        onChange={onChange}
+        ariaLabel="Inventory color"
+      />
+    </FormField>
+  )
+}
+
 export function WarehouseStaticField({ warehouseName }: { warehouseName: string | null }) {
   return (
     <FormField label="Warehouse">
@@ -210,8 +232,23 @@ export function ProductNameField({ value }: { value: string }) {
   return <ReadonlyField label="Product" value={value} />
 }
 
-export function InventoryNumberField({ value }: { value: string }) {
-  return <ReadonlyField label="Inv #" value={value} />
+export function InventoryNumberField({
+  value,
+  paletteColor,
+}: {
+  value: string
+  // When supplied, the inv# renders inside a live-recoloring palette chip
+  // (driven by the draft color) instead of the plain read-only value.
+  paletteColor?: PaletteColor
+}) {
+  if (paletteColor === undefined) {
+    return <ReadonlyField label="Inv #" value={value} />
+  }
+  return (
+    <FormField label="Inv #">
+      <CellChip paletteColor={paletteColor}>{value}</CellChip>
+    </FormField>
+  )
 }
 
 export function RollNumberReadOnlyField({ value }: { value: string }) {

@@ -240,6 +240,9 @@ model FlooringInventory {
   dyeLot                 String?              @db.VarChar(30)
   note                   String?              @db.VarChar(30)
   internalNotes          String?              @db.VarChar(250)
+  // Non-semantic palette tag (shared PaletteColor enum). Metadata only — never
+  // participates in stock/netDeducted/ledger math. Editable post-create.
+  color                  PaletteColor         @default(SLATE)
   warehouseId            String
   warehouse              FlooringWarehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   location               String?              @db.VarChar(30)

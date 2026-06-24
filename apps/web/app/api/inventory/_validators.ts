@@ -9,8 +9,11 @@ import type { ListInput } from "@builders/application"
 import {
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
+  isPaletteColor,
   LIST_INVENTORY_MAX_PAGE_SIZE,
   LIST_INVENTORY_PAGE_SIZE,
+  PALETTE_COLOR_INVALID_MESSAGE,
+  type PaletteColor,
 } from "@builders/domain"
 
 function optionalString(value: unknown, field: string): string {
@@ -44,6 +47,21 @@ function requireBoolean(value: unknown, field: string): boolean {
     throw new InventoryExecutionError({
       code: "INVENTORY_VALIDATION_FAILED",
       message: `${field} must be true or false`,
+      status: 400,
+      field,
+    })
+  }
+  return value
+}
+
+// Palette color. Non-semantic visual tag — strictly validated when present on
+// update (the form always carries the current color). Create never accepts it:
+// manual + worker-materialized rows fall to the DB default (SLATE).
+function requireColor(value: unknown, field: string): PaletteColor {
+  if (!isPaletteColor(value)) {
+    throw new InventoryExecutionError({
+      code: "INVENTORY_VALIDATION_FAILED",
+      message: PALETTE_COLOR_INVALID_MESSAGE,
       status: 400,
       field,
     })
@@ -317,6 +335,7 @@ export function validateUpdateInventoryInput(body: Record<string, unknown>): Upd
   if (body.internalNotes !== undefined)
     input.internalNotes = optionalBoundedString(body.internalNotes, INVENTORY_INTERNAL_NOTES_MAX, "internalNotes")
   if (body.isArchived !== undefined) input.isArchived = requireBoolean(body.isArchived, "isArchived")
+  if (body.color !== undefined) input.color = requireColor(body.color, "color")
   return input
 }
 

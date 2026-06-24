@@ -4,6 +4,7 @@ export {
 } from "./adjustments/types.js"
 
 import type { EnrichedInventoryAdjustmentRow } from "./adjustments/types.js"
+import type { PaletteColor } from "../../shared/palette.js"
 
 export type InventoryRow = {
   id: string
@@ -35,6 +36,7 @@ export type InventoryRow = {
   wasMerged: boolean
   note: string
   internalNotes: string
+  color: PaletteColor
   createdAt: string
   updatedAt: string
 }
@@ -65,6 +67,7 @@ export type InventoryForm = {
   location: string
   internalNotes: string
   isArchived: boolean
+  color: PaletteColor
 }
 
 export function toInventoryForm(row: InventoryRow): InventoryForm {
@@ -72,6 +75,7 @@ export function toInventoryForm(row: InventoryRow): InventoryForm {
     location: row.location,
     internalNotes: row.internalNotes,
     isArchived: row.isArchived,
+    color: row.color,
   }
 }
 

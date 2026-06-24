@@ -50,6 +50,8 @@ export async function updateInventoryUseCase(
     if (input.location !== undefined) dbInput.location = effectiveLocation
     if (input.internalNotes !== undefined) dbInput.internalNotes = effectiveInternalNotes
     if (input.isArchived !== undefined) dbInput.isArchived = input.isArchived
+    // Non-semantic palette tag — metadata only, leaves stock/netDeducted untouched.
+    if (input.color !== undefined) dbInput.color = input.color
 
     return updateInventoryRecord(id, dbInput, c)
   })
