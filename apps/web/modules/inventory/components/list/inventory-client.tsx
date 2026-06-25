@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListToolbarTallCard, SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, NumberSearchTabBody, type TableOptionsConfig } from "@/engines/list-view"
+import { Search, SlidersHorizontal } from "lucide-react"
+import { SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, NumberSearchTabBody, ListActionBar, ToolbarMenuButton, ListCreateButtonPortal, type TableOptionsConfig } from "@/engines/list-view"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
@@ -27,12 +28,9 @@ import {
 import { LocationPicker } from "@/modules/inventory/components/picker/location-picker"
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
 import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
-import { AddInventoryButton } from "./toolbar-controls/add-inventory-button"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
-import { InventoryClearAll } from "./toolbar-controls/sub-controls/inventory-clear-all"
-import { InventoryRowCount } from "./toolbar-controls/sub-controls/inventory-row-count"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 
 const INVENTORY_FILTERABLE_FIELDS = [
@@ -369,36 +367,41 @@ export default function InventoryClient({
     [sorts, onSortsChange, invNumberValue, handleTextFilterChange],
   )
 
-  const hasActiveFilters = useMemo(() => {
-    if (
-      selectedWarehouseId ||
-      selectedCategoryId ||
-      selectedProductId ||
-      selectedPurchaseOrderNumber ||
-      selectedImportNumber ||
-      locationValue ||
-      invNumberValue ||
-      rollNumberValue ||
-      dyeLotValue ||
-      noteValue
-    ) {
-      return true
-    }
-    if (isArchivedValue) return true
-    return false
-  }, [
-    selectedWarehouseId,
-    selectedCategoryId,
-    selectedProductId,
-    selectedPurchaseOrderNumber,
-    selectedImportNumber,
-    locationValue,
-    invNumberValue,
-    rollNumberValue,
-    dyeLotValue,
-    noteValue,
-    isArchivedValue,
-  ])
+  // Each tool lights its own dot independently; `hasActiveFilters` stays the
+  // ListActionBar clear-all signal. Filter = the warehouse/location/category/
+  // product/PO#/IMP#/status attribute pickers; Search = the roll#/dye-lot/note
+  // free-text bars. Inv # lives in the DataTable gutter, so it is excluded from
+  // the Search dot but kept in `hasActiveFilters` so Clear-all still resets it.
+  const hasActiveFilterTool = useMemo(
+    () =>
+      Boolean(selectedWarehouseId) ||
+      Boolean(selectedCategoryId) ||
+      Boolean(selectedProductId) ||
+      Boolean(selectedPurchaseOrderNumber) ||
+      Boolean(selectedImportNumber) ||
+      Boolean(locationValue) ||
+      isArchivedValue,
+    [
+      selectedWarehouseId,
+      selectedCategoryId,
+      selectedProductId,
+      selectedPurchaseOrderNumber,
+      selectedImportNumber,
+      locationValue,
+      isArchivedValue,
+    ],
+  )
+
+  const hasActiveSearchTool = useMemo(
+    () =>
+      Boolean(rollNumberValue) || Boolean(dyeLotValue) || Boolean(noteValue),
+    [rollNumberValue, dyeLotValue, noteValue],
+  )
+
+  const hasActiveFilters = useMemo(
+    () => hasActiveFilterTool || hasActiveSearchTool || Boolean(invNumberValue),
+    [hasActiveFilterTool, hasActiveSearchTool, invNumberValue],
+  )
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -406,9 +409,11 @@ export default function InventoryClient({
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+      <ListCreateButtonPortal label="Inventory" onClick={() => openCreate()} />
+
+      <div className="mx-4">
         {message || pageError ? (
-          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="space-y-2 pb-2">
             {message ? (
               <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
                 {message}
@@ -422,136 +427,101 @@ export default function InventoryClient({
           </div>
         ) : null}
 
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Inventory
-            </span>
-          </div>
-          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-              the encased card's top edge (rounded-tl-none seam). */}
-          <ListToolbar className="pt-0" showDivider={false}>
-            {/* Per-field search bars + (Clear all | row count) — encased card
-                attached to the tab above. Each bar ILIKEs its own column;
-                filling more than one narrows (AND). Inv # row-number search lives
-                in the table's gutter TableOptions menu ("Inv #" tab). */}
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <DebouncedSearchControl
-                  value={rollNumberValue}
-                  onCommit={(next) => handleTextFilterChange("rollNumber", next)}
-                  placeholder="Roll #"
-                  ariaLabel="Search inventory by roll number"
-                />
-                <DebouncedSearchControl
-                  value={dyeLotValue}
-                  onCommit={(next) => handleTextFilterChange("dyeLot", next)}
-                  placeholder="Dye lot"
-                  ariaLabel="Search inventory by dye lot"
-                />
-                <DebouncedSearchControl
-                  value={noteValue}
-                  onCommit={(next) => handleTextFilterChange("note", next)}
-                  placeholder="Note"
-                  ariaLabel="Search inventory by note"
-                />
-                <ListToolbarBottomRow
-                  left={<InventoryClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                  right={<InventoryRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
+        <ListActionBar
+          label="Inventory"
+          rowCount={rows.length}
+          total={total}
+          rowCountLabel="inventory"
+          hasActiveFilters={hasActiveFilters}
+          onClearAll={handleClearAll}
+        >
+          {/* Filter — the attribute pickers composed directly (NOT a
+              self-triggering FilterControl). Cascades preserved: Warehouse
+              gates/clears Location; Category clears Product; PO# and IMP# are
+              mutually exclusive. Status defaults to Active. */}
+          <ToolbarMenuButton
+            label="Filter"
+            icon={SlidersHorizontal}
+            active={hasActiveFilterTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
+              <WarehouseFilterChip
+                value={selectedWarehouseId}
+                selectedLabel={warehouseLabel}
+                onChange={handleWarehouseChange}
+                initialOptions={initialWarehouseOptions}
+              />
+              <LocationPicker
+                value={locationValue || null}
+                onChange={handleLocationChange}
+                warehouseId={selectedWarehouseId}
+                placeholder="Location"
+                disabledPlaceholder="Select warehouse first"
+                ariaLabel="Filter inventory by location"
+              />
+              <CategoryFilterChip
+                value={selectedCategoryId}
+                selectedLabel={categoryLabel}
+                onChange={handleCategoryChange}
+                initialOptions={initialCategoryOptions}
+              />
+              <ProductFilterChip
+                value={selectedProductId}
+                selectedLabel={productLabel}
+                categoryId={selectedCategoryId}
+                onChange={handleProductChange}
+              />
+              <PurchaseOrderPicker
+                value={selectedPurchaseOrderNumber}
+                onChange={handlePurchaseOrderChange}
+                placeholder="PO#"
+                ariaLabel="Filter inventory by import PO number"
+              />
+              <ImportNumberPicker
+                value={selectedImportNumber}
+                onChange={handleImportNumberChange}
+                placeholder="IMP#"
+                ariaLabel="Filter inventory by import number"
+              />
+              <ArchiveSegmentedControl
+                value={isArchivedValue}
+                onChange={handleArchivedChange}
+              />
+            </div>
+          </ToolbarMenuButton>
 
-            {/* Warehouse + Location encased card. The warehouse pick gates
-                Location (the picker renders disabled until a warehouse is
-                picked); a warehouse change cascades a clear into Location via
-                handleWarehouseChange. Sits immediately to the right of the
-                search bars. */}
-            <ListToolbarCell className="self-start">
-              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
-                <WarehouseFilterChip
-                  value={selectedWarehouseId}
-                  selectedLabel={warehouseLabel}
-                  onChange={handleWarehouseChange}
-                  initialOptions={initialWarehouseOptions}
-                />
-                <LocationPicker
-                  value={locationValue || null}
-                  onChange={handleLocationChange}
-                  warehouseId={selectedWarehouseId}
-                  placeholder="Location"
-                  disabledPlaceholder="Select warehouse first"
-                  ariaLabel="Filter inventory by location"
-                />
-              </div>
-            </ListToolbarCell>
+          {/* Search — the per-field identity free-text bars. Inv # stays in the
+              DataTable gutter (tableOptions), not here. Each bar ILIKEs its own
+              column; filling more than one narrows (AND). */}
+          <ToolbarMenuButton
+            label="Search"
+            icon={Search}
+            active={hasActiveSearchTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
+              <DebouncedSearchControl
+                value={rollNumberValue}
+                onCommit={(next) => handleTextFilterChange("rollNumber", next)}
+                placeholder="Roll #"
+                ariaLabel="Search inventory by roll number"
+              />
+              <DebouncedSearchControl
+                value={dyeLotValue}
+                onCommit={(next) => handleTextFilterChange("dyeLot", next)}
+                placeholder="Dye lot"
+                ariaLabel="Search inventory by dye lot"
+              />
+              <DebouncedSearchControl
+                value={noteValue}
+                onCommit={(next) => handleTextFilterChange("note", next)}
+                placeholder="Note"
+                ariaLabel="Search inventory by note"
+              />
+            </div>
+          </ToolbarMenuButton>
+        </ListActionBar>
 
-            {/* Category + Product encased card. Product is category-scoped (a
-                category change cascades the product clear). Sits to the right of
-                the Warehouse/Location card. */}
-            <ListToolbarCell className="self-start">
-              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
-                <CategoryFilterChip
-                  value={selectedCategoryId}
-                  selectedLabel={categoryLabel}
-                  onChange={handleCategoryChange}
-                  initialOptions={initialCategoryOptions}
-                />
-                <ProductFilterChip
-                  value={selectedProductId}
-                  selectedLabel={productLabel}
-                  categoryId={selectedCategoryId}
-                  onChange={handleProductChange}
-                />
-              </div>
-            </ListToolbarCell>
-
-            {/* Import: PO# and Import # share one encased card. They're
-                mutually exclusive (selecting one clears the other). Sits to the
-                right of the Warehouse/Location/Category/Product card. */}
-            <ListToolbarCell className="self-start">
-              <ListToolbarTallCard>
-                <div className="flex w-full flex-col gap-2">
-                  <PurchaseOrderPicker
-                    value={selectedPurchaseOrderNumber}
-                    onChange={handlePurchaseOrderChange}
-                    placeholder="PO#"
-                    ariaLabel="Filter inventory by import PO number"
-                  />
-                  <ImportNumberPicker
-                    value={selectedImportNumber}
-                    onChange={handleImportNumberChange}
-                    placeholder="IMP#"
-                    ariaLabel="Filter inventory by import number"
-                  />
-                </div>
-              </ListToolbarTallCard>
-            </ListToolbarCell>
-
-            {/* Status: own labeled card, hugging its natural 2-row height
-                (self-start) rather than stretching to the tall column. Sits to
-                the right of the Import card. */}
-            <ListToolbarCell className="self-start">
-              <ListToolbarTallCard>
-                <ArchiveSegmentedControl
-                  value={isArchivedValue}
-                  onChange={handleArchivedChange}
-                />
-              </ListToolbarTallCard>
-            </ListToolbarCell>
-
-            {/* Far-right create action — opens the manual create-inventory
-                form. `ml-auto` pushes it to the right edge (matching the other
-                list views' "+ New" button); `self-start` keeps it top-aligned
-                in the tall toolbar. */}
-            <ListToolbarCell className="ml-auto self-start">
-              <AddInventoryButton onClick={() => openCreate()} />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
-      </div>
-
-      <InventoryTable
+        <InventoryTable
         rows={rows}
         onOpenInventory={(id) =>
           router.push(buildInventoryRecordHref({ inventoryId: id, returnTo }))
@@ -577,7 +547,8 @@ export default function InventoryClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
-      />
+        />
+      </div>
     </div>
   )
 }
