@@ -46,7 +46,7 @@ export function parseEntitiesListInputFromSearchParams(
   )
 
   const entityTypeIds = Array.from(
-    new Set(readSearchParamArray(searchParams, "entityType")),
+    new Set(readSearchParamArray(searchParams, "entityTypeIds")),
   )
 
   const filters =
@@ -74,7 +74,7 @@ function buildEntitiesListSearchString(
     params.append("state", code)
   }
   for (const typeId of input.filters?.entityTypeIds ?? []) {
-    params.append("entityType", typeId)
+    params.append("entityTypeIds", typeId)
   }
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))

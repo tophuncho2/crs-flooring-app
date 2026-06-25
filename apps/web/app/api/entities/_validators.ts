@@ -121,7 +121,7 @@ export function validateListEntitiesQuery(
 ): ListInput<EntitiesListFilters> {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
-    if (key === "state" || key === "entityType") return
+    if (key === "state" || key === "entityTypeIds") return
     raw[key] = value
   })
 
@@ -150,7 +150,7 @@ export function validateListEntitiesQuery(
   const entityTypeIds = Array.from(
     new Set(
       searchParams
-        .getAll("entityType")
+        .getAll("entityTypeIds")
         .map((entry) => entry.trim())
         .filter((entry) => entry.length > 0),
     ),

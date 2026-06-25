@@ -24,7 +24,7 @@ import { EntitiesListSearch } from "./toolbar-controls/entities-list-search"
 import { EntitiesClearAll } from "./toolbar-controls/sub-controls/entities-clear-all"
 import { EntitiesRowCount } from "./toolbar-controls/sub-controls/entities-row-count"
 
-const ENTITIES_FILTERABLE_FIELDS = ["state", "entityType"] as const
+const ENTITIES_FILTERABLE_FIELDS = ["state", "entityTypeIds"] as const
 
 export type EntitiesClientProps = {
   initialSearchQuery: string
@@ -91,7 +91,7 @@ export default function EntitiesClient({
   )
 
   const handleTypeFilterChange = useCallback(
-    (nextIds: string[]) => onFilterChange("entityType", nextIds),
+    (nextIds: string[]) => onFilterChange("entityTypeIds", nextIds),
     [onFilterChange],
   )
 
@@ -143,12 +143,6 @@ export default function EntitiesClient({
                   onChange={handleStateChange}
                   ariaLabel="Filter entities by state"
                 />
-                <EntityTypeMultiSelect
-                  selectedIds={selectedTypeIds}
-                  seedRefs={initialEntityTypeRefs}
-                  editable
-                  onChange={handleTypeFilterChange}
-                />
                 <ListToolbarBottomRow
                   left={
                     <EntitiesClearAll
@@ -157,6 +151,23 @@ export default function EntitiesClient({
                     />
                   }
                   right={<EntitiesRowCount count={rows.length} total={total} />}
+                />
+              </div>
+            </ListToolbarCell>
+
+            {/* Type filter — its own framed card to the right of the search
+                card (not nested inside it). The multi-select's chips + "Add
+                type" trigger live here so the picker is directly clickable. */}
+            <ListToolbarCell>
+              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
+                <span className="text-xs font-medium text-[var(--foreground)]/60">
+                  Type
+                </span>
+                <EntityTypeMultiSelect
+                  selectedIds={selectedTypeIds}
+                  seedRefs={initialEntityTypeRefs}
+                  editable
+                  onChange={handleTypeFilterChange}
                 />
               </div>
             </ListToolbarCell>
