@@ -23,6 +23,13 @@ export type AnchoredPanelProps = {
   children: ReactNode
   /** Cap on the panel height before it flips above the trigger. Defaults to 400. */
   maxHeight?: number
+  /**
+   * Which edge of the panel pins to the trigger. `"left"` (default) anchors the
+   * left edge and expands right — correct for left-clustered cell pickers.
+   * `"right"` anchors the right edge and expands left — correct for the
+   * right-clustered toolbar tools, which otherwise run off the viewport.
+   */
+  align?: "left" | "right"
 }
 
 /**
@@ -42,6 +49,7 @@ export function AnchoredPanel({
   stickyHeader,
   children,
   maxHeight = DEFAULT_MAX_HEIGHT_PX,
+  align = "left",
 }: AnchoredPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const popoverRef = useRef<HTMLDivElement | null>(null)
@@ -99,9 +107,16 @@ export function AnchoredPanel({
               style={{
                 position: "fixed",
                 ...computePopoverPlacement(triggerRect, { maxHeight }),
-                left: triggerRect.left,
+                ...(align === "right"
+                  ? {
+                      right: window.innerWidth - triggerRect.right,
+                      maxWidth: `min(32rem, calc(${Math.max(triggerRect.right - 8, 0)}px))`,
+                    }
+                  : {
+                      left: triggerRect.left,
+                      maxWidth: `min(32rem, calc(100vw - ${Math.max(triggerRect.left, 0) + 8}px))`,
+                    }),
                 minWidth: Math.max(triggerRect.width, MIN_POPOVER_WIDTH_PX),
-                maxWidth: `min(32rem, calc(100vw - ${Math.max(triggerRect.left, 0) + 8}px))`,
                 zIndex: 1000,
               }}
               className={POPOVER_CLASS_NAME}

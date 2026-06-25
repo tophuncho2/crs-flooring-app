@@ -45,6 +45,7 @@ export function ToolbarMenuButton({
     <AnchoredPanel
       open={open}
       onClose={close}
+      align="right"
       stickyHeader={
         <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70">
           {title ?? label}

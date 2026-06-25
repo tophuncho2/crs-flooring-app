@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { Search } from "lucide-react"
 import {
   ListActionBar,
   ListCreateButtonPortal,
@@ -162,27 +162,23 @@ export default function EntityTypesClient({
           onClearAll={handleClearAll}
         >
           <ToolbarMenuButton
-            label="Filter"
-            icon={SlidersHorizontal}
-            active={entityTypeNumberValue.trim().length > 0}
-          >
-            <NumberSearchTabBody
-              value={entityTypeNumberValue}
-              onChange={handleEntityTypeNumberChange}
-              placeholder="ET #"
-              ariaLabel="Search entity types by number"
-            />
-          </ToolbarMenuButton>
-          <ToolbarMenuButton
             label="Search"
             icon={Search}
-            active={searchQuery.trim().length > 0}
+            active={searchQuery.trim().length > 0 || entityTypeNumberValue.trim().length > 0}
           >
-            <SearchControl
-              query={searchQuery}
-              onQueryChange={onSearchQueryChange}
-              placeholder="Search entity types"
-            />
+            <div className="flex flex-col gap-2">
+              <SearchControl
+                query={searchQuery}
+                onQueryChange={onSearchQueryChange}
+                placeholder="Search entity types"
+              />
+              <NumberSearchTabBody
+                value={entityTypeNumberValue}
+                onChange={handleEntityTypeNumberChange}
+                placeholder="ET #"
+                ariaLabel="Search entity types by number"
+              />
+            </div>
           </ToolbarMenuButton>
         </ListActionBar>
 

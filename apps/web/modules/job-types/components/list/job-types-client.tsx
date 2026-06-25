@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { Search } from "lucide-react"
 import {
   ListActionBar,
   ListCreateButtonPortal,
@@ -162,27 +162,23 @@ export default function JobTypesClient({
           onClearAll={handleClearAll}
         >
           <ToolbarMenuButton
-            label="Filter"
-            icon={SlidersHorizontal}
-            active={jobTypeNumberValue.trim().length > 0}
-          >
-            <NumberSearchTabBody
-              value={jobTypeNumberValue}
-              onChange={handleJobTypeNumberChange}
-              placeholder="JT #"
-              ariaLabel="Search job types by number"
-            />
-          </ToolbarMenuButton>
-          <ToolbarMenuButton
             label="Search"
             icon={Search}
-            active={searchQuery.trim().length > 0}
+            active={searchQuery.trim().length > 0 || jobTypeNumberValue.trim().length > 0}
           >
-            <SearchControl
-              query={searchQuery}
-              onQueryChange={onSearchQueryChange}
-              placeholder="Search job types"
-            />
+            <div className="flex flex-col gap-2">
+              <SearchControl
+                query={searchQuery}
+                onQueryChange={onSearchQueryChange}
+                placeholder="Search job types"
+              />
+              <NumberSearchTabBody
+                value={jobTypeNumberValue}
+                onChange={handleJobTypeNumberChange}
+                placeholder="JT #"
+                ariaLabel="Search job types by number"
+              />
+            </div>
           </ToolbarMenuButton>
         </ListActionBar>
 

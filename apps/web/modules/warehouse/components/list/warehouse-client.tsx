@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { Search } from "lucide-react"
 import {
   ListActionBar,
   ListCreateButtonPortal,
@@ -146,27 +146,23 @@ export default function WarehouseClient({
           onClearAll={handleClearAll}
         >
           <ToolbarMenuButton
-            label="Filter"
-            icon={SlidersHorizontal}
-            active={storeNumberValue.trim().length > 0}
-          >
-            <NumberSearchTabBody
-              value={storeNumberValue}
-              onChange={handleStoreNumberChange}
-              placeholder="Store #"
-              ariaLabel="Search warehouses by store number"
-            />
-          </ToolbarMenuButton>
-          <ToolbarMenuButton
             label="Search"
             icon={Search}
-            active={searchQuery.trim().length > 0}
+            active={searchQuery.trim().length > 0 || storeNumberValue.trim().length > 0}
           >
-            <SearchControl
-              query={searchQuery}
-              onQueryChange={onSearchQueryChange}
-              placeholder="Search Warehouse Name"
-            />
+            <div className="flex flex-col gap-2">
+              <SearchControl
+                query={searchQuery}
+                onQueryChange={onSearchQueryChange}
+                placeholder="Search Warehouse Name"
+              />
+              <NumberSearchTabBody
+                value={storeNumberValue}
+                onChange={handleStoreNumberChange}
+                placeholder="Store #"
+                ariaLabel="Search warehouses by store number"
+              />
+            </div>
           </ToolbarMenuButton>
         </ListActionBar>
 

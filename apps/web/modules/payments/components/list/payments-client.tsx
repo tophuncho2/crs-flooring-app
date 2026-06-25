@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { SlidersHorizontal } from "lucide-react"
+import { Search } from "lucide-react"
 import {
   ListActionBar,
   ListCreateButtonPortal,
@@ -108,7 +108,7 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
   }, [onClearAllFilters])
 
   // Payments has no full-text search — its two identity bars (each matches
-  // exact on its own column) live in a single Filter menu. No gutter "Menu":
+  // exact on its own column) live in a single Search menu. No gutter "Menu":
   // the table stays bare until CSV export lands.
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
@@ -124,8 +124,8 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
           onClearAll={handleClearAll}
         >
           <ToolbarMenuButton
-            label="Filter"
-            icon={SlidersHorizontal}
+            label="Search"
+            icon={Search}
             active={hasActiveFilters}
           >
             <div className="flex w-[15rem] flex-col gap-2 normal-case tracking-normal">
