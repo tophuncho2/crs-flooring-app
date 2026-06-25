@@ -67,7 +67,11 @@ export function SidePanel({
       role="dialog"
       aria-modal="true"
       aria-label={typeof title === "string" ? title : ariaLabel}
-      className="fixed inset-0 z-50"
+      // Sits above the app-shell header strip (z-50) so an open drawer covers
+      // the portaled header chrome (back button, list label/count/clear) it
+      // overlaps — a full-screen modal + dimming backdrop layers over floating
+      // page chrome, never under it.
+      className="fixed inset-0 z-[60]"
     >
       <button
         type="button"
