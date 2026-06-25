@@ -77,13 +77,22 @@ function renderImportsClient({
   )
 }
 
+// The `+ Import` button portals into the app-shell `page-action-slot`, located
+// by id with a no-op `subscribe`, so the slot must exist in the DOM before the
+// first render. Portaled output lands in document.body — query it via `screen`.
+const PAGE_ACTION_SLOT_ID = "page-action-slot"
+
 describe("ImportsClient", () => {
   beforeEach(() => {
     listImportsRequestMock.mockReset()
+    const slot = document.createElement("div")
+    slot.id = PAGE_ACTION_SLOT_ID
+    document.body.appendChild(slot)
   })
 
   afterEach(() => {
     cleanup()
+    document.getElementById(PAGE_ACTION_SLOT_ID)?.remove()
   })
 
   it("routes to the canonical create form when +Import is clicked", async () => {

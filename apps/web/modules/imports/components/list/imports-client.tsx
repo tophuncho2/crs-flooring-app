@@ -1,7 +1,16 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { NumberSearchTabBody, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { Search, SlidersHorizontal } from "lucide-react"
+import {
+  NumberSearchTabBody,
+  SearchControl,
+  ListActionBar,
+  ListCreateButtonPortal,
+  ToolbarMenuButton,
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+} from "@/engines/list-view"
 import type { ImportsListFilters, ListInput } from "@builders/application"
 import {
   LIST_IMPORTS_PAGE_SIZE,
@@ -14,11 +23,7 @@ import {
 } from "@/modules/imports/data/list-imports-request"
 import { useImportsListController } from "@/modules/imports/controllers/list/use-imports-list-controller"
 import { ImportsTable } from "./imports-table"
-import { AddImportButton } from "./toolbar-controls/add-import-button"
-import { ImportsListSearch } from "./toolbar-controls/imports-list-search"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
-import { ImportsClearAll } from "./toolbar-controls/sub-controls/imports-clear-all"
-import { ImportsRowCount } from "./toolbar-controls/sub-controls/imports-row-count"
 
 const IMPORTS_FILTERABLE_FIELDS = ["impNumber", "warehouseId"] as const
 
@@ -94,6 +99,7 @@ export default function ImportsClient({
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_IMPORTS_PAGE_SIZE,
+    tableKey: "imports-main",
     filterableFields: IMPORTS_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
@@ -106,30 +112,6 @@ export default function ImportsClient({
       onFilterChange("impNumber", trimmed.length > 0 ? [trimmed] : [])
     },
     [onFilterChange],
-  )
-
-  // Row-number exact search lives in the table's gutter TableOptions menu (a
-  // single "IMP #" tab) rather than the toolbar, matching inventory's menu.
-  // The bar auto-commits on debounce, so the tab needs no Apply / close().
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      tabs: [
-        {
-          key: "number",
-          label: "IMP #",
-          active: impNumberValue.trim().length > 0,
-          render: () => (
-            <NumberSearchTabBody
-              value={impNumberValue}
-              onChange={handleImpNumberChange}
-              placeholder="IMP #"
-              ariaLabel="Search imports by import number"
-            />
-          ),
-        },
-      ],
-    }),
-    [impNumberValue, handleImpNumberChange],
   )
 
   const selectedWarehouseId = useMemo(() => {
@@ -170,11 +152,27 @@ export default function ImportsClient({
     [onFilterChange],
   )
 
+  // Each tool lights its own dot independently; `hasActiveFilters` stays the
+  // ListActionBar clear-all signal. Filter = the warehouse picker; Search =
+  // full-text PO # + the IMP # exact-number bar.
+  const hasActiveFilterTool = useMemo(
+    () => Boolean(selectedWarehouseId),
+    [selectedWarehouseId],
+  )
+
+  const hasActiveSearchTool = useMemo(
+    () =>
+      searchQuery.trim().length > 0 || impNumberValue.trim().length > 0,
+    [searchQuery, impNumberValue],
+  )
+
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+      <ListCreateButtonPortal label="Import" onClick={() => openCreate()} />
+
+      <div className="mx-4">
         {message || pageError ? (
-          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="space-y-2 pb-2">
             {message ? (
               <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
                 {message}
@@ -188,59 +186,69 @@ export default function ImportsClient({
           </div>
         ) : null}
 
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Imports
-            </span>
-          </div>
-          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-              the encased card's top edge (rounded-tl-none seam). */}
-          <ListToolbar className="pt-0" showDivider={false}>
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <ImportsListSearch
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
-                />
-                <ListToolbarBottomRow
-                  left={<ImportsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                  right={<ImportsRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
-
-            <ListToolbarCell>
+        <ListActionBar
+          label="Imports"
+          rowCount={rows.length}
+          total={total}
+          rowCountLabel="imports"
+          hasActiveFilters={hasActiveFilters}
+          onClearAll={handleClearAll}
+        >
+          {/* Filter — the warehouse picker, composed directly (NOT the
+              self-triggering FilterControl). */}
+          <ToolbarMenuButton
+            label="Filter"
+            icon={SlidersHorizontal}
+            active={hasActiveFilterTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
               <WarehouseFilterChip
                 value={selectedWarehouseId}
                 selectedLabel={selectedWarehouseLabel}
                 onChange={handleWarehouseChange}
                 initialOptions={initialWarehouseOptions}
               />
-            </ListToolbarCell>
+            </div>
+          </ToolbarMenuButton>
 
-            <ListToolbarCell className="ml-auto">
-              <AddImportButton onClick={() => openCreate()} />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
+          {/* Search — full-text PO # + the IMP # exact-number bar, mirrors
+              products. */}
+          <ToolbarMenuButton
+            label="Search"
+            icon={Search}
+            active={hasActiveSearchTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
+              <SearchControl
+                query={searchQuery}
+                onQueryChange={onSearchQueryChange}
+                placeholder="Search PO #"
+              />
+              <NumberSearchTabBody
+                value={impNumberValue}
+                onChange={handleImpNumberChange}
+                placeholder="IMP #"
+                ariaLabel="Search imports by import number"
+              />
+            </div>
+          </ToolbarMenuButton>
+        </ListActionBar>
+
+        <ImportsTable
+          rows={rows}
+          onOpenImport={openImport}
+          pagination={{
+            page,
+            pageSize,
+            totalItems: total,
+            totalPages,
+            hasPreviousPage,
+            hasNextPage,
+            onPreviousPage: goToPreviousPage,
+            onNextPage: goToNextPage,
+          }}
+        />
       </div>
-
-      <ImportsTable
-        rows={rows}
-        onOpenImport={openImport}
-        tableOptions={tableOptions}
-        pagination={{
-          page,
-          pageSize,
-          totalItems: total,
-          totalPages,
-          hasPreviousPage,
-          hasNextPage,
-          onPreviousPage: goToPreviousPage,
-          onNextPage: goToNextPage,
-        }}
-      />
     </div>
   )
 }
