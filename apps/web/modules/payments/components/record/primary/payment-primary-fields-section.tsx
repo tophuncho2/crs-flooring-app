@@ -99,15 +99,15 @@ export function PaymentPrimaryFieldsSection({
       <RecordColumnBreak
         left={
           <FieldSection gap="0.75rem">
-            {/* Left flank: Payment # (unchanged width) / Amount / Direction / Date */}
+            {/* Left flank: Payment # (unchanged width) / Amount + Direction paired / Date */}
             {paymentNumber ? (
-              <CellAt col={1} colSpan={4}>
+              <CellAt col={1} row={1} colSpan={4}>
                 <FormField label="Payment #">
                   <StaticFieldValue>{paymentNumber}</StaticFieldValue>
                 </FormField>
               </CellAt>
             ) : null}
-            <CellAt col={1} colSpan={8}>
+            <CellAt col={1} row={paymentNumber ? 2 : 1} colSpan={4}>
               <FormField label="Amount" required>
                 <MoneyCell
                   editable={editable}
@@ -117,7 +117,7 @@ export function PaymentPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} colSpan={8}>
+            <CellAt col={5} row={paymentNumber ? 2 : 1} colSpan={4}>
               <FormField label="Direction" required>
                 <SegmentedChoiceCell
                   editable={editable}
@@ -128,7 +128,7 @@ export function PaymentPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} colSpan={8}>
+            <CellAt col={1} row={paymentNumber ? 3 : 2} colSpan={8}>
               <FormField label="Date">
                 <DateCell
                   editable={editable}
