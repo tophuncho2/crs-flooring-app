@@ -6,6 +6,8 @@ import {
   FieldSection,
   FormField,
   PerUnitCell,
+  RecordColumnBreak,
+  RecordSectionDivider,
   StaticFieldValue,
   TextCell,
 } from "@/engines/record-view"
@@ -26,10 +28,12 @@ function formatUnit(name: string | null | undefined, abbrev: string | null | und
 
 /**
  * Products primary section, on the canonical record-view invisible grid.
- * One `FieldSection` (8-col `LayoutGrid`) places every cell with `CellAt`,
- * mirroring `properties/.../property-fields-section.tsx`. The former
- * Details / Units card groupings are gone — identity/spec fields and the
- * read-only unit snapshots flow as one continuous grid.
+ * A centered `RecordColumnBreak` splits the spec fields into two flanks —
+ * left = identity (Category / Style / Color / Naming Add-on), right = the
+ * unit / coverage cluster (Coverage·Unit / Manufacturer / Stock Unit / PROD #) —
+ * then a `RecordSectionDivider` terminates the section above a read-only
+ * metadata band (Created / Updated / Created by / Updated by), mirroring
+ * work-orders + inventory. The former Details / Units card groupings are gone.
  *
  * `categoryReadOnly` renders Category as a static value (immutable
  * post-create; enforced at the type/validator/domain layers). `fieldsReadOnly`
@@ -80,140 +84,154 @@ export function ProductPrimaryFieldsSection({
     : selectedCategory?.stockUnitAbbrev ?? ""
 
   return (
-    <FieldSection>
-      {/* Left column */}
-      <CellAt col={1} row={1} colSpan={4}>
-        <FormField label="Category" required={!categoryReadOnly}>
-          {categoryReadOnly ? (
-            <StaticFieldValue>{product.category.name || "—"}</StaticFieldValue>
-          ) : (
-            <CategoryPicker
-              value={draft.categoryId || null}
-              onChange={(nextCategoryId) => {
-                onFieldChange("categoryId", nextCategoryId ?? "")
-              }}
-              selectedLabel={selectedCategory?.name ?? null}
-              disabled={disabled}
-              placeholder="Select a category"
-              ariaLabel="Category"
-            />
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={1} row={2} colSpan={4}>
-        <FormField label="Style">
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{draft.style || "—"}</StaticFieldValue>
-          ) : (
-            <TextCell
-              editable={editable}
-              value={draft.style}
-              onChange={(value) => onFieldChange("style", value)}
-            />
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={1} row={3} colSpan={4}>
-        <FormField label="Color">
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{draft.color || "—"}</StaticFieldValue>
-          ) : (
-            <TextCell
-              editable={editable}
-              value={draft.color}
-              onChange={(value) => onFieldChange("color", value)}
-            />
-          )}
-        </FormField>
-      </CellAt>
-      <CellAt col={1} row={4} colSpan={4}>
-        <FormField
-          label="Naming Add-on"
-          currentLength={editable ? draft.productNamingAddon.length : undefined}
-          maxLength={editable ? PRODUCT_NAMING_ADDON_MAX : undefined}
-        >
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{draft.productNamingAddon || "—"}</StaticFieldValue>
-          ) : (
-            <TextCell
-              editable={editable}
-              value={draft.productNamingAddon}
-              onChange={(value) => onFieldChange("productNamingAddon", value)}
-              maxLength={PRODUCT_NAMING_ADDON_MAX}
-            />
-          )}
-        </FormField>
-      </CellAt>
-      {/* Right column */}
-      <CellAt col={5} row={1} colSpan={2}>
-        <FormField label="Coverage / Unit">
-          <PerUnitCell
-            editable={!disabled}
-            value={draft.coveragePerUnit}
-            onChange={(value) => onFieldChange("coveragePerUnit", value)}
-            unit={coverageUnitAbbrev}
-            currencyPrefix=""
-            ariaLabel="Coverage per unit"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={3} colSpan={2}>
-        <FormField label="Stock Unit">
-          <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
-        </FormField>
-      </CellAt>
-      <CellAt col={5} row={2} colSpan={2}>
-        <FormField label="Manufacturer">
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
-          ) : (
-            <ManufacturerPicker
-              value={draft.manufacturerId || null}
-              onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
-              selectedLabel={manufacturerName || null}
-              disabled={disabled}
-              placeholder="Select Manufacturer"
-              ariaLabel="Manufacturer"
-            />
-          )}
-        </FormField>
-      </CellAt>
-      {/* Read-only canonical PROD-N number — detail view only (empty on create). */}
-      {product.productNumber ? (
-        <CellAt col={5} row={4} colSpan={2}>
-          <FormField label="PROD #">
-            <StaticFieldValue>{product.productNumber}</StaticFieldValue>
-          </FormField>
-        </CellAt>
-      ) : null}
+    <div className="flex flex-col gap-4">
+      <RecordColumnBreak
+        left={
+          <FieldSection>
+            {/* Left flank: identity — Category / Style / Color / Naming Add-on */}
+            <CellAt col={1} row={1} colSpan={8}>
+              <FormField label="Category" required={!categoryReadOnly}>
+                {categoryReadOnly ? (
+                  <StaticFieldValue>{product.category.name || "—"}</StaticFieldValue>
+                ) : (
+                  <CategoryPicker
+                    value={draft.categoryId || null}
+                    onChange={(nextCategoryId) => {
+                      onFieldChange("categoryId", nextCategoryId ?? "")
+                    }}
+                    selectedLabel={selectedCategory?.name ?? null}
+                    disabled={disabled}
+                    placeholder="Select a category"
+                    ariaLabel="Category"
+                  />
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={2} colSpan={8}>
+              <FormField label="Style">
+                {fieldsReadOnly ? (
+                  <StaticFieldValue>{draft.style || "—"}</StaticFieldValue>
+                ) : (
+                  <TextCell
+                    editable={editable}
+                    value={draft.style}
+                    onChange={(value) => onFieldChange("style", value)}
+                  />
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={3} colSpan={8}>
+              <FormField label="Color">
+                {fieldsReadOnly ? (
+                  <StaticFieldValue>{draft.color || "—"}</StaticFieldValue>
+                ) : (
+                  <TextCell
+                    editable={editable}
+                    value={draft.color}
+                    onChange={(value) => onFieldChange("color", value)}
+                  />
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={4} colSpan={8}>
+              <FormField
+                label="Naming Add-on"
+                currentLength={editable ? draft.productNamingAddon.length : undefined}
+                maxLength={editable ? PRODUCT_NAMING_ADDON_MAX : undefined}
+              >
+                {fieldsReadOnly ? (
+                  <StaticFieldValue>{draft.productNamingAddon || "—"}</StaticFieldValue>
+                ) : (
+                  <TextCell
+                    editable={editable}
+                    value={draft.productNamingAddon}
+                    onChange={(value) => onFieldChange("productNamingAddon", value)}
+                    maxLength={PRODUCT_NAMING_ADDON_MAX}
+                  />
+                )}
+              </FormField>
+            </CellAt>
+          </FieldSection>
+        }
+        right={
+          <FieldSection>
+            {/* Right flank: coverage / unit cluster */}
+            <CellAt col={1} row={1} colSpan={4}>
+              <FormField label="Coverage / Unit">
+                <PerUnitCell
+                  editable={!disabled}
+                  value={draft.coveragePerUnit}
+                  onChange={(value) => onFieldChange("coveragePerUnit", value)}
+                  unit={coverageUnitAbbrev}
+                  currencyPrefix=""
+                  ariaLabel="Coverage per unit"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={2} colSpan={4}>
+              <FormField label="Manufacturer">
+                {fieldsReadOnly ? (
+                  <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
+                ) : (
+                  <ManufacturerPicker
+                    value={draft.manufacturerId || null}
+                    onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
+                    selectedLabel={manufacturerName || null}
+                    disabled={disabled}
+                    placeholder="Select Manufacturer"
+                    ariaLabel="Manufacturer"
+                  />
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={3} colSpan={4}>
+              <FormField label="Stock Unit">
+                <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            {/* Read-only canonical PROD-N number — detail view only (empty on create). */}
+            {product.productNumber ? (
+              <CellAt col={1} row={4} colSpan={4}>
+                <FormField label="PROD #">
+                  <StaticFieldValue>{product.productNumber}</StaticFieldValue>
+                </FormField>
+              </CellAt>
+            ) : null}
+          </FieldSection>
+        }
+      />
       {product.createdAt ? (
         <>
-          <CellAt col={1} row={5} colSpan={4}>
-            <FormField label="Created">
-              <StaticFieldValue>
-                {formatEasternDateTime(product.createdAt) || "—"}
-              </StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={5} row={5} colSpan={4}>
-            <FormField label="Updated">
-              <StaticFieldValue>
-                {formatEasternDateTime(product.updatedAt) || "—"}
-              </StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={1} row={6} colSpan={4}>
-            <FormField label="Created by">
-              <StaticFieldValue>{product.createdBy ?? "—"}</StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={5} row={6} colSpan={4}>
-            <FormField label="Updated by">
-              <StaticFieldValue>{product.updatedBy ?? "—"}</StaticFieldValue>
-            </FormField>
-          </CellAt>
+          <RecordSectionDivider />
+          {/* Read-only metadata band: Created / Updated over Created by / Updated by */}
+          <FieldSection>
+            <CellAt col={1} row={1} colSpan={4}>
+              <FormField label="Created">
+                <StaticFieldValue>
+                  {formatEasternDateTime(product.createdAt) || "—"}
+                </StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={1} colSpan={4}>
+              <FormField label="Updated">
+                <StaticFieldValue>
+                  {formatEasternDateTime(product.updatedAt) || "—"}
+                </StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={2} colSpan={4}>
+              <FormField label="Created by">
+                <StaticFieldValue>{product.createdBy ?? "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={2} colSpan={4}>
+              <FormField label="Updated by">
+                <StaticFieldValue>{product.updatedBy ?? "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          </FieldSection>
         </>
       ) : null}
-    </FieldSection>
+    </div>
   )
 }
