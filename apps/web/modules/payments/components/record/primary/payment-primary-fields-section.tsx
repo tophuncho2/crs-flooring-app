@@ -24,8 +24,8 @@ import {
   WorkOrderPicker,
   formatWorkOrderOptionTitle,
 } from "@/modules/work-orders/components/picker/work-order-picker"
-import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
-import { EntityTypesArrayPicker } from "@/modules/entities/components/record/primary/entity-types-array-picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
+import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
 
 const DIRECTION_OPTIONS = [
   { value: "REVENUE", label: "Revenue", tone: "success" as const },
@@ -165,7 +165,7 @@ export function PaymentPrimaryFieldsSection({
             </CellAt>
             <CellAt col={1} colSpan={8}>
               <FormField label="Entity">
-                <EntityPicker
+                <EntityTypePicker
                   value={draft.entityId}
                   selectedLabel={entitySelectedLabel}
                   onChange={(id) => {
@@ -184,7 +184,7 @@ export function PaymentPrimaryFieldsSection({
             {showEntityTypes ? (
               <CellAt col={1} colSpan={8}>
                 <FormField label="Type(s)">
-                  <EntityTypesArrayPicker
+                  <EntityTypeMultiSelect
                     selectedIds={(entityTypes ?? []).map((ref) => ref.id)}
                     seedRefs={entityTypes ?? []}
                     editable={false}

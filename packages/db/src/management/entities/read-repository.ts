@@ -95,7 +95,10 @@ export async function getEntityById(
 
 export type EntityListViewOptions = {
   search?: string
-  filters?: { state?: ReadonlyArray<string> }
+  filters?: {
+    state?: ReadonlyArray<string>
+    entityTypeIds?: ReadonlyArray<string>
+  }
   skip: number
   take: number
 }
@@ -117,6 +120,14 @@ function buildListViewWhere(
   const stateCodes = options.filters?.state
   if (stateCodes && stateCodes.length > 0) {
     clauses.push({ state: { in: [...stateCodes] } })
+  }
+
+  // Entity-type filter: an entity holds an array of types (m2m), so match is
+  // `some linked type ∈ selection` (contains/OR), never equality. The EXISTS
+  // is served by the join's @@unique([entityId, entityTypeId]) / @@index([entityTypeId]).
+  const entityTypeIds = options.filters?.entityTypeIds
+  if (entityTypeIds && entityTypeIds.length > 0) {
+    clauses.push({ entityTypes: { some: { entityTypeId: { in: [...entityTypeIds] } } } })
   }
 
   if (clauses.length === 0) return undefined
@@ -149,6 +160,12 @@ export async function listEntitiesForListView(
 
 export type EntityOptionsSearchArgs = {
   search?: string
+  /**
+   * Optional entity-type narrowing — keep only entities carrying at least one
+   * of these types (m2m `some/in`, same shape as the list-view filter). Powers
+   * the combo picker's type side.
+   */
+  typeIds?: ReadonlyArray<string>
   skip?: number
   take: number
 }
@@ -162,9 +179,21 @@ export async function searchEntityOptions(
   args: EntityOptionsSearchArgs,
   client: EntitiesDbClient = db,
 ): Promise<EntityOptionsSearchResult> {
-  const where = args.search
-    ? { entity: { contains: args.search, mode: "insensitive" as const } }
-    : undefined
+  const optionClauses: Prisma.EntityWhereInput[] = []
+  if (args.search) {
+    optionClauses.push({ entity: { contains: args.search, mode: "insensitive" } })
+  }
+  if (args.typeIds && args.typeIds.length > 0) {
+    optionClauses.push({
+      entityTypes: { some: { entityTypeId: { in: [...args.typeIds] } } },
+    })
+  }
+  const where =
+    optionClauses.length === 0
+      ? undefined
+      : optionClauses.length === 1
+        ? optionClauses[0]
+        : { AND: optionClauses }
 
   // Fetch take+1 to detect a next page without a separate count query.
   const rows = await client.entity.findMany({

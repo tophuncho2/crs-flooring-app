@@ -3,7 +3,7 @@
 import type { EntityForm, EntityOption } from "@builders/domain"
 import { CellAt, FieldSection, FormField } from "@/engines/record-view"
 import { ActionHeader } from "@/engines/common"
-import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import { EntityCellsSection } from "@/modules/entities/components/record/primary/entity-cells-section"
 import {
   deriveEntityMode,
@@ -48,7 +48,7 @@ export function EntitySelectSection({
         <FieldSection gap="0.75rem">
           <CellAt col={1} colSpan={6}>
             <FormField label="Link existing entity" required>
-              <EntityPicker
+              <EntityTypePicker
                 value={value.entityLinkId}
                 selectedLabel={value.entityLinkLabel}
                 disabled={disabled || mode === "create"}

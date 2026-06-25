@@ -1,7 +1,7 @@
 "use client"
 
 import type { EntityOption } from "@builders/domain"
-import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 
 export type EntityFilterChipProps = {
   value: string | null
@@ -12,7 +12,7 @@ export type EntityFilterChipProps = {
 
 /**
  * Properties list-view chip — narrows the table to a single management
- * company. Renders the canonical `EntityPicker` so the
+ * company. Renders the canonical `EntityTypePicker` so the
  * dropdown chrome + server-side search is shared with every other consumer.
  */
 export function EntityFilterChip({
@@ -22,7 +22,7 @@ export function EntityFilterChip({
   initialOptions,
 }: EntityFilterChipProps) {
   return (
-    <EntityPicker
+    <EntityTypePicker
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}

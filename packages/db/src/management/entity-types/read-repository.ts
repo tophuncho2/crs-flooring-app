@@ -137,6 +137,25 @@ export async function countEntityTypes(client: EntityTypesDbClient = db): Promis
   return client.flooringEntityType.count()
 }
 
+/**
+ * Resolve the slim {id,type,color} option shape for a known set of ids — used
+ * to seed chip labels for URL-restored entity-type filters on first paint
+ * (the list-view type filter). Order follows `type` for stable chips; unknown
+ * ids simply drop out.
+ */
+export async function listEntityTypeOptionsByIds(
+  ids: ReadonlyArray<string>,
+  client: EntityTypesDbClient = db,
+): Promise<EntityTypeOption[]> {
+  if (ids.length === 0) return []
+  const rows = await client.flooringEntityType.findMany({
+    where: { id: { in: [...ids] } },
+    orderBy: [{ type: "asc" }, { id: "asc" }],
+    select: { id: true, type: true, color: true },
+  })
+  return rows.map(normalizeEntityTypeOption)
+}
+
 export type EntityTypeOptionsSearchArgs = {
   search?: string
   skip?: number

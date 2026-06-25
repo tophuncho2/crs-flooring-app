@@ -7,7 +7,9 @@ import {
   LIST_ENTITIES_PAGE_SIZE,
   normalizeAddressState,
   type EntityListRow,
+  type EntityTypeOption,
 } from "@builders/domain"
+import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
 import {
   ENTITIES_LIST_QUERY_KEY,
   listEntitiesRequest,
@@ -22,18 +24,21 @@ import { EntitiesListSearch } from "./toolbar-controls/entities-list-search"
 import { EntitiesClearAll } from "./toolbar-controls/sub-controls/entities-clear-all"
 import { EntitiesRowCount } from "./toolbar-controls/sub-controls/entities-row-count"
 
-const ENTITIES_FILTERABLE_FIELDS = ["state"] as const
+const ENTITIES_FILTERABLE_FIELDS = ["state", "entityType"] as const
 
 export type EntitiesClientProps = {
   initialSearchQuery: string
   initialPage: number
   initialFilters: EntitiesListFilters
+  /** Seed refs ({id,type,color}) for any URL-restored entity-type filter chips. */
+  initialEntityTypeRefs: EntityTypeOption[]
 }
 
 export default function EntitiesClient({
   initialSearchQuery,
   initialPage,
   initialFilters,
+  initialEntityTypeRefs,
 }: EntitiesClientProps) {
   const { message, pageError } = useEntitiesListController()
   const router = useRouter()
@@ -72,6 +77,11 @@ export default function EntitiesClient({
   const selectedState =
     (filters as EntitiesListFilters).state?.[0] ?? null
 
+  const selectedTypeIds = useMemo(
+    () => [...((filters as EntitiesListFilters).entityTypeIds ?? [])],
+    [filters],
+  )
+
   const handleStateChange = useCallback(
     (next: string | null) => {
       const normalized = next ? normalizeAddressState(next) : ""
@@ -80,11 +90,17 @@ export default function EntitiesClient({
     [onFilterChange],
   )
 
+  const handleTypeFilterChange = useCallback(
+    (nextIds: string[]) => onFilterChange("entityType", nextIds),
+    [onFilterChange],
+  )
+
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (selectedState) return true
+    if (selectedTypeIds.length > 0) return true
     return false
-  }, [searchQuery, selectedState])
+  }, [searchQuery, selectedState, selectedTypeIds])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -126,6 +142,12 @@ export default function EntitiesClient({
                   value={selectedState}
                   onChange={handleStateChange}
                   ariaLabel="Filter entities by state"
+                />
+                <EntityTypeMultiSelect
+                  selectedIds={selectedTypeIds}
+                  seedRefs={initialEntityTypeRefs}
+                  editable
+                  onChange={handleTypeFilterChange}
                 />
                 <ListToolbarBottomRow
                   left={

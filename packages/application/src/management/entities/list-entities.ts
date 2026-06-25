@@ -1,6 +1,7 @@
 import {
   LIST_ENTITIES_MAX_PAGE_SIZE,
   LIST_ENTITIES_PAGE_SIZE,
+  normalizeIdFilter,
   normalizeStateCodeFilter,
   type EntityListRow,
   type EntityOption,
@@ -13,6 +14,7 @@ import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type EntitiesListFilters = {
   state?: ReadonlyArray<string>
+  entityTypeIds?: ReadonlyArray<string>
 }
 
 export async function listEntitiesUseCase(
@@ -27,10 +29,19 @@ export async function listEntitiesUseCase(
 
   const search = input.search?.trim() || undefined
   const state = normalizeStateCodeFilter(input.filters?.state)
+  const entityTypeIds = normalizeIdFilter(input.filters?.entityTypeIds)
+
+  const filters =
+    state || entityTypeIds
+      ? {
+          ...(state ? { state } : {}),
+          ...(entityTypeIds ? { entityTypeIds } : {}),
+        }
+      : undefined
 
   const { rows, total } = await listEntitiesForListView({
     search,
-    filters: state ? { state } : undefined,
+    filters,
     skip: (page - 1) * pageSize,
     take: pageSize,
   })
@@ -40,6 +51,7 @@ export async function listEntitiesUseCase(
 
 export type SearchEntityOptionsInput = {
   search?: string
+  typeIds?: ReadonlyArray<string>
   skip?: number
   take?: number
 }
@@ -56,8 +68,9 @@ export async function searchEntityOptionsUseCase(
   input: SearchEntityOptionsInput,
 ): Promise<SearchEntityOptionsResult> {
   const search = input.search?.trim() || undefined
+  const typeIds = normalizeIdFilter(input.typeIds)
   const requested = Math.floor(input.take ?? OPTIONS_DEFAULT_TAKE)
   const take = Math.max(1, Math.min(OPTIONS_MAX_TAKE, requested))
   const skip = Math.max(0, Math.floor(input.skip ?? 0))
-  return searchEntityOptions({ search, skip, take })
+  return searchEntityOptions({ search, typeIds, skip, take })
 }

@@ -25,7 +25,7 @@ import {
 import { useEntityPrimarySection } from "@/modules/entities/controllers/record/primary/use-entity-primary-section"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
 import { EntityCellsSection } from "./primary/entity-cells-section"
-import { EntityTypesArrayPicker } from "./primary/entity-types-array-picker"
+import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
 import { EntityTemplatesSection } from "./templates/entity-templates-section"
 
 /**
@@ -107,7 +107,7 @@ export function EntityRecordView({
                 <FieldSection gap="0.75rem">
                   <CellAt col={1} colSpan={4}>
                     <FormField label="Types">
-                      <EntityTypesArrayPicker
+                      <EntityTypeMultiSelect
                         selectedIds={primary.localValue.typeIds}
                         seedRefs={entry.types}
                         editable={!primary.isSaving}

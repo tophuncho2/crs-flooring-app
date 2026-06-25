@@ -14,9 +14,9 @@ import {
   RecordOpenButton,
   StaticFieldValue,
 } from "@/engines/record-view"
-import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import { EntityCreateMenu } from "@/modules/entities/components/picker/entity-create-menu"
-import { EntityTypesArrayPicker } from "@/modules/entities/components/record/primary/entity-types-array-picker"
+import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
 
 /**
  * The Property record view's §1 entity block — always shown. The
@@ -76,7 +76,7 @@ export function EntityPickerSection({
             </>
           }
         >
-          <EntityPicker
+          <EntityTypePicker
             value={value}
             onChange={onChange}
             onOptionSelected={onOptionSelected}
@@ -90,7 +90,7 @@ export function EntityPickerSection({
       </CellAt>
       <CellAt col={6} colSpan={3}>
         <FormField label="Types">
-          <EntityTypesArrayPicker selectedIds={typeRefs.map((ref) => ref.id)} seedRefs={typeRefs} editable={false} />
+          <EntityTypeMultiSelect selectedIds={typeRefs.map((ref) => ref.id)} seedRefs={typeRefs} editable={false} />
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={5}>

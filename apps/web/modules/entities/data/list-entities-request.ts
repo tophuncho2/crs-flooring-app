@@ -45,7 +45,17 @@ export function parseEntitiesListInputFromSearchParams(
     ),
   )
 
-  const filters = state.length > 0 ? { state } : undefined
+  const entityTypeIds = Array.from(
+    new Set(readSearchParamArray(searchParams, "entityType")),
+  )
+
+  const filters =
+    state.length > 0 || entityTypeIds.length > 0
+      ? {
+          ...(state.length > 0 ? { state } : {}),
+          ...(entityTypeIds.length > 0 ? { entityTypeIds } : {}),
+        }
+      : undefined
 
   return {
     search: searchRaw || undefined,
@@ -62,6 +72,9 @@ function buildEntitiesListSearchString(
   if (input.search) params.set("q", input.search)
   for (const code of input.filters?.state ?? []) {
     params.append("state", code)
+  }
+  for (const typeId of input.filters?.entityTypeIds ?? []) {
+    params.append("entityType", typeId)
   }
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))

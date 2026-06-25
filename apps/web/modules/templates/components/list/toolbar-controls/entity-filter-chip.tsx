@@ -1,7 +1,7 @@
 "use client"
 
 import type { EntityOption } from "@builders/domain"
-import { EntityPicker } from "@/modules/entities/components/picker/entity-picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 
 export type EntityFilterChipProps = {
   value: string | null
@@ -23,7 +23,7 @@ export function EntityFilterChip({
 }: EntityFilterChipProps) {
   return (
     <div className="min-w-[14rem] max-w-[20rem]">
-      <EntityPicker
+      <EntityTypePicker
         value={value}
         selectedLabel={selectedLabel}
         onChange={onChange}

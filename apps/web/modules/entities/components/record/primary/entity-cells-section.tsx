@@ -10,7 +10,7 @@ import {
   StaticFieldValue,
   TextCell,
 } from "@/engines/record-view"
-import { EntityTypesArrayPicker } from "./entity-types-array-picker"
+import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
 
 /**
  * A single labeled text field in the entity cells grid. Editable renders the live
@@ -124,7 +124,7 @@ export function EntityCellsSection({
       {showTypes ? (
         <CellAt col={6} colSpan={3}>
           <FormField label="Types">
-            <EntityTypesArrayPicker
+            <EntityTypeMultiSelect
               selectedIds={form.typeIds}
               seedRefs={seedTypeRefs}
               editable={editable && Boolean(onTypeIdsChange)}

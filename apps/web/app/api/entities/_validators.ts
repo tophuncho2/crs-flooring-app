@@ -121,7 +121,7 @@ export function validateListEntitiesQuery(
 ): ListInput<EntitiesListFilters> {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
-    if (key === "state") return
+    if (key === "state" || key === "entityType") return
     raw[key] = value
   })
 
@@ -147,7 +147,22 @@ export function validateListEntitiesQuery(
     ),
   )
 
-  const filters = state.length > 0 ? { state } : undefined
+  const entityTypeIds = Array.from(
+    new Set(
+      searchParams
+        .getAll("entityType")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  )
+
+  const filters =
+    state.length > 0 || entityTypeIds.length > 0
+      ? {
+          ...(state.length > 0 ? { state } : {}),
+          ...(entityTypeIds.length > 0 ? { entityTypeIds } : {}),
+        }
+      : undefined
 
   return {
     search,
@@ -167,6 +182,7 @@ const entityOptionsQuerySchema = z.object({
 
 export type ValidatedEntityOptionsQuery = {
   search?: string
+  typeIds?: string[]
   skip: number
   take: number
 }
@@ -176,6 +192,7 @@ export function validateEntityOptionsQuery(
 ): ValidatedEntityOptionsQuery {
   const raw: Record<string, string> = {}
   searchParams.forEach((value, key) => {
+    if (key === "typeId") return
     raw[key] = value
   })
 
@@ -190,8 +207,12 @@ export function validateEntityOptionsQuery(
 
   const parsed = parseResult.data
   const trimmed = parsed.search?.trim()
+  const typeIds = Array.from(
+    new Set(searchParams.getAll("typeId").map((entry) => entry.trim()).filter((entry) => entry.length > 0)),
+  )
   return {
     search: trimmed ? trimmed : undefined,
+    typeIds: typeIds.length > 0 ? typeIds : undefined,
     skip: parsed.skip,
     take: parsed.take,
   }

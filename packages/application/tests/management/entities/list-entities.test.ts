@@ -18,7 +18,7 @@ import {
 function listArgs() {
   return listEntitiesForListViewMock.mock.calls[0]![0] as {
     search?: string
-    filters?: { state?: ReadonlyArray<string> }
+    filters?: { state?: ReadonlyArray<string>; entityTypeIds?: ReadonlyArray<string> }
     skip: number
     take: number
   }
@@ -27,6 +27,7 @@ function listArgs() {
 function optionsArgs() {
   return searchEntityOptionsMock.mock.calls[0]![0] as {
     search?: string
+    typeIds?: ReadonlyArray<string>
     skip: number
     take: number
   }
@@ -60,6 +61,20 @@ describe("listEntitiesUseCase", () => {
     expect(listArgs().filters).toBeUndefined()
   })
 
+  it("normalizes entity-type id filters (trim, drop empties, dedupe)", async () => {
+    await listEntitiesUseCase({
+      filters: { entityTypeIds: [" t1 ", "t2", "", "t1"] },
+    })
+    expect(listArgs().filters).toEqual({ entityTypeIds: ["t1", "t2"] })
+  })
+
+  it("combines state and entity-type filters", async () => {
+    await listEntitiesUseCase({
+      filters: { state: ["ca"], entityTypeIds: ["t1"] },
+    })
+    expect(listArgs().filters).toEqual({ state: ["CA"], entityTypeIds: ["t1"] })
+  })
+
   it("returns the repository rows and total", async () => {
     listEntitiesForListViewMock.mockResolvedValue({ rows: [{ id: "entity1" }], total: 1 })
     expect(await listEntitiesUseCase({})).toEqual({ rows: [{ id: "entity1" }], total: 1 })
@@ -80,6 +95,16 @@ describe("searchEntityOptionsUseCase", () => {
   it("trims search and drops a blank one", async () => {
     await searchEntityOptionsUseCase({ search: "  ac " })
     expect(optionsArgs().search).toBe("ac")
+  })
+
+  it("normalizes the typeIds narrowing filter", async () => {
+    await searchEntityOptionsUseCase({ typeIds: [" t1 ", "t1", ""] })
+    expect(optionsArgs().typeIds).toEqual(["t1"])
+  })
+
+  it("passes undefined typeIds when none survive", async () => {
+    await searchEntityOptionsUseCase({ typeIds: ["  "] })
+    expect(optionsArgs().typeIds).toBeUndefined()
   })
 
   it("passes through the repository result", async () => {

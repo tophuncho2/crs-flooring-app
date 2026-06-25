@@ -1,5 +1,8 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
-import { listEntitiesUseCase } from "@builders/application"
+import {
+  listEntitiesUseCase,
+  listEntityTypeOptionsByIdsUseCase,
+} from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
 import { requireSessionUser } from "@/server/auth/session"
 import EntitiesClient from "@/modules/entities/components/list/entities-client"
@@ -44,12 +47,19 @@ export default async function EntitiesPage({
     )
   }
 
+  // Seed chip labels for any URL-restored entity-type filter so the toolbar
+  // reads back on first paint (no flash of bare ids).
+  const initialEntityTypeRefs = await listEntityTypeOptionsByIdsUseCase(
+    initialInput.filters?.entityTypeIds,
+  )
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <EntitiesClient
         initialSearchQuery={initialInput.search ?? ""}
         initialPage={initialInput.page}
         initialFilters={initialInput.filters ?? {}}
+        initialEntityTypeRefs={initialEntityTypeRefs}
       />
     </HydrationBoundary>
   )

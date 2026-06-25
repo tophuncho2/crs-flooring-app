@@ -1,10 +1,15 @@
 import {
   LIST_ENTITY_TYPES_MAX_PAGE_SIZE,
   LIST_ENTITY_TYPES_PAGE_SIZE,
+  normalizeIdFilter,
   type EntityTypeListRow,
   type EntityTypeOption,
 } from "@builders/domain"
-import { listEntityTypesForListView, searchEntityTypeOptions } from "@builders/db"
+import {
+  listEntityTypeOptionsByIds,
+  listEntityTypesForListView,
+  searchEntityTypeOptions,
+} from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type EntityTypesListFilters = {
@@ -33,6 +38,18 @@ export async function listEntityTypesUseCase(
   })
 
   return { rows, total }
+}
+
+/**
+ * Resolve {id,type,color} options for a known id set — seeds chip labels for
+ * URL-restored entity-type filters (the entities list-view type filter).
+ */
+export async function listEntityTypeOptionsByIdsUseCase(
+  ids: ReadonlyArray<string> | undefined,
+): Promise<EntityTypeOption[]> {
+  const cleaned = normalizeIdFilter(ids)
+  if (!cleaned) return []
+  return listEntityTypeOptionsByIds(cleaned)
 }
 
 export type SearchEntityTypeOptionsInput = {
