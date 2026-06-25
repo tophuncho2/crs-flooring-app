@@ -16,3 +16,12 @@ export type CategoryOption = {
   name: string
   slug: string
 }
+
+// Rendered subset for the categories list view. The surface shows
+// `name` + `stockUnit`; `sendUnit` is carried but not currently columned.
+export type CategoryListRow = {
+  id: string
+  name: string
+  sendUnit: string
+  stockUnit: string
+}

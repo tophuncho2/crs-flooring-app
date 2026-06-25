@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { GET } from "@/app/api/unit-of-measures/route"
 
-const { listUnitOfMeasuresMock, applyRoutePolicyMock } = vi.hoisted(() => ({
-  listUnitOfMeasuresMock: vi.fn(),
+const { listUnitOfMeasuresUseCaseMock, applyRoutePolicyMock } = vi.hoisted(() => ({
+  listUnitOfMeasuresUseCaseMock: vi.fn(),
   applyRoutePolicyMock: vi.fn(),
 }))
 
-vi.mock("@builders/db", async () => {
-  const actual = await vi.importActual<typeof import("@builders/db")>("@builders/db")
+vi.mock("@builders/application", async () => {
+  const actual = await vi.importActual<typeof import("@builders/application")>("@builders/application")
   return {
     ...actual,
-    listUnitOfMeasures: listUnitOfMeasuresMock,
+    listUnitOfMeasuresUseCase: listUnitOfMeasuresUseCaseMock,
   }
 })
 
@@ -41,20 +41,27 @@ describe("unit-of-measures routes", () => {
     })
   })
 
-  it("GET returns normalized rows", async () => {
-    listUnitOfMeasuresMock.mockResolvedValue([
-      { id: "u-1", name: "Square Feet", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
-      { id: "u-2", name: "Hour", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
-    ])
+  it("GET returns the paginated list output", async () => {
+    listUnitOfMeasuresUseCaseMock.mockResolvedValue({
+      rows: [
+        { id: "u-1", name: "Square Feet", abbreviation: "sqft", createdAt: "2026-03-19T00:00:00.000Z" },
+        { id: "u-2", name: "Hour", abbreviation: "hr", createdAt: "2026-03-19T00:00:00.000Z" },
+      ],
+      total: 2,
+    })
 
-    const response = await GET(new Request("http://localhost/api/unit-of-measures"))
+    const response = await GET(new Request("http://localhost/api/unit-of-measures?page=1&pageSize=50"))
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(payload.unitOfMeasures).toEqual([
-      { id: "u-1", name: "Square Feet", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
-      { id: "u-2", name: "Hour", createdAt: "2026-03-19T00:00:00.000Z", updatedAt: "2026-03-19T00:00:00.000Z" },
-    ])
+    expect(payload.total).toBe(2)
+    expect(payload.rows).toHaveLength(2)
+    expect(payload.rows[0]).toMatchObject({ id: "u-1", name: "Square Feet" })
+    expect(listUnitOfMeasuresUseCaseMock).toHaveBeenCalledWith({
+      filters: {},
+      page: 1,
+      pageSize: 50,
+    })
     expect(applyRoutePolicyMock).toHaveBeenCalled()
   })
 

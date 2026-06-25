@@ -1,6 +1,10 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import type { CategoryOption } from "@builders/domain"
+import {
+  normalizeCategoryListRow,
+  type CategoryListRow,
+  type CategoryOption,
+} from "@builders/domain"
 
 type CategoryDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -82,6 +86,41 @@ export async function getCategoryById(
     include: categoryInclude,
   })
   return category ? normalizeCategoryRow(category) : null
+}
+
+// --- List view (counted pagination) ---
+
+export type CategoryListViewOptions = {
+  skip: number
+  take: number
+}
+
+export type CategoryListViewResult = {
+  rows: CategoryListRow[]
+  total: number
+}
+
+// Read-only categories list — no search/filter (the surface is a bare data
+// table). Counted pagination: count + page fetch in parallel, mirroring the
+// users read.
+export async function listCategoriesForListView(
+  options: CategoryListViewOptions,
+  client: CategoryDbClient = db,
+): Promise<CategoryListViewResult> {
+  const [total, rows] = await Promise.all([
+    client.flooringCategory.count(),
+    client.flooringCategory.findMany({
+      include: categoryInclude,
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+      skip: options.skip,
+      take: options.take,
+    }),
+  ])
+
+  return {
+    total,
+    rows: rows.map(normalizeCategoryListRow),
+  }
 }
 
 // --- Picker / options search ---

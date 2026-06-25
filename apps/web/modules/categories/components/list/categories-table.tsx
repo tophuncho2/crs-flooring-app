@@ -1,33 +1,24 @@
 "use client"
 
-import { DataTable, type DataTableColumn } from "@/engines/list-view"
-import type { CategoryRow } from "../../types"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
+import type { CategoryListRow } from "@builders/domain"
+import { CATEGORIES_LIST_COLUMNS } from "./table/categories-list-columns"
+import { renderCategoryRowCell } from "./table/categories-row-cell"
 
-const CATEGORIES_LIST_COLUMNS: DataTableColumn<CategoryRow>[] = [
-  { key: "name", label: "Category" },
-  { key: "stockUnit", label: "Stock Unit" },
-]
-
-export type CategoriesTableProps = {
-  rows: CategoryRow[]
-}
-
-export function CategoriesTable({ rows }: CategoriesTableProps) {
+export function CategoriesTable({
+  rows,
+  pagination,
+}: {
+  rows: CategoryListRow[]
+  pagination?: PaginateContract
+}) {
   return (
-    <DataTable<CategoryRow>
+    <DataTable<CategoryListRow>
       rows={rows}
       columns={CATEGORIES_LIST_COLUMNS}
       empty="No categories found."
-      renderCell={(column, row) => {
-        switch (column.key) {
-          case "name":
-            return <span className="font-medium">{row.name}</span>
-          case "stockUnit":
-            return row.stockUnit || "-"
-          default:
-            return "-"
-        }
-      }}
+      renderCell={renderCategoryRowCell}
+      pagination={pagination}
     />
   )
 }

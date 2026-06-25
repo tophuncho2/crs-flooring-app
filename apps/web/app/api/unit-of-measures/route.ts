@@ -1,9 +1,10 @@
-import { listUnitOfMeasures } from "@builders/db"
+import { listUnitOfMeasuresUseCase } from "@builders/application"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
   applyRoutePolicy,
   enforceQueryRateLimit,
 } from "@/server/http/route-policy"
+import { validateListUnitOfMeasuresQuery } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request)
@@ -13,7 +14,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    return routeJson(access, { unitOfMeasures: await listUnitOfMeasures() })
+    const url = new URL(request.url)
+    const input = validateListUnitOfMeasuresQuery(url.searchParams)
+    const result = await listUnitOfMeasuresUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }

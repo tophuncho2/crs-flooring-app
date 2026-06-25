@@ -1,34 +1,24 @@
 "use client"
 
-import { DataTable, type DataTableColumn } from "@/engines/list-view"
-import { formatStableDateTime } from "@builders/domain"
-import type { UnitOfMeasureRow } from "../../types"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
+import type { UnitOfMeasureListRow } from "@builders/domain"
+import { UNIT_OF_MEASURES_LIST_COLUMNS } from "./table/unit-of-measures-list-columns"
+import { renderUnitOfMeasureRowCell } from "./table/unit-of-measures-row-cell"
 
-const UNIT_OF_MEASURES_LIST_COLUMNS: DataTableColumn<UnitOfMeasureRow>[] = [
-  { key: "name", label: "Unit Of Measure" },
-  { key: "createdAt", label: "Created" },
-]
-
-export type UnitOfMeasuresTableProps = {
-  rows: UnitOfMeasureRow[]
-}
-
-export function UnitOfMeasuresTable({ rows }: UnitOfMeasuresTableProps) {
+export function UnitOfMeasuresTable({
+  rows,
+  pagination,
+}: {
+  rows: UnitOfMeasureListRow[]
+  pagination?: PaginateContract
+}) {
   return (
-    <DataTable<UnitOfMeasureRow>
+    <DataTable<UnitOfMeasureListRow>
       rows={rows}
       columns={UNIT_OF_MEASURES_LIST_COLUMNS}
       empty="No units of measure found."
-      renderCell={(column, row) => {
-        switch (column.key) {
-          case "name":
-            return <span className="font-medium">{row.name}</span>
-          case "createdAt":
-            return formatStableDateTime(row.createdAt)
-          default:
-            return "-"
-        }
-      }}
+      renderCell={renderUnitOfMeasureRowCell}
+      pagination={pagination}
     />
   )
 }

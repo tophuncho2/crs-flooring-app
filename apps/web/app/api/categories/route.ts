@@ -1,6 +1,7 @@
-import { listCategories } from "@builders/db"
+import { listCategoriesUseCase } from "@builders/application"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import { applyRoutePolicy, enforceQueryRateLimit } from "@/server/http/route-policy"
+import { validateListCategoriesQuery } from "./_validators"
 
 export async function GET(request: Request) {
   const access = await applyRoutePolicy(request)
@@ -10,7 +11,10 @@ export async function GET(request: Request) {
   if (rateLimited) return rateLimited
 
   try {
-    return routeJson(access, { categories: await listCategories() })
+    const url = new URL(request.url)
+    const input = validateListCategoriesQuery(url.searchParams)
+    const result = await listCategoriesUseCase(input)
+    return routeJson(access, result)
   } catch (error) {
     return routeError(access, error)
   }
