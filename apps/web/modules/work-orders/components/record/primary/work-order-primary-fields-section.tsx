@@ -303,76 +303,19 @@ export function WorkOrderPrimaryFieldsSection({
                 </StaticFieldValue>
               </FormField>
             </CellAt>
-            {/* Template → unit identity */}
+            {/* Installer Instructions */}
             <CellAt col={1} row={6} colSpan={8}>
               <FormField
-                label="Template"
-                actions={
-                  <>
-                    <RecordOpenButton
-                      ariaLabel="Open template record"
-                      title="Open template record"
-                      disabled={!templateValue}
-                      onClick={() => {
-                        if (templateValue) {
-                          router.push(buildTemplateHubHref({ templateId: templateValue, returnTo }))
-                        }
-                      }}
-                    />
-                    {editable ? (
-                      <TemplateCreateMenu
-                        returnTo={returnTo}
-                        initialProperty={
-                          propertyValue ? { id: propertyValue, label: propertyLabel } : null
-                        }
-                        onCreated={handleTemplateSelected}
-                      />
-                    ) : null}
-                  </>
-                }
+                label="Installer Instructions"
+                currentLength={editable ? draft.installerInstructions.length : undefined}
+                maxLength={editable ? WO_INSTALLER_INSTRUCTIONS_MAX : undefined}
               >
-                {editable ? (
-                  <TemplatePicker
-                    value={templateValue}
-                    onChange={() => {}}
-                    onOptionSelected={handleTemplateSelected}
-                    propertyId={propertyValue}
-                    entityId={entityValue}
-                    requireProperty={false}
-                    selectedLabel={templateLabel}
-                    placeholder="—"
-                    ariaLabel="Template"
-                  />
-                ) : (
-                  <StaticFieldValue>{templateLabel ?? "—"}</StaticFieldValue>
-                )}
-              </FormField>
-            </CellAt>
-            <CellAt col={1} row={7} colSpan={4}>
-              <FormField
-                label="Unit Type"
-                currentLength={editable ? draft.unitType.length : undefined}
-                maxLength={editable ? WO_UNIT_TYPE_MAX : undefined}
-              >
-                <TextCell
+                <TextareaCell
                   editable={editable}
-                  value={draft.unitType}
-                  onChange={(value) => onFieldChange("unitType", value)}
-                  maxLength={WO_UNIT_TYPE_MAX}
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={5} row={7} colSpan={2}>
-              <FormField
-                label="Unit Number"
-                currentLength={editable ? draft.unitNumber.length : undefined}
-                maxLength={editable ? WO_UNIT_NUMBER_MAX : undefined}
-              >
-                <TextCell
-                  editable={editable}
-                  value={draft.unitNumber}
-                  onChange={(value) => onFieldChange("unitNumber", value)}
-                  maxLength={WO_UNIT_NUMBER_MAX}
+                  value={draft.installerInstructions}
+                  onChange={(value) => onFieldChange("installerInstructions", value)}
+                  maxLength={WO_INSTALLER_INSTRUCTIONS_MAX}
+                  rows={1}
                 />
               </FormField>
             </CellAt>
@@ -434,7 +377,7 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            {/* Notes stack */}
+            {/* Description */}
             <CellAt col={1} row={3} colSpan={8}>
               <FormField
                 label="Description"
@@ -450,22 +393,80 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
+            {/* Template → unit identity */}
             <CellAt col={1} row={4} colSpan={8}>
               <FormField
-                label="Installer Instructions"
-                currentLength={editable ? draft.installerInstructions.length : undefined}
-                maxLength={editable ? WO_INSTALLER_INSTRUCTIONS_MAX : undefined}
+                label="Template"
+                actions={
+                  <>
+                    <RecordOpenButton
+                      ariaLabel="Open template record"
+                      title="Open template record"
+                      disabled={!templateValue}
+                      onClick={() => {
+                        if (templateValue) {
+                          router.push(buildTemplateHubHref({ templateId: templateValue, returnTo }))
+                        }
+                      }}
+                    />
+                    {editable ? (
+                      <TemplateCreateMenu
+                        returnTo={returnTo}
+                        initialProperty={
+                          propertyValue ? { id: propertyValue, label: propertyLabel } : null
+                        }
+                        onCreated={handleTemplateSelected}
+                      />
+                    ) : null}
+                  </>
+                }
               >
-                <TextareaCell
+                {editable ? (
+                  <TemplatePicker
+                    value={templateValue}
+                    onChange={() => {}}
+                    onOptionSelected={handleTemplateSelected}
+                    propertyId={propertyValue}
+                    entityId={entityValue}
+                    requireProperty={false}
+                    selectedLabel={templateLabel}
+                    placeholder="—"
+                    ariaLabel="Template"
+                  />
+                ) : (
+                  <StaticFieldValue>{templateLabel ?? "—"}</StaticFieldValue>
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={5} colSpan={4}>
+              <FormField
+                label="Unit Type"
+                currentLength={editable ? draft.unitType.length : undefined}
+                maxLength={editable ? WO_UNIT_TYPE_MAX : undefined}
+              >
+                <TextCell
                   editable={editable}
-                  value={draft.installerInstructions}
-                  onChange={(value) => onFieldChange("installerInstructions", value)}
-                  maxLength={WO_INSTALLER_INSTRUCTIONS_MAX}
-                  rows={1}
+                  value={draft.unitType}
+                  onChange={(value) => onFieldChange("unitType", value)}
+                  maxLength={WO_UNIT_TYPE_MAX}
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={5} colSpan={8}>
+            <CellAt col={5} row={5} colSpan={4}>
+              <FormField
+                label="Unit Number"
+                currentLength={editable ? draft.unitNumber.length : undefined}
+                maxLength={editable ? WO_UNIT_NUMBER_MAX : undefined}
+              >
+                <TextCell
+                  editable={editable}
+                  value={draft.unitNumber}
+                  onChange={(value) => onFieldChange("unitNumber", value)}
+                  maxLength={WO_UNIT_NUMBER_MAX}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={6} colSpan={8}>
               <FormField
                 label="Internal Notes"
                 currentLength={editable ? draft.internalNotes.length : undefined}
