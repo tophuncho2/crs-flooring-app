@@ -215,19 +215,21 @@ export default function ProductsClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
-  // ListActionBar clear-all signal. Filter = attributes; Search = text + PROD #.
+  // ListActionBar clear-all signal. Filter = the Category attribute; Search =
+  // full-text + PROD # + the color/style/naming free-text bars.
   const hasActiveFilterTool = useMemo(
-    () =>
-      colorValue.trim().length > 0 ||
-      styleValue.trim().length > 0 ||
-      namingAddonValue.trim().length > 0 ||
-      Boolean(selectedCategoryId),
-    [colorValue, styleValue, namingAddonValue, selectedCategoryId],
+    () => Boolean(selectedCategoryId),
+    [selectedCategoryId],
   )
 
   const hasActiveSearchTool = useMemo(
-    () => searchQuery.trim().length > 0 || prodNumberValue.trim().length > 0,
-    [searchQuery, prodNumberValue],
+    () =>
+      searchQuery.trim().length > 0 ||
+      prodNumberValue.trim().length > 0 ||
+      colorValue.trim().length > 0 ||
+      styleValue.trim().length > 0 ||
+      namingAddonValue.trim().length > 0,
+    [searchQuery, prodNumberValue, colorValue, styleValue, namingAddonValue],
   )
 
   return (
@@ -258,8 +260,8 @@ export default function ProductsClient({
           hasActiveFilters={hasActiveFilters}
           onClearAll={handleClearAll}
         >
-          {/* Filter — products HAS one. Attribute fields composed directly,
-              NOT the self-triggering FilterControl. */}
+          {/* Filter — products HAS one. The Category attribute picker, composed
+              directly (NOT the self-triggering FilterControl). */}
           <ToolbarMenuButton
             label="Filter"
             icon={SlidersHorizontal}
@@ -271,6 +273,28 @@ export default function ProductsClient({
                 selectedLabel={selectedCategoryLabel}
                 onChange={handleCategoryChange}
                 initialOptions={initialCategoryOptions}
+              />
+            </div>
+          </ToolbarMenuButton>
+
+          {/* Search — full-text + PROD # exact number + the color/style/naming
+              free-text bars, mirrors job-types. */}
+          <ToolbarMenuButton
+            label="Search"
+            icon={Search}
+            active={hasActiveSearchTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
+              <SearchControl
+                query={searchQuery}
+                onQueryChange={onSearchQueryChange}
+                placeholder="Search products"
+              />
+              <NumberSearchTabBody
+                value={prodNumberValue}
+                onChange={handleProdNumberChange}
+                placeholder="PROD #"
+                ariaLabel="Search products by product number"
               />
               <DebouncedSearchControl
                 value={colorValue}
@@ -289,27 +313,6 @@ export default function ProductsClient({
                 onCommit={handleNamingAddonChange}
                 placeholder="Naming addon"
                 ariaLabel="Search products by naming addon"
-              />
-            </div>
-          </ToolbarMenuButton>
-
-          {/* Search — full-text + PROD # exact number, mirrors job-types. */}
-          <ToolbarMenuButton
-            label="Search"
-            icon={Search}
-            active={hasActiveSearchTool}
-          >
-            <div className="flex flex-col gap-2">
-              <SearchControl
-                query={searchQuery}
-                onQueryChange={onSearchQueryChange}
-                placeholder="Search products"
-              />
-              <NumberSearchTabBody
-                value={prodNumberValue}
-                onChange={handleProdNumberChange}
-                placeholder="PROD #"
-                ariaLabel="Search products by product number"
               />
             </div>
           </ToolbarMenuButton>
