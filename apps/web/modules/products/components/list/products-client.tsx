@@ -1,7 +1,17 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, NumberSearchTabBody, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { Search, SlidersHorizontal } from "lucide-react"
+import {
+  DebouncedSearchControl,
+  NumberSearchTabBody,
+  SearchControl,
+  ListActionBar,
+  ListCreateButtonPortal,
+  ToolbarMenuButton,
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+} from "@/engines/list-view"
 import type { ListInput, ProductsListFilters } from "@builders/application"
 import {
   LIST_PRODUCTS_PAGE_SIZE,
@@ -14,11 +24,7 @@ import {
 } from "@/modules/products/data/list-products-request"
 import { useProductsListController } from "@/modules/products/controllers/use-products-list-controller"
 import { ProductsTable } from "./products-table"
-import { AddProductButton } from "./toolbar-controls/add-product-button"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
-import { ProductsListSearch } from "./toolbar-controls/products-list-search"
-import { ProductsClearAll } from "./toolbar-controls/sub-controls/products-clear-all"
-import { ProductsRowCount } from "./toolbar-controls/sub-controls/products-row-count"
 
 const PRODUCTS_FILTERABLE_FIELDS = [
   "prodNumber",
@@ -208,34 +214,29 @@ export default function ProductsClient({
     onSearchQueryChange("")
   }, [onClearAllFilters, onSearchQueryChange])
 
-  // Exact record-number search (PROD #) lives in the table's gutter
-  // TableOptions menu, not the toolbar — mirrors inventory's "Sort" tab.
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      tabs: [
-        {
-          key: "number",
-          label: "PROD #",
-          active: prodNumberValue.trim().length > 0,
-          render: () => (
-            <NumberSearchTabBody
-              value={prodNumberValue}
-              onChange={handleProdNumberChange}
-              placeholder="PROD #"
-              ariaLabel="Search products by product number"
-            />
-          ),
-        },
-      ],
-    }),
-    [prodNumberValue, handleProdNumberChange],
+  // Each tool lights its own dot independently; `hasActiveFilters` stays the
+  // ListActionBar clear-all signal. Filter = attributes; Search = text + PROD #.
+  const hasActiveFilterTool = useMemo(
+    () =>
+      colorValue.trim().length > 0 ||
+      styleValue.trim().length > 0 ||
+      namingAddonValue.trim().length > 0 ||
+      Boolean(selectedCategoryId),
+    [colorValue, styleValue, namingAddonValue, selectedCategoryId],
+  )
+
+  const hasActiveSearchTool = useMemo(
+    () => searchQuery.trim().length > 0 || prodNumberValue.trim().length > 0,
+    [searchQuery, prodNumberValue],
   )
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+      <ListCreateButtonPortal label="Product" onClick={() => openCreate()} />
+
+      <div className="mx-4">
         {message || pageError ? (
-          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="space-y-2 pb-2">
             {message ? (
               <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
                 {message}
@@ -249,79 +250,86 @@ export default function ProductsClient({
           </div>
         ) : null}
 
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Flooring Products
-            </span>
-          </div>
-          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-              the encased card's top edge (rounded-tl-none seam). */}
-          <ListToolbar className="pt-0" showDivider={false}>
-            {/* Search + (Clear all | row count) — encased card attached to the tab above */}
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <ProductsListSearch
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
-                />
-                <DebouncedSearchControl
-                  value={colorValue}
-                  onCommit={handleColorChange}
-                  placeholder="Color"
-                  ariaLabel="Search products by color"
-                />
-                <DebouncedSearchControl
-                  value={styleValue}
-                  onCommit={handleStyleChange}
-                  placeholder="Style"
-                  ariaLabel="Search products by style"
-                />
-                <DebouncedSearchControl
-                  value={namingAddonValue}
-                  onCommit={handleNamingAddonChange}
-                  placeholder="Naming addon"
-                  ariaLabel="Search products by naming addon"
-                />
-                <ListToolbarBottomRow
-                  left={<ProductsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                  right={<ProductsRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
-
-            {/* Category */}
-            <ListToolbarCell>
+        <ListActionBar
+          label="Products"
+          rowCount={rows.length}
+          total={total}
+          rowCountLabel="products"
+          hasActiveFilters={hasActiveFilters}
+          onClearAll={handleClearAll}
+        >
+          {/* Filter — products HAS one. Attribute fields composed directly,
+              NOT the self-triggering FilterControl. */}
+          <ToolbarMenuButton
+            label="Filter"
+            icon={SlidersHorizontal}
+            active={hasActiveFilterTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
               <CategoryFilterChip
                 value={selectedCategoryId}
                 selectedLabel={selectedCategoryLabel}
                 onChange={handleCategoryChange}
                 initialOptions={initialCategoryOptions}
               />
-            </ListToolbarCell>
+              <DebouncedSearchControl
+                value={colorValue}
+                onCommit={handleColorChange}
+                placeholder="Color"
+                ariaLabel="Search products by color"
+              />
+              <DebouncedSearchControl
+                value={styleValue}
+                onCommit={handleStyleChange}
+                placeholder="Style"
+                ariaLabel="Search products by style"
+              />
+              <DebouncedSearchControl
+                value={namingAddonValue}
+                onCommit={handleNamingAddonChange}
+                placeholder="Naming addon"
+                ariaLabel="Search products by naming addon"
+              />
+            </div>
+          </ToolbarMenuButton>
 
-            <ListToolbarCell className="ml-auto">
-              <AddProductButton onClick={() => openCreate()} />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
+          {/* Search — full-text + PROD # exact number, mirrors job-types. */}
+          <ToolbarMenuButton
+            label="Search"
+            icon={Search}
+            active={hasActiveSearchTool}
+          >
+            <div className="flex flex-col gap-2">
+              <SearchControl
+                query={searchQuery}
+                onQueryChange={onSearchQueryChange}
+                placeholder="Search products"
+              />
+              <NumberSearchTabBody
+                value={prodNumberValue}
+                onChange={handleProdNumberChange}
+                placeholder="PROD #"
+                ariaLabel="Search products by product number"
+              />
+            </div>
+          </ToolbarMenuButton>
+        </ListActionBar>
+
+        <ProductsTable
+          rows={rows}
+          onOpenProduct={openProduct}
+          pagination={{
+            page,
+            pageSize,
+            totalItems: total,
+            totalPages,
+            hasPreviousPage,
+            hasNextPage,
+            onPreviousPage: goToPreviousPage,
+            onNextPage: goToNextPage,
+          }}
+        />
       </div>
-
-      <ProductsTable
-        rows={rows}
-        onOpenProduct={openProduct}
-        tableOptions={tableOptions}
-        pagination={{
-          page,
-          pageSize,
-          totalItems: total,
-          totalPages,
-          hasPreviousPage,
-          hasNextPage,
-          onPreviousPage: goToPreviousPage,
-          onNextPage: goToNextPage,
-        }}
-      />
     </div>
   )
 }
