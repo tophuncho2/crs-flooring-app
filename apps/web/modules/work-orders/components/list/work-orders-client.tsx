@@ -24,6 +24,7 @@ import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { ScheduledForFilterBody } from "./toolbar-controls/scheduled-for-filter-body"
+import { WorkOrderNumberFilterBody } from "./toolbar-controls/work-order-number-filter-body"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
@@ -277,9 +278,10 @@ export default function WorkOrdersClient({
   )
 
   // Table-level controls live in the table's gutter TableOptions menu: the
-  // "Sort" tab wraps the multi-column sort builder, the "Date" tab hosts the
-  // scheduled-for range filter (moved off the Date column header funnel — the
-  // toolbar chip was already retired). Single-column sort stays a header caret.
+  // "Sort" tab wraps the multi-column sort builder, the "WO #" tab hosts the
+  // work-order row-number search (relocated off the toolbar), and the "Date" tab
+  // hosts the scheduled-for range filter (moved off the Date column header funnel
+  // — the toolbar chip was already retired). Single-column sort stays a header caret.
   const tableOptions = useMemo<TableOptionsConfig>(
     () => ({
       tabs: [
@@ -293,6 +295,17 @@ export default function WorkOrdersClient({
               value={sorts}
               maxLevels={WORK_ORDERS_MAX_SORT_LEVELS}
               onChange={onSortsChange}
+            />
+          ),
+        },
+        {
+          key: "workOrderNumber",
+          label: "WO #",
+          active: Boolean(workOrderNumberValue),
+          render: () => (
+            <WorkOrderNumberFilterBody
+              value={workOrderNumberValue}
+              onChange={(next) => handleTextFilterChange("workOrderNumber", next)}
             />
           ),
         },
@@ -313,6 +326,8 @@ export default function WorkOrdersClient({
     [
       sorts,
       onSortsChange,
+      workOrderNumberValue,
+      handleTextFilterChange,
       selectedScheduledStart,
       selectedScheduledEnd,
       handleScheduledForChange,
@@ -388,8 +403,9 @@ export default function WorkOrdersClient({
               the encased card's top edge (rounded-tl-none seam). */}
           <ListToolbar className="pt-0" showDivider={false}>
             {/* Per-column search bars + (Clear all | row count) — encased card
-                attached to the tab above. Unit type / Unit # / WO # / Description
-                each filter their own column (case-insensitive ILIKE). */}
+                attached to the tab above. Unit type / Unit # / Description each
+                filter their own column (case-insensitive ILIKE). WO # row-number
+                search lives in the table's gutter TableOptions menu ("WO #" tab). */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <DebouncedSearchControl
@@ -403,12 +419,6 @@ export default function WorkOrdersClient({
                   onCommit={(next) => handleTextFilterChange("unitNumber", next)}
                   placeholder="Unit #"
                   ariaLabel="Search work orders by unit number"
-                />
-                <DebouncedSearchControl
-                  value={workOrderNumberValue}
-                  onCommit={(next) => handleTextFilterChange("workOrderNumber", next)}
-                  placeholder="WO #"
-                  ariaLabel="Search work orders by work order number"
                 />
                 <DebouncedSearchControl
                   value={descriptionValue}

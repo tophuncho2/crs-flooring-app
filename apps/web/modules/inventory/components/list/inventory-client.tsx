@@ -31,6 +31,7 @@ import { AddInventoryButton } from "./toolbar-controls/add-inventory-button"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
+import { InventoryNumberFilterBody } from "./toolbar-controls/inventory-number-filter-body"
 import { InventoryClearAll } from "./toolbar-controls/sub-controls/inventory-clear-all"
 import { InventoryRowCount } from "./toolbar-controls/sub-controls/inventory-row-count"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
@@ -208,30 +209,6 @@ export default function InventoryClient({
     [sort, onSortChange, onToggleSortDirection],
   )
 
-  // Multi-column sort lives in the table's gutter TableOptions menu (the "Sort"
-  // tab); single-column sort stays a header-caret click. Column keys match the
-  // backend sort fields, so `sorts` flows straight onto the header carets.
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      tabs: [
-        {
-          key: "sort",
-          label: "Sort",
-          active: sorts.length > 0,
-          render: () => (
-            <SortMenuBody
-              options={INVENTORY_SORT_OPTIONS}
-              value={sorts}
-              maxLevels={INVENTORY_MAX_SORT_LEVELS}
-              onChange={onSortsChange}
-            />
-          ),
-        },
-      ],
-    }),
-    [sorts, onSortsChange],
-  )
-
   // --- Resolve currently-selected values from the engine's filter map ---
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
   const selectedCategoryId = filters.categoryId?.[0] ?? null
@@ -354,6 +331,43 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
+  // Table-level controls live in the table's gutter TableOptions menu: the "Sort"
+  // tab wraps the multi-column sort builder; the "Inv #" tab hosts the inventory
+  // row-number search (relocated off the toolbar). Single-column sort stays a
+  // header-caret click; column keys match the backend sort fields, so `sorts`
+  // flows straight onto the header carets.
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "sort",
+          label: "Sort",
+          active: sorts.length > 0,
+          render: () => (
+            <SortMenuBody
+              options={INVENTORY_SORT_OPTIONS}
+              value={sorts}
+              maxLevels={INVENTORY_MAX_SORT_LEVELS}
+              onChange={onSortsChange}
+            />
+          ),
+        },
+        {
+          key: "invNumber",
+          label: "Inv #",
+          active: Boolean(invNumberValue),
+          render: () => (
+            <InventoryNumberFilterBody
+              value={invNumberValue}
+              onChange={(next) => handleTextFilterChange("invNumber", next)}
+            />
+          ),
+        },
+      ],
+    }),
+    [sorts, onSortsChange, invNumberValue, handleTextFilterChange],
+  )
+
   const hasActiveFilters = useMemo(() => {
     if (
       selectedWarehouseId ||
@@ -418,7 +432,8 @@ export default function InventoryClient({
           <ListToolbar className="pt-0" showDivider={false}>
             {/* Per-field search bars + (Clear all | row count) — encased card
                 attached to the tab above. Each bar ILIKEs its own column;
-                filling more than one narrows (AND). */}
+                filling more than one narrows (AND). Inv # row-number search lives
+                in the table's gutter TableOptions menu ("Inv #" tab). */}
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <DebouncedSearchControl
@@ -426,12 +441,6 @@ export default function InventoryClient({
                   onCommit={(next) => handleTextFilterChange("rollNumber", next)}
                   placeholder="Roll #"
                   ariaLabel="Search inventory by roll number"
-                />
-                <DebouncedSearchControl
-                  value={invNumberValue}
-                  onCommit={(next) => handleTextFilterChange("invNumber", next)}
-                  placeholder="Inv #"
-                  ariaLabel="Search inventory by inventory number"
                 />
                 <DebouncedSearchControl
                   value={dyeLotValue}
