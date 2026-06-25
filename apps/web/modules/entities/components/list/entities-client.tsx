@@ -1,11 +1,19 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { Search, SlidersHorizontal } from "lucide-react"
+import {
+  ListActionBar,
+  ListCreateButtonPortal,
+  ToolbarMenuButton,
+  SearchControl,
+  StateSearchControl,
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+} from "@/engines/list-view"
 import type { EntitiesListFilters } from "@builders/application"
 import {
   LIST_ENTITIES_PAGE_SIZE,
-  normalizeAddressState,
   type EntityListRow,
   type EntityTypeOption,
 } from "@builders/domain"
@@ -15,14 +23,7 @@ import {
   listEntitiesRequest,
 } from "@/modules/entities/data/list-entities-request"
 import { useEntitiesListController } from "@/modules/entities/controllers/list/use-entities-list-controller"
-import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-navigation"
-import { useRouter } from "next/navigation"
-import { buildRecordCreateHref } from "@/hooks/navigation/routes"
 import { EntitiesTable } from "./entities-table"
-import { AddHubButton } from "./toolbar-controls/add-hub-button"
-import { EntitiesListSearch } from "./toolbar-controls/entities-list-search"
-import { EntitiesClearAll } from "./toolbar-controls/sub-controls/entities-clear-all"
-import { EntitiesRowCount } from "./toolbar-controls/sub-controls/entities-row-count"
 
 const ENTITIES_FILTERABLE_FIELDS = ["state", "entityTypeIds"] as const
 
@@ -40,11 +41,7 @@ export default function EntitiesClient({
   initialFilters,
   initialEntityTypeRefs,
 }: EntitiesClientProps) {
-  const { message, pageError } = useEntitiesListController()
-  const router = useRouter()
-  const { openRecord: openEntity, returnTo } = useRecordEntryNavigation(
-    "/dashboard/entities",
-  )
+  const { message, pageError, openCreate, openEntity } = useEntitiesListController()
 
   const {
     rows,
@@ -83,10 +80,7 @@ export default function EntitiesClient({
   )
 
   const handleStateChange = useCallback(
-    (next: string | null) => {
-      const normalized = next ? normalizeAddressState(next) : ""
-      onFilterChange("state", normalized.length === 2 ? [normalized] : [])
-    },
+    (next: string | null) => onFilterChange("state", next ? [next] : []),
     [onFilterChange],
   )
 
@@ -95,12 +89,20 @@ export default function EntitiesClient({
     [onFilterChange],
   )
 
-  const hasActiveFilters = useMemo(() => {
-    if (searchQuery.trim().length > 0) return true
-    if (selectedState) return true
-    if (selectedTypeIds.length > 0) return true
-    return false
-  }, [searchQuery, selectedState, selectedTypeIds])
+  // Each tool lights its own dot independently; `hasActiveFilters` stays the
+  // ListActionBar clear-all signal. Filter = state code + entity types; Search =
+  // free-text only (entities have no number field).
+  const hasActiveFilterTool = useMemo(
+    () => Boolean(selectedState) || selectedTypeIds.length > 0,
+    [selectedState, selectedTypeIds],
+  )
+
+  const hasActiveSearchTool = useMemo(
+    () => searchQuery.trim().length > 0,
+    [searchQuery],
+  )
+
+  const hasActiveFilters = hasActiveFilterTool || hasActiveSearchTool
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -109,9 +111,11 @@ export default function EntitiesClient({
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+      <ListCreateButtonPortal label="Entity" onClick={() => openCreate()} />
+
+      <div className="mx-4">
         {message || pageError ? (
-          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="space-y-2 pb-2">
             {message ? (
               <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
                 {message}
@@ -125,78 +129,68 @@ export default function EntitiesClient({
           </div>
         ) : null}
 
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Entities
-            </span>
-          </div>
-          <ListToolbar className="pt-0" showDivider={false}>
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <EntitiesListSearch
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
-                />
-                <StateSearchControl
-                  value={selectedState}
-                  onChange={handleStateChange}
-                  ariaLabel="Filter entities by state"
-                />
-                <ListToolbarBottomRow
-                  left={
-                    <EntitiesClearAll
-                      hasActive={hasActiveFilters}
-                      onClick={handleClearAll}
-                    />
-                  }
-                  right={<EntitiesRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
-
-            {/* Type filter — its own framed card to the right of the search
-                card (not nested inside it). The multi-select's chips + "Add
-                type" trigger live here so the picker is directly clickable. */}
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
-                <span className="text-xs font-medium text-[var(--foreground)]/60">
-                  Type
-                </span>
-                <EntityTypeMultiSelect
-                  selectedIds={selectedTypeIds}
-                  seedRefs={initialEntityTypeRefs}
-                  editable
-                  onChange={handleTypeFilterChange}
-                />
-              </div>
-            </ListToolbarCell>
-
-            <ListToolbarCell className="ml-auto">
-              <AddHubButton
-                onClick={() =>
-                  router.push(buildRecordCreateHref("/dashboard/entities", { returnTo }))
-                }
+        <ListActionBar
+          label="Entities"
+          rowCount={rows.length}
+          total={total}
+          rowCountLabel="entities"
+          hasActiveFilters={hasActiveFilters}
+          onClearAll={handleClearAll}
+        >
+          {/* Filter — the precision state-CODE bar + the entity-type picker.
+              StateSearchControl looks like search but is a 2-char attribute
+              filter, so it belongs here, not in Search. */}
+          <ToolbarMenuButton
+            label="Filter"
+            icon={SlidersHorizontal}
+            active={hasActiveFilterTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
+              <StateSearchControl
+                value={selectedState}
+                onChange={handleStateChange}
+                ariaLabel="Filter entities by state"
               />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
-      </div>
+              <EntityTypeMultiSelect
+                selectedIds={selectedTypeIds}
+                seedRefs={initialEntityTypeRefs}
+                editable
+                onChange={handleTypeFilterChange}
+              />
+            </div>
+          </ToolbarMenuButton>
 
-      <EntitiesTable
-        rows={rows}
-        onOpenEntity={(row) => openEntity(row.id)}
-        pagination={{
-          page,
-          pageSize,
-          totalItems: total,
-          totalPages,
-          hasPreviousPage,
-          hasNextPage,
-          onPreviousPage: goToPreviousPage,
-          onNextPage: goToNextPage,
-        }}
-      />
+          {/* Search — single free-text bar; entities have no number field. */}
+          <ToolbarMenuButton
+            label="Search"
+            icon={Search}
+            active={hasActiveSearchTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
+              <SearchControl
+                query={searchQuery}
+                onQueryChange={onSearchQueryChange}
+                placeholder="Search entity"
+              />
+            </div>
+          </ToolbarMenuButton>
+        </ListActionBar>
+
+        <EntitiesTable
+          rows={rows}
+          onOpenEntity={(row) => openEntity(row.id)}
+          pagination={{
+            page,
+            pageSize,
+            totalItems: total,
+            totalPages,
+            hasPreviousPage,
+            hasNextPage,
+            onPreviousPage: goToPreviousPage,
+            onNextPage: goToNextPage,
+          }}
+        />
+      </div>
     </div>
   )
 }

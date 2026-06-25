@@ -1,8 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { useRecordEntryNavigation } from "@/hooks/navigation"
 
 export function useEntitiesListController() {
+  const navigation = useRecordEntryNavigation("/dashboard/entities")
   const [message, setMessage] = useState("")
   const [pageError, setPageError] = useState("")
 
@@ -11,5 +13,7 @@ export function useEntitiesListController() {
     setMessage,
     pageError,
     setPageError,
+    openCreate: navigation.openCreate,
+    openEntity: navigation.openRecord,
   }
 }
