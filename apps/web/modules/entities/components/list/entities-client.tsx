@@ -90,16 +90,16 @@ export default function EntitiesClient({
   )
 
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
-  // ListActionBar clear-all signal. Filter = state code + entity types; Search =
-  // free-text only (entities have no number field).
+  // ListActionBar clear-all signal. Filter = entity types; Search = free-text +
+  // the state-code bar (a search-style input, so it lives in the Search menu).
   const hasActiveFilterTool = useMemo(
-    () => Boolean(selectedState) || selectedTypeIds.length > 0,
-    [selectedState, selectedTypeIds],
+    () => selectedTypeIds.length > 0,
+    [selectedTypeIds],
   )
 
   const hasActiveSearchTool = useMemo(
-    () => searchQuery.trim().length > 0,
-    [searchQuery],
+    () => searchQuery.trim().length > 0 || Boolean(selectedState),
+    [searchQuery, selectedState],
   )
 
   const hasActiveFilters = hasActiveFilterTool || hasActiveSearchTool
@@ -137,20 +137,13 @@ export default function EntitiesClient({
           hasActiveFilters={hasActiveFilters}
           onClearAll={handleClearAll}
         >
-          {/* Filter — the precision state-CODE bar + the entity-type picker.
-              StateSearchControl looks like search but is a 2-char attribute
-              filter, so it belongs here, not in Search. */}
+          {/* Filter — the entity-type picker. */}
           <ToolbarMenuButton
             label="Filter"
             icon={SlidersHorizontal}
             active={hasActiveFilterTool}
           >
             <div className="flex w-[15rem] flex-col gap-2">
-              <StateSearchControl
-                value={selectedState}
-                onChange={handleStateChange}
-                ariaLabel="Filter entities by state"
-              />
               <EntityTypeMultiSelect
                 selectedIds={selectedTypeIds}
                 seedRefs={initialEntityTypeRefs}
@@ -160,7 +153,8 @@ export default function EntitiesClient({
             </div>
           </ToolbarMenuButton>
 
-          {/* Search — single free-text bar; entities have no number field. */}
+          {/* Search — free-text bar + the state-code bar (both search-style
+              inputs; entities have no number field). */}
           <ToolbarMenuButton
             label="Search"
             icon={Search}
@@ -171,6 +165,11 @@ export default function EntitiesClient({
                 query={searchQuery}
                 onQueryChange={onSearchQueryChange}
                 placeholder="Search entity"
+              />
+              <StateSearchControl
+                value={selectedState}
+                onChange={handleStateChange}
+                ariaLabel="Filter entities by state"
               />
             </div>
           </ToolbarMenuButton>
