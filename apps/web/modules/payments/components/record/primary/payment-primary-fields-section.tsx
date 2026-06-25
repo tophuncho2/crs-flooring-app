@@ -7,6 +7,8 @@ import {
   FieldSection,
   FormField,
   MoneyCell,
+  RecordColumnBreak,
+  RecordSectionDivider,
   SegmentedChoiceCell,
   StaticFieldValue,
 } from "@/engines/record-view"
@@ -37,6 +39,12 @@ type LinkPick = { id: string | null; label: string | null }
  * the panel owns the draft + dirty/save state (single-section controller) and
  * hands this component `draft` / `editable` / `onFieldChange`. `createdAt` /
  * `updatedAt` are only supplied on the edit face (omitted on create).
+ *
+ * Layout mirrors products + imports: a centered `RecordColumnBreak` splits the
+ * fields into two flanks — left = Payment # / Amount / Direction / Date, right =
+ * Work Order / Entity / Type(s) — then a `RecordSectionDivider` terminates the
+ * section above a read-only metadata band (Created / Updated over Created by /
+ * Updated by). The create flow renders neither the divider nor the band.
  *
  * `entityName` / `workOrderLabel` seed the picker triggers from the record so the
  * current link reads back after reload; a fresh pick overrides them via local
@@ -87,120 +95,136 @@ export function PaymentPrimaryFieldsSection({
   const showEntityTypes = Boolean(draft.entityId) && draft.entityId === (linkedEntityId ?? null)
 
   return (
-    <FieldSection gap="0.75rem">
-      {paymentNumber ? (
-        <CellAt col={1} colSpan={2}>
-          <FormField label="Payment #">
-            <StaticFieldValue>{paymentNumber}</StaticFieldValue>
-          </FormField>
-        </CellAt>
-      ) : null}
-      <CellAt col={1} colSpan={1}>
-        <FormField label="Amount" required>
-          <MoneyCell
-            editable={editable}
-            value={draft.amount}
-            onChange={(next) => onFieldChange("amount", next)}
-            ariaLabel="Amount"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={2} colSpan={1}>
-        <FormField label="Direction" required>
-          <SegmentedChoiceCell
-            editable={editable}
-            value={draft.direction}
-            onChange={(next) => onFieldChange("direction", next as FlooringPaymentDirection)}
-            options={DIRECTION_OPTIONS}
-            ariaLabel="Direction"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={2}>
-        <FormField label="Date">
-          <DateCell
-            editable={editable}
-            value={draft.paymentDate}
-            onChange={(next) => onFieldChange("paymentDate", next)}
-            ariaLabel="Payment date"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={3}>
-        <FormField label="Work Order">
-          <WorkOrderPicker
-            value={draft.workOrderId}
-            selectedLabel={workOrderSelectedLabel}
-            onChange={(id) => {
-              onFieldChange("workOrderId", id)
-              if (id === null) setWorkOrderPick({ id: null, label: null })
-            }}
-            onOptionSelected={(option: WorkOrderOption | null) =>
-              setWorkOrderPick({
-                id: option?.id ?? null,
-                label: option ? formatWorkOrderOptionTitle(option) : null,
-              })
-            }
-            disabled={!editable}
-            ariaLabel="Work order"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={1} colSpan={3}>
-        <FormField label="Entity">
-          <EntityPicker
-            value={draft.entityId}
-            selectedLabel={entitySelectedLabel}
-            onChange={(id) => {
-              onFieldChange("entityId", id)
-              if (id === null) setEntityPick({ id: null, label: null })
-            }}
-            onOptionSelected={(option: EntityOption | null) =>
-              setEntityPick({ id: option?.id ?? null, label: option?.entity ?? null })
-            }
-            placeholder="Select entity"
-            disabled={!editable}
-            ariaLabel="Entity"
-          />
-        </FormField>
-      </CellAt>
-      {showEntityTypes ? (
-        <CellAt col={1} colSpan={3}>
-          <FormField label="Type(s)">
-            <EntityTypesArrayPicker
-              selectedIds={(entityTypes ?? []).map((ref) => ref.id)}
-              seedRefs={entityTypes ?? []}
-              editable={false}
-            />
-          </FormField>
-        </CellAt>
-      ) : null}
+    <div className="flex flex-col gap-4">
+      <RecordColumnBreak
+        left={
+          <FieldSection gap="0.75rem">
+            {/* Left flank: Payment # (unchanged width) / Amount / Direction / Date */}
+            {paymentNumber ? (
+              <CellAt col={1} colSpan={4}>
+                <FormField label="Payment #">
+                  <StaticFieldValue>{paymentNumber}</StaticFieldValue>
+                </FormField>
+              </CellAt>
+            ) : null}
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Amount" required>
+                <MoneyCell
+                  editable={editable}
+                  value={draft.amount}
+                  onChange={(next) => onFieldChange("amount", next)}
+                  ariaLabel="Amount"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Direction" required>
+                <SegmentedChoiceCell
+                  editable={editable}
+                  value={draft.direction}
+                  onChange={(next) => onFieldChange("direction", next as FlooringPaymentDirection)}
+                  options={DIRECTION_OPTIONS}
+                  ariaLabel="Direction"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Date">
+                <DateCell
+                  editable={editable}
+                  value={draft.paymentDate}
+                  onChange={(next) => onFieldChange("paymentDate", next)}
+                  ariaLabel="Payment date"
+                />
+              </FormField>
+            </CellAt>
+          </FieldSection>
+        }
+        right={
+          <FieldSection gap="0.75rem">
+            {/* Right flank: Work Order / Entity / Type(s), top down */}
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Work Order">
+                <WorkOrderPicker
+                  value={draft.workOrderId}
+                  selectedLabel={workOrderSelectedLabel}
+                  onChange={(id) => {
+                    onFieldChange("workOrderId", id)
+                    if (id === null) setWorkOrderPick({ id: null, label: null })
+                  }}
+                  onOptionSelected={(option: WorkOrderOption | null) =>
+                    setWorkOrderPick({
+                      id: option?.id ?? null,
+                      label: option ? formatWorkOrderOptionTitle(option) : null,
+                    })
+                  }
+                  disabled={!editable}
+                  ariaLabel="Work order"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Entity">
+                <EntityPicker
+                  value={draft.entityId}
+                  selectedLabel={entitySelectedLabel}
+                  onChange={(id) => {
+                    onFieldChange("entityId", id)
+                    if (id === null) setEntityPick({ id: null, label: null })
+                  }}
+                  onOptionSelected={(option: EntityOption | null) =>
+                    setEntityPick({ id: option?.id ?? null, label: option?.entity ?? null })
+                  }
+                  placeholder="Select entity"
+                  disabled={!editable}
+                  ariaLabel="Entity"
+                />
+              </FormField>
+            </CellAt>
+            {showEntityTypes ? (
+              <CellAt col={1} colSpan={8}>
+                <FormField label="Type(s)">
+                  <EntityTypesArrayPicker
+                    selectedIds={(entityTypes ?? []).map((ref) => ref.id)}
+                    seedRefs={entityTypes ?? []}
+                    editable={false}
+                  />
+                </FormField>
+              </CellAt>
+            ) : null}
+          </FieldSection>
+        }
+      />
       {createdAt ? (
         <>
-          <CellAt col={1} colSpan={2}>
-            <FormField label="Updated">
-              <StaticFieldValue>
-                {updatedAt ? formatEasternDateTime(updatedAt) || "—" : "—"}
-              </StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={2}>
-            <FormField label="Created">
-              <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={2}>
-            <FormField label="Updated by">
-              <StaticFieldValue>{updatedBy ?? "—"}</StaticFieldValue>
-            </FormField>
-          </CellAt>
-          <CellAt col={1} colSpan={2}>
-            <FormField label="Created by">
-              <StaticFieldValue>{createdBy ?? "—"}</StaticFieldValue>
-            </FormField>
-          </CellAt>
+          <RecordSectionDivider />
+          {/* Read-only metadata band: Created / Updated over Created by / Updated by */}
+          <FieldSection gap="0.75rem">
+            <CellAt col={1} row={1} colSpan={4}>
+              <FormField label="Created">
+                <StaticFieldValue>{formatEasternDateTime(createdAt) || "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={1} colSpan={4}>
+              <FormField label="Updated">
+                <StaticFieldValue>
+                  {updatedAt ? formatEasternDateTime(updatedAt) || "—" : "—"}
+                </StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={2} colSpan={4}>
+              <FormField label="Created by">
+                <StaticFieldValue>{createdBy ?? "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={2} colSpan={4}>
+              <FormField label="Updated by">
+                <StaticFieldValue>{updatedBy ?? "—"}</StaticFieldValue>
+              </FormField>
+            </CellAt>
+          </FieldSection>
         </>
       ) : null}
-    </FieldSection>
+    </div>
   )
 }
