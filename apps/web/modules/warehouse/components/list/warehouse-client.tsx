@@ -1,13 +1,15 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
+import { Search, SlidersHorizontal } from "lucide-react"
 import {
-  ListToolbar,
-  ListToolbarBottomRow,
-  ListToolbarCell,
+  ListActionBar,
+  ListCreateButtonPortal,
+  ToolbarMenuButton,
+  SearchControl,
+  NumberSearchTabBody,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
-  NumberSearchTabBody,
   type TableOptionsConfig,
 } from "@/engines/list-view"
 import type { ListInput, WarehousesListFilters } from "@builders/application"
@@ -21,10 +23,6 @@ import {
 } from "@/modules/warehouse/data/list-warehouse-request"
 import { useWarehouseListController } from "@/modules/warehouse/controllers/list/use-warehouse-list-controller"
 import { WarehouseTable } from "./warehouse-table"
-import { AddWarehouseButton } from "./toolbar-controls/add-warehouse-button"
-import { WarehouseListSearch } from "./toolbar-controls/warehouse-list-search"
-import { WarehouseClearAll } from "./toolbar-controls/sub-controls/warehouse-clear-all"
-import { WarehouseRowCount } from "./toolbar-controls/sub-controls/warehouse-row-count"
 
 // The engine's filter map carries `string[]` only — wrap the scalar store-number
 // search in a 1-element array, mirroring the inventory `# bar` pattern.
@@ -104,28 +102,24 @@ export default function WarehouseClient({
     [onFilterChange],
   )
 
-  // Row-number search lives in the table's gutter "Menu" (a single "Store #"
-  // tab) rather than the toolbar, mirroring the inventory list. Auto-commits on
-  // debounce, so the menu stays open; the tab lights when a value is present.
+  // The gutter "Menu" stays as the home of the CSV export/print landing this
+  // weekend; until then it shows a placeholder so the gutter chrome is ready.
   const tableOptions = useMemo<TableOptionsConfig>(
     () => ({
+      ariaLabel: "Table menu",
       tabs: [
         {
-          key: "number",
-          label: "Store #",
-          active: storeNumberValue.trim().length > 0,
+          key: "csv",
+          label: "Export",
           render: () => (
-            <NumberSearchTabBody
-              value={storeNumberValue}
-              onChange={handleStoreNumberChange}
-              placeholder="Store #"
-              ariaLabel="Search warehouses by store number"
-            />
+            <p className="px-1 py-2 text-xs text-[var(--foreground)]/55">
+              Pending CSV export
+            </p>
           ),
         },
       ],
     }),
-    [storeNumberValue, handleStoreNumberChange],
+    [],
   )
 
   const hasActiveFilters = useMemo(
@@ -140,48 +134,58 @@ export default function WarehouseClient({
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Warehouse
-            </span>
-          </div>
-          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-              the encased card's top edge (rounded-tl-none seam). */}
-          <ListToolbar className="pt-0" showDivider={false}>
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <WarehouseListSearch query={searchQuery} onQueryChange={onSearchQueryChange} />
-                <ListToolbarBottomRow
-                  left={<WarehouseClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                  right={<WarehouseRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
+      <ListCreateButtonPortal label="Warehouse" onClick={() => openCreate()} />
 
-            <ListToolbarCell className="ml-auto">
-              <AddWarehouseButton onClick={() => openCreate()} />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
+      <div className="mx-4">
+        <ListActionBar
+          label="Warehouse"
+          rowCount={rows.length}
+          total={total}
+          rowCountLabel="warehouses"
+          hasActiveFilters={hasActiveFilters}
+          onClearAll={handleClearAll}
+        >
+          <ToolbarMenuButton
+            label="Filter"
+            icon={SlidersHorizontal}
+            active={storeNumberValue.trim().length > 0}
+          >
+            <NumberSearchTabBody
+              value={storeNumberValue}
+              onChange={handleStoreNumberChange}
+              placeholder="Store #"
+              ariaLabel="Search warehouses by store number"
+            />
+          </ToolbarMenuButton>
+          <ToolbarMenuButton
+            label="Search"
+            icon={Search}
+            active={searchQuery.trim().length > 0}
+          >
+            <SearchControl
+              query={searchQuery}
+              onQueryChange={onSearchQueryChange}
+              placeholder="Search Warehouse Name"
+            />
+          </ToolbarMenuButton>
+        </ListActionBar>
+
+        <WarehouseTable
+          rows={rows}
+          onOpen={(row) => openWarehouse(row.id)}
+          tableOptions={tableOptions}
+          pagination={{
+            page,
+            pageSize,
+            totalItems: total,
+            totalPages,
+            hasPreviousPage,
+            hasNextPage,
+            onPreviousPage: goToPreviousPage,
+            onNextPage: goToNextPage,
+          }}
+        />
       </div>
-
-      <WarehouseTable
-        rows={rows}
-        onOpen={(row) => openWarehouse(row.id)}
-        tableOptions={tableOptions}
-        pagination={{
-          page,
-          pageSize,
-          totalItems: total,
-          totalPages,
-          hasPreviousPage,
-          hasNextPage,
-          onPreviousPage: goToPreviousPage,
-          onNextPage: goToNextPage,
-        }}
-      />
     </div>
   )
 }

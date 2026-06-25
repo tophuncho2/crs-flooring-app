@@ -1,13 +1,15 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
+import { Search, SlidersHorizontal } from "lucide-react"
 import {
-  ListToolbar,
-  ListToolbarBottomRow,
-  ListToolbarCell,
+  ListActionBar,
+  ListCreateButtonPortal,
+  ToolbarMenuButton,
+  SearchControl,
+  NumberSearchTabBody,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
-  NumberSearchTabBody,
   type TableOptionsConfig,
 } from "@/engines/list-view"
 import type { ListInput, EntityTypesListFilters } from "@builders/application"
@@ -21,10 +23,6 @@ import {
 } from "@/modules/entity-types/data/list-entity-types-request"
 import { useEntityTypesListController } from "@/modules/entity-types/controllers/list/use-entity-types-list-controller"
 import { EntityTypesTable } from "./entity-types-table"
-import { AddEntityTypeButton } from "./toolbar-controls/add-entity-type-button"
-import { EntityTypesListSearch } from "./toolbar-controls/entity-types-list-search"
-import { EntityTypesClearAll } from "./toolbar-controls/sub-controls/entity-types-clear-all"
-import { EntityTypesRowCount } from "./toolbar-controls/sub-controls/entity-types-row-count"
 
 // The engine's filter map carries `string[]` only — wrap the scalar ET-number
 // search in a 1-element array, mirroring the job-type / warehouse number bars.
@@ -105,28 +103,24 @@ export default function EntityTypesClient({
     [onFilterChange],
   )
 
-  // Row-number search lives in the table's gutter "Menu" (a single "ET #" tab)
-  // rather than the toolbar, mirroring the inventory list. Auto-commits on
-  // debounce, so the menu stays open; the tab lights when a value is present.
+  // The gutter "Menu" stays as the home of the CSV export/print landing this
+  // weekend; until then it shows a placeholder so the gutter chrome is ready.
   const tableOptions = useMemo<TableOptionsConfig>(
     () => ({
+      ariaLabel: "Table menu",
       tabs: [
         {
-          key: "number",
-          label: "ET #",
-          active: entityTypeNumberValue.trim().length > 0,
+          key: "csv",
+          label: "Export",
           render: () => (
-            <NumberSearchTabBody
-              value={entityTypeNumberValue}
-              onChange={handleEntityTypeNumberChange}
-              placeholder="ET #"
-              ariaLabel="Search entity types by number"
-            />
+            <p className="px-1 py-2 text-xs text-[var(--foreground)]/55">
+              Pending CSV export
+            </p>
           ),
         },
       ],
     }),
-    [entityTypeNumberValue, handleEntityTypeNumberChange],
+    [],
   )
 
   const hasActiveFilters = useMemo(
@@ -141,9 +135,11 @@ export default function EntityTypesClient({
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
+      <ListCreateButtonPortal label="Entity Type" onClick={() => openCreate()} />
+
+      <div className="mx-4">
         {message || pageError ? (
-          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
+          <div className="space-y-2 pb-2">
             {message ? (
               <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
                 {message}
@@ -157,53 +153,55 @@ export default function EntityTypesClient({
           </div>
         ) : null}
 
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Entity Types
-            </span>
-          </div>
-          <ListToolbar className="pt-0" showDivider={false}>
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <EntityTypesListSearch
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
-                />
-                <ListToolbarBottomRow
-                  left={
-                    <EntityTypesClearAll
-                      hasActive={hasActiveFilters}
-                      onClick={handleClearAll}
-                    />
-                  }
-                  right={<EntityTypesRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
+        <ListActionBar
+          label="Entity Types"
+          rowCount={rows.length}
+          total={total}
+          rowCountLabel="entity types"
+          hasActiveFilters={hasActiveFilters}
+          onClearAll={handleClearAll}
+        >
+          <ToolbarMenuButton
+            label="Filter"
+            icon={SlidersHorizontal}
+            active={entityTypeNumberValue.trim().length > 0}
+          >
+            <NumberSearchTabBody
+              value={entityTypeNumberValue}
+              onChange={handleEntityTypeNumberChange}
+              placeholder="ET #"
+              ariaLabel="Search entity types by number"
+            />
+          </ToolbarMenuButton>
+          <ToolbarMenuButton
+            label="Search"
+            icon={Search}
+            active={searchQuery.trim().length > 0}
+          >
+            <SearchControl
+              query={searchQuery}
+              onQueryChange={onSearchQueryChange}
+              placeholder="Search entity types"
+            />
+          </ToolbarMenuButton>
+        </ListActionBar>
 
-            <ListToolbarCell className="ml-auto">
-              <AddEntityTypeButton onClick={() => openCreate()} />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
+        <EntityTypesTable
+          rows={rows}
+          onOpenEntityType={(row) => openEntityType(row.id)}
+          tableOptions={tableOptions}
+          pagination={{
+            page,
+            pageSize,
+            totalItems: total,
+            totalPages,
+            hasPreviousPage,
+            hasNextPage,
+            onPreviousPage: goToPreviousPage,
+            onNextPage: goToNextPage,
+          }}
+        />
       </div>
-
-      <EntityTypesTable
-        rows={rows}
-        onOpenEntityType={(row) => openEntityType(row.id)}
-        tableOptions={tableOptions}
-        pagination={{
-          page,
-          pageSize,
-          totalItems: total,
-          totalPages,
-          hasPreviousPage,
-          hasNextPage,
-          onPreviousPage: goToPreviousPage,
-          onNextPage: goToNextPage,
-        }}
-      />
     </div>
   )
 }

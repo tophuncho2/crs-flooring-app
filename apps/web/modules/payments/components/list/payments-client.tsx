@@ -1,10 +1,11 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
+import { SlidersHorizontal } from "lucide-react"
 import {
-  ListToolbar,
-  ListToolbarBottomRow,
-  ListToolbarCell,
+  ListActionBar,
+  ListCreateButtonPortal,
+  ToolbarMenuButton,
   DebouncedSearchControl,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
@@ -17,9 +18,6 @@ import {
 } from "@/modules/payments/data/list-payments-request"
 import { usePaymentsListController } from "@/modules/payments/controllers/list/use-payments-list-controller"
 import { PaymentsTable } from "./payments-table"
-import { AddPaymentButton } from "./toolbar-controls/add-payment-button"
-import { PaymentsClearAll } from "./toolbar-controls/sub-controls/payments-clear-all"
-import { PaymentsRowCount } from "./toolbar-controls/sub-controls/payments-row-count"
 
 const PAYMENTS_FILTERABLE_FIELDS = ["paymentNumber", "amount"] as const
 
@@ -109,22 +107,28 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
     onClearAllFilters()
   }, [onClearAllFilters])
 
+  // Payments has no full-text search — its two identity bars (each matches
+  // exact on its own column) live in a single Filter menu. No gutter "Menu":
+  // the table stays bare until CSV export lands.
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <div className="px-4 pt-3">
-          <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-            Payments
-          </span>
-        </div>
-        {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-            the encased card's top edge (rounded-tl-none seam). */}
-        <ListToolbar className="pt-0" showDivider={false}>
-          {/* Per-field search bars + (Clear all | row count) — encased card
-              attached to the tab above. Each bar matches exact on its own
-              identity column. */}
-          <ListToolbarCell>
-            <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
+      <ListCreateButtonPortal label="Payment" onClick={openCreate} />
+
+      <div className="mx-4">
+        <ListActionBar
+          label="Payments"
+          rowCount={rows.length}
+          total={total}
+          rowCountLabel="payments"
+          hasActiveFilters={hasActiveFilters}
+          onClearAll={handleClearAll}
+        >
+          <ToolbarMenuButton
+            label="Filter"
+            icon={SlidersHorizontal}
+            active={hasActiveFilters}
+          >
+            <div className="flex w-[15rem] flex-col gap-2 normal-case tracking-normal">
               <DebouncedSearchControl
                 value={paymentNumberValue}
                 onCommit={(next) => handleTextFilterChange("paymentNumber", next)}
@@ -137,36 +141,25 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
                 placeholder="Amount"
                 ariaLabel="Search payments by amount"
               />
-              <ListToolbarBottomRow
-                left={<PaymentsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                right={<PaymentsRowCount count={rows.length} total={total} />}
-              />
             </div>
-          </ListToolbarCell>
+          </ToolbarMenuButton>
+        </ListActionBar>
 
-          {/* Far-right create action — opens the manual create-payment form.
-              `ml-auto` pushes it to the right edge; `self-start` keeps it
-              top-aligned in the tall toolbar. */}
-          <ListToolbarCell className="ml-auto self-start">
-            <AddPaymentButton onClick={openCreate} />
-          </ListToolbarCell>
-        </ListToolbar>
+        <PaymentsTable
+          rows={rows}
+          onOpenPayment={(row) => openPayment(row)}
+          pagination={{
+            page,
+            pageSize,
+            totalItems: total,
+            totalPages,
+            hasPreviousPage,
+            hasNextPage,
+            onPreviousPage: goToPreviousPage,
+            onNextPage: goToNextPage,
+          }}
+        />
       </div>
-
-      <PaymentsTable
-        rows={rows}
-        onOpenPayment={(row) => openPayment(row)}
-        pagination={{
-          page,
-          pageSize,
-          totalItems: total,
-          totalPages,
-          hasPreviousPage,
-          hasNextPage,
-          onPreviousPage: goToPreviousPage,
-          onNextPage: goToNextPage,
-        }}
-      />
     </div>
   )
 }
