@@ -8,6 +8,7 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
   DebouncedSearchControl,
+  type TableOptionsConfig,
 } from "@/engines/list-view"
 import type { ListInput, EntityTypesListFilters } from "@builders/application"
 import {
@@ -104,6 +105,30 @@ export default function EntityTypesClient({
     [onFilterChange],
   )
 
+  // Row-number search lives in the table's gutter "Menu" (a single "ET #" tab)
+  // rather than the toolbar, mirroring the inventory list. Auto-commits on
+  // debounce, so the menu stays open; the tab lights when a value is present.
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "number",
+          label: "ET #",
+          active: entityTypeNumberValue.trim().length > 0,
+          render: () => (
+            <DebouncedSearchControl
+              value={entityTypeNumberValue}
+              onCommit={handleEntityTypeNumberChange}
+              placeholder="ET #"
+              ariaLabel="Search entity types by number"
+            />
+          ),
+        },
+      ],
+    }),
+    [entityTypeNumberValue, handleEntityTypeNumberChange],
+  )
+
   const hasActiveFilters = useMemo(
     () => searchQuery.trim().length > 0 || entityTypeNumberValue.trim().length > 0,
     [searchQuery, entityTypeNumberValue],
@@ -145,12 +170,6 @@ export default function EntityTypesClient({
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
                 />
-                <DebouncedSearchControl
-                  value={entityTypeNumberValue}
-                  onCommit={handleEntityTypeNumberChange}
-                  placeholder="ET #"
-                  ariaLabel="Search entity types by number"
-                />
                 <ListToolbarBottomRow
                   left={
                     <EntityTypesClearAll
@@ -173,6 +192,7 @@ export default function EntityTypesClient({
       <EntityTypesTable
         rows={rows}
         onOpenEntityType={(row) => openEntityType(row.id)}
+        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,

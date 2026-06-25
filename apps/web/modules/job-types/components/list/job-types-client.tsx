@@ -8,6 +8,7 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
   DebouncedSearchControl,
+  type TableOptionsConfig,
 } from "@/engines/list-view"
 import type { ListInput, JobTypesListFilters } from "@builders/application"
 import {
@@ -104,6 +105,30 @@ export default function JobTypesClient({
     [onFilterChange],
   )
 
+  // Row-number search lives in the table's gutter "Menu" (a single "JT #" tab)
+  // rather than the toolbar, mirroring the inventory list. Auto-commits on
+  // debounce, so the menu stays open; the tab lights when a value is present.
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "number",
+          label: "JT #",
+          active: jobTypeNumberValue.trim().length > 0,
+          render: () => (
+            <DebouncedSearchControl
+              value={jobTypeNumberValue}
+              onCommit={handleJobTypeNumberChange}
+              placeholder="JT #"
+              ariaLabel="Search job types by number"
+            />
+          ),
+        },
+      ],
+    }),
+    [jobTypeNumberValue, handleJobTypeNumberChange],
+  )
+
   const hasActiveFilters = useMemo(
     () => searchQuery.trim().length > 0 || jobTypeNumberValue.trim().length > 0,
     [searchQuery, jobTypeNumberValue],
@@ -145,12 +170,6 @@ export default function JobTypesClient({
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
                 />
-                <DebouncedSearchControl
-                  value={jobTypeNumberValue}
-                  onCommit={handleJobTypeNumberChange}
-                  placeholder="JT #"
-                  ariaLabel="Search job types by number"
-                />
                 <ListToolbarBottomRow
                   left={
                     <JobTypesClearAll
@@ -173,6 +192,7 @@ export default function JobTypesClient({
       <JobTypesTable
         rows={rows}
         onOpenJobType={(row) => openJobType(row.id)}
+        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,

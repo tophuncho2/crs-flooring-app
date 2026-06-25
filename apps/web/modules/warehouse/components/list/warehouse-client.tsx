@@ -8,6 +8,7 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
   DebouncedSearchControl,
+  type TableOptionsConfig,
 } from "@/engines/list-view"
 import type { ListInput, WarehousesListFilters } from "@builders/application"
 import {
@@ -103,6 +104,30 @@ export default function WarehouseClient({
     [onFilterChange],
   )
 
+  // Row-number search lives in the table's gutter "Menu" (a single "Store #"
+  // tab) rather than the toolbar, mirroring the inventory list. Auto-commits on
+  // debounce, so the menu stays open; the tab lights when a value is present.
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "number",
+          label: "Store #",
+          active: storeNumberValue.trim().length > 0,
+          render: () => (
+            <DebouncedSearchControl
+              value={storeNumberValue}
+              onCommit={handleStoreNumberChange}
+              placeholder="Store #"
+              ariaLabel="Search warehouses by store number"
+            />
+          ),
+        },
+      ],
+    }),
+    [storeNumberValue, handleStoreNumberChange],
+  )
+
   const hasActiveFilters = useMemo(
     () => searchQuery.trim().length > 0 || storeNumberValue.trim().length > 0,
     [searchQuery, storeNumberValue],
@@ -128,12 +153,6 @@ export default function WarehouseClient({
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
                 <WarehouseListSearch query={searchQuery} onQueryChange={onSearchQueryChange} />
-                <DebouncedSearchControl
-                  value={storeNumberValue}
-                  onCommit={handleStoreNumberChange}
-                  placeholder="Store #"
-                  ariaLabel="Search warehouses by store number"
-                />
                 <ListToolbarBottomRow
                   left={<WarehouseClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
                   right={<WarehouseRowCount count={rows.length} total={total} />}
@@ -151,6 +170,7 @@ export default function WarehouseClient({
       <WarehouseTable
         rows={rows}
         onOpen={(row) => openWarehouse(row.id)}
+        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,
