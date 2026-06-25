@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListRowCount, ListToolbar, ListToolbarBottomRow, ListToolbarCell, DebouncedSearchControl, NumberSearchTabBody, ClearAllFiltersButton, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { Search, SlidersHorizontal } from "lucide-react"
+import { DebouncedSearchControl, NumberSearchTabBody, ListActionBar, ToolbarMenuButton, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -211,26 +212,31 @@ export default function AdjustmentsClient({
     [onFilterChange],
   )
 
-  const hasActiveFilters = useMemo(
+  // Each tool lights its own dot independently; `hasActiveFilters` stays the
+  // ListActionBar clear-all signal. Filter = the warehouse/category/product
+  // pickers; Search = the inv#/roll#/dye-lot/note free-text bars. Adj # lives in
+  // the DataTable gutter, so it is excluded from the Search dot but kept in
+  // `hasActiveFilters` so Clear-all still resets it.
+  const hasActiveFilterTool = useMemo(
     () =>
       Boolean(selectedWarehouseId) ||
       Boolean(selectedCategoryId) ||
-      Boolean(selectedProductId) ||
-      Boolean(adjNumberValue) ||
+      Boolean(selectedProductId),
+    [selectedWarehouseId, selectedCategoryId, selectedProductId],
+  )
+
+  const hasActiveSearchTool = useMemo(
+    () =>
       Boolean(invNumberValue) ||
       Boolean(rollNumberValue) ||
       Boolean(dyeLotValue) ||
       Boolean(noteValue),
-    [
-      selectedWarehouseId,
-      selectedCategoryId,
-      selectedProductId,
-      adjNumberValue,
-      invNumberValue,
-      rollNumberValue,
-      dyeLotValue,
-      noteValue,
-    ],
+    [invNumberValue, rollNumberValue, dyeLotValue, noteValue],
+  )
+
+  const hasActiveFilters = useMemo(
+    () => hasActiveFilterTool || hasActiveSearchTool || Boolean(adjNumberValue),
+    [hasActiveFilterTool, hasActiveSearchTool, adjNumberValue],
   )
 
   const handleClearAll = useCallback(() => {
@@ -263,119 +269,123 @@ export default function AdjustmentsClient({
 
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Adjustments
-            </span>
-          </div>
-          <ListToolbar className="pt-0" showDivider={false}>
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <DebouncedSearchControl
-                  value={rollNumberValue}
-                  onCommit={(next) => handleTextFilterChange("rollNumber", next)}
-                  placeholder="Roll #"
-                  ariaLabel="Search adjustments by roll number"
-                />
-                <DebouncedSearchControl
-                  value={invNumberValue}
-                  onCommit={(next) => handleTextFilterChange("invNumber", next)}
-                  placeholder="Inv #"
-                  ariaLabel="Search adjustments by inventory number"
-                />
-                <DebouncedSearchControl
-                  value={dyeLotValue}
-                  onCommit={(next) => handleTextFilterChange("dyeLot", next)}
-                  placeholder="Dye lot"
-                  ariaLabel="Search adjustments by dye lot"
-                />
-                <DebouncedSearchControl
-                  value={noteValue}
-                  onCommit={(next) => handleTextFilterChange("note", next)}
-                  placeholder="Note"
-                  ariaLabel="Search adjustments by note"
-                />
-                <ListToolbarBottomRow
-                  left={
-                    <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={handleClearAll} />
-                  }
-                  right={<ListRowCount count={rows.length} total={total} label="adjustments" />}
-                />
-              </div>
-            </ListToolbarCell>
+      <div className="mx-4">
+        <ListActionBar
+          label="Adjustments"
+          rowCount={rows.length}
+          total={total}
+          rowCountLabel="adjustments"
+          hasActiveFilters={hasActiveFilters}
+          onClearAll={handleClearAll}
+        >
+          {/* Filter — the warehouse/category/product pickers composed directly
+              (NOT a self-triggering FilterControl). Product is category-scoped:
+              changing category cascade-clears it via handleCategoryChange. */}
+          <ToolbarMenuButton
+            label="Filter"
+            icon={SlidersHorizontal}
+            active={hasActiveFilterTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
+              <WarehousePicker
+                value={selectedWarehouseId}
+                selectedLabel={warehouseLabel}
+                onChange={handleWarehouseChange}
+                initialOptions={initialWarehouseOptions}
+                placeholder="Warehouse"
+                searchPlaceholder="Search warehouses"
+                emptyMessage="No warehouses match"
+                clearLabel="Clear filter"
+                ariaLabel="Filter adjustments by warehouse"
+              />
+              <CategoryPicker
+                value={selectedCategoryId}
+                selectedLabel={categoryLabel}
+                onChange={handleCategoryChange}
+                initialOptions={initialCategoryOptions}
+                placeholder="Category"
+                searchPlaceholder="Search categories"
+                emptyMessage="No categories match"
+                clearLabel="Clear filter"
+                ariaLabel="Filter adjustments by category"
+              />
+              <ProductPicker
+                value={selectedProductId}
+                selectedLabel={productLabel}
+                onChange={handleProductChange}
+                categoryId={selectedCategoryId}
+                placeholder="Product"
+                searchPlaceholder="Search products"
+                emptyMessage="No products match"
+                clearLabel="Clear filter"
+                ariaLabel="Filter adjustments by product"
+              />
+            </div>
+          </ToolbarMenuButton>
 
-            {/* One encased card: Warehouse, Category, Product stacked together.
-                Product is category-scoped (category change cascades the product
-                clear via handleCategoryChange). */}
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
-                <WarehousePicker
-                  value={selectedWarehouseId}
-                  selectedLabel={warehouseLabel}
-                  onChange={handleWarehouseChange}
-                  initialOptions={initialWarehouseOptions}
-                  placeholder="Warehouse"
-                  searchPlaceholder="Search warehouses"
-                  emptyMessage="No warehouses match"
-                  clearLabel="Clear filter"
-                  ariaLabel="Filter adjustments by warehouse"
-                />
-                <CategoryPicker
-                  value={selectedCategoryId}
-                  selectedLabel={categoryLabel}
-                  onChange={handleCategoryChange}
-                  initialOptions={initialCategoryOptions}
-                  placeholder="Category"
-                  searchPlaceholder="Search categories"
-                  emptyMessage="No categories match"
-                  clearLabel="Clear filter"
-                  ariaLabel="Filter adjustments by category"
-                />
-                <ProductPicker
-                  value={selectedProductId}
-                  selectedLabel={productLabel}
-                  onChange={handleProductChange}
-                  categoryId={selectedCategoryId}
-                  placeholder="Product"
-                  searchPlaceholder="Search products"
-                  emptyMessage="No products match"
-                  clearLabel="Clear filter"
-                  ariaLabel="Filter adjustments by product"
-                />
-              </div>
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
+          {/* Search — the four identity free-text bars. Adj # stays in the
+              DataTable gutter (tableOptions), not here. */}
+          <ToolbarMenuButton
+            label="Search"
+            icon={Search}
+            active={hasActiveSearchTool}
+          >
+            <div className="flex w-[15rem] flex-col gap-2">
+              <DebouncedSearchControl
+                value={rollNumberValue}
+                onCommit={(next) => handleTextFilterChange("rollNumber", next)}
+                placeholder="Roll #"
+                ariaLabel="Search adjustments by roll number"
+              />
+              <DebouncedSearchControl
+                value={invNumberValue}
+                onCommit={(next) => handleTextFilterChange("invNumber", next)}
+                placeholder="Inv #"
+                ariaLabel="Search adjustments by inventory number"
+              />
+              <DebouncedSearchControl
+                value={dyeLotValue}
+                onCommit={(next) => handleTextFilterChange("dyeLot", next)}
+                placeholder="Dye lot"
+                ariaLabel="Search adjustments by dye lot"
+              />
+              <DebouncedSearchControl
+                value={noteValue}
+                onCommit={(next) => handleTextFilterChange("note", next)}
+                placeholder="Note"
+                ariaLabel="Search adjustments by note"
+              />
+            </div>
+          </ToolbarMenuButton>
+        </ListActionBar>
+
+        <AdjustmentsTable
+          rows={rows}
+          tableOptions={tableOptions}
+          onOpenAdjustment={(row) =>
+            router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
+          }
+          onSplitOff={(row) =>
+            router.push(
+              buildInventorySplitOffHref({
+                sourceInventoryId: row.inventoryId,
+                quantity: row.quantity,
+                returnTo,
+              }),
+            )
+          }
+          pagination={{
+            page,
+            pageSize,
+            totalItems: total,
+            totalPages,
+            hasPreviousPage,
+            hasNextPage,
+            onPreviousPage: goToPreviousPage,
+            onNextPage: goToNextPage,
+          }}
+        />
       </div>
-
-      <AdjustmentsTable
-        rows={rows}
-        tableOptions={tableOptions}
-        onOpenAdjustment={(row) =>
-          router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
-        }
-        onSplitOff={(row) =>
-          router.push(
-            buildInventorySplitOffHref({
-              sourceInventoryId: row.inventoryId,
-              quantity: row.quantity,
-              returnTo,
-            }),
-          )
-        }
-        pagination={{
-          page,
-          pageSize,
-          totalItems: total,
-          totalPages,
-          hasPreviousPage,
-          hasNextPage,
-          onPreviousPage: goToPreviousPage,
-          onNextPage: goToNextPage,
-        }}
-      />
     </div>
   )
 }
