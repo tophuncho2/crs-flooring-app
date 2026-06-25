@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListRowCount, ListToolbar, ListToolbarBottomRow, ListToolbarCell, DebouncedSearchControl, ClearAllFiltersButton, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { ListRowCount, ListToolbar, ListToolbarBottomRow, ListToolbarCell, DebouncedSearchControl, ClearAllFiltersButton, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -237,6 +237,30 @@ export default function AdjustmentsClient({
     onClearAllFilters()
   }, [onClearAllFilters])
 
+  // Exact record-number search (Adj #) lives in the table's gutter
+  // TableOptions menu, not the toolbar — mirrors inventory's "Sort" tab. Inv#
+  // stays in the toolbar (it is a reference field, not the record's number).
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "number",
+          label: "Adj #",
+          active: adjNumberValue.trim().length > 0,
+          render: () => (
+            <DebouncedSearchControl
+              value={adjNumberValue}
+              onCommit={(next) => handleTextFilterChange("adjNumber", next)}
+              placeholder="Adj #"
+              ariaLabel="Search adjustments by adjustment number"
+            />
+          ),
+        },
+      ],
+    }),
+    [adjNumberValue, handleTextFilterChange],
+  )
+
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -249,12 +273,6 @@ export default function AdjustmentsClient({
           <ListToolbar className="pt-0" showDivider={false}>
             <ListToolbarCell>
               <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <DebouncedSearchControl
-                  value={adjNumberValue}
-                  onCommit={(next) => handleTextFilterChange("adjNumber", next)}
-                  placeholder="Adj #"
-                  ariaLabel="Search adjustments by adjustment number"
-                />
                 <DebouncedSearchControl
                   value={rollNumberValue}
                   onCommit={(next) => handleTextFilterChange("rollNumber", next)}
@@ -334,6 +352,7 @@ export default function AdjustmentsClient({
 
       <AdjustmentsTable
         rows={rows}
+        tableOptions={tableOptions}
         onOpenAdjustment={(row) =>
           router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
         }

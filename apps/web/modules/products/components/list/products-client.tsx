@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ListInput, ProductsListFilters } from "@builders/application"
 import {
   LIST_PRODUCTS_PAGE_SIZE,
@@ -208,6 +208,29 @@ export default function ProductsClient({
     onSearchQueryChange("")
   }, [onClearAllFilters, onSearchQueryChange])
 
+  // Exact record-number search (PROD #) lives in the table's gutter
+  // TableOptions menu, not the toolbar — mirrors inventory's "Sort" tab.
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "number",
+          label: "PROD #",
+          active: prodNumberValue.trim().length > 0,
+          render: () => (
+            <DebouncedSearchControl
+              value={prodNumberValue}
+              onCommit={handleProdNumberChange}
+              placeholder="PROD #"
+              ariaLabel="Search products by product number"
+            />
+          ),
+        },
+      ],
+    }),
+    [prodNumberValue, handleProdNumberChange],
+  )
+
   return (
     <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
       <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
@@ -241,12 +264,6 @@ export default function ProductsClient({
                 <ProductsListSearch
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
-                />
-                <DebouncedSearchControl
-                  value={prodNumberValue}
-                  onCommit={handleProdNumberChange}
-                  placeholder="PROD #"
-                  ariaLabel="Search products by product number"
                 />
                 <DebouncedSearchControl
                   value={colorValue}
@@ -293,6 +310,7 @@ export default function ProductsClient({
       <ProductsTable
         rows={rows}
         onOpenProduct={openProduct}
+        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,
