@@ -1,4 +1,5 @@
 export * from "./contracts/search-contract"
 export * from "./search-control"
 export * from "./debounced-search-control"
+export * from "./number-search-tab-body"
 export * from "./state-search-control"

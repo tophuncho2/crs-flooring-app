@@ -7,7 +7,7 @@ import {
   ListToolbarCell,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
-  DebouncedSearchControl,
+  NumberSearchTabBody,
   type TableOptionsConfig,
 } from "@/engines/list-view"
 import type { ListInput, EntityTypesListFilters } from "@builders/application"
@@ -116,9 +116,9 @@ export default function EntityTypesClient({
           label: "ET #",
           active: entityTypeNumberValue.trim().length > 0,
           render: () => (
-            <DebouncedSearchControl
+            <NumberSearchTabBody
               value={entityTypeNumberValue}
-              onCommit={handleEntityTypeNumberChange}
+              onChange={handleEntityTypeNumberChange}
               placeholder="ET #"
               ariaLabel="Search entity types by number"
             />

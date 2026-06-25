@@ -7,7 +7,7 @@ import {
   ListToolbarCell,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
-  DebouncedSearchControl,
+  NumberSearchTabBody,
   type TableOptionsConfig,
 } from "@/engines/list-view"
 import type { ListInput, JobTypesListFilters } from "@builders/application"
@@ -116,9 +116,9 @@ export default function JobTypesClient({
           label: "JT #",
           active: jobTypeNumberValue.trim().length > 0,
           render: () => (
-            <DebouncedSearchControl
+            <NumberSearchTabBody
               value={jobTypeNumberValue}
-              onCommit={handleJobTypeNumberChange}
+              onChange={handleJobTypeNumberChange}
               placeholder="JT #"
               ariaLabel="Search job types by number"
             />

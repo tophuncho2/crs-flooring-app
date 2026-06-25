@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { DebouncedSearchControl, NumberSearchTabBody, ListToolbar, ListToolbarBottomRow, ListToolbarCell, SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { WorkOrdersListFilters } from "@builders/application"
 import type {
   JobTypeOption,
@@ -24,7 +24,6 @@ import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { ScheduledForFilterBody } from "./toolbar-controls/scheduled-for-filter-body"
-import { WorkOrderNumberFilterBody } from "./toolbar-controls/work-order-number-filter-body"
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
@@ -299,13 +298,15 @@ export default function WorkOrdersClient({
           ),
         },
         {
-          key: "workOrderNumber",
+          key: "number",
           label: "WO #",
-          active: Boolean(workOrderNumberValue),
+          active: workOrderNumberValue.trim().length > 0,
           render: () => (
-            <WorkOrderNumberFilterBody
+            <NumberSearchTabBody
               value={workOrderNumberValue}
               onChange={(next) => handleTextFilterChange("workOrderNumber", next)}
+              placeholder="WO #"
+              ariaLabel="Search work orders by work order number"
             />
           ),
         },

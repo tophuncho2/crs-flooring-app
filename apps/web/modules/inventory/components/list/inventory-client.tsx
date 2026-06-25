@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListToolbarTallCard, SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, type TableOptionsConfig } from "@/engines/list-view"
+import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, ListToolbarTallCard, SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, NumberSearchTabBody, type TableOptionsConfig } from "@/engines/list-view"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
@@ -31,7 +31,6 @@ import { AddInventoryButton } from "./toolbar-controls/add-inventory-button"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
 import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
 import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
-import { InventoryNumberFilterBody } from "./toolbar-controls/inventory-number-filter-body"
 import { InventoryClearAll } from "./toolbar-controls/sub-controls/inventory-clear-all"
 import { InventoryRowCount } from "./toolbar-controls/sub-controls/inventory-row-count"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
@@ -353,13 +352,15 @@ export default function InventoryClient({
           ),
         },
         {
-          key: "invNumber",
+          key: "number",
           label: "Inv #",
-          active: Boolean(invNumberValue),
+          active: invNumberValue.trim().length > 0,
           render: () => (
-            <InventoryNumberFilterBody
+            <NumberSearchTabBody
               value={invNumberValue}
               onChange={(next) => handleTextFilterChange("invNumber", next)}
+              placeholder="Inv #"
+              ariaLabel="Search inventory by inventory number"
             />
           ),
         },

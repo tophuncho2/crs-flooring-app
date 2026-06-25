@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { NumberSearchTabBody, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ImportsListFilters, ListInput } from "@builders/application"
 import {
   LIST_IMPORTS_PAGE_SIZE,
@@ -115,13 +115,13 @@ export default function ImportsClient({
     () => ({
       tabs: [
         {
-          key: "impNumber",
+          key: "number",
           label: "IMP #",
-          active: impNumberValue.length > 0,
+          active: impNumberValue.trim().length > 0,
           render: () => (
-            <DebouncedSearchControl
+            <NumberSearchTabBody
               value={impNumberValue}
-              onCommit={handleImpNumberChange}
+              onChange={handleImpNumberChange}
               placeholder="IMP #"
               ariaLabel="Search imports by import number"
             />

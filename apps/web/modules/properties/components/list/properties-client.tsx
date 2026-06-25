@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { NumberSearchTabBody, ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ListInput, PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
@@ -129,13 +129,13 @@ export default function PropertiesClient({
     () => ({
       tabs: [
         {
-          key: "propNumber",
+          key: "number",
           label: "PROP #",
-          active: propNumberValue.length > 0,
+          active: propNumberValue.trim().length > 0,
           render: () => (
-            <DebouncedSearchControl
+            <NumberSearchTabBody
               value={propNumberValue}
-              onCommit={handlePropNumberChange}
+              onChange={handlePropNumberChange}
               placeholder="PROP #"
               ariaLabel="Search properties by property number"
             />

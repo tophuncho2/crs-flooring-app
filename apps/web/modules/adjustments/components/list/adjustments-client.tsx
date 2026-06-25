@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListRowCount, ListToolbar, ListToolbarBottomRow, ListToolbarCell, DebouncedSearchControl, ClearAllFiltersButton, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { ListRowCount, ListToolbar, ListToolbarBottomRow, ListToolbarCell, DebouncedSearchControl, NumberSearchTabBody, ClearAllFiltersButton, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -248,9 +248,9 @@ export default function AdjustmentsClient({
           label: "Adj #",
           active: adjNumberValue.trim().length > 0,
           render: () => (
-            <DebouncedSearchControl
+            <NumberSearchTabBody
               value={adjNumberValue}
-              onCommit={(next) => handleTextFilterChange("adjNumber", next)}
+              onChange={(next) => handleTextFilterChange("adjNumber", next)}
               placeholder="Adj #"
               ariaLabel="Search adjustments by adjustment number"
             />

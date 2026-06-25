@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { DebouncedSearchControl, NumberSearchTabBody, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ListInput, ProductsListFilters } from "@builders/application"
 import {
   LIST_PRODUCTS_PAGE_SIZE,
@@ -218,9 +218,9 @@ export default function ProductsClient({
           label: "PROD #",
           active: prodNumberValue.trim().length > 0,
           render: () => (
-            <DebouncedSearchControl
+            <NumberSearchTabBody
               value={prodNumberValue}
-              onCommit={handleProdNumberChange}
+              onChange={handleProdNumberChange}
               placeholder="PROD #"
               ariaLabel="Search products by product number"
             />

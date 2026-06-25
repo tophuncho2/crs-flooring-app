@@ -7,7 +7,7 @@ import {
   ListToolbarCell,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
-  DebouncedSearchControl,
+  NumberSearchTabBody,
   type TableOptionsConfig,
 } from "@/engines/list-view"
 import type { ListInput, WarehousesListFilters } from "@builders/application"
@@ -115,9 +115,9 @@ export default function WarehouseClient({
           label: "Store #",
           active: storeNumberValue.trim().length > 0,
           render: () => (
-            <DebouncedSearchControl
+            <NumberSearchTabBody
               value={storeNumberValue}
-              onCommit={handleStoreNumberChange}
+              onChange={handleStoreNumberChange}
               placeholder="Store #"
               ariaLabel="Search warehouses by store number"
             />
