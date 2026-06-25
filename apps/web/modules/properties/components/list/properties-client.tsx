@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ListInput, PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
@@ -122,6 +122,30 @@ export default function PropertiesClient({
     [onFilterChange],
   )
 
+  // Row-number exact search lives in the table's gutter TableOptions menu (a
+  // single "PROP #" tab) rather than the toolbar, matching inventory's menu.
+  // The bar auto-commits on debounce, so the tab needs no Apply / close().
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "propNumber",
+          label: "PROP #",
+          active: propNumberValue.length > 0,
+          render: () => (
+            <DebouncedSearchControl
+              value={propNumberValue}
+              onCommit={handlePropNumberChange}
+              placeholder="PROP #"
+              ariaLabel="Search properties by property number"
+            />
+          ),
+        },
+      ],
+    }),
+    [propNumberValue, handlePropNumberChange],
+  )
+
   const selectedEntityId = filters.entityId?.[0] ?? null
 
   const selectedEntityLabel = useMemo(() => {
@@ -201,12 +225,6 @@ export default function PropertiesClient({
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
                 />
-                <DebouncedSearchControl
-                  value={propNumberValue}
-                  onCommit={handlePropNumberChange}
-                  placeholder="PROP #"
-                  ariaLabel="Search properties by property number"
-                />
                 <StateSearchControl
                   value={selectedState}
                   onChange={handleStateChange}
@@ -244,6 +262,7 @@ export default function PropertiesClient({
         onOpenProperty={(row) =>
           router.push(buildPropertyRecordHref(row.id, row.entity?.id ?? null, returnTo))
         }
+        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,

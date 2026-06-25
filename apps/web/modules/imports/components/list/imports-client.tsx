@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { DebouncedSearchControl, ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ImportsListFilters, ListInput } from "@builders/application"
 import {
   LIST_IMPORTS_PAGE_SIZE,
@@ -108,6 +108,30 @@ export default function ImportsClient({
     [onFilterChange],
   )
 
+  // Row-number exact search lives in the table's gutter TableOptions menu (a
+  // single "IMP #" tab) rather than the toolbar, matching inventory's menu.
+  // The bar auto-commits on debounce, so the tab needs no Apply / close().
+  const tableOptions = useMemo<TableOptionsConfig>(
+    () => ({
+      tabs: [
+        {
+          key: "impNumber",
+          label: "IMP #",
+          active: impNumberValue.length > 0,
+          render: () => (
+            <DebouncedSearchControl
+              value={impNumberValue}
+              onCommit={handleImpNumberChange}
+              placeholder="IMP #"
+              ariaLabel="Search imports by import number"
+            />
+          ),
+        },
+      ],
+    }),
+    [impNumberValue, handleImpNumberChange],
+  )
+
   const selectedWarehouseId = useMemo(() => {
     const ids = filters.warehouseId
     return ids && ids.length > 0 ? ids[0] : null
@@ -179,12 +203,6 @@ export default function ImportsClient({
                   query={searchQuery}
                   onQueryChange={onSearchQueryChange}
                 />
-                <DebouncedSearchControl
-                  value={impNumberValue}
-                  onCommit={handleImpNumberChange}
-                  placeholder="IMP #"
-                  ariaLabel="Search imports by import number"
-                />
                 <ListToolbarBottomRow
                   left={<ImportsClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
                   right={<ImportsRowCount count={rows.length} total={total} />}
@@ -211,6 +229,7 @@ export default function ImportsClient({
       <ImportsTable
         rows={rows}
         onOpenImport={openImport}
+        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,
