@@ -25,8 +25,8 @@ const PRESET_CLASS_NAME =
  * on/before; same date in both ⇒ that single day. Bounds are emitted as
  * `YYYY-MM-DD`, compared UTC-pinned to match the date-only column.
  *
- * Pure body — no trigger/popover chrome of its own. Hosted in the table's gutter
- * TableOptions menu as the `Date` tab (the popover chrome + anchoring come from
+ * Pure body — no trigger/popover chrome of its own. Hosted in the toolbar's
+ * Filter menu as the `Date` control (the popover chrome + anchoring come from
  * the engine's `AnchoredPanel`). `normal-case`/`tracking-normal` reset the
  * surrounding uppercase styling for the inputs.
  */

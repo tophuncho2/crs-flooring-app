@@ -1,6 +1,11 @@
 "use client"
 
-import { useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import {
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+  ListPageShell,
+  ListHeaderPortal,
+} from "@/engines/list-view"
 import { LIST_USERS_PAGE_SIZE, type UserListRow } from "@builders/domain"
 import {
   USERS_LIST_QUERY_KEY,
@@ -36,27 +41,26 @@ export default function UsersClient({ initialPage }: UsersClientProps) {
   })
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4">
-        <div className="pb-2">
-          <span className="inline-block rounded-md border border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-            Users
-          </span>
-        </div>
-        <UsersTable
-          rows={rows}
-          pagination={{
-            page,
-            pageSize,
-            totalItems: total,
-            totalPages,
-            hasPreviousPage,
-            hasNextPage,
-            onPreviousPage: goToPreviousPage,
-            onNextPage: goToNextPage,
-          }}
-        />
-      </div>
-    </div>
+    <ListPageShell>
+      <ListHeaderPortal
+        label="Users"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="users"
+      />
+      <UsersTable
+        rows={rows}
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
+      />
+    </ListPageShell>
   )
 }

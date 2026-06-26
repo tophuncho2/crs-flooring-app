@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { Search, SlidersHorizontal } from "lucide-react"
-import { DebouncedSearchControl, NumberSearchTabBody, ListActionBar, ListPageShell, ToolbarMenuButton, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { DebouncedSearchControl, ListActionBar, ListPageShell, ToolbarMenuButton, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -214,9 +214,7 @@ export default function AdjustmentsClient({
 
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
   // ListActionBar clear-all signal. Filter = the warehouse/category/product
-  // pickers; Search = the inv#/roll#/dye-lot/note free-text bars. Adj # lives in
-  // the DataTable gutter, so it is excluded from the Search dot but kept in
-  // `hasActiveFilters` so Clear-all still resets it.
+  // pickers; Search = the adj#/inv#/roll#/dye-lot/note identity bars.
   const hasActiveFilterTool = useMemo(
     () =>
       Boolean(selectedWarehouseId) ||
@@ -227,45 +225,22 @@ export default function AdjustmentsClient({
 
   const hasActiveSearchTool = useMemo(
     () =>
+      Boolean(adjNumberValue) ||
       Boolean(invNumberValue) ||
       Boolean(rollNumberValue) ||
       Boolean(dyeLotValue) ||
       Boolean(noteValue),
-    [invNumberValue, rollNumberValue, dyeLotValue, noteValue],
+    [adjNumberValue, invNumberValue, rollNumberValue, dyeLotValue, noteValue],
   )
 
   const hasActiveFilters = useMemo(
-    () => hasActiveFilterTool || hasActiveSearchTool || Boolean(adjNumberValue),
-    [hasActiveFilterTool, hasActiveSearchTool, adjNumberValue],
+    () => hasActiveFilterTool || hasActiveSearchTool,
+    [hasActiveFilterTool, hasActiveSearchTool],
   )
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
   }, [onClearAllFilters])
-
-  // Exact record-number search (Adj #) lives in the table's gutter
-  // TableOptions menu, not the toolbar — mirrors inventory's "Sort" tab. Inv#
-  // stays in the toolbar (it is a reference field, not the record's number).
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      tabs: [
-        {
-          key: "number",
-          label: "Adj #",
-          active: adjNumberValue.trim().length > 0,
-          render: () => (
-            <NumberSearchTabBody
-              value={adjNumberValue}
-              onChange={(next) => handleTextFilterChange("adjNumber", next)}
-              placeholder="Adj #"
-              ariaLabel="Search adjustments by adjustment number"
-            />
-          ),
-        },
-      ],
-    }),
-    [adjNumberValue, handleTextFilterChange],
-  )
 
   return (
     <ListPageShell>
@@ -320,13 +295,19 @@ export default function AdjustmentsClient({
           />
         </ToolbarMenuButton>
 
-        {/* Search — the four identity free-text bars. Adj # stays in the
-            DataTable gutter (tableOptions), not here. */}
+        {/* Search — the five identity bars. Adj # is the exact record-number
+            match; the rest ILIKE their own column. */}
         <ToolbarMenuButton
           label="Search"
           icon={Search}
           active={hasActiveSearchTool}
         >
+          <DebouncedSearchControl
+            value={adjNumberValue}
+            onCommit={(next) => handleTextFilterChange("adjNumber", next)}
+            placeholder="Adj #"
+            ariaLabel="Search adjustments by adjustment number"
+          />
           <DebouncedSearchControl
             value={rollNumberValue}
             onCommit={(next) => handleTextFilterChange("rollNumber", next)}
@@ -356,7 +337,6 @@ export default function AdjustmentsClient({
 
       <AdjustmentsTable
         rows={rows}
-        tableOptions={tableOptions}
         onOpenAdjustment={(row) =>
           router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
         }

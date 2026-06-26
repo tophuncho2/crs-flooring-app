@@ -1,7 +1,7 @@
 "use client"
 
 import { Copy, Plus } from "lucide-react"
-import { DataTable, type PaginateContract, type TableOptionsConfig } from "@/engines/list-view"
+import { DataTable, type PaginateContract } from "@/engines/list-view"
 import { RecordOptionsMenu } from "@/engines/common"
 import type { InventoryRow } from "@builders/domain"
 import { INVENTORY_LIST_COLUMNS } from "./table/inventory-list-columns"
@@ -15,7 +15,6 @@ export function InventoryTable({
   sort,
   sorts,
   onSort,
-  tableOptions,
   pagination,
 }: {
   rows: InventoryRow[]
@@ -29,8 +28,6 @@ export function InventoryTable({
   sorts?: ReadonlyArray<{ field: string; direction: "asc" | "desc" }>
   /** Header click → re-sort by that column key. */
   onSort?: (key: string) => void
-  /** Gutter TableOptions menu (the multi-column "Sort" tab). */
-  tableOptions?: TableOptionsConfig
   pagination?: PaginateContract
 }) {
   return (
@@ -41,7 +38,6 @@ export function InventoryTable({
       sort={sort}
       sorts={sorts}
       onSort={onSort}
-      tableOptions={tableOptions}
       onOpenRow={(row) => onOpenInventory(row.id)}
       rowActions={(row) => (
         <RecordOptionsMenu

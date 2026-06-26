@@ -2,15 +2,14 @@
 
 import { useSyncExternalStore, type ReactNode } from "react"
 import { createPortal } from "react-dom"
-import { ClearAllFiltersButton } from "../filter/clear-all-filters-button"
-import { ListRowCount } from "../list-toolbar/list-row-count"
+import { ClearAllFiltersButton } from "./clear-all-filters-button"
+import { ListHeaderPortal } from "./list-header-portal"
 
-// The header slots live in the app-shell HeaderControls subtree, so they can
-// only be located after mount. useSyncExternalStore reads them on the client
+// The tools slot lives in the app-shell HeaderControls subtree, so it can only
+// be located after mount. useSyncExternalStore reads it on the client
 // (getServerSnapshot returns null, matching SSR) without a setState-in-effect
 // cascade. getElementById returns the same node ref across renders, so this
-// never loops. Mirrors ListCreateButtonPortal / RecordBackButtonPortal.
-const META_SLOT_ID = "list-meta-slot"
+// never loops. The meta cluster portals through ListHeaderPortal.
 const TOOLS_SLOT_ID = "list-tools-slot"
 
 function subscribe(): () => void {
@@ -21,10 +20,10 @@ function getServerSlot(): HTMLElement | null {
   return null
 }
 
-function useSlot(slotId: string): HTMLElement | null {
+function useToolsSlot(): HTMLElement | null {
   return useSyncExternalStore(
     subscribe,
-    () => document.getElementById(slotId),
+    () => document.getElementById(TOOLS_SLOT_ID),
     getServerSlot,
   )
 }
@@ -51,9 +50,10 @@ export type ListActionBarProps = {
  * replacement for the old in-page toolbar card. Renders nothing in place:
  *
  * - The meta cluster (module label + row count + Clear-all) lands in
- *   `#list-meta-slot`, in the header's left group after the record
- *   back-button/stepper slots. When a back button ever renders on a list page,
- *   the left group's flex order flows the meta cluster to its right for free.
+ *   `#list-meta-slot` via {@link ListHeaderPortal}, in the header's left group
+ *   after the record back-button/stepper slots. When a back button ever renders
+ *   on a list page, the left group's flex order flows the meta cluster to its
+ *   right for free.
  * - The tool buttons (`children`) land in `#list-tools-slot`, in the header's
  *   right group directly left of the `#page-action-slot` "+ Create" button, so
  *   the create action sits inline with the tools.
@@ -74,23 +74,17 @@ export function ListActionBar({
   onClearAll,
   children,
 }: ListActionBarProps) {
-  const metaSlot = useSlot(META_SLOT_ID)
-  const toolsSlot = useSlot(TOOLS_SLOT_ID)
+  const toolsSlot = useToolsSlot()
 
   return (
     <>
-      {metaSlot
-        ? createPortal(
-            <div className="flex items-center gap-3">
-              <span className="inline-block rounded-md border border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-                {label}
-              </span>
-              <ListRowCount count={rowCount} total={total} label={rowCountLabel} />
-              <ClearAllFiltersButton hasActive={hasActiveFilters} onClick={onClearAll} />
-            </div>,
-            metaSlot,
-          )
-        : null}
+      <ListHeaderPortal
+        label={label}
+        rowCount={rowCount}
+        total={total}
+        rowCountLabel={rowCountLabel}
+        trailing={<ClearAllFiltersButton hasActive={hasActiveFilters} onClick={onClearAll} />}
+      />
 
       {toolsSlot && children
         ? createPortal(<div className="flex items-center gap-2">{children}</div>, toolsSlot)

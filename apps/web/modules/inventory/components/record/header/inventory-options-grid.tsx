@@ -1,11 +1,11 @@
 "use client"
 
-import { useMemo } from "react"
+import { ArrowUpDown } from "lucide-react"
 import {
   DataTable,
   DebouncedSearchControl,
   SortMenuBody,
-  type TableOptionsConfig,
+  ToolbarMenuButton,
 } from "@/engines/list-view"
 import type { InventoryRow } from "@builders/domain"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
@@ -59,29 +59,6 @@ export function InventoryOptionsGrid({
   productEditable?: boolean
 }) {
   const { warehouseId, warehouseLabel, productId, productLabel } = selection
-
-  // Same gutter Sort menu the inventory list uses — multi-column sort over the
-  // picker grid. Header clicks still do single-sort replace via `grid.setSort`.
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      tabs: [
-        {
-          key: "sort",
-          label: "Sort",
-          active: grid.sorts.length > 0,
-          render: () => (
-            <SortMenuBody
-              options={INVENTORY_SORT_OPTIONS}
-              value={grid.sorts}
-              maxLevels={INVENTORY_MAX_SORT_LEVELS}
-              onChange={grid.onSortsChange}
-            />
-          ),
-        },
-      ],
-    }),
-    [grid.sorts, grid.onSortsChange],
-  )
 
   return (
     <div className="flex flex-col gap-3">
@@ -143,6 +120,25 @@ export function InventoryOptionsGrid({
         />
       </div>
 
+      {/* Multi-column sort — the same builder the inventory list uses, hosted in
+          a header tool rather than the table gutter. Header clicks still do a
+          single-sort replace via `grid.setSort`. */}
+      <div className="flex justify-end">
+        <ToolbarMenuButton
+          label="Sort"
+          icon={ArrowUpDown}
+          active={grid.sorts.length > 0}
+          bodyClassName="w-auto"
+        >
+          <SortMenuBody
+            options={INVENTORY_SORT_OPTIONS}
+            value={grid.sorts}
+            maxLevels={INVENTORY_MAX_SORT_LEVELS}
+            onChange={grid.onSortsChange}
+          />
+        </ToolbarMenuButton>
+      </div>
+
       <DataTable
         rows={grid.rows}
         columns={INVENTORY_LIST_COLUMNS}
@@ -152,7 +148,6 @@ export function InventoryOptionsGrid({
         sort={grid.sort}
         sorts={grid.sorts}
         onSort={grid.setSort}
-        tableOptions={tableOptions}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
         pagination={grid.pagination}
       />

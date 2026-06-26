@@ -17,8 +17,8 @@ const SEGMENTS: Array<{ key: string; label: string; value: boolean }> = [
  *   - Active    → `value === false`  (URL `archived=false` / absent)
  *   - Archived  → `value === true`   (URL `archived=true`)
  *
- * Designed to live inside a `ListToolbarTallCard` labelled "Status". Shared by
- * the inventory and adjustments list views.
+ * Designed to live inside the inventory list's Filter `ToolbarMenuButton` menu
+ * as its "Status" control.
  */
 export function ArchiveSegmentedControl({
   value,

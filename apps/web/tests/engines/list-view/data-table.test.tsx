@@ -198,40 +198,12 @@ describe("DataTable — sort headers", () => {
   })
 })
 
-describe("DataTable — tableOptions (gutter menu)", () => {
+describe("DataTable — gutter header", () => {
   afterEach(() => cleanup())
 
-  const SORT_TAB_OPTIONS = {
-    tabs: [
-      {
-        key: "sort",
-        label: "Sort",
-        active: false,
-        render: () => <div>Sort body</div>,
-      },
-    ],
-  }
-
-  it("force-renders the gutter header + trigger even without onOpenRow/rowActions", () => {
-    const { getByRole } = render(
-      <DataTable rows={ROWS} columns={COLUMNS} tableOptions={SORT_TAB_OPTIONS} />,
-    )
-    // The trigger lives in the header; rows stay non-interactive (no onRowClick).
-    expect(getByRole("button", { name: "Table options" })).toBeTruthy()
-  })
-
-  it("opens the tabbed popover and renders the active tab body on trigger click", async () => {
-    const user = userEvent.setup()
-    const { getByRole, getByText } = render(
-      <DataTable rows={ROWS} columns={COLUMNS} tableOptions={SORT_TAB_OPTIONS} />,
-    )
-    await user.click(getByRole("button", { name: "Table options" }))
-    expect(getByText("Sort body")).toBeTruthy()
-  })
-
-  it("renders no gutter header when tableOptions/onOpenRow/rowActions are all absent", () => {
+  it("renders no leading gutter header when onOpenRow/rowActions are both absent", () => {
     const { queryByRole } = render(<DataTable rows={ROWS} columns={COLUMNS} />)
-    // Two column headers only — no leading gutter <th>, no trigger.
-    expect(queryByRole("button", { name: "Table options" })).toBeNull()
+    // No open affordance + no row actions ⇒ no leading gutter <th>.
+    expect(queryByRole("button", { name: /^Open / })).toBeNull()
   })
 })

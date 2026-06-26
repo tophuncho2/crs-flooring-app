@@ -10,13 +10,13 @@ export type NumberSearchTabBodyProps = {
 }
 
 /**
- * Shared body for a list's record-number exact-search, hosted as a tab inside the
- * table's gutter `TableOptions` menu (the `WO #` / `Inv #` / `PROD #` … tab).
- * A single debounced search bar, relocated off the toolbar's per-column card.
+ * Shared body for a list's record-number exact-search, hosted inside the toolbar's
+ * `ToolbarMenuButton` Search menu (the `WO #` / `JT #` / `Store #` … bar).
+ * A single debounced search bar.
  *
  * Pure body — no trigger/popover chrome of its own (the popover + anchoring come
  * from the engine's `AnchoredPanel`, same as `SortMenuBody`). The fixed width
- * keeps every module's number tab identical; `normal-case`/`tracking-normal`
+ * keeps every module's number bar identical; `normal-case`/`tracking-normal`
  * reset the surrounding uppercase header styling for the input.
  *
  * `placeholder`/`ariaLabel` are per-module (the row label differs), so callers pass them.

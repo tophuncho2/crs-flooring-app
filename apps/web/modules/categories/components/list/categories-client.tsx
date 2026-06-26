@@ -1,6 +1,11 @@
 "use client"
 
-import { useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import {
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+  ListPageShell,
+  ListHeaderPortal,
+} from "@/engines/list-view"
 import {
   LIST_CATEGORIES_PAGE_SIZE,
   type CategoryListRow,
@@ -39,27 +44,26 @@ export default function CategoriesClient({ initialPage }: CategoriesClientProps)
   })
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4">
-        <div className="pb-2">
-          <span className="inline-block rounded-md border border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-            Categories
-          </span>
-        </div>
-        <CategoriesTable
-          rows={rows}
-          pagination={{
-            page,
-            pageSize,
-            totalItems: total,
-            totalPages,
-            hasPreviousPage,
-            hasNextPage,
-            onPreviousPage: goToPreviousPage,
-            onNextPage: goToNextPage,
-          }}
-        />
-      </div>
-    </div>
+    <ListPageShell>
+      <ListHeaderPortal
+        label="Categories"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="categories"
+      />
+      <CategoriesTable
+        rows={rows}
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
+      />
+    </ListPageShell>
   )
 }

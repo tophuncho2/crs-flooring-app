@@ -18,7 +18,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
  * One `<thead>` cell for the {@link DataTable}. Hosts the column label and, when
  * supplied, a sort caret (`sortable` + `onSort`). Extracted to a component so the
  * header stays a single mapped element. (Table-level filters now live in the
- * gutter `TableOptions` menu, not a per-column header funnel.)
+ * toolbar's Filter/Search menus, not a per-column header funnel.)
  */
 export function DataTableHeaderCell<TRow extends DataTableRow>({
   column,

@@ -48,8 +48,8 @@ const DIRECTION_CLASS_NAME =
  * controller's `sorts` + `onSortsChange`. Column headers stay the quick single-sort
  * path; this composes the ordered chain.
  *
- * Chrome-free: hosts render this inside their own popover (the table-header
- * `TableOptions` "Sort" tab). Returns null when no columns are sortable.
+ * Chrome-free: hosts render this inside their own popover (the toolbar's
+ * `ToolbarMenuButton` "Sort" tool). Returns null when no columns are sortable.
  */
 export function SortMenuBody({
   options,

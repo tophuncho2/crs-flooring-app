@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
-import { SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, NumberSearchTabBody, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal, type TableOptionsConfig } from "@/engines/list-view"
+import { SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal } from "@/engines/list-view"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
@@ -328,39 +328,13 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
-  // The inventory row-number search stays in the table's gutter TableOptions menu
-  // (the "Inv #" tab) — relocated off the toolbar, excluded from the Search dot.
-  // Multi-column sort now lives in the ListActionBar Sort tool; single-column
-  // sort stays a header-caret click (column keys match the backend sort fields,
-  // so `sorts` flows straight onto the header carets).
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      tabs: [
-        {
-          key: "number",
-          label: "Inv #",
-          active: invNumberValue.trim().length > 0,
-          render: () => (
-            <NumberSearchTabBody
-              value={invNumberValue}
-              onChange={(next) => handleTextFilterChange("invNumber", next)}
-              placeholder="Inv #"
-              ariaLabel="Search inventory by inventory number"
-            />
-          ),
-        },
-      ],
-    }),
-    [invNumberValue, handleTextFilterChange],
-  )
-
   const hasActiveSortTool = sorts.length > 0
 
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
   // ListActionBar clear-all signal. Filter = the warehouse/location/category/
-  // product/PO#/IMP#/status attribute pickers; Search = the roll#/dye-lot/note
-  // free-text bars. Inv # lives in the DataTable gutter, so it is excluded from
-  // the Search dot but kept in `hasActiveFilters` so Clear-all still resets it.
+  // product/PO#/IMP#/status attribute pickers; Search = the inv#/roll#/dye-lot/
+  // note identity bars. Single-column sort stays a header-caret click (column
+  // keys match the backend sort fields, so `sorts` flows onto the carets).
   const hasActiveFilterTool = useMemo(
     () =>
       Boolean(selectedWarehouseId) ||
@@ -383,13 +357,16 @@ export default function InventoryClient({
 
   const hasActiveSearchTool = useMemo(
     () =>
-      Boolean(rollNumberValue) || Boolean(dyeLotValue) || Boolean(noteValue),
-    [rollNumberValue, dyeLotValue, noteValue],
+      Boolean(invNumberValue) ||
+      Boolean(rollNumberValue) ||
+      Boolean(dyeLotValue) ||
+      Boolean(noteValue),
+    [invNumberValue, rollNumberValue, dyeLotValue, noteValue],
   )
 
   const hasActiveFilters = useMemo(
-    () => hasActiveFilterTool || hasActiveSearchTool || Boolean(invNumberValue),
-    [hasActiveFilterTool, hasActiveSearchTool, invNumberValue],
+    () => hasActiveFilterTool || hasActiveSearchTool,
+    [hasActiveFilterTool, hasActiveSearchTool],
   )
 
   const handleClearAll = useCallback(() => {
@@ -479,14 +456,20 @@ export default function InventoryClient({
           />
         </ToolbarMenuButton>
 
-        {/* Search — the per-field identity free-text bars. Inv # stays in the
-            DataTable gutter (tableOptions), not here. Each bar ILIKEs its own
-            column; filling more than one narrows (AND). */}
+        {/* Search — the per-field identity bars. Inv # is an exact record-number
+            match; roll #/dye lot/note each ILIKE their own column. Filling more
+            than one narrows (AND). */}
         <ToolbarMenuButton
           label="Search"
           icon={Search}
           active={hasActiveSearchTool}
         >
+          <DebouncedSearchControl
+            value={invNumberValue}
+            onCommit={(next) => handleTextFilterChange("invNumber", next)}
+            placeholder="Inv #"
+            ariaLabel="Search inventory by inventory number"
+          />
           <DebouncedSearchControl
             value={rollNumberValue}
             onCommit={(next) => handleTextFilterChange("rollNumber", next)}
@@ -523,7 +506,6 @@ export default function InventoryClient({
         sort={sort}
         sorts={sorts}
         onSort={handleSort}
-        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,

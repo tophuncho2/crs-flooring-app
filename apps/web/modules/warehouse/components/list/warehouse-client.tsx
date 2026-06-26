@@ -11,7 +11,6 @@ import {
   NumberSearchTabBody,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
-  type TableOptionsConfig,
 } from "@/engines/list-view"
 import type { ListInput, WarehousesListFilters } from "@builders/application"
 import {
@@ -103,26 +102,6 @@ export default function WarehouseClient({
     [onFilterChange],
   )
 
-  // The gutter "Menu" stays as the home of the CSV export/print landing this
-  // weekend; until then it shows a placeholder so the gutter chrome is ready.
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      ariaLabel: "Table menu",
-      tabs: [
-        {
-          key: "csv",
-          label: "Export",
-          render: () => (
-            <p className="px-1 py-2 text-xs text-[var(--foreground)]/55">
-              Pending CSV export
-            </p>
-          ),
-        },
-      ],
-    }),
-    [],
-  )
-
   const hasActiveFilters = useMemo(
     () => searchQuery.trim().length > 0 || storeNumberValue.trim().length > 0,
     [searchQuery, storeNumberValue],
@@ -167,7 +146,6 @@ export default function WarehouseClient({
       <WarehouseTable
         rows={rows}
         onOpen={(row) => openWarehouse(row.id)}
-        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,
