@@ -73,7 +73,7 @@ function WorkOrderCreatePanel({
         title="Work Order Details"
         controller={controller}
         showHeader={false}
-        saveLabel="Create Work Order"
+        saveLabel="Create"
         savingLabel="Creating Work Order..."
       >
         <WorkOrderPrimaryFieldsSection

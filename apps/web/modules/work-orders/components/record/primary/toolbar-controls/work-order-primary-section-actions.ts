@@ -18,7 +18,7 @@ export function workOrderPrimarySectionActions({
   onDiscard: () => void
 }): WorkOrderPrimarySectionActions {
   return {
-    saveLabel: "Save Work Order",
+    saveLabel: "Save",
     savingLabel: "Saving Work Order...",
     onSave,
     onDiscard,
