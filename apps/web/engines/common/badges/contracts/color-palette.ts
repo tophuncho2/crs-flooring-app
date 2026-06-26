@@ -5,8 +5,12 @@
 // is the PRESENTATION sibling — the Tailwind class + display label per color —
 // and re-exports the domain values/type so engine consumers have one import.
 //
-// Deliberately separate from `TONE_CLASS_NAME` so the "plain colors, no meaning"
-// requirement never leaks into the semantic tone system.
+// The "plain colors, no meaning" rule is about USER-FACING meaning: when a user
+// tags a row a color, the client company decides what it signifies — code assigns
+// none. That still holds even though the semantic chip badges now SOURCE their
+// Tailwind tokens from this map (via `tone-palette.ts`): the semantic tones keep
+// their own code-meaning; we only normalize the raw color *values* so they stop
+// duplicating/drifting. Picking a palette color here never confers meaning.
 
 import { PALETTE_COLOR_VALUES, type PaletteColor } from "@builders/domain"
 

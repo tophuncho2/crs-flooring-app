@@ -1,6 +1,6 @@
 "use client"
 
-import { StatusBadge } from "@/engines/common"
+import { StatusBadge, TONE_ACTIVE_CLASS_NAME } from "@/engines/common"
 import type { CellProps, CellTone } from "./contracts/cell-base"
 
 const ALIGN_CLASS_NAME = {
@@ -8,20 +8,6 @@ const ALIGN_CLASS_NAME = {
   center: "justify-center",
   end: "justify-end",
 } as const
-
-/**
- * Selected-segment fill per tone. Mirrors the `StatusBadge` palette but a
- * touch stronger so the chosen option reads as "filled". The container owns
- * the border, so each button only sets background + text colour.
- */
-const ACTIVE_TONE_CLASS_NAME: Record<CellTone, string> = {
-  default: "bg-[var(--foreground)]/10 text-[var(--foreground)]",
-  success: "bg-emerald-500/15 text-emerald-700",
-  warning: "bg-amber-500/20 text-amber-800",
-  error: "bg-rose-500/15 text-rose-800",
-  processing: "bg-blue-500/15 text-blue-800",
-  muted: "bg-stone-200/50 text-stone-700",
-}
 
 const IDLE_CLASS_NAME =
   "text-[var(--foreground)]/65 hover:bg-[var(--foreground)]/5 hover:text-[var(--foreground)]"
@@ -94,7 +80,7 @@ export function SegmentedChoiceCell(props: SegmentedChoiceCellProps) {
             onClick={() => props.onChange?.(option.value)}
             className={joinClassNames(
               "flex-1 rounded px-2 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
-              isActive ? ACTIVE_TONE_CLASS_NAME[option.tone ?? "default"] : IDLE_CLASS_NAME,
+              isActive ? TONE_ACTIVE_CLASS_NAME[option.tone ?? "default"] : IDLE_CLASS_NAME,
             )}
           >
             {option.label}

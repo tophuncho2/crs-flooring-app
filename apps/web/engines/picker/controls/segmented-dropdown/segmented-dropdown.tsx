@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useRef, useState } from "react"
+import { TONE_ACTIVE_CLASS_NAME, type CellTone } from "@/engines/common"
 import type { SegmentedDropdownOption } from "./contracts/segmented-dropdown-option"
 
 const CONTAINER_BASE_CLASS_NAME =
@@ -10,7 +11,6 @@ const BUTTON_BASE_CLASS_NAME =
   "flex-1 px-3 py-1.5 text-sm font-medium outline-none transition focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-60"
 const BUTTON_UNSELECTED_CLASS_NAME =
   "text-[var(--foreground)]/65 hover:bg-[var(--panel-border)]/15 hover:text-[var(--foreground)]"
-const BUTTON_SELECTED_CLASS_NAME = "bg-sky-500/15 text-sky-700"
 const BUTTON_CLEAR_SELECTED_CLASS_NAME =
   "bg-[var(--panel-border)]/30 text-[var(--foreground)]/80"
 
@@ -21,6 +21,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
 type Segment = {
   value: string | null
   label: string
+  tone?: CellTone
   disabled: boolean
   isClear: boolean
 }
@@ -68,6 +69,7 @@ export function SegmentedDropdown({
     const base: Segment[] = options.map((option) => ({
       value: option.value,
       label: option.label,
+      tone: option.tone,
       disabled: Boolean(option.disabled),
       isClear: false,
     }))
@@ -192,7 +194,9 @@ export function SegmentedDropdown({
             className={joinClassNames(
               BUTTON_BASE_CLASS_NAME,
               isChecked && segment.isClear ? BUTTON_CLEAR_SELECTED_CLASS_NAME : null,
-              isChecked && !segment.isClear ? BUTTON_SELECTED_CLASS_NAME : null,
+              isChecked && !segment.isClear
+                ? TONE_ACTIVE_CLASS_NAME[segment.tone ?? "default"]
+                : null,
               !isChecked ? BUTTON_UNSELECTED_CLASS_NAME : null,
             )}
           >
