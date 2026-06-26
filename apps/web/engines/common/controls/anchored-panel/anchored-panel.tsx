@@ -1,8 +1,20 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react"
 import { createPortal } from "react-dom"
 import { computePopoverPlacement } from "../positioning/compute-popover-placement"
+
+// One entry per open panel, in open order. A panel portals its popover to
+// document.body, so a *nested* panel (e.g. a picker opened inside a toolbar
+// menu) lands in a sibling DOM subtree the outer panel's `popoverRef` can't
+// contain. Without this registry the outer panel reads a click inside the inner
+// panel as an outside click and closes mid-selection. Each panel ignores
+// pointer-downs that land inside any panel opened *after* it (its descendants).
+type AnchoredPanelEntry = {
+  containerRef: RefObject<HTMLDivElement | null>
+  popoverRef: RefObject<HTMLDivElement | null>
+}
+const openPanelStack: AnchoredPanelEntry[] = []
 
 const POPOVER_CLASS_NAME =
   "flex flex-col rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl focus:outline-none"
@@ -53,6 +65,7 @@ export function AnchoredPanel({
 }: AnchoredPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const popoverRef = useRef<HTMLDivElement | null>(null)
+  const entryRef = useRef<AnchoredPanelEntry>({ containerRef, popoverRef })
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null)
 
   // Measure the trigger on open and keep the panel pinned to it on
@@ -73,17 +86,35 @@ export function AnchoredPanel({
     }
   }, [open])
 
-  // Close on a pointer-down outside the trigger and panel.
+  // Close on a pointer-down outside the trigger and panel — but never when the
+  // click lands inside a panel opened after this one (a nested descendant that
+  // portals into a sibling DOM subtree this panel can't `contains()`).
   useEffect(() => {
     if (!open) return
+    const entry = entryRef.current
+    openPanelStack.push(entry)
     function onPointerDown(event: PointerEvent) {
       const target = event.target as Node
       if (containerRef.current?.contains(target)) return
       if (popoverRef.current?.contains(target)) return
+      const myIndex = openPanelStack.indexOf(entry)
+      for (let i = myIndex + 1; i < openPanelStack.length; i += 1) {
+        const deeper = openPanelStack[i]
+        if (
+          deeper.containerRef.current?.contains(target) ||
+          deeper.popoverRef.current?.contains(target)
+        ) {
+          return
+        }
+      }
       onClose()
     }
     document.addEventListener("pointerdown", onPointerDown)
-    return () => document.removeEventListener("pointerdown", onPointerDown)
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown)
+      const idx = openPanelStack.indexOf(entry)
+      if (idx >= 0) openPanelStack.splice(idx, 1)
+    }
   }, [open, onClose])
 
   // Close on Escape (when the press isn't already handled inside the panel).

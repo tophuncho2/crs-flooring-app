@@ -1,4 +1,5 @@
 export * from "./client"
+export * from "./shell"
 export * from "./table"
 export * from "./toolbar"
 export * from "./policies"

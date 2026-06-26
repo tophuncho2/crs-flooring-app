@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { Search, SlidersHorizontal } from "lucide-react"
-import { DebouncedSearchControl, NumberSearchTabBody, ListActionBar, ToolbarMenuButton, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { DebouncedSearchControl, NumberSearchTabBody, ListActionBar, ListPageShell, ToolbarMenuButton, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
 import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -268,124 +268,118 @@ export default function AdjustmentsClient({
   )
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4">
-        <ListActionBar
-          label="Adjustments"
-          rowCount={rows.length}
-          total={total}
-          rowCountLabel="adjustments"
-          hasActiveFilters={hasActiveFilters}
-          onClearAll={handleClearAll}
+    <ListPageShell>
+      <ListActionBar
+        label="Adjustments"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="adjustments"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        {/* Filter — the warehouse/category/product pickers composed directly
+            (NOT a self-triggering FilterControl). Product is category-scoped:
+            changing category cascade-clears it via handleCategoryChange. */}
+        <ToolbarMenuButton
+          label="Filter"
+          icon={SlidersHorizontal}
+          active={hasActiveFilterTool}
         >
-          {/* Filter — the warehouse/category/product pickers composed directly
-              (NOT a self-triggering FilterControl). Product is category-scoped:
-              changing category cascade-clears it via handleCategoryChange. */}
-          <ToolbarMenuButton
-            label="Filter"
-            icon={SlidersHorizontal}
-            active={hasActiveFilterTool}
-          >
-            <div className="flex w-[15rem] flex-col gap-2">
-              <WarehousePicker
-                value={selectedWarehouseId}
-                selectedLabel={warehouseLabel}
-                onChange={handleWarehouseChange}
-                initialOptions={initialWarehouseOptions}
-                placeholder="Warehouse"
-                searchPlaceholder="Search warehouses"
-                emptyMessage="No warehouses match"
-                clearLabel="Clear filter"
-                ariaLabel="Filter adjustments by warehouse"
-              />
-              <CategoryPicker
-                value={selectedCategoryId}
-                selectedLabel={categoryLabel}
-                onChange={handleCategoryChange}
-                initialOptions={initialCategoryOptions}
-                placeholder="Category"
-                searchPlaceholder="Search categories"
-                emptyMessage="No categories match"
-                clearLabel="Clear filter"
-                ariaLabel="Filter adjustments by category"
-              />
-              <ProductPicker
-                value={selectedProductId}
-                selectedLabel={productLabel}
-                onChange={handleProductChange}
-                categoryId={selectedCategoryId}
-                placeholder="Product"
-                searchPlaceholder="Search products"
-                emptyMessage="No products match"
-                clearLabel="Clear filter"
-                ariaLabel="Filter adjustments by product"
-              />
-            </div>
-          </ToolbarMenuButton>
+          <WarehousePicker
+            value={selectedWarehouseId}
+            selectedLabel={warehouseLabel}
+            onChange={handleWarehouseChange}
+            initialOptions={initialWarehouseOptions}
+            placeholder="Warehouse"
+            searchPlaceholder="Search warehouses"
+            emptyMessage="No warehouses match"
+            clearLabel="Clear filter"
+            ariaLabel="Filter adjustments by warehouse"
+          />
+          <CategoryPicker
+            value={selectedCategoryId}
+            selectedLabel={categoryLabel}
+            onChange={handleCategoryChange}
+            initialOptions={initialCategoryOptions}
+            placeholder="Category"
+            searchPlaceholder="Search categories"
+            emptyMessage="No categories match"
+            clearLabel="Clear filter"
+            ariaLabel="Filter adjustments by category"
+          />
+          <ProductPicker
+            value={selectedProductId}
+            selectedLabel={productLabel}
+            onChange={handleProductChange}
+            categoryId={selectedCategoryId}
+            placeholder="Product"
+            searchPlaceholder="Search products"
+            emptyMessage="No products match"
+            clearLabel="Clear filter"
+            ariaLabel="Filter adjustments by product"
+          />
+        </ToolbarMenuButton>
 
-          {/* Search — the four identity free-text bars. Adj # stays in the
-              DataTable gutter (tableOptions), not here. */}
-          <ToolbarMenuButton
-            label="Search"
-            icon={Search}
-            active={hasActiveSearchTool}
-          >
-            <div className="flex w-[15rem] flex-col gap-2">
-              <DebouncedSearchControl
-                value={rollNumberValue}
-                onCommit={(next) => handleTextFilterChange("rollNumber", next)}
-                placeholder="Roll #"
-                ariaLabel="Search adjustments by roll number"
-              />
-              <DebouncedSearchControl
-                value={invNumberValue}
-                onCommit={(next) => handleTextFilterChange("invNumber", next)}
-                placeholder="Inv #"
-                ariaLabel="Search adjustments by inventory number"
-              />
-              <DebouncedSearchControl
-                value={dyeLotValue}
-                onCommit={(next) => handleTextFilterChange("dyeLot", next)}
-                placeholder="Dye lot"
-                ariaLabel="Search adjustments by dye lot"
-              />
-              <DebouncedSearchControl
-                value={noteValue}
-                onCommit={(next) => handleTextFilterChange("note", next)}
-                placeholder="Note"
-                ariaLabel="Search adjustments by note"
-              />
-            </div>
-          </ToolbarMenuButton>
-        </ListActionBar>
+        {/* Search — the four identity free-text bars. Adj # stays in the
+            DataTable gutter (tableOptions), not here. */}
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={hasActiveSearchTool}
+        >
+          <DebouncedSearchControl
+            value={rollNumberValue}
+            onCommit={(next) => handleTextFilterChange("rollNumber", next)}
+            placeholder="Roll #"
+            ariaLabel="Search adjustments by roll number"
+          />
+          <DebouncedSearchControl
+            value={invNumberValue}
+            onCommit={(next) => handleTextFilterChange("invNumber", next)}
+            placeholder="Inv #"
+            ariaLabel="Search adjustments by inventory number"
+          />
+          <DebouncedSearchControl
+            value={dyeLotValue}
+            onCommit={(next) => handleTextFilterChange("dyeLot", next)}
+            placeholder="Dye lot"
+            ariaLabel="Search adjustments by dye lot"
+          />
+          <DebouncedSearchControl
+            value={noteValue}
+            onCommit={(next) => handleTextFilterChange("note", next)}
+            placeholder="Note"
+            ariaLabel="Search adjustments by note"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
-        <AdjustmentsTable
-          rows={rows}
-          tableOptions={tableOptions}
-          onOpenAdjustment={(row) =>
-            router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
-          }
-          onSplitOff={(row) =>
-            router.push(
-              buildInventorySplitOffHref({
-                sourceInventoryId: row.inventoryId,
-                quantity: row.quantity,
-                returnTo,
-              }),
-            )
-          }
-          pagination={{
-            page,
-            pageSize,
-            totalItems: total,
-            totalPages,
-            hasPreviousPage,
-            hasNextPage,
-            onPreviousPage: goToPreviousPage,
-            onNextPage: goToNextPage,
-          }}
-        />
-      </div>
-    </div>
+      <AdjustmentsTable
+        rows={rows}
+        tableOptions={tableOptions}
+        onOpenAdjustment={(row) =>
+          router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
+        }
+        onSplitOff={(row) =>
+          router.push(
+            buildInventorySplitOffHref({
+              sourceInventoryId: row.inventoryId,
+              quantity: row.quantity,
+              returnTo,
+            }),
+          )
+        }
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
+      />
+    </ListPageShell>
   )
 }

@@ -5,6 +5,8 @@ import { Search } from "lucide-react"
 import {
   ListActionBar,
   ListCreateButtonPortal,
+  ListPageShell,
+  ListPageFeedback,
   ToolbarMenuButton,
   SearchControl,
   NumberSearchTabBody,
@@ -134,70 +136,53 @@ export default function JobTypesClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+    <ListPageShell>
       <ListCreateButtonPortal label="Job Type" onClick={() => openCreate()} />
 
-      <div className="mx-4">
-        {message || pageError ? (
-          <div className="space-y-2 pb-2">
-            {message ? (
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-                {message}
-              </div>
-            ) : null}
-            {pageError ? (
-              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {pageError}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+      <ListPageFeedback message={message} pageError={pageError} />
 
-        <ListActionBar
-          label="Job Types"
-          rowCount={rows.length}
-          total={total}
-          rowCountLabel="job types"
-          hasActiveFilters={hasActiveFilters}
-          onClearAll={handleClearAll}
+      <ListActionBar
+        label="Job Types"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="job types"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={searchQuery.trim().length > 0 || jobTypeNumberValue.trim().length > 0}
         >
-          <ToolbarMenuButton
-            label="Search"
-            icon={Search}
-            active={searchQuery.trim().length > 0 || jobTypeNumberValue.trim().length > 0}
-          >
-            <div className="flex flex-col gap-2">
-              <SearchControl
-                query={searchQuery}
-                onQueryChange={onSearchQueryChange}
-                placeholder="Search job types"
-              />
-              <NumberSearchTabBody
-                value={jobTypeNumberValue}
-                onChange={handleJobTypeNumberChange}
-                placeholder="JT #"
-                ariaLabel="Search job types by number"
-              />
-            </div>
-          </ToolbarMenuButton>
-        </ListActionBar>
+          <SearchControl
+            query={searchQuery}
+            onQueryChange={onSearchQueryChange}
+            placeholder="Search job types"
+          />
+          <NumberSearchTabBody
+            value={jobTypeNumberValue}
+            onChange={handleJobTypeNumberChange}
+            placeholder="JT #"
+            ariaLabel="Search job types by number"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
-        <JobTypesTable
-          rows={rows}
-          onOpenJobType={(row) => openJobType(row.id)}
-          tableOptions={tableOptions}
-          pagination={{
-            page,
-            pageSize,
-            totalItems: total,
-            totalPages,
-            hasPreviousPage,
-            hasNextPage,
-            onPreviousPage: goToPreviousPage,
-            onNextPage: goToNextPage,
-          }}
-        />
-      </div>
-    </div>
+      <JobTypesTable
+        rows={rows}
+        onOpenJobType={(row) => openJobType(row.id)}
+        tableOptions={tableOptions}
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
+      />
+    </ListPageShell>
   )
 }

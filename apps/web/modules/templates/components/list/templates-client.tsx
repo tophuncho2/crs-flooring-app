@@ -1,7 +1,17 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { Search, SlidersHorizontal } from "lucide-react"
+import {
+  DebouncedSearchControl,
+  ListActionBar,
+  ListCreateButtonPortal,
+  ListPageShell,
+  ListPageFeedback,
+  ToolbarMenuButton,
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+} from "@/engines/list-view"
 import type { TemplatesListFilters } from "@builders/application"
 import {
   LIST_TEMPLATES_PAGE_SIZE,
@@ -15,12 +25,8 @@ import {
 } from "@/modules/templates/data/list-templates-request"
 import { useTemplatesListController } from "@/modules/templates/controllers/list/use-templates-list-controller"
 import { TemplatesTable } from "./templates-table"
-import { AddTemplateButton } from "./toolbar-controls/add-template-button"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
-import { TemplatesListSearch } from "./toolbar-controls/templates-list-search"
-import { TemplatesClearAll } from "./toolbar-controls/sub-controls/templates-clear-all"
-import { TemplatesRowCount } from "./toolbar-controls/sub-controls/templates-row-count"
 
 const TEMPLATES_FILTERABLE_FIELDS = [
   "entityId",
@@ -124,81 +130,81 @@ export default function TemplatesClient({
     [onFilterChange],
   )
 
-  const hasActiveFilters = useMemo(() => {
-    if (unitTypeValue.length > 0 || descriptionValue.length > 0) return true
-    if (selectedEntityId || selectedPropertyId) return true
-    return false
-  }, [unitTypeValue, descriptionValue, selectedEntityId, selectedPropertyId])
+  const hasActiveFilterTool = useMemo(
+    () => Boolean(selectedEntityId) || Boolean(selectedPropertyId),
+    [selectedEntityId, selectedPropertyId],
+  )
+
+  const hasActiveSearchTool = useMemo(
+    () => unitTypeValue.length > 0 || descriptionValue.length > 0,
+    [unitTypeValue, descriptionValue],
+  )
+
+  const hasActiveFilters = useMemo(
+    () => hasActiveFilterTool || hasActiveSearchTool,
+    [hasActiveFilterTool, hasActiveSearchTool],
+  )
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
   }, [onClearAllFilters])
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        {message || pageError ? (
-          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
-            {message ? (
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-                {message}
-              </div>
-            ) : null}
-            {pageError ? (
-              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {pageError}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+    <ListPageShell>
+      <ListCreateButtonPortal label="Template" onClick={() => openCreate()} />
 
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Templates
-            </span>
-          </div>
-          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-              the encased card's top edge (rounded-tl-none seam). */}
-          <ListToolbar className="pt-0" showDivider={false}>
-            {/* Search + (Clear all | row count) — encased card attached to the tab above */}
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <TemplatesListSearch
-                  unitType={unitTypeValue}
-                  description={descriptionValue}
-                  onFieldChange={handleTextFilterChange}
-                />
-                <ListToolbarBottomRow
-                  left={<TemplatesClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                  right={<TemplatesRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
+      <ListPageFeedback message={message} pageError={pageError} />
 
-            {/* Entity → Property: property is entity-scoped (entity change
-                cascades the property chip clear via handleEntityChange). */}
-            <ListToolbarCell>
-              <EntityFilterChip
-                value={selectedEntityId}
-                selectedLabel={entityLabel}
-                onChange={handleEntityChange}
-                initialOptions={initialEntityOptions}
-              />
-              <PropertyFilterChip
-                value={selectedPropertyId}
-                selectedLabel={propertyLabel}
-                entityId={selectedEntityId}
-                onChange={handlePropertyChange}
-              />
-            </ListToolbarCell>
+      <ListActionBar
+        label="Templates"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="templates"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        {/* Filter — Entity → Property: property is entity-scoped (entity change
+            cascades the property chip clear via handleEntityChange). Composed
+            directly (NOT a self-triggering FilterControl). */}
+        <ToolbarMenuButton
+          label="Filter"
+          icon={SlidersHorizontal}
+          active={hasActiveFilterTool}
+        >
+          <EntityFilterChip
+            value={selectedEntityId}
+            selectedLabel={entityLabel}
+            onChange={handleEntityChange}
+            initialOptions={initialEntityOptions}
+          />
+          <PropertyFilterChip
+            value={selectedPropertyId}
+            selectedLabel={propertyLabel}
+            entityId={selectedEntityId}
+            onChange={handlePropertyChange}
+          />
+        </ToolbarMenuButton>
 
-            <ListToolbarCell className="ml-auto">
-              <AddTemplateButton onClick={() => openCreate()} />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
-      </div>
+        {/* Search — the per-field text bars (unit type + description). */}
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={hasActiveSearchTool}
+        >
+          <DebouncedSearchControl
+            value={unitTypeValue}
+            onCommit={(next) => handleTextFilterChange("unitType", next)}
+            placeholder="Unit type"
+            ariaLabel="Search templates by unit type"
+          />
+          <DebouncedSearchControl
+            value={descriptionValue}
+            onCommit={(next) => handleTextFilterChange("description", next)}
+            placeholder="Description"
+            ariaLabel="Search templates by description"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
       <TemplatesTable
         rows={rows}
@@ -216,6 +222,6 @@ export default function TemplatesClient({
           onNextPage: goToNextPage,
         }}
       />
-    </div>
+    </ListPageShell>
   )
 }

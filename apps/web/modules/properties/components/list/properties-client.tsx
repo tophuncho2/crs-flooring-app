@@ -1,7 +1,19 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { NumberSearchTabBody, ListToolbar, ListToolbarBottomRow, ListToolbarCell, StateSearchControl, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { Search, SlidersHorizontal } from "lucide-react"
+import {
+  NumberSearchTabBody,
+  SearchControl,
+  StateSearchControl,
+  ListActionBar,
+  ListCreateButtonPortal,
+  ListPageShell,
+  ListPageFeedback,
+  ToolbarMenuButton,
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+} from "@/engines/list-view"
 import type { ListInput, PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
@@ -18,11 +30,7 @@ import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-na
 import { useRouter } from "next/navigation"
 import { buildPropertyRecordHref, buildRecordCreateHref } from "@/hooks/navigation/routes"
 import { PropertiesTable } from "./properties-table"
-import { AddHubButton } from "./toolbar-controls/add-hub-button"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
-import { PropertiesListSearch } from "./toolbar-controls/properties-list-search"
-import { PropertiesClearAll } from "./toolbar-controls/sub-controls/properties-clear-all"
-import { PropertiesRowCount } from "./toolbar-controls/sub-controls/properties-row-count"
 
 const PROPERTIES_FILTERABLE_FIELDS = ["propNumber", "entityId", "state"] as const
 
@@ -122,30 +130,6 @@ export default function PropertiesClient({
     [onFilterChange],
   )
 
-  // Row-number exact search lives in the table's gutter TableOptions menu (a
-  // single "PROP #" tab) rather than the toolbar, matching inventory's menu.
-  // The bar auto-commits on debounce, so the tab needs no Apply / close().
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      tabs: [
-        {
-          key: "number",
-          label: "PROP #",
-          active: propNumberValue.trim().length > 0,
-          render: () => (
-            <NumberSearchTabBody
-              value={propNumberValue}
-              onChange={handlePropNumberChange}
-              placeholder="PROP #"
-              ariaLabel="Search properties by property number"
-            />
-          ),
-        },
-      ],
-    }),
-    [propNumberValue, handlePropNumberChange],
-  )
-
   const selectedEntityId = filters.entityId?.[0] ?? null
 
   const selectedEntityLabel = useMemo(() => {
@@ -181,13 +165,20 @@ export default function PropertiesClient({
     [onFilterChange],
   )
 
-  const hasActiveFilters = useMemo(() => {
-    if (searchQuery.trim().length > 0) return true
-    if (propNumberValue.trim().length > 0) return true
-    if (selectedEntityId) return true
-    if (selectedState) return true
-    return false
-  }, [searchQuery, propNumberValue, selectedEntityId, selectedState])
+  const hasActiveFilterTool = useMemo(
+    () => Boolean(selectedEntityId) || Boolean(selectedState),
+    [selectedEntityId, selectedState],
+  )
+
+  const hasActiveSearchTool = useMemo(
+    () => searchQuery.trim().length > 0 || propNumberValue.trim().length > 0,
+    [searchQuery, propNumberValue],
+  )
+
+  const hasActiveFilters = useMemo(
+    () => hasActiveFilterTool || hasActiveSearchTool,
+    [hasActiveFilterTool, hasActiveSearchTool],
+  )
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -195,74 +186,69 @@ export default function PropertiesClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        {message || pageError ? (
-          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
-            {message ? (
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-                {message}
-              </div>
-            ) : null}
-            {pageError ? (
-              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {pageError}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+    <ListPageShell>
+      <ListCreateButtonPortal
+        label="Property"
+        onClick={() =>
+          router.push(buildRecordCreateHref("/dashboard/entities", { returnTo }))
+        }
+      />
 
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Properties
-            </span>
-          </div>
-          <ListToolbar className="pt-0" showDivider={false}>
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <PropertiesListSearch
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
-                />
-                <StateSearchControl
-                  value={selectedState}
-                  onChange={handleStateChange}
-                  ariaLabel="Filter properties by state"
-                />
-                <ListToolbarBottomRow
-                  left={<PropertiesClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                  right={<PropertiesRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
+      <ListPageFeedback message={message} pageError={pageError} />
 
-            <ListToolbarCell>
-              <EntityFilterChip
-                value={selectedEntityId}
-                selectedLabel={selectedEntityLabel}
-                onChange={handleEntityChange}
-                initialOptions={initialEntityOptions}
-              />
-            </ListToolbarCell>
+      <ListActionBar
+        label="Properties"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="properties"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        {/* Filter — the Entity picker + the state text filter, composed directly
+            (NOT a self-triggering FilterControl). */}
+        <ToolbarMenuButton
+          label="Filter"
+          icon={SlidersHorizontal}
+          active={hasActiveFilterTool}
+        >
+          <EntityFilterChip
+            value={selectedEntityId}
+            selectedLabel={selectedEntityLabel}
+            onChange={handleEntityChange}
+            initialOptions={initialEntityOptions}
+          />
+          <StateSearchControl
+            value={selectedState}
+            onChange={handleStateChange}
+            ariaLabel="Filter properties by state"
+          />
+        </ToolbarMenuButton>
 
-            <ListToolbarCell className="ml-auto">
-              <AddHubButton
-                onClick={() =>
-                  router.push(buildRecordCreateHref("/dashboard/entities", { returnTo }))
-                }
-              />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
-      </div>
+        {/* Search — full-text + PROP # exact number, mirrors products. */}
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={hasActiveSearchTool}
+        >
+          <SearchControl
+            query={searchQuery}
+            onQueryChange={onSearchQueryChange}
+            placeholder="Search properties"
+          />
+          <NumberSearchTabBody
+            value={propNumberValue}
+            onChange={handlePropNumberChange}
+            placeholder="PROP #"
+            ariaLabel="Search properties by property number"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
       <PropertiesTable
         rows={rows}
         onOpenProperty={(row) =>
           router.push(buildPropertyRecordHref(row.id, row.entity?.id ?? null, returnTo))
         }
-        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,
@@ -274,6 +260,6 @@ export default function PropertiesClient({
           onNextPage: goToNextPage,
         }}
       />
-    </div>
+    </ListPageShell>
   )
 }

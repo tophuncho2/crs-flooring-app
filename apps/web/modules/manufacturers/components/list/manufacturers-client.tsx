@@ -1,7 +1,16 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ListToolbar, ListToolbarBottomRow, ListToolbarCell, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { Search } from "lucide-react"
+import {
+  SearchControl,
+  ListActionBar,
+  ListCreateButtonPortal,
+  ListPageShell,
+  ToolbarMenuButton,
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+} from "@/engines/list-view"
 import type { ManufacturersListFilters } from "@builders/application"
 import {
   LIST_MANUFACTURERS_PAGE_SIZE,
@@ -13,10 +22,6 @@ import {
 } from "@/modules/manufacturers/data/list-manufacturers-request"
 import { useManufacturersListController } from "@/modules/manufacturers/controllers/list/use-manufacturers-list-controller"
 import { ManufacturersTable } from "./manufacturers-table"
-import { AddManufacturerButton } from "./toolbar-controls/add-manufacturer-button"
-import { ManufacturersListSearch } from "./toolbar-controls/manufacturers-list-search"
-import { ManufacturersClearAll } from "./toolbar-controls/sub-controls/manufacturers-clear-all"
-import { ManufacturersRowCount } from "./toolbar-controls/sub-controls/manufacturers-row-count"
 
 export type ManufacturersClientProps = {
   initialSearchQuery: string
@@ -63,36 +68,25 @@ export default function ManufacturersClient({
   )
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Manufacturers
-            </span>
-          </div>
-          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-              the encased card's top edge (rounded-tl-none seam). */}
-          <ListToolbar className="pt-0" showDivider={false}>
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <ManufacturersListSearch
-                  query={searchQuery}
-                  onQueryChange={onSearchQueryChange}
-                />
-                <ListToolbarBottomRow
-                  left={<ManufacturersClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                  right={<ManufacturersRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
+    <ListPageShell>
+      <ListCreateButtonPortal label="Manufacturer" onClick={() => openCreate()} />
 
-            <ListToolbarCell className="ml-auto">
-              <AddManufacturerButton onClick={() => openCreate()} />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
-      </div>
+      <ListActionBar
+        label="Manufacturers"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="manufacturers"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        <ToolbarMenuButton label="Search" icon={Search} active={hasActiveFilters}>
+          <SearchControl
+            query={searchQuery}
+            onQueryChange={onSearchQueryChange}
+            placeholder="Search manufacturers"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
       <ManufacturersTable
         rows={rows}
@@ -108,6 +102,6 @@ export default function ManufacturersClient({
           onNextPage: goToNextPage,
         }}
       />
-    </div>
+    </ListPageShell>
   )
 }

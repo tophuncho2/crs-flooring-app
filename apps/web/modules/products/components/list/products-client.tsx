@@ -8,6 +8,8 @@ import {
   SearchControl,
   ListActionBar,
   ListCreateButtonPortal,
+  ListPageShell,
+  ListPageFeedback,
   ToolbarMenuButton,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
@@ -233,106 +235,87 @@ export default function ProductsClient({
   )
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+    <ListPageShell>
       <ListCreateButtonPortal label="Product" onClick={() => openCreate()} />
 
-      <div className="mx-4">
-        {message || pageError ? (
-          <div className="space-y-2 pb-2">
-            {message ? (
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-                {message}
-              </div>
-            ) : null}
-            {pageError ? (
-              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {pageError}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+      <ListPageFeedback message={message} pageError={pageError} />
 
-        <ListActionBar
-          label="Products"
-          rowCount={rows.length}
-          total={total}
-          rowCountLabel="products"
-          hasActiveFilters={hasActiveFilters}
-          onClearAll={handleClearAll}
+      <ListActionBar
+        label="Products"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="products"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        {/* Filter — products HAS one. The Category attribute picker, composed
+            directly (NOT the self-triggering FilterControl). */}
+        <ToolbarMenuButton
+          label="Filter"
+          icon={SlidersHorizontal}
+          active={hasActiveFilterTool}
         >
-          {/* Filter — products HAS one. The Category attribute picker, composed
-              directly (NOT the self-triggering FilterControl). */}
-          <ToolbarMenuButton
-            label="Filter"
-            icon={SlidersHorizontal}
-            active={hasActiveFilterTool}
-          >
-            <div className="flex w-[15rem] flex-col gap-2">
-              <CategoryFilterChip
-                value={selectedCategoryId}
-                selectedLabel={selectedCategoryLabel}
-                onChange={handleCategoryChange}
-                initialOptions={initialCategoryOptions}
-              />
-            </div>
-          </ToolbarMenuButton>
+          <CategoryFilterChip
+            value={selectedCategoryId}
+            selectedLabel={selectedCategoryLabel}
+            onChange={handleCategoryChange}
+            initialOptions={initialCategoryOptions}
+          />
+        </ToolbarMenuButton>
 
-          {/* Search — full-text + PROD # exact number + the color/style/naming
-              free-text bars, mirrors job-types. */}
-          <ToolbarMenuButton
-            label="Search"
-            icon={Search}
-            active={hasActiveSearchTool}
-          >
-            <div className="flex w-[15rem] flex-col gap-2">
-              <SearchControl
-                query={searchQuery}
-                onQueryChange={onSearchQueryChange}
-                placeholder="Search products"
-              />
-              <NumberSearchTabBody
-                value={prodNumberValue}
-                onChange={handleProdNumberChange}
-                placeholder="PROD #"
-                ariaLabel="Search products by product number"
-              />
-              <DebouncedSearchControl
-                value={colorValue}
-                onCommit={handleColorChange}
-                placeholder="Color"
-                ariaLabel="Search products by color"
-              />
-              <DebouncedSearchControl
-                value={styleValue}
-                onCommit={handleStyleChange}
-                placeholder="Style"
-                ariaLabel="Search products by style"
-              />
-              <DebouncedSearchControl
-                value={namingAddonValue}
-                onCommit={handleNamingAddonChange}
-                placeholder="Naming addon"
-                ariaLabel="Search products by naming addon"
-              />
-            </div>
-          </ToolbarMenuButton>
-        </ListActionBar>
+        {/* Search — full-text + PROD # exact number + the color/style/naming
+            free-text bars, mirrors job-types. */}
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={hasActiveSearchTool}
+        >
+          <SearchControl
+            query={searchQuery}
+            onQueryChange={onSearchQueryChange}
+            placeholder="Search products"
+          />
+          <NumberSearchTabBody
+            value={prodNumberValue}
+            onChange={handleProdNumberChange}
+            placeholder="PROD #"
+            ariaLabel="Search products by product number"
+          />
+          <DebouncedSearchControl
+            value={colorValue}
+            onCommit={handleColorChange}
+            placeholder="Color"
+            ariaLabel="Search products by color"
+          />
+          <DebouncedSearchControl
+            value={styleValue}
+            onCommit={handleStyleChange}
+            placeholder="Style"
+            ariaLabel="Search products by style"
+          />
+          <DebouncedSearchControl
+            value={namingAddonValue}
+            onCommit={handleNamingAddonChange}
+            placeholder="Naming addon"
+            ariaLabel="Search products by naming addon"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
-        <ProductsTable
-          rows={rows}
-          onOpenProduct={openProduct}
-          pagination={{
-            page,
-            pageSize,
-            totalItems: total,
-            totalPages,
-            hasPreviousPage,
-            hasNextPage,
-            onPreviousPage: goToPreviousPage,
-            onNextPage: goToNextPage,
-          }}
-        />
-      </div>
-    </div>
+      <ProductsTable
+        rows={rows}
+        onOpenProduct={openProduct}
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
+      />
+    </ListPageShell>
   )
 }

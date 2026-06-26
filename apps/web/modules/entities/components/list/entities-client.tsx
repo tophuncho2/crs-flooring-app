@@ -5,6 +5,8 @@ import { Search, SlidersHorizontal } from "lucide-react"
 import {
   ListActionBar,
   ListCreateButtonPortal,
+  ListPageShell,
+  ListPageFeedback,
   ToolbarMenuButton,
   SearchControl,
   StateSearchControl,
@@ -110,86 +112,67 @@ export default function EntitiesClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+    <ListPageShell>
       <ListCreateButtonPortal label="Entity" onClick={() => openCreate()} />
 
-      <div className="mx-4">
-        {message || pageError ? (
-          <div className="space-y-2 pb-2">
-            {message ? (
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-                {message}
-              </div>
-            ) : null}
-            {pageError ? (
-              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {pageError}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+      <ListPageFeedback message={message} pageError={pageError} />
 
-        <ListActionBar
-          label="Entities"
-          rowCount={rows.length}
-          total={total}
-          rowCountLabel="entities"
-          hasActiveFilters={hasActiveFilters}
-          onClearAll={handleClearAll}
+      <ListActionBar
+        label="Entities"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="entities"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        {/* Filter — the entity-type picker. */}
+        <ToolbarMenuButton
+          label="Filter"
+          icon={SlidersHorizontal}
+          active={hasActiveFilterTool}
         >
-          {/* Filter — the entity-type picker. */}
-          <ToolbarMenuButton
-            label="Filter"
-            icon={SlidersHorizontal}
-            active={hasActiveFilterTool}
-          >
-            <div className="flex w-[15rem] flex-col gap-2">
-              <EntityTypeMultiSelect
-                selectedIds={selectedTypeIds}
-                seedRefs={initialEntityTypeRefs}
-                editable
-                onChange={handleTypeFilterChange}
-              />
-            </div>
-          </ToolbarMenuButton>
+          <EntityTypeMultiSelect
+            selectedIds={selectedTypeIds}
+            seedRefs={initialEntityTypeRefs}
+            editable
+            onChange={handleTypeFilterChange}
+          />
+        </ToolbarMenuButton>
 
-          {/* Search — free-text bar + the state-code bar (both search-style
-              inputs; entities have no number field). */}
-          <ToolbarMenuButton
-            label="Search"
-            icon={Search}
-            active={hasActiveSearchTool}
-          >
-            <div className="flex w-[15rem] flex-col gap-2">
-              <SearchControl
-                query={searchQuery}
-                onQueryChange={onSearchQueryChange}
-                placeholder="Search entity"
-              />
-              <StateSearchControl
-                value={selectedState}
-                onChange={handleStateChange}
-                ariaLabel="Filter entities by state"
-              />
-            </div>
-          </ToolbarMenuButton>
-        </ListActionBar>
+        {/* Search — free-text bar + the state-code bar (both search-style
+            inputs; entities have no number field). */}
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={hasActiveSearchTool}
+        >
+          <SearchControl
+            query={searchQuery}
+            onQueryChange={onSearchQueryChange}
+            placeholder="Search entity"
+          />
+          <StateSearchControl
+            value={selectedState}
+            onChange={handleStateChange}
+            ariaLabel="Filter entities by state"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
-        <EntitiesTable
-          rows={rows}
-          onOpenEntity={(row) => openEntity(row.id)}
-          pagination={{
-            page,
-            pageSize,
-            totalItems: total,
-            totalPages,
-            hasPreviousPage,
-            hasNextPage,
-            onPreviousPage: goToPreviousPage,
-            onNextPage: goToNextPage,
-          }}
-        />
-      </div>
-    </div>
+      <EntitiesTable
+        rows={rows}
+        onOpenEntity={(row) => openEntity(row.id)}
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
+      />
+    </ListPageShell>
   )
 }

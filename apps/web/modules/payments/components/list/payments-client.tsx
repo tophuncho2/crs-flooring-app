@@ -5,6 +5,7 @@ import { Search } from "lucide-react"
 import {
   ListActionBar,
   ListCreateButtonPortal,
+  ListPageShell,
   ToolbarMenuButton,
   DebouncedSearchControl,
   useFetchListController,
@@ -111,55 +112,52 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
   // exact on its own column) live in a single Search menu. No gutter "Menu":
   // the table stays bare until CSV export lands.
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+    <ListPageShell>
       <ListCreateButtonPortal label="Payment" onClick={openCreate} />
 
-      <div className="mx-4">
-        <ListActionBar
-          label="Payments"
-          rowCount={rows.length}
-          total={total}
-          rowCountLabel="payments"
-          hasActiveFilters={hasActiveFilters}
-          onClearAll={handleClearAll}
+      <ListActionBar
+        label="Payments"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="payments"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={hasActiveFilters}
+          bodyClassName="w-[15rem] normal-case tracking-normal"
         >
-          <ToolbarMenuButton
-            label="Search"
-            icon={Search}
-            active={hasActiveFilters}
-          >
-            <div className="flex w-[15rem] flex-col gap-2 normal-case tracking-normal">
-              <DebouncedSearchControl
-                value={paymentNumberValue}
-                onCommit={(next) => handleTextFilterChange("paymentNumber", next)}
-                placeholder="Payment #"
-                ariaLabel="Search payments by payment number"
-              />
-              <DebouncedSearchControl
-                value={amountValue}
-                onCommit={(next) => handleTextFilterChange("amount", next)}
-                placeholder="Amount"
-                ariaLabel="Search payments by amount"
-              />
-            </div>
-          </ToolbarMenuButton>
-        </ListActionBar>
+          <DebouncedSearchControl
+            value={paymentNumberValue}
+            onCommit={(next) => handleTextFilterChange("paymentNumber", next)}
+            placeholder="Payment #"
+            ariaLabel="Search payments by payment number"
+          />
+          <DebouncedSearchControl
+            value={amountValue}
+            onCommit={(next) => handleTextFilterChange("amount", next)}
+            placeholder="Amount"
+            ariaLabel="Search payments by amount"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
-        <PaymentsTable
-          rows={rows}
-          onOpenPayment={(row) => openPayment(row)}
-          pagination={{
-            page,
-            pageSize,
-            totalItems: total,
-            totalPages,
-            hasPreviousPage,
-            hasNextPage,
-            onPreviousPage: goToPreviousPage,
-            onNextPage: goToNextPage,
-          }}
-        />
-      </div>
-    </div>
+      <PaymentsTable
+        rows={rows}
+        onOpenPayment={(row) => openPayment(row)}
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
+      />
+    </ListPageShell>
   )
 }

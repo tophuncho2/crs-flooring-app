@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
-import { SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, NumberSearchTabBody, ListActionBar, ToolbarMenuButton, ListCreateButtonPortal, type TableOptionsConfig } from "@/engines/list-view"
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
+import { SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, NumberSearchTabBody, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal, type TableOptionsConfig } from "@/engines/list-view"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   LIST_INVENTORY_PAGE_SIZE,
@@ -328,27 +328,14 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
-  // Table-level controls live in the table's gutter TableOptions menu: the "Sort"
-  // tab wraps the multi-column sort builder; the "Inv #" tab hosts the inventory
-  // row-number search (relocated off the toolbar). Single-column sort stays a
-  // header-caret click; column keys match the backend sort fields, so `sorts`
-  // flows straight onto the header carets.
+  // The inventory row-number search stays in the table's gutter TableOptions menu
+  // (the "Inv #" tab) — relocated off the toolbar, excluded from the Search dot.
+  // Multi-column sort now lives in the ListActionBar Sort tool; single-column
+  // sort stays a header-caret click (column keys match the backend sort fields,
+  // so `sorts` flows straight onto the header carets).
   const tableOptions = useMemo<TableOptionsConfig>(
     () => ({
       tabs: [
-        {
-          key: "sort",
-          label: "Sort",
-          active: sorts.length > 0,
-          render: () => (
-            <SortMenuBody
-              options={INVENTORY_SORT_OPTIONS}
-              value={sorts}
-              maxLevels={INVENTORY_MAX_SORT_LEVELS}
-              onChange={onSortsChange}
-            />
-          ),
-        },
         {
           key: "number",
           label: "Inv #",
@@ -364,8 +351,10 @@ export default function InventoryClient({
         },
       ],
     }),
-    [sorts, onSortsChange, invNumberValue, handleTextFilterChange],
+    [invNumberValue, handleTextFilterChange],
   )
+
+  const hasActiveSortTool = sorts.length > 0
 
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
   // ListActionBar clear-all signal. Filter = the warehouse/location/category/
@@ -408,120 +397,118 @@ export default function InventoryClient({
   }, [onClearAllFilters])
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+    <ListPageShell>
       <ListCreateButtonPortal label="Inventory" onClick={() => openCreate()} />
 
-      <div className="mx-4">
-        {message || pageError ? (
-          <div className="space-y-2 pb-2">
-            {message ? (
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-                {message}
-              </div>
-            ) : null}
-            {pageError ? (
-              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {pageError}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+      <ListPageFeedback message={message} pageError={pageError} />
 
-        <ListActionBar
-          label="Inventory"
-          rowCount={rows.length}
-          total={total}
-          rowCountLabel="inventory"
-          hasActiveFilters={hasActiveFilters}
-          onClearAll={handleClearAll}
+      <ListActionBar
+        label="Inventory"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="inventory"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        {/* Sort — the multi-column builder, leftmost. Single-column sort stays a
+            header-caret click on the table. */}
+        <ToolbarMenuButton
+          label="Sort"
+          icon={ArrowUpDown}
+          active={hasActiveSortTool}
+          bodyClassName="w-auto"
         >
-          {/* Filter — the attribute pickers composed directly (NOT a
-              self-triggering FilterControl). Cascades preserved: Warehouse
-              gates/clears Location; Category clears Product; PO# and IMP# are
-              mutually exclusive. Status defaults to Active. */}
-          <ToolbarMenuButton
-            label="Filter"
-            icon={SlidersHorizontal}
-            active={hasActiveFilterTool}
-          >
-            <div className="flex w-[15rem] flex-col gap-2">
-              <WarehouseFilterChip
-                value={selectedWarehouseId}
-                selectedLabel={warehouseLabel}
-                onChange={handleWarehouseChange}
-                initialOptions={initialWarehouseOptions}
-              />
-              <LocationPicker
-                value={locationValue || null}
-                onChange={handleLocationChange}
-                warehouseId={selectedWarehouseId}
-                placeholder="Location"
-                disabledPlaceholder="Select warehouse first"
-                ariaLabel="Filter inventory by location"
-              />
-              <CategoryFilterChip
-                value={selectedCategoryId}
-                selectedLabel={categoryLabel}
-                onChange={handleCategoryChange}
-                initialOptions={initialCategoryOptions}
-              />
-              <ProductFilterChip
-                value={selectedProductId}
-                selectedLabel={productLabel}
-                categoryId={selectedCategoryId}
-                onChange={handleProductChange}
-              />
-              <PurchaseOrderPicker
-                value={selectedPurchaseOrderNumber}
-                onChange={handlePurchaseOrderChange}
-                placeholder="PO#"
-                ariaLabel="Filter inventory by import PO number"
-              />
-              <ImportNumberPicker
-                value={selectedImportNumber}
-                onChange={handleImportNumberChange}
-                placeholder="IMP#"
-                ariaLabel="Filter inventory by import number"
-              />
-              <ArchiveSegmentedControl
-                value={isArchivedValue}
-                onChange={handleArchivedChange}
-              />
-            </div>
-          </ToolbarMenuButton>
+          <SortMenuBody
+            options={INVENTORY_SORT_OPTIONS}
+            value={sorts}
+            maxLevels={INVENTORY_MAX_SORT_LEVELS}
+            onChange={onSortsChange}
+          />
+        </ToolbarMenuButton>
 
-          {/* Search — the per-field identity free-text bars. Inv # stays in the
-              DataTable gutter (tableOptions), not here. Each bar ILIKEs its own
-              column; filling more than one narrows (AND). */}
-          <ToolbarMenuButton
-            label="Search"
-            icon={Search}
-            active={hasActiveSearchTool}
-          >
-            <div className="flex w-[15rem] flex-col gap-2">
-              <DebouncedSearchControl
-                value={rollNumberValue}
-                onCommit={(next) => handleTextFilterChange("rollNumber", next)}
-                placeholder="Roll #"
-                ariaLabel="Search inventory by roll number"
-              />
-              <DebouncedSearchControl
-                value={dyeLotValue}
-                onCommit={(next) => handleTextFilterChange("dyeLot", next)}
-                placeholder="Dye lot"
-                ariaLabel="Search inventory by dye lot"
-              />
-              <DebouncedSearchControl
-                value={noteValue}
-                onCommit={(next) => handleTextFilterChange("note", next)}
-                placeholder="Note"
-                ariaLabel="Search inventory by note"
-              />
-            </div>
-          </ToolbarMenuButton>
-        </ListActionBar>
+        {/* Filter — the attribute pickers composed directly (NOT a
+            self-triggering FilterControl). Cascades preserved: Warehouse
+            gates/clears Location; Category clears Product; PO# and IMP# are
+            mutually exclusive. Status defaults to Active. */}
+        <ToolbarMenuButton
+          label="Filter"
+          icon={SlidersHorizontal}
+          active={hasActiveFilterTool}
+        >
+          <WarehouseFilterChip
+            value={selectedWarehouseId}
+            selectedLabel={warehouseLabel}
+            onChange={handleWarehouseChange}
+            initialOptions={initialWarehouseOptions}
+          />
+          <LocationPicker
+            value={locationValue || null}
+            onChange={handleLocationChange}
+            warehouseId={selectedWarehouseId}
+            placeholder="Location"
+            disabledPlaceholder="Select warehouse first"
+            ariaLabel="Filter inventory by location"
+          />
+          <CategoryFilterChip
+            value={selectedCategoryId}
+            selectedLabel={categoryLabel}
+            onChange={handleCategoryChange}
+            initialOptions={initialCategoryOptions}
+          />
+          <ProductFilterChip
+            value={selectedProductId}
+            selectedLabel={productLabel}
+            categoryId={selectedCategoryId}
+            onChange={handleProductChange}
+          />
+          <PurchaseOrderPicker
+            value={selectedPurchaseOrderNumber}
+            onChange={handlePurchaseOrderChange}
+            placeholder="PO#"
+            ariaLabel="Filter inventory by import PO number"
+          />
+          <ImportNumberPicker
+            value={selectedImportNumber}
+            onChange={handleImportNumberChange}
+            placeholder="IMP#"
+            ariaLabel="Filter inventory by import number"
+          />
+          <ArchiveSegmentedControl
+            value={isArchivedValue}
+            onChange={handleArchivedChange}
+          />
+        </ToolbarMenuButton>
 
-        <InventoryTable
+        {/* Search — the per-field identity free-text bars. Inv # stays in the
+            DataTable gutter (tableOptions), not here. Each bar ILIKEs its own
+            column; filling more than one narrows (AND). */}
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={hasActiveSearchTool}
+        >
+          <DebouncedSearchControl
+            value={rollNumberValue}
+            onCommit={(next) => handleTextFilterChange("rollNumber", next)}
+            placeholder="Roll #"
+            ariaLabel="Search inventory by roll number"
+          />
+          <DebouncedSearchControl
+            value={dyeLotValue}
+            onCommit={(next) => handleTextFilterChange("dyeLot", next)}
+            placeholder="Dye lot"
+            ariaLabel="Search inventory by dye lot"
+          />
+          <DebouncedSearchControl
+            value={noteValue}
+            onCommit={(next) => handleTextFilterChange("note", next)}
+            placeholder="Note"
+            ariaLabel="Search inventory by note"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
+
+      <InventoryTable
         rows={rows}
         onOpenInventory={(id) =>
           router.push(buildInventoryRecordHref({ inventoryId: id, returnTo }))
@@ -547,8 +534,7 @@ export default function InventoryClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
-        />
-      </div>
-    </div>
+      />
+    </ListPageShell>
   )
 }

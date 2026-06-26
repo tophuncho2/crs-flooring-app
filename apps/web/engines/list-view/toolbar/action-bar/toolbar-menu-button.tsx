@@ -19,7 +19,13 @@ export type ToolbarMenuButtonProps = {
   ariaLabel?: string
   /** Sticky header content for the popover; defaults to `label`. */
   title?: ReactNode
-  /** The menu body (search/filter/sort controls). */
+  /**
+   * Width class for the menu body wrapper. The engine owns the body layout
+   * (`flex flex-col gap-2`) so consumers just drop controls in; override only
+   * the width (defaults to `w-[15rem]`) when a body needs to be wider.
+   */
+  bodyClassName?: string
+  /** The menu body controls (search/filter/sort) — wrapped by the engine. */
   children: ReactNode
 }
 
@@ -36,6 +42,7 @@ export function ToolbarMenuButton({
   active = false,
   ariaLabel,
   title,
+  bodyClassName,
   children,
 }: ToolbarMenuButtonProps) {
   const [open, setOpen] = useState(false)
@@ -76,7 +83,9 @@ export function ToolbarMenuButton({
         </button>
       }
     >
-      {children}
+      <div className={joinClassNames("flex flex-col gap-2", bodyClassName ?? "w-[15rem]")}>
+        {children}
+      </div>
     </AnchoredPanel>
   )
 }

@@ -1,7 +1,19 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { DebouncedSearchControl, NumberSearchTabBody, ListToolbar, ListToolbarBottomRow, ListToolbarCell, SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, type TableOptionsConfig } from "@/engines/list-view"
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
+import {
+  DebouncedSearchControl,
+  NumberSearchTabBody,
+  SortMenuBody,
+  ListActionBar,
+  ListCreateButtonPortal,
+  ListPageShell,
+  ListPageFeedback,
+  ToolbarMenuButton,
+  useFetchListController,
+  LIST_FRESHNESS_STANDARD,
+} from "@/engines/list-view"
 import type { WorkOrdersListFilters } from "@builders/application"
 import type {
   JobTypeOption,
@@ -19,7 +31,6 @@ import {
 } from "@/modules/work-orders/data/list-work-orders-request"
 import { useWorkOrdersListController } from "@/modules/work-orders/controllers/list/use-work-orders-list-controller"
 import { WorkOrdersTable } from "./work-orders-table"
-import { AddWorkOrderButton } from "./toolbar-controls/add-work-order-button"
 import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
@@ -27,8 +38,6 @@ import { ScheduledForFilterBody } from "./toolbar-controls/scheduled-for-filter-
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
-import { WorkOrdersClearAll } from "./toolbar-controls/sub-controls/work-orders-clear-all"
-import { WorkOrdersRowCount } from "./toolbar-controls/sub-controls/work-orders-row-count"
 
 const WORK_ORDERS_ALLOWED_SORT_FIELDS = [
   "createdAt",
@@ -276,235 +285,170 @@ export default function WorkOrdersClient({
     [onFilterChange],
   )
 
-  // Table-level controls live in the table's gutter TableOptions menu: the
-  // "Sort" tab wraps the multi-column sort builder, the "WO #" tab hosts the
-  // work-order row-number search (relocated off the toolbar), and the "Date" tab
-  // hosts the scheduled-for range filter (moved off the Date column header funnel
-  // — the toolbar chip was already retired). Single-column sort stays a header caret.
-  const tableOptions = useMemo<TableOptionsConfig>(
-    () => ({
-      tabs: [
-        {
-          key: "sort",
-          label: "Sort",
-          active: sorts.length > 0,
-          render: () => (
-            <SortMenuBody
-              options={WORK_ORDERS_SORT_OPTIONS}
-              value={sorts}
-              maxLevels={WORK_ORDERS_MAX_SORT_LEVELS}
-              onChange={onSortsChange}
-            />
-          ),
-        },
-        {
-          key: "number",
-          label: "WO #",
-          active: workOrderNumberValue.trim().length > 0,
-          render: () => (
-            <NumberSearchTabBody
-              value={workOrderNumberValue}
-              onChange={(next) => handleTextFilterChange("workOrderNumber", next)}
-              placeholder="WO #"
-              ariaLabel="Search work orders by work order number"
-            />
-          ),
-        },
-        {
-          key: "date",
-          label: "Date",
-          active: Boolean(selectedScheduledStart || selectedScheduledEnd),
-          render: () => (
-            <ScheduledForFilterBody
-              start={selectedScheduledStart}
-              end={selectedScheduledEnd}
-              onChange={handleScheduledForChange}
-            />
-          ),
-        },
-      ],
-    }),
+  // Each tool lights its own dot. Sort = the multi-column builder; Filter = the
+  // Entity→Property→Template chain + Warehouse/JobType/Vacancy + the scheduled-for
+  // date range; Search = the unit type / unit # / description / WO # bars.
+  // `hasActiveFilters` is the ListActionBar clear-all signal (filters + search;
+  // sort is cleared from inside the Sort menu, mirroring the prior behaviour).
+  const hasActiveSortTool = sorts.length > 0
+
+  const hasActiveFilterTool = useMemo(
+    () =>
+      Boolean(selectedEntityId) ||
+      Boolean(selectedPropertyId) ||
+      Boolean(selectedTemplateId) ||
+      Boolean(selectedWarehouseId) ||
+      Boolean(selectedJobTypeId) ||
+      Boolean(selectedVacancy) ||
+      Boolean(selectedScheduledStart) ||
+      Boolean(selectedScheduledEnd),
     [
-      sorts,
-      onSortsChange,
-      workOrderNumberValue,
-      handleTextFilterChange,
+      selectedEntityId,
+      selectedPropertyId,
+      selectedTemplateId,
+      selectedWarehouseId,
+      selectedJobTypeId,
+      selectedVacancy,
       selectedScheduledStart,
       selectedScheduledEnd,
-      handleScheduledForChange,
     ],
   )
 
-  const hasActiveFilters = useMemo(() => {
-    if (
-      unitTypeValue ||
-      unitNumberValue ||
-      workOrderNumberValue ||
-      descriptionValue
-    ) {
-      return true
-    }
-    if (
-      selectedEntityId ||
-      selectedPropertyId ||
-      selectedTemplateId ||
-      selectedWarehouseId ||
-      selectedJobTypeId ||
-      selectedVacancy ||
-      selectedScheduledStart ||
-      selectedScheduledEnd
-    ) {
-      return true
-    }
-    return false
-  }, [
-    unitTypeValue,
-    unitNumberValue,
-    workOrderNumberValue,
-    descriptionValue,
-    selectedEntityId,
-    selectedPropertyId,
-    selectedTemplateId,
-    selectedWarehouseId,
-    selectedJobTypeId,
-    selectedVacancy,
-    selectedScheduledStart,
-    selectedScheduledEnd,
-  ])
+  const hasActiveSearchTool = useMemo(
+    () =>
+      Boolean(unitTypeValue) ||
+      Boolean(unitNumberValue) ||
+      Boolean(workOrderNumberValue) ||
+      Boolean(descriptionValue),
+    [unitTypeValue, unitNumberValue, workOrderNumberValue, descriptionValue],
+  )
+
+  const hasActiveFilters = useMemo(
+    () => hasActiveFilterTool || hasActiveSearchTool,
+    [hasActiveFilterTool, hasActiveSearchTool],
+  )
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
   }, [onClearAllFilters])
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
-      <div className="mx-4 rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]">
-        {message || pageError ? (
-          <div className="space-y-2 border-b border-[var(--panel-border)] px-4 py-3">
-            {message ? (
-              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800">
-                {message}
-              </div>
-            ) : null}
-            {pageError ? (
-              <div className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-800">
-                {pageError}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+    <ListPageShell>
+      <ListCreateButtonPortal label="Work Order" onClick={() => openCreate()} />
 
-        <div>
-          <div className="px-4 pt-3">
-            <span className="inline-block rounded-t-md border border-b-0 border-[var(--panel-border)] bg-blue-500/15 px-3 py-1 text-xs font-bold text-black">
-              Work Orders
-            </span>
-          </div>
-          {/* pt-0 overrides ListToolbar's pt-4 so the tab's bottom edge meets
-              the encased card's top edge (rounded-tl-none seam). */}
-          <ListToolbar className="pt-0" showDivider={false}>
-            {/* Per-column search bars + (Clear all | row count) — encased card
-                attached to the tab above. Unit type / Unit # / Description each
-                filter their own column (case-insensitive ILIKE). WO # row-number
-                search lives in the table's gutter TableOptions menu ("WO #" tab). */}
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md rounded-tl-none border border-[var(--panel-border)] p-2">
-                <DebouncedSearchControl
-                  value={unitTypeValue}
-                  onCommit={(next) => handleTextFilterChange("unitType", next)}
-                  placeholder="Unit type"
-                  ariaLabel="Search work orders by unit type"
-                />
-                <DebouncedSearchControl
-                  value={unitNumberValue}
-                  onCommit={(next) => handleTextFilterChange("unitNumber", next)}
-                  placeholder="Unit #"
-                  ariaLabel="Search work orders by unit number"
-                />
-                <DebouncedSearchControl
-                  value={descriptionValue}
-                  onCommit={(next) => handleTextFilterChange("description", next)}
-                  placeholder="Description"
-                  ariaLabel="Search work orders by description"
-                />
-                <ListToolbarBottomRow
-                  left={<WorkOrdersClearAll hasActive={hasActiveFilters} onClick={handleClearAll} />}
-                  right={<WorkOrdersRowCount count={rows.length} total={total} />}
-                />
-              </div>
-            </ListToolbarCell>
+      <ListPageFeedback message={message} pageError={pageError} />
 
-            {/* One encased card: Entity → Property → Template stacked together.
-                Property is entity-scoped and Template is property-scoped — a
-                entity change cascades the property + template chip clears
-                (handleEntityChange); a property change cascades the template
-                clear (handlePropertyChange). */}
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
-                <EntityFilterChip
-                  value={selectedEntityId}
-                  selectedLabel={entityLabel}
-                  onChange={handleEntityChange}
-                  initialOptions={initialEntityOptions}
-                />
-                <PropertyFilterChip
-                  value={selectedPropertyId}
-                  selectedLabel={propertyLabel}
-                  entityId={selectedEntityId}
-                  onChange={handlePropertyChange}
-                  initialOptions={initialPropertyOptions}
-                />
-                <TemplateFilterChip
-                  value={selectedTemplateId}
-                  selectedLabel={templateLabel}
-                  propertyId={selectedPropertyId}
-                  entityId={selectedEntityId}
-                  onChange={handleTemplateChange}
-                  initialOptions={initialTemplateOptions}
-                />
-              </div>
-            </ListToolbarCell>
+      <ListActionBar
+        label="Work Orders"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="work orders"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        {/* Sort — the multi-column builder, leftmost. Single-column sort stays a
+            header-caret click on the table. */}
+        <ToolbarMenuButton
+          label="Sort"
+          icon={ArrowUpDown}
+          active={hasActiveSortTool}
+          bodyClassName="w-auto"
+        >
+          <SortMenuBody
+            options={WORK_ORDERS_SORT_OPTIONS}
+            value={sorts}
+            maxLevels={WORK_ORDERS_MAX_SORT_LEVELS}
+            onChange={onSortsChange}
+          />
+        </ToolbarMenuButton>
 
-            {/* One encased card: Warehouse + Job Type + Vacancy stacked together.
-                All independent, non-cascading single-selects. Vacancy is a static
-                two-option enum dropdown (off when nothing is selected). */}
-            <ListToolbarCell>
-              <div className="flex flex-col gap-2 rounded-md border border-[var(--panel-border)] p-2">
-                <WarehouseFilterChip
-                  value={selectedWarehouseId}
-                  selectedLabel={warehouseLabel}
-                  onChange={handleWarehouseChange}
-                  initialOptions={initialWarehouseOptions}
-                />
-                <JobTypeFilterChip
-                  value={selectedJobTypeId}
-                  selectedLabel={jobTypeLabel}
-                  onChange={handleJobTypeChange}
-                  initialOptions={initialJobTypeOptions}
-                />
-                <VacancyFilterChip
-                  value={selectedVacancy}
-                  onChange={handleVacancyChange}
-                />
-              </div>
-            </ListToolbarCell>
+        {/* Filter — Entity → Property → Template (cascade) + Warehouse / Job Type
+            / Vacancy (independent) + the scheduled-for date range. Pickers are
+            composed directly (NOT a self-triggering FilterControl). */}
+        <ToolbarMenuButton
+          label="Filter"
+          icon={SlidersHorizontal}
+          active={hasActiveFilterTool}
+        >
+          <EntityFilterChip
+            value={selectedEntityId}
+            selectedLabel={entityLabel}
+            onChange={handleEntityChange}
+            initialOptions={initialEntityOptions}
+          />
+          <PropertyFilterChip
+            value={selectedPropertyId}
+            selectedLabel={propertyLabel}
+            entityId={selectedEntityId}
+            onChange={handlePropertyChange}
+            initialOptions={initialPropertyOptions}
+          />
+          <TemplateFilterChip
+            value={selectedTemplateId}
+            selectedLabel={templateLabel}
+            propertyId={selectedPropertyId}
+            entityId={selectedEntityId}
+            onChange={handleTemplateChange}
+            initialOptions={initialTemplateOptions}
+          />
+          <WarehouseFilterChip
+            value={selectedWarehouseId}
+            selectedLabel={warehouseLabel}
+            onChange={handleWarehouseChange}
+            initialOptions={initialWarehouseOptions}
+          />
+          <JobTypeFilterChip
+            value={selectedJobTypeId}
+            selectedLabel={jobTypeLabel}
+            onChange={handleJobTypeChange}
+            initialOptions={initialJobTypeOptions}
+          />
+          <VacancyFilterChip value={selectedVacancy} onChange={handleVacancyChange} />
+          <ScheduledForFilterBody
+            start={selectedScheduledStart}
+            end={selectedScheduledEnd}
+            onChange={handleScheduledForChange}
+          />
+        </ToolbarMenuButton>
 
-            {/* Scheduled-for date filter + multi-column sort both live in the
-                table's gutter TableOptions menu ("Date" and "Sort" tabs).
-                Single-column sort stays a header-caret click. */}
-            <ListToolbarCell className="ml-auto">
-              <AddWorkOrderButton onClick={() => openCreate()} />
-            </ListToolbarCell>
-          </ListToolbar>
-        </div>
-      </div>
+        {/* Search — the per-column identity bars + WO # exact number. */}
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={hasActiveSearchTool}
+        >
+          <DebouncedSearchControl
+            value={unitTypeValue}
+            onCommit={(next) => handleTextFilterChange("unitType", next)}
+            placeholder="Unit type"
+            ariaLabel="Search work orders by unit type"
+          />
+          <DebouncedSearchControl
+            value={unitNumberValue}
+            onCommit={(next) => handleTextFilterChange("unitNumber", next)}
+            placeholder="Unit #"
+            ariaLabel="Search work orders by unit number"
+          />
+          <DebouncedSearchControl
+            value={descriptionValue}
+            onCommit={(next) => handleTextFilterChange("description", next)}
+            placeholder="Description"
+            ariaLabel="Search work orders by description"
+          />
+          <NumberSearchTabBody
+            value={workOrderNumberValue}
+            onChange={(next) => handleTextFilterChange("workOrderNumber", next)}
+            placeholder="WO #"
+            ariaLabel="Search work orders by work order number"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
       <WorkOrdersTable
         rows={rows}
         onOpenWorkOrder={openWorkOrder}
         sorts={tableSorts}
         onSort={handleSort}
-        tableOptions={tableOptions}
         pagination={{
           page,
           pageSize,
@@ -516,6 +460,6 @@ export default function WorkOrdersClient({
           onNextPage: goToNextPage,
         }}
       />
-    </div>
+    </ListPageShell>
   )
 }

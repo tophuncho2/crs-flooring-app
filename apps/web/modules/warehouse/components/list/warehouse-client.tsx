@@ -5,6 +5,7 @@ import { Search } from "lucide-react"
 import {
   ListActionBar,
   ListCreateButtonPortal,
+  ListPageShell,
   ToolbarMenuButton,
   SearchControl,
   NumberSearchTabBody,
@@ -133,55 +134,51 @@ export default function WarehouseClient({
   }, [onSearchQueryChange, onClearAllFilters])
 
   return (
-    <div className="min-h-screen space-y-3 bg-[var(--background)] px-0 pt-24 pb-12 text-[var(--foreground)] sm:pt-28">
+    <ListPageShell>
       <ListCreateButtonPortal label="Warehouse" onClick={() => openCreate()} />
 
-      <div className="mx-4">
-        <ListActionBar
-          label="Warehouse"
-          rowCount={rows.length}
-          total={total}
-          rowCountLabel="warehouses"
-          hasActiveFilters={hasActiveFilters}
-          onClearAll={handleClearAll}
+      <ListActionBar
+        label="Warehouse"
+        rowCount={rows.length}
+        total={total}
+        rowCountLabel="warehouses"
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAll}
+      >
+        <ToolbarMenuButton
+          label="Search"
+          icon={Search}
+          active={searchQuery.trim().length > 0 || storeNumberValue.trim().length > 0}
         >
-          <ToolbarMenuButton
-            label="Search"
-            icon={Search}
-            active={searchQuery.trim().length > 0 || storeNumberValue.trim().length > 0}
-          >
-            <div className="flex flex-col gap-2">
-              <SearchControl
-                query={searchQuery}
-                onQueryChange={onSearchQueryChange}
-                placeholder="Search Warehouse Name"
-              />
-              <NumberSearchTabBody
-                value={storeNumberValue}
-                onChange={handleStoreNumberChange}
-                placeholder="Store #"
-                ariaLabel="Search warehouses by store number"
-              />
-            </div>
-          </ToolbarMenuButton>
-        </ListActionBar>
+          <SearchControl
+            query={searchQuery}
+            onQueryChange={onSearchQueryChange}
+            placeholder="Search Warehouse Name"
+          />
+          <NumberSearchTabBody
+            value={storeNumberValue}
+            onChange={handleStoreNumberChange}
+            placeholder="Store #"
+            ariaLabel="Search warehouses by store number"
+          />
+        </ToolbarMenuButton>
+      </ListActionBar>
 
-        <WarehouseTable
-          rows={rows}
-          onOpen={(row) => openWarehouse(row.id)}
-          tableOptions={tableOptions}
-          pagination={{
-            page,
-            pageSize,
-            totalItems: total,
-            totalPages,
-            hasPreviousPage,
-            hasNextPage,
-            onPreviousPage: goToPreviousPage,
-            onNextPage: goToNextPage,
-          }}
-        />
-      </div>
-    </div>
+      <WarehouseTable
+        rows={rows}
+        onOpen={(row) => openWarehouse(row.id)}
+        tableOptions={tableOptions}
+        pagination={{
+          page,
+          pageSize,
+          totalItems: total,
+          totalPages,
+          hasPreviousPage,
+          hasNextPage,
+          onPreviousPage: goToPreviousPage,
+          onNextPage: goToNextPage,
+        }}
+      />
+    </ListPageShell>
   )
 }
