@@ -34,8 +34,8 @@ function JobTypeCreatePanel({
       title="Job Type Details"
       controller={controller}
       showHeader={false}
-      saveLabel="Create Job Type"
-      savingLabel="Creating Job Type..."
+      saveLabel="Create"
+      savingLabel="Creating..."
     >
       <JobTypePrimaryFieldsSection
         draft={controller.primarySection.localValue}

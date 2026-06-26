@@ -76,7 +76,7 @@ export function ProductRecordPanel({
                 onSave={() => void controller.primarySection.save()}
                 onDiscard={controller.primarySection.discard}
                 saveLabel="Save"
-                savingLabel="Saving Product..."
+                savingLabel="Saving..."
                 showHeader={false}
               >
                 <ProductPrimaryFieldsSection

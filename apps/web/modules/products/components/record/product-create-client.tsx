@@ -86,7 +86,7 @@ function ProductCreatePanel({
         controller={controller}
         showHeader={false}
         saveLabel="Create"
-        savingLabel="Creating Product..."
+        savingLabel="Creating..."
       >
         <ProductPrimaryFieldsSection
           product={EMPTY_PRODUCT}

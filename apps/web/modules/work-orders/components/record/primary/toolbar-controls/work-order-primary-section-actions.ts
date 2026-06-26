@@ -19,7 +19,7 @@ export function workOrderPrimarySectionActions({
 }): WorkOrderPrimarySectionActions {
   return {
     saveLabel: "Save",
-    savingLabel: "Saving Work Order...",
+    savingLabel: "Saving...",
     onSave,
     onDiscard,
   }

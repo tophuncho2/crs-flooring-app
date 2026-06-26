@@ -55,8 +55,8 @@ function PaymentCreatePanel({
       title="Payment Details"
       controller={controller}
       showHeader={false}
-      saveLabel="Create Payment"
-      savingLabel="Creating Payment..."
+      saveLabel="Create"
+      savingLabel="Creating..."
     >
       <PaymentPrimaryFieldsSection
         draft={controller.primarySection.localValue}

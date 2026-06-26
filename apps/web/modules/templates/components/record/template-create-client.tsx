@@ -43,7 +43,7 @@ function TemplateCreatePanel({
         controller={controller}
         showHeader={false}
         saveLabel="Create"
-        savingLabel="Creating Template..."
+        savingLabel="Creating..."
       >
         <TemplatePrimaryFieldsSection
           draft={controller.primarySection.localValue}

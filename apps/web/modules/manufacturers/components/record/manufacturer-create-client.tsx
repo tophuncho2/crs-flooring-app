@@ -34,8 +34,8 @@ function ManufacturerCreatePanel({
       title="Manufacturer Details"
       controller={controller}
       showHeader={false}
-      saveLabel="Create Manufacturer"
-      savingLabel="Creating Manufacturer..."
+      saveLabel="Create"
+      savingLabel="Creating..."
     >
       <ManufacturerPrimaryFieldsSection
         draft={controller.primarySection.localValue}

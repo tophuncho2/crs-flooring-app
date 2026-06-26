@@ -74,7 +74,7 @@ function WorkOrderCreatePanel({
         controller={controller}
         showHeader={false}
         saveLabel="Create"
-        savingLabel="Creating Work Order..."
+        savingLabel="Creating..."
       >
         <WorkOrderPrimaryFieldsSection
           draft={controller.primarySection.localValue}

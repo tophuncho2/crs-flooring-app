@@ -43,7 +43,7 @@ function PropertyHubCreatePanel({
       controller={controller}
       showHeader={false}
       saveLabel="Create"
-      savingLabel="Creating…"
+      savingLabel="Creating..."
     >
       <div className="space-y-4">
         <EntitySelectSection

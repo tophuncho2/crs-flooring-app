@@ -35,7 +35,7 @@ function EntityTypeCreatePanel({
       controller={controller}
       showHeader={false}
       saveLabel="Create"
-      savingLabel="Creating Entity Type..."
+      savingLabel="Creating..."
     >
       <EntityTypePrimaryFieldsSection
         draft={controller.primarySection.localValue}

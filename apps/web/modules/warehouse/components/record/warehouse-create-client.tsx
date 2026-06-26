@@ -34,8 +34,8 @@ function WarehouseCreatePanel({
       title="Warehouse Details"
       controller={controller}
       showHeader={false}
-      saveLabel="Create Warehouse"
-      savingLabel="Creating Warehouse..."
+      saveLabel="Create"
+      savingLabel="Creating..."
     >
       <WarehousePrimaryFieldsSection
         draft={controller.primarySection.localValue}

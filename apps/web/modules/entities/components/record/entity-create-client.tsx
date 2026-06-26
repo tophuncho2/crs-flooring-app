@@ -42,8 +42,8 @@ function EntityCreatePanel({
         <RecordPrimarySectionInstance
           title="Entity"
           showHeader={false}
-          saveLabel="Create Entity"
-          savingLabel="Creating Entity..."
+          saveLabel="Create"
+          savingLabel="Creating..."
           error={primary.error}
           noticeMessage={primary.noticeMessage}
           noticeError={primary.noticeError}

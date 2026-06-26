@@ -69,7 +69,7 @@ export function TemplateMaterialItemsSection({
         onSave,
         onDiscard,
         saveLabel: "Save",
-        savingLabel: "Saving Material Items...",
+        savingLabel: "Saving...",
         discardLabel: "Discard",
         error,
         actions: [

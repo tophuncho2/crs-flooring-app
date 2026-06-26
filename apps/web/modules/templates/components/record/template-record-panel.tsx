@@ -53,7 +53,7 @@ export function TemplateRecordPanel({
                 onSave={() => void primary.primarySection.save()}
                 onDiscard={primary.primarySection.discard}
                 saveLabel="Save"
-                savingLabel="Saving Template..."
+                savingLabel="Saving..."
                 showHeader={false}
                 actions={[
                   {
