@@ -51,10 +51,11 @@ const WASTE_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
  * half-width (`colSpan={4}`) stacked cell.
  *
  * **edit** (the embedded record-view face) — this component owns the full layout:
- * a centered `RecordColumnBreak` above a `RecordSectionDivider` and a Created /
- * Updated footer. Left flank pairs Adjustment # | Color, Quantity | Type, and
- * Location | Warehouse (the source inventory's warehouse, read-only), then the
- * before→after Adjustment transition; right flank = Work order / Notes / Waste.
+ * a centered `RecordColumnBreak` above a `RecordSectionDivider` and a half-width
+ * Created | Updated footer. Left flank pairs Quantity | Type and Location |
+ * Warehouse (the source inventory's warehouse, read-only), then the before→after
+ * Adjustment transition with Adjustment # | Color seated below it; right flank =
+ * Work order / Notes / Waste.
  *
  * Every field is freely editable (only disabled mid-save); flipping the type
  * re-flows the before→after transition server-side on each save.
@@ -177,17 +178,11 @@ export function AdjustmentEditFormFields({
       <RecordColumnBreak
         left={
           <InventoryFieldGrid>
-            {/* Adjustment # | Color paired, then Quantity | Type paired */}
-            <CellAt col={1} row={1} colSpan={4}>
-              <FormField label="Adjustment #">
-                <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
-              </FormField>
-            </CellAt>
-            <CellAt col={5} row={1} colSpan={4}>{colorField}</CellAt>
-            <CellAt col={1} row={2} colSpan={4}>{quantityField}</CellAt>
-            <CellAt col={5} row={2} colSpan={4}>{typeField}</CellAt>
+            {/* Quantity | Type paired, then Location | Warehouse */}
+            <CellAt col={1} row={1} colSpan={4}>{quantityField}</CellAt>
+            <CellAt col={5} row={1} colSpan={4}>{typeField}</CellAt>
             {/* Location (editable) beside the read-only source Warehouse */}
-            <CellAt col={1} row={3} colSpan={4}>
+            <CellAt col={1} row={2} colSpan={4}>
               <FormField
                 label="Location"
                 currentLength={editable ? form.location.length : undefined}
@@ -203,14 +198,21 @@ export function AdjustmentEditFormFields({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={5} row={3} colSpan={4}>
+            <CellAt col={5} row={2} colSpan={4}>
               <WarehouseStaticField warehouseName={adjustment.warehouseName ?? null} />
             </CellAt>
-            <CellAt col={1} row={4} colSpan={8}>
+            <CellAt col={1} row={3} colSpan={8}>
               <FormField label="Adjustment">
                 <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
               </FormField>
             </CellAt>
+            {/* Adjustment # | Color, now seated below the before→after transition */}
+            <CellAt col={1} row={4} colSpan={4}>
+              <FormField label="Adjustment #">
+                <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={4} colSpan={4}>{colorField}</CellAt>
           </InventoryFieldGrid>
         }
         right={
@@ -224,14 +226,19 @@ export function AdjustmentEditFormFields({
 
       <RecordSectionDivider />
 
-      <div className="flex gap-6">
-        <FormField label="Created">
-          <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.createdAt)}</StaticFieldValue>
-        </FormField>
-        <FormField label="Updated">
-          <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.updatedAt)}</StaticFieldValue>
-        </FormField>
-      </div>
+      {/* Created | Updated each widened to a half-width grid cell (+1 col) */}
+      <InventoryFieldGrid>
+        <CellAt col={1} colSpan={4}>
+          <FormField label="Created">
+            <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.createdAt)}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+        <CellAt col={5} colSpan={4}>
+          <FormField label="Updated">
+            <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.updatedAt)}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+      </InventoryFieldGrid>
     </div>
   )
 }
