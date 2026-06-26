@@ -55,7 +55,12 @@ export function PropertyFieldsSection({
 
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={5}>
+      {nameRowTrailing ? (
+        <CellAt col={1} colSpan={2}>
+          {nameRowTrailing}
+        </CellAt>
+      ) : null}
+      <CellAt col={1} colSpan={7}>
         <FormField label="Property Name" required>
           <TextCell
             editable={editable}
@@ -66,14 +71,9 @@ export function PropertyFieldsSection({
           />
         </FormField>
       </CellAt>
-      {nameRowTrailing ? (
-        <CellAt col={6} colSpan={2}>
-          {nameRowTrailing}
-        </CellAt>
-      ) : null}
       {showContact ? (
         <>
-          <CellAt col={1} colSpan={5}>
+          <CellAt col={1} colSpan={7}>
             <FormField label="Phone">
               <PhoneCell
                 editable={editable}
@@ -83,7 +83,7 @@ export function PropertyFieldsSection({
               />
             </FormField>
           </CellAt>
-          <CellAt col={1} colSpan={5}>
+          <CellAt col={1} colSpan={7}>
             <FormField label="Email">
               <TextCell
                 editable={editable}
@@ -98,7 +98,7 @@ export function PropertyFieldsSection({
       ) : null}
       <AddressEditCell
         editable={editable}
-        colSpan={5}
+        colSpan={7}
         ariaPrefix={ariaPrefix}
         value={{
           streetAddress: draft.streetAddress,
@@ -108,7 +108,7 @@ export function PropertyFieldsSection({
         }}
         onChange={(field, value) => onFieldChange(field, value)}
       />
-      <CellAt col={1} colSpan={5}>
+      <CellAt col={1} colSpan={7}>
         <FormField label="Instructions">
           <TextareaCell
             editable={editable}

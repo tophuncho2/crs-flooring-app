@@ -58,7 +58,7 @@ export function EntityPickerSection({
 }) {
   return (
     <FieldSection gap="0.75rem">
-      <CellAt col={1} colSpan={5}>
+      <CellAt col={1} colSpan={7}>
         <FormField
           label="Entity"
           required
@@ -88,24 +88,24 @@ export function EntityPickerSection({
           />
         </FormField>
       </CellAt>
-      <CellAt col={6} colSpan={3}>
+      <CellAt col={1} colSpan={7}>
         <FormField label="Types">
           <EntityTypeMultiSelect selectedIds={typeRefs.map((ref) => ref.id)} seedRefs={typeRefs} editable={false} />
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={5}>
+      <CellAt col={1} colSpan={7}>
         <FormField label="Phone">
           <StaticFieldValue>{(display && formatPhoneNumber(display.phone)) || "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={5}>
+      <CellAt col={1} colSpan={7}>
         <FormField label="Email">
           <StaticFieldValue>{display?.email || "—"}</StaticFieldValue>
         </FormField>
       </CellAt>
       <AddressEditCell
         editable={false}
-        colSpan={5}
+        colSpan={7}
         value={{
           streetAddress: display?.streetAddress ?? "",
           city: display?.city ?? "",
