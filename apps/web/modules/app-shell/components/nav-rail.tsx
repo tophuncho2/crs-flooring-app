@@ -5,7 +5,6 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   Boxes,
-  Building2,
   Circle,
   ClipboardList,
   Contact,
@@ -15,10 +14,11 @@ import {
   Hammer,
   History,
   LayoutGrid,
+  MapPin,
   Package,
   PanelLeftOpen,
   Ruler,
-  SlidersHorizontal,
+  ScissorsLineDashed,
   Tags,
   Upload,
   Users,
@@ -44,10 +44,10 @@ import {
 const NAV_ICONS: Record<string, LucideIcon> = {
   "flooring-work-orders": ClipboardList,
   "flooring-templates": FileText,
-  "flooring-properties": Building2,
+  "flooring-properties": MapPin,
   "flooring-entities": Contact,
   "flooring-payments": DollarSign,
-  "flooring-adjustments": SlidersHorizontal,
+  "flooring-adjustments": ScissorsLineDashed,
   "flooring-inventory": Boxes,
   "flooring-imports": Upload,
   products: Package,
