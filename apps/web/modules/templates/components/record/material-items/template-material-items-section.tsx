@@ -68,7 +68,7 @@ export function TemplateMaterialItemsSection({
         hasConflict,
         onSave,
         onDiscard,
-        saveLabel: "Save Material Items",
+        saveLabel: "Save",
         savingLabel: "Saving Material Items...",
         discardLabel: "Discard",
         error,

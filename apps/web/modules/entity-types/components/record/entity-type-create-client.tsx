@@ -34,7 +34,7 @@ function EntityTypeCreatePanel({
       title="Entity Type Details"
       controller={controller}
       showHeader={false}
-      saveLabel="Create Entity Type"
+      saveLabel="Create"
       savingLabel="Creating Entity Type..."
     >
       <EntityTypePrimaryFieldsSection

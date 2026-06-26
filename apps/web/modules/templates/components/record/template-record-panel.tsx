@@ -52,7 +52,7 @@ export function TemplateRecordPanel({
                 hasConflict={primary.primarySection.hasConflict}
                 onSave={() => void primary.primarySection.save()}
                 onDiscard={primary.primarySection.discard}
-                saveLabel="Save Template"
+                saveLabel="Save"
                 savingLabel="Saving Template..."
                 showHeader={false}
                 actions={[

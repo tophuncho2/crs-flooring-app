@@ -42,7 +42,7 @@ function TemplateCreatePanel({
         title="Template Details"
         controller={controller}
         showHeader={false}
-        saveLabel="Create Template"
+        saveLabel="Create"
         savingLabel="Creating Template..."
       >
         <TemplatePrimaryFieldsSection
