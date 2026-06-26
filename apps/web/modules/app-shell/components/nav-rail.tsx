@@ -10,6 +10,7 @@ import {
   DollarSign,
   Factory,
   FolderTree,
+  Forklift,
   Hammer,
   History,
   LayoutTemplate,
@@ -38,44 +39,15 @@ import {
   isFlooringRoute,
 } from "@/modules/app-shell/navigation/definitions"
 
-// Custom razor-blade glyph for Adjustments — drawn in lucide's stroke style
-// (fill="none", stroke="currentColor", round joins) so it inherits color and
-// the shared `size` prop exactly like the lucide icons in the map.
-function RazorBlade({ size = 24 }: { size?: number | string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {/* blade body */}
-      <rect x="2.5" y="7.5" width="19" height="9" rx="1.5" />
-      {/* long central slot */}
-      <rect x="7" y="10.5" width="10" height="3" rx="1.5" />
-      {/* alignment notches */}
-      <path d="M12 7.5v1" />
-      <path d="M12 16.5v-1" />
-    </svg>
-  )
-}
-
-type NavIcon = LucideIcon | ((props: { size?: number | string }) => JSX.Element)
-
 // Placeholder icon set drawn from lucide-react (already a dependency — no new
 // packages, deploy-safe). Swap to custom artwork later by editing this map.
-const NAV_ICONS: Record<string, NavIcon> = {
+const NAV_ICONS: Record<string, LucideIcon> = {
   "flooring-work-orders": ClipboardList,
   "flooring-templates": LayoutTemplate,
   "flooring-properties": Building2,
   "flooring-entities": User,
   "flooring-payments": DollarSign,
-  "flooring-adjustments": RazorBlade,
+  "flooring-adjustments": Forklift,
   "flooring-inventory": Tags,
   "flooring-imports": Upload,
   products: Package,
