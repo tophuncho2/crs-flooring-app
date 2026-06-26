@@ -52,7 +52,7 @@ export type { WorkOrderPrimaryDetail } from "./types"
  * WO primary section, on the canonical record-view centered layout. A
  * `RecordColumnBreak` splits the fields into two independent flanks, each its
  * own 8-col `FieldSection`: the left flank holds the identity / property / unit
- * cluster (WO number with Vacancy beside it and Color beneath, then Entity,
+ * cluster (WO number, then a warehouse-width Color + Vacancy row, then Entity,
  * Property, addresses, instructions); the right flank holds schedule / config / notes
  * (Warehouse, Job Type, Scheduled For, Time of Day, Description, Installer
  * Instructions, Internal Notes). A `RecordSectionDivider` terminates the section
@@ -185,13 +185,23 @@ export function WorkOrderPrimaryFieldsSection({
       <RecordColumnBreak
         left={
           <FieldSection gap="0.75rem">
-            {/* Work Order Number — top-left stamp, Vacancy beside it, Color beneath */}
+            {/* Work Order Number — top-left stamp, with Color + Vacancy (warehouse-width) beneath */}
             <CellAt col={1} row={1} colSpan={2}>
               <FormField label="Work Order Number">
                 <StaticFieldValue>{detail?.workOrderNumber ?? "—"}</StaticFieldValue>
               </FormField>
             </CellAt>
-            <CellAt col={3} row={1} colSpan={2}>
+            <CellAt col={1} row={2} colSpan={4}>
+              <FormField label="Color">
+                <PaletteColorDropdown
+                  value={draft.color}
+                  editable={editable}
+                  onChange={(color) => onFieldChange("color", color)}
+                  ariaLabel="Work order color"
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={5} row={2} colSpan={4}>
               <FormField label="Vacancy">
                 <SegmentedChoiceCell
                   editable={editable}
@@ -199,16 +209,6 @@ export function WorkOrderPrimaryFieldsSection({
                   options={VACANCY_OPTIONS}
                   ariaLabel="Vacancy"
                   onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} row={2} colSpan={2}>
-              <FormField label="Color">
-                <PaletteColorDropdown
-                  value={draft.color}
-                  editable={editable}
-                  onChange={(color) => onFieldChange("color", color)}
-                  ariaLabel="Work order color"
                 />
               </FormField>
             </CellAt>
