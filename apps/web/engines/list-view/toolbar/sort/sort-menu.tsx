@@ -91,11 +91,8 @@ export function SortMenuBody({
 
   return (
     <div className={joinClasses("w-[min(20rem,calc(100vw-3rem))]", className)}>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/60">
-          Sort by
-        </p>
-        {value.length > 0 ? (
+      {value.length > 0 ? (
+        <div className="mb-2 flex justify-end">
           <button
             type="button"
             onClick={() => onChange([])}
@@ -103,8 +100,8 @@ export function SortMenuBody({
           >
             Clear
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {value.length === 0 ? (
         <p className="px-1 py-2 text-sm text-[var(--foreground)]/55">No sort applied.</p>

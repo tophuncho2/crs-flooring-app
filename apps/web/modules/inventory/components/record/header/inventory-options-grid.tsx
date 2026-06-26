@@ -126,6 +126,7 @@ export function InventoryOptionsGrid({
       <div className="flex justify-end">
         <ToolbarMenuButton
           label="Sort"
+          title="Sort by"
           icon={ArrowUpDown}
           active={grid.sorts.length > 0}
           bodyClassName="w-auto"

@@ -393,6 +393,7 @@ export default function WorkOrdersClient({
             header-caret click on the table. */}
         <ToolbarMenuButton
           label="Sort"
+          title="Sort by"
           icon={ArrowUpDown}
           active={hasActiveSortTool}
           bodyClassName="w-auto"
