@@ -75,7 +75,7 @@ export function ProductRecordPanel({
                 hasConflict={controller.primarySection.hasConflict}
                 onSave={() => void controller.primarySection.save()}
                 onDiscard={controller.primarySection.discard}
-                saveLabel="Save Product"
+                saveLabel="Save"
                 savingLabel="Saving Product..."
                 showHeader={false}
               >
