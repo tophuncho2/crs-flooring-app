@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
-  Boxes,
   Building2,
   Circle,
   ClipboardList,
@@ -18,6 +17,7 @@ import {
   PanelLeftOpen,
   Ruler,
   Shapes,
+  Slice,
   Tags,
   Upload,
   User,
@@ -47,8 +47,8 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "flooring-properties": Building2,
   "flooring-entities": User,
   "flooring-payments": DollarSign,
-  "flooring-adjustments": Tags,
-  "flooring-inventory": Boxes,
+  "flooring-adjustments": Slice,
+  "flooring-inventory": Tags,
   "flooring-imports": Upload,
   products: Package,
   "flooring-job-types": Hammer,
