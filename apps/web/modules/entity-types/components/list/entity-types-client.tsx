@@ -9,7 +9,7 @@ import {
   ListPageFeedback,
   ToolbarMenuButton,
   SearchControl,
-  NumberSearchTabBody,
+  DebouncedSearchControl,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
@@ -138,9 +138,9 @@ export default function EntityTypesClient({
             onQueryChange={onSearchQueryChange}
             placeholder="Search entity types"
           />
-          <NumberSearchTabBody
+          <DebouncedSearchControl
             value={entityTypeNumberValue}
-            onChange={handleEntityTypeNumberChange}
+            onCommit={handleEntityTypeNumberChange}
             placeholder="ET #"
             ariaLabel="Search entity types by number"
           />

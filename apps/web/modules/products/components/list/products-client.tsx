@@ -4,7 +4,6 @@ import { useCallback, useMemo } from "react"
 import { Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
-  NumberSearchTabBody,
   SearchControl,
   ListActionBar,
   ListCreateButtonPortal,
@@ -275,9 +274,9 @@ export default function ProductsClient({
             onQueryChange={onSearchQueryChange}
             placeholder="Search products"
           />
-          <NumberSearchTabBody
+          <DebouncedSearchControl
             value={prodNumberValue}
-            onChange={handleProdNumberChange}
+            onCommit={handleProdNumberChange}
             placeholder="PROD #"
             ariaLabel="Search products by product number"
           />

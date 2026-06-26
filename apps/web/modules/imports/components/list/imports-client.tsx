@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react"
 import { Search, SlidersHorizontal } from "lucide-react"
 import {
-  NumberSearchTabBody,
+  DebouncedSearchControl,
   SearchControl,
   ListActionBar,
   ListCreateButtonPortal,
@@ -209,9 +209,9 @@ export default function ImportsClient({
             onQueryChange={onSearchQueryChange}
             placeholder="Search PO #"
           />
-          <NumberSearchTabBody
+          <DebouncedSearchControl
             value={impNumberValue}
-            onChange={handleImpNumberChange}
+            onCommit={handleImpNumberChange}
             placeholder="IMP #"
             ariaLabel="Search imports by import number"
           />

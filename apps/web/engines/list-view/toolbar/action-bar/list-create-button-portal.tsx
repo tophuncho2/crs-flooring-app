@@ -1,25 +1,11 @@
 "use client"
 
-import { useSyncExternalStore } from "react"
 import { createPortal } from "react-dom"
+import { usePortalSlot } from "./use-portal-slot"
 
-// The slot lives in the app-shell HeaderControls subtree, so it can only be
-// located after mount. useSyncExternalStore reads it on the client
-// (getServerSnapshot returns null, matching SSR) without a setState-in-effect
-// cascade. The slot reference is stable across renders, so this never loops.
+// The slot lives in the app-shell HeaderControls subtree; usePortalSlot resolves
+// it SSR-safely after mount.
 const SLOT_ID = "page-action-slot"
-
-function subscribe(): () => void {
-  return () => {}
-}
-
-function getSlot(): HTMLElement | null {
-  return document.getElementById(SLOT_ID)
-}
-
-function getServerSlot(): HTMLElement | null {
-  return null
-}
 
 const BUTTON_CLASS_NAME =
   "inline-flex items-center gap-1 rounded-md border border-sky-600 bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -42,7 +28,7 @@ export function ListCreateButtonPortal({
   onClick,
   disabled,
 }: ListCreateButtonPortalProps) {
-  const target = useSyncExternalStore(subscribe, getSlot, getServerSlot)
+  const target = usePortalSlot(SLOT_ID)
 
   if (!target) return null
 

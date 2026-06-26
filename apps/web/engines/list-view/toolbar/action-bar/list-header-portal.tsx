@@ -1,31 +1,13 @@
 "use client"
 
-import { useSyncExternalStore, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { ListRowCount } from "./list-row-count"
+import { usePortalSlot } from "./use-portal-slot"
 
-// The meta slot lives in the app-shell HeaderControls subtree, so it can only be
-// located after mount. useSyncExternalStore reads it on the client
-// (getServerSnapshot returns null, matching SSR) without a setState-in-effect
-// cascade. getElementById returns the same node ref across renders, so this
-// never loops. Mirrors ListCreateButtonPortal / RecordBackButtonPortal.
+// The meta slot lives in the app-shell HeaderControls subtree; usePortalSlot
+// resolves it SSR-safely after mount.
 const META_SLOT_ID = "list-meta-slot"
-
-function subscribe(): () => void {
-  return () => {}
-}
-
-function getServerSlot(): HTMLElement | null {
-  return null
-}
-
-function useMetaSlot(): HTMLElement | null {
-  return useSyncExternalStore(
-    subscribe,
-    () => document.getElementById(META_SLOT_ID),
-    getServerSlot,
-  )
-}
 
 export type ListHeaderPortalProps = {
   /** Module label shown in the top-left blue tag (e.g. "Job Types"). */
@@ -58,7 +40,7 @@ export function ListHeaderPortal({
   rowCountLabel,
   trailing,
 }: ListHeaderPortalProps) {
-  const metaSlot = useMetaSlot()
+  const metaSlot = usePortalSlot(META_SLOT_ID)
   if (!metaSlot) return null
 
   const showCount =

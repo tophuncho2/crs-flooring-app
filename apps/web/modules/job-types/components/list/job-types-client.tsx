@@ -9,7 +9,7 @@ import {
   ListPageFeedback,
   ToolbarMenuButton,
   SearchControl,
-  NumberSearchTabBody,
+  DebouncedSearchControl,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
@@ -138,9 +138,9 @@ export default function JobTypesClient({
             onQueryChange={onSearchQueryChange}
             placeholder="Search job types"
           />
-          <NumberSearchTabBody
+          <DebouncedSearchControl
             value={jobTypeNumberValue}
-            onChange={handleJobTypeNumberChange}
+            onCommit={handleJobTypeNumberChange}
             placeholder="JT #"
             ariaLabel="Search job types by number"
           />

@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react"
 import { Search, SlidersHorizontal } from "lucide-react"
 import {
-  NumberSearchTabBody,
+  DebouncedSearchControl,
   SearchControl,
   StateSearchControl,
   ListActionBar,
@@ -235,9 +235,9 @@ export default function PropertiesClient({
             onQueryChange={onSearchQueryChange}
             placeholder="Search properties"
           />
-          <NumberSearchTabBody
+          <DebouncedSearchControl
             value={propNumberValue}
-            onChange={handlePropNumberChange}
+            onCommit={handlePropNumberChange}
             placeholder="PROP #"
             ariaLabel="Search properties by property number"
           />

@@ -4,7 +4,6 @@ import { useCallback, useMemo } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
-  NumberSearchTabBody,
   SortMenuBody,
   ListActionBar,
   ListCreateButtonPortal,
@@ -435,9 +434,9 @@ export default function WorkOrdersClient({
             placeholder="Description"
             ariaLabel="Search work orders by description"
           />
-          <NumberSearchTabBody
+          <DebouncedSearchControl
             value={workOrderNumberValue}
-            onChange={(next) => handleTextFilterChange("workOrderNumber", next)}
+            onCommit={(next) => handleTextFilterChange("workOrderNumber", next)}
             placeholder="WO #"
             ariaLabel="Search work orders by work order number"
           />

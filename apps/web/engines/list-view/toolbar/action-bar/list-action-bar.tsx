@@ -1,32 +1,15 @@
 "use client"
 
-import { useSyncExternalStore, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { ClearAllFiltersButton } from "./clear-all-filters-button"
 import { ListHeaderPortal } from "./list-header-portal"
+import { usePortalSlot } from "./use-portal-slot"
 
-// The tools slot lives in the app-shell HeaderControls subtree, so it can only
-// be located after mount. useSyncExternalStore reads it on the client
-// (getServerSnapshot returns null, matching SSR) without a setState-in-effect
-// cascade. getElementById returns the same node ref across renders, so this
-// never loops. The meta cluster portals through ListHeaderPortal.
+// The tools slot lives in the app-shell HeaderControls subtree; usePortalSlot
+// resolves it SSR-safely after mount. The meta cluster portals through
+// ListHeaderPortal.
 const TOOLS_SLOT_ID = "list-tools-slot"
-
-function subscribe(): () => void {
-  return () => {}
-}
-
-function getServerSlot(): HTMLElement | null {
-  return null
-}
-
-function useToolsSlot(): HTMLElement | null {
-  return useSyncExternalStore(
-    subscribe,
-    () => document.getElementById(TOOLS_SLOT_ID),
-    getServerSlot,
-  )
-}
 
 export type ListActionBarProps = {
   /** Module label shown in the top-left blue tag (e.g. "Job Types"). */
@@ -74,7 +57,7 @@ export function ListActionBar({
   onClearAll,
   children,
 }: ListActionBarProps) {
-  const toolsSlot = useToolsSlot()
+  const toolsSlot = usePortalSlot(TOOLS_SLOT_ID)
 
   return (
     <>

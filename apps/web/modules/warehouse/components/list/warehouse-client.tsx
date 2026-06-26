@@ -8,7 +8,7 @@ import {
   ListPageShell,
   ToolbarMenuButton,
   SearchControl,
-  NumberSearchTabBody,
+  DebouncedSearchControl,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
@@ -134,9 +134,9 @@ export default function WarehouseClient({
             onQueryChange={onSearchQueryChange}
             placeholder="Search Warehouse Name"
           />
-          <NumberSearchTabBody
+          <DebouncedSearchControl
             value={storeNumberValue}
-            onChange={handleStoreNumberChange}
+            onCommit={handleStoreNumberChange}
             placeholder="Store #"
             ariaLabel="Search warehouses by store number"
           />
