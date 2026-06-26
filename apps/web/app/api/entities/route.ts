@@ -65,7 +65,7 @@ export async function POST(request: Request) {
         route: "/api/entities",
         entityType: "entity",
       },
-      () => createEntityUseCase(input),
+      () => createEntityUseCase(input, access.user.email),
     )
 
     const responseBody = { entity: result }

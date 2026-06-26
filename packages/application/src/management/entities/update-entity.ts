@@ -13,8 +13,13 @@ import type {
 export async function updateEntityUseCase(
   id: string,
   input: UpdateEntityUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<EntityUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updateEntityUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -28,7 +33,7 @@ export async function updateEntityUseCase(
     }
 
     try {
-      return await updateEntityRecord(id, input, c)
+      return await updateEntityRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         throw new EntityExecutionError({

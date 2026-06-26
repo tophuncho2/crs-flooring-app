@@ -21,4 +21,6 @@ export const ENTITIES_LIST_COLUMNS: ReadonlyArray<
   { key: "propertyCount", label: "Properties", align: "end" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
+  { key: "createdBy", label: "Created by" },
+  { key: "updatedBy", label: "Updated by" },
 ]

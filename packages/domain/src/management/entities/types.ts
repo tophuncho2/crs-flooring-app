@@ -11,6 +11,8 @@ export type EntityDetail = {
   id: string
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
   entity: string
   streetAddress: string
   city: string
@@ -27,6 +29,8 @@ export type EntityListRow = {
   id: string
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
   entity: string
   streetAddress: string
   city: string

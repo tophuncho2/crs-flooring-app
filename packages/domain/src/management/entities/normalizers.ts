@@ -27,6 +27,8 @@ type EntityDetailInput = {
   id: string
   createdAt: Date | string
   updatedAt: Date | string
+  createdBy: string | null
+  updatedBy: string | null
   entity: string
   streetAddress: string | null
   city: string | null
@@ -42,6 +44,8 @@ type EntityListRowInput = {
   id: string
   createdAt: Date | string
   updatedAt: Date | string
+  createdBy: string | null
+  updatedBy: string | null
   entity: string
   streetAddress: string | null
   city: string | null
@@ -58,6 +62,8 @@ export function normalizeEntity(entity: EntityDetailInput): EntityDetail {
     id: entity.id,
     createdAt: entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt,
     updatedAt: entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt,
+    createdBy: entity.createdBy,
+    updatedBy: entity.updatedBy,
     entity: entity.entity,
     streetAddress: entity.streetAddress ?? "",
     city: entity.city ?? "",
@@ -76,6 +82,8 @@ export function normalizeEntityListRow(entity: EntityListRowInput): EntityListRo
     id: entity.id,
     createdAt: entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt,
     updatedAt: entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt,
+    createdBy: entity.createdBy,
+    updatedBy: entity.updatedBy,
     entity: entity.entity,
     streetAddress: entity.streetAddress ?? "",
     city: entity.city ?? "",

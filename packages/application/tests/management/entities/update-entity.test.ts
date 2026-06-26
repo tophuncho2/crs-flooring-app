@@ -28,6 +28,7 @@ vi.mock("@builders/db", () => ({
 import { updateEntityUseCase } from "../../../src/management/entities/update-entity.js"
 
 const ID = "entity-1"
+const ACTOR = "actor@example.com"
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
@@ -38,13 +39,26 @@ beforeEach(() => {
 })
 
 describe("updateEntityUseCase", () => {
-  it("skips name validation when name is omitted and forwards the input", async () => {
-    await updateEntityUseCase(ID, { phone: "555" } as never)
-    expect(updateEntityRecordMock).toHaveBeenCalledWith(ID, { phone: "555" }, expect.anything())
+  it("rejects a blank actorEmail before touching the database", async () => {
+    await expect(updateEntityUseCase(ID, { phone: "x" } as never, "   ")).rejects.toThrowError(
+      /actorEmail/,
+    )
+    expect(updateEntityRecordMock).not.toHaveBeenCalled()
+  })
+
+  it("forwards the input and stamps updatedBy when name is omitted", async () => {
+    await updateEntityUseCase(ID, { phone: "555" } as never, ACTOR)
+    expect(updateEntityRecordMock).toHaveBeenCalledWith(
+      ID,
+      { phone: "555", updatedBy: ACTOR },
+      expect.anything(),
+    )
   })
 
   it("rejects a blank name when one is supplied", async () => {
-    await expect(updateEntityUseCase(ID, { entity: "   " } as never)).rejects.toMatchObject({
+    await expect(
+      updateEntityUseCase(ID, { entity: "   " } as never, ACTOR),
+    ).rejects.toMatchObject({
       code: "ENTITY_VALIDATION_FAILED",
       status: 400,
     })
@@ -54,12 +68,14 @@ describe("updateEntityUseCase", () => {
   it("returns the updated record on success", async () => {
     const updated = { id: ID, entity: "Renamed" }
     updateEntityRecordMock.mockResolvedValue(updated)
-    expect(await updateEntityUseCase(ID, { entity: "Renamed" } as never)).toBe(updated)
+    expect(await updateEntityUseCase(ID, { entity: "Renamed" } as never, ACTOR)).toBe(updated)
   })
 
   it("maps a P2025 to a 404 not-found", async () => {
     updateEntityRecordMock.mockRejectedValue(new PrismaKnownError("missing", { code: "P2025" }))
-    await expect(updateEntityUseCase(ID, { entity: "Renamed" } as never)).rejects.toMatchObject({
+    await expect(
+      updateEntityUseCase(ID, { entity: "Renamed" } as never, ACTOR),
+    ).rejects.toMatchObject({
       code: "ENTITY_NOT_FOUND",
       status: 404,
     })
@@ -68,7 +84,7 @@ describe("updateEntityUseCase", () => {
   it("maps a bad typeId FK violation (P2003) to a 400", async () => {
     updateEntityRecordMock.mockRejectedValue(new PrismaKnownError("fk", { code: "P2003" }))
     await expect(
-      updateEntityUseCase(ID, { typeIds: ["missing"] } as never),
+      updateEntityUseCase(ID, { typeIds: ["missing"] } as never, ACTOR),
     ).rejects.toMatchObject({
       code: "ENTITY_INVALID_TYPE",
       status: 400,

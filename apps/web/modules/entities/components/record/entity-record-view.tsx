@@ -121,12 +121,18 @@ export function EntityRecordView({
               }
             />
             <RecordSectionDivider />
-            <div className="flex gap-6">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2">
               <FormField label="Created">
                 <StaticFieldValue>{formatEasternDateTime(entry.createdAt) || "—"}</StaticFieldValue>
               </FormField>
+              <FormField label="Created by">
+                <StaticFieldValue>{entry.createdBy ?? "—"}</StaticFieldValue>
+              </FormField>
               <FormField label="Updated">
                 <StaticFieldValue>{formatEasternDateTime(entry.updatedAt) || "—"}</StaticFieldValue>
+              </FormField>
+              <FormField label="Updated by">
+                <StaticFieldValue>{entry.updatedBy ?? "—"}</StaticFieldValue>
               </FormField>
             </div>
           </div>

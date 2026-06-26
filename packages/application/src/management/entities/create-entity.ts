@@ -11,8 +11,13 @@ import type {
 
 export async function createEntityUseCase(
   input: CreateEntityUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<EntityUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createEntityUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -26,7 +31,10 @@ export async function createEntityUseCase(
     }
 
     try {
-      return await createEntityRecord(input, c)
+      return await createEntityRecord(
+        { ...input, createdBy: actorEmail, updatedBy: actorEmail },
+        c,
+      )
     } catch (error) {
       // A typeId that points at no entity-type row trips the FK (P2003).
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {

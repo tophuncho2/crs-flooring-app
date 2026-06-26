@@ -28,6 +28,8 @@ vi.mock("@builders/db", () => ({
 import { createEntityUseCase } from "../../../src/management/entities/create-entity.js"
 import { EntityExecutionError } from "../../../src/management/entities/errors.js"
 
+const ACTOR = "actor@example.com"
+
 function input(overrides: Record<string, unknown> = {}) {
   return {
     entity: "Acme",
@@ -50,8 +52,15 @@ beforeEach(() => {
 })
 
 describe("createEntityUseCase", () => {
+  it("rejects a blank actorEmail before touching the database", async () => {
+    await expect(createEntityUseCase(input() as never, "   ")).rejects.toThrowError(/actorEmail/)
+    expect(createEntityRecordMock).not.toHaveBeenCalled()
+  })
+
   it("rejects a blank name with 400 and never inserts", async () => {
-    await expect(createEntityUseCase(input({ entity: "  " }) as never)).rejects.toMatchObject({
+    await expect(
+      createEntityUseCase(input({ entity: "  " }) as never, ACTOR),
+    ).rejects.toMatchObject({
       code: "ENTITY_VALIDATION_FAILED",
       status: 400,
       field: "entity",
@@ -62,20 +71,33 @@ describe("createEntityUseCase", () => {
   it("returns the created record on success", async () => {
     const created = { id: "entity-9", entity: "Acme" }
     createEntityRecordMock.mockResolvedValue(created)
-    expect(await createEntityUseCase(input() as never)).toBe(created)
+    expect(await createEntityUseCase(input() as never, ACTOR)).toBe(created)
+  })
+
+  it("persists the record, stamping createdBy/updatedBy", async () => {
+    const created = { id: "entity-9", entity: "Acme" }
+    createEntityRecordMock.mockResolvedValue(created)
+
+    const result = await createEntityUseCase(input({ entity: "Acme" }) as never, ACTOR)
+
+    expect(result).toBe(created)
+    expect(createEntityRecordMock).toHaveBeenCalledWith(
+      expect.objectContaining({ entity: "Acme", createdBy: ACTOR, updatedBy: ACTOR }),
+      expect.anything(),
+    )
   })
 
   it("re-throws unexpected database errors unchanged", async () => {
     createEntityRecordMock.mockRejectedValue(new Error("boom"))
-    await expect(createEntityUseCase(input() as never)).rejects.toThrowError("boom")
-    await expect(createEntityUseCase(input() as never)).rejects.not.toBeInstanceOf(
+    await expect(createEntityUseCase(input() as never, ACTOR)).rejects.toThrowError("boom")
+    await expect(createEntityUseCase(input() as never, ACTOR)).rejects.not.toBeInstanceOf(
       EntityExecutionError,
     )
   })
 
   it("maps a bad typeId FK violation (P2003) to a 400", async () => {
     createEntityRecordMock.mockRejectedValue(new PrismaKnownError("fk", { code: "P2003" }))
-    await expect(createEntityUseCase(input() as never)).rejects.toMatchObject({
+    await expect(createEntityUseCase(input() as never, ACTOR)).rejects.toMatchObject({
       code: "ENTITY_INVALID_TYPE",
       status: 400,
       field: "typeIds",

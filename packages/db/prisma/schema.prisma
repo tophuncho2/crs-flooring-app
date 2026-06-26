@@ -99,6 +99,8 @@ model Entity {
   email         String?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
+  createdBy     String?
+  updatedBy     String?
   properties    Property[]
   entityTypes   EntityEntityType[]
   payments      FlooringPayment[]

@@ -5,7 +5,6 @@ import {
   getEntityById,
   updatePropertyRecord,
   withDatabaseTransaction,
-  type CreateEntityRecordInput,
 } from "@builders/db"
 import {
   ENTITY_NOT_FOUND_MESSAGE,
@@ -15,13 +14,14 @@ import {
   type PropertyDetailRecord,
 } from "@builders/domain"
 import { EntityExecutionError } from "../entities/errors.js"
+import type { CreateEntityUseCaseInput } from "../entities/types.js"
 import { PropertyExecutionError } from "./errors.js"
 
 export type CreatePropertyHubUseCaseInput = {
   entity:
     | { mode: "none" }
     | { mode: "link"; id: string }
-    | { mode: "create"; fields: CreateEntityRecordInput }
+    | { mode: "create"; fields: CreateEntityUseCaseInput }
   property:
     | { mode: "none" }
     | { mode: "link"; id: string }
@@ -123,7 +123,7 @@ export async function createPropertyHubUseCase(
       }
     } else if (input.entity.mode === "create") {
       entity = await createEntityRecord(
-        input.entity.fields,
+        { ...input.entity.fields, createdBy: actorEmail, updatedBy: actorEmail },
         c,
       )
     }

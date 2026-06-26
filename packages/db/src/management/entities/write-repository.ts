@@ -24,14 +24,21 @@ export type CreateEntityRecordInput = {
   email: string | null
   /** Entity-type ids to link. Omit (undefined) to link none on create. */
   typeIds?: string[]
+  createdBy: string
+  updatedBy: string
 }
 
-export type UpdateEntityRecordInput = Partial<CreateEntityRecordInput>
+// createdBy is immutable post-create; updatedBy is always stamped on edit.
+export type UpdateEntityRecordInput = Partial<
+  Omit<CreateEntityRecordInput, "createdBy" | "updatedBy">
+> & { updatedBy: string }
 
 const entityDetailSelect = {
   id: true,
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
   entity: true,
   streetAddress: true,
   city: true,
