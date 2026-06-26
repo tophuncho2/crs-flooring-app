@@ -52,8 +52,8 @@ export type { WorkOrderPrimaryDetail } from "./types"
  * WO primary section, on the canonical record-view centered layout. A
  * `RecordColumnBreak` splits the fields into two independent flanks, each its
  * own 8-col `FieldSection`: the left flank holds the identity / property / unit
- * cluster (WO number, Color, Entity, Property, addresses, Template, Unit
- * Type/Number, Vacancy); the right flank holds schedule / config / notes
+ * cluster (WO number with Vacancy beside it and Color beneath, then Entity,
+ * Property, addresses, instructions); the right flank holds schedule / config / notes
  * (Warehouse, Job Type, Scheduled For, Time of Day, Description, Installer
  * Instructions, Internal Notes). A `RecordSectionDivider` terminates the section
  * above a read-only 2-cell Created / Updated footer (shown only on detail).
@@ -185,23 +185,13 @@ export function WorkOrderPrimaryFieldsSection({
       <RecordColumnBreak
         left={
           <FieldSection gap="0.75rem">
-            {/* Work Order Number — top-left stamp, with the Color swatch beside it */}
+            {/* Work Order Number — top-left stamp, Vacancy beside it, Color beneath */}
             <CellAt col={1} row={1} colSpan={2}>
               <FormField label="Work Order Number">
                 <StaticFieldValue>{detail?.workOrderNumber ?? "—"}</StaticFieldValue>
               </FormField>
             </CellAt>
             <CellAt col={3} row={1} colSpan={2}>
-              <FormField label="Color">
-                <PaletteColorDropdown
-                  value={draft.color}
-                  editable={editable}
-                  onChange={(color) => onFieldChange("color", color)}
-                  ariaLabel="Work order color"
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={5} row={1} colSpan={2}>
               <FormField label="Vacancy">
                 <SegmentedChoiceCell
                   editable={editable}
@@ -212,8 +202,18 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
+            <CellAt col={1} row={2} colSpan={2}>
+              <FormField label="Color">
+                <PaletteColorDropdown
+                  value={draft.color}
+                  editable={editable}
+                  onChange={(color) => onFieldChange("color", color)}
+                  ariaLabel="Work order color"
+                />
+              </FormField>
+            </CellAt>
             {/* Entity → Property cascade stack */}
-            <CellAt col={1} row={2} colSpan={8}>
+            <CellAt col={1} row={3} colSpan={8}>
               <FormField
                 label="Entity"
                 actions={
@@ -238,7 +238,7 @@ export function WorkOrderPrimaryFieldsSection({
                 <StaticFieldValue>{entityLabel ?? "—"}</StaticFieldValue>
               </FormField>
             </CellAt>
-            <CellAt col={1} row={3} colSpan={8}>
+            <CellAt col={1} row={4} colSpan={8}>
               <FormField
                 label="Property"
                 actions={
@@ -274,14 +274,14 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Property address (left) + Custom address (right) */}
-            <CellAt col={1} row={4} colSpan={4}>
+            <CellAt col={1} row={5} colSpan={4}>
               <FormField label="Property Address">
                 <StaticFieldValue>
                   <span className="whitespace-pre-line">{addressDisplay}</span>
                 </StaticFieldValue>
               </FormField>
             </CellAt>
-            <CellAt col={5} row={4} colSpan={4}>
+            <CellAt col={5} row={5} colSpan={4}>
               <FormField
                 label="Custom Address"
                 currentLength={editable ? draft.customAddress.length : undefined}
@@ -296,7 +296,7 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={5} colSpan={8}>
+            <CellAt col={1} row={6} colSpan={8}>
               <FormField label="Property Instructions">
                 <StaticFieldValue>
                   <span className="whitespace-pre-line">{instructionsDisplay}</span>
@@ -304,7 +304,7 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Installer Instructions */}
-            <CellAt col={1} row={6} colSpan={8}>
+            <CellAt col={1} row={7} colSpan={8}>
               <FormField
                 label="Installer Instructions"
                 currentLength={editable ? draft.installerInstructions.length : undefined}
