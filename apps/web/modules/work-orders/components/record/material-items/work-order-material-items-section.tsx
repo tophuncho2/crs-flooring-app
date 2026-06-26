@@ -187,8 +187,8 @@ export function WorkOrderMaterialItemsSection({
           hasConflict: section.hasConflict,
           onSave: () => void section.save(),
           onDiscard: () => section.discard(),
-          saveLabel: "Save Material Items",
-          savingLabel: "Saving Material Items...",
+          saveLabel: "Save",
+          savingLabel: "Saving...",
           discardLabel: "Discard",
           error: section.error ? section.error.message : null,
           actions: [
