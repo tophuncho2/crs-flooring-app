@@ -6,12 +6,10 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   Boxes,
   Circle,
-  ClipboardList,
   Contact,
   DollarSign,
   Factory,
   FileText,
-  Hammer,
   History,
   LayoutGrid,
   MapPin,
@@ -20,9 +18,11 @@ import {
   Ruler,
   ScissorsLineDashed,
   Tags,
+  TrafficCone,
   Upload,
   Users,
   Warehouse,
+  Wrench,
   type LucideIcon,
 } from "lucide-react"
 import { SidePanel } from "./side-panel"
@@ -42,7 +42,7 @@ import {
 // Placeholder icon set drawn from lucide-react (already a dependency — no new
 // packages, deploy-safe). Swap to custom artwork later by editing this map.
 const NAV_ICONS: Record<string, LucideIcon> = {
-  "flooring-work-orders": ClipboardList,
+  "flooring-work-orders": Wrench,
   "flooring-templates": FileText,
   "flooring-properties": MapPin,
   "flooring-entities": Contact,
@@ -51,7 +51,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "flooring-inventory": Boxes,
   "flooring-imports": Upload,
   products: Package,
-  "flooring-job-types": Hammer,
+  "flooring-job-types": TrafficCone,
   "flooring-entity-types": Tags,
   "flooring-manufacturers": Factory,
   "flooring-warehouse": Warehouse,
