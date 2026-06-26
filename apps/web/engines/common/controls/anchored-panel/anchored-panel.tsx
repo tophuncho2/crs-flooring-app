@@ -138,11 +138,11 @@ export function AnchoredPanel({
                 ...(align === "right"
                   ? {
                       right: window.innerWidth - triggerRect.right,
-                      maxWidth: `min(32rem, calc(${Math.max(triggerRect.right - 8, 0)}px))`,
+                      maxWidth: `min(40rem, calc(${Math.max(triggerRect.right - 8, 0)}px))`,
                     }
                   : {
                       left: triggerRect.left,
-                      maxWidth: `min(32rem, calc(100vw - ${Math.max(triggerRect.left, 0) + 8}px))`,
+                      maxWidth: `min(40rem, calc(100vw - ${Math.max(triggerRect.left, 0) + 8}px))`,
                     }),
                 minWidth: Math.max(triggerRect.width, MIN_POPOVER_WIDTH_PX),
                 zIndex: 1000,

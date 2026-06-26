@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import type { EntityOption, EntityTypeOption } from "@builders/domain"
-import { AnchoredPanel, CellChip } from "@/engines/common"
+import type { EntityOption } from "@builders/domain"
+import { AnchoredPanel } from "@/engines/common"
 import {
   PickerList,
   PickerTrigger,
@@ -13,10 +13,7 @@ import {
   ENTITY_OPTIONS_QUERY_KEY,
   searchEntityOptionsRequest,
 } from "@/modules/entities/data/entity-options-request"
-import {
-  toEntityTypePickerOption,
-  useEntityTypeMultiSelect,
-} from "@/modules/entity-types/components/picker/use-entity-type-multi-select"
+import { EntityTypeRail } from "@/modules/entity-types/components/picker/entity-type-rail"
 
 export type EntityTypePickerProps = {
   /** Selected entity id (the cell's value). */
@@ -77,13 +74,6 @@ export function EntityTypePicker({
   // never surfaced to consumers (a find-aid, not a persisted link).
   const [typeIds, setTypeIds] = useState<string[]>([])
 
-  const typeSide = useEntityTypeMultiSelect({
-    selectedIds: typeIds,
-    seedRefs: [],
-    onChange: setTypeIds,
-    enabled: open,
-  })
-
   const entityBucketKey = useMemo(
     () => [...ENTITY_OPTIONS_QUERY_KEY, ...typeIds] as const,
     [typeIds],
@@ -118,19 +108,9 @@ export function EntityTypePicker({
     onOptionSelected?.(null)
   }, [onChange, onOptionSelected])
 
-  // The type's canonical option row = its palette chip (matches the chips shown
-  // for an entity's types everywhere else). Selection glow is the row chrome's
-  // job (PickerList owns it via `selectedIds`).
-  const renderTypeOption = useCallback(
-    (_option: PickerListOption, raw: EntityTypeOption) => (
-      <CellChip paletteColor={raw.color ?? undefined}>{raw.type}</CellChip>
-    ),
-    [],
-  )
-
   const stickyHeader = (
     <div className="flex gap-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/55">
-      <span className="w-40 shrink-0">Filter by type</span>
+      <span className="w-52 shrink-0">Filter by type</span>
       <span className="flex-1">Entities</span>
     </div>
   )
@@ -152,23 +132,20 @@ export function EntityTypePicker({
       open={open}
       onClose={closePanel}
       maxHeight={440}
+      align="right"
       stickyHeader={stickyHeader}
     >
-      <div className="flex h-full min-h-0 w-[30rem] max-w-[calc(100vw-3rem)] gap-3">
+      {/* Responsive preferred width that tracks the viewport; `max-w-full` clamps
+          the body to the panel's own (viewport-clamped) inner width, so the combo
+          can never overflow the panel off-screen regardless of trigger position.
+          `align="right"` anchors the right edge and grows left. */}
+      <div className="flex h-full min-h-0 w-[min(40rem,calc(100vw-3rem))] max-w-full gap-3">
         {/* Type rail — every type, always visible, multi-select glow-toggle. */}
-        <div className="flex min-h-0 w-40 shrink-0 flex-col">
-          <PickerList<EntityTypeOption>
-            controller={typeSide.controller}
-            toOption={toEntityTypePickerOption}
-            selectedId={null}
-            selectedLabel={null}
+        <div className="flex min-h-0 w-52 shrink-0 flex-col">
+          <EntityTypeRail
             selectedIds={typeIds}
-            onSelect={typeSide.handleToggle}
-            onClear={() => {}}
+            onChange={setTypeIds}
             onCancel={closePanel}
-            renderOption={renderTypeOption}
-            searchPlaceholder="Search types"
-            emptyMessage="No types"
           />
         </div>
 

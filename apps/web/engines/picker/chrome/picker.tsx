@@ -290,12 +290,15 @@ export function PickerList<TOption>({
                   onClick={() => commitSelect(entry)}
                   className={joinClassNames(
                     "cursor-pointer px-3 py-2 transition",
-                    isActive ? "bg-sky-500/15" : undefined,
+                    // One engine-owned glow: selected rows get a full-bleed
+                    // background (single- and multi-select alike — no ring, which
+                    // left a gutter and read as not-full-width); plain hover/active
+                    // rows get a lighter wash. Selected wins over active.
                     isSelected
-                      ? isMulti
-                        ? "bg-sky-500/15 ring-1 ring-inset ring-sky-500/50"
-                        : "bg-sky-500/10"
-                      : undefined,
+                      ? "bg-sky-500/20"
+                      : isActive
+                        ? "bg-sky-500/10"
+                        : undefined,
                   )}
                 >
                   {renderOption ? (

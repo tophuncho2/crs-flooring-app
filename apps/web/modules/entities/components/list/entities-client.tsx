@@ -17,9 +17,8 @@ import type { EntitiesListFilters } from "@builders/application"
 import {
   LIST_ENTITIES_PAGE_SIZE,
   type EntityListRow,
-  type EntityTypeOption,
 } from "@builders/domain"
-import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
+import { EntityTypeRail } from "@/modules/entity-types/components/picker/entity-type-rail"
 import {
   ENTITIES_LIST_QUERY_KEY,
   listEntitiesRequest,
@@ -33,15 +32,12 @@ export type EntitiesClientProps = {
   initialSearchQuery: string
   initialPage: number
   initialFilters: EntitiesListFilters
-  /** Seed refs ({id,type,color}) for any URL-restored entity-type filter chips. */
-  initialEntityTypeRefs: EntityTypeOption[]
 }
 
 export default function EntitiesClient({
   initialSearchQuery,
   initialPage,
   initialFilters,
-  initialEntityTypeRefs,
 }: EntitiesClientProps) {
   const { message, pageError, openCreate, openEntity } = useEntitiesListController()
 
@@ -125,18 +121,20 @@ export default function EntitiesClient({
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >
-        {/* Filter — the entity-type picker. */}
+        {/* Filter — the entity-type glow rail (same rail as the combo picker):
+            every type listed, selected ones glow, click to toggle. */}
         <ToolbarMenuButton
           label="Filter"
           icon={SlidersHorizontal}
           active={hasActiveFilterTool}
+          bodyClassName="w-[18rem]"
         >
-          <EntityTypeMultiSelect
-            selectedIds={selectedTypeIds}
-            seedRefs={initialEntityTypeRefs}
-            editable
-            onChange={handleTypeFilterChange}
-          />
+          <div className="flex h-80 min-h-0 flex-col">
+            <EntityTypeRail
+              selectedIds={selectedTypeIds}
+              onChange={handleTypeFilterChange}
+            />
+          </div>
         </ToolbarMenuButton>
 
         {/* Search — free-text bar + the state-code bar (both search-style
