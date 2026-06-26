@@ -33,8 +33,8 @@ export type AdjustmentEditFormFieldsProps = {
 }
 
 const ADJUSTMENT_TYPE_OPTIONS = [
-  { value: "DEDUCTION", label: "Deduction" },
-  { value: "INCREASE", label: "Increase" },
+  { value: "DEDUCTION", label: "Deduction", tone: "error" },
+  { value: "INCREASE", label: "Increase", tone: "success" },
 ] as const
 
 const WASTE_OPTIONS: ReadonlyArray<SegmentedChoiceOption> = [
