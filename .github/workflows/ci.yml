@@ -35,6 +35,12 @@ jobs:
       # download to keep `npm ci` fast. Runtime PDF generation is unaffected.
       PUPPETEER_SKIP_DOWNLOAD: "true"
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+      # Prisma 7's prisma.config.ts resolves env("DATABASE_URL") at config-load
+      # time, so the `npm ci` postinstall `prisma generate` aborts when the var
+      # is unset (PrismaConfigEnvError). `generate` never opens a connection —
+      # it only needs the var to resolve — so a throwaway local URL is enough.
+      # Do NOT point this at a real database.
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
 
     steps:
       - name: Checkout (full history for the migration-discipline diff)
