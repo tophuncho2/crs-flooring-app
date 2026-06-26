@@ -11,7 +11,7 @@ import { PaginateControls } from "../toolbar/paginate/paginate-controls"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
 import { DataTableHeaderCell } from "./data-table-header-cell"
-import { DataTableSelectAllButton, DataTableSelectCheckbox } from "./select"
+import { DataTableSelectCheckbox } from "./select"
 
 const ALIGN_CLASS_NAME: Record<DataTableCellAlign, string> = {
   start: "text-left",
@@ -32,24 +32,20 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
 
 /**
  * Optional multi-select feature for the `DataTable`. When supplied, the table
- * prepends a fixed-width checkbox column, renders a "Select All Eligible /
- * Clear" toggle in the header, highlights selected rows, and toggles a row's
- * membership on row-click. The consumer owns the selection state (a
- * `Set<string>` of row ids) and the toggle handlers. Off by default — tables
- * without this prop behave exactly as before.
+ * prepends a fixed-width checkbox column, highlights selected rows, and toggles
+ * a row's membership on row-click. The consumer owns the selection state (a
+ * `Set<string>` of row ids) and the toggle handler. Off by default — tables
+ * without this prop behave exactly as before. Select-all and selection counts
+ * live wherever the consumer surfaces them (e.g. the export menu), NOT in the
+ * table chrome.
  */
 export type DataTableSelection<TRow extends DataTableRow> = {
   /** Currently-selected row ids. */
   selectedIds: Set<string>
   /** Toggle one row's membership in the selection. */
   onToggleRow: (id: string) => void
-  /** Select-all chrome (wire straight from the selection controller). */
-  isSelectionActive: boolean
-  selectedCount: number
-  eligibleCount: number
-  onToggleAll: () => void
-  /** Gate toggling (e.g. section saving). When false, checkboxes render static
-   *  and the Select-All button is disabled in its inactive state. Default true. */
+  /** Gate toggling (e.g. section saving). When false, checkboxes render static.
+   *  Default true. */
   canToggleSelection?: boolean
   /** Per-row eligibility — ineligible rows render an inert checkbox and can't be
    *  toggled. Default: every row selectable. */
@@ -193,23 +189,8 @@ export function DataTable<TRow extends DataTableRow>({
         className,
       )}
     >
-      {headerSlot || selection ? (
-        <div className="border-b border-[var(--panel-border)] px-3 py-2">
-          {selection ? (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-1 flex-wrap items-center gap-2">{headerSlot}</div>
-              <DataTableSelectAllButton
-                isSelectionActive={selection.isSelectionActive}
-                selectedCount={selection.selectedCount}
-                eligibleCount={selection.eligibleCount}
-                canSelect={canToggleSelection}
-                onToggle={selection.onToggleAll}
-              />
-            </div>
-          ) : (
-            headerSlot
-          )}
-        </div>
+      {headerSlot ? (
+        <div className="border-b border-[var(--panel-border)] px-3 py-2">{headerSlot}</div>
       ) : null}
       <div className="overflow-x-auto overscroll-x-contain">
         <table className="w-full border-collapse">

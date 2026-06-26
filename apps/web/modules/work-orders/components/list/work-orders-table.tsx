@@ -26,8 +26,6 @@ export function WorkOrdersTable({
   onSort?: (key: string) => void
   pagination?: PaginateContract
 }) {
-  const pageIds = rows.map((row) => row.id)
-
   return (
     <DataTable<WorkOrderListRow>
       rows={rows}
@@ -38,10 +36,6 @@ export function WorkOrdersTable({
           ? {
               selectedIds: selection.selectedIds,
               onToggleRow: selection.toggle,
-              isSelectionActive: selection.selectedCount > 0,
-              selectedCount: selection.selectedCount,
-              eligibleCount: pageIds.length,
-              onToggleAll: () => selection.toggleAll(pageIds),
             }
           : undefined
       }

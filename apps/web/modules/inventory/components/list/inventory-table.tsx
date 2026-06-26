@@ -33,8 +33,6 @@ export function InventoryTable({
   onSort?: (key: string) => void
   pagination?: PaginateContract
 }) {
-  const pageIds = rows.map((row) => row.id)
-
   return (
     <DataTable<InventoryRow>
       rows={rows}
@@ -45,10 +43,6 @@ export function InventoryTable({
           ? {
               selectedIds: selection.selectedIds,
               onToggleRow: selection.toggle,
-              isSelectionActive: selection.selectedCount > 0,
-              selectedCount: selection.selectedCount,
-              eligibleCount: pageIds.length,
-              onToggleAll: () => selection.toggleAll(pageIds),
             }
           : undefined
       }

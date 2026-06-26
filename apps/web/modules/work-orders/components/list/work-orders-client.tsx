@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
@@ -150,6 +150,17 @@ export default function WorkOrdersClient({
   // Row selection (CSV export scope). Drop it whenever the filtered/sorted scope
   // changes so a ticked id from a prior scope can't leak into an export.
   const selection = useListSelection()
+  // Selection mode is off by default — the checkbox column only appears once the
+  // user flips "Select specific rows" in the Export menu. Turning it off clears
+  // any ticks so a hidden selection can't silently scope a later export.
+  const [selectionEnabled, setSelectionEnabled] = useState(false)
+  const toggleSelectionEnabled = useCallback(() => {
+    setSelectionEnabled((prev) => {
+      if (prev) selection.clear()
+      return !prev
+    })
+  }, [selection])
+
   const scopeSignature = useMemo(() => JSON.stringify({ filters, sorts }), [filters, sorts])
   useEffect(() => {
     selection.clear()
@@ -159,6 +170,7 @@ export default function WorkOrdersClient({
   }, [scopeSignature])
 
   const selectedIds = useMemo(() => [...selection.selectedIds], [selection.selectedIds])
+  const pageEligibleIds = useMemo(() => rows.map((row) => row.id), [rows])
   const exportQuery = useMemo(
     () =>
       buildWorkOrdersExportQuery({
@@ -479,16 +491,20 @@ export default function WorkOrdersClient({
         <ListExportButton
           endpoint="/api/work-orders/export"
           query={exportQuery}
-          selectedIds={selectedIds}
           columns={exportColumns}
           filename="work-orders-export.csv"
+          selectionEnabled={selectionEnabled}
+          onToggleSelectionEnabled={toggleSelectionEnabled}
+          selectedIds={selectedIds}
+          eligibleCount={pageEligibleIds.length}
+          onToggleAll={() => selection.toggleAll(pageEligibleIds)}
         />
       </ListActionBar>
 
       <WorkOrdersTable
         rows={rows}
         onOpenWorkOrder={openWorkOrder}
-        selection={selection}
+        selection={selectionEnabled ? selection : undefined}
         sorts={tableSorts}
         onSort={handleSort}
         pagination={{
