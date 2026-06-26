@@ -39,8 +39,8 @@ function ImportCreatePanel({
         title="Import Details"
         controller={controller}
         showHeader={false}
-        saveLabel="Create Import"
-        savingLabel="Creating Import..."
+        saveLabel="Create"
+        savingLabel="Creating..."
       >
         <ImportPrimaryFieldsSection
           draft={controller.primarySection.localValue}

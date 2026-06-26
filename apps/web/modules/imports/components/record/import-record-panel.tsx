@@ -56,8 +56,8 @@ export function ImportRecordPanel({
                 hasConflict={controller.primarySection.hasConflict}
                 onSave={() => void controller.primarySection.save()}
                 onDiscard={controller.primarySection.discard}
-                saveLabel="Save Import"
-                savingLabel="Saving Import..."
+                saveLabel="Save"
+                savingLabel="Saving..."
                 showHeader={false}
               >
                 <ImportPrimaryFieldsSection

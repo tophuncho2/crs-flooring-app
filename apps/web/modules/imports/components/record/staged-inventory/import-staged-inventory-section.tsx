@@ -203,7 +203,7 @@ export function ImportStagedInventorySection({
         actions: [
           {
             key: "save",
-            label: section.isSaving ? "Saving Rows..." : "Save Rows",
+            label: section.isSaving ? "Saving..." : "Save",
             kind: "custom",
             tone: "primary",
             onClick: () => void section.save(),
