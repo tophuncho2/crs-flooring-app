@@ -1,20 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { computePopoverPlacement } from "../positioning/compute-popover-placement"
-
-// One entry per open panel, in open order. A panel portals its popover to
-// document.body, so a *nested* panel (e.g. a picker opened inside a toolbar
-// menu) lands in a sibling DOM subtree the outer panel's `popoverRef` can't
-// contain. Without this registry the outer panel reads a click inside the inner
-// panel as an outside click and closes mid-selection. Each panel ignores
-// pointer-downs that land inside any panel opened *after* it (its descendants).
-type AnchoredPanelEntry = {
-  containerRef: RefObject<HTMLDivElement | null>
-  popoverRef: RefObject<HTMLDivElement | null>
-}
-const openPanelStack: AnchoredPanelEntry[] = []
+import {
+  registerPopoverLayer,
+  isPointerInsideLayerOrDeeper,
+  isTopmostPopoverLayer,
+} from "../popover-layer-stack"
 
 const POPOVER_CLASS_NAME =
   "flex flex-col rounded-lg border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-xl focus:outline-none"
@@ -65,7 +58,7 @@ export function AnchoredPanel({
 }: AnchoredPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const popoverRef = useRef<HTMLDivElement | null>(null)
-  const entryRef = useRef<AnchoredPanelEntry>({ containerRef, popoverRef })
+  const layerRef = useRef({ containerRef, popoverRef })
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null)
 
   // Measure the trigger on open and keep the panel pinned to it on
@@ -87,41 +80,32 @@ export function AnchoredPanel({
   }, [open])
 
   // Close on a pointer-down outside the trigger and panel — but never when the
-  // click lands inside a panel opened after this one (a nested descendant that
-  // portals into a sibling DOM subtree this panel can't `contains()`).
+  // click lands inside a popover layer opened after this one (a nested picker
+  // dropdown that portals into a sibling DOM subtree this panel can't
+  // `contains()`). The shared registry spans every popover primitive, so a
+  // click inside an AsyncRichDropdown/SelectDropdown opened in this panel keeps
+  // the panel open.
   useEffect(() => {
     if (!open) return
-    const entry = entryRef.current
-    openPanelStack.push(entry)
+    const layer = layerRef.current
+    const release = registerPopoverLayer(layer)
     function onPointerDown(event: PointerEvent) {
-      const target = event.target as Node
-      if (containerRef.current?.contains(target)) return
-      if (popoverRef.current?.contains(target)) return
-      const myIndex = openPanelStack.indexOf(entry)
-      for (let i = myIndex + 1; i < openPanelStack.length; i += 1) {
-        const deeper = openPanelStack[i]
-        if (
-          deeper.containerRef.current?.contains(target) ||
-          deeper.popoverRef.current?.contains(target)
-        ) {
-          return
-        }
-      }
+      if (isPointerInsideLayerOrDeeper(event.target as Node, layer)) return
       onClose()
     }
     document.addEventListener("pointerdown", onPointerDown)
     return () => {
       document.removeEventListener("pointerdown", onPointerDown)
-      const idx = openPanelStack.indexOf(entry)
-      if (idx >= 0) openPanelStack.splice(idx, 1)
+      release()
     }
   }, [open, onClose])
 
-  // Close on Escape (when the press isn't already handled inside the panel).
+  // Close on Escape — but only when this is the topmost layer, so Escape
+  // dismisses an open nested dropdown first rather than the whole menu under it.
   useEffect(() => {
     if (!open) return
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose()
+      if (event.key === "Escape" && isTopmostPopoverLayer(layerRef.current)) onClose()
     }
     document.addEventListener("keydown", onKeyDown)
     return () => document.removeEventListener("keydown", onKeyDown)

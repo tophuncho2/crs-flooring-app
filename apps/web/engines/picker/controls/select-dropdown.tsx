@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+import { registerPopoverLayer, isPointerInsideLayerOrDeeper } from "@/engines/common"
 import type { DropdownOption } from "../contracts/dropdown-option"
 
 const TRIGGER_BASE_CLASS_NAME =
@@ -85,15 +86,20 @@ export function SelectDropdown({
 
   useEffect(() => {
     if (!open) return
+    // Register as a popover layer so a menu this dropdown is nested inside
+    // doesn't read clicks here as outside clicks (and vice-versa).
+    const layer = { containerRef, popoverRef: listboxRef }
+    const release = registerPopoverLayer(layer)
     function onPointerDown(event: PointerEvent) {
-      const target = event.target as Node
-      if (containerRef.current?.contains(target)) return
-      if (listboxRef.current?.contains(target)) return
+      if (isPointerInsideLayerOrDeeper(event.target as Node, layer)) return
       setOpen(false)
       setActiveIndex(-1)
     }
     document.addEventListener("pointerdown", onPointerDown)
-    return () => document.removeEventListener("pointerdown", onPointerDown)
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown)
+      release()
+    }
   }, [open])
 
   useEffect(() => {

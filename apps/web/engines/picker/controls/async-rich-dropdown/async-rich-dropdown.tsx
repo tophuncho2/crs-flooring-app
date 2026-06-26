@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { computePopoverPlacement } from "@/engines/common"
+import {
+  computePopoverPlacement,
+  registerPopoverLayer,
+  isPointerInsideLayerOrDeeper,
+} from "@/engines/common"
 import type { AsyncRichDropdownOption } from "./contracts/async-rich-dropdown-option"
 
 const TRIGGER_BASE_CLASS_NAME =
@@ -155,16 +159,21 @@ export function AsyncRichDropdown({
 
   useEffect(() => {
     if (!open) return
+    // Register as a popover layer so the menu this dropdown may be nested inside
+    // doesn't read clicks here as outside clicks (and vice-versa).
+    const layer = { containerRef, popoverRef }
+    const release = registerPopoverLayer(layer)
     function onPointerDown(event: PointerEvent) {
-      const target = event.target as Node
-      if (containerRef.current?.contains(target)) return
-      if (popoverRef.current?.contains(target)) return
+      if (isPointerInsideLayerOrDeeper(event.target as Node, layer)) return
       setOpen(false)
       setActiveIndex(-1)
       onQueryChange("")
     }
     document.addEventListener("pointerdown", onPointerDown)
-    return () => document.removeEventListener("pointerdown", onPointerDown)
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown)
+      release()
+    }
   }, [open, onQueryChange])
 
   useEffect(() => {
