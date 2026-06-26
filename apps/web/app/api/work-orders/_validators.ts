@@ -9,11 +9,13 @@ import type {
   ListSort,
   SyncTemplateToWorkOrderInput,
   UpdateWorkOrderUseCaseInput,
+  WorkOrdersExportInput,
   WorkOrdersListFilters,
 } from "@builders/application"
 import {
   DEFAULT_PALETTE_COLOR,
   PALETTE_COLOR_INVALID_MESSAGE,
+  WORK_ORDER_EXPORT_COLUMNS,
   WO_CUSTOM_ADDRESS_MAX,
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
@@ -27,6 +29,7 @@ import {
   type WorkOrderMaterialItemUpdateForm,
   type WorkOrderMaterialItemsDiff,
 } from "@builders/domain"
+import { parseExportEnvelope } from "@/server/http/export-request"
 
 function failWorkOrder(message: string, field?: string): never {
   throw new WorkOrderExecutionError({
@@ -410,6 +413,41 @@ export function validateListWorkOrdersQuery(
     ...(hasAnyFilter ? { filters: filterRecord } : {}),
     page: parsed.page,
     pageSize: parsed.pageSize,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CSV export request validator (list query + ticked ids + columns + cap)
+// ---------------------------------------------------------------------------
+
+const WORK_ORDER_EXPORT_COLUMN_KEYS: ReadonlySet<string> = new Set(
+  WORK_ORDER_EXPORT_COLUMNS.map((column) => column.key),
+)
+
+export type ValidatedWorkOrdersExport = {
+  input: WorkOrdersExportInput
+  /** Picked column keys, whitelisted; `undefined` ⇒ all columns. */
+  columns?: string[]
+}
+
+/**
+ * Validate a work-order CSV-export POST body. Reuses {@link validateListWorkOrdersQuery}
+ * on the embedded `query` so the export scopes exactly like the list, then
+ * layers the ticked `ids`, picked `columns`, and row `cap` on top.
+ */
+export function validateWorkOrdersExportRequest(body: unknown): ValidatedWorkOrdersExport {
+  const envelope = parseExportEnvelope(body, WORK_ORDER_EXPORT_COLUMN_KEYS)
+  const listInput = validateListWorkOrdersQuery(new URLSearchParams(envelope.query))
+
+  return {
+    input: {
+      ...(listInput.filters ? { filters: listInput.filters } : {}),
+      ...(listInput.sort ? { sort: listInput.sort } : {}),
+      ...(listInput.sorts ? { sorts: listInput.sorts } : {}),
+      ...(envelope.ids ? { ids: envelope.ids } : {}),
+      ...(envelope.cap !== undefined ? { cap: envelope.cap } : {}),
+    },
+    ...(envelope.columns ? { columns: envelope.columns } : {}),
   }
 }
 

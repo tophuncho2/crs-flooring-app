@@ -1,7 +1,7 @@
 import { authorizeRouteAccess, type AuthorizedRouteContext } from "@/server/auth/route-auth"
 import { normalizePrismaError } from "@/server/http/api-helpers"
 import { buildRateLimitResponse, consumeRateLimit } from "@/server/platform/rate-limit"
-import { jsonWithRequestId } from "@/server/platform/request-context"
+import { jsonWithRequestId, withRequestId } from "@/server/platform/request-context"
 
 type RouteAccessOptions = {
   allowUnverified?: boolean
@@ -56,6 +56,27 @@ export async function enforceRouteRateLimit(
 
 export function routeJson(context: AuthorizedRouteContext, body: unknown, init?: ResponseInit) {
   return jsonWithRequestId(body, context.requestId, init)
+}
+
+/**
+ * Emit a CSV file download as a raw `text/csv` response with a
+ * `Content-Disposition` attachment, carrying the same `x-request-id` header as
+ * `routeJson` for tracing parity. Use for export endpoints; errors still go
+ * through `routeError` (JSON) so the client can surface them.
+ */
+export function routeCsv(
+  context: Pick<AuthorizedRouteContext, "requestId">,
+  csv: string,
+  options: { filename: string; extraHeaders?: Record<string, string> },
+) {
+  const headers = new Headers({
+    "content-type": "text/csv; charset=utf-8",
+    "content-disposition": `attachment; filename="${options.filename}"`,
+  })
+  for (const [key, value] of Object.entries(options.extraHeaders ?? {})) {
+    headers.set(key, value)
+  }
+  return withRequestId(new Response(csv, { status: 200, headers }), context.requestId)
 }
 
 export function routeError(context: Pick<AuthorizedRouteContext, "requestId">, error: unknown) {

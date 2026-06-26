@@ -151,6 +151,19 @@ export function buildInventoryListSearchString(
   return params.toString()
 }
 
+/**
+ * Build the search string the CSV export POSTs as its `query` — the same
+ * filter + sort wire shape as the list, minus pagination (the export ignores
+ * page/pageSize and is capped server-side). Reuses the list encoder so the
+ * exported scope matches the on-screen list exactly.
+ */
+export function buildInventoryExportQuery(input: ListInput<InventoryListFilters>): string {
+  const params = new URLSearchParams(buildInventoryListSearchString({ ...input, page: 1 }))
+  params.delete("page")
+  params.delete("pageSize")
+  return params.toString()
+}
+
 export async function listInventoryRequest(
   input: ListInput<InventoryListFilters>,
 ): Promise<ListOutput<InventoryRow>> {

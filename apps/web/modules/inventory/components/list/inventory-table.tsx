@@ -1,7 +1,7 @@
 "use client"
 
 import { Copy, Plus } from "lucide-react"
-import { DataTable, type PaginateContract } from "@/engines/list-view"
+import { DataTable, type ListSelection, type PaginateContract } from "@/engines/list-view"
 import { RecordOptionsMenu } from "@/engines/common"
 import type { InventoryRow } from "@builders/domain"
 import { INVENTORY_LIST_COLUMNS } from "./table/inventory-list-columns"
@@ -12,6 +12,7 @@ export function InventoryTable({
   onOpenInventory,
   onDuplicateInventory,
   onAddAdjustment,
+  selection,
   sort,
   sorts,
   onSort,
@@ -22,6 +23,8 @@ export function InventoryTable({
   onDuplicateInventory: (id: string) => void
   /** Row ⋮ → "Add Adjustment": open the record in adjustment-create mode. */
   onAddAdjustment: (id: string) => void
+  /** Row-selection state — drives the checkbox column + Select-All (CSV export scope). */
+  selection?: ListSelection
   /** Active server-side sort (drives the header carets). */
   sort?: { field: string; direction: "asc" | "desc" } | null
   /** Active ordered multi-column sort (drives carets + priority badges). */
@@ -30,11 +33,25 @@ export function InventoryTable({
   onSort?: (key: string) => void
   pagination?: PaginateContract
 }) {
+  const pageIds = rows.map((row) => row.id)
+
   return (
     <DataTable<InventoryRow>
       rows={rows}
       columns={INVENTORY_LIST_COLUMNS}
       empty="No inventory rows match these filters."
+      selection={
+        selection
+          ? {
+              selectedIds: selection.selectedIds,
+              onToggleRow: selection.toggle,
+              isSelectionActive: selection.selectedCount > 0,
+              selectedCount: selection.selectedCount,
+              eligibleCount: pageIds.length,
+              onToggleAll: () => selection.toggleAll(pageIds),
+            }
+          : undefined
+      }
       sort={sort}
       sorts={sorts}
       onSort={onSort}

@@ -39,6 +39,12 @@ export type WorkOrdersListSort = {
  * preserves the upgrade path).
  */
 export type WorkOrdersListFilterMap = {
+  /**
+   * Restrict to an explicit set of work-order ids — the export "selected rows"
+   * scope. ANDs with every other filter, so a ticked row that no longer matches
+   * the active filters is excluded. Absent on the normal list read.
+   */
+  id?: string[]
   entityId?: string[]
   propertyId?: string[]
   templateId?: string[]
@@ -77,6 +83,12 @@ function buildWorkOrdersWhere(
   filters: WorkOrdersListFilterMap | undefined,
 ): Prisma.FlooringWorkOrderWhereInput | undefined {
   const andClauses: Prisma.FlooringWorkOrderWhereInput[] = []
+
+  // Explicit id scope — the export "selected rows" path. ANDs with everything
+  // else, so a ticked row that has since been filtered out is excluded.
+  if (filters?.id?.length) {
+    andClauses.push({ id: { in: filters.id } })
+  }
 
   // Per-column identity search — one independent ILIKE per filled search bar.
   const unitType = filters?.unitType?.[0]
@@ -374,6 +386,44 @@ export async function countWorkOrders(
   return client.flooringWorkOrder.count({
     where: buildWorkOrdersWhere(args.filters),
   })
+}
+
+export type WorkOrdersExportArgs = {
+  filters?: WorkOrdersListFilterMap
+  sort?: WorkOrdersListSort
+  /** Hard row ceiling for this export (the resolved cap). No pagination. */
+  take: number
+}
+
+export type WorkOrdersExportResult = {
+  rows: WorkOrderListRow[]
+  total: number
+}
+
+/**
+ * Unpaginated read for the work-order CSV export. Reuses the list view's
+ * `where` + `orderBy` builders verbatim so the exported set is exactly the
+ * filtered list (same order), capped at `take`. Returns `total` too so the
+ * route can report "first N of M" when the match count exceeds the cap. The
+ * optional `filters.id` scopes to ticked rows.
+ */
+export async function exportWorkOrders(
+  args: WorkOrdersExportArgs,
+  client: WorkOrdersDbClient = db,
+): Promise<WorkOrdersExportResult> {
+  const where = buildWorkOrdersWhere(args.filters)
+
+  const [total, workOrders] = await Promise.all([
+    client.flooringWorkOrder.count({ where }),
+    client.flooringWorkOrder.findMany({
+      where,
+      orderBy: buildWorkOrdersOrderBy(args.sort),
+      take: args.take,
+      select: workOrderListSelect,
+    }),
+  ])
+
+  return { total, rows: workOrders.map(normalizeWorkOrderListRow) }
 }
 
 /**

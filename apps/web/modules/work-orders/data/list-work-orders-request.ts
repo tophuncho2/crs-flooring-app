@@ -149,6 +149,19 @@ function buildSearchString(input: WorkOrdersListInput): string {
   return params.toString()
 }
 
+/**
+ * Build the search string the CSV export POSTs as its `query` — the same
+ * filter + sort wire shape as the list, minus pagination (the export ignores
+ * page/pageSize and is capped server-side). Reuses the list encoder so the
+ * exported scope matches the on-screen list exactly.
+ */
+export function buildWorkOrdersExportQuery(input: WorkOrdersListInput): string {
+  const params = new URLSearchParams(buildSearchString({ ...input, page: 1 }))
+  params.delete("page")
+  params.delete("pageSize")
+  return params.toString()
+}
+
 export type WorkOrdersListOutput = ListOutput<WorkOrderListRow>
 
 export async function listWorkOrdersRequest(

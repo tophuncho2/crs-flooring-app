@@ -2,11 +2,13 @@ import { z } from "zod"
 import { InventoryExecutionError } from "@builders/application"
 import type {
   CreateInventoryInput,
+  InventoryExportInput,
   InventoryListFilters,
   UpdateInventoryInput,
 } from "@builders/application"
 import type { ListInput, ListSort } from "@builders/application"
 import {
+  INVENTORY_EXPORT_COLUMNS,
   INVENTORY_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
   isPaletteColor,
@@ -15,6 +17,7 @@ import {
   PALETTE_COLOR_INVALID_MESSAGE,
   type PaletteColor,
 } from "@builders/domain"
+import { parseExportEnvelope } from "@/server/http/export-request"
 
 function optionalString(value: unknown, field: string): string {
   if (value === undefined || value === null) return ""
@@ -350,6 +353,39 @@ export function validateListInventoryQuery(
     filters: hasAnyFilter ? (filterRecord as InventoryListFilters) : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,
+  }
+}
+
+// --- CSV export request validator (list query + ticked ids + columns + cap) ---
+
+const INVENTORY_EXPORT_COLUMN_KEYS: ReadonlySet<string> = new Set(
+  INVENTORY_EXPORT_COLUMNS.map((column) => column.key),
+)
+
+export type ValidatedInventoryExport = {
+  input: InventoryExportInput
+  /** Picked column keys, whitelisted; `undefined` ⇒ all columns. */
+  columns?: string[]
+}
+
+/**
+ * Validate an inventory CSV-export POST body. Reuses {@link validateListInventoryQuery}
+ * on the embedded `query` so the export scopes exactly like the list, then
+ * layers the ticked `ids`, picked `columns`, and row `cap` on top.
+ */
+export function validateInventoryExportRequest(body: unknown): ValidatedInventoryExport {
+  const envelope = parseExportEnvelope(body, INVENTORY_EXPORT_COLUMN_KEYS)
+  const listInput = validateListInventoryQuery(new URLSearchParams(envelope.query))
+
+  return {
+    input: {
+      ...(listInput.filters ? { filters: listInput.filters } : {}),
+      ...(listInput.sort ? { sort: listInput.sort } : {}),
+      ...(listInput.sorts ? { sorts: listInput.sorts } : {}),
+      ...(envelope.ids ? { ids: envelope.ids } : {}),
+      ...(envelope.cap !== undefined ? { cap: envelope.cap } : {}),
+    },
+    ...(envelope.columns ? { columns: envelope.columns } : {}),
   }
 }
 

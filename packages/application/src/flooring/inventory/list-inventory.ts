@@ -5,36 +5,13 @@ import {
 } from "@builders/domain"
 import { listInventoryForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import {
+  resolveInventoryListFilters,
+  resolveInventoryListSort,
+  type InventoryListFilters,
+} from "./list-inventory-input.js"
 
-export type InventoryListFilters = {
-  warehouseId?: ReadonlyArray<string>
-  categoryId?: ReadonlyArray<string>
-  productId?: ReadonlyArray<string>
-  importNumber?: ReadonlyArray<string>
-  purchaseOrderNumber?: ReadonlyArray<string>
-  location?: string
-  isArchived?: boolean
-  // Per-field identity search — the four list-view search bars. Each is a
-  // free-text ILIKE against its own column (`inventoryNumber`/`rollNumber`/
-  // `dyeLot`/`note`); multiple set fields AND together to narrow.
-  invNumber?: string
-  rollNumber?: string
-  dyeLot?: string
-  note?: string
-}
-
-/** Max simultaneous sort columns the inventory list composes (mirrors WO). */
-const MAX_SORT_LEVELS = 3
-
-function normalizeIds(
-  raw: ReadonlyArray<string> | undefined,
-): ReadonlyArray<string> | undefined {
-  if (!raw || raw.length === 0) return undefined
-  const cleaned = Array.from(
-    new Set(raw.map((entry) => entry.trim()).filter((entry) => entry.length > 0)),
-  )
-  return cleaned.length > 0 ? cleaned : undefined
-}
+export type { InventoryListFilters } from "./list-inventory-input.js"
 
 export async function listInventoryUseCase(
   input: ListInput<InventoryListFilters>,
@@ -43,56 +20,11 @@ export async function listInventoryUseCase(
   const requestedPageSize = Math.floor(input.pageSize || LIST_INVENTORY_PAGE_SIZE)
   const pageSize = Math.max(1, Math.min(LIST_INVENTORY_MAX_PAGE_SIZE, requestedPageSize))
 
-  const warehouseId = normalizeIds(input.filters?.warehouseId)
-  const categoryId = normalizeIds(input.filters?.categoryId)
-  const productId = normalizeIds(input.filters?.productId)
-  const importNumber = normalizeIds(input.filters?.importNumber)
-  const purchaseOrderNumber = normalizeIds(input.filters?.purchaseOrderNumber)
-  const location = input.filters?.location?.trim() || undefined
-  const isArchived = input.filters?.isArchived
-  const invNumber = input.filters?.invNumber?.trim() || undefined
-  const rollNumber = input.filters?.rollNumber?.trim() || undefined
-  const dyeLot = input.filters?.dyeLot?.trim() || undefined
-  const note = input.filters?.note?.trim() || undefined
-
-  const filters =
-    warehouseId ||
-    categoryId ||
-    productId ||
-    importNumber ||
-    purchaseOrderNumber ||
-    location ||
-    isArchived !== undefined ||
-    invNumber ||
-    rollNumber ||
-    dyeLot ||
-    note
-      ? {
-          ...(warehouseId ? { warehouseId } : {}),
-          ...(categoryId ? { categoryId } : {}),
-          ...(productId ? { productId } : {}),
-          ...(importNumber ? { importNumber } : {}),
-          ...(purchaseOrderNumber ? { purchaseOrderNumber } : {}),
-          ...(location ? { location } : {}),
-          ...(isArchived !== undefined ? { isArchived } : {}),
-          ...(invNumber ? { invNumber } : {}),
-          ...(rollNumber ? { rollNumber } : {}),
-          ...(dyeLot ? { dyeLot } : {}),
-          ...(note ? { note } : {}),
-        }
-      : undefined
-
-  // Multi-column sort is canonical via `sorts`; a single `sort` is the legacy
-  // fallback (header-caret consumers, old bookmarks). Slice to the cap, then
-  // hand the repo the ordered entries.
-  const sortList = input.sorts ?? (input.sort ? [input.sort] : [])
-  const entries = sortList
-    .slice(0, MAX_SORT_LEVELS)
-    .map((entry) => ({ field: entry.field, direction: entry.direction }))
-  const sort = entries.length > 0 ? { entries } : undefined
+  const filters = resolveInventoryListFilters(input.filters)
+  const sort = resolveInventoryListSort(input)
 
   const { rows, total } = await listInventoryForListView({
-    filters,
+    ...(filters ? { filters } : {}),
     ...(sort ? { sort } : {}),
     skip: (page - 1) * pageSize,
     take: pageSize,

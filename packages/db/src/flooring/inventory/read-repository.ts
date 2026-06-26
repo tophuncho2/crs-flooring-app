@@ -344,6 +344,13 @@ export async function getInventoryDeleteState(
 
 export type InventoryListViewOptions = {
   filters?: {
+    /**
+     * Restrict to an explicit set of inventory row ids — the export "selected
+     * rows" scope. ANDs with every other filter (including the always-on
+     * archived/merged gates), so a ticked row that no longer matches the active
+     * filters is excluded. Absent on the normal list read.
+     */
+    id?: ReadonlyArray<string>
     warehouseId?: ReadonlyArray<string>
     location?: string
     categoryId?: ReadonlyArray<string>
@@ -429,6 +436,14 @@ function buildListViewWhere(
   // (unfiltered by id). This also filters the record-view reference-header
   // options grid, which defaults to this read.
   clauses.push({ wasMerged: false })
+
+  // Explicit id scope — the export "selected rows" path. ANDs with the gates
+  // above, so a ticked row that has since been archived/merged or filtered out
+  // is silently excluded (acceptable: ticks originate from the filtered list).
+  const ids = options.filters?.id
+  if (ids && ids.length > 0) {
+    clauses.push({ id: { in: [...ids] } })
+  }
 
   // Per-field identity search — one independent clause per filled search bar
   // (`inventoryNumber`/`rollNumber`/`dyeLot`/`note`). Each pushes its own AND
@@ -600,6 +615,40 @@ export async function listInventoryForListView(
       where,
       orderBy,
       skip: options.skip,
+      take: options.take,
+      select: inventoryRowSelect,
+    }),
+  ])
+
+  return { total, rows: rows.map(normalizeInventoryRow) }
+}
+
+export type InventoryExportOptions = {
+  filters?: InventoryListViewOptions["filters"]
+  sort?: InventoryListViewSort
+  /** Hard row ceiling for this export (the resolved cap). No pagination. */
+  take: number
+}
+
+/**
+ * Unpaginated read for the inventory CSV export. Reuses the list view's
+ * `where` + `orderBy` builders verbatim so the exported set is exactly the
+ * filtered list (same newest-first order), capped at `take`. Returns `total`
+ * too so the route can report "first N of M" when the match count exceeds the
+ * cap. The optional `filters.id` scopes to ticked rows.
+ */
+export async function exportInventoryForListView(
+  options: InventoryExportOptions,
+  client: InventoryDbClient = db,
+): Promise<InventoryListViewResult> {
+  const where = buildListViewWhere(options)
+  const orderBy = buildInventoryListViewOrderBy(options.sort)
+
+  const [total, rows] = await Promise.all([
+    client.flooringInventory.count({ where }),
+    client.flooringInventory.findMany({
+      where,
+      orderBy,
       take: options.take,
       select: inventoryRowSelect,
     }),

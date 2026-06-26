@@ -1,19 +1,22 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
   SortMenuBody,
   ListActionBar,
   ListCreateButtonPortal,
+  ListExportButton,
   ListPageShell,
   ListPageFeedback,
   ToolbarMenuButton,
   useFetchListController,
+  useListSelection,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
 import type { WorkOrdersListFilters } from "@builders/application"
+import { WORK_ORDER_EXPORT_COLUMNS } from "@builders/domain"
 import type {
   JobTypeOption,
   EntityOption,
@@ -23,6 +26,7 @@ import type {
   WorkOrderListRow,
 } from "@builders/domain"
 import {
+  buildWorkOrdersExportQuery,
   WORK_ORDERS_LIST_FILTERABLE_FIELDS,
   WORK_ORDERS_LIST_PAGE_SIZE,
   WORK_ORDERS_LIST_QUERY_KEY,
@@ -142,6 +146,34 @@ export default function WorkOrdersClient({
     filterableFields: WORK_ORDERS_LIST_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
+
+  // Row selection (CSV export scope). Drop it whenever the filtered/sorted scope
+  // changes so a ticked id from a prior scope can't leak into an export.
+  const selection = useListSelection()
+  const scopeSignature = useMemo(() => JSON.stringify({ filters, sorts }), [filters, sorts])
+  useEffect(() => {
+    selection.clear()
+    // Clear only when the filtered/sorted scope changes — NOT on every selection
+    // mutation (depending on `selection` would wipe ticks the instant they're made).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scopeSignature])
+
+  const selectedIds = useMemo(() => [...selection.selectedIds], [selection.selectedIds])
+  const exportQuery = useMemo(
+    () =>
+      buildWorkOrdersExportQuery({
+        sort: sort ?? undefined,
+        sorts,
+        filters,
+        page: 1,
+        pageSize: WORK_ORDERS_LIST_PAGE_SIZE,
+      }),
+    [sort, sorts, filters],
+  )
+  const exportColumns = useMemo(
+    () => WORK_ORDER_EXPORT_COLUMNS.map((column) => ({ key: column.key, label: column.label })),
+    [],
+  )
 
   // --- Selected values from the filter map ---
   const selectedEntityId = filters.entityId?.[0] ?? null
@@ -441,11 +473,22 @@ export default function WorkOrdersClient({
             ariaLabel="Search work orders by work order number"
           />
         </ToolbarMenuButton>
+
+        {/* Export — column-picker + row-cap; exports the ticked rows, or the
+            whole filtered set when nothing is ticked. */}
+        <ListExportButton
+          endpoint="/api/work-orders/export"
+          query={exportQuery}
+          selectedIds={selectedIds}
+          columns={exportColumns}
+          filename="work-orders-export.csv"
+        />
       </ListActionBar>
 
       <WorkOrdersTable
         rows={rows}
         onOpenWorkOrder={openWorkOrder}
+        selection={selection}
         sorts={tableSorts}
         onSort={handleSort}
         pagination={{

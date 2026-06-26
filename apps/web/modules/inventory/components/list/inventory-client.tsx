@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
-import { SortMenuBody, useFetchListController, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal } from "@/engines/list-view"
+import { SortMenuBody, useFetchListController, useListSelection, ListExportButton, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal } from "@/engines/list-view"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
+  INVENTORY_EXPORT_COLUMNS,
   LIST_INVENTORY_PAGE_SIZE,
   type CategoryOption,
   type InventoryRow,
@@ -12,6 +13,7 @@ import {
   type WarehouseOption,
 } from "@builders/domain"
 import {
+  buildInventoryExportQuery,
   INVENTORY_LIST_QUERY_KEY,
   listInventoryRequest,
 } from "@/modules/inventory/data/list-inventory-request"
@@ -195,6 +197,34 @@ export default function InventoryClient({
     maxSortLevels: INVENTORY_MAX_SORT_LEVELS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
+
+  // Row selection (CSV export scope). Drop it whenever the filtered/sorted scope
+  // changes so a ticked id from a prior scope can't leak into an export.
+  const selection = useListSelection()
+  const scopeSignature = useMemo(() => JSON.stringify({ filters, sorts }), [filters, sorts])
+  useEffect(() => {
+    selection.clear()
+    // Clear only when the filtered/sorted scope changes — NOT on every selection
+    // mutation (depending on `selection` would wipe ticks the instant they're made).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scopeSignature])
+
+  const selectedIds = useMemo(() => [...selection.selectedIds], [selection.selectedIds])
+  const exportQuery = useMemo(
+    () =>
+      buildInventoryExportQuery({
+        sort: sort ?? undefined,
+        sorts,
+        filters: toAppFilters(filters),
+        page: 1,
+        pageSize: LIST_INVENTORY_PAGE_SIZE,
+      }),
+    [sort, sorts, filters],
+  )
+  const exportColumns = useMemo(
+    () => INVENTORY_EXPORT_COLUMNS.map((column) => ({ key: column.key, label: column.label })),
+    [],
+  )
 
   // Column-header sort: flip direction when the active column is re-clicked,
   // else switch field with a sensible default direction.
@@ -489,10 +519,21 @@ export default function InventoryClient({
             ariaLabel="Search inventory by note"
           />
         </ToolbarMenuButton>
+
+        {/* Export — column-picker + row-cap; exports the ticked rows, or the
+            whole filtered set when nothing is ticked. */}
+        <ListExportButton
+          endpoint="/api/inventory/export"
+          query={exportQuery}
+          selectedIds={selectedIds}
+          columns={exportColumns}
+          filename="inventory-export.csv"
+        />
       </ListActionBar>
 
       <InventoryTable
         rows={rows}
+        selection={selection}
         onOpenInventory={(id) =>
           router.push(buildInventoryRecordHref({ inventoryId: id, returnTo }))
         }
