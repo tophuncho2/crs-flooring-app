@@ -37,7 +37,7 @@ export function DropdownCell(props: DropdownCellProps) {
       aria-label={props.ariaLabel}
       className={["block truncate text-sm", props.className].filter(Boolean).join(" ")}
     >
-      {matched?.label || "-"}
+      {matched?.title || "-"}
     </span>
   )
 }

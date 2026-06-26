@@ -55,7 +55,7 @@ export function SelectDropdown({
 
   const keyedOptions = useMemo<ReadonlyArray<DropdownOption & { isClear?: true }>>(() => {
     if (allowClear) {
-      return [{ id: "__clear__", label: "— Clear —", isClear: true }, ...options]
+      return [{ id: "__clear__", title: "— Clear —", isClear: true }, ...options]
     }
     return options
   }, [allowClear, options])
@@ -203,7 +203,7 @@ export function SelectDropdown({
     [keyedOptions, activeIndex, commitSelection, closeAndReturnFocus],
   )
 
-  const triggerLabel = selected ? selected.label : placeholder
+  const triggerLabel = selected ? selected.title : placeholder
 
   return (
     <div ref={containerRef} className={joinClassNames("relative", className)}>
@@ -275,10 +275,10 @@ export function SelectDropdown({
                         option.disabled ? "cursor-not-allowed opacity-50" : undefined,
                       )}
                     >
-                      <div className="whitespace-nowrap">{option.label}</div>
-                      {option.hint ? (
+                      <div className="whitespace-nowrap">{option.title}</div>
+                      {option.subtitle ? (
                         <div className="whitespace-nowrap text-[11px] text-[var(--foreground)]/55">
-                          {option.hint}
+                          {option.subtitle}
                         </div>
                       ) : null}
                     </div>

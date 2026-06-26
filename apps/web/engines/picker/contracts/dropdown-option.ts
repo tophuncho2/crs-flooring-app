@@ -1,11 +1,9 @@
-// Standard option shape for dropdowns. `id` is the value; `label` is the
-// rendered text; `hint` is an optional secondary line; `disabled` blocks
-// selection. Consumers map their own option types onto this shape before
-// passing in.
+import type { PickerOption } from "./picker-option"
 
-export type DropdownOption = {
-  id: string
-  label: string
-  hint?: string
-  disabled?: boolean
-}
+/**
+ * Legacy name for the static `SelectDropdown` option shape, now an alias of the
+ * canonical {@link PickerOption}. `title` is the rendered text; `subtitle` is the
+ * optional secondary line; `disabled` blocks selection. Prefer importing
+ * `PickerOption` directly in new code.
+ */
+export type DropdownOption = PickerOption

@@ -1,12 +1,9 @@
-// Option shape for `AsyncRichDropdown`. AsyncRichDropdown does no local
-// filtering: search runs server-side and `options` is whatever the
-// controller most recently fetched.
+import type { PickerOption } from "../../../contracts/picker-option"
 
-export type AsyncRichDropdownOption = {
-  id: string
-  title: string
-  subtitles?: string[]
-  /** Small trailing detail rendered by the title (e.g. an item count). */
-  meta?: string
-  disabled?: boolean
-}
+/**
+ * Legacy name for the `AsyncRichDropdown` option shape, now an alias of the
+ * canonical {@link PickerOption}. AsyncRichDropdown does no local filtering:
+ * search runs server-side and `options` is whatever the controller most
+ * recently fetched. Prefer importing `PickerOption` directly in new code.
+ */
+export type AsyncRichDropdownOption = PickerOption

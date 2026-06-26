@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import type { AsyncRichDropdownControllerOutput } from "../client"
+import type { PickerOption } from "../contracts/picker-option"
 
 const SEARCH_INPUT_CLASS_NAME =
   "w-full rounded-md border border-[var(--panel-border)] bg-[var(--panel-background)] px-2.5 py-1.5 text-sm text-[var(--foreground)] outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/40"
@@ -13,19 +14,11 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ")
 }
 
-export type PickerListOption = {
-  id: string
-  title: string
-  subtitle?: string | null
-  /**
-   * Multiple stacked sub-lines, one per row. Takes precedence over
-   * `subtitle` when non-empty. Use for richer option cards (e.g. a template's
-   * job type + description).
-   */
-  subtitles?: string[]
-  /** Small trailing detail rendered by the title (e.g. an item count). */
-  meta?: ReactNode
-}
+/**
+ * Legacy name for the in-panel picker option shape, now an alias of the
+ * canonical {@link PickerOption}. Prefer importing `PickerOption` directly.
+ */
+export type PickerListOption = PickerOption
 
 export type PickerListProps<TOption> = {
   controller: AsyncRichDropdownControllerOutput<TOption>
@@ -40,6 +33,20 @@ export type PickerListProps<TOption> = {
   onSelect: (option: PickerListOption, raw: TOption) => void
   onClear: () => void
   onCancel: () => void
+  /**
+   * Custom row-content renderer. Replaces the default title/meta/subtitles body
+   * while the engine keeps owning the row chrome (hover/active/selected glow,
+   * keyboard nav, click). Receives the mapped option and the raw row.
+   */
+  renderOption?: (option: PickerListOption, raw: TOption) => ReactNode
+  /**
+   * Multi-select mode. When provided, every id in this set renders selected
+   * (glow) and the list becomes a toggle surface: the built-in "clear selection"
+   * row is suppressed and `selectedId` is ignored for glow. Selecting a row
+   * still fires `onSelect` — the consumer toggles membership. Used by the combo
+   * picker's type rail.
+   */
+  selectedIds?: ReadonlyArray<string> | null
   searchPlaceholder?: string
   emptyMessage?: string
   loadingMessage?: string
@@ -76,6 +83,8 @@ export function PickerList<TOption>({
   onSelect,
   onClear,
   onCancel,
+  renderOption,
+  selectedIds,
   searchPlaceholder = "Search",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
@@ -92,6 +101,14 @@ export function PickerList<TOption>({
     () => controller.options.map((raw) => ({ option: toOption(raw), raw })),
     [controller.options, toOption],
   )
+
+  // Multi-select (toggle) mode when `selectedIds` is supplied; otherwise the
+  // list is single-select keyed off `selectedId`.
+  const multiSelectedSet = useMemo(
+    () => (selectedIds ? new Set(selectedIds) : null),
+    [selectedIds],
+  )
+  const isMulti = multiSelectedSet !== null
 
   const isLoading = controller.isLoading
   const isFetchingMore = controller.isFetchingMore
@@ -193,7 +210,7 @@ export function PickerList<TOption>({
     [options, activeIndex, commitSelect, onCancel],
   )
 
-  const hasSelection = selectedId !== null && selectedLabel !== null
+  const hasSelection = !isMulti && selectedId !== null && selectedLabel !== null
 
   const searchNode = (
     <div className={joinClassNames("shrink-0", searchPortalTarget ? null : "pb-2")}>
@@ -259,7 +276,9 @@ export function PickerList<TOption>({
             {options.map((entry, index) => {
               const { option } = entry
               const isActive = index === activeIndex
-              const isSelected = option.id === selectedId
+              const isSelected = isMulti
+                ? multiSelectedSet.has(option.id)
+                : option.id === selectedId
               return (
                 <div
                   key={option.id}
@@ -272,38 +291,48 @@ export function PickerList<TOption>({
                   className={joinClassNames(
                     "cursor-pointer px-3 py-2 transition",
                     isActive ? "bg-sky-500/15" : undefined,
-                    isSelected ? "bg-sky-500/10" : undefined,
+                    isSelected
+                      ? isMulti
+                        ? "bg-sky-500/15 ring-1 ring-inset ring-sky-500/50"
+                        : "bg-sky-500/10"
+                      : undefined,
                   )}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
-                      {option.title}
-                    </span>
-                    {option.meta ? (
-                      <span className="shrink-0 text-xs tabular-nums text-[var(--foreground)]/55">
-                        {option.meta}
-                      </span>
-                    ) : null}
-                    {isSelected ? (
-                      <span aria-hidden="true" className="text-xs text-sky-500">
-                        ✓
-                      </span>
-                    ) : null}
-                  </div>
-                  {option.subtitles && option.subtitles.length > 0 ? (
-                    option.subtitles.map((line, lineIndex) => (
-                      <div
-                        key={`${lineIndex}:${line}`}
-                        className="mt-0.5 truncate text-xs text-[var(--foreground)]/55"
-                      >
-                        {line}
+                  {renderOption ? (
+                    renderOption(option, entry.raw)
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--foreground)]">
+                          {option.title}
+                        </span>
+                        {option.meta ? (
+                          <span className="shrink-0 text-xs tabular-nums text-[var(--foreground)]/55">
+                            {option.meta}
+                          </span>
+                        ) : null}
+                        {isSelected ? (
+                          <span aria-hidden="true" className="text-xs text-sky-500">
+                            ✓
+                          </span>
+                        ) : null}
                       </div>
-                    ))
-                  ) : option.subtitle ? (
-                    <div className="mt-0.5 truncate text-xs text-[var(--foreground)]/55">
-                      {option.subtitle}
-                    </div>
-                  ) : null}
+                      {option.subtitles && option.subtitles.length > 0 ? (
+                        option.subtitles.map((line, lineIndex) => (
+                          <div
+                            key={`${lineIndex}:${line}`}
+                            className="mt-0.5 truncate text-xs text-[var(--foreground)]/55"
+                          >
+                            {line}
+                          </div>
+                        ))
+                      ) : option.subtitle ? (
+                        <div className="mt-0.5 truncate text-xs text-[var(--foreground)]/55">
+                          {option.subtitle}
+                        </div>
+                      ) : null}
+                    </>
+                  )}
                 </div>
               )
             })}

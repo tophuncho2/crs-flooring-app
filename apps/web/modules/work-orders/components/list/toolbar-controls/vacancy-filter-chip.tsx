@@ -8,8 +8,8 @@ export type VacancyFilterChipProps = {
 
 // Static enum — the work order's vacancy column is `VACANT` / `OCCUPIED`.
 const VACANCY_OPTIONS: ReadonlyArray<DropdownOption> = [
-  { id: "VACANT", label: "Vacant" },
-  { id: "OCCUPIED", label: "Occupied" },
+  { id: "VACANT", title: "Vacant" },
+  { id: "OCCUPIED", title: "Occupied" },
 ]
 
 /**

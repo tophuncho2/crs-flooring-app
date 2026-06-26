@@ -61,6 +61,19 @@ export function AnchoredPanel({
   const layerRef = useRef({ containerRef, popoverRef })
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null)
 
+  // Latest-`onClose` ref so the outside-click / Escape effects can fire the
+  // current callback WITHOUT taking `onClose` as a dependency. Consumers pass a
+  // fresh inline `onClose` every render; if the effects re-ran on that identity
+  // they'd `release()`+`register()` the popover layer on every render, and React
+  // runs those effects child-first — flipping a nested pair's registration order
+  // ([outer,inner] → [inner,outer]) so the outer menu reads a click inside the
+  // inner picker as "outside" and self-closes. Registering once per `open` keeps
+  // the layer order stable.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
   // Measure the trigger on open and keep the panel pinned to it on
   // scroll/resize (capture catches scrolls in any ancestor). A stale rect left
   // behind on close is harmless — the portal only renders while `open`.
@@ -91,25 +104,25 @@ export function AnchoredPanel({
     const release = registerPopoverLayer(layer)
     function onPointerDown(event: PointerEvent) {
       if (isPointerInsideLayerOrDeeper(event.target as Node, layer)) return
-      onClose()
+      onCloseRef.current()
     }
     document.addEventListener("pointerdown", onPointerDown)
     return () => {
       document.removeEventListener("pointerdown", onPointerDown)
       release()
     }
-  }, [open, onClose])
+  }, [open])
 
   // Close on Escape — but only when this is the topmost layer, so Escape
   // dismisses an open nested dropdown first rather than the whole menu under it.
   useEffect(() => {
     if (!open) return
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && isTopmostPopoverLayer(layerRef.current)) onClose()
+      if (event.key === "Escape" && isTopmostPopoverLayer(layerRef.current)) onCloseRef.current()
     }
     document.addEventListener("keydown", onKeyDown)
     return () => document.removeEventListener("keydown", onKeyDown)
-  }, [open, onClose])
+  }, [open])
 
   return (
     <div ref={containerRef} className="relative">

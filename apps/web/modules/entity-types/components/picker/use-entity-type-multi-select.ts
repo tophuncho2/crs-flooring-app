@@ -67,17 +67,36 @@ export function useEntityTypeMultiSelect({
     [controller, selectedIdSet],
   )
 
+  const rememberRef = useCallback((raw: EntityTypeOption) => {
+    setRefCache((previous) => {
+      if (previous.has(raw.id)) return previous
+      const next = new Map(previous)
+      next.set(raw.id, { id: raw.id, type: raw.type, color: raw.color })
+      return next
+    })
+  }, [])
+
   const handleSelect = useCallback(
     (_option: PickerListOption, raw: EntityTypeOption) => {
-      setRefCache((previous) => {
-        if (previous.has(raw.id)) return previous
-        const next = new Map(previous)
-        next.set(raw.id, { id: raw.id, type: raw.type, color: raw.color })
-        return next
-      })
+      rememberRef(raw)
       if (!selectedIdSet.has(raw.id)) onChange?.([...selectedIds, raw.id])
     },
-    [onChange, selectedIds, selectedIdSet],
+    [onChange, rememberRef, selectedIds, selectedIdSet],
+  )
+
+  // Toggle variant for the glow-rail UI (combo picker): selected types stay in
+  // the list and glow; clicking a selected one removes it. Pair with the
+  // unfiltered `controller` + `selectedIds` (below), not `addController`.
+  const handleToggle = useCallback(
+    (_option: PickerListOption, raw: EntityTypeOption) => {
+      rememberRef(raw)
+      if (selectedIdSet.has(raw.id)) {
+        onChange?.(selectedIds.filter((entry) => entry !== raw.id))
+      } else {
+        onChange?.([...selectedIds, raw.id])
+      }
+    },
+    [onChange, rememberRef, selectedIds, selectedIdSet],
   )
 
   const handleRemove = useCallback(
@@ -94,5 +113,5 @@ export function useEntityTypeMultiSelect({
     [selectedIds, refCache],
   )
 
-  return { addController, handleSelect, handleRemove, chips }
+  return { controller, addController, handleSelect, handleToggle, handleRemove, chips }
 }

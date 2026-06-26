@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react"
 import type { EntityOption, EntityTypeOption } from "@builders/domain"
-import { AnchoredPanel } from "@/engines/common"
+import { AnchoredPanel, CellChip } from "@/engines/common"
 import {
   PickerList,
   PickerTrigger,
@@ -13,13 +13,10 @@ import {
   ENTITY_OPTIONS_QUERY_KEY,
   searchEntityOptionsRequest,
 } from "@/modules/entities/data/entity-options-request"
-import { EntityTypeChips } from "@/modules/entity-types/components/picker/entity-type-chips"
 import {
   toEntityTypePickerOption,
   useEntityTypeMultiSelect,
 } from "@/modules/entity-types/components/picker/use-entity-type-multi-select"
-
-type ActivePicker = "entity" | "type"
 
 export type EntityTypePickerProps = {
   /** Selected entity id (the cell's value). */
@@ -50,18 +47,17 @@ function toEntityOption(option: EntityOption): PickerListOption {
 /**
  * The combined **type → entity** combo picker — the single entity picker used
  * everywhere an entity is selected (payments, properties, work-order/template/
- * property list filters). Mirrors {@link ProductCategoryPicker}: the trigger
- * shows the selected entity; on open it anchors an inline panel whose sticky
- * header carries a **Type** trigger and an **Entity** trigger, and whose body
- * shows the active trigger's list.
+ * property list filters). The trigger shows the selected entity; on open it
+ * anchors a split-pane panel: a **type rail** on the left (every type, always
+ * visible, each rendered as its palette chip) and the **entity list** on the
+ * right, each column with its own search + scroll.
  *
- * Body defaults to the entity list on open; the type list appears when the Type
- * trigger is clicked. Because an entity holds an *array* of types (m2m), the
- * type side is **multi-select** and narrows the entity options to those carrying
- * at least one selected type (`some/in`). The type-filter state is **internal**
- * (never persisted, not lifted to consumers), so this is a true drop-in for the
- * old single-select EntityPicker. Changing the type set re-narrows but never
- * clears the chosen entity (an entity may legitimately carry several types).
+ * The type rail is **multi-select glow-toggle**: clicking a type glows + filters
+ * the entity list to entities carrying at least one selected type (`some/in`);
+ * clicking it again clears it. The type-filter state is **internal** (never
+ * persisted, not lifted to consumers), so this is a true drop-in for the old
+ * single-select entity picker. Changing the type set re-narrows but never clears
+ * the chosen entity (an entity may legitimately carry several types).
  */
 export function EntityTypePicker({
   value,
@@ -77,10 +73,6 @@ export function EntityTypePicker({
   initialOptions,
 }: EntityTypePickerProps) {
   const [open, setOpen] = useState(false)
-  const [activePicker, setActivePicker] = useState<ActivePicker>("entity")
-  // The active picker portals its search input into this header slot so the
-  // search bar stays pinned above the scrolling option list.
-  const [searchSlot, setSearchSlot] = useState<HTMLDivElement | null>(null)
   // Internal type-narrowing selection — drives the entity options' bucketKey;
   // never surfaced to consumers (a find-aid, not a persisted link).
   const [typeIds, setTypeIds] = useState<string[]>([])
@@ -89,7 +81,7 @@ export function EntityTypePicker({
     selectedIds: typeIds,
     seedRefs: [],
     onChange: setTypeIds,
-    enabled: open && activePicker === "type",
+    enabled: open,
   })
 
   const entityBucketKey = useMemo(
@@ -111,10 +103,6 @@ export function EntityTypePicker({
     enabled: open,
   })
 
-  const openPanel = useCallback(() => {
-    setActivePicker("entity")
-    setOpen(true)
-  }, [])
   const closePanel = useCallback(() => setOpen(false), [])
 
   const handleEntitySelect = useCallback(
@@ -130,33 +118,27 @@ export function EntityTypePicker({
     onOptionSelected?.(null)
   }, [onChange, onOptionSelected])
 
-  const typeTriggerLabel =
-    typeIds.length === 0 ? null : `${typeIds.length} type${typeIds.length === 1 ? "" : "s"}`
+  // The type's canonical option row = its palette chip (matches the chips shown
+  // for an entity's types everywhere else). Selection glow is the row chrome's
+  // job (PickerList owns it via `selectedIds`).
+  const renderTypeOption = useCallback(
+    (_option: PickerListOption, raw: EntityTypeOption) => (
+      <CellChip paletteColor={raw.color ?? undefined}>{raw.type}</CellChip>
+    ),
+    [],
+  )
 
   const stickyHeader = (
-    <div className="flex flex-col gap-2">
-      <PickerTrigger
-        expanded={activePicker === "type"}
-        onToggle={() => setActivePicker("type")}
-        selectedLabel={typeTriggerLabel}
-        placeholder="All types"
-        ariaLabel="Type filter"
-      />
-      <PickerTrigger
-        expanded={activePicker === "entity"}
-        onToggle={() => setActivePicker("entity")}
-        selectedLabel={selectedLabel}
-        placeholder={placeholder}
-        ariaLabel={ariaLabel}
-      />
-      <div ref={setSearchSlot} />
+    <div className="flex gap-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/55">
+      <span className="w-40 shrink-0">Filter by type</span>
+      <span className="flex-1">Entities</span>
     </div>
   )
 
   const trigger = (
     <PickerTrigger
       expanded={open}
-      onToggle={() => (open ? closePanel() : openPanel())}
+      onToggle={() => setOpen((previous) => !previous)}
       selectedLabel={selectedLabel}
       placeholder={placeholder}
       disabled={disabled}
@@ -165,38 +147,49 @@ export function EntityTypePicker({
   )
 
   return (
-    <AnchoredPanel trigger={trigger} open={open} onClose={closePanel} stickyHeader={stickyHeader}>
-      {searchSlot === null ? null : activePicker === "type" ? (
-        <div className="flex flex-col gap-2">
-          <EntityTypeChips chips={typeSide.chips} editable onRemove={typeSide.handleRemove} />
+    <AnchoredPanel
+      trigger={trigger}
+      open={open}
+      onClose={closePanel}
+      maxHeight={440}
+      stickyHeader={stickyHeader}
+    >
+      <div className="flex h-full min-h-0 w-[30rem] max-w-[calc(100vw-3rem)] gap-3">
+        {/* Type rail — every type, always visible, multi-select glow-toggle. */}
+        <div className="flex min-h-0 w-40 shrink-0 flex-col">
           <PickerList<EntityTypeOption>
-            controller={typeSide.addController}
+            controller={typeSide.controller}
             toOption={toEntityTypePickerOption}
             selectedId={null}
             selectedLabel={null}
-            onSelect={typeSide.handleSelect}
+            selectedIds={typeIds}
+            onSelect={typeSide.handleToggle}
             onClear={() => {}}
             onCancel={closePanel}
+            renderOption={renderTypeOption}
             searchPlaceholder="Search types"
-            emptyMessage="No more types"
-            searchPortalTarget={searchSlot}
+            emptyMessage="No types"
           />
         </div>
-      ) : (
-        <PickerList<EntityOption>
-          controller={entityController}
-          toOption={toEntityOption}
-          selectedId={value}
-          selectedLabel={selectedLabel}
-          onSelect={handleEntitySelect}
-          onClear={handleEntityClear}
-          onCancel={closePanel}
-          searchPlaceholder={searchPlaceholder}
-          emptyMessage={emptyMessage}
-          clearLabel={clearLabel}
-          searchPortalTarget={searchSlot}
-        />
-      )}
+
+        <div className="w-px shrink-0 bg-[var(--panel-border)]" />
+
+        {/* Entity list — narrowed by the selected types. */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <PickerList<EntityOption>
+            controller={entityController}
+            toOption={toEntityOption}
+            selectedId={value}
+            selectedLabel={selectedLabel}
+            onSelect={handleEntitySelect}
+            onClear={handleEntityClear}
+            onCancel={closePanel}
+            searchPlaceholder={searchPlaceholder}
+            emptyMessage={emptyMessage}
+            clearLabel={clearLabel}
+          />
+        </div>
+      </div>
     </AnchoredPanel>
   )
 }
