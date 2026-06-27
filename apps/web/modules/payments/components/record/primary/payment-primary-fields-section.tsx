@@ -40,11 +40,12 @@ type LinkPick = { id: string | null; label: string | null }
  * hands this component `draft` / `editable` / `onFieldChange`. `createdAt` /
  * `updatedAt` are only supplied on the edit face (omitted on create).
  *
- * Layout mirrors products + imports: a centered `RecordColumnBreak` splits the
- * fields into two flanks — left = Payment # / Amount / Direction / Date, right =
- * Work Order / Entity / Type(s) — then a `RecordSectionDivider` terminates the
- * section above a read-only metadata band (Created / Updated over Created by /
- * Updated by). The create flow renders neither the divider nor the band.
+ * Layout: a centered `RecordColumnBreak` is retained for alignment, but every
+ * editable field now stacks in the left flank — Payment # / Amount + Direction /
+ * Work Order / Entity / Type(s) / Date — while the right flank stays empty. A
+ * `RecordSectionDivider` then terminates the section above a read-only metadata
+ * band (Created / Updated over Created by / Updated by). The create flow renders
+ * neither the divider nor the band.
  *
  * `entityName` / `workOrderLabel` seed the picker triggers from the record so the
  * current link reads back after reload; a fresh pick overrides them via local
@@ -99,7 +100,9 @@ export function PaymentPrimaryFieldsSection({
       <RecordColumnBreak
         left={
           <FieldSection gap="0.75rem">
-            {/* Left flank: Payment # (unchanged width) / Amount + Direction paired / Date */}
+            {/* Left flank, top down: Payment # (unchanged width) / Amount + Direction
+                paired / Work Order / Entity / Type(s) / Date. The full-width cells
+                auto-flow in source order, so a hidden Type(s) leaves no gap. */}
             {paymentNumber ? (
               <CellAt col={1} row={1} colSpan={4}>
                 <FormField label="Payment #">
@@ -128,21 +131,6 @@ export function PaymentPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={paymentNumber ? 3 : 2} colSpan={8}>
-              <FormField label="Date">
-                <DateCell
-                  editable={editable}
-                  value={draft.paymentDate}
-                  onChange={(next) => onFieldChange("paymentDate", next)}
-                  ariaLabel="Payment date"
-                />
-              </FormField>
-            </CellAt>
-          </FieldSection>
-        }
-        right={
-          <FieldSection gap="0.75rem">
-            {/* Right flank: Work Order / Entity / Type(s), top down */}
             <CellAt col={1} colSpan={8}>
               <FormField label="Work Order">
                 <WorkOrderPicker
@@ -192,7 +180,21 @@ export function PaymentPrimaryFieldsSection({
                 </FormField>
               </CellAt>
             ) : null}
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Date">
+                <DateCell
+                  editable={editable}
+                  value={draft.paymentDate}
+                  onChange={(next) => onFieldChange("paymentDate", next)}
+                  ariaLabel="Payment date"
+                />
+              </FormField>
+            </CellAt>
           </FieldSection>
+        }
+        right={
+          /* Right flank intentionally empty; the column break is retained. */
+          <FieldSection gap="0.75rem">{null}</FieldSection>
         }
       />
       {createdAt ? (
