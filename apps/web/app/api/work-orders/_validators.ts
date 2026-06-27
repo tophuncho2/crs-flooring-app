@@ -309,7 +309,7 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 // Per-column identity search — the list-view search bars. Each is a single
 // free-text value carried as a one-element array (same contract as the date
 // bounds), applied server-side as a case-insensitive ILIKE on its own column.
-const TEXT_FILTER_KEYS = ["unitType", "unitNumber", "workOrderNumber", "description"] as const
+const TEXT_FILTER_KEYS = ["unitType", "unitNumber", "workOrderNumber", "description", "purchaseOrderNumber"] as const
 type TextFilterKey = (typeof TEXT_FILTER_KEYS)[number]
 
 // Vacancy enum filter — single-select, carried as a one-element array. Invalid

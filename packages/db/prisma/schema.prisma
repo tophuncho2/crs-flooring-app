@@ -632,6 +632,7 @@ model FlooringWorkOrder {
   // workOrderNumber search is an exact match on `workOrderNumberInt` (btree), so
   // the number column no longer needs a trigram index.
   @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_description_trgm_idx")
+  @@index([purchaseOrderNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_purchaseOrderNumber_trgm_idx")
   @@map("flooring_work_order")
 }
 

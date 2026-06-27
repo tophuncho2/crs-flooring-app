@@ -24,6 +24,7 @@ export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [
   "unitNumber",
   "workOrderNumber",
   "description",
+  "purchaseOrderNumber",
   "vacancy",
   "scheduledForStart",
   "scheduledForEnd",

@@ -166,6 +166,7 @@ export default function WorkOrdersClient({
   const unitNumberValue = filters.unitNumber?.[0] ?? ""
   const workOrderNumberValue = filters.workOrderNumber?.[0] ?? ""
   const descriptionValue = filters.description?.[0] ?? ""
+  const purchaseOrderNumberValue = filters.purchaseOrderNumber?.[0] ?? ""
 
   // --- Selected-label snapshots (initial-seed + fallback to current options) ---
   const entityLabel = useMemo(() => {
@@ -207,7 +208,7 @@ export default function WorkOrdersClient({
 
   const handleTextFilterChange = useCallback(
     (
-      key: "unitType" | "unitNumber" | "workOrderNumber" | "description",
+      key: "unitType" | "unitNumber" | "workOrderNumber" | "description" | "purchaseOrderNumber",
       next: string,
     ) => {
       const trimmed = next.trim()
@@ -303,8 +304,15 @@ export default function WorkOrdersClient({
       Boolean(unitTypeValue) ||
       Boolean(unitNumberValue) ||
       Boolean(workOrderNumberValue) ||
-      Boolean(descriptionValue),
-    [unitTypeValue, unitNumberValue, workOrderNumberValue, descriptionValue],
+      Boolean(descriptionValue) ||
+      Boolean(purchaseOrderNumberValue),
+    [
+      unitTypeValue,
+      unitNumberValue,
+      workOrderNumberValue,
+      descriptionValue,
+      purchaseOrderNumberValue,
+    ],
   )
 
   const hasActiveFilters = useMemo(
@@ -425,6 +433,12 @@ export default function WorkOrdersClient({
             onCommit={(next) => handleTextFilterChange("workOrderNumber", next)}
             placeholder="WO #"
             ariaLabel="Search work orders by work order number"
+          />
+          <DebouncedSearchControl
+            value={purchaseOrderNumberValue}
+            onCommit={(next) => handleTextFilterChange("purchaseOrderNumber", next)}
+            placeholder="PO #"
+            ariaLabel="Search work orders by purchase order number"
           />
         </ToolbarMenuButton>
 

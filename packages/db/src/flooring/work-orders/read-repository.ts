@@ -53,8 +53,8 @@ export type WorkOrdersListFilterMap = {
   jobTypeId?: string[]
   /**
    * Per-column identity search — the list-view search bars. `unitType`,
-   * `unitNumber`, and `description` are case-insensitive substring (ILIKE)
-   * matches against their own column. `workOrderNumber` is the exception: it is
+   * `unitNumber`, `description`, and `purchaseOrderNumber` are case-insensitive
+   * substring (ILIKE) matches against their own column. `workOrderNumber` is the exception: it is
    * an EXACT match on the numeric value (see `buildWorkOrdersWhere`) so the #
    * bar lands the one row. Single-element arrays matching the multi-value filter
    * contract; multiple set fields AND together to narrow.
@@ -63,6 +63,7 @@ export type WorkOrdersListFilterMap = {
   unitNumber?: string[]
   workOrderNumber?: string[]
   description?: string[]
+  purchaseOrderNumber?: string[]
   // Vacancy enum filter — single-element array of `VACANT` / `OCCUPIED`.
   vacancy?: string[]
   /**
@@ -115,6 +116,10 @@ function buildWorkOrdersWhere(
   const description = filters?.description?.[0]
   if (description) {
     andClauses.push({ description: { contains: description, mode: "insensitive" } })
+  }
+  const purchaseOrderNumber = filters?.purchaseOrderNumber?.[0]
+  if (purchaseOrderNumber) {
+    andClauses.push({ purchaseOrderNumber: { contains: purchaseOrderNumber, mode: "insensitive" } })
   }
 
   if (filters?.entityId?.length) {

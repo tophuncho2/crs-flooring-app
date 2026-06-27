@@ -55,3 +55,15 @@ describe("parseWorkOrdersListInputFromSearchParams — ?sorts= parsing", () => {
     expect(input.sort).toEqual({ field: "createdAt", direction: "desc" })
   })
 })
+
+describe("parseWorkOrdersListInputFromSearchParams — text filters", () => {
+  it("reads the purchaseOrderNumber search bar into filters", () => {
+    const input = parseWorkOrdersListInputFromSearchParams({ purchaseOrderNumber: "PO-48" })
+    expect(input.filters?.purchaseOrderNumber).toEqual(["PO-48"])
+  })
+
+  it("omits purchaseOrderNumber from filters when the param is absent", () => {
+    const input = parseWorkOrdersListInputFromSearchParams({})
+    expect(input.filters?.purchaseOrderNumber).toBeUndefined()
+  })
+})
