@@ -53,6 +53,7 @@ function WorkOrderCreatePanel({
         description: updateInput.description,
         internalNotes: updateInput.internalNotes,
         installerInstructions: updateInput.installerInstructions,
+        purchaseOrderNumber: updateInput.purchaseOrderNumber,
         scheduledFor: updateInput.scheduledFor,
         vacancy: updateInput.vacancy ?? null,
         timeOfDay: updateInput.timeOfDay ?? null,
