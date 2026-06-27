@@ -8,6 +8,7 @@ import type { PropertyListRow } from "@builders/domain"
  * `max(header label, widest cell)` and never wraps.
  */
 export const PROPERTIES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<PropertyListRow>> = [
+  { key: "propertyNumber", label: "PROP #" },
   { key: "name", label: "Property" },
   { key: "entity", label: "Entity" },
   { key: "streetAddress", label: "Street" },
@@ -17,7 +18,6 @@ export const PROPERTIES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<PropertyList
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
   { key: "templateCount", label: "Templates", align: "end" },
-  { key: "propertyNumber", label: "PROP #" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
   { key: "createdBy", label: "Created by" },
