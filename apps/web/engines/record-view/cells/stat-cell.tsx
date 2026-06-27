@@ -20,7 +20,14 @@ const ALIGN_CLASS_NAME: Record<CellAlign, string> = {
 
 export type StatCellProps = {
   /** The total to display. Rendered with locale thousands grouping. */
-  value: number
+  value?: number
+  /**
+   * Preformatted display string. When provided it renders verbatim instead of
+   * the locale-formatted `value` — for figures that aren't plain integer counts
+   * (e.g. an inventory quantity with its unit, "12.50 SF"), preserving exact
+   * decimals and suffix. `value` is ignored when this is set.
+   */
+  display?: string
   tone?: CellTone
   align?: CellAlign
   /** Optional sublabel under the number, e.g. "linked". */
@@ -37,13 +44,15 @@ export type StatCellProps = {
  */
 export function StatCell({
   value,
+  display: displayOverride,
   tone = "default",
   align = "start",
   hint,
   ariaLabel,
   className,
 }: StatCellProps) {
-  const display = Number.isFinite(value) ? value.toLocaleString("en-US") : "—"
+  const display =
+    displayOverride ?? (value !== undefined && Number.isFinite(value) ? value.toLocaleString("en-US") : "—")
   return (
     <div
       aria-label={ariaLabel}

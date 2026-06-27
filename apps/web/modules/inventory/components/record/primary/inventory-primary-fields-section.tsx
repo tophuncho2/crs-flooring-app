@@ -100,24 +100,25 @@ export function InventoryPrimaryFieldsSection({
         }
         right={
           <InventoryFieldGrid>
-            {/* Identity headline */}
-            <CellAt col={1} row={1} colSpan={8}>
-              <ProductNameField value={record.productName} />
-            </CellAt>
-            {/* Stock balance beside the archive status, then the rest stacked full-width */}
-            <CellAt col={1} row={2} colSpan={4}>
+            {/* Stock + Deducted lead the flank as prominent stat cells, above the
+                product headline */}
+            <CellAt col={1} row={1} colSpan={4}>
               <StockBalanceField value={record.stockBalance} unitAbbrev={record.stockUnitAbbrev} />
             </CellAt>
-            <CellAt col={5} row={2} colSpan={4}>
+            <CellAt col={5} row={1} colSpan={4}>
+              <NetDeductedField value={record.netDeducted} unitAbbrev={record.stockUnitAbbrev} />
+            </CellAt>
+            {/* Identity headline */}
+            <CellAt col={1} row={2} colSpan={8}>
+              <ProductNameField value={record.productName} />
+            </CellAt>
+            {/* Status | Starting paired */}
+            <CellAt col={1} row={3} colSpan={4}>
               <StatusField
                 editable={editable}
                 value={draft.isArchived}
                 onChange={(next) => onFieldChange("isArchived", next)}
               />
-            </CellAt>
-            {/* Deducted | Starting paired */}
-            <CellAt col={1} row={3} colSpan={4}>
-              <NetDeductedField value={record.netDeducted} unitAbbrev={record.stockUnitAbbrev} />
             </CellAt>
             <CellAt col={5} row={3} colSpan={4}>
               <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />

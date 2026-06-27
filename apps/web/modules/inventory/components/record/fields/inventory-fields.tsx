@@ -3,6 +3,7 @@
 import {
   FormField,
   MoneyCell,
+  StatCell,
   StaticFieldValue,
   TextareaCell,
   TextCell,
@@ -208,12 +209,24 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
   )
 }
 
+// Stock + Deducted are the headline figures of the record — they wear the
+// prominent record-view StatCell (the same big number/box the job-type +
+// warehouse statistics cells use), fed a preformatted quantity so the exact
+// decimals + unit survive.
 export function StockBalanceField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
-  return <ReadonlyField label="Stock" value={formatInventoryQuantity(value, unitAbbrev)} />
+  return (
+    <FormField label="Stock">
+      <StatCell display={formatInventoryQuantity(value, unitAbbrev)} ariaLabel="Stock balance" />
+    </FormField>
+  )
 }
 
 export function NetDeductedField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
-  return <ReadonlyField label="Deducted" value={formatInventoryQuantity(value, unitAbbrev)} />
+  return (
+    <FormField label="Deducted">
+      <StatCell display={formatInventoryQuantity(value, unitAbbrev)} ariaLabel="Net deducted" />
+    </FormField>
+  )
 }
 
 export function StartingStockReadonlyField({ value, unitAbbrev }: { value: string; unitAbbrev: string }) {
