@@ -23,7 +23,7 @@
     "build": "npm run guard:prisma && npm run build --workspace @builders/domain && npm run build --workspace @builders/lib && npm run build --workspace @builders/db && npm run build --workspace @builders/pdf && npm run build --workspace @builders/application && npm run build --workspace @builders/web && npm run build --workspace @builders/relay && npm run build --workspace @builders/worker",
     "lint": "npm run lint --workspace @builders/web",
     "knip": "knip --workspace apps/web",
-    "test": "npm run test --workspace @builders/domain && npm run test --workspace @builders/application && npm run test --workspace @builders/web && npm run test --workspace @builders/relay && npm run test --workspace @builders/worker",
+    "test": "npm run test --workspace @builders/domain && npm run test --workspace @builders/db && npm run test --workspace @builders/application && npm run test --workspace @builders/web && npm run test --workspace @builders/relay && npm run test --workspace @builders/worker",
     "test:e2e": "npm run test:e2e --workspace @builders/web",
     "typecheck": "npm run guard:prisma && npm run typecheck --workspace @builders/domain && npm run typecheck --workspace @builders/lib && npm run typecheck --workspace @builders/db && npm run typecheck --workspace @builders/pdf && npm run typecheck --workspace @builders/application && npm run typecheck --workspace @builders/web && npm run typecheck --workspace @builders/relay && npm run typecheck --workspace @builders/worker",
     "check": "bash bin/check.sh",

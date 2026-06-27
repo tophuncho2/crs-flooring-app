@@ -24,6 +24,7 @@ import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-na
 import { buildInventoryRecordHref } from "@/hooks/navigation"
 import { InventoryTable } from "./inventory-table"
 import {
+  INVENTORY_ALLOWED_SORT_FIELDS,
   INVENTORY_MAX_SORT_LEVELS,
   INVENTORY_SORT_OPTIONS,
 } from "./table/inventory-list-columns"
@@ -47,21 +48,6 @@ const INVENTORY_FILTERABLE_FIELDS = [
   "rollNumber",
   "dyeLot",
   "note",
-] as const
-
-/**
- * Server-side sortable columns. Mirrors the API validator enum + the sortable
- * `INVENTORY_LIST_COLUMNS` headers. `createdAt` is the default; row# is
- * intentionally not sortable. `stockBalance` is the displayed quantity (sorted
- * on the generated `stockQuantity` column server-side).
- */
-const INVENTORY_ALLOWED_SORT_FIELDS = [
-  "stockBalance",
-  "productName",
-  "location",
-  "warehouse",
-  "createdAt",
-  "updatedAt",
 ] as const
 
 /**

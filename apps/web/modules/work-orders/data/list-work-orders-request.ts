@@ -34,7 +34,7 @@ export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [
  * and the toolbar sort chip; `createdAt` is the default. Any other value falls back
  * to `createdAt`.
  */
-const WORK_ORDERS_LIST_SORT_FIELDS = [
+export const WORK_ORDERS_LIST_SORT_FIELDS = [
   "createdAt",
   "updatedAt",
   "scheduledFor",

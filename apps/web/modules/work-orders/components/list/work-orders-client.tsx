@@ -5,7 +5,6 @@ import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
   SortMenuBody,
-  type SortMenuOption,
   ListActionBar,
   ListCreateButtonPortal,
   ListExportButton,
@@ -35,6 +34,11 @@ import {
 } from "@/modules/work-orders/data/list-work-orders-request"
 import { useWorkOrdersListController } from "@/modules/work-orders/controllers/list/use-work-orders-list-controller"
 import { WorkOrdersTable } from "./work-orders-table"
+import {
+  WORK_ORDERS_ALLOWED_SORT_FIELDS,
+  WORK_ORDERS_MAX_SORT_LEVELS,
+  WORK_ORDERS_SORT_OPTIONS,
+} from "./table/work-orders-list-columns"
 import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
@@ -42,34 +46,6 @@ import { ScheduledForFilterBody } from "./toolbar-controls/scheduled-for-filter-
 import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
-
-const WORK_ORDERS_ALLOWED_SORT_FIELDS = [
-  "scheduledFor",
-  "timeOfDay",
-  "property",
-  "entity",
-  "warehouse",
-  "jobType",
-  "createdAt",
-  "updatedAt",
-] as const
-
-/** Max simultaneous sort columns surfaced by the toolbar Sort menu. */
-const WORK_ORDERS_MAX_SORT_LEVELS = 3
-
-// Columns offered by the Sort menu — keyed by backend sort field (what lands in
-// `sorts`), labelled to match the table headers. `type` drives the direction
-// control's labels (A→Z / Newest / AM first).
-const WORK_ORDERS_SORT_OPTIONS = [
-  { key: "scheduledFor", label: "Date", type: "date" },
-  { key: "timeOfDay", label: "Time of Day", type: "time" },
-  { key: "property", label: "Property", type: "text" },
-  { key: "entity", label: "Entity", type: "text" },
-  { key: "warehouse", label: "Warehouse", type: "text" },
-  { key: "jobType", label: "Job Type", type: "text" },
-  { key: "createdAt", label: "Created", type: "date" },
-  { key: "updatedAt", label: "Updated", type: "date" },
-] as const satisfies ReadonlyArray<SortMenuOption>
 
 // Sortable DataTable column key ⇄ backend sort field (buildWorkOrdersOrderBy).
 // Several keys diverge from their backend field because the column key mirrors

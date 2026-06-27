@@ -19,6 +19,7 @@ import {
   workOrderListSelect,
   type WorkOrdersDbClient,
 } from "./shared.js"
+import { buildWorkOrdersOrderBy } from "./order-by.js"
 
 export type WorkOrdersListSortEntry = {
   /** Sort column. `scheduledFor` is nullable and ordered with nulls last;
@@ -153,75 +154,6 @@ function buildWorkOrdersWhere(
   if (andClauses.length === 0) return undefined
   if (andClauses.length === 1) return andClauses[0]
   return { AND: andClauses }
-}
-
-function appendUniqueOrderBy<T>(values: T[], nextValue: T | null | undefined) {
-  if (!nextValue) return
-  const serialized = JSON.stringify(nextValue)
-  if (values.some((value) => JSON.stringify(value) === serialized)) return
-  values.push(nextValue)
-}
-
-// Single source of truth for how each sortable field maps to a Prisma orderBy
-// clause. `scheduledFor` is nullable, so it is ordered explicitly with nulls
-// last in both directions; everything else is a plain relation/scalar sort.
-// Returns `undefined` for unknown fields so the caller can skip them.
-function workOrderFieldOrderBy(
-  field: string,
-  direction: Prisma.SortOrder,
-): Prisma.FlooringWorkOrderOrderByWithRelationInput | undefined {
-  switch (field) {
-    case "scheduledFor":
-      return { scheduledFor: { sort: direction, nulls: "last" } }
-    case "workOrderNumber":
-      return { workOrderNumber: direction }
-    case "property":
-      return { property: { name: direction } }
-    case "entity":
-      return { property: { entity: { entity: direction } } }
-    case "jobType":
-      return { jobType: { name: direction } }
-    case "warehouse":
-      return { warehouse: { name: direction } }
-    case "timeOfDay":
-      return { timeOfDay: { sort: direction, nulls: "last" } }
-    case "createdAt":
-      return { createdAt: direction }
-    case "updatedAt":
-      return { updatedAt: direction }
-    case "unitNumber":
-      return { unitNumber: direction }
-    case "unitType":
-      return { unitType: direction }
-    default:
-      return undefined
-  }
-}
-
-function buildWorkOrdersOrderBy(
-  sort: WorkOrdersListSort | undefined,
-): Prisma.FlooringWorkOrderOrderByWithRelationInput[] {
-  const entries = sort?.entries ?? []
-  const orderBy: Prisma.FlooringWorkOrderOrderByWithRelationInput[] = []
-
-  // Apply the user-selected columns in priority order. Each is appended via
-  // `appendUniqueOrderBy`, so a repeated field collapses to its first occurrence.
-  for (const entry of entries) {
-    appendUniqueOrderBy(orderBy, workOrderFieldOrderBy(entry.field, entry.direction))
-  }
-
-  // Deterministic tiebreak. Its direction mirrors the highest-priority entry so
-  // the trailing order matches the leading column; with no entries it falls back
-  // to `asc` (the createdAt-desc default is applied upstream). Skip the createdAt
-  // tiebreak when the user already sorts by it — its own clause (with the user's
-  // direction) is already in the chain.
-  const tiebreakDirection: Prisma.SortOrder = entries[0]?.direction ?? "asc"
-  if (!entries.some((entry) => entry.field === "createdAt")) {
-    appendUniqueOrderBy(orderBy, { createdAt: tiebreakDirection })
-  }
-  appendUniqueOrderBy(orderBy, { id: tiebreakDirection })
-
-  return orderBy
 }
 
 export async function listWorkOrders(

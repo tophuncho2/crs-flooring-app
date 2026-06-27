@@ -46,5 +46,12 @@ export const INVENTORY_SORT_OPTIONS: ReadonlyArray<SortMenuOption> = [
   { key: "updatedAt", label: "Updated", type: "date" },
 ]
 
+/**
+ * Backend sort fields the menu + header carets may emit, derived from the menu
+ * options so the allowlist and the menu can never drift. Column keys equal the
+ * backend field for inventory (no translation map).
+ */
+export const INVENTORY_ALLOWED_SORT_FIELDS = INVENTORY_SORT_OPTIONS.map((option) => option.key)
+
 /** Max simultaneous sort columns — mirrors the API + use case. */
 export const INVENTORY_MAX_SORT_LEVELS = 3

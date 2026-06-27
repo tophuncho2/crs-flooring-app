@@ -9,21 +9,15 @@ import {
   INVENTORY_LIST_QUERY_KEY,
   listInventoryRequest,
 } from "@/modules/inventory/data/list-inventory-request"
+import { INVENTORY_ALLOWED_SORT_FIELDS } from "@/modules/inventory/components/list/table/inventory-list-columns"
 
 /** A list-shaped fetcher the grid can page through (the inventory list read, or any injected variant). */
 export type InventoryOptionsGridRequest = (
   input: ListInput<InventoryListFilters>,
 ) => Promise<ListOutput<InventoryRow>>
 
-/** Sortable columns (mirrors the list); row# is intentionally not sortable. */
-const ALLOWED_SORT_FIELDS = new Set([
-  "stockBalance",
-  "productName",
-  "location",
-  "warehouse",
-  "createdAt",
-  "updatedAt",
-])
+/** Sortable columns (the canonical list-view allowlist); row# is not sortable. */
+const ALLOWED_SORT_FIELDS = new Set<string>(INVENTORY_ALLOWED_SORT_FIELDS)
 /** Max simultaneous sort columns — mirrors the list + use case. */
 const MAX_SORT_LEVELS = 3
 /** Default chain: newest first. */

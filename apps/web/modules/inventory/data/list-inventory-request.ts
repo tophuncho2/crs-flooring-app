@@ -50,7 +50,7 @@ const TEXT_FILTER_KEYS = ["invNumber", "rollNumber", "dyeLot", "note"] as const
  * and the sortable column headers; `createdAt` is the default. Row# is
  * intentionally not sortable. Any other value falls back to `createdAt`.
  */
-const INVENTORY_LIST_SORT_FIELDS = [
+export const INVENTORY_LIST_SORT_FIELDS = [
   "createdAt",
   "updatedAt",
   "location",
