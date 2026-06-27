@@ -47,6 +47,8 @@ function adjustment(overrides: Partial<EnrichedInventoryAdjustmentRow> = {}): En
     updatedAt: "2026-01-02T00:00:00.000Z",
     workOrderNumber: "1001",
     warehouseName: "Main Warehouse",
+    createdBy: "creator@crs.test",
+    updatedBy: "editor@crs.test",
     ...overrides,
   } as EnrichedInventoryAdjustmentRow
 }
