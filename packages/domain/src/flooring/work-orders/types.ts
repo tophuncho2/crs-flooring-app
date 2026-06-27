@@ -19,6 +19,7 @@ export type WorkOrderListRow = {
   timeOfDay: "AM" | "PM" | null
   scheduledFor: string
   description: string
+  purchaseOrderNumber: string
   createdAt: string
   updatedAt: string
 }
@@ -71,6 +72,7 @@ export type WorkOrderForm = {
   description: string
   internalNotes: string
   installerInstructions: string
+  purchaseOrderNumber: string
   scheduledFor: string
   vacancy: "VACANT" | "OCCUPIED" | ""
   timeOfDay: "AM" | "PM" | ""
@@ -88,6 +90,7 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   description: "",
   internalNotes: "",
   installerInstructions: "",
+  purchaseOrderNumber: "",
   scheduledFor: "",
   vacancy: "",
   timeOfDay: "",

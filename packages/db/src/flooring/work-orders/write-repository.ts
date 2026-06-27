@@ -22,6 +22,7 @@ export type CreateWorkOrderRecordInput = {
   description?: string | null
   internalNotes?: string | null
   installerInstructions?: string | null
+  purchaseOrderNumber?: string | null
   scheduledFor?: Date | null
   vacancy?: "VACANT" | "OCCUPIED" | null
   timeOfDay?: "AM" | "PM" | null

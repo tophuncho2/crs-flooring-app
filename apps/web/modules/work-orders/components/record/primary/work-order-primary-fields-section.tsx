@@ -36,6 +36,7 @@ import {
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
   WO_INTERNAL_NOTES_MAX,
+  WO_PURCHASE_ORDER_NUMBER_MAX,
   WO_UNIT_NUMBER_MAX,
   WO_UNIT_TYPE_MAX,
   type PropertyOption,
@@ -467,6 +468,20 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             <CellAt col={1} row={6} colSpan={8}>
+              <FormField
+                label="Purchase Order Number"
+                currentLength={editable ? draft.purchaseOrderNumber.length : undefined}
+                maxLength={editable ? WO_PURCHASE_ORDER_NUMBER_MAX : undefined}
+              >
+                <TextCell
+                  editable={editable}
+                  value={draft.purchaseOrderNumber}
+                  onChange={(value) => onFieldChange("purchaseOrderNumber", value)}
+                  maxLength={WO_PURCHASE_ORDER_NUMBER_MAX}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={7} colSpan={8}>
               <FormField
                 label="Internal Notes"
                 currentLength={editable ? draft.internalNotes.length : undefined}

@@ -19,6 +19,7 @@ describe("normalizeWorkOrderListRow entity", () => {
     timeOfDay: null,
     scheduledFor: null,
     description: null,
+    purchaseOrderNumber: null,
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",
   }
@@ -37,5 +38,12 @@ describe("normalizeWorkOrderListRow entity", () => {
 
   it("passes the palette color through unchanged", () => {
     expect(normalizeWorkOrderListRow(base).color).toBe("BLUE")
+  })
+
+  it("passes the purchase order number through, defaulting null to empty string", () => {
+    expect(normalizeWorkOrderListRow(base).purchaseOrderNumber).toBe("")
+    expect(normalizeWorkOrderListRow({ ...base, purchaseOrderNumber: "PO-4821" }).purchaseOrderNumber).toBe(
+      "PO-4821",
+    )
   })
 })

@@ -24,6 +24,7 @@ export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
     description: workOrder.description,
     internalNotes: workOrder.internalNotes,
     installerInstructions: workOrder.installerInstructions,
+    purchaseOrderNumber: workOrder.purchaseOrderNumber,
     scheduledFor: toDateInputValue(workOrder.scheduledFor),
     vacancy: workOrder.vacancy ?? "",
     timeOfDay: workOrder.timeOfDay ?? "",

@@ -27,6 +27,7 @@ export const workOrderListSelect = {
   timeOfDay: true,
   scheduledFor: true,
   description: true,
+  purchaseOrderNumber: true,
   createdAt: true,
   updatedAt: true,
 } as const
@@ -67,6 +68,7 @@ export const workOrderDetailSelect = {
   customAddress: true,
   internalNotes: true,
   installerInstructions: true,
+  purchaseOrderNumber: true,
   createdAt: true,
   updatedAt: true,
 } as const

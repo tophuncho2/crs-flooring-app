@@ -35,6 +35,8 @@ export function renderWorkOrderRowCell(
       return row.unitNumber || "-"
     case "unitType":
       return row.unitType || "-"
+    case "purchaseOrderNumber":
+      return row.purchaseOrderNumber || "-"
     case "createdAt":
       return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
     case "updatedAt":

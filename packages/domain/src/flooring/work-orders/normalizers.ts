@@ -33,6 +33,7 @@ type WorkOrderListInput = {
   timeOfDay: "AM" | "PM" | null
   scheduledFor: Date | string | null
   description: string | null
+  purchaseOrderNumber: string | null
   createdAt: Date | string
   updatedAt: Date | string
 }
@@ -78,6 +79,7 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     timeOfDay: workOrder.timeOfDay,
     scheduledFor: toIsoDate(workOrder.scheduledFor),
     description: workOrder.description ?? "",
+    purchaseOrderNumber: workOrder.purchaseOrderNumber ?? "",
     createdAt: toIsoDate(workOrder.createdAt),
     updatedAt: toIsoDate(workOrder.updatedAt),
   }
