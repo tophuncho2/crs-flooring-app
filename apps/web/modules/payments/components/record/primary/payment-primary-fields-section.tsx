@@ -111,6 +111,21 @@ export function PaymentPrimaryFieldsSection({
                 </FormField>
               </CellAt>
             ) : null}
+            {/* Edit-only palette color tag, slotted just right of Payment # (2 wide).
+                Gated to the edit face so the create flow stays clean — new rows fall
+                to the DB default (SLATE). */}
+            {paymentNumber ? (
+              <CellAt col={5} row={1} colSpan={4}>
+                <FormField label="Color">
+                  <PaletteColorDropdown
+                    value={draft.color}
+                    editable={editable}
+                    onChange={(color) => onFieldChange("color", color)}
+                    ariaLabel="Payment color"
+                  />
+                </FormField>
+              </CellAt>
+            ) : null}
             <CellAt col={1} row={paymentNumber ? 2 : 1} colSpan={4}>
               <FormField label="Amount" required>
                 <MoneyCell
@@ -194,23 +209,8 @@ export function PaymentPrimaryFieldsSection({
           </FieldSection>
         }
         right={
-          /* Right flank: the edit-only palette color tag. Gated to the edit face
-             (like Payment # / the metadata band) so the create flow stays clean —
-             new rows fall to the DB default (SLATE). */
-          <FieldSection gap="0.75rem">
-            {paymentNumber ? (
-              <CellAt col={1} row={1} colSpan={8}>
-                <FormField label="Color">
-                  <PaletteColorDropdown
-                    value={draft.color}
-                    editable={editable}
-                    onChange={(color) => onFieldChange("color", color)}
-                    ariaLabel="Payment color"
-                  />
-                </FormField>
-              </CellAt>
-            ) : null}
-          </FieldSection>
+          /* Right flank intentionally empty; the column break is retained. */
+          <FieldSection gap="0.75rem">{null}</FieldSection>
         }
       />
       {createdAt ? (
