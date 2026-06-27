@@ -51,6 +51,7 @@ export function InventoryCreateFields({
     <InventoryFieldGrid>
       <CellAt col={1} colSpan={4}>
         <ProductPickerField
+          required
           value={form.productId || null}
           selectedLabel={productLabel}
           onChange={(id) => setField("productId", id ?? "")}
@@ -61,6 +62,7 @@ export function InventoryCreateFields({
       </CellAt>
       <CellAt col={5} colSpan={2}>
         <StartingStockField
+          required
           editable={editable}
           value={form.startingStock}
           onChange={(value) => setField("startingStock", value)}
@@ -70,6 +72,7 @@ export function InventoryCreateFields({
 
       <CellAt col={1} colSpan={4}>
         <WarehousePickerField
+          required
           value={form.warehouseId || null}
           selectedLabel={warehouseLabel}
           onChange={(id) => setField("warehouseId", id ?? "")}

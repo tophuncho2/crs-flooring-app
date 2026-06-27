@@ -99,9 +99,10 @@ export function StartingStockField({
   value,
   onChange,
   unit,
-}: TextFieldProps & { unit: string }) {
+  required,
+}: TextFieldProps & { unit: string; required?: boolean }) {
   return (
-    <FormField label="Starting Stock">
+    <FormField label="Starting Stock" required={required}>
       <UnitCell
         editable={editable}
         value={value}
@@ -176,17 +177,20 @@ export function WarehouseStaticField({ warehouseName }: { warehouseName: string 
   )
 }
 
-export function ProductPickerField(props: ProductPickerProps) {
+export function ProductPickerField({ required, ...props }: ProductPickerProps & { required?: boolean }) {
   return (
-    <FormField label="Product">
+    <FormField label="Product" required={required}>
       <ProductPicker {...props} />
     </FormField>
   )
 }
 
-export function WarehousePickerField(props: WarehousePickerProps) {
+export function WarehousePickerField({
+  required,
+  ...props
+}: WarehousePickerProps & { required?: boolean }) {
   return (
-    <FormField label="Warehouse">
+    <FormField label="Warehouse" required={required}>
       <WarehousePicker {...props} />
     </FormField>
   )
