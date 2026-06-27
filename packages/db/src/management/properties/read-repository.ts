@@ -27,6 +27,7 @@ const propertyListSelect = {
   postalCode: true,
   phone: true,
   email: true,
+  color: true,
   createdBy: true,
   updatedBy: true,
   entity: {
@@ -53,6 +54,7 @@ const propertyDetailSelect = {
   phone: true,
   email: true,
   instructions: true,
+  color: true,
   createdBy: true,
   updatedBy: true,
   entity: {

@@ -1,6 +1,11 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { normalizeProperty, normalizePhoneNumber, type PropertyDetailRecord } from "@builders/domain"
+import {
+  normalizeProperty,
+  normalizePhoneNumber,
+  type PaletteColor,
+  type PropertyDetailRecord,
+} from "@builders/domain"
 
 type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -23,6 +28,9 @@ export type CreatePropertyRecordInput = {
   phone: string | null
   email: string | null
   instructions?: string | null
+  // Edit-only: the create path never sets color, so new rows fall to the DB
+  // default (SLATE). Optional here so `UpdatePropertyRecordInput` inherits it.
+  color?: PaletteColor
   createdBy: string
   updatedBy: string
 }
@@ -45,6 +53,7 @@ const propertyDetailSelect = {
   phone: true,
   email: true,
   instructions: true,
+  color: true,
   createdBy: true,
   updatedBy: true,
   entity: {

@@ -18,6 +18,7 @@ function form(overrides: Partial<PropertyPrimaryForm> = {}): PropertyPrimaryForm
     phone: "",
     email: "",
     instructions: "",
+    color: "SLATE",
     entityId: "",
     ...overrides,
   }
@@ -36,6 +37,7 @@ function detail(overrides: Partial<PropertyDetailRecord> = {}): PropertyDetailRe
     email: "a@b.com",
     instructions: "Gate code 1234",
     fullAddress: "1 Main St, Austin, TX, 78701",
+    color: "BLUE",
     entity: { id: "entity-1", entity: "Acme" },
     ...overrides,
   }
@@ -66,6 +68,7 @@ describe("toPropertyPrimaryForm", () => {
       phone: "555-1212",
       email: "a@b.com",
       instructions: "Gate code 1234",
+      color: "BLUE",
       entityId: "entity-1",
     })
   })

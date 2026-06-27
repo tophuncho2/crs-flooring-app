@@ -9,7 +9,10 @@ import type {
 import {
   LIST_PROPERTIES_MAX_PAGE_SIZE,
   LIST_PROPERTIES_PAGE_SIZE,
+  PALETTE_COLOR_INVALID_MESSAGE,
+  isPaletteColor,
   normalizePhoneNumber,
+  type PaletteColor,
 } from "@builders/domain"
 
 function fail(message: string, field?: string): never {
@@ -51,6 +54,14 @@ function optionalState(value: unknown, field: string): string | null {
   return trimmed.toUpperCase()
 }
 
+// Palette tag is strict-when-present on update: a supplied value must be a real
+// PaletteColor, else 400 with the shared message. Edit-only — create never
+// accepts color (new rows fall to the DB default SLATE).
+function requireColor(value: unknown): PaletteColor {
+  if (!isPaletteColor(value)) fail(PALETTE_COLOR_INVALID_MESSAGE, "color")
+  return value
+}
+
 function pickPostalCode(body: Record<string, unknown>): unknown {
   if ("postalCode" in body) return body.postalCode
   if ("zip" in body) return body.zip
@@ -87,6 +98,7 @@ export function validateUpdatePropertyInput(
   if ("phone" in body) input.phone = optionalPhone(body.phone)
   if ("email" in body) input.email = optionalString(body.email)
   if ("instructions" in body) input.instructions = optionalString(body.instructions)
+  if ("color" in body) input.color = requireColor(body.color)
 
   return input
 }

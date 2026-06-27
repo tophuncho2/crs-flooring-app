@@ -1,3 +1,5 @@
+import type { PaletteColor } from "../../shared/palette.js"
+
 export type PropertyEntity = {
   id: string
   entity: string
@@ -26,6 +28,7 @@ export type PropertyDetailRecord = {
   email: string
   instructions: string
   fullAddress: string
+  color: PaletteColor
   createdBy: string | null
   updatedBy: string | null
   entity: PropertyEntity | null
@@ -51,6 +54,7 @@ export type PropertyListRow = {
   phone: string
   email: string
   fullAddress: string
+  color: PaletteColor
   createdBy: string | null
   updatedBy: string | null
   entity: PropertyEntity | null
@@ -79,6 +83,7 @@ export type PropertyPrimaryForm = {
   phone: string
   email: string
   instructions: string
+  color: PaletteColor
   entityId: string
 }
 

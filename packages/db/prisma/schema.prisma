@@ -122,6 +122,7 @@ model Property {
   phone               String?
   email               String?
   instructions        String?
+  color               PaletteColor               @default(SLATE)
   createdAt           DateTime                   @default(now())
   updatedAt           DateTime                   @updatedAt
   createdBy           String?

@@ -19,6 +19,7 @@ describe("normalizeProperty", () => {
     phone: "555-1212",
     email: "a@b.com",
     instructions: "Gate 1234",
+    color: "TEAL" as const,
     createdBy: "creator@example.com",
     updatedBy: "editor@example.com",
     entity: { id: "entity-1", entity: "Acme" },
@@ -81,6 +82,10 @@ describe("normalizeProperty", () => {
     expect(normalizeProperty(base).propertyNumber).toBe("PROP-1")
   })
 
+  it("passes the palette color through unchanged (metadata-only, no recompute)", () => {
+    expect(normalizeProperty(base).color).toBe("TEAL")
+  })
+
   it("passes the actor emails through, coalescing missing ones to null", () => {
     const result = normalizeProperty(base)
     expect(result.createdBy).toBe("creator@example.com")
@@ -121,6 +126,7 @@ describe("normalizePropertyListRow", () => {
       postalCode: "78701",
       phone: null,
       email: null,
+      color: "ROSE",
       createdBy: "creator@example.com",
       updatedBy: null,
       entity: null,
@@ -129,6 +135,7 @@ describe("normalizePropertyListRow", () => {
     expect(result.propertyNumber).toBe("PROP-1")
     expect(result.templateCount).toBe(4)
     expect(result.fullAddress).toBe("1 Main St, Austin, TX, 78701")
+    expect(result.color).toBe("ROSE")
     expect(result.createdBy).toBe("creator@example.com")
     expect(result.updatedBy).toBeNull()
   })

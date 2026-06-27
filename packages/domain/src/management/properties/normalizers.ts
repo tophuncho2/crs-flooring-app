@@ -1,5 +1,6 @@
 import { buildAddressLine } from "../../shared/address/index.js"
 import { normalizePhoneNumber } from "../../shared/phone.js"
+import type { PaletteColor } from "../../shared/palette.js"
 import type {
   PropertyDetailRecord,
   PropertyListRow,
@@ -30,6 +31,7 @@ type PropertyDetailInput = {
   phone: string | null
   email: string | null
   instructions: string | null
+  color: PaletteColor
   createdBy: string | null
   updatedBy: string | null
   entity: { id: string; entity: string } | null
@@ -47,6 +49,7 @@ type PropertyListRowInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
+  color: PaletteColor
   createdBy: string | null
   updatedBy: string | null
   entity: { id: string; entity: string } | null
@@ -84,6 +87,7 @@ export function normalizeProperty(
     email: property.email ?? "",
     instructions: property.instructions ?? "",
     fullAddress: buildAddressLine(property),
+    color: property.color,
     createdBy: property.createdBy ?? null,
     updatedBy: property.updatedBy ?? null,
     entity: property.entity,
@@ -106,6 +110,7 @@ export function normalizePropertyListRow(property: PropertyListRowInput): Proper
     phone: normalizePhoneNumber(property.phone ?? ""),
     email: property.email ?? "",
     fullAddress: buildAddressLine(property),
+    color: property.color,
     createdBy: property.createdBy ?? null,
     updatedBy: property.updatedBy ?? null,
     entity: property.entity,

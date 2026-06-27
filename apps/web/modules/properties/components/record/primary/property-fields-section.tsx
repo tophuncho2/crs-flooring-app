@@ -34,6 +34,7 @@ export function PropertyFieldsSection({
   ariaPrefix = "Property",
   showContact = true,
   nameRowTrailing,
+  trailingFields,
 }: {
   draft: PropertyFieldsDraft
   editable: boolean
@@ -50,6 +51,12 @@ export function PropertyFieldsSection({
    * The record view drops the read-only Property # here; the hub forms omit it.
    */
   nameRowTrailing?: ReactNode
+  /**
+   * Optional cell appended after Instructions. The record view drops the
+   * edit-only Color picker here; the hub create forms omit it (color is
+   * edit-only — new properties fall to the DB default).
+   */
+  trailingFields?: ReactNode
 }) {
   const onText = (field: keyof PropertyFieldsDraft) => (value: string) => onFieldChange(field, value)
 
@@ -120,6 +127,11 @@ export function PropertyFieldsSection({
           />
         </FormField>
       </CellAt>
+      {trailingFields ? (
+        <CellAt col={1} colSpan={7}>
+          {trailingFields}
+        </CellAt>
+      ) : null}
     </FieldSection>
   )
 }

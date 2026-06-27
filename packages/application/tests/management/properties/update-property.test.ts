@@ -74,6 +74,15 @@ describe("updatePropertyUseCase", () => {
     )
   })
 
+  it("rides the palette color through to the repo unread (metadata-only, no recompute)", async () => {
+    await updatePropertyUseCase(ID, { color: "VIOLET" } as never, ACTOR)
+    expect(updatePropertyRecordMock).toHaveBeenCalledWith(
+      ID,
+      expect.objectContaining({ color: "VIOLET", updatedBy: ACTOR }),
+      expect.anything(),
+    )
+  })
+
   it("maps a P2025 to a 404 not-found", async () => {
     updatePropertyRecordMock.mockRejectedValue(new PrismaKnownError("missing", { code: "P2025" }))
     await expect(

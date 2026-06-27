@@ -16,6 +16,7 @@ import {
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
+import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import {
   formatEasternDateTime,
   toEntityForm,
@@ -188,7 +189,21 @@ export function PropertyRecordView({
                   }
                   nameRowTrailing={
                     <FormField label="Property #">
-                      <StaticFieldValue>{entry.propertyNumber}</StaticFieldValue>
+                      <CellChip paletteColor={primary.localValue.color}>
+                        {entry.propertyNumber}
+                      </CellChip>
+                    </FormField>
+                  }
+                  trailingFields={
+                    <FormField label="Color">
+                      <PaletteColorDropdown
+                        value={primary.localValue.color}
+                        editable={!primary.isSaving}
+                        onChange={(color) =>
+                          primary.setLocalValue((previous) => ({ ...previous, color }))
+                        }
+                        ariaLabel="Property color"
+                      />
                     </FormField>
                   }
                 />

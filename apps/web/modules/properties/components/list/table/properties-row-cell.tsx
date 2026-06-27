@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import type { DataTableColumn } from "@/engines/list-view"
+import { CellChip } from "@/engines/common"
 import { formatEasternDateTime, formatPhoneNumber, type PropertyListRow } from "@builders/domain"
 
 /**
@@ -15,7 +16,7 @@ export function renderPropertyRowCell(
     case "name":
       return <span className="font-medium">{row.name}</span>
     case "propertyNumber":
-      return <span className="tabular-nums">{row.propertyNumber}</span>
+      return <CellChip paletteColor={row.color}>{row.propertyNumber}</CellChip>
     case "entity":
       return row.entity?.entity ?? "-"
     case "streetAddress":
