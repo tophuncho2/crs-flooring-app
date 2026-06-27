@@ -51,17 +51,6 @@ const INVENTORY_FILTERABLE_FIELDS = [
 ] as const
 
 /**
- * Default direction when first selecting a column: text columns (product,
- * location, warehouse) read naturally A→Z; date + quantity columns default to
- * newest/highest first.
- */
-function defaultSortDirection(field: string): "asc" | "desc" {
-  return field === "productName" || field === "location" || field === "warehouse"
-    ? "asc"
-    : "desc"
-}
-
-/**
  * Engine-side filter shape: the list-view engine's filter map only carries
  * `string[]` values (one per filterable field). For the inventory list's
  * non-array filters — `location` (free text) and `isArchived` (boolean) — we
@@ -173,8 +162,6 @@ export default function InventoryClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    onSortChange,
-    onToggleSortDirection,
     onSortsChange,
     onFilterChange,
     onClearAllFilters,
@@ -232,16 +219,6 @@ export default function InventoryClient({
   const exportColumns = useMemo(
     () => INVENTORY_EXPORT_COLUMNS.map((column) => ({ key: column.key, label: column.label })),
     [],
-  )
-
-  // Column-header sort: flip direction when the active column is re-clicked,
-  // else switch field with a sensible default direction.
-  const handleSort = useCallback(
-    (key: string) => {
-      if (sort?.field === key) onToggleSortDirection()
-      else onSortChange({ field: key, direction: defaultSortDirection(key) })
-    },
-    [sort, onSortChange, onToggleSortDirection],
   )
 
   // --- Resolve currently-selected values from the engine's filter map ---
@@ -371,8 +348,8 @@ export default function InventoryClient({
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
   // ListActionBar clear-all signal. Filter = the warehouse/location/category/
   // product/PO#/IMP#/status attribute pickers; Search = the inv#/roll#/dye-lot/
-  // note identity bars. Single-column sort stays a header-caret click (column
-  // keys match the backend sort fields, so `sorts` flows onto the carets).
+  // note identity bars. Sorting is driven solely by the Sort menu (no header
+  // affordance).
   const hasActiveFilterTool = useMemo(
     () =>
       Boolean(selectedWarehouseId) ||
@@ -425,8 +402,7 @@ export default function InventoryClient({
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >
-        {/* Sort — the multi-column builder, leftmost. Single-column sort stays a
-            header-caret click on the table. */}
+        {/* Sort — the multi-column builder, leftmost. The only sort affordance. */}
         <ToolbarMenuButton
           label="Sort"
           title="Sort by"
@@ -557,9 +533,6 @@ export default function InventoryClient({
             buildInventoryRecordHref({ inventoryId: id, adjustment: NEW_ADJUSTMENT_ID, returnTo }),
           )
         }
-        sort={sort}
-        sorts={sorts}
-        onSort={handleSort}
         pagination={{
           page,
           pageSize,

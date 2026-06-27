@@ -8,27 +8,25 @@ import type { InventoryRow } from "@builders/domain"
  * `max(header label, widest cell)` and never wraps.
  */
 export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>> = [
-  // Sortable headers (server-side): Stock (quantity), Product, Location,
-  // Warehouse, Created, Updated. Row# (`inventoryNumber`) is intentionally NOT
-  // sortable — `createdAt` is the canonical chronological key. Column keys equal
-  // their backend sort field (no translation map needed).
-  { key: "stockBalance", label: "Stock", align: "start", sortable: true },
+  // Sorting is driven by the toolbar Sort menu (see INVENTORY_SORT_OPTIONS), not
+  // the column header — headers are static labels.
+  { key: "stockBalance", label: "Stock", align: "start" },
   { key: "netDeducted", label: "Deducted", align: "end" },
   { key: "startingStock", label: "Starting", align: "end" },
-  { key: "productName", label: "Product", sortable: true },
+  { key: "productName", label: "Product" },
   { key: "inventoryNumber", label: "Inv #" },
   { key: "rollNumber", label: "Roll #" },
   { key: "dyeLot", label: "Dye Lot" },
   { key: "note", label: "Note" },
-  { key: "location", label: "Location", sortable: true },
-  { key: "warehouse", label: "Warehouse", sortable: true },
+  { key: "location", label: "Location" },
+  { key: "warehouse", label: "Warehouse" },
   { key: "categoryName", label: "Category" },
   { key: "purchaseOrderNumber", label: "PO #" },
   { key: "importNumber", label: "Import #" },
   { key: "cost", label: "Cost", align: "end" },
   { key: "freight", label: "Freight", align: "end" },
-  { key: "createdAt", label: "Created", sortable: true },
-  { key: "updatedAt", label: "Updated", sortable: true },
+  { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
   { key: "createdBy", label: "Created by" },
   { key: "updatedBy", label: "Updated by" },
 ]
@@ -49,9 +47,8 @@ export const INVENTORY_SORT_OPTIONS: ReadonlyArray<SortMenuOption> = [
 ]
 
 /**
- * Backend sort fields the menu + header carets may emit, derived from the menu
- * options so the allowlist and the menu can never drift. Column keys equal the
- * backend field for inventory (no translation map).
+ * Backend sort fields the Sort menu may emit, derived from the menu options so
+ * the allowlist and the menu can never drift.
  */
 export const INVENTORY_ALLOWED_SORT_FIELDS = INVENTORY_SORT_OPTIONS.map((option) => option.key)
 

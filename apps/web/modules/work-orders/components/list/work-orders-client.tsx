@@ -47,38 +47,6 @@ import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 
-// Sortable DataTable column key ⇄ backend sort field (buildWorkOrdersOrderBy).
-// Several keys diverge from their backend field because the column key mirrors
-// the `WorkOrderListRow` field that `renderWorkOrderRowCell` switches on.
-const SORT_FIELD_BY_COLUMN: Record<string, string> = {
-  scheduledFor: "scheduledFor",
-  timeOfDay: "timeOfDay",
-  warehouseName: "warehouse",
-  entityName: "entity",
-  propertyName: "property",
-  jobTypeName: "jobType",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-}
-const COLUMN_BY_SORT_FIELD: Record<string, string> = {
-  scheduledFor: "scheduledFor",
-  timeOfDay: "timeOfDay",
-  warehouse: "warehouseName",
-  entity: "entityName",
-  property: "propertyName",
-  jobType: "jobTypeName",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-}
-
-function defaultSortDirection(field: string): "asc" | "desc" {
-  // Name/text + time columns read forward (A–Z, AM first) by default; date
-  // columns lead newest first.
-  return field === "createdAt" || field === "updatedAt" || field === "scheduledFor"
-    ? "desc"
-    : "asc"
-}
-
 export default function WorkOrdersClient({
   initialSearchQuery,
   initialPage,
@@ -123,8 +91,6 @@ export default function WorkOrdersClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    onSortChange,
-    onToggleSortDirection,
     onSortsChange,
     onFilterChange,
     onClearAllFilters,
@@ -195,28 +161,6 @@ export default function WorkOrdersClient({
   const selectedScheduledEnd = filters.scheduledForEnd?.[0] ?? null
 
   // --- Column-header sort (DataTable) ---
-  // Header click maps the column key to its backend sort field, then flips
-  // direction when already active or selects a sensible default otherwise.
-  const handleSort = useCallback(
-    (key: string) => {
-      const field = SORT_FIELD_BY_COLUMN[key]
-      if (!field) return
-      if (sort?.field === field) onToggleSortDirection()
-      else onSortChange({ field, direction: defaultSortDirection(field) })
-    },
-    [sort, onSortChange, onToggleSortDirection],
-  )
-  // Reflect each active backend field back onto its column key so the right
-  // header carets light up (with priority badges when more than one is active).
-  const tableSorts = useMemo(
-    () =>
-      sorts.map((entry) => ({
-        field: COLUMN_BY_SORT_FIELD[entry.field] ?? entry.field,
-        direction: entry.direction,
-      })),
-    [sorts],
-  )
-
   // --- Per-column identity search bars ---
   const unitTypeValue = filters.unitType?.[0] ?? ""
   const unitNumberValue = filters.unitNumber?.[0] ?? ""
@@ -503,8 +447,6 @@ export default function WorkOrdersClient({
         rows={rows}
         onOpenWorkOrder={openWorkOrder}
         selection={selectionEnabled ? selection : undefined}
-        sorts={tableSorts}
-        onSort={handleSort}
         pagination={{
           page,
           pageSize,

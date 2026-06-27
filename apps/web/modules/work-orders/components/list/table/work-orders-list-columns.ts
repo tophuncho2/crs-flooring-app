@@ -7,27 +7,23 @@ import type { WorkOrderListRow } from "@builders/domain"
  * browser (`table-layout: auto`) — each column sizes to
  * `max(header label, widest cell)` and never wraps.
  *
- * Sortable headers (server-side): Date (`scheduledFor`), Time of Day, Warehouse,
- * Entity, Property, Job Type, Created, Updated. WO # (`workOrderNumber`) is
- * intentionally NOT sortable — `createdAt` is the canonical chronological key.
- * The client maps these column keys to backend sort fields (`entityName`→`entity`,
- * `propertyName`→`property`, `warehouseName`→`warehouse`, `jobTypeName`→`jobType`)
- * — see `work-orders-client.tsx`.
+ * Sorting is driven by the toolbar Sort menu (see WORK_ORDERS_SORT_OPTIONS), not
+ * the column header — headers are static labels.
  */
 export const WORK_ORDERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WorkOrderListRow>> = [
   { key: "workOrderNumber", label: "WO #" },
-  { key: "scheduledFor", label: "Date", sortable: true },
-  { key: "timeOfDay", label: "Time of Day", sortable: true },
-  { key: "warehouseName", label: "Warehouse", sortable: true },
-  { key: "entityName", label: "Entity", sortable: true },
-  { key: "propertyName", label: "Property", sortable: true },
-  { key: "jobTypeName", label: "Job Type", sortable: true },
+  { key: "scheduledFor", label: "Date" },
+  { key: "timeOfDay", label: "Time of Day" },
+  { key: "warehouseName", label: "Warehouse" },
+  { key: "entityName", label: "Entity" },
+  { key: "propertyName", label: "Property" },
+  { key: "jobTypeName", label: "Job Type" },
   { key: "vacancy", label: "Vacancy" },
   { key: "unitNumber", label: "Unit #" },
   { key: "unitType", label: "Unit Type" },
   { key: "description", label: "Description" },
-  { key: "createdAt", label: "Created", sortable: true },
-  { key: "updatedAt", label: "Updated", sortable: true },
+  { key: "createdAt", label: "Created" },
+  { key: "updatedAt", label: "Updated" },
 ]
 
 /**
@@ -48,7 +44,7 @@ export const WORK_ORDERS_SORT_OPTIONS = [
   { key: "updatedAt", label: "Updated", type: "date" },
 ] as const satisfies ReadonlyArray<SortMenuOption>
 
-/** Backend sort fields the menu + header carets may emit (derived from the menu). */
+/** Backend sort fields the Sort menu may emit (derived from the menu). */
 export const WORK_ORDERS_ALLOWED_SORT_FIELDS = WORK_ORDERS_SORT_OPTIONS.map(
   (option) => option.key,
 )

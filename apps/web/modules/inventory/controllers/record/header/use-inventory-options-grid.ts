@@ -23,13 +23,6 @@ const MAX_SORT_LEVELS = 3
 /** Default chain: newest first. */
 const DEFAULT_SORTS: ListSort[] = [{ field: "createdAt", direction: "desc" }]
 
-/** Default direction when first selecting a column (mirrors the list client). */
-function defaultSortDirection(field: string): "asc" | "desc" {
-  return field === "productName" || field === "location" || field === "warehouse"
-    ? "asc"
-    : "desc"
-}
-
 /** Dedupe by field, drop unknown fields, cap at {@link MAX_SORT_LEVELS}. */
 function normalizeSorts(next: readonly ListSort[]): ListSort[] {
   const result: ListSort[] = []
@@ -56,12 +49,8 @@ export type InventoryOptionsGridController = {
   setRollNumber: (value: string) => void
   setDyeLot: (value: string) => void
   setNote: (value: string) => void
-  /** Active primary sort (= `sorts[0]`; drives the DataTable header carets). */
-  sort: { field: string; direction: "asc" | "desc" }
-  /** Active ordered multi-column sort (drives carets + priority badges). */
+  /** Active ordered multi-column sort (drives the Sort menu state). */
   sorts: ListSort[]
-  /** Header click → single-sort replace by that column key (flips if primary). */
-  setSort: (key: string) => void
   /** Gutter Sort menu → set the full ordered chain (deduped + capped). */
   onSortsChange: (next: ListSort[]) => void
   /** True when any of the four identity search bars holds a value. */
@@ -106,8 +95,6 @@ export function useInventoryOptionsGrid({
   const [dyeLot, setDyeLotState] = useState("")
   const [note, setNoteState] = useState("")
   const [sorts, setSorts] = useState<ListSort[]>(DEFAULT_SORTS)
-  // Primary entry drives the header carets; the chain composes the rest.
-  const sort = sorts[0] ?? DEFAULT_SORTS[0]
   const pager = useRecordSectionPagination()
 
   // Re-scoping (different warehouse / WO product) returns to page 1. Reset during
@@ -137,18 +124,6 @@ export function useInventoryOptionsGrid({
   }, [pager])
   const setNote = useCallback((value: string) => {
     setNoteState(value)
-    pager.reset()
-  }, [pager])
-
-  // Column-header sort is a single-sort replace: flip direction when the clicked
-  // column is already the primary, else collapse the chain to just that column
-  // with a sensible default direction. Resets to page 1.
-  const setSort = useCallback((key: string) => {
-    setSorts((prev) =>
-      prev[0]?.field === key
-        ? [{ field: key, direction: prev[0].direction === "asc" ? "desc" : "asc" }]
-        : [{ field: key, direction: defaultSortDirection(key) }],
-    )
     pager.reset()
   }, [pager])
 
@@ -205,9 +180,7 @@ export function useInventoryOptionsGrid({
     setRollNumber,
     setDyeLot,
     setNote,
-    sort,
     sorts,
-    setSort,
     onSortsChange,
     hasSearch,
     reset,

@@ -146,9 +146,6 @@ export function InventoryOptionsGrid({
         renderCell={renderInventoryRowCell}
         onRowClick={(row) => onSelectInventory(row)}
         getRowAriaLabel={(row) => row.inventoryNumber}
-        sort={grid.sort}
-        sorts={grid.sorts}
-        onSort={grid.setSort}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No matches"}
         pagination={grid.pagination}
       />

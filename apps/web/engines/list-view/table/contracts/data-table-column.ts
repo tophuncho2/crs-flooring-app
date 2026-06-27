@@ -16,13 +16,6 @@ export type DataTableColumn<TRow> = {
   label: string
   align?: DataTableCellAlign
   /**
-   * @deprecated INERT — the clickable header sort affordance was removed.
-   * Sorting is driven by the toolbar's multi-column Sort menu, not the column
-   * header. This flag no longer renders a caret or makes the header clickable;
-   * retained only for source compat and slated for removal. Off by default.
-   */
-  sortable?: boolean
-  /**
    * Optional per-column renderer. Receives the row and returns the cell
    * body. If omitted, the table renders `row[column.key]` as plain
    * text.

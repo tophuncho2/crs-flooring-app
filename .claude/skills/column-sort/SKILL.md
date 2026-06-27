@@ -13,7 +13,7 @@ This is an **editing** skill — it reads, classifies, then wires the field acro
 
 The tool is **one shared menu fed a per-module list of allowed fields, validated again at every server boundary, and resolved by a pure order-by builder.** A field is sortable only if **EVERY layer agrees** on it. There is no schema change anywhere — sort needs only fields/relations that already exist.
 
-**Sorting is menu-only — the column header carries NO sort affordance.** The clickable header caret/arrow was removed from the `DataTable` primitive (`apps/web/engines/list-view/table/data-table-header-cell.tsx` renders a static label; `DataTableProps.sort`/`sorts`/`onSort` and `DataTableColumn.sortable` are `@deprecated` **inert** props). So a sortable field shows up **only** in the toolbar `SortMenuBody`; never wire or expect a header arrow.
+**Sorting is menu-only — the column header carries NO sort affordance.** The clickable header caret/arrow was removed from the `DataTable` primitive (`apps/web/engines/list-view/table/data-table-header-cell.tsx` renders a static label). The `sort`/`sorts`/`onSort` props on `DataTableProps` and `sortable` on `DataTableColumn` were **deleted** — passing them is now a type error. So a sortable field shows up **only** in the toolbar `SortMenuBody`; never wire or expect a header arrow.
 
 ```
 columns file (SORT_OPTIONS + sortable:true + derived ALLOWED) → client (defaultSortDirection [+ key↔field maps]) → record-view grid reuse (when present) → data/list-*-request.ts allowlist → app/api/*/_validators.ts allowlist → packages/db order-by.ts builder → tests (db order-by + web request-parse + allowlist-sync)
@@ -25,7 +25,7 @@ columns file (SORT_OPTIONS + sortable:true + derived ALLOWED) → client (defaul
 
 The `field` that flows through the menu → URL → parser → order-by is the **backend sort field**, and **`SORT_OPTIONS` keys ARE backend fields** (e.g. WO uses `property`, `entity`, not `propertyName`). Because sorting is menu-only now, a new install needs **no** column-key↔field translation: the menu speaks backend fields end to end.
 
-The old header-caret plumbing in work-orders — `SORT_FIELD_BY_COLUMN` (header click → field), `COLUMN_BY_SORT_FIELD` (field → caret), and the `tableSorts` memo (`work-orders-client.tsx:53-80,211-218`) — existed **only** to bridge the DataTable column key to the backend field for the now-removed header affordance. It is **vestigial**: a new install does NOT add it, and a consolidate pass should delete it. (It survives in WO/inventory today only because the inert `DataTable` props still accept it; that's Phase-2 cleanup, not a live requirement.)
+The old header-caret plumbing — work-orders' `SORT_FIELD_BY_COLUMN`/`COLUMN_BY_SORT_FIELD`/`tableSorts` maps and both modules' per-client `defaultSortDirection`/`handleSort` — existed **only** to bridge the DataTable column key to the backend field for the header affordance. It has been **fully deleted** from both modules (along with the inert `DataTable` props). A new install does **not** reintroduce any of it: the menu speaks backend fields directly.
 
 ### The shared machinery (never fork it — `consolidate-shared-not-per-module`)
 
@@ -54,7 +54,7 @@ The old header-caret plumbing in work-orders — `SORT_FIELD_BY_COLUMN` (header 
 
 ### Done vs candidate (verify against live code each run)
 
-- **Done (2):** inventory + work-orders. These are the references, not a roadmap. (WO still carries vestigial header-caret maps; inventory's keys happen to equal its fields — neither matters now that sorting is menu-only.)
+- **Done (2):** inventory + work-orders. These are the references, not a roadmap. (Both are now header-caret-free — the column-key↔field maps and `handleSort`/`defaultSortDirection` were deleted; sorting is purely the Sort menu.)
 - **Candidate:** any toolbar list module on `useServerListController` that isn't yet sortable — manufacturers, properties, templates, entities, job-types, payments, warehouses, products. Confirm the module renders the shared toolbar Sort `ToolbarMenuButton` (or wire it) before promising sort.
 
 ## Hard rules

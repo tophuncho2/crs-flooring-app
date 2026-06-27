@@ -148,36 +148,13 @@ describe("DataTable — onOpenRow (leading open gutter)", () => {
 describe("DataTable — headers carry no sort affordance", () => {
   afterEach(() => cleanup())
 
-  // `sortable` + `sort`/`sorts`/`onSort` are inert: the clickable header caret
-  // was removed in favor of the toolbar Sort menu. These guard against the
-  // affordance being re-introduced (it must never render per-module).
-  const SORTABLE_COLUMNS: ReadonlyArray<DataTableColumn<Row>> = [
-    { key: "name", label: "Name", sortable: true },
-    { key: "status", label: "Status", sortable: true },
-  ]
-
-  it("renders sortable column headers as plain static labels", () => {
-    const { getByText, queryByRole } = render(
-      <DataTable
-        rows={ROWS}
-        columns={SORTABLE_COLUMNS}
-        sort={{ field: "name", direction: "asc" }}
-        onSort={vi.fn()}
-      />,
-    )
+  // The clickable header sort caret was removed in favor of the toolbar Sort
+  // menu; `DataTableColumn.sortable` + the `sort`/`sorts`/`onSort` props no longer
+  // exist, so a header can never render an interactive sort control.
+  it("renders column headers as plain static labels (no sort control)", () => {
+    const { getByText, queryByRole } = render(<DataTable rows={ROWS} columns={COLUMNS} />)
     expect(getByText("Name")).toBeTruthy()
-    // No interactive sort control of any kind in the header.
     expect(queryByRole("button", { name: /Sort by/ })).toBeNull()
-  })
-
-  it("never fires onSort even when a column is sortable and a handler is passed", async () => {
-    const user = userEvent.setup()
-    const onSort = vi.fn()
-    const { getByText } = render(
-      <DataTable rows={ROWS} columns={SORTABLE_COLUMNS} sort={null} onSort={onSort} />,
-    )
-    await user.click(getByText("Name"))
-    expect(onSort).not.toHaveBeenCalled()
   })
 })
 

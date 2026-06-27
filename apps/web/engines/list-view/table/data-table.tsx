@@ -111,22 +111,6 @@ export type DataTableProps<TRow extends DataTableRow> = {
   rowActions?: (row: TRow) => ReactNode
   /** Optional multi-select feature — see {@link DataTableSelection}. */
   selection?: DataTableSelection<TRow>
-  /**
-   * @deprecated INERT — the header sort affordance was removed; sorting is
-   * driven by the toolbar's Sort menu. Retained only so existing consumers
-   * compile; slated for removal. No longer renders anything.
-   */
-  sort?: { field: string; direction: "asc" | "desc" } | null
-  /**
-   * @deprecated INERT — see {@link sort}. The header no longer renders carets or
-   * priority badges. Retained for source compat; slated for removal.
-   */
-  sorts?: ReadonlyArray<{ field: string; direction: "asc" | "desc" }>
-  /**
-   * @deprecated INERT — the header is no longer clickable. Retained for source
-   * compat; slated for removal. Header clicks no longer fire this.
-   */
-  onSort?: (key: string) => void
   /** Aria-label provider for interactive rows. */
   getRowAriaLabel?: (row: TRow) => string
   className?: string
@@ -156,8 +140,6 @@ export function DataTable<TRow extends DataTableRow>({
   onOpenRow,
   rowActions,
   selection,
-  // sort / sorts / onSort are accepted (inert) for source compat — see the
-  // @deprecated notes on DataTableProps. The header renders a static label.
   getRowAriaLabel,
   className,
 }: DataTableProps<TRow>) {
