@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, type ReactNode } from "react"
 import {
   RECORD_SECTION_BODY_SURFACE_CLASS_NAME,
   RecordSectionSubHeader,
@@ -22,6 +22,13 @@ export type EmbeddedAdjustmentRecordViewProps = {
   onBack: () => void
   /** Bridge the controller's dirtiness up so the host section reflects it. */
   onDirtyChange?: (dirty: boolean) => void
+  /**
+   * Node rendered inline to the left of the Save / Discard / Delete buttons in
+   * the sub-header (the per-parent adjustment stepper). Mirrors the work-order
+   * material-items section, which feeds its mode stepper into the same
+   * `actionsLeading` slot rather than stacking it above.
+   */
+  actionsLeading?: ReactNode
   /**
    * When provided, an "Add inventory from adjustment" action routes straight to
    * the split-off create form seeded from the saved adjustment — no re-save.
@@ -49,6 +56,7 @@ export function EmbeddedAdjustmentRecordView({
   onBack,
   onDirtyChange,
   onAddInventoryFromAdjustment,
+  actionsLeading,
 }: EmbeddedAdjustmentRecordViewProps) {
   const { open, form, isDirty, canSave, isSaving, error } = controller
 
@@ -145,6 +153,7 @@ export function EmbeddedAdjustmentRecordView({
         isSaving={isSaving}
         hasConflict={false}
         error={error}
+        actionsLeading={actionsLeading}
         actions={actions}
       />
       <div className={`px-5 py-5 ${RECORD_SECTION_BODY_SURFACE_CLASS_NAME}`}>

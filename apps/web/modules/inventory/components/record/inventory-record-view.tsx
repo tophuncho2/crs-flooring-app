@@ -322,16 +322,14 @@ export function InventoryRecordView({
               />
             )}
             renderDetail={(_id, onBack) => (
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-start">{adjustmentStepper}</div>
-                <EmbeddedAdjustmentRecordView
-                  controller={adjustments.panel}
-                  hostPage={ctx.page}
-                  onBack={onBack}
-                  onDirtyChange={setEmbeddedAdjustmentDirty}
-                  onAddInventoryFromAdjustment={confirmSplitOff}
-                />
-              </div>
+              <EmbeddedAdjustmentRecordView
+                controller={adjustments.panel}
+                hostPage={ctx.page}
+                onBack={onBack}
+                onDirtyChange={setEmbeddedAdjustmentDirty}
+                onAddInventoryFromAdjustment={confirmSplitOff}
+                actionsLeading={adjustmentStepper}
+              />
             )}
           />
         </RecordItemSection>
