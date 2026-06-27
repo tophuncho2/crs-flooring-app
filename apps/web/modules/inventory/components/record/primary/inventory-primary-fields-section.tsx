@@ -96,6 +96,13 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={5} row={5} colSpan={4}>
               <ImportNumberField value={record.importNumber} />
             </CellAt>
+            {/* Cost | Freight, beneath PO # / Import # */}
+            <CellAt col={1} row={6} colSpan={4}>
+              <CostReadonlyField value={record.cost} />
+            </CellAt>
+            <CellAt col={5} row={6} colSpan={4}>
+              <FreightReadonlyField value={record.freight} />
+            </CellAt>
           </InventoryFieldGrid>
         }
         right={
@@ -123,14 +130,7 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={5} row={3} colSpan={4}>
               <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
             </CellAt>
-            {/* Cost | Freight paired */}
-            <CellAt col={1} row={4} colSpan={4}>
-              <CostReadonlyField value={record.cost} />
-            </CellAt>
-            <CellAt col={5} row={4} colSpan={4}>
-              <FreightReadonlyField value={record.freight} />
-            </CellAt>
-            <CellAt col={1} row={5} colSpan={8}>
+            <CellAt col={1} row={4} colSpan={8}>
               <InternalNotesField
                 editable={editable}
                 value={draft.internalNotes}
