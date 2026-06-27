@@ -3,31 +3,23 @@
 import { requestJson } from "@/transport/http"
 import { withMutationMeta } from "@/transport/mutation"
 import type { ProductRecord } from "@builders/db"
+import type { ProductCreateForm, ProductUpdateForm } from "@builders/domain"
 
-// Serialized product form — the raw client-side shape sent to the API.
-export type ProductRequestInput = {
-  categoryId: string
-  manufacturerId: string
-  style: string
-  color: string
-  productNamingAddon: string
-}
-
-function toCreateRequestBody(input: ProductRequestInput): Record<string, unknown> {
+function toCreateRequestBody(input: ProductCreateForm): Record<string, unknown> {
   return { ...input }
 }
 
-// Strips `categoryId` before sending — it's immutable post-create. The PATCH
-// validator rejects categoryId (PRODUCT_CATEGORY_LOCKED). The record-view
-// section displays it readonly but the controller's local form value still
-// carries it for shape parity with the create flow, so we drop it here at the
-// wire boundary.
-function toUpdateRequestBody(input: ProductRequestInput): Record<string, unknown> {
-  const { categoryId: _categoryId, ...rest } = input
+// `ProductUpdateForm` already omits `categoryId` (immutable post-create — the
+// PATCH validator rejects it with PRODUCT_CATEGORY_LOCKED), so the body is the
+// form as-is. The defensive strip stays in case a caller passes a wider shape.
+function toUpdateRequestBody(input: ProductUpdateForm): Record<string, unknown> {
+  const { categoryId: _categoryId, ...rest } = input as ProductUpdateForm & {
+    categoryId?: string
+  }
   return rest
 }
 
-export async function createProductRequest(input: ProductRequestInput) {
+export async function createProductRequest(input: ProductCreateForm) {
   return requestJson<{ product: ProductRecord }>("/api/products", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -37,7 +29,7 @@ export async function createProductRequest(input: ProductRequestInput) {
 
 export async function updateProductRequest(
   id: string,
-  input: ProductRequestInput,
+  input: ProductUpdateForm,
   revisionKey: string,
 ) {
   return requestJson<{ product: ProductRecord }>(`/api/products/${id}/primary/section`, {

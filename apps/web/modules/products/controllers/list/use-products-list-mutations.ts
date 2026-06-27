@@ -5,11 +5,11 @@ import {
   createProductRequest,
   deleteProductRequest,
   updateProductRequest,
-  type ProductRequestInput,
 } from "@/modules/products/data/mutations"
+import type { ProductCreateForm, ProductUpdateForm } from "@builders/domain"
 import { PRODUCTS_LIST_QUERY_KEY } from "@/modules/products/data/list-products-request"
 
-type UpdateArgs = { id: string; input: ProductRequestInput; revisionKey: string }
+type UpdateArgs = { id: string; input: ProductUpdateForm; revisionKey: string }
 type DeleteArgs = { id: string; updatedAt: string }
 
 export function useProductsListMutations() {
@@ -18,7 +18,7 @@ export function useProductsListMutations() {
     queryClient.invalidateQueries({ queryKey: [...PRODUCTS_LIST_QUERY_KEY] })
 
   const createProduct = useMutation({
-    mutationFn: (input: ProductRequestInput) => createProductRequest(input),
+    mutationFn: (input: ProductCreateForm) => createProductRequest(input),
     onSuccess: invalidateList,
   })
 
