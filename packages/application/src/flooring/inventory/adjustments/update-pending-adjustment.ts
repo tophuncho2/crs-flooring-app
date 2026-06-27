@@ -24,8 +24,13 @@ import type {
 
 export async function updatePendingAdjustmentUseCase(
   input: UpdatePendingAdjustmentInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<AdjustmentMutationResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updatePendingAdjustmentUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -98,7 +103,10 @@ export async function updatePendingAdjustmentUseCase(
 
     await lockInventoryForAdjustment(c, existing.inventoryId)
 
-    const patch: UpdatePendingAdjustmentRowPatch = {}
+    // Stamp the editor unconditionally — the write primitive sets updatedBy
+    // before the recompute branch, so even a metadata-only edit (the
+    // `!chainTouched` short-circuit below) correctly records its author.
+    const patch: UpdatePendingAdjustmentRowPatch = { updatedBy: actorEmail }
     if (input.patch.quantity !== undefined) {
       patch.quantity = input.patch.quantity
     }

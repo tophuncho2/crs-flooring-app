@@ -17,8 +17,13 @@ function emptyToNull(value: string): string | null {
 export async function updateInventoryUseCase(
   id: string,
   input: UpdateInventoryInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<InventoryResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updateInventoryUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -46,7 +51,7 @@ export async function updateInventoryUseCase(
           ? null
           : current.internalNotes
 
-    const dbInput: DbUpdateInventoryInput = {}
+    const dbInput: DbUpdateInventoryInput = { updatedBy: actorEmail }
     if (input.location !== undefined) dbInput.location = effectiveLocation
     if (input.internalNotes !== undefined) dbInput.internalNotes = effectiveInternalNotes
     if (input.isArchived !== undefined) dbInput.isArchived = input.isArchived

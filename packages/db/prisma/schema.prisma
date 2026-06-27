@@ -267,6 +267,8 @@ model FlooringInventory {
   inventoryAdjustments   FlooringInventoryAdjustment[]
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
+  createdBy              String?
+  updatedBy              String?
 
   @@index([inventoryNumber])
   @@index([inventoryNumberInt])
@@ -402,6 +404,8 @@ model FlooringInventoryAdjustment {
   color                  PaletteColor                      @default(SLATE)
   createdAt         DateTime                          @default(now())
   updatedAt         DateTime                          @updatedAt
+  createdBy         String?
+  updatedBy         String?
 
   @@index([adjustmentNumber])
   @@index([adjustmentNumberInt])

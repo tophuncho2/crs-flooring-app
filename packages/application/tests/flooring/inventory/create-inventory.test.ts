@@ -35,6 +35,8 @@ vi.mock("@builders/domain", () => ({
 import { createInventoryUseCase } from "../../../src/flooring/inventory/create-inventory.js"
 import { InventoryExecutionError } from "../../../src/flooring/inventory/errors.js"
 
+const ACTOR = "actor@example.com"
+
 function input(overrides: Record<string, unknown> = {}) {
   return {
     productId: "p-1",
@@ -82,9 +84,15 @@ beforeEach(() => {
 })
 
 describe("createInventoryUseCase", () => {
+  it("rejects a blank actorEmail before touching the database", async () => {
+    await expect(createInventoryUseCase(input(), "   ")).rejects.toThrowError(/actorEmail/)
+    expect(insertInventoryRowMock).not.toHaveBeenCalled()
+    expect(getProductByIdMock).not.toHaveBeenCalled()
+  })
+
   describe("happy path", () => {
-    it("reads product + warehouse, builds the insert, and stamps createdAt", async () => {
-      const result = await createInventoryUseCase(input())
+    it("reads product + warehouse, builds the insert, and stamps createdAt + actor", async () => {
+      const result = await createInventoryUseCase(input(), ACTOR)
 
       expect(result).toBe(CREATED_RECORD)
       expect(getProductByIdMock).toHaveBeenCalledWith("p-1", expect.anything())
@@ -104,6 +112,9 @@ describe("createInventoryUseCase", () => {
       expect(insertArg).toMatchObject(BUILT_FIELDS)
       // createdAt is stamped to the creation instant — the row's FIFO position.
       expect(insertArg.createdAt).toBeInstanceOf(Date)
+      // Create stamps both actor columns with the caller's email.
+      expect(insertArg.createdBy).toBe(ACTOR)
+      expect(insertArg.updatedBy).toBe(ACTOR)
     })
   })
 
@@ -112,7 +123,7 @@ describe("createInventoryUseCase", () => {
       validateCreateInventoryEditsMock.mockReturnValue([{ code: "STARTING_STOCK_REQUIRED" }])
 
       try {
-        await createInventoryUseCase(input({ startingStock: "" }))
+        await createInventoryUseCase(input({ startingStock: "" }), ACTOR)
         expect.fail("Expected throw")
       } catch (error) {
         if (!(error instanceof InventoryExecutionError)) throw error
@@ -128,7 +139,7 @@ describe("createInventoryUseCase", () => {
       getProductByIdMock.mockResolvedValue(null)
 
       try {
-        await createInventoryUseCase(input())
+        await createInventoryUseCase(input(), ACTOR)
         expect.fail("Expected throw")
       } catch (error) {
         if (!(error instanceof InventoryExecutionError)) throw error
@@ -142,7 +153,7 @@ describe("createInventoryUseCase", () => {
       getWarehouseByIdMock.mockResolvedValue(null)
 
       try {
-        await createInventoryUseCase(input())
+        await createInventoryUseCase(input(), ACTOR)
         expect.fail("Expected throw")
       } catch (error) {
         if (!(error instanceof InventoryExecutionError)) throw error

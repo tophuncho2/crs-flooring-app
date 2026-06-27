@@ -77,6 +77,10 @@ export function renderAdjustmentsRowCell(
       return formatAdjustmentTimestamp(row.createdAt)
     case "updatedAt":
       return formatAdjustmentTimestamp(row.updatedAt)
+    case "createdBy":
+      return row.createdBy ?? "—"
+    case "updatedBy":
+      return row.updatedBy ?? "—"
     default:
       return "-"
   }

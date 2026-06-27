@@ -66,7 +66,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         entityType: "flooringInventory",
         entityId: id,
       },
-      () => updateInventoryUseCase(id, input),
+      () => updateInventoryUseCase(id, input, access.user.email),
     )
 
     // Client controller expects InventoryDetailRecord (row + adjustments) so the

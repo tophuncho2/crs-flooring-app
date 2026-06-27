@@ -74,6 +74,8 @@ export type UpdateInventoryRecordInput = {
   isArchived?: boolean
   /** Non-semantic palette tag. Metadata only — never triggers a recompute. */
   color?: PaletteColor
+  /** Actor email of the editing user — stamped on every human edit. */
+  updatedBy: string
 }
 
 /**
@@ -93,6 +95,8 @@ function buildUpdateData(
   if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes
   if (input.isArchived !== undefined) data.isArchived = input.isArchived
   if (input.color !== undefined) data.color = input.color
+  // A human save always records its editor (mirrors the warehouse actor pattern).
+  data.updatedBy = input.updatedBy
   return data
 }
 
@@ -178,6 +182,9 @@ export type InsertInventoryRowInput = {
   netDeducted: Prisma.Decimal | string | number
   isArchived: boolean
   createdAt?: Date
+  /** Actor email of the creating user — stamped into both createdBy + updatedBy. */
+  createdBy: string
+  updatedBy: string
 }
 
 /**
@@ -212,6 +219,8 @@ export async function insertInventoryRow(
       netDeducted: input.netDeducted,
       isArchived: input.isArchived,
       ...(input.createdAt ? { createdAt: input.createdAt } : {}),
+      createdBy: input.createdBy,
+      updatedBy: input.updatedBy,
     },
     select: { id: true },
   })

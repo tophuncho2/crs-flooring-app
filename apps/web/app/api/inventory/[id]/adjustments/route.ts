@@ -113,7 +113,7 @@ export async function POST(request: Request, { params }: RouteContext) {
           notes: input.notes,
           color: input.color,
           location: input.location,
-        }),
+        }, access.user.email),
     )
 
     const responseBody = result

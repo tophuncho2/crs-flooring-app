@@ -29,6 +29,8 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
   { key: "freight", label: "Freight", align: "end" },
   { key: "createdAt", label: "Created", sortable: true },
   { key: "updatedAt", label: "Updated", sortable: true },
+  { key: "createdBy", label: "Created by" },
+  { key: "updatedBy", label: "Updated by" },
 ]
 
 /**

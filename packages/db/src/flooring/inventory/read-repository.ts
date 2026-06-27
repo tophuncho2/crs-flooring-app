@@ -107,6 +107,8 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     color: payload.color,
     createdAt: payload.createdAt.toISOString(),
     updatedAt: payload.updatedAt.toISOString(),
+    createdBy: payload.createdBy ?? null,
+    updatedBy: payload.updatedBy ?? null,
   }
 }
 

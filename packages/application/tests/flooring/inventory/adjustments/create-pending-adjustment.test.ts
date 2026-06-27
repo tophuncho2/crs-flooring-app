@@ -68,6 +68,7 @@ import { InventoryAdjustmentExecutionError } from "../../../../src/flooring/inve
 const WO_ID = "10000000-0000-4000-8000-000000000001"
 const INVENTORY_ID = "30000000-0000-4000-8000-000000000003"
 const ADJUSTMENT_ID = "40000000-0000-4000-8000-000000000004"
+const ACTOR = "actor@example.com"
 
 // A WO-linked DEDUCTION create (the shape the work-orders record view sends).
 // Adjustments link to a work order (any product) — no material-item link.
@@ -164,9 +165,16 @@ beforeEach(() => {
 })
 
 describe("createPendingAdjustmentUseCase — WO-linked create", () => {
+  it("rejects a blank actorEmail before touching the database", async () => {
+    await expect(
+      createPendingAdjustmentUseCase(cutVariantInput(), "   "),
+    ).rejects.toThrowError(/actorEmail/)
+    expect(insertPendingAdjustmentRowMock).not.toHaveBeenCalled()
+  })
+
   describe("happy path", () => {
     it("inserts a DEDUCTION with the WO link + snapshot, recomputes netDeducted, returns the result", async () => {
-      const result = await createPendingAdjustmentUseCase(cutVariantInput())
+      const result = await createPendingAdjustmentUseCase(cutVariantInput(), ACTOR)
 
       expect(result).toEqual({
         adjustment: INSERTED,
@@ -191,19 +199,22 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
             stockUnitName: "Square Foot",
             stockUnitAbbrev: "sf",
           },
+          // Create stamps both actor columns with the caller's email.
+          createdBy: ACTOR,
+          updatedBy: ACTOR,
         }),
       )
       expect(recomputeAndPersistNetDeductedMock).toHaveBeenCalledWith(tx, [INVENTORY_ID])
     })
 
     it("does NOT validate the WO link against the inventory's product (any product may link)", async () => {
-      await createPendingAdjustmentUseCase(cutVariantInput())
+      await createPendingAdjustmentUseCase(cutVariantInput(), ACTOR)
       // No material-item fetch / product-match guard exists anymore.
       expect(insertPendingAdjustmentRowMock).toHaveBeenCalled()
     })
 
     it("locks the parent inventory before reading its context", async () => {
-      await createPendingAdjustmentUseCase(cutVariantInput())
+      await createPendingAdjustmentUseCase(cutVariantInput(), ACTOR)
 
       const lockOrder = lockInventoryForAdjustmentMock.mock.invocationCallOrder[0]!
       const contextOrder = getInventoryParentContextForAdjustmentsMock.mock.invocationCallOrder[0]!
@@ -211,7 +222,7 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
     })
 
     it("inserts before recomputing", async () => {
-      await createPendingAdjustmentUseCase(cutVariantInput())
+      await createPendingAdjustmentUseCase(cutVariantInput(), ACTOR)
 
       const insertOrder = insertPendingAdjustmentRowMock.mock.invocationCallOrder[0]!
       const recomputeOrder = recomputeAndPersistNetDeductedMock.mock.invocationCallOrder[0]!
@@ -223,7 +234,7 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
     it("throws INVENTORY_ADJUSTMENT_VALIDATION_FAILED (400) when the form is invalid", async () => {
       validateAdjustmentPendingFormMock.mockReturnValue([{ code: "ADJUSTMENT_QUANTITY_REQUIRED" }])
 
-      await expect(createPendingAdjustmentUseCase(cutVariantInput())).rejects.toMatchObject({
+      await expect(createPendingAdjustmentUseCase(cutVariantInput(), ACTOR)).rejects.toMatchObject({
         code: "INVENTORY_ADJUSTMENT_VALIDATION_FAILED",
         status: 400,
       })
@@ -233,7 +244,7 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
     it("throws INVENTORY_ADJUSTMENT_NOT_FOUND (404) when the parent inventory is missing", async () => {
       getInventoryParentContextForAdjustmentsMock.mockResolvedValue(null)
 
-      await expect(createPendingAdjustmentUseCase(cutVariantInput())).rejects.toMatchObject({
+      await expect(createPendingAdjustmentUseCase(cutVariantInput(), ACTOR)).rejects.toMatchObject({
         code: "INVENTORY_ADJUSTMENT_NOT_FOUND",
         status: 404,
       })
@@ -249,7 +260,7 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
       })
 
       try {
-        await createPendingAdjustmentUseCase(cutVariantInput())
+        await createPendingAdjustmentUseCase(cutVariantInput(), ACTOR)
         expect.fail("Expected throw")
       } catch (error) {
         if (!(error instanceof InventoryAdjustmentExecutionError)) throw error
@@ -268,7 +279,7 @@ describe("createPendingAdjustmentUseCase — inventory create", () => {
       { inventoryId: INVENTORY_ID, netDeducted: "-10.00" },
     ])
 
-    const result = await createPendingAdjustmentUseCase(manualVariantInput())
+    const result = await createPendingAdjustmentUseCase(manualVariantInput(), ACTOR)
 
     expect(result.netDeducted).toBe("-10.00")
     expect(insertPendingAdjustmentRowMock).toHaveBeenCalledWith(
@@ -288,7 +299,7 @@ describe("createPendingAdjustmentUseCase — inventory create", () => {
       { inventoryId: INVENTORY_ID, netDeducted: "-10.00" },
     ])
 
-    await createPendingAdjustmentUseCase(manualVariantInput({ isWaste: true }))
+    await createPendingAdjustmentUseCase(manualVariantInput({ isWaste: true }), ACTOR)
 
     expect(insertPendingAdjustmentRowMock).toHaveBeenCalledWith(
       tx,
@@ -303,6 +314,7 @@ describe("createPendingAdjustmentUseCase — inventory create", () => {
   it("inserts a WO-linked manual INCREASE (return-to-stock against a work order)", async () => {
     await createPendingAdjustmentUseCase(
       manualVariantInput({ adjustmentType: "INCREASE", workOrderId: WO_ID }),
+      ACTOR,
     )
     expect(insertPendingAdjustmentRowMock).toHaveBeenCalledWith(
       tx,
@@ -314,7 +326,7 @@ describe("createPendingAdjustmentUseCase — inventory create", () => {
   })
 
   it("asserts the warehouse invariant when the form passes a selected warehouse", async () => {
-    await createPendingAdjustmentUseCase(manualVariantInput({ warehouseId: "wh-1" }))
+    await createPendingAdjustmentUseCase(manualVariantInput({ warehouseId: "wh-1" }), ACTOR)
     expect(assertAdjustmentWarehouseMatchesInventoryMock).toHaveBeenCalledWith({
       adjustmentWarehouseId: "wh-1",
       inventoryWarehouseId: "wh-1",
@@ -330,7 +342,7 @@ describe("createPendingAdjustmentUseCase — inventory create", () => {
     })
 
     await expect(
-      createPendingAdjustmentUseCase(manualVariantInput({ warehouseId: "wh-other" })),
+      createPendingAdjustmentUseCase(manualVariantInput({ warehouseId: "wh-other" }), ACTOR),
     ).rejects.toMatchObject({
       code: "INVENTORY_ADJUSTMENT_WAREHOUSE_INVENTORY_MISMATCH",
       status: 400,

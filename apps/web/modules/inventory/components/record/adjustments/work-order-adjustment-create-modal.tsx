@@ -62,6 +62,10 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     color: DEFAULT_PALETTE_COLOR,
     createdAt: "",
     updatedAt: "",
+    // Parent inventory actors aren't tracked on the adjustment snapshot — the
+    // modal fetches the real row by id to fill them.
+    createdBy: null,
+    updatedBy: null,
   }
 }
 

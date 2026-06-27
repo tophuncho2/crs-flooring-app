@@ -24,4 +24,6 @@ export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInv
   { key: "adjustmentType", label: "Type" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
+  { key: "createdBy", label: "Created by" },
+  { key: "updatedBy", label: "Updated by" },
 ]

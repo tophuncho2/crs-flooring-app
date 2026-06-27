@@ -70,7 +70,7 @@ export async function POST(request: Request) {
         route: "/api/inventory",
         entityType: "flooringInventory",
       },
-      () => createInventoryUseCase(input),
+      () => createInventoryUseCase(input, access.user.email),
     )
 
     // Return the full detail (row + adjustments) so the hub can seed its view on

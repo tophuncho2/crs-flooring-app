@@ -66,6 +66,7 @@ const WAREHOUSE_ID = "wh-1"
 const PRODUCT_ID = "prod-1"
 const NEW_WO = "10000000-0000-4000-8000-00000000000a"
 const UPDATED_AT = "2026-01-01T00:00:00.000Z"
+const ACTOR = "actor@example.com"
 
 function existingRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -139,9 +140,16 @@ beforeEach(() => {
 })
 
 describe("updatePendingAdjustmentUseCase", () => {
+  it("rejects a blank actorEmail before touching the database", async () => {
+    await expect(
+      updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }), "   "),
+    ).rejects.toThrowError(/actorEmail/)
+    expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
+  })
+
   describe("happy path", () => {
     it("patches quantity when it changes, recomputes, and returns (location not re-snapped)", async () => {
-      const result = await updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }))
+      const result = await updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }), ACTOR)
 
       expect(result).toEqual({
         adjustment: UPDATED,
@@ -150,54 +158,54 @@ describe("updatePendingAdjustmentUseCase", () => {
       })
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { quantity: "3" } },
+        { id: ADJUSTMENT_ID, patch: { quantity: "3", updatedBy: ACTOR } },
       )
     })
 
     it("re-links to a new work order with a plain workOrderId patch (any product)", async () => {
-      await updatePendingAdjustmentUseCase(input({ patch: { link: { workOrderId: NEW_WO } } }))
+      await updatePendingAdjustmentUseCase(input({ patch: { link: { workOrderId: NEW_WO } } }), ACTOR)
 
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { workOrderId: NEW_WO } },
+        { id: ADJUSTMENT_ID, patch: { workOrderId: NEW_WO, updatedBy: ACTOR } },
       )
     })
 
     it("unlinks the work order with a null workOrderId patch", async () => {
-      await updatePendingAdjustmentUseCase(input({ patch: { link: { workOrderId: null } } }))
+      await updatePendingAdjustmentUseCase(input({ patch: { link: { workOrderId: null } } }), ACTOR)
 
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { workOrderId: null } },
+        { id: ADJUSTMENT_ID, patch: { workOrderId: null, updatedBy: ACTOR } },
       )
     })
 
     it("writes user-owned location only when the patch carries it, never re-snapped from the parent", async () => {
-      await updatePendingAdjustmentUseCase(input({ patch: { location: "Bay 7" } }))
+      await updatePendingAdjustmentUseCase(input({ patch: { location: "Bay 7" } }), ACTOR)
 
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { location: "Bay 7" } },
+        { id: ADJUSTMENT_ID, patch: { location: "Bay 7", updatedBy: ACTOR } },
       )
     })
 
     it("does not touch location on a non-location field patch", async () => {
-      await updatePendingAdjustmentUseCase(input({ patch: { isWaste: true } }))
+      await updatePendingAdjustmentUseCase(input({ patch: { isWaste: true } }), ACTOR)
 
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { isWaste: true } },
+        { id: ADJUSTMENT_ID, patch: { isWaste: true, updatedBy: ACTOR } },
       )
     })
   })
 
   describe("always editable", () => {
     it("flips direction: writes adjustmentType and validates against the merged type", async () => {
-      await updatePendingAdjustmentUseCase(input({ patch: { adjustmentType: "INCREASE" } }))
+      await updatePendingAdjustmentUseCase(input({ patch: { adjustmentType: "INCREASE" } }), ACTOR)
 
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
-        { id: ADJUSTMENT_ID, patch: { adjustmentType: "INCREASE" } },
+        { id: ADJUSTMENT_ID, patch: { adjustmentType: "INCREASE", updatedBy: ACTOR } },
       )
       // Form validation runs against the new (merged) direction, not the stale row.
       expect(validateAdjustmentPendingFormMock).toHaveBeenCalledWith(
@@ -210,6 +218,7 @@ describe("updatePendingAdjustmentUseCase", () => {
     it("skips the ledger replay + ceiling check on a metadata-only edit, returning the snapshot netDeducted", async () => {
       const result = await updatePendingAdjustmentUseCase(
         input({ patch: { isWaste: true, notes: "rework", location: "Bay 7" } }),
+        ACTOR,
       )
 
       expect(recomputeAndPersistNetDeductedMock).not.toHaveBeenCalled()
@@ -220,24 +229,33 @@ describe("updatePendingAdjustmentUseCase", () => {
         inventoryId: INVENTORY_ID,
         netDeducted: "5.00",
       })
+      // Even a metadata-only edit (no ledger replay) still stamps the editor —
+      // the stamp lives in the write primitive, before the recompute branch.
+      expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
+        { tx: true },
+        {
+          id: ADJUSTMENT_ID,
+          patch: { isWaste: true, notes: "rework", location: "Bay 7", updatedBy: ACTOR },
+        },
+      )
     })
 
     it("skips the ledger replay on a link-only edit (relink does not move the balance)", async () => {
-      await updatePendingAdjustmentUseCase(input({ patch: { link: { workOrderId: NEW_WO } } }))
+      await updatePendingAdjustmentUseCase(input({ patch: { link: { workOrderId: NEW_WO } } }), ACTOR)
 
       expect(recomputeAndPersistNetDeductedMock).not.toHaveBeenCalled()
       expect(assertNetDeductedWithinStartingStockMock).not.toHaveBeenCalled()
     })
 
     it("runs the ledger replay + ceiling check on a quantity edit", async () => {
-      await updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }))
+      await updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }), ACTOR)
 
       expect(recomputeAndPersistNetDeductedMock).toHaveBeenCalledWith({ tx: true }, [INVENTORY_ID])
       expect(assertNetDeductedWithinStartingStockMock).toHaveBeenCalled()
     })
 
     it("runs the ledger replay + ceiling check on a direction flip", async () => {
-      await updatePendingAdjustmentUseCase(input({ patch: { adjustmentType: "INCREASE" } }))
+      await updatePendingAdjustmentUseCase(input({ patch: { adjustmentType: "INCREASE" } }), ACTOR)
 
       expect(recomputeAndPersistNetDeductedMock).toHaveBeenCalledWith({ tx: true }, [INVENTORY_ID])
       expect(assertNetDeductedWithinStartingStockMock).toHaveBeenCalled()
@@ -249,7 +267,7 @@ describe("updatePendingAdjustmentUseCase", () => {
       getPendingAdjustmentWithInventoryForMutationMock.mockResolvedValue(null)
 
       await expect(
-        updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } })),
+        updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }), ACTOR),
       ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_NOT_FOUND", status: 404 })
       expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
     })
@@ -259,12 +277,15 @@ describe("updatePendingAdjustmentUseCase", () => {
         found({ adjustment: { adjustmentType: "INCREASE", workOrderId: null } }),
       )
 
-      await updatePendingAdjustmentUseCase({
-        scope: { kind: "inventory" as const, inventoryId: INVENTORY_ID },
-        adjustmentId: ADJUSTMENT_ID,
-        expectedUpdatedAt: UPDATED_AT,
-        patch: { link: { workOrderId: NEW_WO } },
-      })
+      await updatePendingAdjustmentUseCase(
+        {
+          scope: { kind: "inventory" as const, inventoryId: INVENTORY_ID },
+          adjustmentId: ADJUSTMENT_ID,
+          expectedUpdatedAt: UPDATED_AT,
+          patch: { link: { workOrderId: NEW_WO } },
+        },
+        ACTOR,
+      )
 
       expect(updatePendingAdjustmentRowMock).toHaveBeenCalledWith(
         { tx: true },
@@ -281,7 +302,7 @@ describe("updatePendingAdjustmentUseCase", () => {
       })
 
       await expect(
-        updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } })),
+        updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }), ACTOR),
       ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_STALE", status: 409 })
       expect(updatePendingAdjustmentRowMock).not.toHaveBeenCalled()
     })
@@ -294,7 +315,7 @@ describe("updatePendingAdjustmentUseCase", () => {
       })
 
       await expect(
-        updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } })),
+        updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }), ACTOR),
       ).rejects.toMatchObject({ code: "INVENTORY_ADJUSTMENT_EXCEEDS_INVENTORY", status: 400 })
     })
 
@@ -304,7 +325,7 @@ describe("updatePendingAdjustmentUseCase", () => {
       )
 
       try {
-        await updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }))
+        await updatePendingAdjustmentUseCase(input({ patch: { quantity: "3" } }), ACTOR)
         expect.fail("Expected throw")
       } catch (error) {
         if (!(error instanceof InventoryAdjustmentExecutionError)) throw error

@@ -71,6 +71,9 @@ export type InsertPendingAdjustmentRowInput = {
    */
   cost: string | null
   freight: string | null
+  /** Actor email of the creating user — stamped into both createdBy + updatedBy. */
+  createdBy: string
+  updatedBy: string
 }
 
 /**
@@ -116,6 +119,8 @@ export async function insertPendingAdjustmentRow(
       location: input.location,
       cost: input.cost,
       freight: input.freight,
+      createdBy: input.createdBy,
+      updatedBy: input.updatedBy,
     },
     select: adjustmentRowSelect,
   })
@@ -147,6 +152,12 @@ export type UpdatePendingAdjustmentRowPatch = {
    * direction may link a work order.
    */
   workOrderId?: string | null
+  /**
+   * Actor email of the editing user — stamped on every human edit, including a
+   * metadata-only edit. Set unconditionally (the patch always carries it), so a
+   * notes/color/location-only save still records its editor.
+   */
+  updatedBy: string
 }
 
 export type UpdatePendingAdjustmentRowInput = {
@@ -189,6 +200,10 @@ export async function updatePendingAdjustmentRow(
         ? { disconnect: true }
         : { connect: { id: input.patch.workOrderId } }
   }
+  // A human save always records its editor — set unconditionally so even a
+  // metadata-only edit (notes/color/location) stamps updatedBy. This also means
+  // the write branch below always fires.
+  data.updatedBy = input.patch.updatedBy
   const updated =
     Object.keys(data).length > 0
       ? await tx.flooringInventoryAdjustment.update({
@@ -301,6 +316,13 @@ export async function recomputeAndPersistNetDeducted(
       startingStockById.get(inventoryId) ?? "0",
     )
     for (const entry of ledger) {
+      // LOAD-BEARING INVARIANT: NEVER stamp createdBy/updatedBy here. This loop
+      // rewrites before/after on EVERY sibling adjustment — a derived projection
+      // of the ledger, not a human edit. updatedBy must stay "last human author"
+      // per row; it is stamped in exactly two places (insertPendingAdjustmentRow
+      // + updatePendingAdjustmentRow). A sibling's updatedAt does bump here (via
+      // @updatedAt) and that divergence is accepted — its stored balance genuinely
+      // changed. Do not "fix the oversight" by adding actor writes to this update.
       await tx.flooringInventoryAdjustment.update({
         where: { id: entry.id },
         data: { before: entry.before, after: entry.after },

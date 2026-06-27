@@ -24,6 +24,7 @@ import { updateInventoryUseCase } from "../../../src/flooring/inventory/update-i
 import { InventoryExecutionError } from "../../../src/flooring/inventory/errors.js"
 
 const INVENTORY_ID = "11111111-1111-4111-8111-111111111111"
+const ACTOR = "actor@example.com"
 
 // Only the columns the use case reads off `getInventoryById`.
 function currentRow(overrides: Record<string, unknown> = {}) {
@@ -56,16 +57,24 @@ beforeEach(() => {
 })
 
 describe("updateInventoryUseCase", () => {
+  it("rejects a blank actorEmail before touching the database", async () => {
+    await expect(
+      updateInventoryUseCase(INVENTORY_ID, { location: "B2" }, "   "),
+    ).rejects.toThrowError(/actorEmail/)
+    expect(updateInventoryRecordMock).not.toHaveBeenCalled()
+    expect(lockInventoryRowMock).not.toHaveBeenCalled()
+  })
+
   describe("happy path", () => {
-    it("writes only the touched fields", async () => {
+    it("writes only the touched fields, stamping updatedBy", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
-      const result = await updateInventoryUseCase(INVENTORY_ID, { location: "B2" })
+      const result = await updateInventoryUseCase(INVENTORY_ID, { location: "B2" }, ACTOR)
 
       expect(result).toBe(UPDATED_RECORD)
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        { location: "B2" },
+        { location: "B2", updatedBy: ACTOR },
         expect.anything(),
       )
     })
@@ -73,23 +82,23 @@ describe("updateInventoryUseCase", () => {
     it("trims an empty-string patch to null", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
-      await updateInventoryUseCase(INVENTORY_ID, { location: "   " })
+      await updateInventoryUseCase(INVENTORY_ID, { location: "   " }, ACTOR)
 
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        { location: null },
+        { location: null, updatedBy: ACTOR },
         expect.anything(),
       )
     })
 
-    it("writes an empty input when no fields are patched", async () => {
+    it("stamps updatedBy even when no other fields are patched", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
-      await updateInventoryUseCase(INVENTORY_ID, {})
+      await updateInventoryUseCase(INVENTORY_ID, {}, ACTOR)
 
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        {},
+        { updatedBy: ACTOR },
         expect.anything(),
       )
     })
@@ -97,11 +106,11 @@ describe("updateInventoryUseCase", () => {
     it("passes through the isArchived toggle", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
-      await updateInventoryUseCase(INVENTORY_ID, { isArchived: true })
+      await updateInventoryUseCase(INVENTORY_ID, { isArchived: true }, ACTOR)
 
       expect(updateInventoryRecordMock).toHaveBeenCalledWith(
         INVENTORY_ID,
-        { isArchived: true },
+        { isArchived: true, updatedBy: ACTOR },
         expect.anything(),
       )
     })
@@ -109,7 +118,7 @@ describe("updateInventoryUseCase", () => {
     it("acquires the FOR UPDATE lock before reading the row", async () => {
       getInventoryByIdMock.mockResolvedValue(currentRow())
 
-      await updateInventoryUseCase(INVENTORY_ID, { location: "X" })
+      await updateInventoryUseCase(INVENTORY_ID, { location: "X" }, ACTOR)
 
       const lockOrder = lockInventoryRowMock.mock.invocationCallOrder[0]!
       const readOrder = getInventoryByIdMock.mock.invocationCallOrder[0]!
@@ -122,7 +131,7 @@ describe("updateInventoryUseCase", () => {
       getInventoryByIdMock.mockResolvedValue(null)
 
       try {
-        await updateInventoryUseCase(INVENTORY_ID, { location: "X" })
+        await updateInventoryUseCase(INVENTORY_ID, { location: "X" }, ACTOR)
         expect.fail("Expected throw")
       } catch (error) {
         if (!(error instanceof InventoryExecutionError)) throw error

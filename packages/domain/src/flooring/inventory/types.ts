@@ -39,6 +39,8 @@ export type InventoryRow = {
   color: PaletteColor
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 /**

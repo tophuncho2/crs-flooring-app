@@ -18,6 +18,12 @@ import type {
   DeletePendingAdjustmentInput,
 } from "./types.js"
 
+/**
+ * Honest asymmetry vs create/update: this use case takes NO `actorEmail`. The
+ * row is removed, so there is nothing to stamp — the delete actor is captured by
+ * the route's mutation telemetry, not an actor column. The subsequent recompute
+ * never stamps actor columns either (see recomputeAndPersistNetDeducted).
+ */
 export async function deletePendingAdjustmentUseCase(
   input: DeletePendingAdjustmentInput,
   client?: Prisma.TransactionClient,

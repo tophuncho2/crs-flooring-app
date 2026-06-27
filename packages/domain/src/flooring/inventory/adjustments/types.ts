@@ -30,6 +30,8 @@ export type InventoryAdjustmentRow = {
   color: PaletteColor
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 export type InventoryAdjustmentPendingForm = {

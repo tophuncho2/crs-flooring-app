@@ -15,8 +15,13 @@ import type { CreateInventoryInput, InventoryResult } from "./types.js"
 
 export async function createInventoryUseCase(
   input: CreateInventoryInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<InventoryResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createInventoryUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -65,6 +70,8 @@ export async function createInventoryUseCase(
     return insertInventoryRow(c, {
       ...fields,
       createdAt: now,
+      createdBy: actorEmail,
+      updatedBy: actorEmail,
     })
   })
 }

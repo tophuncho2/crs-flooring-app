@@ -64,6 +64,10 @@ export function renderInventoryRowCell(
       return formatEasternDateTime(row.createdAt) || "—"
     case "updatedAt":
       return formatEasternDateTime(row.updatedAt) || "—"
+    case "createdBy":
+      return <span>{row.createdBy ?? "—"}</span>
+    case "updatedBy":
+      return <span>{row.updatedBy ?? "—"}</span>
     default:
       return "-"
   }

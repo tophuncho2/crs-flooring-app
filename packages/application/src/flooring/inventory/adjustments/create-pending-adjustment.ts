@@ -31,8 +31,13 @@ import type {
  */
 export async function createPendingAdjustmentUseCase(
   input: CreatePendingAdjustmentInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<AdjustmentMutationResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createPendingAdjustmentUseCase requires a non-empty actorEmail")
+  }
+
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -130,8 +135,13 @@ export async function createPendingAdjustmentUseCase(
       }),
       // User-owned free text — never seeded from the parent inventory.
       location: input.location ?? null,
+      createdBy: actorEmail,
+      updatedBy: actorEmail,
     })
 
+    // The subsequent recompute rewrites before/after on the whole chain but
+    // never touches actor columns — see the load-bearing comment in
+    // recomputeAndPersistNetDeducted.
     const recomputed = await recomputeAndPersistNetDeducted(c, [input.inventoryId])
     const result = recomputed[0]
     if (!result) {

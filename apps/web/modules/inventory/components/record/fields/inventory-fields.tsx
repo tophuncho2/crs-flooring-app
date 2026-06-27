@@ -283,6 +283,14 @@ export function UpdatedAtField({ value }: { value: string }) {
   return <ReadonlyField label="Updated" value={formatEasternDateTime(value)} />
 }
 
+export function CreatedByField({ value }: { value: string | null }) {
+  return <ReadonlyField label="Created by" value={value ?? "—"} />
+}
+
+export function UpdatedByField({ value }: { value: string | null }) {
+  return <ReadonlyField label="Updated by" value={value ?? "—"} />
+}
+
 export function MergedField({ wasMerged }: { wasMerged: boolean }) {
   return (
     <FormField label="Merged">

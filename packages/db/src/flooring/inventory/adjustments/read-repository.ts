@@ -80,6 +80,8 @@ export function normalizeAdjustmentRow(
     color: row.color,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    createdBy: row.createdBy ?? null,
+    updatedBy: row.updatedBy ?? null,
   }
 }
 

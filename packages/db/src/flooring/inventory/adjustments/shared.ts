@@ -33,6 +33,8 @@ export const adjustmentRowSelect = {
   color: true,
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
 } as const satisfies Prisma.FlooringInventoryAdjustmentSelect
 
 export type InventoryAdjustmentRowPayload = Prisma.FlooringInventoryAdjustmentGetPayload<{

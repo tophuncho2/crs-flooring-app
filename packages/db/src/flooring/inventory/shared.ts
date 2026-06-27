@@ -48,6 +48,8 @@ export const inventoryRowSelect = {
   _count: { select: { inventoryAdjustments: true } },
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
 } as const satisfies Prisma.FlooringInventorySelect
 
 export const inventoryDetailSelect = {

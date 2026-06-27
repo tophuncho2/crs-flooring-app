@@ -6,6 +6,7 @@ import {
   ColorField,
   CostReadonlyField,
   CreatedAtField,
+  CreatedByField,
   DyeLotReadOnlyField,
   FreightReadonlyField,
   ImportNumberField,
@@ -23,6 +24,7 @@ import {
   StatusField,
   StockBalanceField,
   UpdatedAtField,
+  UpdatedByField,
   WarehouseStaticField,
 } from "../fields"
 
@@ -140,7 +142,7 @@ export function InventoryPrimaryFieldsSection({
 
       <RecordSectionDivider />
 
-      {/* Read-only metadata band: Merged · Created · Updated */}
+      {/* Read-only metadata band: Merged · Created · Updated · Created by · Updated by */}
       <InventoryFieldGrid>
         <CellAt col={1} row={1} colSpan={2}>
           <MergedField wasMerged={record.wasMerged} />
@@ -150,6 +152,12 @@ export function InventoryPrimaryFieldsSection({
         </CellAt>
         <CellAt col={5} row={1} colSpan={2}>
           <UpdatedAtField value={record.updatedAt} />
+        </CellAt>
+        <CellAt col={1} row={2} colSpan={4}>
+          <CreatedByField value={record.createdBy} />
+        </CellAt>
+        <CellAt col={5} row={2} colSpan={4}>
+          <UpdatedByField value={record.updatedBy} />
         </CellAt>
       </InventoryFieldGrid>
     </div>
