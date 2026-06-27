@@ -95,7 +95,7 @@ export function TemplatePrimaryFieldsSection({
             {/* Template Number — dedicated top row stamp. Read-only display.
                 In edit (detail present) the number rides a palette-colored chip,
                 like inventory's Inv # field; create (null detail) shows an em-dash. */}
-            <CellAt col={1} row={1} colSpan={2}>
+            <CellAt col={1} row={1} colSpan={4}>
               <FormField label="Template #">
                 {detail ? (
                   <CellChip paletteColor={detail.color}>{detail.templateNumber}</CellChip>
@@ -108,7 +108,7 @@ export function TemplatePrimaryFieldsSection({
             {/* Non-semantic palette tag — edit-only. The create flow (null detail)
                 renders no picker, so new rows fall to the DB default SLATE. */}
             {detail ? (
-              <CellAt col={7} row={1} colSpan={2}>
+              <CellAt col={5} row={1} colSpan={4}>
                 <FormField label="Color">
                   <PaletteColorDropdown
                     value={draft.color}
@@ -168,8 +168,8 @@ export function TemplatePrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
-            {/* Unit Type — below Warehouse / Job Type, spanning half the flank. Required. */}
-            <CellAt col={1} row={2} colSpan={4}>
+            {/* Unit Type — below Warehouse / Job Type, full flank width (matches Description). Required. */}
+            <CellAt col={1} row={2} colSpan={8}>
               <FormField
                 label="Unit Type"
                 required
