@@ -15,7 +15,7 @@ export function renderProductRowCell(
 ): ReactNode {
   switch (column.key) {
     case "category":
-      return <span className="font-medium text-blue-500">{row.category.name}</span>
+      return row.category.name || "-"
     case "name":
       return row.name || "Pending name"
     case "manufacturer":
