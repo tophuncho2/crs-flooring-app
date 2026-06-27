@@ -162,25 +162,6 @@ export function PropertyRecordView({
           <div className="flex flex-col gap-4">
             <RecordColumnBreak
               left={
-                <EntityPickerSection
-                  value={selectedEntityId}
-                  onChange={(id) =>
-                    primary.setLocalValue((previous) => ({
-                      ...previous,
-                      entityId: id ?? "",
-                    }))
-                  }
-                  onOptionSelected={selectEntity}
-                  selectedLabel={entityLabel}
-                  display={entityDisplay}
-                  typeRefs={entityTypeRefs}
-                  editable={!primary.isSaving}
-                  onOpen={openEntity}
-                  returnTo={buildCurrentRecordEntryPath(pathname, searchParams)}
-                  onCreated={handleEntityCreated}
-                />
-              }
-              right={
                 <PropertyFieldsSection
                   draft={primary.localValue}
                   editable={!primary.isSaving}
@@ -206,6 +187,25 @@ export function PropertyRecordView({
                       />
                     </FormField>
                   }
+                />
+              }
+              right={
+                <EntityPickerSection
+                  value={selectedEntityId}
+                  onChange={(id) =>
+                    primary.setLocalValue((previous) => ({
+                      ...previous,
+                      entityId: id ?? "",
+                    }))
+                  }
+                  onOptionSelected={selectEntity}
+                  selectedLabel={entityLabel}
+                  display={entityDisplay}
+                  typeRefs={entityTypeRefs}
+                  editable={!primary.isSaving}
+                  onOpen={openEntity}
+                  returnTo={buildCurrentRecordEntryPath(pathname, searchParams)}
+                  onCreated={handleEntityCreated}
                 />
               }
             />
