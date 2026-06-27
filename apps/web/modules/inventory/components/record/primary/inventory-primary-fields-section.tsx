@@ -103,6 +103,10 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={5} row={6} colSpan={4}>
               <FreightReadonlyField value={record.freight} />
             </CellAt>
+            {/* Merged, beneath Cost */}
+            <CellAt col={1} row={7} colSpan={4}>
+              <MergedField wasMerged={record.wasMerged} />
+            </CellAt>
           </InventoryFieldGrid>
         }
         right={
@@ -143,15 +147,12 @@ export function InventoryPrimaryFieldsSection({
 
       <RecordSectionDivider />
 
-      {/* Read-only metadata band: Merged · Created · Updated · Created by · Updated by */}
+      {/* Read-only metadata band: Created · Updated · Created by · Updated by */}
       <InventoryFieldGrid>
-        <CellAt col={1} row={1} colSpan={2}>
-          <MergedField wasMerged={record.wasMerged} />
-        </CellAt>
-        <CellAt col={3} row={1} colSpan={2}>
+        <CellAt col={1} row={1} colSpan={4}>
           <CreatedAtField value={record.createdAt} />
         </CellAt>
-        <CellAt col={5} row={1} colSpan={2}>
+        <CellAt col={5} row={1} colSpan={4}>
           <UpdatedAtField value={record.updatedAt} />
         </CellAt>
         <CellAt col={1} row={2} colSpan={4}>
