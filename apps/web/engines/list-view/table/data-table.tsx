@@ -233,10 +233,16 @@ export function DataTable<TRow extends DataTableRow>({
   const canToggleSelection = selection ? selection.canToggleSelection ?? true : false
   const isRowSelectable = (row: TRow) =>
     selection?.isRowSelectable ? selection.isRowSelectable(row) : true
+  // Row-click toggles selection on read-only selectable grids. The editable
+  // variant is the exception: its data cells host inline editors, so clicking a
+  // cell must NOT toggle selection — there the checkbox is the sole toggle and
+  // the row body stays free for editing.
   const activateRow = selection
-    ? (row: TRow) => {
-        if (canToggleSelection && isRowSelectable(row)) selection.onToggleRow(row.id)
-      }
+    ? isEditable
+      ? undefined
+      : (row: TRow) => {
+          if (canToggleSelection && isRowSelectable(row)) selection.onToggleRow(row.id)
+        }
     : onRowClick
   const interactive = Boolean(activateRow)
   const hasRowActions = Boolean(rowActions)
@@ -330,7 +336,7 @@ export function DataTable<TRow extends DataTableRow>({
                   role={interactive ? "button" : undefined}
                   tabIndex={interactive ? 0 : undefined}
                   aria-label={interactive ? getRowAriaLabel?.(row) : undefined}
-                  aria-pressed={selection ? selected : undefined}
+                  aria-pressed={interactive && selection ? selected : undefined}
                   onClick={interactive ? () => activateRow?.(row) : undefined}
                   onKeyDown={
                     interactive

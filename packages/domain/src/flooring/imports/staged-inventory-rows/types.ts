@@ -4,7 +4,6 @@ export type StagedInventoryRow = {
   id: string
   importEntryId: string
   importNumber: number
-  filterRowId: string
   productId: string
   productName: string
   categoryId: string

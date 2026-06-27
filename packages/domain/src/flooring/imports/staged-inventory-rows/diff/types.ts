@@ -1,10 +1,9 @@
 import type { FlooringStagedRowStatus } from "../types.js"
 import type { StagedInventoryForm } from "../types.js"
-import type { StagedInventoryFiltersDiff } from "../../staged-inventory-filter-rows/diff/types.js"
 
 export type StagedInventoryRowDraft = {
   tempId: string
-  filterRowId: string
+  productId: string
   form: StagedInventoryForm
 }
 
@@ -25,7 +24,6 @@ export type StagedInventoryRowsDiff = {
 
 export type DiffExistingStagedInventoryRow = {
   id: string
-  filterRowId: string
   status: FlooringStagedRowStatus
   isImported: boolean
 }
@@ -45,18 +43,6 @@ export type StagedInventoryRowDiffValidationIssue =
       rowId: string
       status: FlooringStagedRowStatus
     }
-  | {
-      code: "STAGED_ROW_PARENT_NOT_FOUND"
-      filterRowId: string
-      rowTempId: string | null
-      rowId: string | null
-    }
-  | {
-      code: "STAGED_ROW_PARENT_BEING_DELETED"
-      filterRowId: string
-      rowTempId: string | null
-      rowId: string | null
-    }
 
 export function describeStagedInventoryRowDiffIssue(
   issue: StagedInventoryRowDiffValidationIssue,
@@ -68,10 +54,6 @@ export function describeStagedInventoryRowDiffIssue(
       return `Staged row ${issue.rowId} is ${issue.status.toLowerCase()} and can't be edited.`
     case "STAGED_ROW_DELETE_BLOCKED_NOT_DRAFT":
       return `Staged row ${issue.rowId} is ${issue.status.toLowerCase()} and can't be deleted.`
-    case "STAGED_ROW_PARENT_NOT_FOUND":
-      return `Staged row references filter row ${issue.filterRowId}, which does not exist.`
-    case "STAGED_ROW_PARENT_BEING_DELETED":
-      return `Staged row's parent filter row ${issue.filterRowId} is being deleted; delete the staged row too.`
   }
 }
 
@@ -80,5 +62,3 @@ export function describeStagedInventoryRowDiffIssues(
 ): string {
   return issues.map(describeStagedInventoryRowDiffIssue).join(" ")
 }
-
-export type StagedInventoryRowsDiffContextFilterDiff = StagedInventoryFiltersDiff

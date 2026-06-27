@@ -141,8 +141,8 @@ describe("field classification", () => {
 
   it("STAGED_PARENT_OWNED_FIELDS contains warehouseId (pins the immutability invariant)", () => {
     expect(STAGED_PARENT_OWNED_FIELDS).toContain("warehouseId")
-    expect(STAGED_PARENT_OWNED_FIELDS).toContain("filterRowId")
     expect(STAGED_PARENT_OWNED_FIELDS).toContain("productId")
+    expect(STAGED_PARENT_OWNED_FIELDS).not.toContain("filterRowId")
   })
 
   it("STAGED_LATCH_FIELDS contains only isImported", () => {

@@ -22,7 +22,6 @@ export function normalizeStagedInventoryRow(
     id: row.id,
     importEntryId: row.importEntryId,
     importNumber: row.importEntry.importNumber,
-    filterRowId: row.filterRowId,
     productId: row.productId,
     productName: buildFlooringProductDisplayName({
       name: row.product.name,
@@ -33,9 +32,9 @@ export function normalizeStagedInventoryRow(
     categoryName: row.product.category.name,
     categorySlug: row.product.category.slug,
     // stockUnitName / stockUnitAbbrev are sourced from the row's own
-    // snapshot columns (stamped at create-time from the parent filter
-    // row), not from the product join. Keeps the read shape stable
-    // against later product edits.
+    // snapshot columns (stamped at create-time from the row's product),
+    // not from the product join. Keeps the read shape stable against
+    // later product edits.
     stockUnitName: row.stockUnitName ?? "",
     stockUnitAbbrev: row.stockUnitAbbrev ?? "",
     rollPrefix: row.rollPrefix,
@@ -61,18 +60,6 @@ export async function listStagedInventoryByImport(
 ): Promise<StagedInventoryRecord[]> {
   const rows = await client.flooringImportStagedInventoryRow.findMany({
     where: { importEntryId },
-    select: stagedInventoryRowSelect,
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-  })
-  return rows.map(normalizeStagedInventoryRow)
-}
-
-export async function listStagedInventoryByFilterRow(
-  filterRowId: string,
-  client: StagedInventoryDbClient = db,
-): Promise<StagedInventoryRecord[]> {
-  const rows = await client.flooringImportStagedInventoryRow.findMany({
-    where: { filterRowId },
     select: stagedInventoryRowSelect,
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
   })

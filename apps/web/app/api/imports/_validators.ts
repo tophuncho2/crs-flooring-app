@@ -258,7 +258,7 @@ function shapeStagedRowDraft(raw: unknown, idx: number): StagedInventoryRowDraft
   const row = requireStagedObject(raw, `rows.added[${idx}]`)
   return {
     tempId: requireStagedString(row.tempId, `rows.added[${idx}].tempId`),
-    filterRowId: requireStagedString(row.filterRowId, `rows.added[${idx}].filterRowId`),
+    productId: requireStagedString(row.productId, `rows.added[${idx}].productId`),
     form: shapeStagedForm(row.form, `rows.added[${idx}].form`),
   }
 }
@@ -298,10 +298,10 @@ function shapeRowsSlice(raw: unknown): StagedInventoryRowsDiff {
  * that backs `PATCH /api/imports/[id]/staged-inventory/section`.
  *
  * Body-shape validation only — domain rules (duplicate product,
- * locked-with-children, delete-blocked, unknown product, non-DRAFT
- * edits, orphaned-parent rows, etc.) are evaluated by
- * `validateStagedInventoryFiltersDiff` + `validateStagedInventoryRowsDiff`
- * inside `saveImportStagedInventorySectionUseCase`.
+ * category-filter-locked-after-create, unknown product, non-DRAFT
+ * edits, etc.) are evaluated by `validateStagedInventoryFiltersDiff` +
+ * `validateStagedInventoryRowsDiff` inside
+ * `saveImportStagedInventorySectionUseCase`.
  */
 export function validateImportStagedInventorySectionDiffBody(
   body: Record<string, unknown>,

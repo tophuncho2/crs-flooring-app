@@ -48,7 +48,6 @@ function loadedRow(overrides: Record<string, unknown> = {}) {
   return {
     id: ROW_ID_A,
     importEntryId: IMPORT_ID,
-    filterRowId: "filter-1",
     productId: "product-1",
     warehouseId: "wh-staged-snapshot",
     rollPrefix: "ROLL#",

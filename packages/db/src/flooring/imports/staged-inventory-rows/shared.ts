@@ -11,16 +11,6 @@ export const stagedInventoryRowSelect = {
       importNumber: true,
     },
   },
-  filterRowId: true,
-  filterRow: {
-    select: {
-      id: true,
-      productId: true,
-      stockOrdered: true,
-      stockUnitName: true,
-      stockUnitAbbrev: true,
-    },
-  },
   productId: true,
   product: {
     select: {

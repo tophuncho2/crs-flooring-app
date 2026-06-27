@@ -50,7 +50,6 @@ function readyStagedRow(overrides: Record<string, unknown> = {}) {
     id: ROW_ID_A,
     importEntryId: IMPORT_ID,
     importNumber: 1,
-    filterRowId: "filter-1",
     productId: "product-1",
     productName: "Product",
     categoryId: "cat-1",

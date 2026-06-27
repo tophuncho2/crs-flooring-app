@@ -139,6 +139,9 @@ beforeEach(() => {
   )
 
   getImportByIdMock.mockResolvedValue(fakeImport())
+  // Default: any requested product resolves to a stub with that id, so the
+  // batch-fetch + snapshot resolution succeeds for filter AND staged products.
+  getProductByIdMock.mockImplementation(async (id: string) => fakeProduct({ id }))
   listFilterRowDiffSummariesByImportMock.mockResolvedValue([])
   listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([])
   applyImportStagedInventorySectionDiffMock.mockResolvedValue({
@@ -215,7 +218,7 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
 
   it("rejects a modified filter row with an invalid form (refKind=id)", async () => {
     listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1", hasChildren: false },
+      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1" },
     ])
     try {
       await runSave({
@@ -238,9 +241,6 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
   })
 
   it("rejects an added staged row with an invalid form (refKind=tempId)", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1", hasChildren: false },
-    ])
     try {
       await runSave({
         importEntryId: IMPORT_ID,
@@ -250,7 +250,7 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
             added: [
               {
                 tempId: "tmp-row",
-                filterRowId: "filter-1",
+                productId: "product-1",
                 form: rowForm({ startingStock: "" }),
               },
             ],
@@ -269,11 +269,8 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
   })
 
   it("rejects a modified staged row with an invalid form (refKind=id)", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1", hasChildren: false },
-    ])
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "row-1", filterRowId: "filter-1", status: "DRAFT", isImported: false },
+      { id: "row-1", status: "DRAFT", isImported: false },
     ])
     try {
       await runSave({
@@ -320,12 +317,12 @@ describe("saveImportStagedInventorySectionUseCase — product batch-fetch", () =
   })
 
   it("deduplicates product fetches across added + modified filter diffs", async () => {
-    // The batch-fetch (Step 4) runs BEFORE the diff validators (Step 6),
-    // so the fetch is observable even when the post-diff projection has a
-    // duplicate-product violation. The test asserts fetch deduplication;
-    // the downstream validator firing is incidental.
+    // The batch-fetch runs BEFORE the diff validators, so the fetch is
+    // observable even when the post-diff projection has a duplicate-product
+    // violation. The test asserts fetch deduplication; the downstream
+    // validator firing is incidental.
     listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-existing", productId: "product-x", categoryFilterId: "cat-1", hasChildren: false },
+      { id: "filter-existing", productId: "product-x", categoryFilterId: "cat-1" },
     ])
     getProductByIdMock.mockResolvedValue(fakeProduct({ id: "product-shared" }))
 
@@ -349,7 +346,7 @@ describe("saveImportStagedInventorySectionUseCase — product batch-fetch", () =
   })
 })
 
-describe("saveImportStagedInventorySectionUseCase — cross-slice diff validators", () => {
+describe("saveImportStagedInventorySectionUseCase — diff validators", () => {
   it("surfaces SECTION_FILTER_DIFF_VALIDATION_FAILED when domain filters validator returns issues", async () => {
     // Force the duplicate-product check by adding two filter rows for the
     // same product (and providing both products in the batch-fetch).
@@ -379,9 +376,10 @@ describe("saveImportStagedInventorySectionUseCase — cross-slice diff validator
     expect(applyImportStagedInventorySectionDiffMock).not.toHaveBeenCalled()
   })
 
-  it("surfaces SECTION_ROW_DIFF_VALIDATION_FAILED when staged-row's parent is unsaved (unsaved-parent rule)", async () => {
-    // No existing filter rows; added staged row's filterRowId doesn't match anything.
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([])
+  it("surfaces SECTION_ROW_DIFF_VALIDATION_FAILED when a modified staged row is not DRAFT", async () => {
+    listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
+      { id: "row-1", status: "QUEUED", isImported: true },
+    ])
 
     try {
       await runSave({
@@ -389,8 +387,8 @@ describe("saveImportStagedInventorySectionUseCase — cross-slice diff validator
         diff: {
           filters: { added: [], modified: [], deleted: [] },
           rows: {
-            added: [{ tempId: "tmp", filterRowId: "unsaved-filter", form: rowForm() }],
-            modified: [],
+            added: [],
+            modified: [{ id: "row-1", form: rowForm({ startingStock: "9" }) }],
             deleted: [],
           },
         },
@@ -400,34 +398,25 @@ describe("saveImportStagedInventorySectionUseCase — cross-slice diff validator
       if (!(error instanceof ImportStagedInventorySectionExecutionError)) throw error
       expect(error.code).toBe("SECTION_ROW_DIFF_VALIDATION_FAILED")
     }
+    expect(applyImportStagedInventorySectionDiffMock).not.toHaveBeenCalled()
   })
 })
 
 describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolution", () => {
-  it("snapshots stockUnit from the BATCH-FETCHED product for an added staged row under a MODIFIED filter", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-old", categoryFilterId: "cat-1", hasChildren: false },
-    ])
-    listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([])
-    getProductByIdMock.mockResolvedValueOnce(
-      fakeProduct({ id: "product-new", stockUnitName: "New Unit", stockUnitAbbrev: "nu" }),
+  it("snapshots stockUnit from the added staged row's OWN product (no filter dependency)", async () => {
+    getProductByIdMock.mockImplementation(async (id: string) =>
+      fakeProduct({ id, stockUnitName: "New Unit", stockUnitAbbrev: "nu" }),
     )
 
     await runSave({
       importEntryId: IMPORT_ID,
       diff: {
-        filters: {
-          added: [],
-          modified: [
-            { id: "filter-1", form: filterForm({ productId: "product-new" }) },
-          ],
-          deleted: [],
-        },
+        filters: { added: [], modified: [], deleted: [] },
         rows: {
           added: [
             {
               tempId: "tmp-row",
-              filterRowId: "filter-1",
+              productId: "product-new",
               form: rowForm({ startingStock: "7" }),
             },
           ],
@@ -445,64 +434,46 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
     const addedRow = args.rows.added[0]!
     expect(addedRow.tempId).toBe("tmp-row")
     expect(addedRow.input).toMatchObject({
-      filterRowId: "filter-1",
       productId: "product-new",
       warehouseId: WAREHOUSE_ID,
       stockUnitName: "New Unit",
       stockUnitAbbrev: "nu",
       startingStock: "7",
     })
+    // The staged row no longer carries a filter-row link.
+    expect(addedRow.input).not.toHaveProperty("filterRowId")
   })
 
-  it("snapshots stockUnit via the ENRICHMENT pass for an added staged row under an EXISTING (unchanged) filter", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-existing", categoryFilterId: "cat-1", hasChildren: false },
-    ])
-    listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([])
-    // No filter-row diff for "filter-1" — but the staged row references it.
-    // The use case should re-fetch product-existing in the enrichment pass.
-    getProductByIdMock.mockResolvedValueOnce(
-      fakeProduct({ id: "product-existing", stockUnitName: "Existing Unit", stockUnitAbbrev: "eu" }),
-    )
-
-    await runSave({
-      importEntryId: IMPORT_ID,
-      diff: {
-        filters: { added: [], modified: [], deleted: [] },
-        rows: {
-          added: [
-            { tempId: "tmp", filterRowId: "filter-1", form: rowForm() },
-          ],
-          modified: [],
-          deleted: [],
+  it("throws when an added staged row's product is missing", async () => {
+    getProductByIdMock.mockResolvedValue(null)
+    try {
+      await runSave({
+        importEntryId: IMPORT_ID,
+        diff: {
+          filters: { added: [], modified: [], deleted: [] },
+          rows: {
+            added: [{ tempId: "tmp", productId: "ghost", form: rowForm() }],
+            modified: [],
+            deleted: [],
+          },
         },
-      },
-    })
-
-    const args = applyImportStagedInventorySectionDiffMock.mock.calls[0]?.[1] as {
-      rows: { added: Array<{ input: Record<string, unknown> }> }
+      })
+      expect.fail("expected throw")
+    } catch (error) {
+      if (!(error instanceof ImportStagedInventorySectionExecutionError)) throw error
+      expect(error.payload).toMatchObject({ productId: "ghost" })
     }
-    expect(args.rows.added[0]!.input).toMatchObject({
-      productId: "product-existing",
-      stockUnitName: "Existing Unit",
-      stockUnitAbbrev: "eu",
-    })
+    expect(applyImportStagedInventorySectionDiffMock).not.toHaveBeenCalled()
   })
 
   it("normalizes empty form strings to null on added staged rows (rollNumber, dyeLot, location, note)", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1", hasChildren: false },
-    ])
-    listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([])
-    getProductByIdMock.mockResolvedValueOnce(fakeProduct({ id: "product-1" }))
-
     await runSave({
       importEntryId: IMPORT_ID,
       diff: {
         filters: { added: [], modified: [], deleted: [] },
         rows: {
           added: [
-            { tempId: "tmp", filterRowId: "filter-1", form: rowForm() },
+            { tempId: "tmp", productId: "product-1", form: rowForm() },
           ],
           modified: [],
           deleted: [],
@@ -523,19 +494,13 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
   })
 
   it("normalizes present cost/freight to canonical money strings on added staged rows", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1", hasChildren: false },
-    ])
-    listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([])
-    getProductByIdMock.mockResolvedValueOnce(fakeProduct({ id: "product-1" }))
-
     await runSave({
       importEntryId: IMPORT_ID,
       diff: {
         filters: { added: [], modified: [], deleted: [] },
         rows: {
           added: [
-            { tempId: "tmp", filterRowId: "filter-1", form: rowForm({ cost: "12.5", freight: "3" }) },
+            { tempId: "tmp", productId: "product-1", form: rowForm({ cost: "12.5", freight: "3" }) },
           ],
           modified: [],
           deleted: [],
@@ -551,11 +516,8 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
   })
 
   it("normalizes empty form strings to null on modified staged rows", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1", hasChildren: false },
-    ])
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "row-1", filterRowId: "filter-1", status: "DRAFT", isImported: false },
+      { id: "row-1", status: "DRAFT", isImported: false },
     ])
 
     await runSave({
@@ -578,8 +540,6 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
   })
 
   it("pre-assigns UUIDs to added filter and row drafts (returned via tempId structure)", async () => {
-    getProductByIdMock.mockResolvedValueOnce(fakeProduct({ id: "product-1" }))
-
     await runSave({
       importEntryId: IMPORT_ID,
       diff: {
@@ -620,10 +580,10 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
 
   it("passes deletes through unchanged for both slices", async () => {
     listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-old", productId: "p", categoryFilterId: "c", hasChildren: false },
+      { id: "filter-old", productId: "p", categoryFilterId: "c" },
     ])
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "row-old", filterRowId: "filter-old", status: "DRAFT", isImported: false },
+      { id: "row-old", status: "DRAFT", isImported: false },
     ])
 
     await runSave({

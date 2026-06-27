@@ -84,15 +84,26 @@ export function resolveEffectiveStatus(
 // --- Staged-row drafts (inline editing inside each filter row's expandable sub-grid) ---
 
 /**
+ * A product group's identity, used to seed a new staged-row draft. Carried so a
+ * new row stamps its own productId + display snapshots (staged rows attach to
+ * the import directly — there is no parent filter to inherit from).
+ */
+export type StagedRowProductSeed = {
+  productId: string
+  productName: string
+  stockUnitAbbrev: string
+}
+
+/**
  * Client-side draft for a staged inventory row. `clientId` doubles as the
- * local id the sub-grid uses; for existing server rows it's the row id, for
+ * local id the grid uses; for existing server rows it's the row id, for
  * new rows it's a `createLocalRecordRowId("import-staged-row")` value the
  * engine later maps to a server uuid via the diff response's `rowTempIdMap`.
  *
- * Only the 5 user-editable fields participate in the diff payload. The
- * read-only fields (status, isImported, productName, rollPrefix,
- * stockUnitAbbrev) are snapshots carried so the sub-grid can render them
- * without a parent join.
+ * `productId` is the row's own product (staged rows attach to the import, not
+ * a filter row); it + the read-only snapshots (status, isImported, productName,
+ * rollPrefix, stockUnitAbbrev) are carried so the grid renders without a join.
+ * Only the 7 user-editable fields participate in the diff payload.
  */
 export type ImportStagedRowDraft = {
   clientId: string
@@ -103,7 +114,8 @@ export type ImportStagedRowDraft = {
   dyeLot: string
   location: string
   note: string
-  // Read-only snapshots — never enter the diff payload.
+  // Carried snapshots — productId is sent on create; the rest are display-only.
+  productId: string
   status: FlooringStagedRowStatus
   isImported: boolean
   productName: string
@@ -121,6 +133,7 @@ export function toImportStagedRowDraft(row: StagedInventoryRow): ImportStagedRow
     dyeLot: row.dyeLot,
     location: row.location,
     note: row.note,
+    productId: row.productId,
     status: row.status,
     isImported: row.isImported,
     productName: row.productName,
@@ -130,7 +143,7 @@ export function toImportStagedRowDraft(row: StagedInventoryRow): ImportStagedRow
 }
 
 export function createImportStagedRowDraft(
-  filter: Pick<ImportFilterRowDraft, "productName" | "stockUnitAbbrev">,
+  seed: StagedRowProductSeed,
 ): ImportStagedRowDraft {
   return {
     clientId: createLocalRecordRowId("import-staged-row"),
@@ -141,11 +154,12 @@ export function createImportStagedRowDraft(
     dyeLot: "",
     location: "",
     note: "",
+    productId: seed.productId,
     status: "DRAFT",
     isImported: false,
-    productName: filter.productName,
+    productName: seed.productName,
     rollPrefix: "ROLL#",
-    stockUnitAbbrev: filter.stockUnitAbbrev,
+    stockUnitAbbrev: seed.stockUnitAbbrev,
   }
 }
 
@@ -161,6 +175,7 @@ export function duplicateImportStagedRowDraft(
     dyeLot: source.dyeLot,
     location: source.location,
     note: source.note,
+    productId: source.productId,
     status: "DRAFT",
     isImported: false,
     productName: source.productName,
@@ -171,7 +186,6 @@ export function duplicateImportStagedRowDraft(
 
 export function validateImportStagedRowDrafts(
   drafts: ImportStagedRowDraft[],
-  filterRowLabel: string,
 ): string {
   for (const [index, draft] of drafts.entries()) {
     if (draft.status !== "DRAFT") continue
@@ -185,7 +199,7 @@ export function validateImportStagedRowDrafts(
       note: draft.note,
     })
     if (issues.length > 0) {
-      return `${filterRowLabel} — row ${index + 1}: ${describeStagedInventoryValidationIssues(issues)}`
+      return `${draft.productName || "Staged"} — row ${index + 1}: ${describeStagedInventoryValidationIssues(issues)}`
     }
   }
   return ""
@@ -205,12 +219,8 @@ export function validateImportStagedRowDrafts(
  * save). `categoryFilterId` IS persisted — it's a real FK column on the
  * filter row, not UI-only narrowing.
  *
- * `stagedRows` is the nested list of staged-row drafts belonging to this
- * filter row. The combined section diff is built by walking both layers.
- * Per the unsaved-parent rule, `stagedRows` is only populated for filter
- * rows that exist on the server — local-only filter drafts always have
- * an empty `stagedRows` list (the sub-grid is gated behind a saved
- * parent at the component layer).
+ * A filter row IS a "Planned Import". Staged rows are held separately (flat,
+ * keyed by their own productId) and grouped against these at render time.
  */
 export type ImportFilterRowDraft = {
   clientId: string
@@ -221,19 +231,26 @@ export type ImportFilterRowDraft = {
   stockUnitAbbrev: string
   stockOrdered: string
   /**
-   * Server-snapshot read-only fields carried so the parent grid can
-   * render the remaining-stock + child-count columns + gate
-   * remove-button / product-picker locks. Never sent in the diff.
+   * Server-snapshot read-only fields carried so the grid can render the
+   * remaining-stock column. Never sent in the diff.
    */
-  childRowCount: number
   startingStockSum: string
   remainingStock: string
+}
+
+/**
+ * The staged-inventory section's full local state: the Planned Imports (filter
+ * rows) and the Staged Inventory rows as two flat lists. Both slices save
+ * atomically through the one section diff; the Staged Inventory view groups the
+ * staged rows against the planned imports by productId at render time.
+ */
+export type ImportSectionLocalState = {
+  filters: ImportFilterRowDraft[]
   stagedRows: ImportStagedRowDraft[]
 }
 
 export function toImportFilterRowDraft(
   row: StagedInventoryFilterRow,
-  stagedRows: StagedInventoryRow[] = [],
 ): ImportFilterRowDraft {
   return {
     clientId: row.id,
@@ -243,26 +260,19 @@ export function toImportFilterRowDraft(
     stockUnitName: row.stockUnitName,
     stockUnitAbbrev: row.stockUnitAbbrev,
     stockOrdered: row.stockOrdered,
-    childRowCount: row.childRowCount,
     startingStockSum: row.startingStockSum,
     remainingStock: row.remainingStock,
-    stagedRows: stagedRows.map(toImportStagedRowDraft),
   }
 }
 
-export function toImportFilterRowDrafts(serverValue: {
+export function toImportSectionLocalState(serverValue: {
   filterRows: StagedInventoryFilterRow[]
   stagedRows: StagedInventoryRow[]
-}): ImportFilterRowDraft[] {
-  const stagedByFilterId = new Map<string, StagedInventoryRow[]>()
-  for (const row of serverValue.stagedRows) {
-    const list = stagedByFilterId.get(row.filterRowId) ?? []
-    list.push(row)
-    stagedByFilterId.set(row.filterRowId, list)
+}): ImportSectionLocalState {
+  return {
+    filters: serverValue.filterRows.map(toImportFilterRowDraft),
+    stagedRows: serverValue.stagedRows.map(toImportStagedRowDraft),
   }
-  return serverValue.filterRows.map((filter) =>
-    toImportFilterRowDraft(filter, stagedByFilterId.get(filter.id) ?? []),
-  )
 }
 
 export function createImportFilterRowDraft(clientId: string): ImportFilterRowDraft {
@@ -274,28 +284,21 @@ export function createImportFilterRowDraft(clientId: string): ImportFilterRowDra
     stockUnitName: "",
     stockUnitAbbrev: "",
     stockOrdered: "",
-    childRowCount: 0,
     startingStockSum: "0.00",
     remainingStock: "",
-    stagedRows: [],
   }
 }
 
-export function validateImportFilterRowDrafts(drafts: ImportFilterRowDraft[]): string {
-  for (const [index, draft] of drafts.entries()) {
+export function validateImportSection(state: ImportSectionLocalState): string {
+  for (const [index, draft] of state.filters.entries()) {
     const filterIssues = validateStagedInventoryFilterForm({
       categoryFilterId: draft.categoryFilterId,
       productId: draft.productId,
       stockOrdered: draft.stockOrdered,
     })
     if (filterIssues.length > 0) {
-      return `Filter row ${index + 1}: ${describeStagedInventoryFilterValidationIssues(filterIssues)}`
+      return `Planned import ${index + 1}: ${describeStagedInventoryFilterValidationIssues(filterIssues)}`
     }
-    const stagedIssue = validateImportStagedRowDrafts(
-      draft.stagedRows,
-      `Filter row ${index + 1}`,
-    )
-    if (stagedIssue) return stagedIssue
   }
-  return ""
+  return validateImportStagedRowDrafts(state.stagedRows)
 }

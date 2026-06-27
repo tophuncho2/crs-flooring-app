@@ -25,7 +25,6 @@ export type DiffExistingStagedInventoryFilterRow = {
   id: string
   productId: string
   categoryFilterId: string | null
-  hasChildren: boolean
 }
 
 export type StagedInventoryFilterDiffValidationIssue =
@@ -36,15 +35,7 @@ export type StagedInventoryFilterDiffValidationIssue =
       rowTempId: string | null
     }
   | {
-      code: "FILTER_PRODUCT_LOCKED_WITH_CHILDREN"
-      rowId: string
-    }
-  | {
       code: "FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE"
-      rowId: string
-    }
-  | {
-      code: "FILTER_DELETE_BLOCKED_BY_CHILDREN"
       rowId: string
     }
   | {
@@ -60,12 +51,8 @@ export function describeStagedInventoryFilterDiffIssue(
   switch (issue.code) {
     case "FILTER_DUPLICATE_PRODUCT":
       return `Product ${issue.productId} already has a filter row in this import.`
-    case "FILTER_PRODUCT_LOCKED_WITH_CHILDREN":
-      return `Filter row ${issue.rowId} has staged inventory rows; its product can't change.`
     case "FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE":
       return `Filter row ${issue.rowId} category filter is immutable after the row is saved.`
-    case "FILTER_DELETE_BLOCKED_BY_CHILDREN":
-      return `Filter row ${issue.rowId} has staged inventory rows; delete those first.`
     case "FILTER_UNKNOWN_PRODUCT":
       return `Referenced product ${issue.productId} does not exist.`
   }

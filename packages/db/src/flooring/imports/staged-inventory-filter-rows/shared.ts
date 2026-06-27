@@ -25,13 +25,6 @@ export const stagedInventoryFilterRowSelect = {
   stockUnitAbbrev: true,
   createdAt: true,
   updatedAt: true,
-  // Children's startingStock is the input to the normalizer's
-  // remainingStock + startingStockSum computation. childRowCount falls
-  // out of the array length. Filter rows under an import are bounded
-  // (~tens), so a single-query include beats a separate aggregate.
-  stagedInventoryRows: {
-    select: { startingStock: true },
-  },
 } as const satisfies Prisma.FlooringImportStagedInventoryFilterRowSelect
 
 export type StagedInventoryFilterRowPayload =

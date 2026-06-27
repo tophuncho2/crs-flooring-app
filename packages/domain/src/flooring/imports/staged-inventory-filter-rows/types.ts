@@ -12,7 +12,6 @@ export type StagedInventoryFilterRow = {
   stockOrdered: string
   stockUnitName: string
   stockUnitAbbrev: string
-  childRowCount: number
   startingStockSum: string
   remainingStock: string
   createdAt: string

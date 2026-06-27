@@ -1,23 +1,3 @@
-export function hasChildren(row: { childRowCount: number }): boolean {
-  return row.childRowCount > 0
-}
-
-export function canDeleteFilterRow(row: { childRowCount: number }): boolean {
-  return !hasChildren(row)
-}
-
-export function canEditFilterProduct(row: { childRowCount: number }): boolean {
-  return !hasChildren(row)
-}
-
-export function buildFilterProductLockedMessage(): string {
-  return "Filter row product can't change once staged inventory rows reference it."
-}
-
-export function buildFilterDeleteBlockedMessage(): string {
-  return "Delete the staged inventory rows under this filter before removing it."
-}
-
 export const FILTER_USER_EDITABLE_FIELDS = [
   "categoryFilterId",
   "productId",

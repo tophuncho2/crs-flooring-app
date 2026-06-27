@@ -115,6 +115,7 @@ export async function saveImportStagedInventorySectionUseCase(
       new Set([
         ...input.diff.filters.added.map((d) => d.form.productId),
         ...input.diff.filters.modified.map((m) => m.form.productId),
+        ...input.diff.rows.added.map((d) => d.productId),
       ]),
     )
     const products = await Promise.all(
@@ -148,7 +149,6 @@ export async function saveImportStagedInventorySectionUseCase(
     const filterIssues = validateStagedInventoryFiltersDiff(input.diff.filters, {
       existing: existingFilters,
       knownProductIds: distinctProductIds,
-      stagedRows: { diff: input.diff.rows, existing: existingStagedRows },
     })
     if (filterIssues.length > 0) {
       throw new ImportStagedInventorySectionExecutionError({
@@ -160,8 +160,6 @@ export async function saveImportStagedInventorySectionUseCase(
     }
     const rowIssues = validateStagedInventoryRowsDiff(input.diff.rows, {
       existing: existingStagedRows,
-      filterDiff: input.diff.filters,
-      existingFilterRowIds: existingFilters.map((f) => f.id),
     })
     if (rowIssues.length > 0) {
       throw new ImportStagedInventorySectionExecutionError({
@@ -175,33 +173,16 @@ export async function saveImportStagedInventorySectionUseCase(
     const filtersAddedWithIds = assignDraftIds(input.diff.filters.added, randomUUID)
     const rowsAddedWithIds = assignDraftIds(input.diff.rows.added, randomUUID)
 
-    const modifiedFiltersById = new Map(
-      input.diff.filters.modified.map((m) => [m.id, m]),
-    )
-    function resolveFilterProductId(filterRowId: string): string | null {
-      const modified = modifiedFiltersById.get(filterRowId)
-      if (modified) return modified.form.productId
-      const existing = existingFilters.find((row) => row.id === filterRowId)
-      return existing?.productId ?? null
-    }
-
+    // Staged rows attach directly to the import and carry their own
+    // productId; the stockUnit snapshot is resolved from that product
+    // (already fetched + verified into snapshotByProductId above).
     const stagedRowAddedInputs = rowsAddedWithIds.map((draft) => {
-      const productId = resolveFilterProductId(draft.filterRowId)
-      if (!productId) {
-        throw new ImportStagedInventorySectionExecutionError({
-          code: "SECTION_ROW_DIFF_VALIDATION_FAILED",
-          message: "Staged row's parent filter row could not be resolved.",
-          status: 500,
-          payload: { filterRowId: draft.filterRowId, tempId: draft.tempId },
-        })
-      }
-      const snapshot = snapshotByProductId.get(productId)
+      const snapshot = snapshotByProductId.get(draft.productId)
       return {
         id: draft.id,
         tempId: draft.tempId,
         input: {
-          filterRowId: draft.filterRowId,
-          productId,
+          productId: draft.productId,
           warehouseId: parent.warehouseId,
           stockUnitName: snapshot?.stockUnitName ?? null,
           stockUnitAbbrev: snapshot?.stockUnitAbbrev ?? null,
@@ -213,56 +194,8 @@ export async function saveImportStagedInventorySectionUseCase(
           freight: toStagedMoneyOrNull(draft.form.freight),
           note: draft.form.note || null,
         },
-        _needsExistingFilterSnapshot: !snapshot,
-        _filterRowIdForEnrichment: draft.filterRowId,
       }
     })
-
-    const missingFilterRowIds = Array.from(
-      new Set(
-        stagedRowAddedInputs
-          .filter((entry) => entry._needsExistingFilterSnapshot)
-          .map((entry) => entry._filterRowIdForEnrichment),
-      ),
-    )
-    if (missingFilterRowIds.length > 0) {
-      const productIdByFilterRowId = new Map<string, string>()
-      for (const summary of existingFilters) {
-        if (missingFilterRowIds.includes(summary.id)) {
-          productIdByFilterRowId.set(summary.id, summary.productId)
-        }
-      }
-      const distinctMissingProductIds = Array.from(
-        new Set(Array.from(productIdByFilterRowId.values())),
-      )
-      const missingProducts = await Promise.all(
-        distinctMissingProductIds.map(async (productId) => ({
-          productId,
-          product: await getProductById(productId, c),
-        })),
-      )
-      for (const entry of missingProducts) {
-        if (!entry.product) {
-          throw new ImportStagedInventorySectionExecutionError({
-            code: "SECTION_ROW_VALIDATION_FAILED",
-            message: "Existing filter row's product no longer exists.",
-            status: 400,
-            payload: { productId: entry.productId },
-          })
-        }
-        snapshotByProductId.set(entry.productId, {
-          stockUnitName: entry.product.stockUnitName ?? null,
-          stockUnitAbbrev: entry.product.stockUnitAbbrev ?? null,
-        })
-      }
-      for (const entry of stagedRowAddedInputs) {
-        if (!entry._needsExistingFilterSnapshot) continue
-        const snapshot = snapshotByProductId.get(entry.input.productId)
-        if (!snapshot) continue
-        entry.input.stockUnitName = snapshot.stockUnitName
-        entry.input.stockUnitAbbrev = snapshot.stockUnitAbbrev
-      }
-    }
 
     // Aggregate-root actor: a successful section save (even an empty diff)
     // stamps the parent import's `updatedBy`/`updatedAt`. Runs after all

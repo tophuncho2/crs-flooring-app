@@ -84,7 +84,6 @@ export const STAGED_USER_EDITABLE_FIELDS = [
 
 export const STAGED_PARENT_OWNED_FIELDS = [
   "warehouseId",
-  "filterRowId",
   "productId",
   "stockUnitName",
   "stockUnitAbbrev",

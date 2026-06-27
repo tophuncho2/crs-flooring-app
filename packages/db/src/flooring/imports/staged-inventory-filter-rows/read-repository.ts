@@ -17,22 +17,37 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
   return value.toString()
 }
 
-function sumChildStartingStock(
-  rows: ReadonlyArray<{ startingStock: { toString(): string } }>,
-): string {
-  let total = 0
-  for (const child of rows) {
-    const parsed = Number(child.startingStock.toString())
-    if (Number.isFinite(parsed)) total += parsed
+/**
+ * Sum staged-inventory startingStock per productId across an import.
+ *
+ * Staged rows no longer FK-link to a filter row; the filter↔staged
+ * relationship is now computed by productId (filter rows are unique per
+ * import+product, so the per-product sum is exactly the old per-filter
+ * sum). This feeds each filter's remainingStock + startingStockSum.
+ */
+async function sumStartingStockByProduct(
+  importEntryId: string,
+  client: StagedInventoryFilterDbClient,
+): Promise<Map<string, number>> {
+  const rows = await client.flooringImportStagedInventoryRow.findMany({
+    where: { importEntryId },
+    select: { productId: true, startingStock: true },
+  })
+  const byProduct = new Map<string, number>()
+  for (const row of rows) {
+    const parsed = Number(row.startingStock.toString())
+    if (!Number.isFinite(parsed)) continue
+    byProduct.set(row.productId, (byProduct.get(row.productId) ?? 0) + parsed)
   }
-  return total.toFixed(2)
+  return byProduct
 }
 
 export function normalizeStagedInventoryFilterRow(
   row: StagedInventoryFilterRowPayload,
+  startingStockSumForProduct: number,
 ): StagedInventoryFilterRecord {
   const stockOrdered = toDecimalString(row.stockOrdered)
-  const startingStockSum = sumChildStartingStock(row.stagedInventoryRows)
+  const startingStockSum = startingStockSumForProduct.toFixed(2)
   const remainingStock = computeFilterRemainingStock({
     stockOrdered,
     childStartingStockSum: startingStockSum,
@@ -55,7 +70,6 @@ export function normalizeStagedInventoryFilterRow(
     stockOrdered,
     stockUnitName: row.stockUnitName ?? "",
     stockUnitAbbrev: row.stockUnitAbbrev ?? "",
-    childRowCount: row.stagedInventoryRows.length,
     startingStockSum,
     remainingStock,
     createdAt: row.createdAt.toISOString(),
@@ -67,12 +81,17 @@ export async function listFilterRowsByImport(
   importEntryId: string,
   client: StagedInventoryFilterDbClient = db,
 ): Promise<StagedInventoryFilterRecord[]> {
-  const rows = await client.flooringImportStagedInventoryFilterRow.findMany({
-    where: { importEntryId },
-    select: stagedInventoryFilterRowSelect,
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-  })
-  return rows.map(normalizeStagedInventoryFilterRow)
+  const [rows, sumByProduct] = await Promise.all([
+    client.flooringImportStagedInventoryFilterRow.findMany({
+      where: { importEntryId },
+      select: stagedInventoryFilterRowSelect,
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    }),
+    sumStartingStockByProduct(importEntryId, client),
+  ])
+  return rows.map((row) =>
+    normalizeStagedInventoryFilterRow(row, sumByProduct.get(row.productId) ?? 0),
+  )
 }
 
 export async function getFilterRowById(
@@ -83,21 +102,20 @@ export async function getFilterRowById(
     where: { id },
     select: stagedInventoryFilterRowSelect,
   })
-  return row ? normalizeStagedInventoryFilterRow(row) : null
+  if (!row) return null
+  const sumByProduct = await sumStartingStockByProduct(row.importEntryId, client)
+  return normalizeStagedInventoryFilterRow(row, sumByProduct.get(row.productId) ?? 0)
 }
 
 /**
  * Slim read used by the application save use case to evaluate diff
- * rules (product-locked-with-children,
- * category-filter-locked-after-create, delete-blocked-by-children).
- * Skips the heavy product / category / unit joins; child rows are
- * included only to count them.
+ * rules (duplicate-product, category-filter-locked-after-create,
+ * unknown-product). Skips the heavy product / category / unit joins.
  */
 export type FilterRowDiffSummary = {
   id: string
   productId: string
   categoryFilterId: string | null
-  hasChildren: boolean
 }
 
 export async function listFilterRowDiffSummariesByImport(
@@ -110,13 +128,11 @@ export async function listFilterRowDiffSummariesByImport(
       id: true,
       productId: true,
       categoryFilterId: true,
-      _count: { select: { stagedInventoryRows: true } },
     },
   })
   return rows.map((row) => ({
     id: row.id,
     productId: row.productId,
     categoryFilterId: row.categoryFilterId,
-    hasChildren: row._count.stagedInventoryRows > 0,
   }))
 }

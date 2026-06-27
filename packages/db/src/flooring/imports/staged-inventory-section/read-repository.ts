@@ -19,14 +19,12 @@ export async function listStagedInventoryRowDiffSummariesByImport(
     where: { importEntryId },
     select: {
       id: true,
-      filterRowId: true,
       status: true,
       isImported: true,
     },
   })
   return rows.map((row) => ({
     id: row.id,
-    filterRowId: row.filterRowId,
     status: row.status,
     isImported: row.isImported,
   }))

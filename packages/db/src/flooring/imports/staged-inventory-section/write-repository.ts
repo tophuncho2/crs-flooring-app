@@ -30,15 +30,13 @@ import type {
  *    and the per-row form validators.
  *  - Pre-assigned UUIDs to added entries on both slices via
  *    `assignDraftIds`.
- *  - Resolved every staged-row added entry's parent filter row to its
- *    POST-DIFF productId + stockUnit snapshot, and stamped the
- *    `warehouseId` from the parent import. The unsaved-parent rule
- *    means `filterRowId` is always a real id (existing or just-deleted
- *    is impossible — the domain validator rejects).
+ *  - Resolved every staged-row added entry's own productId to its
+ *    stockUnit snapshot, and stamped the `warehouseId` from the parent
+ *    import. Staged rows attach directly to the import — there is no
+ *    longer a filter-row FK.
  *
  * Execution order:
- *  1. Delete staged rows in `rows.deleted` (must precede filter deletes
- *     because of the FK RESTRICT on `filterRowId`).
+ *  1. Delete staged rows in `rows.deleted`.
  *  2. Delete filter rows in `filters.deleted`.
  *  3. Build `filterTempIdMap` from `filters.added`; `createMany` filters.
  *  4. Per-row update each `filters.modified`.
@@ -110,8 +108,8 @@ export async function applyImportStagedInventorySectionDiff(
   tx: Prisma.TransactionClient,
   input: ApplyImportStagedInventorySectionDiffInput,
 ): Promise<ApplyImportStagedInventorySectionDiffResult> {
-  // Step 1 — delete staged rows first (FK RESTRICT from staged rows →
-  // filter rows means filter deletes would fail otherwise).
+  // Step 1 — delete staged rows. Staged rows and filter rows are
+  // independent now (no FK between them); order is not significant.
   if (input.rows.deleted.length > 0) {
     await tx.flooringImportStagedInventoryRow.deleteMany({
       where: { id: { in: input.rows.deleted.map((d) => d.id) } },
@@ -153,8 +151,8 @@ export async function applyImportStagedInventorySectionDiff(
   }
 
   // Step 5 — create staged rows with pre-assigned ids; build tempId map.
-  // Snapshots (productId, stockUnit*, warehouseId, filterRowId) are
-  // already resolved by the application layer.
+  // Snapshots (productId, stockUnit*, warehouseId) are already resolved
+  // by the application layer.
   const rowTempIdMap: Record<string, string> = {}
   for (const draft of input.rows.added) {
     rowTempIdMap[draft.tempId] = draft.id
@@ -164,7 +162,6 @@ export async function applyImportStagedInventorySectionDiff(
       data: input.rows.added.map((draft) => ({
         id: draft.id,
         importEntryId: input.importEntryId,
-        filterRowId: draft.input.filterRowId,
         productId: draft.input.productId,
         warehouseId: draft.input.warehouseId,
         stockUnitName: draft.input.stockUnitName,

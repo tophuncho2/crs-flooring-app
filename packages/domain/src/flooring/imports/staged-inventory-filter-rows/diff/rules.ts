@@ -3,10 +3,6 @@ import type {
   StagedInventoryFilterDiffValidationIssue,
   StagedInventoryFiltersDiff,
 } from "./types.js"
-import type {
-  DiffExistingStagedInventoryRow,
-  StagedInventoryRowsDiff,
-} from "../../staged-inventory-rows/diff/types.js"
 
 type ProjectedRow = {
   origin: "existing" | "modified" | "added"
@@ -116,79 +112,9 @@ function findLockedCategoryFilterChanges(
   return issues
 }
 
-function findDeletesBlockedByChildren(
-  diff: StagedInventoryFiltersDiff,
-  existing: DiffExistingStagedInventoryFilterRow[],
-  stagedRowsDiff: StagedInventoryRowsDiff,
-  existingStagedRows: DiffExistingStagedInventoryRow[],
-): StagedInventoryFilterDiffValidationIssue[] {
-  const issues: StagedInventoryFilterDiffValidationIssue[] = []
-  const existingById = new Map(existing.map((row) => [row.id, row]))
-
-  const stagedDeletedIds = new Set(stagedRowsDiff.deleted.map((r) => r.id))
-  const postDiffChildCountByFilterId = new Map<string, number>()
-  for (const row of existingStagedRows) {
-    if (stagedDeletedIds.has(row.id)) continue
-    postDiffChildCountByFilterId.set(
-      row.filterRowId,
-      (postDiffChildCountByFilterId.get(row.filterRowId) ?? 0) + 1,
-    )
-  }
-
-  for (const entry of diff.deleted) {
-    const row = existingById.get(entry.id)
-    if (!row?.hasChildren) continue
-    const postDiffChildren = postDiffChildCountByFilterId.get(entry.id) ?? 0
-    if (postDiffChildren > 0) {
-      issues.push({
-        code: "FILTER_DELETE_BLOCKED_BY_CHILDREN",
-        rowId: entry.id,
-      })
-    }
-  }
-  return issues
-}
-
-function findLockedProductChangesPostDiff(
-  diff: StagedInventoryFiltersDiff,
-  existing: DiffExistingStagedInventoryFilterRow[],
-  stagedRowsDiff: StagedInventoryRowsDiff,
-  existingStagedRows: DiffExistingStagedInventoryRow[],
-): StagedInventoryFilterDiffValidationIssue[] {
-  const issues: StagedInventoryFilterDiffValidationIssue[] = []
-  const existingById = new Map(existing.map((row) => [row.id, row]))
-  const stagedDeletedIds = new Set(stagedRowsDiff.deleted.map((r) => r.id))
-  const postDiffChildCountByFilterId = new Map<string, number>()
-  for (const row of existingStagedRows) {
-    if (stagedDeletedIds.has(row.id)) continue
-    postDiffChildCountByFilterId.set(
-      row.filterRowId,
-      (postDiffChildCountByFilterId.get(row.filterRowId) ?? 0) + 1,
-    )
-  }
-
-  for (const update of diff.modified) {
-    const row = existingById.get(update.id)
-    if (!row) continue
-    if (update.form.productId === row.productId) continue
-    const postDiffChildren = postDiffChildCountByFilterId.get(update.id) ?? 0
-    if (postDiffChildren > 0) {
-      issues.push({
-        code: "FILTER_PRODUCT_LOCKED_WITH_CHILDREN",
-        rowId: update.id,
-      })
-    }
-  }
-  return issues
-}
-
 export type StagedInventoryFilterDiffResolution = {
   existing: DiffExistingStagedInventoryFilterRow[]
   knownProductIds: string[]
-  stagedRows?: {
-    diff: StagedInventoryRowsDiff
-    existing: DiffExistingStagedInventoryRow[]
-  }
 }
 
 export function validateStagedInventoryFiltersDiff(
@@ -197,18 +123,9 @@ export function validateStagedInventoryFiltersDiff(
 ): StagedInventoryFilterDiffValidationIssue[] {
   const knownProductIds = new Set(resolution.knownProductIds)
   const projected = projectPostDiffRows(diff, resolution.existing)
-  const stagedDiff: StagedInventoryRowsDiff = resolution.stagedRows?.diff ?? {
-    added: [],
-    modified: [],
-    deleted: [],
-  }
-  const stagedExisting: DiffExistingStagedInventoryRow[] =
-    resolution.stagedRows?.existing ?? []
   return [
     ...findDuplicateProducts(projected),
     ...findUnknownProducts(projected, knownProductIds),
-    ...findLockedProductChangesPostDiff(diff, resolution.existing, stagedDiff, stagedExisting),
     ...findLockedCategoryFilterChanges(diff, resolution.existing),
-    ...findDeletesBlockedByChildren(diff, resolution.existing, stagedDiff, stagedExisting),
   ]
 }

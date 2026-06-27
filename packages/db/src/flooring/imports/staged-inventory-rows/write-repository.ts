@@ -9,8 +9,8 @@ import {
 /**
  * Create input for a staged inventory row. Application layer resolves all
  * snapshots before invoking:
- *  - `productId`, `stockUnitName`, `stockUnitAbbrev` from the parent
- *    filter row (which itself snapshots from FlooringProduct on create).
+ *  - `productId` from the draft, with `stockUnitName` / `stockUnitAbbrev`
+ *    snapshotted from that FlooringProduct on create.
  *  - `warehouseId` from the parent import.
  *  - `rollPrefix` defaults server-side to "ROLL#".
  *
@@ -19,7 +19,6 @@ import {
  */
 export type CreateStagedInventoryRecordInput = {
   importEntryId: string
-  filterRowId: string
   productId: string
   warehouseId: string
   stockUnitName: string | null
@@ -35,7 +34,7 @@ export type CreateStagedInventoryRecordInput = {
 
 /**
  * Update input for a staged inventory row. Only user-editable fields
- * appear here; productId / warehouseId / filterRowId / stockUnit* are
+ * appear here; productId / warehouseId / stockUnit* are
  * immutable snapshots stamped at create time. `isImported` flips
  * exclusively via the mark-for-import path (see `markStagedRowsForImport`)
  * — accepted here only for the legacy materialize backfill path until
@@ -59,7 +58,6 @@ export async function createStagedInventoryRecord(
   const row = await client.flooringImportStagedInventoryRow.create({
     data: {
       importEntry: { connect: { id: input.importEntryId } },
-      filterRow: { connect: { id: input.filterRowId } },
       product: { connect: { id: input.productId } },
       warehouse: { connect: { id: input.warehouseId } },
       stockUnitName: input.stockUnitName,
