@@ -24,8 +24,10 @@ import {
 /**
  * Composer for the imports primary section, on the canonical record-view grid.
  * A centered `RecordColumnBreak` splits the editable fields into two flanks —
- * left = Warehouse / Purchase Order Number / Internal Notes, right = Import # chip
- * / Manufacturer / Color — then a `RecordSectionDivider` terminates the section
+ * left = Import # chip + Color (one row, half-width each = the Warehouse width
+ * below) / Warehouse / Manufacturer / Purchase Order Number / Internal Notes,
+ * right = empty (the break is retained) — then a `RecordSectionDivider`
+ * terminates the section
  * above a read-only metadata band (Created / Updated over Created by / Updated by),
  * mirroring products + inventory + work-orders. The create flow (no persisted row)
  * renders neither the colored Import # identity cell, the editable Color tag, the
@@ -68,7 +70,28 @@ export function ImportPrimaryFieldsSection({
       <RecordColumnBreak
         left={
           <FieldSection gap="0.75rem">
-            {/* Left flank: Warehouse / Purchase Order Number / Internal Notes */}
+            {/* Left flank: Import # chip + Color (one row, = Warehouse width) /
+                Warehouse / Purchase Order Number / Internal Notes.
+                The chip + color tag are record/edit-only (no persisted row on create). */}
+            {persisted ? (
+              <>
+                <CellAt col={1} colSpan={4}>
+                  <FormField label="Import #">
+                    <CellChip paletteColor={draft.color}>{`IMP-${importNumber}`}</CellChip>
+                  </FormField>
+                </CellAt>
+                <CellAt col={5} colSpan={4}>
+                  <FormField label="Color">
+                    <PaletteColorDropdown
+                      value={draft.color}
+                      editable={editable}
+                      onChange={(color) => onFieldChange("color", color)}
+                      ariaLabel="Import color"
+                    />
+                  </FormField>
+                </CellAt>
+              </>
+            ) : null}
             <CellAt col={1} colSpan={8}>
               <FormField label="Warehouse" required>
                 {editable ? (
@@ -81,6 +104,21 @@ export function ImportPrimaryFieldsSection({
                   />
                 ) : (
                   <StaticFieldValue>{warehouseName || "—"}</StaticFieldValue>
+                )}
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Manufacturer">
+                {editable ? (
+                  <ManufacturerPicker
+                    value={draft.manufacturerId || null}
+                    onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
+                    selectedLabel={manufacturerName || null}
+                    placeholder="Select Manufacturer"
+                    ariaLabel="Manufacturer"
+                  />
+                ) : (
+                  <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
                 )}
               </FormField>
             </CellAt>
@@ -116,44 +154,8 @@ export function ImportPrimaryFieldsSection({
           </FieldSection>
         }
         right={
-          <FieldSection gap="0.75rem">
-            {/* Right flank: Import # identity chip / Manufacturer / Color.
-                The chip + color tag are record/edit-only (no persisted row on create). */}
-            {persisted ? (
-              <CellAt col={1} colSpan={8}>
-                <FormField label="Import #">
-                  <CellChip paletteColor={draft.color}>{`IMP-${importNumber}`}</CellChip>
-                </FormField>
-              </CellAt>
-            ) : null}
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Manufacturer">
-                {editable ? (
-                  <ManufacturerPicker
-                    value={draft.manufacturerId || null}
-                    onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
-                    selectedLabel={manufacturerName || null}
-                    placeholder="Select Manufacturer"
-                    ariaLabel="Manufacturer"
-                  />
-                ) : (
-                  <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
-                )}
-              </FormField>
-            </CellAt>
-            {persisted ? (
-              <CellAt col={1} colSpan={8}>
-                <FormField label="Color">
-                  <PaletteColorDropdown
-                    value={draft.color}
-                    editable={editable}
-                    onChange={(color) => onFieldChange("color", color)}
-                    ariaLabel="Import color"
-                  />
-                </FormField>
-              </CellAt>
-            ) : null}
-          </FieldSection>
+          /* Right flank intentionally empty; the column break is retained. */
+          <FieldSection gap="0.75rem">{null}</FieldSection>
         }
       />
       {createdAt ? (
