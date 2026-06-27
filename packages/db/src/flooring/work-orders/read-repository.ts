@@ -183,6 +183,12 @@ function workOrderFieldOrderBy(
       return { jobType: { name: direction } }
     case "warehouse":
       return { warehouse: { name: direction } }
+    case "timeOfDay":
+      return { timeOfDay: { sort: direction, nulls: "last" } }
+    case "createdAt":
+      return { createdAt: direction }
+    case "updatedAt":
+      return { updatedAt: direction }
     case "unitNumber":
       return { unitNumber: direction }
     case "unitType":
@@ -199,18 +205,20 @@ function buildWorkOrdersOrderBy(
   const orderBy: Prisma.FlooringWorkOrderOrderByWithRelationInput[] = []
 
   // Apply the user-selected columns in priority order. Each is appended via
-  // `appendUniqueOrderBy`, so a repeated field (or one colliding with the
-  // tiebreak) collapses to its first occurrence. `createdAt` is intentionally
-  // not in the field map — it is the default and is covered by the tiebreak.
+  // `appendUniqueOrderBy`, so a repeated field collapses to its first occurrence.
   for (const entry of entries) {
     appendUniqueOrderBy(orderBy, workOrderFieldOrderBy(entry.field, entry.direction))
   }
 
   // Deterministic tiebreak. Its direction mirrors the highest-priority entry so
-  // the trailing `createdAt` order matches the leading column; with no entries
-  // it falls back to `asc` (the createdAt-desc default is applied upstream).
+  // the trailing order matches the leading column; with no entries it falls back
+  // to `asc` (the createdAt-desc default is applied upstream). Skip the createdAt
+  // tiebreak when the user already sorts by it — its own clause (with the user's
+  // direction) is already in the chain.
   const tiebreakDirection: Prisma.SortOrder = entries[0]?.direction ?? "asc"
-  appendUniqueOrderBy(orderBy, { createdAt: tiebreakDirection })
+  if (!entries.some((entry) => entry.field === "createdAt")) {
+    appendUniqueOrderBy(orderBy, { createdAt: tiebreakDirection })
+  }
   appendUniqueOrderBy(orderBy, { id: tiebreakDirection })
 
   return orderBy

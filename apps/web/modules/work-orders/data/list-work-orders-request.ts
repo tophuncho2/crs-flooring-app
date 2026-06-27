@@ -36,9 +36,13 @@ export const WORK_ORDERS_LIST_FILTERABLE_FIELDS = [
  */
 const WORK_ORDERS_LIST_SORT_FIELDS = [
   "createdAt",
+  "updatedAt",
   "scheduledFor",
+  "timeOfDay",
   "property",
   "entity",
+  "warehouse",
+  "jobType",
 ] as const satisfies readonly string[]
 
 /** Cap on user-selected sort columns — mirrors the engine + API + use case. */

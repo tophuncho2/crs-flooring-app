@@ -262,7 +262,14 @@ const listInventoryQuerySchema = z.object({
 
 // UI-exposed sortable fields. Row# (`inventoryNumber`) is intentionally excluded
 // (chronological `createdAt` is the canonical time key).
-const INVENTORY_UI_SORT_FIELDS = ["createdAt", "location", "stockBalance"] as const
+const INVENTORY_UI_SORT_FIELDS = [
+  "createdAt",
+  "updatedAt",
+  "location",
+  "stockBalance",
+  "productName",
+  "warehouse",
+] as const
 const INVENTORY_MAX_SORT_LEVELS = 3
 
 /** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */

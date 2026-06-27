@@ -55,14 +55,24 @@ const INVENTORY_FILTERABLE_FIELDS = [
  * intentionally not sortable. `stockBalance` is the displayed quantity (sorted
  * on the generated `stockQuantity` column server-side).
  */
-const INVENTORY_ALLOWED_SORT_FIELDS = ["createdAt", "location", "stockBalance"] as const
+const INVENTORY_ALLOWED_SORT_FIELDS = [
+  "stockBalance",
+  "productName",
+  "location",
+  "warehouse",
+  "createdAt",
+  "updatedAt",
+] as const
 
 /**
- * Default direction when first selecting a column: locations read naturally
- * A→Z; created date + quantity default to newest/highest first.
+ * Default direction when first selecting a column: text columns (product,
+ * location, warehouse) read naturally A→Z; date + quantity columns default to
+ * newest/highest first.
  */
 function defaultSortDirection(field: string): "asc" | "desc" {
-  return field === "location" ? "asc" : "desc"
+  return field === "productName" || field === "location" || field === "warehouse"
+    ? "asc"
+    : "desc"
 }
 
 /**

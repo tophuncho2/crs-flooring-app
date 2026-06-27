@@ -16,11 +16,25 @@ export type InventoryOptionsGridRequest = (
 ) => Promise<ListOutput<InventoryRow>>
 
 /** Sortable columns (mirrors the list); row# is intentionally not sortable. */
-const ALLOWED_SORT_FIELDS = new Set(["createdAt", "location", "stockBalance"])
+const ALLOWED_SORT_FIELDS = new Set([
+  "stockBalance",
+  "productName",
+  "location",
+  "warehouse",
+  "createdAt",
+  "updatedAt",
+])
 /** Max simultaneous sort columns — mirrors the list + use case. */
 const MAX_SORT_LEVELS = 3
 /** Default chain: newest first. */
 const DEFAULT_SORTS: ListSort[] = [{ field: "createdAt", direction: "desc" }]
+
+/** Default direction when first selecting a column (mirrors the list client). */
+function defaultSortDirection(field: string): "asc" | "desc" {
+  return field === "productName" || field === "location" || field === "warehouse"
+    ? "asc"
+    : "desc"
+}
 
 /** Dedupe by field, drop unknown fields, cap at {@link MAX_SORT_LEVELS}. */
 function normalizeSorts(next: readonly ListSort[]): ListSort[] {
@@ -139,7 +153,7 @@ export function useInventoryOptionsGrid({
     setSorts((prev) =>
       prev[0]?.field === key
         ? [{ field: key, direction: prev[0].direction === "asc" ? "desc" : "asc" }]
-        : [{ field: key, direction: key === "location" ? "asc" : "desc" }],
+        : [{ field: key, direction: defaultSortDirection(key) }],
     )
     pager.reset()
   }, [pager])

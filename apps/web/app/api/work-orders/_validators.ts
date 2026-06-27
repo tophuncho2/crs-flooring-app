@@ -321,7 +321,16 @@ const listWorkOrdersQuerySchema = z.object({
 
 // UI-exposed sortable fields. `workOrderNumber` is intentionally excluded (WO#
 // is never user-sortable; createdAt is the canonical chronological key).
-const WORK_ORDERS_UI_SORT_FIELDS = ["createdAt", "scheduledFor", "property", "entity"] as const
+const WORK_ORDERS_UI_SORT_FIELDS = [
+  "createdAt",
+  "updatedAt",
+  "scheduledFor",
+  "timeOfDay",
+  "property",
+  "entity",
+  "warehouse",
+  "jobType",
+] as const
 const WORK_ORDERS_MAX_SORT_LEVELS = 3
 
 /** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */

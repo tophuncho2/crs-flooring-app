@@ -1,4 +1,4 @@
-import type { DataTableColumn } from "@/engines/list-view"
+import type { DataTableColumn, SortMenuOption } from "@/engines/list-view"
 import type { InventoryRow } from "@builders/domain"
 
 /**
@@ -8,26 +8,27 @@ import type { InventoryRow } from "@builders/domain"
  * `max(header label, widest cell)` and never wraps.
  */
 export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>> = [
-  // Sortable headers (server-side): Stock (quantity), Location, Created. Row#
-  // (`inventoryNumber`) is intentionally NOT sortable — `createdAt` is the
-  // canonical chronological key.
+  // Sortable headers (server-side): Stock (quantity), Product, Location,
+  // Warehouse, Created, Updated. Row# (`inventoryNumber`) is intentionally NOT
+  // sortable — `createdAt` is the canonical chronological key. Column keys equal
+  // their backend sort field (no translation map needed).
   { key: "stockBalance", label: "Stock", align: "start", sortable: true },
   { key: "netDeducted", label: "Deducted", align: "end" },
   { key: "startingStock", label: "Starting", align: "end" },
-  { key: "productName", label: "Product" },
+  { key: "productName", label: "Product", sortable: true },
   { key: "inventoryNumber", label: "Inv #" },
   { key: "rollNumber", label: "Roll #" },
   { key: "dyeLot", label: "Dye Lot" },
   { key: "note", label: "Note" },
   { key: "location", label: "Location", sortable: true },
-  { key: "warehouse", label: "Warehouse" },
+  { key: "warehouse", label: "Warehouse", sortable: true },
   { key: "categoryName", label: "Category" },
   { key: "purchaseOrderNumber", label: "PO #" },
   { key: "importNumber", label: "Import #" },
   { key: "cost", label: "Cost", align: "end" },
   { key: "freight", label: "Freight", align: "end" },
   { key: "createdAt", label: "Created", sortable: true },
-  { key: "updatedAt", label: "Updated" },
+  { key: "updatedAt", label: "Updated", sortable: true },
 ]
 
 /**
@@ -36,10 +37,13 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
  * Single source of truth shared by the list client and the reference-header
  * picker grid so the two menus never drift.
  */
-export const INVENTORY_SORT_OPTIONS: ReadonlyArray<{ key: string; label: string }> = [
-  { key: "createdAt", label: "Created" },
-  { key: "location", label: "Location" },
-  { key: "stockBalance", label: "Stock" },
+export const INVENTORY_SORT_OPTIONS: ReadonlyArray<SortMenuOption> = [
+  { key: "stockBalance", label: "Stock", type: "number" },
+  { key: "productName", label: "Product", type: "text" },
+  { key: "location", label: "Location", type: "text" },
+  { key: "warehouse", label: "Warehouse", type: "text" },
+  { key: "createdAt", label: "Created", type: "date" },
+  { key: "updatedAt", label: "Updated", type: "date" },
 ]
 
 /** Max simultaneous sort columns — mirrors the API + use case. */

@@ -5,6 +5,7 @@ import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
   SortMenuBody,
+  type SortMenuOption,
   ListActionBar,
   ListCreateButtonPortal,
   ListExportButton,
@@ -43,43 +44,63 @@ import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
 import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 
 const WORK_ORDERS_ALLOWED_SORT_FIELDS = [
-  "createdAt",
   "scheduledFor",
+  "timeOfDay",
   "property",
   "entity",
+  "warehouse",
+  "jobType",
+  "createdAt",
+  "updatedAt",
 ] as const
 
 /** Max simultaneous sort columns surfaced by the toolbar Sort menu. */
 const WORK_ORDERS_MAX_SORT_LEVELS = 3
 
 // Columns offered by the Sort menu — keyed by backend sort field (what lands in
-// `sorts`), labelled to match the table headers.
+// `sorts`), labelled to match the table headers. `type` drives the direction
+// control's labels (A→Z / Newest / AM first).
 const WORK_ORDERS_SORT_OPTIONS = [
-  { key: "scheduledFor", label: "Date" },
-  { key: "entity", label: "Entity" },
-  { key: "property", label: "Property" },
-  { key: "createdAt", label: "Created" },
-] as const
+  { key: "scheduledFor", label: "Date", type: "date" },
+  { key: "timeOfDay", label: "Time of Day", type: "time" },
+  { key: "property", label: "Property", type: "text" },
+  { key: "entity", label: "Entity", type: "text" },
+  { key: "warehouse", label: "Warehouse", type: "text" },
+  { key: "jobType", label: "Job Type", type: "text" },
+  { key: "createdAt", label: "Created", type: "date" },
+  { key: "updatedAt", label: "Updated", type: "date" },
+] as const satisfies ReadonlyArray<SortMenuOption>
 
 // Sortable DataTable column key ⇄ backend sort field (buildWorkOrdersOrderBy).
-// Two keys diverge from their backend field because the column key mirrors the
-// `WorkOrderListRow` field that `renderWorkOrderRowCell` switches on.
+// Several keys diverge from their backend field because the column key mirrors
+// the `WorkOrderListRow` field that `renderWorkOrderRowCell` switches on.
 const SORT_FIELD_BY_COLUMN: Record<string, string> = {
   scheduledFor: "scheduledFor",
+  timeOfDay: "timeOfDay",
+  warehouseName: "warehouse",
   entityName: "entity",
   propertyName: "property",
+  jobTypeName: "jobType",
   createdAt: "createdAt",
+  updatedAt: "updatedAt",
 }
 const COLUMN_BY_SORT_FIELD: Record<string, string> = {
   scheduledFor: "scheduledFor",
+  timeOfDay: "timeOfDay",
+  warehouse: "warehouseName",
   entity: "entityName",
   property: "propertyName",
+  jobType: "jobTypeName",
   createdAt: "createdAt",
+  updatedAt: "updatedAt",
 }
 
 function defaultSortDirection(field: string): "asc" | "desc" {
-  // Name columns read A–Z by default; date columns newest/latest first.
-  return field === "property" || field === "entity" ? "asc" : "desc"
+  // Name/text + time columns read forward (A–Z, AM first) by default; date
+  // columns lead newest first.
+  return field === "createdAt" || field === "updatedAt" || field === "scheduledFor"
+    ? "desc"
+    : "asc"
 }
 
 export default function WorkOrdersClient({

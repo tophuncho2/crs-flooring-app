@@ -549,6 +549,14 @@ function inventoryFieldOrderBy(
       return { location: { sort: direction, nulls: "last" } }
     case "stockBalance":
       return { stockQuantity: direction }
+    case "productName":
+      return { product: { name: direction } }
+    case "warehouse":
+      return { warehouse: { name: direction } }
+    case "createdAt":
+      return { createdAt: direction }
+    case "updatedAt":
+      return { updatedAt: direction }
     default:
       return undefined
   }
@@ -557,12 +565,12 @@ function inventoryFieldOrderBy(
 /**
  * Builds the inventory list-view `orderBy`. Default sort is `createdAt DESC`
  * (newest first); `id` is the stable tiebreak in the same direction. The
- * user-selectable fields are `createdAt`, `location` (nullable → nulls last),
- * and `stockBalance` (the displayed quantity, sorted on the generated
- * `stockQuantity` column). Row# (`inventoryNumber`) is intentionally NOT
- * sortable — chronological `createdAt` is the canonical time key. Multiple
- * columns compose an ordered chain (highest priority first), mirroring work
- * orders.
+ * user-selectable fields are `createdAt`, `updatedAt`, `location` (nullable →
+ * nulls last), `stockBalance` (the displayed quantity, sorted on the generated
+ * `stockQuantity` column), `productName` (→ product.name) and `warehouse`
+ * (→ warehouse.name). Row# (`inventoryNumber`) is intentionally NOT sortable —
+ * chronological `createdAt` is the canonical time key. Multiple columns compose
+ * an ordered chain (highest priority first), mirroring work orders.
  */
 function buildInventoryListViewOrderBy(
   sort: InventoryListViewSort | undefined,
@@ -571,17 +579,19 @@ function buildInventoryListViewOrderBy(
   const orderBy: Prisma.FlooringInventoryOrderByWithRelationInput[] = []
 
   // Apply the user-selected columns in priority order. Each is appended via
-  // `appendUniqueOrderBy`, so a repeated field (or one colliding with the
-  // tiebreak) collapses to its first occurrence.
+  // `appendUniqueOrderBy`, so a repeated field collapses to its first occurrence.
   for (const entry of entries) {
     appendUniqueOrderBy(orderBy, inventoryFieldOrderBy(entry.field, entry.direction))
   }
 
   // Deterministic tiebreak. Its direction mirrors the highest-priority entry so
-  // the trailing `createdAt` order matches the leading column; with no entries
-  // it falls back to `desc` (the canonical newest-first default).
+  // the trailing order matches the leading column; with no entries it falls back
+  // to `desc` (the canonical newest-first default). Skip the createdAt tiebreak
+  // when the user already sorts by it — its own clause is already in the chain.
   const tiebreakDirection: Prisma.SortOrder = entries[0]?.direction ?? "desc"
-  appendUniqueOrderBy(orderBy, { createdAt: tiebreakDirection })
+  if (!entries.some((entry) => entry.field === "createdAt")) {
+    appendUniqueOrderBy(orderBy, { createdAt: tiebreakDirection })
+  }
   appendUniqueOrderBy(orderBy, { id: tiebreakDirection })
 
   return orderBy
