@@ -9,6 +9,7 @@ import {
   RecordSectionDivider,
   StaticFieldValue,
   TextareaCell,
+  TextCell,
 } from "@/engines/record-view"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
@@ -18,6 +19,7 @@ import {
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
+  TEMPLATE_UNIT_TYPE_MAX,
   type PaletteColor,
   type TemplateForm,
 } from "@builders/domain"
@@ -166,7 +168,23 @@ export function TemplatePrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
-            <CellAt col={1} row={2} colSpan={8}>
+            {/* Unit Type — below Warehouse / Job Type, spanning half the flank. Required. */}
+            <CellAt col={1} row={2} colSpan={4}>
+              <FormField
+                label="Unit Type"
+                required
+                currentLength={editable ? draft.unitType.length : undefined}
+                maxLength={editable ? TEMPLATE_UNIT_TYPE_MAX : undefined}
+              >
+                <TextCell
+                  editable={editable}
+                  value={draft.unitType}
+                  onChange={(value) => onFieldChange("unitType", value)}
+                  maxLength={TEMPLATE_UNIT_TYPE_MAX}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={3} colSpan={8}>
               <FormField
                 label="Description"
                 currentLength={editable ? draft.description.length : undefined}
@@ -181,7 +199,7 @@ export function TemplatePrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={3} colSpan={8}>
+            <CellAt col={1} row={4} colSpan={8}>
               <FormField
                 label="Installer Instructions"
                 currentLength={editable ? draft.installerInstructions.length : undefined}
@@ -196,7 +214,7 @@ export function TemplatePrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={4} colSpan={8}>
+            <CellAt col={1} row={5} colSpan={8}>
               <FormField
                 label="Internal Notes"
                 currentLength={editable ? draft.internalNotes.length : undefined}

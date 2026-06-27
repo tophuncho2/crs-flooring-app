@@ -47,14 +47,14 @@ export function PropertyFieldsSection({
    */
   showContact?: boolean
   /**
-   * Optional cell placed to the right of the Name field (col 6, spanning 2/8).
-   * The record view drops the read-only Property # here; the hub forms omit it.
+   * Optional top-row cell at col 1, spanning 2/8. The record view drops the
+   * read-only Property # here; the hub forms omit it.
    */
   nameRowTrailing?: ReactNode
   /**
-   * Optional cell appended after Instructions. The record view drops the
-   * edit-only Color picker here; the hub create forms omit it (color is
-   * edit-only — new properties fall to the DB default).
+   * Optional cell placed to the right of the Property # (col 3, spanning 2/8).
+   * The record view drops the edit-only Color picker here; the hub create forms
+   * omit it (color is edit-only — new properties fall to the DB default).
    */
   trailingFields?: ReactNode
 }) {
@@ -65,6 +65,11 @@ export function PropertyFieldsSection({
       {nameRowTrailing ? (
         <CellAt col={1} colSpan={2}>
           {nameRowTrailing}
+        </CellAt>
+      ) : null}
+      {trailingFields ? (
+        <CellAt col={3} colSpan={2}>
+          {trailingFields}
         </CellAt>
       ) : null}
       <CellAt col={1} colSpan={7}>
@@ -127,11 +132,6 @@ export function PropertyFieldsSection({
           />
         </FormField>
       </CellAt>
-      {trailingFields ? (
-        <CellAt col={1} colSpan={7}>
-          {trailingFields}
-        </CellAt>
-      ) : null}
     </FieldSection>
   )
 }

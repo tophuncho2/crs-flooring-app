@@ -7,7 +7,6 @@ import {
   FormField,
   RecordOpenButton,
   StaticFieldValue,
-  TextCell,
 } from "@/engines/record-view"
 import type { PropertyJoinedFields } from "@/engines/record-view"
 import { applyPropertySelection } from "@/engines/picker"
@@ -20,7 +19,6 @@ import { PropertyPicker } from "@/modules/properties/components/picker/property-
 import { PropertyCreateMenu } from "@/modules/properties/components/picker/property-create-menu"
 import {
   buildAddressBlock,
-  TEMPLATE_UNIT_TYPE_MAX,
   type PropertyOption,
   type TemplateForm,
 } from "@builders/domain"
@@ -111,23 +109,6 @@ export function TemplatePropertyUnitGroup({
 
   return (
     <>
-      {/* Unit Type — top row, to the right of the Template # stamp. Required.
-          Positioned within the column-break's left flank (own 8-col grid). */}
-      <CellAt col={3} row={1} colSpan={4}>
-        <FormField
-          label="Unit Type"
-          required
-          currentLength={editable ? draft.unitType.length : undefined}
-          maxLength={editable ? TEMPLATE_UNIT_TYPE_MAX : undefined}
-        >
-          <TextCell
-            editable={editable}
-            value={draft.unitType}
-            onChange={(value) => onFieldChange("unitType", value)}
-            maxLength={TEMPLATE_UNIT_TYPE_MAX}
-          />
-        </FormField>
-      </CellAt>
       <CellAt col={1} row={2} colSpan={8}>
         <FormField
           label="Entity"
