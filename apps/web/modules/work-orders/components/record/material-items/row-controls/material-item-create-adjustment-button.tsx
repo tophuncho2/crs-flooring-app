@@ -1,7 +1,6 @@
 "use client"
 
-import { Plus } from "lucide-react"
-import { RowActionButton } from "@/engines/record-view"
+import { CellAddButton } from "@/engines/common"
 
 export type MaterialItemCreateAdjustmentButtonProps = {
   /** Enabled only when the row names a product to pre-seed the modal filter. */
@@ -21,12 +20,10 @@ export function MaterialItemCreateAdjustmentButton({
   onClick,
 }: MaterialItemCreateAdjustmentButtonProps) {
   return (
-    <RowActionButton
-      label={<Plus size={14} aria-hidden="true" />}
+    <CellAddButton
       ariaLabel="Create adjustment for this product"
-      tone="neutral"
       title={enabled ? "Create an adjustment for this product" : "Pick a product first"}
-      editable={enabled}
+      disabled={!enabled}
       onClick={onClick}
     />
   )

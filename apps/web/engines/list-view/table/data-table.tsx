@@ -189,6 +189,14 @@ export type DataTableProps<TRow extends DataTableRow> = {
    * delete via {@link rowActions}, no open button).
    */
   variant?: "list" | "editable"
+  /**
+   * Editable variant only: the px width of the leading gutter that hosts
+   * {@link rowActions}. Defaults to one icon (44). Widen it when a row carries
+   * more than one control (e.g. WO requested-material rows pair a create-
+   * adjustment "+" with the delete icon). Ignored by the `list` variant, which
+   * sizes its gutter from `onOpenRow`/`rowActions` automatically.
+   */
+  rowActionsWidth?: number
   className?: string
 }
 
@@ -218,6 +226,7 @@ export function DataTable<TRow extends DataTableRow>({
   selection,
   getRowAriaLabel,
   variant = "list",
+  rowActionsWidth,
   className,
 }: DataTableProps<TRow>) {
   const isEditable = variant === "editable"
@@ -237,10 +246,11 @@ export function DataTable<TRow extends DataTableRow>({
       ? selection.selectionWidth
       : DEFAULT_SELECTION_WIDTH
     : 0
-  // Editable rows carry a single delete icon (no open button), so the gutter
-  // never widens to the two-target size the list variant uses.
+  // Editable rows carry their own row controls (no open button), so the gutter
+  // is sized by `rowActionsWidth` — one icon by default, wider for multi-control
+  // rows — rather than the list variant's open/open+actions sizing.
   const openColumnWidth = isEditable
-    ? DEFAULT_OPEN_WIDTH
+    ? rowActionsWidth ?? DEFAULT_OPEN_WIDTH
     : hasRowActions
       ? OPEN_WIDTH_WITH_ACTIONS
       : DEFAULT_OPEN_WIDTH

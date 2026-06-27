@@ -1,6 +1,6 @@
 "use client"
 
-import { RowActionButton } from "@/engines/record-view"
+import { RecordDeleteButton } from "@/engines/common"
 
 export type MaterialItemRemoveButtonProps = {
   editable: boolean
@@ -12,12 +12,10 @@ export function MaterialItemRemoveButton({
   onClick,
 }: MaterialItemRemoveButtonProps) {
   return (
-    <RowActionButton
-      label="✕"
+    <RecordDeleteButton
       ariaLabel="Remove material item"
-      tone="destructive"
       title={editable ? "Remove this material item" : "Locked while section is busy"}
-      editable={editable}
+      disabled={!editable}
       onClick={onClick}
     />
   )

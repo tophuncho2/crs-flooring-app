@@ -1,7 +1,7 @@
 "use client"
 
 import { NumberCell, TextCell } from "@/engines/record-view"
-import { Grid, GridEmpty, type GridLayout } from "@/engines/record-view"
+import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { WORK_ORDER_MATERIAL_ITEM_NOTES_MAX } from "@builders/domain"
 import type {
@@ -20,17 +20,15 @@ import {
  * once — there is no uniqueness rule. The old per-item "Assignments" total is
  * dropped: adjustments are decoupled, so a material item carries no linked sum.
  */
-const REQUESTED_MATERIAL_LAYOUT: GridLayout<WorkOrderMaterialItemLocal> = {
-  leadingControls: [
-    { key: "remove", kind: "actions", width: 56 },
-    { key: "create-adjustment", kind: "actions", width: 56 },
-  ],
-  dataColumns: [
-    { key: "product", label: "Product", minWidth: 260, grow: 2 },
-    { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
-    { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
-  ],
-}
+const REQUESTED_MATERIAL_COLUMNS: DataTableColumn<WorkOrderMaterialItemLocal>[] = [
+  { key: "product", label: "Product", minWidth: 260, grow: 2 },
+  { key: "quantity", label: "Quantity", width: 140, align: "end" },
+  { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
+]
+
+// Two row controls (delete + create-adjustment) share the leading gutter, so it
+// runs wider than the single-icon default.
+const REQUESTED_MATERIAL_GUTTER_WIDTH = 92
 
 export function WorkOrderRequestedMaterialGrid({
   section,
@@ -92,34 +90,26 @@ export function WorkOrderRequestedMaterialGrid({
     }
   }
 
-  function renderControl(control: { key: string; kind: string }, item: WorkOrderMaterialItemLocal) {
-    switch (control.key) {
-      case "remove":
-        return (
+  return (
+    <DataTable<WorkOrderMaterialItemLocal>
+      variant="editable"
+      rows={section.items}
+      columns={REQUESTED_MATERIAL_COLUMNS}
+      empty="No material items yet."
+      rowActionsWidth={REQUESTED_MATERIAL_GUTTER_WIDTH}
+      rowActions={(item) => (
+        <>
           <MaterialItemRemoveButton
             editable={editable}
             onClick={() => section.removeItem(item.id)}
           />
-        )
-      case "create-adjustment":
-        return (
           <MaterialItemCreateAdjustmentButton
             enabled={Boolean(item.productId)}
             onClick={() => onCreateAdjustment(item)}
           />
-        )
-      default:
-        return null
-    }
-  }
-
-  return (
-    <Grid<WorkOrderMaterialItemLocal>
-      rows={section.items}
-      layout={REQUESTED_MATERIAL_LAYOUT}
-      empty={<GridEmpty>No material items yet.</GridEmpty>}
+        </>
+      )}
       renderCell={renderCell}
-      renderControl={renderControl}
     />
   )
 }
