@@ -206,6 +206,28 @@ describe("materializeImportedStagedRowsUseCase", () => {
       // id is a UUID assigned by the use case.
       expect(typeof created.id).toBe("string")
       expect(created.id).not.toBe(ROW_ID_A)
+      // Actor columns stamped with the requesting user's email (the user who
+      // marked the rows for import) — both createdBy and updatedBy.
+      expect(created.createdBy).toBe("user@example.com")
+      expect(created.updatedBy).toBe("user@example.com")
+    })
+
+    it("stamps createdBy and updatedBy with requestedBy.userEmail", async () => {
+      listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow()])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+
+      await materializeImportedStagedRowsUseCase(payload())
+
+      const created = (
+        materializeStagedRowsToInventoryMock.mock.calls[0]?.[1] as {
+          inventoryRowsToCreate: Array<Record<string, unknown>>
+        }
+      ).inventoryRowsToCreate[0]!
+      expect(created.createdBy).toBe("user@example.com")
+      expect(created.updatedBy).toBe("user@example.com")
     })
 
     it("PINS warehouseId.immutable: copies warehouseId from STAGED ROW, not from import entry", async () => {

@@ -64,6 +64,8 @@ export async function materializeImportedStagedRowsUseCase(
       startingStock: row.startingStock.toString(),
       cost: row.cost,
       freight: row.freight,
+      createdBy: payload.requestedBy.userEmail,
+      updatedBy: payload.requestedBy.userEmail,
     }))
 
     const result = await materializeStagedRowsToInventory(c, {

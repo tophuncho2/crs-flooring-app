@@ -58,6 +58,9 @@ export type MaterializeInventoryRowFields = {
   startingStock: Prisma.Decimal | string | number
   cost: Prisma.Decimal | string | number | null
   freight: Prisma.Decimal | string | number | null
+  /** Actor email of the user who marked the rows for import — stamped into both createdBy + updatedBy. */
+  createdBy: string
+  updatedBy: string
 }
 
 /**
@@ -303,6 +306,8 @@ export async function materializeStagedRowsToInventory(
       startingStock: row.startingStock,
       cost: row.cost,
       freight: row.freight,
+      createdBy: row.createdBy,
+      updatedBy: row.updatedBy,
     }),
   )
   await tx.flooringInventory.createMany({ data: createData, skipDuplicates: false })
