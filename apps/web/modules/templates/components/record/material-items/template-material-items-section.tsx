@@ -1,19 +1,17 @@
 "use client"
 
-import { NumberCell, RecordItemSection, RowActionButton, TextCell } from "@/engines/record-view"
-import { Grid, GridEmpty, type GridLayout } from "@/engines/record-view"
+import { NumberCell, RecordItemSection, TextCell } from "@/engines/record-view"
+import { DataTable, type DataTableColumn } from "@/engines/list-view"
+import { RecordDeleteButton } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { type ProductOption, TEMPLATE_MATERIAL_ITEM_NOTES_MAX } from "@builders/domain"
 import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/record/material-items/use-template-material-items-section"
 
-const TEMPLATE_MATERIAL_ITEMS_LAYOUT: GridLayout<TemplateMaterialItemLocal> = {
-  leadingControls: [{ key: "remove", kind: "actions", width: 56 }],
-  dataColumns: [
-    { key: "product", label: "Product", minWidth: 260, grow: 2 },
-    { key: "quantity", label: "Quantity", kind: "number", minWidth: 120, grow: 0, align: "end" },
-    { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
-  ],
-}
+const TEMPLATE_MATERIAL_ITEMS_COLUMNS: DataTableColumn<TemplateMaterialItemLocal>[] = [
+  { key: "product", label: "Product", minWidth: 260, grow: 2 },
+  { key: "quantity", label: "Quantity", width: 140, align: "end" },
+  { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
+]
 
 export function TemplateMaterialItemsSection({
   items,
@@ -83,10 +81,19 @@ export function TemplateMaterialItemsSection({
         ],
       }}
     >
-      <Grid<TemplateMaterialItemLocal>
+      <DataTable<TemplateMaterialItemLocal>
+        variant="editable"
         rows={items}
-        layout={TEMPLATE_MATERIAL_ITEMS_LAYOUT}
-        empty={<GridEmpty>No material items yet.</GridEmpty>}
+        columns={TEMPLATE_MATERIAL_ITEMS_COLUMNS}
+        empty="No material items yet."
+        rowActions={(item) => (
+          <RecordDeleteButton
+            ariaLabel="Remove material item"
+            title={editable ? "Remove this material item" : "Saving..."}
+            disabled={!editable}
+            onClick={() => onRemoveItem(item.id)}
+          />
+        )}
         renderCell={(column, item) => {
           switch (column.key) {
             case "product":
@@ -138,23 +145,6 @@ export function TemplateMaterialItemsSection({
             default:
               return null
           }
-        }}
-        renderControl={(control, item) => {
-          if (control.kind === "actions") {
-            return (
-              <div className="flex items-center gap-1">
-                <RowActionButton
-                  label="✕"
-                  ariaLabel="Remove material item"
-                  tone="destructive"
-                  title={editable ? "Remove this material item" : "Saving..."}
-                  editable={editable}
-                  onClick={() => onRemoveItem(item.id)}
-                />
-              </div>
-            )
-          }
-          return null
         }}
       />
     </RecordItemSection>

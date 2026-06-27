@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { RecordOpenButton } from "@/engines/common"
 import type {
   CursorPaginateContract,
@@ -25,9 +25,75 @@ const DEFAULT_SELECTION_WIDTH = 44
 // button beside it, so it widens to fit two targets + gap for zero reflow.
 const DEFAULT_OPEN_WIDTH = 44
 const OPEN_WIDTH_WITH_ACTIONS = 88
+// Fallback track width (px) for an editable data column that declares neither
+// `width` nor `minWidth`.
+const DEFAULT_EDITABLE_DATA_WIDTH = 80
 
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ")
+}
+
+function toCssLength(value: number | string): string {
+  return typeof value === "number" ? `${value}px` : value
+}
+
+/** Pixel value if `value` is a number, else `null` (CSS-length strings can't be
+ *  summed into the table's min-width). */
+function toPx(value: number | string | undefined): number | null {
+  return typeof value === "number" ? value : null
+}
+
+/**
+ * Computes the `<colgroup>` tracks + the table's floor width for the editable
+ * variant (`table-layout: fixed`). Leading control tracks (selection + gutter)
+ * are fixed px; data columns either pin to `width`/`minWidth` or split the
+ * leftover width by `grow` weight — the table-model analogue of the Grid's
+ * `minmax(preferred, grow·fr)`. The table never shrinks below the summed
+ * minimums; the `overflow-x-auto` wrapper scrolls instead.
+ */
+function buildEditableLayout<TRow>(
+  columns: ReadonlyArray<DataTableColumn<TRow>>,
+  leadingWidths: number[],
+): { cols: Array<{ key: string; style: CSSProperties }>; tableMinWidth: number } {
+  const totalGrow = columns.reduce((sum, column) => sum + (column.grow ?? 0), 0)
+  // Width reserved by leading tracks + every pinned (non-grow) data column.
+  // Grow columns share what's left of `100%` after this reservation.
+  const reservedPx =
+    leadingWidths.reduce((sum, width) => sum + width, 0) +
+    columns.reduce((sum, column) => {
+      if ((column.grow ?? 0) > 0) return sum
+      return sum + (toPx(column.width) ?? toPx(column.minWidth) ?? DEFAULT_EDITABLE_DATA_WIDTH)
+    }, 0)
+
+  const cols = columns.map((column) => {
+    const grow = column.grow ?? 0
+    if (grow > 0 && totalGrow > 0) {
+      const fraction = (grow / totalGrow).toFixed(4)
+      return {
+        key: column.key,
+        style: {
+          width: `calc((100% - ${reservedPx}px) * ${fraction})`,
+          minWidth: column.minWidth != null ? toCssLength(column.minWidth) : undefined,
+        } satisfies CSSProperties,
+      }
+    }
+    return {
+      key: column.key,
+      style: {
+        width: toCssLength(column.width ?? column.minWidth ?? DEFAULT_EDITABLE_DATA_WIDTH),
+      } satisfies CSSProperties,
+    }
+  })
+
+  const tableMinWidth =
+    leadingWidths.reduce((sum, width) => sum + width, 0) +
+    columns.reduce(
+      (sum, column) =>
+        sum + (toPx(column.minWidth) ?? toPx(column.width) ?? DEFAULT_EDITABLE_DATA_WIDTH),
+      0,
+    )
+
+  return { cols, tableMinWidth }
 }
 
 /**
@@ -113,6 +179,16 @@ export type DataTableProps<TRow extends DataTableRow> = {
   selection?: DataTableSelection<TRow>
   /** Aria-label provider for interactive rows. */
   getRowAriaLabel?: (row: TRow) => string
+  /**
+   * Layout variant. `"list"` (default) is the read-only dashboard table:
+   * `table-layout: auto`, content-sized columns, `white-space: nowrap` cells —
+   * unchanged from before. `"editable"` deploys the table to a record-view
+   * section: `table-layout: fixed` with a `<colgroup>` built from the columns'
+   * `width`/`minWidth`/`grow` hints, cells that don't wrap-clip so inline
+   * editors fill their track, and a single-icon leading gutter (a per-row
+   * delete via {@link rowActions}, no open button).
+   */
+  variant?: "list" | "editable"
   className?: string
 }
 
@@ -141,8 +217,10 @@ export function DataTable<TRow extends DataTableRow>({
   rowActions,
   selection,
   getRowAriaLabel,
+  variant = "list",
   className,
 }: DataTableProps<TRow>) {
+  const isEditable = variant === "editable"
   const canToggleSelection = selection ? selection.canToggleSelection ?? true : false
   const isRowSelectable = (row: TRow) =>
     selection?.isRowSelectable ? selection.isRowSelectable(row) : true
@@ -154,8 +232,26 @@ export function DataTable<TRow extends DataTableRow>({
   const interactive = Boolean(activateRow)
   const hasRowActions = Boolean(rowActions)
   const hasOpenColumn = Boolean(onOpenRow) || hasRowActions
-  const openColumnWidth = hasRowActions ? OPEN_WIDTH_WITH_ACTIONS : DEFAULT_OPEN_WIDTH
+  const selectionWidth = selection
+    ? typeof selection.selectionWidth === "number"
+      ? selection.selectionWidth
+      : DEFAULT_SELECTION_WIDTH
+    : 0
+  // Editable rows carry a single delete icon (no open button), so the gutter
+  // never widens to the two-target size the list variant uses.
+  const openColumnWidth = isEditable
+    ? DEFAULT_OPEN_WIDTH
+    : hasRowActions
+      ? OPEN_WIDTH_WITH_ACTIONS
+      : DEFAULT_OPEN_WIDTH
   const totalColumns = columns.length + (selection ? 1 : 0) + (hasOpenColumn ? 1 : 0)
+
+  const editableLayout = isEditable
+    ? buildEditableLayout(columns, [
+        ...(selection ? [selectionWidth] : []),
+        ...(hasOpenColumn ? [openColumnWidth] : []),
+      ])
+    : null
 
   return (
     <div
@@ -168,7 +264,22 @@ export function DataTable<TRow extends DataTableRow>({
         <div className="border-b border-[var(--panel-border)] px-3 py-2">{headerSlot}</div>
       ) : null}
       <div className="overflow-x-auto overscroll-x-contain">
-        <table className="w-full border-collapse">
+        <table
+          className={joinClassNames(
+            "w-full border-collapse",
+            isEditable ? "table-fixed" : undefined,
+          )}
+          style={editableLayout ? { minWidth: editableLayout.tableMinWidth } : undefined}
+        >
+          {editableLayout ? (
+            <colgroup>
+              {selection ? <col style={{ width: selectionWidth }} /> : null}
+              {hasOpenColumn ? <col style={{ width: openColumnWidth }} /> : null}
+              {editableLayout.cols.map((col) => (
+                <col key={col.key} style={col.style} />
+              ))}
+            </colgroup>
+          ) : null}
           <thead>
             <tr className="border-b border-[var(--panel-border)] bg-[var(--panel-border)]/10">
               {selection ? (
@@ -270,7 +381,11 @@ export function DataTable<TRow extends DataTableRow>({
                     <td
                       key={column.key}
                       className={joinClassNames(
-                        "whitespace-nowrap px-3 py-2 text-sm text-[var(--foreground)]",
+                        "px-3 py-2 text-sm text-[var(--foreground)]",
+                        // List cells size to content and never wrap. Editable
+                        // cells host full-width inline editors, so they drop
+                        // `nowrap` and align to the input baseline.
+                        isEditable ? "align-middle" : "whitespace-nowrap",
                         ALIGN_CLASS_NAME[column.align ?? "start"],
                       )}
                     >

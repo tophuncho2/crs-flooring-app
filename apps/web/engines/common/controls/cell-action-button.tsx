@@ -7,6 +7,17 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ")
 }
 
+/** Visual tones for the icon button. `neutral` is the default open/add chrome;
+ *  `destructive` is the rose delete chrome (see `RecordDeleteButton`). */
+const TONE_CLASS_NAME = {
+  neutral:
+    "border-[var(--panel-border)] text-[var(--foreground)]/70 hover:bg-[var(--panel-border)]/30 hover:text-[var(--foreground)] focus:ring-sky-500/40 disabled:hover:text-[var(--foreground)]/70",
+  destructive:
+    "border-rose-500/40 text-rose-700 hover:bg-rose-500/20 hover:text-rose-800 focus:ring-rose-500/40 disabled:hover:text-rose-700",
+} as const
+
+export type CellActionButtonTone = keyof typeof TONE_CLASS_NAME
+
 export type CellActionButtonProps = {
   /** Click handler. Ignored when `disabled`. */
   onClick: () => void
@@ -20,6 +31,8 @@ export type CellActionButtonProps = {
    * decides when to render and when to disable.
    */
   disabled?: boolean
+  /** Visual tone. Defaults to `neutral`. */
+  tone?: CellActionButtonTone
   /** Icon override. Defaults are set by the `RecordOpenButton` / `CellAddButton` presets. */
   icon?: ReactNode
   className?: string
@@ -41,6 +54,7 @@ export function CellActionButton({
   ariaLabel,
   title,
   disabled = false,
+  tone = "neutral",
   icon,
   className,
 }: CellActionButtonProps) {
@@ -55,7 +69,8 @@ export function CellActionButton({
       aria-label={ariaLabel}
       title={title}
       className={joinClassNames(
-        "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[var(--panel-border)] bg-transparent text-[var(--foreground)]/70 transition hover:bg-[var(--panel-border)]/30 hover:text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-sky-500/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[var(--foreground)]/70",
+        "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border bg-transparent transition focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent",
+        TONE_CLASS_NAME[tone],
         className,
       )}
     >

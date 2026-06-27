@@ -167,3 +167,56 @@ describe("DataTable — gutter header", () => {
     expect(queryByRole("button", { name: /^Open / })).toBeNull()
   })
 })
+
+describe("DataTable — editable variant", () => {
+  afterEach(() => cleanup())
+
+  const EDITABLE_COLUMNS: ReadonlyArray<DataTableColumn<Row>> = [
+    { key: "name", label: "Name", minWidth: 200, grow: 2 },
+    { key: "status", label: "Status", width: 120, align: "end" },
+  ]
+
+  it("switches the table to fixed layout and emits a <colgroup>", () => {
+    const { container } = render(
+      <DataTable rows={ROWS} columns={EDITABLE_COLUMNS} variant="editable" />,
+    )
+    const table = container.querySelector("table")
+    expect(table?.className).toContain("table-fixed")
+    // One <col> per data column (no leading gutter here).
+    const cols = container.querySelectorAll("colgroup > col")
+    expect(cols).toHaveLength(EDITABLE_COLUMNS.length)
+  })
+
+  it("drops whitespace-nowrap on data cells so inline editors can fill", () => {
+    const { getByText } = render(
+      <DataTable rows={ROWS} columns={EDITABLE_COLUMNS} variant="editable" />,
+    )
+    const cell = getByText("Alpha").closest("td")
+    expect(cell?.className).not.toContain("whitespace-nowrap")
+    expect(cell?.className).toContain("align-middle")
+  })
+
+  it("hosts a per-row rowActions control in the gutter and leaves rows inert", async () => {
+    const user = userEvent.setup()
+    const onDelete = vi.fn()
+    const { getAllByRole, container } = render(
+      <DataTable
+        rows={ROWS}
+        columns={EDITABLE_COLUMNS}
+        variant="editable"
+        rowActions={(row) => (
+          <button type="button" aria-label={`Remove ${row.name}`} onClick={() => onDelete(row.id)}>
+            x
+          </button>
+        )}
+      />,
+    )
+    // Gutter <col> precedes the data <col>s when rowActions is present.
+    expect(container.querySelectorAll("colgroup > col")).toHaveLength(EDITABLE_COLUMNS.length + 1)
+    // One action button per row; the rows themselves are not buttons.
+    const buttons = getAllByRole("button")
+    expect(buttons).toHaveLength(ROWS.length)
+    await user.click(getAllByRole("button", { name: /^Remove / })[0])
+    expect(onDelete).toHaveBeenCalledWith("a")
+  })
+})
