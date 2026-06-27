@@ -1,4 +1,5 @@
 import { normalizeMoneyAmount } from "../../shared/money.js"
+import type { PaletteColor } from "../../shared/palette.js"
 import type { EntityTypeRef } from "../../management/entities/types.js"
 import type { FlooringPaymentDirection, Payment } from "./types.js"
 
@@ -8,6 +9,7 @@ type PaymentInput = {
   paymentNumberInt?: number | null
   amount: { toString(): string }
   direction: FlooringPaymentDirection
+  color: PaletteColor
   paymentDate: Date | string | null
   entityId?: string | null
   workOrderId?: string | null
@@ -34,6 +36,7 @@ export function normalizePayment(payment: PaymentInput): Payment {
     paymentNumberInt: payment.paymentNumberInt ?? undefined,
     amount: normalizeMoneyAmount(payment.amount.toString()),
     direction: payment.direction,
+    color: payment.color,
     paymentDate: toIso(payment.paymentDate),
     entityId: payment.entityId ?? null,
     workOrderId: payment.workOrderId ?? null,

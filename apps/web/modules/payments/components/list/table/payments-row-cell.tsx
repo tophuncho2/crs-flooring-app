@@ -14,7 +14,8 @@ export function renderPaymentRowCell(
 ): ReactNode {
   switch (column.key) {
     case "paymentNumber":
-      return <span className="font-medium tabular-nums">{row.paymentNumber}</span>
+      // The palette tag recolors the PAY-# identity cell (mirrors inventory/WO).
+      return <CellChip paletteColor={row.color}>{row.paymentNumber}</CellChip>
     case "amount":
       // The figure is prefixed with its direction sign (+ revenue / − expense) and
       // the chip tone reads `direction` directly — mirrors the adjustments amount chip.

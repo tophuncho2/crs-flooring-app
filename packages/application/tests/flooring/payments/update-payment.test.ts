@@ -67,6 +67,17 @@ describe("updatePaymentUseCase", () => {
     )
   })
 
+  it("passes the palette color straight through (metadata-only, no recompute)", async () => {
+    // The color is a non-semantic visual tag: it rides the update input unread,
+    // triggers no validation, and reaches the repo unchanged.
+    await updatePaymentUseCase(ID, { color: "VIOLET" }, ACTOR)
+    expect(updatePaymentRecordMock).toHaveBeenCalledWith(
+      ID,
+      { color: "VIOLET", updatedBy: ACTOR },
+      expect.anything(),
+    )
+  })
+
   it("maps a P2025 to a 404 not-found", async () => {
     updatePaymentRecordMock.mockRejectedValue(new PrismaKnownError("missing", { code: "P2025" }))
     await expect(updatePaymentUseCase(ID, { amount: "10.00" }, ACTOR)).rejects.toMatchObject({

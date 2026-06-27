@@ -20,6 +20,7 @@ import {
   type PaymentForm,
   type WorkOrderOption,
 } from "@builders/domain"
+import { PaletteColorDropdown } from "@/engines/common"
 import {
   WorkOrderPicker,
   formatWorkOrderOptionTitle,
@@ -193,8 +194,23 @@ export function PaymentPrimaryFieldsSection({
           </FieldSection>
         }
         right={
-          /* Right flank intentionally empty; the column break is retained. */
-          <FieldSection gap="0.75rem">{null}</FieldSection>
+          /* Right flank: the edit-only palette color tag. Gated to the edit face
+             (like Payment # / the metadata band) so the create flow stays clean —
+             new rows fall to the DB default (SLATE). */
+          <FieldSection gap="0.75rem">
+            {paymentNumber ? (
+              <CellAt col={1} row={1} colSpan={8}>
+                <FormField label="Color">
+                  <PaletteColorDropdown
+                    value={draft.color}
+                    editable={editable}
+                    onChange={(color) => onFieldChange("color", color)}
+                    ariaLabel="Payment color"
+                  />
+                </FormField>
+              </CellAt>
+            ) : null}
+          </FieldSection>
         }
       />
       {createdAt ? (

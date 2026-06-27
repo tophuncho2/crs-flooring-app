@@ -7,11 +7,14 @@ import type {
   UpdatePaymentUseCaseInput,
 } from "@builders/application"
 import {
+  isPaletteColor,
   isValidMoneyAmount,
   normalizeMoneyAmount,
   LIST_PAYMENTS_MAX_PAGE_SIZE,
   LIST_PAYMENTS_PAGE_SIZE,
+  PALETTE_COLOR_INVALID_MESSAGE,
   type FlooringPaymentDirection,
+  type PaletteColor,
 } from "@builders/domain"
 
 function fail(message: string, field?: string): never {
@@ -76,6 +79,14 @@ function optionalAmount(value: unknown, field: string): string | undefined {
   return requireAmount(value, field)
 }
 
+// Palette color. Non-semantic visual tag — strictly validated when present on
+// update (the edit form always carries the current color). Create never accepts
+// it: new rows fall to the DB default (SLATE).
+function requireColor(value: unknown, field: string): PaletteColor {
+  if (!isPaletteColor(value)) fail(PALETTE_COLOR_INVALID_MESSAGE, field)
+  return value
+}
+
 export function validateCreatePaymentInput(
   body: Record<string, unknown>,
 ): CreatePaymentUseCaseInput {
@@ -94,6 +105,7 @@ export function validateUpdatePaymentInput(
   const input: UpdatePaymentUseCaseInput = {}
   if ("amount" in body) input.amount = optionalAmount(body.amount, "amount")
   if ("direction" in body) input.direction = optionalDirection(body.direction, "direction")
+  if ("color" in body) input.color = requireColor(body.color, "color")
   if ("paymentDate" in body) input.paymentDate = optionalString(body.paymentDate, "paymentDate")
   if ("entityId" in body) input.entityId = optionalLinkId(body.entityId, "entityId")
   if ("workOrderId" in body) input.workOrderId = optionalLinkId(body.workOrderId, "workOrderId")

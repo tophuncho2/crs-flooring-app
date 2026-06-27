@@ -1,4 +1,5 @@
 import type { EntityTypeRef } from "../../management/entities/types.js"
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
 
 export type FlooringPaymentDirection = "REVENUE" | "EXPENSE"
 
@@ -19,6 +20,8 @@ export type Payment = {
   paymentNumberInt?: number
   amount: string
   direction: FlooringPaymentDirection
+  // Non-semantic palette tag. Metadata only — never feeds any computation.
+  color: PaletteColor
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -63,6 +66,7 @@ export type PaymentPage = {
 export type PaymentForm = {
   amount: string
   direction: FlooringPaymentDirection
+  color: PaletteColor
   paymentDate: string
   entityId: string | null
   workOrderId: string | null
@@ -71,6 +75,7 @@ export type PaymentForm = {
 export const EMPTY_PAYMENT_FORM: PaymentForm = {
   amount: "",
   direction: "REVENUE",
+  color: DEFAULT_PALETTE_COLOR,
   paymentDate: "",
   entityId: null,
   workOrderId: null,
@@ -80,6 +85,7 @@ export function toPaymentForm(payment: Payment): PaymentForm {
   return {
     amount: payment.amount,
     direction: payment.direction,
+    color: payment.color,
     paymentDate: payment.paymentDate,
     entityId: payment.entityId,
     workOrderId: payment.workOrderId,

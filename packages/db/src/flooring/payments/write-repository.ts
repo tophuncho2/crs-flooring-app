@@ -5,6 +5,7 @@ import {
   normalizeMoneyAmount,
   normalizePayment,
   type FlooringPaymentDirection,
+  type PaletteColor,
   type Payment,
 } from "@builders/domain"
 
@@ -24,6 +25,8 @@ export type CreatePaymentRecordInput = {
 export type UpdatePaymentRecordInput = {
   amount?: string
   direction?: FlooringPaymentDirection
+  // Non-semantic palette tag. Metadata only — never triggers a recompute.
+  color?: PaletteColor
   paymentDate?: string
   // Tri-state: `undefined` = leave as-is, `null` = clear the link, string = set.
   entityId?: string | null
@@ -67,6 +70,7 @@ export async function updatePaymentRecord(
   const data: Prisma.FlooringPaymentUncheckedUpdateInput = { updatedBy: input.updatedBy }
   if (input.amount !== undefined) data.amount = normalizeMoneyAmount(input.amount)
   if (input.direction !== undefined) data.direction = input.direction
+  if (input.color !== undefined) data.color = input.color
   if (input.paymentDate !== undefined) data.paymentDate = optionalDate(input.paymentDate)
   if (input.entityId !== undefined) data.entityId = input.entityId
   if (input.workOrderId !== undefined) data.workOrderId = input.workOrderId

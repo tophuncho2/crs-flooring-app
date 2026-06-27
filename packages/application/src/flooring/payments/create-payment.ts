@@ -1,5 +1,5 @@
 import { Prisma, createPaymentRecord, withDatabaseTransaction } from "@builders/db"
-import { describePaymentFormIssues, validatePaymentForm } from "@builders/domain"
+import { DEFAULT_PALETTE_COLOR, describePaymentFormIssues, validatePaymentForm } from "@builders/domain"
 import { PaymentExecutionError } from "./errors.js"
 import type { CreatePaymentUseCaseInput, PaymentUseCaseResult } from "./types.js"
 
@@ -18,6 +18,10 @@ export async function createPaymentUseCase(
     const issues = validatePaymentForm({
       amount: input.amount ?? "",
       direction: input.direction,
+      // Color is metadata-only with no validation rule; pass the default purely to
+      // satisfy the form shape. Create never persists it — new rows fall to the DB
+      // default (SLATE) since `input` (CreatePaymentUseCaseInput) carries no color.
+      color: DEFAULT_PALETTE_COLOR,
       paymentDate: "",
       entityId: input.entityId ?? null,
       workOrderId: input.workOrderId ?? null,
