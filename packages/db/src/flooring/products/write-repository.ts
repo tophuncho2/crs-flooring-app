@@ -1,3 +1,4 @@
+import type { PaletteColor } from "@builders/domain"
 import type { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
 import { productRowSelect, type ProductsDbClient } from "./shared.js"
@@ -52,9 +53,11 @@ type ImmutableProductFields =
 
 // `updatedBy` is required on every update (always stamped with the actor email),
 // so it's carried explicitly rather than left optional in the `Partial<…>`.
+// `paletteColor` is update-only (the non-semantic tag) — never on create
+// (`CreateProductInput`), so new rows fall to the DB default SLATE.
 export type UpdateProductInput = Partial<
   Omit<CreateProductInput, ImmutableProductFields | "updatedBy">
-> & { updatedBy: string }
+> & { updatedBy: string; paletteColor?: PaletteColor }
 
 // --- Writes ---
 
@@ -95,6 +98,7 @@ export async function updateProduct(
   if (input.color !== undefined) data.color = input.color
   if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
   if (input.productNamingAddon !== undefined) data.productNamingAddon = input.productNamingAddon
+  if (input.paletteColor !== undefined) data.paletteColor = input.paletteColor
 
   const row = await client.flooringProduct.update({
     where: { id },

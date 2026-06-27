@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import { formatEasternDateTime, type ProductListRow } from "@builders/domain"
 
@@ -32,7 +33,7 @@ export function renderProductRowCell(
         ? `${row.coveragePerUnit} ${row.stockUnitAbbrev}`.trim()
         : "-"
     case "productNumber":
-      return <span className="tabular-nums">{row.productNumber}</span>
+      return <CellChip paletteColor={row.paletteColor}>{row.productNumber}</CellChip>
     case "createdAt":
       return (
         <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>

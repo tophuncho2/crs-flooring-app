@@ -11,11 +11,13 @@ import {
   StaticFieldValue,
   TextCell,
 } from "@/engines/record-view"
+import { PaletteColorDropdown } from "@/engines/common"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
 import {
   formatEasternDateTime,
+  type PaletteColor,
   type ProductCreateForm,
 } from "@builders/domain"
 
@@ -63,7 +65,7 @@ export function ProductPrimaryFieldsSection({
   disabled: boolean
   categoryReadOnly?: boolean
   fieldsReadOnly?: boolean
-  onFieldChange: (field: keyof ProductCreateForm, value: string) => void
+  onFieldChange: (field: keyof ProductCreateForm, value: string | PaletteColor) => void
 }) {
   const selectedCategory = useMemo(() => {
     if (categoryReadOnly) {
@@ -194,6 +196,21 @@ export function ProductPrimaryFieldsSection({
               <CellAt col={1} row={4} colSpan={4}>
                 <FormField label="PROD #">
                   <StaticFieldValue>{product.productNumber}</StaticFieldValue>
+                </FormField>
+              </CellAt>
+            ) : null}
+            {/* Non-semantic palette tag — edit-only. Labelled "Palette" to stay
+                distinct from the physical "Color" field on the left flank. The
+                create flow (categoryReadOnly false) renders no picker. */}
+            {categoryReadOnly ? (
+              <CellAt col={1} row={5} colSpan={4}>
+                <FormField label="Palette">
+                  <PaletteColorDropdown
+                    value={draft.paletteColor}
+                    editable={editable}
+                    onChange={(next) => onFieldChange("paletteColor", next)}
+                    ariaLabel="Product palette color"
+                  />
                 </FormField>
               </CellAt>
             ) : null}

@@ -6,8 +6,11 @@ import type {
   ProductsListFilters,
 } from "@builders/application"
 import {
+  isPaletteColor,
   LIST_PRODUCTS_MAX_PAGE_SIZE,
   LIST_PRODUCTS_PAGE_SIZE,
+  PALETTE_COLOR_INVALID_MESSAGE,
+  type PaletteColor,
 } from "@builders/domain"
 import { parseOptionalString } from "@/server/http/api-helpers"
 
@@ -38,6 +41,16 @@ function parseCoveragePerUnit(value: unknown): string | null {
     fail("coveragePerUnit must be a non-negative number", "coveragePerUnit")
   }
   return trimmed
+}
+
+// Palette color — non-semantic visual tag. Strictly validated when present on
+// update (the edit form always carries the current color). Create never accepts
+// it: new rows fall to the DB default (SLATE).
+function requireColor(value: unknown, field: string): PaletteColor {
+  if (!isPaletteColor(value)) {
+    fail(PALETTE_COLOR_INVALID_MESSAGE, field)
+  }
+  return value
 }
 
 function parseSharedFields(body: Record<string, unknown>) {
@@ -88,7 +101,7 @@ export function validateCreateProductInput(body: Record<string, unknown>): Creat
  */
 export function validateUpdateProductInput(
   body: Record<string, unknown>,
-): Omit<CreateProductInput, "categoryId"> {
+): Omit<CreateProductInput, "categoryId"> & { paletteColor?: PaletteColor } {
   if (body.categoryId !== undefined) {
     throw new ProductExecutionError({
       code: "PRODUCT_CATEGORY_LOCKED",
@@ -98,7 +111,14 @@ export function validateUpdateProductInput(
     })
   }
 
-  return parseSharedFields(body)
+  return {
+    ...parseSharedFields(body),
+    // Edit-only palette tag — strict when present. Absent on a stale client →
+    // left unchanged. Create has no equivalent (defaults to SLATE in the DB).
+    ...(body.paletteColor !== undefined
+      ? { paletteColor: requireColor(body.paletteColor, "paletteColor") }
+      : {}),
+  }
 }
 
 // --- List query validator ---

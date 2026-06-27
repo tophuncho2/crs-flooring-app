@@ -4,6 +4,8 @@
 //
 // No `baseColor`, no `photoUrls` — both were removed in the Phase 1/2 cleanup.
 
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
+
 export type ProductRowCategory = {
   id: string
   slug: string
@@ -23,6 +25,9 @@ export type ProductRow = {
   manufacturerName: string
   style: string
   color: string
+  // Non-semantic palette tag (user-assigned visual color). Metadata-only — no
+  // business logic reads it. Distinct from the free-text physical `color` above.
+  paletteColor: PaletteColor
   // Send / stock unit name + abbreviation snapshots, stamped onto
   // the product row at write time from the chosen category. Reads never join
   // through `category → unit_of_measure`. Empty string when the category does
@@ -63,6 +68,10 @@ export type ProductCreateForm = {
   // Mutable on create AND update — not an immutable snapshot. Empty string clears it.
   coveragePerUnit: string
   productNamingAddon: string
+  // Non-semantic palette tag. Carried on the shared draft so the record-view
+  // edit form can re-pick it; the create flow never renders a picker and the
+  // create API validator ignores it, so new rows fall to the DB default SLATE.
+  paletteColor: PaletteColor
 }
 
 // Update form — categoryId is omitted: it's immutable post-create (it drives
@@ -97,6 +106,7 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   color: "",
   coveragePerUnit: "",
   productNamingAddon: "",
+  paletteColor: DEFAULT_PALETTE_COLOR,
 }
 
 export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
@@ -106,5 +116,6 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     color: row.color,
     coveragePerUnit: row.coveragePerUnit,
     productNamingAddon: row.productNamingAddon,
+    paletteColor: row.paletteColor,
   }
 }

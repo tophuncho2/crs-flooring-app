@@ -195,6 +195,10 @@ model FlooringProduct {
   manufacturer                     FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
   style                            String?
   color                            String?
+  // Non-semantic palette tag (user-assigned visual color). Distinct from the
+  // free-text physical `color` above — never overload that. Edit-only: only the
+  // record-view edit form sets it; create/import/worker/seed fall to SLATE.
+  paletteColor                     PaletteColor                       @default(SLATE)
   coveragePerUnit                  Decimal?                           @db.Decimal(12, 4)
   productNamingAddon               String?                            @db.VarChar(80)
   sendUnitName                     String?

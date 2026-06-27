@@ -71,6 +71,9 @@ export async function updateProductUseCase(
     if ("color" in input) patch.color = input.color
     if ("coveragePerUnit" in input) patch.coveragePerUnit = input.coveragePerUnit
     if ("productNamingAddon" in input) patch.productNamingAddon = input.productNamingAddon
+    // Non-semantic palette tag — metadata-only passthrough. Never read here: it
+    // does not affect the stored name, coverage, or any recompute.
+    if ("paletteColor" in input) patch.paletteColor = input.paletteColor
 
     if (nameAffected) {
       const name = buildStoredFlooringProductName({

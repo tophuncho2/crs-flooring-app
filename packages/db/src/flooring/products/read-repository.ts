@@ -1,6 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma } from "../../generated/prisma/client.js"
-import type { ProductOption, ProductStats } from "@builders/domain"
+import type { PaletteColor, ProductOption, ProductStats } from "@builders/domain"
 import {
   listCategories,
   type CategoryRecord,
@@ -35,6 +35,8 @@ export type ProductRecord = {
   manufacturerName: string
   style: string
   color: string
+  // Non-semantic palette tag (metadata-only). Distinct from the physical `color`.
+  paletteColor: PaletteColor
   sendUnitName: string
   sendUnitAbbrev: string
   stockUnitName: string
@@ -106,6 +108,7 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     manufacturerName: product.manufacturer?.companyName ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
+    paletteColor: product.paletteColor,
     sendUnitName: product.sendUnitName ?? "",
     sendUnitAbbrev: product.sendUnitAbbrev ?? "",
     stockUnitName: product.stockUnitName ?? "",

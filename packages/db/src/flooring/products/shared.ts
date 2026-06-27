@@ -16,6 +16,9 @@ export const productRowSelect = {
   manufacturerId: true,
   style: true,
   color: true,
+  // Non-semantic palette tag. On the row/detail reads only — the skinny
+  // `productOptionSelect` omits it (pickers don't render the chip).
+  paletteColor: true,
   sendUnitName: true,
   sendUnitAbbrev: true,
   stockUnitName: true,
