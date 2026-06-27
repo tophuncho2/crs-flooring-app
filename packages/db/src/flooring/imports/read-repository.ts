@@ -29,6 +29,7 @@ export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
     warehouseName: row.warehouse?.name ?? "",
     manufacturerId: row.manufacturerId ?? "",
     manufacturerName: row.manufacturer?.companyName ?? "",
+    color: row.color,
     stagedInventoryRowsCount: row._count.stagedInventoryRows,
     liveInventoryRowsCount: row._count.inventories,
     createdAt: row.createdAt.toISOString(),

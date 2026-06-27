@@ -62,6 +62,7 @@ export function ImportRecordPanel({
               >
                 <ImportPrimaryFieldsSection
                   draft={controller.primarySection.localValue}
+                  importNumber={controller.record.importNumber}
                   warehouseName={controller.record.warehouseName}
                   manufacturerName={controller.record.manufacturerName}
                   createdAt={controller.record.createdAt}

@@ -13,6 +13,9 @@ import {
   LIST_IMPORTS_MAX_PAGE_SIZE,
   LIST_IMPORTS_PAGE_SIZE,
   MAX_MARK_FOR_IMPORT_ROWS,
+  PALETTE_COLOR_INVALID_MESSAGE,
+  isPaletteColor,
+  type PaletteColor,
 } from "@builders/domain"
 // no sort param — imports default to createdAt desc, hardcoded server-side
 import type {
@@ -54,6 +57,21 @@ function optionalString(value: unknown, field: string): string {
   return value
 }
 
+// Palette tag is strict-when-present on update: a supplied value must be a real
+// PaletteColor, else 400 with the shared message. Edit-only — create never
+// accepts color (new rows fall to the DB default SLATE).
+function requireColor(value: unknown): PaletteColor {
+  if (!isPaletteColor(value)) {
+    throw new ImportExecutionError({
+      code: "IMPORT_VALIDATION_FAILED",
+      message: PALETTE_COLOR_INVALID_MESSAGE,
+      status: 400,
+      field: "color",
+    })
+  }
+  return value
+}
+
 export function validateCreateImportInput(body: Record<string, unknown>): CreateImportInput {
   return {
     purchaseOrderNumber: optionalString(body.purchaseOrderNumber, "purchaseOrderNumber"),
@@ -71,6 +89,7 @@ export function validateUpdateImportInput(body: Record<string, unknown>): Update
     input.internalNotes = optionalString(body.internalNotes, "internalNotes")
   if (body.warehouseId !== undefined) input.warehouseId = requireString(body.warehouseId, "warehouseId")
   if (body.manufacturerId !== undefined) input.manufacturerId = optionalString(body.manufacturerId, "manufacturerId")
+  if ("color" in body) input.color = requireColor(body.color)
   return input
 }
 

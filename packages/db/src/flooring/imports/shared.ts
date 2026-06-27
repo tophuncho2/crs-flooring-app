@@ -11,6 +11,7 @@ export const importRowSelect = {
   warehouse: { select: { id: true, name: true } },
   manufacturerId: true,
   manufacturer: { select: { id: true, companyName: true } },
+  color: true,
   _count: { select: { stagedInventoryRows: true, inventories: true } },
   createdAt: true,
   updatedAt: true,

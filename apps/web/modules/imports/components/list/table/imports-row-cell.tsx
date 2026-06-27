@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import { formatEasternDateTime, type ImportRow } from "@builders/domain"
 
@@ -13,9 +14,7 @@ export function renderImportsRowCell(
   switch (column.key) {
     case "importNumber":
       return (
-        <span className="font-medium text-blue-500">
-          {formatImportNumber(row.importNumber)}
-        </span>
+        <CellChip paletteColor={row.color}>{formatImportNumber(row.importNumber)}</CellChip>
       )
     case "warehouseName":
       return row.warehouseName || "-"

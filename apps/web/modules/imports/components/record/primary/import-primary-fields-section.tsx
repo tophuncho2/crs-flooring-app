@@ -1,5 +1,6 @@
 "use client"
 
+import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import {
   CellAt,
   FieldSection,
@@ -17,19 +18,22 @@ import {
   IMPORT_INTERNAL_NOTES_MAX,
   IMPORT_PURCHASE_ORDER_NUMBER_MAX,
   type ImportPrimaryForm,
+  type PaletteColor,
 } from "@builders/domain"
 
 /**
  * Composer for the imports primary section, on the canonical record-view grid.
  * A centered `RecordColumnBreak` splits the editable fields into two flanks —
- * left = Warehouse / Purchase Order Number / Internal Notes, right = Manufacturer —
- * then a `RecordSectionDivider` terminates the section above a read-only metadata
- * band (Created / Updated over Created by / Updated by), mirroring products +
- * inventory + work-orders. The create flow (no persisted row) renders neither the
- * divider nor the band.
+ * left = Warehouse / Purchase Order Number / Internal Notes, right = Import # chip
+ * / Manufacturer / Color — then a `RecordSectionDivider` terminates the section
+ * above a read-only metadata band (Created / Updated over Created by / Updated by),
+ * mirroring products + inventory + work-orders. The create flow (no persisted row)
+ * renders neither the colored Import # identity cell, the editable Color tag, the
+ * divider, nor the band — color is edit-only (`column-color`).
  */
 export function ImportPrimaryFieldsSection({
   draft,
+  importNumber,
   warehouseName,
   manufacturerName,
   createdAt,
@@ -40,6 +44,10 @@ export function ImportPrimaryFieldsSection({
   onFieldChange,
 }: {
   draft: ImportPrimaryForm
+  // Present on the record view (existing import); omitted on the create flow.
+  // Drives the colored `IMP-#` identity chip + the editable Color tag, both of
+  // which are record/edit-only.
+  importNumber?: number
   warehouseName: string | null
   manufacturerName: string | null
   // Present on the record view (existing import); omitted on the create flow,
@@ -49,9 +57,11 @@ export function ImportPrimaryFieldsSection({
   createdBy?: string
   updatedBy?: string
   disabled: boolean
-  onFieldChange: (field: keyof ImportPrimaryForm, value: string) => void
+  // `value` widens to PaletteColor for the Color tag; all other fields are strings.
+  onFieldChange: (field: keyof ImportPrimaryForm, value: string | PaletteColor) => void
 }) {
   const editable = !disabled
+  const persisted = importNumber !== undefined
 
   return (
     <div className="flex flex-col gap-4">
@@ -107,7 +117,15 @@ export function ImportPrimaryFieldsSection({
         }
         right={
           <FieldSection gap="0.75rem">
-            {/* Right flank: Manufacturer */}
+            {/* Right flank: Import # identity chip / Manufacturer / Color.
+                The chip + color tag are record/edit-only (no persisted row on create). */}
+            {persisted ? (
+              <CellAt col={1} colSpan={8}>
+                <FormField label="Import #">
+                  <CellChip paletteColor={draft.color}>{`IMP-${importNumber}`}</CellChip>
+                </FormField>
+              </CellAt>
+            ) : null}
             <CellAt col={1} colSpan={8}>
               <FormField label="Manufacturer">
                 {editable ? (
@@ -123,6 +141,18 @@ export function ImportPrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
+            {persisted ? (
+              <CellAt col={1} colSpan={8}>
+                <FormField label="Color">
+                  <PaletteColorDropdown
+                    value={draft.color}
+                    editable={editable}
+                    onChange={(color) => onFieldChange("color", color)}
+                    ariaLabel="Import color"
+                  />
+                </FormField>
+              </CellAt>
+            ) : null}
           </FieldSection>
         }
       />

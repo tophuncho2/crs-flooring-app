@@ -1,3 +1,4 @@
+import type { PaletteColor } from "@builders/domain"
 import { Prisma } from "../../generated/prisma/client.js"
 import { db } from "../../client.js"
 import { type ImportsDbClient } from "./shared.js"
@@ -49,11 +50,14 @@ export type CreateImportRecordInput = {
 /**
  * Update input — partial of the user-editable subset (mirrors
  * `IMPORT_USER_EDITABLE_FIELDS` in the domain) plus an always-present
- * `updatedBy` actor stamp. `createdBy` is immutable post-create.
+ * `updatedBy` actor stamp. `createdBy` is immutable post-create. `color` is
+ * the editable palette tag — added explicitly here (not on the create input, so
+ * new rows fall to the DB default SLATE); a non-semantic visual tag carried
+ * through unread.
  */
 export type UpdateImportRecordInput = Partial<
   Omit<CreateImportRecordInput, "createdBy" | "updatedBy">
-> & { updatedBy: string }
+> & { updatedBy: string; color?: PaletteColor }
 
 export async function createImportRecord(
   input: CreateImportRecordInput,
@@ -96,6 +100,7 @@ export async function updateImportRecord(
       ? { connect: { id: input.manufacturerId } }
       : { disconnect: true }
   }
+  if (input.color !== undefined) data.color = input.color
 
   await client.flooringImportEntry.update({
     where: { id },

@@ -44,6 +44,7 @@ function currentRecord(overrides: Record<string, unknown> = {}) {
     warehouseName: "Main",
     manufacturerId: "",
     manufacturerName: "",
+    color: "SLATE",
     stagedInventoryRowsCount: 0,
     liveInventoryRowsCount: 0,
     createdAt: "2026-05-22T00:00:00.000Z",
@@ -94,6 +95,15 @@ describe("updateImportUseCase — actor stamping", () => {
     const [, dbInput] = updateImportRecordMock.mock.calls[0]!
     expect(dbInput).not.toHaveProperty("createdBy")
     expect(dbInput).toMatchObject({ updatedBy: ACTOR, internalNotes: "new note" })
+  })
+
+  it("rides the palette color through to the repo unread (metadata-only, no recompute)", async () => {
+    await updateImportUseCase(IMPORT_ID, { color: "VIOLET" }, ACTOR)
+    expect(updateImportRecordMock).toHaveBeenCalledWith(
+      IMPORT_ID,
+      expect.objectContaining({ color: "VIOLET", updatedBy: ACTOR }),
+      expect.anything(),
+    )
   })
 
   it("acquires the FOR UPDATE lock before reading the import", async () => {

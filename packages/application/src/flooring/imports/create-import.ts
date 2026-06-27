@@ -4,7 +4,7 @@ import {
   getWarehouseById,
   withDatabaseTransaction,
 } from "@builders/db"
-import { validateImportPrimaryForm } from "@builders/domain"
+import { DEFAULT_PALETTE_COLOR, validateImportPrimaryForm } from "@builders/domain"
 import { ImportExecutionError } from "./errors.js"
 import type { CreateImportInput, ImportResult } from "./types.js"
 
@@ -25,7 +25,9 @@ export async function createImportUseCase(
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
-    const issues = validateImportPrimaryForm(input)
+    // color is metadata-only and unread by the validator; create rows fall to the
+    // DB default SLATE, so satisfy the form type with the default tag.
+    const issues = validateImportPrimaryForm({ ...input, color: DEFAULT_PALETTE_COLOR })
     if (issues.length > 0) {
       const [first] = issues
       throw new ImportExecutionError({

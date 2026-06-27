@@ -3,6 +3,7 @@ export const IMPORT_USER_EDITABLE_FIELDS = [
   "internalNotes",
   "warehouseId",
   "manufacturerId",
+  "color",
 ] as const
 
 export const IMPORT_AUTO_FIELDS = [

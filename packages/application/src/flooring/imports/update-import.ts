@@ -28,6 +28,7 @@ function toPrimaryForm(input: UpdateImportInput, current: ImportPrimaryForm): Im
     internalNotes: input.internalNotes ?? current.internalNotes,
     warehouseId: input.warehouseId ?? current.warehouseId,
     manufacturerId: input.manufacturerId ?? current.manufacturerId,
+    color: input.color ?? current.color,
   }
 }
 
@@ -60,6 +61,7 @@ export async function updateImportUseCase(
       internalNotes: current.internalNotes,
       warehouseId: current.warehouseId,
       manufacturerId: current.manufacturerId,
+      color: current.color,
     })
 
     const issues = validateImportPrimaryForm(merged)
@@ -109,6 +111,8 @@ export async function updateImportUseCase(
     if (input.manufacturerId !== undefined) {
       dbInput.manufacturerId = emptyToNull(input.manufacturerId)
     }
+    // Palette tag rides through unread — metadata-only, no recompute.
+    if (input.color !== undefined) dbInput.color = input.color
 
     return updateImportRecord(id, dbInput, c)
   })

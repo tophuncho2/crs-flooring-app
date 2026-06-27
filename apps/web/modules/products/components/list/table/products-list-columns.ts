@@ -2,6 +2,7 @@ import type { DataTableColumn } from "@/engines/list-view"
 import type { ProductListRow } from "@builders/domain"
 
 export const PRODUCTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ProductListRow>> = [
+  { key: "productNumber", label: "PROD #" },
   { key: "category", label: "Category" },
   { key: "style", label: "Style" },
   { key: "color", label: "Color" },
@@ -10,7 +11,6 @@ export const PRODUCTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ProductListRow
   { key: "name", label: "Product" },
   { key: "coveragePerUnit", label: "Coverage / Unit", align: "end" },
   { key: "stockUnit", label: "Stock Unit" },
-  { key: "productNumber", label: "PROD #" },
   { key: "createdAt", label: "Created" },
   { key: "createdBy", label: "Created by" },
   { key: "updatedBy", label: "Updated by" },

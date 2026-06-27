@@ -1,3 +1,5 @@
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
+
 export type ImportRow = {
   id: string
   importNumber: number
@@ -7,6 +9,7 @@ export type ImportRow = {
   warehouseName: string
   manufacturerId: string
   manufacturerName: string
+  color: PaletteColor
   stagedInventoryRowsCount: number
   liveInventoryRowsCount: number
   createdAt: string
@@ -41,6 +44,7 @@ export type ImportPrimaryForm = {
   internalNotes: string
   warehouseId: string
   manufacturerId: string
+  color: PaletteColor
 }
 
 export const EMPTY_IMPORT_PRIMARY_FORM: ImportPrimaryForm = {
@@ -48,6 +52,7 @@ export const EMPTY_IMPORT_PRIMARY_FORM: ImportPrimaryForm = {
   internalNotes: "",
   warehouseId: "",
   manufacturerId: "",
+  color: DEFAULT_PALETTE_COLOR,
 }
 
 export function toImportPrimaryForm(record: ImportRow): ImportPrimaryForm {
@@ -56,6 +61,7 @@ export function toImportPrimaryForm(record: ImportRow): ImportPrimaryForm {
     internalNotes: record.internalNotes,
     warehouseId: record.warehouseId,
     manufacturerId: record.manufacturerId,
+    color: record.color,
   }
 }
 

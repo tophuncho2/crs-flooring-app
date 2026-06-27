@@ -357,6 +357,7 @@ model FlooringImportEntry {
   manufacturerId      String?
   manufacturer        FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
   internalNotes       String?                            @db.VarChar(250)
+  color               PaletteColor                       @default(SLATE)
   createdAt           DateTime                           @default(now())
   updatedAt           DateTime                           @updatedAt
   createdBy           String?
