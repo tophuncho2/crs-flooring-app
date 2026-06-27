@@ -16,10 +16,10 @@ export type DataTableColumn<TRow> = {
   label: string
   align?: DataTableCellAlign
   /**
-   * When true, the header renders as a sort button (caret affordance) and
-   * clicking it calls `DataTableProps.onSort(column.key)`. Inert unless the
-   * table is also given an `onSort` handler. The caller maps the column key to
-   * a server sort field + direction. Off by default.
+   * @deprecated INERT — the clickable header sort affordance was removed.
+   * Sorting is driven by the toolbar's multi-column Sort menu, not the column
+   * header. This flag no longer renders a caret or makes the header clickable;
+   * retained only for source compat and slated for removal. Off by default.
    */
   sortable?: boolean
   /**

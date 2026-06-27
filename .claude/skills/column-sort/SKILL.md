@@ -1,11 +1,11 @@
 ---
 name: column-sort
-description: Master of the multi-column **Sort tool** across the columns → client → record-grid → data-request → api-validator → db-order-by → tests stack — the shared SortMenuBody, the type-aware direction labels, the `?sorts=field:dir` URL codec, the per-module SORT_OPTIONS allowlist, and the pure Prisma order-by builders. Invoke to install sort onto a new list module, add a sortable column to a module that already has it, audit an existing install for layer drift, or consolidate a hand-maintained allowlist onto the one derived source. Always classifies the module shape first — key==field (inventory) vs key≠field divergence (work-orders) — because the client wiring differs. Knows every field-set layer must agree and refuses to let one drift. Editing skill, not read-only. Explicit-only — invoke on /column-sort.
+description: Master of the multi-column **Sort tool** across the columns → client → record-grid → data-request → api-validator → db-order-by → tests stack — the shared SortMenuBody, the type-aware direction labels, the `?sorts=field:dir` URL codec, the per-module SORT_OPTIONS allowlist, and the pure Prisma order-by builders. Invoke to install sort onto a new list module, add a sortable column to a module that already has it, audit an existing install for layer drift, or consolidate a hand-maintained allowlist onto the one derived source. Sorting is menu-only — the clickable DataTable header caret was removed, so SORT_OPTIONS keys ARE backend fields and no column-key↔field maps are needed. Knows every field-set layer must agree and refuses to let one drift. Editing skill, not read-only. Explicit-only — invoke on /column-sort.
 ---
 
 # /column-sort
 
-`/column-sort` makes you the owner of the **multi-column Sort tool** — the shared `SortMenuBody`, the `?sorts=field:dir,field:dir` URL contract, the per-module `SORT_OPTIONS` allowlist that drives the menu, and the pure Prisma order-by builders that turn the chosen fields into a query. The user invokes it with a free-form intent — "make properties sortable", "add a sortable Cost column to inventory", "audit the work-orders sort for drift", "fold that hand-maintained allowlist onto SORT_OPTIONS". Your job: ground in the live two-module reference (inventory + work-orders), classify the module shape, and drive the sort field through every layer it touches so **no allowlist drifts**.
+`/column-sort` makes you the owner of the **multi-column Sort tool** — the shared `SortMenuBody`, the `?sorts=field:dir,field:dir` URL contract, the per-module `SORT_OPTIONS` allowlist that drives the menu, and the pure Prisma order-by builders that turn the chosen fields into a query. The user invokes it with a free-form intent — "make properties sortable", "add a sortable Cost column to inventory", "audit the work-orders sort for drift", "fold that hand-maintained allowlist onto SORT_OPTIONS". Your job: ground in the live two-module reference (inventory + work-orders) and drive the sort field through every layer it touches so **no allowlist drifts**.
 
 This is an **editing** skill — it reads, classifies, then wires the field across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`). The Sort tool is **proven on exactly two modules** (inventory + work-orders); installing onto a third is the headline use.
 
@@ -13,32 +13,31 @@ This is an **editing** skill — it reads, classifies, then wires the field acro
 
 The tool is **one shared menu fed a per-module list of allowed fields, validated again at every server boundary, and resolved by a pure order-by builder.** A field is sortable only if **EVERY layer agrees** on it. There is no schema change anywhere — sort needs only fields/relations that already exist.
 
+**Sorting is menu-only — the column header carries NO sort affordance.** The clickable header caret/arrow was removed from the `DataTable` primitive (`apps/web/engines/list-view/table/data-table-header-cell.tsx` renders a static label; `DataTableProps.sort`/`sorts`/`onSort` and `DataTableColumn.sortable` are `@deprecated` **inert** props). So a sortable field shows up **only** in the toolbar `SortMenuBody`; never wire or expect a header arrow.
+
 ```
 columns file (SORT_OPTIONS + sortable:true + derived ALLOWED) → client (defaultSortDirection [+ key↔field maps]) → record-view grid reuse (when present) → data/list-*-request.ts allowlist → app/api/*/_validators.ts allowlist → packages/db order-by.ts builder → tests (db order-by + web request-parse + allowlist-sync)
 ```
 
 **The drift contract is the whole point.** Four field-set layers must hold identical sets — the menu `*_SORT_OPTIONS`, the client `*_ALLOWED_SORT_FIELDS`, the request `*_LIST_SORT_FIELDS`, and the api `*_UI_SORT_FIELDS`. Add a column to some-but-not-all and it either silently fails to sort or is rejected server-side. `apps/web/tests/modules/sort/sort-allowlist-sync.test.ts` is the catch — it fails the moment the sets diverge.
 
-### Column key vs backend field — classify the module shape FIRST
+### Column key vs backend field — the menu uses the backend field directly
 
-The `field` that flows through the URL → parser → order-by is the **backend sort field**. The DataTable column it caret-decorates is the **column key**. The two modules differ, and this decides the client wiring:
+The `field` that flows through the menu → URL → parser → order-by is the **backend sort field**, and **`SORT_OPTIONS` keys ARE backend fields** (e.g. WO uses `property`, `entity`, not `propertyName`). Because sorting is menu-only now, a new install needs **no** column-key↔field translation: the menu speaks backend fields end to end.
 
-- **key == field (inventory shape, the simple case).** Column keys equal backend fields (`stockBalance`, `productName`, `location`, `warehouse`). No translation maps. The client only needs a `defaultSortDirection`. Reference: `apps/web/modules/inventory/components/list/inventory-client.tsx`.
-- **key ≠ field (work-orders shape, the divergent case).** Column keys (`warehouseName`, `entityName`, `propertyName`, `jobTypeName`) differ from backend fields (`warehouse`, `entity`, `property`, `jobType`). The client needs **both** maps — `SORT_FIELD_BY_COLUMN` (header click → field) and `COLUMN_BY_SORT_FIELD` (field → caret) — plus a `tableSorts` memo that reflects backend fields back onto column keys. Reference: `apps/web/modules/work-orders/components/list/work-orders-client.tsx:53-80,211-218`.
-
-State which shape the target is before touching anything. A wrong guess here is the only thing that makes sort look broken in the UI while the query is correct.
+The old header-caret plumbing in work-orders — `SORT_FIELD_BY_COLUMN` (header click → field), `COLUMN_BY_SORT_FIELD` (field → caret), and the `tableSorts` memo (`work-orders-client.tsx:53-80,211-218`) — existed **only** to bridge the DataTable column key to the backend field for the now-removed header affordance. It is **vestigial**: a new install does NOT add it, and a consolidate pass should delete it. (It survives in WO/inventory today only because the inert `DataTable` props still accept it; that's Phase-2 cleanup, not a live requirement.)
 
 ### The shared machinery (never fork it — `consolidate-shared-not-per-module`)
 
 - **Menu** — `apps/web/engines/list-view/toolbar/sort/sort-menu.tsx`: `SortMenuBody` + `SortMenuOption { key; label; type? }` + `SortValueType = "text"|"number"|"date"|"time"`. The `type` drives the readable direction labels (text `A→Z`, number `Low→High`, date `Oldest/Newest`, time `AM first/PM first`). Consumers pass `title="Sort by"` to the hosting `ToolbarMenuButton` (the sticky header owns the title — the body draws no header).
 - **Controller** — `apps/web/engines/list-view/client/use-server-list-controller.ts`: `encodeSorts`/`parseSorts`/`normalizeSorts`, the `?sorts=` codec, `allowedSortFields`, `maxSortLevels`. `maxSortLevels > 1` activates the multi-sort URL path. **Cap is 3 everywhere.**
 
-### The canonical per-layer wiring (reference: inventory key==field · work-orders key≠field)
+### The canonical per-layer wiring (reference: inventory + work-orders)
 
 | Layer | File(s) | The sort seam |
 |---|---|---|
-| Columns (the ONE client source) | `modules/{m}/components/list/table/{m}-list-columns.ts` | `sortable: true` on the column; a `{m}_SORT_OPTIONS` entry `{ key, label, type }`; **derived** `{m}_ALLOWED_SORT_FIELDS = {m}_SORT_OPTIONS.map((o) => o.key)`; `{m}_MAX_SORT_LEVELS = 3` |
-| Client | `modules/{m}/components/list/{m}-client.tsx` | `defaultSortDirection(field)`; **key≠field only**: `SORT_FIELD_BY_COLUMN`, `COLUMN_BY_SORT_FIELD`, `tableSorts` memo |
+| Columns (the ONE client source) | `modules/{m}/components/list/table/{m}-list-columns.ts` | a `{m}_SORT_OPTIONS` entry `{ key, label, type }` (key = backend field); **derived** `{m}_ALLOWED_SORT_FIELDS = {m}_SORT_OPTIONS.map((o) => o.key)`; `{m}_MAX_SORT_LEVELS = 3`. *(`sortable: true` on a `DataTableColumn` is inert now — optional, renders nothing.)* |
+| Client | `modules/{m}/components/list/{m}-client.tsx` | `defaultSortDirection(field)` + pass `maxSortLevels`/`allowedSortFields` into the controller and `title="Sort by"` to the Sort button. *(The `SORT_FIELD_BY_COLUMN`/`COLUMN_BY_SORT_FIELD`/`tableSorts` header plumbing is vestigial — see above; don't add it.)* |
 | Record-view grid reuse (when the module has one) | `modules/inventory/controllers/record/header/use-inventory-options-grid.ts:19-31` | reuses `{m}_ALLOWED_SORT_FIELDS` + `MAX_SORT_LEVELS` so the gutter Sort picker never drifts from the list |
 | Data request allowlist (independent) | `modules/{m}/data/list-{m}-request.ts` | exported `{m}_LIST_SORT_FIELDS` + `parseSortsParam` (dedupe, drop-unknown, default `desc`, cap 3) |
 | API validator allowlist (independent) | `app/api/{m}/_validators.ts` | exported `{m}_UI_SORT_FIELDS` + `parseSortsParam` (same shape, `Set`-backed) |
@@ -55,12 +54,12 @@ State which shape the target is before touching anything. A wrong guess here is 
 
 ### Done vs candidate (verify against live code each run)
 
-- **Done (2):** inventory (key==field) + work-orders (key≠field). These are the references, not a roadmap.
+- **Done (2):** inventory + work-orders. These are the references, not a roadmap. (WO still carries vestigial header-caret maps; inventory's keys happen to equal its fields — neither matters now that sorting is menu-only.)
 - **Candidate:** any toolbar list module on `useServerListController` that isn't yet sortable — manufacturers, properties, templates, entities, job-types, payments, warehouses, products. Confirm the module renders the shared toolbar Sort `ToolbarMenuButton` (or wire it) before promising sort.
 
 ## Hard rules
 
-- **Ground before you touch, and classify the shape first.** Do the Step 1 read every time. Decide **key==field (inventory) vs key≠field (work-orders)** before any edit — it determines whether the client needs the two translation maps + `tableSorts`. A wrong call here makes sort look broken in the UI while the query is fine.
+- **Ground before you touch.** Do the Step 1 read every time. Sorting is **menu-only** — the DataTable header caret is gone; never wire `sortable`/`onSort`/`tableSorts`/column-key↔field maps expecting a header arrow. `SORT_OPTIONS` keys are backend fields, so the menu speaks one vocabulary end to end.
 - **Every field-set layer must agree.** A new sortable field touches **all four** allowlists in lockstep: menu `SORT_OPTIONS` (with a `type`), client `*_ALLOWED_SORT_FIELDS` (derived — see next rule), request `*_LIST_SORT_FIELDS`, api `*_UI_SORT_FIELDS` — **plus** the `*FieldOrderBy` case and the test specs. Missing one = silent no-sort or a server reject. The `sort-allowlist-sync` test is the guard.
 - **The client allowlist is DERIVED, never hand-listed.** `*_ALLOWED_SORT_FIELDS = *_SORT_OPTIONS.map((o) => o.key)` lives in the columns file; the client + the record-view grid **import** it. If you find a hand-maintained client list, that's a consolidate job — converge it onto the derived source, don't extend it.
 - **The two SERVER allowlists stay independent — defense-in-depth (confirmed scope).** `*_LIST_SORT_FIELDS` (data) and `*_UI_SORT_FIELDS` (api) are deliberately separate, each `export`ed so the sync test compares them. **Consolidate does NOT collapse them onto the client source.** They cannot import `@builders/db` either (see the dist trap).
@@ -79,15 +78,15 @@ State which shape the target is before touching anything. A wrong guess here is 
 Before classifying, read the current reality:
 
 1. **Shared machinery** — confirm `sort-menu.tsx` (`SortMenuOption`/`SortValueType`) and `use-server-list-controller.ts` (`?sorts=` codec, `maxSortLevels`, `allowedSortFields`) are intact and unforked.
-2. **Both references** — read inventory (key==field) and work-orders (key≠field) at each layer of the table above. They are the install spec; mirror whichever shape the target matches.
-3. **Target module** — read its columns file, client, `data/list-*-request.ts`, `app/api/*/_validators.ts`, and `packages/db/src/flooring/*/`. Confirm it renders the shared toolbar Sort button (or note it must be wired). Decide its shape (key==field vs key≠field) and whether it has a record-view options grid that reuses sort.
+2. **Both references** — read inventory and work-orders at each layer of the table above. They are the install spec. (Ignore WO's `SORT_FIELD_BY_COLUMN`/`tableSorts` — that's dead header plumbing, not part of the spec.)
+3. **Target module** — read its columns file, client, `data/list-*-request.ts`, `app/api/*/_validators.ts`, and `packages/db/src/flooring/*/`. Confirm it renders the shared toolbar Sort button (or note it must be wired) and whether it has a record-view options grid that reuses sort.
 4. **Memory** — read `sort-menu-redesign-and-sweep` (full provenance of the menu redesign + sweep + tests) and `consolidate-shared-not-per-module`. Treat as context; verify against code.
 
-State what you found in one tight block (target module, shape, on-toolbar?, record-grid reuse?, the field(s) in scope) before proposing the change.
+State what you found in one tight block (target module, on-toolbar?, record-grid reuse?, the field(s) in scope) before proposing the change.
 
 ## Step 2 — Classify the task
 
-- **A. Install** — the target is a candidate list module with no sort yet. Confirm it's on the shared toolbar, pick the shape, then walk all layers (Step 3) for the full sortable set.
+- **A. Install** — the target is a candidate list module with no sort yet. Confirm it's on the shared toolbar, then walk all layers (Step 3) for the full sortable set.
 - **B. Add a column** — the module already sorts; add one field end-to-end. Same layer walk, scoped to the one field: `SORT_OPTIONS` (+ type) → derived allowlist (free) → server `*_LIST_SORT_FIELDS` + `*_UI_SORT_FIELDS` → `*FieldOrderBy` case → test specs.
 - **C. Audit** — verify every field-set layer agrees, the client allowlist is derived (not hand-listed), the order-by has a case per field, nullable fields use `nulls:"last"`, the tiebreak invariants hold, and the sync test exists. Read-only output — report drift as a checklist, then offer to fix.
 - **D. Consolidate** — a module hand-maintains its client allowlist, inlines the order-by in the read-repository, or scatters its sort config across the client instead of the columns file. Converge onto the derived `*_SORT_OPTIONS.map(key)` source + the extracted `order-by.ts`. **Leave the two server allowlists independent.**
@@ -97,7 +96,7 @@ State what you found in one tight block (target module, shape, on-toolbar?, reco
 For an **install** (or per field for an add):
 
 1. **Columns file** — set `sortable: true` on the column; add `{ key, label, type }` to `{m}_SORT_OPTIONS`; ensure `{m}_ALLOWED_SORT_FIELDS = {m}_SORT_OPTIONS.map((o) => o.key)` and `{m}_MAX_SORT_LEVELS = 3` exist here.
-2. **Client** — add the field to `defaultSortDirection` (text/time → `asc`, date/number → `desc`). **key≠field only:** add the column-key↔backend-field pair to both `SORT_FIELD_BY_COLUMN` and `COLUMN_BY_SORT_FIELD`; confirm `tableSorts` reflects it. Pass `maxSortLevels={…_MAX_SORT_LEVELS}` + `allowedSortFields={…_ALLOWED_SORT_FIELDS}` into the controller, and `title="Sort by"` on the Sort button.
+2. **Client** — add the field to `defaultSortDirection` (text/time → `asc`, date/number → `desc`). Pass `maxSortLevels={…_MAX_SORT_LEVELS}` + `allowedSortFields={…_ALLOWED_SORT_FIELDS}` into the controller, and `title="Sort by"` on the Sort button. **No** `SORT_FIELD_BY_COLUMN`/`COLUMN_BY_SORT_FIELD`/`tableSorts` — that header plumbing is dead.
 3. **Record-view grid reuse** — if the module has an options grid (inventory does), it imports `{m}_ALLOWED_SORT_FIELDS` — nothing to add, just confirm it isn't a forked copy.
 4. **Data request** — add the **backend field** to `{m}_LIST_SORT_FIELDS` (exported); `parseSortsParam` already dedupes/drops-unknown/caps-3.
 5. **API validator** — add the same backend field to `{m}_UI_SORT_FIELDS` (exported).
@@ -109,7 +108,7 @@ For an **install** (or per field for an add):
 - **Build order:** build `@builders/db` (the read-repository consumes `order-by.ts` via dist), then `npm run typecheck`. No `db:generate` — there's no schema change.
 - **Targeted tests:** `packages/db/tests/flooring/{m}/order-by.test.ts`, `apps/web/tests/modules/{m}/list-{m}-request.test.ts`, and `apps/web/tests/modules/sort/sort-allowlist-sync.test.ts` (the drift catch). Then **the full suite** — a UI change can break `tests/engines/list-view/sort-menu.test.tsx`.
 - **Drift sanity:** the four field sets are identical; the client allowlist is derived; each field has an order-by case; nullable fields sink nulls; `id` is last and the createdAt tiebreak doesn't double.
-- **UI sanity (key≠field):** the caret lands on the right column (the `tableSorts`/`COLUMN_BY_SORT_FIELD` reflection) and a header click sends the right backend field.
+- **UI sanity:** the field appears in the toolbar Sort menu with the right type-aware direction labels and reorders/applies; the column **header stays a static label** (no caret — that affordance is gone).
 - Report real counts. For an **audit**, walk each layer against the checklist and report which carry the field vs which drifted.
 
 ## Step 5 — Report (per project CLAUDE.md)
@@ -117,16 +116,16 @@ For an **install** (or per field for an add):
 Headline + counts + TL;DR in the chat; table for the layer-by-layer detail. Open questions in the response. End with a commit message — but **do not commit**.
 
 ```
-COLUMN-SORT — <module> — <install | add-column | audit | consolidate>   (shape: <key==field | key≠field>   fields: <list>)
+COLUMN-SORT — <module> — <install | add-column | audit | consolidate>   (menu-only   fields: <list>)
 
 ═══ Grounding ═══
-Target: <module>   Shape: <key==field | key≠field>   On shared toolbar: <yes/no>   Record-grid reuse: <yes/no>   Reference: <inventory | work-orders>
+Target: <module>   On shared toolbar: <yes/no>   Record-grid reuse: <yes/no>   Reference: <inventory | work-orders>
 
 ═══ Layers ═══
 | Layer | File(s) | Change |
 |---|---|---|
 | Columns | modules/<m>/components/list/table/<m>-list-columns.ts | ✅ sortable:true + SORT_OPTIONS{type} + derived ALLOWED |
-| Client | modules/<m>/components/list/<m>-client.tsx | ✅ defaultSortDirection (+ key↔field maps + tableSorts if key≠field) |
+| Client | modules/<m>/components/list/<m>-client.tsx | ✅ defaultSortDirection + controller wiring (no header maps) |
 | Record grid | controllers/record/header/use-<m>-options-grid.ts | ✅ reuses ALLOWED (or n/a) |
 | Data request | modules/<m>/data/list-<m>-request.ts | ✅ *_LIST_SORT_FIELDS (independent) |
 | API validator | app/api/<m>/_validators.ts | ✅ *_UI_SORT_FIELDS (independent) |
@@ -135,7 +134,7 @@ Target: <module>   Shape: <key==field | key≠field>   On shared toolbar: <yes/n
 
 ═══ Verify ═══
 build db → typecheck: <PASS | N errors>   Targeted + full suite: <web N/N, db N/N>
-four sets agree · order-by case · tiebreak invariants · caret reflection: <ok | …>
+four sets agree · order-by case · tiebreak invariants · menu shows field · header stays static: <ok | …>
 
 ═══ Open questions ═══
 - <not-on-toolbar / ambiguous relation path / no backend field, or "none">
@@ -147,7 +146,7 @@ four sets agree · order-by case · tiebreak invariants · caret reflection: <ok
 ## What this skill does NOT do
 
 - Act on the done/candidate map without re-reading the live shared machinery + both references + the target first.
-- Skip the **shape classification** (key==field vs key≠field) — the client wiring depends on it.
+- Wire (or expect) a clickable header sort caret — the affordance was removed from `DataTable`; sorting is menu-only, and `sortable`/`onSort`/`tableSorts`/column-key↔field maps are inert/vestigial.
 - Add a field to some-but-not-all of the four field-set allowlists, or hand-maintain the client allowlist instead of deriving it from `*_SORT_OPTIONS.map(key)`.
 - Collapse the two **server** allowlists (`*_LIST_SORT_FIELDS`, `*_UI_SORT_FIELDS`) onto the client source — they stay independent for defense-in-depth.
 - "Fix" `appendUniqueOrderBy` (it dedupes by full clause JSON by design), or break the `id`-last / skip-createdAt-tiebreak / secondary-createdAt-keeps-direction invariants.

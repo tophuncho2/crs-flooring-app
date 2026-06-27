@@ -145,16 +145,19 @@ describe("DataTable — onOpenRow (leading open gutter)", () => {
   })
 })
 
-describe("DataTable — sort headers", () => {
+describe("DataTable — headers carry no sort affordance", () => {
   afterEach(() => cleanup())
 
+  // `sortable` + `sort`/`sorts`/`onSort` are inert: the clickable header caret
+  // was removed in favor of the toolbar Sort menu. These guard against the
+  // affordance being re-introduced (it must never render per-module).
   const SORTABLE_COLUMNS: ReadonlyArray<DataTableColumn<Row>> = [
     { key: "name", label: "Name", sortable: true },
     { key: "status", label: "Status", sortable: true },
   ]
 
-  it("reflects a single active sort with no priority badge", () => {
-    const { getByRole } = render(
+  it("renders sortable column headers as plain static labels", () => {
+    const { getByText, queryByRole } = render(
       <DataTable
         rows={ROWS}
         columns={SORTABLE_COLUMNS}
@@ -162,39 +165,19 @@ describe("DataTable — sort headers", () => {
         onSort={vi.fn()}
       />,
     )
-    const button = getByRole("button", { name: /Sort by Name/ })
-    expect(button.getAttribute("aria-label")).toContain("(ascending)")
-    expect(button.getAttribute("aria-label")).not.toContain("priority")
+    expect(getByText("Name")).toBeTruthy()
+    // No interactive sort control of any kind in the header.
+    expect(queryByRole("button", { name: /Sort by/ })).toBeNull()
   })
 
-  it("shows 1-based priority badges for a multi-column sort", () => {
-    const { getByRole } = render(
-      <DataTable
-        rows={ROWS}
-        columns={SORTABLE_COLUMNS}
-        sorts={[
-          { field: "status", direction: "desc" },
-          { field: "name", direction: "asc" },
-        ]}
-        onSort={vi.fn()}
-      />,
-    )
-    expect(getByRole("button", { name: /Sort by Status/ }).getAttribute("aria-label")).toContain(
-      "priority 1",
-    )
-    expect(getByRole("button", { name: /Sort by Name/ }).getAttribute("aria-label")).toContain(
-      "priority 2",
-    )
-  })
-
-  it("fires onSort with the column key on header click", async () => {
+  it("never fires onSort even when a column is sortable and a handler is passed", async () => {
     const user = userEvent.setup()
     const onSort = vi.fn()
-    const { getByRole } = render(
+    const { getByText } = render(
       <DataTable rows={ROWS} columns={SORTABLE_COLUMNS} sort={null} onSort={onSort} />,
     )
-    await user.click(getByRole("button", { name: /Sort by Name/ }))
-    expect(onSort).toHaveBeenCalledWith("name")
+    await user.click(getByText("Name"))
+    expect(onSort).not.toHaveBeenCalled()
   })
 })
 

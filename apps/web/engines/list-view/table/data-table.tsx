@@ -112,22 +112,19 @@ export type DataTableProps<TRow extends DataTableRow> = {
   /** Optional multi-select feature — see {@link DataTableSelection}. */
   selection?: DataTableSelection<TRow>
   /**
-   * Active server-side sort. When a column is `sortable` and matches
-   * `sort.field`, its header caret reflects the direction; other sortable
-   * headers show an idle ⇅. Null/absent → no active sort indicator.
+   * @deprecated INERT — the header sort affordance was removed; sorting is
+   * driven by the toolbar's Sort menu. Retained only so existing consumers
+   * compile; slated for removal. No longer renders anything.
    */
   sort?: { field: string; direction: "asc" | "desc" } | null
   /**
-   * Active multi-column sort (highest priority first). When set, it supersedes
-   * {@link sort}: a sortable column matching an entry shows its caret, plus a
-   * priority badge (1, 2, 3…) when more than one column is active. Single-sort
-   * consumers can ignore this and pass {@link sort} alone.
+   * @deprecated INERT — see {@link sort}. The header no longer renders carets or
+   * priority badges. Retained for source compat; slated for removal.
    */
   sorts?: ReadonlyArray<{ field: string; direction: "asc" | "desc" }>
   /**
-   * Called with a sortable column's `key` when its header is clicked. The
-   * caller owns the field→direction mapping (e.g. flip when already active,
-   * else select with a sensible default). Sortable headers are inert without it.
+   * @deprecated INERT — the header is no longer clickable. Retained for source
+   * compat; slated for removal. Header clicks no longer fire this.
    */
   onSort?: (key: string) => void
   /** Aria-label provider for interactive rows. */
@@ -159,15 +156,11 @@ export function DataTable<TRow extends DataTableRow>({
   onOpenRow,
   rowActions,
   selection,
-  sort,
-  sorts,
-  onSort,
+  // sort / sorts / onSort are accepted (inert) for source compat — see the
+  // @deprecated notes on DataTableProps. The header renders a static label.
   getRowAriaLabel,
   className,
 }: DataTableProps<TRow>) {
-  // The ordered `sorts` list is canonical; a single `sort` is treated as a
-  // one-element list so single-sort consumers need no changes.
-  const effectiveSorts = sorts ?? (sort ? [sort] : [])
   const canToggleSelection = selection ? selection.canToggleSelection ?? true : false
   const isRowSelectable = (row: TRow) =>
     selection?.isRowSelectable ? selection.isRowSelectable(row) : true
@@ -211,12 +204,7 @@ export function DataTable<TRow extends DataTableRow>({
                 </th>
               ) : null}
               {columns.map((column) => (
-                <DataTableHeaderCell<TRow>
-                  key={column.key}
-                  column={column}
-                  sorts={effectiveSorts}
-                  onSort={onSort}
-                />
+                <DataTableHeaderCell<TRow> key={column.key} column={column} />
               ))}
             </tr>
           </thead>
