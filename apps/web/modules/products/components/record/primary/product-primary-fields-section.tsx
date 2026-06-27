@@ -31,9 +31,9 @@ function formatUnit(name: string | null | undefined, abbrev: string | null | und
 /**
  * Products primary section, on the canonical record-view invisible grid.
  * A centered `RecordColumnBreak` splits the spec fields into two flanks —
- * left = identity (Category / Style / Color / Naming Add-on), right = the
- * unit / coverage cluster (Coverage·Unit / Manufacturer / Stock Unit / PROD #) —
- * then a `RecordSectionDivider` terminates the section above a read-only
+ * left = identity (PROD # + Palette paired / Category / Style / Color / Naming
+ * Add-on), right = the unit / coverage cluster (Coverage·Unit / Manufacturer /
+ * Stock Unit) — then a `RecordSectionDivider` terminates the section above a read-only
  * metadata band (Created / Updated / Created by / Updated by), mirroring
  * work-orders + inventory. The former Details / Units card groupings are gone.
  *
@@ -90,8 +90,34 @@ export function ProductPrimaryFieldsSection({
       <RecordColumnBreak
         left={
           <FieldSection>
-            {/* Left flank: identity — Category / Style / Color / Naming Add-on */}
-            <CellAt col={1} row={1} colSpan={8}>
+            {/* Left flank, top down: PROD # + Palette paired (one row, = the
+                Category width below) / Category / Style / Color / Naming Add-on.
+                The full-width cells auto-flow, so the detail-only top pair leaves
+                no gap on the create flow. */}
+            {/* Read-only canonical PROD-N number — detail view only (empty on create). */}
+            {product.productNumber ? (
+              <CellAt col={1} colSpan={4}>
+                <FormField label="PROD #">
+                  <StaticFieldValue>{product.productNumber}</StaticFieldValue>
+                </FormField>
+              </CellAt>
+            ) : null}
+            {/* Non-semantic palette tag — edit-only. Labelled "Palette" to stay
+                distinct from the physical "Color" field below. The create flow
+                (categoryReadOnly false) renders no picker. */}
+            {categoryReadOnly ? (
+              <CellAt col={5} colSpan={4}>
+                <FormField label="Palette">
+                  <PaletteColorDropdown
+                    value={draft.paletteColor}
+                    editable={editable}
+                    onChange={(next) => onFieldChange("paletteColor", next)}
+                    ariaLabel="Product palette color"
+                  />
+                </FormField>
+              </CellAt>
+            ) : null}
+            <CellAt col={1} colSpan={8}>
               <FormField label="Category" required={!categoryReadOnly}>
                 {categoryReadOnly ? (
                   <StaticFieldValue>{product.category.name || "—"}</StaticFieldValue>
@@ -109,7 +135,7 @@ export function ProductPrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
-            <CellAt col={1} row={2} colSpan={8}>
+            <CellAt col={1} colSpan={8}>
               <FormField label="Style">
                 {fieldsReadOnly ? (
                   <StaticFieldValue>{draft.style || "—"}</StaticFieldValue>
@@ -122,7 +148,7 @@ export function ProductPrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
-            <CellAt col={1} row={3} colSpan={8}>
+            <CellAt col={1} colSpan={8}>
               <FormField label="Color">
                 {fieldsReadOnly ? (
                   <StaticFieldValue>{draft.color || "—"}</StaticFieldValue>
@@ -135,7 +161,7 @@ export function ProductPrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
-            <CellAt col={1} row={4} colSpan={8}>
+            <CellAt col={1} colSpan={8}>
               <FormField
                 label="Naming Add-on"
                 currentLength={editable ? draft.productNamingAddon.length : undefined}
@@ -191,29 +217,6 @@ export function ProductPrimaryFieldsSection({
                 <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
               </FormField>
             </CellAt>
-            {/* Read-only canonical PROD-N number — detail view only (empty on create). */}
-            {product.productNumber ? (
-              <CellAt col={1} row={4} colSpan={4}>
-                <FormField label="PROD #">
-                  <StaticFieldValue>{product.productNumber}</StaticFieldValue>
-                </FormField>
-              </CellAt>
-            ) : null}
-            {/* Non-semantic palette tag — edit-only. Labelled "Palette" to stay
-                distinct from the physical "Color" field on the left flank. The
-                create flow (categoryReadOnly false) renders no picker. */}
-            {categoryReadOnly ? (
-              <CellAt col={1} row={5} colSpan={4}>
-                <FormField label="Palette">
-                  <PaletteColorDropdown
-                    value={draft.paletteColor}
-                    editable={editable}
-                    onChange={(next) => onFieldChange("paletteColor", next)}
-                    ariaLabel="Product palette color"
-                  />
-                </FormField>
-              </CellAt>
-            ) : null}
           </FieldSection>
         }
       />
