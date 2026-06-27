@@ -278,8 +278,16 @@ model FlooringInventory {
   @@index([warehouseId])
   @@index([isArchived])
   @@index([wasMerged])
-  @@index([stockQuantity])
+  @@index([stockQuantity, id])
   @@index([productId, createdAt, rollNumber, id])
+  // Sort-column btree indexes for the menu-only inventory list sort. Composite
+  // `(col, id)` so the `id` tiebreak resolves in the same scan — createdAt/updatedAt
+  // are tie-prone under bulk import/worker-materialize. `(createdAt, id)` backs the
+  // default list ordering (createdAt DESC, id DESC). location is only ever sorted
+  // with warehouse filtered first, so lead the composite with warehouseId.
+  @@index([createdAt, id])
+  @@index([warehouseId, location, id])
+  @@index([updatedAt, id])
   // inventoryNumber search is an exact match on `inventoryNumberInt` (btree), so
   // the number column no longer needs a trigram index.
   @@index([rollNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_inventory_rollNumber_trgm_idx")
@@ -604,6 +612,10 @@ model FlooringWorkOrder {
   @@index([scheduledFor])
   @@index([createdAt])
   @@index([updatedAt])
+  // Sort-column btree for the menu-only unitType sort (the GIN-trgm index below
+  // serves ILIKE search, not ORDER BY). Composite `(col, id)` resolves the `id`
+  // tiebreak in the same scan.
+  @@index([unitType, id])
   // GIN trigram indexes backing the list-view per-column search bars (ILIKE
   // substring). Mirrors the FlooringInventory identity-search indexes.
   @@index([unitType(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_unitType_trgm_idx")

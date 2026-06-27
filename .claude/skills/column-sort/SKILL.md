@@ -11,7 +11,9 @@ This is an **editing** skill — it reads, classifies, then wires the field acro
 
 ## The model (what the Sort tool IS)
 
-The tool is **one shared menu fed a per-module list of allowed fields, validated again at every server boundary, and resolved by a pure order-by builder.** A field is sortable only if **EVERY layer agrees** on it. There is no schema change anywhere — sort needs only fields/relations that already exist.
+The tool is **one shared menu fed a per-module list of allowed fields, validated again at every server boundary, and resolved by a pure order-by builder.** A field is sortable only if **EVERY layer agrees** on it. Wiring a field sortable needs **no schema change** — sort uses only fields/relations that already exist.
+
+But **wiring is orthogonal to whether the DB can serve the sort efficiently.** Each sortable **local scalar** field should be backed by a **btree index** — ideally a composite `(col, id)` so the `id` tiebreak resolves in the same index scan. **Relation-name** sorts (`property.name`, `warehouse.name`) rely on the **related model's `name` index**, not the parent. This index check is a **separate, follow-up concern** from the field-set wiring: if a sorted column lacks a backing index, that's a migration of its own (see the indexing Hard rule + Step 3's Index step), not a reason to block the wiring.
 
 **Sorting is menu-only — the column header carries NO sort affordance.** The clickable header caret/arrow was removed from the `DataTable` primitive (`apps/web/engines/list-view/table/data-table-header-cell.tsx` renders a static label). The `sort`/`sorts`/`onSort` props on `DataTableProps` and `sortable` on `DataTableColumn` were **deleted** — passing them is now a type error. So a sortable field shows up **only** in the toolbar `SortMenuBody`; never wire or expect a header arrow.
 
@@ -42,6 +44,7 @@ The old header-caret plumbing — work-orders' `SORT_FIELD_BY_COLUMN`/`COLUMN_BY
 | Data request allowlist (independent) | `modules/{m}/data/list-{m}-request.ts` | exported `{m}_LIST_SORT_FIELDS` + `parseSortsParam` (dedupe, drop-unknown, default `desc`, cap 3) |
 | API validator allowlist (independent) | `app/api/{m}/_validators.ts` | exported `{m}_UI_SORT_FIELDS` + `parseSortsParam` (same shape, `Set`-backed) |
 | DB order-by builder | `packages/db/src/flooring/{m}/order-by.ts` | `{m}FieldOrderBy(field, dir)` switch → Prisma clause; `build*OrderBy` (id always last, createdAt tiebreak skipped when user-selected); `appendUniqueOrderBy`. **Type-only Prisma import, no client.** |
+| Index coverage (DB) | `packages/db/prisma/schema.prisma` (+ a `migrations/<ts>_*/migration.sql`) | each sorted **local scalar** has a backing btree `@@index([col, id])`; relation-name sorts ride the related `name` index. GIN-trgm ≠ sort index. Missing = author the index + SQL migration as its **own commit**. |
 | Tests | `packages/db/tests/flooring/{m}/order-by.test.ts` · `apps/web/tests/modules/{m}/list-{m}-request.test.ts` · `apps/web/tests/modules/sort/sort-allowlist-sync.test.ts` | `FIELD_CLAUSE` map; parse new fields/drop-unknown/cap-3; cross-layer set equality |
 
 ### Order-by clause shapes (copy these exactly)
@@ -67,7 +70,13 @@ The old header-caret plumbing — work-orders' `SORT_FIELD_BY_COLUMN`/`COLUMN_BY
 - **`order-by.ts` is pure: type-only Prisma, no client, no `apps/` import.** `@builders/db` may not import `apps/`. Keep the builder a pure field→clause map. `id` is always the last tiebreak; skip the createdAt tiebreak when the user already sorts createdAt.
 - **Don't "fix" `appendUniqueOrderBy`.** It dedupes by **full clause JSON, not by field** — field-level dedup happens upstream in the parsers. That's intentional.
 - **The web sync test must NOT import `@builders/db`.** Web tests resolve `@builders/db` to **dist**, not src — the cross-package import is a trap. The allowlist-sync guard stays web-only (UI + data + api); db-side coverage lives in `packages/db/tests`.
-- **No schema, no migration.** Sort uses existing fields/relations only. If a target lacks the field a user wants to sort by, that's a different job (`/newsession`) — surface it, don't add a column here.
+- **No schema change to WIRE a field sortable.** The sort *wiring* uses existing fields/relations only — never add a column to make something sortable. If a target lacks the field a user wants to sort by, that's a different job (`/newsession`) — surface it, don't add a column here. (Adding an **index** to back a sort is a distinct, allowed follow-up — see the next rule.)
+- **Every sorted scalar column should be backed by a btree index.** Sort wiring works without one, but an unindexed `ORDER BY ... LIMIT` is a full-table sort. Check coverage as part of install/audit; if missing, author `@@index([col, id])` + the matching SQL migration as its **own commit** (per `author-migration-with-schema-edit` — `db:deploy` only *applies* pre-written files). Distinguish:
+  - **Local scalar sort** → needs a btree index; prefer a composite `(col, id)` so the `id` tiebreak is served in one scan — especially when the column is **tie-prone** (bulk-imported `createdAt`/`updatedAt`, low-cardinality quantities, DATE columns).
+  - **Relation-name sort** → the index lives on the **related `name` column**, not the parent (the user already understands the join fields — don't belabor).
+  - **GIN trigram ≠ sort index.** A trgm index serves `ILIKE` search, never `ORDER BY` — a column with only a trgm index is an *unindexed* sort.
+  - **Low-cardinality enums** (`timeOfDay` = AM/PM) and **tiny tables** (a 2-hop `entity` relation sort) may not warrant an index — let cardinality justify each one; don't over-index (write + storage cost).
+  - **NULLS direction subtlety.** A nullable col sorted `nulls:"last"` is cleanly index-served by a default btree only in the **ASC** direction; the DESC-NULLS-LAST case may still sort — fine when the index leads with a filtered column (e.g. `location` behind `warehouseId`).
 - **Build db before typecheck; re-run the FULL suite.** `order-by.ts` is consumed via dist by the read-repository — build db before `typecheck`. A UI tweak can silently break `sort-menu.test.tsx`, so run the whole suite, not just the new tests.
 - **DO NOT COMMIT.** The user commits. Provide a commit message ≤17 words. No migration to run.
 - **Drive, don't multiple-choice.** Surface genuine open questions (the module isn't on the shared toolbar yet; an ambiguous relation-sort path; a column with no obvious backend field) in the response, then execute.
@@ -88,7 +97,7 @@ State what you found in one tight block (target module, on-toolbar?, record-grid
 
 - **A. Install** — the target is a candidate list module with no sort yet. Confirm it's on the shared toolbar, then walk all layers (Step 3) for the full sortable set.
 - **B. Add a column** — the module already sorts; add one field end-to-end. Same layer walk, scoped to the one field: `SORT_OPTIONS` (+ type) → derived allowlist (free) → server `*_LIST_SORT_FIELDS` + `*_UI_SORT_FIELDS` → `*FieldOrderBy` case → test specs.
-- **C. Audit** — verify every field-set layer agrees, the client allowlist is derived (not hand-listed), the order-by has a case per field, nullable fields use `nulls:"last"`, the tiebreak invariants hold, and the sync test exists. Read-only output — report drift as a checklist, then offer to fix.
+- **C. Audit** — verify every field-set layer agrees, the client allowlist is derived (not hand-listed), the order-by has a case per field, nullable fields use `nulls:"last"`, the tiebreak invariants hold, the sync test exists, **and each sorted scalar has a backing btree index for the field + its `id` tiebreak** (flag GIN-only columns, missing standalone indexes, and `createdAt`-only-inside-a-filtered-composite — the inventory pattern). Read-only output — report drift as a checklist, then offer to fix.
 - **D. Consolidate** — a module hand-maintains its client allowlist, inlines the order-by in the read-repository, or scatters its sort config across the client instead of the columns file. Converge onto the derived `*_SORT_OPTIONS.map(key)` source + the extracted `order-by.ts`. **Leave the two server allowlists independent.**
 
 ## Step 3 — Execute the layer walk
@@ -101,13 +110,15 @@ For an **install** (or per field for an add):
 4. **Data request** — add the **backend field** to `{m}_LIST_SORT_FIELDS` (exported); `parseSortsParam` already dedupes/drops-unknown/caps-3.
 5. **API validator** — add the same backend field to `{m}_UI_SORT_FIELDS` (exported).
 6. **DB order-by** — add a `case "<field>": return <clause>` to `{m}FieldOrderBy` using the right clause shape (scalar / nullable `nulls:"last"` / relation / aliased). Don't touch the tiebreak logic or `appendUniqueOrderBy`.
-7. **Tests** — add the field to the db `FIELD_CLAUSE` spec, to the web `list-{m}-request.test.ts` parse cases, and (for a new module) create `order-by.test.ts` + `list-{m}-request.test.ts` mirroring the references and extend `sort-allowlist-sync.test.ts` with the module's four sets.
+7. **Index coverage** — confirm the sorted **local scalar** has a backing btree index in `schema.prisma`. If missing (no index, or only a GIN-trgm one), author `@@index([col, id])` **and** the matching `migrations/<ts>_*/migration.sql` (double-quoted identifiers; plain `CREATE INDEX`, no `CONCURRENTLY`) — shipped as its **own commit**, separate from the wiring. Relation-name sorts need no parent index (they ride the related `name` index); low-cardinality enums / tiny tables may skip. **User runs `db:deploy`, never Claude.**
+8. **Tests** — add the field to the db `FIELD_CLAUSE` spec, to the web `list-{m}-request.test.ts` parse cases, and (for a new module) create `order-by.test.ts` + `list-{m}-request.test.ts` mirroring the references and extend `sort-allowlist-sync.test.ts` with the module's four sets.
 
 ## Step 4 — Verify
 
 - **Build order:** build `@builders/db` (the read-repository consumes `order-by.ts` via dist), then `npm run typecheck`. No `db:generate` — there's no schema change.
 - **Targeted tests:** `packages/db/tests/flooring/{m}/order-by.test.ts`, `apps/web/tests/modules/{m}/list-{m}-request.test.ts`, and `apps/web/tests/modules/sort/sort-allowlist-sync.test.ts` (the drift catch). Then **the full suite** — a UI change can break `tests/engines/list-view/sort-menu.test.tsx`.
 - **Drift sanity:** the four field sets are identical; the client allowlist is derived; each field has an order-by case; nullable fields sink nulls; `id` is last and the createdAt tiebreak doesn't double.
+- **Index sanity:** each sorted local scalar has a backing btree `@@index([col, id])` (or a documented skip for a low-cardinality enum / tiny-table relation); relation-name sorts ride the related `name` index; a GIN-trgm-only column is flagged as an unindexed sort. If an index was added, it shipped its **own** migration + commit (`schema.prisma` `@@index` ↔ `migration.sql` names align; `db:deploy` is the user's).
 - **UI sanity:** the field appears in the toolbar Sort menu with the right type-aware direction labels and reorders/applies; the column **header stays a static label** (no caret — that affordance is gone).
 - Report real counts. For an **audit**, walk each layer against the checklist and report which carry the field vs which drifted.
 
@@ -130,6 +141,7 @@ Target: <module>   On shared toolbar: <yes/no>   Record-grid reuse: <yes/no>   R
 | Data request | modules/<m>/data/list-<m>-request.ts | ✅ *_LIST_SORT_FIELDS (independent) |
 | API validator | app/api/<m>/_validators.ts | ✅ *_UI_SORT_FIELDS (independent) |
 | DB order-by | packages/db/src/flooring/<m>/order-by.ts | ✅ *FieldOrderBy case (type-only Prisma) |
+| Index | packages/db/prisma/schema.prisma (+ migration.sql) | ✅ btree (col, id) / rides related name / skipped (low-card) — own commit |
 | Tests | db order-by + web request-parse + allowlist-sync | ✅ FIELD_CLAUSE + parse + set-equality |
 
 ═══ Verify ═══
@@ -151,7 +163,7 @@ four sets agree · order-by case · tiebreak invariants · menu shows field · h
 - Collapse the two **server** allowlists (`*_LIST_SORT_FIELDS`, `*_UI_SORT_FIELDS`) onto the client source — they stay independent for defense-in-depth.
 - "Fix" `appendUniqueOrderBy` (it dedupes by full clause JSON by design), or break the `id`-last / skip-createdAt-tiebreak / secondary-createdAt-keeps-direction invariants.
 - Import `@builders/db` from a web test (dist trap), or import `apps/` from `order-by.ts` (it's pure, type-only Prisma).
-- Add a schema column or migration to make something sortable — sort uses existing fields only; a missing field is a `/newsession` job.
+- Add a schema **column** to make something sortable — the sort *wiring* uses existing fields only; a missing field is a `/newsession` job. (Adding a backing **index** for an already-sortable column is in scope — but it ships as its own migration + commit, never folded into the wiring.)
 - Redesign the shared `SortMenuBody`, the `?sorts=` codec, or the toolbar chrome — that's **/engine**.
 - Touch `createdBy`/`updatedBy` → **/column-actor**; `createdAt`/`updatedAt` display → **/column-timestamp**; the PaletteColor chip → **/column-color**; the record-# sequence/stepper → **/column-rownumber**.
 - Plan or execute whole-module work, or author another skill → **/newsession** / **/newskill**.
