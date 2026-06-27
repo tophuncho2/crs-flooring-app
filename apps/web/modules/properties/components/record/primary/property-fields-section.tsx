@@ -24,8 +24,8 @@ export type PropertyFieldsDraft = Pick<
  * outside this block, so the draft's `entityId` (record view) is
  * left untouched here.
  *
- * Layout: every field stacked one-per-row at col 1, each spanning 5/8 columns,
- * with Email below Phone.
+ * Layout: every field stacked one-per-row at col 1, each spanning the full 8
+ * columns, with Email below Phone.
  */
 export function PropertyFieldsSection({
   draft,
@@ -52,8 +52,8 @@ export function PropertyFieldsSection({
    */
   nameRowTrailing?: ReactNode
   /**
-   * Optional cell placed to the right of the Property # (col 5, spanning 3/8) —
-   * the pair tiling the same width as the Name row below.
+   * Optional cell placed to the right of the Property # (col 5, spanning 4/8) —
+   * the pair tiling the same 8-wide span as the Name row below.
    * The record view drops the edit-only Color picker here; the hub create forms
    * omit it (color is edit-only — new properties fall to the DB default).
    */
@@ -69,11 +69,11 @@ export function PropertyFieldsSection({
         </CellAt>
       ) : null}
       {trailingFields ? (
-        <CellAt col={5} colSpan={3}>
+        <CellAt col={5} colSpan={4}>
           {trailingFields}
         </CellAt>
       ) : null}
-      <CellAt col={1} colSpan={7}>
+      <CellAt col={1} colSpan={8}>
         <FormField label="Property Name" required>
           <TextCell
             editable={editable}
@@ -86,7 +86,7 @@ export function PropertyFieldsSection({
       </CellAt>
       {showContact ? (
         <>
-          <CellAt col={1} colSpan={7}>
+          <CellAt col={1} colSpan={8}>
             <FormField label="Phone">
               <PhoneCell
                 editable={editable}
@@ -96,7 +96,7 @@ export function PropertyFieldsSection({
               />
             </FormField>
           </CellAt>
-          <CellAt col={1} colSpan={7}>
+          <CellAt col={1} colSpan={8}>
             <FormField label="Email">
               <TextCell
                 editable={editable}
@@ -111,7 +111,7 @@ export function PropertyFieldsSection({
       ) : null}
       <AddressEditCell
         editable={editable}
-        colSpan={7}
+        colSpan={8}
         ariaPrefix={ariaPrefix}
         value={{
           streetAddress: draft.streetAddress,
@@ -121,7 +121,7 @@ export function PropertyFieldsSection({
         }}
         onChange={(field, value) => onFieldChange(field, value)}
       />
-      <CellAt col={1} colSpan={7}>
+      <CellAt col={1} colSpan={8}>
         <FormField label="Instructions">
           <TextareaCell
             editable={editable}
