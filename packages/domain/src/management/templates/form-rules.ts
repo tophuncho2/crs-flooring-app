@@ -17,5 +17,6 @@ export function toTemplateForm(template: TemplateDetail): TemplateForm {
     description: template.description,
     internalNotes: template.internalNotes,
     installerInstructions: template.installerInstructions,
+    color: template.color,
   }
 }

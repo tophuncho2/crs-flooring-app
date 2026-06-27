@@ -1,6 +1,6 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { normalizeTemplate, type TemplateDetail } from "@builders/domain"
+import { normalizeTemplate, type PaletteColor, type TemplateDetail } from "@builders/domain"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -17,13 +17,16 @@ export type CreateTemplateRecordInput = {
 }
 
 // `createdBy` is immutable post-create; `updatedBy` is always stamped on edit.
+// `color` is update-only (the non-semantic palette tag) — never on create
+// (`CreateTemplateRecordInput`), so new rows fall to the DB default SLATE.
 export type UpdateTemplateRecordInput = Partial<
   Omit<CreateTemplateRecordInput, "createdBy" | "updatedBy">
-> & { updatedBy: string }
+> & { updatedBy: string; color?: PaletteColor }
 
 const templateDetailSelect = {
   id: true,
   templateNumber: true,
+  color: true,
   unitType: true,
   description: true,
   internalNotes: true,

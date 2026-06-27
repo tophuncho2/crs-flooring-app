@@ -7,13 +7,16 @@ import type {
   UpdateTemplateUseCaseInput,
 } from "@builders/application"
 import {
+  isPaletteColor,
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
+  PALETTE_COLOR_INVALID_MESSAGE,
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
   TEMPLATE_MATERIAL_ITEM_NOTES_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
+  type PaletteColor,
   type TemplateMaterialItemForm,
   type TemplateMaterialItemsDiff,
 } from "@builders/domain"
@@ -80,6 +83,13 @@ function optionalBoundedText(
   return value
 }
 
+// Edit-only palette tag — strict when present. Create has no equivalent: new
+// rows default to SLATE in the DB.
+function requireColor(value: unknown, field: string): PaletteColor {
+  if (!isPaletteColor(value)) failTemplate(PALETTE_COLOR_INVALID_MESSAGE, field)
+  return value
+}
+
 export function validateCreateTemplateInput(
   body: Record<string, unknown>,
 ): CreateTemplateUseCaseInput {
@@ -136,6 +146,9 @@ export function validateUpdateTemplateInput(
       failTemplate,
     )
   }
+  // Edit-only palette tag — strict when present, left unchanged when absent
+  // (a stale client). Create has no equivalent (defaults to SLATE in the DB).
+  if ("color" in body) input.color = requireColor(body.color, "color")
 
   return input
 }

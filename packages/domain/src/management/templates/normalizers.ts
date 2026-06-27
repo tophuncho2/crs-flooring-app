@@ -1,3 +1,4 @@
+import type { PaletteColor } from "../../shared/palette.js"
 import { normalizeTemplateMaterialItem } from "./material-items/normalizers.js"
 import type { TemplateMaterialItemRow } from "./material-items/types.js"
 import type {
@@ -20,6 +21,7 @@ const NO_TEMPLATE_NEIGHBORS: TemplateNeighbors = {
 type TemplateListInput = {
   id: string
   templateNumber: string
+  color: PaletteColor
   unitType: string
   description: string | null
   propertyId: string | null
@@ -54,6 +56,7 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
   return {
     id: template.id,
     templateNumber: template.templateNumber,
+    color: template.color,
     unitType: template.unitType,
     description: template.description ?? "",
     propertyId: template.propertyId,

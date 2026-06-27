@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import { formatEasternDateTime, type TemplateListRow } from "@builders/domain"
 
@@ -27,7 +28,7 @@ export function renderTemplateRowCell(
     case "items":
       return <span className="tabular-nums">{row.itemsCount}</span>
     case "templateNumber":
-      return <span className="font-medium">{row.templateNumber}</span>
+      return <CellChip paletteColor={row.color}>{row.templateNumber}</CellChip>
     case "createdAt":
       return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
     case "updatedAt":

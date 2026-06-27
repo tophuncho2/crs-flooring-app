@@ -10,6 +10,7 @@ import {
   StaticFieldValue,
   TextareaCell,
 } from "@/engines/record-view"
+import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
@@ -17,6 +18,7 @@ import {
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
+  type PaletteColor,
   type TemplateForm,
 } from "@builders/domain"
 import { usePropertyJoinedOverride } from "@/modules/templates/controllers/record/primary/use-property-joined-override"
@@ -30,6 +32,9 @@ import { TemplatePropertyUnitGroup } from "./groups/template-property-unit-group
  */
 export type TemplatePrimaryDetail = {
   templateNumber: string
+  // Non-semantic palette tag — fills the Template # chip and seeds the edit-only
+  // Color dropdown. Null detail (create flow) means no chip / no picker.
+  color: PaletteColor
   propertyId: string | null
   propertyName: string
   propertyStreetAddress: string
@@ -68,7 +73,7 @@ export function TemplatePrimaryFieldsSection({
   draft: TemplateForm
   detail: TemplatePrimaryDetail | null
   disabled: boolean
-  onFieldChange: (field: keyof TemplateForm, value: string) => void
+  onFieldChange: (field: keyof TemplateForm, value: string | PaletteColor) => void
   /** Multi-field setter — used by the property-unit cluster for the entity→Property cascade. */
   onFieldsChange: (patch: Partial<TemplateForm>) => void
 }) {
@@ -85,12 +90,33 @@ export function TemplatePrimaryFieldsSection({
       <RecordColumnBreak
         left={
           <FieldSection gap="0.75rem">
-            {/* Template Number — dedicated top row stamp. Read-only display. */}
+            {/* Template Number — dedicated top row stamp. Read-only display.
+                In edit (detail present) the number rides a palette-colored chip,
+                like inventory's Inv # field; create (null detail) shows an em-dash. */}
             <CellAt col={1} row={1} colSpan={2}>
               <FormField label="Template #">
-                <StaticFieldValue>{detail?.templateNumber ?? "—"}</StaticFieldValue>
+                {detail ? (
+                  <CellChip paletteColor={detail.color}>{detail.templateNumber}</CellChip>
+                ) : (
+                  <StaticFieldValue>—</StaticFieldValue>
+                )}
               </FormField>
             </CellAt>
+
+            {/* Non-semantic palette tag — edit-only. The create flow (null detail)
+                renders no picker, so new rows fall to the DB default SLATE. */}
+            {detail ? (
+              <CellAt col={7} row={1} colSpan={2}>
+                <FormField label="Color">
+                  <PaletteColorDropdown
+                    value={draft.color}
+                    editable={editable}
+                    onChange={(next) => onFieldChange("color", next)}
+                    ariaLabel="Template color"
+                  />
+                </FormField>
+              </CellAt>
+            ) : null}
 
             {/* Unit Type, then the property cluster — entity, Property, Address +
                 Instructions — flowing down the break's left flank. */}

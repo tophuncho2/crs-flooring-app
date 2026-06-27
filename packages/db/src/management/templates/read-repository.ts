@@ -36,6 +36,7 @@ export type TemplatesListArgs = {
 const templateListSelect = {
   id: true,
   templateNumber: true,
+  color: true,
   unitType: true,
   description: true,
   propertyId: true,

@@ -1,8 +1,12 @@
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
 import type { TemplateMaterialItemRow } from "./material-items/types.js"
 
 export type TemplateListRow = {
   id: string
   templateNumber: string
+  // Non-semantic palette tag (user-assigned visual color). Metadata-only — no
+  // business logic reads it. Defaults to SLATE; only the record-view edit form sets it.
+  color: PaletteColor
   unitType: string
   description: string
   propertyId: string | null
@@ -67,6 +71,10 @@ export type TemplateForm = {
   description: string
   internalNotes: string
   installerInstructions: string
+  // Non-semantic palette tag. Carried on the draft so the record-view edit form
+  // can re-pick it; the create flow renders no picker and the create API validator
+  // ignores it, so new rows fall to the DB default SLATE.
+  color: PaletteColor
 }
 
 export const EMPTY_TEMPLATE_FORM: TemplateForm = {
@@ -77,4 +85,5 @@ export const EMPTY_TEMPLATE_FORM: TemplateForm = {
   description: "",
   internalNotes: "",
   installerInstructions: "",
+  color: DEFAULT_PALETTE_COLOR,
 }
