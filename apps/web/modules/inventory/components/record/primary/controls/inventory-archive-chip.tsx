@@ -26,7 +26,7 @@ export function InventoryArchiveChip({
   disabled: boolean
 }) {
   return (
-    <div className="w-44">
+    <div className="w-full">
       <SegmentedChoiceCell
         editable={!disabled}
         value={value ? "ARCHIVED" : "ACTIVE"}

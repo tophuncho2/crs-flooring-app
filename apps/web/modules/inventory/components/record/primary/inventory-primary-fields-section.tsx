@@ -84,12 +84,16 @@ export function InventoryPrimaryFieldsSection({
                 onChange={(value) => onFieldChange("location", value)}
               />
             </CellAt>
-            {/* Note | Import # */}
+            {/* Note | Status */}
             <CellAt col={1} row={4} colSpan={4}>
               <NoteReadOnlyField value={record.note} />
             </CellAt>
             <CellAt col={5} row={4} colSpan={4}>
-              <ImportNumberField value={record.importNumber} />
+              <StatusField
+                editable={editable}
+                value={draft.isArchived}
+                onChange={(next) => onFieldChange("isArchived", next)}
+              />
             </CellAt>
             {/* PO # */}
             <CellAt col={1} row={5} colSpan={4}>
@@ -115,16 +119,12 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={1} row={2} colSpan={8}>
               <ProductNameField value={record.productName} />
             </CellAt>
-            {/* Starting | Status paired */}
+            {/* Starting | Import # */}
             <CellAt col={1} row={3} colSpan={4}>
               <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
             </CellAt>
             <CellAt col={5} row={3} colSpan={4}>
-              <StatusField
-                editable={editable}
-                value={draft.isArchived}
-                onChange={(next) => onFieldChange("isArchived", next)}
-              />
+              <ImportNumberField value={record.importNumber} />
             </CellAt>
             <CellAt col={1} row={4} colSpan={8}>
               <InternalNotesField
