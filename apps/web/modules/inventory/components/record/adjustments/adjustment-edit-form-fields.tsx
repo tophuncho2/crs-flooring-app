@@ -12,6 +12,7 @@ import {
   RecordColumnBreak,
   RecordSectionDivider,
   SegmentedChoiceCell,
+  StatCell,
   StaticFieldValue,
   TextCell,
   UnitCell,
@@ -221,24 +222,27 @@ export function AdjustmentEditFormFields({
             <CellAt col={5} row={2} colSpan={4}>
               <WarehouseStaticField warehouseName={adjustment.warehouseName ?? null} />
             </CellAt>
-            <CellAt col={1} row={3} colSpan={8}>
-              <FormField label="Adjustment">
-                <StaticFieldValue className="tabular-nums">{transition}</StaticFieldValue>
-              </FormField>
-            </CellAt>
-            {/* Adjustment # | Color, now seated below the before→after transition */}
-            <CellAt col={1} row={4} colSpan={4}>
+            {/* Adjustment # | Color (the transition moved to the right flank). */}
+            <CellAt col={1} row={3} colSpan={4}>
               <FormField label="Adjustment #">
                 <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
               </FormField>
             </CellAt>
-            <CellAt col={5} row={4} colSpan={4}>{colorField}</CellAt>
+            <CellAt col={5} row={3} colSpan={4}>{colorField}</CellAt>
             {/* User-owned free-text area — editable, sits below Adjustment # / Color. */}
-            <CellAt col={1} row={5} colSpan={4}>{areaField}</CellAt>
+            <CellAt col={1} row={4} colSpan={4}>{areaField}</CellAt>
           </InventoryFieldGrid>
         }
         right={
           <InventoryFieldGrid>
+            {/* Before→after transition as a prominent StatCell (the same big/bold
+                box the inventory Stock/Deducted cells use), seated above the
+                work-order picker and matching its full-flank column width. */}
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Adjustment">
+                <StatCell display={transition} ariaLabel="Adjustment transition" />
+              </FormField>
+            </CellAt>
             <AdjustmentPickerStack controller={controller} colSpan={8} />
             <CellAt col={1} colSpan={8}>{notesField}</CellAt>
             <CellAt col={1} colSpan={8}>{wasteField}</CellAt>
