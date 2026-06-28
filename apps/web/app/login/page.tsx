@@ -1,4 +1,5 @@
 import LoginForm from "@/modules/auth/components/login-form"
+import { getBrandLogoPrintUrl } from "@/server/storage/s3"
 
 const ERROR_MESSAGES: Record<string, string> = {
   denied:
@@ -15,5 +16,9 @@ export default async function LoginPage({
     ? (ERROR_MESSAGES[params.error] ?? "Sign-in failed. Please try again.")
     : undefined
 
-  return <LoginForm error={error} />
+  // Same presigned brand-logo URL the work-order prints use; null when the
+  // object is absent, in which case the form falls back to the gradient badge.
+  const logoUrl = await getBrandLogoPrintUrl()
+
+  return <LoginForm error={error} logoUrl={logoUrl} />
 }

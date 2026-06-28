@@ -4,7 +4,13 @@ import { useState } from "react"
 import { Layers } from "lucide-react"
 import { authClient } from "@/modules/auth/auth-client"
 
-export default function LoginForm({ error }: { error?: string }) {
+export default function LoginForm({
+  error,
+  logoUrl,
+}: {
+  error?: string
+  logoUrl?: string | null
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleGoogleSignIn() {
@@ -93,11 +99,20 @@ export default function LoginForm({ error }: { error?: string }) {
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
         />
 
-        {/* Brand */}
+        {/* Brand — the company logo (presigned from S3) on a white tile so the
+            print-optimized PNG stays legible over the dark aurora; falls back
+            to the gradient badge when the logo object is absent. */}
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 shadow-lg shadow-sky-500/30">
-            <Layers className="h-7 w-7 text-white" strokeWidth={2.2} />
-          </div>
+          {logoUrl ? (
+            <div className="mb-4 flex items-center justify-center rounded-2xl bg-white px-5 py-4 shadow-lg shadow-black/30">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoUrl} alt="CRS Floor Covering" className="h-12 w-auto" />
+            </div>
+          ) : (
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 shadow-lg shadow-sky-500/30">
+              <Layers className="h-7 w-7 text-white" strokeWidth={2.2} />
+            </div>
+          )}
           <h1 className="text-2xl font-semibold tracking-tight text-white">CRS Flooring</h1>
           <p className="mt-1 text-sm text-white/50">Sign in to your operations portal</p>
         </div>
