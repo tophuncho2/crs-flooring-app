@@ -144,4 +144,44 @@ describe("consumeRateLimit Redis fallback", () => {
     )
     expect(connectFailedLogs).toHaveLength(1)
   })
+
+  it("logs a positive confirmation when the client reaches ready", async () => {
+    const handlers: Record<string, (arg?: unknown) => void> = {}
+    const readyClient = {
+      isOpen: true,
+      on: vi.fn((event: string, handler: (arg?: unknown) => void) => {
+        handlers[event] = handler
+      }),
+      connect: vi.fn().mockResolvedValue(undefined),
+      incr: vi.fn().mockResolvedValue(1),
+      pExpire: vi.fn().mockResolvedValue(undefined),
+      disconnect: vi.fn().mockResolvedValue(undefined),
+    }
+
+    createClientMock.mockReturnValue(readyClient)
+
+    const rateLimitModule = await import("@/server/platform/rate-limit")
+    rateLimitModule.resetRateLimitStateForTests()
+
+    await rateLimitModule.consumeRateLimit({
+      request: new Request("http://localhost/api/auth", {
+        headers: { "x-forwarded-for": "127.0.0.1" },
+      }),
+      scope: "auth.login",
+      limit: 10,
+      windowMs: 60_000,
+      route: "/api/auth",
+    })
+
+    // node-redis emits 'ready' once the connection is live.
+    handlers.ready?.()
+
+    expect(logEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: "info",
+        action: "rateLimit.redis.connected",
+        message: "Redis rate-limit client connected",
+      }),
+    )
+  })
 })

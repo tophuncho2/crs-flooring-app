@@ -118,9 +118,20 @@ async function connectRedisClient() {
     })
 
     client.on("ready", () => {
+      const reconnected = wasReady
       wasReady = true
       hasWarnedRedisUnavailable = false
       redisUnavailableUntil = 0
+      // Positive confirmation that rate limiting is Redis-backed, not the
+      // process-local fallback — so "no error" in the logs isn't the only signal.
+      logEvent({
+        level: "info",
+        message: reconnected
+          ? "Redis rate-limit client reconnected"
+          : "Redis rate-limit client connected",
+        action: "rateLimit.redis.connected",
+        route: RATE_LIMIT_MODULE_ROUTE,
+      })
     })
 
     client.on("error", (error) => {
