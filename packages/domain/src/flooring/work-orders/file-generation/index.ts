@@ -1,4 +1,6 @@
 export * from "./types.js"
+export * from "./print-presets.js"
+export * from "./build-work-order-print-html.js"
 export * from "./build-work-order-slip-html.js"
 export * from "./build-work-order-picking-ticket-html.js"
 export * from "./build-work-order-plan-file-html.js"

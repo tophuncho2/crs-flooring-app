@@ -68,6 +68,81 @@ export type WorkOrderFileProductMaterialItemGroup = {
   materialItems: WorkOrderFileMaterialItemProjection[]
 }
 
+/**
+ * The twelve top-section values a user can toggle on the print configurator,
+ * in render order. This is the single source the configurator's checkbox panel
+ * and {@link renderWorkOrderInfo} both key off — adding a key here surfaces a
+ * checkbox AND gates its cell/row.
+ */
+export const WORK_ORDER_TOP_FIELD_KEYS = [
+  "date",
+  "warehouse",
+  "jobType",
+  "description",
+  "entity",
+  "property",
+  "propertyAddress",
+  "propertyInstructions",
+  "installerInstructions",
+  "unitType",
+  "unitNumber",
+  "vacancy",
+] as const
+
+export type WorkOrderTopFieldKey = (typeof WORK_ORDER_TOP_FIELD_KEYS)[number]
+
+/** Human labels for the top-section checkboxes, keyed by {@link WorkOrderTopFieldKey}. */
+export const WORK_ORDER_TOP_FIELD_LABELS: Record<WorkOrderTopFieldKey, string> = {
+  date: "Date",
+  warehouse: "Warehouse",
+  jobType: "Job Type",
+  description: "Description",
+  entity: "Entity",
+  property: "Property",
+  propertyAddress: "Property Address",
+  propertyInstructions: "Property Instructions",
+  installerInstructions: "Installer Instructions",
+  unitType: "Unit Type",
+  unitNumber: "Unit Number",
+  vacancy: "Vacancy",
+}
+
+/** Which top-section values render. `true` ⇒ shown. */
+export type WorkOrderTopFieldVisibility = Record<WorkOrderTopFieldKey, boolean>
+
+/**
+ * Optional adjustment columns (Product + Quantity are always shown). Mirrors the
+ * old `includeInventoryDetail` boolean, split into independent toggles so the
+ * configurator can show any subset.
+ */
+export type WorkOrderAdjustmentColumnVisibility = {
+  dyeLot: boolean
+  rollNumber: boolean
+  adjustment: boolean
+  location: boolean
+}
+
+/** Optional material columns (Product + Qty/Unit are always shown). */
+export type WorkOrderMaterialColumnVisibility = {
+  notes: boolean
+}
+
+/**
+ * The full checkbox-driven configuration for ONE work-order print document.
+ * Seeded from a preset (Picking Ticket / Slip / Plan File) and then mutated by
+ * the configurator's checkboxes. `mode` is the mutually-exclusive bottom section
+ * (adjustments XOR requested material). `selected*Ids` undefined ⇒ all rows.
+ */
+export type WorkOrderPrintConfig = {
+  documentLabel: string
+  mode: "adjustments" | "material"
+  topFields: WorkOrderTopFieldVisibility
+  adjustmentColumns: WorkOrderAdjustmentColumnVisibility
+  materialColumns: WorkOrderMaterialColumnVisibility
+  selectedAdjustmentIds?: ReadonlyArray<string>
+  selectedMaterialIds?: ReadonlyArray<string>
+}
+
 export type WorkOrderFileGenerationInput = {
   workOrderNumber: string
   scheduledFor: string

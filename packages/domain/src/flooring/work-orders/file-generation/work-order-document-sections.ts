@@ -1,36 +1,50 @@
 import { buildAddressLine } from "../../../shared/address/index.js"
 import { formatPhoneNumber } from "../../../shared/phone.js"
 import { sumAdjustmentQuantities } from "../material-items/adjustment-quantities.js"
-import type {
-  WorkOrderFileAdjustmentProjection,
-  WorkOrderFileGenerationInput,
-  WorkOrderFileProductAdjustmentGroup,
-  WorkOrderFileProductMaterialItemGroup,
+import {
+  WORK_ORDER_TOP_FIELD_KEYS,
+  type WorkOrderAdjustmentColumnVisibility,
+  type WorkOrderFileAdjustmentProjection,
+  type WorkOrderFileGenerationInput,
+  type WorkOrderFileProductAdjustmentGroup,
+  type WorkOrderFileProductMaterialItemGroup,
+  type WorkOrderMaterialColumnVisibility,
+  type WorkOrderTopFieldVisibility,
 } from "./types.js"
 
 /**
- * Shared section renderers + style block for the on-demand work-order
- * PRINT VIEWS (Work Order Slip + Picking Ticket). These mirror the
- * private helpers in `build-work-order-pdf-html.ts` so the browser print
- * output matches the worker-generated PDF page-for-page.
+ * Shared section renderers + style block for the on-demand work-order PRINT
+ * VIEWS — the single source of truth for the Picking Ticket, Work Order Slip,
+ * and Plan File documents (the worker-generated PDF path they replaced has been
+ * removed). The configurator drives these renderers with a per-document config:
+ * which top-section values, which bottom columns, and which rows to render.
  *
- * This is a deliberate, temporary duplication: the file-generation worker
- * (and `build-work-order-pdf-html.ts`) stays untouched until the print
- * views are confirmed. When the worker is retired the old builder is
- * deleted and these become the single source of truth.
- *
- * Differences from the PDF builder's STYLE_BLOCK — these exist because the
- * print views render INSIDE the Next app (Tailwind preflight + a single
- * standalone page), not as a standalone Puppeteer document:
- *   - Every selector is scoped under `.wo-print-root` so Tailwind's
- *     preflight reset (which flattens bare h1/h2/table) cannot win.
+ * Style-block notes — these render INSIDE the Next app (Tailwind preflight + a
+ * single standalone page):
+ *   - Every selector is scoped under `.wo-print-root` so Tailwind's preflight
+ *     reset (which flattens bare h1/h2/table) cannot win.
  *   - `@page { margin: 0 }` + the inset moved onto `.wo-print-root` padding:
  *     with no page-margin box, the browser cannot inject its default
  *     header/footer (date / URL / page #), so the user never has to uncheck
- *     "Headers and footers" in the print dialog. The 0.35in padding keeps
- *     content inside every printer's non-printable edge.
- *   - Each view is its own single page, so the PDF's `.page-break` rule is dropped.
+ *     "Headers and footers" in the print dialog. The padding keeps content
+ *     inside every printer's non-printable edge.
+ *   - Each view is its own single page (no inter-page `.page-break` rule).
  */
+
+/** Default: every top-section value visible (used when no config is supplied). */
+function allTopFieldsVisible(): WorkOrderTopFieldVisibility {
+  return Object.fromEntries(
+    WORK_ORDER_TOP_FIELD_KEYS.map((key) => [key, true]),
+  ) as WorkOrderTopFieldVisibility
+}
+
+/** Default: every adjustment detail column visible (Picking Ticket behavior). */
+const ALL_ADJUSTMENT_COLUMNS: WorkOrderAdjustmentColumnVisibility = {
+  dyeLot: true,
+  rollNumber: true,
+  adjustment: true,
+  location: true,
+}
 
 export const WO_PRINT_STYLE_BLOCK = `
   @page { size: letter; margin: 0; }
@@ -79,8 +93,9 @@ export const WO_PRINT_STYLE_BLOCK = `
 
 // Shared header (.page-header grid, all three spans the same size):
 // "CRS Floor Covering" on the left, the document-type tag centered, and the
-// work-order number mirrored to the right.
-function renderDocumentHeader(
+// work-order number mirrored to the right. The `tag` is the configurable
+// top-center document label (the one part that differs between the presets).
+export function renderWorkOrderDocumentHeader(
   input: WorkOrderFileGenerationInput,
   tag: string,
   logoUrl?: string | null,
@@ -104,21 +119,21 @@ export function renderWorkOrderHeader(
   input: WorkOrderFileGenerationInput,
   logoUrl?: string | null,
 ): string {
-  return renderDocumentHeader(input, "Work Order", logoUrl)
+  return renderWorkOrderDocumentHeader(input, "Work Order", logoUrl)
 }
 
 export function renderWorkOrderPickingTicketHeader(
   input: WorkOrderFileGenerationInput,
   logoUrl?: string | null,
 ): string {
-  return renderDocumentHeader(input, "Picking Ticket", logoUrl)
+  return renderWorkOrderDocumentHeader(input, "Picking Ticket", logoUrl)
 }
 
 export function renderWorkOrderPlanFileHeader(
   input: WorkOrderFileGenerationInput,
   logoUrl?: string | null,
 ): string {
-  return renderDocumentHeader(input, "Plan File", logoUrl)
+  return renderWorkOrderDocumentHeader(input, "Plan File", logoUrl)
 }
 
 // Wraps the document so the header repeats on every printed page. The header
@@ -164,7 +179,10 @@ ${body}
  * empty); the address is the customAddress override or the property's flat
  * address line.
  */
-export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string {
+export function renderWorkOrderInfo(
+  input: WorkOrderFileGenerationInput,
+  topFields: WorkOrderTopFieldVisibility = allTopFieldsVisible(),
+): string {
   const warehouseParts = [
     input.warehouse.name,
     buildAddressLine(input.warehouse),
@@ -173,23 +191,77 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
   const warehouseCell = warehouseParts.length
     ? escapeHtml(warehouseParts.join(" - "))
     : `<span class="empty-cell">—</span>`
-  // Description shares row 2 of the top grid, to the right of Job Type. When
-  // blank the cell pair is left empty so the grid keeps its shape.
-  const descriptionCells = input.description
-    ? `<th>Description</th><td class="multiline">${escapeHtml(input.description)}</td>`
+  // Each top-grid cell is a `<th>label</th><td>value</td>` pair, or an empty
+  // pair when its checkbox is off — emptying (not removing) the cell keeps the
+  // 2×2 grid's shape. Description additionally goes empty when its value is blank.
+  const dateCells = topFields.date
+    ? `<th>Date</th><td>${escapeOrEmpty(input.scheduledFor)} - ${formatTimeOfDay(input.timeOfDay)}</td>`
     : `<th></th><td></td>`
-  // Property (or custom) address, flat text — labeled row beneath the Property
-  // name.
+  const warehouseCells = topFields.warehouse
+    ? `<th>Warehouse</th><td>${warehouseCell}</td>`
+    : `<th></th><td></td>`
+  const jobTypeCells = topFields.jobType
+    ? `<th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td>`
+    : `<th></th><td></td>`
+  const descriptionCells =
+    topFields.description && input.description
+      ? `<th>Description</th><td class="multiline">${escapeHtml(input.description)}</td>`
+      : `<th></th><td></td>`
+  // Property (or custom) address, flat text — labeled row beneath the Property name.
   const propertyAddress = input.customAddress || buildAddressLine(input.property)
-  const propertyAddressRow = propertyAddress
-    ? `\n    <tr><th>Property Address</th><td>${escapeHtml(propertyAddress)}</td></tr>`
+  // Left flex column rows — Entity / Property always render (showing — when
+  // blank) when their box is on; the address + instruction rows additionally
+  // require a value (mirroring the original omit-when-blank behavior).
+  const leftRows = [
+    topFields.entity ? `<tr><th>Entity</th><td>${escapeOrEmpty(input.entityName)}</td></tr>` : "",
+    topFields.property
+      ? `<tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>`
+      : "",
+    topFields.propertyAddress && propertyAddress
+      ? `<tr><th>Property Address</th><td>${escapeHtml(propertyAddress)}</td></tr>`
+      : "",
+    topFields.propertyInstructions && input.property.instructions
+      ? `<tr><th>Property Instructions</th><td class="multiline">${escapeHtml(input.property.instructions)}</td></tr>`
+      : "",
+    topFields.installerInstructions && input.installerInstructions
+      ? `<tr><th>Installer Instructions</th><td class="multiline">${escapeHtml(input.installerInstructions)}</td></tr>`
+      : "",
+  ].filter(Boolean)
+  const rightRows = [
+    topFields.unitType ? `<tr><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>` : "",
+    topFields.unitNumber
+      ? `<tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>`
+      : "",
+    topFields.vacancy
+      ? `<tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>`
+      : "",
+  ].filter(Boolean)
+  const leftTable = leftRows.length
+    ? `
+  <table class="wo-top-table wo-mid-left">
+    <colgroup>
+      <col style="width: 1%;" />
+      <col />
+    </colgroup>
+    <tbody>
+      ${leftRows.join("\n      ")}
+    </tbody>
+  </table>`
     : ""
-  const propertyInstructionsRow = input.property.instructions
-    ? `\n    <tr><th>Property Instructions</th><td class="multiline">${escapeHtml(input.property.instructions)}</td></tr>`
+  const rightTable = rightRows.length
+    ? `
+  <table class="wo-top-table wo-mid-right">
+    <colgroup>
+      <col style="width: 1%;" />
+      <col />
+    </colgroup>
+    <tbody>
+      ${rightRows.join("\n      ")}
+    </tbody>
+  </table>`
     : ""
-  const installerInstructionsRow = input.installerInstructions
-    ? `\n    <tr><th>Installer Instructions</th><td class="multiline">${escapeHtml(input.installerInstructions)}</td></tr>`
-    : ""
+  const midBand =
+    leftTable || rightTable ? `\n<div class="wo-mid">${leftTable}${rightTable}\n</div>` : ""
   return `
 <table class="wo-top-grid">
   <colgroup>
@@ -200,53 +272,39 @@ export function renderWorkOrderInfo(input: WorkOrderFileGenerationInput): string
   </colgroup>
   <tbody>
     <tr>
-      <th>Date</th><td>${escapeOrEmpty(input.scheduledFor)} - ${formatTimeOfDay(input.timeOfDay)}</td>
-      <th>Warehouse</th><td>${warehouseCell}</td>
+      ${dateCells}
+      ${warehouseCells}
     </tr>
     <tr>
-      <th>Job Type</th><td>${escapeOrEmpty(input.jobTypeName)}</td>
+      ${jobTypeCells}
       ${descriptionCells}
     </tr>
   </tbody>
-</table>
-<div class="wo-mid">
-  <table class="wo-top-table wo-mid-left">
-    <colgroup>
-      <col style="width: 1%;" />
-      <col />
-    </colgroup>
-    <tbody>
-      <tr><th>Entity</th><td>${escapeOrEmpty(input.entityName)}</td></tr>
-      <tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>${propertyAddressRow}${propertyInstructionsRow}${installerInstructionsRow}
-    </tbody>
-  </table>
-  <table class="wo-top-table wo-mid-right">
-    <colgroup>
-      <col style="width: 1%;" />
-      <col />
-    </colgroup>
-    <tbody>
-      <tr><th>Unit Type</th><td>${escapeOrEmpty(input.unitType)}</td></tr>
-      <tr><th>Unit Number</th><td>${escapeOrEmpty(input.unitNumber)}</td></tr>
-      <tr><th>Vacancy</th><td>${escapeOrEmpty(formatVacancy(input.vacancy))}</td></tr>
-    </tbody>
-  </table>
-</div>
+</table>${midBand}
 `.trim()
 }
 
 export function renderWorkOrderAdjustments(
   groups: WorkOrderFileProductAdjustmentGroup[],
-  options: { includeInventoryDetail?: boolean } = {},
+  options: {
+    columns?: WorkOrderAdjustmentColumnVisibility
+    selectedIds?: ReadonlyArray<string>
+  } = {},
 ): string {
-  // includeInventoryDetail (default true → Picking Ticket): the warehouse view
-  // adds the Dyelot/Roll# and before→after Adjustment + Location columns. The
-  // Slip (false) is the customer-facing summary — Product / Quantity only.
-  // BOTH views render the same structure: one row per adjustment grouped by
-  // product, each group closed by a summed subtotal row. The only difference is
-  // which columns show.
-  const includeInventoryDetail = options.includeInventoryDetail ?? true
-  const groupsWithAdjustments = groups.filter((group) => group.adjustments.length > 0)
+  // Each detail column toggles independently (default all on → Picking Ticket;
+  // all off → the Slip summary of Product / Quantity). `selectedIds`, when
+  // supplied, narrows to the chosen adjustment rows — groups left empty drop
+  // out, and the per-group subtotal sums only what is shown.
+  const columns = options.columns ?? ALL_ADJUSTMENT_COLUMNS
+  const selectedIds = options.selectedIds ? new Set(options.selectedIds) : null
+  const groupsWithAdjustments = groups
+    .map((group) => ({
+      productName: group.productName,
+      adjustments: selectedIds
+        ? group.adjustments.filter((adj) => selectedIds.has(adj.id))
+        : group.adjustments,
+    }))
+    .filter((group) => group.adjustments.length > 0)
   if (groupsWithAdjustments.length === 0) {
     return ""
   }
@@ -256,20 +314,21 @@ export function renderWorkOrderAdjustments(
   const renderedRows = groupsWithAdjustments
     .map((group) => {
       const adjustmentRows = group.adjustments
-        .map((adj) => renderAdjustmentRow({ adj, productName: group.productName }, includeInventoryDetail))
+        .map((adj) => renderAdjustmentRow({ adj, productName: group.productName }, columns))
         .join("\n")
-      return `${adjustmentRows}\n${renderSubtotalRow(group, includeInventoryDetail)}`
+      return `${adjustmentRows}\n${renderSubtotalRow(group.adjustments, columns)}`
     })
     .join("\n")
-  const headCells = includeInventoryDetail
-    ? `<th>Product</th>
-      <th>Dyelot</th>
-      <th>Roll#</th>
-      <th class="cl-num">Quantity</th>
-      <th class="cl-num">Adjustment</th>
-      <th>Location</th>`
-    : `<th>Product</th>
-      <th class="cl-num">Quantity</th>`
+  const headCells = [
+    `<th>Product</th>`,
+    columns.dyeLot ? `<th>Dyelot</th>` : "",
+    columns.rollNumber ? `<th>Roll#</th>` : "",
+    `<th class="cl-num">Quantity</th>`,
+    columns.adjustment ? `<th class="cl-num">Adjustment</th>` : "",
+    columns.location ? `<th>Location</th>` : "",
+  ]
+    .filter(Boolean)
+    .join("\n      ")
   return `
 <table class="flat-rows">
   <thead>
@@ -299,31 +358,56 @@ export function renderWorkOrderAdjustments(
  */
 export function renderWorkOrderMaterialItems(
   groups: WorkOrderFileProductMaterialItemGroup[],
+  options: {
+    columns?: WorkOrderMaterialColumnVisibility
+    selectedIds?: ReadonlyArray<string>
+  } = {},
 ): string {
-  const groupsWithItems = groups.filter((group) => group.materialItems.length > 0)
+  // Notes toggles independently (default on); Product + Qty/Unit always show.
+  // `selectedIds`, when supplied, narrows to the chosen rows — empty groups drop
+  // out and the per-group subtotal sums only what is shown.
+  const showNotes = options.columns?.notes ?? true
+  const selectedIds = options.selectedIds ? new Set(options.selectedIds) : null
+  const groupsWithItems = groups
+    .map((group) => ({
+      productName: group.productName,
+      materialItems: selectedIds
+        ? group.materialItems.filter((item) => selectedIds.has(item.id))
+        : group.materialItems,
+    }))
+    .filter((group) => group.materialItems.length > 0)
   if (groupsWithItems.length === 0) {
     return ""
   }
   const renderedRows = groupsWithItems
     .map((group) => {
       const itemRows = group.materialItems
-        .map((item) => renderMaterialItemRow({ item, productName: group.productName }))
+        .map((item) => renderMaterialItemRow({ item, productName: group.productName }, showNotes))
         .join("\n")
-      return `${itemRows}\n${renderMaterialItemSubtotalRow(group)}`
+      return `${itemRows}\n${renderMaterialItemSubtotalRow(group.materialItems, showNotes)}`
     })
     .join("\n")
+  const colgroup = showNotes
+    ? `<col style="width: 50%;" />
+    <col style="width: 35%;" />
+    <col style="width: 15%;" />`
+    : `<col style="width: 70%;" />
+    <col style="width: 30%;" />`
+  const headCells = [
+    `<th>Product</th>`,
+    showNotes ? `<th>Notes</th>` : "",
+    `<th class="cl-num">Qty / Unit</th>`,
+  ]
+    .filter(Boolean)
+    .join("\n      ")
   return `
 <table class="flat-rows plan-file">
   <colgroup>
-    <col style="width: 50%;" />
-    <col style="width: 35%;" />
-    <col style="width: 15%;" />
+    ${colgroup}
   </colgroup>
   <thead>
     <tr>
-      <th>Product</th>
-      <th>Notes</th>
-      <th class="cl-num">Qty / Unit</th>
+      ${headCells}
     </tr>
   </thead>
   <tbody>
@@ -333,17 +417,20 @@ export function renderWorkOrderMaterialItems(
 `.trim()
 }
 
-function renderMaterialItemRow({
-  item,
-  productName,
-}: {
-  item: WorkOrderFileProductMaterialItemGroup["materialItems"][number]
-  productName: string
-}): string {
+function renderMaterialItemRow(
+  {
+    item,
+    productName,
+  }: {
+    item: WorkOrderFileProductMaterialItemGroup["materialItems"][number]
+    productName: string
+  },
+  showNotes: boolean,
+): string {
+  const notesCell = showNotes ? `\n  <td>${escapeOrEmpty(item.notes)}</td>` : ""
   return `
 <tr>
-  <td>${escapeOrEmpty(productName)}</td>
-  <td>${escapeOrEmpty(item.notes)}</td>
+  <td>${escapeOrEmpty(productName)}</td>${notesCell}
   <td class="cl-num">${renderUnitValue(item.quantity, item.unitAbbrev)}</td>
 </tr>
 `.trim()
@@ -356,14 +443,17 @@ function renderMaterialItemRow({
  * mapping each item to its `{ quantity, stockUnitAbbrev }` shape (the unit suffix
  * is taken from the first item that carries one).
  */
-function renderMaterialItemSubtotalRow(group: WorkOrderFileProductMaterialItemGroup): string {
+function renderMaterialItemSubtotalRow(
+  materialItems: WorkOrderFileProductMaterialItemGroup["materialItems"],
+  showNotes: boolean,
+): string {
   const { quantity, stockUnitAbbrev } = sumAdjustmentQuantities(
-    group.materialItems.map((item) => ({ quantity: item.quantity, stockUnitAbbrev: item.unitAbbrev })),
+    materialItems.map((item) => ({ quantity: item.quantity, stockUnitAbbrev: item.unitAbbrev })),
   )
+  const notesCell = showNotes ? "\n  <td></td>" : ""
   return `
 <tr class="group-end">
-  <td></td>
-  <td></td>
+  <td></td>${notesCell}
   <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
 </tr>
 `.trim()
@@ -387,17 +477,20 @@ function renderAdjustmentRow(
     adj: WorkOrderFileAdjustmentProjection
     productName: string
   },
-  includeInventoryDetail: boolean,
+  columns: WorkOrderAdjustmentColumnVisibility,
 ): string {
   // Dyelot/Roll# (after Product) and the before→after Adjustment + Location
-  // (after Quantity) are warehouse-only (Picking Ticket); the Slip omits them,
-  // leaving Product / Quantity.
-  const leadDetailCells = includeInventoryDetail
-    ? `\n  <td>${escapeOrEmpty(adj.dyeLot)}</td>\n  <td>${escapeOrEmpty(adj.rollNumber)}</td>`
-    : ""
-  const trailDetailCells = includeInventoryDetail
-    ? `\n  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.stockUnitAbbrev)}</td>\n  <td>${escapeOrEmpty(adj.location)}</td>`
-    : ""
+  // (after Quantity) each toggle independently. Product + Quantity always show.
+  const leadDetailCells = [
+    columns.dyeLot ? `\n  <td>${escapeOrEmpty(adj.dyeLot)}</td>` : "",
+    columns.rollNumber ? `\n  <td>${escapeOrEmpty(adj.rollNumber)}</td>` : "",
+  ].join("")
+  const trailDetailCells = [
+    columns.adjustment
+      ? `\n  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.stockUnitAbbrev)}</td>`
+      : "",
+    columns.location ? `\n  <td>${escapeOrEmpty(adj.location)}</td>` : "",
+  ].join("")
   return `
 <tr>
   <td>${escapeOrEmpty(productName)}</td>${leadDetailCells}
@@ -419,12 +512,18 @@ function renderAdjustmentRow(
  * (`.flat-rows th`) supplies the top divider of the first group.
  */
 function renderSubtotalRow(
-  group: WorkOrderFileProductAdjustmentGroup,
-  includeInventoryDetail: boolean,
+  adjustments: WorkOrderFileAdjustmentProjection[],
+  columns: WorkOrderAdjustmentColumnVisibility,
 ): string {
-  const { quantity, stockUnitAbbrev } = sumAdjustmentQuantities(group.adjustments)
-  const leadDetailCells = includeInventoryDetail ? "\n  <td></td>\n  <td></td>" : ""
-  const trailDetailCells = includeInventoryDetail ? "\n  <td></td>\n  <td></td>" : ""
+  const { quantity, stockUnitAbbrev } = sumAdjustmentQuantities(adjustments)
+  const leadDetailCells = [
+    columns.dyeLot ? "\n  <td></td>" : "",
+    columns.rollNumber ? "\n  <td></td>" : "",
+  ].join("")
+  const trailDetailCells = [
+    columns.adjustment ? "\n  <td></td>" : "",
+    columns.location ? "\n  <td></td>" : "",
+  ].join("")
   return `
 <tr class="group-end">
   <td></td>${leadDetailCells}

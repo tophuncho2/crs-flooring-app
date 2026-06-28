@@ -1,6 +1,4 @@
-export type WorkOrderDomainErrorCode =
-  | "WORK_ORDER_INVENTORY_ADJUSTMENT_WRITE_FAILED"
-  | "WORK_ORDER_FILE_GENERATION_FAILED"
+export type WorkOrderDomainErrorCode = "WORK_ORDER_INVENTORY_ADJUSTMENT_WRITE_FAILED"
 
 export class WorkOrderDomainError extends Error {
   readonly code: WorkOrderDomainErrorCode

@@ -3,9 +3,12 @@ import { buildWorkOrderSlipHtml } from "../../../../src/flooring/work-orders/fil
 import { renderWorkOrderAdjustments } from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
 import { makeAdjustment, makeFileGenInput, makeMaterialItem } from "./_fixtures.js"
 
-// Slip = the customer-facing variant (Product / Quantity columns only).
+// Slip = the customer-facing variant (Product / Quantity columns only) — every
+// detail column toggled off.
 function slipTable(items: ReturnType<typeof makeMaterialItem>[]): string {
-  return renderWorkOrderAdjustments(items, { includeInventoryDetail: false })
+  return renderWorkOrderAdjustments(items, {
+    columns: { dyeLot: false, rollNumber: false, adjustment: false, location: false },
+  })
 }
 
 function count(haystack: string, needle: string): number {
