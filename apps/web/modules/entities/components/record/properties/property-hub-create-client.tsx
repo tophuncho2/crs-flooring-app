@@ -3,6 +3,7 @@
 import {
   ChoiceDialog,
   RecordCreateClientScaffold,
+  RecordSectionDivider,
   RecordSingleSectionPanel,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
@@ -11,9 +12,6 @@ import { ActionHeader } from "@/engines/common"
 import { usePropertyHubCreateSection } from "@/modules/entities/controllers/record/properties/use-property-hub-create-section"
 import { PropertyFieldsSection } from "@/modules/properties/components/record/primary/property-fields-section"
 import { EntitySelectSection } from "./primary/entity-select-section"
-
-const SECTION_CARD_CLASS =
-  "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
 
 /**
  * The unified property "hub" create form on the record-view engine — replaces
@@ -71,21 +69,21 @@ function PropertyHubCreatePanel({
           }
         />
 
-        <div className={SECTION_CARD_CLASS}>
-          <ActionHeader title="Property" />
-          <div className="p-4">
-            <PropertyFieldsSection
-              draft={primary.localValue.propertyForm}
-              editable={editable}
-              ariaPrefix="Property"
-              onFieldChange={(field, next) =>
-                primary.setLocalValue((prev) => ({
-                  ...prev,
-                  propertyForm: { ...prev.propertyForm, [field]: next },
-                }))
-              }
-            />
-          </div>
+        <RecordSectionDivider />
+
+        <ActionHeader title="Property" />
+        <div className="p-4">
+          <PropertyFieldsSection
+            draft={primary.localValue.propertyForm}
+            editable={editable}
+            ariaPrefix="Property"
+            onFieldChange={(field, next) =>
+              primary.setLocalValue((prev) => ({
+                ...prev,
+                propertyForm: { ...prev.propertyForm, [field]: next },
+              }))
+            }
+          />
         </div>
       </div>
     </RecordSingleSectionPanel>

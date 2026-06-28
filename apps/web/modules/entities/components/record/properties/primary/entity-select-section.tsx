@@ -10,14 +10,16 @@ import {
   type PropertyHubCreateForm,
 } from "@/modules/entities/controllers/record/properties/use-property-hub-create-section"
 
-const SECTION_CARD_CLASS =
-  "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)]"
-
 /**
  * The entity half of the hub create form: link an existing entity
  * (picker) OR create a new one (cells). The two are mutually exclusive — picking
  * a link disables the create cells and vice-versa (the legacy `deriveEntityMode`
  * rule). Leaving both empty creates the property with no entity.
+ *
+ * Chrome-free (just the titled `ActionHeader` + the field grid) — each consumer
+ * supplies its own surrounding surface: the hub create *page* lets the engine's
+ * grey section body show through; the quick-create *modal* wraps it in a white
+ * card. Mirrors the `PropertyFieldsSection` / `EntityCellsSection` convention.
  */
 export function EntitySelectSection({
   value,
@@ -42,7 +44,7 @@ export function EntitySelectSection({
   const mode = deriveEntityMode(value)
 
   return (
-    <div className={SECTION_CARD_CLASS}>
+    <>
       <ActionHeader title="Entity" />
       <div className="space-y-4 p-4">
         <FieldSection gap="0.75rem">
@@ -76,6 +78,6 @@ export function EntitySelectSection({
           showContactAndAddress={!compact}
         />
       </div>
-    </div>
+    </>
   )
 }

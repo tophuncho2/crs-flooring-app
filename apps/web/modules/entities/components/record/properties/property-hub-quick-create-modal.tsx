@@ -60,30 +60,32 @@ export function PropertyHubQuickCreateModal({
       error={controller.error}
     >
       <div className="space-y-4">
-        <EntitySelectSection
-          value={controller.localValue}
-          disabled={!editable}
-          onLink={(option) =>
-            controller.setLocalValue((prev) =>
-              option
-                ? {
-                    ...prev,
-                    entityLinkId: option.id,
-                    entityLinkLabel: option.entity,
-                    entityForm: EMPTY_ENTITY_FORM,
-                  }
-                : { ...prev, entityLinkId: null, entityLinkLabel: null },
-            )
-          }
-          onEntityFieldChange={(field, next) =>
-            controller.setLocalValue((prev) => ({
-              ...prev,
-              entityLinkId: null,
-              entityLinkLabel: null,
-              entityForm: { ...prev.entityForm, [field]: next },
-            }))
-          }
-        />
+        <div className={SECTION_CARD_CLASS}>
+          <EntitySelectSection
+            value={controller.localValue}
+            disabled={!editable}
+            onLink={(option) =>
+              controller.setLocalValue((prev) =>
+                option
+                  ? {
+                      ...prev,
+                      entityLinkId: option.id,
+                      entityLinkLabel: option.entity,
+                      entityForm: EMPTY_ENTITY_FORM,
+                    }
+                  : { ...prev, entityLinkId: null, entityLinkLabel: null },
+              )
+            }
+            onEntityFieldChange={(field, next) =>
+              controller.setLocalValue((prev) => ({
+                ...prev,
+                entityLinkId: null,
+                entityLinkLabel: null,
+                entityForm: { ...prev.entityForm, [field]: next },
+              }))
+            }
+          />
+        </div>
 
         <div className={SECTION_CARD_CLASS}>
           <ActionHeader title="Property" />
