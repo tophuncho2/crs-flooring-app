@@ -1,6 +1,7 @@
 import {
   Prisma,
   createImportRecord,
+  entityExists,
   getWarehouseById,
   withDatabaseTransaction,
 } from "@builders/db"
@@ -49,12 +50,23 @@ export async function createImportUseCase(
       })
     }
 
+    const entityId = emptyToNull(input.entityId)
+    if (entityId && !(await entityExists(entityId, c))) {
+      throw new ImportExecutionError({
+        code: "IMPORT_ENTITY_NOT_FOUND",
+        message: "Selected entity was not found.",
+        status: 400,
+        field: "entityId",
+      })
+    }
+
     return createImportRecord(
       {
         purchaseOrderNumber: emptyToNull(input.purchaseOrderNumber),
         internalNotes: emptyToNull(input.internalNotes),
         warehouseId: input.warehouseId,
         manufacturerId: emptyToNull(input.manufacturerId),
+        entityId,
         createdBy: actorEmail,
         updatedBy: actorEmail,
       },

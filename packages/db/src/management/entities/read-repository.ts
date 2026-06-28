@@ -86,6 +86,17 @@ export async function listEntityOptions(
   return entities.map(normalizeEntityOption)
 }
 
+// Lightweight existence probe — returns whether an entity row exists without
+// fetching/normalizing the full detail. Used by the product/import create+update
+// use cases to validate a supplied entityId before persisting the FK.
+export async function entityExists(
+  id: string,
+  client: EntitiesDbClient = db,
+): Promise<boolean> {
+  const row = await client.entity.findUnique({ where: { id }, select: { id: true } })
+  return row !== null
+}
+
 export async function getEntityById(
   id: string,
   client: EntitiesDbClient = db,

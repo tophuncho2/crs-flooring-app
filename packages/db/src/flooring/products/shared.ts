@@ -14,6 +14,7 @@ export const productRowSelect = {
   name: true,
   categoryId: true,
   manufacturerId: true,
+  entityId: true,
   style: true,
   color: true,
   // Non-semantic palette tag. On the row/detail reads only — the skinny
@@ -42,6 +43,12 @@ export const productRowSelect = {
     select: {
       id: true,
       companyName: true,
+    },
+  },
+  entity: {
+    select: {
+      id: true,
+      entity: true,
     },
   },
 } as const

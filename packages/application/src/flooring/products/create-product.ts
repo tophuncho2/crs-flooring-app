@@ -1,6 +1,7 @@
 import {
   Prisma,
   createProduct,
+  entityExists,
   getCategoryById,
   getManufacturerById,
   productNameExists,
@@ -48,6 +49,15 @@ export async function createProductUseCase(
       }
     }
 
+    if (input.entityId && !(await entityExists(input.entityId, c))) {
+      throw new ProductExecutionError({
+        code: "PRODUCT_ENTITY_NOT_FOUND",
+        message: "Selected entity was not found",
+        status: 400,
+        field: "entityId",
+      })
+    }
+
     const name = buildStoredFlooringProductName({
       categoryName: category.name,
       style: input.style,
@@ -84,6 +94,7 @@ export async function createProductUseCase(
           name,
           categoryId: input.categoryId,
           manufacturerId: input.manufacturerId,
+          entityId: input.entityId,
           style: input.style,
           color: input.color,
           coveragePerUnit: input.coveragePerUnit,

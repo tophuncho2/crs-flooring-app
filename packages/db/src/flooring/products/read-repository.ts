@@ -33,6 +33,8 @@ export type ProductRecord = {
   categoryId: string
   manufacturerId: string
   manufacturerName: string
+  entityId: string
+  entityName: string
   style: string
   color: string
   // Non-semantic palette tag (metadata-only). Distinct from the physical `color`.
@@ -106,6 +108,10 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     // agentName is intentionally NOT a fallback — products surface the company
     // name, not the agent's personal name.
     manufacturerName: product.manufacturer?.companyName ?? "",
+    // Entity link (Entity Payments epic). entityName is the joined entity.entity
+    // display name; "" when the product has no entity linked.
+    entityId: product.entityId ?? "",
+    entityName: product.entity?.entity ?? "",
     style: product.style ?? "",
     color: product.color ?? "",
     paletteColor: product.paletteColor,

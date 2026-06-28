@@ -27,6 +27,8 @@ const EMPTY_PRODUCT: ProductRecord = {
   categoryId: "",
   manufacturerId: "",
   manufacturerName: "",
+  entityId: "",
+  entityName: "",
   style: "",
   color: "",
   // Placeholder default — the create flow renders no palette picker; new rows
@@ -95,7 +97,7 @@ function ProductCreatePanel({
           product={EMPTY_PRODUCT}
           draft={controller.primarySection.localValue}
           categoryOptions={categoryOptions}
-          manufacturerName={null}
+          entityName={null}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({

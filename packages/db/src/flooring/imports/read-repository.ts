@@ -29,6 +29,10 @@ export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
     warehouseName: row.warehouse?.name ?? "",
     manufacturerId: row.manufacturerId ?? "",
     manufacturerName: row.manufacturer?.companyName ?? "",
+    // Entity link (Entity Payments epic). entityName is the joined entity.entity
+    // display name; "" when the import has no entity linked.
+    entityId: row.entityId ?? "",
+    entityName: row.entity?.entity ?? "",
     color: row.color,
     stagedInventoryRowsCount: row._count.stagedInventoryRows,
     liveInventoryRowsCount: row._count.inventories,

@@ -45,7 +45,7 @@ function ImportCreatePanel({
         <ImportPrimaryFieldsSection
           draft={controller.primarySection.localValue}
           warehouseName={null}
-          manufacturerName={null}
+          entityName={null}
           disabled={controller.primarySection.isSaving}
           onFieldChange={(field, value) => {
             controller.primarySection.setLocalValue((previous) => ({

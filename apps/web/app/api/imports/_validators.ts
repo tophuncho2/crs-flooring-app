@@ -78,6 +78,7 @@ export function validateCreateImportInput(body: Record<string, unknown>): Create
     internalNotes: optionalString(body.internalNotes, "internalNotes"),
     warehouseId: requireString(body.warehouseId, "warehouseId"),
     manufacturerId: optionalString(body.manufacturerId, "manufacturerId"),
+    entityId: optionalString(body.entityId, "entityId"),
   }
 }
 
@@ -89,6 +90,7 @@ export function validateUpdateImportInput(body: Record<string, unknown>): Update
     input.internalNotes = optionalString(body.internalNotes, "internalNotes")
   if (body.warehouseId !== undefined) input.warehouseId = requireString(body.warehouseId, "warehouseId")
   if (body.manufacturerId !== undefined) input.manufacturerId = optionalString(body.manufacturerId, "manufacturerId")
+  if (body.entityId !== undefined) input.entityId = optionalString(body.entityId, "entityId")
   if ("color" in body) input.color = requireColor(body.color)
   return input
 }

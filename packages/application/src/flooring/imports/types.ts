@@ -6,6 +6,7 @@ export type CreateImportInput = {
   internalNotes: string
   warehouseId: string
   manufacturerId: string
+  entityId: string
 }
 
 // `color` is the editable palette tag — added explicitly to the update input

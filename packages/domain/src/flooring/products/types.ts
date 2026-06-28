@@ -23,6 +23,11 @@ export type ProductRow = {
   categoryId: string
   manufacturerId: string
   manufacturerName: string
+  // Entity link (Entity Payments epic — manufacturers folding into entities).
+  // Coexists with manufacturerId during the transition; entityName is the joined
+  // display name (entity.entity), "" when unlinked.
+  entityId: string
+  entityName: string
   style: string
   color: string
   // Non-semantic palette tag (user-assigned visual color). Metadata-only — no
@@ -63,6 +68,7 @@ export type ProductStats = {
 export type ProductCreateForm = {
   categoryId: string
   manufacturerId: string
+  entityId: string
   style: string
   color: string
   // Mutable on create AND update — not an immutable snapshot. Empty string clears it.
@@ -102,6 +108,7 @@ export type ProductOption = {
 export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   categoryId: "",
   manufacturerId: "",
+  entityId: "",
   style: "",
   color: "",
   coveragePerUnit: "",
@@ -112,6 +119,7 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
 export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
   return {
     manufacturerId: row.manufacturerId,
+    entityId: row.entityId,
     style: row.style,
     color: row.color,
     coveragePerUnit: row.coveragePerUnit,

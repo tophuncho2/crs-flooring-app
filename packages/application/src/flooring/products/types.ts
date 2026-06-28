@@ -8,6 +8,7 @@ import type { PaletteColor } from "@builders/domain"
 export type CreateProductInput = {
   categoryId: string
   manufacturerId: string | null
+  entityId: string | null
   style: string | null
   color: string | null
   // Mutable on create AND update. Canonical decimal string (mirrors inventory

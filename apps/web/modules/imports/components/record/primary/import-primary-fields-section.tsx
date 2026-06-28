@@ -11,7 +11,7 @@ import {
   TextCell,
   TextareaCell,
 } from "@/engines/record-view"
-import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatEasternDateTime,
@@ -37,7 +37,7 @@ export function ImportPrimaryFieldsSection({
   draft,
   importNumber,
   warehouseName,
-  manufacturerName,
+  entityName,
   createdAt,
   updatedAt,
   createdBy,
@@ -51,7 +51,7 @@ export function ImportPrimaryFieldsSection({
   // which are record/edit-only.
   importNumber?: number
   warehouseName: string | null
-  manufacturerName: string | null
+  entityName: string | null
   // Present on the record view (existing import); omitted on the create flow,
   // where there's no persisted row yet — the timestamp + actor cells stay hidden.
   createdAt?: string
@@ -108,17 +108,17 @@ export function ImportPrimaryFieldsSection({
               </FormField>
             </CellAt>
             <CellAt col={1} colSpan={8}>
-              <FormField label="Manufacturer">
+              <FormField label="Entity">
                 {editable ? (
-                  <ManufacturerPicker
-                    value={draft.manufacturerId || null}
-                    onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
-                    selectedLabel={manufacturerName || null}
-                    placeholder="Select Manufacturer"
-                    ariaLabel="Manufacturer"
+                  <EntityTypePicker
+                    value={draft.entityId || null}
+                    onChange={(id) => onFieldChange("entityId", id ?? "")}
+                    selectedLabel={entityName || null}
+                    placeholder="Select entity"
+                    ariaLabel="Entity"
                   />
                 ) : (
-                  <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
+                  <StaticFieldValue>{entityName || "—"}</StaticFieldValue>
                 )}
               </FormField>
             </CellAt>

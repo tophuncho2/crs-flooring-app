@@ -13,7 +13,7 @@ import {
 } from "@/engines/record-view"
 import { PaletteColorDropdown } from "@/engines/common"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
-import { ManufacturerPicker } from "@/modules/manufacturers/components/picker/manufacturer-picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
 import {
   formatEasternDateTime,
@@ -46,7 +46,7 @@ export function ProductPrimaryFieldsSection({
   product,
   draft,
   categoryOptions,
-  manufacturerName,
+  entityName,
   disabled,
   categoryReadOnly = false,
   fieldsReadOnly = false,
@@ -56,12 +56,12 @@ export function ProductPrimaryFieldsSection({
   draft: ProductCreateForm
   categoryOptions: CategoryRecord[]
   /**
-   * Pre-resolved label for the saved `manufacturerId`, sourced from
-   * `product.manufacturerName` (joined snapshot). Empty string on create
+   * Pre-resolved label for the saved `entityId`, sourced from
+   * `product.entityName` (joined entity.entity). Empty string on create
    * mode — the picker still works, just renders no trigger label until
    * the user picks one.
    */
-  manufacturerName: string | null
+  entityName: string | null
   disabled: boolean
   categoryReadOnly?: boolean
   fieldsReadOnly?: boolean
@@ -197,17 +197,17 @@ export function ProductPrimaryFieldsSection({
               </FormField>
             </CellAt>
             <CellAt col={1} row={2} colSpan={4}>
-              <FormField label="Manufacturer">
+              <FormField label="Entity">
                 {fieldsReadOnly ? (
-                  <StaticFieldValue>{manufacturerName || "—"}</StaticFieldValue>
+                  <StaticFieldValue>{entityName || "—"}</StaticFieldValue>
                 ) : (
-                  <ManufacturerPicker
-                    value={draft.manufacturerId || null}
-                    onChange={(id) => onFieldChange("manufacturerId", id ?? "")}
-                    selectedLabel={manufacturerName || null}
+                  <EntityTypePicker
+                    value={draft.entityId || null}
+                    onChange={(id) => onFieldChange("entityId", id ?? "")}
+                    selectedLabel={entityName || null}
                     disabled={disabled}
-                    placeholder="Select Manufacturer"
-                    ariaLabel="Manufacturer"
+                    placeholder="Select entity"
+                    ariaLabel="Entity"
                   />
                 )}
               </FormField>

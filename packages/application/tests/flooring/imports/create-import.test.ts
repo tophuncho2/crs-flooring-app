@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { withDatabaseTransactionMock, getWarehouseByIdMock, createImportRecordMock } =
+const { withDatabaseTransactionMock, getWarehouseByIdMock, entityExistsMock, createImportRecordMock } =
   vi.hoisted(() => ({
     withDatabaseTransactionMock: vi.fn(),
     getWarehouseByIdMock: vi.fn(),
+    entityExistsMock: vi.fn(),
     createImportRecordMock: vi.fn(),
   }))
 
@@ -13,6 +14,7 @@ vi.mock("@builders/db", () => ({
   },
   withDatabaseTransaction: withDatabaseTransactionMock,
   getWarehouseById: getWarehouseByIdMock,
+  entityExists: entityExistsMock,
   createImportRecord: createImportRecordMock,
 }))
 
@@ -27,6 +29,7 @@ function validInput(overrides: Record<string, string> = {}) {
     internalNotes: "",
     warehouseId: "wh-1",
     manufacturerId: "",
+    entityId: "",
     ...overrides,
   }
 }
@@ -40,6 +43,8 @@ beforeEach(() => {
     cb({ $queryRaw: vi.fn().mockResolvedValue([]) }),
   )
   getWarehouseByIdMock.mockResolvedValue({ id: "wh-1" })
+  entityExistsMock.mockReset()
+  entityExistsMock.mockResolvedValue(true)
   createImportRecordMock.mockResolvedValue({ id: "import-1" })
 })
 
@@ -97,5 +102,23 @@ describe("createImportUseCase — validation", () => {
       expect(error.code).toBe("IMPORT_WAREHOUSE_NOT_FOUND")
     }
     expect(createImportRecordMock).not.toHaveBeenCalled()
+  })
+
+  it("throws IMPORT_ENTITY_NOT_FOUND when a supplied entity does not exist", async () => {
+    entityExistsMock.mockResolvedValue(false)
+    try {
+      await createImportUseCase(validInput({ entityId: "ent-missing" }), ACTOR)
+      expect.fail("expected throw")
+    } catch (error) {
+      if (!(error instanceof ImportExecutionError)) throw error
+      expect(error.code).toBe("IMPORT_ENTITY_NOT_FOUND")
+    }
+    expect(createImportRecordMock).not.toHaveBeenCalled()
+  })
+
+  it("passes a validated entityId through to the repo", async () => {
+    await createImportUseCase(validInput({ entityId: "ent-1" }), ACTOR)
+    expect(entityExistsMock).toHaveBeenCalledWith("ent-1", expect.anything())
+    expect(createImportRecordMock.mock.calls[0]![0]).toMatchObject({ entityId: "ent-1" })
   })
 })

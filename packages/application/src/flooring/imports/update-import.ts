@@ -1,5 +1,6 @@
 import {
   Prisma,
+  entityExists,
   getImportById,
   getImportLinkState,
   getWarehouseById,
@@ -28,6 +29,7 @@ function toPrimaryForm(input: UpdateImportInput, current: ImportPrimaryForm): Im
     internalNotes: input.internalNotes ?? current.internalNotes,
     warehouseId: input.warehouseId ?? current.warehouseId,
     manufacturerId: input.manufacturerId ?? current.manufacturerId,
+    entityId: input.entityId ?? current.entityId,
     color: input.color ?? current.color,
   }
 }
@@ -61,6 +63,7 @@ export async function updateImportUseCase(
       internalNotes: current.internalNotes,
       warehouseId: current.warehouseId,
       manufacturerId: current.manufacturerId,
+      entityId: current.entityId,
       color: current.color,
     })
 
@@ -110,6 +113,18 @@ export async function updateImportUseCase(
     }
     if (input.manufacturerId !== undefined) {
       dbInput.manufacturerId = emptyToNull(input.manufacturerId)
+    }
+    if (input.entityId !== undefined) {
+      const nextEntityId = emptyToNull(input.entityId)
+      if (nextEntityId && !(await entityExists(nextEntityId, c))) {
+        throw new ImportExecutionError({
+          code: "IMPORT_ENTITY_NOT_FOUND",
+          message: "Selected entity was not found.",
+          status: 400,
+          field: "entityId",
+        })
+      }
+      dbInput.entityId = nextEntityId
     }
     // Palette tag rides through unread — metadata-only, no recompute.
     if (input.color !== undefined) dbInput.color = input.color

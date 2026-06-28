@@ -21,6 +21,7 @@ export type CreateProductInput = {
   name: string
   categoryId: string
   manufacturerId: string | null
+  entityId: string | null
   style: string | null
   color: string | null
   // Mutable reference value (mutable on create AND update). Canonical decimal
@@ -70,6 +71,7 @@ export async function createProduct(
       name: input.name,
       categoryId: input.categoryId,
       manufacturerId: input.manufacturerId,
+      entityId: input.entityId,
       style: input.style,
       color: input.color,
       coveragePerUnit: input.coveragePerUnit,
@@ -94,6 +96,7 @@ export async function updateProduct(
   const data: Prisma.FlooringProductUncheckedUpdateInput = { updatedBy: input.updatedBy }
   if (input.name !== undefined) data.name = input.name
   if (input.manufacturerId !== undefined) data.manufacturerId = input.manufacturerId
+  if (input.entityId !== undefined) data.entityId = input.entityId
   if (input.style !== undefined) data.style = input.style
   if (input.color !== undefined) data.color = input.color
   if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit

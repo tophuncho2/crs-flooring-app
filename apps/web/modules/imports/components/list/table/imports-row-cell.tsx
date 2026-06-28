@@ -18,8 +18,8 @@ export function renderImportsRowCell(
       )
     case "warehouseName":
       return row.warehouseName || "-"
-    case "manufacturerName":
-      return row.manufacturerName || "-"
+    case "entityName":
+      return row.entityName || "-"
     case "purchaseOrderNumber":
       return row.purchaseOrderNumber || "-"
     case "stagedInventoryRowsCount":

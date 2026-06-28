@@ -83,7 +83,7 @@ export function ProductRecordPanel({
                   product={controller.record}
                   draft={controller.primarySection.localValue}
                   categoryOptions={categoryOptions}
-                  manufacturerName={controller.record.manufacturerName || null}
+                  entityName={controller.record.entityName || null}
                   disabled={controller.primarySection.isSaving}
                   categoryReadOnly
                   onFieldChange={(field, value) => {

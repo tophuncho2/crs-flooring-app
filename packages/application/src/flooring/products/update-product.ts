@@ -1,5 +1,6 @@
 import {
   Prisma,
+  entityExists,
   getManufacturerById,
   getProductById,
   productNameExists,
@@ -65,8 +66,21 @@ export async function updateProductUseCase(
       }
     }
 
+    if ("entityId" in input) {
+      const nextEntityId = input.entityId
+      if (nextEntityId && !(await entityExists(nextEntityId, c))) {
+        throw new ProductExecutionError({
+          code: "PRODUCT_ENTITY_NOT_FOUND",
+          message: "Selected entity was not found",
+          status: 400,
+          field: "entityId",
+        })
+      }
+    }
+
     const patch: Parameters<typeof updateProduct>[1] = { updatedBy: actorEmail }
     if ("manufacturerId" in input) patch.manufacturerId = input.manufacturerId
+    if ("entityId" in input) patch.entityId = input.entityId
     if ("style" in input) patch.style = input.style
     if ("color" in input) patch.color = input.color
     if ("coveragePerUnit" in input) patch.coveragePerUnit = input.coveragePerUnit

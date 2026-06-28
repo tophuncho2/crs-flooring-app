@@ -43,6 +43,7 @@ export type CreateImportRecordInput = {
   internalNotes: string | null
   warehouseId: string
   manufacturerId: string | null
+  entityId: string | null
   createdBy: string
   updatedBy: string
 }
@@ -71,6 +72,7 @@ export async function createImportRecord(
       manufacturer: input.manufacturerId
         ? { connect: { id: input.manufacturerId } }
         : undefined,
+      entity: input.entityId ? { connect: { id: input.entityId } } : undefined,
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
     },
@@ -99,6 +101,9 @@ export async function updateImportRecord(
     data.manufacturer = input.manufacturerId
       ? { connect: { id: input.manufacturerId } }
       : { disconnect: true }
+  }
+  if (input.entityId !== undefined) {
+    data.entity = input.entityId ? { connect: { id: input.entityId } } : { disconnect: true }
   }
   if (input.color !== undefined) data.color = input.color
 

@@ -18,8 +18,8 @@ export function renderProductRowCell(
       return row.category.name || "-"
     case "name":
       return row.name || "Pending name"
-    case "manufacturer":
-      return row.manufacturerName || "-"
+    case "entity":
+      return row.entityName || "-"
     case "style":
       return row.style || "-"
     case "color":

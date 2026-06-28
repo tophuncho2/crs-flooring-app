@@ -64,7 +64,7 @@ export function ImportRecordPanel({
                   draft={controller.primarySection.localValue}
                   importNumber={controller.record.importNumber}
                   warehouseName={controller.record.warehouseName}
-                  manufacturerName={controller.record.manufacturerName}
+                  entityName={controller.record.entityName}
                   createdAt={controller.record.createdAt}
                   updatedAt={controller.record.updatedAt}
                   createdBy={controller.record.createdBy}
