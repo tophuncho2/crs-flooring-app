@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   buildWorkOrderPrintConfig,
   buildWorkOrderPrintHtml,
+  WORK_ORDER_DOCUMENT_LABELS,
   WORK_ORDER_TOP_FIELD_KEYS,
   WORK_ORDER_TOP_FIELD_LABELS,
   type WorkOrderFileGenerationInput,
@@ -112,6 +113,11 @@ export function WorkOrderPrintConfigurator({
   const setMode = (mode: WorkOrderPrintConfig["mode"]) =>
     setConfig((current) => ({ ...current, mode }))
 
+  // Document-type switch is label-only — it sets the centered top tag and leaves
+  // the user's mode/columns/row selections untouched.
+  const setDocumentLabel = (documentLabel: string) =>
+    setConfig((current) => ({ ...current, documentLabel }))
+
   const toggleAdjustmentColumn = (key: (typeof ADJUSTMENT_COLUMN_FIELDS)[number]["key"]) =>
     setConfig((current) => ({
       ...current,
@@ -150,7 +156,7 @@ export function WorkOrderPrintConfigurator({
     <main className="mx-auto flex max-w-6xl gap-6 bg-white px-6 py-8 text-black print:block print:max-w-none print:gap-0 print:p-0">
       <aside className="w-72 shrink-0 space-y-5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm print:hidden">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold">{config.documentLabel}</h2>
+          <h2 className="text-base font-semibold">Print options</h2>
           <button
             type="button"
             onClick={() => void handlePrint()}
@@ -159,6 +165,21 @@ export function WorkOrderPrintConfigurator({
             Print
           </button>
         </div>
+
+        <PanelSection title="Document">
+          <div className="flex flex-col gap-1 rounded border border-neutral-200 p-0.5">
+            {WORK_ORDER_DOCUMENT_LABELS.map((label) => (
+              <ModeButton
+                key={label}
+                active={config.documentLabel === label}
+                onClick={() => setDocumentLabel(label)}
+              >
+                {label}
+              </ModeButton>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-neutral-400">Sets the centered title on the document.</p>
+        </PanelSection>
 
         <PanelSection title="Top section">
           {WORK_ORDER_TOP_FIELD_KEYS.map((key) => (

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: { absolute: "CRS Floor Covering" },
 }
 
-export default async function WorkOrderPickingTicketPrintPage({
+export default async function WorkOrderPrintPage({
   params,
 }: {
   params: Promise<{ id: string }>
@@ -40,6 +40,8 @@ export default async function WorkOrderPickingTicketPrintPage({
 
   const logoUrl = await getBrandLogoPrintUrl()
 
+  // Seed the fullest starting point (adjustments, all detail columns). The
+  // user switches the centered document label and toggles from there.
   return (
     <WorkOrderPrintConfigurator
       input={result.data.workOrder}

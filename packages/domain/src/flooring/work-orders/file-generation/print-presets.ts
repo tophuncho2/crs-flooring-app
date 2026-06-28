@@ -19,6 +19,17 @@ import {
  */
 export type WorkOrderPrintPreset = "pickingTicket" | "slip" | "planFile"
 
+/**
+ * The three centered top-section labels the configurator's document-type
+ * selector offers, in order. Switching the selector is label-only — it sets
+ * `config.documentLabel` and nothing else (mode/columns/rows stay as the user
+ * left them). These mirror the three presets' `documentLabel`s, asserted in
+ * print-config.test.ts.
+ */
+export const WORK_ORDER_DOCUMENT_LABELS = ["Picking Ticket", "Work Order", "Plan File"] as const
+
+export type WorkOrderDocumentLabel = (typeof WORK_ORDER_DOCUMENT_LABELS)[number]
+
 function allTopFieldsVisible(): WorkOrderTopFieldVisibility {
   return Object.fromEntries(
     WORK_ORDER_TOP_FIELD_KEYS.map((key) => [key, true]),

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 import { buildWorkOrderPrintHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-print-html.js"
-import { buildWorkOrderPrintConfig } from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
+import {
+  buildWorkOrderPrintConfig,
+  WORK_ORDER_DOCUMENT_LABELS,
+} from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
 import {
   renderWorkOrderAdjustments,
   renderWorkOrderInfo,
@@ -38,6 +41,14 @@ describe("presets seed the right document", () => {
     const config = buildWorkOrderPrintConfig("planFile")
     expect(config.mode).toBe("material")
     expect(config.documentLabel).toBe("Plan File")
+  })
+
+  it("document-type selector labels mirror the three preset documentLabels", () => {
+    expect(WORK_ORDER_DOCUMENT_LABELS).toEqual([
+      buildWorkOrderPrintConfig("pickingTicket").documentLabel,
+      buildWorkOrderPrintConfig("slip").documentLabel,
+      buildWorkOrderPrintConfig("planFile").documentLabel,
+    ])
   })
 })
 

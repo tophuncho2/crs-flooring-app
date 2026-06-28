@@ -1,45 +1,31 @@
 import type { ReactNode } from "react"
-import { ClipboardList, FileText, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
 import type { WorkOrderListRow } from "@builders/domain"
 import { RecordOptionsMenu, type RecordOptionsMenuItem } from "@/engines/common"
 
-type WorkOrderPrintKind = "picking-ticket" | "slip" | "plan-file"
-
 /**
- * Open one of the work order's on-demand print views in a new tab. URLs mirror
- * the work-order record panel's print actions (the single source of truth for
- * the routes); both items are self-contained by the row's id, so no per-host
- * handler threading is needed.
+ * Open the work order's on-demand print configurator in a new tab. The URL
+ * mirrors the work-order record panel's Print action (the single source of
+ * truth for the route); the document type is picked inside the configurator,
+ * so one entry point covers all three documents.
  */
-function openWorkOrderPrint(id: string, kind: WorkOrderPrintKind): void {
+function openWorkOrderPrint(id: string): void {
   if (typeof window === "undefined") return
-  window.open(`/print/work-orders/${id}/${kind}`, "_blank", "noopener,noreferrer")
+  window.open(`/print/work-orders/${id}`, "_blank", "noopener,noreferrer")
 }
 
 /**
- * Build the shared work-order row ⋮ options menu — the two print views
- * (Picking Ticket → Work Order Slip), identical for every `DataTable` host.
- * Slots straight into `DataTable`'s `rowActions`, pairing with the open-↗ button.
+ * Build the shared work-order row ⋮ options menu — a single Print entry that
+ * opens the configurator, identical for every `DataTable` host. Slots straight
+ * into `DataTable`'s `rowActions`, pairing with the open-↗ button.
  */
 export function renderWorkOrderRowActions(row: WorkOrderListRow): ReactNode {
   const items: RecordOptionsMenuItem[] = [
     {
-      key: "print-picking-ticket",
-      label: "Picking Ticket",
+      key: "print",
+      label: "Print",
       icon: <Printer size={14} aria-hidden="true" />,
-      onClick: () => openWorkOrderPrint(row.id, "picking-ticket"),
-    },
-    {
-      key: "print-slip",
-      label: "Work Order Slip",
-      icon: <FileText size={14} aria-hidden="true" />,
-      onClick: () => openWorkOrderPrint(row.id, "slip"),
-    },
-    {
-      key: "print-plan-file",
-      label: "Plan File",
-      icon: <ClipboardList size={14} aria-hidden="true" />,
-      onClick: () => openWorkOrderPrint(row.id, "plan-file"),
+      onClick: () => openWorkOrderPrint(row.id),
     },
   ]
 

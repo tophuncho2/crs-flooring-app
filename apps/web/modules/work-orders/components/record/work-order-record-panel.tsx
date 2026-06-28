@@ -53,44 +53,18 @@ export function WorkOrderRecordPanel({
     onDiscard: controller.primarySection.discard,
   })
 
-  // On-demand print views (replaced the retired file-generation worker).
+  // One on-demand print view — the configurator (replaced the retired
+  // file-generation worker). The document type is chosen inside the
+  // configurator's label selector, so a single entry button suffices.
   const workOrderId = controller.record.id
   const printActions: RecordSectionSubHeaderAction[] = [
     {
-      key: "print-picking-ticket",
-      label: "Picking Ticket",
+      key: "print",
+      label: "Print",
       tone: "neutral",
       onClick: () => {
         if (typeof window !== "undefined") {
-          window.open(
-            `/print/work-orders/${workOrderId}/picking-ticket`,
-            "_blank",
-            "noopener,noreferrer",
-          )
-        }
-      },
-    },
-    {
-      key: "print-slip",
-      label: "Work Order Slip",
-      tone: "neutral",
-      onClick: () => {
-        if (typeof window !== "undefined") {
-          window.open(`/print/work-orders/${workOrderId}/slip`, "_blank", "noopener,noreferrer")
-        }
-      },
-    },
-    {
-      key: "print-plan-file",
-      label: "Plan File",
-      tone: "neutral",
-      onClick: () => {
-        if (typeof window !== "undefined") {
-          window.open(
-            `/print/work-orders/${workOrderId}/plan-file`,
-            "_blank",
-            "noopener,noreferrer",
-          )
+          window.open(`/print/work-orders/${workOrderId}`, "_blank", "noopener,noreferrer")
         }
       },
     },
