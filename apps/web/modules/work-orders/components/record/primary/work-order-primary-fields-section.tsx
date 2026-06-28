@@ -15,7 +15,7 @@ import {
   TextCell,
   TextareaCell,
 } from "@/engines/record-view"
-import { PaletteColorDropdown } from "@/engines/common"
+import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { applyPropertySelection, applyTemplateSelection } from "@/engines/picker"
 import {
   buildCurrentRecordEntryPath,
@@ -189,7 +189,11 @@ export function WorkOrderPrimaryFieldsSection({
             {/* Work Order Number + Color — equal-width top row (4/4, matching the split below) */}
             <CellAt col={1} row={1} colSpan={4}>
               <FormField label="Work Order Number">
-                <StaticFieldValue>{detail?.workOrderNumber ?? "—"}</StaticFieldValue>
+                {detail ? (
+                  <CellChip paletteColor={draft.color}>{detail.workOrderNumber}</CellChip>
+                ) : (
+                  <StaticFieldValue>—</StaticFieldValue>
+                )}
               </FormField>
             </CellAt>
             <CellAt col={5} row={1} colSpan={4}>
@@ -313,7 +317,7 @@ export function WorkOrderPrimaryFieldsSection({
         }
         right={
           <FieldSection gap="0.75rem">
-            {/* Schedule — Warehouse over Job Type (left column), Vacancy top-right */}
+            {/* Schedule — Warehouse on top, then Job Type + Vacancy beneath */}
             <CellAt col={1} row={1} colSpan={4}>
               <FormField label="Warehouse">
                 {editable ? (
@@ -330,7 +334,7 @@ export function WorkOrderPrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
-            <CellAt col={5} row={1} colSpan={4}>
+            <CellAt col={5} row={2} colSpan={4}>
               <FormField label="Vacancy">
                 <SegmentedChoiceCell
                   editable={editable}
