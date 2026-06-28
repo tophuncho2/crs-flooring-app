@@ -40,9 +40,16 @@ export type PropertyHubCreateForm = {
 export type PropertyHubEntityMode = "none" | "link" | "create"
 
 function entityFieldsHaveAnyValue(form: EntityForm): boolean {
-  return Object.values(form).some((value) =>
-    Array.isArray(value) ? value.length > 0 : value.trim().length > 0,
-  )
+  // `color` is an edit-only palette tag that always carries a non-empty default
+  // (SLATE) — it is never user-entered intent, so it must NOT count toward
+  // "the operator started creating an entity". Counting it would lock the form
+  // into "create" mode and disable the link picker on a pristine form.
+  return (Object.keys(form) as Array<keyof EntityForm>)
+    .filter((key) => key !== "color")
+    .some((key) => {
+      const value = form[key]
+      return Array.isArray(value) ? value.length > 0 : value.trim().length > 0
+    })
 }
 
 /** Link wins; otherwise any typed entity field means "create"; otherwise none. */
