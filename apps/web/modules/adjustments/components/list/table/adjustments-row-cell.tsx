@@ -3,7 +3,6 @@ import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import {
   formatAdjustmentTransition,
-  formatSignedAdjustmentMoney,
   formatSignedAdjustmentQuantity,
   type EnrichedInventoryAdjustmentRow,
 } from "@builders/domain"
@@ -39,22 +38,6 @@ export function renderAdjustmentsRowCell(
       return (
         <CellChip tone={row.adjustmentType === "INCREASE" ? "success" : "error"}>
           {formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.stockUnitAbbrev ?? "")}
-        </CellChip>
-      )
-    case "cost":
-      return row.cost == null ? (
-        <span className="text-[var(--text-muted)]">—</span>
-      ) : (
-        <CellChip tone={row.adjustmentType === "INCREASE" ? "success" : "error"}>
-          {formatSignedAdjustmentMoney(row.cost, row.adjustmentType)}
-        </CellChip>
-      )
-    case "freight":
-      return row.freight == null ? (
-        <span className="text-[var(--text-muted)]">—</span>
-      ) : (
-        <CellChip tone={row.adjustmentType === "INCREASE" ? "success" : "error"}>
-          {formatSignedAdjustmentMoney(row.freight, row.adjustmentType)}
         </CellChip>
       )
     case "adjustment": {
