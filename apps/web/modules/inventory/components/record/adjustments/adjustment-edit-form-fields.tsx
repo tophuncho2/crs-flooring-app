@@ -250,7 +250,9 @@ export function AdjustmentEditFormFields({
 
       <RecordSectionDivider />
 
-      {/* Created | Updated each widened to a half-width grid cell (+1 col) */}
+      {/* Created | Updated each widened to a half-width grid cell (+1 col), with
+          the actor (Created by | Updated by) email seated directly beneath —
+          mirroring the list columns. */}
       <InventoryFieldGrid>
         <CellAt col={1} colSpan={4}>
           <FormField label="Created">
@@ -260,6 +262,16 @@ export function AdjustmentEditFormFields({
         <CellAt col={5} colSpan={4}>
           <FormField label="Updated">
             <StaticFieldValue>{formatAdjustmentTimestamp(adjustment.updatedAt)}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+        <CellAt col={1} colSpan={4}>
+          <FormField label="Created by">
+            <StaticFieldValue>{adjustment.createdBy ?? EMPTY_CELL}</StaticFieldValue>
+          </FormField>
+        </CellAt>
+        <CellAt col={5} colSpan={4}>
+          <FormField label="Updated by">
+            <StaticFieldValue>{adjustment.updatedBy ?? EMPTY_CELL}</StaticFieldValue>
           </FormField>
         </CellAt>
       </InventoryFieldGrid>
