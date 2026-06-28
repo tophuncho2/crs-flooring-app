@@ -1,0 +1,12 @@
+-- Better Auth cut-over backfill.
+--
+-- Every existing "User" row predates Better Auth and was created by the seed or
+-- an admin (trusted). Better Auth refuses to implicitly link a Google sign-in to
+-- a pre-existing local user whose own "emailVerified" is false (it raises
+-- account_not_linked even when google is a trusted provider — trusted only
+-- bypasses the provider-side check, not the existing-user check). Mark these
+-- rows verified so the first Google sign-in auto-links to the existing account.
+--
+-- Safe and idempotent: only flips rows still at the Phase-A default of false.
+-- New users created post-cut-over get "emailVerified" straight from Google.
+UPDATE "User" SET "emailVerified" = true WHERE "emailVerified" = false;
