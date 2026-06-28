@@ -78,7 +78,6 @@ describe("normalizeWorkOrder WO-owned address", () => {
     updatedAt: "2026-06-08T00:00:00.000Z",
     createdBy: null,
     updatedBy: null,
-    customAddress: null,
     streetAddress: "12 Oak St",
     city: "Austin",
     state: "TX",

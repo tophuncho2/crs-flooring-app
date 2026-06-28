@@ -45,7 +45,6 @@ type WorkOrderListInput = {
 }
 
 type WorkOrderDetailInput = WorkOrderListInput & {
-  customAddress: string | null
   internalNotes: string | null
   installerInstructions: string | null
   property: {
@@ -101,7 +100,6 @@ export function normalizeWorkOrder(
   return {
     ...base,
     // streetAddress / city / state / zip come from `base` (now on the list row).
-    customAddress: workOrder.customAddress ?? "",
     internalNotes: workOrder.internalNotes ?? "",
     installerInstructions: workOrder.installerInstructions ?? "",
     propertyInstructions: workOrder.property?.instructions ?? "",

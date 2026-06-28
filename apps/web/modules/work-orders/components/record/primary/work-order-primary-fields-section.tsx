@@ -32,7 +32,6 @@ import { TemplateCreateMenu } from "@/modules/templates/components/picker/templa
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatEasternDateTime,
-  WO_CUSTOM_ADDRESS_MAX,
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
   WO_INTERNAL_NOTES_MAX,
@@ -286,23 +285,7 @@ export function WorkOrderPrimaryFieldsSection({
               }}
               onChange={(field, value) => onFieldChange(field, value)}
             />
-            {/* Custom Address — freeform override, kept alongside the snapshot. */}
             <CellAt col={1} row={5} colSpan={8}>
-              <FormField
-                label="Custom Address"
-                currentLength={editable ? draft.customAddress.length : undefined}
-                maxLength={editable ? WO_CUSTOM_ADDRESS_MAX : undefined}
-              >
-                <TextareaCell
-                  editable={editable}
-                  value={draft.customAddress}
-                  onChange={(value) => onFieldChange("customAddress", value)}
-                  maxLength={WO_CUSTOM_ADDRESS_MAX}
-                  rows={2}
-                />
-              </FormField>
-            </CellAt>
-            <CellAt col={1} row={6} colSpan={8}>
               <FormField label="Property Instructions">
                 <StaticFieldValue>
                   <span className="whitespace-pre-line">{instructionsDisplay}</span>
@@ -310,7 +293,7 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Installer Instructions */}
-            <CellAt col={1} row={7} colSpan={8}>
+            <CellAt col={1} row={6} colSpan={8}>
               <FormField
                 label="Installer Instructions"
                 currentLength={editable ? draft.installerInstructions.length : undefined}

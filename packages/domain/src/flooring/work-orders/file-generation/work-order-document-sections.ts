@@ -176,8 +176,8 @@ ${body}
  * runs as tall as the right column (ending at Vacancy) no matter how far the
  * left column's instructions push downward. Description / address / instruction
  * rows are omitted when their value is blank (the Description grid cell is left
- * empty); the address is the customAddress override or the property's flat
- * address line.
+ * empty); the Address line is built from the WO-owned address columns
+ * (snapshotted from the property at pick time, then editable).
  */
 export function renderWorkOrderInfo(
   input: WorkOrderFileGenerationInput,
@@ -207,8 +207,13 @@ export function renderWorkOrderInfo(
     topFields.description && input.description
       ? `<th>Description</th><td class="multiline">${escapeHtml(input.description)}</td>`
       : `<th></th><td></td>`
-  // Property (or custom) address, flat text — labeled row beneath the Property name.
-  const propertyAddress = input.customAddress || buildAddressLine(input.property)
+  // WO-owned address, flat text — labeled row beneath the Property name.
+  const propertyAddress = buildAddressLine({
+    streetAddress: input.streetAddress,
+    city: input.city,
+    state: input.state,
+    postalCode: input.postalCode,
+  })
   // Left flex column rows — Entity / Property always render (showing — when
   // blank) when their box is on; the address + instruction rows additionally
   // require a value (mirroring the original omit-when-blank behavior).
@@ -218,7 +223,7 @@ export function renderWorkOrderInfo(
       ? `<tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>`
       : "",
     topFields.propertyAddress && propertyAddress
-      ? `<tr><th>Property Address</th><td>${escapeHtml(propertyAddress)}</td></tr>`
+      ? `<tr><th>Address</th><td>${escapeHtml(propertyAddress)}</td></tr>`
       : "",
     topFields.propertyInstructions && input.property.instructions
       ? `<tr><th>Property Instructions</th><td class="multiline">${escapeHtml(input.property.instructions)}</td></tr>`

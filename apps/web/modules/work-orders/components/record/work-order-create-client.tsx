@@ -49,7 +49,6 @@ function WorkOrderCreatePanel({
         jobTypeId: updateInput.jobTypeId ?? null,
         unitNumber: updateInput.unitNumber,
         unitType: updateInput.unitType,
-        customAddress: updateInput.customAddress,
         streetAddress: updateInput.streetAddress,
         city: updateInput.city,
         state: updateInput.state,

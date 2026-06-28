@@ -52,7 +52,6 @@ export function toUpdateWorkOrderInput(form: WorkOrderForm): UpdateWorkOrderUseC
     jobTypeId: form.jobTypeId || null,
     unitNumber: form.unitNumber,
     unitType: form.unitType,
-    customAddress: form.customAddress,
     streetAddress: form.streetAddress,
     city: form.city,
     state: form.state,

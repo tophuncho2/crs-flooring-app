@@ -68,9 +68,9 @@ describe("renderWorkOrderInfo — conditional rows present when set", () => {
     expect(html).toContain("Rush job")
   })
 
-  it("includes Property Address (flat address line) when no custom override", () => {
+  it("includes the Address line built from the WO-owned address columns", () => {
     const html = renderWorkOrderInfo(makeFileGenInput())
-    expect(html).toContain("<th>Property Address</th><td>100 Maple St, Austin, TX, 78701</td>")
+    expect(html).toContain("<th>Address</th><td>100 Maple St, Austin, TX, 78701</td>")
   })
 
   it("includes Property Instructions when present", () => {
@@ -89,19 +89,17 @@ describe("renderWorkOrderInfo — conditional rows present when set", () => {
 })
 
 describe("renderWorkOrderInfo — conditional rows absent when blank", () => {
-  // Property/warehouse have addresses by default, so address row is present;
-  // blank out the property address fields too for the omission case.
+  // The WO-owned address renders by default, so the Address row is present;
+  // blank out the WO-owned address fields too for the omission case.
   const html = renderWorkOrderInfo(
     makeFileGenInput({
       description: "",
       installerInstructions: "",
-      property: {
-        streetAddress: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        instructions: "",
-      },
+      streetAddress: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      property: { instructions: "" },
     }),
   )
 
@@ -109,8 +107,8 @@ describe("renderWorkOrderInfo — conditional rows absent when blank", () => {
     expect(html).not.toContain("<th>Description</th>")
   })
 
-  it("omits Property Address", () => {
-    expect(html).not.toContain("<th>Property Address</th>")
+  it("omits Address", () => {
+    expect(html).not.toContain("<th>Address</th>")
   })
 
   it("omits Property Instructions", () => {
@@ -119,14 +117,6 @@ describe("renderWorkOrderInfo — conditional rows absent when blank", () => {
 
   it("omits Installer Instructions", () => {
     expect(html).not.toContain("<th>Installer Instructions</th>")
-  })
-})
-
-describe("renderWorkOrderInfo — property address precedence", () => {
-  it("uses customAddress override over the property flat address line", () => {
-    const html = renderWorkOrderInfo(makeFileGenInput({ customAddress: "999 Override Ave, Dallas, TX" }))
-    expect(html).toContain("<th>Property Address</th><td>999 Override Ave, Dallas, TX</td>")
-    expect(html).not.toContain("100 Maple St, Austin, TX, 78701")
   })
 })
 

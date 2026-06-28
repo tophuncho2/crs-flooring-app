@@ -20,7 +20,6 @@ export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
     warehouseId: workOrder.warehouseId ?? "",
     unitNumber: workOrder.unitNumber,
     unitType: workOrder.unitType,
-    customAddress: workOrder.customAddress,
     streetAddress: workOrder.streetAddress,
     city: workOrder.city,
     state: workOrder.state,

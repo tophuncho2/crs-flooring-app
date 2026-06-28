@@ -3,8 +3,8 @@ import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 export type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 
 /**
- * List-view select. Excludes detail-only columns (customAddress, items,
- * files) and uses the lightweight `property: { name }` join. Surfaces the
+ * List-view select. Excludes detail-only columns (items, files) and uses the
+ * lightweight `property: { name }` join. Surfaces the
  * WO-owned address columns (streetAddress/city/state/postalCode) so the list
  * grid can display + search them, plus `status`, `description`, `scheduledFor`
  * for badges + sortable columns.
@@ -68,7 +68,6 @@ export const workOrderDetailSelect = {
   timeOfDay: true,
   scheduledFor: true,
   description: true,
-  customAddress: true,
   streetAddress: true,
   city: true,
   state: true,

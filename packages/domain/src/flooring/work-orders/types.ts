@@ -43,7 +43,6 @@ export type WorkOrderNeighbor = {
 }
 
 export type WorkOrderDetail = WorkOrderListRow & {
-  customAddress: string
   // streetAddress / city / state / zip now live on WorkOrderListRow (the list
   // displays + searches them); the detail inherits them.
   internalNotes: string
@@ -78,7 +77,6 @@ export type WorkOrderForm = {
   warehouseId: string
   unitNumber: string
   unitType: string
-  customAddress: string
   streetAddress: string
   city: string
   state: string
@@ -100,7 +98,6 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   warehouseId: "",
   unitNumber: "",
   unitType: "",
-  customAddress: "",
   streetAddress: "",
   city: "",
   state: "",

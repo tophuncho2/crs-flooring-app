@@ -3,10 +3,12 @@
  * data layer assembles this in `getWorkOrderForFileGeneration` at the
  * moment a print view loads.
  *
- * Property fields appear as live joined values (`property.streetAddress`,
- * `property.instructions`, etc.). Inventory-adjustment identity + unit
- * fields are read from the adjustment row's own snapshot columns, not
- * the joined inventory or product row.
+ * The printed address line is built from the WO-owned address columns
+ * (`streetAddress`/`city`/`state`/`postalCode`, snapshotted from the property
+ * at pick time then editable); `property.name`/`property.instructions` remain
+ * live joined values. Inventory-adjustment identity + unit fields are read from
+ * the adjustment row's own snapshot columns, not the joined inventory or
+ * product row.
  *
  * Only DEDUCTION adjustments surface here — the join scopes by `workOrderId`
  * and filters to DEDUCTION. Adjustments are grouped by their OWN product
@@ -99,7 +101,7 @@ export const WORK_ORDER_TOP_FIELD_LABELS: Record<WorkOrderTopFieldKey, string> =
   description: "Description",
   entity: "Entity",
   property: "Property",
-  propertyAddress: "Property Address",
+  propertyAddress: "Address",
   propertyInstructions: "Property Instructions",
   installerInstructions: "Installer Instructions",
   unitType: "Unit Type",
@@ -150,15 +152,16 @@ export type WorkOrderFileGenerationInput = {
   timeOfDay: "AM" | "PM" | null
   unitNumber: string
   unitType: string
-  customAddress: string
+  // WO-owned address (snapshotted from the property on pick, then editable).
+  // The printed Address line is built from these — `customAddress` is retired.
+  streetAddress: string
+  city: string
+  state: string
+  postalCode: string
   description: string
   installerInstructions: string
   property: {
     name: string
-    streetAddress: string
-    city: string
-    state: string
-    postalCode: string
     instructions: string
   }
   entityName: string

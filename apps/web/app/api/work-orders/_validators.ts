@@ -16,7 +16,6 @@ import {
   DEFAULT_PALETTE_COLOR,
   PALETTE_COLOR_INVALID_MESSAGE,
   WORK_ORDER_EXPORT_COLUMNS,
-  WO_CUSTOM_ADDRESS_MAX,
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
   WO_INTERNAL_NOTES_MAX,
@@ -152,7 +151,6 @@ export function validateCreateWorkOrderInput(
     jobTypeId: optionalString(body.jobTypeId),
     unitNumber: optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder),
     unitType: optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder),
-    customAddress: optionalBoundedText(body.customAddress, WO_CUSTOM_ADDRESS_MAX, "customAddress", failWorkOrder),
     streetAddress: optionalString(body.streetAddress),
     city: optionalString(body.city),
     state: optionalState(body.state, "state"),
@@ -195,7 +193,6 @@ export function validateUpdateWorkOrderInput(
   if ("jobTypeId" in body) input.jobTypeId = optionalString(body.jobTypeId)
   if ("unitNumber" in body) input.unitNumber = optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder)
   if ("unitType" in body) input.unitType = optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder)
-  if ("customAddress" in body) input.customAddress = optionalBoundedText(body.customAddress, WO_CUSTOM_ADDRESS_MAX, "customAddress", failWorkOrder)
   if ("streetAddress" in body) input.streetAddress = optionalString(body.streetAddress)
   if ("city" in body) input.city = optionalString(body.city)
   if ("state" in body) input.state = optionalState(body.state, "state")

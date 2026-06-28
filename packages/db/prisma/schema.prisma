@@ -668,11 +668,14 @@ model FlooringWorkOrder {
   scheduledFor         DateTime?                  @db.Date
   unitNumber           String?                    @db.VarChar(30)
   unitType             String?                    @db.VarChar(40)
+  // RETIRED: customAddress is no longer read or written by any layer — the print
+  // document + record form now use the WO-owned address columns below. Column
+  // kept (not dropped) so existing rows retain their value pending manual backfill.
   customAddress        String?                    @db.VarChar(200)
   // WO-owned address — snapshotted from the selected property at pick time but
   // editable + detachable thereafter. Plain nullable text, mirroring Property /
-  // Entity / FlooringWarehouse (no @db.VarChar bound). Distinct from the
-  // freeform `customAddress` override above, which stays as-is.
+  // Entity / FlooringWarehouse (no @db.VarChar bound). This is now the sole
+  // address source for the record form + the printed document.
   streetAddress        String?
   city                 String?
   state                String?
