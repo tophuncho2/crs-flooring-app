@@ -143,6 +143,15 @@ export function AnchoredPanel({
               style={{
                 position: "fixed",
                 ...computePopoverPlacement(triggerRect, { maxHeight }),
+                // When the body doesn't scroll, the children own definite-height
+                // scroll regions (e.g. a multi-rail combo). A bare `max-height`
+                // isn't a definite height, so percentage/flex heights inside
+                // wouldn't bound — promote the available height to a definite
+                // `height` so the panel fills downward and each rail scrolls in
+                // place rather than overflowing the panel.
+                ...(bodyScroll
+                  ? null
+                  : { height: computePopoverPlacement(triggerRect, { maxHeight }).maxHeight }),
                 ...(align === "right"
                   ? {
                       right: window.innerWidth - triggerRect.right,
