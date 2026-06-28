@@ -32,42 +32,62 @@ describe("platform environment", () => {
   it("validates auth configuration only when auth is used", () => {
     expect(() =>
       validateAuthEnvironment({
-        NEXTAUTH_SECRET: "short",
-        NEXTAUTH_URL: "http://localhost:3000",
+        BETTER_AUTH_URL: "http://localhost:3000",
+        BETTER_AUTH_SECRET: "short",
+        GOOGLE_CLIENT_ID: "client-id",
+        GOOGLE_CLIENT_SECRET: "client-secret",
       }),
-    ).toThrow("NEXTAUTH_SECRET must be at least 16 characters")
+    ).toThrow("BETTER_AUTH_SECRET must be at least 16 characters")
+
+    expect(() =>
+      validateAuthEnvironment({
+        BETTER_AUTH_URL: "http://localhost:3000",
+        BETTER_AUTH_SECRET: "super-secret-value-123",
+        GOOGLE_CLIENT_SECRET: "client-secret",
+      }),
+    ).toThrow("GOOGLE_CLIENT_ID")
 
     expect(
       validateAuthEnvironment({
-        NEXTAUTH_SECRET: "super-secret-value-123",
-        NEXTAUTH_URL: "http://localhost:3000",
+        BETTER_AUTH_URL: "http://localhost:3000",
+        BETTER_AUTH_SECRET: "super-secret-value-123",
+        GOOGLE_CLIENT_ID: "client-id",
+        GOOGLE_CLIENT_SECRET: "client-secret",
       }),
     ).toEqual({
-      NEXTAUTH_SECRET: "super-secret-value-123",
-      NEXTAUTH_URL: "http://localhost:3000",
+      url: "http://localhost:3000",
+      secret: "super-secret-value-123",
+      googleClientId: "client-id",
+      googleClientSecret: "client-secret",
     })
   })
 
-  it("rejects a localhost NEXTAUTH_URL on a deployed Railway environment", () => {
+  it("rejects a localhost BETTER_AUTH_URL on a deployed Railway environment", () => {
     expect(() =>
       validateAuthEnvironment({
-        NEXTAUTH_SECRET: "super-secret-value-123",
-        NEXTAUTH_URL: "http://localhost:3000",
+        BETTER_AUTH_URL: "http://localhost:3000",
+        BETTER_AUTH_SECRET: "super-secret-value-123",
+        GOOGLE_CLIENT_ID: "client-id",
+        GOOGLE_CLIENT_SECRET: "client-secret",
         RAILWAY_ENVIRONMENT_NAME: "main",
       }),
-    ).toThrow(/NEXTAUTH_URL must be a public https URL/)
+    ).toThrow(/BETTER_AUTH_URL must be a public https URL/)
   })
 
-  it("accepts a public https NEXTAUTH_URL on a deployed Railway environment", () => {
+  it("accepts a public https BETTER_AUTH_URL on a deployed Railway environment", () => {
     expect(
       validateAuthEnvironment({
-        NEXTAUTH_SECRET: "super-secret-value-123",
-        NEXTAUTH_URL: "https://builderswebapp-production.up.railway.app",
+        BETTER_AUTH_URL: "https://builderswebapp-production.up.railway.app",
+        BETTER_AUTH_SECRET: "super-secret-value-123",
+        GOOGLE_CLIENT_ID: "client-id",
+        GOOGLE_CLIENT_SECRET: "client-secret",
         RAILWAY_ENVIRONMENT_NAME: "main",
       }),
     ).toEqual({
-      NEXTAUTH_SECRET: "super-secret-value-123",
-      NEXTAUTH_URL: "https://builderswebapp-production.up.railway.app",
+      url: "https://builderswebapp-production.up.railway.app",
+      secret: "super-secret-value-123",
+      googleClientId: "client-id",
+      googleClientSecret: "client-secret",
     })
   })
 

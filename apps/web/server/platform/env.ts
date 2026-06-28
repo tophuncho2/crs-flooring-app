@@ -33,8 +33,10 @@ function readWebCoreEnvironment(source: NodeJS.ProcessEnv) {
 
 function readAuthEnvironment(source: NodeJS.ProcessEnv) {
   return {
-    NEXTAUTH_SECRET: optionalTrimmed(source.NEXTAUTH_SECRET),
-    NEXTAUTH_URL: optionalTrimmed(source.NEXTAUTH_URL),
+    BETTER_AUTH_URL: optionalTrimmed(source.BETTER_AUTH_URL),
+    BETTER_AUTH_SECRET: optionalTrimmed(source.BETTER_AUTH_SECRET),
+    GOOGLE_CLIENT_ID: optionalTrimmed(source.GOOGLE_CLIENT_ID),
+    GOOGLE_CLIENT_SECRET: optionalTrimmed(source.GOOGLE_CLIENT_SECRET),
   }
 }
 
@@ -63,8 +65,10 @@ const webCoreEnvironmentSchema = z.object({
 })
 
 const authEnvironmentSchema = z.object({
-  NEXTAUTH_SECRET: z.string().min(16, "NEXTAUTH_SECRET must be at least 16 characters"),
-  NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
+  BETTER_AUTH_URL: z.string().url("BETTER_AUTH_URL must be a valid URL"),
+  BETTER_AUTH_SECRET: z.string().min(16, "BETTER_AUTH_SECRET must be at least 16 characters"),
+  GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
+  GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
 })
 
 const storageEnvironmentSchema = z.object({
@@ -94,7 +98,12 @@ const rateLimitEnvironmentSchema = z
   })
 
 export type WebCoreEnvironment = z.infer<typeof webCoreEnvironmentSchema>
-export type AuthEnvironment = z.infer<typeof authEnvironmentSchema>
+export type AuthEnvironment = {
+  url: string
+  secret: string
+  googleClientId: string
+  googleClientSecret: string
+}
 export type StorageEnvironment = {
   accessKeyId: string
   defaultRegion: string
@@ -125,10 +134,10 @@ export function getWebCoreEnvironment(): WebCoreEnvironment {
   return cachedWebCoreEnvironment
 }
 
-function assertProductionAuthUrl(nextAuthUrl: string) {
+function assertProductionAuthUrl(betterAuthUrl: string) {
   let hostname: string | null = null
   try {
-    hostname = new URL(nextAuthUrl).hostname
+    hostname = new URL(betterAuthUrl).hostname
   } catch {
     hostname = null
   }
@@ -139,10 +148,10 @@ function assertProductionAuthUrl(nextAuthUrl: string) {
     hostname === "127.0.0.1" ||
     hostname.endsWith(".local")
 
-  if (isLocalHost || !nextAuthUrl.startsWith("https://")) {
+  if (isLocalHost || !betterAuthUrl.startsWith("https://")) {
     throw new Error(
-      "Invalid auth environment: NEXTAUTH_URL must be a public https URL in production (not localhost). " +
-        "A misconfigured value sends post-logout redirects to an unprovisioned host.",
+      "Invalid auth environment: BETTER_AUTH_URL must be a public https URL in production (not localhost). " +
+        "A misconfigured value sends OAuth callbacks and post-logout redirects to an unprovisioned host.",
     )
   }
 }
@@ -151,12 +160,17 @@ export function validateAuthEnvironment(source: NodeJS.ProcessEnv = process.env)
   const parsed = parseEnvironment("auth", authEnvironmentSchema, readAuthEnvironment(source))
 
   // Only enforce on deployed Railway services (which set RAILWAY_ENVIRONMENT_NAME);
-  // local builds/`next start` legitimately use a localhost NEXTAUTH_URL.
+  // local builds/`next start` legitimately use a localhost BETTER_AUTH_URL.
   if (optionalTrimmed(source.RAILWAY_ENVIRONMENT_NAME)) {
-    assertProductionAuthUrl(parsed.NEXTAUTH_URL)
+    assertProductionAuthUrl(parsed.BETTER_AUTH_URL)
   }
 
-  return parsed
+  return {
+    url: parsed.BETTER_AUTH_URL,
+    secret: parsed.BETTER_AUTH_SECRET,
+    googleClientId: parsed.GOOGLE_CLIENT_ID,
+    googleClientSecret: parsed.GOOGLE_CLIENT_SECRET,
+  }
 }
 
 export function getAuthEnvironment(): AuthEnvironment {

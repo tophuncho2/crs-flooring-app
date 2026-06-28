@@ -19,7 +19,7 @@ This is a **runbook + helper-command** skill. It runs the documented operational
 - **Strictly-below rule** = one predicate `canInviteRank` (`packages/domain/src/management/invites/invite-rules.ts:10`) gates invites, rank-change, AND deactivate: an actor may only act on a rank **strictly below** their own (`RANK_ORDER[target] > RANK_ORDER[inviter]`). So a TIER_1 cannot act on another TIER_1, and **DEVELOPER is script-only/immutable** — no app path creates or edits a DEVELOPER. The UI mirror is `assignableRanks`/`canEditRank` (`apps/web/modules/users/rank-presentation.ts`).
 - **Deactivate** = `User.isActive=false` **and** delete the user's `Session` rows for instant lockout (`set-user-active.ts`). `getSessionUser` rejects `isActive===false` (`apps/web/server/auth/session.ts:25`) to cover the brief cookie-cache window.
 - **Login Activity** = live `Session` rows (current/active sessions), **not** a historical login log — there is no all-time login history table.
-- **The four env vars (per env)** = `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (read directly in `better-auth.ts:20-31`).
+- **The four env vars (per env)** = `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Validated **fail-closed at boot** via `getAuthEnvironment()` (`apps/web/server/platform/env.ts`) — a missing/blank value throws at server start; `better-auth.ts` consumes the validated object, not raw `process.env`. On a deployed Railway service `BETTER_AUTH_URL` must be a public https URL or the prod-URL assert throws.
 
 ## Hard rules
 

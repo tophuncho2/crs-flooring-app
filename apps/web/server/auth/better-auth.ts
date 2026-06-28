@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma"
 import { APIError } from "better-auth/api"
 import { db } from "@builders/db"
 import { markSignupInviteAccepted, resolveSignupInviteRank } from "@builders/application"
+import { getAuthEnvironment } from "@/server/platform/env"
 
 // Only Google Workspace accounts on this domain may authenticate. Google enforces
 // it server-side via the `hd` hint; we re-check the email domain in the create
@@ -13,12 +14,14 @@ const COMPANY_GOOGLE_DOMAIN = "crsfloorcovering.com"
 // Replaces the legacy NextAuth credentials setup. Identity = Google Workspace SSO
 // (passwordless); authorization = our `UserRank` domain model (unchanged).
 //
-// NOTE: env vars are read directly here (the standard Better Auth pattern). They
-// get folded into `readAuthEnvironment` validation at the final cut-over, when the
-// legacy NEXTAUTH_* vars are retired.
+// Env is read through `getAuthEnvironment` (validated, fail-closed at boot) rather
+// than raw `process.env` — a missing URL/secret/Google credential throws instead of
+// silently producing a broken auth instance.
+const authEnv = getAuthEnvironment()
+
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
-  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: authEnv.url,
+  secret: authEnv.secret,
   database: prismaAdapter(db, { provider: "postgresql" }),
 
   // Passwordless: identity from Google, authorization from the invite. No password
@@ -27,8 +30,8 @@ export const auth = betterAuth({
 
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      clientId: authEnv.googleClientId,
+      clientSecret: authEnv.googleClientSecret,
       hd: COMPANY_GOOGLE_DOMAIN,
     },
   },
