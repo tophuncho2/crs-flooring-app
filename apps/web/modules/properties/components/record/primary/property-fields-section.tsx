@@ -35,6 +35,7 @@ export function PropertyFieldsSection({
   showContact = true,
   nameRowTrailing,
   trailingFields,
+  cellSpan = 8,
 }: {
   draft: PropertyFieldsDraft
   editable: boolean
@@ -58,6 +59,12 @@ export function PropertyFieldsSection({
    * omit it (color is edit-only — new properties fall to the DB default).
    */
   trailingFields?: ReactNode
+  /**
+   * Width (in 8-col grid units) of the stacked field cells. Defaults to the full
+   * `8` (the record view). The hub create form passes `5` so the property cells
+   * line up with the entity-create cells in the same single-column section.
+   */
+  cellSpan?: number
 }) {
   const onText = (field: keyof PropertyFieldsDraft) => (value: string) => onFieldChange(field, value)
 
@@ -73,7 +80,7 @@ export function PropertyFieldsSection({
           {trailingFields}
         </CellAt>
       ) : null}
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={cellSpan}>
         <FormField label="Property Name" required>
           <TextCell
             editable={editable}
@@ -86,7 +93,7 @@ export function PropertyFieldsSection({
       </CellAt>
       {showContact ? (
         <>
-          <CellAt col={1} colSpan={8}>
+          <CellAt col={1} colSpan={cellSpan}>
             <FormField label="Phone">
               <PhoneCell
                 editable={editable}
@@ -96,7 +103,7 @@ export function PropertyFieldsSection({
               />
             </FormField>
           </CellAt>
-          <CellAt col={1} colSpan={8}>
+          <CellAt col={1} colSpan={cellSpan}>
             <FormField label="Email">
               <TextCell
                 editable={editable}
@@ -111,7 +118,7 @@ export function PropertyFieldsSection({
       ) : null}
       <AddressEditCell
         editable={editable}
-        colSpan={8}
+        colSpan={cellSpan}
         ariaPrefix={ariaPrefix}
         value={{
           streetAddress: draft.streetAddress,
@@ -121,7 +128,7 @@ export function PropertyFieldsSection({
         }}
         onChange={(field, value) => onFieldChange(field, value)}
       />
-      <CellAt col={1} colSpan={8}>
+      <CellAt col={1} colSpan={cellSpan}>
         <FormField label="Instructions">
           <TextareaCell
             editable={editable}

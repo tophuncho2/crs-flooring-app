@@ -48,7 +48,7 @@ export function EntitySelectSection({
       <ActionHeader title="Entity" />
       <div className="space-y-4 p-4">
         <FieldSection gap="0.75rem">
-          <CellAt col={1} colSpan={6}>
+          <CellAt col={1} colSpan={5}>
             <FormField label="Link existing entity" required>
               <EntityTypePicker
                 value={value.entityLinkId}

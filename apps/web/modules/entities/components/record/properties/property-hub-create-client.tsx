@@ -3,7 +3,6 @@
 import {
   ChoiceDialog,
   RecordCreateClientScaffold,
-  RecordSectionDivider,
   RecordSingleSectionPanel,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
@@ -69,14 +68,13 @@ function PropertyHubCreatePanel({
           }
         />
 
-        <RecordSectionDivider />
-
         <ActionHeader title="Property" />
         <div className="p-4">
           <PropertyFieldsSection
             draft={primary.localValue.propertyForm}
             editable={editable}
             ariaPrefix="Property"
+            cellSpan={5}
             onFieldChange={(field, next) =>
               primary.setLocalValue((prev) => ({
                 ...prev,
