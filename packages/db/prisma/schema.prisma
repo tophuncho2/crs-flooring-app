@@ -463,6 +463,7 @@ model FlooringInventoryAdjustment {
   dyeLot            String?                           @db.VarChar(30)
   inventoryNote     String?                           @db.VarChar(30)
   location          String?                           @db.VarChar(30)
+  area              String?                           @db.VarChar(30)
   categorySlug      String
   productId         String
   product           FlooringProduct                   @relation(fields: [productId], references: [id], onDelete: Restrict)

@@ -81,6 +81,7 @@ function cutVariantInput(overrides: Record<string, unknown> = {}) {
     isWaste: false,
     notes: "",
     location: "Bay 7",
+    area: "Zone A",
     ...overrides,
   }
 }
@@ -195,6 +196,8 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
           freight: "2.500",
           // User-owned: comes from the input ("Bay 7"), not the parent inventory ("A1").
           location: "Bay 7",
+          // User-owned free text — passed straight through from the input.
+          area: "Zone A",
           unitSnapshot: {
             stockUnitName: "Square Foot",
             stockUnitAbbrev: "sf",

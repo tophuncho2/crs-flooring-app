@@ -42,6 +42,7 @@ export const EMPTY_FORM: AdjustmentEditForm = {
   notes: "",
   color: DEFAULT_PALETTE_COLOR,
   location: "",
+  area: "",
   workOrderId: null,
 }
 
@@ -66,6 +67,7 @@ export function buildEditForm(adjustment: InventoryAdjustmentRow): AdjustmentEdi
     notes: adjustment.notes,
     color: adjustment.color,
     location: adjustment.location ?? "",
+    area: adjustment.area ?? "",
     workOrderId: adjustment.workOrderId,
   }
 }
@@ -131,6 +133,7 @@ export function formIsDirty(current: AdjustmentEditForm, baseline: AdjustmentEdi
     current.notes !== baseline.notes ||
     current.color !== baseline.color ||
     current.location !== baseline.location ||
+    current.area !== baseline.area ||
     current.workOrderId !== baseline.workOrderId
   )
 }

@@ -63,6 +63,7 @@ export function useUpdateAdjustmentMutation({
           notes: input.form.notes,
           color: input.form.color,
           location: input.form.location,
+          area: input.form.area,
           ...(linkChanged ? { link: { workOrderId: input.form.workOrderId } } : {}),
         },
       })

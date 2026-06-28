@@ -2,6 +2,7 @@
 
 import {
   formatAdjustmentTransition,
+  INVENTORY_ADJUSTMENT_AREA_MAX,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
 } from "@builders/domain"
@@ -146,6 +147,24 @@ export function AdjustmentEditFormFields({
     </FormField>
   )
 
+  // User-owned free text — editable in create + edit, never seeded from parent.
+  const areaField = (
+    <FormField
+      label="Area"
+      currentLength={editable ? form.area.length : undefined}
+      maxLength={editable ? INVENTORY_ADJUSTMENT_AREA_MAX : undefined}
+    >
+      <TextCell
+        editable={editable}
+        value={form.area}
+        onChange={(next) => controller.setField("area", next)}
+        placeholder="Area"
+        ariaLabel="Adjustment area"
+        maxLength={INVENTORY_ADJUSTMENT_AREA_MAX}
+      />
+    </FormField>
+  )
+
   if (mode === "create" || !adjustment) {
     return (
       <>
@@ -162,6 +181,7 @@ export function AdjustmentEditFormFields({
             />
           </FormField>
         </CellAt>
+        <CellAt col={1} colSpan={4}>{areaField}</CellAt>
         <CellAt col={1} colSpan={4}>{quantityField}</CellAt>
         <CellAt col={1} colSpan={4}>{typeField}</CellAt>
         <CellAt col={1} colSpan={4}>{colorField}</CellAt>
@@ -213,6 +233,8 @@ export function AdjustmentEditFormFields({
               </FormField>
             </CellAt>
             <CellAt col={5} row={4} colSpan={4}>{colorField}</CellAt>
+            {/* User-owned free-text area — editable, sits below Adjustment # / Color. */}
+            <CellAt col={1} row={5} colSpan={4}>{areaField}</CellAt>
           </InventoryFieldGrid>
         }
         right={

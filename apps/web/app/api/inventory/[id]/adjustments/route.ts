@@ -113,6 +113,7 @@ export async function POST(request: Request, { params }: RouteContext) {
           notes: input.notes,
           color: input.color,
           location: input.location,
+          area: input.area,
         }, access.user.email),
     )
 

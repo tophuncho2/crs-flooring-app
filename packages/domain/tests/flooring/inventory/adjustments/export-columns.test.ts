@@ -13,6 +13,7 @@ describe("ADJUSTMENTS_EXPORT_COLUMNS", () => {
     dyeLot: "D9",
     inventoryNote: "from import",
     location: "A-12",
+    area: "Bay 7",
     categorySlug: "carpet",
     productId: "prod-1",
     productName: "Berber — Oat",
@@ -66,10 +67,15 @@ describe("ADJUSTMENTS_EXPORT_COLUMNS", () => {
     expect(byKey("updatedBy")?.value(row)).toBe("c@d.com")
   })
 
+  it("renders the user-owned area free text", () => {
+    expect(byKey("area")?.value(row)).toBe("Bay 7")
+  })
+
   it("falls back to empty string for nullable columns (machine-friendly)", () => {
-    const blank = { ...row, workOrderNumber: null, dyeLot: null, location: null }
+    const blank = { ...row, workOrderNumber: null, dyeLot: null, location: null, area: null }
     expect(byKey("workOrderNumber")?.value(blank)).toBe("")
     expect(byKey("dyeLot")?.value(blank)).toBe("")
     expect(byKey("location")?.value(blank)).toBe("")
+    expect(byKey("area")?.value(blank)).toBe("")
   })
 })

@@ -12,6 +12,7 @@ export const adjustmentRowSelect = {
   dyeLot: true,
   inventoryNote: true,
   location: true,
+  area: true,
   categorySlug: true,
   productId: true,
   // Live product join — the normalizer derives the displayed product label

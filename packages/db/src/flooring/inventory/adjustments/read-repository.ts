@@ -67,6 +67,7 @@ export function normalizeAdjustmentRow(
     dyeLot: row.dyeLot ?? null,
     inventoryNote: row.inventoryNote ?? null,
     location: row.location ?? null,
+    area: row.area ?? null,
     categorySlug: row.categorySlug,
     productId: row.productId,
     // Live product label via the joined product. The `productName` snapshot

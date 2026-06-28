@@ -12,6 +12,7 @@ export type InventoryAdjustmentRow = {
   dyeLot: string | null
   inventoryNote: string | null
   location: string | null
+  area: string | null
   categorySlug: string
   productId: string
   productName: string

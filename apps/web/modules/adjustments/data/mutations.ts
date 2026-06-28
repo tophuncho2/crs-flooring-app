@@ -54,6 +54,7 @@ export async function createAdjustmentRequest(args: {
   notes: string
   color: PaletteColor
   location?: string | null
+  area?: string | null
   warehouseId?: string | null
   workOrderId?: string | null
 }) {
@@ -64,6 +65,7 @@ export async function createAdjustmentRequest(args: {
     notes: args.notes,
     color: args.color,
     location: args.location ?? null,
+    area: args.area ?? null,
   }
   if (args.warehouseId) payload.warehouseId = args.warehouseId
   if (args.workOrderId) payload.workOrderId = args.workOrderId
@@ -89,6 +91,7 @@ export async function updatePendingAdjustmentRequest(args: {
     notes?: string
     color?: PaletteColor
     location?: string | null
+    area?: string | null
     link?: { workOrderId: string | null }
   }
 }) {

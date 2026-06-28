@@ -63,6 +63,8 @@ export type InsertPendingAdjustmentRowInput = {
    * never re-snapped by update-pending.
    */
   location: string | null
+  /** User-owned free-text area label. User-typed in create + edit; never snapshotted. */
+  area: string | null
   /**
    * Derived money share of the parent inventory's cost/freight attributable to
    * this adjustment's quantity. Stamped unsigned at insert; `null` when the
@@ -117,6 +119,7 @@ export async function insertPendingAdjustmentRow(
       productId: input.inventorySnapshot.productId,
       warehouseId: input.inventorySnapshot.warehouseId,
       location: input.location,
+      area: input.area,
       cost: input.cost,
       freight: input.freight,
       createdBy: input.createdBy,
@@ -146,6 +149,11 @@ export type UpdatePendingAdjustmentRowPatch = {
    * (`null` clears it); never re-snapped from the parent inventory.
    */
   location?: string | null
+  /**
+   * User-owned free-text area label. Written only when the patch carries it
+   * (`null` clears it). Metadata only — never triggers a ledger recompute.
+   */
+  area?: string | null
   /**
    * Work-order link edit. `null` disconnects the relation; a string id
    * connects. Absent leaves the relation untouched. Any product / any
@@ -194,6 +202,7 @@ export async function updatePendingAdjustmentRow(
   }
   if (input.patch.color !== undefined) data.color = input.patch.color
   if (input.patch.location !== undefined) data.location = input.patch.location
+  if (input.patch.area !== undefined) data.area = input.patch.area
   if (input.patch.workOrderId !== undefined) {
     data.workOrder =
       input.patch.workOrderId === null

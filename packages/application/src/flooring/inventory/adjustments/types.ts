@@ -27,6 +27,8 @@ export type CreatePendingAdjustmentInput = {
   color?: PaletteColor
   /** User-owned free-text location. Not seeded from the parent inventory. */
   location?: string | null
+  /** User-owned free-text area label. User-typed in create; not seeded from parent. */
+  area?: string | null
 }
 
 export type UpdatePendingAdjustmentPatch = {
@@ -50,6 +52,8 @@ export type UpdatePendingAdjustmentPatch = {
   isWaste?: boolean
   notes?: string
   location?: string | null
+  /** User-owned free-text area label. Metadata only — never re-snapped, no recompute. */
+  area?: string | null
   /** Non-semantic palette tag. Metadata only — never triggers a ledger recompute. */
   color?: PaletteColor
   /** WO link, editable on either direction (any product). `null` unlinks. */

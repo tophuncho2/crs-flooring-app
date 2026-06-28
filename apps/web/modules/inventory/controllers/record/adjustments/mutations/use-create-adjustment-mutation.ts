@@ -66,6 +66,7 @@ export function useCreateAdjustmentMutation({
         notes: input.form.notes,
         color: input.form.color,
         location: input.form.location,
+        area: input.form.area,
         warehouseId: input.form.warehouseId,
         workOrderId: input.form.workOrderId,
       }),

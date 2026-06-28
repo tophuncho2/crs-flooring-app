@@ -217,7 +217,7 @@ describe("updatePendingAdjustmentUseCase", () => {
   describe("recompute gating", () => {
     it("skips the ledger replay + ceiling check on a metadata-only edit, returning the snapshot netDeducted", async () => {
       const result = await updatePendingAdjustmentUseCase(
-        input({ patch: { isWaste: true, notes: "rework", location: "Bay 7" } }),
+        input({ patch: { isWaste: true, notes: "rework", location: "Bay 7", area: "Zone A" } }),
         ACTOR,
       )
 
@@ -235,7 +235,7 @@ describe("updatePendingAdjustmentUseCase", () => {
         { tx: true },
         {
           id: ADJUSTMENT_ID,
-          patch: { isWaste: true, notes: "rework", location: "Bay 7", updatedBy: ACTOR },
+          patch: { isWaste: true, notes: "rework", location: "Bay 7", area: "Zone A", updatedBy: ACTOR },
         },
       )
     })

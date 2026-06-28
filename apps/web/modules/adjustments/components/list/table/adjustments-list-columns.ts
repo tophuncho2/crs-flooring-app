@@ -16,6 +16,7 @@ export const ADJUSTMENTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<EnrichedInv
   { key: "inventoryNote", label: "Note" },
   { key: "location", label: "Location" },
   { key: "isWaste", label: "Waste" },
+  { key: "area", label: "Area" },
   { key: "workOrderNumber", label: "WO #" },
   { key: "warehouseName", label: "Warehouse" },
   { key: "adjustmentNumber", label: "Adjustment #" },

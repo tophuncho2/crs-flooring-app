@@ -120,6 +120,8 @@ export async function updatePendingAdjustmentUseCase(
     // Location is user-owned free text — written only when the patch carries it,
     // never re-snapped from the parent inventory.
     if (input.patch.location !== undefined) patch.location = input.patch.location
+    // Area is user-owned free text — metadata only, leaves the ledger untouched.
+    if (input.patch.area !== undefined) patch.area = input.patch.area
     if (input.patch.link !== undefined) {
       patch.workOrderId = input.patch.link.workOrderId
     }

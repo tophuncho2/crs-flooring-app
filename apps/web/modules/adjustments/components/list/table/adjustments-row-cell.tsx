@@ -34,6 +34,8 @@ export function renderAdjustmentsRowCell(
       return row.inventoryNote || "-"
     case "location":
       return row.location || "-"
+    case "area":
+      return row.area || "-"
     case "quantity":
       return (
         <CellChip tone={row.adjustmentType === "INCREASE" ? "success" : "error"}>

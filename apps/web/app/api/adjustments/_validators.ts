@@ -4,6 +4,7 @@ import type { AdjustmentsExportInput, ListInput, ListSort } from "@builders/appl
 import {
   ADJUSTMENTS_EXPORT_COLUMNS,
   DEFAULT_PALETTE_COLOR,
+  INVENTORY_ADJUSTMENT_AREA_MAX,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
   INVENTORY_ADJUSTMENTS_LIST_MAX_PAGE_SIZE,
@@ -73,6 +74,7 @@ export type ValidatedCreateManualAdjustmentInput = {
   notes: string
   color: PaletteColor
   location: string | null
+  area: string | null
   workOrderId: string | null
   warehouseId: string | null
 }
@@ -100,6 +102,7 @@ export function validateCreateManualAdjustmentInput(
       : requireAdjustmentString(body.warehouseId, "warehouseId")
   const isWaste = typeof body.isWaste === "boolean" ? body.isWaste : false
   const location = optionalBoundedAdjustmentText(body.location, INVENTORY_LOCATION_MAX, "location")
+  const area = optionalBoundedAdjustmentText(body.area, INVENTORY_ADJUSTMENT_AREA_MAX, "area")
   return {
     adjustmentType: rawType,
     quantity: requireAdjustmentString(body.quantity, "quantity"),
@@ -107,6 +110,7 @@ export function validateCreateManualAdjustmentInput(
     notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
     color: colorOrDefault(body.color),
     location: location && location.trim() !== "" ? location : null,
+    area: area && area.trim() !== "" ? area : null,
     workOrderId,
     warehouseId,
   }
@@ -131,6 +135,7 @@ export type ValidatedUpdatePendingAdjustmentPatch = {
   notes?: string
   color?: PaletteColor
   location?: string | null
+  area?: string | null
   link?: ValidatedUpdatePendingAdjustmentLink
 }
 
@@ -185,12 +190,17 @@ export function validateUpdatePendingAdjustmentInput(
     const next = optionalBoundedAdjustmentText(patchBody.location, INVENTORY_LOCATION_MAX, "patch.location")
     patch.location = next && next.trim() !== "" ? next : null
   }
+  if ("area" in patchBody) {
+    // User-owned free text; a blank/absent value clears it to null.
+    const next = optionalBoundedAdjustmentText(patchBody.area, INVENTORY_ADJUSTMENT_AREA_MAX, "patch.area")
+    patch.area = next && next.trim() !== "" ? next : null
+  }
   if ("link" in patchBody) {
     patch.link = validateUpdatePendingAdjustmentLink(patchBody.link)
   }
   if (Object.keys(patch).length === 0) {
     failAdjustment(
-      "Patch must contain at least one of quantity, adjustmentType, isWaste, notes, color, location, or link",
+      "Patch must contain at least one of quantity, adjustmentType, isWaste, notes, color, location, area, or link",
       "patch",
     )
   }

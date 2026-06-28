@@ -38,6 +38,8 @@ export type AdjustmentEditForm = {
    * text, fully editable for the rest of its lifecycle.
    */
   location: string
+  /** User-owned free-text area label. Freely editable in create + edit (not seeded). */
+  area: string
   workOrderId: string | null
 }
 

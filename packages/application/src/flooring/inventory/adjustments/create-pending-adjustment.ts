@@ -135,6 +135,7 @@ export async function createPendingAdjustmentUseCase(
       }),
       // User-owned free text — never seeded from the parent inventory.
       location: input.location ?? null,
+      area: input.area ?? null,
       createdBy: actorEmail,
       updatedBy: actorEmail,
     })

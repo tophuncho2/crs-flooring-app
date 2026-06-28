@@ -40,6 +40,7 @@ export const ADJUSTMENTS_EXPORT_COLUMNS: ReadonlyArray<
   { key: "inventoryNote", label: "Note", value: (row) => row.inventoryNote ?? "" },
   { key: "location", label: "Location", value: (row) => row.location ?? "" },
   { key: "isWaste", label: "Waste", value: (row) => (row.isWaste ? "Waste" : "") },
+  { key: "area", label: "Area", value: (row) => row.area ?? "" },
   { key: "workOrderNumber", label: "WO #", value: (row) => row.workOrderNumber ?? "" },
   { key: "warehouseName", label: "Warehouse", value: (row) => row.warehouseName },
   { key: "adjustmentNumber", label: "Adjustment #", value: (row) => row.adjustmentNumber },
