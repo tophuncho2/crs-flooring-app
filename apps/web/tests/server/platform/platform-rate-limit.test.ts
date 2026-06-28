@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest"
-import { buildRateLimitResponse, consumeRateLimit, resetRateLimitStateForTests } from "@/server/platform/rate-limit"
+import {
+  buildRateLimitResponse,
+  consumeRateLimit,
+  createAuthRateLimitStorage,
+  resetRateLimitStateForTests,
+} from "@/server/platform/rate-limit"
 
 describe("consumeRateLimit", () => {
   beforeEach(() => {
@@ -60,5 +65,37 @@ describe("consumeRateLimit", () => {
     expect(payload.error).toBe("Too many requests. Please try again later.")
     expect(response.headers.get("retry-after")).toBe("60")
     expect(response.headers.get("x-request-id")).toBeTruthy()
+  })
+})
+
+describe("createAuthRateLimitStorage", () => {
+  beforeEach(() => {
+    delete process.env.RATE_LIMIT_REDIS_URL
+    delete process.env.REDIS_URL
+    delete process.env.RATE_LIMIT_PREFIX
+    resetRateLimitStateForTests()
+  })
+
+  it("atomically consumes a fixed window in the process-local fallback store", async () => {
+    const storage = createAuthRateLimitStorage()
+    const rule = { window: 10, max: 2 }
+
+    const first = await storage.consume("1.2.3.4|/sign-in", rule)
+    const second = await storage.consume("1.2.3.4|/sign-in", rule)
+    const third = await storage.consume("1.2.3.4|/sign-in", rule)
+
+    expect(first).toEqual({ allowed: true, retryAfter: null })
+    expect(second).toEqual({ allowed: true, retryAfter: null })
+    expect(third).toEqual({ allowed: false, retryAfter: 10 })
+  })
+
+  it("isolates counters per key", async () => {
+    const storage = createAuthRateLimitStorage()
+    const rule = { window: 10, max: 1 }
+
+    await storage.consume("1.2.3.4|/sign-in", rule)
+    const otherIp = await storage.consume("5.6.7.8|/sign-in", rule)
+
+    expect(otherIp.allowed).toBe(true)
   })
 })

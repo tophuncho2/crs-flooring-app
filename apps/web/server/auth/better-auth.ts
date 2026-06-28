@@ -4,6 +4,7 @@ import { APIError } from "better-auth/api"
 import { db } from "@builders/db"
 import { markSignupInviteAccepted, resolveSignupInviteRank } from "@builders/application"
 import { getAuthEnvironment } from "@/server/platform/env"
+import { createAuthRateLimitStorage } from "@/server/platform/rate-limit"
 
 // Only Google Workspace accounts on this domain may authenticate. Google enforces
 // it server-side via the `hd` hint; we re-check the email domain in the create
@@ -23,6 +24,29 @@ export const auth = betterAuth({
   baseURL: authEnv.url,
   secret: authEnv.secret,
   database: prismaAdapter(db, { provider: "postgresql" }),
+
+  // Rate limiting needs the real client IP to bucket per-user rather than collapse
+  // everyone into one shared per-path bucket. We run behind Railway's edge proxy,
+  // which appends a multi-hop `x-forwarded-for` chain — and Better Auth rejects a
+  // multi-IP XFF as spoofable unless `trustedProxies` is configured. Instead of
+  // pinning Railway's proxy CIDRs, point it at the single-value, proxy-set headers
+  // the rest of the app already trusts (see `getClientIp` in
+  // server/platform/request-context.ts): Railway's own client-IP header, then
+  // Cloudflare's. Both are single values, so they resolve without proxy config.
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ["x-railway-client-ip", "cf-connecting-ip"],
+    },
+  },
+
+  // Auth routes bypass the API gauntlet, so Better Auth's built-in limiter is the
+  // only guard on sign-in/OAuth. Back it with the shared Redis-or-memory counters
+  // (see server/platform/rate-limit.ts) instead of the default process-memory
+  // store, so limits survive restarts and hold across web instances. Stays
+  // production-only by default — Better Auth only enables rate limiting in prod.
+  rateLimit: {
+    customStorage: createAuthRateLimitStorage(),
+  },
 
   // Passwordless: identity from Google, authorization from the invite. No password
   // column in play, no reset flow.

@@ -234,6 +234,85 @@ async function incrementCounter(scope: string, key: string, windowMs: number) {
   }
 }
 
+// ── Better Auth rate-limit storage ──────────────────────────────────────────
+// Better Auth's auth routes (/api/auth/*) are served by its own handler, outside
+// the canonical API gauntlet, so Better Auth's built-in limiter is the only thing
+// guarding sign-in/OAuth. By default that limiter keeps counters in process memory
+// — per-instance and wiped on every restart/redeploy. This adapter backs it with
+// the SAME Redis-or-memory store as the gauntlet limiter above, so auth rate
+// limiting is durable and shared across web instances.
+//
+// Better Auth uses the atomic `consume` whenever it is defined; `get`/`set` exist
+// only to satisfy the storage interface's legacy non-atomic fallback and are never
+// reached while `consume` is present (verified in better-auth's rate-limiter).
+const AUTH_RATE_LIMIT_SCOPE = "better-auth"
+// TTL for the legacy `set` path only — the live `consume` path derives its own TTL
+// from each rule's window. Mirrors better-auth's 10s default window.
+const AUTH_RATE_LIMIT_FALLBACK_WINDOW_MS = 10_000
+
+function readMemoryCounter(key: string) {
+  const entry = memoryCounters.get(key)
+  if (!entry || entry.expiresAt <= Date.now()) {
+    return null
+  }
+  return entry.count
+}
+
+async function readCounterValue(key: string): Promise<number | null> {
+  const redisClient = await getRedisClientPromise()
+  if (!redisClient) {
+    return readMemoryCounter(key)
+  }
+
+  try {
+    const raw = await redisClient.get(key)
+    return raw == null ? null : Number.parseInt(raw, 10)
+  } catch {
+    await invalidateRedisClient()
+    return readMemoryCounter(key)
+  }
+}
+
+async function writeCounterValue(key: string, count: number, windowMs: number): Promise<void> {
+  const redisClient = await getRedisClientPromise()
+  if (!redisClient) {
+    memoryCounters.set(key, { count, expiresAt: Date.now() + windowMs })
+    return
+  }
+
+  try {
+    await redisClient.set(key, String(count), { PX: windowMs })
+  } catch {
+    await invalidateRedisClient()
+    memoryCounters.set(key, { count, expiresAt: Date.now() + windowMs })
+  }
+}
+
+// Built once at Better Auth init and reused per request. Wires Better Auth's
+// `rateLimit.customStorage` to our Redis/in-memory counters under a dedicated
+// key namespace so its keys never collide with the gauntlet limiter's.
+export function createAuthRateLimitStorage() {
+  const { prefix } = getRateLimitEnvironment()
+  const namespacedKey = (key: string) => `${prefix}:${AUTH_RATE_LIMIT_SCOPE}:${key}`
+
+  return {
+    async get(key: string) {
+      const count = await readCounterValue(namespacedKey(key))
+      return count === null ? null : { key, count, lastRequest: Date.now() }
+    },
+    async set(key: string, value: { key: string; count: number; lastRequest: number }) {
+      await writeCounterValue(namespacedKey(key), value.count, AUTH_RATE_LIMIT_FALLBACK_WINDOW_MS)
+    },
+    async consume(key: string, rule: { window: number; max: number }) {
+      const windowMs = Math.max(1, Math.ceil(rule.window)) * 1000
+      const count = await incrementCounter(AUTH_RATE_LIMIT_SCOPE, namespacedKey(key), windowMs)
+      return count <= rule.max
+        ? { allowed: true, retryAfter: null }
+        : { allowed: false, retryAfter: rule.window }
+    },
+  }
+}
+
 export async function consumeRateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
   const requestId = getRequestId(options.request)
   const clientIp = getClientIp(options.request)
