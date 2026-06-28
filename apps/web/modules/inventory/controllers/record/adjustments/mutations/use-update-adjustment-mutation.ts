@@ -60,7 +60,7 @@ export function useUpdateAdjustmentMutation({
           quantity: input.form.quantity,
           adjustmentType: input.form.adjustmentType,
           isWaste: input.form.isWaste,
-          notes: input.form.notes,
+          internalNotes: input.form.internalNotes,
           color: input.form.color,
           location: input.form.location,
           area: input.form.area,

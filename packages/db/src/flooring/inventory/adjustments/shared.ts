@@ -30,7 +30,7 @@ export const adjustmentRowSelect = {
   stockUnitAbbrev: true,
   adjustmentType: true,
   isWaste: true,
-  notes: true,
+  internalNotes: true,
   color: true,
   createdAt: true,
   updatedAt: true,

@@ -27,7 +27,7 @@ export type InventoryAdjustmentRow = {
   stockUnitAbbrev: string | null
   adjustmentType: FlooringInventoryAdjustmentType
   isWaste: boolean
-  notes: string
+  internalNotes: string
   color: PaletteColor
   createdAt: string
   updatedAt: string
@@ -39,7 +39,7 @@ export type InventoryAdjustmentPendingForm = {
   adjustmentType: FlooringInventoryAdjustmentType
   quantity: string
   isWaste: boolean
-  notes: string
+  internalNotes: string
 }
 
 export type InventoryAdjustmentLinkUpdate = {

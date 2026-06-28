@@ -89,7 +89,7 @@ export function normalizeAdjustmentRow(
     stockUnitAbbrev: row.stockUnitAbbrev ?? null,
     adjustmentType,
     isWaste: row.isWaste,
-    notes: row.notes ?? "",
+    internalNotes: row.internalNotes ?? "",
     color: row.color,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

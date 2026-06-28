@@ -77,7 +77,7 @@ function existingRow(overrides: Record<string, unknown> = {}) {
     updatedAt: UPDATED_AT,
     quantity: "5",
     isWaste: false,
-    notes: "",
+    internalNotes: "",
     warehouseId: WAREHOUSE_ID,
     productId: PRODUCT_ID,
     ...overrides,
@@ -217,7 +217,7 @@ describe("updatePendingAdjustmentUseCase", () => {
   describe("recompute gating", () => {
     it("skips the ledger replay + ceiling check on a metadata-only edit, returning the snapshot netDeducted", async () => {
       const result = await updatePendingAdjustmentUseCase(
-        input({ patch: { isWaste: true, notes: "rework", location: "Bay 7", area: "Zone A" } }),
+        input({ patch: { isWaste: true, internalNotes: "rework", location: "Bay 7", area: "Zone A" } }),
         ACTOR,
       )
 
@@ -235,7 +235,7 @@ describe("updatePendingAdjustmentUseCase", () => {
         { tx: true },
         {
           id: ADJUSTMENT_ID,
-          patch: { isWaste: true, notes: "rework", location: "Bay 7", area: "Zone A", updatedBy: ACTOR },
+          patch: { isWaste: true, internalNotes: "rework", location: "Bay 7", area: "Zone A", updatedBy: ACTOR },
         },
       )
     })

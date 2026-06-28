@@ -110,7 +110,7 @@ export async function POST(request: Request, { params }: RouteContext) {
           workOrderId: input.workOrderId,
           quantity: input.quantity,
           isWaste: input.isWaste,
-          notes: input.notes,
+          internalNotes: input.internalNotes,
           color: input.color,
           location: input.location,
           area: input.area,

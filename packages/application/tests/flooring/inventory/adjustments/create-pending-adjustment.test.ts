@@ -79,7 +79,7 @@ function cutVariantInput(overrides: Record<string, unknown> = {}) {
     inventoryId: INVENTORY_ID,
     quantity: "5",
     isWaste: false,
-    notes: "",
+    internalNotes: "",
     location: "Bay 7",
     area: "Zone A",
     ...overrides,
@@ -93,7 +93,7 @@ function manualVariantInput(overrides: Record<string, unknown> = {}) {
     inventoryId: INVENTORY_ID,
     quantity: "10",
     isWaste: false,
-    notes: "",
+    internalNotes: "",
     ...overrides,
   }
 }

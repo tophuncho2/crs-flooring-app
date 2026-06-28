@@ -84,13 +84,13 @@ export async function updatePendingAdjustmentUseCase(
       input.patch.quantity !== undefined ? input.patch.quantity : existing.quantity
     const mergedIsWaste =
       input.patch.isWaste !== undefined ? input.patch.isWaste : existing.isWaste
-    const mergedNotes =
-      input.patch.notes !== undefined ? input.patch.notes : existing.notes
+    const mergedInternalNotes =
+      input.patch.internalNotes !== undefined ? input.patch.internalNotes : existing.internalNotes
     const formIssues = validateAdjustmentPendingForm({
       adjustmentType: mergedAdjustmentType,
       quantity: mergedQuantity,
       isWaste: mergedIsWaste,
-      notes: mergedNotes,
+      internalNotes: mergedInternalNotes,
     })
     if (formIssues.length > 0) {
       throw new InventoryAdjustmentExecutionError({
@@ -114,7 +114,7 @@ export async function updatePendingAdjustmentUseCase(
       patch.adjustmentType = input.patch.adjustmentType
     }
     if (input.patch.isWaste !== undefined) patch.isWaste = input.patch.isWaste
-    if (input.patch.notes !== undefined) patch.notes = input.patch.notes
+    if (input.patch.internalNotes !== undefined) patch.internalNotes = input.patch.internalNotes
     // Non-semantic palette tag — metadata only, leaves the ledger chain untouched.
     if (input.patch.color !== undefined) patch.color = input.patch.color
     // Location is user-owned free text — written only when the patch carries it,
@@ -129,7 +129,7 @@ export async function updatePendingAdjustmentUseCase(
     const written = await updatePendingAdjustmentRow(c, { id: existing.id, patch })
 
     // Only quantity + direction move the running balance. A metadata-only edit
-    // (notes / isWaste / location / link) leaves the whole before/after chain
+    // (internalNotes / isWaste / location / link) leaves the whole before/after chain
     // and netDeducted untouched, so skip the ledger replay + ceiling re-check
     // and return the written row with the inventory's existing netDeducted.
     const chainTouched =

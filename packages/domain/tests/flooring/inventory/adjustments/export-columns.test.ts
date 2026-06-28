@@ -28,7 +28,7 @@ describe("ADJUSTMENTS_EXPORT_COLUMNS", () => {
     stockUnitAbbrev: "sq ft",
     adjustmentType: "DEDUCTION",
     isWaste: true,
-    notes: "scrap",
+    internalNotes: "scrap",
     color: "BLUE",
     createdAt: "2026-06-27T12:00:00.000Z",
     updatedAt: "2026-06-27T13:00:00.000Z",

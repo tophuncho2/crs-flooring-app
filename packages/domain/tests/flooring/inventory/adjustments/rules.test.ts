@@ -73,7 +73,7 @@ describe("validateAdjustmentPendingForm", () => {
         adjustmentType: "DEDUCTION",
         quantity: "5",
         isWaste: false,
-        notes: "",
+        internalNotes: "",
       }),
     ).toEqual([])
   })
@@ -84,7 +84,7 @@ describe("validateAdjustmentPendingForm", () => {
         adjustmentType: "DEDUCTION",
         quantity: "  ",
         isWaste: false,
-        notes: "",
+        internalNotes: "",
       }),
     ).toEqual([{ code: "ADJUSTMENT_QUANTITY_REQUIRED" }])
     expect(
@@ -92,7 +92,7 @@ describe("validateAdjustmentPendingForm", () => {
         adjustmentType: "DEDUCTION",
         quantity: "abc",
         isWaste: false,
-        notes: "",
+        internalNotes: "",
       }),
     ).toEqual([{ code: "ADJUSTMENT_QUANTITY_INVALID", value: "abc" }])
     expect(
@@ -100,7 +100,7 @@ describe("validateAdjustmentPendingForm", () => {
         adjustmentType: "DEDUCTION",
         quantity: "0",
         isWaste: false,
-        notes: "",
+        internalNotes: "",
       }),
     ).toEqual([{ code: "ADJUSTMENT_QUANTITY_NOT_POSITIVE", value: "0" }])
   })

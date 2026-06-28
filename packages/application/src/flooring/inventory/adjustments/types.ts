@@ -22,7 +22,7 @@ export type CreatePendingAdjustmentInput = {
   workOrderId?: string | null
   quantity: string
   isWaste: boolean
-  notes: string
+  internalNotes: string
   /** Non-semantic palette tag; omitted → DB default SLATE. */
   color?: PaletteColor
   /** User-owned free-text location. Not seeded from the parent inventory. */
@@ -50,7 +50,7 @@ export type UpdatePendingAdjustmentPatch = {
    * from parent).
    */
   isWaste?: boolean
-  notes?: string
+  internalNotes?: string
   location?: string | null
   /** User-owned free-text area label. Metadata only — never re-snapped, no recompute. */
   area?: string | null

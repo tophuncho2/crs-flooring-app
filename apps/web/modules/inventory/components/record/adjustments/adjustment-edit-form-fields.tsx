@@ -3,7 +3,7 @@
 import {
   formatAdjustmentTransition,
   INVENTORY_ADJUSTMENT_AREA_MAX,
-  INVENTORY_ADJUSTMENT_NOTES_MAX,
+  INVENTORY_ADJUSTMENT_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
 } from "@builders/domain"
 import {
@@ -131,19 +131,19 @@ export function AdjustmentEditFormFields({
     </FormField>
   )
 
-  const notesField = (
+  const internalNotesField = (
     <FormField
-      label="Notes"
-      currentLength={editable ? form.notes.length : undefined}
-      maxLength={editable ? INVENTORY_ADJUSTMENT_NOTES_MAX : undefined}
+      label="Internal Notes"
+      currentLength={editable ? form.internalNotes.length : undefined}
+      maxLength={editable ? INVENTORY_ADJUSTMENT_INTERNAL_NOTES_MAX : undefined}
     >
       <TextCell
         editable={editable}
-        value={form.notes}
-        onChange={(next) => controller.setField("notes", next)}
-        placeholder="Notes"
-        ariaLabel="Adjustment notes"
-        maxLength={INVENTORY_ADJUSTMENT_NOTES_MAX}
+        value={form.internalNotes}
+        onChange={(next) => controller.setField("internalNotes", next)}
+        placeholder="Internal notes"
+        ariaLabel="Adjustment internal notes"
+        maxLength={INVENTORY_ADJUSTMENT_INTERNAL_NOTES_MAX}
       />
     </FormField>
   )
@@ -186,7 +186,7 @@ export function AdjustmentEditFormFields({
         <CellAt col={1} colSpan={4}>{quantityField}</CellAt>
         <CellAt col={1} colSpan={4}>{typeField}</CellAt>
         <CellAt col={1} colSpan={4}>{colorField}</CellAt>
-        <CellAt col={1} colSpan={4}>{notesField}</CellAt>
+        <CellAt col={1} colSpan={4}>{internalNotesField}</CellAt>
         <CellAt col={1} colSpan={4}>{wasteField}</CellAt>
       </>
     )
@@ -200,7 +200,7 @@ export function AdjustmentEditFormFields({
         left={
           <InventoryFieldGrid>
             {/* Adjustment # | Color lead the flank, then the work-order picker,
-                area, and notes stacked full-width beneath. */}
+                area, and internal notes stacked full-width beneath. */}
             <CellAt col={1} colSpan={4}>
               <FormField label="Adjustment #">
                 <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
@@ -209,7 +209,7 @@ export function AdjustmentEditFormFields({
             <CellAt col={5} colSpan={4}>{colorField}</CellAt>
             <AdjustmentPickerStack controller={controller} colSpan={8} />
             <CellAt col={1} colSpan={8}>{areaField}</CellAt>
-            <CellAt col={1} colSpan={8}>{notesField}</CellAt>
+            <CellAt col={1} colSpan={8}>{internalNotesField}</CellAt>
           </InventoryFieldGrid>
         }
         right={

@@ -470,7 +470,7 @@ export async function getWorkOrderForFileGeneration(
       quantity: true,
       after: true,
       isWaste: true,
-      notes: true,
+      internalNotes: true,
       dyeLot: true,
       rollNumber: true,
       location: true,
@@ -494,7 +494,9 @@ export async function getWorkOrderForFileGeneration(
       quantity: adj.quantity.toString(),
       after: adj.after === null ? "" : adj.after.toString(),
       isWaste: adj.isWaste,
-      notes: adj.notes ?? "",
+      // WO-file DTO keeps its own `notes` field name; sourced from the renamed
+      // adjustment `internalNotes` column (rename stops at this projection seam).
+      notes: adj.internalNotes ?? "",
       dyeLot: adj.dyeLot ?? "",
       rollNumber: adj.rollNumber ?? "",
       location: adj.location ?? "",

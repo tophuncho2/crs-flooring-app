@@ -42,7 +42,7 @@ export async function createPendingAdjustmentUseCase(
     const c = client ?? tx
 
     const quantity = input.quantity
-    const notes = input.notes
+    const internalNotes = input.internalNotes
     const adjustmentType: FlooringInventoryAdjustmentType = input.adjustmentType
     // An optional work-order link (any product, any direction). The work order
     // is not validated against the inventory's product — adjustments fulfil a
@@ -54,7 +54,7 @@ export async function createPendingAdjustmentUseCase(
       adjustmentType,
       quantity,
       isWaste,
-      notes,
+      internalNotes,
     })
     if (formIssues.length > 0) {
       throw new InventoryAdjustmentExecutionError({
@@ -115,7 +115,7 @@ export async function createPendingAdjustmentUseCase(
       inventoryId: input.inventoryId,
       quantity,
       isWaste,
-      notes,
+      internalNotes,
       color: input.color,
       cost,
       freight,

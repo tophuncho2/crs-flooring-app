@@ -48,7 +48,7 @@ export type InsertPendingAdjustmentRowInput = {
   inventoryId: string
   isWaste: boolean
   /** Empty string accepted; persisted as null when blank. */
-  notes: string
+  internalNotes: string
   /** Non-semantic palette tag; omitted → DB default SLATE. */
   color?: PaletteColor
   unitSnapshot: PendingAdjustmentUnitSnapshot
@@ -105,7 +105,7 @@ export async function insertPendingAdjustmentRow(
       adjustmentType: input.adjustmentType,
       quantity: input.quantity,
       isWaste: input.isWaste,
-      notes: input.notes ? input.notes : null,
+      internalNotes: input.internalNotes ? input.internalNotes : null,
       // Omitted → Prisma applies the column default (SLATE).
       ...(input.color !== undefined ? { color: input.color } : {}),
       stockUnitName: input.unitSnapshot.stockUnitName,
@@ -141,7 +141,7 @@ export type UpdatePendingAdjustmentRowPatch = {
   adjustmentType?: FlooringInventoryAdjustmentType
   isWaste?: boolean
   /** Empty string accepted; persisted as null when blank. */
-  notes?: string
+  internalNotes?: string
   /** Non-semantic palette tag. Metadata only — never triggers a ledger recompute. */
   color?: PaletteColor
   /**
@@ -163,7 +163,7 @@ export type UpdatePendingAdjustmentRowPatch = {
   /**
    * Actor email of the editing user — stamped on every human edit, including a
    * metadata-only edit. Set unconditionally (the patch always carries it), so a
-   * notes/color/location-only save still records its editor.
+   * internalNotes/color/location-only save still records its editor.
    */
   updatedBy: string
 }
@@ -180,7 +180,7 @@ export type UpdatePendingAdjustmentRowInput = {
  *
  * Writable in this primitive:
  *   - user-editable form fields: `quantity`, `adjustmentType`, `isWaste`,
- *     `notes`, `location`
+ *     `internalNotes`, `location`
  *   - the `workOrderId` link relation (any product, any direction)
  *
  * Never written here: `inventoryId`, `before`, `after`, `adjustmentNumber`,
@@ -197,8 +197,8 @@ export async function updatePendingAdjustmentRow(
     data.adjustmentType = input.patch.adjustmentType
   }
   if (input.patch.isWaste !== undefined) data.isWaste = input.patch.isWaste
-  if (input.patch.notes !== undefined) {
-    data.notes = input.patch.notes ? input.patch.notes : null
+  if (input.patch.internalNotes !== undefined) {
+    data.internalNotes = input.patch.internalNotes ? input.patch.internalNotes : null
   }
   if (input.patch.color !== undefined) data.color = input.patch.color
   if (input.patch.location !== undefined) data.location = input.patch.location
@@ -210,7 +210,7 @@ export async function updatePendingAdjustmentRow(
         : { connect: { id: input.patch.workOrderId } }
   }
   // A human save always records its editor — set unconditionally so even a
-  // metadata-only edit (notes/color/location) stamps updatedBy. This also means
+  // metadata-only edit (internalNotes/color/location) stamps updatedBy. This also means
   // the write branch below always fires.
   data.updatedBy = input.patch.updatedBy
   const updated =

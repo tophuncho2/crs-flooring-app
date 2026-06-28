@@ -51,7 +51,7 @@ export async function createAdjustmentRequest(args: {
   adjustmentType: FlooringInventoryAdjustmentType
   quantity: string
   isWaste: boolean
-  notes: string
+  internalNotes: string
   color: PaletteColor
   location?: string | null
   area?: string | null
@@ -62,7 +62,7 @@ export async function createAdjustmentRequest(args: {
     adjustmentType: args.adjustmentType,
     quantity: args.quantity,
     isWaste: args.isWaste,
-    notes: args.notes,
+    internalNotes: args.internalNotes,
     color: args.color,
     location: args.location ?? null,
     area: args.area ?? null,
@@ -88,7 +88,7 @@ export async function updatePendingAdjustmentRequest(args: {
     quantity?: string
     adjustmentType?: FlooringInventoryAdjustmentType
     isWaste?: boolean
-    notes?: string
+    internalNotes?: string
     color?: PaletteColor
     location?: string | null
     area?: string | null

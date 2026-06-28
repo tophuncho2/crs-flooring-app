@@ -5,7 +5,7 @@ import {
   ADJUSTMENTS_EXPORT_COLUMNS,
   DEFAULT_PALETTE_COLOR,
   INVENTORY_ADJUSTMENT_AREA_MAX,
-  INVENTORY_ADJUSTMENT_NOTES_MAX,
+  INVENTORY_ADJUSTMENT_INTERNAL_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
   INVENTORY_ADJUSTMENTS_LIST_MAX_PAGE_SIZE,
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -71,7 +71,7 @@ export type ValidatedCreateManualAdjustmentInput = {
   adjustmentType: "INCREASE" | "DEDUCTION"
   quantity: string
   isWaste: boolean
-  notes: string
+  internalNotes: string
   color: PaletteColor
   location: string | null
   area: string | null
@@ -107,7 +107,8 @@ export function validateCreateManualAdjustmentInput(
     adjustmentType: rawType,
     quantity: requireAdjustmentString(body.quantity, "quantity"),
     isWaste,
-    notes: optionalBoundedAdjustmentText(body.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "notes") ?? "",
+    internalNotes:
+      optionalBoundedAdjustmentText(body.internalNotes, INVENTORY_ADJUSTMENT_INTERNAL_NOTES_MAX, "internalNotes") ?? "",
     color: colorOrDefault(body.color),
     location: location && location.trim() !== "" ? location : null,
     area: area && area.trim() !== "" ? area : null,
@@ -132,7 +133,7 @@ export type ValidatedUpdatePendingAdjustmentPatch = {
   quantity?: string
   adjustmentType?: "INCREASE" | "DEDUCTION"
   isWaste?: boolean
-  notes?: string
+  internalNotes?: string
   color?: PaletteColor
   location?: string | null
   area?: string | null
@@ -181,9 +182,13 @@ export function validateUpdatePendingAdjustmentInput(
   if ("color" in patchBody) {
     patch.color = requireColor(patchBody.color, "patch.color")
   }
-  if ("notes" in patchBody) {
-    const next = optionalBoundedAdjustmentText(patchBody.notes, INVENTORY_ADJUSTMENT_NOTES_MAX, "patch.notes")
-    if (next !== null) patch.notes = next
+  if ("internalNotes" in patchBody) {
+    const next = optionalBoundedAdjustmentText(
+      patchBody.internalNotes,
+      INVENTORY_ADJUSTMENT_INTERNAL_NOTES_MAX,
+      "patch.internalNotes",
+    )
+    if (next !== null) patch.internalNotes = next
   }
   if ("location" in patchBody) {
     // User-owned free text; a blank/absent value clears it to null.
@@ -200,7 +205,7 @@ export function validateUpdatePendingAdjustmentInput(
   }
   if (Object.keys(patch).length === 0) {
     failAdjustment(
-      "Patch must contain at least one of quantity, adjustmentType, isWaste, notes, color, location, area, or link",
+      "Patch must contain at least one of quantity, adjustmentType, isWaste, internalNotes, color, location, area, or link",
       "patch",
     )
   }

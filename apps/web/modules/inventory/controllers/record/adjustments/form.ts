@@ -39,7 +39,7 @@ export const EMPTY_FORM: AdjustmentEditForm = {
   adjustmentType: "DEDUCTION",
   quantity: "",
   isWaste: false,
-  notes: "",
+  internalNotes: "",
   color: DEFAULT_PALETTE_COLOR,
   location: "",
   area: "",
@@ -64,7 +64,7 @@ export function buildEditForm(adjustment: InventoryAdjustmentRow): AdjustmentEdi
     adjustmentType: adjustment.adjustmentType,
     quantity: adjustment.quantity,
     isWaste: adjustment.isWaste,
-    notes: adjustment.notes,
+    internalNotes: adjustment.internalNotes,
     color: adjustment.color,
     location: adjustment.location ?? "",
     area: adjustment.area ?? "",
@@ -105,7 +105,7 @@ export function buildCreateForm(seed: AdjustmentCreateSeed): AdjustmentEditForm 
     quantity: seed.quantity ?? EMPTY_FORM.quantity,
     adjustmentType: seed.adjustmentType ?? EMPTY_FORM.adjustmentType,
     isWaste: seed.isWaste ?? EMPTY_FORM.isWaste,
-    notes: seed.notes ?? EMPTY_FORM.notes,
+    internalNotes: seed.internalNotes ?? EMPTY_FORM.internalNotes,
     color: seed.color ?? EMPTY_FORM.color,
   }
 }
@@ -130,7 +130,7 @@ export function formIsDirty(current: AdjustmentEditForm, baseline: AdjustmentEdi
     current.adjustmentType !== baseline.adjustmentType ||
     current.quantity !== baseline.quantity ||
     current.isWaste !== baseline.isWaste ||
-    current.notes !== baseline.notes ||
+    current.internalNotes !== baseline.internalNotes ||
     current.color !== baseline.color ||
     current.location !== baseline.location ||
     current.area !== baseline.area ||

@@ -52,8 +52,8 @@ export function renderAdjustmentsRowCell(
       ) : (
         <span className="text-[var(--text-muted)]">-</span>
       )
-    case "notes":
-      return row.notes || "-"
+    case "internalNotes":
+      return row.internalNotes || "-"
     case "warehouseName":
       return row.warehouseName || "-"
     case "workOrderNumber":

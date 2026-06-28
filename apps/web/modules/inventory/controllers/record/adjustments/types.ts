@@ -7,7 +7,7 @@ import type {
 /**
  * Editable form values for the adjustment edit form. `inventoryId` is editable
  * only in create mode; saved rows treat it as immutable. Every other field —
- * `quantity`, the metadata trio (`location` / `notes` / `isWaste`), and the
+ * `quantity`, the metadata trio (`location` / `internalNotes` / `isWaste`), and the
  * `workOrderId` relink — is freely editable for the row's whole lifecycle;
  * there is no finalize/freeze.
  *
@@ -29,7 +29,7 @@ export type AdjustmentEditForm = {
   adjustmentType: FlooringInventoryAdjustmentType
   quantity: string
   isWaste: boolean
-  notes: string
+  internalNotes: string
   /** Non-semantic palette tag; freely editable in create + edit. */
   color: PaletteColor
   /**
@@ -100,7 +100,7 @@ export type AdjustmentCreateSeed = {
   quantity?: string
   adjustmentType?: FlooringInventoryAdjustmentType
   isWaste?: boolean
-  notes?: string
+  internalNotes?: string
   color?: PaletteColor
 }
 
