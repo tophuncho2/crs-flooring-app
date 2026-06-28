@@ -14,6 +14,7 @@ import {
   SegmentedChoiceCell,
   StatCell,
   StaticFieldValue,
+  TextareaCell,
   TextCell,
   UnitCell,
   type SegmentedChoiceOption,
@@ -137,13 +138,14 @@ export function AdjustmentEditFormFields({
       currentLength={editable ? form.internalNotes.length : undefined}
       maxLength={editable ? INVENTORY_ADJUSTMENT_INTERNAL_NOTES_MAX : undefined}
     >
-      <TextCell
+      <TextareaCell
         editable={editable}
         value={form.internalNotes}
         onChange={(next) => controller.setField("internalNotes", next)}
         placeholder="Internal notes"
         ariaLabel="Adjustment internal notes"
         maxLength={INVENTORY_ADJUSTMENT_INTERNAL_NOTES_MAX}
+        rows={1}
       />
     </FormField>
   )
