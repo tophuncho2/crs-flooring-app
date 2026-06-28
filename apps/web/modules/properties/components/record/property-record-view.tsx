@@ -115,6 +115,18 @@ export function PropertyRecordView({
     setEntityTypeRefs([])
   }
 
+  // Re-seed the read-only contact cells, trigger label, and type chips from the
+  // server-loaded entity whenever the record swaps (stepper). Reset during render
+  // and keyed on entry.id so a pick/save on the SAME record is never clobbered
+  // (`entity` doesn't refetch on save — only on the stepper's SSR re-run).
+  const [seenEntryId, setSeenEntryId] = useState(entry.id)
+  if (seenEntryId !== entry.id) {
+    setSeenEntryId(entry.id)
+    setEntityDisplay(entity ? toEntityForm(entity) : null)
+    setEntityLabel(linkedEntity?.entity ?? null)
+    setEntityTypeRefs(entity?.types ?? [])
+  }
+
   // A quick/proper-created company fills the cell exactly like a picked one: link
   // it in the dirty draft (saves with the property) and refresh the display cells.
   const handleEntityCreated = (option: EntityOption) => {

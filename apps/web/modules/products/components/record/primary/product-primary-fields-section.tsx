@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import {
   CellAt,
   FieldSection,
@@ -77,6 +77,18 @@ export function ProductPrimaryFieldsSection({
   }, [categoryOptions, categoryReadOnly, draft.categoryId, product.category.id])
 
   const editable = !disabled && !fieldsReadOnly
+
+  // The picker derives its trigger label only from `selectedLabel`; on select it
+  // updates `entityId` but not the saved join name. Hold the in-flight pick label
+  // locally and reset it (during render) whenever the saved `entityName` changes —
+  // a save commits the pick (new name == pickedLabel, no flicker) or a record swap
+  // (stepper) loads a neighbour (falls back to that record's entityName).
+  const [pickedLabel, setPickedLabel] = useState<string | null>(null)
+  const [seenEntityName, setSeenEntityName] = useState(entityName)
+  if (seenEntityName !== entityName) {
+    setSeenEntityName(entityName)
+    setPickedLabel(null)
+  }
 
   const stockUnitDisplay = categoryReadOnly
     ? formatUnit(product.stockUnitName, product.stockUnitAbbrev)
@@ -204,7 +216,8 @@ export function ProductPrimaryFieldsSection({
                   <EntityTypePicker
                     value={draft.entityId || null}
                     onChange={(id) => onFieldChange("entityId", id ?? "")}
-                    selectedLabel={entityName || null}
+                    onOptionSelected={(opt) => setPickedLabel(opt?.entity ?? null)}
+                    selectedLabel={draft.entityId ? pickedLabel ?? entityName : null}
                     disabled={disabled}
                     placeholder="Select entity"
                     ariaLabel="Entity"

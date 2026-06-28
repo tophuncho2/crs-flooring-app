@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import {
   CellAt,
@@ -65,6 +66,18 @@ export function ImportPrimaryFieldsSection({
   const editable = !disabled
   const persisted = importNumber !== undefined
 
+  // The picker derives its trigger label only from `selectedLabel`; on select it
+  // updates `entityId` but not the saved join name. Hold the in-flight pick label
+  // locally and reset it (during render) whenever the saved `entityName` changes —
+  // a save commits the pick (new name == pickedLabel, no flicker) or a record swap
+  // loads a neighbour (falls back to that record's entityName).
+  const [pickedLabel, setPickedLabel] = useState<string | null>(null)
+  const [seenEntityName, setSeenEntityName] = useState(entityName)
+  if (seenEntityName !== entityName) {
+    setSeenEntityName(entityName)
+    setPickedLabel(null)
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <RecordColumnBreak
@@ -113,7 +126,8 @@ export function ImportPrimaryFieldsSection({
                   <EntityTypePicker
                     value={draft.entityId || null}
                     onChange={(id) => onFieldChange("entityId", id ?? "")}
-                    selectedLabel={entityName || null}
+                    onOptionSelected={(opt) => setPickedLabel(opt?.entity ?? null)}
+                    selectedLabel={draft.entityId ? pickedLabel ?? entityName : null}
                     placeholder="Select entity"
                     ariaLabel="Entity"
                   />
