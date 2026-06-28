@@ -104,17 +104,16 @@ export default function LoginForm({
             to the gradient badge when the logo object is absent. */}
         <div className="mb-8 flex flex-col items-center text-center">
           {logoUrl ? (
-            <div className="mb-4 flex items-center justify-center rounded-2xl bg-white px-5 py-4 shadow-lg shadow-black/30">
+            <div className="mb-5 flex items-center justify-center rounded-2xl bg-white px-7 py-6 shadow-lg shadow-black/30">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoUrl} alt="CRS Floor Covering" className="h-12 w-auto" />
+              <img src={logoUrl} alt="CRS Floor Covering" className="h-24 w-auto" />
             </div>
           ) : (
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 shadow-lg shadow-sky-500/30">
-              <Layers className="h-7 w-7 text-white" strokeWidth={2.2} />
+            <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 shadow-lg shadow-sky-500/30">
+              <Layers className="h-10 w-10 text-white" strokeWidth={2.2} />
             </div>
           )}
-          <h1 className="text-2xl font-semibold tracking-tight text-white">CRS Flooring</h1>
-          <p className="mt-1 text-sm text-white/50">Sign in to your operations portal</p>
+          <p className="mt-1 text-sm text-white/50">Operations Portal</p>
         </div>
 
         {error && (
