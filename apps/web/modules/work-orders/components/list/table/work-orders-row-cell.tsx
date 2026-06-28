@@ -25,6 +25,14 @@ export function renderWorkOrderRowCell(
       return row.description || "-"
     case "propertyName":
       return row.propertyName || "-"
+    case "streetAddress":
+      return row.streetAddress || "-"
+    case "city":
+      return row.city || "-"
+    case "state":
+      return row.state || "-"
+    case "zip":
+      return row.zip || "-"
     case "entityName":
       return row.entityName || "-"
     case "jobTypeName":

@@ -710,6 +710,12 @@ model FlooringWorkOrder {
   // the number column no longer needs a trigram index.
   @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_description_trgm_idx")
   @@index([purchaseOrderNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_purchaseOrderNumber_trgm_idx")
+  // WO-owned address search bars. streetAddress / city / postalCode are ILIKE
+  // substring (GIN-trgm); state is an exact 2-letter `IN` match (plain btree).
+  @@index([streetAddress(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_streetAddress_trgm_idx")
+  @@index([city(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_city_trgm_idx")
+  @@index([postalCode(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_work_order_postalCode_trgm_idx")
+  @@index([state])
   @@map("flooring_work_order")
 }
 

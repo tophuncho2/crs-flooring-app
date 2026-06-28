@@ -26,6 +26,13 @@ export type WorkOrdersListFilters = {
   workOrderNumber?: string[]
   description?: string[]
   purchaseOrderNumber?: string[]
+  // WO-owned address search bars. street/city/postalCode are ILIKE substring;
+  // state is an exact 2-letter `IN` match. Single-element arrays (multi-value
+  // contract), AND-ed together to narrow.
+  streetAddress?: string[]
+  city?: string[]
+  state?: string[]
+  postalCode?: string[]
   // Vacancy enum filter — single-element array of `VACANT` / `OCCUPIED`.
   vacancy?: string[]
   // Inclusive `scheduledFor` lower / upper bound as `YYYY-MM-DD` (single-element

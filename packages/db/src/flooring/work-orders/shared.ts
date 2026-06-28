@@ -4,9 +4,10 @@ export type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 
 /**
  * List-view select. Excludes detail-only columns (customAddress, items,
- * files) and uses the lightweight `property: { name }` join because list
- * rows do not display the full address. Surfaces `status`, `description`,
- * `scheduledFor` so the list grid can render badges + sortable columns.
+ * files) and uses the lightweight `property: { name }` join. Surfaces the
+ * WO-owned address columns (streetAddress/city/state/postalCode) so the list
+ * grid can display + search them, plus `status`, `description`, `scheduledFor`
+ * for badges + sortable columns.
  */
 export const workOrderListSelect = {
   id: true,
@@ -27,6 +28,10 @@ export const workOrderListSelect = {
   timeOfDay: true,
   scheduledFor: true,
   description: true,
+  streetAddress: true,
+  city: true,
+  state: true,
+  postalCode: true,
   purchaseOrderNumber: true,
   createdAt: true,
   updatedAt: true,

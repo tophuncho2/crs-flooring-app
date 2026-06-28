@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
+  StateSearchControl,
   SortMenuBody,
   ListActionBar,
   ListCreateButtonPortal,
@@ -167,6 +168,11 @@ export default function WorkOrdersClient({
   const workOrderNumberValue = filters.workOrderNumber?.[0] ?? ""
   const descriptionValue = filters.description?.[0] ?? ""
   const purchaseOrderNumberValue = filters.purchaseOrderNumber?.[0] ?? ""
+  // WO-owned address search bars (street/city/zip = ILIKE; state = exact 2-letter).
+  const streetAddressValue = filters.streetAddress?.[0] ?? ""
+  const cityValue = filters.city?.[0] ?? ""
+  const postalCodeValue = filters.postalCode?.[0] ?? ""
+  const selectedState = filters.state?.[0] ?? null
 
   // --- Selected-label snapshots (initial-seed + fallback to current options) ---
   const entityLabel = useMemo(() => {
@@ -208,11 +214,26 @@ export default function WorkOrdersClient({
 
   const handleTextFilterChange = useCallback(
     (
-      key: "unitType" | "unitNumber" | "workOrderNumber" | "description" | "purchaseOrderNumber",
+      key:
+        | "unitType"
+        | "unitNumber"
+        | "workOrderNumber"
+        | "description"
+        | "purchaseOrderNumber"
+        | "streetAddress"
+        | "city"
+        | "postalCode",
       next: string,
     ) => {
       const trimmed = next.trim()
       onFilterChange(key, trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
+  const handleStateChange = useCallback(
+    (next: string | null) => {
+      onFilterChange("state", next ? [next] : [])
     },
     [onFilterChange],
   )
@@ -305,13 +326,21 @@ export default function WorkOrdersClient({
       Boolean(unitNumberValue) ||
       Boolean(workOrderNumberValue) ||
       Boolean(descriptionValue) ||
-      Boolean(purchaseOrderNumberValue),
+      Boolean(purchaseOrderNumberValue) ||
+      Boolean(streetAddressValue) ||
+      Boolean(cityValue) ||
+      Boolean(postalCodeValue) ||
+      Boolean(selectedState),
     [
       unitTypeValue,
       unitNumberValue,
       workOrderNumberValue,
       descriptionValue,
       purchaseOrderNumberValue,
+      streetAddressValue,
+      cityValue,
+      postalCodeValue,
+      selectedState,
     ],
   )
 
@@ -439,6 +468,30 @@ export default function WorkOrdersClient({
             onCommit={(next) => handleTextFilterChange("purchaseOrderNumber", next)}
             placeholder="PO #"
             ariaLabel="Search work orders by purchase order number"
+          />
+          <DebouncedSearchControl
+            value={streetAddressValue}
+            onCommit={(next) => handleTextFilterChange("streetAddress", next)}
+            placeholder="Street"
+            ariaLabel="Search work orders by street address"
+          />
+          <DebouncedSearchControl
+            value={cityValue}
+            onCommit={(next) => handleTextFilterChange("city", next)}
+            placeholder="City"
+            ariaLabel="Search work orders by city"
+          />
+          <StateSearchControl
+            value={selectedState}
+            onChange={handleStateChange}
+            placeholder="State"
+            ariaLabel="Search work orders by state"
+          />
+          <DebouncedSearchControl
+            value={postalCodeValue}
+            onCommit={(next) => handleTextFilterChange("postalCode", next)}
+            placeholder="Zip"
+            ariaLabel="Search work orders by zip"
           />
         </ToolbarMenuButton>
 

@@ -335,7 +335,16 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 // Per-column identity search — the list-view search bars. Each is a single
 // free-text value carried as a one-element array (same contract as the date
 // bounds), applied server-side as a case-insensitive ILIKE on its own column.
-const TEXT_FILTER_KEYS = ["unitType", "unitNumber", "workOrderNumber", "description", "purchaseOrderNumber"] as const
+const TEXT_FILTER_KEYS = [
+  "unitType",
+  "unitNumber",
+  "workOrderNumber",
+  "description",
+  "purchaseOrderNumber",
+  "streetAddress",
+  "city",
+  "postalCode",
+] as const
 type TextFilterKey = (typeof TEXT_FILTER_KEYS)[number]
 
 // Vacancy enum filter — single-select, carried as a one-element array. Invalid
@@ -411,6 +420,7 @@ export function validateListWorkOrdersQuery(
     ...DATE_FILTER_KEYS,
     ...TEXT_FILTER_KEYS,
     "vacancy",
+    "state",
   ])
   searchParams.forEach((value, key) => {
     if (reservedMultiValueKeys.has(key)) return
@@ -441,6 +451,16 @@ export function validateListWorkOrdersQuery(
   if (vacancy && (VACANCY_VALUES as readonly string[]).includes(vacancy)) {
     filterRecord.vacancy = [vacancy]
   }
+  // State address filter — exact 2-letter `IN` match. Upper-cased + gated to
+  // valid 2-letter codes (mirrors the properties list filter); junk drops out.
+  const stateCodes = Array.from(
+    new Set(
+      readMultiValue(searchParams, "state")
+        .map((entry) => entry.toUpperCase())
+        .filter((entry) => /^[A-Z]{2}$/.test(entry)),
+    ),
+  )
+  if (stateCodes.length > 0) filterRecord.state = stateCodes
   for (const key of DATE_FILTER_KEYS) {
     const value = readMultiValue(searchParams, key)[0]
     if (!value) continue

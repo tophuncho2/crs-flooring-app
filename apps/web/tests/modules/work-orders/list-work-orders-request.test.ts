@@ -66,4 +66,25 @@ describe("parseWorkOrdersListInputFromSearchParams — text filters", () => {
     const input = parseWorkOrdersListInputFromSearchParams({})
     expect(input.filters?.purchaseOrderNumber).toBeUndefined()
   })
+
+  it("reads the WO-owned address search bars into filters", () => {
+    const input = parseWorkOrdersListInputFromSearchParams({
+      streetAddress: "123 Main",
+      city: "Austin",
+      state: "TX",
+      postalCode: "787",
+    })
+    expect(input.filters?.streetAddress).toEqual(["123 Main"])
+    expect(input.filters?.city).toEqual(["Austin"])
+    expect(input.filters?.state).toEqual(["TX"])
+    expect(input.filters?.postalCode).toEqual(["787"])
+  })
+
+  it("omits the address filters when their params are absent", () => {
+    const input = parseWorkOrdersListInputFromSearchParams({})
+    expect(input.filters?.streetAddress).toBeUndefined()
+    expect(input.filters?.city).toBeUndefined()
+    expect(input.filters?.state).toBeUndefined()
+    expect(input.filters?.postalCode).toBeUndefined()
+  })
 })

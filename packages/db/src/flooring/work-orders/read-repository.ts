@@ -64,6 +64,15 @@ export type WorkOrdersListFilterMap = {
   workOrderNumber?: string[]
   description?: string[]
   purchaseOrderNumber?: string[]
+  /**
+   * WO-owned address search bars. `streetAddress`, `city`, `postalCode` are
+   * case-insensitive substring (ILIKE) matches; `state` is an EXACT 2-letter
+   * `IN` match (see `buildWorkOrdersWhere`), mirroring the properties filter.
+   */
+  streetAddress?: string[]
+  city?: string[]
+  state?: string[]
+  postalCode?: string[]
   // Vacancy enum filter — single-element array of `VACANT` / `OCCUPIED`.
   vacancy?: string[]
   /**
@@ -120,6 +129,24 @@ function buildWorkOrdersWhere(
   const purchaseOrderNumber = filters?.purchaseOrderNumber?.[0]
   if (purchaseOrderNumber) {
     andClauses.push({ purchaseOrderNumber: { contains: purchaseOrderNumber, mode: "insensitive" } })
+  }
+
+  // WO-owned address search bars. Street / city / postal are substring ILIKE;
+  // state is an exact 2-letter `IN` match (mirrors the properties state filter).
+  const streetAddress = filters?.streetAddress?.[0]
+  if (streetAddress) {
+    andClauses.push({ streetAddress: { contains: streetAddress, mode: "insensitive" } })
+  }
+  const city = filters?.city?.[0]
+  if (city) {
+    andClauses.push({ city: { contains: city, mode: "insensitive" } })
+  }
+  const postalCode = filters?.postalCode?.[0]
+  if (postalCode) {
+    andClauses.push({ postalCode: { contains: postalCode, mode: "insensitive" } })
+  }
+  if (filters?.state?.length) {
+    andClauses.push({ state: { in: filters.state } })
   }
 
   if (filters?.entityId?.length) {

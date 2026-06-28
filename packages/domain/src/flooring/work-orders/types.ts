@@ -19,6 +19,13 @@ export type WorkOrderListRow = {
   timeOfDay: "AM" | "PM" | null
   scheduledFor: string
   description: string
+  // WO-owned address (snapshotted from the property, then editable). `zip` vocab
+  // matches the form + shared AddressEditCell; persisted as `postalCode`. On the
+  // list row so the table can display + search the address columns.
+  streetAddress: string
+  city: string
+  state: string
+  zip: string
   purchaseOrderNumber: string
   createdAt: string
   updatedAt: string
@@ -37,12 +44,8 @@ export type WorkOrderNeighbor = {
 
 export type WorkOrderDetail = WorkOrderListRow & {
   customAddress: string
-  // WO-owned address (snapshotted from the property, then editable). `zip`
-  // vocab matches the form + shared AddressEditCell; persisted as `postalCode`.
-  streetAddress: string
-  city: string
-  state: string
-  zip: string
+  // streetAddress / city / state / zip now live on WorkOrderListRow (the list
+  // displays + searches them); the detail inherits them.
   internalNotes: string
   installerInstructions: string
   // Live property instructions for the record-view read-only preview cell. The

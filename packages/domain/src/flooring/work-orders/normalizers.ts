@@ -33,6 +33,10 @@ type WorkOrderListInput = {
   timeOfDay: "AM" | "PM" | null
   scheduledFor: Date | string | null
   description: string | null
+  streetAddress: string | null
+  city: string | null
+  state: string | null
+  postalCode: string | null
   purchaseOrderNumber: string | null
   createdAt: Date | string
   updatedAt: Date | string
@@ -42,10 +46,6 @@ type WorkOrderListInput = {
 
 type WorkOrderDetailInput = WorkOrderListInput & {
   customAddress: string | null
-  streetAddress: string | null
-  city: string | null
-  state: string | null
-  postalCode: string | null
   internalNotes: string | null
   installerInstructions: string | null
   property: {
@@ -81,6 +81,10 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     timeOfDay: workOrder.timeOfDay,
     scheduledFor: toIsoDate(workOrder.scheduledFor),
     description: workOrder.description ?? "",
+    streetAddress: workOrder.streetAddress ?? "",
+    city: workOrder.city ?? "",
+    state: workOrder.state ?? "",
+    zip: workOrder.postalCode ?? "",
     purchaseOrderNumber: workOrder.purchaseOrderNumber ?? "",
     createdAt: toIsoDate(workOrder.createdAt),
     updatedAt: toIsoDate(workOrder.updatedAt),
@@ -96,11 +100,8 @@ export function normalizeWorkOrder(
   const base = normalizeWorkOrderListRow(workOrder)
   return {
     ...base,
+    // streetAddress / city / state / zip come from `base` (now on the list row).
     customAddress: workOrder.customAddress ?? "",
-    streetAddress: workOrder.streetAddress ?? "",
-    city: workOrder.city ?? "",
-    state: workOrder.state ?? "",
-    zip: workOrder.postalCode ?? "",
     internalNotes: workOrder.internalNotes ?? "",
     installerInstructions: workOrder.installerInstructions ?? "",
     propertyInstructions: workOrder.property?.instructions ?? "",
