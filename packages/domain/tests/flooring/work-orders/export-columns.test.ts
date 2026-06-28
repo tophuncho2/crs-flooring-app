@@ -22,10 +22,10 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     timeOfDay: null,
     scheduledFor: "",
     description: "",
-    streetAddress: "",
-    city: "",
-    state: "",
-    zip: "",
+    streetAddress: "12 Oak St",
+    city: "Austin",
+    state: "TX",
+    zip: "78701",
     purchaseOrderNumber: "PO-4821",
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",
@@ -43,6 +43,22 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     const createdIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "createdAt")
     expect(poIndex).toBeGreaterThanOrEqual(0)
     expect(poIndex).toBeLessThan(createdIndex)
+  })
+
+  it("exports the WO-owned address columns, positioned after Property", () => {
+    const byKey = (key: string) => WORK_ORDER_EXPORT_COLUMNS.find((c) => c.key === key)
+    expect(byKey("streetAddress")?.label).toBe("Street")
+    expect(byKey("streetAddress")?.value(row)).toBe("12 Oak St")
+    expect(byKey("city")?.value(row)).toBe("Austin")
+    expect(byKey("state")?.value(row)).toBe("TX")
+    expect(byKey("zip")?.label).toBe("Zip")
+    expect(byKey("zip")?.value(row)).toBe("78701")
+
+    const propertyIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "propertyName")
+    const streetIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "streetAddress")
+    const jobTypeIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "jobTypeName")
+    expect(streetIndex).toBeGreaterThan(propertyIndex)
+    expect(streetIndex).toBeLessThan(jobTypeIndex)
   })
 
   it("includes the actor columns", () => {
