@@ -317,28 +317,25 @@ describe("saveImportStagedInventorySectionUseCase — product batch-fetch", () =
   })
 
   it("deduplicates product fetches across added + modified filter diffs", async () => {
-    // The batch-fetch runs BEFORE the diff validators, so the fetch is
-    // observable even when the post-diff projection has a duplicate-product
-    // violation. The test asserts fetch deduplication; the downstream
-    // validator firing is incidental.
+    // The same product can now appear on multiple planned imports (the
+    // duplicate-product rule was removed), so the batch-fetch must still
+    // collapse repeats: product-shared in both added + modified is fetched once.
     listFilterRowDiffSummariesByImportMock.mockResolvedValue([
       { id: "filter-existing", productId: "product-x", categoryFilterId: "cat-1" },
     ])
     getProductByIdMock.mockResolvedValue(fakeProduct({ id: "product-shared" }))
 
-    await expect(
-      runSave({
-        importEntryId: IMPORT_ID,
-        diff: {
-          filters: {
-            added: [{ tempId: "t1", form: filterForm({ productId: "product-shared" }) }],
-            modified: [{ id: "filter-existing", form: filterForm({ productId: "product-shared" }) }],
-            deleted: [],
-          },
-          rows: { added: [], modified: [], deleted: [] },
+    await runSave({
+      importEntryId: IMPORT_ID,
+      diff: {
+        filters: {
+          added: [{ tempId: "t1", form: filterForm({ productId: "product-shared" }) }],
+          modified: [{ id: "filter-existing", form: filterForm({ productId: "product-shared" }) }],
+          deleted: [],
         },
-      }),
-    ).rejects.toBeInstanceOf(ImportStagedInventorySectionExecutionError)
+        rows: { added: [], modified: [], deleted: [] },
+      },
+    })
 
     // product-shared appears in both added + modified — fetched exactly once.
     expect(getProductByIdMock).toHaveBeenCalledTimes(1)
@@ -348,20 +345,24 @@ describe("saveImportStagedInventorySectionUseCase — product batch-fetch", () =
 
 describe("saveImportStagedInventorySectionUseCase — diff validators", () => {
   it("surfaces SECTION_FILTER_DIFF_VALIDATION_FAILED when domain filters validator returns issues", async () => {
-    // Force the duplicate-product check by adding two filter rows for the
-    // same product (and providing both products in the batch-fetch).
-    getProductByIdMock.mockResolvedValue(fakeProduct({ id: "product-dup" }))
+    // Force the category-filter-locked check by modifying a saved row's
+    // categoryFilterId (immutable after create).
+    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
+      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1" },
+    ])
 
     try {
       await runSave({
         importEntryId: IMPORT_ID,
         diff: {
           filters: {
-            added: [
-              { tempId: "t1", form: filterForm({ productId: "product-dup" }) },
-              { tempId: "t2", form: filterForm({ productId: "product-dup" }) },
+            added: [],
+            modified: [
+              {
+                id: "filter-1",
+                form: filterForm({ categoryFilterId: "cat-other" }),
+              },
             ],
-            modified: [],
             deleted: [],
           },
           rows: { added: [], modified: [], deleted: [] },

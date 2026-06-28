@@ -367,6 +367,45 @@ export function useImportFilterRows({
     [section],
   )
 
+  // Section-level "Add staged inventory": a blank staged row with no product —
+  // the user picks one inline (its own product picker) before it can save.
+  const addBlankStagedRow = useCallback(() => {
+    addStagedRowDraft({ productId: "", productName: "", stockUnitAbbrev: "" })
+  }, [addStagedRowDraft])
+
+  const setStagedRowProductId = useCallback(
+    (clientId: string, productId: string) => {
+      section.setLocalValue((prev) => ({
+        ...prev,
+        stagedRows: prev.stagedRows.map((s) =>
+          s.clientId === clientId ? { ...s, productId } : s,
+        ),
+      }))
+      if (section.error) section.setError(null)
+    },
+    [section],
+  )
+
+  const setStagedRowProductSnapshot = useCallback(
+    (clientId: string, option: ProductOption | null) => {
+      section.setLocalValue((prev) => ({
+        ...prev,
+        stagedRows: prev.stagedRows.map((s) => {
+          if (s.clientId !== clientId) return s
+          if (option === null) {
+            return { ...s, productName: "", stockUnitAbbrev: "" }
+          }
+          return {
+            ...s,
+            productName: option.name,
+            stockUnitAbbrev: option.stockUnitAbbrev,
+          }
+        }),
+      }))
+    },
+    [section],
+  )
+
   const duplicateStagedRowDraft = useCallback(
     (sourceClientId: string) => {
       section.setLocalValue((prev) => {
@@ -422,6 +461,9 @@ export function useImportFilterRows({
     setFilterCategoryFilter,
     setFilterProductSnapshot,
     addStagedRowDraft,
+    addBlankStagedRow,
+    setStagedRowProductId,
+    setStagedRowProductSnapshot,
     duplicateStagedRowDraft,
     removeStagedRowDraft,
     setStagedRowField,

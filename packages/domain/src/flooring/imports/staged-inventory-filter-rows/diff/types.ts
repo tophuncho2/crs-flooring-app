@@ -29,12 +29,6 @@ export type DiffExistingStagedInventoryFilterRow = {
 
 export type StagedInventoryFilterDiffValidationIssue =
   | {
-      code: "FILTER_DUPLICATE_PRODUCT"
-      productId: string
-      rowId: string | null
-      rowTempId: string | null
-    }
-  | {
       code: "FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE"
       rowId: string
     }
@@ -49,8 +43,6 @@ export function describeStagedInventoryFilterDiffIssue(
   issue: StagedInventoryFilterDiffValidationIssue,
 ): string {
   switch (issue.code) {
-    case "FILTER_DUPLICATE_PRODUCT":
-      return `Product ${issue.productId} already has a filter row in this import.`
     case "FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE":
       return `Filter row ${issue.rowId} category filter is immutable after the row is saved.`
     case "FILTER_UNKNOWN_PRODUCT":

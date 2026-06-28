@@ -30,8 +30,8 @@ function emptyDiff(): StagedInventoryFiltersDiff {
 }
 
 describe("validateStagedInventoryFiltersDiff", () => {
-  describe("FILTER_DUPLICATE_PRODUCT", () => {
-    it("flags two added rows referencing the same product", () => {
+  describe("duplicate products are allowed", () => {
+    it("does NOT flag two added rows referencing the same product", () => {
       const diff: StagedInventoryFiltersDiff = {
         ...emptyDiff(),
         added: [
@@ -43,16 +43,10 @@ describe("validateStagedInventoryFiltersDiff", () => {
         existing: [],
         knownProductIds: ["product-a"],
       })
-      const dup = issues.filter((i) => i.code === "FILTER_DUPLICATE_PRODUCT")
-      expect(dup).toHaveLength(1)
-      expect(dup[0]).toMatchObject({
-        code: "FILTER_DUPLICATE_PRODUCT",
-        productId: "product-a",
-        rowTempId: "t2",
-      })
+      expect(issues).toEqual([])
     })
 
-    it("flags an added row colliding with an existing row's product", () => {
+    it("does NOT flag an added row sharing an existing row's product", () => {
       const diff: StagedInventoryFiltersDiff = {
         ...emptyDiff(),
         added: [{ tempId: "t1", form: filterForm({ productId: "product-1" }) }],
@@ -61,20 +55,7 @@ describe("validateStagedInventoryFiltersDiff", () => {
         existing: [existingFilter()],
         knownProductIds: ["product-1"],
       })
-      expect(issues.some((i) => i.code === "FILTER_DUPLICATE_PRODUCT")).toBe(true)
-    })
-
-    it("does NOT flag a duplicate when the existing row is being deleted in the same save", () => {
-      const diff: StagedInventoryFiltersDiff = {
-        added: [{ tempId: "t1", form: filterForm({ productId: "product-1" }) }],
-        modified: [],
-        deleted: [{ id: "filter-1" }],
-      }
-      const issues = validateStagedInventoryFiltersDiff(diff, {
-        existing: [existingFilter()],
-        knownProductIds: ["product-1"],
-      })
-      expect(issues.some((i) => i.code === "FILTER_DUPLICATE_PRODUCT")).toBe(false)
+      expect(issues).toEqual([])
     })
   })
 
@@ -148,10 +129,7 @@ describe("validateStagedInventoryFiltersDiff", () => {
 
     it("returns all violations in a single pass", () => {
       const diff: StagedInventoryFiltersDiff = {
-        added: [
-          { tempId: "t1", form: filterForm({ productId: "ghost" }) },
-          { tempId: "t2", form: filterForm({ productId: "ghost" }) },
-        ],
+        added: [{ tempId: "t1", form: filterForm({ productId: "ghost" }) }],
         modified: [
           { id: "filter-1", form: filterForm({ productId: "product-2", categoryFilterId: "cat-other" }) },
         ],
@@ -165,7 +143,6 @@ describe("validateStagedInventoryFiltersDiff", () => {
         knownProductIds: ["product-2"],
       })
       const codes = new Set(issues.map((i) => i.code))
-      expect(codes.has("FILTER_DUPLICATE_PRODUCT")).toBe(true)
       expect(codes.has("FILTER_UNKNOWN_PRODUCT")).toBe(true)
       expect(codes.has("FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE")).toBe(true)
     })

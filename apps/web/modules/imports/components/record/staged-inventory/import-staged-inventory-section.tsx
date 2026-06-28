@@ -72,18 +72,6 @@ export function ImportStagedInventorySection({
     [stagedRows],
   )
 
-  // Live sum of staged-row startingStock per product, for the Planned Imports
-  // "remaining" column.
-  const startingStockSumByProductId = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const row of section.localValue.stagedRows) {
-      const parsed = Number(row.startingStock)
-      if (!Number.isFinite(parsed)) continue
-      map.set(row.productId, (map.get(row.productId) ?? 0) + parsed)
-    }
-    return map
-  }, [section.localValue.stagedRows])
-
   const filterCount = section.localValue.filters.length
   const stagedCount = section.localValue.stagedRows.length
   const selectedCount = section.selectedIds.size
@@ -205,7 +193,18 @@ export function ImportStagedInventorySection({
               />
             </div>
           ),
-          actions: saveDiscardActions,
+          actions: [
+            ...saveDiscardActions,
+            {
+              key: "add",
+              label: "Add Staged Inventory",
+              kind: "add-row" as const,
+              tone: "neutral" as const,
+              onClick: section.addBlankStagedRow,
+              disabled:
+                section.isSaving || section.isMarking || section.isSelectionActive,
+            },
+          ],
         }
 
   return (
@@ -225,7 +224,6 @@ export function ImportStagedInventorySection({
           <ImportPlannedImportsGrid
             section={section}
             serverFilterRowsById={serverFilterRowsById}
-            startingStockSumByProductId={startingStockSumByProductId}
           />
         ) : (
           <ImportStagedInventoryGrid section={section} serverStatusById={serverStatusById} />

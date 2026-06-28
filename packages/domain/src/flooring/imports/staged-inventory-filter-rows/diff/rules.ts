@@ -52,27 +52,6 @@ function projectPostDiffRows(
   return projected
 }
 
-function findDuplicateProducts(
-  rows: ProjectedRow[],
-): StagedInventoryFilterDiffValidationIssue[] {
-  const issues: StagedInventoryFilterDiffValidationIssue[] = []
-  const seenProductIds = new Set<string>()
-  for (const row of rows) {
-    if (!row.productId) continue
-    if (seenProductIds.has(row.productId)) {
-      issues.push({
-        code: "FILTER_DUPLICATE_PRODUCT",
-        productId: row.productId,
-        rowId: row.id,
-        rowTempId: row.tempId,
-      })
-    } else {
-      seenProductIds.add(row.productId)
-    }
-  }
-  return issues
-}
-
 function findUnknownProducts(
   rows: ProjectedRow[],
   knownProductIds: Set<string>,
@@ -124,7 +103,6 @@ export function validateStagedInventoryFiltersDiff(
   const knownProductIds = new Set(resolution.knownProductIds)
   const projected = projectPostDiffRows(diff, resolution.existing)
   return [
-    ...findDuplicateProducts(projected),
     ...findUnknownProducts(projected, knownProductIds),
     ...findLockedCategoryFilterChanges(diff, resolution.existing),
   ]

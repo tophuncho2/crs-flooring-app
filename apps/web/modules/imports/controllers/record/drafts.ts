@@ -189,6 +189,12 @@ export function validateImportStagedRowDrafts(
 ): string {
   for (const [index, draft] of drafts.entries()) {
     if (draft.status !== "DRAFT") continue
+    // A staged row attaches to the import via its own productId (no parent
+    // filter to inherit from), so a section-level blank add must pick one
+    // before it can save.
+    if (!draft.productId) {
+      return `Staged — row ${index + 1}: select a product.`
+    }
     const issues = validateStagedInventoryForm({
       rollNumber: draft.rollNumber,
       startingStock: draft.startingStock,

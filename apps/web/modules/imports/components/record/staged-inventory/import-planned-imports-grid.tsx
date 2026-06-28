@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import { UnitCell, isLocalOnlyRecordRow } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
-import { computeFilterRemainingStock, type StagedInventoryFilterRow } from "@builders/domain"
+import type { StagedInventoryFilterRow } from "@builders/domain"
 import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
 import type { useImportStagedInventorySection } from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
 import { PlannedImportRemoveButton } from "./row-controls"
@@ -14,23 +14,21 @@ type PlannedImportGridRow = ImportFilterRowDraft & { id: string }
 const PLANNED_IMPORT_COLUMNS: DataTableColumn<PlannedImportGridRow>[] = [
   { key: "product", label: "Product", minWidth: 260, grow: 2 },
   { key: "stockOrdered", label: "Stock Ordered", width: 170, align: "end" },
-  { key: "remaining", label: "Remaining", width: 150, align: "end" },
 ]
 
 /**
  * "Planned Imports" view: the filter rows as a flat editable table — product +
- * the ordered quantity, with a live read-only "remaining" (ordered − the sum of
- * staged startingStock for that product). Mirrors the WO Requested Material grid.
+ * the ordered quantity. A product may appear on several planned imports now, so
+ * "remaining" is no longer a per-row concept; it lives in the Staged Inventory
+ * view's per-product group header (ordered total − staged startingStock sum).
+ * Mirrors the WO Requested Material grid.
  */
 export function ImportPlannedImportsGrid({
   section,
   serverFilterRowsById,
-  startingStockSumByProductId,
 }: {
   section: ReturnType<typeof useImportStagedInventorySection>
   serverFilterRowsById: Map<string, StagedInventoryFilterRow>
-  /** Live sum of staged-row startingStock per productId, for the remaining calc. */
-  startingStockSumByProductId: Map<string, number>
 }) {
   const editable = !section.isSaving && !section.isMarking && !section.isSelectionActive
 
@@ -72,20 +70,6 @@ export function ImportPlannedImportsGrid({
             ariaLabel="Stock ordered"
           />
         )
-      case "remaining": {
-        const sum = startingStockSumByProductId.get(draft.productId) ?? 0
-        const remaining = computeFilterRemainingStock({
-          stockOrdered: draft.stockOrdered,
-          childStartingStockSum: sum.toFixed(2),
-        })
-        const unit = draft.stockUnitAbbrev || server?.stockUnitAbbrev || ""
-        return (
-          <span className="text-sm text-[var(--foreground)]/80">
-            {remaining || "—"}
-            {remaining && unit ? ` ${unit}` : ""}
-          </span>
-        )
-      }
       default:
         return null
     }
