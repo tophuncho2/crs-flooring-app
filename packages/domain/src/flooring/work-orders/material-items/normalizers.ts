@@ -10,6 +10,8 @@ type WorkOrderMaterialItemInput = {
   notes: string | null
   sourceTemplateItemId: string | null
   createdAt: Date | string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 export function normalizeWorkOrderMaterialItem(
@@ -25,6 +27,8 @@ export function normalizeWorkOrderMaterialItem(
     notes: item.notes ?? "",
     sourceTemplateItemId: item.sourceTemplateItemId,
     createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : item.createdAt,
+    createdBy: item.createdBy ?? null,
+    updatedBy: item.updatedBy ?? null,
   }
 }
 

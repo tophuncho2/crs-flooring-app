@@ -26,8 +26,12 @@ function notesOrNull(value: string): string | null {
 
 export async function syncTemplateToWorkOrderUseCase(
   input: SyncTemplateToWorkOrderInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SyncTemplateToWorkOrderResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("syncTemplateToWorkOrderUseCase requires a non-empty actorEmail")
+  }
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -55,6 +59,7 @@ export async function syncTemplateToWorkOrderUseCase(
 
     return createWorkOrderFromTemplateRecord(
       {
+        actorEmail,
         workOrder: {
           propertyId: template.propertyId,
           templateId: template.id,

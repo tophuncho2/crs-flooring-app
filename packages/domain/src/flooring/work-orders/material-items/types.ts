@@ -8,6 +8,11 @@ export type WorkOrderMaterialItemRow = {
   notes: string
   sourceTemplateItemId: string | null
   createdAt: string
+  // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
+  // updatedBy on edit). Null on historical rows. Carried on the row but not
+  // surfaced in the section table — DB-only by design.
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 // Create form carries `productId` — the user picks a product when they add a

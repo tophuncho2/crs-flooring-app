@@ -17,6 +17,8 @@ const workOrderMaterialItemSelect = {
   notes: true,
   sourceTemplateItemId: true,
   createdAt: true,
+  createdBy: true,
+  updatedBy: true,
 } as const
 
 export async function listWorkOrderMaterialItems(

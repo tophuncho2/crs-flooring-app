@@ -41,6 +41,10 @@ export function renderWorkOrderRowCell(
       return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
     case "updatedAt":
       return <span className="tabular-nums">{formatEasternDateTime(row.updatedAt) || "—"}</span>
+    case "createdBy":
+      return row.createdBy ?? "—"
+    case "updatedBy":
+      return row.updatedBy ?? "—"
     default:
       return "-"
   }

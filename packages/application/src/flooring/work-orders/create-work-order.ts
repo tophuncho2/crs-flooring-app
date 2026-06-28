@@ -7,8 +7,12 @@ import type { CreateWorkOrderUseCaseInput, WorkOrderUseCaseResult } from "./type
 
 export async function createWorkOrderUseCase(
   input: CreateWorkOrderUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<WorkOrderUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("createWorkOrderUseCase requires a non-empty actorEmail")
+  }
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -19,6 +23,6 @@ export async function createWorkOrderUseCase(
     // their warehouse from the chosen inventory, not the WO, so a warehouse
     // is no longer required here.
 
-    return createWorkOrderRecord(input, c)
+    return createWorkOrderRecord({ ...input, createdBy: actorEmail, updatedBy: actorEmail }, c)
   })
 }

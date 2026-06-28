@@ -63,7 +63,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringWorkOrder",
         entityId: id,
       },
-      () => saveWorkOrderMaterialItemsSectionUseCase({ workOrderId: id, diff }),
+      () => saveWorkOrderMaterialItemsSectionUseCase({ workOrderId: id, diff }, access.user.email),
     )
 
     const [detail, materialItems] = await Promise.all([

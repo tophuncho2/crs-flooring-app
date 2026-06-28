@@ -39,6 +39,9 @@ function toDecimal(value: string): Prisma.Decimal | string | null {
 
 export type ApplyWorkOrderMaterialItemsDiffInput = {
   workOrderId: string
+  // Actor email stamped on every written item: createdBy + updatedBy on added
+  // rows, updatedBy on modified rows. Deletes never stamp.
+  actorEmail: string
   added: Array<{ id: string; tempId: string; input: WriteWorkOrderMaterialItemCreateInput }>
   modified: Array<{ id: string; input: WriteWorkOrderMaterialItemUpdateInput }>
   deleted: Array<{ id: string }>
@@ -80,6 +83,8 @@ export async function applyWorkOrderMaterialItemsDiff(
         sendUnitName: draft.input.sendUnitName,
         sendUnitAbbrev: draft.input.sendUnitAbbrev,
         notes: draft.input.notes ? draft.input.notes : null,
+        createdBy: input.actorEmail,
+        updatedBy: input.actorEmail,
       })),
     })
   }
@@ -90,6 +95,7 @@ export async function applyWorkOrderMaterialItemsDiff(
       data: {
         quantity: toDecimal(update.input.quantity),
         notes: update.input.notes ? update.input.notes : null,
+        updatedBy: input.actorEmail,
         ...(update.input.product
           ? {
               product: { connect: { id: update.input.product.productId } },

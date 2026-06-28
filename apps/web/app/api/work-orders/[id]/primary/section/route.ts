@@ -61,7 +61,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         entityType: "flooringWorkOrder",
         entityId: id,
       },
-      () => updateWorkOrderUseCase(id, input),
+      () => updateWorkOrderUseCase(id, input, access.user.email),
     )
 
     const responseBody = { workOrder: result }

@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         route: "/api/work-orders",
         entityType: "flooringWorkOrder",
       },
-      () => createWorkOrderUseCase(input),
+      () => createWorkOrderUseCase(input, access.user.email),
     )
 
     const responseBody = { workOrder: result }

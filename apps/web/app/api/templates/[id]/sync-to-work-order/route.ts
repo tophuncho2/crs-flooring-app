@@ -47,7 +47,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         route: "/api/templates/[id]/sync-to-work-order",
         entityType: "flooringWorkOrder",
       },
-      () => syncTemplateToWorkOrderUseCase({ templateId }),
+      () => syncTemplateToWorkOrderUseCase({ templateId }, access.user.email),
     )
 
     const responseBody = { workOrder: result.workOrder, items: result.items }

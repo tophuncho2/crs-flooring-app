@@ -16,15 +16,19 @@ import type { UpdateWorkOrderUseCaseInput, WorkOrderUseCaseResult } from "./type
 export async function updateWorkOrderUseCase(
   id: string,
   input: UpdateWorkOrderUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<WorkOrderUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("updateWorkOrderUseCase requires a non-empty actorEmail")
+  }
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
     // Property is optional and freely clearable — passing `null` detaches it.
 
     try {
-      return await updateWorkOrderRecord(id, input, c)
+      return await updateWorkOrderRecord(id, { ...input, updatedBy: actorEmail }, c)
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
         throw new WorkOrderExecutionError({

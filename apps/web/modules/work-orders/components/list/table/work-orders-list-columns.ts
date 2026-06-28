@@ -25,6 +25,8 @@ export const WORK_ORDERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WorkOrderLi
   { key: "purchaseOrderNumber", label: "PO #" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
+  { key: "createdBy", label: "Created by" },
+  { key: "updatedBy", label: "Updated by" },
 ]
 
 /**

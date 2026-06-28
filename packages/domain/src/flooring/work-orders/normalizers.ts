@@ -36,6 +36,8 @@ type WorkOrderListInput = {
   purchaseOrderNumber: string | null
   createdAt: Date | string
   updatedAt: Date | string
+  createdBy: string | null
+  updatedBy: string | null
 }
 
 type WorkOrderDetailInput = WorkOrderListInput & {
@@ -82,6 +84,8 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     purchaseOrderNumber: workOrder.purchaseOrderNumber ?? "",
     createdAt: toIsoDate(workOrder.createdAt),
     updatedAt: toIsoDate(workOrder.updatedAt),
+    createdBy: workOrder.createdBy ?? null,
+    updatedBy: workOrder.updatedBy ?? null,
   }
 }
 

@@ -26,9 +26,15 @@ export type CreateWorkOrderRecordInput = {
   scheduledFor?: Date | null
   vacancy?: "VACANT" | "OCCUPIED" | null
   timeOfDay?: "AM" | "PM" | null
+  // Actor-email snapshots — required on create (creator stamps both).
+  createdBy: string
+  updatedBy: string
 }
 
-export type UpdateWorkOrderRecordInput = Partial<CreateWorkOrderRecordInput>
+// createdBy is immutable after insert; an update only ever flips updatedBy.
+export type UpdateWorkOrderRecordInput = Partial<
+  Omit<CreateWorkOrderRecordInput, "createdBy" | "updatedBy">
+> & { updatedBy: string }
 
 export async function createWorkOrderRecord(
   input: CreateWorkOrderRecordInput,
@@ -67,7 +73,10 @@ export async function deleteWorkOrderRecordById(
  * new work order's items remember their template origin.
  */
 export type CreateWorkOrderFromTemplateRecordInput = {
-  workOrder: CreateWorkOrderRecordInput
+  // Actor email stamped on the new work order AND every materialized item
+  // (createdBy + updatedBy). Sync is a human action, so it stamps.
+  actorEmail: string
+  workOrder: Omit<CreateWorkOrderRecordInput, "createdBy" | "updatedBy">
   items: Array<{
     productId: string
     quantity: string
@@ -95,7 +104,7 @@ export async function createWorkOrderFromTemplateRecord(
   client: WorkOrdersDbClient = db,
 ): Promise<CreateWorkOrderFromTemplateRecordResult> {
   const created = await client.flooringWorkOrder.create({
-    data: input.workOrder,
+    data: { ...input.workOrder, createdBy: input.actorEmail, updatedBy: input.actorEmail },
     select: workOrderDetailSelect,
   })
 
@@ -109,6 +118,8 @@ export async function createWorkOrderFromTemplateRecord(
         sendUnitAbbrev: item.sendUnitAbbrev,
         notes: item.notes,
         sourceTemplateItemId: item.sourceTemplateItemId,
+        createdBy: input.actorEmail,
+        updatedBy: input.actorEmail,
       })),
     })
   }

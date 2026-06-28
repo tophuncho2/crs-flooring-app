@@ -500,12 +500,18 @@ export function WorkOrderPrimaryFieldsSection({
         }
       />
       <RecordSectionDivider />
-      <div className="flex gap-6">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
         <FormField label="Created">
           <StaticFieldValue>{detail ? formatEasternDateTime(detail.createdAt) || "—" : "—"}</StaticFieldValue>
         </FormField>
+        <FormField label="Created by">
+          <StaticFieldValue>{detail?.createdBy ?? "—"}</StaticFieldValue>
+        </FormField>
         <FormField label="Updated">
           <StaticFieldValue>{detail ? formatEasternDateTime(detail.updatedAt) || "—" : "—"}</StaticFieldValue>
+        </FormField>
+        <FormField label="Updated by">
+          <StaticFieldValue>{detail?.updatedBy ?? "—"}</StaticFieldValue>
         </FormField>
       </div>
     </div>

@@ -30,6 +30,8 @@ export const workOrderListSelect = {
   purchaseOrderNumber: true,
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
 } as const
 
 /**
@@ -71,6 +73,8 @@ export const workOrderDetailSelect = {
   purchaseOrderNumber: true,
   createdAt: true,
   updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
 } as const
 
 export type WorkOrderListPayload = Prisma.FlooringWorkOrderGetPayload<{ select: typeof workOrderListSelect }>

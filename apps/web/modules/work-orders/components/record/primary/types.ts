@@ -23,4 +23,6 @@ export type WorkOrderPrimaryDetail = {
   warehouseName: string
   createdAt: string
   updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
 }

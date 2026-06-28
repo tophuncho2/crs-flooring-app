@@ -37,8 +37,12 @@ import type {
  */
 export async function saveWorkOrderMaterialItemsSectionUseCase(
   input: SaveWorkOrderMaterialItemsSectionUseCaseInput,
+  actorEmail: string,
   client?: Prisma.TransactionClient,
 ): Promise<SaveWorkOrderMaterialItemsSectionUseCaseResult> {
+  if (!actorEmail || !actorEmail.trim()) {
+    throw new Error("saveWorkOrderMaterialItemsSectionUseCase requires a non-empty actorEmail")
+  }
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
@@ -106,6 +110,7 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
 
     return await applyWorkOrderMaterialItemsDiff(c, {
       workOrderId: input.workOrderId,
+      actorEmail,
       added: addedWithIds.map((draft) => ({
         id: draft.id,
         tempId: draft.tempId,

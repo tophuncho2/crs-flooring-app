@@ -1,0 +1,66 @@
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+const {
+  withDatabaseTransactionMock,
+  getTemplateByIdMock,
+  createWorkOrderFromTemplateRecordMock,
+} = vi.hoisted(() => {
+  return {
+    withDatabaseTransactionMock: vi.fn(),
+    getTemplateByIdMock: vi.fn(),
+    createWorkOrderFromTemplateRecordMock: vi.fn(),
+  }
+})
+
+vi.mock("@builders/db", () => ({
+  Prisma: { PrismaClientKnownRequestError: class {} },
+  withDatabaseTransaction: withDatabaseTransactionMock,
+  getTemplateById: getTemplateByIdMock,
+  createWorkOrderFromTemplateRecord: createWorkOrderFromTemplateRecordMock,
+}))
+
+import { syncTemplateToWorkOrderUseCase } from "../../../src/flooring/work-orders/sync-template-to-work-order.js"
+
+const ACTOR = "actor@example.com"
+
+function template(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "tpl-1",
+    propertyId: null,
+    jobTypeId: null,
+    warehouseId: null,
+    unitType: "2BR",
+    description: null,
+    installerInstructions: null,
+    items: [],
+    ...overrides,
+  }
+}
+
+beforeEach(() => {
+  withDatabaseTransactionMock.mockReset()
+  getTemplateByIdMock.mockReset()
+  createWorkOrderFromTemplateRecordMock.mockReset()
+
+  withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
+  getTemplateByIdMock.mockResolvedValue(template())
+  createWorkOrderFromTemplateRecordMock.mockResolvedValue({ workOrder: { id: "wo-1" }, items: [] })
+})
+
+describe("syncTemplateToWorkOrderUseCase", () => {
+  it("rejects a blank actorEmail before touching the database", async () => {
+    await expect(
+      syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, "   "),
+    ).rejects.toThrowError(/actorEmail/)
+    expect(getTemplateByIdMock).not.toHaveBeenCalled()
+    expect(createWorkOrderFromTemplateRecordMock).not.toHaveBeenCalled()
+  })
+
+  it("forwards the actorEmail so the work order and items get stamped", async () => {
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    expect(createWorkOrderFromTemplateRecordMock).toHaveBeenCalledWith(
+      expect.objectContaining({ actorEmail: ACTOR }),
+      expect.anything(),
+    )
+  })
+})

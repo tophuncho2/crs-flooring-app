@@ -675,6 +675,8 @@ model FlooringWorkOrder {
   purchaseOrderNumber  String?                    @db.VarChar(50)
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
+  createdBy            String?
+  updatedBy            String?
   items                FlooringWorkOrderItem[]
   inventoryAdjustments FlooringInventoryAdjustment[]
   payments             FlooringPayment[]
@@ -716,6 +718,8 @@ model FlooringWorkOrderItem {
   notes                String?                     @db.VarChar(30)
   createdAt            DateTime                    @default(now())
   updatedAt            DateTime                    @updatedAt
+  createdBy            String?
+  updatedBy            String?
 
   @@index([workOrderId])
   @@index([workOrderId, createdAt])
