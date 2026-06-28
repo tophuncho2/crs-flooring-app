@@ -104,9 +104,11 @@ export default function LoginForm({
             to the gradient badge when the logo object is absent. */}
         <div className="mb-8 flex flex-col items-center text-center">
           {logoUrl ? (
-            <div className="mb-5 flex items-center justify-center rounded-2xl bg-white px-7 py-6 shadow-lg shadow-black/30">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoUrl} alt="CRS Floor Covering" className="h-24 w-auto" />
+            <div className="crs-aurora-button mb-5 rounded-2xl p-1.5 shadow-lg shadow-black/30">
+              <div className="flex items-center justify-center rounded-xl bg-white px-6 py-5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={logoUrl} alt="CRS Floor Covering" className="h-24 w-auto" />
+              </div>
             </div>
           ) : (
             <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 shadow-lg shadow-sky-500/30">
