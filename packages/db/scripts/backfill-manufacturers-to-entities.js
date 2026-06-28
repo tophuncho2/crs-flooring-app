@@ -17,12 +17,21 @@
  * no-op. The manufacturers model is left fully intact — this script only POPULATES
  * the new entity links; the column/table drop is a separate, later migration.
  *
- * Run:  cd packages/db && npm run db:backfill:manufacturers-to-entities
+ * Run:      cd packages/db && npm run db:backfill:manufacturers-to-entities
+ * Dry run:  cd packages/db && npm run db:backfill:manufacturers-to-entities:dry-run
+ *
+ * The dry run does ALL the work inside the transaction (so the reported counts are
+ * exactly what a real run would apply against the current data), then deliberately
+ * rolls the transaction back so nothing is written.
  */
 
 const SYSTEM_ACTOR = "system@backfill"
 const MANUFACTURER_TYPE_LABEL = "Manufacturer"
 const MANUFACTURER_TYPE_COLOR = "BLUE"
+
+// Sentinel thrown to abort (roll back) the transaction in dry-run mode. Caught by
+// the caller so it never surfaces as a real error.
+const DRY_RUN_ROLLBACK = new Error("__dry_run_rollback__")
 
 // Digits-only phone, matching the app's normalizePhoneNumber boundary contract.
 function normalizePhone(value) {
@@ -97,7 +106,7 @@ async function resolveEntityForManufacturer(tx, manufacturer, manufacturerTypeId
   return entity.id
 }
 
-async function backfillManufacturersToEntities({ prisma, logger = console }) {
+async function backfillManufacturersToEntities({ prisma, logger = console, dryRun = false }) {
   const counters = {
     manufacturers: 0,
     entitiesCreated: 0,
@@ -106,51 +115,62 @@ async function backfillManufacturersToEntities({ prisma, logger = console }) {
     importsLinked: 0,
   }
 
-  await prisma.$transaction(async (tx) => {
-    const manufacturerTypeId = await findOrCreateManufacturerType(tx)
+  try {
+    await prisma.$transaction(async (tx) => {
+      const manufacturerTypeId = await findOrCreateManufacturerType(tx)
 
-    const manufacturers = await tx.flooringManufacturer.findMany({
-      select: { id: true, companyName: true, phone: true, email: true },
+      const manufacturers = await tx.flooringManufacturer.findMany({
+        select: { id: true, companyName: true, phone: true, email: true },
+      })
+      counters.manufacturers = manufacturers.length
+
+      for (const manufacturer of manufacturers) {
+        const entityId = await resolveEntityForManufacturer(
+          tx,
+          manufacturer,
+          manufacturerTypeId,
+          counters,
+        )
+
+        // Only fill rows that still point at the manufacturer but have no entity —
+        // never overwrite an entity link a user may have already set.
+        const products = await tx.flooringProduct.updateMany({
+          where: { manufacturerId: manufacturer.id, entityId: null },
+          data: { entityId },
+        })
+        counters.productsLinked += products.count
+
+        const imports = await tx.flooringImportEntry.updateMany({
+          where: { manufacturerId: manufacturer.id, entityId: null },
+          data: { entityId },
+        })
+        counters.importsLinked += imports.count
+      }
+
+      // Dry run: abort the transaction after doing the full pass, so the counts
+      // are real but nothing is persisted. The counters live outside the tx
+      // closure, so they survive the rollback.
+      if (dryRun) throw DRY_RUN_ROLLBACK
     })
-    counters.manufacturers = manufacturers.length
+  } catch (error) {
+    if (error !== DRY_RUN_ROLLBACK) throw error
+  }
 
-    for (const manufacturer of manufacturers) {
-      const entityId = await resolveEntityForManufacturer(
-        tx,
-        manufacturer,
-        manufacturerTypeId,
-        counters,
-      )
-
-      // Only fill rows that still point at the manufacturer but have no entity —
-      // never overwrite an entity link a user may have already set.
-      const products = await tx.flooringProduct.updateMany({
-        where: { manufacturerId: manufacturer.id, entityId: null },
-        data: { entityId },
-      })
-      counters.productsLinked += products.count
-
-      const imports = await tx.flooringImportEntry.updateMany({
-        where: { manufacturerId: manufacturer.id, entityId: null },
-        data: { entityId },
-      })
-      counters.importsLinked += imports.count
-    }
-  })
-
+  const headline = dryRun ? "DRY RUN — would apply (no changes written):" : "Backfill complete:"
   logger.log(
-    `Backfill complete: ${counters.manufacturers} manufacturers → ` +
+    `${headline} ${counters.manufacturers} manufacturers → ` +
       `${counters.entitiesCreated} entities created, ${counters.entitiesReused} reused; ` +
       `${counters.productsLinked} products + ${counters.importsLinked} imports linked.`,
   )
 }
 
 async function main() {
+  const dryRun = process.argv.includes("--dry-run")
   const { createPrismaClient } = await import("@builders/db")
   const prisma = createPrismaClient()
 
   try {
-    await backfillManufacturersToEntities({ prisma })
+    await backfillManufacturersToEntities({ prisma, dryRun })
   } finally {
     await prisma.$disconnect()
   }

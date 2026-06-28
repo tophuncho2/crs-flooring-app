@@ -42,6 +42,7 @@
     "db:seed:work-order-statuses": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-work-order-statuses.js",
     "db:seed:properties": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-properties-csv.js",
     "db:backfill:manufacturers-to-entities": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-manufacturers-to-entities.js",
+    "db:backfill:manufacturers-to-entities:dry-run": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-manufacturers-to-entities.js --dry-run",
     "upload:brand-logo": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/upload-brand-logo.js"
   },
   "dependencies": {
