@@ -20,6 +20,7 @@ function entityOption(overrides: Partial<EntityOption> = {}): EntityOption {
     phone: "",
     email: "",
     fullAddress: "",
+    types: [],
     ...overrides,
   }
 }

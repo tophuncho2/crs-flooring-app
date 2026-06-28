@@ -106,6 +106,7 @@ type EntityOptionInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
+  entityTypes?: EntityTypeLinkInput[]
 }
 
 export function normalizeEntityOption(entity: EntityOptionInput): EntityOption {
@@ -119,5 +120,6 @@ export function normalizeEntityOption(entity: EntityOptionInput): EntityOption {
     phone: normalizePhoneNumber(entity.phone ?? ""),
     email: entity.email ?? "",
     fullAddress: buildAddressLine(entity),
+    types: normalizeEntityTypeRefs(entity.entityTypes),
   }
 }

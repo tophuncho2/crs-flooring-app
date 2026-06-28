@@ -62,7 +62,7 @@ export function EntityTypeRail({
       onClear={() => {}}
       onCancel={onCancel ?? (() => {})}
       renderOption={renderTypeOption}
-      searchPlaceholder="Search types"
+      hideSearchInput
       emptyMessage="No types"
     />
   )

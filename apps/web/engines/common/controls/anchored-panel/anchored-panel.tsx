@@ -35,6 +35,13 @@ export type AnchoredPanelProps = {
    * right-clustered toolbar tools, which otherwise run off the viewport.
    */
   align?: "left" | "right"
+  /**
+   * Whether the panel body owns a vertical scroll. `true` (default) is correct for
+   * single-column pickers whose content overflows the panel. Set `false` when the
+   * children manage their own scroll regions (e.g. a multi-rail combo where each
+   * rail scrolls independently) so the body doesn't double-scroll over them.
+   */
+  bodyScroll?: boolean
 }
 
 /**
@@ -55,6 +62,7 @@ export function AnchoredPanel({
   children,
   maxHeight = DEFAULT_MAX_HEIGHT_PX,
   align = "left",
+  bodyScroll = true,
 }: AnchoredPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const popoverRef = useRef<HTMLDivElement | null>(null)
@@ -152,7 +160,13 @@ export function AnchoredPanel({
               <div className="shrink-0 border-b border-[var(--panel-border)] p-2">
                 {stickyHeader}
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto p-2">{children}</div>
+              <div
+                className={
+                  bodyScroll ? "min-h-0 flex-1 overflow-y-auto p-2" : "min-h-0 flex-1 p-2"
+                }
+              >
+                {children}
+              </div>
             </div>,
             document.body,
           )

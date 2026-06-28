@@ -96,6 +96,7 @@ describe("normalizeEntityOption", () => {
       phone: "",
       email: "",
       fullAddress: "1 Main St, Austin, TX, 78701",
+      types: [],
     })
   })
 })

@@ -72,6 +72,7 @@ const entityOptionSelect = {
   postalCode: true,
   phone: true,
   email: true,
+  entityTypes: entityTypesSelect,
 } as const
 
 export async function listEntityOptions(

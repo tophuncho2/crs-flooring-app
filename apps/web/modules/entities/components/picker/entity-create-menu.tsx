@@ -22,6 +22,7 @@ function toEntityOption(
     phone: entity.phone,
     email: entity.email,
     fullAddress: entity.fullAddress,
+    types: entity.types,
   }
 }
 

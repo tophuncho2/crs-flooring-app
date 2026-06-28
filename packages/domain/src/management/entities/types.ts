@@ -53,6 +53,8 @@ export type EntityOption = {
   phone: string
   email: string
   fullAddress: string
+  /** Linked entity-types, for the picker option's subtitle line. */
+  types: EntityTypeRef[]
 }
 
 export type EntityForm = {

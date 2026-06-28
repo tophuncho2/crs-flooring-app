@@ -13,6 +13,7 @@ import {
   ENTITY_OPTIONS_QUERY_KEY,
   searchEntityOptionsRequest,
 } from "@/modules/entities/data/entity-options-request"
+import { toEntityOption } from "@/modules/entities/components/picker/entity-option-presentation"
 import { EntityTypeRail } from "@/modules/entity-types/components/picker/entity-type-rail"
 
 export type EntityTypePickerProps = {
@@ -35,10 +36,6 @@ export type EntityTypePickerProps = {
   ariaLabel?: string
   /** Optional initial seed shown before the user types anything (e.g. SSR-loaded top 20). */
   initialOptions?: EntityOption[]
-}
-
-function toEntityOption(option: EntityOption): PickerListOption {
-  return { id: option.id, title: option.entity }
 }
 
 /**
@@ -133,6 +130,7 @@ export function EntityTypePicker({
       onClose={closePanel}
       maxHeight={440}
       align="right"
+      bodyScroll={false}
       stickyHeader={stickyHeader}
     >
       {/* Responsive preferred width that tracks the viewport; `max-w-full` clamps
