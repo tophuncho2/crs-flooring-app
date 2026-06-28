@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { signOut } from "next-auth/react"
+import { authClient } from "@/modules/auth/auth-client"
 import { FLOORING_AVATAR_BUTTON_CLASS_NAME } from "@/engines/common"
 
 type UserMenuProps = {
@@ -44,7 +44,9 @@ export default function UserMenu({ email, rank }: UserMenuProps) {
   }, [])
 
   async function handleLogout() {
-    await signOut({ callbackUrl: "/login" })
+    await authClient.signOut()
+    router.push("/login")
+    router.refresh()
   }
 
   return (

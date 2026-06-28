@@ -1,8 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { withAuth } from "next-auth/middleware"
+import { getSessionCookie } from "better-auth/cookies"
 import { REQUEST_ID_HEADER } from "@/server/platform/request-context"
 
-export default withAuth(function proxy(request: NextRequest) {
+// Optimistic auth gate for dashboard routes: bounce to /login when there's no
+// Better Auth session cookie. Full session validation still happens server-side
+// per request (`getSessionUser`); this just avoids rendering protected shells.
+export default function proxy(request: NextRequest) {
+  if (!getSessionCookie(request)) {
+    return NextResponse.redirect(new URL("/login", request.url))
+  }
+
   const requestId = request.headers.get(REQUEST_ID_HEADER) ?? crypto.randomUUID()
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set(REQUEST_ID_HEADER, requestId)
@@ -15,12 +22,6 @@ export default withAuth(function proxy(request: NextRequest) {
 
   response.headers.set(REQUEST_ID_HEADER, requestId)
   return response
-}, {
-  // Keep auth middleware scoped to dashboard routes only.
-  // Public auth endpoints and browser security headers are handled elsewhere.
-  pages: {
-    signIn: "/login",
-  },
-})
+}
 
 export const config = { matcher: ["/dashboard/:path*"] }

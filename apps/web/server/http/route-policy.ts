@@ -16,7 +16,6 @@ export type MutationRequest<T> = T & {
 }
 
 export type RoutePolicy = {
-  allowUnverified?: boolean
   rateLimit?: {
     scope: string
     limit: number
@@ -95,9 +94,7 @@ export async function applyRoutePolicy(
   request: Request,
   policy: RoutePolicy = {},
 ): Promise<AuthorizedRouteContext | Response> {
-  const access = await requireRouteAccess(request, {
-    allowUnverified: policy.allowUnverified,
-  })
+  const access = await requireRouteAccess(request)
 
   if (access instanceof Response) {
     return access

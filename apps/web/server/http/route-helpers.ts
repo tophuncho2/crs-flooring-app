@@ -3,10 +3,6 @@ import { normalizePrismaError } from "@/server/http/api-helpers"
 import { buildRateLimitResponse, consumeRateLimit } from "@/server/platform/rate-limit"
 import { jsonWithRequestId, withRequestId } from "@/server/platform/request-context"
 
-type RouteAccessOptions = {
-  allowUnverified?: boolean
-}
-
 type RateLimitOptions = {
   scope: string
   limit: number
@@ -21,10 +17,8 @@ type RateLimitOptions = {
  */
 export async function requireRouteAccess(
   request: Request,
-  options: RouteAccessOptions = {},
 ): Promise<AuthorizedRouteContext | Response> {
-  const result = await authorizeRouteAccess(request, options)
-  return result
+  return authorizeRouteAccess(request)
 }
 
 /**
