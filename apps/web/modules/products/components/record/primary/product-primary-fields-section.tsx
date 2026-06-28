@@ -11,7 +11,7 @@ import {
   StaticFieldValue,
   TextCell,
 } from "@/engines/record-view"
-import { PaletteColorDropdown } from "@/engines/common"
+import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
@@ -110,7 +110,11 @@ export function ProductPrimaryFieldsSection({
             {product.productNumber ? (
               <CellAt col={1} colSpan={4}>
                 <FormField label="PROD #">
-                  <StaticFieldValue>{product.productNumber}</StaticFieldValue>
+                  {/* Palette tag recolors the PROD-# cell live off the draft —
+                      mirrors the list cell + work-orders' record-view number cell. */}
+                  <CellChip paletteColor={draft.paletteColor}>
+                    {product.productNumber}
+                  </CellChip>
                 </FormField>
               </CellAt>
             ) : null}

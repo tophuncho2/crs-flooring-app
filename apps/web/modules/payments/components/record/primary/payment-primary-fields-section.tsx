@@ -20,7 +20,7 @@ import {
   type PaymentForm,
   type WorkOrderOption,
 } from "@builders/domain"
-import { PaletteColorDropdown } from "@/engines/common"
+import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import {
   WorkOrderPicker,
   formatWorkOrderOptionTitle,
@@ -107,7 +107,9 @@ export function PaymentPrimaryFieldsSection({
             {paymentNumber ? (
               <CellAt col={1} row={1} colSpan={4}>
                 <FormField label="Payment #">
-                  <StaticFieldValue>{paymentNumber}</StaticFieldValue>
+                  {/* Palette tag recolors the PAY-# cell live off the draft —
+                      mirrors the list cell + work-orders' record-view number cell. */}
+                  <CellChip paletteColor={draft.color}>{paymentNumber}</CellChip>
                 </FormField>
               </CellAt>
             ) : null}
