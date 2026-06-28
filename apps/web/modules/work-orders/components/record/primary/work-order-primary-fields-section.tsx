@@ -186,13 +186,13 @@ export function WorkOrderPrimaryFieldsSection({
       <RecordColumnBreak
         left={
           <FieldSection gap="0.75rem">
-            {/* Work Order Number — top-left stamp, with Color + Vacancy (warehouse-width) beneath */}
-            <CellAt col={1} row={1} colSpan={2}>
+            {/* Work Order Number + Color — equal-width top row (4/4, matching the split below) */}
+            <CellAt col={1} row={1} colSpan={4}>
               <FormField label="Work Order Number">
                 <StaticFieldValue>{detail?.workOrderNumber ?? "—"}</StaticFieldValue>
               </FormField>
             </CellAt>
-            <CellAt col={1} row={2} colSpan={4}>
+            <CellAt col={5} row={1} colSpan={4}>
               <FormField label="Color">
                 <PaletteColorDropdown
                   value={draft.color}
@@ -202,19 +202,8 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={5} row={2} colSpan={4}>
-              <FormField label="Vacancy">
-                <SegmentedChoiceCell
-                  editable={editable}
-                  value={draft.vacancy}
-                  options={VACANCY_OPTIONS}
-                  ariaLabel="Vacancy"
-                  onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
-                />
-              </FormField>
-            </CellAt>
             {/* Entity → Property cascade stack */}
-            <CellAt col={1} row={3} colSpan={8}>
+            <CellAt col={1} row={2} colSpan={8}>
               <FormField
                 label="Entity"
                 actions={
@@ -239,7 +228,7 @@ export function WorkOrderPrimaryFieldsSection({
                 <StaticFieldValue>{entityLabel ?? "—"}</StaticFieldValue>
               </FormField>
             </CellAt>
-            <CellAt col={1} row={4} colSpan={8}>
+            <CellAt col={1} row={3} colSpan={8}>
               <FormField
                 label="Property"
                 actions={
@@ -275,14 +264,14 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Property address (left) + Custom address (right) */}
-            <CellAt col={1} row={5} colSpan={4}>
+            <CellAt col={1} row={4} colSpan={4}>
               <FormField label="Property Address">
                 <StaticFieldValue>
                   <span className="whitespace-pre-line">{addressDisplay}</span>
                 </StaticFieldValue>
               </FormField>
             </CellAt>
-            <CellAt col={5} row={5} colSpan={4}>
+            <CellAt col={5} row={4} colSpan={4}>
               <FormField
                 label="Custom Address"
                 currentLength={editable ? draft.customAddress.length : undefined}
@@ -297,7 +286,7 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={6} colSpan={8}>
+            <CellAt col={1} row={5} colSpan={8}>
               <FormField label="Property Instructions">
                 <StaticFieldValue>
                   <span className="whitespace-pre-line">{instructionsDisplay}</span>
@@ -305,7 +294,7 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Installer Instructions */}
-            <CellAt col={1} row={7} colSpan={8}>
+            <CellAt col={1} row={6} colSpan={8}>
               <FormField
                 label="Installer Instructions"
                 currentLength={editable ? draft.installerInstructions.length : undefined}
@@ -324,7 +313,7 @@ export function WorkOrderPrimaryFieldsSection({
         }
         right={
           <FieldSection gap="0.75rem">
-            {/* Schedule — Warehouse + Job Type top row */}
+            {/* Schedule — Warehouse over Job Type (left column), Vacancy top-right */}
             <CellAt col={1} row={1} colSpan={4}>
               <FormField label="Warehouse">
                 {editable ? (
@@ -342,6 +331,17 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             <CellAt col={5} row={1} colSpan={4}>
+              <FormField label="Vacancy">
+                <SegmentedChoiceCell
+                  editable={editable}
+                  value={draft.vacancy}
+                  options={VACANCY_OPTIONS}
+                  ariaLabel="Vacancy"
+                  onChange={(value) => onFieldChange("vacancy", value as WorkOrderForm["vacancy"])}
+                />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} row={2} colSpan={4}>
               <FormField label="Job Type">
                 {editable ? (
                   <JobTypePicker
@@ -358,7 +358,7 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Scheduled For + Time of Day */}
-            <CellAt col={1} row={2} colSpan={4}>
+            <CellAt col={1} row={3} colSpan={4}>
               <FormField label="Scheduled For">
                 <DateCell
                   editable={editable}
@@ -367,7 +367,7 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={5} row={2} colSpan={4}>
+            <CellAt col={5} row={3} colSpan={4}>
               <FormField label="Time of Day">
                 <SegmentedChoiceCell
                   editable={editable}
@@ -379,7 +379,7 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Description */}
-            <CellAt col={1} row={3} colSpan={8}>
+            <CellAt col={1} row={4} colSpan={8}>
               <FormField
                 label="Description"
                 currentLength={editable ? draft.description.length : undefined}
@@ -395,7 +395,7 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Template → unit identity */}
-            <CellAt col={1} row={4} colSpan={8}>
+            <CellAt col={1} row={5} colSpan={8}>
               <FormField
                 label="Template"
                 actions={
@@ -439,7 +439,7 @@ export function WorkOrderPrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
-            <CellAt col={1} row={5} colSpan={4}>
+            <CellAt col={1} row={6} colSpan={4}>
               <FormField
                 label="Unit Type"
                 currentLength={editable ? draft.unitType.length : undefined}
@@ -453,7 +453,7 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={5} row={5} colSpan={4}>
+            <CellAt col={5} row={6} colSpan={4}>
               <FormField
                 label="Unit Number"
                 currentLength={editable ? draft.unitNumber.length : undefined}
@@ -467,7 +467,7 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={6} colSpan={8}>
+            <CellAt col={1} row={7} colSpan={8}>
               <FormField
                 label="Purchase Order Number"
                 currentLength={editable ? draft.purchaseOrderNumber.length : undefined}
@@ -481,7 +481,7 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={7} colSpan={8}>
+            <CellAt col={1} row={8} colSpan={8}>
               <FormField
                 label="Internal Notes"
                 currentLength={editable ? draft.internalNotes.length : undefined}
