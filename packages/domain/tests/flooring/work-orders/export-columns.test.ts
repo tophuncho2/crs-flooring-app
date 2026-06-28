@@ -25,6 +25,8 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     purchaseOrderNumber: "PO-4821",
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",
+    createdBy: "creator@example.com",
+    updatedBy: "editor@example.com",
   }
 
   it("exports the purchase order number, positioned before Created", () => {
@@ -37,5 +39,11 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     const createdIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "createdAt")
     expect(poIndex).toBeGreaterThanOrEqual(0)
     expect(poIndex).toBeLessThan(createdIndex)
+  })
+
+  it("includes the actor columns", () => {
+    const byKey = (key: string) => WORK_ORDER_EXPORT_COLUMNS.find((c) => c.key === key)
+    expect(byKey("createdBy")?.value(row)).toBe("creator@example.com")
+    expect(byKey("updatedBy")?.value(row)).toBe("editor@example.com")
   })
 })
