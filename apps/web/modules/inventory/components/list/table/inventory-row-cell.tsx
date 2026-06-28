@@ -4,7 +4,6 @@ import { CellChip } from "@/engines/common"
 import {
   formatEasternDateTime,
   formatInventoryQuantity,
-  formatMoney,
   type InventoryRow,
 } from "@builders/domain"
 
@@ -56,10 +55,6 @@ export function renderInventoryRowCell(
       return row.purchaseOrderNumber || "-"
     case "importNumber":
       return row.importNumber != null ? String(row.importNumber) : "-"
-    case "cost":
-      return <span className="tabular-nums">{formatMoney(row.cost)}</span>
-    case "freight":
-      return <span className="tabular-nums">{formatMoney(row.freight)}</span>
     case "createdAt":
       return formatEasternDateTime(row.createdAt) || "—"
     case "updatedAt":

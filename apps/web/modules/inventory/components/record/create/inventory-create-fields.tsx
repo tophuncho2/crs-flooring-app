@@ -4,9 +4,7 @@ import type { ProductOption, WarehouseOption } from "@builders/domain"
 import { CellAt } from "@/engines/record-view"
 import type { InventoryCreateForm } from "@/modules/inventory/controllers/record/create/use-inventory-create-section"
 import {
-  CostField,
   DyeLotField,
-  FreightField,
   InternalNotesField,
   InventoryFieldGrid,
   LocationField,
@@ -87,21 +85,6 @@ export function InventoryCreateFields({
           editable={editable}
           value={form.location}
           onChange={(value) => setField("location", value)}
-        />
-      </CellAt>
-
-      <CellAt col={5} colSpan={2}>
-        <CostField
-          editable={editable}
-          value={form.cost}
-          onChange={(value) => setField("cost", value)}
-        />
-      </CellAt>
-      <CellAt col={5} colSpan={2}>
-        <FreightField
-          editable={editable}
-          value={form.freight}
-          onChange={(value) => setField("freight", value)}
         />
       </CellAt>
 

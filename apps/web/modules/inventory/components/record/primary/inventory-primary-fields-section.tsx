@@ -4,11 +4,9 @@ import type { InventoryForm, InventoryRow, PaletteColor } from "@builders/domain
 import { CellAt, RecordColumnBreak, RecordSectionDivider } from "@/engines/record-view"
 import {
   ColorField,
-  CostReadonlyField,
   CreatedAtField,
   CreatedByField,
   DyeLotReadOnlyField,
-  FreightReadonlyField,
   ImportNumberField,
   InventoryFieldGrid,
   InventoryNumberField,
@@ -96,15 +94,8 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={5} row={5} colSpan={4}>
               <ImportNumberField value={record.importNumber} />
             </CellAt>
-            {/* Cost | Freight, beneath PO # / Import # */}
+            {/* Merged, beneath PO # / Import # */}
             <CellAt col={1} row={6} colSpan={4}>
-              <CostReadonlyField value={record.cost} />
-            </CellAt>
-            <CellAt col={5} row={6} colSpan={4}>
-              <FreightReadonlyField value={record.freight} />
-            </CellAt>
-            {/* Merged, beneath Cost */}
-            <CellAt col={1} row={7} colSpan={4}>
               <MergedField wasMerged={record.wasMerged} />
             </CellAt>
           </InventoryFieldGrid>
