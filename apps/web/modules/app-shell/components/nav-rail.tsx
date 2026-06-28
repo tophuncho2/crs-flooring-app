@@ -20,7 +20,8 @@ import {
   Tags,
   TrafficCone,
   Upload,
-  Users,
+  UserPen,
+  UserPlus,
   Warehouse,
   Wrench,
   type LucideIcon,
@@ -58,7 +59,8 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "flooring-warehouse": Warehouse,
   "flooring-unit-of-measures": Ruler,
   "flooring-categories": LayoutGrid,
-  "flooring-users": Users,
+  "flooring-users": UserPen,
+  "flooring-invites": UserPlus,
   "flooring-user-activity": History,
 }
 
