@@ -66,6 +66,14 @@ export async function syncTemplateToWorkOrderUseCase(
           jobTypeId: template.jobTypeId,
           warehouseId: template.warehouseId,
           unitType: template.unitType ? template.unitType : null,
+          // Snapshot the template's (live property-joined) address into the
+          // work order's own editable address columns at sync time — mirrors
+          // the record-form overwrite-on-pick. A property-less template leaves
+          // these NULL rather than "".
+          streetAddress: template.propertyStreetAddress || null,
+          city: template.propertyCity || null,
+          state: template.propertyState || null,
+          postalCode: template.propertyPostalCode || null,
           description: template.description ? template.description : null,
           // installerInstructions are installer-facing copy that survives
           // the template -> work order materialization. internalNotes are

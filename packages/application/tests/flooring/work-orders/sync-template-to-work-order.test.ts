@@ -30,6 +30,10 @@ function template(overrides: Record<string, unknown> = {}) {
     jobTypeId: null,
     warehouseId: null,
     unitType: "2BR",
+    propertyStreetAddress: "",
+    propertyCity: "",
+    propertyState: "",
+    propertyPostalCode: "",
     description: null,
     installerInstructions: null,
     items: [],
@@ -60,6 +64,44 @@ describe("syncTemplateToWorkOrderUseCase", () => {
     await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
     expect(createWorkOrderFromTemplateRecordMock).toHaveBeenCalledWith(
       expect.objectContaining({ actorEmail: ACTOR }),
+      expect.anything(),
+    )
+  })
+
+  it("snapshots the template property's address into the new work order's columns", async () => {
+    getTemplateByIdMock.mockResolvedValue(
+      template({
+        propertyStreetAddress: "123 Main St",
+        propertyCity: "Springfield",
+        propertyState: "IL",
+        propertyPostalCode: "62704",
+      }),
+    )
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    expect(createWorkOrderFromTemplateRecordMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workOrder: expect.objectContaining({
+          streetAddress: "123 Main St",
+          city: "Springfield",
+          state: "IL",
+          postalCode: "62704",
+        }),
+      }),
+      expect.anything(),
+    )
+  })
+
+  it("leaves the address columns null when the template has no property address", async () => {
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    expect(createWorkOrderFromTemplateRecordMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workOrder: expect.objectContaining({
+          streetAddress: null,
+          city: null,
+          state: null,
+          postalCode: null,
+        }),
+      }),
       expect.anything(),
     )
   })
