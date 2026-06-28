@@ -1,23 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-describe("consumeRateLimit Redis fallback", () => {
-  const createClientMock = vi.fn()
-  const logEventMock = vi.fn()
+// Hoisted, file-scoped module mocks. A sibling test file statically imports
+// @/server/platform/rate-limit in the same worker; with vi.doMock + resetModules
+// inside beforeEach, that static evaluation could race our reset cycle and bind
+// the module-under-test to the REAL logger/redis (mocks would see 0 calls — a
+// run-to-run flake). vi.mock is applied before any import and is immune to that.
+const { createClientMock, logEventMock } = vi.hoisted(() => ({
+  createClientMock: vi.fn(),
+  logEventMock: vi.fn(),
+}))
 
+vi.mock("redis", () => ({
+  createClient: createClientMock,
+}))
+
+vi.mock("@/server/platform/logger", () => ({
+  logEvent: logEventMock,
+}))
+
+describe("consumeRateLimit Redis fallback", () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
     delete process.env.RATE_LIMIT_REDIS_URL
     process.env.REDIS_URL = "redis://localhost:6379"
     delete process.env.RATE_LIMIT_PREFIX
-
-    vi.doMock("redis", () => ({
-      createClient: createClientMock,
-    }))
-
-    vi.doMock("@/server/platform/logger", () => ({
-      logEvent: logEventMock,
-    }))
   })
 
   afterEach(() => {
@@ -25,8 +32,6 @@ describe("consumeRateLimit Redis fallback", () => {
     delete process.env.REDIS_URL
     delete process.env.RATE_LIMIT_PREFIX
     vi.resetModules()
-    vi.doUnmock("redis")
-    vi.doUnmock("@/server/platform/logger")
   })
 
   it("falls back to the local store when a Redis command fails and reconnects on the next request", async () => {
