@@ -129,16 +129,18 @@ export default function LoginForm({
           type="button"
           onClick={() => void handleGoogleSignIn()}
           disabled={isSubmitting}
-          className="group flex w-full items-center justify-center gap-3 rounded-xl bg-white px-4 py-3 font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+          className="crs-aurora-button group flex w-full items-center justify-center gap-3 rounded-xl px-4 py-3 font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:brightness-110 hover:shadow-sky-500/30 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? (
             <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
               Redirecting…
             </>
           ) : (
             <>
-              <GoogleIcon />
+              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white">
+                <GoogleIcon />
+              </span>
               Sign in with Google
             </>
           )}
