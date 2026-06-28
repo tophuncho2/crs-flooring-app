@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { APIError } from "better-auth/api"
 import { db } from "@builders/db"
+import { markSignupInviteAccepted, resolveSignupInviteRank } from "@builders/application"
 
 // Only Google Workspace accounts on this domain may authenticate. Google enforces
 // it server-side via the `hd` hint; we re-check the email domain in the create
@@ -58,6 +59,8 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // Invite-only gate. Runs only for BRAND-NEW users — existing users link
+        // to Google via `accountLinking` and never reach here.
         before: async (user) => {
           const email = user.email?.toLowerCase() ?? ""
 
@@ -68,16 +71,20 @@ export const auth = betterAuth({
             })
           }
 
-          // Invite-only: a brand-new user must have a valid open invite. Until the
-          // invite use cases are wired (next step), creation of NEW users is
-          // blocked fail-closed. Existing users are unaffected — they link via
-          // `accountLinking` and never reach `user.create`.
-          // TODO(invite-gate): replace with `consumeOpenInvite({ email })` →
-          // returns the rank + marks the invite accepted; set rank on the user via
-          // `return { data: { ...user, rank } }`.
-          throw new APIError("FORBIDDEN", {
-            message: "Your account isn't provisioned yet. Ask a manager to invite you.",
-          })
+          // A new user must have a valid open invite; its rank is stamped onto the
+          // user. No invite → fail closed (no self-provisioning).
+          const rank = await resolveSignupInviteRank(email)
+          if (!rank) {
+            throw new APIError("FORBIDDEN", {
+              message: "Your account isn't provisioned yet. Ask a manager to invite you.",
+            })
+          }
+
+          return { data: { ...user, rank } }
+        },
+        // Post-creation: retire the invite so the link can't be reused.
+        after: async (user) => {
+          await markSignupInviteAccepted(user.email)
         },
       },
     },
