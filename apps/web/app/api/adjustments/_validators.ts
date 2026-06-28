@@ -1,7 +1,8 @@
 import { z } from "zod"
 import { InventoryAdjustmentExecutionError } from "@builders/application"
-import type { ListInput, ListSort } from "@builders/application"
+import type { AdjustmentsExportInput, ListInput, ListSort } from "@builders/application"
 import {
+  ADJUSTMENTS_EXPORT_COLUMNS,
   DEFAULT_PALETTE_COLOR,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
   INVENTORY_LOCATION_MAX,
@@ -14,6 +15,7 @@ import {
   type InventoryAdjustmentListFilters,
   type PaletteColor,
 } from "@builders/domain"
+import { parseExportEnvelope } from "@/server/http/export-request"
 
 // Adjustment mutations are one scope-aware use-case set called from two route
 // trees — `api/inventory/[id]/adjustments/...` and
@@ -367,5 +369,38 @@ export function validateAdjustmentsListQuery(
     ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     page: parsed.page,
     pageSize: parsed.pageSize,
+  }
+}
+
+// --- CSV export request validator (list query + ticked ids + columns + cap) ---
+
+const ADJUSTMENTS_EXPORT_COLUMN_KEYS: ReadonlySet<string> = new Set(
+  ADJUSTMENTS_EXPORT_COLUMNS.map((column) => column.key),
+)
+
+export type ValidatedAdjustmentsExport = {
+  input: AdjustmentsExportInput
+  /** Picked column keys, whitelisted; `undefined` ⇒ all columns. */
+  columns?: string[]
+}
+
+/**
+ * Validate an adjustments CSV-export POST body. Reuses {@link validateAdjustmentsListQuery}
+ * on the embedded `query` so the export scopes exactly like the ledger list, then
+ * layers the ticked `ids`, picked `columns`, and row `cap` on top.
+ */
+export function validateAdjustmentsExportRequest(body: unknown): ValidatedAdjustmentsExport {
+  const envelope = parseExportEnvelope(body, ADJUSTMENTS_EXPORT_COLUMN_KEYS)
+  const listInput = validateAdjustmentsListQuery(new URLSearchParams(envelope.query))
+
+  return {
+    input: {
+      ...(listInput.filters ? { filters: listInput.filters } : {}),
+      ...(listInput.sort ? { sort: listInput.sort } : {}),
+      ...(listInput.sorts ? { sorts: listInput.sorts } : {}),
+      ...(envelope.ids ? { ids: envelope.ids } : {}),
+      ...(envelope.cap !== undefined ? { cap: envelope.cap } : {}),
+    },
+    ...(envelope.columns ? { columns: envelope.columns } : {}),
   }
 }

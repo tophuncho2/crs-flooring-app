@@ -56,6 +56,10 @@ export type EnrichedInventoryAdjustmentPage = {
 }
 
 export type InventoryAdjustmentListFilters = {
+  // Explicit id scope — the CSV-export "selected rows" path. Never parsed from
+  // the URL; the export use case merges the ticked ids in. ANDs with the other
+  // filters (mirrors inventory's `InventoryListFilters.id`).
+  id?: ReadonlyArray<string>
   warehouseId?: ReadonlyArray<string>
   // Category narrows via the live `product.categoryId` relation; product is a
   // direct `productId` match. Mirrors the inventory list chips.

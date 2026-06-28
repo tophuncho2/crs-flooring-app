@@ -113,7 +113,9 @@ export function parseAdjustmentsListInputFromSearchParams(
   }
 }
 
-function buildAdjustmentsListSearchString(input: ListInput<InventoryAdjustmentListFilters>): string {
+export function buildAdjustmentsListSearchString(
+  input: ListInput<InventoryAdjustmentListFilters>,
+): string {
   const params = new URLSearchParams()
   // Emit the ordered `?sorts=` param (canonical) so the API receives the
   // user-selected sort; single-sort consumers coerce through the same encoder.
@@ -129,6 +131,20 @@ function buildAdjustmentsListSearchString(input: ListInput<InventoryAdjustmentLi
   }
   if (input.page && input.page !== 1) params.set("page", String(input.page))
   if (input.pageSize) params.set("pageSize", String(input.pageSize))
+  return params.toString()
+}
+
+/**
+ * Build the query string the CSV export POSTs — the same filter + `?sorts=`
+ * encoding as the list read, minus pagination (the server caps the row count).
+ * Mirrors `buildInventoryExportQuery`.
+ */
+export function buildAdjustmentsExportQuery(
+  input: ListInput<InventoryAdjustmentListFilters>,
+): string {
+  const params = new URLSearchParams(buildAdjustmentsListSearchString({ ...input, page: 1 }))
+  params.delete("page")
+  params.delete("pageSize")
   return params.toString()
 }
 

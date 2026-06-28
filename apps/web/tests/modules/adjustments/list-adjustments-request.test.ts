@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { parseAdjustmentsListInputFromSearchParams } from "@/modules/adjustments/data/list-adjustments-request"
+import {
+  buildAdjustmentsExportQuery,
+  parseAdjustmentsListInputFromSearchParams,
+} from "@/modules/adjustments/data/list-adjustments-request"
 
 describe("parseAdjustmentsListInputFromSearchParams — identity search bars", () => {
   it("parses adjNumber alongside the inv#/roll#/dye/note bars", () => {
@@ -79,5 +82,33 @@ describe("parseAdjustmentsListInputFromSearchParams — ?sorts= parsing", () => 
     const input = parseAdjustmentsListInputFromSearchParams({})
     expect(input.sorts).toEqual([{ field: "createdAt", direction: "desc" }])
     expect(input.sort).toEqual({ field: "createdAt", direction: "desc" })
+  })
+})
+
+describe("buildAdjustmentsExportQuery", () => {
+  it("reproduces the list query minus page/pageSize, preserving sorts + filters", () => {
+    const params = new URLSearchParams(
+      buildAdjustmentsExportQuery({
+        sorts: [
+          { field: "productName", direction: "asc" },
+          { field: "location", direction: "desc" },
+        ],
+        filters: { warehouseId: ["w1", "w2"], adjNumber: "12" },
+        page: 3,
+        pageSize: 25,
+      }),
+    )
+
+    expect(params.has("page")).toBe(false)
+    expect(params.has("pageSize")).toBe(false)
+    expect(params.get("sorts")).toBe("productName:asc,location:desc")
+    expect(params.getAll("warehouseId")).toEqual(["w1", "w2"])
+    expect(params.get("adjNumber")).toBe("12")
+  })
+
+  it("emits an empty string when there are no sorts or filters", () => {
+    expect(
+      buildAdjustmentsExportQuery({ filters: undefined, page: 1, pageSize: 25 }),
+    ).toBe("")
   })
 })

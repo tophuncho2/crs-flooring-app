@@ -364,6 +364,76 @@ export async function getAdjustmentNeighbors(
  * so the rows carry the same server-resolved labels (workOrderNumber,
  * product label, warehouseName) the inventory hub side panel expects.
  */
+/**
+ * Pure `where` builder for the standalone adjustments ledger list view, shared by
+ * the paginated list read and the CSV export read so both scope identically.
+ *   - `id` — the export "selected rows" path: an explicit IN over ticked ids,
+ *     ANDed with the other filters (mirrors inventory's `buildListViewWhere`). A
+ *     ticked row that has since been filtered out is silently excluded.
+ *   - warehouse/category/product — IN matches (category via the live product
+ *     relation; product a direct `productId` match).
+ *   - adj#/inv# — EXACT numeric matches on the generated integer columns
+ *     (`adjustmentNumberInt`/`inventoryNumberInt`, btree): "12" finds INV-12
+ *     only, never INV-120/INV-312. The user may type bare ("12") or prefixed
+ *     ("INV-12"/"ADJ-12"); non-digits are stripped, and a non-numeric query
+ *     matches nothing via the -1 sentinel (both sequences are always positive).
+ *   - roll#/dye/note — substring ILIKE against their own frozen snapshot column
+ *     (note maps to `inventoryNote`). All filters AND together.
+ */
+function buildAdjustmentsListViewWhere(
+  filters: InventoryAdjustmentListFilters,
+): Prisma.FlooringInventoryAdjustmentWhereInput {
+  const where: Prisma.FlooringInventoryAdjustmentWhereInput = {}
+
+  const ids = filters.id
+  if (ids && ids.length > 0) {
+    where.id = { in: [...ids] }
+  }
+
+  const warehouseIds = filters.warehouseId
+  if (warehouseIds && warehouseIds.length > 0) {
+    where.warehouseId = { in: [...warehouseIds] }
+  }
+
+  // Category narrows via the live product relation; product is a direct match.
+  const categoryIds = filters.categoryId
+  if (categoryIds && categoryIds.length > 0) {
+    where.product = { is: { categoryId: { in: [...categoryIds] } } }
+  }
+
+  const productIds = filters.productId
+  if (productIds && productIds.length > 0) {
+    where.productId = { in: [...productIds] }
+  }
+
+  const adjNumber = filters.adjNumber?.trim()
+  if (adjNumber) {
+    const digits = adjNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    where.adjustmentNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
+  }
+  const invNumber = filters.invNumber?.trim()
+  if (invNumber) {
+    const digits = invNumber.replace(/\D/g, "")
+    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
+    where.inventoryNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
+  }
+  const rollNumber = filters.rollNumber?.trim()
+  if (rollNumber) {
+    where.rollNumber = { contains: rollNumber, mode: "insensitive" }
+  }
+  const dyeLot = filters.dyeLot?.trim()
+  if (dyeLot) {
+    where.dyeLot = { contains: dyeLot, mode: "insensitive" }
+  }
+  const note = filters.note?.trim()
+  if (note) {
+    where.inventoryNote = { contains: note, mode: "insensitive" }
+  }
+
+  return where
+}
+
 export async function listAdjustmentsForListView(
   args: {
     filters: InventoryAdjustmentListFilters
@@ -373,56 +443,7 @@ export async function listAdjustmentsForListView(
   },
   client: InventoryAdjustmentDbClient = db,
 ): Promise<{ rows: EnrichedInventoryAdjustmentRow[]; total: number }> {
-  const where: Prisma.FlooringInventoryAdjustmentWhereInput = {}
-
-  const warehouseIds = args.filters.warehouseId
-  if (warehouseIds && warehouseIds.length > 0) {
-    where.warehouseId = { in: [...warehouseIds] }
-  }
-
-  // Category narrows via the live product relation; product is a direct match.
-  const categoryIds = args.filters.categoryId
-  if (categoryIds && categoryIds.length > 0) {
-    where.product = { is: { categoryId: { in: [...categoryIds] } } }
-  }
-
-  const productIds = args.filters.productId
-  if (productIds && productIds.length > 0) {
-    where.productId = { in: [...productIds] }
-  }
-
-  // Per-field identity search. adj#/inv# are EXACT numeric matches on the
-  // generated integer columns (`adjustmentNumberInt`/`inventoryNumberInt`,
-  // btree) — "12" finds INV-12 only, never INV-120/INV-312 — mirroring the
-  // inventory list. The user may type bare ("12") or prefixed ("INV-12"/"ADJ-12");
-  // non-digits are stripped, and a non-numeric query matches nothing via the -1
-  // sentinel (both sequences are always positive). roll#/dye/note stay substring
-  // ILIKE against their own frozen snapshot column (note maps to `inventoryNote`).
-  const adjNumber = args.filters.adjNumber?.trim()
-  if (adjNumber) {
-    const digits = adjNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    where.adjustmentNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
-  }
-  const invNumber = args.filters.invNumber?.trim()
-  if (invNumber) {
-    const digits = invNumber.replace(/\D/g, "")
-    const parsed = digits.length > 0 ? Number.parseInt(digits, 10) : Number.NaN
-    where.inventoryNumberInt = { equals: Number.isInteger(parsed) ? parsed : -1 }
-  }
-  const rollNumber = args.filters.rollNumber?.trim()
-  if (rollNumber) {
-    where.rollNumber = { contains: rollNumber, mode: "insensitive" }
-  }
-  const dyeLot = args.filters.dyeLot?.trim()
-  if (dyeLot) {
-    where.dyeLot = { contains: dyeLot, mode: "insensitive" }
-  }
-  const note = args.filters.note?.trim()
-  if (note) {
-    where.inventoryNote = { contains: note, mode: "insensitive" }
-  }
-
+  const where = buildAdjustmentsListViewWhere(args.filters)
   const skip = (args.page - 1) * args.pageSize
 
   const [rows, total] = await Promise.all([
@@ -432,6 +453,39 @@ export async function listAdjustmentsForListView(
       orderBy: buildAdjustmentsListViewOrderBy(args.sort),
       skip,
       take: args.pageSize,
+    }),
+    client.flooringInventoryAdjustment.count({ where }),
+  ])
+
+  return { rows: rows.map(normalizeEnrichedInventoryAdjustmentRow), total }
+}
+
+export type AdjustmentsExportOptions = {
+  filters: InventoryAdjustmentListFilters
+  sort?: AdjustmentsListViewSort
+  /** Hard row ceiling for this export (the resolved cap). No pagination. */
+  take: number
+}
+
+/**
+ * Unpaginated read for the adjustments CSV export. Reuses the list view's
+ * `where` + `orderBy` builders verbatim so the exported set is exactly the
+ * filtered ledger (same newest-first order), capped at `take`. Returns `total`
+ * too so the route can report "first N of M" when the match count exceeds the
+ * cap. The optional `filters.id` scopes to ticked rows.
+ */
+export async function exportAdjustmentsForListView(
+  options: AdjustmentsExportOptions,
+  client: InventoryAdjustmentDbClient = db,
+): Promise<{ rows: EnrichedInventoryAdjustmentRow[]; total: number }> {
+  const where = buildAdjustmentsListViewWhere(options.filters)
+
+  const [rows, total] = await Promise.all([
+    client.flooringInventoryAdjustment.findMany({
+      where,
+      select: enrichedInventoryAdjustmentRowSelect,
+      orderBy: buildAdjustmentsListViewOrderBy(options.sort),
+      take: options.take,
     }),
     client.flooringInventoryAdjustment.count({ where }),
   ])

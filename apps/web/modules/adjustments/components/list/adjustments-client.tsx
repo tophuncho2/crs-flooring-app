@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
-import { DebouncedSearchControl, ListActionBar, ListPageShell, SortMenuBody, ToolbarMenuButton, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { DebouncedSearchControl, ListActionBar, ListExportButton, ListPageShell, SortMenuBody, ToolbarMenuButton, useFetchListController, useListSelection, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { ListInput } from "@builders/application"
 import {
+  ADJUSTMENTS_EXPORT_COLUMNS,
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   type CategoryOption,
   type InventoryAdjustmentListFilters,
@@ -20,6 +21,7 @@ import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-na
 import { buildInventoryAdjustmentHref, buildInventorySplitOffHref } from "@/hooks/navigation/routes"
 import {
   ADJUSTMENTS_LIST_QUERY_KEY,
+  buildAdjustmentsExportQuery,
   listAdjustmentsRequest,
 } from "@/modules/adjustments/data/list-adjustments-request"
 import {
@@ -155,6 +157,45 @@ export default function AdjustmentsClient({
     maxSortLevels: ADJUSTMENTS_MAX_SORT_LEVELS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
+
+  // Row selection (CSV export scope). Drop it whenever the filtered/sorted scope
+  // changes so a ticked id from a prior scope can't leak into an export.
+  const selection = useListSelection()
+  // Selection mode is off by default — the checkbox column only appears once the
+  // user flips "Select specific rows" in the Export menu. Turning it off clears
+  // any ticks so a hidden selection can't silently scope a later export.
+  const [selectionEnabled, setSelectionEnabled] = useState(false)
+  const toggleSelectionEnabled = useCallback(() => {
+    setSelectionEnabled((prev) => {
+      if (prev) selection.clear()
+      return !prev
+    })
+  }, [selection])
+
+  const scopeSignature = useMemo(() => JSON.stringify({ filters, sorts }), [filters, sorts])
+  useEffect(() => {
+    selection.clear()
+    // Clear only when the filtered/sorted scope changes — NOT on every selection
+    // mutation (depending on `selection` would wipe ticks the instant they're made).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scopeSignature])
+
+  const selectedIds = useMemo(() => [...selection.selectedIds], [selection.selectedIds])
+  const pageEligibleIds = useMemo(() => rows.map((row) => row.id), [rows])
+  const exportQuery = useMemo(
+    () =>
+      buildAdjustmentsExportQuery({
+        sorts,
+        filters: toAppFilters(filters),
+        page: 1,
+        pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
+      }),
+    [sorts, filters],
+  )
+  const exportColumns = useMemo(
+    () => ADJUSTMENTS_EXPORT_COLUMNS.map((column) => ({ key: column.key, label: column.label })),
+    [],
+  )
 
   const selectedWarehouseId = filters.warehouseId?.[0] ?? null
   const selectedCategoryId = filters.categoryId?.[0] ?? null
@@ -364,10 +405,25 @@ export default function AdjustmentsClient({
             ariaLabel="Search adjustments by note"
           />
         </ToolbarMenuButton>
+
+        {/* Export — column-picker + row-cap; exports the ticked rows, or the
+            whole filtered set when nothing is ticked. */}
+        <ListExportButton
+          endpoint="/api/adjustments/export"
+          query={exportQuery}
+          columns={exportColumns}
+          filename="adjustments-export.csv"
+          selectionEnabled={selectionEnabled}
+          onToggleSelectionEnabled={toggleSelectionEnabled}
+          selectedIds={selectedIds}
+          eligibleCount={pageEligibleIds.length}
+          onToggleAll={() => selection.toggleAll(pageEligibleIds)}
+        />
       </ListActionBar>
 
       <AdjustmentsTable
         rows={rows}
+        selection={selectionEnabled ? selection : undefined}
         onOpenAdjustment={(row) =>
           router.push(buildInventoryAdjustmentHref(row.inventoryId, row.id, returnTo))
         }
