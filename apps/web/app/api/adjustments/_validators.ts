@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { InventoryAdjustmentExecutionError } from "@builders/application"
-import type { ListInput } from "@builders/application"
+import type { ListInput, ListSort } from "@builders/application"
 import {
   DEFAULT_PALETTE_COLOR,
   INVENTORY_ADJUSTMENT_NOTES_MAX,
@@ -262,12 +262,45 @@ function readAdjustmentsMultiValue(searchParams: URLSearchParams, key: string): 
   )
 }
 
+/**
+ * Sort fields the adjustments list API accepts. Kept independent of the data
+ * request allowlist for defense-in-depth; the sort-allowlist-sync test asserts
+ * the two (and the menu) stay identical. `productName` resolves to the live
+ * `product.name` relation server-side.
+ */
+export const ADJUSTMENTS_UI_SORT_FIELDS = [
+  "createdAt",
+  "updatedAt",
+  "location",
+  "productName",
+] as const
+
+/** Cap on user-selected sort columns — mirrors the engine + data request + use case. */
+const ADJUSTMENTS_MAX_SORT_LEVELS = 3
+
+/** Parse the ordered `?sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | undefined): ListSort[] {
+  if (!raw) return []
+  const allowed = new Set<string>(ADJUSTMENTS_UI_SORT_FIELDS)
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !allowed.has(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "asc" ? "asc" : "desc" })
+    if (result.length >= ADJUSTMENTS_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
 const listAdjustmentsQuerySchema = z.object({
   adjNumber: z.string().optional(),
   invNumber: z.string().optional(),
   rollNumber: z.string().optional(),
   dyeLot: z.string().optional(),
   note: z.string().optional(),
+  sorts: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -325,8 +358,13 @@ export function validateAdjustmentsListQuery(
 
   const hasAnyFilter = Object.keys(filters).length > 0
 
+  // Ordered multi-column sort via `?sorts=`; empty when absent (the use case +
+  // repo then fall back to the newest-first ledger default).
+  const sorts = parseSortsParam(parsed.sorts)
+
   return {
     filters: hasAnyFilter ? (filters as InventoryAdjustmentListFilters) : undefined,
+    ...(sorts.length > 0 ? { sort: sorts[0], sorts } : {}),
     page: parsed.page,
     pageSize: parsed.pageSize,
   }

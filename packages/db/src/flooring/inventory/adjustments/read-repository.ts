@@ -9,6 +9,7 @@ import {
   type InventoryAdjustmentRow,
 } from "@builders/domain"
 import { db } from "../../../client.js"
+import { buildAdjustmentsListViewOrderBy } from "./order-by.js"
 import {
   adjustmentRowSelect,
   enrichedInventoryAdjustmentRowSelect,
@@ -18,6 +19,17 @@ import {
 } from "./shared.js"
 
 export type InventoryAdjustmentRecord = InventoryAdjustmentRow
+
+/** One ordered sort column for the adjustments list view. */
+export type AdjustmentsListViewSortEntry = {
+  field: string
+  direction: "asc" | "desc"
+}
+
+/** The resolved multi-column sort passed to `buildAdjustmentsListViewOrderBy`. */
+export type AdjustmentsListViewSort = {
+  entries: AdjustmentsListViewSortEntry[]
+}
 
 function toDecimalString(value: { toString(): string }): string {
   return value.toString()
@@ -357,6 +369,7 @@ export async function listAdjustmentsForListView(
     filters: InventoryAdjustmentListFilters
     page: number
     pageSize: number
+    sort?: AdjustmentsListViewSort
   },
   client: InventoryAdjustmentDbClient = db,
 ): Promise<{ rows: EnrichedInventoryAdjustmentRow[]; total: number }> {
@@ -416,7 +429,7 @@ export async function listAdjustmentsForListView(
     client.flooringInventoryAdjustment.findMany({
       where,
       select: enrichedInventoryAdjustmentRowSelect,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy: buildAdjustmentsListViewOrderBy(args.sort),
       skip,
       take: args.pageSize,
     }),

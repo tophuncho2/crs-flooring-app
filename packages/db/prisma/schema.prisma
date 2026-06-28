@@ -430,6 +430,11 @@ model FlooringInventoryAdjustment {
   // and all-warehouses createdAt/id sort.
   @@index([warehouseId, createdAt, id])
   @@index([createdAt, id])
+  // Menu-only multi-column sort: updatedAt + location each composite with id so
+  // the tiebreak resolves in the same scan. createdAt rides the index above;
+  // productName sort rides FlooringProduct.name.
+  @@index([updatedAt, id])
+  @@index([location, id])
   // Per-field identity search on the frozen snapshot columns. adj#/inv# search
   // are exact matches on the generated `adjustmentNumberInt`/`inventoryNumberInt`
   // (btree, above), so those number columns need no trigram index. roll#/dye/note

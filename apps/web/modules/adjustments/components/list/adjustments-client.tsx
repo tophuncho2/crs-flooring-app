@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
-import { DebouncedSearchControl, ListActionBar, ListPageShell, ToolbarMenuButton, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
+import { DebouncedSearchControl, ListActionBar, ListPageShell, SortMenuBody, ToolbarMenuButton, useFetchListController, LIST_FRESHNESS_STANDARD } from "@/engines/list-view"
 import type { ListInput } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -22,6 +22,11 @@ import {
   ADJUSTMENTS_LIST_QUERY_KEY,
   listAdjustmentsRequest,
 } from "@/modules/adjustments/data/list-adjustments-request"
+import {
+  ADJUSTMENTS_ALLOWED_SORT_FIELDS,
+  ADJUSTMENTS_MAX_SORT_LEVELS,
+  ADJUSTMENTS_SORT_OPTIONS,
+} from "./table/adjustments-list-columns"
 import { AdjustmentsTable } from "./adjustments-table"
 
 const ADJUSTMENTS_FILTERABLE_FIELDS = [
@@ -131,6 +136,8 @@ export default function AdjustmentsClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    sorts,
+    onSortsChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<EnrichedInventoryAdjustmentRow, EngineAdjustmentFilters>({
@@ -138,11 +145,14 @@ export default function AdjustmentsClient({
     queryKey: [...ADJUSTMENTS_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
+    initialSort: { field: "createdAt", direction: "desc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
     tableKey: "adjustments-main",
     filterableFields: ADJUSTMENTS_FILTERABLE_FIELDS,
+    allowedSortFields: ADJUSTMENTS_ALLOWED_SORT_FIELDS,
+    maxSortLevels: ADJUSTMENTS_MAX_SORT_LEVELS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
@@ -238,6 +248,10 @@ export default function AdjustmentsClient({
     [hasActiveFilterTool, hasActiveSearchTool],
   )
 
+  // The Sort tool lights its own dot independently of the filter/search dots
+  // (createdAt-desc is the default, so any user-applied sort counts as active).
+  const hasActiveSortTool = sorts.length > 0
+
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
   }, [onClearAllFilters])
@@ -252,6 +266,23 @@ export default function AdjustmentsClient({
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >
+        {/* Sort — the multi-column builder, leftmost. The only sort affordance
+            (column headers are static labels). */}
+        <ToolbarMenuButton
+          label="Sort"
+          title="Sort by"
+          icon={ArrowUpDown}
+          active={hasActiveSortTool}
+          bodyClassName="w-auto"
+        >
+          <SortMenuBody
+            options={ADJUSTMENTS_SORT_OPTIONS}
+            value={sorts}
+            maxLevels={ADJUSTMENTS_MAX_SORT_LEVELS}
+            onChange={onSortsChange}
+          />
+        </ToolbarMenuButton>
+
         {/* Filter — the warehouse/category/product pickers composed directly
             (NOT a self-triggering FilterControl). Product is category-scoped:
             changing category cascade-clears it via handleCategoryChange. */}

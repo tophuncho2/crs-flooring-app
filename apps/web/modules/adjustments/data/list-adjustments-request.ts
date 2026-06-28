@@ -1,4 +1,4 @@
-import type { ListInput, ListOutput } from "@builders/application"
+import type { ListInput, ListOutput, ListSort } from "@builders/application"
 import {
   INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
   type InventoryAdjustmentListFilters,
@@ -7,6 +7,45 @@ import {
 import { requestJson } from "@/transport/http"
 
 export const ADJUSTMENTS_LIST_QUERY_KEY = ["adjustments", "list"] as const
+
+/**
+ * Sort fields recognised by the adjustments list. Mirrors the API validator enum
+ * and the Sort menu options; `createdAt` is the default. Any other value is
+ * dropped. Kept independent of the API allowlist for defense-in-depth (the
+ * sort-allowlist-sync test asserts they stay identical).
+ */
+export const ADJUSTMENTS_LIST_SORT_FIELDS = [
+  "createdAt",
+  "updatedAt",
+  "location",
+  "productName",
+] as const
+
+/** Cap on user-selected sort columns — mirrors the engine + API + use case. */
+const ADJUSTMENTS_MAX_SORT_LEVELS = 3
+
+function isAllowedSortField(value: string): boolean {
+  return (ADJUSTMENTS_LIST_SORT_FIELDS as readonly string[]).includes(value)
+}
+
+/** Parse the ordered `?sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | undefined): ListSort[] {
+  if (!raw) return []
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !isAllowedSortField(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "asc" ? "asc" : "desc" })
+    if (result.length >= ADJUSTMENTS_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
+function encodeSortsParam(sorts: readonly ListSort[]): string {
+  return sorts.map((entry) => `${entry.field}:${entry.direction}`).join(",")
+}
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -59,7 +98,15 @@ export function parseAdjustmentsListInputFromSearchParams(
 
   const hasAnyFilter = Object.keys(filters).length > 0
 
+  // Ordered multi-column sort via `?sorts=`; falls back to the newest-first
+  // ledger default so the SSR input matches the controller's `initialSort`.
+  const sorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
+  const effectiveSorts: ListSort[] =
+    sorts.length > 0 ? sorts : [{ field: "createdAt", direction: "desc" }]
+
   return {
+    sort: effectiveSorts[0],
+    sorts: effectiveSorts,
     filters: hasAnyFilter ? (filters as InventoryAdjustmentListFilters) : undefined,
     page,
     pageSize: INVENTORY_ADJUSTMENTS_LIST_PAGE_SIZE,
@@ -68,6 +115,10 @@ export function parseAdjustmentsListInputFromSearchParams(
 
 function buildAdjustmentsListSearchString(input: ListInput<InventoryAdjustmentListFilters>): string {
   const params = new URLSearchParams()
+  // Emit the ordered `?sorts=` param (canonical) so the API receives the
+  // user-selected sort; single-sort consumers coerce through the same encoder.
+  const sorts = input.sorts?.length ? input.sorts : input.sort ? [input.sort] : []
+  if (sorts.length > 0) params.set("sorts", encodeSortsParam(sorts))
   for (const key of MULTI_VALUE_FILTER_KEYS) {
     const values = (input.filters?.[key] ?? []) as ReadonlyArray<string>
     for (const id of values) params.append(key, id)

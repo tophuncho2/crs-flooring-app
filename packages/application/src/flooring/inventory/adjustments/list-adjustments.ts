@@ -6,6 +6,7 @@ import {
   type InventoryAdjustmentListFilters,
 } from "@builders/domain"
 import type { ListInput, ListOutput } from "../../../list-view/contracts.js"
+import { resolveInventoryListSort } from "../list-inventory-input.js"
 
 function normalizeIds(
   raw: ReadonlyArray<string> | undefined,
@@ -36,6 +37,12 @@ export async function listAdjustmentsUseCase(
   const dyeLot = input.filters?.dyeLot?.trim() || undefined
   const note = input.filters?.note?.trim() || undefined
 
+  // Canonical multi-column sort (capped at 3) resolved from `?sorts=`; the
+  // generic inventory resolver is reused since the shape is identical and the
+  // cap matches. Undefined when no sort is requested → repo falls back to the
+  // newest-first ledger default.
+  const sort = resolveInventoryListSort(input)
+
   const { rows, total } = await listAdjustmentsForListView({
     filters: {
       ...(warehouseId ? { warehouseId } : {}),
@@ -49,6 +56,7 @@ export async function listAdjustmentsUseCase(
     },
     page,
     pageSize,
+    ...(sort ? { sort } : {}),
   })
 
   return { rows, total }

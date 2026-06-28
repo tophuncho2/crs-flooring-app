@@ -28,3 +28,56 @@ describe("parseAdjustmentsListInputFromSearchParams — identity search bars", (
     expect(input.filters?.adjNumber).toBe("5")
   })
 })
+
+describe("parseAdjustmentsListInputFromSearchParams — ?sorts= parsing", () => {
+  it("parses the sortable fields in priority order", () => {
+    const input = parseAdjustmentsListInputFromSearchParams({
+      sorts: "productName:asc,location:desc,updatedAt:asc",
+    })
+    expect(input.sorts).toEqual([
+      { field: "productName", direction: "asc" },
+      { field: "location", direction: "desc" },
+      { field: "updatedAt", direction: "asc" },
+    ])
+    expect(input.sort).toEqual({ field: "productName", direction: "asc" })
+  })
+
+  it("drops unknown / non-allowlisted fields", () => {
+    expect(
+      parseAdjustmentsListInputFromSearchParams({ sorts: "bogus:asc,location:asc,id:desc" }).sorts,
+    ).toEqual([{ field: "location", direction: "asc" }])
+  })
+
+  it("defaults a missing or invalid direction to desc", () => {
+    expect(parseAdjustmentsListInputFromSearchParams({ sorts: "location" }).sorts).toEqual([
+      { field: "location", direction: "desc" },
+    ])
+    expect(parseAdjustmentsListInputFromSearchParams({ sorts: "location:sideways" }).sorts).toEqual([
+      { field: "location", direction: "desc" },
+    ])
+  })
+
+  it("dedupes a repeated field, keeping the first occurrence's direction", () => {
+    expect(
+      parseAdjustmentsListInputFromSearchParams({ sorts: "productName:asc,productName:desc" }).sorts,
+    ).toEqual([{ field: "productName", direction: "asc" }])
+  })
+
+  it("caps at 3 sort levels", () => {
+    const input = parseAdjustmentsListInputFromSearchParams({
+      sorts: "productName:asc,location:asc,createdAt:asc,updatedAt:asc",
+    })
+    expect(input.sorts).toHaveLength(3)
+    expect(input.sorts?.map((entry) => entry.field)).toEqual([
+      "productName",
+      "location",
+      "createdAt",
+    ])
+  })
+
+  it("falls back to createdAt desc when no sorts param is present", () => {
+    const input = parseAdjustmentsListInputFromSearchParams({})
+    expect(input.sorts).toEqual([{ field: "createdAt", direction: "desc" }])
+    expect(input.sort).toEqual({ field: "createdAt", direction: "desc" })
+  })
+})
