@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { formatPhoneNumber, type EntityForm, type EntityTypeRef } from "@builders/domain"
 import {
   AddressEditCell,
@@ -72,6 +73,8 @@ export function EntityCellsSection({
   seedTypeRefs = [],
   onTypeIdsChange,
   cellSpan = 5,
+  nameRowLeading,
+  nameRowTrailing,
 }: {
   form: EntityForm
   editable: boolean
@@ -110,6 +113,15 @@ export function EntityCellsSection({
    * its own Types picker on the break's right side).
    */
   cellSpan?: number
+  /**
+   * Record-view-only slots rendered side-by-side ABOVE Entity Name: the ENT-#
+   * chip (`nameRowLeading`, col 1) and the color picker (`nameRowTrailing`,
+   * col 5). The create surfaces omit both — the number is DB-generated and color
+   * is edit-only, so neither belongs on a create form. Pre-composed ReactNodes,
+   * so the number/color state stays in the record view, not this shared cell.
+   */
+  nameRowLeading?: ReactNode
+  nameRowTrailing?: ReactNode
 }) {
   const onText =
     <K extends keyof EntityForm>(field: K) =>
@@ -132,6 +144,16 @@ export function EntityCellsSection({
 
   return (
     <FieldSection gap="0.75rem">
+      {nameRowLeading ? (
+        <CellAt col={1} colSpan={4}>
+          {nameRowLeading}
+        </CellAt>
+      ) : null}
+      {nameRowTrailing ? (
+        <CellAt col={5} colSpan={4}>
+          {nameRowTrailing}
+        </CellAt>
+      ) : null}
       {typesPosition === "above" ? typesCell : null}
       <CellAt col={1} colSpan={cellSpan}>
         <CellTextField

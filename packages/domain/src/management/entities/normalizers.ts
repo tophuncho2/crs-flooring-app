@@ -4,9 +4,20 @@ import { normalizePhoneNumber } from "../../shared/phone.js"
 import type {
   EntityDetail,
   EntityListRow,
+  EntityNeighbor,
   EntityOption,
   EntityTypeRef,
 } from "./types.js"
+
+export type EntityNeighbors = {
+  previousEntity: EntityNeighbor | null
+  nextEntity: EntityNeighbor | null
+}
+
+export const NO_ENTITY_NEIGHBORS: EntityNeighbors = {
+  previousEntity: null,
+  nextEntity: null,
+}
 
 /** Shape of the joined entity-type rows as selected by the read repository. */
 type EntityTypeLinkInput = {
@@ -25,6 +36,7 @@ function normalizeEntityTypeRefs(
 
 type EntityDetailInput = {
   id: string
+  entityNumber: string
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -36,12 +48,14 @@ type EntityDetailInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
+  color: PaletteColor
   _count: { properties: number }
   entityTypes?: EntityTypeLinkInput[]
 }
 
 type EntityListRowInput = {
   id: string
+  entityNumber: string
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -53,13 +67,18 @@ type EntityListRowInput = {
   postalCode: string | null
   phone: string | null
   email: string | null
+  color: PaletteColor
   _count: { properties: number }
   entityTypes?: EntityTypeLinkInput[]
 }
 
-export function normalizeEntity(entity: EntityDetailInput): EntityDetail {
+export function normalizeEntity(
+  entity: EntityDetailInput,
+  neighbors: EntityNeighbors = NO_ENTITY_NEIGHBORS,
+): EntityDetail {
   return {
     id: entity.id,
+    entityNumber: entity.entityNumber,
     createdAt: entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt,
     updatedAt: entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt,
     createdBy: entity.createdBy,
@@ -72,14 +91,18 @@ export function normalizeEntity(entity: EntityDetailInput): EntityDetail {
     phone: normalizePhoneNumber(entity.phone ?? ""),
     email: entity.email ?? "",
     fullAddress: buildAddressLine(entity),
+    color: entity.color,
     propertyCount: entity._count.properties,
     types: normalizeEntityTypeRefs(entity.entityTypes),
+    previousEntity: neighbors.previousEntity,
+    nextEntity: neighbors.nextEntity,
   }
 }
 
 export function normalizeEntityListRow(entity: EntityListRowInput): EntityListRow {
   return {
     id: entity.id,
+    entityNumber: entity.entityNumber,
     createdAt: entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt,
     updatedAt: entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt,
     createdBy: entity.createdBy,
@@ -92,6 +115,7 @@ export function normalizeEntityListRow(entity: EntityListRowInput): EntityListRo
     phone: normalizePhoneNumber(entity.phone ?? ""),
     email: entity.email ?? "",
     fullAddress: buildAddressLine(entity),
+    color: entity.color,
     propertyCount: entity._count.properties,
     types: normalizeEntityTypeRefs(entity.entityTypes),
   }

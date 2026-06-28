@@ -13,6 +13,8 @@ export function renderEntityRowCell(
   row: EntityListRow,
 ): ReactNode {
   switch (column.key) {
+    case "entityNumber":
+      return <CellChip paletteColor={row.color}>{row.entityNumber}</CellChip>
     case "entity":
       return <span className="font-medium">{row.entity}</span>
     case "types":

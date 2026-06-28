@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react"
 import { Search, SlidersHorizontal } from "lucide-react"
 import {
+  DebouncedSearchControl,
   ListActionBar,
   ListCreateButtonPortal,
   ListPageShell,
@@ -13,7 +14,7 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
-import type { EntitiesListFilters } from "@builders/application"
+import type { EntitiesListFilters, ListInput } from "@builders/application"
 import {
   LIST_ENTITIES_PAGE_SIZE,
   type EntityListRow,
@@ -26,7 +27,33 @@ import {
 import { useEntitiesListController } from "@/modules/entities/controllers/list/use-entities-list-controller"
 import { EntitiesTable } from "./entities-table"
 
-const ENTITIES_FILTERABLE_FIELDS = ["state", "entityTypeIds"] as const
+const ENTITIES_FILTERABLE_FIELDS = ["entityNumber", "state", "entityTypeIds"] as const
+
+// The list-view engine stores every filter value as `string[]`. The app filter
+// type carries a scalar `entityNumber` alongside arrays, so we bridge the two the
+// same way properties does: an all-array engine view + adapters at the edge.
+type EngineEntitiesFilters = {
+  entityNumber?: ReadonlyArray<string>
+  state?: ReadonlyArray<string>
+  entityTypeIds?: ReadonlyArray<string>
+}
+
+function toEngineFilters(app: EntitiesListFilters): EngineEntitiesFilters {
+  const out: EngineEntitiesFilters = {}
+  if (app.entityNumber && app.entityNumber.length > 0) out.entityNumber = [app.entityNumber]
+  if (app.state?.length) out.state = app.state
+  if (app.entityTypeIds?.length) out.entityTypeIds = app.entityTypeIds
+  return out
+}
+
+function toAppFilters(engine: EngineEntitiesFilters): EntitiesListFilters {
+  const out: EntitiesListFilters = {}
+  const entityNumber = engine.entityNumber?.[0]?.trim()
+  if (entityNumber) out.entityNumber = entityNumber
+  if (engine.state?.length) out.state = engine.state
+  if (engine.entityTypeIds?.length) out.entityTypeIds = engine.entityTypeIds
+  return out
+}
 
 export type EntitiesClientProps = {
   initialSearchQuery: string
@@ -40,6 +67,16 @@ export default function EntitiesClient({
   initialFilters,
 }: EntitiesClientProps) {
   const { message, pageError, openCreate, openEntity } = useEntitiesListController()
+
+  // Convert the engine's all-array filters back to the app shape before fetch.
+  const adaptedListFn = useCallback(
+    (input: ListInput<EngineEntitiesFilters>) =>
+      listEntitiesRequest({
+        ...input,
+        filters: input.filters ? toAppFilters(input.filters) : undefined,
+      }),
+    [],
+  )
 
   const {
     rows,
@@ -56,24 +93,33 @@ export default function EntitiesClient({
     onSearchQueryChange,
     onFilterChange,
     onClearAllFilters,
-  } = useFetchListController<EntityListRow, EntitiesListFilters>({
+  } = useFetchListController<EntityListRow, EngineEntitiesFilters>({
     mode: "fetch",
     queryKey: [...ENTITIES_LIST_QUERY_KEY],
-    listFn: listEntitiesRequest,
+    listFn: adaptedListFn,
     initialSearchQuery,
     initialPage,
-    initialFilters,
+    initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_ENTITIES_PAGE_SIZE,
     tableKey: "entities-main",
     filterableFields: ENTITIES_FILTERABLE_FIELDS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  const selectedState =
-    (filters as EntitiesListFilters).state?.[0] ?? null
+  const entityNumberValue = filters.entityNumber?.[0] ?? ""
+
+  const handleEntityNumberChange = useCallback(
+    (next: string) => {
+      const trimmed = next.trim()
+      onFilterChange("entityNumber", trimmed.length > 0 ? [trimmed] : [])
+    },
+    [onFilterChange],
+  )
+
+  const selectedState = filters.state?.[0] ?? null
 
   const selectedTypeIds = useMemo(
-    () => [...((filters as EntitiesListFilters).entityTypeIds ?? [])],
+    () => [...(filters.entityTypeIds ?? [])],
     [filters],
   )
 
@@ -96,8 +142,11 @@ export default function EntitiesClient({
   )
 
   const hasActiveSearchTool = useMemo(
-    () => searchQuery.trim().length > 0 || Boolean(selectedState),
-    [searchQuery, selectedState],
+    () =>
+      searchQuery.trim().length > 0 ||
+      entityNumberValue.trim().length > 0 ||
+      Boolean(selectedState),
+    [searchQuery, entityNumberValue, selectedState],
   )
 
   const hasActiveFilters = hasActiveFilterTool || hasActiveSearchTool
@@ -137,8 +186,8 @@ export default function EntitiesClient({
           </div>
         </ToolbarMenuButton>
 
-        {/* Search — free-text bar + the state-code bar (both search-style
-            inputs; entities have no number field). */}
+        {/* Search — free-text bar + the ENT # exact-number bar + the state-code
+            bar (all search-style inputs; mirrors properties). */}
         <ToolbarMenuButton
           label="Search"
           icon={Search}
@@ -148,6 +197,12 @@ export default function EntitiesClient({
             query={searchQuery}
             onQueryChange={onSearchQueryChange}
             placeholder="Search entity"
+          />
+          <DebouncedSearchControl
+            value={entityNumberValue}
+            onCommit={handleEntityNumberChange}
+            placeholder="ENT #"
+            ariaLabel="Search entities by entity number"
           />
           <StateSearchControl
             value={selectedState}

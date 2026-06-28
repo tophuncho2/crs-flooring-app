@@ -9,16 +9,19 @@ import {
   RecordMultiSectionPanel,
   RecordPrimarySectionInstance,
   RecordSectionDivider,
+  RecordStepperPortal,
   StaticFieldValue,
   useRecordDeleteConfirmation,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
 } from "@/engines/record-view"
+import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { formatEasternDateTime, type EntityDetail } from "@builders/domain"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
   buildRecordCreateHref,
+  buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
 import { useEntityPrimarySection } from "@/modules/entities/controllers/record/primary/use-entity-primary-section"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
@@ -49,6 +52,16 @@ export function EntityRecordView({
   const deletion = useRecordDeleteConfirmation(controller.deleteRecord)
 
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
+
+  // Record-view shell stepper (◀ ENT-# ▶). Entities live on a true SSR record
+  // page, so stepping to a neighbor is a `router.push` of `?entityId=` (which
+  // re-runs the server loader for the neighbor). The existing `returnTo` is
+  // preserved so "back" still lands on the original list across steps.
+  const returnToParam = searchParams.get("returnTo")
+  const stepPrevious = entry.previousEntity
+  const stepNext = entry.nextEntity
+  const stepTo = (id: string) =>
+    router.push(buildRecordDetailHref("/dashboard/entities", id, returnToParam))
 
   const openProperty = (propertyId: string) => {
     router.push(buildPropertyRecordHref(propertyId, entry.id, returnTo))
@@ -104,6 +117,25 @@ export function EntityRecordView({
                     primary.setLocalValue((previous) => ({ ...previous, typeIds }))
                   }
                   cellSpan={8}
+                  nameRowLeading={
+                    <FormField label="ENT #">
+                      <CellChip paletteColor={primary.localValue.color}>
+                        {entry.entityNumber}
+                      </CellChip>
+                    </FormField>
+                  }
+                  nameRowTrailing={
+                    <FormField label="Color">
+                      <PaletteColorDropdown
+                        value={primary.localValue.color}
+                        editable={!primary.isSaving}
+                        onChange={(color) =>
+                          primary.setLocalValue((previous) => ({ ...previous, color }))
+                        }
+                        ariaLabel="Entity color"
+                      />
+                    </FormField>
+                  }
                 />
               }
               right={null}
@@ -149,6 +181,13 @@ export function EntityRecordView({
 
   return (
     <>
+      <RecordStepperPortal
+        label={entry.entityNumber}
+        isDirty={page.isDirty}
+        discardMessage="This entity has unsaved changes. Stepping to another entity will discard them."
+        onPrevious={stepPrevious ? () => stepTo(stepPrevious.id) : null}
+        onNext={stepNext ? () => stepTo(stepNext.id) : null}
+      />
       <RecordMultiSectionPanel page={page} sections={sections} />
       <RecordEntityFooter onClose={page.closePage} />
       <RecordDeleteDialog

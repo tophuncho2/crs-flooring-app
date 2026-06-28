@@ -10,6 +10,7 @@ import type { EntityListRow } from "@builders/domain"
 export const ENTITIES_LIST_COLUMNS: ReadonlyArray<
   DataTableColumn<EntityListRow>
 > = [
+  { key: "entityNumber", label: "ENT #" },
   { key: "types", label: "Type(s)" },
   { key: "entity", label: "Entity" },
   { key: "streetAddress", label: "Street" },

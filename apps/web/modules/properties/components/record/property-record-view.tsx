@@ -18,6 +18,7 @@ import {
 } from "@/engines/record-view"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import {
+  DEFAULT_PALETTE_COLOR,
   formatEasternDateTime,
   toEntityForm,
   type EntityDetail,
@@ -49,6 +50,9 @@ function toDisplayForm(option: EntityOption): EntityForm {
     // Entity options don't carry their linked types; chips show only for the
     // server-loaded linked entity (re-resolved on its own record view).
     typeIds: [],
+    // Read-only contact display only — color is never shown/edited here, so the
+    // default satisfies the form shape without implying a real value.
+    color: DEFAULT_PALETTE_COLOR,
   }
 }
 

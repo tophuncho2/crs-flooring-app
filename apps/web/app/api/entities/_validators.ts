@@ -9,7 +9,10 @@ import type {
 import {
   LIST_ENTITIES_MAX_PAGE_SIZE,
   LIST_ENTITIES_PAGE_SIZE,
+  PALETTE_COLOR_INVALID_MESSAGE,
+  isPaletteColor,
   normalizePhoneNumber,
+  type PaletteColor,
 } from "@builders/domain"
 
 function fail(message: string, field?: string): never {
@@ -60,6 +63,14 @@ function pickPostalCode(body: Record<string, unknown>): unknown {
 // Linked entity-type ids. Must be an array of non-empty strings; dedup'd to keep
 // set semantics. Referential validity (the ids point at real types) is the
 // data/application layer's job (FK → P2003 → 400).
+// Palette tag is strict-when-present on update: a supplied value must be a real
+// PaletteColor, else 400 with the shared message. Edit-only — create never
+// accepts color (new rows fall to the DB default SLATE).
+function requireColor(value: unknown): PaletteColor {
+  if (!isPaletteColor(value)) fail(PALETTE_COLOR_INVALID_MESSAGE, "color")
+  return value
+}
+
 function requireTypeIds(value: unknown): string[] {
   if (!Array.isArray(value)) fail("typeIds must be an array", "typeIds")
   const ids = value.map((entry) => {
@@ -99,6 +110,7 @@ export function validateUpdateEntityInput(
   if ("phone" in body) input.phone = optionalPhone(body.phone)
   if ("email" in body) input.email = optionalString(body.email)
   if ("typeIds" in body) input.typeIds = requireTypeIds(body.typeIds)
+  if ("color" in body) input.color = requireColor(body.color)
 
   return input
 }
@@ -107,6 +119,7 @@ export function validateUpdateEntityInput(
 
 const listEntitiesQuerySchema = z.object({
   q: z.string().optional(),
+  entityNumber: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -138,6 +151,9 @@ export function validateListEntitiesQuery(
   const trimmedSearch = parsed.q?.trim()
   const search = trimmedSearch ? trimmedSearch : undefined
 
+  const entityNumberTrimmed = parsed.entityNumber?.trim()
+  const entityNumber = entityNumberTrimmed ? entityNumberTrimmed : undefined
+
   const stateRaw = searchParams.getAll("state")
   const state = Array.from(
     new Set(
@@ -157,8 +173,9 @@ export function validateListEntitiesQuery(
   )
 
   const filters =
-    state.length > 0 || entityTypeIds.length > 0
+    entityNumber || state.length > 0 || entityTypeIds.length > 0
       ? {
+          ...(entityNumber ? { entityNumber } : {}),
           ...(state.length > 0 ? { state } : {}),
           ...(entityTypeIds.length > 0 ? { entityTypeIds } : {}),
         }

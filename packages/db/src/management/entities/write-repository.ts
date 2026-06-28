@@ -1,6 +1,11 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
-import { normalizeEntity, normalizePhoneNumber, type EntityDetail } from "@builders/domain"
+import {
+  normalizeEntity,
+  normalizePhoneNumber,
+  type EntityDetail,
+  type PaletteColor,
+} from "@builders/domain"
 import { entityTypesSelect } from "./read-repository.js"
 
 type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
@@ -29,12 +34,15 @@ export type CreateEntityRecordInput = {
 }
 
 // createdBy is immutable post-create; updatedBy is always stamped on edit.
+// `color` is edit-only (not in CreateEntityRecordInput) — new rows default SLATE
+// in the DB, the record form is the only place it can be set.
 export type UpdateEntityRecordInput = Partial<
   Omit<CreateEntityRecordInput, "createdBy" | "updatedBy">
-> & { updatedBy: string }
+> & { updatedBy: string; color?: PaletteColor }
 
 const entityDetailSelect = {
   id: true,
+  entityNumber: true,
   createdAt: true,
   updatedAt: true,
   createdBy: true,
@@ -46,6 +54,7 @@ const entityDetailSelect = {
   postalCode: true,
   phone: true,
   email: true,
+  color: true,
   _count: {
     select: { properties: true },
   },

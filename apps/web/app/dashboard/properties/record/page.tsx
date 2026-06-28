@@ -37,7 +37,7 @@ export default async function PropertyRecordPage({
 
   let entity: EntityDetail | null = null
   if (property.entity) {
-    entity = await getEntityById(property.entity.id).catch(
+    entity = await getEntityById(property.entity.id, { withNeighbors: false }).catch(
       () => null,
     )
   }

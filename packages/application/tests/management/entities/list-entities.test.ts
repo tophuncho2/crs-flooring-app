@@ -18,7 +18,11 @@ import {
 function listArgs() {
   return listEntitiesForListViewMock.mock.calls[0]![0] as {
     search?: string
-    filters?: { state?: ReadonlyArray<string>; entityTypeIds?: ReadonlyArray<string> }
+    filters?: {
+      entityNumber?: string
+      state?: ReadonlyArray<string>
+      entityTypeIds?: ReadonlyArray<string>
+    }
     skip: number
     take: number
   }
@@ -68,11 +72,23 @@ describe("listEntitiesUseCase", () => {
     expect(listArgs().filters).toEqual({ entityTypeIds: ["t1", "t2"] })
   })
 
-  it("combines state and entity-type filters", async () => {
+  it("trims the entity number filter and drops a blank one", async () => {
+    await listEntitiesUseCase({ filters: { entityNumber: "  5  " } })
+    expect(listArgs().filters).toEqual({ entityNumber: "5" })
+    listEntitiesForListViewMock.mockClear()
+    await listEntitiesUseCase({ filters: { entityNumber: "   " } })
+    expect(listArgs().filters).toBeUndefined()
+  })
+
+  it("combines entity number, state, and entity-type filters", async () => {
     await listEntitiesUseCase({
-      filters: { state: ["ca"], entityTypeIds: ["t1"] },
+      filters: { entityNumber: "ENT-7", state: ["ca"], entityTypeIds: ["t1"] },
     })
-    expect(listArgs().filters).toEqual({ state: ["CA"], entityTypeIds: ["t1"] })
+    expect(listArgs().filters).toEqual({
+      entityNumber: "ENT-7",
+      state: ["CA"],
+      entityTypeIds: ["t1"],
+    })
   })
 
   it("returns the repository rows and total", async () => {

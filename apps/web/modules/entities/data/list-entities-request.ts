@@ -34,6 +34,7 @@ export function parseEntitiesListInputFromSearchParams(
   searchParams: Record<string, string | string[] | undefined> | undefined,
 ): ListInput<EntitiesListFilters> {
   const searchRaw = (readSearchParam(searchParams, "q") ?? "").trim()
+  const entityNumber = (readSearchParam(searchParams, "entityNumber") ?? "").trim()
   const pageRaw = Number(readSearchParam(searchParams, "page"))
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
 
@@ -50,8 +51,9 @@ export function parseEntitiesListInputFromSearchParams(
   )
 
   const filters =
-    state.length > 0 || entityTypeIds.length > 0
+    entityNumber.length > 0 || state.length > 0 || entityTypeIds.length > 0
       ? {
+          ...(entityNumber.length > 0 ? { entityNumber } : {}),
           ...(state.length > 0 ? { state } : {}),
           ...(entityTypeIds.length > 0 ? { entityTypeIds } : {}),
         }
@@ -70,6 +72,7 @@ function buildEntitiesListSearchString(
 ): string {
   const params = new URLSearchParams()
   if (input.search) params.set("q", input.search)
+  if (input.filters?.entityNumber) params.set("entityNumber", input.filters.entityNumber)
   for (const code of input.filters?.state ?? []) {
     params.append("state", code)
   }

@@ -11,6 +11,7 @@ export function toEntityForm(entity: EntityDetail): EntityForm {
     phone: entity.phone,
     email: entity.email,
     typeIds: entity.types.map((type) => type.id),
+    color: entity.color,
   }
 }
 

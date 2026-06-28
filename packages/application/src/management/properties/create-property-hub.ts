@@ -7,6 +7,7 @@ import {
   withDatabaseTransaction,
 } from "@builders/db"
 import {
+  DEFAULT_PALETTE_COLOR,
   ENTITY_NOT_FOUND_MESSAGE,
   validateCreatePropertyHubForm,
   type CreatePropertyHubForm,
@@ -59,6 +60,9 @@ function toDomainForm(input: CreatePropertyHubUseCaseInput): CreatePropertyHubFo
             phone: input.entity.fields.phone ?? "",
             email: input.entity.fields.email ?? "",
             typeIds: input.entity.fields.typeIds ?? [],
+            // Edit-only tag — the hub create form never sets it; new rows default
+            // SLATE in the DB. Present only to satisfy the EntityForm shape.
+            color: DEFAULT_PALETTE_COLOR,
           },
         }
       : input.entity
@@ -107,7 +111,7 @@ export async function createPropertyHubUseCase(
     let entity: EntityDetail | null = null
     if (input.entity.mode === "link") {
       try {
-        entity = await getEntityById(input.entity.id, c)
+        entity = await getEntityById(input.entity.id, { withNeighbors: false }, c)
       } catch (error) {
         if (
           error instanceof Prisma.PrismaClientKnownRequestError &&

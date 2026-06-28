@@ -149,23 +149,26 @@ enum FlooringPaymentDirection {
 }
 
 model Entity {
-  id            String              @id @default(uuid())
-  entity        String
-  streetAddress String?
-  city          String?
-  state         String?
-  postalCode    String?
-  phone         String?
-  email         String?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  createdBy     String?
-  updatedBy     String?
-  properties    Property[]
-  entityTypes   EntityEntityType[]
-  payments      FlooringPayment[]
-  products      FlooringProduct[]
-  imports       FlooringImportEntry[]
+  id              String                @id @default(uuid())
+  entityNumber    String                @unique @default(dbgenerated("('ENT-'::text || (nextval('entity_number_seq'::regclass))::text)")) @map("entity_number")
+  entityNumberInt Int?                  @default(dbgenerated("(SUBSTRING(entity_number FROM 5))::integer"))
+  entity          String
+  streetAddress   String?
+  city            String?
+  state           String?
+  postalCode      String?
+  phone           String?
+  email           String?
+  color           PaletteColor          @default(SLATE)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  createdBy       String?
+  updatedBy       String?
+  properties      Property[]
+  entityTypes     EntityEntityType[]
+  payments        FlooringPayment[]
+  products        FlooringProduct[]
+  imports         FlooringImportEntry[]
 
   // Sort-column btree backing the work-orders list sort by entity name (2-hop
   // `property.entity.entity`). Plain btree — the sort's `id` tiebreak lives on
@@ -174,6 +177,10 @@ model Entity {
   // GIN trigram backing the entity list + picker name search (ILIKE `contains`,
   // case-insensitive). Mirrors every other search bar's identity-search index.
   @@index([entity(ops: raw("gin_trgm_ops"))], type: Gin, map: "entity_entity_trgm_idx")
+  // Record-number identity: the unique PREFIX string + the generated int that
+  // backs the exact-int `#` search bar and the record-view stepper's neighbor walk.
+  @@index([entityNumber])
+  @@index([entityNumberInt])
   @@map("entity")
 }
 

@@ -13,6 +13,8 @@ import {
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
 export type EntitiesListFilters = {
+  /** Exact-int ENT-# bar — strip-non-digits handled in the data layer. */
+  entityNumber?: string
   state?: ReadonlyArray<string>
   entityTypeIds?: ReadonlyArray<string>
 }
@@ -28,12 +30,14 @@ export async function listEntitiesUseCase(
   )
 
   const search = input.search?.trim() || undefined
+  const entityNumber = input.filters?.entityNumber?.trim() || undefined
   const state = normalizeStateCodeFilter(input.filters?.state)
   const entityTypeIds = normalizeIdFilter(input.filters?.entityTypeIds)
 
   const filters =
-    state || entityTypeIds
+    entityNumber || state || entityTypeIds
       ? {
+          ...(entityNumber ? { entityNumber } : {}),
           ...(state ? { state } : {}),
           ...(entityTypeIds ? { entityTypeIds } : {}),
         }

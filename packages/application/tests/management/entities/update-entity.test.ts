@@ -55,6 +55,15 @@ describe("updateEntityUseCase", () => {
     )
   })
 
+  it("forwards the palette color verbatim (metadata-only, no recompute)", async () => {
+    await updateEntityUseCase(ID, { color: "VIOLET" } as never, ACTOR)
+    expect(updateEntityRecordMock).toHaveBeenCalledWith(
+      ID,
+      { color: "VIOLET", updatedBy: ACTOR },
+      expect.anything(),
+    )
+  })
+
   it("rejects a blank name when one is supplied", async () => {
     await expect(
       updateEntityUseCase(ID, { entity: "   " } as never, ACTOR),
