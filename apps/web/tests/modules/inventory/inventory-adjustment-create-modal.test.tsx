@@ -8,7 +8,7 @@
  * injected `source` only:
  *   - blank create ("+ Adjustment" / the list deep-link) — no work-order seed;
  *   - duplicate (row ⋮) — seeds the source row's work-order link + adjustment
- *     values (quantity / type / notes / waste).
+ *     values (quantity / type / internal notes / waste).
  *
  * Only the network boundary (`createAdjustmentRequest`) is mocked; the real
  * controller (`useAdjustmentCreateForm`) + form cells run.
@@ -120,7 +120,7 @@ describe("InventoryAdjustmentCreateModal", () => {
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
   })
 
-  it("duplicate: seeds the source work-order link + adjustment values (qty / type / notes / waste)", async () => {
+  it("duplicate: seeds the source work-order link + adjustment values (qty / type / internalNotes / waste)", async () => {
     createAdjustmentRequestMock.mockResolvedValue({
       adjustment: {},
       inventoryId: "inv-1",
@@ -133,14 +133,14 @@ describe("InventoryAdjustmentCreateModal", () => {
       quantity: "7",
       adjustmentType: "INCREASE",
       isWaste: true,
-      notes: "scrap from cut",
+      internalNotes: "scrap from cut",
     } as EnrichedInventoryAdjustmentRow
     const { onCreated } = renderModal(source)
 
     expect(screen.getByText("Duplicate adjustment")).toBeTruthy()
-    // Quantity + notes are pre-seeded from the source (not blank).
+    // Quantity + internal notes are pre-seeded from the source (not blank).
     expect((screen.getByLabelText("Adjustment quantity") as HTMLInputElement).value).toBe("7")
-    expect((screen.getByLabelText("Adjustment notes") as HTMLInputElement).value).toBe(
+    expect((screen.getByLabelText("Adjustment internal notes") as HTMLInputElement).value).toBe(
       "scrap from cut",
     )
 
@@ -155,7 +155,7 @@ describe("InventoryAdjustmentCreateModal", () => {
         workOrderId: "wo-9",
         adjustmentType: "INCREASE",
         isWaste: true,
-        notes: "scrap from cut",
+        internalNotes: "scrap from cut",
       }),
     )
     await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
