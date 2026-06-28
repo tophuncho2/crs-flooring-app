@@ -209,7 +209,7 @@ export function ImportStagedInventoryGrid({
   if (groups.length === 0) {
     return (
       <div className="border border-[var(--panel-border)] bg-[var(--panel-border)]/5 px-4 py-8 text-center text-sm text-[var(--foreground)]/65">
-        No staged inventory yet. Use “Add Staged Inventory” above, or add a planned import and “+” a row under it.
+        No staged inventory yet. Add the product as a planned import, then use “+” under its group to stage a row.
       </div>
     )
   }

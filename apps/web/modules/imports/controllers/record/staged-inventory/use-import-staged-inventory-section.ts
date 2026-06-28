@@ -61,7 +61,6 @@ export function useImportStagedInventorySection({
     setFilterCategoryFilter: filters.setFilterCategoryFilter,
     setFilterProductSnapshot: filters.setFilterProductSnapshot,
     addStagedRowDraft: filters.addStagedRowDraft,
-    addStagedRowFromModal: filters.addStagedRowFromModal,
     duplicateStagedRowDraft: filters.duplicateStagedRowDraft,
     removeStagedRowDraft: filters.removeStagedRowDraft,
     setStagedRowField: filters.setStagedRowField,

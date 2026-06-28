@@ -16,7 +16,6 @@ import type {
 } from "@builders/domain"
 import type { useImportStagedInventorySection } from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
 import { buildServerStatusMap } from "@/modules/imports/controllers/record/drafts"
-import { AddStagedInventoryModal } from "./add-staged-inventory-modal"
 import { ImportPlannedImportsGrid } from "./import-planned-imports-grid"
 import { ImportStagedInventoryGrid } from "./import-staged-inventory-grid"
 import { StagedInventorySelectionCluster } from "./toolbar-controls"
@@ -59,9 +58,6 @@ export function ImportStagedInventorySection({
   const [mode, setMode] = useState<SectionMode>(
     searchParams.get("view") === "planned" ? "planned" : "staged",
   )
-  // Section-level "Add Staged Inventory" create modal. Mounted only while open so
-  // its find/form state resets each time.
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   // Server snapshots: category labels (product picker) + live row status (the
   // worker flips QUEUED → IMPORTED without bumping the parent, so status is
@@ -197,18 +193,9 @@ export function ImportStagedInventorySection({
               />
             </div>
           ),
-          actions: [
-            ...saveDiscardActions,
-            {
-              key: "add",
-              label: "Add Staged Inventory",
-              kind: "add-row" as const,
-              tone: "neutral" as const,
-              onClick: () => setIsAddModalOpen(true),
-              disabled:
-                section.isSaving || section.isMarking || section.isSelectionActive,
-            },
-          ],
+          // Staged rows are added per-product via the "+" in each group header
+          // (the product must already be on Planned Imports). No section-level add.
+          actions: saveDiscardActions,
         }
 
   return (
@@ -235,13 +222,6 @@ export function ImportStagedInventorySection({
       </RecordItemSection>
 
       <ConfirmDialog {...dialogProps} />
-
-      {isAddModalOpen ? (
-        <AddStagedInventoryModal
-          onClose={() => setIsAddModalOpen(false)}
-          onAdd={section.addStagedRowFromModal}
-        />
-      ) : null}
     </>
   )
 }
