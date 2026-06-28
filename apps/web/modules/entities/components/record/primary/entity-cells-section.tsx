@@ -68,6 +68,7 @@ export function EntityCellsSection({
   onFieldChange,
   showContactAndAddress = true,
   showTypes = false,
+  typesPosition = "above",
   seedTypeRefs = [],
   onTypeIdsChange,
   cellSpan = 5,
@@ -85,12 +86,19 @@ export function EntityCellsSection({
    */
   showContactAndAddress?: boolean
   /**
-   * Render the entity-type array picker as a full-width cell stacked directly
-   * above Entity Name. Default `false`. Every create surface passes `true` (the
+   * Render the entity-type array picker as a cell stacked next to Entity Name
+   * (placement set by `typesPosition`). Default `false`. The create surfaces (the
    * standalone create form, both quick-create modals, and the property-hub-create
-   * entity sub-form); the entity record view supplies its own Types picker.
+   * entity sub-form) pass `true` with the default `"above"`; the entity record
+   * view passes `"below"`.
    */
   showTypes?: boolean
+  /**
+   * Where the Types cell sits relative to Entity Name. `"above"` (default) for
+   * the create surfaces; `"below"` for the entity record view. No effect unless
+   * `showTypes` is set.
+   */
+  typesPosition?: "above" | "below"
   /** The record's current type refs — seeds chip labels for the picker. */
   seedTypeRefs?: EntityTypeRef[]
   /** Editable-types handler. When omitted, the picker renders read-only. */
@@ -109,20 +117,22 @@ export function EntityCellsSection({
       onFieldChange?.(field, value as EntityForm[K])
     }
 
+  const typesCell = showTypes ? (
+    <CellAt col={1} colSpan={cellSpan}>
+      <FormField label="Types">
+        <EntityTypeMultiSelect
+          selectedIds={form.typeIds}
+          seedRefs={seedTypeRefs}
+          editable={editable && Boolean(onTypeIdsChange)}
+          onChange={onTypeIdsChange}
+        />
+      </FormField>
+    </CellAt>
+  ) : null
+
   return (
     <FieldSection gap="0.75rem">
-      {showTypes ? (
-        <CellAt col={1} colSpan={cellSpan}>
-          <FormField label="Types">
-            <EntityTypeMultiSelect
-              selectedIds={form.typeIds}
-              seedRefs={seedTypeRefs}
-              editable={editable && Boolean(onTypeIdsChange)}
-              onChange={onTypeIdsChange}
-            />
-          </FormField>
-        </CellAt>
-      ) : null}
+      {typesPosition === "above" ? typesCell : null}
       <CellAt col={1} colSpan={cellSpan}>
         <CellTextField
           label="Entity Name"
@@ -134,6 +144,7 @@ export function EntityCellsSection({
           ariaLabel="Entity name"
         />
       </CellAt>
+      {typesPosition === "below" ? typesCell : null}
       {showContactAndAddress ? (
         <>
           <CellAt col={1} colSpan={cellSpan}>

@@ -2,8 +2,6 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
-  CellAt,
-  FieldSection,
   FormField,
   RecordColumnBreak,
   RecordDeleteDialog,
@@ -25,7 +23,6 @@ import {
 import { useEntityPrimarySection } from "@/modules/entities/controllers/record/primary/use-entity-primary-section"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
 import { EntityCellsSection } from "./primary/entity-cells-section"
-import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
 import { EntityTemplatesSection } from "./templates/entity-templates-section"
 
 /**
@@ -100,25 +97,16 @@ export function EntityRecordView({
                   onFieldChange={(field, value) =>
                     primary.setLocalValue((previous) => ({ ...previous, [field]: value }))
                   }
+                  showTypes
+                  typesPosition="below"
+                  seedTypeRefs={entry.types}
+                  onTypeIdsChange={(typeIds) =>
+                    primary.setLocalValue((previous) => ({ ...previous, typeIds }))
+                  }
                   cellSpan={8}
                 />
               }
-              right={
-                <FieldSection gap="0.75rem">
-                  <CellAt col={1} colSpan={4}>
-                    <FormField label="Types">
-                      <EntityTypeMultiSelect
-                        selectedIds={primary.localValue.typeIds}
-                        seedRefs={entry.types}
-                        editable={!primary.isSaving}
-                        onChange={(typeIds) =>
-                          primary.setLocalValue((previous) => ({ ...previous, typeIds }))
-                        }
-                      />
-                    </FormField>
-                  </CellAt>
-                </FieldSection>
-              }
+              right={null}
             />
             <RecordSectionDivider />
             <div className="grid grid-cols-2 gap-x-6 gap-y-2">
