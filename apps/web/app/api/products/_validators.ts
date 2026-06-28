@@ -198,9 +198,6 @@ export function validateListProductsQuery(
 const productOptionsQuerySchema = z.object({
   search: z.string().optional(),
   categoryId: z.string().optional(),
-  style: z.string().optional(),
-  color: z.string().optional(),
-  namingAddon: z.string().optional(),
   skip: z.coerce.number().int().min(0).default(0),
   take: z.coerce.number().int().min(1).max(50).default(20),
 })
@@ -208,9 +205,6 @@ const productOptionsQuerySchema = z.object({
 export type ValidatedProductOptionsQuery = {
   search?: string
   categoryId?: string
-  style?: string
-  color?: string
-  namingAddon?: string
   skip: number
   take: number
 }
@@ -235,15 +229,9 @@ export function validateProductOptionsQuery(
   const parsed = parseResult.data
   const trimmedSearch = parsed.search?.trim()
   const trimmedCategoryId = parsed.categoryId?.trim()
-  const trimmedStyle = parsed.style?.trim()
-  const trimmedColor = parsed.color?.trim()
-  const trimmedNamingAddon = parsed.namingAddon?.trim()
   return {
     search: trimmedSearch ? trimmedSearch : undefined,
     categoryId: trimmedCategoryId ? trimmedCategoryId : undefined,
-    style: trimmedStyle ? trimmedStyle : undefined,
-    color: trimmedColor ? trimmedColor : undefined,
-    namingAddon: trimmedNamingAddon ? trimmedNamingAddon : undefined,
     skip: parsed.skip,
     take: parsed.take,
   }

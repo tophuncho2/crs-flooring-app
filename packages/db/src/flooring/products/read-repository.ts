@@ -73,9 +73,6 @@ export type ProductOptionRecord = {
   name: string
   categoryId: string
   categoryName: string
-  style: string
-  color: string
-  productNamingAddon: string
   sendUnitName: string
   sendUnitAbbrev: string
   stockUnitName: string
@@ -184,9 +181,6 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
     name: product.name || fallback,
     categoryId: product.categoryId,
     categoryName: product.category?.name ?? "",
-    style: product.style ?? "",
-    color: product.color ?? "",
-    productNamingAddon: product.productNamingAddon ?? "",
     sendUnitName: product.sendUnitName ?? "",
     sendUnitAbbrev: product.sendUnitAbbrev ?? "",
     stockUnitName: product.stockUnitName ?? "",
@@ -417,10 +411,6 @@ export async function listProductsForListView(
 export type ProductOptionsSearchArgs = {
   search?: string
   categoryId?: string
-  /** Substring (case-insensitive) matches on the free-text attribute columns (trgm GIN). */
-  style?: string
-  color?: string
-  namingAddon?: string
   skip?: number
   take: number
 }
@@ -440,18 +430,6 @@ export async function searchProductOptions(
   }
   if (args.categoryId) {
     clauses.push({ categoryId: args.categoryId })
-  }
-  const style = args.style?.trim() ?? ""
-  if (style.length > 0) {
-    clauses.push({ style: { contains: style, mode: "insensitive" } })
-  }
-  const color = args.color?.trim() ?? ""
-  if (color.length > 0) {
-    clauses.push({ color: { contains: color, mode: "insensitive" } })
-  }
-  const namingAddon = args.namingAddon?.trim() ?? ""
-  if (namingAddon.length > 0) {
-    clauses.push({ productNamingAddon: { contains: namingAddon, mode: "insensitive" } })
   }
   const where: Prisma.FlooringProductWhereInput | undefined =
     clauses.length === 0 ? undefined : clauses.length === 1 ? clauses[0] : { AND: clauses }

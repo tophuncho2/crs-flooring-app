@@ -93,10 +93,6 @@ export type ProductOption = {
   categoryId: string
   /** The product's category name, for pickers that surface the derived category. */
   categoryName: string
-  /** Physical attributes — surfaced by search tables that filter on them (e.g. the staged-inventory add modal). */
-  style: string
-  color: string
-  productNamingAddon: string
   sendUnitName: string
   sendUnitAbbrev: string
   stockUnitName: string
