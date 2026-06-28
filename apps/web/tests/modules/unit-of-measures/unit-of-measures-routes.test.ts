@@ -36,7 +36,6 @@ describe("unit-of-measures routes", () => {
         id: "admin-1",
         email: "admin@test.com",
         rank: "DEVELOPER",
-        isVerified: true,
       },
     })
   })

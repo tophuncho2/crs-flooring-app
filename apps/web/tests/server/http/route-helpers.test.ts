@@ -9,7 +9,6 @@ const context = {
     id: "owner-1",
     email: "owner@test.com",
     rank: "TIER_1" as const,
-    isVerified: true,
   },
 }
 

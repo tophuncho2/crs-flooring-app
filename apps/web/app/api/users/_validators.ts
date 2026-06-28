@@ -1,6 +1,51 @@
 import { z } from "zod"
+import { UserExecutionError } from "@builders/application"
 import type { ListInput, UsersListFilters } from "@builders/application"
-import { LIST_USERS_MAX_PAGE_SIZE, LIST_USERS_PAGE_SIZE } from "@builders/domain"
+import {
+  LIST_USERS_MAX_PAGE_SIZE,
+  LIST_USERS_PAGE_SIZE,
+  setUserActivePayloadSchema,
+  updateUserRankPayloadSchema,
+  type SetUserActivePayload,
+  type UpdateUserRankPayload,
+} from "@builders/domain"
+
+function failUserValidation(message: string, field?: string): never {
+  throw new UserExecutionError({
+    code: "USER_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
+
+export function validateUpdateUserRankInput(
+  body: Record<string, unknown>,
+): UpdateUserRankPayload {
+  const parseResult = updateUserRankPayloadSchema.safeParse(body)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    failUserValidation(
+      issue?.message ?? "Invalid rank",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+  return parseResult.data
+}
+
+export function validateSetUserActiveInput(
+  body: Record<string, unknown>,
+): SetUserActivePayload {
+  const parseResult = setUserActivePayloadSchema.safeParse(body)
+  if (!parseResult.success) {
+    const issue = parseResult.error.issues[0]
+    failUserValidation(
+      issue?.message ?? "Invalid activation state",
+      issue?.path[0] ? String(issue.path[0]) : undefined,
+    )
+  }
+  return parseResult.data
+}
 
 export class UsersListValidationError extends Error {
   readonly status = 400

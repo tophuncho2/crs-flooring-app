@@ -13,7 +13,7 @@ export default async function UsersPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireManageUsersAccess()
+  const actor = await requireManageUsersAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseUsersListInputFromSearchParams(resolvedSearchParams)
@@ -38,7 +38,11 @@ export default async function UsersPage({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <UsersClient initialPage={initialInput.page} />
+      <UsersClient
+        initialPage={initialInput.page}
+        actorId={actor.id}
+        actorRank={actor.rank}
+      />
     </HydrationBoundary>
   )
 }

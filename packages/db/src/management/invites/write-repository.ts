@@ -7,7 +7,6 @@ type InvitesDbClient = PrismaClient | Prisma.TransactionClient
 export type CreateInviteRecordInput = {
   email: string
   rank: UserRank
-  token: string
   invitedBy: string | null
   expiresAt: Date
 }
@@ -20,7 +19,6 @@ export async function createInviteRecord(
     data: {
       email: input.email,
       rank: input.rank,
-      token: input.token,
       invitedBy: input.invitedBy,
       expiresAt: input.expiresAt,
     },

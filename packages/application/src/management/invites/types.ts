@@ -15,6 +15,5 @@ export type CreateInviteResult = {
   id: string
   email: string
   rank: UserRank
-  token: string
   expiresAt: string
 }

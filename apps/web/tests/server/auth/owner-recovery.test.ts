@@ -2,96 +2,75 @@ import { describe, expect, it, vi } from "vitest"
 import { resolveOwnerRecoveryInput, upsertOwnerUser } from "../../packages/db/scripts/owner-recovery.js"
 
 describe("resolveOwnerRecoveryInput", () => {
-  it("accepts positional email and password arguments", () => {
-    expect(resolveOwnerRecoveryInput([" Owner@Test.com ", "Owner-Password-123" ])).toEqual({
+  it("accepts a positional email argument", () => {
+    expect(resolveOwnerRecoveryInput([" Owner@Test.com "])).toEqual({
       email: "owner@test.com",
-      password: "Owner-Password-123",
     })
   })
 
-  it("accepts flag-based email and password arguments", () => {
-    expect(resolveOwnerRecoveryInput(["--email", " Owner@Test.com ", "--password", "Owner-Password-123"])).toEqual({
+  it("accepts a flag-based email argument", () => {
+    expect(resolveOwnerRecoveryInput(["--email", " Owner@Test.com "])).toEqual({
       email: "owner@test.com",
-      password: "Owner-Password-123",
     })
   })
 
   it("rejects invalid invocation shapes", () => {
     expect(() => resolveOwnerRecoveryInput([])).toThrow(
-      "Usage: node scripts/owner-recovery.js <email> <password> or --email <email> --password <password>",
+      "Usage: node scripts/owner-recovery.js <email> or --email <email>",
     )
   })
 })
 
 describe("upsertOwnerUser", () => {
-  it("upserts a verified owner account", async () => {
-    const hash = vi.fn().mockResolvedValue("hashed-password")
+  it("upserts a passwordless DEVELOPER account", async () => {
     const upsert = vi.fn().mockResolvedValue({
       id: "owner-1",
       email: "owner@test.com",
-      rank: "TIER_1",
-      isVerified: true,
+      rank: "DEVELOPER",
+      isActive: true,
     })
     const logger = { log: vi.fn() }
 
     await expect(
       upsertOwnerUser({
-        prisma: {
-          user: {
-            upsert,
-          },
-        },
-        bcrypt: {
-          hash,
-        },
+        prisma: { user: { upsert } },
         email: " Owner@Test.com ",
-        password: "Owner-Password-123",
         logger,
       }),
     ).resolves.toEqual({
       id: "owner-1",
       email: "owner@test.com",
-      rank: "TIER_1",
-      isVerified: true,
+      rank: "DEVELOPER",
+      isActive: true,
     })
 
-    expect(hash).toHaveBeenCalledWith("Owner-Password-123", 10)
     expect(upsert).toHaveBeenCalledWith({
       where: { email: "owner@test.com" },
       update: {
-        password: "hashed-password",
-        rank: "TIER_1",
-        isVerified: true,
+        rank: "DEVELOPER",
+        isActive: true,
+        emailVerified: true,
       },
       create: {
         email: "owner@test.com",
-        password: "hashed-password",
-        rank: "TIER_1",
-        isVerified: true,
+        rank: "DEVELOPER",
+        emailVerified: true,
       },
       select: {
         id: true,
         email: true,
         rank: true,
-        isVerified: true,
+        isActive: true,
       },
     })
   })
 
-  it("rejects weak passwords", async () => {
+  it("rejects a missing email", async () => {
     await expect(
       upsertOwnerUser({
-        prisma: {
-          user: {
-            upsert: vi.fn(),
-          },
-        },
-        bcrypt: {
-          hash: vi.fn(),
-        },
-        email: "owner@test.com",
-        password: "short",
+        prisma: { user: { upsert: vi.fn() } },
+        email: "   ",
       }),
-    ).rejects.toThrow("Password must be at least 12 characters")
+    ).rejects.toThrow("Email is required")
   })
 })

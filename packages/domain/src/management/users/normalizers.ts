@@ -1,12 +1,15 @@
 import type { UserRank } from "./rank.js"
 import type { UserListRow } from "./types.js"
 
+const toIso = (value: Date | string) => (value instanceof Date ? value.toISOString() : value)
+
 type UserListRowInput = {
   id: string
   email: string
   rank: UserRank
-  isVerified: boolean
+  isActive: boolean
   createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export function normalizeUserListRow(user: UserListRowInput): UserListRow {
@@ -14,7 +17,8 @@ export function normalizeUserListRow(user: UserListRowInput): UserListRow {
     id: user.id,
     email: user.email,
     rank: user.rank,
-    isVerified: user.isVerified,
-    createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
+    isActive: user.isActive,
+    createdAt: toIso(user.createdAt),
+    updatedAt: toIso(user.updatedAt),
   }
 }

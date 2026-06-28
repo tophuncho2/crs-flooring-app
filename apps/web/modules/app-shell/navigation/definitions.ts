@@ -42,6 +42,7 @@ export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-unit-of-measures", name: "Unit Of Measures", href: "/dashboard/unit-of-measures", group: "catalog" },
   { slug: "flooring-categories", name: "Categories", href: "/dashboard/categories", group: "catalog" },
   { slug: "flooring-users", name: "Users", href: "/dashboard/users", group: "users" },
+  { slug: "flooring-invites", name: "Invites", href: "/dashboard/invites", group: "users" },
   { slug: "flooring-user-activity", name: "Login Activity", href: "/dashboard/user-activity", group: "users" },
 ]
 

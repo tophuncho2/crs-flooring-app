@@ -1,13 +1,11 @@
 async function main() {
   const [
     { createPrismaClient },
-    bcrypt,
     { seedSystemUsers },
     { seedUnitOfMeasures },
     { seedCategories },
   ] = await Promise.all([
     import("@builders/db"),
-    import("bcrypt"),
     import("./system-user-seed.js"),
     import("./seed-unit-of-measures.js"),
     import("./seed-categories.js"),
@@ -16,10 +14,7 @@ async function main() {
   const prisma = createPrismaClient()
 
   try {
-    await seedSystemUsers({
-      prisma,
-      bcrypt: bcrypt.default,
-    })
+    await seedSystemUsers({ prisma })
 
     console.log("Seeding unit of measures...")
     await seedUnitOfMeasures({ prisma })

@@ -4,6 +4,28 @@ import { normalizeUserListRow, type UserListRow } from "@builders/domain"
 
 type UsersDbClient = PrismaClient | Prisma.TransactionClient
 
+export const USER_ROW_SELECT = {
+  id: true,
+  email: true,
+  rank: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+} as const
+
+// Single user row (with `updatedAt` for optimistic concurrency). Used by the
+// rank-change / activation mutations.
+export async function getUserRecordById(
+  id: string,
+  client: UsersDbClient = db,
+): Promise<UserListRow | null> {
+  const user = await client.user.findUnique({
+    where: { id },
+    select: USER_ROW_SELECT,
+  })
+  return user ? normalizeUserListRow(user) : null
+}
+
 export type UserListViewOptions = {
   skip: number
   take: number
@@ -27,13 +49,7 @@ export async function listUsersForListView(
       orderBy: [{ email: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,
-      select: {
-        id: true,
-        email: true,
-        rank: true,
-        isVerified: true,
-        createdAt: true,
-      },
+      select: USER_ROW_SELECT,
     }),
   ])
 

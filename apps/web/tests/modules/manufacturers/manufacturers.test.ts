@@ -69,7 +69,6 @@ const routeAccess = {
     id: "user-1",
     email: "builder@example.com",
     rank: "DEVELOPER",
-    isVerified: true,
     tools: [],
   },
   clientIp: "127.0.0.1",

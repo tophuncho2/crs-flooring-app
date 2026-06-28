@@ -6,38 +6,37 @@ describe("resolveSeededSystemUsers", () => {
     expect(resolveSeededSystemUsers({})).toEqual([])
   })
 
-  it("normalizes valid admin and builder seed users", () => {
+  it("normalizes valid admin and builder seed users (passwordless)", () => {
     expect(
       resolveSeededSystemUsers({
         SEEDED_ADMIN_EMAIL: " Admin@Test.com ",
-        SEEDED_ADMIN_PASSWORD: "Admin-Seed-7Nw!4Qk2Lp",
         SEEDED_BUILDER_EMAIL: " Builder@Test.com ",
-        SEEDED_BUILDER_PASSWORD: "Builder-Seed-3Hv!8Tx5Mz",
       }),
     ).toEqual([
       {
         label: "admin",
         rank: "DEVELOPER",
         email: "admin@test.com",
-        password: "Admin-Seed-7Nw!4Qk2Lp",
       },
       {
         label: "builder",
         rank: "DEVELOPER",
         email: "builder@test.com",
-        password: "Builder-Seed-3Hv!8Tx5Mz",
       },
     ])
   })
 
-  it("rejects partial or weak seeded-user configuration", () => {
-    expect(() =>
+  it("skips definitions without a configured email", () => {
+    expect(
       resolveSeededSystemUsers({
-        SEEDED_ADMIN_EMAIL: "admin@test.com",
-        SEEDED_BUILDER_PASSWORD: "short",
+        SEEDED_BUILDER_EMAIL: "builder@test.com",
       }),
-    ).toThrowError(
-      "SEEDED_ADMIN_PASSWORD is required when configuring the admin seed user; SEEDED_BUILDER_EMAIL is required when configuring the builder seed user; SEEDED_BUILDER_PASSWORD must be at least 12 characters",
-    )
+    ).toEqual([
+      {
+        label: "builder",
+        rank: "DEVELOPER",
+        email: "builder@test.com",
+      },
+    ])
   })
 })

@@ -1,5 +1,7 @@
 export * from "./errors.js"
 export * from "./types.js"
 export * from "./create-invite.js"
+export * from "./list-invites.js"
+export * from "./revoke-invite.js"
 export * from "./resolve-signup-invite.js"
 export * from "./mark-signup-invite-accepted.js"

@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto"
 import { createInviteRecord, withDatabaseTransaction } from "@builders/db"
 import {
   canInviteRank,
@@ -11,8 +10,8 @@ import { InviteExecutionError } from "./errors.js"
 import type { CreateInviteResult, CreateInviteUseCaseInput, InviteActor } from "./types.js"
 
 // Manager-gated, rank-scoped invite creation. The actor must be allowed to manage
-// users and may only invite at or below their own rank. Returns the token so the
-// caller can build the shareable link (no email is sent — copy-paste delivery).
+// users and may only invite at or below their own rank. No secret link or email —
+// the invitee just signs in with Google and the email-match gate provisions them.
 export async function createInviteUseCase(
   input: CreateInviteUseCaseInput,
   actor: InviteActor,
@@ -35,19 +34,17 @@ export async function createInviteUseCase(
   }
 
   const email = input.email.trim().toLowerCase()
-  const token = randomBytes(32).toString("base64url")
   const expiresAt = new Date(Date.now() + INVITE_EXPIRY_MS)
 
   return withDatabaseTransaction(async (tx) => {
     const invite = await createInviteRecord(
-      { email, rank: input.rank, token, invitedBy: actor.email, expiresAt },
+      { email, rank: input.rank, invitedBy: actor.email, expiresAt },
       tx,
     )
     return {
       id: invite.id,
       email: invite.email,
       rank: invite.rank,
-      token: invite.token,
       expiresAt: invite.expiresAt,
     }
   })

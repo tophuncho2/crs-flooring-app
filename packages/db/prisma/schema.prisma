@@ -20,15 +20,13 @@ model User {
   email                  String                @unique
   emailVerified          Boolean               @default(false)
   image                  String?
-  // KEPT through the auth cut-over so the legacy NextAuth credentials flow
-  // keeps working; both are dropped in Better Auth Phase B once Google SSO is
-  // verified. `rank` stays the domain authority for authorization.
-  password               String?
   rank                   UserRank              @default(TIER_3)
-  isVerified             Boolean               @default(false)
+  // Manager-controlled activation gate. Deactivating flips this false and revokes
+  // the user's sessions; `getSessionUser` rejects inactive users. `rank` stays the
+  // domain authority for authorization.
+  isActive               Boolean               @default(true)
   createdAt              DateTime              @default(now())
   updatedAt              DateTime              @default(now()) @updatedAt
-  activities             UserLoginActivity[]
   mutationReceipts       AppMutationReceipt[]
   sessions               Session[]
   accounts               Account[]
@@ -90,24 +88,12 @@ model UserInvite {
   id         String    @id @default(uuid())
   email      String
   rank       UserRank
-  token      String    @unique
   invitedBy  String?
   expiresAt  DateTime
   acceptedAt DateTime?
   createdAt  DateTime  @default(now())
 
   @@index([email])
-}
-
-model UserLoginActivity {
-  id         String   @id @default(uuid())
-  userId     String?
-  userEmail  String
-  loggedInAt DateTime @default(now())
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([loggedInAt])
-  @@index([userEmail])
 }
 
 model AppMutationReceipt {

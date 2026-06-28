@@ -1,1 +1,5 @@
+export * from "./errors.js"
+export * from "./types.js"
 export * from "./list-users.js"
+export * from "./update-user-rank.js"
+export * from "./set-user-active.js"

@@ -12,9 +12,17 @@ export type SessionUser = {
 
 export async function getSessionUser(): Promise<SessionUser | null> {
   const session = await auth.api.getSession({ headers: await headers() })
-  const user = session?.user as { id?: string; email?: string; rank?: string } | undefined
+  const user = session?.user as
+    | { id?: string; email?: string; rank?: string; isActive?: boolean }
+    | undefined
 
   if (!user?.id || !user.email || !user.rank) {
+    return null
+  }
+
+  // Deactivated users are locked out. Deactivation also revokes their sessions,
+  // so this guards the brief cookie-cache window before the session lookup fails.
+  if (user.isActive === false) {
     return null
   }
 

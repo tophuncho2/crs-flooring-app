@@ -43,11 +43,12 @@ export const auth = betterAuth({
     },
   },
 
-  // `rank` stays the domain authority for authorization — surfaced on the user,
-  // never settable from client input.
+  // `rank` (authorization) and `isActive` (activation gate) stay server-owned —
+  // surfaced on the session user, never settable from client input.
   user: {
     additionalFields: {
       rank: { type: "string", required: false, input: false },
+      isActive: { type: "boolean", required: false, input: false },
     },
   },
 

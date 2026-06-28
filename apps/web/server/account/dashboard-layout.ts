@@ -7,7 +7,6 @@ export async function getDashboardLayoutUser(userId: string, db: DataAccessConte
       id: true,
       email: true,
       rank: true,
-      isVerified: true,
     },
   })
 }
