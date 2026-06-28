@@ -84,15 +84,16 @@ export function InventoryPrimaryFieldsSection({
                 onChange={(value) => onFieldChange("location", value)}
               />
             </CellAt>
-            <CellAt col={1} row={4} colSpan={8}>
+            {/* Note | Import # */}
+            <CellAt col={1} row={4} colSpan={4}>
               <NoteReadOnlyField value={record.note} />
             </CellAt>
-            {/* PO # | Import # */}
+            <CellAt col={5} row={4} colSpan={4}>
+              <ImportNumberField value={record.importNumber} />
+            </CellAt>
+            {/* PO # */}
             <CellAt col={1} row={5} colSpan={4}>
               <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
-            </CellAt>
-            <CellAt col={5} row={5} colSpan={4}>
-              <ImportNumberField value={record.importNumber} />
             </CellAt>
             {/* Merged, beneath PO # / Import # */}
             <CellAt col={1} row={6} colSpan={4}>
