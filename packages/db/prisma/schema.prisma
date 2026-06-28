@@ -584,7 +584,7 @@ model FlooringTemplate {
   unitType             String                     @db.VarChar(40)
   description          String?                    @db.VarChar(120)
   internalNotes        String?                    @db.VarChar(250)
-  installerInstructions String?                   @db.VarChar(250)
+  installerInstructions String?                   @db.VarChar(500)
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
   // Non-semantic palette tag (user-assigned visual color). Metadata-only — no
@@ -690,7 +690,7 @@ model FlooringWorkOrder {
   postalCode           String?
   description          String?                    @db.VarChar(120)
   internalNotes        String?                    @db.VarChar(250)
-  installerInstructions String?                   @db.VarChar(250)
+  installerInstructions String?                   @db.VarChar(500)
   purchaseOrderNumber  String?                    @db.VarChar(50)
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
