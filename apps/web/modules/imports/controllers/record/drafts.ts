@@ -95,6 +95,19 @@ export type StagedRowProductSeed = {
 }
 
 /**
+ * The editable fields the "Add Staged Inventory" modal collects. Cost + freight
+ * are intentionally absent — the modal hides them; the draft defaults them empty
+ * (the backend Decimal columns + materialize mapping stay intact).
+ */
+export type StagedRowFormValues = {
+  rollNumber: string
+  startingStock: string
+  dyeLot: string
+  location: string
+  note: string
+}
+
+/**
  * Client-side draft for a staged inventory row. `clientId` doubles as the
  * local id the grid uses; for existing server rows it's the row id, for
  * new rows it's a `createLocalRecordRowId("import-staged-row")` value the
@@ -160,6 +173,25 @@ export function createImportStagedRowDraft(
     productName: seed.productName,
     rollPrefix: "ROLL#",
     stockUnitAbbrev: seed.stockUnitAbbrev,
+  }
+}
+
+/**
+ * Seed a staged-row draft from the "Add Staged Inventory" modal: a product seed
+ * plus the modal's editable field values. Cost + freight stay empty (the modal
+ * doesn't surface them).
+ */
+export function createImportStagedRowDraftFromForm(
+  seed: StagedRowProductSeed,
+  form: StagedRowFormValues,
+): ImportStagedRowDraft {
+  return {
+    ...createImportStagedRowDraft(seed),
+    rollNumber: form.rollNumber,
+    startingStock: form.startingStock,
+    dyeLot: form.dyeLot,
+    location: form.location,
+    note: form.note,
   }
 }
 

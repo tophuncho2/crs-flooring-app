@@ -23,6 +23,7 @@ import type {
 import {
   createImportFilterRowDraft,
   createImportStagedRowDraft,
+  createImportStagedRowDraftFromForm,
   createSectionRevisionKey,
   duplicateImportStagedRowDraft,
   toImportSectionLocalState,
@@ -31,6 +32,7 @@ import {
   type ImportReconcileResponse,
   type ImportSectionLocalState,
   type ImportStagedRowDraft,
+  type StagedRowFormValues,
   type StagedRowProductSeed,
 } from "@/modules/imports/controllers/record/drafts"
 import { useSaveImportStagedInventorySectionMutation } from "./mutations/use-save-import-staged-inventory-section-mutation"
@@ -367,41 +369,15 @@ export function useImportFilterRows({
     [section],
   )
 
-  // Section-level "Add staged inventory": a blank staged row with no product —
-  // the user picks one inline (its own product picker) before it can save.
-  const addBlankStagedRow = useCallback(() => {
-    addStagedRowDraft({ productId: "", productName: "", stockUnitAbbrev: "" })
-  }, [addStagedRowDraft])
-
-  const setStagedRowProductId = useCallback(
-    (clientId: string, productId: string) => {
+  // Section-level "Add Staged Inventory": the create modal finds a product and
+  // collects the editable fields, then seeds a fully-populated draft in one shot.
+  const addStagedRowFromModal = useCallback(
+    (seed: StagedRowProductSeed, form: StagedRowFormValues) => {
       section.setLocalValue((prev) => ({
         ...prev,
-        stagedRows: prev.stagedRows.map((s) =>
-          s.clientId === clientId ? { ...s, productId } : s,
-        ),
+        stagedRows: [...prev.stagedRows, createImportStagedRowDraftFromForm(seed, form)],
       }))
       if (section.error) section.setError(null)
-    },
-    [section],
-  )
-
-  const setStagedRowProductSnapshot = useCallback(
-    (clientId: string, option: ProductOption | null) => {
-      section.setLocalValue((prev) => ({
-        ...prev,
-        stagedRows: prev.stagedRows.map((s) => {
-          if (s.clientId !== clientId) return s
-          if (option === null) {
-            return { ...s, productName: "", stockUnitAbbrev: "" }
-          }
-          return {
-            ...s,
-            productName: option.name,
-            stockUnitAbbrev: option.stockUnitAbbrev,
-          }
-        }),
-      }))
     },
     [section],
   )
@@ -461,9 +437,7 @@ export function useImportFilterRows({
     setFilterCategoryFilter,
     setFilterProductSnapshot,
     addStagedRowDraft,
-    addBlankStagedRow,
-    setStagedRowProductId,
-    setStagedRowProductSnapshot,
+    addStagedRowFromModal,
     duplicateStagedRowDraft,
     removeStagedRowDraft,
     setStagedRowField,

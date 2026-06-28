@@ -1,15 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { Plus } from "lucide-react"
 import {
   computeFilterRemainingStock,
   type FlooringStagedRowStatus,
 } from "@builders/domain"
 import { CellAddButton, StatusBadge, type BadgeTone } from "@/engines/common"
-import { MoneyCell, TextCell, UnitCell, isLocalOnlyRecordRow } from "@/engines/record-view"
+import { TextCell, UnitCell, isLocalOnlyRecordRow } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
-import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import {
   resolveEffectiveStatus,
   type ImportFilterRowDraft,
@@ -35,23 +34,16 @@ type StagedGroup = {
   rows: ImportStagedRowDraft[]
 }
 
+// Cost + freight are intentionally absent — hidden from the UI (the modal omits
+// them too). The backend Decimal columns + materialize mapping stay intact; rows
+// just default them empty.
 const STAGED_COLUMNS: DataTableColumn<StagedGridRow>[] = [
   { key: "status", label: "Status", width: 120, align: "center" },
   { key: "rollNumber", label: "Roll #", minWidth: 150, grow: 0.8 },
   { key: "startingStock", label: "Starting Stock", width: 160, align: "end" },
-  { key: "cost", label: "Cost", width: 130, align: "end" },
-  { key: "freight", label: "Freight", width: 130, align: "end" },
   { key: "dyeLot", label: "Dye Lot", minWidth: 130, grow: 0.6 },
   { key: "location", label: "Location", minWidth: 140, grow: 0.6 },
   { key: "note", label: "Note", minWidth: 220, grow: 1.4 },
-]
-
-// The "unassigned" group (a section-level blank add, productId "") leads with an
-// inline product picker so the user chooses a product before the row can save.
-// Once picked, the row regroups under its product and uses STAGED_COLUMNS.
-const STAGED_COLUMNS_WITH_PRODUCT: DataTableColumn<StagedGridRow>[] = [
-  { key: "product", label: "Product", minWidth: 240, grow: 1.4 },
-  ...STAGED_COLUMNS,
 ]
 
 // Two row controls (duplicate + delete) share the gutter — wider than the
@@ -115,6 +107,10 @@ function buildGroups(
   for (const row of stagedRows) {
     ensure(row.productId, row.productName, row.stockUnitAbbrev).rows.push(row)
   }
+  // Within a group, show rows newest→oldest. Server rows arrive createdAt-asc and
+  // new local drafts append to the end, so reversing puts the most recently added
+  // row on top — directly under the group header's "+" (and the modal-seeded add).
+  for (const group of groups) group.rows.reverse()
   groups.sort((a, b) => a.productName.localeCompare(b.productName))
   return groups
 }
@@ -139,13 +135,6 @@ export function ImportStagedInventoryGrid({
 
   const isSectionBusy = section.isSaving || section.isMarking || section.isSelectionActive
 
-  // Per-row category narrowing for the inline product picker on blank rows.
-  // UI-only (never persisted on a staged row) — keyed by the row's stable
-  // clientId so it survives the regroup once a product is picked.
-  const [categoryByClientId, setCategoryByClientId] = useState<
-    Record<string, string | null>
-  >({})
-
   const effectiveStatus = (draft: ImportStagedRowDraft): FlooringStagedRowStatus =>
     resolveEffectiveStatus(serverStatusById, draft)
 
@@ -164,26 +153,6 @@ export function ImportStagedInventoryGrid({
     const status = effectiveStatus(gridRow)
     const editable = status === "DRAFT" && !isSectionBusy
     switch (column.key) {
-      case "product":
-        return (
-          <ProductCategoryPicker
-            productId={gridRow.productId || null}
-            productLabel={gridRow.productName || null}
-            onProductChange={(next) =>
-              section.setStagedRowProductId(gridRow.clientId, next ?? "")
-            }
-            onProductOptionSelected={(option) =>
-              section.setStagedRowProductSnapshot(gridRow.clientId, option)
-            }
-            categoryId={categoryByClientId[gridRow.clientId] ?? null}
-            onCategoryChange={(next) =>
-              setCategoryByClientId((prev) => ({ ...prev, [gridRow.clientId]: next }))
-            }
-            productEditable={editable}
-            categoryEditable={editable}
-            ariaLabel="Staged inventory product"
-          />
-        )
       case "status":
         return <StatusBadge tone={statusTone(status)}>{statusLabel(status)}</StatusBadge>
       case "rollNumber":
@@ -203,24 +172,6 @@ export function ImportStagedInventoryGrid({
             onChange={(next) => section.setStagedRowField(gridRow.clientId, "startingStock", next)}
             unit={gridRow.stockUnitAbbrev || "unit"}
             ariaLabel="Starting stock"
-          />
-        )
-      case "cost":
-        return (
-          <MoneyCell
-            editable={editable}
-            value={gridRow.cost}
-            onChange={(next) => section.setStagedRowField(gridRow.clientId, "cost", next)}
-            ariaLabel="Cost"
-          />
-        )
-      case "freight":
-        return (
-          <MoneyCell
-            editable={editable}
-            value={gridRow.freight}
-            onChange={(next) => section.setStagedRowField(gridRow.clientId, "freight", next)}
-            ariaLabel="Freight"
           />
         )
       case "dyeLot":
@@ -266,10 +217,6 @@ export function ImportStagedInventoryGrid({
   return (
     <div className="space-y-5">
       {groups.map((group) => {
-        // The "unassigned" group collects section-level blank adds (productId
-        // ""): no planned import, no Requested/Remaining, an inline product
-        // picker column. A row regroups under its product once one is picked.
-        const isUnassigned = group.productId === ""
         const sum = startingStockSumByProductId.get(group.productId) ?? 0
         const remaining = computeFilterRemainingStock({
           stockOrdered: group.stockOrdered,
@@ -278,57 +225,53 @@ export function ImportStagedInventoryGrid({
         const rows: StagedGridRow[] = group.rows.map((row) => ({ ...row, id: row.clientId }))
         return (
           <div
-            key={group.productId || "__unassigned__"}
+            key={group.productId}
             className="space-y-2 border-b border-[var(--panel-border)] pb-5 last:border-b-0 last:pb-0"
           >
             <div className="flex items-center justify-between gap-3 px-1">
               <span className="flex items-center gap-2">
-                {isUnassigned ? null : (
-                  <CellAddButton
-                    onClick={() =>
-                      section.addStagedRowDraft({
-                        productId: group.productId,
-                        productName: group.productName,
-                        stockUnitAbbrev: group.stockUnitAbbrev,
-                      })
-                    }
-                    ariaLabel={`Add staged row for ${group.productName}`}
-                    title="Add a staged row for this product"
-                    disabled={isSectionBusy}
-                    className="h-8 w-8"
-                    icon={<Plus size={18} aria-hidden="true" />}
-                  />
-                )}
+                <CellAddButton
+                  onClick={() =>
+                    section.addStagedRowDraft({
+                      productId: group.productId,
+                      productName: group.productName,
+                      stockUnitAbbrev: group.stockUnitAbbrev,
+                    })
+                  }
+                  ariaLabel={`Add staged row for ${group.productName}`}
+                  title="Add a staged row for this product"
+                  disabled={isSectionBusy}
+                  className="h-8 w-8"
+                  icon={<Plus size={18} aria-hidden="true" />}
+                />
                 <span className="text-base font-semibold text-[var(--foreground)]">
-                  {isUnassigned ? "New staged inventory" : group.productName}
+                  {group.productName}
                 </span>
               </span>
-              {isUnassigned ? null : (
-                <span className="flex items-center gap-4 text-base uppercase tracking-wide text-[var(--foreground)]/55">
-                  <span>
-                    <span className="font-bold">Requested</span>{" "}
-                    <span className="tabular-nums text-sky-700/80">
-                      {group.stockOrdered || "—"}
-                      {group.stockOrdered && group.stockUnitAbbrev
-                        ? ` ${group.stockUnitAbbrev}`
-                        : ""}
-                    </span>
-                  </span>
-                  <span>
-                    <span className="font-bold">Remaining</span>{" "}
-                    <span className="tabular-nums text-[var(--foreground)]/80">
-                      {remaining || "—"}
-                      {remaining && group.stockUnitAbbrev ? ` ${group.stockUnitAbbrev}` : ""}
-                    </span>
+              <span className="flex items-center gap-4 text-base uppercase tracking-wide text-[var(--foreground)]/55">
+                <span>
+                  <span className="font-bold">Requested</span>{" "}
+                  <span className="tabular-nums text-sky-700/80">
+                    {group.stockOrdered || "—"}
+                    {group.stockOrdered && group.stockUnitAbbrev
+                      ? ` ${group.stockUnitAbbrev}`
+                      : ""}
                   </span>
                 </span>
-              )}
+                <span>
+                  <span className="font-bold">Remaining</span>{" "}
+                  <span className="tabular-nums text-[var(--foreground)]/80">
+                    {remaining || "—"}
+                    {remaining && group.stockUnitAbbrev ? ` ${group.stockUnitAbbrev}` : ""}
+                  </span>
+                </span>
+              </span>
             </div>
             {rows.length > 0 ? (
               <DataTable<StagedGridRow>
                 variant="editable"
                 rows={rows}
-                columns={isUnassigned ? STAGED_COLUMNS_WITH_PRODUCT : STAGED_COLUMNS}
+                columns={STAGED_COLUMNS}
                 rowActionsWidth={STAGED_GUTTER_WIDTH}
                 selection={{
                   selectedIds: section.selectedIds,
