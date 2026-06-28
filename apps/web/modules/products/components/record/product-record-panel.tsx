@@ -11,7 +11,6 @@ import type { CategoryRecord, ProductDetailRecord } from "@builders/db"
 import type { ProductStats } from "@builders/domain"
 import { useProductPrimarySection } from "@/modules/products/controllers/use-product-primary-section"
 import { ProductPrimaryFieldsSection } from "./primary/product-primary-fields-section"
-import { ProductStatisticsSection } from "./statistics/product-statistics-section"
 import { ProductRecordFooter } from "./footer"
 
 export function ProductRecordPanel({
@@ -86,6 +85,7 @@ export function ProductRecordPanel({
                   entityName={controller.record.entityName || null}
                   disabled={controller.primarySection.isSaving}
                   categoryReadOnly
+                  stats={stats}
                   onFieldChange={(field, value) => {
                     controller.primarySection.setLocalValue((previous) => ({
                       ...previous,
@@ -95,12 +95,6 @@ export function ProductRecordPanel({
                 />
               </RecordPrimarySectionInstance>
             ),
-          },
-          {
-            key: "statistics",
-            type: "item",
-            order: 20,
-            render: () => <ProductStatisticsSection stats={stats} />,
           },
         ]}
       />
