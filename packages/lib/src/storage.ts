@@ -59,6 +59,12 @@ export async function uploadBucketObject(
     data: Buffer
     key: string
     contentType: string
+    /**
+     * Optional `Cache-Control` response header stored on the object. S3/MinIO
+     * echoes it on GET, so the browser caches the bytes — used for static brand
+     * assets (e.g. the print logo) that change rarely.
+     */
+    cacheControl?: string
   },
 ) {
   await getStorageClient(env).send(
@@ -67,6 +73,7 @@ export async function uploadBucketObject(
       Key: input.key,
       Body: input.data,
       ContentType: input.contentType,
+      CacheControl: input.cacheControl,
     }),
   )
 

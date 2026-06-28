@@ -21,6 +21,13 @@ const { resolve } = require("node:path")
 // Source of truth: BRAND_LOGO_KEY in apps/web/server/storage/s3.ts.
 const LOGO_KEY = "assets/logo.png"
 const CONTENT_TYPE = "image/png"
+// Long-lived immutable cache: the logo changes rarely, and the print views read
+// it through a presigned URL that the app memoizes per process — so a stable URL
+// + this header lets the browser cache the bytes across prints. S3/MinIO echoes
+// Cache-Control on GET.
+const CACHE_CONTROL = "public, max-age=31536000, immutable"
+// Print-optimized asset (small PNG, sized for the 56px print render). Keep this
+// the small upload source — the hi-res master belongs in design tooling, not git.
 const DEFAULT_LOGO_PATH = resolve(__dirname, "../../../CRS-Logo-Transparent.png")
 
 function getStorageEnv() {
@@ -82,7 +89,12 @@ async function uploadBrandLogo({ env, logoPath, force = false, logger = console 
 
   const data = readFileSync(logoPath)
   logger.log(`${exists ? "Overwriting" : "Uploading"} ${data.length} bytes...`)
-  await uploadBucketObject(env, { data, key: LOGO_KEY, contentType: CONTENT_TYPE })
+  await uploadBucketObject(env, {
+    data,
+    key: LOGO_KEY,
+    contentType: CONTENT_TYPE,
+    cacheControl: CACHE_CONTROL,
+  })
 
   const confirmed = await bucketObjectExists(env, LOGO_KEY)
   if (!confirmed) {
