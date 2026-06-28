@@ -94,12 +94,16 @@ async function seedSystemUsers({
         password: hashedPassword,
         rank: user.rank,
         isVerified: true,
+        // Trusted bootstrap account — verified so the first Google sign-in
+        // auto-links to this row instead of raising account_not_linked.
+        emailVerified: true,
       },
       create: {
         email: user.email,
         password: hashedPassword,
         rank: user.rank,
         isVerified: true,
+        emailVerified: true,
       },
     })
 
