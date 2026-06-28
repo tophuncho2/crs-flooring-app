@@ -58,6 +58,7 @@ export function PropertyHubQuickCreateModal({
       canCreate={controller.canCreate}
       isSaving={controller.isSaving}
       error={controller.error}
+      widthClassName="max-w-4xl"
     >
       <div className="space-y-4">
         <div className={SECTION_CARD_CLASS}>

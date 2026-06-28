@@ -76,6 +76,8 @@ export function EntitySelectSection({
           editable={!disabled && mode !== "link"}
           onFieldChange={onEntityFieldChange}
           showContactAndAddress={!compact}
+          showTypes
+          onTypeIdsChange={(typeIds) => onEntityFieldChange("typeIds", typeIds)}
         />
       </div>
     </>

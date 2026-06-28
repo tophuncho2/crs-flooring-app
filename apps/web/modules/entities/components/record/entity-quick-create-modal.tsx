@@ -44,12 +44,17 @@ export function EntityQuickCreateModal({
       canCreate={controller.canCreate}
       isSaving={controller.isSaving}
       error={controller.error}
+      widthClassName="max-w-4xl"
     >
       <EntityCellsSection
         form={controller.localValue}
         editable={editable}
         onFieldChange={(field, value) =>
           controller.setLocalValue((prev) => ({ ...prev, [field]: value }))
+        }
+        showTypes
+        onTypeIdsChange={(typeIds) =>
+          controller.setLocalValue((prev) => ({ ...prev, typeIds }))
         }
       />
     </QuickCreateModal>
