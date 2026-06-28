@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { buildWorkOrderPickingTicketHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-picking-ticket-html.js"
-import { buildWorkOrderSlipHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-slip-html.js"
+import { buildWorkOrderPrintHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-print-html.js"
+import { buildWorkOrderPrintConfig } from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
 import { makeFileGenInput, makeMaterialItem } from "./_fixtures.js"
 
 // Everything above the adjustments table = the slice of the document before the
@@ -21,8 +21,8 @@ const options = { logoUrl: "https://bucket.example/logo.png" }
 
 describe("work-order documents — above the adjustments table", () => {
   it("the slip and picking ticket are identical except for the title tag", () => {
-    const slipPreamble = preamble(buildWorkOrderSlipHtml(input, options))
-    const pickingPreamble = preamble(buildWorkOrderPickingTicketHtml(input, options))
+    const slipPreamble = preamble(buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("slip"), options))
+    const pickingPreamble = preamble(buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("pickingTicket"), options))
 
     // Normalize the one intentional difference — the document-type tag — then
     // assert byte-for-byte equality of everything above the table.
@@ -35,8 +35,8 @@ describe("work-order documents — above the adjustments table", () => {
   })
 
   it("the two preambles differ ONLY by the tag (sanity: un-normalized they are not equal)", () => {
-    const slipPreamble = preamble(buildWorkOrderSlipHtml(input, options))
-    const pickingPreamble = preamble(buildWorkOrderPickingTicketHtml(input, options))
+    const slipPreamble = preamble(buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("slip"), options))
+    const pickingPreamble = preamble(buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("pickingTicket"), options))
 
     expect(pickingPreamble).not.toEqual(slipPreamble)
     expect(slipPreamble).toContain('<span class="page-tag">Work Order</span>')
@@ -45,7 +45,7 @@ describe("work-order documents — above the adjustments table", () => {
 
   it("matches the characterization snapshot of the shared preamble", () => {
     // Tag normalized out so the snapshot captures the shared region only.
-    const shared = preamble(buildWorkOrderSlipHtml(input, options))
+    const shared = preamble(buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("slip"), options))
     expect(shared).toMatchInlineSnapshot(`
       "<style>
         @page { size: letter; margin: 0; }

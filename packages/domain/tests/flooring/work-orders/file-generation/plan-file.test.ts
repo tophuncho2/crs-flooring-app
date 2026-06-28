@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { buildWorkOrderPlanFileHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-plan-file-html.js"
+import { buildWorkOrderPrintHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-print-html.js"
+import { buildWorkOrderPrintConfig } from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
 import {
+  renderWorkOrderDocumentHeader,
   renderWorkOrderMaterialItems,
-  renderWorkOrderPlanFileHeader,
 } from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
 import { makeFileGenInput, makeMaterialItemGroup, makeMaterialItemRow } from "./_fixtures.js"
 
@@ -12,7 +13,7 @@ function count(haystack: string, needle: string): number {
 
 describe("plan-file — header tag", () => {
   it("carries the 'Plan File' tag (not the other view titles)", () => {
-    const html = renderWorkOrderPlanFileHeader(makeFileGenInput(), null)
+    const html = renderWorkOrderDocumentHeader(makeFileGenInput(), "Plan File", null)
     expect(html).toContain('<span class="page-tag">Plan File</span>')
     expect(html).not.toContain("Picking Ticket")
     expect(html).not.toContain('page-tag">Work Order<')
@@ -72,7 +73,7 @@ describe("plan-file — grouping + subtotal", () => {
 })
 
 describe("plan-file — wired through the full builder", () => {
-  it("buildWorkOrderPlanFileHtml renders the header, info, and material items", () => {
+  it("the planFile preset renders the header, info, and material items", () => {
     const input = makeFileGenInput({
       workOrderNumber: "WO-7777",
       materialItemGroups: [
@@ -85,7 +86,7 @@ describe("plan-file — wired through the full builder", () => {
         }),
       ],
     })
-    const html = buildWorkOrderPlanFileHtml(input)
+    const html = buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("planFile"))
     expect(html).toContain('<span class="page-tag">Plan File</span>')
     expect(html).toContain('<span class="page-number">WO-7777</span>')
     expect(html).toContain("<td>Vinyl Plank</td>")

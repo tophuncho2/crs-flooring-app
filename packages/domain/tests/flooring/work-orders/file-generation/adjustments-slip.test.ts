@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { buildWorkOrderSlipHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-slip-html.js"
+import { buildWorkOrderPrintHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-print-html.js"
+import { buildWorkOrderPrintConfig } from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
 import { renderWorkOrderAdjustments } from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
 import { makeAdjustment, makeFileGenInput, makeMaterialItem } from "./_fixtures.js"
 
@@ -91,7 +92,7 @@ describe("slip — per-group subtotal row", () => {
 })
 
 describe("slip — wired through the full builder", () => {
-  it("buildWorkOrderSlipHtml lists each adjustment, subtotals, and omits detail", () => {
+  it("the slip preset lists each adjustment, subtotals, and omits detail", () => {
     const input = makeFileGenInput({
       materialItems: [
         makeMaterialItem({
@@ -103,7 +104,7 @@ describe("slip — wired through the full builder", () => {
         }),
       ],
     })
-    const html = buildWorkOrderSlipHtml(input)
+    const html = buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("slip"))
     expect(html).toContain("<td>Vinyl Plank</td>")
     // each adjustment on its own row, then the summed subtotal under a rule
     expect(html).toContain('<td class="cl-num">3 rolls</td>')

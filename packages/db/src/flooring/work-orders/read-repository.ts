@@ -399,11 +399,10 @@ export async function exportWorkOrders(
 }
 
 /**
- * Joined read shape consumed by the on-demand print views (Work Order
- * Slip / Picking Ticket). Returns the data already projected to
- * `WorkOrderFileGenerationInput` so the page loader can hand it straight
- * to `buildWorkOrderSlipHtml` / `buildWorkOrderPickingTicketHtml` from
- * the domain layer.
+ * Joined read shape consumed by the on-demand print configurator. Returns
+ * the data already projected to `WorkOrderFileGenerationInput` so the page
+ * loader can hand it straight to `buildWorkOrderPrintHtml` from the domain
+ * layer.
  *
  * Inventory identity + unit fields on each adjustment are read from the
  * adjustment row's snapshot columns rather than the joined inventory or

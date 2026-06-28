@@ -115,27 +115,6 @@ export function renderWorkOrderDocumentHeader(
 `.trim()
 }
 
-export function renderWorkOrderHeader(
-  input: WorkOrderFileGenerationInput,
-  logoUrl?: string | null,
-): string {
-  return renderWorkOrderDocumentHeader(input, "Work Order", logoUrl)
-}
-
-export function renderWorkOrderPickingTicketHeader(
-  input: WorkOrderFileGenerationInput,
-  logoUrl?: string | null,
-): string {
-  return renderWorkOrderDocumentHeader(input, "Picking Ticket", logoUrl)
-}
-
-export function renderWorkOrderPlanFileHeader(
-  input: WorkOrderFileGenerationInput,
-  logoUrl?: string | null,
-): string {
-  return renderWorkOrderDocumentHeader(input, "Plan File", logoUrl)
-}
-
 // Wraps the document so the header repeats on every printed page. The header
 // goes in a <thead> (a table-header-group): Chromium re-renders it at the top
 // of each page AND reserves vertical space for it, so it never overlaps the

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { buildWorkOrderPickingTicketHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-picking-ticket-html.js"
-import { buildWorkOrderSlipHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-slip-html.js"
+import { buildWorkOrderPrintHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-print-html.js"
+import { buildWorkOrderPrintConfig } from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
 import { renderWorkOrderAdjustments } from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
 import { EMPTY_CELL, makeAdjustment, makeFileGenInput, makeMaterialItem } from "./_fixtures.js"
 
@@ -36,8 +36,12 @@ describe("both sections — empty adjustments are omitted entirely", () => {
 
   it("neither builder renders a flat-rows table when there are no adjustments", () => {
     const input = makeFileGenInput({ materialItems: [makeMaterialItem({ inventoryAdjustments: [] })] })
-    expect(buildWorkOrderPickingTicketHtml(input)).not.toContain('<table class="flat-rows">')
-    expect(buildWorkOrderSlipHtml(input)).not.toContain('<table class="flat-rows">')
+    expect(
+      buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("pickingTicket")),
+    ).not.toContain('<table class="flat-rows">')
+    expect(buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("slip"))).not.toContain(
+      '<table class="flat-rows">',
+    )
   })
 })
 
