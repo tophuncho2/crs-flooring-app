@@ -113,7 +113,9 @@ export default function LoginForm({
               <Layers className="h-10 w-10 text-white" strokeWidth={2.2} />
             </div>
           )}
-          <p className="mt-1 text-sm text-white/50">Operations Portal</p>
+          <p className="crs-aurora-text mt-1 text-lg font-bold uppercase tracking-[0.25em]">
+            Operations Portal
+          </p>
         </div>
 
         {error && (

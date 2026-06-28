@@ -110,6 +110,32 @@ body {
   from { opacity: 0; transform: translateY(16px) scale(0.985); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+@keyframes crs-text-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Aurora-tinted gradient wordmark — same sky/teal/indigo palette as the
+   background layers, slowly shifting so it shimmers in sync with the drift. */
+.crs-aurora-text {
+  background-image: linear-gradient(
+    100deg,
+    #38bdf8 0%,
+    #2dd4bf 30%,
+    #818cf8 55%,
+    #38bdf8 80%,
+    #2dd4bf 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: crs-text-shimmer 8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .crs-aurora-text { animation: none !important; }
+}
 
 .crs-aurora-layer {
   position: absolute;
