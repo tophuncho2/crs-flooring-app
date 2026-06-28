@@ -48,19 +48,13 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
  * carve-out, this is a data-layer normalizer reusing pure domain
  * formatters/computations; it MUST NOT call domain rules that throw.
  *
- * The `categoryName` snapshot column is surfaced as-is; the worker writes it at
- * materialize time. `importNumber` and `purchaseOrderNumber` are derived from
- * the live `importEntry` join (their snapshot columns have been dropped) so they
- * always reflect the linked import — including PO# edits made after materialize.
+ * `importNumber` and `purchaseOrderNumber` are derived from the live
+ * `importEntry` join (their snapshot columns have been dropped) so they always
+ * reflect the linked import — including PO# edits made after materialize.
  * `productName` is likewise derived from the live `product` join (not a snapshot
  * column) so product edits propagate.
  */
 export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRecord {
-  // Read the categorySlug snapshot column, not the joined product.category.slug.
-  // The snapshot is stamped at worker-create time and is immutable thereafter;
-  // the product's category can no longer change while inventory exists (see
-  // isProductCategoryChangeBlocked).
-  const categorySlug = payload.categorySlug
   const balanceNum = computeInventoryBalance({
     startingStock: payload.startingStock.toString(),
     netDeducted: payload.netDeducted.toString(),
@@ -83,8 +77,6 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
       color: payload.product.color,
     }),
     categoryId: payload.product.category.id,
-    categoryName: payload.categoryName,
-    categorySlug,
     stockUnitName: payload.stockUnitName ?? "",
     stockUnitAbbrev: payload.stockUnitAbbrev ?? "",
     sendUnitName: payload.sendUnitName ?? "",
@@ -780,7 +772,6 @@ export async function listInventoryOptions(
         categoryId: true,
         category: {
           select: {
-            slug: true,
             stockUnit: { select: { name: true } },
             sendUnit: { select: { name: true } },
           },
@@ -810,7 +801,6 @@ export async function listInventoryOptions(
       style: row.style,
       color: row.color,
       categoryId: row.categoryId,
-      categorySlug: row.category.slug,
       stockUnit: row.category.stockUnit?.name ?? "",
       sendUnit: row.category.sendUnit?.name ?? "",
     })),

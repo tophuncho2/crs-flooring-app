@@ -48,10 +48,9 @@ export function isProductNameConflict(a: string, b: string): boolean {
 /**
  * Category is immutable post-create — full stop, regardless of whether any
  * inventory exists yet. The product's category drives the unit-of-measure
- * snapshot stamped on the product row (sendUnit/stockUnit Name + Abbrev),
- * and downstream snapshots on inventory rows
- * (`inventory.categorySlug`) and material item rows (`*.sendUnitName` etc).
- * Allowing the category to change post-create would drift every snapshot.
+ * snapshot stamped on the product row (sendUnit/stockUnit Name + Abbrev) and on
+ * material item rows (`*.sendUnitName` etc). Allowing the category to change
+ * post-create would drift every snapshot.
  *
  * Returns true when the caller is attempting to change the category, false
  * otherwise. Both ids are compared trimmed so whitespace noise doesn't

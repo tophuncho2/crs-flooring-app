@@ -101,8 +101,6 @@ describe("createInventoryUseCase", () => {
       // The product's joined snapshot is flattened before the domain builder.
       expect(buildCreatedInventoryInsertMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          categorySlug: "carpet",
-          categoryName: "Carpet",
           stockUnitAbbrev: "SF",
         }),
         input(),

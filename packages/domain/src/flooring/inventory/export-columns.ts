@@ -13,7 +13,6 @@ import type { InventoryRow } from "./types.js"
 export const INVENTORY_EXPORT_COLUMNS: ReadonlyArray<ExportColumn<InventoryRow>> = [
   { key: "inventoryNumber", label: "Inv #", value: (row) => row.inventoryNumber },
   { key: "productName", label: "Product", value: (row) => row.productName },
-  { key: "categoryName", label: "Category", value: (row) => row.categoryName },
   {
     key: "rollNumber",
     label: "Roll #",

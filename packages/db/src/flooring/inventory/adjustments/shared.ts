@@ -13,7 +13,6 @@ export const adjustmentRowSelect = {
   inventoryNote: true,
   location: true,
   area: true,
-  categorySlug: true,
   productId: true,
   // Live product join — the normalizer derives the displayed product label
   // from this (via buildFlooringProductDisplayName). `productId` is non-nullable

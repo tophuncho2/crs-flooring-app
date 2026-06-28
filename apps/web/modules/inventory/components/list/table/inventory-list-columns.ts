@@ -19,7 +19,6 @@ export const INVENTORY_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InventoryRow>
   { key: "note", label: "Note" },
   { key: "location", label: "Location" },
   { key: "warehouse", label: "Warehouse" },
-  { key: "categoryName", label: "Category" },
   { key: "startingStock", label: "Starting", align: "end" },
   { key: "purchaseOrderNumber", label: "PO #" },
   { key: "importNumber", label: "Import #" },

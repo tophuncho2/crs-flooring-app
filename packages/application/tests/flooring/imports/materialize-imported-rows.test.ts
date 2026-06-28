@@ -183,8 +183,6 @@ describe("materializeImportedStagedRowsUseCase", () => {
       // snapshotted (rendered from the live `product` join at read time).
       expect(created.productId).toBe("product-1")
       expect(created.productName).toBeUndefined()
-      expect(created.categorySlug).toBe("carpet")
-      expect(created.categoryName).toBe("Carpet")
       // UoM snapshots from product.
       expect(created.stockUnitName).toBe("Square Yard")
       expect(created.stockUnitAbbrev).toBe("sy")

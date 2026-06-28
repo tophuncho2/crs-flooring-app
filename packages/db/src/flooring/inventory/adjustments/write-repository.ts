@@ -53,9 +53,9 @@ export type InsertPendingAdjustmentRowInput = {
   color?: PaletteColor
   unitSnapshot: PendingAdjustmentUnitSnapshot
   /**
-   * Identity snapshot from the parent inventory: `categorySlug` + the 5
-   * underlying primitives (`inventoryNumber`, `rollPrefix`, `rollNumber`,
-   * `dyeLot`, `inventoryNote`). Stamped at insert and frozen — never re-stamped.
+   * Identity snapshot from the parent inventory: the 5 underlying primitives
+   * (`inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`, `inventoryNote`).
+   * Stamped at insert and frozen — never re-stamped.
    */
   inventorySnapshot: PendingAdjustmentInventorySnapshot
   /**
@@ -85,9 +85,9 @@ export type InsertPendingAdjustmentRowInput = {
  * persistence call — no business rules, no invariant checks (those run in
  * the use case before/after via the domain).
  *
- * Stamps the two stock unit-snapshot fields, the eight identity-snapshot fields
- * (`categorySlug`, the 5 identity primitives, plus
- * `productId` / `warehouseId`), and the user-owned `location` from the input.
+ * Stamps the two stock unit-snapshot fields, the seven identity-snapshot fields
+ * (the 5 identity primitives, plus `productId` / `warehouseId`), and the
+ * user-owned `location` from the input.
  *
  * `before` / `after` are left null here; the caller immediately runs
  * `recomputeAndPersistNetDeducted`, which replays the inventory's whole chain
@@ -110,7 +110,6 @@ export async function insertPendingAdjustmentRow(
       ...(input.color !== undefined ? { color: input.color } : {}),
       stockUnitName: input.unitSnapshot.stockUnitName,
       stockUnitAbbrev: input.unitSnapshot.stockUnitAbbrev,
-      categorySlug: input.inventorySnapshot.categorySlug,
       inventoryNumber: input.inventorySnapshot.inventoryNumber,
       rollPrefix: input.inventorySnapshot.rollPrefix,
       rollNumber: input.inventorySnapshot.rollNumber,

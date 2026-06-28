@@ -43,8 +43,6 @@ function inventory(): InventoryDetail {
     productId: "prod-1",
     productName: "Berber Carpet",
     categoryId: "",
-    categoryName: "",
-    categorySlug: "carpet",
     stockUnitName: "square foot",
     stockUnitAbbrev: "sqft",
     sendUnitName: "",

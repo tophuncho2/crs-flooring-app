@@ -32,8 +32,6 @@ export type CreateInventoryEdits = {
 // missing units to "" — into this before calling the builder), keeping the
 // domain free of `@builders/db` types.
 export type CreateInventoryProductSnapshot = {
-  categorySlug: string
-  categoryName: string
   stockUnitName: string
   stockUnitAbbrev: string
   sendUnitName: string
@@ -44,8 +42,6 @@ export type CreatedInventoryInsertFields = {
   importEntryId: null
   sourceStagedRowId: null
   productId: string
-  categorySlug: string
-  categoryName: string
   stockUnitName: string | null
   stockUnitAbbrev: string | null
   sendUnitName: string | null
@@ -165,8 +161,6 @@ export function buildCreatedInventoryInsert(
     importEntryId: null,
     sourceStagedRowId: null,
     productId: edits.productId,
-    categorySlug: product.categorySlug,
-    categoryName: product.categoryName,
     stockUnitName: emptyToNull(product.stockUnitName),
     stockUnitAbbrev: emptyToNull(product.stockUnitAbbrev),
     sendUnitName: emptyToNull(product.sendUnitName),

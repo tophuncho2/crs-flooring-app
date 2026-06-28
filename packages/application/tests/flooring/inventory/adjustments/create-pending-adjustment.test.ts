@@ -103,7 +103,6 @@ function inventoryContext(overrides: Record<string, unknown> = {}) {
     startingStock: "100.00",
     cost: "200.00",
     freight: "50.00",
-    categorySlug: "vinyl-plank",
     stockUnitName: "Square Foot",
     stockUnitAbbrev: "sf",
     inventoryNumber: "INV-5",

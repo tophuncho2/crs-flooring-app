@@ -7,8 +7,6 @@ export type StagedInventoryFilterRow = {
   productId: string
   productName: string
   categoryId: string
-  categoryName: string
-  categorySlug: string
   stockOrdered: string
   stockUnitName: string
   stockUnitAbbrev: string

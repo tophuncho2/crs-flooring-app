@@ -25,8 +25,6 @@ export const stagedInventoryRowSelect = {
       category: {
         select: {
           id: true,
-          slug: true,
-          name: true,
         },
       },
     },

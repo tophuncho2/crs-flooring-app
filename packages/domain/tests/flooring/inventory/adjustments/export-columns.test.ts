@@ -14,7 +14,6 @@ describe("ADJUSTMENTS_EXPORT_COLUMNS", () => {
     inventoryNote: "from import",
     location: "A-12",
     area: "Bay 7",
-    categorySlug: "carpet",
     productId: "prod-1",
     productName: "Berber — Oat",
     warehouseId: "wh-1",

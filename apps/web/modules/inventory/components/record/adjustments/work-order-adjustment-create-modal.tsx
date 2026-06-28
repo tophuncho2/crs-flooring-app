@@ -36,8 +36,6 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     productId: adj.productId,
     productName: adj.productName,
     categoryId: "",
-    categoryName: "",
-    categorySlug: adj.categorySlug,
     stockUnitName: adj.stockUnitName ?? "",
     stockUnitAbbrev: adj.stockUnitAbbrev ?? "",
     sendUnitName: "",

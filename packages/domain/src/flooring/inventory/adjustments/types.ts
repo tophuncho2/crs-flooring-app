@@ -13,7 +13,6 @@ export type InventoryAdjustmentRow = {
   inventoryNote: string | null
   location: string | null
   area: string | null
-  categorySlug: string
   productId: string
   productName: string
   warehouseId: string
@@ -102,7 +101,6 @@ export type InventoryAdjustmentParentContext = {
   cost: string | null
   freight: string | null
   currentNetDeducted: string
-  categorySlug: string
   stockUnitName: string | null
   stockUnitAbbrev: string | null
   inventoryNumber: string | null

@@ -17,7 +17,7 @@ export const stagedInventoryFilterRowSelect = {
       color: true,
       stockUnitName: true,
       stockUnitAbbrev: true,
-      category: { select: { id: true, slug: true, name: true } },
+      category: { select: { id: true } },
     },
   },
   stockOrdered: true,

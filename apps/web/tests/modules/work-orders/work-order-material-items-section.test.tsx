@@ -98,7 +98,6 @@ function adjustment(overrides: Partial<EnrichedInventoryAdjustmentRow> = {}): En
     dyeLot: "DL-3",
     inventoryNote: "",
     location: "A1",
-    categorySlug: "carpet",
     productId: "prod-1",
     productName: "Berber Carpet",
     warehouseId: "wh-1",

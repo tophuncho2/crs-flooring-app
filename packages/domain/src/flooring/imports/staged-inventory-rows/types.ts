@@ -7,8 +7,6 @@ export type StagedInventoryRow = {
   productId: string
   productName: string
   categoryId: string
-  categoryName: string
-  categorySlug: string
   stockUnitName: string
   stockUnitAbbrev: string
   rollPrefix: string

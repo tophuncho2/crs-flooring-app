@@ -48,8 +48,6 @@ export async function materializeImportedStagedRowsUseCase(
       sourceStagedRowId: row.id,
       importEntryId: payload.importEntryId,
       productId: row.productId,
-      categorySlug: row.product.category.slug,
-      categoryName: row.product.category.name,
       stockUnitName: row.product.stockUnitName,
       stockUnitAbbrev: row.product.stockUnitAbbrev,
       sendUnitName: row.product.sendUnitName,

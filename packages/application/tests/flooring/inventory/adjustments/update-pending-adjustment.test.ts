@@ -86,7 +86,6 @@ function existingRow(overrides: Record<string, unknown> = {}) {
 
 function inventoryRow(overrides: Record<string, unknown> = {}) {
   return {
-    categorySlug: "vinyl-plank",
     location: "A1",
     startingStock: "100.00",
     currentNetDeducted: "5.00",

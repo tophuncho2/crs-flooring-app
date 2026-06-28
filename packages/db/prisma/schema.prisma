@@ -316,8 +316,6 @@ model FlooringInventory {
   sourceStagedRow        FlooringImportStagedInventoryRow? @relation(fields: [sourceStagedRowId], references: [id], onDelete: SetNull)
   productId              String
   product                FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
-  categorySlug           String
-  categoryName           String               @default("")
   stockUnitName          String?
   stockUnitAbbrev        String?
   sendUnitName           String?
@@ -471,7 +469,6 @@ model FlooringInventoryAdjustment {
   inventoryNote     String?                           @db.VarChar(30)
   location          String?                           @db.VarChar(30)
   area              String?                           @db.VarChar(30)
-  categorySlug      String
   productId         String
   product           FlooringProduct                   @relation(fields: [productId], references: [id], onDelete: Restrict)
   warehouseId       String

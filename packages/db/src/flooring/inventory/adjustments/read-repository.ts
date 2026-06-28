@@ -47,11 +47,11 @@ function toDecimalStringOrNull(
  * columns surface as strings; nullable columns preserve null instead of
  * coercing to "".
  *
- * Frozen-at-create snapshots on the adjustment row: `categorySlug`,
- * `inventoryNumber`, `rollPrefix`, `rollNumber`, `dyeLot`,
- * `inventoryNote`, and the stock unit-of-measure labels. Stamped once at
- * insert, never mutated. (`location` is separate — user-owned free text,
- * editable through update; not a parent mirror.)
+ * Frozen-at-create snapshots on the adjustment row: `inventoryNumber`,
+ * `rollPrefix`, `rollNumber`, `dyeLot`, `inventoryNote`, and the stock
+ * unit-of-measure labels. Stamped once at insert, never mutated. (`location` is
+ * separate — user-owned free text, editable through update; not a parent
+ * mirror.)
  */
 export function normalizeAdjustmentRow(
   row: InventoryAdjustmentRowPayload,
@@ -68,7 +68,6 @@ export function normalizeAdjustmentRow(
     inventoryNote: row.inventoryNote ?? null,
     location: row.location ?? null,
     area: row.area ?? null,
-    categorySlug: row.categorySlug,
     productId: row.productId,
     // Live product label via the joined product. The `productName` snapshot
     // column has been dropped; the label is derived here so product edits
@@ -149,7 +148,6 @@ export async function getEnrichedInventoryAdjustmentById(
  * under the FOR UPDATE lock:
  *   - `startingStock` + `currentNetDeducted` for the
  *     `netDeducted ≤ startingStock` invariant.
- *   - `categorySlug` — stamped on the adjustment at create.
  *   - Stock unit-of-measure labels — stamped on the adjustment at create
  *     (frozen thereafter).
  *   - The 5 inventory-identity primitives — stamped on the adjustment at
@@ -182,7 +180,6 @@ export async function getInventoryParentContextForAdjustments(
       cost: true,
       freight: true,
       netDeducted: true,
-      categorySlug: true,
       stockUnitName: true,
       stockUnitAbbrev: true,
       productId: true,
@@ -196,7 +193,6 @@ export async function getInventoryParentContextForAdjustments(
     cost: toDecimalStringOrNull(row.cost),
     freight: toDecimalStringOrNull(row.freight),
     currentNetDeducted: row.netDeducted.toString(),
-    categorySlug: row.categorySlug,
     stockUnitName: row.stockUnitName ?? null,
     stockUnitAbbrev: row.stockUnitAbbrev ?? null,
     inventoryNumber: row.inventoryNumber,
@@ -569,7 +565,6 @@ export async function getPendingAdjustmentWithInventoryForMutation(
           cost: true,
           freight: true,
           netDeducted: true,
-          categorySlug: true,
           stockUnitName: true,
           stockUnitAbbrev: true,
           productId: true,
@@ -588,7 +583,6 @@ export async function getPendingAdjustmentWithInventoryForMutation(
       cost: toDecimalStringOrNull(inv.cost),
       freight: toDecimalStringOrNull(inv.freight),
       currentNetDeducted: inv.netDeducted.toString(),
-      categorySlug: inv.categorySlug,
       stockUnitName: inv.stockUnitName ?? null,
       stockUnitAbbrev: inv.stockUnitAbbrev ?? null,
       inventoryNumber: inv.inventoryNumber,

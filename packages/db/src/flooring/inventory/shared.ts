@@ -18,14 +18,10 @@ export const inventoryRowSelect = {
       category: {
         select: {
           id: true,
-          slug: true,
-          name: true,
         },
       },
     },
   },
-  categorySlug: true,
-  categoryName: true,
   stockUnitName: true,
   stockUnitAbbrev: true,
   sendUnitName: true,

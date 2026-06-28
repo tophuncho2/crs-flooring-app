@@ -15,8 +15,6 @@ export type InventoryRow = {
   productId: string
   productName: string
   categoryId: string
-  categoryName: string
-  categorySlug: string
   stockUnitName: string
   stockUnitAbbrev: string
   sendUnitName: string
@@ -88,7 +86,6 @@ export type InventoryProductOption = {
   style: string | null
   color: string | null
   categoryId: string
-  categorySlug: string
   stockUnit: string
   sendUnit: string
 }

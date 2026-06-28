@@ -65,8 +65,6 @@ export function normalizeStagedInventoryFilterRow(
       color: row.product.color,
     }),
     categoryId: row.product.category.id,
-    categoryName: row.product.category.name,
-    categorySlug: row.product.category.slug,
     stockOrdered,
     stockUnitName: row.stockUnitName ?? "",
     stockUnitAbbrev: row.stockUnitAbbrev ?? "",

@@ -53,8 +53,6 @@ function readyStagedRow(overrides: Record<string, unknown> = {}) {
     productId: "product-1",
     productName: "Product",
     categoryId: "cat-1",
-    categoryName: "Carpet",
-    categorySlug: "carpet",
     stockUnitName: "sy",
     stockUnitAbbrev: "sy",
     rollPrefix: "ROLL#",

@@ -29,8 +29,6 @@ export function normalizeStagedInventoryRow(
       color: row.product.color,
     }),
     categoryId: row.product.category.id,
-    categoryName: row.product.category.name,
-    categorySlug: row.product.category.slug,
     // stockUnitName / stockUnitAbbrev are sourced from the row's own
     // snapshot columns (stamped at create-time from the row's product),
     // not from the product join. Keeps the read shape stable against

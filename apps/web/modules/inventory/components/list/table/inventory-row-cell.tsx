@@ -49,8 +49,6 @@ export function renderInventoryRowCell(
           {formatInventoryQuantity(row.startingStock, row.stockUnitAbbrev)}
         </span>
       )
-    case "categoryName":
-      return row.categoryName || "-"
     case "purchaseOrderNumber":
       return row.purchaseOrderNumber || "-"
     case "importNumber":

@@ -55,8 +55,6 @@ export async function createInventoryUseCase(
 
     const fields = buildCreatedInventoryInsert(
       {
-        categorySlug: product.category.slug,
-        categoryName: product.category.name,
         stockUnitName: product.stockUnitName,
         stockUnitAbbrev: product.stockUnitAbbrev,
         sendUnitName: product.sendUnitName,

@@ -27,8 +27,6 @@ function product(
   overrides: Partial<CreateInventoryProductSnapshot> = {},
 ): CreateInventoryProductSnapshot {
   return {
-    categorySlug: "carpet",
-    categoryName: "Carpet",
     stockUnitName: "Square Feet",
     stockUnitAbbrev: "SF",
     sendUnitName: "Linear Feet",
@@ -108,8 +106,6 @@ describe("buildCreatedInventoryInsert", () => {
 
     // Snapshot columns from the product.
     expect(fields.productId).toBe("p-1")
-    expect(fields.categorySlug).toBe("carpet")
-    expect(fields.categoryName).toBe("Carpet")
     expect(fields.stockUnitAbbrev).toBe("SF")
     expect(fields.sendUnitAbbrev).toBe("LF")
 
