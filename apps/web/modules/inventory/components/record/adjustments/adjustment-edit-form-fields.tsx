@@ -199,11 +199,32 @@ export function AdjustmentEditFormFields({
       <RecordColumnBreak
         left={
           <InventoryFieldGrid>
-            {/* Quantity | Type paired, then Location | Warehouse */}
-            <CellAt col={1} row={1} colSpan={4}>{quantityField}</CellAt>
-            <CellAt col={5} row={1} colSpan={4}>{typeField}</CellAt>
+            {/* Adjustment # | Color lead the flank, then the work-order picker,
+                area, and notes stacked full-width beneath. */}
+            <CellAt col={1} colSpan={4}>
+              <FormField label="Adjustment #">
+                <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
+              </FormField>
+            </CellAt>
+            <CellAt col={5} colSpan={4}>{colorField}</CellAt>
+            <AdjustmentPickerStack controller={controller} colSpan={8} />
+            <CellAt col={1} colSpan={8}>{areaField}</CellAt>
+            <CellAt col={1} colSpan={8}>{notesField}</CellAt>
+          </InventoryFieldGrid>
+        }
+        right={
+          <InventoryFieldGrid>
+            {/* The before→after transition StatCell sits atop the quantity / type
+                it reflects; Location | Warehouse and the Waste toggle stack below. */}
+            <CellAt col={1} colSpan={8}>
+              <FormField label="Adjustment">
+                <StatCell display={transition} ariaLabel="Adjustment transition" />
+              </FormField>
+            </CellAt>
+            <CellAt col={1} colSpan={4}>{quantityField}</CellAt>
+            <CellAt col={5} colSpan={4}>{typeField}</CellAt>
             {/* Location (editable) beside the read-only source Warehouse */}
-            <CellAt col={1} row={2} colSpan={4}>
+            <CellAt col={1} colSpan={4}>
               <FormField
                 label="Location"
                 currentLength={editable ? form.location.length : undefined}
@@ -219,32 +240,9 @@ export function AdjustmentEditFormFields({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={5} row={2} colSpan={4}>
+            <CellAt col={5} colSpan={4}>
               <WarehouseStaticField warehouseName={adjustment.warehouseName ?? null} />
             </CellAt>
-            {/* Adjustment # | Color (the transition moved to the right flank). */}
-            <CellAt col={1} row={3} colSpan={4}>
-              <FormField label="Adjustment #">
-                <CellChip paletteColor={form.color}>{adjustment.adjustmentNumber}</CellChip>
-              </FormField>
-            </CellAt>
-            <CellAt col={5} row={3} colSpan={4}>{colorField}</CellAt>
-            {/* User-owned free-text area — editable, sits below Adjustment # / Color. */}
-            <CellAt col={1} row={4} colSpan={4}>{areaField}</CellAt>
-          </InventoryFieldGrid>
-        }
-        right={
-          <InventoryFieldGrid>
-            {/* Before→after transition as a prominent StatCell (the same big/bold
-                box the inventory Stock/Deducted cells use), seated above the
-                work-order picker and matching its full-flank column width. */}
-            <CellAt col={1} colSpan={8}>
-              <FormField label="Adjustment">
-                <StatCell display={transition} ariaLabel="Adjustment transition" />
-              </FormField>
-            </CellAt>
-            <AdjustmentPickerStack controller={controller} colSpan={8} />
-            <CellAt col={1} colSpan={8}>{notesField}</CellAt>
             <CellAt col={1} colSpan={8}>{wasteField}</CellAt>
           </InventoryFieldGrid>
         }
