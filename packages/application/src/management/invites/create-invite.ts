@@ -10,8 +10,8 @@ import { InviteExecutionError } from "./errors.js"
 import type { CreateInviteResult, CreateInviteUseCaseInput, InviteActor } from "./types.js"
 
 // Manager-gated, rank-scoped invite creation. The actor must be allowed to manage
-// users and may only invite at or below their own rank. No secret link or email —
-// the invitee just signs in with Google and the email-match gate provisions them.
+// users and may only invite a rank strictly below their own. No secret link or
+// email — the invitee just signs in with Google and the email-match gate provisions them.
 export async function createInviteUseCase(
   input: CreateInviteUseCaseInput,
   actor: InviteActor,
