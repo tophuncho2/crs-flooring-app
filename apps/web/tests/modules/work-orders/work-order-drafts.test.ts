@@ -12,4 +12,18 @@ describe("toUpdateWorkOrderInput", () => {
     const input = toUpdateWorkOrderInput(EMPTY_WORK_ORDER_FORM)
     expect(input.purchaseOrderNumber).toBe("")
   })
+
+  it("maps the WO-owned address, aliasing form `zip` to wire `postalCode`", () => {
+    const input = toUpdateWorkOrderInput({
+      ...EMPTY_WORK_ORDER_FORM,
+      streetAddress: "12 Oak St",
+      city: "Austin",
+      state: "TX",
+      zip: "78701",
+    })
+    expect(input.streetAddress).toBe("12 Oak St")
+    expect(input.city).toBe("Austin")
+    expect(input.state).toBe("TX")
+    expect(input.postalCode).toBe("78701")
+  })
 })

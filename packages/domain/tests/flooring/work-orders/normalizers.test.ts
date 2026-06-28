@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { normalizeWorkOrderListRow } from "../../../src/flooring/work-orders/normalizers.js"
+import {
+  normalizeWorkOrder,
+  normalizeWorkOrderListRow,
+} from "../../../src/flooring/work-orders/normalizers.js"
 
 describe("normalizeWorkOrderListRow entity", () => {
   const base = {
@@ -45,5 +48,64 @@ describe("normalizeWorkOrderListRow entity", () => {
     expect(normalizeWorkOrderListRow({ ...base, purchaseOrderNumber: "PO-4821" }).purchaseOrderNumber).toBe(
       "PO-4821",
     )
+  })
+})
+
+describe("normalizeWorkOrder WO-owned address", () => {
+  const detailBase = {
+    id: "wo-1",
+    workOrderNumber: "WO-1",
+    color: "BLUE" as const,
+    propertyId: "prop-1",
+    property: { name: "Maple Court", entity: null, instructions: "Knock twice" },
+    jobTypeId: null,
+    jobType: null,
+    templateId: null,
+    warehouseId: null,
+    warehouse: null,
+    unitNumber: null,
+    unitType: null,
+    vacancy: null,
+    timeOfDay: null,
+    scheduledFor: null,
+    description: null,
+    purchaseOrderNumber: null,
+    createdAt: "2026-06-08T00:00:00.000Z",
+    updatedAt: "2026-06-08T00:00:00.000Z",
+    createdBy: null,
+    updatedBy: null,
+    customAddress: null,
+    streetAddress: "12 Oak St",
+    city: "Austin",
+    state: "TX",
+    postalCode: "78701",
+    internalNotes: null,
+    installerInstructions: null,
+  }
+
+  it("maps the WO columns to the detail, aliasing postalCode → zip", () => {
+    const detail = normalizeWorkOrder(detailBase)
+    expect(detail.streetAddress).toBe("12 Oak St")
+    expect(detail.city).toBe("Austin")
+    expect(detail.state).toBe("TX")
+    expect(detail.zip).toBe("78701")
+  })
+
+  it("defaults null address columns to empty strings", () => {
+    const detail = normalizeWorkOrder({
+      ...detailBase,
+      streetAddress: null,
+      city: null,
+      state: null,
+      postalCode: null,
+    })
+    expect(detail.streetAddress).toBe("")
+    expect(detail.city).toBe("")
+    expect(detail.state).toBe("")
+    expect(detail.zip).toBe("")
+  })
+
+  it("surfaces the live property instructions for the read-only preview", () => {
+    expect(normalizeWorkOrder(detailBase).propertyInstructions).toBe("Knock twice")
   })
 })

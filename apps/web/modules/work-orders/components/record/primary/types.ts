@@ -8,10 +8,9 @@ export type WorkOrderPrimaryDetail = {
   workOrderNumber: string
   propertyId: string | null
   propertyName: string
-  propertyStreetAddress: string
-  propertyCity: string
-  propertyState: string
-  propertyPostalCode: string
+  // Live property instructions for the read-only preview cell. The property's
+  // address is no longer surfaced here — it's snapshotted into the WO's own
+  // editable address columns on pick.
   propertyInstructions: string
   entityId: string | null
   entityName: string | null

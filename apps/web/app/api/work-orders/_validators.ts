@@ -64,6 +64,24 @@ function optionalString(value: unknown): string | null {
   return trimmed ? trimmed : null
 }
 
+// Address state — 2-letter code, upper-cased (mirrors the properties/entities
+// address contract). Blank ⇒ null; a non-2-letter value 400s.
+function optionalState(value: unknown, field: string): string | null {
+  if (value === undefined || value === null) return null
+  if (typeof value !== "string") return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (!/^[A-Za-z]{2}$/.test(trimmed)) failWorkOrder(`${field} must be a 2-letter state code`, field)
+  return trimmed.toUpperCase()
+}
+
+// Postal code accepts either `postalCode` (canonical) or the UI's `zip` alias.
+function pickPostalCode(body: Record<string, unknown>): unknown {
+  if ("postalCode" in body) return body.postalCode
+  if ("zip" in body) return body.zip
+  return undefined
+}
+
 // Quantity is optional on a material item — a missing/blank value is carried
 // as an empty string ("unset") and persisted as NULL downstream. A provided
 // value is validated (> 0) by the domain rule, not here.
@@ -135,6 +153,10 @@ export function validateCreateWorkOrderInput(
     unitNumber: optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder),
     unitType: optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder),
     customAddress: optionalBoundedText(body.customAddress, WO_CUSTOM_ADDRESS_MAX, "customAddress", failWorkOrder),
+    streetAddress: optionalString(body.streetAddress),
+    city: optionalString(body.city),
+    state: optionalState(body.state, "state"),
+    postalCode: optionalString(pickPostalCode(body)),
     description: optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder),
     internalNotes: optionalBoundedText(body.internalNotes, WO_INTERNAL_NOTES_MAX, "internalNotes", failWorkOrder),
     installerInstructions: optionalBoundedText(
@@ -174,6 +196,10 @@ export function validateUpdateWorkOrderInput(
   if ("unitNumber" in body) input.unitNumber = optionalBoundedText(body.unitNumber, WO_UNIT_NUMBER_MAX, "unitNumber", failWorkOrder)
   if ("unitType" in body) input.unitType = optionalBoundedText(body.unitType, WO_UNIT_TYPE_MAX, "unitType", failWorkOrder)
   if ("customAddress" in body) input.customAddress = optionalBoundedText(body.customAddress, WO_CUSTOM_ADDRESS_MAX, "customAddress", failWorkOrder)
+  if ("streetAddress" in body) input.streetAddress = optionalString(body.streetAddress)
+  if ("city" in body) input.city = optionalString(body.city)
+  if ("state" in body) input.state = optionalState(body.state, "state")
+  if ("zip" in body || "postalCode" in body) input.postalCode = optionalString(pickPostalCode(body))
   if ("description" in body) input.description = optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder)
   if ("internalNotes" in body) {
     input.internalNotes = optionalBoundedText(body.internalNotes, WO_INTERNAL_NOTES_MAX, "internalNotes", failWorkOrder)

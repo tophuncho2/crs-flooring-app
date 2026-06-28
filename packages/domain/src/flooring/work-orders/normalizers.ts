@@ -42,15 +42,15 @@ type WorkOrderListInput = {
 
 type WorkOrderDetailInput = WorkOrderListInput & {
   customAddress: string | null
+  streetAddress: string | null
+  city: string | null
+  state: string | null
+  postalCode: string | null
   internalNotes: string | null
   installerInstructions: string | null
   property: {
     name: string
     entity: { id: string; entity: string } | null
-    streetAddress: string | null
-    city: string | null
-    state: string | null
-    postalCode: string | null
     instructions: string | null
   } | null
 }
@@ -97,12 +97,12 @@ export function normalizeWorkOrder(
   return {
     ...base,
     customAddress: workOrder.customAddress ?? "",
+    streetAddress: workOrder.streetAddress ?? "",
+    city: workOrder.city ?? "",
+    state: workOrder.state ?? "",
+    zip: workOrder.postalCode ?? "",
     internalNotes: workOrder.internalNotes ?? "",
     installerInstructions: workOrder.installerInstructions ?? "",
-    propertyStreetAddress: workOrder.property?.streetAddress ?? "",
-    propertyCity: workOrder.property?.city ?? "",
-    propertyState: workOrder.property?.state ?? "",
-    propertyPostalCode: workOrder.property?.postalCode ?? "",
     propertyInstructions: workOrder.property?.instructions ?? "",
     previousWorkOrder: neighbors.previousWorkOrder,
     nextWorkOrder: neighbors.nextWorkOrder,

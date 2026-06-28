@@ -37,12 +37,17 @@ export type WorkOrderNeighbor = {
 
 export type WorkOrderDetail = WorkOrderListRow & {
   customAddress: string
+  // WO-owned address (snapshotted from the property, then editable). `zip`
+  // vocab matches the form + shared AddressEditCell; persisted as `postalCode`.
+  streetAddress: string
+  city: string
+  state: string
+  zip: string
   internalNotes: string
   installerInstructions: string
-  propertyStreetAddress: string
-  propertyCity: string
-  propertyState: string
-  propertyPostalCode: string
+  // Live property instructions for the record-view read-only preview cell. The
+  // property's address is snapshotted into the WO-owned columns above (on pick),
+  // so the joined address is no longer carried on the detail.
   propertyInstructions: string
   /**
    * Neighbors by global work-order-number order (`workOrderNumberInt`), ignoring
@@ -71,6 +76,10 @@ export type WorkOrderForm = {
   unitNumber: string
   unitType: string
   customAddress: string
+  streetAddress: string
+  city: string
+  state: string
+  zip: string
   description: string
   internalNotes: string
   installerInstructions: string
@@ -89,6 +98,10 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   unitNumber: "",
   unitType: "",
   customAddress: "",
+  streetAddress: "",
+  city: "",
+  state: "",
+  zip: "",
   description: "",
   internalNotes: "",
   installerInstructions: "",

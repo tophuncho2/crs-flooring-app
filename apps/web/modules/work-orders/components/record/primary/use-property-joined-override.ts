@@ -1,24 +1,26 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import type { PropertyJoinedFields } from "@/engines/record-view"
 import type { PropertyOption } from "@builders/domain"
-import { detailToPropertyJoined } from "./helpers"
 import type { WorkOrderPrimaryDetail } from "./types"
 
 /**
- * Live preview override for the joined property-readonly cells.
- * Initializes from the saved detail; flips to the picker's selected
- * option as soon as the user picks (so address / instructions cells
- * track the dropdown selection rather than waiting for save). Cleared
- * whenever the saved `propertyId` changes — after save or record swap
- * — so the override doesn't stomp the next record's joined fields.
+ * Live preview override for the read-only Property Instructions cell.
+ * Initializes from the saved detail; flips to the picker's selected option's
+ * instructions as soon as the user picks (so the cell tracks the dropdown
+ * selection rather than waiting for save). Cleared whenever the saved
+ * `propertyId` changes — after save or record swap — so the override doesn't
+ * stomp the next record's joined instructions.
+ *
+ * The property's ADDRESS is no longer previewed here: on pick it is snapshotted
+ * into the WO's own editable address cells (see `handlePropertySelected`), which
+ * then persist independently of the property.
  */
 export function usePropertyJoinedOverride(detail: WorkOrderPrimaryDetail | null) {
-  const [picked, setPicked] = useState<PropertyJoinedFields | null>(null)
+  const [picked, setPicked] = useState<string | null>(null)
 
-  // Clear the override when the saved propertyId changes — during render so
-  // the next record's joined fields aren't briefly stomped by the prior pick.
+  // Clear the override when the saved propertyId changes — during render so the
+  // next record's joined instructions aren't briefly stomped by the prior pick.
   const [trackedPropertyId, setTrackedPropertyId] = useState(detail?.propertyId)
   if (trackedPropertyId !== detail?.propertyId) {
     setTrackedPropertyId(detail?.propertyId)
@@ -26,20 +28,10 @@ export function usePropertyJoinedOverride(detail: WorkOrderPrimaryDetail | null)
   }
 
   const handlePropertyOption = useCallback((option: PropertyOption | null) => {
-    if (option === null) {
-      setPicked(null)
-      return
-    }
-    setPicked({
-      streetAddress: option.streetAddress,
-      city: option.city,
-      state: option.state,
-      postalCode: option.postalCode,
-      instructions: option.instructions,
-    })
+    setPicked(option === null ? null : option.instructions)
   }, [])
 
-  const propertyJoined = picked ?? detailToPropertyJoined(detail)
+  const instructions = picked ?? detail?.propertyInstructions ?? null
 
-  return { propertyJoined, handlePropertyOption }
+  return { instructions, handlePropertyOption }
 }

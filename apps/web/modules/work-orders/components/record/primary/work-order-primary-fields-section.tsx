@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
+  AddressEditCell,
   CellAt,
   RecordColumnBreak,
   RecordOpenButton,
@@ -30,7 +31,6 @@ import { TemplatePicker } from "@/modules/templates/components/picker/template-p
 import { TemplateCreateMenu } from "@/modules/templates/components/picker/template-create-menu"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
-  buildAddressBlock,
   formatEasternDateTime,
   WO_CUSTOM_ADDRESS_MAX,
   WO_DESCRIPTION_MAX,
@@ -86,8 +86,7 @@ export function WorkOrderPrimaryFieldsSection({
   onFieldsChange: (patch: Partial<WorkOrderForm>) => void
 }) {
   const editable = !disabled
-  const { propertyJoined: joined, handlePropertyOption } = usePropertyJoinedOverride(detail)
-  const propertyJoined = draft.propertyId ? joined : null
+  const { instructions: propertyInstructions, handlePropertyOption } = usePropertyJoinedOverride(detail)
 
   const propertyValue = draft.propertyId || null
   const templateValue = draft.templateId || null
@@ -141,16 +140,10 @@ export function WorkOrderPrimaryFieldsSection({
   const searchParams = useSearchParams()
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
-  const formattedAddress = propertyJoined
-    ? buildAddressBlock({
-        streetAddress: propertyJoined.streetAddress || null,
-        city: propertyJoined.city || null,
-        state: propertyJoined.state || null,
-        postalCode: propertyJoined.postalCode || null,
-      })
-    : ""
-  const addressDisplay = formattedAddress || "—"
-  const instructionsDisplay = propertyJoined?.instructions || "—"
+  // Read-only Property Instructions preview — live from the selected property
+  // (the property's address is now snapshotted into the WO's own editable cells,
+  // not previewed here). Shown only while a property is selected.
+  const instructionsDisplay = (draft.propertyId ? propertyInstructions : null) || "—"
 
   // Apply a property option to the cell — the shared path for both the picker and
   // the quick-create menu: cascade-fill the draft (clearing the template),
@@ -160,6 +153,17 @@ export function WorkOrderPrimaryFieldsSection({
     onFieldsChange({
       propertyId: patch.propertyId ?? "",
       templateId: patch.templateId ?? "",
+      // Snapshot the property's address into the WO's own editable cells
+      // (overwrite-on-pick). Clearing the property to none leaves the address
+      // intact — it's WO-owned and editable once snapshotted.
+      ...(option
+        ? {
+            streetAddress: option.streetAddress,
+            city: option.city,
+            state: option.state,
+            zip: option.postalCode,
+          }
+        : {}),
     })
     setPickedPropertyLabel(patch.propertyLabel ?? null)
     setPickedTemplateLabel(patch.templateLabel ?? null)
@@ -267,15 +271,23 @@ export function WorkOrderPrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
-            {/* Property address (left) + Custom address (right) */}
-            <CellAt col={1} row={4} colSpan={4}>
-              <FormField label="Property Address">
-                <StaticFieldValue>
-                  <span className="whitespace-pre-line">{addressDisplay}</span>
-                </StaticFieldValue>
-              </FormField>
-            </CellAt>
-            <CellAt col={5} row={4} colSpan={4}>
+            {/* Address — snapshotted from the selected property on pick, then
+                editable + detachable (auto-flows to the next full-width row). */}
+            <AddressEditCell
+              editable={editable}
+              col={1}
+              colSpan={8}
+              ariaPrefix="Work order"
+              value={{
+                streetAddress: draft.streetAddress,
+                city: draft.city,
+                state: draft.state,
+                zip: draft.zip,
+              }}
+              onChange={(field, value) => onFieldChange(field, value)}
+            />
+            {/* Custom Address — freeform override, kept alongside the snapshot. */}
+            <CellAt col={1} row={5} colSpan={8}>
               <FormField
                 label="Custom Address"
                 currentLength={editable ? draft.customAddress.length : undefined}
@@ -290,7 +302,7 @@ export function WorkOrderPrimaryFieldsSection({
                 />
               </FormField>
             </CellAt>
-            <CellAt col={1} row={5} colSpan={8}>
+            <CellAt col={1} row={6} colSpan={8}>
               <FormField label="Property Instructions">
                 <StaticFieldValue>
                   <span className="whitespace-pre-line">{instructionsDisplay}</span>
@@ -298,7 +310,7 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Installer Instructions */}
-            <CellAt col={1} row={6} colSpan={8}>
+            <CellAt col={1} row={7} colSpan={8}>
               <FormField
                 label="Installer Instructions"
                 currentLength={editable ? draft.installerInstructions.length : undefined}

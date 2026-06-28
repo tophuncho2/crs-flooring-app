@@ -669,6 +669,14 @@ model FlooringWorkOrder {
   unitNumber           String?                    @db.VarChar(30)
   unitType             String?                    @db.VarChar(40)
   customAddress        String?                    @db.VarChar(200)
+  // WO-owned address — snapshotted from the selected property at pick time but
+  // editable + detachable thereafter. Plain nullable text, mirroring Property /
+  // Entity / FlooringWarehouse (no @db.VarChar bound). Distinct from the
+  // freeform `customAddress` override above, which stays as-is.
+  streetAddress        String?
+  city                 String?
+  state                String?
+  postalCode           String?
   description          String?                    @db.VarChar(120)
   internalNotes        String?                    @db.VarChar(250)
   installerInstructions String?                   @db.VarChar(250)
