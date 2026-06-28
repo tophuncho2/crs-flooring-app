@@ -25,6 +25,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react"
+import { canManageUsers, type UserRank } from "@builders/domain"
 import { SidePanel } from "./side-panel"
 import UserMenu from "./user-menu"
 import {
@@ -70,6 +71,9 @@ export default function NavRail({ email, rank }: NavRailProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
+  // Rank gate: only DEVELOPER + TIER_1 see the "Users" nav group (Users + Login
+  // Activity). Lower ranks lose the links; the pages/APIs enforce this too.
+  const canManageUserPages = canManageUsers(rank as UserRank)
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
@@ -116,7 +120,9 @@ export default function NavRail({ email, rank }: NavRailProps) {
 
         <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pb-3">
           {FLOORING_NAV_GROUPS.map((group, groupIndex) => {
-            const groupItems = FLOORING_NAV_ITEMS.filter((item) => item.group === group.id)
+            const groupItems = FLOORING_NAV_ITEMS.filter(
+              (item) => item.group === group.id && (canManageUserPages || group.id !== "users"),
+            )
             if (groupItems.length === 0) return null
 
             return (
@@ -173,7 +179,9 @@ export default function NavRail({ email, rank }: NavRailProps) {
       >
         <nav className="flex flex-col py-2">
           {FLOORING_NAV_GROUPS.map((group, groupIndex) => {
-            const groupItems = FLOORING_NAV_ITEMS.filter((item) => item.group === group.id)
+            const groupItems = FLOORING_NAV_ITEMS.filter(
+              (item) => item.group === group.id && (canManageUserPages || group.id !== "users"),
+            )
             if (groupItems.length === 0) return null
 
             return (

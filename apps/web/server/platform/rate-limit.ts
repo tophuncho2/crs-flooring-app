@@ -49,7 +49,29 @@ declare global {
 
 const memoryCounters = new Map<string, MemoryCounter>()
 let hasWarnedMissingRedis = false
+// When the configured Redis host is unreachable (e.g. a Railway-internal URL from
+// an environment that can't resolve it) we must not re-attempt the connection on
+// every rate-limited request — that thrash is what spammed the logs with an error
+// + stack on every login. Cache the unavailability for a cooldown and warn once.
+let redisUnavailableUntil = 0
+let hasWarnedRedisUnavailable = false
+const REDIS_UNAVAILABLE_COOLDOWN_MS = 60_000
 const RATE_LIMIT_MODULE_ROUTE = "server/platform/rate-limit"
+
+function noteRedisUnavailable(action: string, message: string, error?: unknown) {
+  redisUnavailableUntil = Date.now() + REDIS_UNAVAILABLE_COOLDOWN_MS
+  if (hasWarnedRedisUnavailable) {
+    return
+  }
+  hasWarnedRedisUnavailable = true
+  logEvent({
+    level: "warn",
+    message,
+    action,
+    route: RATE_LIMIT_MODULE_ROUTE,
+    error,
+  })
+}
 
 function incrementInMemoryCounter(key: string, windowMs: number) {
   const now = Date.now()
@@ -85,6 +107,8 @@ async function connectRedisClient() {
     return null
   }
 
+  let wasReady = false
+
   try {
     const client = createClient({
       url: redisUrl,
@@ -93,17 +117,27 @@ async function connectRedisClient() {
       },
     })
 
+    client.on("ready", () => {
+      wasReady = true
+      hasWarnedRedisUnavailable = false
+      redisUnavailableUntil = 0
+    })
+
     client.on("error", (error) => {
-      logEvent({
-        level: "warn",
-        message: "Redis rate-limit client emitted an error",
-        action: "rateLimit.redis.error",
-        route: RATE_LIMIT_MODULE_ROUTE,
+      noteRedisUnavailable(
+        "rateLimit.redis.error",
+        "Redis rate-limit client unavailable; using process-local rate limiting",
         error,
-      })
+      )
     })
 
     client.on("end", () => {
+      // Only a previously-healthy connection should arm a reconnect. A client that
+      // never reached "ready" stays cached as unavailable so the next request uses
+      // the process-local fallback instead of re-dialing an unreachable host.
+      if (!wasReady) {
+        return
+      }
       global.rateLimitRedisClientPromise = undefined
       logEvent({
         level: "warn",
@@ -116,19 +150,23 @@ async function connectRedisClient() {
     await client.connect()
     return client
   } catch (error) {
-    logEvent({
-      level: "warn",
-      message: "Failed to connect Redis rate-limit client; using process-local fallback",
-      action: "rateLimit.redis.connectFailed",
-      route: RATE_LIMIT_MODULE_ROUTE,
+    noteRedisUnavailable(
+      "rateLimit.redis.connectFailed",
+      "Failed to connect Redis rate-limit client; using process-local fallback",
       error,
-    })
+    )
     return null
   }
 }
 
 function getRedisClientPromise() {
   if (!global.rateLimitRedisClientPromise) {
+    // Inside the cooldown after a failed connect, skip Redis entirely — return a
+    // resolved null so callers fall through to the in-memory counter without
+    // re-dialing (and re-logging) an unreachable host on every request.
+    if (Date.now() < redisUnavailableUntil) {
+      return Promise.resolve<RateLimitRedisClient | null>(null)
+    }
     global.rateLimitRedisClientPromise = connectRedisClient()
   }
 
@@ -241,5 +279,7 @@ export function buildRateLimitResponse(result: RateLimitResult, message = "Too m
 export function resetRateLimitStateForTests() {
   memoryCounters.clear()
   hasWarnedMissingRedis = false
+  redisUnavailableUntil = 0
+  hasWarnedRedisUnavailable = false
   global.rateLimitRedisClientPromise = undefined
 }

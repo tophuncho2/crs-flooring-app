@@ -7,16 +7,6 @@ import { logEvent } from "@/server/platform/logger"
 import { consumeRateLimit } from "@/server/platform/rate-limit"
 import { getClientIp, getRequestId } from "@/server/platform/request-context"
 
-// Typed errors thrown by `authorize()` are control-flow signals (read by the
-// login form), not faults — `authorize()` already records each as a structured
-// warn. NextAuth would otherwise re-log them as CREDENTIALS_SIGNIN_ERROR with a
-// stack trace on every failed/probed login, so we suppress that duplicate.
-const EXPECTED_CREDENTIAL_ERRORS = new Set([
-  "INVALID_CREDENTIALS",
-  "RATE_LIMITED",
-  "ACCOUNT_RESTRICTED",
-])
-
 export function getAuthOptions(): NextAuthOptions {
   const authEnvironment = getAuthEnvironment()
 
@@ -117,12 +107,11 @@ export function getAuthOptions(): NextAuthOptions {
 
     logger: {
       error(code, metadata) {
+        // A thrown `authorize()` error is a control-flow signal already recorded
+        // by `authorize()` as a structured warn — and NextAuth v4 turns it into a
+        // redirect, never a `logger.error`. The codes that reach here are genuine
+        // faults (JWT/session decode, OAuth), so we always surface them.
         const error = metadata instanceof Error ? metadata : (metadata as { error?: unknown })?.error
-        const message = error instanceof Error ? error.message : undefined
-
-        if (code === "CREDENTIALS_SIGNIN_ERROR" && message && EXPECTED_CREDENTIAL_ERRORS.has(message)) {
-          return
-        }
 
         logEvent({
           level: "error",

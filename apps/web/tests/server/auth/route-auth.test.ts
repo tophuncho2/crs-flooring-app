@@ -8,7 +8,15 @@ vi.mock("@/server/auth/session", () => ({
   getSessionUser: getSessionUserMock,
 }))
 
-const { authorizeRouteAccess } = await import("@/server/auth/route-auth")
+const { authorizeRouteAccess, enforceManageUsersAccess } = await import("@/server/auth/route-auth")
+
+function buildManageUsersAccess(rank: string) {
+  return {
+    user: { id: "u1", email: "u1@test.com", rank: rank as never, isVerified: true },
+    requestId: "req-1",
+    clientIp: "unknown",
+  }
+}
 
 describe("authorizeRouteAccess", () => {
   beforeEach(() => {
@@ -78,6 +86,24 @@ describe("authorizeRouteAccess", () => {
       expect(result.user.email).toBe("admin@test.com")
       expect(result.requestId).toBeTruthy()
       expect(result.clientIp).toBe("unknown")
+    }
+  })
+})
+
+describe("enforceManageUsersAccess", () => {
+  it("admits DEVELOPER and TIER_1", () => {
+    expect(enforceManageUsersAccess(buildManageUsersAccess("DEVELOPER"))).toBeNull()
+    expect(enforceManageUsersAccess(buildManageUsersAccess("TIER_1"))).toBeNull()
+  })
+
+  it("returns a request-id tagged 403 for ranks below the threshold", async () => {
+    const response = enforceManageUsersAccess(buildManageUsersAccess("TIER_2"))
+
+    expect(response).toBeInstanceOf(Response)
+    if (response instanceof Response) {
+      expect(response.status).toBe(403)
+      expect(response.headers.get("x-request-id")).toBe("req-1")
+      await expect(response.json()).resolves.toEqual({ error: "Forbidden" })
     }
   })
 })

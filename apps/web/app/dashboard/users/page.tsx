@@ -1,7 +1,7 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import { listUsersUseCase } from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireSessionUser } from "@/server/auth/session"
+import { requireManageUsersAccess } from "@/server/auth/session"
 import UsersClient from "@/modules/users/components/list/users-client"
 import {
   USERS_LIST_QUERY_KEY,
@@ -13,7 +13,7 @@ export default async function UsersPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireSessionUser()
+  await requireManageUsersAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseUsersListInputFromSearchParams(resolvedSearchParams)

@@ -34,3 +34,21 @@ export function canSee(viewer: UserRank, target: UserRank): boolean {
   if (viewer === "DEVELOPER") return true
   return RANK_ORDER[viewer] <= RANK_ORDER[target]
 }
+
+/**
+ * Whether `viewer` ranks at or above `minimum`. The threshold form of the gate
+ * (vs. `canSee`, which compares two resource-scoped ranks): use this for page-
+ * and route-level access where a single minimum rank guards a feature.
+ */
+export function hasRankAtLeast(viewer: UserRank, minimum: UserRank): boolean {
+  return RANK_ORDER[viewer] <= RANK_ORDER[minimum]
+}
+
+// Minimum rank that may see and (later) manage the Users + Login Activity pages.
+// DEVELOPER + TIER_1 qualify; TIER_2 and TIER_3 do not.
+export const USER_MANAGEMENT_MIN_RANK: UserRank = "TIER_1"
+
+/** Whether `rank` may access the user-management pages (Users, Login Activity). */
+export function canManageUsers(rank: UserRank): boolean {
+  return hasRankAtLeast(rank, USER_MANAGEMENT_MIN_RANK)
+}

@@ -1,7 +1,7 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query"
 import { listUserLoginActivityUseCase } from "@builders/application"
 import DashboardErrorState from "@/modules/app-shell/components/dashboard-error-state"
-import { requireSessionUser } from "@/server/auth/session"
+import { requireManageUsersAccess } from "@/server/auth/session"
 import UserActivityClient from "@/modules/user-activity/components/list/user-activity-client"
 import {
   USER_ACTIVITY_LIST_QUERY_KEY,
@@ -13,7 +13,7 @@ export default async function UserActivityPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  await requireSessionUser()
+  await requireManageUsersAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseUserActivityListInputFromSearchParams(resolvedSearchParams)
