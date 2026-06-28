@@ -17,9 +17,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1015.0",
+    "@builders/application": "file:../../packages/application",
     "@builders/db": "file:../../packages/db",
     "@builders/domain": "file:../../packages/domain",
-    "@builders/application": "file:../../packages/application",
     "@builders/lib": "file:../../packages/lib",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -27,6 +27,7 @@
     "@sentry/nextjs": "^10.47.0",
     "@tanstack/react-query": "^5.0.0",
     "bcrypt": "^6.0.0",
+    "better-auth": "^1.6.22",
     "lucide-react": "^0.575.0",
     "next": "16.2.4",
     "next-auth": "^4.24.13",

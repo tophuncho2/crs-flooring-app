@@ -16,13 +16,87 @@ enum UserRank {
 
 model User {
   id                     String                @id @default(uuid())
+  name                   String                @default("")
   email                  String                @unique
+  emailVerified          Boolean               @default(false)
+  image                  String?
+  // KEPT through the auth cut-over so the legacy NextAuth credentials flow
+  // keeps working; both are dropped in Better Auth Phase B once Google SSO is
+  // verified. `rank` stays the domain authority for authorization.
   password               String?
   rank                   UserRank              @default(TIER_3)
   isVerified             Boolean               @default(false)
   createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @default(now()) @updatedAt
   activities             UserLoginActivity[]
   mutationReceipts       AppMutationReceipt[]
+  sessions               Session[]
+  accounts               Account[]
+}
+
+// Better Auth core tables. Field names mirror Better Auth's required schema
+// exactly (it accesses them via the camelCase Prisma client). Self-hosted in our
+// own Postgres — no external identity store.
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @default(now()) @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@index([identifier])
+}
+
+// Lean invite-only, rank-scoped provisioning. Deliberately NOT Better Auth's
+// org/teams plugin — we are a single company, so its team machinery would be
+// over-abstraction. An invite pre-sets the new user's rank; Google verifies
+// identity on first sign-in.
+model UserInvite {
+  id         String    @id @default(uuid())
+  email      String
+  rank       UserRank
+  token      String    @unique
+  invitedBy  String?
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
 }
 
 model UserLoginActivity {
