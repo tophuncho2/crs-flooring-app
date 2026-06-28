@@ -85,9 +85,10 @@ export function EntityCellsSection({
    */
   showContactAndAddress?: boolean
   /**
-   * Render the entity-type array picker on the right half. Default `false`. The
-   * entity record view + standalone create form pass `true`; the quick-create and
-   * property-hub-create entity sub-forms leave it off.
+   * Render the entity-type array picker as a full-width cell stacked directly
+   * above Entity Name. Default `false`. Every create surface passes `true` (the
+   * standalone create form, both quick-create modals, and the property-hub-create
+   * entity sub-form); the entity record view supplies its own Types picker.
    */
   showTypes?: boolean
   /** The record's current type refs — seeds chip labels for the picker. */
@@ -95,10 +96,10 @@ export function EntityCellsSection({
   /** Editable-types handler. When omitted, the picker renders read-only. */
   onTypeIdsChange?: (nextIds: string[]) => void
   /**
-   * Width (in 8-col grid units) of the stacked left-column cells. Defaults to
-   * `5/8` (the historic layout that left room for the inline Types cell at col
-   * 6). The entity record view passes `8` so the cells fill the full left flank
-   * up to its column break (Types now lives on the break's right side).
+   * Width (in 8-col grid units) of the stacked left-column cells (including the
+   * Types cell when shown). Defaults to `5/8`. The entity record view passes `8`
+   * so the cells fill the full left flank up to its column break (where it hosts
+   * its own Types picker on the break's right side).
    */
   cellSpan?: number
 }) {
@@ -110,6 +111,18 @@ export function EntityCellsSection({
 
   return (
     <FieldSection gap="0.75rem">
+      {showTypes ? (
+        <CellAt col={1} colSpan={cellSpan}>
+          <FormField label="Types">
+            <EntityTypeMultiSelect
+              selectedIds={form.typeIds}
+              seedRefs={seedTypeRefs}
+              editable={editable && Boolean(onTypeIdsChange)}
+              onChange={onTypeIdsChange}
+            />
+          </FormField>
+        </CellAt>
+      ) : null}
       <CellAt col={1} colSpan={cellSpan}>
         <CellTextField
           label="Entity Name"
@@ -121,18 +134,6 @@ export function EntityCellsSection({
           ariaLabel="Entity name"
         />
       </CellAt>
-      {showTypes ? (
-        <CellAt col={6} colSpan={3}>
-          <FormField label="Types">
-            <EntityTypeMultiSelect
-              selectedIds={form.typeIds}
-              seedRefs={seedTypeRefs}
-              editable={editable && Boolean(onTypeIdsChange)}
-              onChange={onTypeIdsChange}
-            />
-          </FormField>
-        </CellAt>
-      ) : null}
       {showContactAndAddress ? (
         <>
           <CellAt col={1} colSpan={cellSpan}>
