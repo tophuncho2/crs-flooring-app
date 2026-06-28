@@ -66,23 +66,23 @@ export function InventoryPrimaryFieldsSection({
                 onChange={(next) => onFieldChange("color", next)}
               />
             </CellAt>
-            {/* Warehouse | Roll # */}
+            {/* Roll # | Warehouse */}
             <CellAt col={1} row={2} colSpan={4}>
-              <WarehouseStaticField warehouseName={warehouseName} />
-            </CellAt>
-            <CellAt col={5} row={2} colSpan={4}>
               <RollNumberReadOnlyField value={record.rollNumber} />
             </CellAt>
-            {/* Location | Dye Lot */}
+            <CellAt col={5} row={2} colSpan={4}>
+              <WarehouseStaticField warehouseName={warehouseName} />
+            </CellAt>
+            {/* Dye Lot | Location */}
             <CellAt col={1} row={3} colSpan={4}>
+              <DyeLotReadOnlyField value={record.dyeLot} />
+            </CellAt>
+            <CellAt col={5} row={3} colSpan={4}>
               <LocationField
                 editable={editable}
                 value={draft.location}
                 onChange={(value) => onFieldChange("location", value)}
               />
-            </CellAt>
-            <CellAt col={5} row={3} colSpan={4}>
-              <DyeLotReadOnlyField value={record.dyeLot} />
             </CellAt>
             <CellAt col={1} row={4} colSpan={8}>
               <NoteReadOnlyField value={record.note} />
