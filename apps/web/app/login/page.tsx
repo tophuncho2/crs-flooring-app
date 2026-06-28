@@ -18,7 +18,9 @@ export default async function LoginPage({
 
   // Same presigned brand-logo URL the work-order prints use; null when the
   // object is absent, in which case the form falls back to the gradient badge.
-  const logoUrl = await getBrandLogoPrintUrl()
+  // Guarded because this is the unauthenticated entry gate: a storage misconfig
+  // or non-404 S3 error must degrade to the badge, never block sign-in.
+  const logoUrl = await getBrandLogoPrintUrl().catch(() => null)
 
   return <LoginForm error={error} logoUrl={logoUrl} />
 }
