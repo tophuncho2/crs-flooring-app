@@ -70,6 +70,18 @@ describe("setUserActiveUseCase", () => {
     expect(setUserActiveMock).not.toHaveBeenCalled()
   })
 
+  it("forbids deactivating a SAME-rank peer — strictly-below only (403)", async () => {
+    getUserRecordByIdMock.mockResolvedValue({ ...TARGET, rank: "TIER_1" })
+    await expect(
+      setUserActiveUseCase({ id: "u-1", isActive: false }, {
+        id: "matt",
+        email: "matt@crsfloorcovering.com",
+        rank: "TIER_1",
+      }),
+    ).rejects.toMatchObject({ code: "USER_FORBIDDEN_RANK", status: 403 })
+    expect(setUserActiveMock).not.toHaveBeenCalled()
+  })
+
   it("deactivates AND revokes the target's sessions", async () => {
     const result = await setUserActiveUseCase({ id: "u-1", isActive: false }, DEV)
     expect(setUserActiveMock).toHaveBeenCalledWith("u-1", false, expect.anything())

@@ -50,6 +50,16 @@ describe("createInviteUseCase", () => {
     expect(createInviteRecordMock).not.toHaveBeenCalled()
   })
 
+  it("forbids inviting at the actor's OWN rank — strictly-below only (403)", async () => {
+    await expect(
+      createInviteUseCase({ email: "x@crsfloorcovering.com", rank: "TIER_1" }, {
+        email: "matt@crsfloorcovering.com",
+        rank: "TIER_1",
+      }),
+    ).rejects.toMatchObject({ code: "INVITE_FORBIDDEN_RANK", status: 403, field: "rank" })
+    expect(createInviteRecordMock).not.toHaveBeenCalled()
+  })
+
   it("persists a normalized email + rank + invitedBy + expiresAt, never a token", async () => {
     await createInviteUseCase({ email: "  NewHire@CRSFloorcovering.com  ", rank: "TIER_2" }, DEV)
 

@@ -70,6 +70,30 @@ describe("updateUserRankUseCase", () => {
     expect(setUserRankMock).not.toHaveBeenCalled()
   })
 
+  it("forbids editing a SAME-rank peer — strictly-below only (403)", async () => {
+    getUserRecordByIdMock.mockResolvedValue({ ...TARGET, rank: "TIER_1" })
+    await expect(
+      updateUserRankUseCase({ id: "u-1", rank: "TIER_2", expectedUpdatedAt: TARGET.updatedAt }, {
+        id: "matt",
+        email: "matt@crsfloorcovering.com",
+        rank: "TIER_1",
+      }),
+    ).rejects.toMatchObject({ code: "USER_FORBIDDEN_RANK", status: 403, field: "rank" })
+    expect(setUserRankMock).not.toHaveBeenCalled()
+  })
+
+  it("forbids granting the actor's OWN rank — strictly-below only (403)", async () => {
+    getUserRecordByIdMock.mockResolvedValue({ ...TARGET, rank: "TIER_2" })
+    await expect(
+      updateUserRankUseCase({ id: "u-1", rank: "TIER_1", expectedUpdatedAt: TARGET.updatedAt }, {
+        id: "matt",
+        email: "matt@crsfloorcovering.com",
+        rank: "TIER_1",
+      }),
+    ).rejects.toMatchObject({ code: "USER_FORBIDDEN_RANK", status: 403, field: "rank" })
+    expect(setUserRankMock).not.toHaveBeenCalled()
+  })
+
   it("forbids granting a rank above the actor's own (403)", async () => {
     await expect(
       updateUserRankUseCase({ id: "u-1", rank: "DEVELOPER", expectedUpdatedAt: TARGET.updatedAt }, {

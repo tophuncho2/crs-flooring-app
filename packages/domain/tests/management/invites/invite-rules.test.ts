@@ -2,19 +2,22 @@ import { describe, expect, it } from "vitest"
 import { canInviteRank, isInviteOpen } from "../../../src/management/invites/invite-rules.js"
 
 describe("canInviteRank", () => {
-  it("lets DEVELOPER invite any rank", () => {
-    expect(canInviteRank("DEVELOPER", "DEVELOPER")).toBe(true)
+  it("lets DEVELOPER act on every lower rank, but NOT another DEVELOPER", () => {
     expect(canInviteRank("DEVELOPER", "TIER_1")).toBe(true)
     expect(canInviteRank("DEVELOPER", "TIER_3")).toBe(true)
+    // Strictly below — DEVELOPER cannot create/edit another DEVELOPER (script-only).
+    expect(canInviteRank("DEVELOPER", "DEVELOPER")).toBe(false)
   })
 
-  it("lets TIER_1 invite at or below its own rank, but never DEVELOPER", () => {
-    expect(canInviteRank("TIER_1", "TIER_1")).toBe(true)
+  it("lets TIER_1 act only on ranks STRICTLY below its own", () => {
     expect(canInviteRank("TIER_1", "TIER_2")).toBe(true)
+    expect(canInviteRank("TIER_1", "TIER_3")).toBe(true)
+    // No same-rank actions: a TIER_1 cannot touch another TIER_1.
+    expect(canInviteRank("TIER_1", "TIER_1")).toBe(false)
     expect(canInviteRank("TIER_1", "DEVELOPER")).toBe(false)
   })
 
-  it("forbids ranks that cannot manage users from inviting at all", () => {
+  it("forbids ranks that cannot manage users from acting at all", () => {
     expect(canInviteRank("TIER_2", "TIER_3")).toBe(false)
     expect(canInviteRank("TIER_3", "TIER_3")).toBe(false)
   })
