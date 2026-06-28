@@ -12,7 +12,6 @@ import {
 import type { JobType, JobTypeStats } from "@builders/domain"
 import { useJobTypePrimarySection } from "@/modules/job-types/controllers/record/primary/use-job-type-primary-section"
 import { JobTypePrimaryFieldsSection } from "./primary/job-type-primary-fields-section"
-import { JobTypeStatisticsSection } from "./statistics/job-type-statistics-section"
 
 export function JobTypeRecordPanel({
   page,
@@ -63,15 +62,10 @@ export function JobTypeRecordPanel({
             updatedAt={record.updatedAt}
             createdBy={record.createdBy}
             updatedBy={record.updatedBy}
+            stats={stats}
           />
         </RecordPrimarySectionInstance>
       ),
-    },
-    {
-      key: "statistics",
-      type: "item",
-      order: 20,
-      render: () => <JobTypeStatisticsSection stats={stats} />,
     },
   ]
 

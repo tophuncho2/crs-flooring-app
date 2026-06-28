@@ -12,7 +12,6 @@ import {
 import type { WarehouseRow, WarehouseStats } from "@builders/domain"
 import { useWarehousePrimarySection } from "@/modules/warehouse/controllers/record/primary/use-warehouse-primary-section"
 import { WarehousePrimaryFieldsSection } from "./primary/warehouse-primary-fields-section"
-import { WarehouseStatisticsSection } from "./statistics/warehouse-statistics-section"
 
 export function WarehouseRecordPanel({
   page,
@@ -63,15 +62,10 @@ export function WarehouseRecordPanel({
             updatedAt={record.updatedAt}
             createdBy={record.createdBy}
             updatedBy={record.updatedBy}
+            stats={stats}
           />
         </RecordPrimarySectionInstance>
       ),
-    },
-    {
-      key: "statistics",
-      type: "item",
-      order: 20,
-      render: () => <WarehouseStatisticsSection stats={stats} />,
     },
   ]
 
