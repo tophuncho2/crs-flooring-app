@@ -341,7 +341,6 @@ model FlooringInventory {
   // that domain helper in `normalizeInventoryRow` (surfaced as `stockBalance`).
   stockQuantity          Decimal?             @default(dbgenerated("GREATEST((\"startingStock\" - \"netDeducted\"), (0)::numeric)")) @db.Decimal(12, 2)
   isArchived             Boolean              @default(false)
-  wasMerged              Boolean              @default(false)
   inventoryAdjustments   FlooringInventoryAdjustment[]
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
