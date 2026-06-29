@@ -237,6 +237,14 @@ export function InventoryRecordView({
           error={primary.error}
           noticeMessage={primary.noticeMessage}
           noticeError={primary.noticeError}
+          // While an adjustment is open below, the inventory fields are locked
+          // (see `editable` on the fields section). Surface why in the section's
+          // own notice region so the read-only state isn't a silent surprise.
+          noticeInfo={
+            selectedAdjustmentId !== null
+              ? "Inventory details are read-only while you edit an adjustment. Close the adjustment to edit them."
+              : undefined
+          }
           isDirty={primary.isDirty}
           isSaving={primary.isSaving}
           hasConflict={primary.hasConflict}

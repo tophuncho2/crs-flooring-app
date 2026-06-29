@@ -47,6 +47,7 @@ export type RecordSectionSubHeaderProps = {
   error?: ReactNode | RecordSectionError | null
   noticeMessage?: string
   noticeError?: string
+  noticeInfo?: string
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -76,6 +77,7 @@ export function RecordSectionSubHeader({
   error,
   noticeMessage,
   noticeError,
+  noticeInfo,
   isDirty,
   isSaving,
   hasConflict,
@@ -160,6 +162,7 @@ export function RecordSectionSubHeader({
       error={error ?? null}
       noticeMessage={noticeMessage}
       noticeError={noticeError}
+      noticeInfo={noticeInfo}
       status={statusContent}
       actions={managedActions}
     />

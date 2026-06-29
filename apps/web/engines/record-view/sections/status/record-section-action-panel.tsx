@@ -51,6 +51,7 @@ export function RecordSectionActionPanel({
   error,
   noticeMessage,
   noticeError,
+  noticeInfo,
   className,
 }: {
   summary?: ReactNode
@@ -59,6 +60,7 @@ export function RecordSectionActionPanel({
   error?: ReactNode | RecordSectionError
   noticeMessage?: string
   noticeError?: string
+  noticeInfo?: string
   className?: string
 }) {
   return (
@@ -84,7 +86,7 @@ export function RecordSectionActionPanel({
             </div>
           ) : null}
         </div>
-        {error || noticeMessage || noticeError ? (
+        {error || noticeMessage || noticeError || noticeInfo ? (
           <div className="space-y-3 lg:flex-1 lg:min-w-0 lg:mx-3 lg:text-center">
             {error ? (
               typeof error === "object" && error !== null && "kind" in error ? (
@@ -95,7 +97,7 @@ export function RecordSectionActionPanel({
                 </div>
               )
             ) : null}
-            <RecordFormNotices message={noticeMessage} error={noticeError} />
+            <RecordFormNotices message={noticeMessage} error={noticeError} info={noticeInfo} />
           </div>
         ) : null}
         {actions ? <div className="flex flex-wrap items-center gap-2 lg:justify-start">{actions}</div> : null}

@@ -25,6 +25,7 @@ export type RecordFieldSectionProps = {
   error?: ReactNode | RecordSectionError | null
   noticeMessage?: string
   noticeError?: string
+  noticeInfo?: string
   isDirty: boolean
   isSaving: boolean
   hasConflict: boolean
@@ -52,6 +53,7 @@ export function RecordFieldSection({
   error,
   noticeMessage,
   noticeError,
+  noticeInfo,
   isDirty,
   isSaving,
   hasConflict,
@@ -80,6 +82,7 @@ export function RecordFieldSection({
       error={error ?? null}
       noticeMessage={noticeMessage}
       noticeError={noticeError}
+      noticeInfo={noticeInfo}
       isDirty={isDirty}
       isSaving={isSaving}
       hasConflict={hasConflict}
