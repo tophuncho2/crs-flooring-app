@@ -37,7 +37,6 @@ export const inventoryRowSelect = {
   freight: true,
   netDeducted: true,
   isArchived: true,
-  wasMerged: true,
   note: true,
   internalNotes: true,
   color: true,

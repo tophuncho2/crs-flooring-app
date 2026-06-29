@@ -59,7 +59,6 @@ function inventory(): InventoryDetail {
     netDeducted: "0",
     stockBalance: "100",
     isArchived: false,
-    wasMerged: false,
     note: "",
     internalNotes: "",
     createdAt: "",

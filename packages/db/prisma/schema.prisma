@@ -354,7 +354,6 @@ model FlooringInventory {
   @@index([productId])
   @@index([warehouseId])
   @@index([isArchived])
-  @@index([wasMerged])
   @@index([stockQuantity, id])
   @@index([productId, createdAt, rollNumber, id])
   // Sort-column btree indexes for the menu-only inventory list sort. Composite

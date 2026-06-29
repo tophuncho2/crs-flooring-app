@@ -26,7 +26,6 @@ import { useInventoryPrimarySection } from "@/modules/inventory/controllers/reco
 import { useInventoryAdjustmentsSection } from "@/modules/inventory/controllers/record/adjustments/use-inventory-adjustments-section"
 import { useAdjustmentReconcile } from "@/modules/adjustments"
 import { NEW_ADJUSTMENT_ID } from "@/modules/inventory/controllers/record/use-inventory-record-selection"
-import { WarningNotice } from "@/engines/common"
 import {
   buildInventoryRecordHref,
   buildInventorySplitOffHref,
@@ -339,12 +338,6 @@ export function InventoryRecordView({
 
   return (
     <>
-      {entry.wasMerged ? (
-        <WarningNotice className="mb-4">
-          This inventory item has been merged into another row. Editing it at this point may
-          not reflect where its stock actually lives — edit at your own risk.
-        </WarningNotice>
-      ) : null}
       <RecordMultiSectionPanel page={page} sections={sections} />
       <RecordEntityFooter
         onClose={page.closePage}

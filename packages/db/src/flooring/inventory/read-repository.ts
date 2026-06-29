@@ -93,7 +93,6 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     netDeducted: toDecimalString(payload.netDeducted),
     stockBalance: toInventoryFixedString(balanceNum),
     isArchived: payload.isArchived,
-    wasMerged: payload.wasMerged,
     note: payload.note ?? "",
     internalNotes: payload.internalNotes ?? "",
     color: payload.color,
@@ -269,7 +268,6 @@ export type MergeSourceInventoryRow = {
   warehouseId: string
   startingStock: string
   netDeducted: string
-  wasMerged: boolean
 }
 
 /**
@@ -291,7 +289,6 @@ export async function getInventoryRowsForMerge(
       warehouseId: true,
       startingStock: true,
       netDeducted: true,
-      wasMerged: true,
     },
   })
   return rows.map((row) => ({
@@ -300,7 +297,6 @@ export async function getInventoryRowsForMerge(
     warehouseId: row.warehouseId,
     startingStock: toDecimalString(row.startingStock),
     netDeducted: toDecimalString(row.netDeducted),
-    wasMerged: row.wasMerged,
   }))
 }
 
@@ -425,15 +421,8 @@ function buildListViewWhere(
     clauses.push({ isArchived: false })
   }
 
-  // Merged rows are ALWAYS hidden from the list (no opt-in toggle, unlike
-  // archived). They survive only as the target of an adjustment's "open
-  // inventory" link, which goes through `getInventoryById`/`getInventoryDetailById`
-  // (unfiltered by id). This also filters the record-view reference-header
-  // options grid, which defaults to this read.
-  clauses.push({ wasMerged: false })
-
   // Explicit id scope — the export "selected rows" path. ANDs with the gates
-  // above, so a ticked row that has since been archived/merged or filtered out
+  // above, so a ticked row that has since been archived or filtered out
   // is silently excluded (acceptable: ticks originate from the filtered list).
   const ids = options.filters?.id
   if (ids && ids.length > 0) {
@@ -619,7 +608,6 @@ export async function searchInventoryLocationsForWarehouse(
   const conditions: Prisma.Sql[] = [
     Prisma.sql`"warehouseId" = ${args.warehouseId}`,
     Prisma.sql`"isArchived" = false`,
-    Prisma.sql`"wasMerged" = false`,
     Prisma.sql`"location" IS NOT NULL`,
     Prisma.sql`length(trim("location")) > 0`,
   ]
@@ -671,7 +659,6 @@ export async function searchInventoryPurchaseOrderNumbers(
   client: InventoryDbClient = db,
 ): Promise<InventoryPurchaseOrderSearchResult> {
   const conditions: Prisma.Sql[] = [
-    Prisma.sql`fi."wasMerged" = false`,
     Prisma.sql`ie."purchaseOrderNumber" IS NOT NULL`,
     Prisma.sql`length(trim(ie."purchaseOrderNumber")) > 0`,
   ]
@@ -730,12 +717,17 @@ export async function searchInventoryImportNumbers(
   args: InventoryImportNumberSearchArgs,
   client: InventoryDbClient = db,
 ): Promise<InventoryImportNumberSearchResult> {
-  const conditions: Prisma.Sql[] = [Prisma.sql`fi."wasMerged" = false`]
+  const conditions: Prisma.Sql[] = []
   const trimmed = args.search?.trim() ?? ""
   if (trimmed.length > 0) {
     conditions.push(Prisma.sql`ie."importNumber"::text ILIKE ${`%${trimmed}%`}`)
   }
-  const whereClause = Prisma.join(conditions, " AND ")
+  // Optional ILIKE only — when no search term is given there is no filter, so
+  // emit no WHERE at all (the inner JOIN already drops rows with no import entry).
+  const whereClause =
+    conditions.length > 0
+      ? Prisma.sql`WHERE ${Prisma.join(conditions, " AND ")}`
+      : Prisma.empty
 
   // Fetch take+1 (offset by skip) to detect a next page without a count query.
   // Distinct is wrapped in a subquery so the ORDER BY references the plain
@@ -748,7 +740,7 @@ export async function searchInventoryImportNumbers(
       SELECT DISTINCT ie."importNumber" AS "importNumber"
       FROM "flooring_inventory" fi
       JOIN "flooring_import_entry" ie ON fi."importEntryId" = ie."id"
-      WHERE ${whereClause}
+      ${whereClause}
     ) AS sub
     ORDER BY "importNumber" ASC
     LIMIT ${args.take + 1} OFFSET ${skip}

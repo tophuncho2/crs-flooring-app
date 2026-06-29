@@ -12,7 +12,6 @@ import {
   InventoryNumberField,
   InternalNotesField,
   LocationField,
-  MergedField,
   NetDeductedField,
   NoteReadOnlyField,
   ProductNameField,
@@ -98,10 +97,6 @@ export function InventoryPrimaryFieldsSection({
             {/* PO # */}
             <CellAt col={1} row={5} colSpan={4}>
               <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
-            </CellAt>
-            {/* Merged, beneath PO # / Import # */}
-            <CellAt col={1} row={6} colSpan={4}>
-              <MergedField wasMerged={record.wasMerged} />
             </CellAt>
           </InventoryFieldGrid>
         }

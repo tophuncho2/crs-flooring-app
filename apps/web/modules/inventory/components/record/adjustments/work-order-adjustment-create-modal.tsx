@@ -52,7 +52,6 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     netDeducted: "",
     stockBalance: "",
     isArchived: false,
-    wasMerged: false,
     note: adj.inventoryNote ?? "",
     internalNotes: "",
     // The adjustment row carries no parent inventory color (frozen snapshot, no

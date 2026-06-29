@@ -9,7 +9,7 @@ import {
   TextCell,
   UnitCell,
 } from "@/engines/record-view"
-import { CellChip, PaletteColorDropdown, StatusBadge } from "@/engines/common"
+import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import {
   formatEasternDateTime,
   formatInventoryQuantity,
@@ -308,18 +308,3 @@ export function UpdatedByField({ value }: { value: string | null }) {
   return <ReadonlyField label="Updated by" value={value ?? "—"} />
 }
 
-export function MergedField({ wasMerged }: { wasMerged: boolean }) {
-  return (
-    <FormField label="Merged">
-      <StaticFieldValue>
-        {wasMerged ? (
-          <StatusBadge tone="warning" size="sm">
-            Merged
-          </StatusBadge>
-        ) : (
-          "—"
-        )}
-      </StaticFieldValue>
-    </FormField>
-  )
-}
