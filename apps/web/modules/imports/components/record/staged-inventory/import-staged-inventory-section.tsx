@@ -78,21 +78,27 @@ export function ImportStagedInventorySection({
   const eligibleSelectedCount = section.eligibleSelectedIds.length
   const sectionError = section.error?.message ?? null
 
-  // Both views are editable, so flipping a dirty section warns first — but the
-  // flip KEEPS the edits (they persist until save or leaving the import), so the
-  // copy is switch-flavored, not discard-flavored.
+  // Both views share ONE atomic draft slice ({ filters, stagedRows }) + one
+  // isDirty, so a draft left in one view would otherwise bleed into the other
+  // (e.g. a Planned Import draft persisting while you add Staged rows, then
+  // surfacing as a stray "pending save"). Flipping a dirty section therefore
+  // DISCARDS this section's drafts on confirm — an unsaved view can't ride the
+  // toggle. The copy is discard-flavored to match.
   const { guard, dialogProps } = useRecordSwapGuard({
     isDirty: section.isDirty,
-    title: "Switch view?",
+    title: "Discard unsaved changes?",
     discardMessage:
-      "This section has unsaved changes. Switch views? Your edits stay until you save or leave the import.",
-    confirmLabel: "Switch & keep editing",
+      "Switching views discards this section's unsaved changes. Switch anyway?",
+    confirmLabel: "Discard & switch",
     cancelLabel: "Stay here",
   })
 
   const flipMode = useCallback(() => {
-    guard(() => setMode((prev) => (prev === "planned" ? "staged" : "planned")))
-  }, [guard])
+    guard(() => {
+      section.discard()
+      setMode((prev) => (prev === "planned" ? "staged" : "planned"))
+    })
+  }, [guard, section])
 
   const stepper = (
     <RecordStepper
