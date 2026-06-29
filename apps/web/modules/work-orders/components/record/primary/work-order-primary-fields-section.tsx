@@ -16,19 +16,18 @@ import {
   TextCell,
   TextareaCell,
 } from "@/engines/record-view"
-import { CellChip, PaletteColorDropdown } from "@/engines/common"
+import { CellAddButton, CellChip, PaletteColorDropdown } from "@/engines/common"
 import { applyPropertySelection, applyTemplateSelection } from "@/engines/picker"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
+  buildRecordCreateHref,
   buildRecordDetailHref,
   buildTemplateHubHref,
 } from "@/hooks/navigation/routes"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
-import { PropertyCreateMenu } from "@/modules/properties/components/picker/property-create-menu"
 import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
-import { TemplateCreateMenu } from "@/modules/templates/components/picker/template-create-menu"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatEasternDateTime,
@@ -60,8 +59,8 @@ export type { WorkOrderPrimaryDetail } from "./types"
  *
  * The "open entity / Property / Template" + "new" affordances that used to live in a
  * group header now sit in each field's label-row `actions` slot: a
- * `RecordOpenButton` plus, on the Property and Template cells, the shared
- * `PropertyCreateMenu` / `TemplateCreateMenu` (⋮ → Quick form / Proper form).
+ * `RecordOpenButton` plus, on the Property and Template cells, a `CellAddButton`
+ * that opens the proper create form (the quick-create modals were removed).
  *
  * Cascade rules come from the shared engine (`@/engines/picker`
  * `applyPropertySelection` / `applyTemplateSelection`):
@@ -251,7 +250,13 @@ export function WorkOrderPrimaryFieldsSection({
                       }}
                     />
                     {editable ? (
-                      <PropertyCreateMenu returnTo={returnTo} onCreated={handlePropertySelected} />
+                      <CellAddButton
+                        ariaLabel="New property"
+                        title="New property"
+                        onClick={() =>
+                          router.push(buildRecordCreateHref("/dashboard/entities", { returnTo }))
+                        }
+                      />
                     ) : null}
                   </>
                 }
@@ -410,12 +415,12 @@ export function WorkOrderPrimaryFieldsSection({
                       }}
                     />
                     {editable ? (
-                      <TemplateCreateMenu
-                        returnTo={returnTo}
-                        initialProperty={
-                          propertyValue ? { id: propertyValue, label: propertyLabel } : null
+                      <CellAddButton
+                        ariaLabel="New template"
+                        title="New template"
+                        onClick={() =>
+                          router.push(buildRecordCreateHref("/dashboard/templates", { returnTo }))
                         }
-                        onCreated={handleTemplateSelected}
                       />
                     ) : null}
                   </>

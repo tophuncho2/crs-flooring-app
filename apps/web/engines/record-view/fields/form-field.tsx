@@ -37,8 +37,15 @@ export function FormField({
 }: FormFieldWrapperProps) {
   const showCounter = typeof currentLength === "number" && typeof maxLength === "number"
   const atMax = showCounter && (currentLength as number) >= (maxLength as number)
+  // A <label> forwards a click anywhere inside it to its first labelable
+  // descendant. When the cell hosts action buttons (e.g. `RecordOpenButton`),
+  // that first labelable descendant is the action <button> — so clicking the
+  // cell would fire "open record" instead of just clicking the icon. Drop to a
+  // plain <div> when actions are present; keep <label> (click-label-to-focus the
+  // control) otherwise.
+  const Wrapper = actions ? "div" : "label"
   return (
-    <label className={joinClassNames("flex min-w-0 flex-col gap-1 text-sm", className)}>
+    <Wrapper className={joinClassNames("flex min-w-0 flex-col gap-1 text-sm", className)}>
       <span className="flex items-center justify-between gap-2 text-[var(--foreground)]/80">
         <span className="flex items-center gap-1">
           {label}
@@ -63,6 +70,6 @@ export function FormField({
       {hint ? <span className="text-xs text-[var(--foreground)]/55">{hint}</span> : null}
       {children}
       {error ? <span className="text-xs text-rose-700">{error}</span> : null}
-    </label>
+    </Wrapper>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { createPortal } from "react-dom"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import type { TemplateListRow } from "@builders/domain"
 import { DataTable } from "@/engines/list-view"
@@ -98,32 +99,43 @@ export function EntityTemplatesSection({
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates for this entity yet."}
         pagination={grid.pagination}
       />
-      {templateModalOpen ? (
-        <TemplateQuickCreateModal
-          open
-          entityScope={{ id: entity.id, label: entity.entity }}
-          onClose={() => setTemplateModalOpen(false)}
-          onCreated={(option) => {
-            setTemplateModalOpen(false)
-            choice.present({
-              destinations: [
-                {
-                  label: `Go to ${option.unitType}`,
-                  href: buildTemplateHubHref({
-                    templateId: option.id,
-                    templateLabel: option.unitType,
-                    entityId: entity.id,
-                    entityLabel: entity.entity,
-                    returnTo,
-                  }),
-                },
-              ],
-              stay: { label: "Stay here" },
-            })
-          }}
-        />
-      ) : null}
-      {choice.choiceDialogProps ? <ChoiceDialog {...choice.choiceDialogProps} /> : null}
+      {/* Portal the modal + choice dialog to <body>: mounted inline they sit in
+          the record section's stacking context and the app shell paints over
+          them. The shared RecordModal is left untouched (sacred adjustment
+          modals depend on it). */}
+      {typeof document !== "undefined" && (templateModalOpen || choice.choiceDialogProps)
+        ? createPortal(
+            <>
+              {templateModalOpen ? (
+                <TemplateQuickCreateModal
+                  open
+                  entityScope={{ id: entity.id, label: entity.entity }}
+                  onClose={() => setTemplateModalOpen(false)}
+                  onCreated={(option) => {
+                    setTemplateModalOpen(false)
+                    choice.present({
+                      destinations: [
+                        {
+                          label: `Go to ${option.unitType}`,
+                          href: buildTemplateHubHref({
+                            templateId: option.id,
+                            templateLabel: option.unitType,
+                            entityId: entity.id,
+                            entityLabel: entity.entity,
+                            returnTo,
+                          }),
+                        },
+                      ],
+                      stay: { label: "Stay here" },
+                    })
+                  }}
+                />
+              ) : null}
+              {choice.choiceDialogProps ? <ChoiceDialog {...choice.choiceDialogProps} /> : null}
+            </>,
+            document.body,
+          )
+        : null}
     </RecordItemSection>
   )
 }
