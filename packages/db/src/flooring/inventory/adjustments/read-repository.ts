@@ -281,15 +281,17 @@ export type InventoryAdjustmentNeighborsResult = InventoryAdjustmentNeighbors & 
 
 /**
  * Prev/next neighbors of one adjustment within its parent inventory's ledger,
- * powering the record-view Adjustments-section stepper. The ledger order is
- * `createdAt DESC, id DESC` (newest-first — see `listInventoryAdjustmentsPage`),
- * so neighbors are a keyset step over that order scoped to `inventoryId`, NOT
- * the numeric `adjustmentNumberInt` sequence used by the inventory shell stepper.
+ * powering the record-view Adjustments-section stepper. Stepping follows the
+ * numeric `+1 = next` convention shared by the inventory shell stepper and the
+ * reference-header pickers (RIGHT advances to the newer/higher adjustment), NOT
+ * the newest-first visual list order (`createdAt DESC` — see
+ * `listInventoryAdjustmentsPage`). Neighbors are a keyset step scoped to
+ * `inventoryId`.
  *
- *   - previous (◀): the row ABOVE — newer, the smallest `(createdAt, id)` that is
- *     still strictly greater than the cursor.
- *   - next (▶): the row BELOW — older, the largest `(createdAt, id)` strictly less
- *     than the cursor.
+ *   - previous (◀): older — the largest `(createdAt, id)` strictly less than the
+ *     cursor.
+ *   - next (▶): newer — the smallest `(createdAt, id)` strictly greater than the
+ *     cursor.
  *
  * The `(createdAt, id)` tuple compare is OR-decomposed (Prisma has no row-value
  * comparator). Returns `null` when the adjustment id does not exist.
@@ -306,19 +308,7 @@ export async function getAdjustmentNeighbors(
 
   const neighborSelect = { id: true, adjustmentNumber: true } as const
   const [previous, next] = await Promise.all([
-    // ◀ newer: smallest (createdAt, id) strictly greater than the cursor.
-    client.flooringInventoryAdjustment.findFirst({
-      where: {
-        inventoryId: cursor.inventoryId,
-        OR: [
-          { createdAt: { gt: cursor.createdAt } },
-          { createdAt: cursor.createdAt, id: { gt: cursor.id } },
-        ],
-      },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      select: neighborSelect,
-    }),
-    // ▶ older: largest (createdAt, id) strictly less than the cursor.
+    // ◀ older: largest (createdAt, id) strictly less than the cursor.
     client.flooringInventoryAdjustment.findFirst({
       where: {
         inventoryId: cursor.inventoryId,
@@ -328,6 +318,18 @@ export async function getAdjustmentNeighbors(
         ],
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: neighborSelect,
+    }),
+    // ▶ newer: smallest (createdAt, id) strictly greater than the cursor.
+    client.flooringInventoryAdjustment.findFirst({
+      where: {
+        inventoryId: cursor.inventoryId,
+        OR: [
+          { createdAt: { gt: cursor.createdAt } },
+          { createdAt: cursor.createdAt, id: { gt: cursor.id } },
+        ],
+      },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       select: neighborSelect,
     }),
   ])
