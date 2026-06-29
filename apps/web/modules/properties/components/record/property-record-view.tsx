@@ -25,6 +25,7 @@ import {
   type EntityForm,
   type EntityOption,
   type EntityTypeRef,
+  type PaletteColor,
   type PropertyDetailRecord,
 } from "@builders/domain"
 import {
@@ -113,11 +114,18 @@ export function PropertyRecordView({
   const [entityTypeRefs, setEntityTypeRefs] = useState<EntityTypeRef[]>(
     entity?.types ?? [],
   )
+  // The linked entity's ENT-# + palette color, mirrored read-only above the
+  // Entity cell (parity with the entity record view). Seeded from the
+  // server-loaded entity; cleared on re-pick (EntityOption carries neither).
+  const [entityNumber, setEntityNumber] = useState<string | null>(entity?.entityNumber ?? null)
+  const [entityColor, setEntityColor] = useState<PaletteColor | null>(entity?.color ?? null)
 
   const selectEntity = (option: EntityOption | null) => {
     setEntityDisplay(option ? toDisplayForm(option) : null)
     setEntityLabel(option?.entity ?? null)
     setEntityTypeRefs([])
+    setEntityNumber(null)
+    setEntityColor(null)
   }
 
   // Re-seed the read-only contact cells, trigger label, and type chips from the
@@ -130,6 +138,8 @@ export function PropertyRecordView({
     setEntityDisplay(entity ? toEntityForm(entity) : null)
     setEntityLabel(linkedEntity?.entity ?? null)
     setEntityTypeRefs(entity?.types ?? [])
+    setEntityNumber(entity?.entityNumber ?? null)
+    setEntityColor(entity?.color ?? null)
   }
 
   const openEntity = () => {
@@ -182,6 +192,8 @@ export function PropertyRecordView({
                     selectedLabel={entityLabel}
                     display={entityDisplay}
                     typeRefs={entityTypeRefs}
+                    entityNumber={entityNumber}
+                    entityColor={entityColor}
                     editable={!primary.isSaving}
                     onOpen={openEntity}
                     onCreate={() =>
