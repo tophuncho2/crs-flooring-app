@@ -76,6 +76,8 @@ const entityDetailSelect = {
 const entityOptionSelect = {
   id: true,
   entity: true,
+  entityNumber: true,
+  color: true,
   streetAddress: true,
   city: true,
   state: true,

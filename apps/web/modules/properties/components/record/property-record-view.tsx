@@ -49,8 +49,8 @@ function toDisplayForm(option: EntityOption): EntityForm {
     zip: option.zip,
     phone: option.phone,
     email: option.email,
-    // Entity options don't carry their linked types; chips show only for the
-    // server-loaded linked entity (re-resolved on its own record view).
+    // Contact-only display form: the type chips render from `entityTypeRefs`
+    // (fed the option's `types`), not from this form's `typeIds`.
     typeIds: [],
     // Read-only contact display only — color is never shown/edited here, so the
     // default satisfies the form shape without implying a real value.
@@ -110,22 +110,22 @@ export function PropertyRecordView({
   )
   const [entityLabel, setEntityLabel] = useState<string | null>(linkedEntity?.entity ?? null)
   // The linked entity's type chips (read-only). Seeded from the server-loaded
-  // entity; cleared when a different entity is picked (options carry no types).
+  // entity and refreshed from the picked option (which carries its types).
   const [entityTypeRefs, setEntityTypeRefs] = useState<EntityTypeRef[]>(
     entity?.types ?? [],
   )
   // The linked entity's ENT-# + palette color, mirrored read-only above the
   // Entity cell (parity with the entity record view). Seeded from the
-  // server-loaded entity; cleared on re-pick (EntityOption carries neither).
+  // server-loaded entity and refreshed from the picked option.
   const [entityNumber, setEntityNumber] = useState<string | null>(entity?.entityNumber ?? null)
   const [entityColor, setEntityColor] = useState<PaletteColor | null>(entity?.color ?? null)
 
   const selectEntity = (option: EntityOption | null) => {
     setEntityDisplay(option ? toDisplayForm(option) : null)
     setEntityLabel(option?.entity ?? null)
-    setEntityTypeRefs([])
-    setEntityNumber(null)
-    setEntityColor(null)
+    setEntityTypeRefs(option?.types ?? [])
+    setEntityNumber(option?.entityNumber ?? null)
+    setEntityColor(option?.color ?? null)
   }
 
   // Re-seed the read-only contact cells, trigger label, and type chips from the

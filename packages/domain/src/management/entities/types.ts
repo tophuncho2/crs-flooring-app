@@ -66,6 +66,10 @@ export type EntityListRow = {
 export type EntityOption = {
   id: string
   entity: string
+  /** ENT-# label — lets a picked option hydrate the read-only ENT-# chip. */
+  entityNumber: string
+  /** Palette tag — lets a picked option hydrate the read-only color chip. */
+  color: PaletteColor
   streetAddress: string
   city: string
   state: string

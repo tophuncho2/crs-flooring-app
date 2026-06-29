@@ -124,6 +124,8 @@ export function normalizeEntityListRow(entity: EntityListRowInput): EntityListRo
 type EntityOptionInput = {
   id: string
   entity: string
+  entityNumber: string
+  color: PaletteColor
   streetAddress: string | null
   city: string | null
   state: string | null
@@ -137,6 +139,8 @@ export function normalizeEntityOption(entity: EntityOptionInput): EntityOption {
   return {
     id: entity.id,
     entity: entity.entity,
+    entityNumber: entity.entityNumber,
+    color: entity.color,
     streetAddress: entity.streetAddress ?? "",
     city: entity.city ?? "",
     state: entity.state ?? "",
