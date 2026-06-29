@@ -10,6 +10,7 @@ import {
 } from "@builders/domain"
 import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
+import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import { useTemplateQuickCreate } from "@/modules/templates/controllers/record/use-template-quick-create"
 
 /**
@@ -29,18 +30,30 @@ export function TemplateQuickCreateModal({
   onClose,
   onCreated,
   initialProperty,
+  entityScope,
 }: {
   open: boolean
   onClose: () => void
   onCreated: (option: TemplateOption) => void
-  /** The host's current property — the new template is scoped to it (optional). */
+  /**
+   * The host's current property — the new template links to it, shown read-only
+   * (the locked default). Mutually exclusive with `entityScope`.
+   */
   initialProperty?: { id: string; label: string | null } | null
+  /**
+   * Scope the property *picker* to an entity's properties. When set, the modal
+   * renders a `PropertyPicker` (filtered to this entity) instead of the read-only
+   * "For property:" line, so the host can pick which of the entity's properties
+   * the template attaches to. Mutually exclusive with `initialProperty`.
+   */
+  entityScope?: { id: string; label: string | null } | null
 }) {
   const controller = useTemplateQuickCreate({ initialPropertyId: initialProperty?.id ?? null })
   const editable = !controller.isSaving
 
   const [jobTypeLabel, setJobTypeLabel] = useState<string | null>(null)
   const [warehouseLabel, setWarehouseLabel] = useState<string | null>(null)
+  const [pickedPropertyLabel, setPickedPropertyLabel] = useState<string | null>(null)
 
   const { localValue } = controller
   const setField = (field: keyof TemplateForm, value: string) =>
@@ -71,12 +84,27 @@ export function TemplateQuickCreateModal({
       error={controller.error}
     >
       <div className="space-y-4">
-        <p className="text-sm text-[var(--foreground)]/70">
-          For property:{" "}
-          <span className="font-medium text-[var(--foreground)]">
-            {initialProperty?.label ?? "No property"}
-          </span>
-        </p>
+        {entityScope ? (
+          <FormField label="Property">
+            <PropertyPicker
+              value={localValue.propertyId || null}
+              onChange={(id) => setField("propertyId", id ?? "")}
+              onOptionSelected={(option) => setPickedPropertyLabel(option?.name ?? null)}
+              selectedLabel={pickedPropertyLabel}
+              entityId={entityScope.id}
+              placeholder="Select property"
+              ariaLabel="Property"
+              disabled={!editable}
+            />
+          </FormField>
+        ) : (
+          <p className="text-sm text-[var(--foreground)]/70">
+            For property:{" "}
+            <span className="font-medium text-[var(--foreground)]">
+              {initialProperty?.label ?? "No property"}
+            </span>
+          </p>
+        )}
 
         <FormField
           label="Unit Type"

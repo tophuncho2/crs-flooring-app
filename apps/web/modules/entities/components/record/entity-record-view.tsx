@@ -1,7 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
+  ChoiceDialog,
   FormField,
   RecordColumnBreak,
   RecordDeleteDialog,
@@ -11,6 +13,7 @@ import {
   RecordSectionDivider,
   RecordStepperPortal,
   StaticFieldValue,
+  useRecordCreateChoice,
   useRecordDeleteConfirmation,
   type RecordDetailClientScaffoldContext,
   type RecordPanelSectionConfig,
@@ -20,11 +23,11 @@ import { formatEasternDateTime, type EntityDetail } from "@builders/domain"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
-  buildRecordCreateHref,
   buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
 import { useEntityPrimarySection } from "@/modules/entities/controllers/record/primary/use-entity-primary-section"
 import { LinkedPropertiesList } from "./properties/linked-properties-list"
+import { PropertyHubQuickCreateModal } from "./properties/property-hub-quick-create-modal"
 import { EntityCellsSection } from "./primary/entity-cells-section"
 import { EntityTemplatesSection } from "./templates/entity-templates-section"
 
@@ -50,6 +53,8 @@ export function EntityRecordView({
   const controller = useEntityPrimarySection({ page, entry })
   const primary = controller.primarySection
   const deletion = useRecordDeleteConfirmation(controller.deleteRecord)
+  const choice = useRecordCreateChoice()
+  const [propertyModalOpen, setPropertyModalOpen] = useState(false)
 
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
@@ -67,16 +72,10 @@ export function EntityRecordView({
     router.push(buildPropertyRecordHref(propertyId, entry.id, returnTo))
   }
 
-  // "+ Property" opens the single management form (the hub create flow),
-  // pre-linked to this entity so the operator only fills the property fields.
-  const createProperty = () => {
-    router.push(
-      buildRecordCreateHref("/dashboard/entities", {
-        returnTo,
-        params: { entityId: entry.id, entityLabel: entry.entity },
-      }),
-    )
-  }
+  // "+ Property" opens the hub create form in a modal, with this entity seeded
+  // and LOCKED (the operator only fills the property fields). On create the
+  // choice dialog offers "Go to {property}" or stay in this entity.
+  const createProperty = () => setPropertyModalOpen(true)
 
   const sections: RecordPanelSectionConfig[] = [
     {
@@ -204,6 +203,27 @@ export function EntityRecordView({
         onConfirm={() => void deletion.confirmDelete()}
         onCancel={deletion.cancelDelete}
       />
+      {propertyModalOpen ? (
+        <PropertyHubQuickCreateModal
+          open
+          locked
+          initialEntity={{ id: entry.id, label: entry.entity }}
+          onClose={() => setPropertyModalOpen(false)}
+          onCreated={(property) => {
+            setPropertyModalOpen(false)
+            choice.present({
+              destinations: [
+                {
+                  label: `Go to ${property.name}`,
+                  href: buildPropertyRecordHref(property.id, entry.id, returnTo),
+                },
+              ],
+              stay: { label: "Stay here" },
+            })
+          }}
+        />
+      ) : null}
+      {choice.choiceDialogProps ? <ChoiceDialog {...choice.choiceDialogProps} /> : null}
     </>
   )
 }

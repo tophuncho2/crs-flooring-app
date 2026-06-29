@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import {
+  useRecordCreateChoice,
   useSingleSectionCreateController,
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
@@ -90,16 +89,12 @@ export function usePropertyHubCreateSection({
   /** Pre-link an existing entity (e.g. "+ Property" from inside that entity's record view). */
   initialEntity?: { id: string; label: string | null } | null
 }) {
-  const router = useRouter()
   const queryClient = useQueryClient()
 
   // When the form creates BOTH an entity and a property, we can't pick one
   // destination for the operator — surface a choice dialog instead of
   // auto-redirecting (see the `redirectTo: null` branch below).
-  const [choice, setChoice] = useState<{
-    propertyHref: string
-    entityHref: string
-  } | null>(null)
+  const choice = useRecordCreateChoice()
 
   const controller = useSingleSectionCreateController<PropertyHubCreateForm>({
     page,
@@ -132,13 +127,24 @@ export function usePropertyHubCreateSection({
       // Both created → let the operator choose where to land. Defer navigation
       // by returning `redirectTo: null` and opening the choice dialog.
       if (property && entity) {
-        setChoice({
-          propertyHref: buildPropertyRecordHref(property.id, entity.id, backHref),
-          entityHref: buildRecordDetailHref(
-            "/dashboard/entities",
-            entity.id,
-            backHref,
-          ),
+        choice.present({
+          title: "Created",
+          message:
+            "The entity and property were both created. Where would you like to go?",
+          destinations: [
+            {
+              label: "Go to property",
+              href: buildPropertyRecordHref(property.id, entity.id, backHref),
+            },
+            {
+              label: "Go to entity",
+              href: buildRecordDetailHref(
+                "/dashboard/entities",
+                entity.id,
+                backHref,
+              ),
+            },
+          ],
         })
         return { redirectTo: null, noticeMessage: "Created" }
       }
@@ -157,14 +163,5 @@ export function usePropertyHubCreateSection({
     },
   })
 
-  const choiceDialog = choice
-    ? {
-        open: true,
-        goToProperty: () => router.push(choice.propertyHref, { scroll: false }),
-        goToEntity: () =>
-          router.push(choice.entityHref, { scroll: false }),
-      }
-    : null
-
-  return { ...controller, choiceDialog }
+  return { ...controller, choiceDialogProps: choice.choiceDialogProps }
 }

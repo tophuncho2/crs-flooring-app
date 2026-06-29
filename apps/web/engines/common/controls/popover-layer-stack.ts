@@ -58,3 +58,13 @@ export function isPointerInsideLayerOrDeeper(target: Node, layer: PopoverLayer):
 export function isTopmostPopoverLayer(layer: PopoverLayer): boolean {
   return openLayers.length > 0 && openLayers[openLayers.length - 1] === layer
 }
+
+/**
+ * True when any popover layer is currently open. A container that is *not* itself
+ * a registered layer (e.g. `RecordModal`) consults this so its own Escape handler
+ * defers to an open nested dropdown — Escape closes the dropdown first, and only
+ * a second Escape (registry now empty) closes the container.
+ */
+export function hasOpenPopoverLayer(): boolean {
+  return openLayers.length > 0
+}

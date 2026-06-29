@@ -9,14 +9,15 @@ import {
   StaticFieldValue,
 } from "@/engines/record-view"
 import type { PropertyJoinedFields } from "@/engines/record-view"
+import { CellAddButton } from "@/engines/common"
 import { applyPropertySelection } from "@/engines/picker"
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
+  buildRecordCreateHref,
   buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
-import { PropertyCreateMenu } from "@/modules/properties/components/picker/property-create-menu"
 import {
   buildAddressBlock,
   type PropertyOption,
@@ -29,8 +30,8 @@ import type { TemplatePrimaryDetail } from "../template-primary-fields-section"
  * group chrome). Entity is a read-only mirror of the picked
  * property's entity (templates no longer store their own). The open-record (launch)
  * and New property affordances live in each cell's label-row `actions` slot
- * (`RecordOpenButton` / the shared `PropertyCreateMenu`), mirroring the
- * work-orders primary.
+ * (`RecordOpenButton` / a `CellAddButton` that opens the proper property create
+ * form), mirroring the work-orders primary.
  *
  * Cascade rules come from the shared picker engine (`applyPropertySelection`):
  * picking a property back-fills its linked entity. `pickedMc` / `pickedPropertyLabel`
@@ -150,7 +151,13 @@ export function TemplatePropertyUnitGroup({
                 }}
               />
               {editable ? (
-                <PropertyCreateMenu returnTo={returnTo} onCreated={selectProperty} />
+                <CellAddButton
+                  ariaLabel="New property"
+                  title="New property"
+                  onClick={() =>
+                    router.push(buildRecordCreateHref("/dashboard/entities", { returnTo }))
+                  }
+                />
               ) : null}
             </>
           }

@@ -30,6 +30,7 @@ export function PropertyHubQuickCreateModal({
   onClose,
   onCreated,
   initialEntity,
+  locked = false,
 }: {
   open: boolean
   onClose: () => void
@@ -38,6 +39,13 @@ export function PropertyHubQuickCreateModal({
     entity: EntityDetail | null,
   ) => void
   initialEntity?: { id: string; label: string | null } | null
+  /**
+   * Lock the seeded entity. When `true` (and `initialEntity` is set), the entity
+   * select/create section is replaced by a read-only "For entity:" line — the new
+   * property links to that entity and the host cannot reselect it. Default `false`
+   * keeps the reselectable section (Work Orders / standalone create).
+   */
+  locked?: boolean
 }) {
   const controller = usePropertyHubQuickCreate({ initialEntity })
   const editable = !controller.isSaving
@@ -61,32 +69,41 @@ export function PropertyHubQuickCreateModal({
       widthClassName="max-w-4xl"
     >
       <div className="space-y-4">
-        <div className={SECTION_CARD_CLASS}>
-          <EntitySelectSection
-            value={controller.localValue}
-            disabled={!editable}
-            onLink={(option) =>
-              controller.setLocalValue((prev) =>
-                option
-                  ? {
-                      ...prev,
-                      entityLinkId: option.id,
-                      entityLinkLabel: option.entity,
-                      entityForm: EMPTY_ENTITY_FORM,
-                    }
-                  : { ...prev, entityLinkId: null, entityLinkLabel: null },
-              )
-            }
-            onEntityFieldChange={(field, next) =>
-              controller.setLocalValue((prev) => ({
-                ...prev,
-                entityLinkId: null,
-                entityLinkLabel: null,
-                entityForm: { ...prev.entityForm, [field]: next },
-              }))
-            }
-          />
-        </div>
+        {locked && initialEntity ? (
+          <p className="text-sm text-[var(--foreground)]/70">
+            For entity:{" "}
+            <span className="font-medium text-[var(--foreground)]">
+              {initialEntity.label ?? "Entity"}
+            </span>
+          </p>
+        ) : (
+          <div className={SECTION_CARD_CLASS}>
+            <EntitySelectSection
+              value={controller.localValue}
+              disabled={!editable}
+              onLink={(option) =>
+                controller.setLocalValue((prev) =>
+                  option
+                    ? {
+                        ...prev,
+                        entityLinkId: option.id,
+                        entityLinkLabel: option.entity,
+                        entityForm: EMPTY_ENTITY_FORM,
+                      }
+                    : { ...prev, entityLinkId: null, entityLinkLabel: null },
+                )
+              }
+              onEntityFieldChange={(field, next) =>
+                controller.setLocalValue((prev) => ({
+                  ...prev,
+                  entityLinkId: null,
+                  entityLinkLabel: null,
+                  entityForm: { ...prev.entityForm, [field]: next },
+                }))
+              }
+            />
+          </div>
+        )}
 
         <div className={SECTION_CARD_CLASS}>
           <ActionHeader title="Property" />

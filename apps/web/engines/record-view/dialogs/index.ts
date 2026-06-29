@@ -1,6 +1,7 @@
 export * from "./confirm-dialog"
 export * from "./confirm-delete"
 export * from "./choice-dialog"
+export * from "./use-record-create-choice"
 export * from "./record-delete-dialog"
 export * from "./record-modal"
 export * from "./quick-create-modal"

@@ -30,6 +30,7 @@ import {
 import {
   buildCurrentRecordEntryPath,
   buildPropertyRecordHref,
+  buildRecordCreateHref,
   buildRecordDetailHref,
 } from "@/hooks/navigation/routes"
 import { usePropertyPrimarySection } from "@/modules/properties/controllers/record/use-property-primary-section"
@@ -131,16 +132,6 @@ export function PropertyRecordView({
     setEntityTypeRefs(entity?.types ?? [])
   }
 
-  // A quick/proper-created company fills the cell exactly like a picked one: link
-  // it in the dirty draft (saves with the property) and refresh the display cells.
-  const handleEntityCreated = (option: EntityOption) => {
-    primary.setLocalValue((previous) => ({
-      ...previous,
-      entityId: option.id,
-    }))
-    selectEntity(option)
-  }
-
   const openEntity = () => {
     if (!selectedEntityId) return
     router.push(
@@ -193,8 +184,13 @@ export function PropertyRecordView({
                     typeRefs={entityTypeRefs}
                     editable={!primary.isSaving}
                     onOpen={openEntity}
-                    returnTo={buildCurrentRecordEntryPath(pathname, searchParams)}
-                    onCreated={handleEntityCreated}
+                    onCreate={() =>
+                      router.push(
+                        buildRecordCreateHref("/dashboard/entities", {
+                          returnTo: buildCurrentRecordEntryPath(pathname, searchParams),
+                        }),
+                      )
+                    }
                   />
                   <PropertyFieldsSection
                     draft={primary.localValue}

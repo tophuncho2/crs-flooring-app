@@ -85,16 +85,8 @@ function PropertyHubCreatePanel({
         </div>
       </div>
     </RecordSingleSectionPanel>
-    {controller.choiceDialog ? (
-      <ChoiceDialog
-        open={controller.choiceDialog.open}
-        title="Created"
-        message="The entity and property were both created. Where would you like to go?"
-        primaryLabel="Go to property"
-        onPrimary={controller.choiceDialog.goToProperty}
-        secondaryLabel="Go to entity"
-        onSecondary={controller.choiceDialog.goToEntity}
-      />
+    {controller.choiceDialogProps ? (
+      <ChoiceDialog {...controller.choiceDialogProps} />
     ) : null}
     </>
   )

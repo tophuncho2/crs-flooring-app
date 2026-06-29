@@ -1,14 +1,15 @@
 "use client"
 
+import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import type { TemplateListRow } from "@builders/domain"
 import { DataTable } from "@/engines/list-view"
-import { RecordItemSection } from "@/engines/record-view"
+import { ChoiceDialog, RecordItemSection, useRecordCreateChoice } from "@/engines/record-view"
 import {
   buildCurrentRecordEntryPath,
-  buildRecordCreateHref,
   buildTemplateHubHref,
 } from "@/hooks/navigation/routes"
+import { TemplateQuickCreateModal } from "@/modules/templates/components/record/template-quick-create-modal"
 import { TEMPLATES_LIST_COLUMNS } from "@/modules/templates/components/list/table/templates-list-columns"
 import { renderTemplateRowCell } from "@/modules/templates/components/list/table/templates-row-cell"
 import { useTemplatesSectionTable } from "@/modules/templates/controllers/record/use-templates-section-table"
@@ -45,12 +46,15 @@ export function EntityTemplatesSection({
     enabled: true,
   })
 
+  const choice = useRecordCreateChoice()
+  const [templateModalOpen, setTemplateModalOpen] = useState(false)
+
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
-  // "+ Template" opens a fresh template create form — no scope seeding.
-  const openTemplateCreate = () => {
-    router.push(buildRecordCreateHref("/dashboard/templates", { returnTo }))
-  }
+  // "+ Template" opens the quick-create modal with the property picker scoped to
+  // THIS entity's properties. On create, the choice dialog offers "Go to
+  // {template}" or stay in this entity.
+  const openTemplateCreate = () => setTemplateModalOpen(true)
 
   const openTemplate = (row: TemplateListRow) => {
     router.push(
@@ -94,6 +98,32 @@ export function EntityTemplatesSection({
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates for this entity yet."}
         pagination={grid.pagination}
       />
+      {templateModalOpen ? (
+        <TemplateQuickCreateModal
+          open
+          entityScope={{ id: entity.id, label: entity.entity }}
+          onClose={() => setTemplateModalOpen(false)}
+          onCreated={(option) => {
+            setTemplateModalOpen(false)
+            choice.present({
+              destinations: [
+                {
+                  label: `Go to ${option.unitType}`,
+                  href: buildTemplateHubHref({
+                    templateId: option.id,
+                    templateLabel: option.unitType,
+                    entityId: entity.id,
+                    entityLabel: entity.entity,
+                    returnTo,
+                  }),
+                },
+              ],
+              stay: { label: "Stay here" },
+            })
+          }}
+        />
+      ) : null}
+      {choice.choiceDialogProps ? <ChoiceDialog {...choice.choiceDialogProps} /> : null}
     </RecordItemSection>
   )
 }

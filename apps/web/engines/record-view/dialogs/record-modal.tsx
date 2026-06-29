@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, type ReactNode } from "react"
 
+import { hasOpenPopoverLayer } from "@/engines/common"
+
 export type RecordModalProps = {
   /** Controls visibility. When `false`, the modal (and its backdrop) is not rendered. */
   open: boolean
@@ -44,6 +46,9 @@ export function RecordModal({
     cardRef.current?.focus()
     function handleKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        // Defer to an open nested dropdown — its own Escape handler closes it
+        // first; only a second Escape (registry now empty) closes the modal.
+        if (hasOpenPopoverLayer()) return
         event.preventDefault()
         onClose()
       }

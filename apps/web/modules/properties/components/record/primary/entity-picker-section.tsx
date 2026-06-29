@@ -14,8 +14,8 @@ import {
   RecordOpenButton,
   StaticFieldValue,
 } from "@/engines/record-view"
+import { CellAddButton } from "@/engines/common"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
-import { EntityCreateMenu } from "@/modules/entities/components/picker/entity-create-menu"
 import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/entity-type-multi-select"
 
 /**
@@ -23,10 +23,10 @@ import { EntityTypeMultiSelect } from "@/modules/entity-types/components/picker/
  * Company-Name cell is the live entity picker (tracked by the property's primary
  * controller, so a pick is a dirty edit that saves with the property). The
  * `RecordOpenButton` (launch ↗) sits inline on the cell label and hands off to
- * the selected entity's record view; the ⋮ `EntityCreateMenu` beside it
- * spins up a new company (quick modal or proper page) that fills the cell. Phone /
- * Email / Address always render read-only ("—" when empty) and refresh from
- * `display` when a new company is picked.
+ * the selected entity's record view; the `CellAddButton` (+) beside it opens the
+ * proper entity create form (no quick modal). Phone / Email / Address always
+ * render read-only ("—" when empty) and refresh from `display` when a new company
+ * is picked.
  */
 export function EntityPickerSection({
   value,
@@ -38,8 +38,7 @@ export function EntityPickerSection({
   editable,
   onOpen,
   initialOptions,
-  returnTo,
-  onCreated,
+  onCreate,
 }: {
   value: string | null
   onChange: (id: string | null) => void
@@ -51,10 +50,8 @@ export function EntityPickerSection({
   editable: boolean
   onOpen: () => void
   initialOptions?: EntityOption[]
-  /** Record-entry path the create menu's proper-form route returns to. */
-  returnTo: string
-  /** Fired with a freshly created company, mapped to a `EntityOption`. */
-  onCreated: (option: EntityOption) => void
+  /** Opens the proper entity create form (the `+` affordance). */
+  onCreate: () => void
 }) {
   return (
     <FieldSection gap="0.75rem">
@@ -71,7 +68,7 @@ export function EntityPickerSection({
                 onClick={onOpen}
               />
               {editable ? (
-                <EntityCreateMenu returnTo={returnTo} onCreated={onCreated} />
+                <CellAddButton ariaLabel="New entity" title="New entity" onClick={onCreate} />
               ) : null}
             </>
           }
