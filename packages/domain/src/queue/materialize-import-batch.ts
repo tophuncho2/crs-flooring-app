@@ -28,7 +28,11 @@ export const ImportMaterializeBatchPayloadSchema = z.object({
   importEntryId: z.string().uuid(),
   stagedRowIds: z.array(z.string().uuid()).min(1).max(MAX_MARK_FOR_IMPORT_ROWS),
   requestedBy: z.object({
-    userId: z.string().uuid(),
+    // Opaque auth identifier from the trusted session, not a domain entity id —
+    // its format is owned by the auth provider (Better Auth), so we only assert
+    // non-empty rather than UUID. (`importEntryId`/`stagedRowIds` above ARE domain
+    // ids and stay `.uuid()`.)
+    userId: z.string().min(1),
     userEmail: z.string().email(),
   }),
   requestedAt: isoTimestamp,

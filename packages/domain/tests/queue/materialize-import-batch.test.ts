@@ -89,13 +89,23 @@ describe("ImportMaterializeBatchPayloadSchema", () => {
     ).toThrow()
   })
 
-  it("requires requestedBy.userId to be UUID and userEmail to be email-shaped", () => {
+  it("accepts a non-UUID requestedBy.userId (opaque auth id) but requires it non-empty", () => {
+    // Better Auth user ids are not UUIDs — userId is an opaque auth identifier.
     expect(() =>
       ImportMaterializeBatchPayloadSchema.parse({
         ...VALID_PAYLOAD,
-        requestedBy: { userId: "not-uuid", userEmail: "user@example.com" },
+        requestedBy: { userId: "WusouSNUWQE8oAq6pxLOlXYXakTuWR5i", userEmail: "user@example.com" },
+      }),
+    ).not.toThrow()
+    expect(() =>
+      ImportMaterializeBatchPayloadSchema.parse({
+        ...VALID_PAYLOAD,
+        requestedBy: { userId: "", userEmail: "user@example.com" },
       }),
     ).toThrow()
+  })
+
+  it("requires requestedBy.userEmail to be email-shaped", () => {
     expect(() =>
       ImportMaterializeBatchPayloadSchema.parse({
         ...VALID_PAYLOAD,

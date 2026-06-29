@@ -1,7 +1,7 @@
 import { updateUserRankUseCase } from "@builders/application"
 import { enforceManageUsersAccess } from "@/server/auth/route-auth"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
-import { parseUuidParam } from "@/server/http/api-helpers"
+import { parseRequiredString } from "@/server/http/api-helpers"
 import { CRUD_UPDATE_SECTION } from "@/server/http/rate-limit-presets"
 import { routeError, routeJson } from "@/server/http/route-helpers"
 import {
@@ -29,7 +29,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   try {
     const { id: rawId } = await params
-    const id = parseUuidParam(rawId, "id")
+    // User ids are opaque auth identifiers (Better Auth), not UUIDs — require
+    // non-empty, not UUID-shaped.
+    const id = parseRequiredString(rawId, "id")
     const body = (await request.json()) as Record<string, unknown>
     const { input, mutation } = parseMutationEnvelope(body, validateUpdateUserRankInput, {
       requireExpectedUpdatedAt: true,
