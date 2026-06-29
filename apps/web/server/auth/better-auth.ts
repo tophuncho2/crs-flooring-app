@@ -34,6 +34,15 @@ export const auth = betterAuth({
   // server/platform/request-context.ts): Railway's own client-IP header, then
   // Cloudflare's. Both are single values, so they resolve without proxy config.
   advanced: {
+    // User/Session/Account ids must be UUIDs to match the Prisma schema's
+    // `@default(uuid())` and every downstream user-id contract (the import
+    // materialize payload's `requestedBy.userId` and the user-management routes'
+    // `parseUuidParam`). Better Auth's Prisma adapter supplies the id explicitly,
+    // so without this it emits its native 32-char id and `@default(uuid())` never
+    // fires — invited users then fail UUID validation on Run Import / rank / active.
+    database: {
+      generateId: "uuid",
+    },
     ipAddress: {
       ipAddressHeaders: ["x-railway-client-ip", "cf-connecting-ip"],
     },
