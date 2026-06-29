@@ -3,6 +3,7 @@ import { TemplateExecutionError, TemplateMaterialItemExecutionError } from "@bui
 import type {
   CreateTemplateUseCaseInput,
   ListInput,
+  ListSort,
   TemplatesListFilters,
   UpdateTemplateUseCaseInput,
 } from "@builders/application"
@@ -221,6 +222,36 @@ const listTemplatesQuerySchema = z.object({
     .default(LIST_TEMPLATES_PAGE_SIZE),
 })
 
+// UI-exposed sortable fields. Row# (Template #) is intentionally excluded —
+// createdAt is the canonical chronological key. Kept independent of the data +
+// client allowlists (defense-in-depth); the allowlist-sync test holds them in step.
+export const TEMPLATES_UI_SORT_FIELDS = [
+  "property",
+  "entity",
+  "unitType",
+  "createdAt",
+  "updatedAt",
+] as const
+const TEMPLATES_MAX_SORT_LEVELS = 3
+/** The list's default order when no `sorts` param is supplied (property A→Z). */
+const TEMPLATES_DEFAULT_SORT: ListSort = { field: "property", direction: "asc" }
+
+/** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | null): ListSort[] {
+  if (!raw) return []
+  const allowed = new Set<string>(TEMPLATES_UI_SORT_FIELDS)
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !allowed.has(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "desc" ? "desc" : "asc" })
+    if (result.length >= TEMPLATES_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
 function readMultiValue(searchParams: URLSearchParams, key: string): string[] {
   return Array.from(
     new Set(
@@ -263,7 +294,13 @@ export function validateListTemplatesQuery(
   }
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
+  // Canonical ordered sort via `sorts`; absent → the list's property-asc default.
+  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
+  const sorts: ListSort[] = parsedSorts.length > 0 ? parsedSorts : [TEMPLATES_DEFAULT_SORT]
+
   return {
+    sort: sorts[0],
+    sorts,
     filters: hasAnyFilter ? (filterRecord as TemplatesListFilters) : undefined,
     page: parsed.page,
     pageSize: parsed.pageSize,

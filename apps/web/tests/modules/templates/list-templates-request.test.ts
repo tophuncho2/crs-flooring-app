@@ -30,3 +30,32 @@ describe("parseTemplatesListInputFromSearchParams — unit-type / description se
     expect((input as { search?: string }).search).toBeUndefined()
   })
 })
+
+describe("parseTemplatesListInputFromSearchParams — sort", () => {
+  it("defaults to property ASC when no sorts param is present", () => {
+    const input = parseTemplatesListInputFromSearchParams({})
+    expect(input.sorts).toEqual([{ field: "property", direction: "asc" }])
+    expect(input.sort).toEqual({ field: "property", direction: "asc" })
+  })
+
+  it("parses an ordered multi-column sorts param", () => {
+    const input = parseTemplatesListInputFromSearchParams({
+      sorts: "unitType:asc,createdAt:desc",
+    })
+    expect(input.sorts).toEqual([
+      { field: "unitType", direction: "asc" },
+      { field: "createdAt", direction: "desc" },
+    ])
+  })
+
+  it("drops unknown fields, dedupes, and caps at 3 levels", () => {
+    const input = parseTemplatesListInputFromSearchParams({
+      sorts: "bogus:asc,property:asc,property:desc,entity:asc,unitType:asc,createdAt:desc",
+    })
+    expect(input.sorts).toEqual([
+      { field: "property", direction: "asc" },
+      { field: "entity", direction: "asc" },
+      { field: "unitType", direction: "asc" },
+    ])
+  })
+})

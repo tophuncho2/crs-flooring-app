@@ -43,6 +43,8 @@ export function LinkedPropertiesList({
     queryKey: [...PROPERTIES_LIST_QUERY_KEY, "entity-record-section", entityId, pager.page],
     queryFn: () =>
       listPropertiesRequest({
+        // Record-view sections always show newest rows first (id final tiebreak).
+        sorts: [{ field: "createdAt", direction: "desc" }],
         filters: { entityId: [entityId] },
         page: pager.page,
         pageSize: pager.pageSize,

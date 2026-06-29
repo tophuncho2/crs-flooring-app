@@ -7,6 +7,9 @@ import {
 import { listPropertiesForListView } from "@builders/db"
 import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 
+/** Cap on user-selected sort columns (the engine + API enforce the same). */
+const MAX_SORT_LEVELS = 3
+
 export type PropertiesListFilters = {
   propNumber?: string
   entityId?: ReadonlyArray<string>
@@ -44,8 +47,18 @@ export async function listPropertiesUseCase(
         }
       : undefined
 
+  // The multi-column `sorts` array is canonical; a single `sort` is treated as
+  // an array of one. Highest priority first, capped at MAX_SORT_LEVELS. The repo
+  // silently drops unknown fields, so no field whitelist is needed here.
+  const sortList = input.sorts ?? (input.sort ? [input.sort] : [])
+  const entries = sortList
+    .slice(0, MAX_SORT_LEVELS)
+    .map((entry) => ({ field: entry.field, direction: entry.direction }))
+  const sort = entries.length > 0 ? { entries } : undefined
+
   const { rows, total } = await listPropertiesForListView({
     search,
+    sort,
     filters,
     skip: (page - 1) * pageSize,
     take: pageSize,

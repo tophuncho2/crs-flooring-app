@@ -58,7 +58,13 @@ export function useTemplatesSectionTable({
       ...(entityId ? { entityId: [entityId] } : {}),
       ...(propertyId ? { propertyId: [propertyId] } : {}),
     }
-    return { filters, page: pager.page, pageSize: pager.pageSize }
+    return {
+      // Record-view sections always show newest rows first (id final tiebreak).
+      sorts: [{ field: "createdAt", direction: "desc" }],
+      filters,
+      page: pager.page,
+      pageSize: pager.pageSize,
+    }
   }, [entityId, propertyId, pager.page, pager.pageSize])
 
   const query = useQuery({

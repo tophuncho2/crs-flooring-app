@@ -1,5 +1,6 @@
 import { db } from "../../client.js"
 import { numberNeighborQueries } from "../../shared/number-neighbors.js"
+import { buildTemplatesOrderBy } from "./order-by.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeTemplate,
@@ -28,7 +29,20 @@ export type TemplatesListFilterMap = {
   description?: ReadonlyArray<string>
 }
 
+export type TemplatesListSortEntry = {
+  /** Sort column — maps through `templateFieldOrderBy`. */
+  field: string
+  direction: "asc" | "desc"
+}
+
+export type TemplatesListSort = {
+  /** Ordered sort columns, highest priority first. An empty list falls straight
+   * through to the `createdAt`+`id` tiebreaker. */
+  entries: TemplatesListSortEntry[]
+}
+
 export type TemplatesListArgs = {
+  sort?: TemplatesListSort
   filters?: TemplatesListFilterMap
   pagination?: { skip: number; take: number }
 }
@@ -129,29 +143,13 @@ function buildTemplatesWhere(
   return { AND: clauses }
 }
 
-/**
- * Default sort is fixed: property name ASC → unitType ASC → createdAt ASC,
- * with `id ASC` as a stable tiebreak. Used for the templates list view AND
- * the picker options (`listTemplateOptions` / `searchTemplateOptions` mirror
- * the same chain modulo redundant keys). The list-view toolbar does not
- * expose a sort toggle — this ordering is the single source of truth.
- */
-function buildTemplatesOrderBy(): Prisma.FlooringTemplateOrderByWithRelationInput[] {
-  return [
-    { property: { name: "asc" } },
-    { unitType: "asc" },
-    { createdAt: "asc" },
-    { id: "asc" },
-  ]
-}
-
 export async function listTemplates(
   args: TemplatesListArgs,
   client: TemplatesDbClient = db,
 ): Promise<TemplateListRow[]> {
   const templates = await client.flooringTemplate.findMany({
     where: buildTemplatesWhere(args.filters),
-    orderBy: buildTemplatesOrderBy(),
+    orderBy: buildTemplatesOrderBy(args.sort),
     select: templateListSelect,
     ...(args.pagination ?? {}),
   })

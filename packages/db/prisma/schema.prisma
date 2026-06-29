@@ -210,6 +210,8 @@ model Property {
   @@index([name])
   @@index([propertyNumber])
   @@index([propertyNumberInt])
+  @@index([createdAt, id])
+  @@index([updatedAt, id])
   @@map("property_hub")
 }
 

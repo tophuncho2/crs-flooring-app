@@ -3,6 +3,7 @@ import { PropertyExecutionError } from "@builders/application"
 import type {
   CreatePropertyUseCaseInput,
   ListInput,
+  ListSort,
   PropertiesListFilters,
   UpdatePropertyUseCaseInput,
 } from "@builders/application"
@@ -117,6 +118,35 @@ const listPropertiesQuerySchema = z.object({
     .default(LIST_PROPERTIES_PAGE_SIZE),
 })
 
+// UI-exposed sortable fields. Row# (PROP #) is intentionally excluded — createdAt
+// is the canonical chronological key. Kept independent of the data-layer + client
+// allowlists (defense-in-depth); the allowlist-sync test holds the three in step.
+export const PROPERTIES_UI_SORT_FIELDS = [
+  "name",
+  "entity",
+  "createdAt",
+  "updatedAt",
+] as const
+const PROPERTIES_MAX_SORT_LEVELS = 3
+/** The list's default order when no `sorts` param is supplied (name A→Z). */
+const PROPERTIES_DEFAULT_SORT: ListSort = { field: "name", direction: "asc" }
+
+/** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | null): ListSort[] {
+  if (!raw) return []
+  const allowed = new Set<string>(PROPERTIES_UI_SORT_FIELDS)
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !allowed.has(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "desc" ? "desc" : "asc" })
+    if (result.length >= PROPERTIES_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
 export function validateListPropertiesQuery(
   searchParams: URLSearchParams,
 ): ListInput<PropertiesListFilters> {
@@ -166,8 +196,14 @@ export function validateListPropertiesQuery(
         }
       : undefined
 
+  // Canonical ordered sort via `sorts`; absent → the list's name-asc default.
+  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
+  const sorts: ListSort[] = parsedSorts.length > 0 ? parsedSorts : [PROPERTIES_DEFAULT_SORT]
+
   return {
     search,
+    sort: sorts[0],
+    sorts,
     filters,
     page: parsed.page,
     pageSize: parsed.pageSize,

@@ -1,4 +1,9 @@
-import type { ListInput, ListOutput, TemplatesListFilters } from "@builders/application"
+import type {
+  ListInput,
+  ListOutput,
+  ListSort,
+  TemplatesListFilters,
+} from "@builders/application"
 import {
   LIST_TEMPLATES_PAGE_SIZE,
   type TemplateListRow,
@@ -8,6 +13,48 @@ import { requestJson } from "@/transport/http"
 export const TEMPLATES_LIST_QUERY_KEY = ["templates", "list"] as const
 
 const FILTER_KEYS = ["entityId", "propertyId", "unitType", "description"] as const
+
+/**
+ * Sort fields recognised by the templates list. Mirrors the API validator
+ * allowlist and the toolbar Sort menu. The list defaults to `property ASC` when
+ * no `?sorts=` is present; any unknown field is dropped.
+ */
+export const TEMPLATES_LIST_SORT_FIELDS = [
+  "property",
+  "entity",
+  "unitType",
+  "createdAt",
+  "updatedAt",
+] as const satisfies readonly string[]
+
+/** Cap on user-selected sort columns — mirrors the engine + API + use case. */
+const TEMPLATES_MAX_SORT_LEVELS = 3
+
+/** The list's default order when the URL carries no `?sorts=` (preserve property A→Z). */
+const TEMPLATES_DEFAULT_SORT: ListSort = { field: "property", direction: "asc" }
+
+function isAllowedSortField(value: string): boolean {
+  return (TEMPLATES_LIST_SORT_FIELDS as readonly string[]).includes(value)
+}
+
+/** Parse the ordered `?sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | undefined): ListSort[] {
+  if (!raw) return []
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !isAllowedSortField(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "desc" ? "desc" : "asc" })
+    if (result.length >= TEMPLATES_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
+function encodeSortsParam(sorts: readonly ListSort[]): string {
+  return sorts.map((entry) => `${entry.field}:${entry.direction}`).join(",")
+}
 
 function readSearchParam(
   searchParams: Record<string, string | string[] | undefined> | undefined,
@@ -43,7 +90,13 @@ export function parseTemplatesListInputFromSearchParams(
   }
   const hasAnyFilter = Object.keys(filterRecord).length > 0
 
+  // Multi-column sort via `?sorts=`; absent → the list's property-asc default.
+  const parsedSorts = parseSortsParam(readSearchParam(searchParams, "sorts"))
+  const sorts = parsedSorts.length > 0 ? parsedSorts : [TEMPLATES_DEFAULT_SORT]
+
   return {
+    sort: sorts[0],
+    sorts,
     filters: hasAnyFilter ? (filterRecord as TemplatesListFilters) : undefined,
     page,
     pageSize: LIST_TEMPLATES_PAGE_SIZE,
@@ -54,6 +107,9 @@ function buildTemplatesListSearchString(
   input: ListInput<TemplatesListFilters>,
 ): string {
   const params = new URLSearchParams()
+  // Encode the ordered sort list; a single `sort` is an array of one.
+  const sorts = input.sorts?.length ? input.sorts : input.sort ? [input.sort] : []
+  if (sorts.length > 0) params.set("sorts", encodeSortsParam(sorts))
   for (const key of FILTER_KEYS) {
     const values = (input.filters?.[key] ?? []) as ReadonlyArray<string>
     for (const id of values) params.append(key, id)

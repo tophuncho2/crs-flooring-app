@@ -1,13 +1,14 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
   ListActionBar,
   ListCreateButtonPortal,
   ListPageShell,
   ListPageFeedback,
+  SortMenuBody,
   ToolbarMenuButton,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
@@ -25,6 +26,11 @@ import {
 } from "@/modules/templates/data/list-templates-request"
 import { useTemplatesListController } from "@/modules/templates/controllers/list/use-templates-list-controller"
 import { TemplatesTable } from "./templates-table"
+import {
+  TEMPLATES_ALLOWED_SORT_FIELDS,
+  TEMPLATES_MAX_SORT_LEVELS,
+  TEMPLATES_SORT_OPTIONS,
+} from "./table/templates-list-columns"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 
@@ -55,6 +61,7 @@ export default function TemplatesClient({
     rows,
     total,
     filters,
+    sorts,
     page,
     pageSize,
     totalPages,
@@ -62,17 +69,21 @@ export default function TemplatesClient({
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    onSortsChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<TemplateListRow, TemplatesListFilters>({
     mode: "fetch",
     queryKey: [...TEMPLATES_LIST_QUERY_KEY],
     listFn: listTemplatesRequest,
+    initialSort: { field: "property", direction: "asc" },
     initialPage,
     initialFilters,
     pageSize: LIST_TEMPLATES_PAGE_SIZE,
     tableKey: "templates-main",
     filterableFields: TEMPLATES_FILTERABLE_FIELDS,
+    allowedSortFields: TEMPLATES_ALLOWED_SORT_FIELDS,
+    maxSortLevels: TEMPLATES_MAX_SORT_LEVELS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
@@ -130,6 +141,8 @@ export default function TemplatesClient({
     [onFilterChange],
   )
 
+  const hasActiveSortTool = sorts.length > 0
+
   const hasActiveFilterTool = useMemo(
     () => Boolean(selectedEntityId) || Boolean(selectedPropertyId),
     [selectedEntityId, selectedPropertyId],
@@ -163,6 +176,22 @@ export default function TemplatesClient({
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >
+        {/* Sort — the multi-column builder, leftmost. The only sort affordance. */}
+        <ToolbarMenuButton
+          label="Sort"
+          title="Sort by"
+          icon={ArrowUpDown}
+          active={hasActiveSortTool}
+          bodyClassName="w-auto"
+        >
+          <SortMenuBody
+            options={TEMPLATES_SORT_OPTIONS}
+            value={sorts}
+            maxLevels={TEMPLATES_MAX_SORT_LEVELS}
+            onChange={onSortsChange}
+          />
+        </ToolbarMenuButton>
+
         {/* Filter — Entity → Property: property is entity-scoped (entity change
             cascades the property chip clear via handleEntityChange). Composed
             directly (NOT a self-triggering FilterControl). */}

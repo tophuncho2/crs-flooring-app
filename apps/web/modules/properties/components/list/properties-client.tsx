@@ -1,10 +1,11 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
   SearchControl,
+  SortMenuBody,
   StateSearchControl,
   ListActionBar,
   ListCreateButtonPortal,
@@ -30,6 +31,11 @@ import { useRecordEntryNavigation } from "@/hooks/navigation/use-record-entry-na
 import { useRouter } from "next/navigation"
 import { buildPropertyRecordHref, buildRecordCreateHref } from "@/hooks/navigation/routes"
 import { PropertiesTable } from "./properties-table"
+import {
+  PROPERTIES_ALLOWED_SORT_FIELDS,
+  PROPERTIES_MAX_SORT_LEVELS,
+  PROPERTIES_SORT_OPTIONS,
+} from "./table/properties-list-columns"
 import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 
 const PROPERTIES_FILTERABLE_FIELDS = ["propNumber", "entityId", "state"] as const
@@ -97,6 +103,7 @@ export default function PropertiesClient({
     total,
     searchQuery,
     filters,
+    sorts,
     page,
     pageSize,
     totalPages,
@@ -105,6 +112,7 @@ export default function PropertiesClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
+    onSortsChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<PropertyListRow, EnginePropertiesFilters>({
@@ -112,11 +120,14 @@ export default function PropertiesClient({
     queryKey: [...PROPERTIES_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
+    initialSort: { field: "name", direction: "asc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_PROPERTIES_PAGE_SIZE,
     tableKey: "properties-main",
     filterableFields: PROPERTIES_FILTERABLE_FIELDS,
+    allowedSortFields: PROPERTIES_ALLOWED_SORT_FIELDS,
+    maxSortLevels: PROPERTIES_MAX_SORT_LEVELS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
@@ -165,6 +176,8 @@ export default function PropertiesClient({
     [onFilterChange],
   )
 
+  const hasActiveSortTool = sorts.length > 0
+
   const hasActiveFilterTool = useMemo(
     () => Boolean(selectedEntityId) || Boolean(selectedState),
     [selectedEntityId, selectedState],
@@ -204,6 +217,22 @@ export default function PropertiesClient({
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >
+        {/* Sort — the multi-column builder, leftmost. The only sort affordance. */}
+        <ToolbarMenuButton
+          label="Sort"
+          title="Sort by"
+          icon={ArrowUpDown}
+          active={hasActiveSortTool}
+          bodyClassName="w-auto"
+        >
+          <SortMenuBody
+            options={PROPERTIES_SORT_OPTIONS}
+            value={sorts}
+            maxLevels={PROPERTIES_MAX_SORT_LEVELS}
+            onChange={onSortsChange}
+          />
+        </ToolbarMenuButton>
+
         {/* Filter — the Entity picker + the state text filter, composed directly
             (NOT a self-triggering FilterControl). */}
         <ToolbarMenuButton

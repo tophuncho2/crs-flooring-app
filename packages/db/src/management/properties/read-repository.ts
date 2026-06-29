@@ -12,8 +12,21 @@ import {
   type PropertyOption,
 } from "@builders/domain"
 import { numberNeighborQueries } from "../../shared/number-neighbors.js"
+import { buildPropertiesOrderBy } from "./order-by.js"
 
 type PropertiesDbClient = PrismaClient | Prisma.TransactionClient
+
+export type PropertiesListSortEntry = {
+  /** Sort column — maps through `propertyFieldOrderBy`. */
+  field: string
+  direction: "asc" | "desc"
+}
+
+export type PropertiesListSort = {
+  /** Ordered sort columns, highest priority first. An empty list falls straight
+   * through to the `createdAt`+`id` tiebreaker. */
+  entries: PropertiesListSortEntry[]
+}
 
 const propertyListSelect = {
   id: true,
@@ -156,6 +169,8 @@ export async function countTemplatesByPropertyId(
 
 export type PropertyListViewOptions = {
   search?: string
+  /** Ordered multi-column sort; falls through to the createdAt+id tiebreak. */
+  sort?: PropertiesListSort
   filters?: {
     /**
      * Exact match on the generated `propertyNumberInt` (btree) — the toolbar's
@@ -217,7 +232,7 @@ export async function listPropertiesForListView(
     client.property.count({ where }),
     client.property.findMany({
       where,
-      orderBy: [{ name: "asc" }, { id: "asc" }],
+      orderBy: buildPropertiesOrderBy(options.sort),
       skip: options.skip,
       take: options.take,
       select: propertyListSelect,
