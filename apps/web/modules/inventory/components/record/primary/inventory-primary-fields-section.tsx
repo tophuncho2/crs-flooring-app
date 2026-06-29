@@ -94,9 +94,13 @@ export function InventoryPrimaryFieldsSection({
                 onChange={(next) => onFieldChange("isArchived", next)}
               />
             </CellAt>
-            {/* PO # */}
-            <CellAt col={1} row={5} colSpan={4}>
-              <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
+            {/* Internal Notes — full width beneath the Note | Status pair above */}
+            <CellAt col={1} row={5} colSpan={8}>
+              <InternalNotesField
+                editable={editable}
+                value={draft.internalNotes}
+                onChange={(value) => onFieldChange("internalNotes", value)}
+              />
             </CellAt>
           </InventoryFieldGrid>
         }
@@ -121,12 +125,9 @@ export function InventoryPrimaryFieldsSection({
             <CellAt col={5} row={3} colSpan={4}>
               <ImportNumberField value={record.importNumber} />
             </CellAt>
+            {/* PO # */}
             <CellAt col={1} row={4} colSpan={8}>
-              <InternalNotesField
-                editable={editable}
-                value={draft.internalNotes}
-                onChange={(value) => onFieldChange("internalNotes", value)}
-              />
+              <PurchaseOrderNumberField value={record.purchaseOrderNumber} />
             </CellAt>
           </InventoryFieldGrid>
         }
