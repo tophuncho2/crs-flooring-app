@@ -47,6 +47,15 @@ export function useEntityTypeMultiSelect({
 
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds])
 
+  // Live id→ref map off the current `seedRefs` prop. The `refCache` above is
+  // mount-seeded + topped up on user picks, so it can't track a re-seed (e.g. a
+  // re-selected entity hands down a fresh `seedRefs`). Resolving chips against
+  // this derived map keeps read-only consumers reactive without a set-in-effect.
+  const seedMap = useMemo(
+    () => new Map(seedRefs.map((ref) => [ref.id, ref])),
+    [seedRefs],
+  )
+
   const controller = useAsyncRichDropdownController<EntityTypeOption>({
     bucketKey: ENTITY_TYPE_OPTIONS_QUERY_KEY,
     pagedSearchFn: useCallback(
@@ -107,10 +116,10 @@ export function useEntityTypeMultiSelect({
   const chips = useMemo<EntityTypeChip[]>(
     () =>
       selectedIds.map((id) => {
-        const ref = refCache.get(id)
+        const ref = refCache.get(id) ?? seedMap.get(id)
         return { id, label: ref?.type ?? "—", color: ref?.color }
       }),
-    [selectedIds, refCache],
+    [selectedIds, refCache, seedMap],
   )
 
   return { controller, addController, handleSelect, handleToggle, handleRemove, chips }
