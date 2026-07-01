@@ -106,6 +106,6 @@ Flag, in the TL;DR, which branches are **clean and in sync with dev** (the safe 
 - Refresh refs from origin — comparisons are local; the report says so.
 - Hardcode the dev-N count — it discovers them from `refs/heads/dev-[0-9]+`.
 - Read code, build a file-ownership map, or write dispatch briefs — that's `/dispatch`.
-- Run the sync/check/push cycle or resolve being behind dev — that's `/dev-sync` (user-run).
+- Run the sync/check-gauntlet/push cycle or resolve being behind dev — that's `/dev-sync` (user-run).
 - Audit a planned promotion before merging — that's `/diff-merge`.
 - Trigger on anything but the literal `/dispatch-begin` invocation.

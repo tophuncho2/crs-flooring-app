@@ -5,7 +5,7 @@ description: Bring the current worktree up to dev and verify it in one pass — 
 
 # /dev-sync
 
-`/dev-sync` runs the cross-worktree sync cycle for the current branch: **fetch origin → merge `origin/dev` → `bin/check.sh` → push** (push only if the checks pass). It is the sibling of `/check` — where `/check` just verifies, `/dev-sync` catches the worktree up to `dev`, verifies, and publishes. The script of record is `bin/dev-sync.sh` (also `npm run dev-sync`); this skill drives it and interprets the result.
+`/dev-sync` runs the cross-worktree sync cycle for the current branch: **fetch origin → merge `origin/dev` → `bin/check.sh` → push** (push only if the checks pass). It is the sibling of `/check-gauntlet` — where `/check-gauntlet` just verifies, `/dev-sync` catches the worktree up to `dev`, verifies, and publishes. The script of record is `bin/dev-sync.sh` (also `npm run dev-sync`); this skill drives it and interprets the result.
 
 Reach for it when a `dev-N` worktree has fallen behind `dev` and you want it current, checked, and pushed in one command.
 
@@ -58,5 +58,5 @@ Recovery (on abort): <the exact command to run next>
 - Does not resolve merge conflicts or edit code to make checks pass — it reports and stops.
 - Does not commit or stash the user's working changes; a dirty tree aborts by design.
 - Does not run migrations (the user runs those), and is not a promotion tool (→ `/diff-merge`).
-- Is not the build gauntlet itself — that's `/check` / `bin/check.sh`, which `/dev-sync` invokes as one step.
+- Is not the build gauntlet itself — that's `/check-gauntlet` / `bin/check.sh`, which `/dev-sync` invokes as one step.
 - Does not trigger on anything but the literal `/dev-sync`.

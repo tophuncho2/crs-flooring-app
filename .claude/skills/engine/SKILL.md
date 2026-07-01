@@ -1,13 +1,13 @@
 ---
 name: engine
-description: Master of apps/web/engines/ — the self-contained client engines (record-view, list-view, picker) imported as @/engines/<name>. Invoke at any point to migrate a module onto an engine, extract/pull a misplaced primitive or controller into an engine, upgrade or extend an engine, fix an engine issue, or organize an engine's internals. Grounds in the live engine tree + the components/ primitive contract before acting, keeps every engine self-contained behind its barrel (the "cage"), and drives the change with the proven git-mv + import-rewrite + /check technique. Editing skill, not read-only. Explicit-only — invoke on /engine.
+description: Master of apps/web/engines/ — the self-contained client engines (record-view, list-view, picker) imported as @/engines/<name>. Invoke at any point to migrate a module onto an engine, extract/pull a misplaced primitive or controller into an engine, upgrade or extend an engine, fix an engine issue, or organize an engine's internals. Grounds in the live engine tree + the components/ primitive contract before acting, keeps every engine self-contained behind its barrel (the "cage"), and drives the change with the proven git-mv + import-rewrite + /check-gauntlet technique. Editing skill, not read-only. Explicit-only — invoke on /engine.
 ---
 
 # /engine
 
 `/engine` makes you the owner of `apps/web/engines/`. The user invokes it with a free-form intent — "migrate inventory onto record-view", "the expandable grid is split across components/ and controllers/, pull it into the engine", "the picker barrel is leaking deep paths", "organize the cascade namespace". Your job: ground in the live engine tree, classify the intent, and drive the change while keeping every engine self-contained behind its barrel.
 
-This is an **editing** skill — it reads, plans tightly, then makes the change. It is not a read-only audit (that's `/dig`) and not a build gauntlet (that's `/check`).
+This is an **editing** skill — it reads, plans tightly, then makes the change. It is not a read-only audit (that's `/dig`) and not a build gauntlet (that's `/check-gauntlet`).
 
 ## The model (what an engine IS)
 
@@ -52,7 +52,7 @@ A primitive that has grown an orchestration half — a controller in `apps/web/c
 
 - **Ground before you touch.** Do the Step 1 read every time. The tree drifts (engines merge, buckets flatten); never act on the model above without confirming it against the live folder.
 - **Self-contained or it's not done.** Every symbol the change introduces or moves lands inside one engine folder, exported through that engine's barrel, with consumers importing `@/engines/<name>`. No new deep-path imports, no re-export shims.
-- **Preserve history on every move.** `git mv` (never delete-then-recreate) so blame survives. Rewrite consumer imports with `perl -pi`/`sed` path swaps, then run `/check` as the punch-list.
+- **Preserve history on every move.** `git mv` (never delete-then-recreate) so blame survives. Rewrite consumer imports with `perl -pi`/`sed` path swaps, then run `/check-gauntlet` as the punch-list.
 - **Stay in the cage.** If a change would make the engine import from `modules/*`, stop and convert to data-injection instead. If it would re-export out through `@/components`/`@/controllers`, stop.
 - **Tight, reviewable diff.** During an extraction/migration sweep, **defer polish**: no new engine alignment test, no chasing `modules/shared` doc/tooling leftovers — that's a later cleanup (per the established sweep convention). Update only the CLAUDE.md docs that directly describe the dirs you moved.
 - **Schema changes are their own commit. DO NOT COMMIT** — per project CLAUDE.md, you provide a commit message; the user commits.
@@ -84,7 +84,7 @@ The module gets its detail/list view from the engine. Mirror the engine's canoni
 3. **`git mv` the files** into the chosen bucket, consolidating the split halves into one folder.
 4. **Wire the barrel** — add `export *` for the new bucket/sub-engine; switch internal references to relative imports.
 5. **Rewrite consumers** to `@/engines/<name>` with a path swap; **delete the emptied husk folders**.
-6. `/check` until green.
+6. `/check-gauntlet` until green.
 
 ### C. Upgrade / extend an engine
 Add to the **right bucket** (types → `contracts/`, controller/hook → `client/`, view → the matching presentation bucket). Keep `contracts/` JSX-free. Export through the bucket barrel so it reaches `@/engines/<name>`. If a feature is becoming independently reusable, promote it to a sub-engine folder; if a sub-namespace has stopped earning its separation, dissolve it back into the shared buckets and fix the barrel.
@@ -98,7 +98,7 @@ Bucket hygiene: every file under exactly one bucket; barrels in sync with the tr
 ## Step 3 — Execute and verify
 
 - Make the moves with `git mv`; rewrite importers with a scripted path swap; keep the diff scoped to the move + rewrites + genuinely-dead-code deletion.
-- Run **`/check`** (or at minimum the typecheck it wraps) as the punch-list — do not claim green from reading. Report real error counts.
+- Run **`/check-gauntlet`** (or at minimum the typecheck it wraps) as the punch-list — do not claim green from reading. Report real error counts.
 - If you added, migrated, consolidated, or retired an engine, update the **status section of the `web-engines-convention` memory** (and add a focused memory for a brand-new engine, mirroring `picker-engine`) plus its `MEMORY.md` index line.
 
 ## Step 4 — Report (per project CLAUDE.md)
@@ -119,7 +119,7 @@ Engines: <record-view, list-view, picker>   Target: <name> (<buckets>)   Consume
 | ... | components/... | engines/<name>/<bucket>/... | + export | <N> |
 
 ═══ Verify ═══
-/check: <PASS | N errors>   Husks deleted: <list>   Cage intact: <yes / note>
+/check-gauntlet: <PASS | N errors>   Husks deleted: <list>   Cage intact: <yes / note>
 
 ═══ Open questions ═══
 - <boundary / promote-dissolve / ambiguity, or "none">

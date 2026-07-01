@@ -111,5 +111,5 @@ Open     <which env / which email / "none">
 - Does **not** commit, and does **not** treat `.env` edits as committable repo changes.
 - Does **not** create or edit a DEVELOPER through any app/API path — DEVELOPER is `db:upsert-owner`/seed only.
 - Does **not** delete the last DEVELOPER or self-demote otto.
-- Is **not** the build gauntlet (`/check`), the cross-worktree sync (`/dev-sync`), or the promotion gate (`/diff-merge`).
+- Is **not** the build gauntlet (`/check-gauntlet`), the cross-worktree sync (`/dev-sync`), or the promotion gate (`/diff-merge`).
 - Does **not** trigger on anything but the literal `/auth-ops`.

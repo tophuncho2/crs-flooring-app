@@ -142,7 +142,7 @@ git push origin <target>
 
 - Merge, push, pull, fetch, checkout, or deploy anything — the user runs the merge in the target folder.
 - Swap or write any `.env` (the worktree model has no env swap).
-- Edit code or auto-fix any blocker — it reports and stops; code fixes are the user's, the gauntlet is `/check`.
+- Edit code or auto-fix any blocker — it reports and stops; code fixes are the user's, the gauntlet is `/check-gauntlet`.
 - Run migrations or `npm run db:deploy` (the user runs those), or execute `guard-prisma.js` (reasons by inspection).
 - Catch a `dev-N` worktree up to `dev` — that's `/dev-sync`. Open a dispatching session — that's `/dispatch-begin`.
 - Write anything outside the memory dir.

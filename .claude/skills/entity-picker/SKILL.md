@@ -74,11 +74,11 @@ Drive the per-consumer checklist; every box must be satisfied:
 - `placeholder` / `ariaLabel` / `disabled` — set per the form's conventions.
 - **Create affordance** — add `EntityCreateMenu` only if the consumer should create-and-link inline; mirror `entity-picker-section.tsx`.
 
-For **consolidate**, `git mv`-free: rewrite the fork's imports to the shared modules, delete the fork, converge any prop the fork added onto the shared component, then run `/check` as the punch-list.
+For **consolidate**, `git mv`-free: rewrite the fork's imports to the shared modules, delete the fork, converge any prop the fork added onto the shared component, then run `/check-gauntlet` as the punch-list.
 
 ## Step 4 — Verify
 
-- Run `/check` (build → typecheck → lint → test). Typecheck catches a missing/renamed prop; lint catches a `useEffect`+`setState` reset slipping back in.
+- Run `/check-gauntlet` (build → typecheck → lint → test). Typecheck catches a missing/renamed prop; lint catches a `useEffect`+`setState` reset slipping back in.
 - Manual matrix per touched consumer:
   - **Create flow** (no saved name): pick → trigger shows it immediately; clear → placeholder returns.
   - **Existing record**: saved entity shows on load; reselect a **different** entity → label tracks the new pick immediately; save → label persists (no flicker to the old name).

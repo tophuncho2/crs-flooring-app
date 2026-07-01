@@ -5,13 +5,13 @@ description: Rename a concept (model + column + every symbol, path, label, route
 
 # /full-rename
 
-`/full-rename` makes you the surgeon for a wholesale, in-place rename. The user invokes it with a free-form intent — "rename Management Companies → Entities", "rename warehouse → store across the stack", "the `number` column should be `code` everywhere". Your job: prove the scope against live code, settle the handful of decisions only the user can make, then drive the rename through **every layer** so the concept reads uniformly under its new name and `/check` is green — with **no new behavior**.
+`/full-rename` makes you the surgeon for a wholesale, in-place rename. The user invokes it with a free-form intent — "rename Management Companies → Entities", "rename warehouse → store across the stack", "the `number` column should be `code` everywhere". Your job: prove the scope against live code, settle the handful of decisions only the user can make, then drive the rename through **every layer** so the concept reads uniformly under its new name and `/check-gauntlet` is green — with **no new behavior**.
 
-This is an **editing** skill — it reads, settles decisions, then makes the change across ~50–170 files. It is not the pre-rename research pass (that's `/session-new`), not the engine-folder move (that's `/engine`), and not the gauntlet (that's `/check`).
+This is an **editing** skill — it reads, settles decisions, then makes the change across ~50–170 files. It is not the pre-rename research pass (that's `/session-new`), not the engine-folder move (that's `/engine`), and not the gauntlet (that's `/check-gauntlet`).
 
 ## The model (what a full rename IS)
 
-A full rename is a **pure rename, never a refactor**: the same rows, the same control flow, the same behavior — only the *name* changes, everywhere, at once. "Done" = the old name returns **zero** source hits (outside generated code and historical migrations) and `/check` is green.
+A full rename is a **pure rename, never a refactor**: the same rows, the same control flow, the same behavior — only the *name* changes, everywhere, at once. "Done" = the old name returns **zero** source hits (outside generated code and historical migrations) and `/check-gauntlet` is green.
 
 It propagates down the project's layer cascade (root `CLAUDE.md`), and the renamer who stops early leaves a broken build:
 
@@ -65,7 +65,7 @@ State findings in one tight block (schema facts, file count per dir, collisions,
 
 Work the cascade in dependency order so each layer compiles before the next leans on it: **schema → migration → (`db:generate`) → domain (+tests) → data → application (+tests) → api → barrels → module dir → pages → engines → nav/routes → PDF → cross-module → tests.** For each renamed directory: `git mv` it, then Read + rewrite each file against the symbol map. Update the three package barrels (`packages/{domain,application,db}/src/index.ts`) early so downstream packages resolve.
 
-**Fan out the directory-isolated tail.** Once the backend + API are renamed, the remaining work splits into **non-overlapping directory trees** — the module dir, the consumer pages, the cross-module backend, the cross-module frontend + engine. Dispatch these to parallel **forks** (each inherits your context and the exact symbol map; assign disjoint dirs; tell them not to run `/check` and to report boundary contracts they now depend on). Then **reconcile the seams yourself**: renamed component prop names, API response keys, query-key export names, and the consumer dashboard pages / options API routes that no fork owned.
+**Fan out the directory-isolated tail.** Once the backend + API are renamed, the remaining work splits into **non-overlapping directory trees** — the module dir, the consumer pages, the cross-module backend, the cross-module frontend + engine. Dispatch these to parallel **forks** (each inherits your context and the exact symbol map; assign disjoint dirs; tell them not to run `/check-gauntlet` and to report boundary contracts they now depend on). Then **reconcile the seams yourself**: renamed component prop names, API response keys, query-key export names, and the consumer dashboard pages / options API routes that no fork owned.
 
 ## Step 4 — Author the migration (pure rename, do NOT run)
 
@@ -89,12 +89,12 @@ Preserves every row; no backfill, no new column. The user runs `db:deploy` per e
 - **Straggler grep** (exclude `/generated/`, `/dist/`, `/.next/`, `*.tsbuildinfo`, historical migrations): the old token, `ManagementCompany`-style PascalCase, kebab paths, the nav slug, AND short-forms `\bmc\b`/`Mgmt`/`mgmt-co` — all must return zero in hand-written source. Prose "MC" in comments is a cosmetic last pass.
 - **Don't exclude `.md` from the prose pass.** The layered `CLAUDE.md` docs and `packages/domain/BUSINESS-LOGIC.md` carry old-concept prose ("the MC→Property→Template cascade", "belongs to one management company") that a source-only grep skips. Sweep docs in the same pass — a green build never catches these.
 - **Hunt dead shadow-types — the orphan a green build hides.** A module-local type alias named after the renamed concept (e.g. a WO-local `EntityOption = { id; name }`) silently shadows the domain type of the same name; if nothing imports the local one it's dead code that still compiles. After the rename, grep each renamed `*Option`/DTO name and confirm the local copy is actually imported — if not, delete it (it also confuses the next reader who assumes it's the domain type).
-- **Run `/check`.** Report the structured table. Note that unit/engine tests are DB-independent (green without the migration) but **e2e / live-DB behavior needs `db:deploy` first**.
+- **Run `/check-gauntlet`.** Report the structured table. Note that unit/engine tests are DB-independent (green without the migration) but **e2e / live-DB behavior needs `db:deploy` first**.
 - **Watch the empty-migration-husk trap:** a tool that creates a migration folder without writing `migration.sql` leaves an empty dir that git can't track and `db:deploy` chokes on (P3015). If you ever made one, `find packages/db/prisma/migrations -type d -empty` and `rmdir` it.
 
 ## Step 6 — Report (per project CLAUDE.md)
 
-Headlines + counts + a `/check` table in the chat; details in a table. Open questions (boundary discoveries, anything you left intentionally) in the response. End with the ≤17-word commit message. **Do not commit; do not run the migration.**
+Headlines + counts + a `/check-gauntlet` table in the chat; details in a table. Open questions (boundary discoveries, anything you left intentionally) in the response. End with the ≤17-word commit message. **Do not commit; do not run the migration.**
 
 ```
 FULL-RENAME — <old> → <new>   (<N> files, <M> layers)
@@ -127,5 +127,5 @@ build ✅   typecheck ✅   lint ✅(N warn)   test ✅(X/Y)   straggler grep: <
 - Typecheck across packages before rebuilding dists (the stale-dist phantom-error trap).
 - Run the migration, or edit a historical migration file — author the new pure-rename SQL; the user runs `db:deploy`.
 - Commit the change, or exceed a 17-word commit message.
-- Do the upstream module *research* (that's `/session-new`), the engine-folder *move design* (that's `/engine`), the cross-branch *work split* (that's `/dispatch`), or the gauntlet (that's `/check`) — call those by name.
+- Do the upstream module *research* (that's `/session-new`), the engine-folder *move design* (that's `/engine`), the cross-branch *work split* (that's `/dispatch`), or the gauntlet (that's `/check-gauntlet`) — call those by name.
 - Trigger on anything but the literal `/full-rename` invocation.

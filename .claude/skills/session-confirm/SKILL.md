@@ -89,7 +89,7 @@ Verdict: <✅ ALL CLEAR — you're right | ⚠️ ONE THING | ❌ NOT YET>
 - Commit, push, merge, checkout, fetch, or deploy anything — it reads state and reports; the user does all of those.
 - Run a migration (`db:migrate:dev` / `db:deploy` / `db:reset`) or execute `guard-prisma.js` — migration status is read-only; drift is judged by inspection. The user runs migrations.
 - Edit code, schema, `.env`, or memory.
-- Run the build/typecheck/lint/test gauntlet — that's `/check`.
+- Run the build/typecheck/lint/test gauntlet — that's `/check-gauntlet`.
 - Audit the working diff for layer boundaries, dead code, or wire mismatches — that's `/dig`.
 - Gate a promotion or list what `db:deploy` will apply to the next env — that's `/diff-merge`.
 - Flag a dev-family sibling's shared-DB migration as drift — on the dev family that's expected.
