@@ -7,7 +7,7 @@ description: Master of the shared entity picker (EntityTypePicker) — the singl
 
 `/entity-picker` makes you the owner of the **shared entity picker** — the `EntityTypePicker` type→entity combo and the **label-binding contract** every place that consumes it must satisfy. The user invokes it with a free-form intent — "wire the entity picker onto the new contacts form", "audit payments' entity picker for the label bug", "the import picker goes blank on select", "fold this copied combo back onto the shared one". Your job: ground in the one shared machinery, classify the task, and drive the consumer (or the shared source) to correctness.
 
-This is an **editing** skill — it reads, classifies, then makes the change. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`). The picker's *engine chrome* (`@/engines/picker` — `PickerList`, `PickerTrigger`, the async controller) belongs to `/engine`; **this skill owns the entity-domain picker built on top of it and the consumer contract end to end.**
+This is an **editing** skill — it reads, classifies, then makes the change. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`). The picker's *engine chrome* (`@/engines/picker` — `PickerList`, `PickerTrigger`, the async controller) belongs to `/engine`; **this skill owns the entity-domain picker built on top of it and the consumer contract end to end.**
 
 ## The model (what the entity picker IS)
 
@@ -122,7 +122,7 @@ build <…> · typecheck <…> · lint <0 errors> · test <…>
 - Restructure the picker **engine chrome** — `PickerList`, `PickerTrigger`, `useAsyncRichDropdownController`, `AnchoredPanel`. That's `/engine`.
 - Own the **option-row palette chip** (`CellChip` recolor) — that's `/column-color`.
 - Own the standalone **`EntityTypeMultiSelect` chips** form surface (payments/entities type selection) — a related sibling, lightly out of scope; left for a future type-picker skill.
-- Do whole-module work (that's `/newsession`) or read-only audits (that's `/report`/`/dig`).
+- Do whole-module work (that's `/newsession`) or read-only audits (that's `/quick-report`/`/dig`).
 - Perform the future `EntityType → EntityIdentifier` rename — that's `/full-rename`.
 - Fork the combo, presentation, or options request per consumer (extend with a prop instead).
 - Add supporting files beyond this SKILL.md, commit the change, or run migrations.

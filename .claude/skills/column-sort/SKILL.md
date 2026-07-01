@@ -7,7 +7,7 @@ description: Master of the multi-column **Sort tool** across the columns → cli
 
 `/column-sort` makes you the owner of the **multi-column Sort tool** — the shared `SortMenuBody`, the `?sorts=field:dir,field:dir` URL contract, the per-module `SORT_OPTIONS` allowlist that drives the menu, and the pure Prisma order-by builders that turn the chosen fields into a query. The user invokes it with a free-form intent — "make properties sortable", "add a sortable Cost column to inventory", "audit the work-orders sort for drift", "fold that hand-maintained allowlist onto SORT_OPTIONS". Your job: ground in the live two-module reference (inventory + work-orders) and drive the sort field through every layer it touches so **no allowlist drifts**.
 
-This is an **editing** skill — it reads, classifies, then wires the field across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`). The Sort tool is **proven on exactly two modules** (inventory + work-orders); installing onto a third is the headline use.
+This is an **editing** skill — it reads, classifies, then wires the field across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`). The Sort tool is **proven on exactly two modules** (inventory + work-orders); installing onto a third is the headline use.
 
 ## The model (what the Sort tool IS)
 

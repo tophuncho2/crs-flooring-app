@@ -1,13 +1,13 @@
 ---
 name: whattests
-description: Ultra-short, checklisted inventory of tests with a few-words gloss of what each one is for. The test-focused sibling of /report — locates the tests for a layer, a module, or a single symbol and lists each with a real path cite, so you can see what's covered and sharpen your own test instincts. Read-only recon; never runs or edits tests. Use only on explicit `/whattests`.
+description: Ultra-short, checklisted inventory of tests with a few-words gloss of what each one is for. The test-focused sibling of /quick-report — locates the tests for a layer, a module, or a single symbol and lists each with a real path cite, so you can see what's covered and sharpen your own test instincts. Read-only recon; never runs or edits tests. Use only on explicit `/whattests`.
 ---
 
 # /whattests
 
 The user's prompt after `/whattests` names a **test scope** — a full layer (`domain`, `application`, `web`, `relay`, `worker`), some slice of one (a module, feature, or folder), or one thing (a single file or symbol). Your job: locate the matching tests, then return a **terse checklist where each line names a test and describes in a few words what it's for**. This is a learning aid and a coverage map, not a plan and not a test run.
 
-Think of it as `/report` aimed at the test suite: read the minimum to be right, gloss each test in a few words, cite a real path.
+Think of it as `/quick-report` aimed at the test suite: read the minimum to be right, gloss each test in a few words, cite a real path.
 
 ## Where the tests live
 

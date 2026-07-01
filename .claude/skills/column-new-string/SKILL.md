@@ -7,7 +7,7 @@ description: Master of adding a brand-new STRING column/field to a module end-to
 
 `/column-new-string` makes you the owner of adding a **brand-new string column** to a module. The user invokes it with a free-form intent — "add a `purchaseOrderNumber` to work orders", "put a `reference` code on properties shown in the list and CSV". Your job: deep-dig the target module by tracing an existing analogous string field, classify the new field's visibility, and drive it through every layer it touches — including the one that silently swallows it.
 
-This is an **editing** skill — it reads the module end-to-end, classifies, then makes the change across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`, which this skill's deep-dig step borrows from).
+This is an **editing** skill — it reads the module end-to-end, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`, which this skill's deep-dig step borrows from).
 
 ## Scope — exactly one kind of column
 

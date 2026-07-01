@@ -7,7 +7,7 @@ description: Master of the record-number row# setup across the schema → domain
 
 `/column-rownumber` makes you the owner of the record-number **row# setup** — the sequential `PREFIX-N` number, its exact-int search bar, its record-view stepper, and the editable color chip that wraps the number cell. The user invokes it with a free-form intent — "install the number + stepper on categories", "audit the payments row# install for drift", "fold the per-module palette fork back onto the shared chip". Your job: ground in the live row# map, classify the **stepper shape**, and drive the change through every layer the setup touches.
 
-This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`).
+This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`).
 
 ## The model (what the row# setup IS)
 

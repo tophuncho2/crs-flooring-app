@@ -14,7 +14,6 @@ Three checklists: every skill, every `CLAUDE.md`, and every other `.md` in the r
 - [ ] column-sort
 - [ ] column-timestamp
 - [ ] confirm
-- [ ] csv-export
 - [ ] dev-sync
 - [ ] diff-merge
 - [ ] dig
@@ -26,8 +25,9 @@ Three checklists: every skill, every `CLAUDE.md`, and every other `.md` in the r
 - [ ] handoff
 - [ ] newsession
 - [ ] newskill
-- [ ] quick
-- [ ] report
+- [ ] quick-report
+- [ ] quick-task
+- [ ] table-csv-export
 - [ ] whattests
 
 ## 2 · `CLAUDE.md` files

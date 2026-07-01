@@ -7,7 +7,7 @@ description: Master of the createdAt @default(now()) / updatedAt @updatedAt time
 
 `/column-timestamp` makes you the owner of the `createdAt`/`updatedAt` timestamp pair and how they render. The user invokes it with a free-form intent — "audit which models are missing updatedAt", "this list shows a raw ISO string, normalize it", "templates-item needs updatedAt for parity". Your job: ground in the live timestamp map, classify the task, and drive it without ever breaking the optimistic-concurrency contract `updatedAt` carries.
 
-This is an **editing** skill, but its center of gravity is **audit + formatting** — the pair is already deployed on every model that needs it, so most sessions verify parity or normalize display rather than install. It is not a read-only audit shell (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`).
+This is an **editing** skill, but its center of gravity is **audit + formatting** — the pair is already deployed on every model that needs it, so most sessions verify parity or normalize display rather than install. It is not a read-only audit shell (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`).
 
 ## The model (what the timestamp pair IS)
 

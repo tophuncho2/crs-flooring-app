@@ -1,13 +1,13 @@
 ---
-name: csv-export
-description: Master of the list-view **CSV export** across the domain-manifest → db-export-read → application-use-case → api-route+validator → client-query-builder+ListExportButton+useListSelection → tests stack — the shared `ExportColumn`/`toCsv`/`pickExportColumns` serializer, the `parseExportEnvelope` body parser, the `EXPORT` rate-limit bucket, the 5000-row ceiling, the selected-else-filtered scope, and the column-picker + row-selection UI. Invoke to install CSV export onto a list module, add/adjust an export column, audit an existing install for layer drift, or fold a per-module fork back onto the shared serializer. Knows the export REUSES the list read's `where`/`orderBy` verbatim so the file matches the on-screen scope, runs READ-ONLY on its own rate-limit bucket (no mutation gauntlet), and that each module's manifest mirrors ITS OWN visible list. Editing skill, not read-only. Explicit-only — invoke on /csv-export.
+name: table-csv-export
+description: Master of the list-view **CSV export** across the domain-manifest → db-export-read → application-use-case → api-route+validator → client-query-builder+ListExportButton+useListSelection → tests stack — the shared `ExportColumn`/`toCsv`/`pickExportColumns` serializer, the `parseExportEnvelope` body parser, the `EXPORT` rate-limit bucket, the 5000-row ceiling, the selected-else-filtered scope, and the column-picker + row-selection UI. Invoke to install CSV export onto a list module, add/adjust an export column, audit an existing install for layer drift, or fold a per-module fork back onto the shared serializer. Knows the export REUSES the list read's `where`/`orderBy` verbatim so the file matches the on-screen scope, runs READ-ONLY on its own rate-limit bucket (no mutation gauntlet), and that each module's manifest mirrors ITS OWN visible list. Editing skill, not read-only. Explicit-only — invoke on /table-csv-export.
 ---
 
-# /csv-export
+# /table-csv-export
 
-`/csv-export` makes you the owner of the **list-view CSV export** — the shared `ExportColumn` manifest + `toCsv`/`pickExportColumns` serializer, the `parseExportEnvelope` POST-body parser, the `EXPORT` rate-limit bucket, the `resolveExportRowCap`/`EXPORT_MAX_ROWS` ceiling, the `normalizeIdFilter` ticked-rows scope, and the client `ListExportButton` + `useListSelection` UI. The user invokes it with a free-form intent — "add CSV export to adjustments", "audit the inventory export", "add a PO# column to the work-orders export", "fold that bespoke CSV writer onto the shared one". Your job: ground in the live three-module reference (inventory + work-orders + adjustments) and drive the export through every layer so the **file matches the on-screen list** and **no shared primitive gets forked**.
+`/table-csv-export` makes you the owner of the **list-view CSV export** — the shared `ExportColumn` manifest + `toCsv`/`pickExportColumns` serializer, the `parseExportEnvelope` POST-body parser, the `EXPORT` rate-limit bucket, the `resolveExportRowCap`/`EXPORT_MAX_ROWS` ceiling, the `normalizeIdFilter` ticked-rows scope, and the client `ListExportButton` + `useListSelection` UI. The user invokes it with a free-form intent — "add CSV export to adjustments", "audit the inventory export", "add a PO# column to the work-orders export", "fold that bespoke CSV writer onto the shared one". Your job: ground in the live three-module reference (inventory + work-orders + adjustments) and drive the export through every layer so the **file matches the on-screen list** and **no shared primitive gets forked**.
 
-This is an **editing** skill — it reads, classifies, then wires the export across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`). Export is **proven on exactly three modules**; installing onto a fourth is the headline use.
+This is an **editing** skill — it reads, classifies, then wires the export across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`). Export is **proven on exactly three modules**; installing onto a fourth is the headline use.
 
 ## The model (what CSV export IS)
 
@@ -75,7 +75,7 @@ domain manifest ({M}_EXPORT_COLUMNS) → db export read (export{M}ForListView, r
 - **No schema change to wire an export.** It reads existing fields/relations only. Adding `id?` to the filters TYPE is a domain type change (allowed). A missing field the user wants to export is a `/newsession` job — surface it, don't add a column.
 - **DO NOT COMMIT.** The user commits. Provide a commit message ≤17 words. Export is schema-free (read-only over existing data) — a single non-schema commit; no migration to run.
 - **Drive, don't multiple-choice.** Surface genuine product/divergence questions (which columns; exclude UI-hidden ones; include actor columns) in the response, then execute.
-- **Explicit-only.** Trigger on the literal `/csv-export`. Not on "export this", "download a CSV", "add a download button".
+- **Explicit-only.** Trigger on the literal `/table-csv-export`. Not on "export this", "download a CSV", "add a download button".
 
 ## Step 1 — Ground in the live export reality
 
@@ -168,4 +168,4 @@ where reused · filters.id honored · cap 5000 · BOM · EXPORT bucket · ListEx
 - Touch the multi-column Sort tool → **/column-sort**; `createdBy`/`updatedBy` columns → **/column-actor**; the PaletteColor chip → **/column-color**; the record-# sequence → **/column-rownumber**.
 - Plan or execute whole-module work, or author another skill → **/newsession** / **/newskill**.
 - Commit, run migrations, or multiple-choice the user through a change it can drive.
-- Trigger on anything but the literal `/csv-export` invocation.
+- Trigger on anything but the literal `/table-csv-export` invocation.

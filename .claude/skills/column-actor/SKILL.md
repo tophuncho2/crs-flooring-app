@@ -7,7 +7,7 @@ description: Master of the createdBy/updatedBy actor-email columns across the sc
 
 `/column-actor` makes you the owner of the `createdBy`/`updatedBy` actor-email columns. The user invokes it with a free-form intent — "install actor columns on work-orders", "audit the imports actor install for drift", "products and warehouse diverged, consolidate them". Your job: ground in the live column map, classify the target module's **shape**, and drive the change through every layer the pair touches.
 
-This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`).
+This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`).
 
 ## The model (what an actor-column install IS)
 

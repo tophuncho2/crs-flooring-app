@@ -7,7 +7,7 @@ description: Master of the editable PaletteColor palette-tag column across the s
 
 `/column-color` makes you the owner of the **palette-color column** — the user-assigned, non-semantic `PaletteColor` visual tag, its `CellChip` that recolors a record's identity cell in the list, and the `PaletteColorDropdown` that lets a user re-select it in the record form. The user invokes it with a free-form intent — "install the color tag on templates", "audit the inventory color install for drift", "fold a copied dropdown back onto the shared one". Your job: ground in the live palette map, confirm the shared machinery, and drive the color column through every layer it touches.
 
-This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`). The neighbor `/column-rownumber` treats this chip as its optional "Piece 4"; **this skill owns it end to end.**
+This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`). The neighbor `/column-rownumber` treats this chip as its optional "Piece 4"; **this skill owns it end to end.**
 
 ## The model (what the palette-color column IS)
 

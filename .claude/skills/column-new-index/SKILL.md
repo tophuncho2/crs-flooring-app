@@ -7,7 +7,7 @@ description: Master of making an EXISTING column searchable — the follow-on to
 
 `/column-new-index` makes you the owner of **making an existing column searchable**. The user invokes it with a free-form intent — "add a search bar for `purchaseOrderNumber`", "let me filter work orders by PO #", "index the `reference` code so the list can search it". The column already exists across the layers (that was `/column-new-string` or a sibling); your job is the **search slice**: the index, the migration, the server-side `where` filter, the four data-driven allowlists, and the list-view search control — then prove it filters server-side.
 
-This is an **editing** skill — it traces an existing analogous *searchable* field across the search layers, classifies the new field's search shape, then makes the change across the stack. It is not a read-only audit (`/report`/`/dig`) and not a whole-module plan (`/newsession`, which this skill's deep-dig step borrows from).
+This is an **editing** skill — it traces an existing analogous *searchable* field across the search layers, classifies the new field's search shape, then makes the change across the stack. It is not a read-only audit (`/quick-report`/`/dig`) and not a whole-module plan (`/newsession`, which this skill's deep-dig step borrows from).
 
 ## Scope — exactly one kind of wiring
 
