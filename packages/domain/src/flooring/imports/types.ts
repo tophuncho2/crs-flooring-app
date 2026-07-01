@@ -7,11 +7,8 @@ export type ImportRow = {
   internalNotes: string
   warehouseId: string
   warehouseName: string
-  manufacturerId: string
-  manufacturerName: string
-  // Entity link (Entity Payments epic — manufacturers folding into entities).
-  // Coexists with manufacturerId during the transition; entityName is the joined
-  // display name (entity.entity), "" when unlinked.
+  // Entity link (Entity Payments epic). entityName is the joined display name
+  // (entity.entity), "" when unlinked.
   entityId: string
   entityName: string
   color: PaletteColor
@@ -48,7 +45,6 @@ export type ImportPrimaryForm = {
   purchaseOrderNumber: string
   internalNotes: string
   warehouseId: string
-  manufacturerId: string
   entityId: string
   color: PaletteColor
 }
@@ -57,7 +53,6 @@ export const EMPTY_IMPORT_PRIMARY_FORM: ImportPrimaryForm = {
   purchaseOrderNumber: "",
   internalNotes: "",
   warehouseId: "",
-  manufacturerId: "",
   entityId: "",
   color: DEFAULT_PALETTE_COLOR,
 }
@@ -67,7 +62,6 @@ export function toImportPrimaryForm(record: ImportRow): ImportPrimaryForm {
     purchaseOrderNumber: record.purchaseOrderNumber,
     internalNotes: record.internalNotes,
     warehouseId: record.warehouseId,
-    manufacturerId: record.manufacturerId,
     entityId: record.entityId,
     color: record.color,
   }

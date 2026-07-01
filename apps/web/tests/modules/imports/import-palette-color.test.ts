@@ -19,8 +19,6 @@ const baseRowPayload = {
   internalNotes: "",
   warehouseId: "wh-1",
   warehouse: { id: "wh-1", name: "Main" },
-  manufacturerId: null,
-  manufacturer: null,
   color: "SLATE",
   _count: { stagedInventoryRows: 0, inventories: 0 },
   createdAt: new Date("2026-05-22T00:00:00Z"),

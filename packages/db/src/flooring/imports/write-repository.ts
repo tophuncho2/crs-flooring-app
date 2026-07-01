@@ -34,7 +34,7 @@ export async function stampImportActor(
 
 /**
  * Create input — the worker / import-creation use case pre-resolves every FK
- * and passes scalar ids. `warehouseId` is required (schema-side); `manufacturerId`
+ * and passes scalar ids. `warehouseId` is required (schema-side); `entityId`
  * is nullable. `createdBy`/`updatedBy` are the actor email, stamped by the
  * application layer (aggregate-root actor — see `stampImportActor`).
  */
@@ -42,7 +42,6 @@ export type CreateImportRecordInput = {
   purchaseOrderNumber: string | null
   internalNotes: string | null
   warehouseId: string
-  manufacturerId: string | null
   entityId: string | null
   createdBy: string
   updatedBy: string
@@ -69,9 +68,6 @@ export async function createImportRecord(
       purchaseOrderNumber: input.purchaseOrderNumber,
       internalNotes: input.internalNotes,
       warehouse: { connect: { id: input.warehouseId } },
-      manufacturer: input.manufacturerId
-        ? { connect: { id: input.manufacturerId } }
-        : undefined,
       entity: input.entityId ? { connect: { id: input.entityId } } : undefined,
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
@@ -96,11 +92,6 @@ export async function updateImportRecord(
   if (input.internalNotes !== undefined) data.internalNotes = input.internalNotes
   if (input.warehouseId !== undefined) {
     data.warehouse = { connect: { id: input.warehouseId } }
-  }
-  if (input.manufacturerId !== undefined) {
-    data.manufacturer = input.manufacturerId
-      ? { connect: { id: input.manufacturerId } }
-      : { disconnect: true }
   }
   if (input.entityId !== undefined) {
     data.entity = input.entityId ? { connect: { id: input.entityId } } : { disconnect: true }

@@ -1,7 +1,6 @@
 import {
   Prisma,
   entityExists,
-  getManufacturerById,
   getProductById,
   productNameExists,
   updateProduct,
@@ -51,21 +50,6 @@ export async function updateProductUseCase(
     const nameAffected =
       "style" in input || "color" in input || "productNamingAddon" in input
 
-    if ("manufacturerId" in input) {
-      const nextManufacturerId = input.manufacturerId
-      if (nextManufacturerId !== null && nextManufacturerId !== undefined) {
-        const manufacturer = await getManufacturerById(nextManufacturerId, c)
-        if (!manufacturer) {
-          throw new ProductExecutionError({
-            code: "PRODUCT_MANUFACTURER_NOT_FOUND",
-            message: "Selected manufacturer was not found",
-            status: 400,
-            field: "manufacturerId",
-          })
-        }
-      }
-    }
-
     if ("entityId" in input) {
       const nextEntityId = input.entityId
       if (nextEntityId && !(await entityExists(nextEntityId, c))) {
@@ -79,7 +63,6 @@ export async function updateProductUseCase(
     }
 
     const patch: Parameters<typeof updateProduct>[1] = { updatedBy: actorEmail }
-    if ("manufacturerId" in input) patch.manufacturerId = input.manufacturerId
     if ("entityId" in input) patch.entityId = input.entityId
     if ("style" in input) patch.style = input.style
     if ("color" in input) patch.color = input.color

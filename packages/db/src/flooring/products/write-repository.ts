@@ -20,7 +20,6 @@ import { normalizeProductRow, type ProductRecord } from "./read-repository.js"
 export type CreateProductInput = {
   name: string
   categoryId: string
-  manufacturerId: string | null
   entityId: string | null
   style: string | null
   color: string | null
@@ -70,7 +69,6 @@ export async function createProduct(
     data: {
       name: input.name,
       categoryId: input.categoryId,
-      manufacturerId: input.manufacturerId,
       entityId: input.entityId,
       style: input.style,
       color: input.color,
@@ -95,7 +93,6 @@ export async function updateProduct(
 ): Promise<ProductRecord> {
   const data: Prisma.FlooringProductUncheckedUpdateInput = { updatedBy: input.updatedBy }
   if (input.name !== undefined) data.name = input.name
-  if (input.manufacturerId !== undefined) data.manufacturerId = input.manufacturerId
   if (input.entityId !== undefined) data.entityId = input.entityId
   if (input.style !== undefined) data.style = input.style
   if (input.color !== undefined) data.color = input.color

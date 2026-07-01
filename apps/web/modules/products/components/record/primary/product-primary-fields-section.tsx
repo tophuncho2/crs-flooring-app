@@ -44,7 +44,7 @@ function formatUnit(name: string | null | undefined, abbrev: string | null | und
  * post-create; enforced at the type/validator/domain layers) and doubles as the
  * detail-vs-create discriminator (the record panel sets it; the create flow leaves
  * it false). `fieldsReadOnly` renders the remaining identity/spec cells
- * (manufacturer, style, color, naming addon) read-only too.
+ * (style, color, naming addon) read-only too.
  */
 export function ProductPrimaryFieldsSection({
   product,

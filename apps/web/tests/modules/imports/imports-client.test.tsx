@@ -36,8 +36,6 @@ function importRow(overrides: Partial<ImportRow> = {}): ImportRow {
     internalNotes: "",
     warehouseId: "wh-1",
     warehouseName: "Main Warehouse",
-    manufacturerId: "mfr-1",
-    manufacturerName: "Acme Flooring",
     stagedInventoryRowsCount: 4,
     liveInventoryRowsCount: 4,
     createdAt: "2026-03-19T00:00:00.000Z",

@@ -2,7 +2,6 @@ export const IMPORT_USER_EDITABLE_FIELDS = [
   "purchaseOrderNumber",
   "internalNotes",
   "warehouseId",
-  "manufacturerId",
   "color",
 ] as const
 

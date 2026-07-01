@@ -28,7 +28,6 @@ function validInput(overrides: Record<string, string> = {}) {
     purchaseOrderNumber: "PO-1",
     internalNotes: "",
     warehouseId: "wh-1",
-    manufacturerId: "",
     entityId: "",
     ...overrides,
   }
@@ -69,12 +68,11 @@ describe("createImportUseCase — actor stamping", () => {
 
   it("normalizes blank optional fields to null but still stamps the actor", async () => {
     await createImportUseCase(
-      validInput({ purchaseOrderNumber: "  ", manufacturerId: "" }),
+      validInput({ purchaseOrderNumber: "  " }),
       ACTOR,
     )
     const arg = createImportRecordMock.mock.calls[0]![0] as Record<string, unknown>
     expect(arg.purchaseOrderNumber).toBeNull()
-    expect(arg.manufacturerId).toBeNull()
     expect(arg.createdBy).toBe(ACTOR)
     expect(arg.updatedBy).toBe(ACTOR)
   })

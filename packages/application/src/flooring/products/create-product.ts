@@ -3,7 +3,6 @@ import {
   createProduct,
   entityExists,
   getCategoryById,
-  getManufacturerById,
   productNameExists,
   withDatabaseTransaction,
 } from "@builders/db"
@@ -35,18 +34,6 @@ export async function createProductUseCase(
         status: 400,
         field: "categoryId",
       })
-    }
-
-    if (input.manufacturerId) {
-      const manufacturer = await getManufacturerById(input.manufacturerId, c)
-      if (!manufacturer) {
-        throw new ProductExecutionError({
-          code: "PRODUCT_MANUFACTURER_NOT_FOUND",
-          message: "Selected manufacturer was not found",
-          status: 400,
-          field: "manufacturerId",
-        })
-      }
     }
 
     if (input.entityId && !(await entityExists(input.entityId, c))) {
@@ -93,7 +80,6 @@ export async function createProductUseCase(
         {
           name,
           categoryId: input.categoryId,
-          manufacturerId: input.manufacturerId,
           entityId: input.entityId,
           style: input.style,
           color: input.color,

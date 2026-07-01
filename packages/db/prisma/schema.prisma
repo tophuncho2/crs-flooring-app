@@ -246,23 +246,6 @@ model FlooringUnitOfMeasure {
   @@map("flooring_unit_of_measure")
 }
 
-model FlooringManufacturer {
-  id                    String                @id @default(uuid())
-  companyName           String
-  companyNameNormalized String                @unique
-  agentName             String?
-  website               String?
-  phone                 String?
-  email                 String?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  products              FlooringProduct[]
-  imports               FlooringImportEntry[]
-
-  @@index([companyName])
-  @@map("flooring_manufacturer")
-}
-
 model FlooringProduct {
   id                               String                             @id @default(uuid())
   productNumber                    String                             @unique @default(dbgenerated("('PROD-'::text || (nextval('flooring_product_number_seq'::regclass))::text)")) @map("product_number")
@@ -270,8 +253,6 @@ model FlooringProduct {
   name                             String                             @default("")
   categoryId                       String
   category                         FlooringCategory                   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  manufacturerId                   String?
-  manufacturer                     FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
   entityId                         String?
   entity                           Entity?                            @relation(fields: [entityId], references: [id], onDelete: SetNull)
   style                            String?
@@ -297,7 +278,6 @@ model FlooringProduct {
   FlooringImportStagedInventoryRow       FlooringImportStagedInventoryRow[]
   FlooringImportStagedInventoryFilterRow FlooringImportStagedInventoryFilterRow[]
 
-  @@index([manufacturerId])
   @@index([entityId])
   @@index([name])
   @@index([productNumber])
@@ -433,8 +413,6 @@ model FlooringImportEntry {
   purchaseOrderNumber String?                            @db.VarChar(50)
   warehouseId         String
   warehouse           FlooringWarehouse                  @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  manufacturerId      String?
-  manufacturer        FlooringManufacturer?              @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
   entityId            String?
   entity              Entity?                            @relation(fields: [entityId], references: [id], onDelete: SetNull)
   internalNotes       String?                            @db.VarChar(250)
@@ -449,7 +427,6 @@ model FlooringImportEntry {
 
   @@index([createdAt])
   @@index([warehouseId])
-  @@index([manufacturerId])
   @@index([entityId])
   @@index([purchaseOrderNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_import_entry_purchaseOrderNumber_trgm_idx")
   @@map("flooring_import_entry")

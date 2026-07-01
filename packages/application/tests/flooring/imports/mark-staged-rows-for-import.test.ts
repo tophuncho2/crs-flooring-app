@@ -78,8 +78,6 @@ function importRow(overrides: Record<string, unknown> = {}) {
     purchaseOrderNumber: "PO-1",
     warehouseId: "wh-1",
     warehouseName: "Main",
-    manufacturerId: "mfr-1",
-    manufacturerName: "Acme",
     internalNotes: "",
     stagedInventoryRowsCount: 1,
     liveInventoryRowsCount: 0,

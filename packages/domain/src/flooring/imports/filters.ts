@@ -1,6 +1,5 @@
 export type ImportPageFilterState = {
   warehouseId: string[]
-  manufacturerId: string[]
 }
 
 function parseIdArray(value: unknown): string[] {
@@ -15,4 +14,3 @@ function parseIdArray(value: unknown): string[] {
 }
 
 export const parseImportWarehouseFilter = parseIdArray
-export const parseImportManufacturerFilter = parseIdArray

@@ -103,8 +103,6 @@ function fakeImport() {
     purchaseOrderNumber: "PO-1",
     warehouseId: WAREHOUSE_ID,
     warehouseName: "Main",
-    manufacturerId: "mfr-1",
-    manufacturerName: "Acme",
     internalNotes: "",
     stagedInventoryRowsCount: 0,
     liveInventoryRowsCount: 0,

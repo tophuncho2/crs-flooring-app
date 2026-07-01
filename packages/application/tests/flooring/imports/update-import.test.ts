@@ -42,8 +42,6 @@ function currentRecord(overrides: Record<string, unknown> = {}) {
     internalNotes: "",
     warehouseId: "wh-1",
     warehouseName: "Main",
-    manufacturerId: "",
-    manufacturerName: "",
     color: "SLATE",
     stagedInventoryRowsCount: 0,
     liveInventoryRowsCount: 0,

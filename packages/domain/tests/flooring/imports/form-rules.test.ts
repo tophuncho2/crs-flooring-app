@@ -11,7 +11,6 @@ function form(overrides: Partial<ImportPrimaryForm> = {}): ImportPrimaryForm {
     purchaseOrderNumber: "",
     internalNotes: "",
     warehouseId: "wh-1",
-    manufacturerId: "",
     ...overrides,
   }
 }

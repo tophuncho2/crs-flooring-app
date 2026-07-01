@@ -17,7 +17,6 @@ const baseRowPayload = {
   productNumber: "PROD-1",
   name: "Carpet - Plush - Sand",
   categoryId: "cat-1",
-  manufacturerId: "mfg-1",
   style: "Plush",
   color: "Sand",
   sendUnitName: "SY",

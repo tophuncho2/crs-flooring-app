@@ -65,7 +65,6 @@ export async function createImportUseCase(
         purchaseOrderNumber: emptyToNull(input.purchaseOrderNumber),
         internalNotes: emptyToNull(input.internalNotes),
         warehouseId: input.warehouseId,
-        manufacturerId: emptyToNull(input.manufacturerId),
         entityId,
         createdBy: actorEmail,
         updatedBy: actorEmail,

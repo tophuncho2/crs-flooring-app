@@ -5,7 +5,6 @@ export type CreateImportInput = {
   purchaseOrderNumber: string
   internalNotes: string
   warehouseId: string
-  manufacturerId: string
   entityId: string
 }
 

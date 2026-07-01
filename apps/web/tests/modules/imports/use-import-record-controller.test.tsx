@@ -47,8 +47,6 @@ function makeImport(overrides: Partial<ImportDetail> = {}): ImportDetail {
     internalNotes: "",
     warehouseId: "wh-1",
     warehouseName: "WH",
-    manufacturerId: "mc-1",
-    manufacturerName: "MC",
     stagedInventoryRowsCount: 0,
     liveInventoryRowsCount: 0,
     createdAt: "2026-06-24T00:00:00.000Z",

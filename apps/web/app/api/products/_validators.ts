@@ -55,7 +55,6 @@ function requireColor(value: unknown, field: string): PaletteColor {
 
 function parseSharedFields(body: Record<string, unknown>) {
   return {
-    manufacturerId: parseOptionalString(body.manufacturerId),
     entityId: parseOptionalString(body.entityId),
     style: parseOptionalString(body.style),
     color: parseOptionalString(body.color),
@@ -71,7 +70,7 @@ function parseSharedFields(body: Record<string, unknown>) {
  * Requires `categoryId` — category is the source of the unit-of-measure
  * snapshots stamped onto the product row.
  *
- * Structural type-guards only. Business rules (category existence, manufacturer
+ * Structural type-guards only. Business rules (category existence, entity
  * existence, name uniqueness, etc.) live in the domain/use-case layers.
  */
 export function validateCreateProductInput(body: Record<string, unknown>): CreateProductInput {

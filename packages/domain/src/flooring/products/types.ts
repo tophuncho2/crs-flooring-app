@@ -21,11 +21,8 @@ export type ProductRow = {
   productNumber: string
   name: string
   categoryId: string
-  manufacturerId: string
-  manufacturerName: string
-  // Entity link (Entity Payments epic — manufacturers folding into entities).
-  // Coexists with manufacturerId during the transition; entityName is the joined
-  // display name (entity.entity), "" when unlinked.
+  // Entity link (Entity Payments epic). entityName is the joined display name
+  // (entity.entity), "" when unlinked.
   entityId: string
   entityName: string
   style: string
@@ -67,7 +64,6 @@ export type ProductStats = {
 // Create form — accepts categoryId. Used by the create-product flow.
 export type ProductCreateForm = {
   categoryId: string
-  manufacturerId: string
   entityId: string
   style: string
   color: string
@@ -107,7 +103,6 @@ export type ProductOption = {
 
 export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   categoryId: "",
-  manufacturerId: "",
   entityId: "",
   style: "",
   color: "",
@@ -118,7 +113,6 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
 
 export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
   return {
-    manufacturerId: row.manufacturerId,
     entityId: row.entityId,
     style: row.style,
     color: row.color,

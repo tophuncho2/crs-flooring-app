@@ -3,11 +3,10 @@ import type { PaletteColor } from "@builders/domain"
 
 // Input types consumed by the product use cases. These are what the route-edge
 // `_validators.ts` produces — pre-parsed / pre-typed but not yet resolved against
-// dependent records (category, manufacturer).
+// dependent records (category, entity).
 
 export type CreateProductInput = {
   categoryId: string
-  manufacturerId: string | null
   entityId: string | null
   style: string | null
   color: string | null

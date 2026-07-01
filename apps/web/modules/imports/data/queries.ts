@@ -15,10 +15,10 @@ import {
 import { withLoaderTiming } from "@/server/telemetry/loader-timing"
 
 // All form-options for the imports record view are powered by async pickers
-// (WarehousePicker / ProductPicker / CategoryPicker / ManufacturerPicker)
-// which call /api/{warehouses,products,categories,manufacturers}/options on
+// (WarehousePicker / ProductPicker / CategoryPicker / EntityTypePicker)
+// which call /api/{warehouses,products,categories,entities}/options on
 // demand. Read-only labels come from joined snapshots on ImportDetail
-// (warehouseName, manufacturerName), filter rows (productName + stockUnit +
+// (warehouseName, entityName), filter rows (productName + stockUnit +
 // category), and staged inventory rows.
 export type ImportDetailPageData = {
   entry: ImportDetailRecord

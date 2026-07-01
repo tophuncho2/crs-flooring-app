@@ -31,8 +31,6 @@ export type ProductRecord = {
   productNumber: string
   name: string
   categoryId: string
-  manufacturerId: string
-  manufacturerName: string
   entityId: string
   entityName: string
   style: string
@@ -102,12 +100,6 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     productNumber: product.productNumber,
     name: product.name,
     categoryId: product.categoryId,
-    manufacturerId: product.manufacturerId ?? "",
-    // Display rule: the manufacturer's companyName from the live relation. A
-    // product whose manufacturer link is null surfaces no name (empty string).
-    // agentName is intentionally NOT a fallback — products surface the company
-    // name, not the agent's personal name.
-    manufacturerName: product.manufacturer?.companyName ?? "",
     // Entity link (Entity Payments epic). entityName is the joined entity.entity
     // display name; "" when the product has no entity linked.
     entityId: product.entityId ?? "",
@@ -314,10 +306,8 @@ export async function getProductDeleteState(
 export async function getProductFormOptions(
   client: ProductsDbClient = db,
 ): Promise<ProductFormOptions> {
-  // Pass-through of the canonical category records. Manufacturer selection has
-  // moved to the async `ManufacturerPicker` (server-side search via
-  // `/api/manufacturers/options`); category is still a flat <select> on the
-  // products record view, so it stays here.
+  // Pass-through of the canonical category records — a flat <select> on the
+  // products record view. Entity selection uses the async EntityTypePicker.
   const categoryOptions = await listCategories(client)
   return { categoryOptions }
 }

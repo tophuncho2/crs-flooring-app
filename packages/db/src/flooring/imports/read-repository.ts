@@ -16,7 +16,6 @@ export type ImportDetailRecord = ImportDetail
 export type ImportsListFilter = {
   searchQuery?: string
   warehouseId?: string
-  manufacturerId?: string
 }
 
 export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
@@ -27,8 +26,6 @@ export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
     internalNotes: row.internalNotes ?? "",
     warehouseId: row.warehouseId,
     warehouseName: row.warehouse?.name ?? "",
-    manufacturerId: row.manufacturerId ?? "",
-    manufacturerName: row.manufacturer?.companyName ?? "",
     // Entity link (Entity Payments epic). entityName is the joined entity.entity
     // display name; "" when the import has no entity linked.
     entityId: row.entityId ?? "",
@@ -70,13 +67,11 @@ function buildListWhere(filter?: ImportsListFilter) {
   if (!filter) return undefined
   const where: Record<string, unknown> = {}
   if (filter.warehouseId) where.warehouseId = filter.warehouseId
-  if (filter.manufacturerId) where.manufacturerId = filter.manufacturerId
   if (filter.searchQuery) {
     const searchQuery = filter.searchQuery
     where.OR = [
       { purchaseOrderNumber: { contains: searchQuery, mode: "insensitive" } },
       { warehouse: { name: { contains: searchQuery, mode: "insensitive" } } },
-      { manufacturer: { companyName: { contains: searchQuery, mode: "insensitive" } } },
     ]
   }
   return where
@@ -108,7 +103,7 @@ export async function getImportById(
 /**
  * Resolve the import rows immediately before/after the given number in the
  * global import-number order (`importNumber`). Powers the record-view shell
- * stepper — deliberately global: no warehouse / manufacturer scoping, the
+ * stepper — deliberately global: no warehouse / entity scoping, the
  * stepper walks the raw number line. Two single-row lookups on the unique
  * `importNumber` index. `importNumber` is a non-null autoincrement, so there is
  * always a key to step from; both sides null only at the sequence's edges.

@@ -26,7 +26,7 @@ import {
  * Composer for the imports primary section, on the canonical record-view grid.
  * A centered `RecordColumnBreak` splits the editable fields into two flanks —
  * left = Import # chip + Color (one row, half-width each = the Warehouse width
- * below) / Warehouse / Manufacturer / Purchase Order Number / Internal Notes,
+ * below) / Warehouse / Entity / Purchase Order Number / Internal Notes,
  * right = empty (the break is retained) — then a `RecordSectionDivider`
  * terminates the section
  * above a read-only metadata band (Created / Updated over Created by / Updated by),

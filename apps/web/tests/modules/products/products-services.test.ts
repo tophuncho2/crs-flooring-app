@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest"
 import { normalizeProductRow } from "@builders/db"
 
 describe("normalizeProductRow", () => {
-  it("products resolve manufacturer display names from the live company name", () => {
+  it("products resolve entity display names from the live entity name", () => {
     const normalized = normalizeProductRow({
       id: "prod-1",
       name: "Carpet - Plush - Sand",
       categoryId: "cat-1",
-      manufacturerId: "mfg-1",
+      entityId: "ent-1",
       style: "Plush",
       color: "Sand",
       productNamingAddon: null,
@@ -22,23 +22,23 @@ describe("normalizeProductRow", () => {
         sendUnit: { id: "u1", name: "SY" },
         stockUnit: { id: "u2", name: "Roll" },
       },
-      manufacturer: {
-        id: "mfg-1",
-        companyName: "Acme Flooring",
+      entity: {
+        id: "ent-1",
+        entity: "Acme Flooring",
       },
     })
 
-    expect(normalized.manufacturerName).toBe("Acme Flooring")
+    expect(normalized.entityName).toBe("Acme Flooring")
     expect(normalized.createdBy).toBe("creator@example.com")
     expect(normalized.updatedBy).toBe("editor@example.com")
   })
 
-  it("surfaces an empty manufacturer name when the manufacturer link is null", () => {
+  it("surfaces an empty entity name when the entity link is null", () => {
     const normalized = normalizeProductRow({
       id: "prod-2",
       name: "Carpet - Plush - Sand",
       categoryId: "cat-1",
-      manufacturerId: null,
+      entityId: null,
       style: "Plush",
       color: "Sand",
       productNamingAddon: null,
@@ -53,10 +53,10 @@ describe("normalizeProductRow", () => {
         sendUnit: null,
         stockUnit: null,
       },
-      manufacturer: null,
+      entity: null,
     })
 
-    expect(normalized.manufacturerName).toBe("")
+    expect(normalized.entityName).toBe("")
     expect(normalized.createdBy).toBeNull()
     expect(normalized.updatedBy).toBeNull()
   })

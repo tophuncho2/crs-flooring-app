@@ -4,13 +4,10 @@ import { describe, expect, it } from "vitest"
 const ROOT = path.join(process.cwd(), "..", "..")
 
 describe("record view feature alignment", () => {
-  it("manufacturers and entities have no @/modules/shared/engines imports", async () => {
+  it("entities have no @/modules/shared/engines imports", async () => {
     const migratedDirs = [
-      "apps/web/modules/manufacturers",
       "apps/web/modules/entities",
-      "apps/web/app/dashboard/manufacturers",
       "apps/web/app/dashboard/entities",
-      "apps/web/app/api/manufacturers",
       "apps/web/app/api/entities",
     ]
 

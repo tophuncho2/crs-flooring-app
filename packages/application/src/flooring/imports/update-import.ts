@@ -28,7 +28,6 @@ function toPrimaryForm(input: UpdateImportInput, current: ImportPrimaryForm): Im
     purchaseOrderNumber: input.purchaseOrderNumber ?? current.purchaseOrderNumber,
     internalNotes: input.internalNotes ?? current.internalNotes,
     warehouseId: input.warehouseId ?? current.warehouseId,
-    manufacturerId: input.manufacturerId ?? current.manufacturerId,
     entityId: input.entityId ?? current.entityId,
     color: input.color ?? current.color,
   }
@@ -62,7 +61,6 @@ export async function updateImportUseCase(
       purchaseOrderNumber: current.purchaseOrderNumber,
       internalNotes: current.internalNotes,
       warehouseId: current.warehouseId,
-      manufacturerId: current.manufacturerId,
       entityId: current.entityId,
       color: current.color,
     })
@@ -110,9 +108,6 @@ export async function updateImportUseCase(
     if (input.internalNotes !== undefined) dbInput.internalNotes = emptyToNull(input.internalNotes)
     if (input.warehouseId !== undefined) {
       dbInput.warehouseId = input.warehouseId
-    }
-    if (input.manufacturerId !== undefined) {
-      dbInput.manufacturerId = emptyToNull(input.manufacturerId)
     }
     if (input.entityId !== undefined) {
       const nextEntityId = emptyToNull(input.entityId)

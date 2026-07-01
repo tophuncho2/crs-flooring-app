@@ -25,8 +25,6 @@ const EMPTY_PRODUCT: ProductRecord = {
   productNumber: "",
   name: "",
   categoryId: "",
-  manufacturerId: "",
-  manufacturerName: "",
   entityId: "",
   entityName: "",
   style: "",
