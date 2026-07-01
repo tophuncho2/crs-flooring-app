@@ -1,40 +1,121 @@
-# UoM Schema Cleanup & Send-Unit Removal
+# Product UoM & Category Backbone — FK Migration Epic
 
-## Context
+> **Supersedes** the earlier "UoM Schema Cleanup & Send-Unit Removal" plan, which kept
+> inventory/adjustments/staged on **frozen snapshot strings** and made template/WO items
+> **live-resolve** off the product. This version replaces both with **per-row unit FKs**.
+> Validated end-to-end against live code 2026-07-01 (six-module read); scoped-down with user
+> the same day (see "Deliberately deferred").
 
-Units of measure are modelled two ways today, and both are wrong for where the
-product is going:
+## Vision
 
-1. **Category owns the units.** `FlooringCategory.sendUnitId` / `stockUnitId`
-   are the only real FKs to the seeded `FlooringUnitOfMeasure` table. Every one
-   of the 23 seeded categories has `sendUnitSlug === stockUnitSlug` — send unit
-   and stock unit have always been identical, so "send unit" is dead weight.
-2. **Everything downstream is a flat string snapshot.** Products carry
-   `sendUnitName/Abbrev` + `stockUnitName/Abbrev` (stamped from category at
-   create); template items, work-order items, inventory, adjustments, and staged
-   import rows each copy those strings forward so reads never join to UoM.
+Make `FlooringUnitOfMeasure` (and eventually `FlooringCategory`) the **backbone** of the catalog:
+one canonical unit table, referenced by a real FK from every row that carries a unit. Send unit is
+dead weight (every category's `sendUnitSlug === stockUnitSlug`) and is deleted, not migrated. Post
+cleanup there is exactly **one unit of measure per row**, so the field is named honestly: **`unitId`**
+(relation `unit`) — the old "stock unit" prefix implied a contrast (send vs stock) that no longer
+exists.
 
-Goal: collapse to **one editable unit per product** — a real
-`FlooringProduct.stockUnitId` FK — rip "send unit" out of every table, resolve
-template/WO item units live from `product.stockUnit` at read time, keep
-inventory/adjustments/staged on **frozen snapshots** (but sourced from the new
-product FK), backfill existing rows, then make product UoM editable and category
-user-managed. The `FlooringUnitOfMeasure` table stays **seeded / not user-managed**.
+This epic is the databasing foundation for later work (per-row conversion / alternative stock
+balance; the invoicing / planned-expense sections on templates + work orders). None of that ships
+here — this epic only lays the FK groundwork plus one dormant column (`product.coverageUnitId`) so
+the future conversion plan has its anchor already in place.
 
-This runs as an **expand → contract** epic in the user-prescribed order. The user
-runs every migration (`prisma migrate`) and the backfill; Claude never commits.
+---
 
-### Confirmed decisions
-- **Scope:** full epic in one plan (incl. net-new product UoM picker + category CRUD).
-- **`product.stockUnitId`:** nullable on the expand migration, flipped to **NOT NULL** in a separate contract migration *after* backfill verifies clean.
-- **Backfill fallback:** match `product.stockUnitName` → `UoM.name`; if null/unmatched, copy the product's `category.stockUnitId` (the original snapshot source); report any still-unresolved IDs.
-- **Category snapshot on inventory/adjustments:** drop it entirely. `categorySlug` on both `FlooringInventory` + `FlooringInventoryAdjustment` is dead plumbing (never filtered/grouped/rendered). `categoryName` on `FlooringInventory` is the inventory list's "Category" column — drop the column too. Product name carries identity; category is derivable from the product.
-- **Category stays immutable post-create** — kept as a deliberate product rule, not for snapshot integrity. Its rationale (`isProductCategoryChangeBlocked`) is rewritten since both cited reasons (`inventory.categorySlug` + `*.sendUnitName`) are removed this epic.
-- **Category `slug` demoted to an internal dedup guard.** Nothing joins on slug (products/staged use `categoryId` FK) and its only stable-key job — the inventory snapshot — is dropped this epic. Slug becomes a normalized key auto-derived from `name` (`slugifyCategoryName`), stays `@unique`, regenerates on create **and** rename, and is never shown or edited. `name` is the sole user-facing identity; **`name @unique` is dropped** (slug subsumes it, and normalized matching catches case/whitespace variants exact-name uniqueness misses). Remove the slug subheader from category pickers. Regenerating slugs from names also heals the legacy `vinyl-plank`/`Plank` mismatch.
+## Confirmed decisions (locked with user 2026-07-01)
 
-### Key semantic split (intended, confirmed)
-- **Template items / WO items → LIVE resolve.** Their snapshot columns are dropped; unit is read from `product.stockUnit` via join. Editing a product's stock unit therefore retroactively changes how historical template/WO line items render. Accepted.
-- **Inventory / adjustments / staged → FROZEN snapshot.** They keep `stockUnitName/Abbrev`, but the value written now comes from `product.stockUnit` (the FK), not the old product string columns. Editing a product's unit later does **not** touch already-materialized inventory.
+1. **Inventory `unitId` is set at create and immutable thereafter** — same lifecycle as today's unit
+   snapshot strings. It is chosen on the manual create form, or written by the worker from the staged
+   row at materialize. **No adjustment-existence lock in this plan** (that editability-before-first-
+   adjustment behavior is a separate future plan).
+2. **Adjustment unit = FK** (not frozen snapshot). Stamped at create from the inventory row's
+   `unitId`. Since inventory's unit never changes post-create, the value is stable; a UoM rename is a
+   label correction, not a meaning change, and UoM deletes are blocked while linked — history stays
+   coherent, and adjustments stay on the same FK model as everything else.
+3. **Naming = `unitId` / relation `unit`** for the primary unit on every model (product, inventory,
+   adjustment, staged row, filter row, template item, WO item). Coverage's dormant pair is
+   `coverageUnitId` / `coverageUnit` (product only).
+4. **Split into four sequenced sub-plans (2A→2D)**; migrations run in strict order on the shared dev
+   DB (see the migration spine).
+5. **Template + WO item `unitId` is nullable** (mirrors the already-nullable item `quantity` — a
+   half-drafted line needn't carry a unit).
+6. **Build the UoM `/options` picker stack first** (front of 2A) so the product Unit field is
+   editable immediately — no throwaway read-only phase.
+7. **Category slug is dropped entirely.** No slug column, no `slugify`. Normalized-unique names are
+   enforced by a **case-insensitive unique index on `name`** (`lower(name)`) + a light
+   `normalizeCategoryName` (trim + collapse whitespace, preserve case) on write. The legacy
+   `vinyl-plank`/`Plank` slug just goes away.
+8. **Backfill scripts are kept until main is done** (not deleted after the dev run). Main runs the
+   same safe expand→backfill→contract and is where the temporarily-kept columns finally get torn out.
+9. **UoM display is a per-render-site, build-time choice** (name *or* abbrev, never both in one cell)
+   — see the rendering matrix. No user preference, no toggle.
+
+### Driven decisions (Claude's call — flagged, override if wrong)
+
+- **Template/WO item unit = its own editable FK**, seeded from the product's `unit` at add-time;
+  **sync copies the FK** template→WO (no product re-resolve).
+- **Product `categoryId` becomes mutable** — its immutability rationale was purely the snapshots
+  we're deleting (`product-rules.ts:48-62`), so it's safe. **One wrinkle:** the stored `product.name`
+  is composed from the category name (`buildStoredFlooringProductName`), so a category change must
+  **recompose `product.name`** in `update-product` (see 2A) or the name goes stale.
+- **Worker reads the staged row's `unitId`**, not the product — today it re-derives from `product`
+  (`materialize-imported-rows.ts:51-54`); that must change.
+- **Staged rows + filter rows keep an editable `unitId`** — but only within the row's existing edit
+  window (while DRAFT, before status flips to QUEUED/IMPORTED); the unit follows the same editability
+  lifecycle as the other staged fields. It freezes for good once it lands on an inventory row.
+
+### Deliberately deferred (NOT in this epic)
+
+- **Coverage / conversion feature** — except the one dormant `product.coverageUnitId` FK column
+  (schema + relation only; nullable, unwired, unsurfaced). `coveragePerUnit` already exists and
+  stays. Everything else (coverage on inventory/staged, the alt-balance conversion column, any UI)
+  is its own future plan.
+- **Rank gating** — the "categories/UoM rows editable only by TIER_1+" restriction is a future plan.
+  2D ships the CRUD **ungated** (normal auth/rate-limit gauntlet only); the tier-1 guard is noted as
+  the intended follow-up but not built here.
+- **Editable-inventory-unit-before-adjustment** — future plan (see decision 1).
+
+---
+
+## The unit model
+
+| Row | `unitId` | Editable? | Notes |
+|---|---|---|---|
+| **Product** | FK, NOT NULL | Always | Catalog source of truth; seeds the others. Also gains dormant `coverageUnitId` (nullable, unwired). |
+| **Inventory** | FK, NOT NULL | **Create-only**, immutable after | From form on manual create; from staged row via worker at materialize |
+| **Adjustment** | FK, NOT NULL | No (ledger) | Stamped at create from `inventory.unitId` |
+| **Staged inventory row** | FK | Editable in staging | Seeded from product; **worker materializes it forward** to inventory |
+| **Staged filter row** | FK | Editable in staging | Balance math is unit-agnostic; mixing units allowed |
+| **Template item** | FK | Always | Seeded from product `unit`; replaces `sendUnit*` |
+| **WO item** (Requested Material) | FK | Always | Sync copies FK from template item |
+
+Requested/remaining balances (imports) and quantities remain **unit-agnostic numbers** — mixing
+units across rows is a deliberate user choice, not a system conversion
+(`computeFilterRemainingStock`, `staged-inventory-filter-rows/types.ts:41-57`).
+
+---
+
+## UoM rendering — name vs abbreviation (per-site, fixed)
+
+Every unit FK resolves both `{name, abbreviation}` for free. Each render site shows **exactly one**
+(never both in a cell — that's crowding). This is a build-time decision baked into each render swap,
+NOT a user toggle. Thread this matrix through the render tasks in 2A/2B/2C.
+
+| Render site | Show |
+|---|---|
+| Product form — Unit picker/field | **Name** |
+| Category / UoM pickers — option labels | **Name** |
+| UoM management list — `name` & `abbreviation` as **separate columns** | Both (separate cells) |
+| Products list — unit column | Abbrev |
+| Inventory create + detail — stock / balance / net suffixes | Abbrev |
+| Inventory list — unit column | Abbrev |
+| Adjustments — qty / unit display | Abbrev |
+| Import staged + planned grids — unit cell | Abbrev |
+| Template + WO requested-material grids — unit cell | Abbrev |
+| WO print file — unit column | Abbrev |
+
+**Rule:** pickers + the product Unit field render the **name**; every inline suffix / dense grid /
+list cell renders the **abbreviation**.
 
 ---
 
@@ -42,193 +123,309 @@ runs every migration (`prisma migrate`) and the backfill; Claude never commits.
 
 | Model | Change |
 |---|---|
-| `FlooringUnitOfMeasure` | **Seeded, unchanged data.** Drop `sendUnitCategories` + `stockUnitCategories` relations; add `products FlooringProduct[]` relation. |
-| `FlooringProduct` | **+`stockUnitId String`** (NOT NULL, FK→UoM, `onDelete: Restrict`, indexed) + `stockUnit` relation. **Drop** `sendUnitName`, `sendUnitAbbrev`, `stockUnitName`, `stockUnitAbbrev`. |
-| `FlooringTemplateItem` | **Drop** `sendUnitName`, `sendUnitAbbrev`. Unit resolved via `product.stockUnit` at read. |
-| `FlooringWorkOrderItem` | **Drop** `sendUnitName`, `sendUnitAbbrev`. Unit resolved via `product.stockUnit` at read. |
-| `FlooringInventory` | **Drop** `sendUnitName`, `sendUnitAbbrev`, **`categorySlug`, `categoryName`**. **Keep** `stockUnitName`/`stockUnitAbbrev` (frozen snapshot, now sourced from `product.stockUnit`). |
-| `FlooringInventoryAdjustment` | **Drop** `categorySlug`. **Keep** `stockUnitName`/`stockUnitAbbrev` (no send unit here). |
-| `FlooringImportStagedInventoryRow` | **Keep** `stockUnitName`/`stockUnitAbbrev` (now sourced from `product.stockUnit`). |
-| `FlooringImportStagedInventoryFilterRow` | **Keep** `stockUnitName`/`stockUnitAbbrev` (now sourced from `product.stockUnit`). |
-| `FlooringCategory` | **Drop** `sendUnitId`, `stockUnitId` (+ both indexes + relations). **Drop `name @unique`** (slug is the sole dedup guard). `slug` stays `@unique`, becomes an auto-derived normalized key. Becomes user-managed. |
+| `FlooringUnitOfMeasure` | Keep seeded data. **Drop** `sendUnitCategories`/`stockUnitCategories` relations. **Add** inverse relations for every new FK (products, inventory, adjustments, staged rows, filter rows, template items, WO items, + product coverage). **Drop the `slug` column**; case-insensitive unique `name` **and** unique `abbreviation` (both `lower()`), same treatment as category. User-managed CRUD in 2D. |
+| `FlooringProduct` | **+`unitId`** (NOT NULL, FK→UoM Restrict, indexed) **+`coverageUnitId`** (nullable FK→UoM Restrict, **dormant**). **Drop** `sendUnitName/Abbrev`, `stockUnitName/Abbrev`. `coveragePerUnit` stays. `categoryId` becomes **mutable**. |
+| `FlooringInventory` | **+`unitId`** (NOT NULL FK, create-only). **Drop** `sendUnitName/Abbrev`, `stockUnitName/Abbrev`. |
+| `FlooringInventoryAdjustment` | **+`unitId`** (NOT NULL FK, immutable). **Drop** `stockUnitName/Abbrev`. |
+| `FlooringImportStagedInventoryRow` | **+`unitId`** (FK, editable in staging). **Drop** `stockUnitName/Abbrev`. |
+| `FlooringImportStagedInventoryFilterRow` | **+`unitId`** (FK, editable in staging). **Drop** `stockUnitName/Abbrev`. |
+| `FlooringTemplateItem` | **+`unitId`** (FK, editable). **Drop** `sendUnitName/Abbrev`. |
+| `FlooringWorkOrderItem` | **+`unitId`** (FK, editable). **Drop** `sendUnitName/Abbrev`. |
+| `FlooringCategory` | **Drop** `sendUnitId`, `stockUnitId` (+ indexes + relations). **Drop the `slug` column** (+ its `@unique`). Replace `name @unique` with a **case-insensitive unique index** on `lower(name)`; no user-facing slug. User-managed CRUD in 2D. |
 
-Schema file: `packages/db/prisma/schema.prisma`.
-
----
-
-## Phase 1 — Expand: add `stockUnitId`, backfill, install through backend layers
-
-**Migration mechanics (verified against history):** the user runs `npm run db:deploy` (`prisma migrate deploy`, non-interactive) — migrations are checked in, no interactive `migrate dev` in the flow. **LIVE precedents (core entities):** `20260527120000_work_order_status_lookup` adds a nullable FK col on `flooring_work_order`, `UPDATE` backfills it, then `ADD CONSTRAINT … FOREIGN KEY … ON UPDATE CASCADE` + `CREATE INDEX "{table}_{col}_idx"`; `20260526120000_property_name_unique` shows the nullable → `UPDATE` backfill → `ALTER … SET NOT NULL` → index progression on `property_hub`. Convention is **NOT NULL + FK + index grouped in one migration**, FK named `{table}_{col}_fkey`, index `{table}_{col}_idx`, `ON UPDATE CASCADE`. For our **required** FK use **`ON DELETE RESTRICT ON UPDATE CASCADE`** — matches every other required FK in the schema (`product.categoryId` L189, `inventory.productId` L226, `adjustment.productId` L363). *(Note: the older `20260519120000_cut_log_…` migration shows the same shape but `flooring_cut_log` was renamed to `flooring_inventory_adjustment` on 2026-05-28 — dead table, don't cite it.)*
-
-**Migration 1 (additive, user runs):** add `stockUnitId String?` + `stockUnit` relation on `FlooringProduct`; add `products` back-relation on `FlooringUnitOfMeasure`. Nullable, no NOT NULL yet.
-
-**Backfill script (one-time, user runs — mirror the retired coverage-backfill scripts; delete after):**
-- Location: `packages/db/scripts/backfill-product-stock-unit.js`. **Convention (verified against the deleted `backfill-coverage-to-stock.js` @ commit `7da59e8^`):** plain **CommonJS `.js`, run via `node -r dotenv/config`** (NOT `tsx`). Skeleton: `createPrismaClient()` from `@builders/db` inside `main()` + `try/finally { $disconnect() }`; **dry-run by default, `--apply` to mutate**; single `prisma.$transaction(fn, { timeout: 120_000, maxWait: 10_000 })`; padded per-table + TOTAL report; `if (require.main === module) main().catch(...)` + `module.exports` so it's unit-testable. npm wiring mirrors the deleted one: `"db:backfill:stock-unit": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-product-stock-unit.js"` in `packages/db/package.json` + a root delegate. Delete the script + npm lines in a `chore(db): delete spent one-off …` commit after it runs (same lifecycle as coverage scripts).
-- Logic per product: load all `FlooringUnitOfMeasure` into a `name → id` map (and `slug → id`). For each product:
-  1. If `stockUnitName` matches a `UoM.name` → set `stockUnitId`.
-  2. Else copy `category.stockUnitId` (the original snapshot source).
-  3. Else collect the product id as unresolved.
-- **Anomaly guard:** if any product has a non-null `stockUnitName` with no UoM-name match, **throw to refuse `--apply`** (surfaces prod junk on a main run instead of silently mislabeling). Print: total, matched-by-name, matched-by-category, unresolved IDs. Idempotent (only sets where null).
-- **Data reality (dev DB, verified live):** 223 products, **100% exact `stockUnitName`→`UoM.name` match, 0 fallbacks, 0 NULLs** (distinct values: Linear Feet ×121, Square Feet ×72, Square Yard ×20, Pieces ×6, Buckets ×2, Bags ×1, Units ×1 — all seeded UoM `name`s). The category fallback is dead code on dev; keep it only as a guard for main/staging where backup junk may surface (memory `main-backups-roll-into-staging-dev`). **`UoM.name` is `@unique`**, which is what makes name the safe match key. `product.stockUnitName` is a verbatim copy of `category.stockUnit.name` (`unit-snapshot.ts:29-34` ← `create-product.ts:73-79`), so the match is name-against-itself.
-
-**Migration 2 (NOT NULL + FK, user runs after backfill verified clean):** `ALTER COLUMN stockUnitId SET NOT NULL`, add FK constraint `onDelete: Restrict`, add `@@index([stockUnitId])`.
-
-**Backend install (snapshot strings still present & still rendering — no UI change yet):**
-- `packages/db/src/flooring/products/read-repository.ts` + `shared.ts` — add `stockUnit { id, name, abbreviation }` to the product select; expose `stockUnitId` + resolved `stockUnit` on `ProductRecord`/`ProductDetailRecord`/`ProductDisplayRecord`.
-- `packages/domain/src/flooring/products/types.ts` — add `stockUnitId` + resolved `stockUnit` shape to `ProductRow`/`ProductOption`.
-
-**Exit check:** `/check` green; products read back with both the new FK-resolved unit and the legacy snapshot strings.
+Schema file: `packages/db/prisma/schema.prisma`. Current locations:
+Product 249-289, Category 218-234, UoM 236-247, Inventory 291-355, Adjustment 435-497,
+StagedRow 357-388, FilterRow 390-408, TemplateItem 588-607, WOItem 707-728.
 
 ---
 
-## Phase 2 — Swap rendering to `product.stockUnit`; stop rendering snapshots
+## Migration & promotion model
 
-Switch every read + render path off the snapshot strings and onto the resolved FK. Snapshot columns still exist (dropped in Phase 3) but are no longer read.
+**No direct edits to main, ever.** The epic executes on dev, is promoted dev → staging → main, and
+only *after* it's live on main and verified does the destructive cleanup run — itself promoted
+through the same chain. Standard **expand → migrate → contract**, with contract deferred to the very
+end so the old snapshot columns + scripts stay as a fallback the whole way up.
 
-**Resolve unit at read (templates / WO items) — verified ZERO N+1, free nested select:** all three read paths *already* `select` the related `product` (templates item read-repo:10, WO item read-repo:15, WO file-gen read-repo:469), so adding `stockUnit { name, abbreviation }` as a nested select rides the existing join — no new query, no per-item loop anywhere (templates/WO list detail + file-gen are each one `findUniqueOrThrow`; WO item counts use a single `groupBy … in`). Edit points:
-- `packages/db/src/management/templates/material-items/read-repository.ts` and `packages/db/src/flooring/work-orders/material-items/read-repository.ts` + `work-orders/read-repository.ts` (file-gen path, ~L462-508) — drop the item's own `sendUnit*` select; nest `product.stockUnit` and surface `stockUnitName`/`stockUnitAbbrev` (resolved). **Also the parent repos** `management/templates/read-repository.ts:74-75` + `templates/write-repository.ts:51-52` (and `work-orders/write-repository.ts:71-72,105-106`) select/carry the item `sendUnit*` in their nested item shape — sweep these too.
-- Domain item types **and normalizers**: `management/templates/material-items/{types.ts,normalizers.ts}`, `flooring/work-orders/material-items/{types.ts,normalizers.ts}`, `work-orders/file-generation/types.ts` — replace `sendUnitName/Abbrev` with `stockUnitName/Abbrev`; normalizers map from `product.stockUnit` instead of the item row. **WO file-gen adjustments keep their own frozen `stockUnitAbbrev` snapshot** (adjustment row, read-repo:521) — that's the frozen side, leave it.
-- Retire snapshot builder `packages/domain/src/flooring/products/item-send-unit-snapshot.ts` and all `buildItemSendUnitSnapshotFromProduct` call sites (create/update/save template + WO material items, `sync-template-to-work-order.ts`). Item writes no longer stamp a unit at all.
+Two non-obvious operational rules:
+- **Backfill is a manual step BETWEEN migrations.** Per env: deploy the expand migration → run the
+  backfill `--apply` → verify zero unresolved → *then* deploy the NOT-NULL/FK migration. Promotion is
+  **staged per env**, not "merge and deploy everything at once" — a NOT-NULL migration must never
+  reach an env before that env's backfill has run.
+- **Shared dev DB** — dev-1/2/3 share one database; expand migrations land for all three at once.
 
-**Write paths source from `product.stockUnit` (inventory/staged stay snapshot):**
-- **⚠ SOURCE TRAP (validated — applies to ALL write sites):** the new snapshot source is the **product-level `product.stockUnit` FK**, NOT `product.category.stockUnit`. Category units are dropped in Phase 4, so anything routed through category breaks then. Today **all four write sites read the product's own flat strings** (`product.stockUnitName/Abbrev`) and must flip to `product.stockUnit.{name,abbreviation}`: (1) `create-inventory.ts:53-58`, (2) `merge-inventory.ts:135-140`, (3) the worker `materialize-imported-rows.ts:57-58` (+ delete categorySlug/categoryName at :55-56 and sendUnit at :59-60), (4) `save-import-staged-inventory-section.ts:104-125` snapshot-capture map. Each needs its product select to surface `stockUnit` (`getProductById` per the Phase 1 install; the staged worker's `stagedInventoryRowSelect` in `staged-inventory-rows/shared.ts:26-43` gains `product.stockUnit`). Also drop `categorySlug`/`categoryName` from `materializeStagedRowsToInventory`'s bulk-insert input (`inventory/write-repository.ts:335-336`).
-- **Inventory-create product picker (missed edit point):** `packages/db/src/flooring/inventory/read-repository.ts` `listInventoryOptions` (~789-839) currently sources the option's `stockUnit`/`sendUnit` subtitle from `category.stockUnit`/`category.sendUnit` relations — move `stockUnit` to `product.stockUnit`, drop `sendUnit` + `categorySlug` from `InventoryProductOption` (`inventory/types.ts:86-96`).
-- Rework `packages/domain/src/flooring/products/unit-snapshot.ts` → build the inventory/staged stock-unit snapshot from `product.stockUnit.{name,abbreviation}` (drop all send-unit fields). Rename to reflect "from product stock unit."
-- `materialize-imported-rows.ts:57-60` — source `stockUnitName/Abbrev` from `row.product.stockUnit`; delete the two `sendUnit*` lines. Ensure `listStagedInventoryForMaterialization` selects `product.stockUnit`.
-- `create-inventory.ts` / `merge-inventory.ts` / `save-import-staged-inventory-section.ts` — same: stock snapshot from `product.stockUnit`, drop send-unit. Also stop writing `categorySlug`/`categoryName` to inventory (`materialize-imported-rows.ts:55-56`, `merge-inventory.ts:135-136`, `create-inventory.ts:53-54`) and stop stamping `categorySlug` onto adjustments (`create-pending-adjustment.ts:150`, adjustment snapshot builder `pending-adjustment-inventory-snapshot.ts`).
-- `inventory/create-rules.ts`, `inventory/editability.ts`, `inventory/write-repository.ts` (`MaterializeInventoryRowFields`), `inventory/types.ts`, `inventory/read-repository.ts` + `shared.ts`, adjustments `read/write-repository.ts` + `shared.ts` + `types.ts` — drop `sendUnitName/Abbrev` **and** `categorySlug`/`categoryName` from the insert/immutable/select contracts; keep `stockUnit*`.
+### Phase E — Expand & migrate (during the epic; promoted through)
+Additive + non-destructive; old snapshot columns stay populated as the fallback.
+- **2A-E:** +`product.unitId?` +`product.coverageUnitId?` (nullable) + UoM `products` relation → run
+  `backfill-product-unit.js` (`product.stockUnitName → UoM.name`; dev 100%/223, fallback
+  `category.stockUnitId`, anomaly-guard) → `product.unitId SET NOT NULL` + FK Restrict + index.
+  `coverageUnitId` stays nullable/dormant. Category unlock = code only.
+- **2B-E:** +`unitId?` on inventory / adjustment / staged / filter → run `backfill-row-units.js` (each
+  row's own `stockUnitName → UoM.name`) → `SET NOT NULL` on inventory + adjustment `unitId` + FKs +
+  indexes (staged/filter may stay nullable-tolerant).
+- **2C-E:** +`templateItem.unitId?` +`WOItem.unitId?` → run `backfill-item-units.js`
+  (`item.sendUnitName → UoM.name`, fallback `product.unitId`) → FKs + indexes; `unitId` stays
+  **nullable** (mirrors nullable `quantity`).
+- **2D-E:** add the case-insensitive unique indexes — `lower(name)` on category; `lower(name)` **and**
+  `lower(abbreviation)` on UoM (additive — verify no existing dupes first). CRUD + name-normalization
+  + render swaps = code.
+- **All code ships in Phase E:** write/read the new FKs, stop reading snapshot columns, category
+  unlock + `product.name` recompose, CRUD, render per the rendering matrix.
 
-**UI render swap:**
-- Products: `product-primary-fields-section.tsx` — Stock Unit reads `product.stockUnit` (resolved); **delete the Send Unit `FormField`** (lines 168-172) and the `sendUnitDisplay` logic. `products-list-columns.ts` + `products-row-cell.tsx` — drop the `sendUnit` column; keep `stockUnit` (resolved).
-- Categories list: `categories-table.tsx` — drop `sendUnit` column (stock stays until Phase 4).
-- Templates / WO item sections + drafts: swap `item.sendUnitAbbrev` → `item.stockUnitAbbrev` (`work-order-material-items-section.tsx`, `template-material-items-section.tsx`, their `drafts.ts` / `use-*` controllers, and the WO/template material-item pickers' subtitle).
-- Inventory / adjustments / imports: already render `stockUnitAbbrev` — no unit UI change; they just receive a snapshot sourced from the new FK. **Remove the inventory list "Category" column** (`inventory-list-columns.ts:21` + the `categoryName` case in `inventory-row-cell.tsx:53-54`).
-- **`categorySlug`/`categoryName` confirmed fully dead outside snapshots** (grep: zero `where`/`orderBy`/`groupBy` on either, zero web-UI refs). Adjustment category filtering keys off `product.categoryId`, not `categorySlug` (adjustments read-repo:462,480) — unaffected by the drop. **One real consumer to rewire:** `packages/domain/src/flooring/shared/product-display-name.ts` (`buildFlooringProductDisplayName`) currently reads inventory's `categoryName` snapshot; after the drop, callers pass `category.name` from the FK join. Staged-import row/filter-row read-repos that *compute* `categoryName`/`categorySlug` from `product.category` (staged rows read-repo:33-40, filter-rows read-repo:53-57) lose that computation — they're LIVE joins, not stored columns, so this is a normalize-step removal, not a migration.
+### Phase C — Contract & cleanup (ONLY after the epic is live on main + verified; promoted through)
+The single destructive step, done last, everywhere via the promotion chain.
+- **Drop** `stockUnitName/Abbrev` + `sendUnit*` on product / inventory / adjustment / staged / filter;
+  **drop** `sendUnit*` on template + WO items.
+- **Drop** `category.slug` (+ `@unique`) and the old `category.name @unique`; **drop**
+  `category.sendUnitId`/`stockUnitId` (+ indexes + relations); **drop** UoM `slug` + the old
+  `sendUnitCategories`/`stockUnitCategories` relations.
+- **Delete** the three backfill scripts + their npm wiring.
 
-**Exit check:** `/check` green; no code reads `sendUnit*` anywhere; grep confirms.
+**FK/index convention** (verified vs history): FK `{table}_{col}_fkey`, index `{table}_{col}_idx`,
+`ON DELETE RESTRICT ON UPDATE CASCADE` for required FKs (matches `product.categoryId`,
+`inventory.productId`, `adjustment.productId`).
 
----
-
-## Phase 3 — Contract: drop snapshot string columns
-
-**Migration 3 (user runs)** — drop columns:
-- `FlooringProduct`: `sendUnitName`, `sendUnitAbbrev`, `stockUnitName`, `stockUnitAbbrev`.
-- `FlooringTemplateItem`: `sendUnitName`, `sendUnitAbbrev`.
-- `FlooringWorkOrderItem`: `sendUnitName`, `sendUnitAbbrev`.
-- `FlooringInventory`: `sendUnitName`, `sendUnitAbbrev`, `categorySlug`, `categoryName`.
-- `FlooringInventoryAdjustment`: `categorySlug`.
-
-Remove the corresponding fields from the Prisma models and any lingering type/select references. `CreateProductInput`/product write-repo lose the four snapshot fields. Rewrite the `isProductCategoryChangeBlocked` doc comment (`product-rules.ts:67-73`) since both cited reasons are gone; keep the rule itself.
-
-**Exit check:** `prisma generate` + `/check` green; full grep for `sendUnit` returns zero hits outside migration history.
-
----
-
-## Phase 4 — Strip category units
-
-**Migration 4 (user runs)** — drop `FlooringCategory.sendUnitId`, `stockUnitId`, both `@@index`, both relations; drop `sendUnitCategories`/`stockUnitCategories` from `FlooringUnitOfMeasure`; **drop the `name @unique` constraint** (slug remains `@unique` as the dedup guard).
-
-- `packages/db/src/seed/categories.ts` — drop `sendUnitSlug`/`stockUnitSlug` from every seeded row (name/slug only); derive each `slug` from `name` via `slugifyCategoryName` so the legacy `vinyl-plank`/`Plank` mismatch heals; update the obsolete "retained for snapshot stability" comment. Confirm the product seed (if any) now sets `stockUnitId`.
-- `packages/domain/src/flooring/categories/types.ts` (`CategoryMeta`) and `apps/web/modules/categories/types.ts` — drop `sendUnit*`/`stockUnit*`.
-- Category read repo + `categories-table.tsx` — drop the remaining `stockUnit` column/select.
-
-**Exit check:** `/check` green; category no longer references UoM.
+**Backfill script convention** (from deleted `backfill-coverage-to-stock.js @ 7da59e8^`): CommonJS
+`.js` via `node -r dotenv/config`; `createPrismaClient()` from `@builders/db`; dry-run default,
+`--apply` to mutate; single `$transaction(fn,{timeout:120_000})`; idempotent (`WHERE …Id IS NULL`);
+padded per-table + TOTAL report; `module.exports` for unit tests; npm delegate in
+`packages/db/package.json` + root.
 
 ---
 
-## Phase 5 — Editability: product UoM picker + user-managed category
+## Sub-plan 2A — Product unit FK (+ dormant coverage FK) + category unlock
 
-### 5a. Editable product stock unit (net-new picker)
-No UoM picker exists today (unit was static). **Pattern transfer verified clean — no engine drift:** `AsyncRichDropdown` + `useAsyncRichDropdownController` from `@/engines/picker` are current, `AnchoredPanel` confirmed at `@/engines/common` (used *inside* `AsyncRichDropdown`, no direct import). Mirror the category picker head-to-toe. **Note what UoM already has:** `listUnitOfMeasures` (read-repo:38), a basic unpaginated `GET /api/unit-of-measures/route.ts`, and a list-view module — the `/options` search stack is net-new alongside these. Files:
-- `packages/domain/src/flooring/unit-of-measures/types.ts` — **new `UnitOfMeasureOption` type** `{ id, name }` (mirror `CategoryOption`; the plan omitted this).
-- `packages/db/src/flooring/unit-of-measures/read-repository.ts` — add `searchUnitOfMeasureOptions(search, skip, take)` (`take+1` paging, case-insensitive on name/abbreviation) alongside existing `listUnitOfMeasures`.
-- `packages/application/src/flooring/unit-of-measures/search-unit-of-measure-options.ts` — new use case (clamp take 1–50, default 20, per category precedent).
-- **`apps/web/app/api/unit-of-measures/_validators.ts`** — new `validateUnitOfMeasureOptionsQuery` (the plan omitted this file; mirrors `categories/_validators.ts`).
-- `apps/web/app/api/unit-of-measures/options/route.ts` — GET, full gauntlet (`applyRoutePolicy` → `enforceQueryRateLimit` → validator → use case → `routeJson`), returns `{ items, hasMore }`.
-- `apps/web/modules/unit-of-measures/data/unit-of-measure-options-request.ts` — query key + search fn (mirror `category-options-request.ts`).
-- `apps/web/modules/unit-of-measures/components/picker/unit-of-measure-picker.tsx` — `AsyncRichDropdown` on `@/engines/picker`.
-- Wire `stockUnitId` into the write path: `ProductCreateForm` + `CreateProductInput`/`UpdateProductInput`, product `_validators.ts` (accept `stockUnitId`; **not** locked like `categoryId`), `create-product.ts` + `update-product.ts` (set/patch `stockUnitId`), `data/mutations.ts`. Replace the static Stock Unit `FormField` in `product-primary-fields-section.tsx` with the new picker (editable on both create + record edit).
-- `create-product.ts` no longer derives unit from category — it takes the chosen `stockUnitId` directly.
+**Goal:** product owns a real `unitId` FK; a dormant `coverageUnitId` column exists for the future;
+category becomes mutable; product snapshot strings still present (dropped in 2B) but no longer
+authoritative.
 
-### 5b. User-managed category (net-new CRUD)
-Categories are seed-only today — **confirmed zero write path** (GET-only `/api/categories`, no use cases, no `data/mutations.ts`, no `controllers/`). Mirror the product CRUD + gauntlet:
-- **Slug derivation — reuse, don't reinvent:** a pure `slugify()` already exists at `packages/application/src/shared/slug.ts` (NFKD + diacritic strip + non-alnum→hyphen + trim, throws on empty). `slugifyCategoryName` is a thin wrapper over it. **⚠ Layering decision (open):** the plan puts the wrapper in `packages/domain/.../categories/normalizers.ts`, but domain importing `@builders/application` is a layer inversion. Pick one: **(a)** relocate the pure `slugify` to `packages/domain/src/shared/` and have application re-export it (cleanest), or **(b)** keep `slugifyCategoryName` in the application layer next to `slug.ts`. Recommend (a).
-- `packages/db/src/flooring/categories/write-repository.ts` — `createCategory` / `updateCategory` / `deleteCategory`. Create + update both set `slug = slugifyCategoryName(name)` (regenerate on rename); map the unique-violation via the existing `isP2002(error, "slug")` helper (`packages/db/src/shared/prisma-errors.ts`) → typed `CategoryExecutionError({ code, status: 409, field: "name" })`, mirroring `create-product.ts:82-107`.
-- `packages/application/src/flooring/categories/{create,update,delete}-category.ts` — use cases. **Delete guard must count TWO referrers, not just products:** `FlooringProduct.categoryId` **and** `FlooringImportStagedInventoryFilterRow.categoryFilter` (`categoryFilterId` FK — kept per handoff). Add `getCategoryDeleteState(id)` → `{ products, filterRows }`; domain `isCategoryDeleteBlocked` blocks if either > 0; throw 409 with a pluralized message (mirror `delete-product.ts:13-41` + `product-rules.ts:8-39`).
-- `packages/domain/src/flooring/categories/*-rules.ts` + zod payloads — validate `name` only (slug is derived, never user-supplied); duplicate guard keys off the derived slug.
-- API: `POST /api/categories`, `PATCH /api/categories/[id]/primary/section`, `DELETE /api/categories/[id]`.
-- UI: category `controllers/` + `components/record/` (create + primary section) + `data/mutations.ts` + list create/delete wiring, mirroring products. **Category form exposes `name` only** — slug is internal, units are gone.
-- **Picker:** `apps/web/modules/categories/components/picker/category-picker.tsx:39` — drop the slug subheader (`subtitles: []`; title = name only).
-- **Ordering polish:** `packages/db/src/flooring/products/read-repository.ts:279` — change `orderBy: category.slug` → `category.name` so slug is fully internal.
+**Schema/seed**
+- [ ] `schema.prisma` — add `unitId` + `coverageUnitId` + relations to `FlooringProduct`; `products`
+      back-relation on `FlooringUnitOfMeasure`.
+- [ ] `packages/db/scripts/backfill-product-unit.js` + npm wiring.
 
-**Exit check:** `/check` green; manual run — create a product picking a UoM, edit its unit, confirm template/WO line items re-render live while existing inventory stays frozen; create/rename/delete a category.
+**Domain**
+- [ ] `products/types.ts` — `ProductCreateForm`/`ProductUpdateForm` gain `unitId`; **`ProductUpdateForm`
+      stops `Omit`-ing `categoryId`** (now mutable). `coverageUnitId` **not** added to the forms
+      (dormant).
+- [ ] `products/product-rules.ts:64-73` — **delete** `isProductCategoryChangeBlocked` +
+      `buildProductCategoryChangeBlockedMessage`.
+- [ ] `products/unit-snapshot.ts` — retire `buildProductUnitSnapshotsFromCategory` (unit chosen
+      directly, not derived from category). Keep until 2B swaps create-inventory's source.
+
+**Data**
+- [ ] `products/shared.ts:11-47` — add `unit {id,name,abbreviation}` to `productRowSelect`/
+      `productOptionSelect`; expose `unitId` + resolved `unit` on the records/option.
+- [ ] `products/write-repository.ts:20-52` — `CreateProductInput` gains `unitId`; **remove `categoryId`
+      from `ImmutableProductFields`**; `updateProduct` patches `unitId` + `categoryId`. `coverageUnitId`
+      accepted at neither (dormant; nullable, written by no one yet).
+
+**Application**
+- [ ] `create-product.ts:69-93` — stop deriving unit snapshot from category; set `unitId` from input.
+- [ ] `update-product.ts:38-42,69` — drop the "category immutable" comment; patch `categoryId` +
+      `unitId`. **When `categoryId` changes, recompose the stored `product.name`** via
+      `buildStoredFlooringProductName` (the name embeds the category name — else it goes stale).
+
+**API**
+- [ ] `products/_validators.ts:96-122` — **delete** the `PRODUCT_CATEGORY_LOCKED` rejection; accept
+      `categoryId` on update; accept `unitId` (required) on both. `coverageUnitId` not accepted.
+
+**Module dir / pages**
+- [ ] `product-primary-fields-section.tsx:142-155,168-172` — Category becomes an editable
+      `CategoryPicker` in detail (not `StaticFieldValue`); Unit becomes the **new UoM picker**
+      (see cross-dependency); **Send Unit field deleted**. Coverage cell unchanged.
+- [ ] `products-list-columns.ts` / `products-row-cell.tsx` — drop `sendUnit` col; `unit` resolves
+      from the FK.
+- [ ] `products/data/mutations.ts:15-20` — stop stripping `categoryId` from the PATCH body.
+
+> **Cross-dependency:** the editable product Unit picker needs the **UoM `/options` picker** stack
+> built in 2D. Build that picker stack as the *first* task of 2A so the product form is fully
+> editable immediately (rather than shipping a read-only unit and flipping it later).
+
+**Exit:** `/check` green; products read/write `unitId`; category editable; `coverageUnitId` present
+but untouched.
 
 ---
 
-## Files touched (representative, not exhaustive)
+## Sub-plan 2B — Inventory + adjustments + staged: unit FK + worker rewrite
 
-- **Schema/seed:** `packages/db/prisma/schema.prisma`, `packages/db/scripts/backfill-product-stock-unit.ts`, `packages/db/src/seed/categories.ts`.
-- **Domain:** `products/types.ts`, `products/unit-snapshot.ts`, `products/item-send-unit-snapshot.ts` (delete), `inventory/{create-rules,editability,types}.ts`, `categories/types.ts`, templates/WO material-item `types.ts`.
-- **Data:** products `read/write/shared`, templates + WO material-items `read/write`, `inventory/write-repository.ts`, staged-inventory repos, `unit-of-measures/read-repository.ts`, new `categories/write-repository.ts`.
-- **Application:** `products/{create,update}-product.ts`, templates + WO material-item create/update/save, `sync-template-to-work-order.ts`, inventory `create`/`merge`, `materialize-imported-rows.ts`, `save-import-staged-inventory-section.ts`, new UoM-options + category CRUD use cases.
-- **API:** product `_validators.ts` + section route, new `/api/unit-of-measures/options`, new category CRUD routes.
-- **Web modules:** products (primary fields, list cols/cell, create), categories (list + new record/CRUD), templates + WO material-item sections/controllers/pickers, unit-of-measures (new picker + options request).
+**Goal:** inventory/adjustments/staged move off snapshot strings onto `unitId` FKs. Inventory unit is
+create-only (immutable after). Staged rows stay editable in staging. Worker copies the staged row's
+unit forward. **No coverage, no lock machinery** (both deferred).
+
+**Schema**
+- [ ] Add the 2B `unitId` columns — **Phase E** (nullable → backfill → NOT NULL + FK + index). The
+      snapshot columns are **dropped in Phase C**, not here.
+- [ ] `backfill-row-units.js` + npm wiring.
+
+**Domain**
+- [ ] `inventory/editability.ts:1-23` — swap the unit strings in `INVENTORY_IMMUTABLE_FIELDS` for
+      `unitId` (stays immutable post-create — no conditional predicate, no adjustment lock).
+- [ ] `inventory/create-rules.ts:34-39,156-181` — `CreateInventoryProductSnapshot` carries `unitId`
+      (from product), not unit strings.
+- [ ] `inventory/types.ts` — `InventoryRow` gains `unitId` + resolved `unit`, drops unit strings.
+- [ ] adjustments `types.ts` + `pending-adjustment-inventory-snapshot.ts` — adjustment carries
+      `unitId` (from inventory), not `stockUnitName/Abbrev`.
+
+**Data**
+- [ ] `inventory/shared.ts:6-48` + `read-repository.ts:57-104` — select `unit` relation; normalize FK.
+- [ ] `inventory/write-repository.ts:34-59,267-328` — `MaterializeInventoryRowFields` +
+      `materializeStagedRowsToInventory` insert `unitId`.
+- [ ] `inventory/read-repository.ts` `listInventoryOptions` — source option subtitle unit from
+      `product.unit` (was category).
+- [ ] adjustments `shared.ts:5-38` + `write-repository.ts:36-39,175-187` — select `unit`; stamp
+      `unitId` at create; keep it in the immutable-on-update set.
+- [ ] staged rows `shared.ts` + read/write repos — select/write `unitId`; **update input now INCLUDES
+      `unitId`** (today it's immutable, `write-repository.ts:43-52`).
+- [ ] staged filter rows read/write — select/write `unitId`; editable.
+
+**Application**
+- [ ] `create-inventory.ts:56-64` — snapshot `unitId` from **`product.unit`** FK (not `product.stockUnitName`).
+- [ ] `merge-inventory.ts` — same source flip (if still live).
+- [ ] `create-pending-adjustment.ts:122-125` — stamp `unitId` from `inventory.unitId`.
+- [ ] `update-pending-adjustment.ts` — leave unit out of the editable patch (ledger).
+- [ ] `save-import-staged-inventory-section.ts:127-142,179-227` — seed `unitId` from product on add;
+      **allow editing it on modify** (no longer a re-stamped snapshot).
+- [ ] **`materialize-imported-rows.ts:44-67`** — the linchpin: read `row.unitId` (**not**
+      `row.product.*`); `stagedInventoryRowSelect` for materialization selects the staged `unitId`.
+
+**Module dir / pages**
+- [ ] `inventory-create-fields.tsx` — add the UoM picker (editable at create only), seeded from the
+      picked product.
+- [ ] `inventory-primary-fields-section.tsx` — unit resolves from FK; read-only in detail (create-only).
+- [ ] `import-staged-inventory-grid.tsx` + `import-planned-imports-grid.tsx` +
+      `use-import-filter-rows.ts` + `drafts.ts` — unit cell becomes an **editable** picker on staged +
+      filter rows (today read-only).
+- [ ] Inventory list/CSV — `unit` resolves from FK; no visible change beyond source.
+
+**Exit:** `/check` green; grep: no `stockUnitName/Abbrev` or `sendUnit*` reads on
+inventory/adjustment/staged/product; worker carries staged units; inventory unit fixed post-create.
+
+---
+
+## Sub-plan 2C — Template + WO item unit FK + sync
+
+**Goal:** each material item owns an editable `unitId` FK, seeded from the product; sync copies the
+FK. Items only ever had `sendUnit*` today — no stock unit.
+
+**Schema**
+- [ ] Add `templateItem.unitId?` + `WOItem.unitId?` (mig spine 2C); backfill from `item.sendUnitName`.
+
+**Domain**
+- [ ] `templates/material-items/{types,normalizers}.ts` + `work-orders/material-items/{types,normalizers}.ts`
+      — replace `sendUnitName/Abbrev` with `unitId` + resolved `unit`.
+- [ ] `work-orders/file-generation/types.ts` — map `unitAbbrev` from the item's `unit`.
+- [ ] **Delete** `products/item-send-unit-snapshot.ts` + all `buildItemSendUnitSnapshotFromProduct`
+      call sites (template save :83, WO save :106).
+
+**Data**
+- [ ] template MI read-repo (:7-19) + template detail nested (:89-104) + WO MI read-repo (:10-22) +
+      WO file-gen (:523-538) — select `unit`; product already joined (zero N+1 — free nested select).
+- [ ] template + WO MI write-repos — write `unitId`.
+
+**Application**
+- [ ] `save-template-material-items-section.ts` + `save-work-order-material-items-section.ts` — on
+      add/product-change, seed `unitId` from `product.unitId`; allow user override; stop stamping
+      unit strings.
+- [ ] **`sync-template-to-work-order.ts:86-93`** — copy `unitId` template item → WO item (verbatim,
+      like today's `sendUnit*` copy at `write-repository.ts:120-121`). **Don't forget this.**
+
+**Module dir**
+- [ ] `template-material-items-section.tsx` + `work-order-requested-material-grid.tsx` +
+      controllers/drafts — item unit becomes an editable UoM picker cell; subtitle reads `unit`.
+      (Section label "Requested Material" unchanged — `MODE_LABEL`, `work-order-material-items-section.tsx:47-49`.)
+
+**Exit:** `/check` green; items carry editable `unitId`; sync propagates it; no `sendUnit*` left.
+
+---
+
+## Sub-plan 2D — Strip category units + user-managed Category & UoM CRUD (ungated)
+
+**Goal:** sever category↔unit, then make both backbone tables user-managed CRUD, with a
+no-delete-while-linked rule (DB already `Restrict`s; app mirrors it). **Rank gating is NOT built here**
+— it's a future plan; note the tier-1 guard as the intended follow-up.
+
+**Schema/seed**
+- [ ] **Phase E:** add the case-insensitive unique indexes — `lower(name)` on category; `lower(name)`
+      + `lower(abbreviation)` on UoM. The category-unit / `slug` / old-`name @unique` / UoM-relation
+      **drops are Phase C** (post-main).
+- [ ] `seed/categories.ts` — drop `sendUnitSlug`/`stockUnitSlug` **and the `slug` field** (column
+      gone); seed `name` only (normalized). The legacy `vinyl-plank`/`Plank` slug is simply removed.
+
+**Name normalization (replaces slug)**
+- [ ] Add `normalizeCategoryName` in `domain/.../categories/normalizers.ts` — trim + collapse internal
+      whitespace, **preserve case** (display-faithful). Apply on create + update. (Same for UoM if
+      confirmed.) No `slugify`, no slug column.
+- [ ] Uniqueness enforced by the DB case-insensitive index (2D-mig); map its P2002 via `isP2002` →
+      typed 409 on `name`.
+- [ ] Staged filter rows — **drop the `categoryFilterSlug` computation** from the read-repo + type
+      (`staged-inventory-filter-rows` read normalizer :59-60); it's dead once `category.slug` is gone.
+
+**UoM picker stack (net-new — build early; 2A depends on it)**
+- [ ] `unit-of-measures/types.ts` — `UnitOfMeasureOption {id,name}`.
+- [ ] `unit-of-measures/read-repository.ts` — `searchUnitOfMeasureOptions(search,skip,take)` (`take+1`,
+      case-insensitive) alongside `listUnitOfMeasuresForListView`.
+- [ ] `search-unit-of-measure-options.ts` use case (clamp 1–50, default 20).
+- [ ] `api/unit-of-measures/_validators.ts` + `options/route.ts` — GET, full gauntlet, **ungated**.
+- [ ] `unit-of-measures/data/unit-of-measure-options-request.ts` +
+      `components/picker/unit-of-measure-picker.tsx` (`AsyncRichDropdown` on `@/engines/picker`).
+
+**Category + UoM CRUD (mirror product CRUD, ungated)**
+- [ ] `categories/write-repository.ts` + `unit-of-measures/write-repository.ts` — `create/update/delete`;
+      create+update store the **normalized `name`** (no slug); map P2002 (on the `lower(name)` index)
+      → typed 409 on `name`.
+- [ ] `application/.../{create,update,delete}-{category,unit-of-measure}.ts` — **delete guards count
+      ALL referrers**: Category ← `product.categoryId` + `filterRow.categoryFilterId`; UoM ← every FK
+      added this epic (product `unitId`, product `coverageUnitId`, inventory, adjustment, staged,
+      filter, template item, WO item). Block if any > 0; 409 with a pluralized message.
+- [ ] domain `*-rules.ts` + zod — validate `name` (+ `abbreviation` for UoM); dedup keys off the
+      normalized name (case-insensitive).
+
+**API (ungated — normal gauntlet only)**
+- [ ] `POST/PATCH/DELETE /api/categories` + `/api/unit-of-measures` — `applyRoutePolicy` →
+      `enforceMutationRateLimit` → idempotency → validator → use case. **No `enforceManageUsersAccess`
+      in this plan** (deferred).
+
+**Module dir / pages**
+- [ ] category + UoM `controllers/` + `components/record/` + `data/mutations.ts` + list create/delete
+      wiring (mirror products). Forms expose `name` only (+ `abbreviation` for UoM); slug internal.
+- [ ] `category-picker.tsx:39` — drop the slug subheader (title = name only).
+- [ ] `products/read-repository.ts:279` — `orderBy: category.slug` → `category.name`.
+
+**Exit:** `/check` green; category ⊥ unit; both tables CRUD-able; delete blocked while linked; manual
+run confirms the full loop.
 
 ---
 
 ## Risks & watch-items
-- **Shared dev DB:** dev-1/2/3 share dev's `.env` (one database). Each migration affects all three branches the moment it's applied — sequence the expand/contract carefully and coordinate. Per the main-backups memory, the same data shapes likely exist in main.
-- **Backfill correctness gates NOT NULL.** Migration 2 must not run until the script reports zero unresolved products.
-- **Category immutability rule (`isProductCategoryChangeBlocked`) stays** — kept as a deliberate product rule (stable categorization). After this epic it no longer protects any snapshot (`inventory.categorySlug` + `*.sendUnitName` are both dropped), so its doc comment must be rewritten to the new rationale; the rule logic is unchanged.
-- **No more inventory↔category join needed.** Dropping the inventory `categoryName` column removes the list's "Category" column outright (not re-sourced live), preserving the frozen-snapshot, join-free read.
-- **Live-resolve visibility change** for template/WO items is intentional but worth a sanity check with the user on first run (historical work orders will show the product's *current* unit).
 
-## Decisions (resolved with user — hardening pass)
-1. **Backfill mechanism = standalone `.js` script (DECIDED).** The match is always 100%, but the backfill must be **a re-runnable script the user runs against each DB** (dev now; staging + main at promotion time), so a one-shot in-migration `UPDATE` is out. Script is idempotent (`WHERE stockUnitId IS NULL`), dry-run by default, `--apply` to write, anomaly-guard refuses `--apply` on any unmatched non-null `stockUnitName`.
-2. **Lifecycle = keep the script until main is backfilled (DECIDED).** Do NOT delete it after the dev run (departs from the coverage-script lifecycle). It must survive through the staging + main promotion runs; delete the script + npm wiring only after main is verified. Promotion is "nowhere near" yet — the script is a durable epic artifact until then.
-3. **Migration split = keep the 2-step expand/contract (DECIDED).** Mig1 (nullable `stockUnitId`) → script backfill per-env → Mig2 (`SET NOT NULL` + FK + index), so NOT NULL never flips before the script reports clean on that env. Each env runs: deploy Mig1 → run script `--apply` → verify zero unresolved → deploy Mig2.
-4. **`slugifyCategoryName` home = relocate pure `slugify` to `packages/domain/src/shared/` (DECIDED, Q3 confirmed).** `packages/db/CLAUDE.md` forbids data→application and only carves out data→domain for pure helpers; domain→application is likewise an inversion. Move the pure `slugify` (`packages/application/src/shared/slug.ts`) into `packages/domain/src/shared/`, have application re-export it for existing callers, and build `slugifyCategoryName` in `domain/.../categories/normalizers.ts` on top.
+- **Shared dev DB** — every migration hits dev-1/2/3 at once; run the spine in strict order.
+- **Backfill gates NOT NULL** — each `SET NOT NULL` contract-mig must not run until its backfill
+  reports zero unresolved rows on that env.
+- **Worker source flip is behavioral** — after 2B the worker materializes the *staged row's* unit;
+  before 2B it re-derives from product. A staged row created pre-2B (no `unitId`) must be backfilled
+  before the worker rewrite goes live, or materialize will null the unit.
+- **UoM gains ~9 inverse relations** — the 2D delete guard must enumerate every one, or a "safe
+  delete" will orphan/break a referrer the guard forgot.
+- **Adjustment FK vs history** — accepted: a UoM rename re-labels historical adjustments. Mitigated by
+  inventory unit being fixed post-create + no-delete-while-linked.
+- **Mixed units across import rows** — accepted by design; balances are unit-agnostic. Worth a
+  first-run sanity check on real data.
+- **Ungated CRUD (interim)** — until the future rank-gating plan lands, any authenticated user can
+  create/edit/delete backbone rows. Acceptable per user; flagged so it isn't forgotten.
 
-## Open questions (remaining)
-- **Live-resolve visibility on historical work orders** — confirm on first run with the user that editing a product's stock unit retroactively changing how *past* WO/template line items render is acceptable (it's the intended frozen/live split, but it's the one user-visible behavioral surprise). Inventory/adjustments stay frozen.
+## Tests
 
-## Verification (end-to-end)
-1. `/check` after each phase (clean + build + typecheck + lint + test).
-2. Backfill: dry-run report shows full coverage before Migration 2.
-3. Grep gates: no `sendUnit*` references after Phase 2; none in schema after Phase 4.
-4. Manual (`/run` or app): create product → pick UoM; edit product UoM → template/WO items re-render, inventory unchanged; materialize an import → inventory snapshot carries the product's stock unit; create/rename/delete a category.
+**Will break (update in the relevant sub-plan):** the prior 13-file set still applies — inventory
+`create-rules`, `create-inventory`, `merge-inventory`, adjustments create/update/delete, imports
+materialize + save-section + mark-for-import, WO file-gen adjustments, inventory adjustment identity,
+product-display-name. Plus new item-unit tests (template/WO material-items save + sync).
 
-### Tests that WILL break (update during the relevant phase) — 13 files
-| Test | Why it breaks |
-|---|---|
-| `packages/domain/tests/flooring/inventory/create-rules.test.ts` | `product()` helper + assertions stamp dropped send/stock/category fields |
-| `packages/application/tests/flooring/inventory/create-inventory.test.ts` | product mock + `buildCreatedInventoryInsert` call signature |
-| `packages/application/tests/flooring/inventory/merge-inventory.test.ts` | product mock + builder assertions on dropped fields |
-| `packages/application/tests/flooring/inventory/adjustments/create-pending-adjustment.test.ts` | asserts `categorySlug` + stock snapshot |
-| `packages/application/tests/flooring/inventory/adjustments/{update,delete}-pending-adjustment.test.ts` | `stockUnitAbbrev` message assertions (how it's passed/fetched) |
-| `packages/application/tests/flooring/imports/materialize-imported-rows.test.ts` | asserts `categorySlug`/`categoryName`/stock snapshot |
-| `packages/application/tests/flooring/imports/save-import-staged-inventory-section.test.ts` | snapshot-mutation assertions (drop category) |
-| `packages/application/tests/flooring/imports/mark-staged-rows-for-import.test.ts` | verify snapshot-field refs |
-| `packages/domain/tests/flooring/work-orders/file-generation/adjustments-{picking-ticket,shared}.test.ts` | `stockUnitAbbrev` in rendered output |
-| `apps/web/tests/modules/inventory/adjustment-inventory-identity.test.ts` | `categorySlug` + `stockUnitAbbrev` identity display |
-| `apps/web/tests/modules/products/product-display-name.test.ts` | `categoryName` now passed explicitly, not from product snapshot |
+**Add:** each backfill script's `module.exports` (name-match / fallback / anomaly-guard); UoM
+`searchUnitOfMeasureOptions` paging; category + UoM CRUD (slug derivation + regenerate-on-rename,
+P2002→friendly 409, delete-blocked-while-linked across every referrer); worker carries staged unit.
 
-### Tests to ADD (net-new, no coverage today)
-- Backfill correctness (unit-test the `.js` script's `module.exports`, mirroring the deleted `backfill-product-names.test.ts`): name-match hit, category fallback, anomaly-guard throws on unmatched non-null name.
-- UoM `searchUnitOfMeasureOptions` paging (`take+1`/`hasMore`) + the options use case bounds.
-- Category CRUD: `slugifyCategoryName` derivation + regenerate-on-rename, P2002→friendly duplicate error, delete-blocked when products OR filter-rows reference it.
+## Remaining open questions
 
----
-
-## Per-module behavioral change (validated against live code)
-
-| Module | What changes for the user | Frozen vs Live | Validation note |
-|---|---|---|---|
-| **Products** | Stock Unit becomes an **editable async picker** (create + edit); **Send Unit field disappears** entirely. Unit no longer derived from category — chosen directly. | n/a (the editable source of truth) | `create-product.ts:73-80` is the *only* snapshot write site; `_validators` keeps `categoryId` locked, `stockUnitId` un-locked; `ProductUpdateForm`/`ImmutableProductFields` must **add `stockUnitId` as editable**. |
-| **Templates — material items** | Line-item unit now shows the product's **current** stock unit; editing a product's unit **retroactively re-renders** past template items. Send-unit gone. | **LIVE** | Read repo already joins `product` → adding `stockUnit` is a free nested select (zero N+1). Item writes stop stamping any unit. |
-| **Work Orders — material items + file-gen (PDF)** | Same live re-render as templates, **including printed slips / picking tickets** — a reprinted historical WO shows the product's current unit. | **LIVE** (WO item) | File-gen is one `findUniqueOrThrow`; normalizer maps from `product.stockUnit`. **Adjustment lines on the PDF keep their own frozen `stockUnitAbbrev`.** |
-| **Inventory** | No visible unit change (still shows the unit stamped at materialize). **"Category" list column is removed.** | **FROZEN** | Snapshot now sourced from `product.stockUnit` FK at create, not category. Read path reads stored columns — never re-resolves. `categorySlug`/`categoryName` dropped (dead). |
-| **Adjustments** | No visible change; unit stays the frozen value from the parent inventory. | **FROZEN** | `categorySlug` dropped; category filtering already keys off `product.categoryId`, unaffected. |
-| **Staged imports** | No visible unit change; staged/filter rows keep their frozen `stockUnit*`. Category shown in the grid is **live-computed** (unchanged behavior). `categoryFilterId` filter feature untouched. | **FROZEN** snapshot; category is **LIVE** display | Worker stops stamping `categorySlug`/`categoryName`; sources `stockUnit*` from `product.stockUnit`. 1000-row cap unaffected. |
-| **Categories** | Becomes **user-managed**: create / rename / delete. Form shows **name only** (slug internal, units gone). Rename heals the legacy `vinyl-plank`/`Plank` slug mismatch. Delete blocked while products **or** import filter-rows reference it. | n/a | Net-new CRUD; DB already `onDelete: Restrict` on both referrers, so the app guard mirrors the DB. |
-| **Unit of Measures** | Appears as a searchable picker on the product form. Still **seeded / not user-editable** as a list. | n/a | Net-new `/options` search stack mirrors category picker; clean engine transfer. |
+_All design decisions resolved as of 2026-07-01._ UoM gets the same slug-drop as category, and its
+`abbreviation` is case-insensitive unique too. Remaining unknowns are execution-time details noted
+inline in each sub-plan (e.g. dupe-check before adding the `lower()` unique indexes).
