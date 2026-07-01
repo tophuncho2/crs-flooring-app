@@ -1,6 +1,7 @@
 import {
   Prisma,
   entityExists,
+  getCategoryById,
   getProductById,
   productNameExists,
   updateProduct,
@@ -35,11 +36,26 @@ export async function updateProductUseCase(
       })
     }
 
-    // Category is immutable post-create — `UpdateProductInput` omits
-    // `categoryId` at the type level and the API PATCH validator rejects it on
-    // the wire. The category, its name, slug, and unit-of-measure snapshots
-    // stamped onto the product row at create time are all stable for this fetch.
-    const categoryName = current.category.name
+    // Category is now MUTABLE (UoM epic 2A). The stored product name embeds the
+    // category name, so a category change must recompose it — resolve the new
+    // category here and feed its name into the name builder below.
+    let categoryName = current.category.name
+    const categoryChanged =
+      "categoryId" in input &&
+      input.categoryId !== undefined &&
+      input.categoryId !== current.categoryId
+    if (categoryChanged) {
+      const category = await getCategoryById(input.categoryId as string, c)
+      if (!category) {
+        throw new ProductExecutionError({
+          code: "PRODUCT_CATEGORY_NOT_FOUND",
+          message: "Selected category was not found",
+          status: 400,
+          field: "categoryId",
+        })
+      }
+      categoryName = category.name
+    }
 
     const nextStyle = "style" in input ? input.style : current.style || null
     const nextColor = "color" in input ? input.color : current.color || null
@@ -48,7 +64,10 @@ export async function updateProductUseCase(
         ? input.productNamingAddon
         : current.productNamingAddon || null
     const nameAffected =
-      "style" in input || "color" in input || "productNamingAddon" in input
+      categoryChanged ||
+      "style" in input ||
+      "color" in input ||
+      "productNamingAddon" in input
 
     if ("entityId" in input) {
       const nextEntityId = input.entityId
@@ -63,6 +82,8 @@ export async function updateProductUseCase(
     }
 
     const patch: Parameters<typeof updateProduct>[1] = { updatedBy: actorEmail }
+    if ("categoryId" in input) patch.categoryId = input.categoryId
+    if ("unitId" in input) patch.unitId = input.unitId
     if ("entityId" in input) patch.entityId = input.entityId
     if ("style" in input) patch.style = input.style
     if ("color" in input) patch.color = input.color

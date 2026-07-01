@@ -16,6 +16,24 @@ describe("product display naming", () => {
     ).toBe("Carpet - Plush - Sand")
   })
 
+  it("recomposes the stored name when the category changes (drives update-product)", () => {
+    // The stored name embeds the category name, so `update-product` must rebuild
+    // it on a category change (UoM epic 2A made categoryId mutable).
+    const before = buildStoredFlooringProductName({
+      categoryName: "Carpet",
+      style: "Plush",
+      color: "Sand",
+    })
+    const after = buildStoredFlooringProductName({
+      categoryName: "Vinyl",
+      style: "Plush",
+      color: "Sand",
+    })
+    expect(before).toBe("Carpet - Plush - Sand")
+    expect(after).toBe("Vinyl - Plush - Sand")
+    expect(after).not.toBe(before)
+  })
+
   it("appends the naming addon as the final segment of the stored name", () => {
     expect(
       buildStoredFlooringProductName({

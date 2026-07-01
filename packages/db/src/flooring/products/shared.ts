@@ -13,6 +13,16 @@ export const productRowSelect = {
   productNumber: true,
   name: true,
   categoryId: true,
+  // Canonical unit FK + resolved unit (UoM epic 2A). `unit` resolves both name
+  // (record picker label) and abbreviation (list/dense cells) in one join.
+  unitId: true,
+  unit: {
+    select: {
+      id: true,
+      name: true,
+      abbreviation: true,
+    },
+  },
   entityId: true,
   style: true,
   color: true,
@@ -63,6 +73,9 @@ export const productOptionSelect = {
   id: true,
   name: true,
   categoryId: true,
+  // Canonical unit FK (UoM epic 2A). Carried so downstream row pickers can seed
+  // a row's unit from the picked product in later sub-plans.
+  unitId: true,
   category: { select: { name: true } },
   style: true,
   color: true,

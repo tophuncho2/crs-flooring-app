@@ -11,15 +11,14 @@ import { normalizeProductRow, type ProductRecord } from "./read-repository.js"
 // data layer free of name-building logic maintains the "persistence only" rule
 // for packages/db.
 //
-// The unit-of-measure snapshot fields (sendUnit/stockUnit × Name/Abbrev) are
-// pre-computed by the application use case via
-// `buildProductUnitSnapshotsFromCategory` from `@builders/domain` and passed in
-// at create time. They're immutable post-create — `UpdateProductInput` omits
-// them.
+// `unitId` is the canonical unit FK (UoM epic 2A). The legacy snapshot strings
+// (sendUnit/stockUnit × Name/Abbrev) are no longer written on create — the FK is
+// authoritative; those columns stay for the existing-row fallback until Phase C.
 
 export type CreateProductInput = {
   name: string
   categoryId: string
+  unitId: string
   entityId: string | null
   style: string | null
   color: string | null
@@ -28,35 +27,20 @@ export type CreateProductInput = {
   // to the Decimal column on write.
   coveragePerUnit: string | null
   productNamingAddon: string | null
-  sendUnitName: string | null
-  sendUnitAbbrev: string | null
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
   // Actor-email snapshots — server-assigned from the authenticated user, not off
   // the wire. Both stamped on create; `updatedBy` flips on every update.
   createdBy: string
   updatedBy: string
 }
 
-// `categoryId` and the unit-snapshot fields are immutable post-create —
-// removed from the update shape at the type level so call sites can't pass
-// them. Category drives the unit snapshots (the tightened
-// `isProductCategoryChangeBlocked` predicate in @builders/domain catches
-// anything that bypasses the type system).
-type ImmutableProductFields =
-  | "categoryId"
-  | "sendUnitName"
-  | "sendUnitAbbrev"
-  | "stockUnitName"
-  | "stockUnitAbbrev"
-  | "createdBy"
-
+// `createdBy` is the only immutable field now. `categoryId` and `unitId` are
+// MUTABLE post-create (UoM epic 2A retired the immutable unit snapshots).
 // `updatedBy` is required on every update (always stamped with the actor email),
 // so it's carried explicitly rather than left optional in the `Partial<…>`.
 // `paletteColor` is update-only (the non-semantic tag) — never on create
 // (`CreateProductInput`), so new rows fall to the DB default SLATE.
 export type UpdateProductInput = Partial<
-  Omit<CreateProductInput, ImmutableProductFields | "updatedBy">
+  Omit<CreateProductInput, "createdBy" | "updatedBy">
 > & { updatedBy: string; paletteColor?: PaletteColor }
 
 // --- Writes ---
@@ -69,15 +53,12 @@ export async function createProduct(
     data: {
       name: input.name,
       categoryId: input.categoryId,
+      unitId: input.unitId,
       entityId: input.entityId,
       style: input.style,
       color: input.color,
       coveragePerUnit: input.coveragePerUnit,
       productNamingAddon: input.productNamingAddon,
-      sendUnitName: input.sendUnitName,
-      sendUnitAbbrev: input.sendUnitAbbrev,
-      stockUnitName: input.stockUnitName,
-      stockUnitAbbrev: input.stockUnitAbbrev,
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
     },
@@ -93,6 +74,8 @@ export async function updateProduct(
 ): Promise<ProductRecord> {
   const data: Prisma.FlooringProductUncheckedUpdateInput = { updatedBy: input.updatedBy }
   if (input.name !== undefined) data.name = input.name
+  if (input.categoryId !== undefined) data.categoryId = input.categoryId
+  if (input.unitId !== undefined) data.unitId = input.unitId
   if (input.entityId !== undefined) data.entityId = input.entityId
   if (input.style !== undefined) data.style = input.style
   if (input.color !== undefined) data.color = input.color

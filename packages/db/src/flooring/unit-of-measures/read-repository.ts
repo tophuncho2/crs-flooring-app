@@ -3,6 +3,7 @@ import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
   normalizeUnitOfMeasureListRow,
   type UnitOfMeasureListRow,
+  type UnitOfMeasureOption,
 } from "@builders/domain"
 
 type UnitOfMeasureDbClient = PrismaClient | Prisma.TransactionClient
@@ -43,5 +44,44 @@ export async function listUnitOfMeasuresForListView(
   return {
     total,
     rows: rows.map(normalizeUnitOfMeasureListRow),
+  }
+}
+
+// --- Picker options (infinite-scroll search) ---
+
+export type UnitOfMeasureOptionsSearchArgs = {
+  search?: string
+  skip?: number
+  take: number
+}
+
+export type UnitOfMeasureOptionsSearchResult = {
+  items: UnitOfMeasureOption[]
+  hasMore: boolean
+}
+
+export async function searchUnitOfMeasureOptions(
+  args: UnitOfMeasureOptionsSearchArgs,
+  client: UnitOfMeasureDbClient = db,
+): Promise<UnitOfMeasureOptionsSearchResult> {
+  const where = args.search
+    ? { name: { contains: args.search, mode: "insensitive" as const } }
+    : undefined
+
+  // Fetch take+1 (offset by skip) to detect a next page without a count query.
+  const skip = Math.max(0, Math.floor(args.skip ?? 0))
+  const rows = await client.flooringUnitOfMeasure.findMany({
+    where,
+    orderBy: { name: "asc" },
+    skip,
+    take: args.take + 1,
+    select: { id: true, name: true },
+  })
+
+  const hasMore = rows.length > args.take
+  const page = hasMore ? rows.slice(0, args.take) : rows
+  return {
+    items: page.map((row) => ({ id: row.id, name: row.name })),
+    hasMore,
   }
 }

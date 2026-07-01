@@ -8,7 +8,6 @@ import {
 } from "@builders/db"
 import {
   ProductExecutionError,
-  buildProductUnitSnapshotsFromCategory,
   buildStoredFlooringProductName,
 } from "@builders/domain"
 import { isP2002 } from "../../shared/prisma-errors.js"
@@ -61,31 +60,20 @@ export async function createProductUseCase(
       })
     }
 
-    // Stamp the unit-of-measure snapshot from the chosen category onto the
-    // product row. After this write, reads NEVER traverse `product → category
-    // → unit_of_measure` — the snapshot lives flat on `flooring_product`.
-    // Mirrors the inventory-side stamping pattern in
-    // packages/application/src/flooring/imports/staged-inventory-rows/materialize-imported-rows.ts.
-    const snapshot = buildProductUnitSnapshotsFromCategory({
-      sendUnit: category.sendUnitId
-        ? { name: category.sendUnit, abbreviation: category.sendUnitAbbrev }
-        : null,
-      stockUnit: category.stockUnitId
-        ? { name: category.stockUnit, abbreviation: category.stockUnitAbbrev }
-        : null,
-    })
-
+    // Unit is chosen directly via the UoM FK (UoM epic 2A) — no longer derived
+    // from the category. The retiring snapshot strings are left NULL on new rows
+    // (the FK is authoritative); 2B flips the last cross-module readers onto it.
     try {
       return await createProduct(
         {
           name,
           categoryId: input.categoryId,
+          unitId: input.unitId,
           entityId: input.entityId,
           style: input.style,
           color: input.color,
           coveragePerUnit: input.coveragePerUnit,
           productNamingAddon: input.productNamingAddon,
-          ...snapshot,
           createdBy: actorEmail,
           updatedBy: actorEmail,
         },

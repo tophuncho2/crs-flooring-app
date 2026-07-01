@@ -369,6 +369,12 @@ FK. Items only ever had `sendUnit*` today — no stock unit.
 no-delete-while-linked rule (DB already `Restrict`s; app mirrors it). **Rank gating is NOT built here**
 — it's a future plan; note the tier-1 guard as the intended follow-up.
 
+> **Pacing note (do not let this rush 2A–2C).** Before Category & UoM become mutable/CRUD-able,
+> this sub-plan carries its own dedicated cleanup + test pass (name-normalization, dedupe check
+> before the `lower()` unique indexes, delete-guard coverage across every referrer, seed rework).
+> That work stands on its own gate — it must **not** compress or hurry the FK backbone in 2A–2C.
+> Land 2A–2C clean and verified first; 2D's mutability is deliberately the tail of the epic.
+
 **Schema/seed**
 - [ ] **Phase E:** add the case-insensitive unique indexes — `lower(name)` on category; `lower(name)`
       + `lower(abbreviation)` on UoM. The category-unit / `slug` / old-`name @unique` / UoM-relation

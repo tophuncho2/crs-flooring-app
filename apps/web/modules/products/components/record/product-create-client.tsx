@@ -25,6 +25,9 @@ const EMPTY_PRODUCT: ProductRecord = {
   productNumber: "",
   name: "",
   categoryId: "",
+  // No unit until the user picks one — the create form seeds nothing.
+  unitId: "",
+  unit: null,
   entityId: "",
   entityName: "",
   style: "",
@@ -65,7 +68,10 @@ function ProductCreatePanel({
     page,
     createInitialValue: () => ({ ...EMPTY_PRODUCT_CREATE_FORM }),
     createRecord: async (localValue) => {
-      const validationError = validateProductPrimaryForm({ categoryId: localValue.categoryId })
+      const validationError = validateProductPrimaryForm({
+        categoryId: localValue.categoryId,
+        unitId: localValue.unitId,
+      })
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",

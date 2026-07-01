@@ -14,15 +14,10 @@ import type { ProductRecord } from "@builders/db"
 import { useProductsListMutations } from "@/modules/products/controllers/list/use-products-list-mutations"
 
 // Synthesize a ProductCreateForm-shaped local value for the record-view section.
-// `categoryId` is sourced from the loaded record and never edited (the section
-// renders it readonly, and the PATCH body strips it), but the section component
-// shares its draft type with the create flow which DOES carry it. It's still
-// needed here for read-only display.
+// `ProductUpdateForm` now carries the full draft (categoryId + unitId are both
+// mutable, UoM epic 2A), so the update form IS the section's local value.
 function toProductRecordViewForm(product: ProductRecord): ProductCreateForm {
-  return {
-    categoryId: product.categoryId,
-    ...toProductUpdateForm(product),
-  }
+  return toProductUpdateForm(product)
 }
 
 export function useProductPrimarySection({
@@ -44,7 +39,10 @@ export function useProductPrimarySection({
     createLocalValue: toProductRecordViewForm,
     manageDirtySections: false,
     saveSection: async ({ localValue, record }) => {
-      const validationError = validateProductPrimaryForm({ categoryId: localValue.categoryId })
+      const validationError = validateProductPrimaryForm({
+        categoryId: localValue.categoryId,
+        unitId: localValue.unitId,
+      })
       if (validationError) {
         throw createRecordSectionError({
           kind: "validation",

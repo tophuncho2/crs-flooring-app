@@ -3,12 +3,6 @@ import { CellChip } from "@/engines/common"
 import type { DataTableColumn } from "@/engines/list-view"
 import { formatEasternDateTime, type ProductListRow } from "@builders/domain"
 
-// Unit snapshot cell: "Name (abbrev)" when both present, else the name, else "-".
-function formatUnit(name: string, abbrev: string): string {
-  if (!name) return "-"
-  return abbrev ? `${name} (${abbrev})` : name
-}
-
 export function renderProductRowCell(
   column: DataTableColumn<ProductListRow>,
   row: ProductListRow,
@@ -26,11 +20,12 @@ export function renderProductRowCell(
       return row.color || "-"
     case "productNamingAddon":
       return row.productNamingAddon || "-"
-    case "stockUnit":
-      return formatUnit(row.stockUnitName, row.stockUnitAbbrev)
+    case "unit":
+      // Unit column renders the abbreviation off the FK (per the UoM matrix).
+      return row.unit?.abbreviation || "-"
     case "coveragePerUnit":
       return row.coveragePerUnit
-        ? `${row.coveragePerUnit} ${row.stockUnitAbbrev}`.trim()
+        ? `${row.coveragePerUnit} ${row.unit?.abbreviation ?? ""}`.trim()
         : "-"
     case "productNumber":
       return <CellChip paletteColor={row.paletteColor}>{row.productNumber}</CellChip>

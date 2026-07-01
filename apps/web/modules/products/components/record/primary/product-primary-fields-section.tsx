@@ -14,6 +14,7 @@ import {
 } from "@/engines/record-view"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
+import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
 import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import type { CategoryRecord, ProductRecord } from "@builders/db"
 import {
@@ -25,11 +26,6 @@ import {
 
 const PRODUCT_NAMING_ADDON_MAX = 80
 
-function formatUnit(name: string | null | undefined, abbrev: string | null | undefined) {
-  if (!name) return "—"
-  return abbrev ? `${name} (${abbrev})` : name
-}
-
 /**
  * Products primary section, on the canonical record-view invisible grid.
  * In the detail view a `RecordColumnBreak` splits the section into two flanks —
@@ -40,11 +36,11 @@ function formatUnit(name: string | null | undefined, abbrev: string | null | und
  * Updated by), mirroring warehouse + job-types. The create flow renders the same
  * spec fields as a single column (no stats, no metadata band yet).
  *
- * `categoryReadOnly` renders Category as a static value (immutable
- * post-create; enforced at the type/validator/domain layers) and doubles as the
- * detail-vs-create discriminator (the record panel sets it; the create flow leaves
- * it false). `fieldsReadOnly` renders the remaining identity/spec cells
- * (style, color, naming addon) read-only too.
+ * `categoryReadOnly` is the detail-vs-create discriminator (the record panel sets
+ * it; the create flow leaves it false) — it drives the detail-only layout (PROD #,
+ * Palette, stats, metadata band), NOT Category editability (category is mutable now,
+ * UoM epic 2A). `fieldsReadOnly` renders the identity/spec cells (category, unit,
+ * style, color, naming addon) as static values.
  */
 export function ProductPrimaryFieldsSection({
   product,
@@ -74,14 +70,12 @@ export function ProductPrimaryFieldsSection({
   stats?: ProductStats
   onFieldChange: (field: keyof ProductCreateForm, value: string | PaletteColor) => void
 }) {
-  const selectedCategory = useMemo(() => {
-    if (categoryReadOnly) {
-      return (
-        categoryOptions.find((category) => category.id === product.category.id) ?? null
-      )
-    }
-    return categoryOptions.find((category) => category.id === draft.categoryId) ?? null
-  }, [categoryOptions, categoryReadOnly, draft.categoryId, product.category.id])
+  // Category is editable in both flows now (UoM epic 2A) — the label always
+  // resolves off the draft against the flat `categoryOptions` pass-through list.
+  const selectedCategory = useMemo(
+    () => categoryOptions.find((category) => category.id === draft.categoryId) ?? null,
+    [categoryOptions, draft.categoryId],
+  )
 
   const editable = !disabled && !fieldsReadOnly
 
@@ -97,12 +91,20 @@ export function ProductPrimaryFieldsSection({
     setPickedLabel(null)
   }
 
-  const stockUnitDisplay = categoryReadOnly
-    ? formatUnit(product.stockUnitName, product.stockUnitAbbrev)
-    : formatUnit(selectedCategory?.stockUnit, selectedCategory?.stockUnitAbbrev)
-  const coverageUnitAbbrev = categoryReadOnly
-    ? product.stockUnitAbbrev
-    : selectedCategory?.stockUnitAbbrev ?? ""
+  // The UoM picker is async/paginated — same label-binding contract as entity.
+  // Hold the in-flight pick name and reset it when the saved unit changes (save
+  // commits the pick; a record swap loads the neighbour's unit).
+  const savedUnitName = product.unit?.name ?? null
+  const [pickedUnitLabel, setPickedUnitLabel] = useState<string | null>(null)
+  const [seenUnitName, setSeenUnitName] = useState(savedUnitName)
+  if (seenUnitName !== savedUnitName) {
+    setSeenUnitName(savedUnitName)
+    setPickedUnitLabel(null)
+  }
+
+  // Coverage-per-unit suffix follows the product's saved unit abbreviation
+  // (empty on create / until saved — the name-only picker option carries no abbrev).
+  const coverageUnitAbbrev = product.unit?.abbreviation ?? ""
 
   // All spec fields, shared by both flows. Detail puts these in the left flank;
   // create renders them as a single column. Top down: PROD # + Palette paired
@@ -136,11 +138,12 @@ export function ProductPrimaryFieldsSection({
           </FormField>
         </CellAt>
       ) : null}
-      {/* Category + Stock Unit sit side by side, equal width (4 + 4). */}
+      {/* Category + Unit sit side by side, equal width (4 + 4). Both editable
+          pickers now (UoM epic 2A) — category is mutable, unit is its own FK. */}
       <CellAt col={1} colSpan={4}>
-        <FormField label="Category" required={!categoryReadOnly}>
-          {categoryReadOnly ? (
-            <StaticFieldValue>{product.category.name || "—"}</StaticFieldValue>
+        <FormField label="Category" required>
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{selectedCategory?.name || product.category.name || "—"}</StaticFieldValue>
           ) : (
             <CategoryPicker
               value={draft.categoryId || null}
@@ -156,8 +159,20 @@ export function ProductPrimaryFieldsSection({
         </FormField>
       </CellAt>
       <CellAt col={5} colSpan={4}>
-        <FormField label="Stock Unit">
-          <StaticFieldValue>{stockUnitDisplay}</StaticFieldValue>
+        <FormField label="Unit" required>
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{savedUnitName || "—"}</StaticFieldValue>
+          ) : (
+            <UnitOfMeasurePicker
+              value={draft.unitId || null}
+              onChange={(nextUnitId) => onFieldChange("unitId", nextUnitId ?? "")}
+              onOptionSelected={(opt) => setPickedUnitLabel(opt?.name ?? null)}
+              selectedLabel={draft.unitId ? pickedUnitLabel ?? savedUnitName : null}
+              disabled={disabled}
+              placeholder="Select a unit"
+              ariaLabel="Unit"
+            />
+          )}
         </FormField>
       </CellAt>
       <CellAt col={1} colSpan={8}>

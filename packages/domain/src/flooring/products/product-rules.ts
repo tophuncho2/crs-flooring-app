@@ -46,42 +46,21 @@ export function isProductNameConflict(a: string, b: string): boolean {
 }
 
 /**
- * Category is immutable post-create — full stop, regardless of whether any
- * inventory exists yet. The product's category drives the unit-of-measure
- * snapshot stamped on the product row (sendUnit/stockUnit Name + Abbrev) and on
- * material item rows (`*.sendUnitName` etc). Allowing the category to change
- * post-create would drift every snapshot.
- *
- * Returns true when the caller is attempting to change the category, false
- * otherwise. Both ids are compared trimmed so whitespace noise doesn't
- * trigger a false positive.
- *
- * Defense in depth: `ProductUpdateForm` no longer carries `categoryId` and
- * the API PATCH validator rejects the field. This rule fires only when
- * something bypasses the type system (e.g., a future test using the data
- * client directly, or a malformed call from another use case).
- */
-export function isProductCategoryChangeBlocked(
-  currentCategoryId: string,
-  nextCategoryId: string,
-): boolean {
-  return currentCategoryId.trim() !== nextCategoryId.trim()
-}
-
-export function buildProductCategoryChangeBlockedMessage(): string {
-  return `Category cannot change after a product is created.`
-}
-
-/**
  * Client-side pre-submit validation of the primary section form.
  * Returns an empty string when valid, or a user-readable error message.
  *
  * Kept in the domain layer so the same rule can be reused by non-UI callers
  * (admin scripts, imports) without reaching into web-only code.
  */
-export function validateProductPrimaryForm(input: { categoryId: string }): string {
+export function validateProductPrimaryForm(input: {
+  categoryId: string
+  unitId: string
+}): string {
   if (!input.categoryId.trim()) {
     return "Category is required"
+  }
+  if (!input.unitId.trim()) {
+    return "Unit is required"
   }
   return ""
 }

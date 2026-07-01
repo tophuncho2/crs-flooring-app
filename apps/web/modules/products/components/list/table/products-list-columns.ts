@@ -10,7 +10,7 @@ export const PRODUCTS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<ProductListRow
   { key: "entity", label: "Entity" },
   { key: "name", label: "Product" },
   { key: "coveragePerUnit", label: "Coverage / Unit", align: "end" },
-  { key: "stockUnit", label: "Stock Unit" },
+  { key: "unit", label: "Unit" },
   { key: "createdAt", label: "Created" },
   { key: "createdBy", label: "Created by" },
   { key: "updatedBy", label: "Updated by" },

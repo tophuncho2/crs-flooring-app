@@ -47,27 +47,36 @@ describe("product paletteColor — normalizer passthrough", () => {
   })
 })
 
+// The update validator now requires categoryId + unitId (UoM epic 2A — both are
+// mutable and always carried by the primary edit form), so the palette-focused
+// cases supply them to reach the palette logic.
+const baseUpdateBody = { categoryId: "cat-1", unitId: "u-1" }
+
 describe("product paletteColor — update validator (edit-only, strict-when-present)", () => {
   it("accepts a valid palette color", () => {
-    const input = validateUpdateProductInput({ paletteColor: "TEAL" })
+    const input = validateUpdateProductInput({ ...baseUpdateBody, paletteColor: "TEAL" })
     expect(input.paletteColor).toBe("TEAL")
   })
 
   it("rejects an invalid palette color with PALETTE_COLOR_INVALID_MESSAGE", () => {
-    expect(() => validateUpdateProductInput({ paletteColor: "NEON" })).toThrow(
+    expect(() => validateUpdateProductInput({ ...baseUpdateBody, paletteColor: "NEON" })).toThrow(
       PALETTE_COLOR_INVALID_MESSAGE,
     )
   })
 
   it("leaves the color absent when not posted (stale client → unchanged)", () => {
-    const input = validateUpdateProductInput({ style: "Plank" })
+    const input = validateUpdateProductInput({ ...baseUpdateBody, style: "Plank" })
     expect("paletteColor" in input).toBe(false)
   })
 })
 
 describe("product paletteColor — create validator never accepts it (DB default SLATE)", () => {
   it("ignores a posted palette color on create", () => {
-    const input = validateCreateProductInput({ categoryId: "cat-1", paletteColor: "ROSE" })
+    const input = validateCreateProductInput({
+      categoryId: "cat-1",
+      unitId: "u-1",
+      paletteColor: "ROSE",
+    })
     expect("paletteColor" in input).toBe(false)
   })
 })

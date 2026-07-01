@@ -53,6 +53,14 @@ function requireColor(value: unknown, field: string): PaletteColor {
   return value
 }
 
+// Required FK id — trimmed non-empty. Structural guard only; existence is
+// checked in the use case (and the DB FK's RESTRICT is the backstop).
+function requireId(value: unknown, field: string): string {
+  const id = typeof value === "string" ? value.trim() : ""
+  if (!id) fail(`${field} is required`, field)
+  return id
+}
+
 function parseSharedFields(body: Record<string, unknown>) {
   return {
     entityId: parseOptionalString(body.entityId),
@@ -67,25 +75,16 @@ function parseSharedFields(body: Record<string, unknown>) {
  * Route-edge validator for POST /api/products (create flow).
  *
  * Produces the canonical `CreateProductInput` consumed by `createProductUseCase`.
- * Requires `categoryId` — category is the source of the unit-of-measure
- * snapshots stamped onto the product row.
+ * Requires `categoryId` + `unitId` (the canonical unit FK). `coverageUnitId` is
+ * dormant (UoM epic 2A) — never accepted on the wire.
  *
  * Structural type-guards only. Business rules (category existence, entity
  * existence, name uniqueness, etc.) live in the domain/use-case layers.
  */
 export function validateCreateProductInput(body: Record<string, unknown>): CreateProductInput {
-  const categoryId = typeof body.categoryId === "string" ? body.categoryId.trim() : ""
-  if (!categoryId) {
-    throw new ProductExecutionError({
-      code: "PRODUCT_VALIDATION_FAILED",
-      message: "categoryId is required",
-      status: 400,
-      field: "categoryId",
-    })
-  }
-
   return {
-    categoryId,
+    categoryId: requireId(body.categoryId, "categoryId"),
+    unitId: requireId(body.unitId, "unitId"),
     ...parseSharedFields(body),
   }
 }
@@ -93,25 +92,16 @@ export function validateCreateProductInput(body: Record<string, unknown>): Creat
 /**
  * Route-edge validator for PATCH /api/products/[id]/primary/section (update flow).
  *
- * `categoryId` is immutable post-create (mirrored at the type level —
- * `ProductUpdateForm` in @builders/domain and `UpdateProductInput` in
- * @builders/db both omit it; `isProductCategoryChangeBlocked` rejects any
- * category change that bypasses the type system). This validator rejects
- * `categoryId` outright so the wire boundary enforces the rule too.
+ * `categoryId` is now MUTABLE (UoM epic 2A) — accepted and required, like the
+ * create flow (the primary edit form always carries the full draft). `unitId`
+ * is required too. `coverageUnitId` is dormant — never accepted.
  */
 export function validateUpdateProductInput(
   body: Record<string, unknown>,
-): Omit<CreateProductInput, "categoryId"> & { paletteColor?: PaletteColor } {
-  if (body.categoryId !== undefined) {
-    throw new ProductExecutionError({
-      code: "PRODUCT_CATEGORY_LOCKED",
-      message: "Category cannot change after a product is created.",
-      status: 400,
-      field: "categoryId",
-    })
-  }
-
+): CreateProductInput & { paletteColor?: PaletteColor } {
   return {
+    categoryId: requireId(body.categoryId, "categoryId"),
+    unitId: requireId(body.unitId, "unitId"),
     ...parseSharedFields(body),
     // Edit-only palette tag — strict when present. Absent on a stale client →
     // left unchanged. Create has no equivalent (defaults to SLATE in the DB).

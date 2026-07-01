@@ -9,14 +9,11 @@ function toCreateRequestBody(input: ProductCreateForm): Record<string, unknown> 
   return { ...input }
 }
 
-// `ProductUpdateForm` already omits `categoryId` (immutable post-create — the
-// PATCH validator rejects it with PRODUCT_CATEGORY_LOCKED), so the body is the
-// form as-is. The defensive strip stays in case a caller passes a wider shape.
+// `ProductUpdateForm` carries the full draft (categoryId + unitId are both
+// mutable now, UoM epic 2A) — send it as-is. The PATCH validator requires
+// categoryId + unitId; `coverageUnitId` is dormant and never sent.
 function toUpdateRequestBody(input: ProductUpdateForm): Record<string, unknown> {
-  const { categoryId: _categoryId, ...rest } = input as ProductUpdateForm & {
-    categoryId?: string
-  }
-  return rest
+  return { ...input }
 }
 
 export async function createProductRequest(input: ProductCreateForm) {

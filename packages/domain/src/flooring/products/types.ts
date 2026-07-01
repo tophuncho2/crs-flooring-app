@@ -14,6 +14,14 @@ export type ProductRowCategory = {
   stockUnitId: string
 }
 
+// Resolved unit-of-measure off the FK (UoM epic 2A). `null` only on legacy rows
+// not yet backfilled (column nullable until the NOT-NULL migration runs).
+export type ProductRowUnit = {
+  id: string
+  name: string
+  abbreviation: string
+}
+
 export type ProductRow = {
   id: string
   // Canonical human-facing record number ("PROD-1"), sequence-backed + generated
@@ -21,6 +29,11 @@ export type ProductRow = {
   productNumber: string
   name: string
   categoryId: string
+  // Canonical unit-of-measure FK + resolved unit (UoM epic 2A). The product's
+  // real unit — reads resolve it from the FK; the snapshot strings below are the
+  // retiring fallback.
+  unitId: string
+  unit: ProductRowUnit | null
   // Entity link (Entity Payments epic). entityName is the joined display name
   // (entity.entity), "" when unlinked.
   entityId: string
@@ -61,9 +74,12 @@ export type ProductStats = {
   adjustmentsCount: number
 }
 
-// Create form — accepts categoryId. Used by the create-product flow.
+// Create form — accepts categoryId + unitId. Used by the create-product flow.
 export type ProductCreateForm = {
   categoryId: string
+  // Unit-of-measure FK, chosen via the UoM picker. Required (empty string until
+  // the user picks). Seeds a row's downstream units in later sub-plans.
+  unitId: string
   entityId: string
   style: string
   color: string
@@ -76,10 +92,10 @@ export type ProductCreateForm = {
   paletteColor: PaletteColor
 }
 
-// Update form — categoryId is omitted: it's immutable post-create (it drives
-// the unit snapshots). Enforced by type, validator, and
-// `isProductCategoryChangeBlocked`.
-export type ProductUpdateForm = Omit<ProductCreateForm, "categoryId">
+// Update form — carries the same fields as create. `categoryId` is now MUTABLE
+// (UoM epic 2A retired the unit snapshots that made it immutable; a category
+// change recomposes the stored name in `update-product`). `unitId` is editable too.
+export type ProductUpdateForm = ProductCreateForm
 
 // Slim option shape for product pickers / dropdowns. Matches the DB-layer
 // `ProductOptionRecord` shape — kept in domain so picker requests + search
@@ -93,6 +109,9 @@ export type ProductOption = {
   id: string
   name: string
   categoryId: string
+  // Canonical unit FK (UoM epic 2A). Carried so downstream pickers can seed a
+  // row's unit from the picked product in later sub-plans.
+  unitId: string
   /** The product's category name, for pickers that surface the derived category. */
   categoryName: string
   sendUnitName: string
@@ -103,6 +122,7 @@ export type ProductOption = {
 
 export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   categoryId: "",
+  unitId: "",
   entityId: "",
   style: "",
   color: "",
@@ -113,6 +133,8 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
 
 export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
   return {
+    categoryId: row.categoryId,
+    unitId: row.unitId,
     entityId: row.entityId,
     style: row.style,
     color: row.color,

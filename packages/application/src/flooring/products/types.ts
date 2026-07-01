@@ -7,6 +7,8 @@ import type { PaletteColor } from "@builders/domain"
 
 export type CreateProductInput = {
   categoryId: string
+  // Unit-of-measure FK (UoM epic 2A). Required — resolved from the UoM picker.
+  unitId: string
   entityId: string | null
   style: string | null
   color: string | null
@@ -16,13 +18,12 @@ export type CreateProductInput = {
   productNamingAddon: string | null
 }
 
-// Update form omits `categoryId` — immutable post-create. Mirrors the domain
-// `ProductUpdateForm`, the data layer `UpdateProductInput`, and the API PATCH
-// validator carve-out. Defense in depth: even if a caller bypasses these gates,
-// the data layer's `updateProduct` won't accept it.
+// Update input carries the same fields (all optional). `categoryId` and `unitId`
+// are now MUTABLE (UoM epic 2A retired the immutable unit snapshots); a category
+// change recomposes the stored product name in `update-product`.
 // `paletteColor` is the non-semantic palette tag — update-only (create never
 // carries it; new rows default to SLATE in the DB). Metadata-only passthrough.
-export type UpdateProductInput = Partial<Omit<CreateProductInput, "categoryId">> & {
+export type UpdateProductInput = Partial<CreateProductInput> & {
   paletteColor?: PaletteColor
 }
 

@@ -26,11 +26,22 @@ export type ProductRecordCategory = {
   stockUnitId: string
 }
 
+// Resolved unit-of-measure (UoM epic 2A) — the product's real unit off the FK.
+export type ProductRecordUnit = {
+  id: string
+  name: string
+  abbreviation: string
+}
+
 export type ProductRecord = {
   id: string
   productNumber: string
   name: string
   categoryId: string
+  // Canonical unit FK + resolved unit. `unit` is null only for legacy rows not
+  // yet backfilled (the column is nullable until the NOT-NULL migration runs).
+  unitId: string
+  unit: ProductRecordUnit | null
   entityId: string
   entityName: string
   style: string
@@ -72,6 +83,8 @@ export type ProductOptionRecord = {
   id: string
   name: string
   categoryId: string
+  // Canonical unit FK (UoM epic 2A) — seeds downstream row pickers.
+  unitId: string
   categoryName: string
   sendUnitName: string
   sendUnitAbbrev: string
@@ -100,6 +113,16 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     productNumber: product.productNumber,
     name: product.name,
     categoryId: product.categoryId,
+    // Canonical unit FK + resolved unit (UoM epic 2A). `unitId` is "" only on
+    // legacy rows before the backfill (the column is nullable until NOT NULL).
+    unitId: product.unitId ?? "",
+    unit: product.unit
+      ? {
+          id: product.unit.id,
+          name: product.unit.name,
+          abbreviation: product.unit.abbreviation,
+        }
+      : null,
     // Entity link (Entity Payments epic). entityName is the joined entity.entity
     // display name; "" when the product has no entity linked.
     entityId: product.entityId ?? "",
@@ -178,6 +201,7 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
     id: product.id,
     name: product.name || fallback,
     categoryId: product.categoryId,
+    unitId: product.unitId ?? "",
     categoryName: product.category?.name ?? "",
     sendUnitName: product.sendUnitName ?? "",
     sendUnitAbbrev: product.sendUnitAbbrev ?? "",

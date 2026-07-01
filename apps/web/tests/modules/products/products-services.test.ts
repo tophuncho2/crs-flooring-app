@@ -33,6 +33,50 @@ describe("normalizeProductRow", () => {
     expect(normalized.updatedBy).toBe("editor@example.com")
   })
 
+  it("resolves the unit off the FK, and null unit when unlinked", () => {
+    const withUnit = normalizeProductRow({
+      id: "prod-3",
+      name: "Vinyl - Plank - Ash",
+      categoryId: "cat-1",
+      unitId: "u-sf",
+      unit: { id: "u-sf", name: "Square Feet", abbreviation: "sq ft" },
+      entityId: null,
+      style: "Plank",
+      color: "Ash",
+      productNamingAddon: null,
+      createdAt: new Date("2026-07-01T00:00:00Z"),
+      updatedAt: new Date("2026-07-01T00:00:00Z"),
+      createdBy: null,
+      updatedBy: null,
+      category: { id: "cat-1", slug: "vinyl", name: "Vinyl", sendUnitId: null, stockUnitId: null },
+      entity: null,
+    } as never)
+
+    expect(withUnit.unitId).toBe("u-sf")
+    expect(withUnit.unit).toEqual({ id: "u-sf", name: "Square Feet", abbreviation: "sq ft" })
+
+    const withoutUnit = normalizeProductRow({
+      id: "prod-4",
+      name: "Legacy",
+      categoryId: "cat-1",
+      unitId: null,
+      unit: null,
+      entityId: null,
+      style: null,
+      color: null,
+      productNamingAddon: null,
+      createdAt: new Date("2026-07-01T00:00:00Z"),
+      updatedAt: new Date("2026-07-01T00:00:00Z"),
+      createdBy: null,
+      updatedBy: null,
+      category: { id: "cat-1", slug: "vinyl", name: "Vinyl", sendUnitId: null, stockUnitId: null },
+      entity: null,
+    } as never)
+
+    expect(withoutUnit.unitId).toBe("")
+    expect(withoutUnit.unit).toBeNull()
+  })
+
   it("surfaces an empty entity name when the entity link is null", () => {
     const normalized = normalizeProductRow({
       id: "prod-2",

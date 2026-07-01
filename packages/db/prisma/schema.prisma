@@ -242,6 +242,8 @@ model FlooringUnitOfMeasure {
   updatedAt                  DateTime           @updatedAt
   sendUnitCategories         FlooringCategory[] @relation("FlooringCategorySendUnit")
   stockUnitCategories        FlooringCategory[] @relation("FlooringCategoryStockUnit")
+  products                   FlooringProduct[]  @relation("FlooringProductUnit")
+  coverageProducts           FlooringProduct[]  @relation("FlooringProductCoverageUnit")
 
   @@map("flooring_unit_of_measure")
 }
@@ -253,6 +255,8 @@ model FlooringProduct {
   name                             String                             @default("")
   categoryId                       String
   category                         FlooringCategory                   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  unitId                           String
+  unit                             FlooringUnitOfMeasure              @relation("FlooringProductUnit", fields: [unitId], references: [id], onDelete: Restrict)
   entityId                         String?
   entity                           Entity?                            @relation(fields: [entityId], references: [id], onDelete: SetNull)
   style                            String?
@@ -262,6 +266,10 @@ model FlooringProduct {
   // record-view edit form sets it; create/import/worker/seed fall to SLATE.
   paletteColor                     PaletteColor                       @default(SLATE)
   coveragePerUnit                  Decimal?                           @db.Decimal(12, 4)
+  // Dormant FK (2A): anchor for the future coverage/conversion feature. Schema +
+  // relation only — never accepted on the wire (no form/validator/use-case/write).
+  coverageUnitId                   String?
+  coverageUnit                     FlooringUnitOfMeasure?             @relation("FlooringProductCoverageUnit", fields: [coverageUnitId], references: [id], onDelete: Restrict)
   productNamingAddon               String?                            @db.VarChar(80)
   sendUnitName                     String?
   sendUnitAbbrev                   String?
@@ -279,6 +287,8 @@ model FlooringProduct {
   FlooringImportStagedInventoryFilterRow FlooringImportStagedInventoryFilterRow[]
 
   @@index([entityId])
+  @@index([unitId])
+  @@index([coverageUnitId])
   @@index([name])
   @@index([productNumber])
   @@index([productNumberInt])
