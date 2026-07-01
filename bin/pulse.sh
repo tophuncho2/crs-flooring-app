@@ -6,12 +6,14 @@
 # command here is STRICTLY read-only (status / logs / list) — no deploys, no
 # migrations, no writes — so it can never hurt the running system.
 #
-# Scope (this pass): §1 Local/git · §2 CI & Backups (gh) · §3 Railway services.
-# Deferred (coming next): DB outbox/staged-row SELECTs and Redis checks.
+# Scope: §1 Local/git · §2 CI & Backups (gh) · §3 Railway services ·
+#        §4 outbox health · §5 stuck staged rows · §6 Redis. §4–6 read the prod
+#        DB/Redis directly (read-only SELECTs + redis-cli). A separate future
+#        "scale" pulse owns row-count reads — this one stays health-only.
 #
-# Creds: prod-only. The single secret needed now is RAILWAY_TOKEN, read live
-# from the main worktree's .env (single source of truth — no per-branch copies).
-# Override the env file with:  PULSE_ENV=/path/to/.env bash bin/pulse.sh
+# Creds: prod-only, read live from the main worktree's .env (single source of
+# truth — no per-branch copies): RAILWAY_TOKEN (§3), DATABASE_URL (§4/§5),
+# REDIS_URL (§6). Override the env file with:  PULSE_ENV=/path/to/.env bash bin/pulse.sh
 #
 # Run from anywhere:  bash bin/pulse.sh   (or, once wired, `npm run pulse`)
 
@@ -28,6 +30,14 @@ BACKUP_WARN_HOURS=24     # backup older than this → 🟡
 BACKUP_STALE_HOURS=26    # backup older than this (or failed) → 🔴
 ERR_RE='error|fatal|unhandled|exception|econnrefused|etimedout|panic'
 
+# DB + Redis health (§4–6), read-only against the prod DATABASE_URL / REDIS_URL.
+BULL_QUEUE="bull:flooring-imports-materialize"   # the one active BullMQ queue
+OUTBOX_PROC_STUCK_MIN=5        # PROCESSING held longer than this = stuck (relay reclaims in ~30s)
+OUTBOX_PENDING_OVERDUE_MIN=15  # due PENDING older than this = drain lag (>15min max backoff)
+STAGED_STUCK_WARN_MIN=30       # QUEUED-not-IMPORTED older than this → 🟡
+STAGED_STUCK_RED_MIN=60        # …older than this → 🔴 (stranded — the recovery gap)
+QUEUE_WAIT_WARN=100            # BullMQ waiting jobs above this → 🟡
+
 # ── presentation + roll-up ────────────────────────────────────────────────────
 RED=0; YEL=0; GRN=0
 header()   { printf "\n\033[1;36m▸ %s\033[0m\n" "$*"; }
@@ -41,6 +51,10 @@ line_info(){                 printf "  \033[2m•  %-20s %s\033[0m\n" "$1" "${2:
 TIMEOUT=""
 command -v timeout  >/dev/null 2>&1 && TIMEOUT="timeout 25"
 command -v gtimeout >/dev/null 2>&1 && TIMEOUT="gtimeout 25"
+
+# Coerce a value to a non-negative integer (0 if empty/non-numeric) so the
+# integer comparisons in §4–6 can never error on stray output.
+intval() { case "${1:-}" in ''|*[!0-9]*) echo 0;; *) echo "$1";; esac; }
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 # Path of the `main` worktree (handles spaces in the repo path via substr).
@@ -240,6 +254,115 @@ PY
       line_ok "$svc logs" "clean (last $LOG_LINES lines)"
     fi
   done
+fi
+
+# ── §4 + §5 shared read: one psql round-trip for all outbox + staged metrics ──
+DBURL="$(read_env_key "$PROD_ENV_FILE" DATABASE_URL)"
+DB_OK=0; DB_METRICS=""
+if command -v psql >/dev/null 2>&1 && [ -n "$DBURL" ]; then
+  DB_METRICS="$($TIMEOUT psql "$DBURL" -v ON_ERROR_STOP=1 -X -At -F'|' -c "
+    SELECT 'ob_exhausted', count(*) FROM queue_outbox_event WHERE status='EXHAUSTED'
+    UNION ALL SELECT 'ob_proc_stuck', count(*) FROM queue_outbox_event WHERE status='PROCESSING' AND \"lockedAt\" < now() - interval '$OUTBOX_PROC_STUCK_MIN minutes'
+    UNION ALL SELECT 'ob_pending_overdue', count(*) FROM queue_outbox_event WHERE status='PENDING' AND \"availableAt\" < now() AND \"createdAt\" < now() - interval '$OUTBOX_PENDING_OVERDUE_MIN minutes'
+    UNION ALL SELECT 'ob_pending', count(*) FROM queue_outbox_event WHERE status='PENDING'
+    UNION ALL SELECT 'ob_dispatched', count(*) FROM queue_outbox_event WHERE status='DISPATCHED'
+    UNION ALL SELECT 'st_queued', count(*) FROM flooring_import_staged_inventory_row WHERE status='QUEUED'
+    UNION ALL SELECT 'st_stuck_warn', count(*) FROM flooring_import_staged_inventory_row WHERE status='QUEUED' AND \"updatedAt\" < now() - interval '$STAGED_STUCK_WARN_MIN minutes'
+    UNION ALL SELECT 'st_stuck_red', count(*) FROM flooring_import_staged_inventory_row WHERE status='QUEUED' AND \"updatedAt\" < now() - interval '$STAGED_STUCK_RED_MIN minutes';
+  " 2>/dev/null)"
+  [ -n "$DB_METRICS" ] && DB_OK=1
+fi
+# Pull one labeled metric out of the shared DB_METRICS blob (empty if absent).
+db_metric() { echo "$DB_METRICS" | awk -F'|' -v k="$1" '$1==k{print $2; exit}'; }
+
+# ── §4 Outbox health (relay dispatch pipeline) ────────────────────────────────
+header "§4  Outbox health (queue_outbox_event)"
+if ! command -v psql >/dev/null 2>&1; then
+  line_warn "outbox" "psql not installed — skipped"
+elif [ -z "$DBURL" ]; then
+  line_warn "outbox" "no DATABASE_URL in $PROD_ENV_FILE — skipped"
+elif [ "$DB_OK" -ne 1 ]; then
+  line_bad "outbox" "prod DB unreachable (query failed)"
+else
+  exh="$(intval "$(db_metric ob_exhausted)")"
+  pstuck="$(intval "$(db_metric ob_proc_stuck)")"
+  overdue="$(intval "$(db_metric ob_pending_overdue)")"
+  pend="$(intval "$(db_metric ob_pending)")"
+  disp="$(intval "$(db_metric ob_dispatched)")"
+  if [ "$exh" -gt 0 ]; then
+    line_bad "exhausted events" "$exh dead-lettered (EXHAUSTED) — inspect lastError"
+  else
+    line_ok "exhausted events" "0"
+  fi
+  if [ "$pstuck" -gt 0 ]; then
+    line_bad "stuck PROCESSING" "$pstuck locked >${OUTBOX_PROC_STUCK_MIN}m — relay not dispatching"
+  else
+    line_ok "stuck PROCESSING" "0"
+  fi
+  if [ "$overdue" -gt 0 ]; then
+    line_warn "PENDING backlog" "$overdue overdue >${OUTBOX_PENDING_OVERDUE_MIN}m (of $pend pending)"
+  else
+    line_ok "PENDING backlog" "none ($pend pending)"
+  fi
+  line_info "dispatched" "$disp total"
+fi
+
+# ── §5 Stuck staged import rows (worker materialize pipeline) ──────────────────
+header "§5  Stuck staged rows (flooring_import_staged_inventory_row)"
+if ! command -v psql >/dev/null 2>&1; then
+  line_warn "staged rows" "psql not installed — skipped"
+elif [ -z "$DBURL" ]; then
+  line_warn "staged rows" "no DATABASE_URL — skipped"
+elif [ "$DB_OK" -ne 1 ]; then
+  line_bad "staged rows" "prod DB unreachable"
+else
+  queued="$(intval "$(db_metric st_queued)")"
+  swarn="$(intval "$(db_metric st_stuck_warn)")"
+  sred="$(intval "$(db_metric st_stuck_red)")"
+  if [ "$sred" -gt 0 ]; then
+    line_bad "stranded QUEUED" "$sred QUEUED >${STAGED_STUCK_RED_MIN}m — worker not materializing"
+  elif [ "$swarn" -gt 0 ]; then
+    line_warn "aging QUEUED" "$swarn QUEUED >${STAGED_STUCK_WARN_MIN}m"
+  elif [ "$queued" -gt 0 ]; then
+    line_ok "QUEUED in flight" "$queued (none stuck)"
+  else
+    line_ok "QUEUED" "none pending import"
+  fi
+fi
+
+# ── §6 Redis (BullMQ materialize queue + reachability) ────────────────────────
+header "§6  Redis ($BULL_QUEUE)"
+RURL="$(read_env_key "$PROD_ENV_FILE" REDIS_URL)"
+if ! command -v redis-cli >/dev/null 2>&1; then
+  line_warn "redis" "redis-cli not installed — skipped"
+elif [ -z "$RURL" ]; then
+  line_warn "redis" "no REDIS_URL in $PROD_ENV_FILE — skipped"
+else
+  rc() { $TIMEOUT redis-cli -u "$RURL" --no-auth-warning "$@" 2>/dev/null; }
+  if [ "$(rc PING)" != "PONG" ]; then
+    line_bad "reachability" "no PONG — Redis unreachable"
+  else
+    line_ok "reachability" "PONG"
+    waiting="$(intval "$(rc LLEN "$BULL_QUEUE:wait")")"
+    active="$(intval "$(rc LLEN "$BULL_QUEUE:active")")"
+    delayed="$(intval "$(rc ZCARD "$BULL_QUEUE:delayed")")"
+    failed="$(intval "$(rc ZCARD "$BULL_QUEUE:failed")")"
+    if [ "$failed" -gt 0 ]; then
+      line_bad "queue failed jobs" "$failed failed in materialize queue — check Bull Board"
+    else
+      line_ok "queue failed jobs" "0"
+    fi
+    if [ "$waiting" -gt "$QUEUE_WAIT_WARN" ]; then
+      line_warn "queue waiting" "$waiting waiting (>$QUEUE_WAIT_WARN) — relay behind"
+    elif [ "$active" -gt 1 ]; then
+      line_warn "queue active" "$active active (worker concurrency is 1)"
+    else
+      line_ok "queue depth" "wait $waiting · active $active · delayed $delayed"
+    fi
+    mem="$(rc INFO memory | grep -i used_memory_human | cut -d: -f2 | tr -d '\r ')"
+    clients="$(rc INFO clients | grep -i connected_clients | cut -d: -f2 | tr -d '\r ')"
+    line_info "redis" "mem ${mem:-?} · clients ${clients:-?}"
+  fi
 fi
 
 # ── TL;DR ─────────────────────────────────────────────────────────────────────
