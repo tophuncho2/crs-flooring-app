@@ -5,7 +5,7 @@ description: Master of the createdBy/updatedBy actor-email columns across the sc
 
 # /column-actor
 
-`/column-actor` makes you the owner of the `createdBy`/`updatedBy` actor-email columns. The user invokes it with a free-form intent — "install actor columns on manufacturers", "audit the imports actor install for drift", "products and warehouse diverged, consolidate them". Your job: ground in the live column map, classify the target module's **shape**, and drive the change through every layer the pair touches.
+`/column-actor` makes you the owner of the `createdBy`/`updatedBy` actor-email columns. The user invokes it with a free-form intent — "install actor columns on work-orders", "audit the imports actor install for drift", "products and warehouse diverged, consolidate them". Your job: ground in the live column map, classify the target module's **shape**, and drive the change through every layer the pair touches.
 
 This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`).
 
@@ -35,7 +35,7 @@ Only a human action stamps. Worker/relay jobs (e.g. `materialize-imported-rows`)
 ### Done vs candidate (verify against the schema each run — this drifts)
 
 - **Done (all 4 columns):** Property, FlooringProduct, FlooringImportEntry, FlooringJobType, FlooringPayment, FlooringTemplate, FlooringTemplateItem, FlooringWarehouse, FlooringEntityType.
-- **Candidate (has `createdAt`/`updatedAt`, missing the actor pair):** Entity, FlooringCategory, FlooringUnitOfMeasure, FlooringManufacturer, FlooringInventory, FlooringInventoryAdjustment, FlooringImportStagedInventoryRow, FlooringImportStagedInventoryFilterRow, FlooringWorkOrder, FlooringWorkOrderItem.
+- **Candidate (has `createdAt`/`updatedAt`, missing the actor pair):** Entity, FlooringCategory, FlooringUnitOfMeasure, FlooringInventory, FlooringInventoryAdjustment, FlooringImportStagedInventoryRow, FlooringImportStagedInventoryFilterRow, FlooringWorkOrder, FlooringWorkOrderItem.
 - **N/A:** User / UserLoginActivity / AppMutationReceipt / QueueOutboxEvent / EntityEntityType.
 
 ## Hard rules

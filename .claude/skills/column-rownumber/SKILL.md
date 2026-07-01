@@ -5,7 +5,7 @@ description: Master of the record-number row# setup across the schema → domain
 
 # /column-rownumber
 
-`/column-rownumber` makes you the owner of the record-number **row# setup** — the sequential `PREFIX-N` number, its exact-int search bar, its record-view stepper, and the editable color chip that wraps the number cell. The user invokes it with a free-form intent — "install the number + stepper on manufacturers", "audit the payments row# install for drift", "fold the per-module palette fork back onto the shared chip". Your job: ground in the live row# map, classify the **stepper shape**, and drive the change through every layer the setup touches.
+`/column-rownumber` makes you the owner of the record-number **row# setup** — the sequential `PREFIX-N` number, its exact-int search bar, its record-view stepper, and the editable color chip that wraps the number cell. The user invokes it with a free-form intent — "install the number + stepper on categories", "audit the payments row# install for drift", "fold the per-module palette fork back onto the shared chip". Your job: ground in the live row# map, classify the **stepper shape**, and drive the change through every layer the setup touches.
 
 This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`).
 
@@ -73,7 +73,7 @@ Reference: **work-orders** (`work-orders-row-cell.tsx` wraps `workOrderNumber` i
 - **Number + search + stepper — done (10):** FlooringWarehouse, FlooringInventory, FlooringWorkOrder, FlooringPayment, FlooringProduct, FlooringJobType, FlooringTemplate, FlooringProperty, FlooringInventoryAdjustment, FlooringEntityType.
 - **Palette chip — done (4 of those 10):** FlooringWorkOrder, FlooringInventory, FlooringInventoryAdjustment, FlooringEntityType. *(Adjustments' inv# chip won't light up — inv# is a frozen snapshot, not a join; see `adjustment-invnumber-join-pending`.)*
 - **N/A:** FlooringImportEntry numbers via plain `Int @default(autoincrement())` — no `PREFIX-N`, not a target.
-- **Candidate:** FlooringCategory, FlooringUnitOfMeasure, FlooringManufacturer; row-item tables (FlooringTemplateItem, FlooringWorkOrderItem) and joins are not stepper-capable records.
+- **Candidate:** FlooringCategory, FlooringUnitOfMeasure; row-item tables (FlooringTemplateItem, FlooringWorkOrderItem) and joins are not stepper-capable records.
 
 ## Hard rules
 

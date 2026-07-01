@@ -5,7 +5,7 @@ description: Master of the editable PaletteColor palette-tag column across the s
 
 # /column-color
 
-`/column-color` makes you the owner of the **palette-color column** — the user-assigned, non-semantic `PaletteColor` visual tag, its `CellChip` that recolors a record's identity cell in the list, and the `PaletteColorDropdown` that lets a user re-select it in the record form. The user invokes it with a free-form intent — "install the color tag on manufacturers", "audit the inventory color install for drift", "fold a copied dropdown back onto the shared one". Your job: ground in the live palette map, confirm the shared machinery, and drive the color column through every layer it touches.
+`/column-color` makes you the owner of the **palette-color column** — the user-assigned, non-semantic `PaletteColor` visual tag, its `CellChip` that recolors a record's identity cell in the list, and the `PaletteColorDropdown` that lets a user re-select it in the record form. The user invokes it with a free-form intent — "install the color tag on templates", "audit the inventory color install for drift", "fold a copied dropdown back onto the shared one". Your job: ground in the live palette map, confirm the shared machinery, and drive the color column through every layer it touches.
 
 This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/report`/`/dig`) and not a whole-module plan (that's `/newsession`). The neighbor `/column-rownumber` treats this chip as its optional "Piece 4"; **this skill owns it end to end.**
 
@@ -41,7 +41,7 @@ One source per concern; every module converges on it:
 ### Done vs candidate (verify against the schema each run — this drifts)
 
 - **Palette tag — done (4):** FlooringWorkOrder, FlooringEntityType, FlooringInventoryAdjustment, FlooringInventory. (`palette-color-sharing-epic`.) The **adjustments** chip won't light up — its inv# is a frozen snapshot, not a join (`adjustment-invnumber-join-pending`).
-- **Candidate:** any record module that already shows a `# ` identity cell and lacks the tag — e.g. FlooringManufacturer, FlooringProperty, FlooringTemplate, FlooringJobType, FlooringPayment, FlooringWarehouse, FlooringProduct. Re-derive this from the live schema each run; don't treat the list as a roadmap.
+- **Candidate:** any record module that already shows a `# ` identity cell and lacks the tag — e.g. FlooringProperty, FlooringTemplate, FlooringJobType, FlooringPayment, FlooringWarehouse, FlooringProduct. Re-derive this from the live schema each run; don't treat the list as a roadmap.
 - **⚠️ Name collision — a target may already own a `color` that means something else.** FlooringProduct, for one, has a free-text *physical* `color String?` with its own trgm GIN (`schema.prisma` ~L195) — a different concept from the palette tag. Where that happens the palette column must take a **distinct name** (e.g. `paletteColor`); do not overload the existing string. Surface it as an open question before installing.
 
 ## Hard rules

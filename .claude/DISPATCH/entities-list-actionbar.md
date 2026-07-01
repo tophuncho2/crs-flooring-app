@@ -51,7 +51,7 @@ Migrate the entities list view's legacy `ListToolbar`/`ListToolbarBottomRow`/`Li
 - Reference clients `products-client.tsx` and `job-types-client.tsx` — read only.
 - Entity-types picker files under `apps/web/modules/entity-types/components/picker/` — shared, out of bounds.
 - Engine-wide message/pageError block extraction into a shared primitive — NOT this session's job; move the existing inline blocks as-is.
-- Any other module still on legacy `ListToolbar` (work-orders, imports, properties, inventory, manufacturers, templates) — leave them untouched.
+- Any other module still on legacy `ListToolbar` (work-orders, imports, properties, inventory, templates) — leave them untouched.
 - Backend, API, application, domain, schema layers — zero changes.
 
 ---

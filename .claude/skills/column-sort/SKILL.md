@@ -58,7 +58,7 @@ The old header-caret plumbing — work-orders' `SORT_FIELD_BY_COLUMN`/`COLUMN_BY
 ### Done vs candidate (verify against live code each run)
 
 - **Done (2):** inventory + work-orders. These are the references, not a roadmap. (Both are now header-caret-free — the column-key↔field maps and `handleSort`/`defaultSortDirection` were deleted; sorting is purely the Sort menu.)
-- **Candidate:** any toolbar list module on `useServerListController` that isn't yet sortable — manufacturers, properties, templates, entities, job-types, payments, warehouses, products. Confirm the module renders the shared toolbar Sort `ToolbarMenuButton` (or wire it) before promising sort.
+- **Candidate:** any toolbar list module on `useServerListController` that isn't yet sortable — properties, templates, entities, job-types, payments, warehouses, products. Confirm the module renders the shared toolbar Sort `ToolbarMenuButton` (or wire it) before promising sort.
 
 ## Hard rules
 

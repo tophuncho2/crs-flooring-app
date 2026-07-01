@@ -115,7 +115,7 @@ No table-component (`*-table.tsx`) edits — the `tableOptions` prop plumbing is
 
 - No behavior change: same filter keys, same handlers, same exact-`*NumberInt` match. Purely presentational.
 - No schema / domain / data / application / api changes. No migration.
-- `manufacturer` is excluded (it has no row#-search bar). Don't touch other toolbar bars
+- Don't touch other toolbar bars
   (`adjustments` Inv#, products Color/Style/Naming, etc.) — only the row-number tab.
 - DO NOT COMMIT — the user commits. Provide a ≤17-word commit message.
 

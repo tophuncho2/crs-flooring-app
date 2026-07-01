@@ -58,7 +58,7 @@ domain manifest ({M}_EXPORT_COLUMNS) → db export read (export{M}ForListView, r
 ### Done vs candidate (verify against live code each run)
 
 - **Done (3):** inventory + work-orders + adjustments. These are the references, not a roadmap.
-- **Candidate:** any toolbar list module with a `data/list-{m}-request.ts` encoder + the shared `ListActionBar` toolbar — manufacturers, properties, templates, entities, job-types, payments, warehouses, products. Confirm the module renders `ListActionBar` and has a list-search encoder to reuse before promising export.
+- **Candidate:** any toolbar list module with a `data/list-{m}-request.ts` encoder + the shared `ListActionBar` toolbar — properties, templates, entities, job-types, payments, warehouses, products. Confirm the module renders `ListActionBar` and has a list-search encoder to reuse before promising export.
 
 ## Hard rules
 

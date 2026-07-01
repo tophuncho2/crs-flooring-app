@@ -8,7 +8,7 @@
 - [ ] Add an `entities type` table; payments and entities both link to it.
 - [ ] Add filtering for entities type.
 - [ ] Plan user role/status gating based on entity type, or let owner users manually configure which users see which entities or types.
-- [ ] Backfill manufacturers into the entities table with `manufacturer` type, link entities to imports and products and backfill, then delete the manufacturers model all the way through.
+- [x] Backfill manufacturers into the entities table with `manufacturer` type, link entities to imports and products and backfill, then delete the manufacturers model all the way through. (DONE 2026-07-01 — backfill run + verified, model + module fully stripped, migration `20260701120000_drop_manufacturer_model`.)
 - [ ] Link payments to work orders; add a `planned payments` table which links to work orders, maybe payments.
 - [ ] Add cost and freight columns to inventory, adjustments, and staged inventory rows.
 - [ ] Link inventory and imports to the payments table.
