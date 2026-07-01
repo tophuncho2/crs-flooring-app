@@ -26,7 +26,7 @@ This is the whole reason the skill exists in this repo: you dispatch schema edit
 ## Hard rules
 
 - **Default to trusting the user; verify, then confirm.** The user is almost always right. Your job is to produce the *evidence* they're right — or the single precise reason they're not — never to reflexively doubt them or ask them to redo a step you haven't actually checked. If a check comes back clean, say so plainly; don't hedge.
-- **Read-only.** Allowed: `git status`, `git log`, `git rev-parse`, `git rev-list`, `git branch`, `git worktree list`, `git ls-remote`, `npm run db:migrate:status` (`prisma migrate status` is a read-only query — it never applies anything), plus `Read`/`grep`/`ls`. **Never** `git commit`/`push`/`merge`/`checkout`/`fetch --prune`, **never** `db:migrate:dev`/`db:deploy`/`db:reset`, **never** edit a file. The user commits and runs migrations — always.
+- **Read-only.** Allowed: `git status`, `git log`, `git rev-parse`, `git rev-list`, `git branch`, `git worktree list`, `git ls-remote`, `npm run db:migrate:status --workspace @builders/db` (`prisma migrate status` is a read-only query — it never applies anything), plus `Read`/`grep`/`ls`. **Never** `git commit`/`push`/`merge`/`checkout`/`fetch --prune`, **never** `db:migrate:dev`/`db:deploy`/`db:reset`, **never** edit a file. The user commits and runs migrations — always.
 - **Check "did my push land" against the remote, live.** Use `git ls-remote origin <branch>` — it reads the remote SHA directly with no fetch and no local ref mutation. Never claim "not pushed" from a stale local `origin/<branch>` tracking ref.
 - **Know the branch family before judging migrations.** Apply the table above. On the dev family, "applied to DB but missing locally" is **expected** (a sibling's migration in the shared DB) — confirm clean. On staging/main it's an anomaly.
 - **Real drift is the other direction.** Local migration folder not yet applied, or a `schema.prisma` edit with no paired `migration.sql` under `packages/db/prisma/migrations/`. Detect the orphan edit by inspection (mirror `packages/db/scripts/guard-prisma.js`'s logic — do **not** execute a migration).
@@ -54,7 +54,7 @@ This is the whole reason the skill exists in this repo: you dispatch schema edit
 
 ## Step 4 — Migrated + no drift
 
-- Run `npm run db:migrate:status` from the repo root (it targets this worktree's `.env` DB — the shared dev DB on the dev family). Read the output:
+- Run `npm run db:migrate:status --workspace @builders/db` from the repo root (the script lives in the `@builders/db` workspace, not root — a bare `npm run db:migrate:status` silently no-ops). It targets this worktree's `.env` DB — the shared dev DB on the dev family. Read the output:
   - **"Database schema is up to date!"** → ✅ applied, no drift. Done.
   - **"…have not yet been applied"** (local folders not in the DB) → **real "not yet applied."** If the user claimed they ran it, this is the one honest ❌ — the migration exists locally but isn't in the DB. Command the *user* runs: `npm run db:migrate:dev` (or `db:deploy` on a deployed env).
   - **"…applied to the database but missing from the local migrations directory"** → interpret by family: **dev family → ✅ expected** (a sibling's in-flight migration in the shared dev DB; reconciles on merge to `dev`) — name it so the user sees you understood, don't flag it as a problem. **staging/main → ⚠️ anomaly** (a migration in the DB that this branch doesn't have) — surface it.
