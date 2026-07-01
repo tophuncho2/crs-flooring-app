@@ -1,10 +1,9 @@
 name: Prune transient DB tables
 
-# Weekly housekeeping. Prunes three high-churn, low-value tables across all
+# Weekly housekeeping. Prunes two high-churn, low-value tables across all
 # three databases. Age-based — never a full wipe — and never touches outbox
 # events that are still in flight.
 #
-#   UserLoginActivity   -> delete rows older than 21 days (loggedInAt)
 #   app_mutation_receipt-> delete rows past their idempotency window (expiresAt < now)
 #   queue_outbox_event  -> delete only DISPATCHED events older than 21 days
 #                          (dispatchedAt). PENDING / PROCESSING / EXHAUSTED are
@@ -55,12 +54,6 @@ jobs:
           # psql output. ON_ERROR_STOP + explicit transaction => all-or-nothing.
           OUT="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X <<'SQL'
           BEGIN;
-          WITH d AS (
-            DELETE FROM "UserLoginActivity"
-            WHERE "loggedInAt" < now() - interval '21 days'
-            RETURNING 1
-          ) SELECT 'UserLoginActivity' AS "table", count(*) AS deleted FROM d;
-
           WITH d AS (
             DELETE FROM "app_mutation_receipt"
             WHERE "expiresAt" < now()
