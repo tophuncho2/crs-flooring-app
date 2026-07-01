@@ -28,12 +28,12 @@ export const auth = betterAuth({
   // Rate limiting needs the real client IP to bucket per-user rather than collapse
   // everyone into one shared per-path bucket. Better Auth's getIp() only accepts a
   // header whose value is a SINGLE, valid IP (no `trustedProxies` = it rejects the
-  // multi-hop `x-forwarded-for` chain Railway forwards). Rather than keep guessing
-  // which header Railway sets, the auth route handler pre-resolves the client IP
-  // (see resolveClientIp) and injects it as a clean single-value `x-client-ip`
-  // header — so getIp() always resolves. The direct proxy headers stay listed as a
-  // backup. (Earlier fixes keyed on `x-railway-client-ip`, a header that does not
-  // exist on Railway, so resolution always failed and this warning kept firing.)
+  // multi-hop `x-forwarded-for` chain Railway forwards). Railway sets `x-real-ip`
+  // to exactly that — one clean client IP — so we point the limiter straight at it
+  // (confirmed from live prod logs). `cf-connecting-ip` stays listed only in case
+  // Cloudflare ever fronts us. (Earlier fixes keyed on `x-railway-client-ip`, a
+  // header that does not exist on Railway, so resolution always failed and this
+  // warning kept firing.)
   advanced: {
     // User/Session/Account ids must be UUIDs to match the Prisma schema's
     // `@default(uuid())` and every downstream user-id contract (the import
@@ -45,7 +45,7 @@ export const auth = betterAuth({
       generateId: "uuid",
     },
     ipAddress: {
-      ipAddressHeaders: ["x-client-ip", "x-envoy-external-address", "cf-connecting-ip"],
+      ipAddressHeaders: ["x-real-ip", "cf-connecting-ip"],
     },
   },
 

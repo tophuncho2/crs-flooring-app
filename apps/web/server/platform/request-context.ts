@@ -63,20 +63,22 @@ function looksLikeIp(value: string): boolean {
 
 /**
  * Resolve the real client IP from the incoming proxy headers, trying the most
- * trustworthy source first. Returns `null` when nothing usable is present.
+ * trustworthy single-value source first. Returns `null` when nothing usable is
+ * present.
  *
  * Order:
- *  1. `x-envoy-external-address` — Railway's edge (Envoy) sets this to the single
- *     trusted client IP (unspoofable, no chain). Preferred when present.
+ *  1. `x-real-ip` — Railway sets this to the single client IP (unspoofable, no
+ *     chain). Confirmed as the live source from prod logs.
  *  2. `cf-connecting-ip` — only if Cloudflare ever fronts us.
- *  3. `x-real-ip` — some proxies set this single-value header.
- *  4. `x-forwarded-for` leftmost — Railway's documented real client IP. The
- *     leftmost token is client-spoofable, so this is a last resort, but a
+ *  3. `x-forwarded-for` leftmost — Railway also sends the client IP as the
+ *     leftmost token, but it's client-spoofable, so it's a last resort. A
  *     per-IP bucket (even a spoofable one) beats collapsing everyone into one.
  *
- * The prior fix keyed on `x-railway-client-ip`, a header that does not exist on
- * Railway — so resolution always failed, Better Auth logged the "shared bucket"
- * warning, and the gauntlet limiter bucketed everyone under "unknown" in prod.
+ * Backs the app-wide gauntlet limiter via getClientIp; Better Auth's own limiter
+ * reads `x-real-ip` directly (see server/auth/better-auth.ts). The prior fix
+ * keyed on `x-railway-client-ip`, a header that does not exist on Railway — so
+ * resolution always failed, Better Auth logged the "shared bucket" warning, and
+ * the gauntlet limiter bucketed everyone under "unknown" in prod.
  */
 export function resolveClientIp(carrier?: HeaderCarrier): string | null {
   const headers = getHeaders(carrier)
@@ -85,9 +87,8 @@ export function resolveClientIp(carrier?: HeaderCarrier): string | null {
   }
 
   const single =
-    headers.get("x-envoy-external-address")?.trim() ||
-    headers.get("cf-connecting-ip")?.trim() ||
-    headers.get("x-real-ip")?.trim()
+    headers.get("x-real-ip")?.trim() ||
+    headers.get("cf-connecting-ip")?.trim()
   if (single && looksLikeIp(single)) {
     return single
   }
