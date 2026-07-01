@@ -56,8 +56,14 @@ export function getRequestId(carrier?: HeaderCarrier) {
 
 export function getClientIp(carrier?: HeaderCarrier) {
   const headers = getHeaders(carrier)
+  // Railway's edge (Envoy) sets `x-envoy-external-address` to the single trusted
+  // client IP — unlike the multi-hop `x-forwarded-for` chain. This is the header
+  // to key rate limiting on in production; `cf-connecting-ip` is a fallback if
+  // Cloudflare ever fronts us. (`x-railway-client-ip` never existed — a prior fix
+  // named a fictional header, so in prod this returned "unknown" for everyone and
+  // collapsed the gauntlet limiter into one shared bucket.)
   const trustedIp =
-    headers?.get("x-railway-client-ip")?.trim() ||
+    headers?.get("x-envoy-external-address")?.trim() ||
     headers?.get("cf-connecting-ip")?.trim()
 
   if (trustedIp) {

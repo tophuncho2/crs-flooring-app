@@ -26,13 +26,16 @@ export const auth = betterAuth({
   database: prismaAdapter(db, { provider: "postgresql" }),
 
   // Rate limiting needs the real client IP to bucket per-user rather than collapse
-  // everyone into one shared per-path bucket. We run behind Railway's edge proxy,
-  // which appends a multi-hop `x-forwarded-for` chain — and Better Auth rejects a
-  // multi-IP XFF as spoofable unless `trustedProxies` is configured. Instead of
-  // pinning Railway's proxy CIDRs, point it at the single-value, proxy-set headers
-  // the rest of the app already trusts (see `getClientIp` in
-  // server/platform/request-context.ts): Railway's own client-IP header, then
-  // Cloudflare's. Both are single values, so they resolve without proxy config.
+  // everyone into one shared per-path bucket. We run behind Railway's edge proxy
+  // (Envoy), which appends a multi-hop `x-forwarded-for` chain — and Better Auth
+  // rejects a multi-IP XFF as spoofable unless `trustedProxies` is configured.
+  // Instead of pinning Railway's proxy CIDRs, point it at Envoy's single-value,
+  // edge-set `x-envoy-external-address` (the trusted client address, unlike the
+  // XFF chain), then Cloudflare's header as a fallback if CF ever fronts us. Both
+  // are single values, so they resolve without proxy config. The rest of the app
+  // trusts the same headers (see `getClientIp` in server/platform/request-context.ts).
+  // NOTE: `x-railway-client-ip` does NOT exist — a prior fix named a fictional
+  // header, so this warned + shared one bucket until switched to the Envoy header.
   advanced: {
     // User/Session/Account ids must be UUIDs to match the Prisma schema's
     // `@default(uuid())` and every downstream user-id contract (the import
@@ -44,7 +47,7 @@ export const auth = betterAuth({
       generateId: "uuid",
     },
     ipAddress: {
-      ipAddressHeaders: ["x-railway-client-ip", "cf-connecting-ip"],
+      ipAddressHeaders: ["x-envoy-external-address", "cf-connecting-ip"],
     },
   },
 
