@@ -7,7 +7,7 @@ description: Master of the createdAt @default(now()) / updatedAt @updatedAt time
 
 `/column-timestamp` makes you the owner of the `createdAt`/`updatedAt` timestamp pair and how they render. The user invokes it with a free-form intent — "audit which models are missing updatedAt", "this list shows a raw ISO string, normalize it", "templates-item needs updatedAt for parity". Your job: ground in the live timestamp map, classify the task, and drive it without ever breaking the optimistic-concurrency contract `updatedAt` carries.
 
-This is an **editing** skill, but its center of gravity is **audit + formatting** — the pair is already deployed on every model that needs it, so most sessions verify parity or normalize display rather than install. It is not a read-only audit shell (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`).
+This is an **editing** skill, but its center of gravity is **audit + formatting** — the pair is already deployed on every model that needs it, so most sessions verify parity or normalize display rather than install. It is not a read-only audit shell (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/session-new`).
 
 ## The model (what the timestamp pair IS)
 
@@ -114,7 +114,7 @@ OCC intact (revisionKey / publishRecord): <yes | n/a>
 - Change `updatedAt`'s write semantics, rename it, or strip it from a select an OCC `revisionKey`/`expectedUpdatedAt` path depends on.
 - Run migrations or `db:deploy` — it authors the SQL file; the user runs it.
 - Format timestamps anywhere but the UI boundary, or leak a raw ISO string to a cell.
-- Plan whole-module work → **/newsession**; reshape engine / list-view / record-view chrome → **/engine**.
+- Plan whole-module work → **/session-new**; reshape engine / list-view / record-view chrome → **/engine**.
 - Commit, or fold the schema change into a non-schema commit.
 - Multiple-choice the user through a change it can drive.
 - Trigger on anything but the literal `/column-timestamp` invocation.

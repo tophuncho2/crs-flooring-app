@@ -7,7 +7,7 @@ description: Lightweight mid-execution cleanup. Takes your invoke-time context p
 
 `/quick-task <what to clean>` is the "while we're here, tidy this" reflex during ongoing work. Mid-execution you spot a couple of quick cleanups — a dead import, a stale comment, a dup, a rename — and want them done tight without derailing the main task. `/quick-task` takes the context you give it plus the session's own context, scopes to **one side**, and makes a minimal-diff edit.
 
-This is an **editing** skill. It is not a module sweep (that's `/newsession`), not an audit (that's `/dig`), not the build gauntlet (that's `/check`), and not a cross-layer refactor (that's `/engine` or a real session).
+This is an **editing** skill. It is not a module sweep (that's `/session-new`), not an audit (that's `/dig`), not the build gauntlet (that's `/check`), and not a cross-layer refactor (that's `/engine` or a real session).
 
 ## The two sides
 
@@ -71,7 +71,7 @@ QUICK — <backend | frontend> — <one-line scope>
 - Touch both sides in one pass by default (one side; flag the other).
 - Change behavior, add features, or do a cross-layer refactor (that's `/engine` or a real session).
 - Edit schema or run migrations (`packages/db/prisma/` is off-limits).
-- Do a full module read (`/newsession`) or a loose-end audit (`/dig`).
+- Do a full module read (`/session-new`) or a loose-end audit (`/dig`).
 - Run the full `/check` gauntlet unless asked.
 - Commit.
 - Trigger on anything but the literal `/quick-task` invocation.

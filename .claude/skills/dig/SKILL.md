@@ -7,12 +7,12 @@ description: Mid-session audit. Reads the current working diff + recent conversa
 
 After work has already been underway in the session, /dig is the "wait, does this all still hang together?" reflex. It re-grounds in the current state of the code — not the conversation's optimistic narrative — and produces a short, structured audit.
 
-Common case: invoked after `/newsession` once a sweep is partway done. But /dig doesn't require /newsession to have run; it audits whatever the session is actually working on right now, even if that has drifted from the original kickoff scope.
+Common case: invoked after `/session-new` once a sweep is partway done. But /dig doesn't require /session-new to have run; it audits whatever the session is actually working on right now, even if that has drifted from the original kickoff scope.
 
 ## Hard rules
 
 - **Read-only.** No edits, commits, migrations, builds, or test runs. For the build/typecheck/lint/test gauntlet, /check is the right skill.
-- **Scope = current session work.** Whatever has been edited, discussed, or queued *in this session* — not necessarily the modules /newsession originally named. The session may have drifted; audit where it actually is.
+- **Scope = current session work.** Whatever has been edited, discussed, or queued *in this session* — not necessarily the modules /session-new originally named. The session may have drifted; audit where it actually is.
 - **Code on disk + git diff are the source of truth.** Do not audit against conversation memory of "what we did" when the file says otherwise.
 - **Explicit-only.** Trigger on literal `/dig`. Never on phrases like "dig in", "audit this", or "check on things".
 
@@ -107,6 +107,6 @@ Keep findings tight. One line of context, one line of why-it-matters. The user r
 
 - Run build / typecheck / lint / test. (That's /check.)
 - Edit code, write tests, or fix anything it surfaces.
-- Re-read modules end-to-end from scratch. (That's /newsession.) /dig assumes session context is already loaded; it audits, not primes.
-- Require /newsession to have been run earlier. Common case, not a prerequisite.
+- Re-read modules end-to-end from scratch. (That's /session-new.) /dig assumes session context is already loaded; it audits, not primes.
+- Require /session-new to have been run earlier. Common case, not a prerequisite.
 - Trigger on anything other than the literal `/dig` invocation.

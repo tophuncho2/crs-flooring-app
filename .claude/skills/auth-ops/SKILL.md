@@ -1,13 +1,13 @@
 ---
 name: auth-ops
-description: Operational runbook + helper-command skill for the Better Auth + Google SSO auth surface — invite/revoke a user, promote/demote rank, deactivate/reactivate, break-glass DEVELOPER recovery (db:upsert-owner), the ad-hoc delete-user script, the four env vars per env, Google Cloud OAuth redirect-URI management, multi-port local dev, and invite semantics. Reach for it to run or explain an auth operation, not to edit the auth code (that's /newsession). Read-only on the repo — it never edits source or migrations and never commits; its one side effect is the documented break-glass/delete scripts it runs against the env's own DB. Explicit-only — invoke on /auth-ops.
+description: Operational runbook + helper-command skill for the Better Auth + Google SSO auth surface — invite/revoke a user, promote/demote rank, deactivate/reactivate, break-glass DEVELOPER recovery (db:upsert-owner), the ad-hoc delete-user script, the four env vars per env, Google Cloud OAuth redirect-URI management, multi-port local dev, and invite semantics. Reach for it to run or explain an auth operation, not to edit the auth code (that's /session-new). Read-only on the repo — it never edits source or migrations and never commits; its one side effect is the documented break-glass/delete scripts it runs against the env's own DB. Explicit-only — invoke on /auth-ops.
 ---
 
 # /auth-ops
 
 `/auth-ops <what you want to do>` operates and explains the live auth surface: **Better Auth + Google Workspace SSO**, passwordless, invite-gated, domain-locked to `@crsfloorcovering.com`, with authorization by `UserRank`. Reach for it to invite or revoke a user, change a rank, deactivate/reactivate, restore the owner via break-glass, wire env vars + Google Cloud redirect URIs, or set up multi-port local dev — and to answer "how does X work / who can do Y" about auth.
 
-This is a **runbook + helper-command** skill. It runs the documented operational commands (e.g. `npm run db:upsert-owner`) and guides the UI/console steps; it does **not** edit the auth code, the migrations, or commit. To *change* how auth behaves, hand off to `/newsession` over `apps/web/server/auth` + `packages/{domain,application,db}/src/management`.
+This is a **runbook + helper-command** skill. It runs the documented operational commands (e.g. `npm run db:upsert-owner`) and guides the UI/console steps; it does **not** edit the auth code, the migrations, or commit. To *change* how auth behaves, hand off to `/session-new` over `apps/web/server/auth` + `packages/{domain,application,db}/src/management`.
 
 ## The auth surface (terms before rules)
 
@@ -28,7 +28,7 @@ This is a **runbook + helper-command** skill. It runs the documented operational
 - **The break-glass and delete scripts mutate the live DB.** They act on whatever `DATABASE_URL` the worktree `.env` points at (dev = `zephyr.proxy.rlwy.net`; staging/main have their own). **State the target env and confirm before running** — this is outward-facing and hard to reverse.
 - **The user runs migrations; Claude only authors SQL.** Rolling auth out to staging/main needs migration `20260628150000_user_management_and_nextauth_teardown` applied **after** the code deploy — surface that, don't run it.
 - **DO NOT COMMIT.** The user commits. After any change, give a commit message ≤17 words. `.env` edits are per-worktree local config, not part of any commit.
-- **Read-only on the repo.** This skill does not edit auth source, modules, or migrations. A behavior change is a `/newsession` hand-off, not an `/auth-ops` action.
+- **Read-only on the repo.** This skill does not edit auth source, modules, or migrations. A behavior change is a `/session-new` hand-off, not an `/auth-ops` action.
 - **Drive, don't poll.** Make the sound operational call and state it; surface a genuine open question (which env, which email) in the response — don't multiple-choice routine steps.
 - **Explicit-only.** Trigger on the literal `/auth-ops`. Not on "fix auth", "add a user", "invite someone".
 
@@ -106,7 +106,7 @@ Open     <which env / which email / "none">
 
 ## What this skill does NOT do
 
-- Does **not** edit the auth code, the rank rules, the modules, or the migrations — a behavior change hands off to `/newsession` over `apps/web/server/auth` + `packages/*/src/management`.
+- Does **not** edit the auth code, the rank rules, the modules, or the migrations — a behavior change hands off to `/session-new` over `apps/web/server/auth` + `packages/*/src/management`.
 - Does **not** run migrations (the user runs those) or apply `20260628150000` to staging/main — it only flags that it's pending.
 - Does **not** commit, and does **not** treat `.env` edits as committable repo changes.
 - Does **not** create or edit a DEVELOPER through any app/API path — DEVELOPER is `db:upsert-owner`/seed only.

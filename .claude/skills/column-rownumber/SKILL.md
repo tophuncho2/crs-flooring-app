@@ -7,7 +7,7 @@ description: Master of the record-number row# setup across the schema → domain
 
 `/column-rownumber` makes you the owner of the record-number **row# setup** — the sequential `PREFIX-N` number, its exact-int search bar, its record-view stepper, and the editable color chip that wraps the number cell. The user invokes it with a free-form intent — "install the number + stepper on categories", "audit the payments row# install for drift", "fold the per-module palette fork back onto the shared chip". Your job: ground in the live row# map, classify the **stepper shape**, and drive the change through every layer the setup touches.
 
-This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`).
+This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/session-new`).
 
 ## The model (what the row# setup IS)
 
@@ -168,6 +168,6 @@ exact-search · stepper-order · palette-no-recompute: <ok | …>
 - Recompute anything on a palette-color change, or fork the shared palette machinery per module — that's `consolidate-shared-not-per-module`.
 - Reshape the record-view / list-view / common **engine** chrome (the stepper portal, the dropdown widget, the search control) — that's **/engine**.
 - Touch `createdBy`/`updatedBy` actor columns → **/column-actor**; `createdAt`/`updatedAt` or their Eastern-time display → **/column-timestamp**.
-- Plan or execute whole-module work, or any other column sweep → **/newsession**.
+- Plan or execute whole-module work, or any other column sweep → **/session-new**.
 - Commit, fold the schema change into a non-schema commit, or multiple-choice the user through a change it can drive.
 - Trigger on anything but the literal `/column-rownumber` invocation.

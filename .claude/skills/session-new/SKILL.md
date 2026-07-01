@@ -1,11 +1,11 @@
 ---
-name: newsession
-description: Prime a fresh session for a surgical change. Reads the named modules end-to-end across every layer (schema → domain → data → application → outbox → api → module dir → pages) before forming a plan or touching code. Treats the code as the source of truth — does not rely on memory or assumptions about current behavior. Use only on explicit `/newsession`.
+name: session-new
+description: Prime a fresh session for a surgical change. Reads the named modules end-to-end across every layer (schema → domain → data → application → outbox → api → module dir → pages) before forming a plan or touching code. Treats the code as the source of truth — does not rely on memory or assumptions about current behavior. Use only on explicit `/session-new`.
 ---
 
-# /newsession
+# /session-new
 
-The user's prompt after `/newsession` always defines the session's purpose and names the modules involved. Your job: before you reason about the change, do a complete end-to-end read of every named module. Then produce a checklisted, layer-grouped plan that references real files.
+The user's prompt after `/session-new` always defines the session's purpose and names the modules involved. Your job: before you reason about the change, do a complete end-to-end read of every named module. Then produce a checklisted, layer-grouped plan that references real files.
 
 ## Hard rules
 
@@ -13,7 +13,7 @@ The user's prompt after `/newsession` always defines the session's purpose and n
 - **Surgical, not speculative.** The plan must cite real files, real functions, real layers. No "we could maybe add a helper here" unless you've confirmed the helper doesn't already exist.
 - **Don't edit during analysis.** This skill is a read + plan phase. Apply changes only after the plan is laid out and the user has greenlit it (or the prompt clearly directs an immediate execution).
 - **Stay within the user's stated scope.** Do not propose refactors, abstractions, or rewrites of code the user didn't ask about. Note adjacent issues in the plan's "Open questions" — don't fold them into the work.
-- **Explicit-only.** Trigger only on literal `/newsession`. Never on phrases like "new session", "start over", "fresh take".
+- **Explicit-only.** Trigger only on literal `/session-new`. Never on phrases like "new session", "start over", "fresh take".
 
 ## Step 1 — List the modules in scope
 
@@ -104,4 +104,4 @@ If the plan is small and the user's prompt clearly directs execution, proceed to
 - Propose abstractions or refactors outside the user's stated scope.
 - Add ad-hoc layers (e.g. `web/components/*`) unless the user's prompt explicitly names a file there.
 - Edit code during the analysis phase.
-- Trigger on anything other than the literal `/newsession` invocation.
+- Trigger on anything other than the literal `/session-new` invocation.

@@ -13,7 +13,6 @@ Three checklists: every skill, every `CLAUDE.md`, and every other `.md` in the r
 - [ ] column-rownumber
 - [ ] column-sort
 - [ ] column-timestamp
-- [ ] confirm
 - [ ] dev-sync
 - [ ] diff-merge
 - [ ] dig
@@ -22,11 +21,12 @@ Three checklists: every skill, every `CLAUDE.md`, and every other `.md` in the r
 - [ ] engine
 - [ ] entity-picker
 - [ ] full-rename
-- [ ] handoff
-- [ ] newsession
 - [ ] newskill
 - [ ] quick-report
 - [ ] quick-task
+- [ ] session-confirm
+- [ ] session-handoff
+- [ ] session-new
 - [ ] table-csv-export
 - [ ] whattests
 

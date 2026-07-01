@@ -7,7 +7,7 @@ description: Master of the editable PaletteColor palette-tag column across the s
 
 `/column-color` makes you the owner of the **palette-color column** — the user-assigned, non-semantic `PaletteColor` visual tag, its `CellChip` that recolors a record's identity cell in the list, and the `PaletteColorDropdown` that lets a user re-select it in the record form. The user invokes it with a free-form intent — "install the color tag on templates", "audit the inventory color install for drift", "fold a copied dropdown back onto the shared one". Your job: ground in the live palette map, confirm the shared machinery, and drive the color column through every layer it touches.
 
-This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`). The neighbor `/column-rownumber` treats this chip as its optional "Piece 4"; **this skill owns it end to end.**
+This is an **editing** skill — it reads, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/session-new`). The neighbor `/column-rownumber` treats this chip as its optional "Piece 4"; **this skill owns it end to end.**
 
 ## The model (what the palette-color column IS)
 
@@ -137,6 +137,6 @@ no-recompute · guard · chip-recolors: <ok | …>
 - Reshape the `@/engines/common` chrome (the `PaletteColorDropdown` widget, the `CellChip`, the contracts color map) — that's **/engine**.
 - Own the record-# number, its sequence, exact-int search, or the stepper — that's **/column-rownumber** (this chip is its "Piece 4").
 - Touch `createdBy`/`updatedBy` actor columns → **/column-actor**; `createdAt`/`updatedAt` or their Eastern-time display → **/column-timestamp**.
-- Plan or execute whole-module work, or any other column sweep → **/newsession**.
+- Plan or execute whole-module work, or any other column sweep → **/session-new**.
 - Commit, fold the schema change into a non-schema commit, or multiple-choice the user through a change it can drive.
 - Trigger on anything but the literal `/column-color` invocation.

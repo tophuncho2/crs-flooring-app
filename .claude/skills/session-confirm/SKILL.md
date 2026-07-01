@@ -1,11 +1,11 @@
 ---
-name: confirm
-description: Trust-but-verify confirmation of your own "I already committed / pushed / ran the migration" claims. When you tell Claude the work is done and the tree is clean and it reflexively doubts you, run /confirm — it checks the actual git and database state (working tree clean, local HEAD landed on origin, Prisma migrations applied with no drift) and confirms you're right (you usually are) instead of asking you to redo something it never checked. Knows the dev family shares ONE database, so a sibling sub-branch's in-flight migration showing in the shared DB is expected, not drift. Read-only recon — never commits, pushes, or runs a migration. Explicit-only — invoke on /confirm.
+name: session-confirm
+description: Trust-but-verify confirmation of your own "I already committed / pushed / ran the migration" claims. When you tell Claude the work is done and the tree is clean and it reflexively doubts you, run /session-confirm — it checks the actual git and database state (working tree clean, local HEAD landed on origin, Prisma migrations applied with no drift) and confirms you're right (you usually are) instead of asking you to redo something it never checked. Knows the dev family shares ONE database, so a sibling sub-branch's in-flight migration showing in the shared DB is expected, not drift. Read-only recon — never commits, pushes, or runs a migration. Explicit-only — invoke on /session-confirm.
 ---
 
-# /confirm
+# /session-confirm
 
-You already did the thing — committed, pushed, ran the migration — and Claude is second-guessing you ("are you sure you committed?", "did you run the migration yet?") without checking. `/confirm` is the tool you run instead of typing that correction by hand. It reads the **actual git and DB state**, confirms your claim with evidence, and defaults to *you're right* — because you almost always are.
+You already did the thing — committed, pushed, ran the migration — and Claude is second-guessing you ("are you sure you committed?", "did you run the migration yet?") without checking. `/session-confirm` is the tool you run instead of typing that correction by hand. It reads the **actual git and DB state**, confirms your claim with evidence, and defaults to *you're right* — because you almost always are.
 
 It answers three questions, in order: **is the tree clean (committed)?** → **did my push land on origin?** → **are migrations applied with no drift?** — then hands back a one-glance verdict.
 
@@ -32,7 +32,7 @@ This is the whole reason the skill exists in this repo: you dispatch schema edit
 - **Real drift is the other direction.** Local migration folder not yet applied, or a `schema.prisma` edit with no paired `migration.sql` under `packages/db/prisma/migrations/`. Detect the orphan edit by inspection (mirror `packages/db/scripts/guard-prisma.js`'s logic — do **not** execute a migration).
 - **DO NOT COMMIT, never run migrations.** This skill only reports. In the rare case it writes anything, provide a commit message ≤17 words; the user commits.
 - **Drive, don't multiple-choice.** If something is genuinely off, state the one issue and the exact command the *user* runs — don't offer menus.
-- **Explicit-only.** Trigger on the literal `/confirm`. Never on "confirm this", "can you confirm", "I confirmed", or "yes".
+- **Explicit-only.** Trigger on the literal `/session-confirm`. Never on "confirm this", "can you confirm", "I confirmed", or "yes".
 
 ## Step 1 — Resolve branch, family, worktree
 
@@ -93,4 +93,4 @@ Verdict: <✅ ALL CLEAR — you're right | ⚠️ ONE THING | ❌ NOT YET>
 - Audit the working diff for layer boundaries, dead code, or wire mismatches — that's `/dig`.
 - Gate a promotion or list what `db:deploy` will apply to the next env — that's `/diff-merge`.
 - Flag a dev-family sibling's shared-DB migration as drift — on the dev family that's expected.
-- Trigger on anything but the literal `/confirm` invocation.
+- Trigger on anything but the literal `/session-confirm` invocation.

@@ -7,7 +7,7 @@ description: Rename a concept (model + column + every symbol, path, label, route
 
 `/full-rename` makes you the surgeon for a wholesale, in-place rename. The user invokes it with a free-form intent — "rename Management Companies → Entities", "rename warehouse → store across the stack", "the `number` column should be `code` everywhere". Your job: prove the scope against live code, settle the handful of decisions only the user can make, then drive the rename through **every layer** so the concept reads uniformly under its new name and `/check` is green — with **no new behavior**.
 
-This is an **editing** skill — it reads, settles decisions, then makes the change across ~50–170 files. It is not the pre-rename research pass (that's `/newsession`), not the engine-folder move (that's `/engine`), and not the gauntlet (that's `/check`).
+This is an **editing** skill — it reads, settles decisions, then makes the change across ~50–170 files. It is not the pre-rename research pass (that's `/session-new`), not the engine-folder move (that's `/engine`), and not the gauntlet (that's `/check`).
 
 ## The model (what a full rename IS)
 
@@ -127,5 +127,5 @@ build ✅   typecheck ✅   lint ✅(N warn)   test ✅(X/Y)   straggler grep: <
 - Typecheck across packages before rebuilding dists (the stale-dist phantom-error trap).
 - Run the migration, or edit a historical migration file — author the new pure-rename SQL; the user runs `db:deploy`.
 - Commit the change, or exceed a 17-word commit message.
-- Do the upstream module *research* (that's `/newsession`), the engine-folder *move design* (that's `/engine`), the cross-branch *work split* (that's `/dispatch`), or the gauntlet (that's `/check`) — call those by name.
+- Do the upstream module *research* (that's `/session-new`), the engine-folder *move design* (that's `/engine`), the cross-branch *work split* (that's `/dispatch`), or the gauntlet (that's `/check`) — call those by name.
 - Trigger on anything but the literal `/full-rename` invocation.

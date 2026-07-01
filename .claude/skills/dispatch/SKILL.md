@@ -1,6 +1,6 @@
 ---
 name: dispatch
-description: Split a body of work across the dev-N branches without two branches ever touching the same file. The dispatch analog of /newsession — partitions the work into a non-overlapping file-ownership map, then runs ONE research+writer agent pair per branch (a deep newsession-level researcher feeds a paired writer that authors the brief) so the briefs are produced in parallel, not written serially in the main thread. Each brief is ONE focused task: it states the session's intent, flags the decisions to make and potential gaps for that branch to solve, and names the research skill to run. The dispatcher window does not problem-solve or negotiate the work — it just starts the other windows; the heavy thinking happens in each dev-N session. Editing skill (writes briefs, never code). Explicit-only — invoke on /dispatch.
+description: Split a body of work across the dev-N branches without two branches ever touching the same file. The dispatch analog of /session-new — partitions the work into a non-overlapping file-ownership map, then runs ONE research+writer agent pair per branch (a deep newsession-level researcher feeds a paired writer that authors the brief) so the briefs are produced in parallel, not written serially in the main thread. Each brief is ONE focused task: it states the session's intent, flags the decisions to make and potential gaps for that branch to solve, and names the research skill to run. The dispatcher window does not problem-solve or negotiate the work — it just starts the other windows; the heavy thinking happens in each dev-N session. Editing skill (writes briefs, never code). Explicit-only — invoke on /dispatch.
 ---
 
 # /dispatch
@@ -9,7 +9,7 @@ description: Split a body of work across the dev-N branches without two branches
 
 **The mental model.** This window is the general contractor at the start of the day: the user walks in with intent, and your job is to assign each branch **one clear task** and send it off — fast, decisive, no negotiating the work here. The agents you fan out and the dev-N sessions that later receive the briefs are the branch managers and field supervisors: the real problem-solving, validation, and heavy thinking happen **in those windows**, not in this one. A brief's job is to tell the next session "here's the intent for this session, here are the decisions that do or may need to be made, run this skill" — and then get out of the way.
 
-This is the dispatch analog of `/newsession`: same end-to-end, code-is-source-of-truth read, aimed at **parallelizing work across worktrees without merge conflicts**. Two things make this skill what it is:
+This is the dispatch analog of `/session-new`: same end-to-end, code-is-source-of-truth read, aimed at **parallelizing work across worktrees without merge conflicts**. Two things make this skill what it is:
 1. **The file-ownership map** — conflict avoidance is the whole point; no path appears in two briefs.
 2. **The agent-pair pipeline** — you do NOT research everything and write all the briefs yourself in one serial pass. You partition, then dispatch a deep **researcher** + a paired **writer** per branch so the briefs are built in parallel by focused agents.
 
@@ -19,10 +19,10 @@ It is an **editing** skill, but the only files written are brief markdown under 
 
 - **Dispatch brief** — one markdown file under `.claude/DISPATCH/<slug>.md`, addressed to a single `dev-N` branch. Self-contained: a fresh Claude on that branch executes from it with zero outside context.
 - **File-ownership map** — the partition of every file the work touches into disjoint per-branch sets. No path appears in two briefs. This is the artifact that guarantees no merge conflict, and it is the **dispatcher's** job — not delegated.
-- **Research agent** — a deep, read-only `Explore` subagent scoped to ONE branch's ownership envelope. Does `/newsession`-level research across every layer for that slice and reports structured findings with real `path:line` cites. One per branch.
+- **Research agent** — a deep, read-only `Explore` subagent scoped to ONE branch's ownership envelope. Does `/session-new`-level research across every layer for that slice and reports structured findings with real `path:line` cites. One per branch.
 - **Writer agent** — a `general-purpose` subagent paired to one research agent. Consumes that branch's research findings + its ownership envelope + the chosen receiving-skill, and writes that branch's `.claude/DISPATCH/<slug>.md`. One per branch. This is why the main thread doesn't hand-write all the briefs.
 - **Receiving session** — the fresh Claude Code on the dev-N worktree that the brief is dropped into. It runs its own research skill and validates against the brief before acting (see "the receiving-session contract").
-- **Named skill** — the skill the brief tells the receiving session to run for its own research (e.g. `/newsession`, `/engine`). The user may name it; if not, you recommend or decide. The roster grows over time — today the top-tier skills are `/engine` and `/newsession`.
+- **Named skill** — the skill the brief tells the receiving session to run for its own research (e.g. `/session-new`, `/engine`). The user may name it; if not, you recommend or decide. The roster grows over time — today the top-tier skills are `/engine` and `/session-new`.
 - **Flag** — a decision the branch must make, or a potential gap/ambiguity the research surfaced, written into the brief's **Flags** section with a visual marker (`⚑`). Flags are *not* pre-decided here — they exist so the receiving session (and the user flipping into that window) sees at a glance "this branch has something to settle." The dispatcher records flags; the branch resolves them.
 - **Branch model** — `.bare` + per-branch worktrees; `dev-1, dev-2, … dev-N` are sub-branches off `dev`. The user runs all merges and migrations. You only produce briefs; you do not assign branches to humans, merge, or sync (that's the user + `/dev-sync`).
 - **Standalone rule** — a brief must not reference other branches, other briefs, or the umbrella epic. If two branches must coordinate on a shared file, that's a partition failure — fix the split, don't cross-reference.
@@ -71,13 +71,13 @@ Assign every touched area to exactly one branch along natural seams (by module/f
 Each brief tells its receiving session which skill to run for its own research. Resolve this per branch before the writer runs:
 
 - If the user named a skill for that branch (e.g. "have dev-2 rip `/engine`"), use it.
-- Otherwise recommend or decide from the work's nature — today `/engine` for engine/UI-primitive work, `/newsession` for a surgical cross-layer change. The roster grows; pick the best current fit and say why.
+- Otherwise recommend or decide from the work's nature — today `/engine` for engine/UI-primitive work, `/session-new` for a surgical cross-layer change. The roster grows; pick the best current fit and say why.
 
 ## Step 4 — Fan out one research+writer pair per branch
 
 For each branch, run a two-stage pipeline (pairs run in parallel across branches; stages are sequential within a branch):
 
-1. **Researcher (`Explore`, read-only, deep).** Scope it to that branch's ownership envelope only. Instruct it to do `/newsession`-level research across every relevant layer for that slice and return structured findings with real `path:line` cites: the exact files, the precise change points, the reference patterns to copy, the gotchas, and anything that would surprise the receiving session. **Explicitly have it call out two things separately:** (a) the **decisions the branch will need to make**, and (b) the **potential gaps or ambiguities** it spotted — so the writer can turn them into flags. The researcher surfaces these; it does not resolve them.
+1. **Researcher (`Explore`, read-only, deep).** Scope it to that branch's ownership envelope only. Instruct it to do `/session-new`-level research across every relevant layer for that slice and return structured findings with real `path:line` cites: the exact files, the precise change points, the reference patterns to copy, the gotchas, and anything that would surprise the receiving session. **Explicitly have it call out two things separately:** (a) the **decisions the branch will need to make**, and (b) the **potential gaps or ambiguities** it spotted — so the writer can turn them into flags. The researcher surfaces these; it does not resolve them.
 2. **Writer (`general-purpose`, can Write).** Hand it: the researcher's findings, the branch's ownership envelope (files it owns + explicit out-of-bounds, phrased without naming other branches), and the chosen receiving-skill. It writes `.claude/DISPATCH/<slug>.md` using the skeleton below — including a tight **Intent** line and a `⚑` **Flags** section built from the researcher's surfaced decisions/gaps (or "⚑ None" if the task is unambiguous). It must produce a professional, structured, self-contained brief scoped to **one task** — everything the receiving session needs, nothing that references another branch, and no pre-decided answers to the flags (those are the branch's to solve).
 
 The writers do the authoring; you orchestrate and then validate. Do not collapse this into writing the briefs yourself.
@@ -180,6 +180,6 @@ dev-2    | <the one task>         | <files / layer slice>  | /<skill> | <N>
 - Problem-solve the work, debate findings, weigh trade-offs, or negotiate solutions in the dispatcher window — those belong in each brief's `⚑ Flags` for the branch session to solve.
 - Pack one branch with multiple unrelated tasks — each brief is ONE focused task.
 - Pre-decide a brief's flags — the dispatcher records the decision/gap; the receiving branch settles it with the user.
-- Plan a single-branch surgical change — that's `/newsession`.
+- Plan a single-branch surgical change — that's `/session-new`.
 - Report branch ahead/behind state or open a dispatching session — that's `/dispatch-begin`.
 - Trigger on anything but the literal `/dispatch` invocation.

@@ -7,7 +7,7 @@ description: Master of the multi-column **Sort tool** across the columns → cli
 
 `/column-sort` makes you the owner of the **multi-column Sort tool** — the shared `SortMenuBody`, the `?sorts=field:dir,field:dir` URL contract, the per-module `SORT_OPTIONS` allowlist that drives the menu, and the pure Prisma order-by builders that turn the chosen fields into a query. The user invokes it with a free-form intent — "make properties sortable", "add a sortable Cost column to inventory", "audit the work-orders sort for drift", "fold that hand-maintained allowlist onto SORT_OPTIONS". Your job: ground in the live two-module reference (inventory + work-orders) and drive the sort field through every layer it touches so **no allowlist drifts**.
 
-This is an **editing** skill — it reads, classifies, then wires the field across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`). The Sort tool is **proven on exactly two modules** (inventory + work-orders); installing onto a third is the headline use.
+This is an **editing** skill — it reads, classifies, then wires the field across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/session-new`). The Sort tool is **proven on exactly two modules** (inventory + work-orders); installing onto a third is the headline use.
 
 ## The model (what the Sort tool IS)
 
@@ -70,7 +70,7 @@ The old header-caret plumbing — work-orders' `SORT_FIELD_BY_COLUMN`/`COLUMN_BY
 - **`order-by.ts` is pure: type-only Prisma, no client, no `apps/` import.** `@builders/db` may not import `apps/`. Keep the builder a pure field→clause map. `id` is always the last tiebreak; skip the createdAt tiebreak when the user already sorts createdAt.
 - **Don't "fix" `appendUniqueOrderBy`.** It dedupes by **full clause JSON, not by field** — field-level dedup happens upstream in the parsers. That's intentional.
 - **The web sync test must NOT import `@builders/db`.** Web tests resolve `@builders/db` to **dist**, not src — the cross-package import is a trap. The allowlist-sync guard stays web-only (UI + data + api); db-side coverage lives in `packages/db/tests`.
-- **No schema change to WIRE a field sortable.** The sort *wiring* uses existing fields/relations only — never add a column to make something sortable. If a target lacks the field a user wants to sort by, that's a different job (`/newsession`) — surface it, don't add a column here. (Adding an **index** to back a sort is a distinct, allowed follow-up — see the next rule.)
+- **No schema change to WIRE a field sortable.** The sort *wiring* uses existing fields/relations only — never add a column to make something sortable. If a target lacks the field a user wants to sort by, that's a different job (`/session-new`) — surface it, don't add a column here. (Adding an **index** to back a sort is a distinct, allowed follow-up — see the next rule.)
 - **Every sorted scalar column should be backed by a btree index.** Sort wiring works without one, but an unindexed `ORDER BY ... LIMIT` is a full-table sort. Check coverage as part of install/audit; if missing, author `@@index([col, id])` + the matching SQL migration as its **own commit** (per `author-migration-with-schema-edit` — `db:deploy` only *applies* pre-written files). Distinguish:
   - **Local scalar sort** → needs a btree index; prefer a composite `(col, id)` so the `id` tiebreak is served in one scan — especially when the column is **tie-prone** (bulk-imported `createdAt`/`updatedAt`, low-cardinality quantities, DATE columns).
   - **Relation-name sort** → the index lives on the **related `name` column**, not the parent (the user already understands the join fields — don't belabor).
@@ -163,9 +163,9 @@ four sets agree · order-by case · tiebreak invariants · menu shows field · h
 - Collapse the two **server** allowlists (`*_LIST_SORT_FIELDS`, `*_UI_SORT_FIELDS`) onto the client source — they stay independent for defense-in-depth.
 - "Fix" `appendUniqueOrderBy` (it dedupes by full clause JSON by design), or break the `id`-last / skip-createdAt-tiebreak / secondary-createdAt-keeps-direction invariants.
 - Import `@builders/db` from a web test (dist trap), or import `apps/` from `order-by.ts` (it's pure, type-only Prisma).
-- Add a schema **column** to make something sortable — the sort *wiring* uses existing fields only; a missing field is a `/newsession` job. (Adding a backing **index** for an already-sortable column is in scope — but it ships as its own migration + commit, never folded into the wiring.)
+- Add a schema **column** to make something sortable — the sort *wiring* uses existing fields only; a missing field is a `/session-new` job. (Adding a backing **index** for an already-sortable column is in scope — but it ships as its own migration + commit, never folded into the wiring.)
 - Redesign the shared `SortMenuBody`, the `?sorts=` codec, or the toolbar chrome — that's **/engine**.
 - Touch `createdBy`/`updatedBy` → **/column-actor**; `createdAt`/`updatedAt` display → **/column-timestamp**; the PaletteColor chip → **/column-color**; the record-# sequence/stepper → **/column-rownumber**.
-- Plan or execute whole-module work, or author another skill → **/newsession** / **/newskill**.
+- Plan or execute whole-module work, or author another skill → **/session-new** / **/newskill**.
 - Commit, run migrations, or multiple-choice the user through a change it can drive.
 - Trigger on anything but the literal `/column-sort` invocation.

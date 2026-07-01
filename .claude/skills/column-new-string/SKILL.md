@@ -7,7 +7,7 @@ description: Master of adding a brand-new STRING column/field to a module end-to
 
 `/column-new-string` makes you the owner of adding a **brand-new string column** to a module. The user invokes it with a free-form intent — "add a `purchaseOrderNumber` to work orders", "put a `reference` code on properties shown in the list and CSV". Your job: deep-dig the target module by tracing an existing analogous string field, classify the new field's visibility, and drive it through every layer it touches — including the one that silently swallows it.
 
-This is an **editing** skill — it reads the module end-to-end, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/newsession`, which this skill's deep-dig step borrows from).
+This is an **editing** skill — it reads the module end-to-end, classifies, then makes the change across the stack. It is not a read-only audit (that's `/quick-report`/`/dig`) and not a whole-module plan (that's `/session-new`, which this skill's deep-dig step borrows from).
 
 ## Scope — exactly one kind of column
 
@@ -58,7 +58,7 @@ The front-end does **not** send the whole draft. The update path runs through a 
 
 ## Step 1 — Deep-dig the target module
 
-Before proposing anything, read the current reality (this is a focused `/newsession`-style read):
+Before proposing anything, read the current reality (this is a focused `/session-new`-style read):
 
 1. **Confirm scope.** The field is a plain string, not an FK, not generated. If not, hand off.
 2. **Pick the analog.** Choose the closest existing string field of the same visibility (free text → `internalNotes`/`description`; short code → a sibling VarChar). It is your edit-for-edit template.
@@ -144,6 +144,6 @@ Index + search bar for <field>: → /column-new-index
 - Forget the client save-payload builders — the whole reason it exists; an editable field missing from `drafts.ts`/`*-create-client.tsx` is silently dropped.
 - Add the field to the printed file/PDF unless the user asks — operational columns stay off the slip.
 - Reshape engine / list-view / record-view chrome, or the export mechanism itself — that's **/engine**.
-- Plan or execute whole-module work or a broad multi-column sweep → **/newsession**; author another skill → **/newskill**.
+- Plan or execute whole-module work or a broad multi-column sweep → **/session-new**; author another skill → **/newskill**.
 - Commit, fold the schema into a non-schema commit, or multiple-choice the user through a change it can drive.
 - Trigger on anything but the literal `/column-new-string` invocation.
