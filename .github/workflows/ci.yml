@@ -42,14 +42,18 @@ jobs:
       #     at config-load time, so the `npm ci` postinstall `prisma generate`
       #     aborts when it's unset (PrismaConfigEnvError). generate never opens a
       #     connection — it only needs the var to resolve.
-      #   - NEXTAUTH_SECRET / NEXTAUTH_URL: `next build` collects page data for
-      #     /api/auth/[...nextauth], which validates the auth env schema
-      #     (server/platform/env.ts). The localhost URL is fine because the
-      #     production https check is gated on RAILWAY_ENVIRONMENT_NAME (unset here).
+      #   - BETTER_AUTH_* / GOOGLE_*: `next build` collects page data for the
+      #     auth-backed API routes (better-auth initializes at module load), which
+      #     validates the auth env schema (server/platform/env.ts): a valid URL, a
+      #     secret >=16 chars, and non-empty Google client id/secret. The localhost
+      #     URL is fine because the production https check (assertProductionAuthUrl)
+      #     is gated on RAILWAY_ENVIRONMENT_NAME, which is unset here.
       # Do NOT point any of these at real infrastructure.
       DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
-      NEXTAUTH_SECRET: "ci-build-only-not-a-real-secret"
-      NEXTAUTH_URL: "http://localhost:3000"
+      BETTER_AUTH_URL: "http://localhost:3000"
+      BETTER_AUTH_SECRET: "ci-build-only-not-a-real-secret"
+      GOOGLE_CLIENT_ID: "ci-build-only"
+      GOOGLE_CLIENT_SECRET: "ci-build-only"
 
     steps:
       - name: Checkout (full history for the migration-discipline diff)
