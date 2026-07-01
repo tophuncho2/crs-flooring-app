@@ -93,6 +93,29 @@ Requested/remaining balances (imports) and quantities remain **unit-agnostic num
 units across rows is a deliberate user choice, not a system conversion
 (`computeFilterRemainingStock`, `staged-inventory-filter-rows/types.ts:41-57`).
 
+### Seeding principle — the product seeds the unit; each row edits it within its own window
+
+The **product** is the catalog source of truth for the unit: a user sets the canonical `unitId` on
+the product, and **everywhere a product is selected, picking (or changing) that product seeds its
+`unitId` into that row's unit FK picker.** The product-pick is the seeding *trigger*; from there the
+seeded value **stays editable for exactly as long as that row's lifecycle allows edits**, then locks
+per the unit-model table above. "Seed + editable" means *seed on product-select, then editable
+within that row's own edit window* — **not** "editable forever everywhere."
+
+| Where a product is picked | Seed trigger | Editable window after seeding |
+|---|---|---|
+| Inventory manual create | on product-pick in the create form | **create only**, then frozen (immutable after) |
+| Staged inventory row / filter row | on product-pick (add) or product-change (modify) | **while DRAFT** (before QUEUED/IMPORTED); frozen once it materializes onto an inventory row |
+| Template item / WO item | on product-pick / product-change | **always** (seeds from `product.unit`, user may override; sync copies the FK) |
+
+**Re-seed vs. preserve.** Changing the picked product re-seeds the unit from the new product (a new
+product is a new default meaning); editing the unit alone, without changing the product,
+**preserves the user's override**. The WO material-items save already models this exactly — its
+`productChanged` guard re-snapshots only when the product actually changed
+(`save-work-order-material-items-section.ts:119-139`); every FK site in 2B/2C follows the same
+trigger. This supersedes today's blunter behavior, where staged-row modify drops the unit entirely
+and template modify re-stamps it on every save.
+
 ---
 
 ## UoM rendering — name vs abbreviation (per-site, fixed)
@@ -284,7 +307,9 @@ unit forward. **No coverage, no lock machinery** (both deferred).
 - [ ] `create-pending-adjustment.ts:122-125` — stamp `unitId` from `inventory.unitId`.
 - [ ] `update-pending-adjustment.ts` — leave unit out of the editable patch (ledger).
 - [ ] `save-import-staged-inventory-section.ts:127-142,179-227` — seed `unitId` from product on add;
-      **allow editing it on modify** (no longer a re-stamped snapshot).
+      on modify, **re-seed only when the product changes** (mirror the WO `productChanged` guard),
+      otherwise **preserve the user's edited `unitId`** — today modify drops the unit entirely
+      (`:236-247`), so it becomes an editable, product-seeded field.
 - [ ] **`materialize-imported-rows.ts:44-67`** — the linchpin: read `row.unitId` (**not**
       `row.product.*`); `stagedInventoryRowSelect` for materialization selects the staged `unitId`.
 
