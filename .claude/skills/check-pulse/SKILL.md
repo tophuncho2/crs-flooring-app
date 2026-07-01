@@ -84,7 +84,7 @@ Drill-into-red:
 ## What this skill does NOT do
 
 - **Fix, deploy, migrate, or write anything** — it runs the read-only board and reports; remediation is a separate deliberate task.
-- **Run the build gauntlet** — that's `/check` (build/typecheck/lint/test). This skill has no source to verify.
+- **Run the build gauntlet** — that's `/check-gauntlet` (build/typecheck/lint/test). This skill has no source to verify.
 - **Watch lower envs** — the pulse is prod (main) only, by design; it does not check staging or dev-N.
 - **Report scale/row-count metrics** — this pulse is HEALTH-only (stuck / dead-lettered / backed-up). Volume/scale reads are a SEPARATE future pulse per [[morning-pulse-check]].
 - **Edit `bin/pulse.sh` or its thresholds** — tuning the gatherer or adding a §7 (e.g. Sentry) is a code change, not this skill's job.

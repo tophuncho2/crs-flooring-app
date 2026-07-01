@@ -1,9 +1,9 @@
 ---
-name: check
-description: Run the full local build gauntlet — clean caches, then build, typecheck, lint, test — and report a structured PASS/FAIL table with error counts and a TL;DR. Use on /check, or when the user asks to "run the checks", "run the gauntlet", "clean and rebuild", or verify the tree compiles/lints/tests/builds before committing or promoting.
+name: check-gauntlet
+description: Run the full local build gauntlet — clean caches, then build, typecheck, lint, test — and report a structured PASS/FAIL table with error counts and a TL;DR. Use on /check-gauntlet, or when the user asks to "run the checks", "run the gauntlet", "clean and rebuild", or verify the tree compiles/lints/tests/builds before committing or promoting.
 ---
 
-# /check
+# /check-gauntlet
 
 Run the project's local verification gauntlet and report results in one pass. This is the sequence the user runs by hand before committing or promoting:
 

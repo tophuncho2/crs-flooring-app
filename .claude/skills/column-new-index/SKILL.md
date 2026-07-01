@@ -91,7 +91,7 @@ Touch every search layer (all are required — a missing one drops the filter at
 ## Step 4 — Verify
 
 - **Build order:** `npm run db:generate`, then build domain → db → application, **then** `npm run typecheck` and tests. Don't typecheck before the dist rebuild.
-- Run the full gauntlet (`/check`) for a cross-layer change, or at minimum the touched workspaces' tests + web typecheck.
+- Run the full gauntlet (`/check-gauntlet`) for a cross-layer change, or at minimum the touched workspaces' tests + web typecheck.
 - **Manually reason through the filter path** — does the typed value reach the URL, the parser, the validator, the `where`, and the index? Recommend the user smoke-test: type a substring in the Search menu → the list filters server-side.
 
 ## Step 5 — Report (per project CLAUDE.md)

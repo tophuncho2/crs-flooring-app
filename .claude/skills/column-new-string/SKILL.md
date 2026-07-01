@@ -93,7 +93,7 @@ Touch only the layers the visibility classification lit up:
 ## Step 4 — Verify
 
 - **Build order:** `npm run db:generate`, then build domain → db → application, **then** `npm run typecheck` and tests. Don't typecheck before the dist rebuild.
-- Run the full gauntlet (`/check`) for a cross-layer change, or at minimum the touched workspaces' tests + web typecheck.
+- Run the full gauntlet (`/check-gauntlet`) for a cross-layer change, or at minimum the touched workspaces' tests + web typecheck.
 - **Manually reason through the save path** — does the field reach the PATCH/POST body, the validator, and the DB? The trap passes typecheck, so eyeball `drafts.ts` + the create body. Recommend the user smoke-test: set the field → save → reopen → check the DB row.
 
 ## Step 5 — Report (per project CLAUDE.md)

@@ -11,7 +11,7 @@ Common case: invoked after `/session-new` once a sweep is partway done. But /dig
 
 ## Hard rules
 
-- **Read-only.** No edits, commits, migrations, builds, or test runs. For the build/typecheck/lint/test gauntlet, /check is the right skill.
+- **Read-only.** No edits, commits, migrations, builds, or test runs. For the build/typecheck/lint/test gauntlet, /check-gauntlet is the right skill.
 - **Scope = current session work.** Whatever has been edited, discussed, or queued *in this session* — not necessarily the modules /session-new originally named. The session may have drifted; audit where it actually is.
 - **Code on disk + git diff are the source of truth.** Do not audit against conversation memory of "what we did" when the file says otherwise.
 - **Explicit-only.** Trigger on literal `/dig`. Never on phrases like "dig in", "audit this", or "check on things".
@@ -105,7 +105,7 @@ Keep findings tight. One line of context, one line of why-it-matters. The user r
 
 ## What this skill does NOT do
 
-- Run build / typecheck / lint / test. (That's /check.)
+- Run build / typecheck / lint / test. (That's /check-gauntlet.)
 - Edit code, write tests, or fix anything it surfaces.
 - Re-read modules end-to-end from scratch. (That's /session-new.) /dig assumes session context is already loaded; it audits, not primes.
 - Require /session-new to have been run earlier. Common case, not a prerequisite.

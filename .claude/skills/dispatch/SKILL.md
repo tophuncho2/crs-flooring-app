@@ -34,7 +34,7 @@ It is an **editing** skill, but the only files written are brief markdown under 
 - **One research+writer pair per branch — don't write the briefs yourself.** For each branch: spawn a deep researcher (read-only, scoped to that branch's envelope), then feed its findings to a paired writer that authors the brief. Researcher→writer is sequential per branch; the pairs run in parallel across branches. The main thread orchestrates and validates; it does not hand-author all three briefs in one serial pass.
 - **The brief carries the receiving-session contract.** Every brief must (a) tell the receiving session which skill to run for its own research, (b) tell it to validate the brief against the live code before trusting it, and (c) honor mode: **plan mode → produce a plan and stop; auto mode → execute** — but research-and-validate FIRST either way. The brief is a high-confidence map, never a substitute for the receiving session reading the code.
 - **Every brief is standalone.** No mention of other branches, other dispatch files, or the parent epic. A `dev-N` reader knows only its own brief. Self-test: "could someone who has seen *only this file* execute it?"
-- **Briefs plan; they don't pre-execute.** Each brief carries the project non-negotiables: **migration written, not run** (the user runs migrations), **`/check` green before done**, **≤17-word commit message**, **DO NOT COMMIT** (the user commits).
+- **Briefs plan; they don't pre-execute.** Each brief carries the project non-negotiables: **migration written, not run** (the user runs migrations), **`/check-gauntlet` green before done**, **≤17-word commit message**, **DO NOT COMMIT** (the user commits).
 - **You write only `.claude/DISPATCH/` files.** No code edits, no migrations, no git mutations, no commits. Provide a ≤17-word commit message for the briefs; the user commits them.
 - **This window dispatches; it does not problem-solve or negotiate.** Your job here is to *start the other windows*, not to solve the work. Make the **dispatch decisions** decisively and on your own — the partition, each branch's one task, its scope, its receiving-skill — by reading the code and the user's context; never put them to the user as menus, and never debate the work's solution, audit findings, or trade-offs in this chat. The only thing that comes back to this window is a genuine **dispatch blocker** (an unavoidable shared file that breaks the no-overlap guarantee, or a branch count you truly can't determine): surface it in one line and stop. Everything else is either resolved by reading code or deferred into the brief as a flag.
 - **One specific task per branch.** Each brief is ONE coherent mission, tightly scoped — not ten unrelated things packed into one file. Don't pad a branch with extra work to fill it. If the user handed a branch several unrelated threads, that's a signal they belong on separate briefs/branches, not bundled — say so in one line rather than packing them.
@@ -132,7 +132,7 @@ Pages       — <path:line> — <change>
 Write the migration; DO NOT run it. The user runs all migrations.
 
 ## Done means
-- /check green (build + typecheck + lint + test)
+- /check-gauntlet green (build + typecheck + lint + test)
 - Commit message ≤17 words ready (DO NOT COMMIT — the user commits)
 ```
 

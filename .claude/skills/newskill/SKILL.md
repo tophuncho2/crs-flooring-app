@@ -7,7 +7,7 @@ description: Author a new Claude Code skill under .claude/skills/ that fits this
 
 `/newskill <intent for the new skill>` makes you the author of a new skill. The user invokes it with a free-form intent — "a skill that audits outbox relay lag", "a read-only skill that maps a module's zod payloads", "a skill that scaffolds a new use case". Your job: ground in the four sources that make a skill correct here, then write a `SKILL.md` that reads like the ones already in `.claude/skills/`.
 
-This is an **editing** skill — it reads, decides the skill's shape, then writes the file. It is not a read-only recon (that's `/quick-report`/`/dig`) and not a build gauntlet (that's `/check`).
+This is an **editing** skill — it reads, decides the skill's shape, then writes the file. It is not a read-only recon (that's `/quick-report`/`/dig`) and not a build gauntlet (that's `/check-gauntlet`).
 
 ## The model (what a skill IS here)
 

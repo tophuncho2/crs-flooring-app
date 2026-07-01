@@ -112,7 +112,7 @@ For an **install** (scope each step to the one column for an add):
 ## Step 4 — Verify
 
 - **Build order:** build `@builders/domain` → `@builders/db` → `@builders/application` (the use case consumes the export read via dist), then `npm run typecheck`. No `db:generate` — there's no schema change.
-- **Targeted tests:** the domain manifest spec, the application use-case spec, and the web query-builder spec. Then **the full suite** (`/check`) — the export touches domain, db, application, and web.
+- **Targeted tests:** the domain manifest spec, the application use-case spec, and the web query-builder spec. Then **the full suite** (`/check-gauntlet`) — the export touches domain, db, application, and web.
 - **Invariant sanity:** manifest values pure + mirror the list cell (live relations, Eastern timestamps, `""` for nulls); `where`/`orderBy` reused; `filters.id` honored in the shared where; cap clamped to 5000 + ids capped; `{bom:true}`; route on `EXPORT` bucket with `{m}.export` scope and no mutation gauntlet; `ListExportButton` direct in `ListActionBar`; selection cleared on scope change + toggle-off.
 - **UI sanity (optional, `/run`):** open the list, apply a filter + sort, Export → file matches the on-screen scope, has a BOM, the picked columns, and the intended exclusions; tick rows → only those export; change a filter with ticks → selection clears; force the cap → "first N of M" message.
 - Report real counts. For an **audit**, walk each layer against the checklist and report which carry the export vs which drifted/forked.
