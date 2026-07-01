@@ -16,7 +16,7 @@ Think of it as the forward-looking cousin of `/report`: same terse, checklisted 
 - **Lead with hints.** Whatever the user flagged after `/handoff` is the priority — make sure it lands prominently in the brief. If they gave no hints, infer the most likely next step from where the session ended.
 - **Tight, not terse.** Longer than `/report` because it carries state, but still checklisted and scannable — no rambling prose. If it runs past roughly a screen and a half, you're including things the next session doesn't need.
 - **Carry the open loops.** Explicitly list what was left unfinished, undecided, or unverified — that's the highest-value part of a handoff. Don't bury or omit it.
-- **Respect the project rules.** Honor CLAUDE.md (e.g. DO NOT COMMIT, layer-at-a-time, commit-message format) and note any in-flight constraint the next session must keep.
+- **Carry constraints, don't restate CLAUDE.md.** The next session already loads CLAUDE.md (DO NOT COMMIT, layer-at-a-time, commit-message format) — don't re-state those. Note only the *in-flight* constraints specific to this work that the next session must keep.
 - **Explicit-only.** Trigger only on literal `/handoff`. Never on "hand off", "handoff this", etc.
 
 ## Output shape
@@ -38,7 +38,8 @@ HANDOFF — <one-line subject of the next session>
 - [ ] <thing to verify>
 
 ## Watch out
-- <gotcha, constraint, or project rule the next session must respect>
+- <in-flight constraint / blocker — a PENDING decision awaiting sign-off, a sacred file, a dispatch file-ownership boundary>
+- <sequencing fact — a pending deploy, a script that must be run, an UNRUN migration to apply after deploy, a shared dev-DB sibling caveat>
 
 ## Key files
 - `path` — <why it matters>
@@ -46,6 +47,8 @@ HANDOFF — <one-line subject of the next session>
 ````
 
 Wrap the whole brief in a fenced block so the user can copy it in one go. Drop any section that's genuinely empty (e.g. no `Watch out`), but never drop **Open / next** — a handoff with nothing open isn't a handoff.
+
+**Watch out** carries concrete facts, never a default reassurance — the *specific* in-flight constraint or sequencing step this work leaves behind (e.g. "migration 20260701… UNRUN, apply after deploy", "run `bin/backfill.sh` before the next import", "dev-1 shares the dev DB with sibling sub-branches"), not generic advice. Git / push / migration *verification* is `/confirm`'s job — don't re-verify it here; just record the forward-looking sequencing fact.
 
 ## What this skill does NOT do
 
