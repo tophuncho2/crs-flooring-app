@@ -23,14 +23,10 @@ export const inventoryRowSelect = {
     },
   },
   // Canonical unit FK + resolved unit (UoM epic 2B). The normalizer derives the
-  // display abbrev/name from `unit`; the frozen snapshot columns below stay
-  // selected as the transition fallback (dropped in Phase C).
+  // display abbrev/name from `unit`; the frozen snapshot columns are fully
+  // de-referenced (2D drops them).
   unitId: true,
   unit: { select: { id: true, name: true, abbreviation: true } },
-  stockUnitName: true,
-  stockUnitAbbrev: true,
-  sendUnitName: true,
-  sendUnitAbbrev: true,
   rollPrefix: true,
   rollNumber: true,
   dyeLot: true,

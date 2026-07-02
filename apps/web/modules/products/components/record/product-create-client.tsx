@@ -35,10 +35,6 @@ const EMPTY_PRODUCT: ProductRecord = {
   // Placeholder default — the create flow renders no palette picker; new rows
   // fall to the DB default SLATE.
   paletteColor: "SLATE",
-  sendUnitName: "",
-  sendUnitAbbrev: "",
-  stockUnitName: "",
-  stockUnitAbbrev: "",
   coveragePerUnit: "",
   productNamingAddon: "",
   createdAt: "",

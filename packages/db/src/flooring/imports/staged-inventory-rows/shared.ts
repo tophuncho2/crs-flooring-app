@@ -19,14 +19,9 @@ export const stagedInventoryRowSelect = {
       style: true,
       color: true,
       // Product's own unit FK + resolved unit (UoM epic 2B) — seeds a staged
-      // row's `unitId` on add / product-change; the frozen strings are the
-      // transition fallback.
+      // row's `unitId` on add / product-change.
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
-      stockUnitName: true,
-      stockUnitAbbrev: true,
-      sendUnitName: true,
-      sendUnitAbbrev: true,
       category: {
         select: {
           id: true,
@@ -48,8 +43,6 @@ export const stagedInventoryRowSelect = {
   startingStock: true,
   cost: true,
   freight: true,
-  stockUnitName: true,
-  stockUnitAbbrev: true,
   isImported: true,
   status: true,
   note: true,

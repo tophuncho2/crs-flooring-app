@@ -60,11 +60,9 @@ const templateDetailSelect = {
       quantity: true,
       // Item's own unit FK + resolved unit (UoM epic 2C) — create/update return
       // through this select, so it must join `unit` or the returned item's unit
-      // comes back blank. Frozen sendUnit* = fallback.
+      // comes back blank. Snapshot columns fully de-referenced (2D drops them).
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
-      sendUnitName: true,
-      sendUnitAbbrev: true,
       notes: true,
       createdAt: true,
       updatedAt: true,

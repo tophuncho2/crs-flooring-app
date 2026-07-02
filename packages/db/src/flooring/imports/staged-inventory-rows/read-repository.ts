@@ -30,10 +30,10 @@ export function normalizeStagedInventoryRow(
     }),
     categoryId: row.product.category.id,
     unitId: row.unitId ?? "",
-    // Unit display derives from the row's own unit FK join (UoM epic 2B); the
-    // frozen snapshot columns are the transition fallback (Phase C drops them).
-    stockUnitName: row.unit?.name ?? row.stockUnitName ?? "",
-    stockUnitAbbrev: row.unit?.abbreviation ?? row.stockUnitAbbrev ?? "",
+    // Unit display derives solely from the row's own unit FK join (UoM epic 2B);
+    // snapshot columns fully de-referenced (2D drops them).
+    stockUnitName: row.unit?.name ?? "",
+    stockUnitAbbrev: row.unit?.abbreviation ?? "",
     rollPrefix: row.rollPrefix,
     rollNumber: row.rollNumber ?? "",
     dyeLot: row.dyeLot ?? "",
@@ -77,8 +77,9 @@ export async function getStagedInventoryById(
 /**
  * Worker-only read primitive for the materialize-import flow. Returns the raw
  * `StagedInventoryRowPayload` (with the full join graph) instead of the
- * normalized `StagedInventoryRecord` because the materialize use case needs
- * the unit abbreviations that the normalizer flattens away.
+ * normalized `StagedInventoryRecord` because the materialize use case needs the
+ * raw `unitId` FK (carried forward onto the new inventory row) before the
+ * normalizer flattens it to display strings.
  *
  * Filters by `status = QUEUED` so any row that drifted state (raced edit /
  * delete / retry) is silently excluded — the caller compares the returned

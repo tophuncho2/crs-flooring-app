@@ -48,10 +48,6 @@ export type ProductRecord = {
   color: string
   // Non-semantic palette tag (metadata-only). Distinct from the physical `color`.
   paletteColor: PaletteColor
-  sendUnitName: string
-  sendUnitAbbrev: string
-  stockUnitName: string
-  stockUnitAbbrev: string
   coveragePerUnit: string
   productNamingAddon: string
   createdAt: string
@@ -130,10 +126,6 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     style: product.style ?? "",
     color: product.color ?? "",
     paletteColor: product.paletteColor,
-    sendUnitName: product.sendUnitName ?? "",
-    sendUnitAbbrev: product.sendUnitAbbrev ?? "",
-    stockUnitName: product.stockUnitName ?? "",
-    stockUnitAbbrev: product.stockUnitAbbrev ?? "",
     coveragePerUnit: product.coveragePerUnit?.toString() ?? "",
     productNamingAddon: product.productNamingAddon ?? "",
     createdAt: product.createdAt.toISOString(),
@@ -203,13 +195,13 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
     categoryId: product.categoryId,
     unitId: product.unitId ?? "",
     categoryName: product.category?.name ?? "",
-    // Unit label + abbrev derive from the product's own unit FK (UoM epic 2B);
-    // the frozen snapshot strings are the transition fallback (they're null on
-    // products created after 2A). Row pickers seed a row's unit from these.
-    sendUnitName: product.unit?.name ?? product.sendUnitName ?? "",
-    sendUnitAbbrev: product.unit?.abbreviation ?? product.sendUnitAbbrev ?? "",
-    stockUnitName: product.unit?.name ?? product.stockUnitName ?? "",
-    stockUnitAbbrev: product.unit?.abbreviation ?? product.stockUnitAbbrev ?? "",
+    // Unit label + abbrev derive solely from the product's own unit FK (UoM epic
+    // 2B); snapshot columns fully de-referenced (2D drops them). Row pickers seed
+    // a row's unit from these.
+    sendUnitName: product.unit?.name ?? "",
+    sendUnitAbbrev: product.unit?.abbreviation ?? "",
+    stockUnitName: product.unit?.name ?? "",
+    stockUnitAbbrev: product.unit?.abbreviation ?? "",
   }
 }
 

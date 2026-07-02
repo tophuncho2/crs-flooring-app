@@ -29,10 +29,6 @@ export const productRowSelect = {
   // Non-semantic palette tag. On the row/detail reads only — the skinny
   // `productOptionSelect` omits it (pickers don't render the chip).
   paletteColor: true,
-  sendUnitName: true,
-  sendUnitAbbrev: true,
-  stockUnitName: true,
-  stockUnitAbbrev: true,
   coveragePerUnit: true,
   productNamingAddon: true,
   createdAt: true,
@@ -66,25 +62,20 @@ export const productDetailSelect = {
 
 // Skinny shape for picker dropdowns. Includes `categoryId` so consumers can
 // implement category-scoped product filtering in row pickers without an
-// additional query, plus BOTH unit snapshots (send + stock) so material-item
-// grids and staged-inventory-rows grids can render their respective unit
-// suffixes beside numeric inputs without a second fetch.
+// additional query. Downstream row pickers seed a row's unit from the picked
+// product; the option's unit label + abbrev derive from the `unit` join.
 export const productOptionSelect = {
   id: true,
   name: true,
   categoryId: true,
   // Canonical unit FK (UoM epic 2A) + resolved unit (2B). Downstream row pickers
-  // seed a row's unit from the picked product; the option's stock-unit label +
-  // abbrev derive from `unit` (the frozen strings are the transition fallback).
+  // seed a row's unit from the picked product; the option's unit label + abbrev
+  // derive solely from `unit` (snapshot columns fully de-referenced, 2D drops them).
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
   category: { select: { name: true } },
   style: true,
   color: true,
-  sendUnitName: true,
-  sendUnitAbbrev: true,
-  stockUnitName: true,
-  stockUnitAbbrev: true,
 } as const
 
 export type ProductRowPayload = Prisma.FlooringProductGetPayload<{ select: typeof productRowSelect }>

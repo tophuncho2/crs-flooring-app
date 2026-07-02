@@ -474,11 +474,9 @@ export async function getWorkOrderForFileGeneration(
       dyeLot: true,
       rollNumber: true,
       location: true,
-      // Adjustment's own unit FK (UoM epic 2B) resolves the printed abbrev; the
-      // frozen stockUnitAbbrev is the transition fallback (null on post-2B rows —
-      // create stopped stamping it once the FK became authoritative).
+      // Adjustment's own unit FK (UoM epic 2B) resolves the printed abbrev;
+      // snapshot columns fully de-referenced (2D drops them).
       unit: { select: { abbreviation: true } },
-      stockUnitAbbrev: true,
       productId: true,
       product: { select: { name: true, style: true, color: true } },
     },
@@ -506,7 +504,7 @@ export async function getWorkOrderForFileGeneration(
       location: adj.location ?? "",
       // Unit abbrev derives from the adjustment's own unit FK join (UoM epic 2B);
       // the frozen snapshot string is the transition fallback.
-      stockUnitAbbrev: adj.unit?.abbreviation ?? adj.stockUnitAbbrev ?? "",
+      stockUnitAbbrev: adj.unit?.abbreviation ?? "",
     }
     if (adj.productId !== currentProductId) {
       currentProductId = adj.productId
@@ -536,10 +534,9 @@ export async function getWorkOrderForFileGeneration(
     select: {
       id: true,
       quantity: true,
-      // Item's own unit FK (UoM epic 2C) resolves the printed abbrev; the frozen
-      // sendUnitAbbrev is the transition fallback (blank on post-2A products).
+      // Item's own unit FK (UoM epic 2C) resolves the printed abbrev; snapshot
+      // columns fully de-referenced (2D drops them).
       unit: { select: { abbreviation: true } },
-      sendUnitAbbrev: true,
       notes: true,
       productId: true,
       product: { select: { name: true, style: true, color: true } },
@@ -552,7 +549,7 @@ export async function getWorkOrderForFileGeneration(
     const projection = {
       id: item.id,
       quantity: item.quantity === null ? "" : item.quantity.toString(),
-      unitAbbrev: item.unit?.abbreviation ?? item.sendUnitAbbrev ?? "",
+      unitAbbrev: item.unit?.abbreviation ?? "",
       notes: item.notes ?? "",
     }
     if (item.productId !== currentMaterialProductId) {

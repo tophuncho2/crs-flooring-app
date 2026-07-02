@@ -43,14 +43,6 @@ export type ProductRow = {
   // Non-semantic palette tag (user-assigned visual color). Metadata-only — no
   // business logic reads it. Distinct from the free-text physical `color` above.
   paletteColor: PaletteColor
-  // Send / stock unit name + abbreviation snapshots, stamped onto
-  // the product row at write time from the chosen category. Reads never join
-  // through `category → unit_of_measure`. Empty string when the category does
-  // not have the corresponding unit configured.
-  sendUnitName: string
-  sendUnitAbbrev: string
-  stockUnitName: string
-  stockUnitAbbrev: string
   // Coverage per stock unit. Mutable reference value (no business logic depends
   // on it yet) — stored as a string here; the read normalizer converts the
   // Decimal column to a string and "" when null.

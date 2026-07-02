@@ -78,13 +78,10 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     }),
     categoryId: payload.product.category.id,
     unitId: payload.unitId,
-    // Unit display derives from the FK join (UoM epic 2B) — a UoM rename flows
-    // through. Frozen snapshot columns are the transition fallback (Phase C
-    // drops them). Send unit is dead (send===stock) — surfaced as "".
-    stockUnitName: payload.unit?.name ?? payload.stockUnitName ?? "",
-    stockUnitAbbrev: payload.unit?.abbreviation ?? payload.stockUnitAbbrev ?? "",
-    sendUnitName: "",
-    sendUnitAbbrev: "",
+    // Unit display derives solely from the FK join (UoM epic 2B) — a UoM rename
+    // flows through. Snapshot columns are fully de-referenced (2D drops them).
+    stockUnitName: payload.unit?.name ?? "",
+    stockUnitAbbrev: payload.unit?.abbreviation ?? "",
     rollPrefix: payload.rollPrefix,
     rollNumber: payload.rollNumber ?? "",
     dyeLot: payload.dyeLot ?? "",

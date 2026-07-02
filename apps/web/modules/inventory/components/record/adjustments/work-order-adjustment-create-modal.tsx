@@ -38,8 +38,6 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     categoryId: "",
     stockUnitName: adj.stockUnitName ?? "",
     stockUnitAbbrev: adj.stockUnitAbbrev ?? "",
-    sendUnitName: "",
-    sendUnitAbbrev: "",
     rollPrefix: adj.rollPrefix ?? "",
     rollNumber: adj.rollNumber ?? "",
     dyeLot: adj.dyeLot ?? "",

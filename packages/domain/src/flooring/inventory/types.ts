@@ -22,8 +22,6 @@ export type InventoryRow = {
   unitId?: string
   stockUnitName: string
   stockUnitAbbrev: string
-  sendUnitName: string
-  sendUnitAbbrev: string
   rollPrefix: string
   rollNumber: string
   dyeLot: string

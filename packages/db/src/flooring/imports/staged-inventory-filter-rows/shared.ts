@@ -19,8 +19,6 @@ export const stagedInventoryFilterRowSelect = {
       // row's `unitId` on add / product-change.
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
-      stockUnitName: true,
-      stockUnitAbbrev: true,
       category: { select: { id: true } },
     },
   },
@@ -28,8 +26,6 @@ export const stagedInventoryFilterRowSelect = {
   // The filter row's OWN unit FK + resolved unit (UoM epic 2B).
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
-  stockUnitName: true,
-  stockUnitAbbrev: true,
   createdAt: true,
   updatedAt: true,
 } as const satisfies Prisma.FlooringImportStagedInventoryFilterRowSelect

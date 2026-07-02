@@ -85,10 +85,10 @@ export function normalizeAdjustmentRow(
     cost: toDecimalStringOrNull(row.cost),
     freight: toDecimalStringOrNull(row.freight),
     unitId: row.unitId,
-    // Unit display derives from the FK join (UoM epic 2B); frozen snapshot
-    // columns are the transition fallback (Phase C drops them).
-    stockUnitName: row.unit?.name ?? row.stockUnitName ?? null,
-    stockUnitAbbrev: row.unit?.abbreviation ?? row.stockUnitAbbrev ?? null,
+    // Unit display derives solely from the FK join (UoM epic 2B); snapshot
+    // columns fully de-referenced (2D drops them).
+    stockUnitName: row.unit?.name ?? null,
+    stockUnitAbbrev: row.unit?.abbreviation ?? null,
     adjustmentType,
     isWaste: row.isWaste,
     internalNotes: row.internalNotes ?? "",
@@ -184,8 +184,9 @@ export async function getInventoryParentContextForAdjustments(
       freight: true,
       netDeducted: true,
       unitId: true,
-      stockUnitName: true,
-      stockUnitAbbrev: true,
+      // Unit display for mutation error messages derives from the FK join (UoM
+      // epic 2B); snapshot columns fully de-referenced (2D drops them).
+      unit: { select: { name: true, abbreviation: true } },
       productId: true,
       warehouseId: true,
     },
@@ -198,8 +199,8 @@ export async function getInventoryParentContextForAdjustments(
     freight: toDecimalStringOrNull(row.freight),
     currentNetDeducted: row.netDeducted.toString(),
     unitId: row.unitId,
-    stockUnitName: row.stockUnitName ?? null,
-    stockUnitAbbrev: row.stockUnitAbbrev ?? null,
+    stockUnitName: row.unit?.name ?? null,
+    stockUnitAbbrev: row.unit?.abbreviation ?? null,
     inventoryNumber: row.inventoryNumber,
     rollPrefix: row.rollPrefix,
     rollNumber: row.rollNumber ?? null,
@@ -573,8 +574,9 @@ export async function getPendingAdjustmentWithInventoryForMutation(
           freight: true,
           netDeducted: true,
           unitId: true,
-          stockUnitName: true,
-          stockUnitAbbrev: true,
+          // Unit display derives from the FK join (UoM epic 2B); snapshot
+          // columns fully de-referenced (2D drops them).
+          unit: { select: { name: true, abbreviation: true } },
           productId: true,
           warehouseId: true,
         },
@@ -592,8 +594,8 @@ export async function getPendingAdjustmentWithInventoryForMutation(
       freight: toDecimalStringOrNull(inv.freight),
       currentNetDeducted: inv.netDeducted.toString(),
       unitId: inv.unitId,
-      stockUnitName: inv.stockUnitName ?? null,
-      stockUnitAbbrev: inv.stockUnitAbbrev ?? null,
+      stockUnitName: inv.unit?.name ?? null,
+      stockUnitAbbrev: inv.unit?.abbreviation ?? null,
       inventoryNumber: inv.inventoryNumber,
       rollPrefix: inv.rollPrefix,
       rollNumber: inv.rollNumber ?? null,

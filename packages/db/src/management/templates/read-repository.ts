@@ -92,11 +92,10 @@ const templateDetailSelect = {
       productId: true,
       product: { select: { name: true, category: { select: { name: true } } } },
       quantity: true,
-      // Item's own unit FK + resolved unit (UoM epic 2C); frozen sendUnit* = fallback.
+      // Item's own unit FK + resolved unit (UoM epic 2C); snapshot columns fully
+      // de-referenced (2D drops them).
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
-      sendUnitName: true,
-      sendUnitAbbrev: true,
       notes: true,
       createdAt: true,
       updatedAt: true,
