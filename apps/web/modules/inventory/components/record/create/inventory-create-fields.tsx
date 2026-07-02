@@ -18,10 +18,10 @@ import {
 
 /**
  * Presentational body for the manual create-inventory flow, built on the shared
- * inventory field package (`../fields`) over the record-view engine. Product +
- * warehouse (both required, immutable after create) stack in a single left
- * column; Location follows the warehouse, then Starting Stock | Unit pair
- * beneath it (each half its width), then the remaining editable item fields. The
+ * inventory field package (`../fields`) over the record-view engine. Everything
+ * stacks in a single left column: Starting Stock | Unit pair lead the top (each
+ * half the warehouse width), then Product + Warehouse (both required, immutable
+ * after create), Location, and the remaining editable item fields. The
  * starting-stock unit suffix reflects the picked product's stock unit.
  * Snapshot/category columns are derived server-side from the product — never
  * entered here.
@@ -54,8 +54,29 @@ export function InventoryCreateFields({
 }) {
   return (
     <InventoryFieldGrid>
-      {/* Product headline */}
-      <CellAt col={1} row={1} colSpan={4}>
+      {/* Starting Stock | Unit paired at the top (each half the warehouse width,
+          together spanning the same cols), then Product, Warehouse, Location. */}
+      <CellAt col={1} row={1} colSpan={2}>
+        <StartingStockField
+          required
+          editable={editable}
+          value={form.startingStock}
+          onChange={(value) => setField("startingStock", value)}
+          unit={stockUnitAbbrev}
+        />
+      </CellAt>
+      <CellAt col={3} row={1} colSpan={2}>
+        <UnitPickerField
+          required
+          value={form.unitId || null}
+          selectedLabel={unitLabel}
+          onChange={(id) => setField("unitId", id ?? "")}
+          onOptionSelected={onUnitSelected}
+          disabled={!editable}
+          ariaLabel="Select a unit"
+        />
+      </CellAt>
+      <CellAt col={1} row={2} colSpan={4}>
         <ProductPickerField
           required
           value={form.productId || null}
@@ -66,10 +87,7 @@ export function InventoryCreateFields({
           ariaLabel="Select a product"
         />
       </CellAt>
-
-      {/* Warehouse, then Location, then Starting Stock | Unit paired (each half
-          the warehouse width, together spanning the same cols). */}
-      <CellAt col={1} row={2} colSpan={4}>
+      <CellAt col={1} row={3} colSpan={4}>
         <WarehousePickerField
           required
           value={form.warehouseId || null}
@@ -81,31 +99,11 @@ export function InventoryCreateFields({
           ariaLabel="Select a warehouse"
         />
       </CellAt>
-      <CellAt col={1} row={3} colSpan={4}>
+      <CellAt col={1} row={4} colSpan={4}>
         <LocationField
           editable={editable}
           value={form.location}
           onChange={(value) => setField("location", value)}
-        />
-      </CellAt>
-      <CellAt col={1} row={4} colSpan={2}>
-        <StartingStockField
-          required
-          editable={editable}
-          value={form.startingStock}
-          onChange={(value) => setField("startingStock", value)}
-          unit={stockUnitAbbrev}
-        />
-      </CellAt>
-      <CellAt col={3} row={4} colSpan={2}>
-        <UnitPickerField
-          required
-          value={form.unitId || null}
-          selectedLabel={unitLabel}
-          onChange={(id) => setField("unitId", id ?? "")}
-          onOptionSelected={onUnitSelected}
-          disabled={!editable}
-          ariaLabel="Select a unit"
         />
       </CellAt>
 
