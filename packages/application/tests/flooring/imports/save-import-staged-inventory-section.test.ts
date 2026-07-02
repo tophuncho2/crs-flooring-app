@@ -461,7 +461,7 @@ describe("saveImportStagedInventorySectionUseCase — diff validators", () => {
 })
 
 describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolution", () => {
-  it("falls back to the added staged row's OWN product unit when the form leaves it blank", async () => {
+  it("does NOT seed the added staged row's unit from the product when the form leaves it blank", async () => {
     getProductByIdMock.mockImplementation(async (id: string) =>
       fakeProduct({ id, unitId: "unit-from-product" }),
     )
@@ -475,7 +475,8 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
             {
               tempId: "tmp-row",
               productId: "product-new",
-              // Blank form unit → the use case seeds it from the product's own FK.
+              // Blank form unit → persisted as null; the server never seeds it
+              // from the product (the client owns the on-select seed).
               form: rowForm({ startingStock: "7", unitId: "" }),
             },
           ],
@@ -495,7 +496,7 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
     expect(addedRow.input).toMatchObject({
       productId: "product-new",
       warehouseId: WAREHOUSE_ID,
-      unitId: "unit-from-product",
+      unitId: null,
       startingStock: "7",
     })
     // The staged row no longer carries a filter-row link.

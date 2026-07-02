@@ -21,9 +21,10 @@ import type {
  * Diff-save use case mirroring the templates' MI section save:
  *  1. Validate every draft (create form) + update (update form).
  *  2. Batch-fetch every distinct product the `added` drafts AND the
- *     product-changed `modified` rows touch — to validate it exists and to seed
- *     the item's `unitId` from the product's unit when the form left it blank
- *     (UoM epic 2C). The form's own editable `unitId` takes precedence.
+ *     product-changed `modified` rows touch — to validate it exists (and to
+ *     reconnect the product FK on a change). The `unitId` is NOT seeded from the
+ *     product (UoM epic 2C): it's a user-managed, per-row value the client fills
+ *     on product select, and the server persists only the form's own value.
  *  3. Assign UUIDs to drafts via `assignDraftIds`.
  *  4. Hand off to `applyWorkOrderMaterialItemsDiff`.
  *
@@ -90,9 +91,10 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
         product: await getProductById(productId, c),
       })),
     )
-    // Product → its own unit FK (UoM epic 2C) — seeds a row's `unitId` when the
-    // form left it blank. The form's own editable value takes precedence.
-    const unitIdByProductId = new Map<string, string>()
+    // Validate every product touched by the diff (added + product-change) still
+    // exists. The unit FK is NOT seeded here — it's a user-managed, per-row value
+    // the client fills on product select; the server persists only the form's own
+    // value (UoM epic 2C). The product fetch remains for the reconnect below.
     for (const entry of products) {
       if (!entry.product) {
         throw new WorkOrderMaterialItemExecutionError({
@@ -103,7 +105,6 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
           payload: { productId: entry.productId },
         })
       }
-      unitIdByProductId.set(entry.productId, entry.product.unitId)
     }
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
@@ -114,10 +115,9 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
       added: addedWithIds.map((draft) => ({
         id: draft.id,
         tempId: draft.tempId,
-        input: {
-          ...draft.form,
-          unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.form.productId) || "",
-        },
+        // Unit FK is the form's own value (client seeds on product select);
+        // never re-seeded from the product here (mirrors modified below).
+        input: { ...draft.form },
       })),
       modified: input.diff.modified.map((update) => {
         const existing = existingById.get(update.id)
@@ -129,11 +129,9 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
           input: {
             quantity: update.form.quantity,
             notes: update.form.notes,
-            // The unit is the user's own editable value; on a product change the
-            // client re-seeds it, else fall back to the new product's unit.
-            unitId:
-              update.form.unitId.trim() ||
-              (productChanged ? unitIdByProductId.get(update.form.productId) ?? "" : ""),
+            // The unit is the user's own editable value — the server never
+            // re-seeds it from the product (the client seeds on product change).
+            unitId: update.form.unitId.trim() || "",
             // Reconnect the product FK only when it actually changed.
             ...(productChanged ? { product: { productId: update.form.productId } } : {}),
           },

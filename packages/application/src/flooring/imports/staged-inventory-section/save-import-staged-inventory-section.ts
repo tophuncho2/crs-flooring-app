@@ -123,11 +123,9 @@ export async function saveImportStagedInventorySectionUseCase(
       product: await getProductById(productId, reader),
     })),
   )
-  // Product → its own unit FK (UoM epic 2B). Seeds a row's `unitId` on add /
-  // product-change; the form's own `unitId` (kept correct client-side, and
-  // re-seeded there on product-change) takes precedence, with this as the
-  // fallback when the form left it blank.
-  const unitIdByProductId = new Map<string, string>()
+  // Validate every product touched by the diff still exists. The unit FK is NOT
+  // seeded here — it's a user-managed, per-row value the client fills on product
+  // select; the server persists only what the form sends (UoM epic 2B).
   for (const entry of products) {
     if (!entry.product) {
       throw new ImportStagedInventorySectionExecutionError({
@@ -138,7 +136,6 @@ export async function saveImportStagedInventorySectionUseCase(
         payload: { productId: entry.productId },
       })
     }
-    unitIdByProductId.set(entry.productId, entry.product.unitId)
   }
 
   const [existingFilters, existingStagedRows] = await Promise.all([
@@ -174,8 +171,8 @@ export async function saveImportStagedInventorySectionUseCase(
   const rowsAddedWithIds = assignDraftIds(input.diff.rows.added, randomUUID)
 
   // Staged rows attach directly to the import and carry their own productId;
-  // the unit FK is the form's own `unitId`, falling back to the product's unit
-  // (already fetched into unitIdByProductId above) when the form left it blank.
+  // the unit FK is the form's own `unitId` verbatim — the server never re-seeds
+  // it from the product (the client seeds on product select; a blank stays null).
   const stagedRowAddedInputs = rowsAddedWithIds.map((draft) => {
     return {
       id: draft.id,
@@ -183,7 +180,7 @@ export async function saveImportStagedInventorySectionUseCase(
       input: {
         productId: draft.productId,
         warehouseId: parent.warehouseId,
-        unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.productId) || null,
+        unitId: draft.form.unitId.trim() || null,
         rollNumber: draft.form.rollNumber || null,
         dyeLot: draft.form.dyeLot || null,
         location: draft.form.location || null,
@@ -220,7 +217,8 @@ export async function saveImportStagedInventorySectionUseCase(
             input: {
               categoryFilterId: draft.form.categoryFilterId,
               productId: draft.form.productId,
-              unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.form.productId) || null,
+              // Unit FK is the form's own value; never re-seeded from the product.
+              unitId: draft.form.unitId.trim() || null,
               stockOrdered: draft.form.stockOrdered,
             },
           })),

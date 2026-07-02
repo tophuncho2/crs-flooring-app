@@ -52,10 +52,9 @@ export async function saveTemplateMaterialItemsSectionUseCase(
     }
 
     // Batch-fetch every distinct product touched by the diff (added + modified)
-    // to (a) validate it exists and (b) seed the item's `unitId` from the
-    // product's own unit when the form left it blank (UoM epic 2C). The form's
-    // own editable `unitId` takes precedence — the client seeds it on product
-    // select and re-seeds on product change. One query per distinct product.
+    // to validate it still exists. The unit FK is NOT seeded here — it's a
+    // user-managed, per-row value the client fills on product select; the server
+    // persists only what the form sends (UoM epic 2C). One query per product.
     const distinctProductIds = Array.from(
       new Set([
         ...input.diff.added.map((d) => d.form.productId),
@@ -68,7 +67,6 @@ export async function saveTemplateMaterialItemsSectionUseCase(
         product: await getProductById(productId, c),
       })),
     )
-    const unitIdByProductId = new Map<string, string>()
     for (const entry of products) {
       if (!entry.product) {
         throw new TemplateMaterialItemExecutionError({
@@ -79,14 +77,7 @@ export async function saveTemplateMaterialItemsSectionUseCase(
           payload: { productId: entry.productId },
         })
       }
-      unitIdByProductId.set(entry.productId, entry.product.unitId)
     }
-
-    // Seed the item's unit FK from the product's unit when the form left it
-    // blank — ADDED rows only (a convenience default on create; UoM epic 2C).
-    // The form's own editable value takes precedence.
-    const seedAddedUnitId = (form: { productId: string; unitId: string }) =>
-      form.unitId.trim() || unitIdByProductId.get(form.productId) || ""
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
 
@@ -96,7 +87,9 @@ export async function saveTemplateMaterialItemsSectionUseCase(
       added: addedWithIds.map((draft) => ({
         id: draft.id,
         tempId: draft.tempId,
-        input: { ...draft.form, unitId: seedAddedUnitId(draft.form) },
+        // Unit FK is the form's own value (client seeds on product select);
+        // never re-seeded from the product here (mirrors modified below).
+        input: { ...draft.form },
       })),
       // MODIFIED: pass the form's own `unitId` through unchanged so an explicit
       // clear ("") reaches the repo (→ NULL). Never re-seed from the product on

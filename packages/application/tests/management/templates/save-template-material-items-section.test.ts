@@ -69,7 +69,7 @@ describe("saveTemplateMaterialItemsSectionUseCase", () => {
     expect(diff.modified[0].input.unitId).toBe("")
   })
 
-  it("seeds a blank unit from the product on an ADDED row", async () => {
+  it("does NOT seed a blank unit from the product on an ADDED row", async () => {
     getProductByIdMock.mockResolvedValue({ id: "prod-1", unitId: "prod-unit-1" })
     await saveTemplateMaterialItemsSectionUseCase(
       {
@@ -83,7 +83,8 @@ describe("saveTemplateMaterialItemsSectionUseCase", () => {
       ACTOR,
     )
     const [, diff] = applyTemplateMaterialItemsDiffMock.mock.calls[0]
-    // Added rows still seed the product's unit as a convenience default.
-    expect(diff.added[0].input.unitId).toBe("prod-unit-1")
+    // Added rows are NOT seeded from the product — the form's own value persists
+    // (blank stays blank); the client owns the on-select seed.
+    expect(diff.added[0].input.unitId).toBe("")
   })
 })
