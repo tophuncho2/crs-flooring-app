@@ -103,6 +103,7 @@ function inventoryContext(overrides: Record<string, unknown> = {}) {
     startingStock: "100.00",
     cost: "200.00",
     freight: "50.00",
+    unitId: "unit-1",
     stockUnitName: "Square Foot",
     stockUnitAbbrev: "sf",
     inventoryNumber: "INV-5",
@@ -198,8 +199,7 @@ describe("createPendingAdjustmentUseCase — WO-linked create", () => {
           // User-owned free text — passed straight through from the input.
           area: "Zone A",
           unitSnapshot: {
-            stockUnitName: "Square Foot",
-            stockUnitAbbrev: "sf",
+            unitId: "unit-1",
           },
           // Create stamps both actor columns with the caller's email.
           createdBy: ACTOR,

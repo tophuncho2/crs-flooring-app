@@ -1,6 +1,6 @@
 "use client"
 
-import type { ProductOption, WarehouseOption } from "@builders/domain"
+import type { ProductOption, UnitOfMeasureOption, WarehouseOption } from "@builders/domain"
 import { CellAt } from "@/engines/record-view"
 import type { InventoryCreateForm } from "@/modules/inventory/controllers/record/create/use-inventory-create-section"
 import {
@@ -12,6 +12,7 @@ import {
   ProductPickerField,
   RollNumberField,
   StartingStockField,
+  UnitPickerField,
   WarehousePickerField,
 } from "../fields"
 
@@ -29,8 +30,10 @@ export function InventoryCreateFields({
   editable,
   productLabel,
   warehouseLabel,
+  unitLabel,
   stockUnitAbbrev,
   onProductSelected,
+  onUnitSelected,
   onWarehouseSelected,
 }: {
   form: InventoryCreateForm
@@ -41,8 +44,10 @@ export function InventoryCreateFields({
   editable: boolean
   productLabel: string | null
   warehouseLabel: string | null
+  unitLabel: string | null
   stockUnitAbbrev: string
   onProductSelected: (option: ProductOption | null) => void
+  onUnitSelected: (option: UnitOfMeasureOption | null) => void
   onWarehouseSelected: (option: WarehouseOption | null) => void
 }) {
   return (
@@ -89,6 +94,18 @@ export function InventoryCreateFields({
       </CellAt>
 
       <CellAt col={1} row={3} colSpan={4}>
+        <UnitPickerField
+          required
+          value={form.unitId || null}
+          selectedLabel={unitLabel}
+          onChange={(id) => setField("unitId", id ?? "")}
+          onOptionSelected={onUnitSelected}
+          disabled={!editable}
+          ariaLabel="Select a unit"
+        />
+      </CellAt>
+
+      <CellAt col={1} row={4} colSpan={4}>
         <RollNumberField
           editable={editable}
           value={form.rollNumber}
@@ -96,18 +113,18 @@ export function InventoryCreateFields({
         />
       </CellAt>
 
-      <CellAt col={1} row={4} colSpan={4}>
+      <CellAt col={1} row={5} colSpan={4}>
         <DyeLotField
           editable={editable}
           value={form.dyeLot}
           onChange={(value) => setField("dyeLot", value)}
         />
       </CellAt>
-      <CellAt col={1} row={5} colSpan={4}>
+      <CellAt col={1} row={6} colSpan={4}>
         <NoteField editable={editable} value={form.note} onChange={(value) => setField("note", value)} />
       </CellAt>
 
-      <CellAt col={1} row={6} colSpan={4}>
+      <CellAt col={1} row={7} colSpan={4}>
         <InternalNotesField
           editable={editable}
           value={form.internalNotes}

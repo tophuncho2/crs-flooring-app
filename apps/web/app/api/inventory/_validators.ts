@@ -422,6 +422,7 @@ export function validateCreateInventoryInput(
 ): CreateInventoryInput {
   return {
     productId: optionalString(body.productId, "productId"),
+    unitId: optionalString(body.unitId, "unitId"),
     warehouseId: optionalString(body.warehouseId, "warehouseId"),
     rollNumber: optionalString(body.rollNumber, "rollNumber"),
     dyeLot: optionalString(body.dyeLot, "dyeLot"),

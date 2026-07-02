@@ -64,6 +64,8 @@ export default async function InventoryCreatePage({
   const seed: InventoryCreateSeed = {
     form: {
       productId: source.productId,
+      // Seed the unit FK from the source row (UoM epic 2B); editable on the form.
+      unitId: source.unitId ?? "",
       warehouseId: source.warehouseId,
       rollNumber: source.rollNumber,
       dyeLot: source.dyeLot,
@@ -78,6 +80,7 @@ export default async function InventoryCreatePage({
     },
     productLabel: source.productName,
     warehouseLabel: source.warehouseName,
+    unitLabel: source.stockUnitName,
     stockUnitAbbrev: source.stockUnitAbbrev,
   }
 

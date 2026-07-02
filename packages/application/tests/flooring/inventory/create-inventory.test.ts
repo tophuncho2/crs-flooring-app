@@ -40,6 +40,7 @@ const ACTOR = "actor@example.com"
 function input(overrides: Record<string, unknown> = {}) {
   return {
     productId: "p-1",
+    unitId: "u-1",
     warehouseId: "wh-1",
     rollNumber: "R-2",
     dyeLot: "DYE-9",
@@ -98,13 +99,9 @@ describe("createInventoryUseCase", () => {
       expect(getProductByIdMock).toHaveBeenCalledWith("p-1", expect.anything())
       expect(getWarehouseByIdMock).toHaveBeenCalledWith("wh-1", expect.anything())
 
-      // The product's joined snapshot is flattened before the domain builder.
-      expect(buildCreatedInventoryInsertMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          stockUnitAbbrev: "SF",
-        }),
-        input(),
-      )
+      // The form (incl. its unit FK) is passed straight to the domain builder —
+      // the unit is no longer derived from the product's retiring snapshot.
+      expect(buildCreatedInventoryInsertMock).toHaveBeenCalledWith(input())
 
       const insertArg = insertInventoryRowMock.mock.calls[0]![1] as Record<string, unknown>
       expect(insertArg).toMatchObject(BUILT_FIELDS)

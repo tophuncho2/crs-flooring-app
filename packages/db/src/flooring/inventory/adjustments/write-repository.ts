@@ -28,14 +28,13 @@ import { adjustmentRowSelect } from "./shared.js"
 // ---------------------------------------------------------------------------
 
 /**
- * Snapshot of the parent inventory's unit-of-measure labels at create
- * time. Stamped onto the adjustment on insert and never re-snapped — the
- * adjustment keeps its frozen labels even if the parent inventory's UoM is
- * later edited.
+ * The parent inventory's unit FK at create time (UoM epic 2B). Stamped onto the
+ * adjustment on insert and never re-linked — the adjustment keeps its own unit
+ * link even if the parent inventory's row is later changed. Replaces the two
+ * frozen unit-label snapshot strings (display now derives from the join).
  */
 export type PendingAdjustmentUnitSnapshot = {
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
+  unitId: string
 }
 
 export type InsertPendingAdjustmentRowInput = {
@@ -85,9 +84,9 @@ export type InsertPendingAdjustmentRowInput = {
  * persistence call — no business rules, no invariant checks (those run in
  * the use case before/after via the domain).
  *
- * Stamps the two stock unit-snapshot fields, the seven identity-snapshot fields
- * (the 5 identity primitives, plus `productId` / `warehouseId`), and the
- * user-owned `location` from the input.
+ * Stamps the unit FK (`unitId`), the seven identity-snapshot fields (the 5
+ * identity primitives, plus `productId` / `warehouseId`), and the user-owned
+ * `location` from the input.
  *
  * `before` / `after` are left null here; the caller immediately runs
  * `recomputeAndPersistNetDeducted`, which replays the inventory's whole chain
@@ -108,8 +107,7 @@ export async function insertPendingAdjustmentRow(
       internalNotes: input.internalNotes ? input.internalNotes : null,
       // Omitted → Prisma applies the column default (SLATE).
       ...(input.color !== undefined ? { color: input.color } : {}),
-      stockUnitName: input.unitSnapshot.stockUnitName,
-      stockUnitAbbrev: input.unitSnapshot.stockUnitAbbrev,
+      unitId: input.unitSnapshot.unitId,
       inventoryNumber: input.inventorySnapshot.inventoryNumber,
       rollPrefix: input.inventorySnapshot.rollPrefix,
       rollNumber: input.inventorySnapshot.rollNumber,

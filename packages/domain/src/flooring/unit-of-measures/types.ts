@@ -8,8 +8,10 @@ export type UnitOfMeasureListRow = {
 }
 
 // Picker option shape. Pickers render the name only (per the UoM rendering
-// matrix), so the option carries no abbreviation/subtitle.
+// matrix), but the option carries `abbreviation` too so grid/create cells can
+// refresh their inline abbrev suffix when the user picks a new unit.
 export type UnitOfMeasureOption = {
   id: string
   name: string
+  abbreviation: string
 }

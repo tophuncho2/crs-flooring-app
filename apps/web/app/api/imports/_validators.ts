@@ -130,6 +130,7 @@ function requireStagedArray(value: unknown, path: string): unknown[] {
 function shapeStagedForm(raw: unknown, path: string): StagedInventoryForm {
   const form = requireStagedObject(raw, path)
   return {
+    unitId: optionalStagedString(form.unitId, `${path}.unitId`),
     rollNumber: optionalStagedString(form.rollNumber, `${path}.rollNumber`),
     dyeLot: optionalStagedString(form.dyeLot, `${path}.dyeLot`),
     location: optionalStagedString(form.location, `${path}.location`),
@@ -208,6 +209,7 @@ function shapeFilterForm(raw: unknown, path: string): StagedInventoryFilterForm 
   return {
     categoryFilterId: nullableFilterString(form.categoryFilterId, `${path}.categoryFilterId`),
     productId: requireFilterString(form.productId, `${path}.productId`),
+    unitId: nullableFilterString(form.unitId, `${path}.unitId`) ?? "",
     // Stock ordered is optional — accept missing/blank; "" carries "unset"
     // through the domain form type (which is a plain string).
     stockOrdered: nullableFilterString(form.stockOrdered, `${path}.stockOrdered`) ?? "",

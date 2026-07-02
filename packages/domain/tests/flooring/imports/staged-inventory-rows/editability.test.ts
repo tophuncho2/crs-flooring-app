@@ -70,6 +70,7 @@ describe("getStagedRowImportabilityBlocker + canImportStagedRow", () => {
     status: "DRAFT" as const,
     isImported: false,
     productId: "p-1",
+    unitId: "u-1",
     warehouseId: "w-1",
     startingStock: "5",
   }
@@ -95,6 +96,11 @@ describe("getStagedRowImportabilityBlocker + canImportStagedRow", () => {
   it("MISSING_PRODUCT when productId is empty or whitespace", () => {
     expect(getStagedRowImportabilityBlocker({ ...ready, productId: "" })).toBe("MISSING_PRODUCT")
     expect(getStagedRowImportabilityBlocker({ ...ready, productId: "   " })).toBe("MISSING_PRODUCT")
+  })
+
+  it("MISSING_UNIT when unitId is empty or whitespace", () => {
+    expect(getStagedRowImportabilityBlocker({ ...ready, unitId: "" })).toBe("MISSING_UNIT")
+    expect(getStagedRowImportabilityBlocker({ ...ready, unitId: "   " })).toBe("MISSING_UNIT")
   })
 
   it("MISSING_WAREHOUSE when warehouseId is empty", () => {
@@ -129,8 +135,9 @@ describe("buildStagedRowNotDraftMessage", () => {
 })
 
 describe("field classification", () => {
-  it("STAGED_USER_EDITABLE_FIELDS lists the 5 user-editable form fields", () => {
+  it("STAGED_USER_EDITABLE_FIELDS lists the user-editable form fields (incl. unitId)", () => {
     expect(STAGED_USER_EDITABLE_FIELDS).toEqual([
+      "unitId",
       "rollNumber",
       "dyeLot",
       "location",

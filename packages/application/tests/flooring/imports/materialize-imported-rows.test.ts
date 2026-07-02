@@ -49,6 +49,9 @@ function loadedRow(overrides: Record<string, unknown> = {}) {
     id: ROW_ID_A,
     importEntryId: IMPORT_ID,
     productId: "product-1",
+    // The staged row's OWN unit FK (UoM epic 2B) — the worker materializes this
+    // forward verbatim.
+    unitId: "unit-staged-1",
     warehouseId: "wh-staged-snapshot",
     rollPrefix: "ROLL#",
     rollNumber: "A-001",
@@ -183,11 +186,13 @@ describe("materializeImportedStagedRowsUseCase", () => {
       // snapshotted (rendered from the live `product` join at read time).
       expect(created.productId).toBe("product-1")
       expect(created.productName).toBeUndefined()
-      // UoM snapshots from product.
-      expect(created.stockUnitName).toBe("Square Yard")
-      expect(created.stockUnitAbbrev).toBe("sy")
-      expect(created.sendUnitName).toBe("Roll")
-      expect(created.sendUnitAbbrev).toBe("rl")
+      // Unit FK is carried forward from the staged row's OWN unitId (UoM epic
+      // 2B) — no longer re-derived from the product's retiring snapshot strings.
+      expect(created.unitId).toBe("unit-staged-1")
+      expect(created.stockUnitName).toBeUndefined()
+      expect(created.stockUnitAbbrev).toBeUndefined()
+      expect(created.sendUnitName).toBeUndefined()
+      expect(created.sendUnitAbbrev).toBeUndefined()
       // User values copied verbatim from staged row.
       expect(created.rollPrefix).toBe("ROLL#")
       expect(created.rollNumber).toBe("A-001")
@@ -310,6 +315,24 @@ describe("materializeImportedStagedRowsUseCase", () => {
           missingIds: [ROW_ID_B],
         })
       }
+    })
+
+    it("throws when a loaded staged row is missing its unit FK (UoM epic 2B backstop)", async () => {
+      // The importability gate blocks a null-unit row from queueing, so this is
+      // a precondition regression — the worker refuses to materialize a null unit
+      // into inventory's NOT-NULL column.
+      listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow({ unitId: null })])
+
+      try {
+        await materializeImportedStagedRowsUseCase(payload())
+        expect.fail("Expected throw")
+      } catch (error) {
+        if (!(error instanceof StagedInventoryExecutionError)) throw error
+        expect(error.code).toBe("STAGED_MATERIALIZE_PRECONDITION_FAILED")
+        expect(error.status).toBe(409)
+        expect(error.payload).toMatchObject({ missingIds: [ROW_ID_A] })
+      }
+      expect(materializeStagedRowsToInventoryMock).not.toHaveBeenCalled()
     })
 
     it("does NOT call materializeStagedRowsToInventory when precondition fails", async () => {

@@ -203,10 +203,13 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
     categoryId: product.categoryId,
     unitId: product.unitId ?? "",
     categoryName: product.category?.name ?? "",
-    sendUnitName: product.sendUnitName ?? "",
-    sendUnitAbbrev: product.sendUnitAbbrev ?? "",
-    stockUnitName: product.stockUnitName ?? "",
-    stockUnitAbbrev: product.stockUnitAbbrev ?? "",
+    // Unit label + abbrev derive from the product's own unit FK (UoM epic 2B);
+    // the frozen snapshot strings are the transition fallback (they're null on
+    // products created after 2A). Row pickers seed a row's unit from these.
+    sendUnitName: product.unit?.name ?? product.sendUnitName ?? "",
+    sendUnitAbbrev: product.unit?.abbreviation ?? product.sendUnitAbbrev ?? "",
+    stockUnitName: product.unit?.name ?? product.stockUnitName ?? "",
+    stockUnitAbbrev: product.unit?.abbreviation ?? product.stockUnitAbbrev ?? "",
   }
 }
 

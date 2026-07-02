@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { UnitCell, isLocalOnlyRecordRow } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
+import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
 import type { StagedInventoryFilterRow } from "@builders/domain"
 import type { ImportFilterRowDraft } from "@/modules/imports/controllers/record/drafts"
 import type { useImportStagedInventorySection } from "@/modules/imports/controllers/record/staged-inventory/use-import-staged-inventory-section"
@@ -13,6 +14,7 @@ type PlannedImportGridRow = ImportFilterRowDraft & { id: string }
 
 const PLANNED_IMPORT_COLUMNS: DataTableColumn<PlannedImportGridRow>[] = [
   { key: "product", label: "Product", minWidth: 260, grow: 2 },
+  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "stockOrdered", label: "Stock Ordered", width: 170, align: "end" },
 ]
 
@@ -57,6 +59,17 @@ export function ImportPlannedImportsGrid({
             // Category filter is immutable after the row is saved.
             categoryEditable={editable && isNew}
             ariaLabel="Planned import product"
+          />
+        )
+      case "unit":
+        return (
+          <UnitOfMeasurePicker
+            value={draft.unitId || null}
+            selectedLabel={draft.stockUnitName || server?.stockUnitName || null}
+            onChange={(id) => section.setFilterField(draft.clientId, "unitId", id ?? "")}
+            onOptionSelected={(option) => section.setFilterUnit(draft.clientId, option)}
+            disabled={!editable}
+            ariaLabel="Planned import unit"
           />
         )
       case "stockOrdered":

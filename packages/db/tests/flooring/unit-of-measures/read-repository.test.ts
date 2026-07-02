@@ -1,22 +1,22 @@
 import { describe, expect, it, vi } from "vitest"
 import { searchUnitOfMeasureOptions } from "../../../src/flooring/unit-of-measures/read-repository.js"
 
-function makeClient(rows: Array<{ id: string; name: string }>) {
+function makeClient(rows: Array<{ id: string; name: string; abbreviation: string }>) {
   return { flooringUnitOfMeasure: { findMany: vi.fn().mockResolvedValue(rows) } }
 }
 
 describe("searchUnitOfMeasureOptions", () => {
-  it("maps rows to {id,name} and reports hasMore=false on a partial page", async () => {
+  it("maps rows to {id,name,abbreviation} and reports hasMore=false on a partial page", async () => {
     const client = makeClient([
-      { id: "u1", name: "Square Feet" },
-      { id: "u2", name: "Square Yard" },
+      { id: "u1", name: "Square Feet", abbreviation: "sq ft" },
+      { id: "u2", name: "Square Yard", abbreviation: "sq yd" },
     ])
 
     const result = await searchUnitOfMeasureOptions({ take: 20 }, client as never)
 
     expect(result.items).toEqual([
-      { id: "u1", name: "Square Feet" },
-      { id: "u2", name: "Square Yard" },
+      { id: "u1", name: "Square Feet", abbreviation: "sq ft" },
+      { id: "u2", name: "Square Yard", abbreviation: "sq yd" },
     ])
     expect(result.hasMore).toBe(false)
 
@@ -25,11 +25,15 @@ describe("searchUnitOfMeasureOptions", () => {
     expect(arg.take).toBe(21)
     expect(arg.where).toBeUndefined()
     expect(arg.orderBy).toEqual({ name: "asc" })
-    expect(arg.select).toEqual({ id: true, name: true })
+    expect(arg.select).toEqual({ id: true, name: true, abbreviation: true })
   })
 
   it("detects a next page (take+1) and trims the extra row", async () => {
-    const rows = Array.from({ length: 3 }, (_, i) => ({ id: `u${i}`, name: `Unit ${i}` }))
+    const rows = Array.from({ length: 3 }, (_, i) => ({
+      id: `u${i}`,
+      name: `Unit ${i}`,
+      abbreviation: `u${i}`,
+    }))
     const client = makeClient(rows)
 
     const result = await searchUnitOfMeasureOptions({ take: 2 }, client as never)

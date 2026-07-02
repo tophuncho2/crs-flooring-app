@@ -19,6 +19,7 @@ import type {
   StagedInventoryRowDelete,
   StagedInventoryRowDraft,
   StagedInventoryRowUpdate,
+  UnitOfMeasureOption,
 } from "@builders/domain"
 import {
   createImportFilterRowDraft,
@@ -44,12 +45,14 @@ function toFilterDiffForm(draft: ImportFilterRowDraft) {
   return {
     categoryFilterId: draft.categoryFilterId,
     productId: draft.productId,
+    unitId: draft.unitId,
     stockOrdered: draft.stockOrdered,
   }
 }
 
 function toRowDiffForm(draft: ImportStagedRowDraft) {
   return {
+    unitId: draft.unitId,
     rollNumber: draft.rollNumber,
     startingStock: draft.startingStock,
     cost: draft.cost,
@@ -67,6 +70,7 @@ function filterFormIsDirty(
   return (
     draft.categoryFilterId !== server.categoryFilterId ||
     draft.productId !== server.productId ||
+    draft.unitId !== server.unitId ||
     draft.stockOrdered !== server.stockOrdered
   )
 }
@@ -76,6 +80,7 @@ function rowFormIsDirty(
   server: StagedInventoryRow,
 ): boolean {
   return (
+    draft.unitId !== server.unitId ||
     draft.rollNumber !== server.rollNumber ||
     draft.startingStock !== server.startingStock ||
     draft.cost !== server.cost ||
@@ -304,7 +309,7 @@ export function useImportFilterRows({
   )
 
   const setFilterField = useCallback(
-    <K extends keyof Pick<ImportFilterRowDraft, "productId" | "stockOrdered">>(
+    <K extends keyof Pick<ImportFilterRowDraft, "productId" | "unitId" | "stockOrdered">>(
       clientId: string,
       field: K,
       value: ImportFilterRowDraft[K],
@@ -313,6 +318,26 @@ export function useImportFilterRows({
         ...prev,
         filters: prev.filters.map((row) =>
           row.clientId === clientId ? { ...row, [field]: value } : row,
+        ),
+      }))
+      if (section.error) section.setError(null)
+    },
+    [section],
+  )
+
+  const setFilterUnit = useCallback(
+    (clientId: string, option: UnitOfMeasureOption | null) => {
+      section.setLocalValue((prev) => ({
+        ...prev,
+        filters: prev.filters.map((row) =>
+          row.clientId === clientId
+            ? {
+                ...row,
+                unitId: option?.id ?? "",
+                stockUnitName: option?.name ?? "",
+                stockUnitAbbrev: option?.abbreviation ?? "",
+              }
+            : row,
         ),
       }))
       if (section.error) section.setError(null)
@@ -340,11 +365,14 @@ export function useImportFilterRows({
         filters: prev.filters.map((row) => {
           if (row.clientId !== clientId) return row
           if (option === null) {
-            return { ...row, productName: "", stockUnitName: "", stockUnitAbbrev: "" }
+            return { ...row, productName: "", unitId: "", stockUnitName: "", stockUnitAbbrev: "" }
           }
+          // Re-seed the unit FK from the picked product (UoM epic 2B) — mirrors
+          // the material-item product-change re-snapshot.
           return {
             ...row,
             productName: option.name,
+            unitId: option.unitId,
             stockUnitName: option.stockUnitName ?? "",
             stockUnitAbbrev: option.stockUnitAbbrev,
           }
@@ -397,7 +425,7 @@ export function useImportFilterRows({
   const setStagedRowField = useCallback(
     <K extends keyof Pick<
       ImportStagedRowDraft,
-      "rollNumber" | "startingStock" | "cost" | "freight" | "dyeLot" | "location" | "note"
+      "unitId" | "rollNumber" | "startingStock" | "cost" | "freight" | "dyeLot" | "location" | "note"
     >>(
       clientId: string,
       field: K,
@@ -414,16 +442,37 @@ export function useImportFilterRows({
     [section],
   )
 
+  const setStagedRowUnit = useCallback(
+    (clientId: string, option: UnitOfMeasureOption | null) => {
+      section.setLocalValue((prev) => ({
+        ...prev,
+        stagedRows: prev.stagedRows.map((s) =>
+          s.clientId === clientId
+            ? {
+                ...s,
+                unitId: option?.id ?? "",
+                stockUnitAbbrev: option?.abbreviation ?? "",
+              }
+            : s,
+        ),
+      }))
+      if (section.error) section.setError(null)
+    },
+    [section],
+  )
+
   return {
     section,
     addFilterRow,
     removeFilterRow,
     setFilterField,
+    setFilterUnit,
     setFilterCategoryFilter,
     setFilterProductSnapshot,
     addStagedRowDraft,
     duplicateStagedRowDraft,
     removeStagedRowDraft,
     setStagedRowField,
+    setStagedRowUnit,
   }
 }

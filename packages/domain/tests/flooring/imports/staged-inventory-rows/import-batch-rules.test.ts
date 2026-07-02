@@ -9,7 +9,7 @@ import type { StagedInventoryRow } from "../../../../src/flooring/imports/staged
 
 type BatchRow = Pick<
   StagedInventoryRow,
-  "id" | "status" | "isImported" | "productId" | "warehouseId" | "startingStock"
+  "id" | "status" | "isImported" | "productId" | "unitId" | "warehouseId" | "startingStock"
 >
 
 function readyRow(overrides: Partial<BatchRow> = {}): BatchRow {
@@ -18,6 +18,7 @@ function readyRow(overrides: Partial<BatchRow> = {}): BatchRow {
     status: "DRAFT",
     isImported: false,
     productId: "product-1",
+    unitId: "unit-1",
     warehouseId: "wh-1",
     startingStock: "5",
     ...overrides,

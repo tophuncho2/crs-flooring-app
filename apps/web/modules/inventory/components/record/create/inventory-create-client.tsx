@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import type { ProductOption, WarehouseOption } from "@builders/domain"
+import type { ProductOption, UnitOfMeasureOption, WarehouseOption } from "@builders/domain"
 import {
   RecordCreateClientScaffold,
   RecordFieldSection,
@@ -29,6 +29,7 @@ export type InventoryCreateSeed = {
   form: Partial<InventoryCreateForm>
   productLabel: string | null
   warehouseLabel: string | null
+  unitLabel: string | null
   stockUnitAbbrev: string
 }
 
@@ -59,6 +60,7 @@ function InventoryCreatePanel({
   // before the user touches the pickers.
   const [productLabel, setProductLabel] = useState<string | null>(seed?.productLabel ?? null)
   const [warehouseLabel, setWarehouseLabel] = useState<string | null>(seed?.warehouseLabel ?? null)
+  const [unitLabel, setUnitLabel] = useState<string | null>(seed?.unitLabel ?? null)
   const [stockUnitAbbrev, setStockUnitAbbrev] = useState<string>(seed?.stockUnitAbbrev ?? "")
 
   // Register dirtiness with the page so the scaffold's leave-guard fires when
@@ -69,7 +71,16 @@ function InventoryCreatePanel({
 
   const handleProductSelected = (option: ProductOption | null) => {
     setProductLabel(option?.name ?? null)
+    // Seed the unit from the picked product (overridable via the unit picker).
+    setField("unitId", option?.unitId ?? "")
+    setUnitLabel(option?.stockUnitName || null)
     setStockUnitAbbrev(option?.stockUnitAbbrev ?? "")
+  }
+
+  const handleUnitSelected = (option: UnitOfMeasureOption | null) => {
+    setField("unitId", option?.id ?? "")
+    setUnitLabel(option?.name ?? null)
+    setStockUnitAbbrev(option?.abbreviation ?? "")
   }
 
   const handleWarehouseSelected = (option: WarehouseOption | null) => {
@@ -134,8 +145,10 @@ function InventoryCreatePanel({
         editable={!isPending}
         productLabel={productLabel}
         warehouseLabel={warehouseLabel}
+        unitLabel={unitLabel}
         stockUnitAbbrev={stockUnitAbbrev}
         onProductSelected={handleProductSelected}
+        onUnitSelected={handleUnitSelected}
         onWarehouseSelected={handleWarehouseSelected}
       />
     </RecordFieldSection>

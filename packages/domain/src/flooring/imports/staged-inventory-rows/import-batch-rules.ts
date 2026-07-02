@@ -13,7 +13,7 @@ export function validateStagedImportBatch(
   rows: ReadonlyArray<
     Pick<
       StagedInventoryRow,
-      "id" | "status" | "isImported" | "productId" | "warehouseId" | "startingStock"
+      "id" | "status" | "isImported" | "productId" | "unitId" | "warehouseId" | "startingStock"
     >
   >,
 ): StagedImportBatchValidationIssue[] {

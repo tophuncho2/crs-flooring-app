@@ -22,6 +22,10 @@ import {
   type PaletteColor,
 } from "@builders/domain"
 import { ProductPicker, type ProductPickerProps } from "@/modules/products/components/picker/product-picker"
+import {
+  UnitOfMeasurePicker,
+  type UnitOfMeasurePickerProps,
+} from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
 import { WarehousePicker, type WarehousePickerProps } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { InventoryArchiveChip } from "../primary/controls/inventory-archive-chip"
 
@@ -181,6 +185,17 @@ export function ProductPickerField({ required, ...props }: ProductPickerProps & 
   return (
     <FormField label="Product" required={required}>
       <ProductPicker {...props} />
+    </FormField>
+  )
+}
+
+export function UnitPickerField({
+  required,
+  ...props
+}: UnitOfMeasurePickerProps & { required?: boolean }) {
+  return (
+    <FormField label="Unit" required={required}>
+      <UnitOfMeasurePicker {...props} />
     </FormField>
   )
 }

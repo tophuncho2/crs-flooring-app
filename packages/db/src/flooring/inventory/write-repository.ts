@@ -34,10 +34,9 @@ export async function lockInventoryRow(
 export type MaterializeInventoryRowFields = {
   importEntryId: string | null
   productId: string
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
-  sendUnitName: string | null
-  sendUnitAbbrev: string | null
+  // Unit FK (UoM epic 2B) — copied forward from the staged row's own unitId.
+  // Replaces the four frozen unit snapshot strings.
+  unitId: string
   /**
    * Display prefix for the roll number (column default `'ROLL#'`). Worker
    * materialize copies it verbatim from the source staged row so the
@@ -160,10 +159,8 @@ export type InsertInventoryRowInput = {
   importEntryId: string | null
   sourceStagedRowId: string | null
   productId: string
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
-  sendUnitName: string | null
-  sendUnitAbbrev: string | null
+  // Unit FK (UoM epic 2B) — replaces the four frozen unit snapshot strings.
+  unitId: string
   rollPrefix: string
   rollNumber: string | null
   dyeLot: string | null
@@ -195,10 +192,7 @@ export async function insertInventoryRow(
       importEntryId: input.importEntryId,
       sourceStagedRowId: input.sourceStagedRowId,
       productId: input.productId,
-      stockUnitName: input.stockUnitName,
-      stockUnitAbbrev: input.stockUnitAbbrev,
-      sendUnitName: input.sendUnitName,
-      sendUnitAbbrev: input.sendUnitAbbrev,
+      unitId: input.unitId,
       rollPrefix: input.rollPrefix,
       rollNumber: input.rollNumber,
       dyeLot: input.dyeLot,
@@ -280,10 +274,7 @@ export async function materializeStagedRowsToInventory(
       sourceStagedRowId: row.sourceStagedRowId,
       importEntryId: row.importEntryId,
       productId: row.productId,
-      stockUnitName: row.stockUnitName,
-      stockUnitAbbrev: row.stockUnitAbbrev,
-      sendUnitName: row.sendUnitName,
-      sendUnitAbbrev: row.sendUnitAbbrev,
+      unitId: row.unitId,
       rollPrefix: row.rollPrefix,
       rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,

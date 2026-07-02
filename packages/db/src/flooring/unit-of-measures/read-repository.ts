@@ -75,13 +75,13 @@ export async function searchUnitOfMeasureOptions(
     orderBy: { name: "asc" },
     skip,
     take: args.take + 1,
-    select: { id: true, name: true },
+    select: { id: true, name: true, abbreviation: true },
   })
 
   const hasMore = rows.length > args.take
   const page = hasMore ? rows.slice(0, args.take) : rows
   return {
-    items: page.map((row) => ({ id: row.id, name: row.name })),
+    items: page.map((row) => ({ id: row.id, name: row.name, abbreviation: row.abbreviation })),
     hasMore,
   }
 }

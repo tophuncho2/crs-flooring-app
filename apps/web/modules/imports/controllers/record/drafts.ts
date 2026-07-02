@@ -91,6 +91,10 @@ export function resolveEffectiveStatus(
 export type StagedRowProductSeed = {
   productId: string
   productName: string
+  // Product's own unit FK + name/abbrev (UoM epic 2B) — seeds the new row's
+  // editable unit, its picker label, and its display suffix.
+  unitId: string
+  stockUnitName: string
   stockUnitAbbrev: string
 }
 
@@ -107,6 +111,9 @@ export type StagedRowProductSeed = {
  */
 export type ImportStagedRowDraft = {
   clientId: string
+  // Editable unit FK (UoM epic 2B) — sent in the diff; `stockUnitAbbrev` is the
+  // display suffix, refreshed when the user picks a new unit.
+  unitId: string
   rollNumber: string
   startingStock: string
   cost: string
@@ -120,12 +127,14 @@ export type ImportStagedRowDraft = {
   isImported: boolean
   productName: string
   rollPrefix: string
+  stockUnitName: string
   stockUnitAbbrev: string
 }
 
 export function toImportStagedRowDraft(row: StagedInventoryRow): ImportStagedRowDraft {
   return {
     clientId: row.id,
+    unitId: row.unitId,
     rollNumber: row.rollNumber,
     startingStock: row.startingStock,
     cost: row.cost,
@@ -138,6 +147,7 @@ export function toImportStagedRowDraft(row: StagedInventoryRow): ImportStagedRow
     isImported: row.isImported,
     productName: row.productName,
     rollPrefix: row.rollPrefix,
+    stockUnitName: row.stockUnitName,
     stockUnitAbbrev: row.stockUnitAbbrev,
   }
 }
@@ -147,6 +157,7 @@ export function createImportStagedRowDraft(
 ): ImportStagedRowDraft {
   return {
     clientId: createLocalRecordRowId("import-staged-row"),
+    unitId: seed.unitId,
     rollNumber: "",
     startingStock: "",
     cost: "",
@@ -159,6 +170,7 @@ export function createImportStagedRowDraft(
     isImported: false,
     productName: seed.productName,
     rollPrefix: "ROLL#",
+    stockUnitName: seed.stockUnitName,
     stockUnitAbbrev: seed.stockUnitAbbrev,
   }
 }
@@ -168,6 +180,7 @@ export function duplicateImportStagedRowDraft(
 ): ImportStagedRowDraft {
   return {
     clientId: createLocalRecordRowId("import-staged-row"),
+    unitId: source.unitId,
     rollNumber: source.rollNumber,
     startingStock: source.startingStock,
     cost: source.cost,
@@ -180,6 +193,7 @@ export function duplicateImportStagedRowDraft(
     isImported: false,
     productName: source.productName,
     rollPrefix: source.rollPrefix,
+    stockUnitName: source.stockUnitName,
     stockUnitAbbrev: source.stockUnitAbbrev,
   }
 }
@@ -196,6 +210,7 @@ export function validateImportStagedRowDrafts(
       return `Staged — row ${index + 1}: select a product.`
     }
     const issues = validateStagedInventoryForm({
+      unitId: draft.unitId,
       rollNumber: draft.rollNumber,
       startingStock: draft.startingStock,
       cost: draft.cost,
@@ -233,6 +248,9 @@ export type ImportFilterRowDraft = {
   categoryFilterId: string | null
   productId: string
   productName: string
+  // Editable unit FK (UoM epic 2B) — sent in the diff; re-seeded on product
+  // change. `stockUnit*` are display-only, refreshed alongside.
+  unitId: string
   stockUnitName: string
   stockUnitAbbrev: string
   stockOrdered: string
@@ -263,6 +281,7 @@ export function toImportFilterRowDraft(
     categoryFilterId: row.categoryFilterId,
     productId: row.productId,
     productName: row.productName,
+    unitId: row.unitId,
     stockUnitName: row.stockUnitName,
     stockUnitAbbrev: row.stockUnitAbbrev,
     stockOrdered: row.stockOrdered,
@@ -287,6 +306,7 @@ export function createImportFilterRowDraft(clientId: string): ImportFilterRowDra
     categoryFilterId: null,
     productId: "",
     productName: "",
+    unitId: "",
     stockUnitName: "",
     stockUnitAbbrev: "",
     stockOrdered: "",
@@ -300,6 +320,7 @@ export function validateImportSection(state: ImportSectionLocalState): string {
     const filterIssues = validateStagedInventoryFilterForm({
       categoryFilterId: draft.categoryFilterId,
       productId: draft.productId,
+      unitId: draft.unitId,
       stockOrdered: draft.stockOrdered,
     })
     if (filterIssues.length > 0) {

@@ -84,9 +84,11 @@ function buildFilterUpdateData(
       ? { connect: { id: input.categoryFilterId } }
       : { disconnect: true },
     product: { connect: { id: input.productId } },
+    unit:
+      input.unitId && input.unitId.trim() !== ""
+        ? { connect: { id: input.unitId } }
+        : { disconnect: true },
     stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
-    stockUnitName: input.stockUnitName,
-    stockUnitAbbrev: input.stockUnitAbbrev,
   }
 }
 
@@ -94,6 +96,12 @@ function buildStagedRowUpdateData(
   input: UpdateStagedInventoryRecordInput,
 ): Prisma.FlooringImportStagedInventoryRowUpdateInput {
   const data: Prisma.FlooringImportStagedInventoryRowUpdateInput = {}
+  if (input.unitId !== undefined) {
+    data.unit =
+      input.unitId && input.unitId.trim() !== ""
+        ? { connect: { id: input.unitId } }
+        : { disconnect: true }
+  }
   if (input.rollNumber !== undefined) data.rollNumber = input.rollNumber
   if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
   if (input.location !== undefined) data.location = input.location
@@ -135,9 +143,8 @@ export async function applyImportStagedInventorySectionDiff(
         importEntryId: input.importEntryId,
         categoryFilterId: draft.input.categoryFilterId,
         productId: draft.input.productId,
+        unitId: draft.input.unitId,
         stockOrdered: emptyToNullStockOrdered(draft.input.stockOrdered),
-        stockUnitName: draft.input.stockUnitName,
-        stockUnitAbbrev: draft.input.stockUnitAbbrev,
       })),
     })
   }
@@ -164,8 +171,7 @@ export async function applyImportStagedInventorySectionDiff(
         importEntryId: input.importEntryId,
         productId: draft.input.productId,
         warehouseId: draft.input.warehouseId,
-        stockUnitName: draft.input.stockUnitName,
-        stockUnitAbbrev: draft.input.stockUnitAbbrev,
+        unitId: draft.input.unitId,
         rollNumber: draft.input.rollNumber,
         dyeLot: draft.input.dyeLot,
         location: draft.input.location,

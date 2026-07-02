@@ -15,12 +15,19 @@ export const stagedInventoryFilterRowSelect = {
       name: true,
       style: true,
       color: true,
+      // Product's own unit FK + resolved unit (UoM epic 2B) — seeds the filter
+      // row's `unitId` on add / product-change.
+      unitId: true,
+      unit: { select: { name: true, abbreviation: true } },
       stockUnitName: true,
       stockUnitAbbrev: true,
       category: { select: { id: true } },
     },
   },
   stockOrdered: true,
+  // The filter row's OWN unit FK + resolved unit (UoM epic 2B).
+  unitId: true,
+  unit: { select: { name: true, abbreviation: true } },
   stockUnitName: true,
   stockUnitAbbrev: true,
   createdAt: true,

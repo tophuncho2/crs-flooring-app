@@ -9,6 +9,7 @@ import {
 import { CellAddButton, StatusBadge, type BadgeTone } from "@/engines/common"
 import { TextCell, UnitCell, isLocalOnlyRecordRow } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
+import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
 import {
   resolveEffectiveStatus,
   type ImportFilterRowDraft,
@@ -22,6 +23,9 @@ type StagedGridRow = ImportStagedRowDraft & { id: string }
 type StagedGroup = {
   productId: string
   productName: string
+  // Product's default unit (UoM epic 2B) — seeds a newly added staged row.
+  unitId: string
+  stockUnitName: string
   stockUnitAbbrev: string
   /**
    * The combined planned ordered quantity for this product — the SUM of
@@ -39,6 +43,7 @@ type StagedGroup = {
 // just default them empty.
 const STAGED_COLUMNS: DataTableColumn<StagedGridRow>[] = [
   { key: "status", label: "Status", width: 120, align: "center" },
+  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "rollNumber", label: "Roll #", minWidth: 150, grow: 0.8 },
   { key: "startingStock", label: "Starting Stock", width: 160, align: "end" },
   { key: "dyeLot", label: "Dye Lot", minWidth: 130, grow: 0.6 },
@@ -85,10 +90,24 @@ function buildGroups(
 ): StagedGroup[] {
   const groups: StagedGroup[] = []
   const byId = new Map<string, StagedGroup>()
-  const ensure = (productId: string, productName: string, stockUnitAbbrev: string) => {
+  const ensure = (
+    productId: string,
+    productName: string,
+    unitId: string,
+    stockUnitName: string,
+    stockUnitAbbrev: string,
+  ) => {
     let group = byId.get(productId)
     if (!group) {
-      group = { productId, productName, stockUnitAbbrev, stockOrdered: "", rows: [] }
+      group = {
+        productId,
+        productName,
+        unitId,
+        stockUnitName,
+        stockUnitAbbrev,
+        stockOrdered: "",
+        rows: [],
+      }
       byId.set(productId, group)
       groups.push(group)
     }
@@ -96,7 +115,13 @@ function buildGroups(
   }
   for (const filter of filters) {
     if (!filter.productId) continue
-    const group = ensure(filter.productId, filter.productName, filter.stockUnitAbbrev)
+    const group = ensure(
+      filter.productId,
+      filter.productName,
+      filter.unitId,
+      filter.stockUnitName,
+      filter.stockUnitAbbrev,
+    )
     // Combine duplicate planned imports for the same product: SUM their ordered
     // quantities (skip blanks so an all-blank group stays "" → renders "—").
     const ordered = Number(filter.stockOrdered)
@@ -105,7 +130,13 @@ function buildGroups(
     }
   }
   for (const row of stagedRows) {
-    ensure(row.productId, row.productName, row.stockUnitAbbrev).rows.push(row)
+    ensure(
+      row.productId,
+      row.productName,
+      row.unitId,
+      row.stockUnitName,
+      row.stockUnitAbbrev,
+    ).rows.push(row)
   }
   // Within a group, show rows newest→oldest. Server rows arrive createdAt-asc and
   // new local drafts append to the end, so reversing puts the most recently added
@@ -155,6 +186,17 @@ export function ImportStagedInventoryGrid({
     switch (column.key) {
       case "status":
         return <StatusBadge tone={statusTone(status)}>{statusLabel(status)}</StatusBadge>
+      case "unit":
+        return (
+          <UnitOfMeasurePicker
+            value={gridRow.unitId || null}
+            selectedLabel={gridRow.stockUnitName || null}
+            onChange={(id) => section.setStagedRowField(gridRow.clientId, "unitId", id ?? "")}
+            onOptionSelected={(option) => section.setStagedRowUnit(gridRow.clientId, option)}
+            disabled={!editable}
+            ariaLabel="Select a unit"
+          />
+        )
       case "rollNumber":
         return (
           <TextCell
@@ -235,6 +277,8 @@ export function ImportStagedInventoryGrid({
                     section.addStagedRowDraft({
                       productId: group.productId,
                       productName: group.productName,
+                      unitId: group.unitId,
+                      stockUnitName: group.stockUnitName,
                       stockUnitAbbrev: group.stockUnitAbbrev,
                     })
                   }

@@ -66,8 +66,11 @@ export function normalizeStagedInventoryFilterRow(
     }),
     categoryId: row.product.category.id,
     stockOrdered,
-    stockUnitName: row.stockUnitName ?? "",
-    stockUnitAbbrev: row.stockUnitAbbrev ?? "",
+    unitId: row.unitId ?? "",
+    // Unit display derives from the row's own unit FK join (UoM epic 2B); frozen
+    // snapshot columns are the transition fallback (Phase C drops them).
+    stockUnitName: row.unit?.name ?? row.stockUnitName ?? "",
+    stockUnitAbbrev: row.unit?.abbreviation ?? row.stockUnitAbbrev ?? "",
     startingStockSum,
     remainingStock,
     createdAt: row.createdAt.toISOString(),

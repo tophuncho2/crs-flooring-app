@@ -7,17 +7,16 @@ import {
 } from "./read-repository.js"
 
 /**
- * Wire-input shape for filter-row writes. Combines the user-supplied
- * form fields with the stock-unit snapshot the application layer
- * computes from FlooringProduct before invoking. Mirrors WOMI's
+ * Wire-input shape for filter-row writes. Combines the user-supplied form fields
+ * with the `unitId` the application layer resolves (seeded from FlooringProduct,
+ * re-seeded on product-change, else the user's edit). Mirrors WOMI's
  * `WriteWorkOrderMaterialItemCreateInput` — same orchestration shape.
  */
 export type WriteStagedInventoryFilterRecordInput = {
   categoryFilterId: string | null
   productId: string
+  unitId: string | null
   stockOrdered: Prisma.Decimal | string | number | null
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
 }
 
 /**
@@ -44,9 +43,8 @@ export async function createStagedInventoryFilterRecord(
         ? { connect: { id: input.categoryFilterId } }
         : undefined,
       product: { connect: { id: input.productId } },
+      ...(input.unitId ? { unit: { connect: { id: input.unitId } } } : {}),
       stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
-      stockUnitName: input.stockUnitName,
-      stockUnitAbbrev: input.stockUnitAbbrev,
     },
     select: { id: true },
   })
@@ -67,9 +65,11 @@ function buildUpdateData(
       ? { connect: { id: input.categoryFilterId } }
       : { disconnect: true },
     product: { connect: { id: input.productId } },
+    unit:
+      input.unitId && input.unitId.trim() !== ""
+        ? { connect: { id: input.unitId } }
+        : { disconnect: true },
     stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
-    stockUnitName: input.stockUnitName,
-    stockUnitAbbrev: input.stockUnitAbbrev,
   }
 }
 

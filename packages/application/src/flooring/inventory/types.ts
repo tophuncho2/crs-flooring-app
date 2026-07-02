@@ -11,6 +11,8 @@ export type UpdateInventoryInput = {
 
 export type CreateInventoryInput = {
   productId: string
+  // Unit FK (UoM epic 2B) — seeded from the product on the form, overridable.
+  unitId: string
   warehouseId: string
   rollNumber: string
   dyeLot: string

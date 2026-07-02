@@ -9,20 +9,19 @@ import {
 /**
  * Create input for a staged inventory row. Application layer resolves all
  * snapshots before invoking:
- *  - `productId` from the draft, with `stockUnitName` / `stockUnitAbbrev`
- *    snapshotted from that FlooringProduct on create.
+ *  - `productId` from the draft, with `unitId` seeded from that FlooringProduct
+ *    on create (UoM epic 2B — replaces the frozen `stockUnit*` label snapshots).
  *  - `warehouseId` from the parent import.
  *  - `rollPrefix` defaults server-side to "ROLL#".
  *
- * None of these snapshot fields are user-editable on the per-row update
- * path — see `UpdateStagedInventoryRecordInput`.
+ * `unitId` is user-editable on the per-row update path (see
+ * `UpdateStagedInventoryRecordInput`); product / warehouse are not.
  */
 export type CreateStagedInventoryRecordInput = {
   importEntryId: string
   productId: string
   warehouseId: string
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
+  unitId: string | null
   rollNumber: string | null
   dyeLot: string | null
   location: string | null
@@ -33,14 +32,15 @@ export type CreateStagedInventoryRecordInput = {
 }
 
 /**
- * Update input for a staged inventory row. Only user-editable fields
- * appear here; productId / warehouseId / stockUnit* are
- * immutable snapshots stamped at create time. `isImported` flips
+ * Update input for a staged inventory row. Only user-editable fields appear
+ * here; productId / warehouseId are immutable after create. `unitId` is now
+ * editable (UoM epic 2B) — "" / null disconnects the unit. `isImported` flips
  * exclusively via the mark-for-import path (see `markStagedRowsForImport`)
  * — accepted here only for the legacy materialize backfill path until
  * that retires.
  */
 export type UpdateStagedInventoryRecordInput = {
+  unitId?: string | null
   rollNumber?: string | null
   dyeLot?: string | null
   location?: string | null
@@ -60,8 +60,7 @@ export async function createStagedInventoryRecord(
       importEntry: { connect: { id: input.importEntryId } },
       product: { connect: { id: input.productId } },
       warehouse: { connect: { id: input.warehouseId } },
-      stockUnitName: input.stockUnitName,
-      stockUnitAbbrev: input.stockUnitAbbrev,
+      ...(input.unitId ? { unit: { connect: { id: input.unitId } } } : {}),
       rollNumber: input.rollNumber,
       dyeLot: input.dyeLot,
       location: input.location,
@@ -83,6 +82,12 @@ function buildUpdateData(
   input: UpdateStagedInventoryRecordInput,
 ): Prisma.FlooringImportStagedInventoryRowUpdateInput {
   const data: Prisma.FlooringImportStagedInventoryRowUpdateInput = {}
+  if (input.unitId !== undefined) {
+    data.unit =
+      input.unitId && input.unitId.trim() !== ""
+        ? { connect: { id: input.unitId } }
+        : { disconnect: true }
+  }
   if (input.rollNumber !== undefined) data.rollNumber = input.rollNumber
   if (input.dyeLot !== undefined) data.dyeLot = input.dyeLot
   if (input.location !== undefined) data.location = input.location

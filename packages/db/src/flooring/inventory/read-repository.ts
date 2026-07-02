@@ -77,10 +77,14 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
       color: payload.product.color,
     }),
     categoryId: payload.product.category.id,
-    stockUnitName: payload.stockUnitName ?? "",
-    stockUnitAbbrev: payload.stockUnitAbbrev ?? "",
-    sendUnitName: payload.sendUnitName ?? "",
-    sendUnitAbbrev: payload.sendUnitAbbrev ?? "",
+    unitId: payload.unitId,
+    // Unit display derives from the FK join (UoM epic 2B) — a UoM rename flows
+    // through. Frozen snapshot columns are the transition fallback (Phase C
+    // drops them). Send unit is dead (send===stock) — surfaced as "".
+    stockUnitName: payload.unit?.name ?? payload.stockUnitName ?? "",
+    stockUnitAbbrev: payload.unit?.abbreviation ?? payload.stockUnitAbbrev ?? "",
+    sendUnitName: "",
+    sendUnitAbbrev: "",
     rollPrefix: payload.rollPrefix,
     rollNumber: payload.rollNumber ?? "",
     dyeLot: payload.dyeLot ?? "",
@@ -762,12 +766,10 @@ export async function listInventoryOptions(
         style: true,
         color: true,
         categoryId: true,
-        category: {
-          select: {
-            stockUnit: { select: { name: true } },
-            sendUnit: { select: { name: true } },
-          },
-        },
+        // Unit now comes from the product's own FK (UoM epic 2B), not the
+        // category's stock/send unit.
+        unitId: true,
+        unit: { select: { name: true, abbreviation: true } },
       },
       orderBy: { name: "asc" },
     }),
@@ -793,8 +795,9 @@ export async function listInventoryOptions(
       style: row.style,
       color: row.color,
       categoryId: row.categoryId,
-      stockUnit: row.category.stockUnit?.name ?? "",
-      sendUnit: row.category.sendUnit?.name ?? "",
+      unitId: row.unitId,
+      stockUnit: row.unit?.name ?? "",
+      stockUnitAbbrev: row.unit?.abbreviation ?? "",
     })),
     warehouses,
     categories,

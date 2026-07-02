@@ -29,12 +29,11 @@ export function normalizeStagedInventoryRow(
       color: row.product.color,
     }),
     categoryId: row.product.category.id,
-    // stockUnitName / stockUnitAbbrev are sourced from the row's own
-    // snapshot columns (stamped at create-time from the row's product),
-    // not from the product join. Keeps the read shape stable against
-    // later product edits.
-    stockUnitName: row.stockUnitName ?? "",
-    stockUnitAbbrev: row.stockUnitAbbrev ?? "",
+    unitId: row.unitId ?? "",
+    // Unit display derives from the row's own unit FK join (UoM epic 2B); the
+    // frozen snapshot columns are the transition fallback (Phase C drops them).
+    stockUnitName: row.unit?.name ?? row.stockUnitName ?? "",
+    stockUnitAbbrev: row.unit?.abbreviation ?? row.stockUnitAbbrev ?? "",
     rollPrefix: row.rollPrefix,
     rollNumber: row.rollNumber ?? "",
     dyeLot: row.dyeLot ?? "",

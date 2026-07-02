@@ -73,9 +73,11 @@ export const productOptionSelect = {
   id: true,
   name: true,
   categoryId: true,
-  // Canonical unit FK (UoM epic 2A). Carried so downstream row pickers can seed
-  // a row's unit from the picked product in later sub-plans.
+  // Canonical unit FK (UoM epic 2A) + resolved unit (2B). Downstream row pickers
+  // seed a row's unit from the picked product; the option's stock-unit label +
+  // abbrev derive from `unit` (the frozen strings are the transition fallback).
   unitId: true,
+  unit: { select: { name: true, abbreviation: true } },
   category: { select: { name: true } },
   style: true,
   color: true,

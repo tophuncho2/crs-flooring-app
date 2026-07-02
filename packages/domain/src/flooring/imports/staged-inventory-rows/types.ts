@@ -7,6 +7,10 @@ export type StagedInventoryRow = {
   productId: string
   productName: string
   categoryId: string
+  // Canonical unit FK (UoM epic 2B) — editable in staging, materialized forward
+  // by the worker. "" when unset (a draft can lack a unit; the importability
+  // gate blocks queueing until it's set). Display derives from the join below.
+  unitId: string
   stockUnitName: string
   stockUnitAbbrev: string
   rollPrefix: string
@@ -26,6 +30,7 @@ export type StagedInventoryRow = {
 }
 
 export type StagedInventoryForm = {
+  unitId: string
   rollNumber: string
   dyeLot: string
   location: string
@@ -36,6 +41,7 @@ export type StagedInventoryForm = {
 }
 
 export const EMPTY_STAGED_INVENTORY_FORM: StagedInventoryForm = {
+  unitId: "",
   rollNumber: "",
   dyeLot: "",
   location: "",
@@ -47,6 +53,7 @@ export const EMPTY_STAGED_INVENTORY_FORM: StagedInventoryForm = {
 
 export function toStagedInventoryForm(row: StagedInventoryRow): StagedInventoryForm {
   return {
+    unitId: row.unitId,
     rollNumber: row.rollNumber,
     dyeLot: row.dyeLot,
     location: row.location,

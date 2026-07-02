@@ -119,9 +119,9 @@ export async function createPendingAdjustmentUseCase(
       color: input.color,
       cost,
       freight,
+      // Stamp the parent inventory's unit FK onto the ledger row (UoM epic 2B).
       unitSnapshot: {
-        stockUnitName: inventory.stockUnitName,
-        stockUnitAbbrev: inventory.stockUnitAbbrev,
+        unitId: inventory.unitId,
       },
       inventorySnapshot: buildPendingAdjustmentInventorySnapshot({
         inventoryNumber: inventory.inventoryNumber,

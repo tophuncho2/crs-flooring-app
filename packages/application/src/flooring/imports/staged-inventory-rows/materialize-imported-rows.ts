@@ -41,6 +41,21 @@ export async function materializeImportedStagedRowsUseCase(
       })
     }
 
+    // The staged rows carry their OWN unit FK (UoM epic 2B) — the worker
+    // materializes it forward verbatim (no re-derivation from the product).
+    // The importability gate blocks a null-unit row from ever reaching QUEUED,
+    // so a null here means a precondition regression, not a normal state.
+    const rowsMissingUnit = loadedRows.filter((row) => !row.unitId)
+    if (rowsMissingUnit.length > 0) {
+      throw new StagedInventoryExecutionError({
+        code: "STAGED_MATERIALIZE_PRECONDITION_FAILED",
+        message:
+          "Staged rows are missing a unit and cannot be materialized. Assign a unit to every row before importing.",
+        status: 409,
+        payload: { missingIds: rowsMissingUnit.map((row) => row.id) },
+      })
+    }
+
     const inventoryRowsToCreate: Array<
       MaterializeInventoryRowFields & { id: string; sourceStagedRowId: string }
     > = loadedRows.map((row) => ({
@@ -48,10 +63,8 @@ export async function materializeImportedStagedRowsUseCase(
       sourceStagedRowId: row.id,
       importEntryId: payload.importEntryId,
       productId: row.productId,
-      stockUnitName: row.product.stockUnitName,
-      stockUnitAbbrev: row.product.stockUnitAbbrev,
-      sendUnitName: row.product.sendUnitName,
-      sendUnitAbbrev: row.product.sendUnitAbbrev,
+      // Non-null: the `rowsMissingUnit` guard above rejects the batch otherwise.
+      unitId: row.unitId as string,
       rollPrefix: row.rollPrefix,
       rollNumber: row.rollNumber,
       dyeLot: row.dyeLot,

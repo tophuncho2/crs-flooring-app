@@ -15,6 +15,11 @@ export type InventoryRow = {
   productId: string
   productName: string
   categoryId: string
+  // Canonical unit FK (UoM epic 2B). Optional so the sacred WO-adjustment create
+  // modal's synthesized row literal (which has no source unit id) still satisfies
+  // the type; the normalizer always populates it for real rows. Display still
+  // flows through the derived `stockUnitAbbrev`/`stockUnitName` below.
+  unitId?: string
   stockUnitName: string
   stockUnitAbbrev: string
   sendUnitName: string
@@ -85,8 +90,10 @@ export type InventoryProductOption = {
   style: string | null
   color: string | null
   categoryId: string
+  // Unit FK (UoM epic 2B) + resolved name/abbrev off the product's own unit.
+  unitId: string
   stockUnit: string
-  sendUnit: string
+  stockUnitAbbrev: string
 }
 
 export type InventoryWarehouseOption = {

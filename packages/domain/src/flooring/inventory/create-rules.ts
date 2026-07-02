@@ -16,6 +16,9 @@ export const DEFAULT_ROLL_PREFIX = "ROLL#"
 // product + warehouse select the snapshot/relation; the rest are free entry.
 export type CreateInventoryEdits = {
   productId: string
+  // Unit FK (UoM epic 2B). Seeded from the picked product on the create form,
+  // user-overridable; frozen after create.
+  unitId: string
   warehouseId: string
   rollNumber: string
   dyeLot: string
@@ -27,25 +30,11 @@ export type CreateInventoryEdits = {
   internalNotes: string
 }
 
-// Product-derived snapshot columns, stamped onto the inventory row at create.
-// Plain-string shape (the application maps `ProductRecord` — which normalizes
-// missing units to "" — into this before calling the builder), keeping the
-// domain free of `@builders/db` types.
-export type CreateInventoryProductSnapshot = {
-  stockUnitName: string
-  stockUnitAbbrev: string
-  sendUnitName: string
-  sendUnitAbbrev: string
-}
-
 export type CreatedInventoryInsertFields = {
   importEntryId: null
   sourceStagedRowId: null
   productId: string
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
-  sendUnitName: string | null
-  sendUnitAbbrev: string | null
+  unitId: string
   rollPrefix: string
   rollNumber: string | null
   dyeLot: string | null
@@ -62,6 +51,7 @@ export type CreatedInventoryInsertFields = {
 
 export type InventoryCreateIssueCode =
   | "PRODUCT_REQUIRED"
+  | "UNIT_REQUIRED"
   | "WAREHOUSE_REQUIRED"
   | "STARTING_STOCK_REQUIRED"
   | "STARTING_STOCK_INVALID"
@@ -88,6 +78,9 @@ export function validateCreateInventoryEdits(
 
   if (edits.productId.trim().length === 0) {
     issues.push({ code: "PRODUCT_REQUIRED" })
+  }
+  if (edits.unitId.trim().length === 0) {
+    issues.push({ code: "UNIT_REQUIRED" })
   }
   if (edits.warehouseId.trim().length === 0) {
     issues.push({ code: "WAREHOUSE_REQUIRED" })
@@ -136,6 +129,7 @@ export function validateCreateInventoryEdits(
 
 const INVENTORY_CREATE_ISSUE_COPY: Record<InventoryCreateIssueCode, string> = {
   PRODUCT_REQUIRED: "A product is required.",
+  UNIT_REQUIRED: "A unit is required.",
   WAREHOUSE_REQUIRED: "A warehouse is required.",
   STARTING_STOCK_REQUIRED: "Starting stock is required.",
   STARTING_STOCK_INVALID: "Starting stock must be a number.",
@@ -154,17 +148,13 @@ export function describeInventoryCreateIssues(issues: InventoryCreateIssue[]): s
 }
 
 export function buildCreatedInventoryInsert(
-  product: CreateInventoryProductSnapshot,
   edits: CreateInventoryEdits,
 ): CreatedInventoryInsertFields {
   return {
     importEntryId: null,
     sourceStagedRowId: null,
     productId: edits.productId,
-    stockUnitName: emptyToNull(product.stockUnitName),
-    stockUnitAbbrev: emptyToNull(product.stockUnitAbbrev),
-    sendUnitName: emptyToNull(product.sendUnitName),
-    sendUnitAbbrev: emptyToNull(product.sendUnitAbbrev),
+    unitId: edits.unitId.trim(),
     rollPrefix: DEFAULT_ROLL_PREFIX,
     rollNumber: emptyToNull(edits.rollNumber),
     dyeLot: emptyToNull(edits.dyeLot),

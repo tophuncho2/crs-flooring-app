@@ -25,6 +25,11 @@ export const adjustmentRowSelect = {
   after: true,
   cost: true,
   freight: true,
+  // Canonical unit FK + resolved unit (UoM epic 2B). The normalizer derives the
+  // display abbrev/name from `unit`; the frozen snapshot columns stay selected as
+  // the transition fallback (dropped in Phase C).
+  unitId: true,
+  unit: { select: { name: true, abbreviation: true } },
   stockUnitName: true,
   stockUnitAbbrev: true,
   adjustmentType: true,

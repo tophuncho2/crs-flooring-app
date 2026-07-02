@@ -18,6 +18,11 @@ export const stagedInventoryRowSelect = {
       name: true,
       style: true,
       color: true,
+      // Product's own unit FK + resolved unit (UoM epic 2B) — seeds a staged
+      // row's `unitId` on add / product-change; the frozen strings are the
+      // transition fallback.
+      unitId: true,
+      unit: { select: { name: true, abbreviation: true } },
       stockUnitName: true,
       stockUnitAbbrev: true,
       sendUnitName: true,
@@ -29,6 +34,11 @@ export const stagedInventoryRowSelect = {
       },
     },
   },
+  // The staged row's OWN unit FK (UoM epic 2B) — editable in staging, and the
+  // value the worker materializes forward into inventory. Nullable until the
+  // importability gate requires it. `unit` resolves the display abbrev/name.
+  unitId: true,
+  unit: { select: { name: true, abbreviation: true } },
   rollPrefix: true,
   rollNumber: true,
   dyeLot: true,

@@ -28,11 +28,6 @@ import type {
   SaveImportStagedInventorySectionResult,
 } from "./types.js"
 
-type StockUnitSnapshot = {
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
-}
-
 /**
  * Cost/freight are optional money figures. Empty string → null; otherwise
  * normalized to the canonical Decimal(12,2) string at this boundary (money
@@ -124,7 +119,11 @@ export async function saveImportStagedInventorySectionUseCase(
         product: await getProductById(productId, c),
       })),
     )
-    const snapshotByProductId = new Map<string, StockUnitSnapshot>()
+    // Product → its own unit FK (UoM epic 2B). Seeds a row's `unitId` on add /
+    // product-change; the form's own `unitId` (kept correct client-side, and
+    // re-seeded there on product-change) takes precedence, with this as the
+    // fallback when the form left it blank.
+    const unitIdByProductId = new Map<string, string>()
     for (const entry of products) {
       if (!entry.product) {
         throw new ImportStagedInventorySectionExecutionError({
@@ -135,10 +134,7 @@ export async function saveImportStagedInventorySectionUseCase(
           payload: { productId: entry.productId },
         })
       }
-      snapshotByProductId.set(entry.productId, {
-        stockUnitName: entry.product.stockUnitName ?? null,
-        stockUnitAbbrev: entry.product.stockUnitAbbrev ?? null,
-      })
+      unitIdByProductId.set(entry.productId, entry.product.unitId)
     }
 
     const [existingFilters, existingStagedRows] = await Promise.all([
@@ -173,19 +169,17 @@ export async function saveImportStagedInventorySectionUseCase(
     const filtersAddedWithIds = assignDraftIds(input.diff.filters.added, randomUUID)
     const rowsAddedWithIds = assignDraftIds(input.diff.rows.added, randomUUID)
 
-    // Staged rows attach directly to the import and carry their own
-    // productId; the stockUnit snapshot is resolved from that product
-    // (already fetched + verified into snapshotByProductId above).
+    // Staged rows attach directly to the import and carry their own productId;
+    // the unit FK is the form's own `unitId`, falling back to the product's unit
+    // (already fetched into unitIdByProductId above) when the form left it blank.
     const stagedRowAddedInputs = rowsAddedWithIds.map((draft) => {
-      const snapshot = snapshotByProductId.get(draft.productId)
       return {
         id: draft.id,
         tempId: draft.tempId,
         input: {
           productId: draft.productId,
           warehouseId: parent.warehouseId,
-          stockUnitName: snapshot?.stockUnitName ?? null,
-          stockUnitAbbrev: snapshot?.stockUnitAbbrev ?? null,
+          unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.productId) || null,
           rollNumber: draft.form.rollNumber || null,
           dyeLot: draft.form.dyeLot || null,
           location: draft.form.location || null,
@@ -212,8 +206,8 @@ export async function saveImportStagedInventorySectionUseCase(
           input: {
             categoryFilterId: draft.form.categoryFilterId,
             productId: draft.form.productId,
+            unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.form.productId) || null,
             stockOrdered: draft.form.stockOrdered,
-            ...snapshotByProductId.get(draft.form.productId)!,
           },
         })),
         modified: input.diff.filters.modified.map((update) => ({
@@ -221,8 +215,8 @@ export async function saveImportStagedInventorySectionUseCase(
           input: {
             categoryFilterId: update.form.categoryFilterId,
             productId: update.form.productId,
+            unitId: update.form.unitId.trim() || unitIdByProductId.get(update.form.productId) || null,
             stockOrdered: update.form.stockOrdered,
-            ...snapshotByProductId.get(update.form.productId)!,
           },
         })),
         deleted: input.diff.filters.deleted.map((d) => ({ id: d.id })),
@@ -236,6 +230,9 @@ export async function saveImportStagedInventorySectionUseCase(
         modified: input.diff.rows.modified.map((update) => ({
           id: update.id,
           input: {
+            // Product is fixed on a staged row → the unit is the user's own edit
+            // ("" disconnects; the importability gate blocks queueing a null unit).
+            unitId: update.form.unitId.trim() || null,
             rollNumber: update.form.rollNumber || null,
             dyeLot: update.form.dyeLot || null,
             location: update.form.location || null,

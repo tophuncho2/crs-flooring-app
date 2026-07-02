@@ -46,19 +46,23 @@ export type StagedImportabilityReason =
   | "ALREADY_QUEUED"
   | "ALREADY_IMPORTED"
   | "MISSING_PRODUCT"
+  | "MISSING_UNIT"
   | "MISSING_WAREHOUSE"
   | "ZERO_STARTING_STOCK"
 
 export function getStagedRowImportabilityBlocker(
   row: Pick<
     StagedInventoryRow,
-    "status" | "isImported" | "productId" | "warehouseId" | "startingStock"
+    "status" | "isImported" | "productId" | "unitId" | "warehouseId" | "startingStock"
   >,
 ): StagedImportabilityReason | null {
   if (row.status === "QUEUED") return "ALREADY_QUEUED"
   if (row.status === "IMPORTED") return "NOT_DRAFT_STATUS"
   if (row.isImported) return "ALREADY_IMPORTED"
   if (!row.productId || row.productId.trim() === "") return "MISSING_PRODUCT"
+  // A staged row must carry a unit before it can queue — the worker materializes
+  // it forward into inventory's NOT-NULL unit column (UoM epic 2B).
+  if (!row.unitId || row.unitId.trim() === "") return "MISSING_UNIT"
   if (!row.warehouseId || row.warehouseId.trim() === "") return "MISSING_WAREHOUSE"
   const parsed = Number((row.startingStock ?? "").toString())
   if (!Number.isFinite(parsed) || parsed <= 0) return "ZERO_STARTING_STOCK"
@@ -68,13 +72,14 @@ export function getStagedRowImportabilityBlocker(
 export function canImportStagedRow(
   row: Pick<
     StagedInventoryRow,
-    "status" | "isImported" | "productId" | "warehouseId" | "startingStock"
+    "status" | "isImported" | "productId" | "unitId" | "warehouseId" | "startingStock"
   >,
 ): boolean {
   return row.status === "DRAFT" && getStagedRowImportabilityBlocker(row) === null
 }
 
 export const STAGED_USER_EDITABLE_FIELDS = [
+  "unitId",
   "rollNumber",
   "dyeLot",
   "location",

@@ -58,12 +58,14 @@ export function useImportStagedInventorySection({
     addFilterRow: filters.addFilterRow,
     removeFilterRow: filters.removeFilterRow,
     setFilterField: filters.setFilterField,
+    setFilterUnit: filters.setFilterUnit,
     setFilterCategoryFilter: filters.setFilterCategoryFilter,
     setFilterProductSnapshot: filters.setFilterProductSnapshot,
     addStagedRowDraft: filters.addStagedRowDraft,
     duplicateStagedRowDraft: filters.duplicateStagedRowDraft,
     removeStagedRowDraft: filters.removeStagedRowDraft,
     setStagedRowField: filters.setStagedRowField,
+    setStagedRowUnit: filters.setStagedRowUnit,
     ...selection,
   }
 }

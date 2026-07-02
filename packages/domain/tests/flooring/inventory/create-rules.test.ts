@@ -4,12 +4,12 @@ import {
   buildCreatedInventoryInsert,
   validateCreateInventoryEdits,
   type CreateInventoryEdits,
-  type CreateInventoryProductSnapshot,
 } from "../../../src/flooring/inventory/create-rules.js"
 
 function edits(overrides: Partial<CreateInventoryEdits> = {}): CreateInventoryEdits {
   return {
     productId: "p-1",
+    unitId: "u-1",
     warehouseId: "wh-1",
     rollNumber: "R-2",
     dyeLot: "DYE-9",
@@ -23,26 +23,17 @@ function edits(overrides: Partial<CreateInventoryEdits> = {}): CreateInventoryEd
   }
 }
 
-function product(
-  overrides: Partial<CreateInventoryProductSnapshot> = {},
-): CreateInventoryProductSnapshot {
-  return {
-    stockUnitName: "Square Feet",
-    stockUnitAbbrev: "SF",
-    sendUnitName: "Linear Feet",
-    sendUnitAbbrev: "LF",
-    ...overrides,
-  }
-}
-
 describe("validateCreateInventoryEdits", () => {
   it("passes a complete, in-bounds form", () => {
     expect(validateCreateInventoryEdits(edits())).toEqual([])
   })
 
-  it("flags a missing product / warehouse", () => {
+  it("flags a missing product / unit / warehouse", () => {
     expect(validateCreateInventoryEdits(edits({ productId: "  " }))).toEqual([
       { code: "PRODUCT_REQUIRED" },
+    ])
+    expect(validateCreateInventoryEdits(edits({ unitId: "  " }))).toEqual([
+      { code: "UNIT_REQUIRED" },
     ])
     expect(validateCreateInventoryEdits(edits({ warehouseId: "" }))).toEqual([
       { code: "WAREHOUSE_REQUIRED" },
@@ -97,17 +88,16 @@ describe("validateCreateInventoryEdits", () => {
 })
 
 describe("buildCreatedInventoryInsert", () => {
-  it("stamps product snapshot columns, applies edits, and drops all import provenance", () => {
-    const fields = buildCreatedInventoryInsert(product(), edits())
+  it("stamps the unit FK, applies edits, and drops all import provenance", () => {
+    const fields = buildCreatedInventoryInsert(edits())
 
     // No import / staged-row provenance for a manual create.
     expect(fields.importEntryId).toBeNull()
     expect(fields.sourceStagedRowId).toBeNull()
 
-    // Snapshot columns from the product.
+    // Unit FK from the form (seeded from the product, overridable).
     expect(fields.productId).toBe("p-1")
-    expect(fields.stockUnitAbbrev).toBe("SF")
-    expect(fields.sendUnitAbbrev).toBe("LF")
+    expect(fields.unitId).toBe("u-1")
 
     // Roll prefix defaults; dye lot comes from edits (not a source row).
     expect(fields.rollPrefix).toBe(DEFAULT_ROLL_PREFIX)
@@ -124,9 +114,12 @@ describe("buildCreatedInventoryInsert", () => {
     expect(fields.isArchived).toBe(false)
   })
 
+  it("trims the unit FK", () => {
+    expect(buildCreatedInventoryInsert(edits({ unitId: " u-9 " })).unitId).toBe("u-9")
+  })
+
   it("normalizes empty short-text fields to null", () => {
     const fields = buildCreatedInventoryInsert(
-      product(),
       edits({ dyeLot: "", location: "", internalNotes: "" }),
     )
     expect(fields.dyeLot).toBeNull()
@@ -135,13 +128,13 @@ describe("buildCreatedInventoryInsert", () => {
   })
 
   it("trims the edited starting stock", () => {
-    const fields = buildCreatedInventoryInsert(product(), edits({ startingStock: " 42.50 " }))
+    const fields = buildCreatedInventoryInsert(edits({ startingStock: " 42.50 " }))
     expect(fields.startingStock).toBe("42.50")
   })
 
   it("normalizes cost/freight to fixed-scale money, blank → null", () => {
-    expect(buildCreatedInventoryInsert(product(), edits({ cost: "", freight: "" })).cost).toBeNull()
-    const fields = buildCreatedInventoryInsert(product(), edits({ cost: "12.5", freight: "300" }))
+    expect(buildCreatedInventoryInsert(edits({ cost: "", freight: "" })).cost).toBeNull()
+    const fields = buildCreatedInventoryInsert(edits({ cost: "12.5", freight: "300" }))
     expect(fields.cost).toBe("12.50")
     expect(fields.freight).toBe("300.00")
   })

@@ -4,10 +4,9 @@ export const INVENTORY_IMMUTABLE_FIELDS = [
   "freight",
   "importEntryId",
   "productId",
-  "stockUnitName",
-  "stockUnitAbbrev",
-  "sendUnitName",
-  "sendUnitAbbrev",
+  // Unit FK (UoM epic 2B) — create-only, immutable after (replaced the four
+  // frozen stock/send unit snapshot strings).
+  "unitId",
   "warehouseId",
   "rollNumber",
   "dyeLot",

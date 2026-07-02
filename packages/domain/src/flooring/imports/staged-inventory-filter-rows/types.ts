@@ -8,6 +8,10 @@ export type StagedInventoryFilterRow = {
   productName: string
   categoryId: string
   stockOrdered: string
+  // Canonical unit FK (UoM epic 2B) — editable, re-seeded from the product on
+  // product-change (mirrors the material-item unit). "" when unset. Display
+  // derives from the join.
+  unitId: string
   stockUnitName: string
   stockUnitAbbrev: string
   startingStockSum: string
@@ -19,12 +23,14 @@ export type StagedInventoryFilterRow = {
 export type StagedInventoryFilterForm = {
   categoryFilterId: string | null
   productId: string
+  unitId: string
   stockOrdered: string
 }
 
 export const EMPTY_STAGED_INVENTORY_FILTER_FORM: StagedInventoryFilterForm = {
   categoryFilterId: null,
   productId: "",
+  unitId: "",
   stockOrdered: "",
 }
 
@@ -34,6 +40,7 @@ export function toStagedInventoryFilterForm(
   return {
     categoryFilterId: row.categoryFilterId,
     productId: row.productId,
+    unitId: row.unitId,
     stockOrdered: row.stockOrdered,
   }
 }

@@ -52,9 +52,11 @@ function runSave(input: SaveImportStagedInventorySectionInput) {
 type FilterForm = {
   categoryFilterId: string | null
   productId: string
+  unitId: string
   stockOrdered: string
 }
 type RowForm = {
+  unitId: string
   rollNumber: string
   dyeLot: string
   location: string
@@ -68,12 +70,14 @@ function filterForm(overrides: Partial<FilterForm> = {}): FilterForm {
   return {
     categoryFilterId: "cat-1",
     productId: "product-1",
+    unitId: "unit-1",
     stockOrdered: "10",
     ...overrides,
   }
 }
 function rowForm(overrides: Partial<RowForm> = {}): RowForm {
   return {
+    unitId: "unit-1",
     rollNumber: "",
     dyeLot: "",
     location: "",
@@ -112,10 +116,11 @@ function fakeImport() {
 }
 
 function fakeProduct(overrides: Record<string, unknown> = {}) {
-  // Shape relevant to the use case: only stockUnitName / stockUnitAbbrev
-  // are read.
+  // Shape relevant to the use case: only `unitId` is read now (the retiring
+  // stockUnit* strings are no longer seeded onto staged rows — UoM epic 2B).
   return {
     id: "product-1",
+    unitId: "unit-1",
     stockUnitName: "Square Yard",
     stockUnitAbbrev: "sy",
     ...overrides,
@@ -402,9 +407,9 @@ describe("saveImportStagedInventorySectionUseCase — diff validators", () => {
 })
 
 describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolution", () => {
-  it("snapshots stockUnit from the added staged row's OWN product (no filter dependency)", async () => {
+  it("falls back to the added staged row's OWN product unit when the form leaves it blank", async () => {
     getProductByIdMock.mockImplementation(async (id: string) =>
-      fakeProduct({ id, stockUnitName: "New Unit", stockUnitAbbrev: "nu" }),
+      fakeProduct({ id, unitId: "unit-from-product" }),
     )
 
     await runSave({
@@ -416,7 +421,8 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
             {
               tempId: "tmp-row",
               productId: "product-new",
-              form: rowForm({ startingStock: "7" }),
+              // Blank form unit → the use case seeds it from the product's own FK.
+              form: rowForm({ startingStock: "7", unitId: "" }),
             },
           ],
           modified: [],
@@ -435,12 +441,40 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
     expect(addedRow.input).toMatchObject({
       productId: "product-new",
       warehouseId: WAREHOUSE_ID,
-      stockUnitName: "New Unit",
-      stockUnitAbbrev: "nu",
+      unitId: "unit-from-product",
       startingStock: "7",
     })
     // The staged row no longer carries a filter-row link.
     expect(addedRow.input).not.toHaveProperty("filterRowId")
+  })
+
+  it("uses the form's own unit FK when present (overriding the product default)", async () => {
+    getProductByIdMock.mockImplementation(async (id: string) =>
+      fakeProduct({ id, unitId: "unit-from-product" }),
+    )
+
+    await runSave({
+      importEntryId: IMPORT_ID,
+      diff: {
+        filters: { added: [], modified: [], deleted: [] },
+        rows: {
+          added: [
+            {
+              tempId: "tmp-row",
+              productId: "product-new",
+              form: rowForm({ startingStock: "7", unitId: "unit-user-picked" }),
+            },
+          ],
+          modified: [],
+          deleted: [],
+        },
+      },
+    })
+
+    const input = (applyImportStagedInventorySectionDiffMock.mock.calls[0]?.[1] as {
+      rows: { added: Array<{ input: Record<string, unknown> }> }
+    }).rows.added[0]!.input
+    expect(input.unitId).toBe("unit-user-picked")
   })
 
   it("throws when an added staged row's product is missing", async () => {

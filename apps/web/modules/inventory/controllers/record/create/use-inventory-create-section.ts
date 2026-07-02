@@ -13,6 +13,9 @@ import { useInventoryListMutations } from "@/modules/inventory/controllers/list/
  */
 export type InventoryCreateForm = {
   productId: string
+  // Unit FK (UoM epic 2B). Seeded from the picked product, overridable via the
+  // create form's UoM picker; immutable after create.
+  unitId: string
   warehouseId: string
   rollNumber: string
   dyeLot: string
@@ -26,6 +29,7 @@ export type InventoryCreateForm = {
 
 const EMPTY_CREATE_FORM: InventoryCreateForm = {
   productId: "",
+  unitId: "",
   warehouseId: "",
   rollNumber: "",
   dyeLot: "",
@@ -101,6 +105,7 @@ export function useInventoryCreateSection({
   const isDirty = useMemo(
     () =>
       form.productId !== seed.productId ||
+      form.unitId !== seed.unitId ||
       form.warehouseId !== seed.warehouseId ||
       form.rollNumber !== seed.rollNumber ||
       form.dyeLot !== seed.dyeLot ||
@@ -115,6 +120,7 @@ export function useInventoryCreateSection({
 
   const canSubmit =
     form.productId.trim().length > 0 &&
+    form.unitId.trim().length > 0 &&
     form.warehouseId.trim().length > 0 &&
     form.startingStock.trim().length > 0
 

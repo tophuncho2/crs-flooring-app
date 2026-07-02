@@ -53,15 +53,9 @@ export async function createInventoryUseCase(
       })
     }
 
-    const fields = buildCreatedInventoryInsert(
-      {
-        stockUnitName: product.stockUnitName,
-        stockUnitAbbrev: product.stockUnitAbbrev,
-        sendUnitName: product.sendUnitName,
-        sendUnitAbbrev: product.sendUnitAbbrev,
-      },
-      input,
-    )
+    // Unit is the FK from the create form (seeded from the product, overridable).
+    // No longer derived from the product's retiring snapshot strings (UoM epic 2B).
+    const fields = buildCreatedInventoryInsert(input)
 
     // Pin createdAt to the creation instant — it's the row's FIFO position.
     const now = new Date()
