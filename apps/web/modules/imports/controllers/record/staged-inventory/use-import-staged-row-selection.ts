@@ -1,15 +1,17 @@
 "use client"
 
 import { useCallback } from "react"
-import type { StagedInventoryRow } from "@builders/domain"
+import { canImportStagedRow, type StagedInventoryRow } from "@builders/domain"
 import { useGatedBatchSelect } from "@/engines/record-view"
 import type { ImportReconcileResponse } from "../drafts"
 import { useMarkForImportMutation } from "./mutations/use-mark-for-import-mutation"
 
 /**
  * Staged-row selection slice. Wraps `useGatedBatchSelect` for the
- * mark-for-import flow: eligibility (DRAFT + productId + startingStock),
- * batch fire, gated by section dirty/busy state.
+ * mark-for-import flow: eligibility is the shared domain predicate
+ * `canImportStagedRow` (DRAFT + product + unit + warehouse + positive stock) —
+ * the SAME rule the server enforces at mark-for-import, so a row that can't be
+ * imported can't be selected. Batch fire, gated by section dirty/busy state.
  *
  * Shape mirrors the future shared `useBatchSelectionSection` — when
  * WOMI/adjustments adopts batch selection, `useMarkForImportMutation` becomes
@@ -45,12 +47,10 @@ export function useImportStagedRowSelection({
 
   const batch = useGatedBatchSelect<StagedInventoryRow>({
     rows: stagedRows,
-    isEligible: (row) => {
-      if (row.status !== "DRAFT") return false
-      if (!row.productId) return false
-      if (!row.startingStock) return false
-      return true
-    },
+    // Single source of truth with the server's mark-for-import gate — closes the
+    // drift where a unit-less (or zero-stock) row was selectable client-side but
+    // rejected server-side.
+    isEligible: canImportStagedRow,
     performAction,
     isSectionDirty,
     isSectionBusy,
