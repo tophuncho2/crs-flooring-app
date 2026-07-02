@@ -151,13 +151,13 @@ export async function searchCategoryOptions(
     orderBy: { name: "asc" },
     skip,
     take: args.take + 1,
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true },
   })
 
   const hasMore = rows.length > args.take
   const page = hasMore ? rows.slice(0, args.take) : rows
   return {
-    items: page.map((row) => ({ id: row.id, name: row.name, slug: row.slug })),
+    items: page.map((row) => ({ id: row.id, name: row.name })),
     hasMore,
   }
 }

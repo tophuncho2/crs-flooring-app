@@ -9,12 +9,10 @@ export type CategoryMeta = {
 }
 
 // Slim option shape consumed by the canonical CategoryPicker (server-side
-// search). `slug` is included so the picker can show it as a subtitle line
-// without an extra fetch.
+// search). Name-only — the picker renders no subtitle line.
 export type CategoryOption = {
   id: string
   name: string
-  slug: string
 }
 
 // Rendered subset for the categories list view. The surface shows

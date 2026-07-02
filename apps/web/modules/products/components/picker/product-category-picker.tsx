@@ -53,7 +53,7 @@ export type ProductCategoryPickerProps = {
 }
 
 function toCategoryOption(option: CategoryOption): PickerListOption {
-  return { id: option.id, title: option.name, subtitles: [option.slug] }
+  return { id: option.id, title: option.name }
 }
 
 function toProductOption(option: ProductOption): PickerListOption {

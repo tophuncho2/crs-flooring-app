@@ -36,7 +36,7 @@ export type CategoryPickerProps = {
 }
 
 function toDropdownOption(option: CategoryOption): AsyncRichDropdownOption {
-  return { id: option.id, title: option.name, subtitles: [option.slug] }
+  return { id: option.id, title: option.name }
 }
 
 export function CategoryPicker({
