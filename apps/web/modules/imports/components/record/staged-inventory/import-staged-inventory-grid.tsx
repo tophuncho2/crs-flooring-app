@@ -297,10 +297,10 @@ export function ImportStagedInventoryGrid({
                 />
                 <span className="text-base font-semibold text-[var(--foreground)]">
                   {group.productName}
-                  {group.stockUnitName || group.stockUnitAbbrev ? (
+                  {group.stockUnitAbbrev || group.stockUnitName ? (
                     <span className="font-normal text-[var(--foreground)]/55">
                       {" · "}
-                      {group.stockUnitName || group.stockUnitAbbrev}
+                      {group.stockUnitAbbrev || group.stockUnitName}
                     </span>
                   ) : null}
                 </span>

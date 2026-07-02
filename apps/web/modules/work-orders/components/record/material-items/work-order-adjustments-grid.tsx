@@ -64,9 +64,9 @@ function groupByProduct(
     return group
   }
   for (const adj of adjustments)
-    ensure(adj.productId, adj.unitId ?? "", adj.stockUnitName ?? "", adj.productName).rows.push(adj)
+    ensure(adj.productId, adj.unitId ?? "", adj.stockUnitAbbrev ?? "", adj.productName).rows.push(adj)
   for (const item of requestedItems)
-    ensure(item.productId, item.unitId, item.sendUnitName, item.productName)
+    ensure(item.productId, item.unitId, item.sendUnitAbbrev, item.productName)
   for (const group of groups) group.rows.sort(compareAdjustmentsByRecency)
   // Product-name ascending, then unit so a product's unit-groups stay adjacent.
   groups.sort(

@@ -214,8 +214,8 @@ describe("WorkOrderAdjustmentsGrid — splits one product across units (UoM epic
       ],
     })
     const text = container.textContent ?? ""
-    // Two groups for the one product — headers disambiguated by unit.
-    expect(text).toContain("Berber Carpet · square foot")
+    // Two groups for the one product — headers disambiguated by unit abbreviation.
+    expect(text).toContain("Berber Carpet · sqft")
     expect(text).toContain("Berber Carpet · box")
     // Per-unit Deduction subtotals — never summed together (would be "8").
     expect(screen.getByText("5 sqft")).toBeTruthy()
