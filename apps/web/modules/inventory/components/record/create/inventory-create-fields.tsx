@@ -20,8 +20,8 @@ import {
  * Presentational body for the manual create-inventory flow, built on the shared
  * inventory field package (`../fields`) over the record-view engine. Product +
  * warehouse (both required, immutable after create) stack in a single left
- * column; Starting Stock | Unit pair beneath the warehouse (each half its
- * width), Location follows, then the remaining editable item fields. The
+ * column; Location follows the warehouse, then Starting Stock | Unit pair
+ * beneath it (each half its width), then the remaining editable item fields. The
  * starting-stock unit suffix reflects the picked product's stock unit.
  * Snapshot/category columns are derived server-side from the product — never
  * entered here.
@@ -67,8 +67,8 @@ export function InventoryCreateFields({
         />
       </CellAt>
 
-      {/* Warehouse, then Starting Stock | Unit paired beneath it (each half the
-          warehouse width, together spanning the same cols), then Location. */}
+      {/* Warehouse, then Location, then Starting Stock | Unit paired (each half
+          the warehouse width, together spanning the same cols). */}
       <CellAt col={1} row={2} colSpan={4}>
         <WarehousePickerField
           required
@@ -81,7 +81,14 @@ export function InventoryCreateFields({
           ariaLabel="Select a warehouse"
         />
       </CellAt>
-      <CellAt col={1} row={3} colSpan={2}>
+      <CellAt col={1} row={3} colSpan={4}>
+        <LocationField
+          editable={editable}
+          value={form.location}
+          onChange={(value) => setField("location", value)}
+        />
+      </CellAt>
+      <CellAt col={1} row={4} colSpan={2}>
         <StartingStockField
           required
           editable={editable}
@@ -90,7 +97,7 @@ export function InventoryCreateFields({
           unit={stockUnitAbbrev}
         />
       </CellAt>
-      <CellAt col={3} row={3} colSpan={2}>
+      <CellAt col={3} row={4} colSpan={2}>
         <UnitPickerField
           required
           value={form.unitId || null}
@@ -99,13 +106,6 @@ export function InventoryCreateFields({
           onOptionSelected={onUnitSelected}
           disabled={!editable}
           ariaLabel="Select a unit"
-        />
-      </CellAt>
-      <CellAt col={1} row={4} colSpan={4}>
-        <LocationField
-          editable={editable}
-          value={form.location}
-          onChange={(value) => setField("location", value)}
         />
       </CellAt>
 
