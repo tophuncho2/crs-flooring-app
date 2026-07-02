@@ -40,6 +40,15 @@ type StagedGroup = {
    * group whose Requested is their total.
    */
   stockOrdered: string
+  /**
+   * Live sum of this group's staged-row `startingStock` — the "Remaining"
+   * subtrahend (`ordered − this`). Accumulated in-place while the group is built
+   * (mirrors `stockOrdered`), so it is ALWAYS the sum of the rows this exact
+   * group holds and can never mis-join a separately-keyed lookup map. A staged
+   * row lands in the group whose (productId, unitId) key matches its own, so
+   * this sum is unit-correct by construction.
+   */
+  startingStockSum: number
   rows: ImportStagedRowDraft[]
 }
 
@@ -112,6 +121,7 @@ function buildGroups(
         stockUnitName,
         stockUnitAbbrev,
         stockOrdered: "",
+        startingStockSum: 0,
         rows: [],
       }
       byId.set(key, group)
@@ -136,13 +146,18 @@ function buildGroups(
     }
   }
   for (const row of stagedRows) {
-    ensure(
+    const group = ensure(
       row.productId,
       row.productName,
       row.unitId,
       row.stockUnitName,
       row.stockUnitAbbrev,
-    ).rows.push(row)
+    )
+    group.rows.push(row)
+    // Fold startingStock into the group's live sum here — same in-place pattern
+    // as `stockOrdered` above — so "Remaining" reads off the group it belongs to.
+    const parsed = Number(row.startingStock)
+    if (Number.isFinite(parsed)) group.startingStockSum += parsed
   }
   // Within a group, show rows newest→oldest. Server rows arrive createdAt-asc and
   // new local drafts append to the end, so reversing puts the most recently added
@@ -174,19 +189,6 @@ export function ImportStagedInventoryGrid({
 
   const effectiveStatus = (draft: ImportStagedRowDraft): FlooringStagedRowStatus =>
     resolveEffectiveStatus(serverStatusById, draft)
-
-  // Live sum of staged startingStock per (product, unit) group, for the
-  // "Remaining" header — keyed to match `buildGroups` so units never mix.
-  const startingStockSumByGroupKey = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const row of stagedRows) {
-      const parsed = Number(row.startingStock)
-      if (!Number.isFinite(parsed)) continue
-      const key = groupKey(row.productId, row.unitId)
-      map.set(key, (map.get(key) ?? 0) + parsed)
-    }
-    return map
-  }, [stagedRows])
 
   function renderCell(column: { key: string }, gridRow: StagedGridRow) {
     const status = effectiveStatus(gridRow)
@@ -266,10 +268,9 @@ export function ImportStagedInventoryGrid({
   return (
     <div className="space-y-5">
       {groups.map((group) => {
-        const sum = startingStockSumByGroupKey.get(groupKey(group.productId, group.unitId)) ?? 0
         const remaining = computeFilterRemainingStock({
           stockOrdered: group.stockOrdered,
-          childStartingStockSum: sum.toFixed(2),
+          childStartingStockSum: group.startingStockSum.toFixed(2),
         })
         const rows: StagedGridRow[] = group.rows.map((row) => ({ ...row, id: row.clientId }))
         return (
