@@ -474,6 +474,10 @@ export async function getWorkOrderForFileGeneration(
       dyeLot: true,
       rollNumber: true,
       location: true,
+      // Adjustment's own unit FK (UoM epic 2B) resolves the printed abbrev; the
+      // frozen stockUnitAbbrev is the transition fallback (null on post-2B rows —
+      // create stopped stamping it once the FK became authoritative).
+      unit: { select: { abbreviation: true } },
       stockUnitAbbrev: true,
       productId: true,
       product: { select: { name: true, style: true, color: true } },
@@ -500,7 +504,9 @@ export async function getWorkOrderForFileGeneration(
       dyeLot: adj.dyeLot ?? "",
       rollNumber: adj.rollNumber ?? "",
       location: adj.location ?? "",
-      stockUnitAbbrev: adj.stockUnitAbbrev ?? "",
+      // Unit abbrev derives from the adjustment's own unit FK join (UoM epic 2B);
+      // the frozen snapshot string is the transition fallback.
+      stockUnitAbbrev: adj.unit?.abbreviation ?? adj.stockUnitAbbrev ?? "",
     }
     if (adj.productId !== currentProductId) {
       currentProductId = adj.productId

@@ -32,8 +32,9 @@ export type WorkOrderFileAdjustmentProjection = {
   // Inventory location snapshot from the adjustment row. Empty string when
   // the parent inventory had no location at the moment of the adjustment.
   location: string
-  // Stock-unit snapshot from the adjustment row — used as the per-cell suffix
-  // in the print sub-table. Empty string when the snapshot is null.
+  // Unit abbrev for the per-cell suffix in the print sub-table. Derives from the
+  // adjustment's own unit FK join (UoM epic 2B); the frozen stock-unit snapshot
+  // string is the transition fallback. Empty string when neither resolves.
   stockUnitAbbrev: string
 }
 
