@@ -5,7 +5,7 @@ import {
   CellAt,
   FieldSection,
   FormField,
-  PerUnitCell,
+  NumberCell,
   RecordColumnBreak,
   RecordSectionDivider,
   StatCell,
@@ -108,22 +108,11 @@ export function ProductPrimaryFieldsSection({
   // label and reset it when the saved coverage unit changes (save / record swap).
   const savedCoverageUnitName = product.coverageUnit?.name ?? null
   const [pickedCoverageUnitLabel, setPickedCoverageUnitLabel] = useState<string | null>(null)
-  // Track the picked option's abbreviation too, so the coverage-per-unit suffix
-  // updates ON SELECT (not on save) — the picker's option carries `abbreviation`.
-  const [pickedCoverageUnitAbbrev, setPickedCoverageUnitAbbrev] = useState<string | null>(null)
   const [seenCoverageUnitName, setSeenCoverageUnitName] = useState(savedCoverageUnitName)
   if (seenCoverageUnitName !== savedCoverageUnitName) {
     setSeenCoverageUnitName(savedCoverageUnitName)
     setPickedCoverageUnitLabel(null)
-    setPickedCoverageUnitAbbrev(null)
   }
-
-  // Coverage-per-unit suffix follows the product's OWN coverage unit abbreviation
-  // (UoM epic 1a). Prefer the in-flight picked abbrev so it renders on-select;
-  // fall back to the saved unit's abbrev; empty until a coverage unit is picked.
-  const coverageUnitAbbrev = draft.coverageUnitId
-    ? pickedCoverageUnitAbbrev ?? product.coverageUnit?.abbreviation ?? ""
-    : ""
 
   // All spec fields, shared by both flows. Detail puts these in the left flank;
   // create renders them as a single column. Top down: PROD # + Palette paired
@@ -196,16 +185,14 @@ export function ProductPrimaryFieldsSection({
       </CellAt>
       {/* Coverage·Unit + its coverage-unit picker paired (4 + 4), sitting
           directly under Category + Unit. The picker sets the product's OWN
-          coverage unit (UoM epic 1a); the Coverage / Unit cell's suffix follows
-          the picked unit's abbrev. */}
+          coverage unit (UoM epic 1a); no unit suffix on the value cell — the
+          Coverage Unit picker beside it already shows the unit. */}
       <CellAt col={1} colSpan={4}>
         <FormField label="Coverage / Unit">
-          <PerUnitCell
+          <NumberCell
             editable={!disabled}
             value={draft.coveragePerUnit}
             onChange={(value) => onFieldChange("coveragePerUnit", value)}
-            unit={coverageUnitAbbrev}
-            currencyPrefix=""
             ariaLabel="Coverage per unit"
           />
         </FormField>
@@ -218,10 +205,7 @@ export function ProductPrimaryFieldsSection({
             <UnitOfMeasurePicker
               value={draft.coverageUnitId || null}
               onChange={(nextUnitId) => onFieldChange("coverageUnitId", nextUnitId ?? "")}
-              onOptionSelected={(opt) => {
-                setPickedCoverageUnitLabel(opt?.name ?? null)
-                setPickedCoverageUnitAbbrev(opt?.abbreviation ?? null)
-              }}
+              onOptionSelected={(opt) => setPickedCoverageUnitLabel(opt?.name ?? null)}
               selectedLabel={
                 draft.coverageUnitId ? pickedCoverageUnitLabel ?? savedCoverageUnitName : null
               }
