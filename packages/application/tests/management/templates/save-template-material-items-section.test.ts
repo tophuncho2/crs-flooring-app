@@ -48,4 +48,42 @@ describe("saveTemplateMaterialItemsSectionUseCase", () => {
       expect.objectContaining({ templateId: "tpl-1", actorEmail: ACTOR }),
     )
   })
+
+  it("keeps a cleared unit blank on a MODIFIED row (does not re-seed from the product)", async () => {
+    getProductByIdMock.mockResolvedValue({ id: "prod-1", unitId: "prod-unit-1" })
+    await saveTemplateMaterialItemsSectionUseCase(
+      {
+        templateId: "tpl-1",
+        diff: {
+          added: [],
+          modified: [
+            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } },
+          ],
+          deleted: [],
+        },
+      } as never,
+      ACTOR,
+    )
+    const [, diff] = applyTemplateMaterialItemsDiffMock.mock.calls[0]
+    // The user's clear survives — NOT replaced by the product's own unit.
+    expect(diff.modified[0].input.unitId).toBe("")
+  })
+
+  it("seeds a blank unit from the product on an ADDED row", async () => {
+    getProductByIdMock.mockResolvedValue({ id: "prod-1", unitId: "prod-unit-1" })
+    await saveTemplateMaterialItemsSectionUseCase(
+      {
+        templateId: "tpl-1",
+        diff: {
+          added: [{ tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } }],
+          modified: [],
+          deleted: [],
+        },
+      } as never,
+      ACTOR,
+    )
+    const [, diff] = applyTemplateMaterialItemsDiffMock.mock.calls[0]
+    // Added rows still seed the product's unit as a convenience default.
+    expect(diff.added[0].input.unitId).toBe("prod-unit-1")
+  })
 })

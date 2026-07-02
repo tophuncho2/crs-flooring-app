@@ -82,9 +82,10 @@ export async function saveTemplateMaterialItemsSectionUseCase(
       unitIdByProductId.set(entry.productId, entry.product.unitId)
     }
 
-    // Resolve the item's unit FK: the form's own editable value, else seed from
-    // the product's unit, else "" (no unit — nullable on the item).
-    const resolveUnitId = (form: { productId: string; unitId: string }) =>
+    // Seed the item's unit FK from the product's unit when the form left it
+    // blank — ADDED rows only (a convenience default on create; UoM epic 2C).
+    // The form's own editable value takes precedence.
+    const seedAddedUnitId = (form: { productId: string; unitId: string }) =>
       form.unitId.trim() || unitIdByProductId.get(form.productId) || ""
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
@@ -95,11 +96,16 @@ export async function saveTemplateMaterialItemsSectionUseCase(
       added: addedWithIds.map((draft) => ({
         id: draft.id,
         tempId: draft.tempId,
-        input: { ...draft.form, unitId: resolveUnitId(draft.form) },
+        input: { ...draft.form, unitId: seedAddedUnitId(draft.form) },
       })),
+      // MODIFIED: pass the form's own `unitId` through unchanged so an explicit
+      // clear ("") reaches the repo (→ NULL). Never re-seed from the product on
+      // modify — the client already re-seeds on product change, and re-seeding
+      // here silently defeats the user's clear. (Mirrors WO material-items +
+      // imports staged rows.)
       modified: input.diff.modified.map((update) => ({
         id: update.id,
-        input: { ...update.form, unitId: resolveUnitId(update.form) },
+        input: { ...update.form },
       })),
       deleted: input.diff.deleted.map((d) => ({ id: d.id })),
     })

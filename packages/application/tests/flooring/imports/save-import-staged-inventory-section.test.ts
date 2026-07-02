@@ -309,6 +309,47 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
   })
 })
 
+describe("saveImportStagedInventorySectionUseCase — unit clear on modify", () => {
+  it("clears a MODIFIED filter row's unit (no product re-seed)", async () => {
+    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
+      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1" },
+    ])
+    await runSave({
+      importEntryId: IMPORT_ID,
+      diff: {
+        filters: {
+          added: [],
+          modified: [{ id: "filter-1", form: filterForm({ unitId: "" }) }],
+          deleted: [],
+        },
+        rows: { added: [], modified: [], deleted: [] },
+      },
+    })
+    const [, diff] = applyImportStagedInventorySectionDiffMock.mock.calls[0]
+    // The user's clear survives — NOT replaced by the product's own unit ("unit-1").
+    expect(diff.filters.modified[0].input.unitId).toBeNull()
+  })
+
+  it("clears a MODIFIED staged row's unit (unchanged reference path)", async () => {
+    listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
+      { id: "row-1", status: "DRAFT", isImported: false },
+    ])
+    await runSave({
+      importEntryId: IMPORT_ID,
+      diff: {
+        filters: { added: [], modified: [], deleted: [] },
+        rows: {
+          added: [],
+          modified: [{ id: "row-1", form: rowForm({ unitId: "" }) }],
+          deleted: [],
+        },
+      },
+    })
+    const [, diff] = applyImportStagedInventorySectionDiffMock.mock.calls[0]
+    expect(diff.rows.modified[0].input.unitId).toBeNull()
+  })
+})
+
 describe("saveImportStagedInventorySectionUseCase — product batch-fetch", () => {
   it("throws SECTION_FILTER_VALIDATION_FAILED when an added filter row's product is missing", async () => {
     getProductByIdMock.mockResolvedValue(null)

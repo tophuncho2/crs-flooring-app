@@ -229,7 +229,11 @@ export async function saveImportStagedInventorySectionUseCase(
             input: {
               categoryFilterId: update.form.categoryFilterId,
               productId: update.form.productId,
-              unitId: update.form.unitId.trim() || unitIdByProductId.get(update.form.productId) || null,
+              // The unit is the user's own edit ("" disconnects). No product
+              // fallback on modify — the client re-seeds on product change, and
+              // re-seeding here would silently defeat an intentional clear
+              // (mirrors the staged-row modified path below).
+              unitId: update.form.unitId.trim() || null,
               stockOrdered: update.form.stockOrdered,
             },
           })),
