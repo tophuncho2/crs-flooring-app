@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { UnitCell, isLocalOnlyRecordRow } from "@/engines/record-view"
+import { NumberCell, isLocalOnlyRecordRow } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
@@ -14,8 +14,8 @@ type PlannedImportGridRow = ImportFilterRowDraft & { id: string }
 
 const PLANNED_IMPORT_COLUMNS: DataTableColumn<PlannedImportGridRow>[] = [
   { key: "product", label: "Product", minWidth: 260, grow: 2 },
-  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "stockOrdered", label: "Stock Ordered", width: 170, align: "end" },
+  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
 ]
 
 /**
@@ -74,11 +74,10 @@ export function ImportPlannedImportsGrid({
         )
       case "stockOrdered":
         return (
-          <UnitCell
+          <NumberCell
             editable={editable}
             value={draft.stockOrdered}
             onChange={(next) => section.setFilterField(draft.clientId, "stockOrdered", next)}
-            unit={draft.stockUnitAbbrev || server?.stockUnitAbbrev || "unit"}
             placeholder="—"
             ariaLabel="Stock ordered"
           />

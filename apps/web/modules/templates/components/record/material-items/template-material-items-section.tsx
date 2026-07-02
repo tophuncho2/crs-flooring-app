@@ -14,8 +14,8 @@ import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/
 
 const TEMPLATE_MATERIAL_ITEMS_COLUMNS: DataTableColumn<TemplateMaterialItemLocal>[] = [
   { key: "product", label: "Product", minWidth: 260, grow: 2 },
-  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "quantity", label: "Quantity", width: 140, align: "end" },
+  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
 ]
 
@@ -131,25 +131,16 @@ export function TemplateMaterialItemsSection({
                   ariaLabel="Material item unit"
                 />
               )
-            case "quantity": {
-              const unitAbbrev = item.sendUnitAbbrev
+            case "quantity":
               return (
-                <div className="flex w-full items-center gap-2">
-                  <div className="min-w-0 flex-1">
-                    <NumberCell
-                      editable={editable}
-                      value={item.quantity}
-                      onChange={(next) => onChangeField(item.id, "quantity", next)}
-                      placeholder="Quantity"
-                      ariaLabel="Material item quantity"
-                    />
-                  </div>
-                  <span className="shrink-0 text-[var(--foreground)]/60" aria-hidden="true">
-                    {unitAbbrev || "—"}
-                  </span>
-                </div>
+                <NumberCell
+                  editable={editable}
+                  value={item.quantity}
+                  onChange={(next) => onChangeField(item.id, "quantity", next)}
+                  placeholder="Quantity"
+                  ariaLabel="Material item quantity"
+                />
               )
-            }
             case "notes":
               return (
                 <TextCell

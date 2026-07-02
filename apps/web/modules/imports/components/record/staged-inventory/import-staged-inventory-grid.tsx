@@ -7,7 +7,7 @@ import {
   type FlooringStagedRowStatus,
 } from "@builders/domain"
 import { CellAddButton, StatusBadge, type BadgeTone } from "@/engines/common"
-import { TextCell, UnitCell, isLocalOnlyRecordRow } from "@/engines/record-view"
+import { NumberCell, TextCell, isLocalOnlyRecordRow } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
 import {
@@ -43,9 +43,9 @@ type StagedGroup = {
 // just default them empty.
 const STAGED_COLUMNS: DataTableColumn<StagedGridRow>[] = [
   { key: "status", label: "Status", width: 120, align: "center" },
-  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "rollNumber", label: "Roll #", minWidth: 150, grow: 0.8 },
   { key: "startingStock", label: "Starting Stock", width: 160, align: "end" },
+  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "dyeLot", label: "Dye Lot", minWidth: 130, grow: 0.6 },
   { key: "location", label: "Location", minWidth: 140, grow: 0.6 },
   { key: "note", label: "Note", minWidth: 220, grow: 1.4 },
@@ -208,11 +208,10 @@ export function ImportStagedInventoryGrid({
         )
       case "startingStock":
         return (
-          <UnitCell
+          <NumberCell
             editable={editable}
             value={gridRow.startingStock}
             onChange={(next) => section.setStagedRowField(gridRow.clientId, "startingStock", next)}
-            unit={gridRow.stockUnitAbbrev || "unit"}
             ariaLabel="Starting stock"
           />
         )
