@@ -107,15 +107,22 @@ export function ProductPrimaryFieldsSection({
   // label and reset it when the saved coverage unit changes (save / record swap).
   const savedCoverageUnitName = product.coverageUnit?.name ?? null
   const [pickedCoverageUnitLabel, setPickedCoverageUnitLabel] = useState<string | null>(null)
+  // Track the picked option's abbreviation too, so the coverage-per-unit suffix
+  // updates ON SELECT (not on save) — the picker's option carries `abbreviation`.
+  const [pickedCoverageUnitAbbrev, setPickedCoverageUnitAbbrev] = useState<string | null>(null)
   const [seenCoverageUnitName, setSeenCoverageUnitName] = useState(savedCoverageUnitName)
   if (seenCoverageUnitName !== savedCoverageUnitName) {
     setSeenCoverageUnitName(savedCoverageUnitName)
     setPickedCoverageUnitLabel(null)
+    setPickedCoverageUnitAbbrev(null)
   }
 
-  // Coverage-per-unit suffix now follows the product's OWN coverage unit
-  // abbreviation (UoM epic 1a) — empty until a coverage unit is picked.
-  const coverageUnitAbbrev = product.coverageUnit?.abbreviation ?? ""
+  // Coverage-per-unit suffix follows the product's OWN coverage unit abbreviation
+  // (UoM epic 1a). Prefer the in-flight picked abbrev so it renders on-select;
+  // fall back to the saved unit's abbrev; empty until a coverage unit is picked.
+  const coverageUnitAbbrev = draft.coverageUnitId
+    ? pickedCoverageUnitAbbrev ?? product.coverageUnit?.abbreviation ?? ""
+    : ""
 
   // All spec fields, shared by both flows. Detail puts these in the left flank;
   // create renders them as a single column. Top down: PROD # + Palette paired
@@ -253,7 +260,10 @@ export function ProductPrimaryFieldsSection({
             <UnitOfMeasurePicker
               value={draft.coverageUnitId || null}
               onChange={(nextUnitId) => onFieldChange("coverageUnitId", nextUnitId ?? "")}
-              onOptionSelected={(opt) => setPickedCoverageUnitLabel(opt?.name ?? null)}
+              onOptionSelected={(opt) => {
+                setPickedCoverageUnitLabel(opt?.name ?? null)
+                setPickedCoverageUnitAbbrev(opt?.abbreviation ?? null)
+              }}
               selectedLabel={
                 draft.coverageUnitId ? pickedCoverageUnitLabel ?? savedCoverageUnitName : null
               }

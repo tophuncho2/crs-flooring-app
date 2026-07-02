@@ -24,8 +24,10 @@ export function renderProductRowCell(
       // Unit column renders the abbreviation off the FK (per the UoM matrix).
       return row.unit?.abbreviation || "-"
     case "coveragePerUnit":
+      // Coverage column pairs with the product's OWN coverage unit (UoM epic 1b),
+      // distinct from the main `unit` column above.
       return row.coveragePerUnit
-        ? `${row.coveragePerUnit} ${row.unit?.abbreviation ?? ""}`.trim()
+        ? `${row.coveragePerUnit} ${row.coverageUnit?.abbreviation ?? ""}`.trim()
         : "-"
     case "productNumber":
       return <CellChip paletteColor={row.paletteColor}>{row.productNumber}</CellChip>
