@@ -45,14 +45,19 @@ async function backfillProductUnit({ prisma, apply = false, logger = console }) 
       const units = await tx.flooringUnitOfMeasure.findMany({ select: { id: true, name: true } })
       const unitNameMap = new Map(units.map((u) => [u.name.trim().toLowerCase(), u.id]))
 
-      const products = await tx.flooringProduct.findMany({
-        where: { unitId: null },
+      // The generated Prisma client types `unitId` NOT NULL (schema end-state),
+      // so it rejects a `where: { unitId: null }` filter during the expand window
+      // while the column is still nullable in the DB. Fetch all rows and filter
+      // the un-backfilled ones in JS to keep the `WHERE unitId IS NULL` idempotency.
+      const allProducts = await tx.flooringProduct.findMany({
         select: {
           id: true,
+          unitId: true,
           stockUnitName: true,
           category: { select: { stockUnitId: true } },
         },
       })
+      const products = allProducts.filter((product) => !product.unitId)
       report.total = products.length
 
       const resolved = []
