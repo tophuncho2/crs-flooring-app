@@ -260,7 +260,7 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} colSpan={4}>
+      <CellAt col={1} colSpan={8}>
         <FormField label="Entity">
           {fieldsReadOnly ? (
             <StaticFieldValue>{entityName || "—"}</StaticFieldValue>
@@ -280,9 +280,19 @@ export function ProductPrimaryFieldsSection({
     </>
   )
 
-  // Create flow: no stats / no metadata — keep the spec fields as a single column.
+  // Create flow: no stats / no metadata / no column rule / no divider. The spec
+  // fields sit at the SAME width as the detail view's left flank — the 7fr side
+  // of the right-narrow split — instead of stretching the full panel width. We
+  // reuse the engine's right-narrow grid template but leave the rule + 3fr flank
+  // empty (nothing rendered where the stats sit in the detail view).
   if (!categoryReadOnly) {
-    return <FieldSection>{specFields}</FieldSection>
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,7fr)_auto_minmax(0,3fr)] md:gap-x-8">
+        <div className="min-w-0">
+          <FieldSection>{specFields}</FieldSection>
+        </div>
+      </div>
+    )
   }
 
   // Detail flow: spec fields left, linked-row counts stacked right, then a
