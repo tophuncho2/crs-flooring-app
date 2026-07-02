@@ -12,6 +12,7 @@ import type {
   TemplateMaterialItemForm,
   TemplateMaterialItemRow,
   TemplateMaterialItemsDiff,
+  UnitOfMeasureOption,
 } from "@builders/domain"
 import { validateTemplateMaterialItemForm } from "@builders/domain"
 import { saveTemplateMaterialItemsSectionRequest } from "@/modules/templates/data/mutations"
@@ -24,6 +25,11 @@ export type TemplateMaterialItemLocal = {
   // onOptionSelected). Never sent in the diff — server re-normalizes
   // from the live product table on save.
   productName: string
+  // Editable unit FK (UoM epic 2C) — seeded from the product on select, then
+  // freely editable; sent in the diff. `sendUnitName` feeds the picker's trigger
+  // label (selectedLabel), `sendUnitAbbrev` the quantity-cell suffix.
+  unitId: string
+  sendUnitName: string
   sendUnitAbbrev: string
   quantity: string
   notes: string
@@ -44,6 +50,8 @@ function toLocalItem(row: TemplateMaterialItemRow): TemplateMaterialItemLocal {
     id: row.id,
     productId: row.productId,
     productName: row.productName,
+    unitId: row.unitId,
+    sendUnitName: row.sendUnitName,
     sendUnitAbbrev: row.sendUnitAbbrev,
     quantity: row.quantity,
     notes: row.notes,
@@ -58,7 +66,7 @@ function createLocalState(record: TemplateDetail): TemplateMaterialItemsLocalSta
 
 function createItemsRevisionKey(record: TemplateDetail) {
   return JSON.stringify(
-    record.items.map((row) => `${row.id}:${row.productId}:${row.quantity}:${row.notes}`),
+    record.items.map((row) => `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}`),
   )
 }
 
@@ -73,6 +81,7 @@ function serverItemById(record: TemplateDetail) {
 function itemsDiffer(local: TemplateMaterialItemLocal, server: TemplateMaterialItemRow) {
   return (
     local.productId !== server.productId ||
+    local.unitId !== server.unitId ||
     local.quantity !== server.quantity ||
     local.notes !== server.notes
   )
@@ -81,6 +90,7 @@ function itemsDiffer(local: TemplateMaterialItemLocal, server: TemplateMaterialI
 function toDiffForm(local: TemplateMaterialItemLocal): TemplateMaterialItemForm {
   return {
     productId: local.productId,
+    unitId: local.unitId,
     quantity: local.quantity,
     notes: local.notes,
   }
@@ -169,6 +179,8 @@ export function useTemplateMaterialItemsSection({
           id: createLocalRecordRowId("template-material-item"),
           productId: "",
           productName: "",
+          unitId: "",
+          sendUnitName: "",
           sendUnitAbbrev: "",
           quantity: "",
           notes: "",
@@ -217,15 +229,37 @@ export function useTemplateMaterialItemsSection({
       items: previous.items.map((row) => {
         if (row.id !== itemId) return row
         if (option === null) {
-          return { ...row, productName: "", sendUnitAbbrev: "" }
+          return { ...row, productName: "", unitId: "", sendUnitName: "", sendUnitAbbrev: "" }
         }
+        // Re-seed the unit FK from the picked product (UoM epic 2C); the unit
+        // stays editable afterward.
         return {
           ...row,
           productName: option.name,
+          unitId: option.unitId,
+          sendUnitName: option.sendUnitName,
           sendUnitAbbrev: option.sendUnitAbbrev,
         }
       }),
     }))
+  }
+
+  // Set the item's unit from the picked UoM option — refreshes the display
+  // name (picker trigger label) + abbrev (quantity-cell suffix) alongside the FK.
+  function setUnit(itemId: string, option: UnitOfMeasureOption | null) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) =>
+        row.id === itemId
+          ? {
+              ...row,
+              unitId: option?.id ?? "",
+              sendUnitName: option?.name ?? "",
+              sendUnitAbbrev: option?.abbreviation ?? "",
+            }
+          : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
   }
 
   return {
@@ -236,5 +270,6 @@ export function useTemplateMaterialItemsSection({
     changeField,
     changeCategoryFilter,
     setProductSnapshot,
+    setUnit,
   }
 }

@@ -8,10 +8,8 @@ import {
 } from "@builders/db"
 import {
   assignDraftIds,
-  buildItemSendUnitSnapshotFromProduct,
   validateWorkOrderMaterialItemCreateForm,
   validateWorkOrderMaterialItemUpdateForm,
-  type ItemSendUnitSnapshot,
 } from "@builders/domain"
 import { WorkOrderMaterialItemExecutionError } from "./errors.js"
 import type {
@@ -23,15 +21,15 @@ import type {
  * Diff-save use case mirroring the templates' MI section save:
  *  1. Validate every draft (create form) + update (update form).
  *  2. Batch-fetch every distinct product the `added` drafts AND the
- *     product-changed `modified` rows touch, and stamp the send-unit snapshot
- *     via `buildItemSendUnitSnapshotFromProduct`. Modified rows whose product
- *     is unchanged keep their stored snapshot.
+ *     product-changed `modified` rows touch — to validate it exists and to seed
+ *     the item's `unitId` from the product's unit when the form left it blank
+ *     (UoM epic 2C). The form's own editable `unitId` takes precedence.
  *  3. Assign UUIDs to drafts via `assignDraftIds`.
  *  4. Hand off to `applyWorkOrderMaterialItemsDiff`.
  *
  * The product is freely editable — adjustments no longer link to a material
- * item, so a product change can't drift any snapshot — and the same product
- * may appear on a work order any number of times (no uniqueness rule).
+ * item — and the same product may appear on a work order any number of times
+ * (no uniqueness rule).
  *
  * Returns updated items + tempIdMap for the UI to reconcile draft state.
  */
@@ -73,8 +71,8 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
     const existingRows = await listWorkOrderMaterialItems(input.workOrderId, c)
     const existingById = new Map(existingRows.map((row) => [row.id, row]))
 
-    // Rows whose product actually changed need a fresh send-unit snapshot
-    // (the product is freely editable now — no lock).
+    // Rows whose product actually changed reconnect the product FK (the product
+    // is freely editable now — no lock).
     const productChangedUpdates = input.diff.modified.filter((update) => {
       const existing = existingById.get(update.id)
       return existing !== undefined && update.form.productId.trim() !== existing.productId.trim()
@@ -92,7 +90,9 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
         product: await getProductById(productId, c),
       })),
     )
-    const snapshotByProductId = new Map<string, ItemSendUnitSnapshot>()
+    // Product → its own unit FK (UoM epic 2C) — seeds a row's `unitId` when the
+    // form left it blank. The form's own editable value takes precedence.
+    const unitIdByProductId = new Map<string, string>()
     for (const entry of products) {
       if (!entry.product) {
         throw new WorkOrderMaterialItemExecutionError({
@@ -103,7 +103,7 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
           payload: { productId: entry.productId },
         })
       }
-      snapshotByProductId.set(entry.productId, buildItemSendUnitSnapshotFromProduct(entry.product))
+      unitIdByProductId.set(entry.productId, entry.product.unitId)
     }
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
@@ -114,7 +114,10 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
       added: addedWithIds.map((draft) => ({
         id: draft.id,
         tempId: draft.tempId,
-        input: { ...draft.form, ...snapshotByProductId.get(draft.form.productId)! },
+        input: {
+          ...draft.form,
+          unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.form.productId) || "",
+        },
       })),
       modified: input.diff.modified.map((update) => {
         const existing = existingById.get(update.id)
@@ -126,16 +129,13 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
           input: {
             quantity: update.form.quantity,
             notes: update.form.notes,
-            // Re-snapshot send units only when the product actually changed;
-            // unchanged rows keep their stored snapshot untouched.
-            ...(productChanged
-              ? {
-                  product: {
-                    productId: update.form.productId,
-                    ...snapshotByProductId.get(update.form.productId)!,
-                  },
-                }
-              : {}),
+            // The unit is the user's own editable value; on a product change the
+            // client re-seeds it, else fall back to the new product's unit.
+            unitId:
+              update.form.unitId.trim() ||
+              (productChanged ? unitIdByProductId.get(update.form.productId) ?? "" : ""),
+            // Reconnect the product FK only when it actually changed.
+            ...(productChanged ? { product: { productId: update.form.productId } } : {}),
           },
         }
       }),

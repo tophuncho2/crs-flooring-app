@@ -7,9 +7,7 @@ import {
 } from "@builders/db"
 import {
   assignDraftIds,
-  buildItemSendUnitSnapshotFromProduct,
   validateTemplateMaterialItemForm,
-  type ItemSendUnitSnapshot,
 } from "@builders/domain"
 import { TemplateMaterialItemExecutionError } from "./errors.js"
 import type {
@@ -53,10 +51,11 @@ export async function saveTemplateMaterialItemsSectionUseCase(
       }
     }
 
-    // Batch-fetch every distinct product touched by the diff (added + modified).
-    // Each entry needs the product's send-unit snapshot stamped on its row at
-    // write time. One query per distinct product — bounded by the number of
-    // unique products in this user's save action (typically small).
+    // Batch-fetch every distinct product touched by the diff (added + modified)
+    // to (a) validate it exists and (b) seed the item's `unitId` from the
+    // product's own unit when the form left it blank (UoM epic 2C). The form's
+    // own editable `unitId` takes precedence — the client seeds it on product
+    // select and re-seeds on product change. One query per distinct product.
     const distinctProductIds = Array.from(
       new Set([
         ...input.diff.added.map((d) => d.form.productId),
@@ -69,7 +68,7 @@ export async function saveTemplateMaterialItemsSectionUseCase(
         product: await getProductById(productId, c),
       })),
     )
-    const snapshotByProductId = new Map<string, ItemSendUnitSnapshot>()
+    const unitIdByProductId = new Map<string, string>()
     for (const entry of products) {
       if (!entry.product) {
         throw new TemplateMaterialItemExecutionError({
@@ -80,8 +79,13 @@ export async function saveTemplateMaterialItemsSectionUseCase(
           payload: { productId: entry.productId },
         })
       }
-      snapshotByProductId.set(entry.productId, buildItemSendUnitSnapshotFromProduct(entry.product))
+      unitIdByProductId.set(entry.productId, entry.product.unitId)
     }
+
+    // Resolve the item's unit FK: the form's own editable value, else seed from
+    // the product's unit, else "" (no unit — nullable on the item).
+    const resolveUnitId = (form: { productId: string; unitId: string }) =>
+      form.unitId.trim() || unitIdByProductId.get(form.productId) || ""
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
 
@@ -91,11 +95,11 @@ export async function saveTemplateMaterialItemsSectionUseCase(
       added: addedWithIds.map((draft) => ({
         id: draft.id,
         tempId: draft.tempId,
-        input: { ...draft.form, ...snapshotByProductId.get(draft.form.productId)! },
+        input: { ...draft.form, unitId: resolveUnitId(draft.form) },
       })),
       modified: input.diff.modified.map((update) => ({
         id: update.id,
-        input: { ...update.form, ...snapshotByProductId.get(update.form.productId)! },
+        input: { ...update.form, unitId: resolveUnitId(update.form) },
       })),
       deleted: input.diff.deleted.map((d) => ({ id: d.id })),
     })

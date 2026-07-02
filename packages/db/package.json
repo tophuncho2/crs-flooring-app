@@ -41,6 +41,7 @@
     "db:seed:categories": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-categories.js",
     "db:backfill:product-unit": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-product-unit.js",
     "db:backfill:row-units": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-row-units.js",
+    "db:backfill:item-units": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/backfill-item-units.js",
     "db:seed:work-order-statuses": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-work-order-statuses.js",
     "db:seed:properties": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/seed-properties-csv.js",
     "upload:brand-logo": "DOTENV_CONFIG_PATH=../../.env node -r dotenv/config scripts/upload-brand-logo.js"

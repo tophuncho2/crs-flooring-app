@@ -58,6 +58,11 @@ const templateDetailSelect = {
       productId: true,
       product: { select: { name: true } },
       quantity: true,
+      // Item's own unit FK + resolved unit (UoM epic 2C) — create/update return
+      // through this select, so it must join `unit` or the returned item's unit
+      // comes back blank. Frozen sendUnit* = fallback.
+      unitId: true,
+      unit: { select: { name: true, abbreviation: true } },
       sendUnitName: true,
       sendUnitAbbrev: true,
       notes: true,

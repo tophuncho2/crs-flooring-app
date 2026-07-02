@@ -530,6 +530,9 @@ export async function getWorkOrderForFileGeneration(
     select: {
       id: true,
       quantity: true,
+      // Item's own unit FK (UoM epic 2C) resolves the printed abbrev; the frozen
+      // sendUnitAbbrev is the transition fallback (blank on post-2A products).
+      unit: { select: { abbreviation: true } },
       sendUnitAbbrev: true,
       notes: true,
       productId: true,
@@ -543,7 +546,7 @@ export async function getWorkOrderForFileGeneration(
     const projection = {
       id: item.id,
       quantity: item.quantity === null ? "" : item.quantity.toString(),
-      unitAbbrev: item.sendUnitAbbrev ?? "",
+      unitAbbrev: item.unit?.abbreviation ?? item.sendUnitAbbrev ?? "",
       notes: item.notes ?? "",
     }
     if (item.productId !== currentMaterialProductId) {

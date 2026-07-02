@@ -3,6 +3,7 @@
 import { NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
+import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
 import { WORK_ORDER_MATERIAL_ITEM_NOTES_MAX } from "@builders/domain"
 import type {
   WorkOrderMaterialItemLocal,
@@ -22,6 +23,7 @@ import {
  */
 const REQUESTED_MATERIAL_COLUMNS: DataTableColumn<WorkOrderMaterialItemLocal>[] = [
   { key: "product", label: "Product", minWidth: 260, grow: 2 },
+  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "quantity", label: "Quantity", width: 140, align: "end" },
   { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
 ]
@@ -55,6 +57,17 @@ export function WorkOrderRequestedMaterialGrid({
             categoryEditable={editable}
             showProductCategory
             ariaLabel="Material item product"
+          />
+        )
+      case "unit":
+        return (
+          <UnitOfMeasurePicker
+            value={item.unitId || null}
+            selectedLabel={item.sendUnitName || null}
+            onChange={(id) => section.changeField(item.id, "unitId", id ?? "")}
+            onOptionSelected={(option) => section.setUnit(item.id, option)}
+            disabled={!editable}
+            ariaLabel="Material item unit"
           />
         )
       case "quantity":

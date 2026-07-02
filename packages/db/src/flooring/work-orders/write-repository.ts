@@ -83,8 +83,10 @@ export type CreateWorkOrderFromTemplateRecordInput = {
   items: Array<{
     productId: string
     quantity: string
-    sendUnitName: string
-    sendUnitAbbrev: string
+    // Template item's editable unit FK, carried forward to the WO item (UoM
+    // epic 2C). "" / null → no unit. The frozen sendUnit* snapshot is no longer
+    // copied; `unitId` is authoritative.
+    unitId: string | null
     notes: string | null
     sourceTemplateItemId: string
   }>
@@ -117,8 +119,7 @@ export async function createWorkOrderFromTemplateRecord(
         workOrderId: created.id,
         productId: item.productId,
         quantity: toItemDecimal(item.quantity),
-        sendUnitName: item.sendUnitName,
-        sendUnitAbbrev: item.sendUnitAbbrev,
+        unitId: item.unitId && item.unitId.trim() ? item.unitId : null,
         notes: item.notes,
         sourceTemplateItemId: item.sourceTemplateItemId,
         createdBy: input.actorEmail,

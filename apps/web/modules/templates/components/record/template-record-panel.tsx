@@ -126,6 +126,7 @@ export function TemplateRecordPanel({
                 onChangeField={materialItems.changeField}
                 onChangeCategoryFilter={materialItems.changeCategoryFilter}
                 onSetProductSnapshot={materialItems.setProductSnapshot}
+                onSetUnit={materialItems.setUnit}
                 onRemoveItem={materialItems.removeItem}
               />
             ),

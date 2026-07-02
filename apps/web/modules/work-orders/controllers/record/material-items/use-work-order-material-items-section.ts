@@ -39,6 +39,7 @@ export function useWorkOrderMaterialItemsSection({
     changeField: rows.changeField,
     changeCategoryFilter: rows.changeCategoryFilter,
     setProductSnapshot: rows.setProductSnapshot,
+    setUnit: rows.setUnit,
   }
 }
 

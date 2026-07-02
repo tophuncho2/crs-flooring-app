@@ -9,6 +9,10 @@ const templateMaterialItemSelect = {
   productId: true,
   product: { select: { name: true, category: { select: { name: true } } } },
   quantity: true,
+  // The item's OWN unit FK + resolved unit (UoM epic 2C); `unit` resolves the
+  // display name/abbrev, the frozen `sendUnit*` strings are the fallback.
+  unitId: true,
+  unit: { select: { name: true, abbreviation: true } },
   sendUnitName: true,
   sendUnitAbbrev: true,
   notes: true,

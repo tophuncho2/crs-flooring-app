@@ -6,6 +6,11 @@ export type WorkOrderMaterialItemLocal = {
   // onOptionSelected). Never sent in the diff — server re-normalizes
   // from the live product table on save.
   productName: string
+  // Editable unit FK (UoM epic 2C) — seeded from the product on select, then
+  // freely editable; sent in the diff. `sendUnitName` feeds the picker's trigger
+  // label (selectedLabel), `sendUnitAbbrev` the quantity-cell suffix.
+  unitId: string
+  sendUnitName: string
   sendUnitAbbrev: string
   quantity: string
   notes: string

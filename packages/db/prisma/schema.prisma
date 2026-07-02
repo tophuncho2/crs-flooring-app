@@ -248,6 +248,8 @@ model FlooringUnitOfMeasure {
   adjustments                FlooringInventoryAdjustment[] @relation("FlooringAdjustmentUnit")
   stagedRows                 FlooringImportStagedInventoryRow[] @relation("FlooringStagedRowUnit")
   stagedFilterRows           FlooringImportStagedInventoryFilterRow[] @relation("FlooringStagedFilterRowUnit")
+  templateItems              FlooringTemplateItem[] @relation("FlooringTemplateItemUnit")
+  workOrderItems             FlooringWorkOrderItem[] @relation("FlooringWorkOrderItemUnit")
 
   @@map("flooring_unit_of_measure")
 }
@@ -630,6 +632,8 @@ model FlooringTemplateItem {
   productId      String
   product        FlooringProduct  @relation(fields: [productId], references: [id], onDelete: Restrict)
   quantity       Decimal?         @db.Decimal(10, 2)
+  unitId         String?
+  unit           FlooringUnitOfMeasure? @relation("FlooringTemplateItemUnit", fields: [unitId], references: [id], onDelete: Restrict)
   sendUnitName   String?
   sendUnitAbbrev String?
   notes          String?          @db.VarChar(30)
@@ -641,6 +645,7 @@ model FlooringTemplateItem {
   @@index([templateId])
   @@index([templateId, createdAt])
   @@index([productId])
+  @@index([unitId])
   @@map("flooring_template_item")
 }
 
@@ -750,6 +755,8 @@ model FlooringWorkOrderItem {
   product              FlooringProduct             @relation(fields: [productId], references: [id], onDelete: Restrict)
   sourceTemplateItemId String?
   quantity             Decimal?                    @db.Decimal(10, 2)
+  unitId               String?
+  unit                 FlooringUnitOfMeasure?      @relation("FlooringWorkOrderItemUnit", fields: [unitId], references: [id], onDelete: Restrict)
   sendUnitName         String?
   sendUnitAbbrev       String?
   notes                String?                     @db.VarChar(30)
@@ -762,6 +769,7 @@ model FlooringWorkOrderItem {
   @@index([workOrderId, createdAt])
   @@index([productId])
   @@index([sourceTemplateItemId])
+  @@index([unitId])
   @@map("flooring_work_order_item")
 }
 

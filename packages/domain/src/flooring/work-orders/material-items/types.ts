@@ -3,6 +3,11 @@ export type WorkOrderMaterialItemRow = {
   productId: string
   productName: string
   quantity: string
+  // Editable unit FK (UoM epic 2C) — seeded from the product on select, then
+  // freely editable; sent in the diff. "" when no unit linked yet.
+  unitId: string
+  // Unit display derives from the item's own unit FK join; the frozen
+  // `sendUnit*` snapshot strings are the transition fallback (Phase C drops them).
   sendUnitName: string
   sendUnitAbbrev: string
   notes: string
@@ -21,12 +26,15 @@ export type WorkOrderMaterialItemRow = {
 // to drift). The DB `@@unique([workOrderId, productId])` still blocks dupes.
 export type WorkOrderMaterialItemCreateForm = {
   productId: string
+  // Editable unit FK (UoM epic 2C). "" disconnects the unit.
+  unitId: string
   quantity: string
   notes: string
 }
 
 export type WorkOrderMaterialItemUpdateForm = {
   productId: string
+  unitId: string
   quantity: string
   notes: string
 }

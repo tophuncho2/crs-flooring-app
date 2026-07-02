@@ -5,8 +5,11 @@ export type TemplateMaterialItemRow = {
   /** The product's category name, for the combined product/category picker. */
   categoryName: string
   quantity: string
-  // Send-unit snapshot stamped at item write from the chosen product. Empty
-  // string when the product's category has no send unit configured.
+  // Editable unit FK (UoM epic 2C) — seeded from the product on select, then
+  // freely editable; sent in the diff. "" when the item has no unit linked yet.
+  unitId: string
+  // Unit display derives from the item's own unit FK join; the frozen
+  // `sendUnit*` snapshot strings are the transition fallback (Phase C drops them).
   sendUnitName: string
   sendUnitAbbrev: string
   notes: string
@@ -21,12 +24,15 @@ export type TemplateMaterialItemRow = {
 
 export type TemplateMaterialItemForm = {
   productId: string
+  // Editable unit FK (UoM epic 2C). "" disconnects the unit.
+  unitId: string
   quantity: string
   notes: string
 }
 
 export const EMPTY_TEMPLATE_MATERIAL_ITEM_FORM: TemplateMaterialItemForm = {
   productId: "",
+  unitId: "",
   quantity: "",
   notes: "",
 }

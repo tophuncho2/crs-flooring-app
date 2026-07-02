@@ -170,6 +170,8 @@ function validateMaterialItemForm(value: unknown, path: string): TemplateMateria
   const obj = requireObject(value, path)
   return {
     productId: requireString(obj.productId, `${path}.productId`, failDiff),
+    // Editable unit FK (UoM epic 2C); "" = no unit.
+    unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
     notes: optionalBoundedText(obj.notes, TEMPLATE_MATERIAL_ITEM_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
   }

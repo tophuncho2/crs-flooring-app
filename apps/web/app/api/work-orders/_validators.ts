@@ -247,6 +247,8 @@ function validateMaterialItemCreateForm(
   const obj = requireObject(value, path, failMaterialItem)
   return {
     productId: requireString(obj.productId, `${path}.productId`, failMaterialItem),
+    // Editable unit FK (UoM epic 2C); "" = no unit.
+    unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
     notes: optionalBoundedText(obj.notes, WORK_ORDER_MATERIAL_ITEM_NOTES_MAX, `${path}.notes`, failMaterialItem) ?? "",
   }
@@ -262,6 +264,8 @@ function validateMaterialItemUpdateForm(
   const obj = requireObject(value, path, failMaterialItem)
   return {
     productId: requireString(obj.productId, `${path}.productId`, failMaterialItem),
+    // Editable unit FK (UoM epic 2C); "" = no unit.
+    unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
     notes: optionalBoundedText(obj.notes, WORK_ORDER_MATERIAL_ITEM_NOTES_MAX, `${path}.notes`, failMaterialItem) ?? "",
   }

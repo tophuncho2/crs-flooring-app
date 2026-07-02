@@ -41,6 +41,7 @@
     "db:seed:categories": "npm run db:seed:categories --workspace @builders/db",
     "db:backfill:product-unit": "npm run db:backfill:product-unit --workspace @builders/db --",
     "db:backfill:row-units": "npm run db:backfill:row-units --workspace @builders/db --",
+    "db:backfill:item-units": "npm run db:backfill:item-units --workspace @builders/db --",
     "db:seed:work-order-statuses": "npm run db:seed:work-order-statuses --workspace @builders/db",
     "db:seed:properties": "npm run db:seed:properties --workspace @builders/db --",
     "upload:brand-logo": "npm run upload:brand-logo --workspace @builders/db --"

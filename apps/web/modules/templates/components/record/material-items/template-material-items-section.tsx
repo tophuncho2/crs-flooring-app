@@ -4,11 +4,17 @@ import { NumberCell, RecordItemSection, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
-import { type ProductOption, TEMPLATE_MATERIAL_ITEM_NOTES_MAX } from "@builders/domain"
+import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
+import {
+  type ProductOption,
+  type UnitOfMeasureOption,
+  TEMPLATE_MATERIAL_ITEM_NOTES_MAX,
+} from "@builders/domain"
 import type { TemplateMaterialItemLocal } from "@/modules/templates/controllers/record/material-items/use-template-material-items-section"
 
 const TEMPLATE_MATERIAL_ITEMS_COLUMNS: DataTableColumn<TemplateMaterialItemLocal>[] = [
   { key: "product", label: "Product", minWidth: 260, grow: 2 },
+  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "quantity", label: "Quantity", width: 140, align: "end" },
   { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
 ]
@@ -27,6 +33,7 @@ export function TemplateMaterialItemsSection({
   onChangeField,
   onChangeCategoryFilter,
   onSetProductSnapshot,
+  onSetUnit,
   onRemoveItem,
 }: {
   items: TemplateMaterialItemLocal[]
@@ -42,6 +49,7 @@ export function TemplateMaterialItemsSection({
   onChangeField: (itemId: string, field: keyof TemplateMaterialItemLocal, value: string) => void
   onChangeCategoryFilter: (itemId: string, categoryId: string | null) => void
   onSetProductSnapshot: (itemId: string, option: ProductOption | null) => void
+  onSetUnit: (itemId: string, option: UnitOfMeasureOption | null) => void
   onRemoveItem: (itemId: string) => void
 }) {
   const editable = !isSaving
@@ -110,6 +118,17 @@ export function TemplateMaterialItemsSection({
                   showProductCategory
                   categoryLabel={item.categoryFilterName}
                   ariaLabel="Material item product"
+                />
+              )
+            case "unit":
+              return (
+                <UnitOfMeasurePicker
+                  value={item.unitId || null}
+                  selectedLabel={item.sendUnitName || null}
+                  onChange={(id) => onChangeField(item.id, "unitId", id ?? "")}
+                  onOptionSelected={(option) => onSetUnit(item.id, option)}
+                  disabled={!editable}
+                  ariaLabel="Material item unit"
                 />
               )
             case "quantity": {

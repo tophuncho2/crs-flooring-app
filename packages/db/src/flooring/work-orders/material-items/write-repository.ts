@@ -1,7 +1,6 @@
 import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "../../../generated/prisma/client.js"
 import {
-  type ItemSendUnitSnapshot,
   type WorkOrderMaterialItemCreateForm,
   type WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -10,30 +9,35 @@ import { listWorkOrderMaterialItems } from "./read-repository.js"
 type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 
 /**
- * Wire-input shape for material-item creates. Combines the user-supplied
- * create form with the send-unit snapshot the application layer computes
- * via `buildItemSendUnitSnapshotFromProduct(product)` before calling here.
+ * Wire-input shape for material-item creates (UoM epic 2C). The create form now
+ * carries the editable `unitId` FK directly (the application resolves it — form
+ * value, else the product's own unit as a seed fallback). The frozen `sendUnit*`
+ * snapshot is no longer written; the item's `unitId` FK is authoritative.
  */
-export type WriteWorkOrderMaterialItemCreateInput =
-  WorkOrderMaterialItemCreateForm & ItemSendUnitSnapshot
+export type WriteWorkOrderMaterialItemCreateInput = WorkOrderMaterialItemCreateForm
 
 /**
  * Wire-input shape for material-item updates. Always carries the mutable
- * quantity/notes. `product` is present only when the product changed (always
- * allowed now that adjustments don't link to a material item); it carries the
- * re-snapshotted send units for the new product so the snapshot stays
- * consistent with `productId`.
+ * quantity/notes + the editable `unitId` (the user's own edit — "" disconnects).
+ * `product` is present only when the product changed (always allowed now that
+ * adjustments don't link to a material item) and just reconnects the product FK.
  */
 export type WriteWorkOrderMaterialItemUpdateInput = {
   quantity: string
   notes: string
-  product?: { productId: string } & ItemSendUnitSnapshot
+  unitId: string
+  product?: { productId: string }
 }
 
 // Quantity is optional: a blank string means "unset" and is stored as
 // NULL. A non-blank string is handed straight to Prisma, which coerces it
 // to Decimal.
 function toDecimal(value: string): Prisma.Decimal | string | null {
+  return value.trim() ? value : null
+}
+
+// "" / whitespace disconnects the unit (stored NULL); otherwise the FK id.
+function toUnitId(value: string): string | null {
   return value.trim() ? value : null
 }
 
@@ -80,8 +84,7 @@ export async function applyWorkOrderMaterialItemsDiff(
         workOrderId: input.workOrderId,
         productId: draft.input.productId,
         quantity: toDecimal(draft.input.quantity),
-        sendUnitName: draft.input.sendUnitName,
-        sendUnitAbbrev: draft.input.sendUnitAbbrev,
+        unitId: toUnitId(draft.input.unitId),
         notes: draft.input.notes ? draft.input.notes : null,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
@@ -94,15 +97,12 @@ export async function applyWorkOrderMaterialItemsDiff(
       where: { id: update.id },
       data: {
         quantity: toDecimal(update.input.quantity),
+        // Scalar FK writes (not nested `connect`) so `unitId` + `productId` stay
+        // in the same Prisma unchecked-update variant.
+        unitId: toUnitId(update.input.unitId),
         notes: update.input.notes ? update.input.notes : null,
         updatedBy: input.actorEmail,
-        ...(update.input.product
-          ? {
-              product: { connect: { id: update.input.product.productId } },
-              sendUnitName: update.input.product.sendUnitName,
-              sendUnitAbbrev: update.input.product.sendUnitAbbrev,
-            }
-          : {}),
+        ...(update.input.product ? { productId: update.input.product.productId } : {}),
       },
     })
   }

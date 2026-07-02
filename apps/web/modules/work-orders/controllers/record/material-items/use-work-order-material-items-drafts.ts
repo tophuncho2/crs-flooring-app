@@ -3,7 +3,7 @@
 import { useCallback } from "react"
 import type { Dispatch, SetStateAction } from "react"
 import { createLocalRecordRowId } from "@/engines/record-view"
-import type { ProductOption } from "@builders/domain"
+import type { ProductOption, UnitOfMeasureOption } from "@builders/domain"
 import type { RecordSectionError } from "@/types/record/section-error"
 import { createBlankMaterialItemLocal } from "./drafts"
 import type {
@@ -85,15 +85,40 @@ export function useWorkOrderMaterialItemsDrafts({ section }: { section: SectionR
         items: previous.items.map((row) => {
           if (row.id !== itemId) return row
           if (option === null) {
-            return { ...row, productName: "", sendUnitAbbrev: "" }
+            return { ...row, productName: "", unitId: "", sendUnitName: "", sendUnitAbbrev: "" }
           }
+          // Re-seed the unit FK from the picked product (UoM epic 2C) — mirrors
+          // the imports row product-change re-seed. The unit stays editable.
           return {
             ...row,
             productName: option.name,
+            unitId: option.unitId,
+            sendUnitName: option.sendUnitName,
             sendUnitAbbrev: option.sendUnitAbbrev,
           }
         }),
       }))
+    },
+    [section],
+  )
+
+  // Set the item's unit from the picked UoM option — refreshes the display
+  // name (picker trigger label) + abbrev (quantity-cell suffix) alongside the FK.
+  const setUnit = useCallback(
+    (itemId: string, option: UnitOfMeasureOption | null) => {
+      section.setLocalValue((previous) => ({
+        items: previous.items.map((row) =>
+          row.id === itemId
+            ? {
+                ...row,
+                unitId: option?.id ?? "",
+                sendUnitName: option?.name ?? "",
+                sendUnitAbbrev: option?.abbreviation ?? "",
+              }
+            : row,
+        ),
+      }))
+      if (section.error) section.setError(null)
     },
     [section],
   )
@@ -104,5 +129,6 @@ export function useWorkOrderMaterialItemsDrafts({ section }: { section: SectionR
     changeField,
     changeCategoryFilter,
     setProductSnapshot,
+    setUnit,
   }
 }

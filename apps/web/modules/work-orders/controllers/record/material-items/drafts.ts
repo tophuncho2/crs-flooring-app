@@ -22,6 +22,8 @@ export const BLANK_MATERIAL_ITEM_LOCAL_DEFAULTS: Omit<
 > = {
   productId: "",
   productName: "",
+  unitId: "",
+  sendUnitName: "",
   sendUnitAbbrev: "",
   quantity: "",
   notes: "",
@@ -37,6 +39,8 @@ export function toLocalItem(row: WorkOrderMaterialItemRow): WorkOrderMaterialIte
     id: row.id,
     productId: row.productId,
     productName: row.productName,
+    unitId: row.unitId,
+    sendUnitName: row.sendUnitName,
     sendUnitAbbrev: row.sendUnitAbbrev,
     quantity: row.quantity,
     notes: row.notes,
@@ -54,7 +58,7 @@ export function createLocalState(
 
 export function createItemsRevisionKey(rows: WorkOrderMaterialItemRow[]) {
   return JSON.stringify(
-    rows.map((row) => `${row.id}:${row.productId}:${row.quantity}:${row.notes}`),
+    rows.map((row) => `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}`),
   )
 }
 
@@ -79,6 +83,7 @@ function serverItemById(rows: WorkOrderMaterialItemRow[]) {
 function itemsDiffer(local: WorkOrderMaterialItemLocal, server: WorkOrderMaterialItemRow) {
   return (
     local.productId !== server.productId ||
+    local.unitId !== server.unitId ||
     local.quantity !== server.quantity ||
     local.notes !== server.notes
   )
@@ -89,6 +94,7 @@ export function toCreateForm(
 ): WorkOrderMaterialItemCreateForm {
   return {
     productId: local.productId,
+    unitId: local.unitId,
     quantity: local.quantity,
     notes: local.notes,
   }
@@ -99,6 +105,7 @@ export function toUpdateForm(
 ): WorkOrderMaterialItemUpdateForm {
   return {
     productId: local.productId,
+    unitId: local.unitId,
     quantity: local.quantity,
     notes: local.notes,
   }

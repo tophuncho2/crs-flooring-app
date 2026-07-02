@@ -98,5 +98,6 @@ export function useWorkOrderMaterialItemsRows({
     changeField: drafts.changeField,
     changeCategoryFilter: drafts.changeCategoryFilter,
     setProductSnapshot: drafts.setProductSnapshot,
+    setUnit: drafts.setUnit,
   }
 }

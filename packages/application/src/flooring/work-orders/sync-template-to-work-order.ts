@@ -86,8 +86,9 @@ export async function syncTemplateToWorkOrderUseCase(
         items: template.items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
-          sendUnitName: item.sendUnitName,
-          sendUnitAbbrev: item.sendUnitAbbrev,
+          // Carry the template item's editable unit FK forward to the WO item
+          // (UoM epic 2C) — replaces the frozen sendUnit* copy.
+          unitId: item.unitId,
           notes: notesOrNull(item.notes),
           sourceTemplateItemId: item.id,
         })),

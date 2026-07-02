@@ -1,7 +1,6 @@
 import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "../../../generated/prisma/client.js"
 import {
-  type ItemSendUnitSnapshot,
   type TemplateMaterialItemForm,
   type TemplateMaterialItemRow,
 } from "@builders/domain"
@@ -9,19 +8,22 @@ import { listTemplateMaterialItems } from "./read-repository.js"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
-// Wire-input shape for material-item writes. Combines the user-supplied form
-// with the send-unit snapshot the application layer computes via
-// `buildItemSendUnitSnapshotFromProduct(product)` before calling here.
-//
-// Reused-shape pattern: WO MI's data-layer write input will look the same
-// (form + ItemSendUnitSnapshot), so the application orchestration is identical
-// across both modules.
-export type WriteTemplateMaterialItemInput = TemplateMaterialItemForm & ItemSendUnitSnapshot
+// Wire-input shape for material-item writes (UoM epic 2C). The user-supplied
+// form now carries the editable `unitId` FK directly — the application layer
+// resolves it (form value, else the product's own unit as a seed fallback)
+// before calling here. The frozen `sendUnit*` snapshot is no longer written;
+// the item's `unitId` FK is authoritative.
+export type WriteTemplateMaterialItemInput = TemplateMaterialItemForm
 
 // Quantity is optional: a blank string means "unset" and is stored as
 // NULL. A non-blank string is handed straight to Prisma, which coerces it
 // to Decimal.
 function toDecimal(value: string): Prisma.Decimal | string | null {
+  return value.trim() ? value : null
+}
+
+// "" / whitespace disconnects the unit (stored NULL); otherwise the FK id.
+function toUnitId(value: string): string | null {
   return value.trim() ? value : null
 }
 
@@ -63,8 +65,7 @@ export async function applyTemplateMaterialItemsDiff(
         templateId: input.templateId,
         productId: draft.input.productId,
         quantity: toDecimal(draft.input.quantity),
-        sendUnitName: draft.input.sendUnitName,
-        sendUnitAbbrev: draft.input.sendUnitAbbrev,
+        unitId: toUnitId(draft.input.unitId),
         notes: draft.input.notes ? draft.input.notes : null,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
@@ -78,8 +79,7 @@ export async function applyTemplateMaterialItemsDiff(
       data: {
         productId: update.input.productId,
         quantity: toDecimal(update.input.quantity),
-        sendUnitName: update.input.sendUnitName,
-        sendUnitAbbrev: update.input.sendUnitAbbrev,
+        unitId: toUnitId(update.input.unitId),
         notes: update.input.notes ? update.input.notes : null,
         updatedBy: input.actorEmail,
       },
