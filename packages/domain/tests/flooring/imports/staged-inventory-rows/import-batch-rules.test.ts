@@ -151,19 +151,39 @@ describe("buildStagedImportBatchIneligibleMessage", () => {
     expect(buildStagedImportBatchIneligibleMessage([])).toMatch(/All staged rows are ready/)
   })
 
-  it("formats a singular message for one issue", () => {
+  it("names the blocker for a single missing-unit row", () => {
     const msg = buildStagedImportBatchIneligibleMessage([
-      { rowId: "row-1", reason: "MISSING_PRODUCT" },
+      { rowId: "row-1", reason: "MISSING_UNIT" },
     ])
-    expect(msg).toContain("1 row is not ready")
+    expect(msg).toBe("Cannot import: 1 row with no unit of measure.")
+    expect(msg).not.toContain("see per-row reasons")
   })
 
-  it("formats a plural message for multiple issues", () => {
+  it("pluralizes rows sharing one blocker", () => {
     const msg = buildStagedImportBatchIneligibleMessage([
-      { rowId: "row-1", reason: "MISSING_PRODUCT" },
-      { rowId: "row-2", reason: "MISSING_WAREHOUSE" },
+      { rowId: "row-1", reason: "MISSING_UNIT" },
+      { rowId: "row-2", reason: "MISSING_UNIT" },
     ])
-    expect(msg).toContain("2 rows are not ready")
+    expect(msg).toBe("Cannot import: 2 rows with no unit of measure.")
+  })
+
+  it("groups a mixed batch by blocker in first-seen order", () => {
+    const msg = buildStagedImportBatchIneligibleMessage([
+      { rowId: "row-1", reason: "MISSING_UNIT" },
+      { rowId: "row-2", reason: "MISSING_UNIT" },
+      { rowId: "row-3", reason: "MISSING_PRODUCT" },
+    ])
+    expect(msg).toBe(
+      "Cannot import: 2 rows with no unit of measure, 1 row with no product.",
+    )
+  })
+
+  it("collapses reasons that share a label (both map to 'already imported')", () => {
+    const msg = buildStagedImportBatchIneligibleMessage([
+      { rowId: "row-1", reason: "ALREADY_IMPORTED" },
+      { rowId: "row-2", reason: "NOT_DRAFT_STATUS" },
+    ])
+    expect(msg).toBe("Cannot import: 2 rows already imported.")
   })
 })
 

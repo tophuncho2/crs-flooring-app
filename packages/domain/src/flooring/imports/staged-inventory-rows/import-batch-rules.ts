@@ -27,14 +27,36 @@ export function validateStagedImportBatch(
   return issues
 }
 
+// Human-readable descriptor per blocker, phrased to read after "N row / N rows"
+// (e.g. "1 row with no unit of measure", "2 rows already imported"). Per-row
+// notices aren't surfaced anywhere, so the batch message names the blocker(s).
+const STAGED_IMPORTABILITY_REASON_LABEL: Record<StagedImportabilityReason, string> = {
+  MISSING_UNIT: "with no unit of measure",
+  MISSING_PRODUCT: "with no product",
+  MISSING_WAREHOUSE: "with no warehouse",
+  ZERO_STARTING_STOCK: "with no starting stock",
+  ALREADY_QUEUED: "already queued for import",
+  ALREADY_IMPORTED: "already imported",
+  NOT_DRAFT_STATUS: "already imported",
+}
+
 export function buildStagedImportBatchIneligibleMessage(
   issues: ReadonlyArray<StagedImportBatchValidationIssue>,
 ): string {
   if (issues.length === 0) {
     return "All staged rows are ready for import."
   }
-  const count = issues.length
-  return `Cannot import: ${count} row${count === 1 ? "" : "s"} ${count === 1 ? "is" : "are"} not ready (see per-row reasons).`
+  // Tally by resolved label (first-seen order) so reasons that share a label
+  // — e.g. the two "already imported" reasons — collapse into one clause.
+  const countByLabel = new Map<string, number>()
+  for (const issue of issues) {
+    const label = STAGED_IMPORTABILITY_REASON_LABEL[issue.reason]
+    countByLabel.set(label, (countByLabel.get(label) ?? 0) + 1)
+  }
+  const parts = Array.from(countByLabel, ([label, count]) =>
+    `${count} ${count === 1 ? "row" : "rows"} ${label}`,
+  )
+  return `Cannot import: ${parts.join(", ")}.`
 }
 
 export const MAX_MARK_FOR_IMPORT_ROWS = 1000
