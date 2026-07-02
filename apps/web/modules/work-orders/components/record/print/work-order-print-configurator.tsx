@@ -363,7 +363,10 @@ function RowPicker({
           {groups
             .filter((group) => group.rows.length > 0)
             .map((group) => (
-              <div key={group.productName}>
+              // Key on the first row's (globally-unique) id, NOT productName — a
+              // product can now appear as multiple groups (one per unit, UoM
+              // epic), so productName is no longer unique across groups.
+              <div key={group.rows[0].id}>
                 <p className="truncate text-xs font-medium text-neutral-600">{group.productName}</p>
                 {group.rows.map((row) => (
                   <CheckRow
