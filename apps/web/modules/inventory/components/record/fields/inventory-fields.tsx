@@ -3,11 +3,11 @@
 import {
   FormField,
   MoneyCell,
+  NumberCell,
   StatCell,
   StaticFieldValue,
   TextareaCell,
   TextCell,
-  UnitCell,
 } from "@/engines/record-view"
 import { CellChip, PaletteColorDropdown } from "@/engines/common"
 import {
@@ -102,16 +102,16 @@ export function StartingStockField({
   editable,
   value,
   onChange,
-  unit,
   required,
-}: TextFieldProps & { unit: string; required?: boolean }) {
+}: TextFieldProps & { required?: boolean }) {
+  // No unit suffix: the Unit picker sits directly beside this cell on the create
+  // form, so the abbreviation next to the number would be redundant.
   return (
     <FormField label="Starting Stock" required={required}>
-      <UnitCell
+      <NumberCell
         editable={editable}
         value={value}
         onChange={onChange}
-        unit={unit}
         align="start"
         placeholder="0.00"
         ariaLabel="Starting stock"

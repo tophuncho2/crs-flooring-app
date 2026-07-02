@@ -21,10 +21,8 @@ import {
  * inventory field package (`../fields`) over the record-view engine. Everything
  * stacks in a single left column: Starting Stock | Unit pair lead the top (each
  * half the warehouse width), then Product + Warehouse (both required, immutable
- * after create), Location, and the remaining editable item fields. The
- * starting-stock unit suffix reflects the picked product's stock unit.
- * Snapshot/category columns are derived server-side from the product — never
- * entered here.
+ * after create), Location, and the remaining editable item fields. Snapshot/
+ * category columns are derived server-side from the product — never entered here.
  */
 export function InventoryCreateFields({
   form,
@@ -33,7 +31,6 @@ export function InventoryCreateFields({
   productLabel,
   warehouseLabel,
   unitLabel,
-  stockUnitAbbrev,
   onProductSelected,
   onUnitSelected,
   onWarehouseSelected,
@@ -47,7 +44,6 @@ export function InventoryCreateFields({
   productLabel: string | null
   warehouseLabel: string | null
   unitLabel: string | null
-  stockUnitAbbrev: string
   onProductSelected: (option: ProductOption | null) => void
   onUnitSelected: (option: UnitOfMeasureOption | null) => void
   onWarehouseSelected: (option: WarehouseOption | null) => void
@@ -62,7 +58,6 @@ export function InventoryCreateFields({
           editable={editable}
           value={form.startingStock}
           onChange={(value) => setField("startingStock", value)}
-          unit={stockUnitAbbrev}
         />
       </CellAt>
       <CellAt col={3} row={1} colSpan={2}>

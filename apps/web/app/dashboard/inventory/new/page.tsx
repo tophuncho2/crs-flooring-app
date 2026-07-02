@@ -81,7 +81,6 @@ export default async function InventoryCreatePage({
     productLabel: source.productName,
     warehouseLabel: source.warehouseName,
     unitLabel: source.stockUnitName,
-    stockUnitAbbrev: source.stockUnitAbbrev,
   }
 
   return (

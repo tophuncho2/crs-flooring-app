@@ -22,15 +22,14 @@ const CREATE_DIRTY_SECTION = "create"
 
 /**
  * Seed for the create form when opened from a source row (the "duplicate" entry
- * point). Carries the draft field values plus the display-only picker labels +
- * stock-unit suffix so the seeded product/warehouse triggers render immediately.
+ * point). Carries the draft field values plus the display-only picker labels so
+ * the seeded product/warehouse/unit triggers render immediately.
  */
 export type InventoryCreateSeed = {
   form: Partial<InventoryCreateForm>
   productLabel: string | null
   warehouseLabel: string | null
   unitLabel: string | null
-  stockUnitAbbrev: string
 }
 
 /**
@@ -55,13 +54,12 @@ function InventoryCreatePanel({
   })
   const { form, setField, isDirty, canSubmit, isPending, commitCreate, resetToSeed } = create
 
-  // Display-only snapshots for the picker triggers + starting-stock unit suffix.
-  // Seeded from the source row when duplicating so the triggers read correctly
-  // before the user touches the pickers.
+  // Display-only snapshots for the picker triggers. Seeded from the source row
+  // when duplicating so the triggers read correctly before the user touches the
+  // pickers.
   const [productLabel, setProductLabel] = useState<string | null>(seed?.productLabel ?? null)
   const [warehouseLabel, setWarehouseLabel] = useState<string | null>(seed?.warehouseLabel ?? null)
   const [unitLabel, setUnitLabel] = useState<string | null>(seed?.unitLabel ?? null)
-  const [stockUnitAbbrev, setStockUnitAbbrev] = useState<string>(seed?.stockUnitAbbrev ?? "")
 
   // Register dirtiness with the page so the scaffold's leave-guard fires when
   // navigating away with unsaved edits.
@@ -74,13 +72,11 @@ function InventoryCreatePanel({
     // Seed the unit from the picked product (overridable via the unit picker).
     setField("unitId", option?.unitId ?? "")
     setUnitLabel(option?.stockUnitName || null)
-    setStockUnitAbbrev(option?.stockUnitAbbrev ?? "")
   }
 
   const handleUnitSelected = (option: UnitOfMeasureOption | null) => {
     setField("unitId", option?.id ?? "")
     setUnitLabel(option?.name ?? null)
-    setStockUnitAbbrev(option?.abbreviation ?? "")
   }
 
   const handleWarehouseSelected = (option: WarehouseOption | null) => {
@@ -146,7 +142,6 @@ function InventoryCreatePanel({
         productLabel={productLabel}
         warehouseLabel={warehouseLabel}
         unitLabel={unitLabel}
-        stockUnitAbbrev={stockUnitAbbrev}
         onProductSelected={handleProductSelected}
         onUnitSelected={handleUnitSelected}
         onWarehouseSelected={handleWarehouseSelected}
