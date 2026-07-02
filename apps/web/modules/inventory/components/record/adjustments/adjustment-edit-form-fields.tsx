@@ -70,8 +70,9 @@ export function AdjustmentEditFormFields({
 }: AdjustmentEditFormFieldsProps) {
   const { form, local, isSaving } = controller
 
-  // Stock-unit source: edit → the row's frozen snapshot; create → the picked
-  // inventory's snapshot kept in `local` (seeded for the locked hub case).
+  // Stock-unit abbrev, FK-derived at read time (off `unitId`): edit → the row's
+  // resolved abbrev; create → the picked inventory's abbrev kept in `local`
+  // (seeded for the locked hub case).
   const stockUnit = adjustment?.stockUnitAbbrev ?? local.pickedInventoryStockUnitAbbrev
 
   // Every field is freely editable now — there is no finalize/freeze. Cells are

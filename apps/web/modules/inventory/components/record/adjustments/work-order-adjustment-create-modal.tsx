@@ -21,10 +21,11 @@ import { AdjustmentRecordFields } from "./adjustment-record-fields"
 /**
  * Build the inventory list row a duplicate's source adjustment represents, so the
  * modal can pre-select it. The adjustment carries the identity columns (inv# /
- * roll# / dye / note / location / product / warehouse / unit); the import/PO/
- * balance columns it doesn't track stay blank — the modal fetches the real row by
- * id to fill them (see `detailQuery`). `id` is the inventory's id (the row stands
- * for the inventory item).
+ * roll# / dye / note / location / product / warehouse) plus the FK-derived unit
+ * abbrev/name (off `unitId`, resolved at read time); the import/PO/balance columns
+ * it doesn't track stay blank — the modal fetches the real row by id to fill them
+ * (see `detailQuery`). `id` is the inventory's id (the row stands for the
+ * inventory item).
  */
 function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): InventoryRow {
   return {
