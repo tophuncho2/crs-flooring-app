@@ -19,10 +19,12 @@ import {
 /**
  * Presentational body for the manual create-inventory flow, built on the shared
  * inventory field package (`../fields`) over the record-view engine. Product +
- * warehouse (both required, immutable after create) sit in the first row; the
- * editable item fields follow. The starting-stock unit suffix reflects the
- * picked product's stock unit. Snapshot/category columns are derived server-side
- * from the product — never entered here.
+ * warehouse (both required, immutable after create) stack in a single left
+ * column; Starting Stock | Unit pair beneath the warehouse (each half its
+ * width), Location follows, then the remaining editable item fields. The
+ * starting-stock unit suffix reflects the picked product's stock unit.
+ * Snapshot/category columns are derived server-side from the product — never
+ * entered here.
  */
 export function InventoryCreateFields({
   form,
@@ -52,7 +54,8 @@ export function InventoryCreateFields({
 }) {
   return (
     <InventoryFieldGrid>
-      <CellAt col={1} colSpan={4}>
+      {/* Product headline */}
+      <CellAt col={1} row={1} colSpan={4}>
         <ProductPickerField
           required
           value={form.productId || null}
@@ -63,17 +66,10 @@ export function InventoryCreateFields({
           ariaLabel="Select a product"
         />
       </CellAt>
-      <CellAt col={5} colSpan={2}>
-        <StartingStockField
-          required
-          editable={editable}
-          value={form.startingStock}
-          onChange={(value) => setField("startingStock", value)}
-          unit={stockUnitAbbrev}
-        />
-      </CellAt>
 
-      <CellAt col={1} colSpan={4}>
+      {/* Warehouse, then Starting Stock | Unit paired beneath it (each half the
+          warehouse width, together spanning the same cols), then Location. */}
+      <CellAt col={1} row={2} colSpan={4}>
         <WarehousePickerField
           required
           value={form.warehouseId || null}
@@ -85,15 +81,16 @@ export function InventoryCreateFields({
           ariaLabel="Select a warehouse"
         />
       </CellAt>
-      <CellAt col={5} colSpan={2}>
-        <LocationField
+      <CellAt col={1} row={3} colSpan={2}>
+        <StartingStockField
+          required
           editable={editable}
-          value={form.location}
-          onChange={(value) => setField("location", value)}
+          value={form.startingStock}
+          onChange={(value) => setField("startingStock", value)}
+          unit={stockUnitAbbrev}
         />
       </CellAt>
-
-      <CellAt col={1} row={3} colSpan={4}>
+      <CellAt col={3} row={3} colSpan={2}>
         <UnitPickerField
           required
           value={form.unitId || null}
@@ -104,8 +101,15 @@ export function InventoryCreateFields({
           ariaLabel="Select a unit"
         />
       </CellAt>
-
       <CellAt col={1} row={4} colSpan={4}>
+        <LocationField
+          editable={editable}
+          value={form.location}
+          onChange={(value) => setField("location", value)}
+        />
+      </CellAt>
+
+      <CellAt col={1} row={5} colSpan={4}>
         <RollNumberField
           editable={editable}
           value={form.rollNumber}
@@ -113,18 +117,18 @@ export function InventoryCreateFields({
         />
       </CellAt>
 
-      <CellAt col={1} row={5} colSpan={4}>
+      <CellAt col={1} row={6} colSpan={4}>
         <DyeLotField
           editable={editable}
           value={form.dyeLot}
           onChange={(value) => setField("dyeLot", value)}
         />
       </CellAt>
-      <CellAt col={1} row={6} colSpan={4}>
+      <CellAt col={1} row={7} colSpan={4}>
         <NoteField editable={editable} value={form.note} onChange={(value) => setField("note", value)} />
       </CellAt>
 
-      <CellAt col={1} row={7} colSpan={4}>
+      <CellAt col={1} row={8} colSpan={4}>
         <InternalNotesField
           editable={editable}
           value={form.internalNotes}
