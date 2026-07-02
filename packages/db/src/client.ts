@@ -55,6 +55,9 @@ export const prisma = new Proxy({} as PrismaClient, {
 
 export const db = prisma
 
-export function withDatabaseTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>) {
-  return db.$transaction(callback)
+export function withDatabaseTransaction<T>(
+  callback: (tx: Prisma.TransactionClient) => Promise<T>,
+  options?: { maxWait?: number; timeout?: number },
+) {
+  return db.$transaction(callback, options)
 }

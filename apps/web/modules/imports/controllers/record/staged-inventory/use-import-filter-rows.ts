@@ -451,6 +451,10 @@ export function useImportFilterRows({
             ? {
                 ...s,
                 unitId: option?.id ?? "",
+                // Refresh the display name too — the grid picker's trigger label
+                // derives solely from `stockUnitName` (via `selectedLabel`), so
+                // leaving it stale reverts the label to the product's default unit.
+                stockUnitName: option?.name ?? "",
                 stockUnitAbbrev: option?.abbreviation ?? "",
               }
             : s,

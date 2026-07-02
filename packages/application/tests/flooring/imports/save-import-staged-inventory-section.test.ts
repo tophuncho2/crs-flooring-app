@@ -24,6 +24,9 @@ vi.mock("@builders/db", () => ({
   Prisma: {
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
   },
+  // `db` is the pooled fallback client the use case reads on when no tx client
+  // is passed; the read mocks ignore the arg, so a stub is enough.
+  db: {},
   withDatabaseTransaction: withDatabaseTransactionMock,
   getImportById: getImportByIdMock,
   getProductById: getProductByIdMock,
@@ -170,11 +173,21 @@ describe("saveImportStagedInventorySectionUseCase — parent locking", () => {
     expect(stampImportActorMock).not.toHaveBeenCalled()
   })
 
-  it("acquires FOR UPDATE lock before reading the import", async () => {
+  it("acquires the FOR UPDATE lock before the writes (stamp + diff apply)", async () => {
+    // Read-only validation runs on the pool BEFORE the transaction (keeps the
+    // interactive tx under its timeout; OCC is enforced at the route). The lock
+    // then guards only the write phase — it precedes the stamp and the diff apply.
     await runSave(emptyInput())
     expect(lockImportRowMock).toHaveBeenCalledTimes(1)
     expect(lockImportRowMock.mock.invocationCallOrder[0]!).toBeLessThan(
-      getImportByIdMock.mock.invocationCallOrder[0]!,
+      stampImportActorMock.mock.invocationCallOrder[0]!,
+    )
+    expect(lockImportRowMock.mock.invocationCallOrder[0]!).toBeLessThan(
+      applyImportStagedInventorySectionDiffMock.mock.invocationCallOrder[0]!,
+    )
+    // Reads happen before the lock now (outside the transaction).
+    expect(getImportByIdMock.mock.invocationCallOrder[0]!).toBeLessThan(
+      lockImportRowMock.mock.invocationCallOrder[0]!,
     )
   })
 

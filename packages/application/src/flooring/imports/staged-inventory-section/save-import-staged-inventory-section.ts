@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import {
   Prisma,
   applyImportStagedInventorySectionDiff,
+  db,
   getImportById,
   getProductById,
   listFilterRowDiffSummariesByImport,
@@ -46,204 +47,219 @@ export async function saveImportStagedInventorySectionUseCase(
     throw new Error("saveImportStagedInventorySectionUseCase requires a non-empty actorEmail")
   }
 
-  return withDatabaseTransaction(async (tx) => {
-    const c = client ?? tx
+  // Read-only validation work runs BEFORE the transaction, on the pooled client
+  // (`db`) unless this use case is composed inside a caller's transaction. These
+  // reads (parent fetch, per-product fetch, the two diff-summary reads) used to
+  // serialize on the single interactive-transaction connection and, with 2B's
+  // added `unit` joins, pushed the transaction past its timeout. Out here they
+  // run on the pool; the transaction below holds only the lock + the writes.
+  const reader = client ?? db
 
-    await lockImportRow(c, input.importEntryId)
-
-    const parent = await getImportById(input.importEntryId, c)
-    if (!parent) {
-      throw new ImportStagedInventorySectionExecutionError({
-        code: "SECTION_PARENT_NOT_FOUND",
-        message: "Import not found.",
-        status: 404,
-      })
-    }
-
-    for (const draft of input.diff.filters.added) {
-      const issues = validateStagedInventoryFilterForm(draft.form)
-      if (issues.length > 0) {
-        throw new ImportStagedInventorySectionExecutionError({
-          code: "SECTION_FILTER_VALIDATION_FAILED",
-          message: describeStagedInventoryFilterValidationIssues(issues),
-          status: 400,
-          payload: { refKind: "tempId", ref: draft.tempId, issues },
-        })
-      }
-    }
-    for (const update of input.diff.filters.modified) {
-      const issues = validateStagedInventoryFilterForm(update.form)
-      if (issues.length > 0) {
-        throw new ImportStagedInventorySectionExecutionError({
-          code: "SECTION_FILTER_VALIDATION_FAILED",
-          message: describeStagedInventoryFilterValidationIssues(issues),
-          status: 400,
-          payload: { refKind: "id", ref: update.id, issues },
-        })
-      }
-    }
-
-    for (const draft of input.diff.rows.added) {
-      const issues = validateStagedInventoryForm(draft.form)
-      if (issues.length > 0) {
-        throw new ImportStagedInventorySectionExecutionError({
-          code: "SECTION_ROW_VALIDATION_FAILED",
-          message: describeStagedInventoryValidationIssues(issues),
-          status: 400,
-          payload: { refKind: "tempId", ref: draft.tempId, issues },
-        })
-      }
-    }
-    for (const update of input.diff.rows.modified) {
-      const issues = validateStagedInventoryForm(update.form)
-      if (issues.length > 0) {
-        throw new ImportStagedInventorySectionExecutionError({
-          code: "SECTION_ROW_VALIDATION_FAILED",
-          message: describeStagedInventoryValidationIssues(issues),
-          status: 400,
-          payload: { refKind: "id", ref: update.id, issues },
-        })
-      }
-    }
-
-    const distinctProductIds = Array.from(
-      new Set([
-        ...input.diff.filters.added.map((d) => d.form.productId),
-        ...input.diff.filters.modified.map((m) => m.form.productId),
-        ...input.diff.rows.added.map((d) => d.productId),
-      ]),
-    )
-    const products = await Promise.all(
-      distinctProductIds.map(async (productId) => ({
-        productId,
-        product: await getProductById(productId, c),
-      })),
-    )
-    // Product → its own unit FK (UoM epic 2B). Seeds a row's `unitId` on add /
-    // product-change; the form's own `unitId` (kept correct client-side, and
-    // re-seeded there on product-change) takes precedence, with this as the
-    // fallback when the form left it blank.
-    const unitIdByProductId = new Map<string, string>()
-    for (const entry of products) {
-      if (!entry.product) {
-        throw new ImportStagedInventorySectionExecutionError({
-          code: "SECTION_FILTER_VALIDATION_FAILED",
-          message: "Selected product was not found.",
-          status: 400,
-          field: "productId",
-          payload: { productId: entry.productId },
-        })
-      }
-      unitIdByProductId.set(entry.productId, entry.product.unitId)
-    }
-
-    const [existingFilters, existingStagedRows] = await Promise.all([
-      listFilterRowDiffSummariesByImport(input.importEntryId, c),
-      listStagedInventoryRowDiffSummariesByImport(input.importEntryId, c),
-    ])
-
-    const filterIssues = validateStagedInventoryFiltersDiff(input.diff.filters, {
-      existing: existingFilters,
-      knownProductIds: distinctProductIds,
+  const parent = await getImportById(input.importEntryId, reader)
+  if (!parent) {
+    throw new ImportStagedInventorySectionExecutionError({
+      code: "SECTION_PARENT_NOT_FOUND",
+      message: "Import not found.",
+      status: 404,
     })
-    if (filterIssues.length > 0) {
+  }
+
+  for (const draft of input.diff.filters.added) {
+    const issues = validateStagedInventoryFilterForm(draft.form)
+    if (issues.length > 0) {
       throw new ImportStagedInventorySectionExecutionError({
-        code: "SECTION_FILTER_DIFF_VALIDATION_FAILED",
-        message: describeStagedInventoryFilterDiffIssues(filterIssues),
+        code: "SECTION_FILTER_VALIDATION_FAILED",
+        message: describeStagedInventoryFilterValidationIssues(issues),
         status: 400,
-        payload: { issues: filterIssues },
+        payload: { refKind: "tempId", ref: draft.tempId, issues },
       })
     }
-    const rowIssues = validateStagedInventoryRowsDiff(input.diff.rows, {
-      existing: existingStagedRows,
-    })
-    if (rowIssues.length > 0) {
+  }
+  for (const update of input.diff.filters.modified) {
+    const issues = validateStagedInventoryFilterForm(update.form)
+    if (issues.length > 0) {
       throw new ImportStagedInventorySectionExecutionError({
-        code: "SECTION_ROW_DIFF_VALIDATION_FAILED",
-        message: describeStagedInventoryRowDiffIssues(rowIssues),
+        code: "SECTION_FILTER_VALIDATION_FAILED",
+        message: describeStagedInventoryFilterValidationIssues(issues),
         status: 400,
-        payload: { issues: rowIssues },
+        payload: { refKind: "id", ref: update.id, issues },
       })
     }
+  }
 
-    const filtersAddedWithIds = assignDraftIds(input.diff.filters.added, randomUUID)
-    const rowsAddedWithIds = assignDraftIds(input.diff.rows.added, randomUUID)
+  for (const draft of input.diff.rows.added) {
+    const issues = validateStagedInventoryForm(draft.form)
+    if (issues.length > 0) {
+      throw new ImportStagedInventorySectionExecutionError({
+        code: "SECTION_ROW_VALIDATION_FAILED",
+        message: describeStagedInventoryValidationIssues(issues),
+        status: 400,
+        payload: { refKind: "tempId", ref: draft.tempId, issues },
+      })
+    }
+  }
+  for (const update of input.diff.rows.modified) {
+    const issues = validateStagedInventoryForm(update.form)
+    if (issues.length > 0) {
+      throw new ImportStagedInventorySectionExecutionError({
+        code: "SECTION_ROW_VALIDATION_FAILED",
+        message: describeStagedInventoryValidationIssues(issues),
+        status: 400,
+        payload: { refKind: "id", ref: update.id, issues },
+      })
+    }
+  }
 
-    // Staged rows attach directly to the import and carry their own productId;
-    // the unit FK is the form's own `unitId`, falling back to the product's unit
-    // (already fetched into unitIdByProductId above) when the form left it blank.
-    const stagedRowAddedInputs = rowsAddedWithIds.map((draft) => {
-      return {
-        id: draft.id,
-        tempId: draft.tempId,
-        input: {
-          productId: draft.productId,
-          warehouseId: parent.warehouseId,
-          unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.productId) || null,
-          rollNumber: draft.form.rollNumber || null,
-          dyeLot: draft.form.dyeLot || null,
-          location: draft.form.location || null,
-          startingStock: draft.form.startingStock,
-          cost: toStagedMoneyOrNull(draft.form.cost),
-          freight: toStagedMoneyOrNull(draft.form.freight),
-          note: draft.form.note || null,
-        },
-      }
-    })
+  const distinctProductIds = Array.from(
+    new Set([
+      ...input.diff.filters.added.map((d) => d.form.productId),
+      ...input.diff.filters.modified.map((m) => m.form.productId),
+      ...input.diff.rows.added.map((d) => d.productId),
+    ]),
+  )
+  const products = await Promise.all(
+    distinctProductIds.map(async (productId) => ({
+      productId,
+      product: await getProductById(productId, reader),
+    })),
+  )
+  // Product → its own unit FK (UoM epic 2B). Seeds a row's `unitId` on add /
+  // product-change; the form's own `unitId` (kept correct client-side, and
+  // re-seeded there on product-change) takes precedence, with this as the
+  // fallback when the form left it blank.
+  const unitIdByProductId = new Map<string, string>()
+  for (const entry of products) {
+    if (!entry.product) {
+      throw new ImportStagedInventorySectionExecutionError({
+        code: "SECTION_FILTER_VALIDATION_FAILED",
+        message: "Selected product was not found.",
+        status: 400,
+        field: "productId",
+        payload: { productId: entry.productId },
+      })
+    }
+    unitIdByProductId.set(entry.productId, entry.product.unitId)
+  }
 
-    // Aggregate-root actor: a successful section save (even an empty diff)
-    // stamps the parent import's `updatedBy`/`updatedAt`. Runs after all
-    // validation so a rejected save leaves the parent untouched (the touch
-    // rolls back with the transaction).
-    await stampImportActor(c, input.importEntryId, actorEmail)
+  const [existingFilters, existingStagedRows] = await Promise.all([
+    listFilterRowDiffSummariesByImport(input.importEntryId, reader),
+    listStagedInventoryRowDiffSummariesByImport(input.importEntryId, reader),
+  ])
 
-    return applyImportStagedInventorySectionDiff(c, {
-      importEntryId: input.importEntryId,
-      filters: {
-        added: filtersAddedWithIds.map((draft) => ({
-          id: draft.id,
-          tempId: draft.tempId,
-          input: {
-            categoryFilterId: draft.form.categoryFilterId,
-            productId: draft.form.productId,
-            unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.form.productId) || null,
-            stockOrdered: draft.form.stockOrdered,
-          },
-        })),
-        modified: input.diff.filters.modified.map((update) => ({
-          id: update.id,
-          input: {
-            categoryFilterId: update.form.categoryFilterId,
-            productId: update.form.productId,
-            unitId: update.form.unitId.trim() || unitIdByProductId.get(update.form.productId) || null,
-            stockOrdered: update.form.stockOrdered,
-          },
-        })),
-        deleted: input.diff.filters.deleted.map((d) => ({ id: d.id })),
-      },
-      rows: {
-        added: stagedRowAddedInputs.map(({ id, tempId, input: rowInput }) => ({
-          id,
-          tempId,
-          input: rowInput,
-        })),
-        modified: input.diff.rows.modified.map((update) => ({
-          id: update.id,
-          input: {
-            // Product is fixed on a staged row → the unit is the user's own edit
-            // ("" disconnects; the importability gate blocks queueing a null unit).
-            unitId: update.form.unitId.trim() || null,
-            rollNumber: update.form.rollNumber || null,
-            dyeLot: update.form.dyeLot || null,
-            location: update.form.location || null,
-            startingStock: update.form.startingStock,
-            cost: toStagedMoneyOrNull(update.form.cost),
-            freight: toStagedMoneyOrNull(update.form.freight),
-            note: update.form.note || null,
-          },
-        })),
-        deleted: input.diff.rows.deleted.map((d) => ({ id: d.id })),
-      },
-    })
+  const filterIssues = validateStagedInventoryFiltersDiff(input.diff.filters, {
+    existing: existingFilters,
+    knownProductIds: distinctProductIds,
   })
+  if (filterIssues.length > 0) {
+    throw new ImportStagedInventorySectionExecutionError({
+      code: "SECTION_FILTER_DIFF_VALIDATION_FAILED",
+      message: describeStagedInventoryFilterDiffIssues(filterIssues),
+      status: 400,
+      payload: { issues: filterIssues },
+    })
+  }
+  const rowIssues = validateStagedInventoryRowsDiff(input.diff.rows, {
+    existing: existingStagedRows,
+  })
+  if (rowIssues.length > 0) {
+    throw new ImportStagedInventorySectionExecutionError({
+      code: "SECTION_ROW_DIFF_VALIDATION_FAILED",
+      message: describeStagedInventoryRowDiffIssues(rowIssues),
+      status: 400,
+      payload: { issues: rowIssues },
+    })
+  }
+
+  const filtersAddedWithIds = assignDraftIds(input.diff.filters.added, randomUUID)
+  const rowsAddedWithIds = assignDraftIds(input.diff.rows.added, randomUUID)
+
+  // Staged rows attach directly to the import and carry their own productId;
+  // the unit FK is the form's own `unitId`, falling back to the product's unit
+  // (already fetched into unitIdByProductId above) when the form left it blank.
+  const stagedRowAddedInputs = rowsAddedWithIds.map((draft) => {
+    return {
+      id: draft.id,
+      tempId: draft.tempId,
+      input: {
+        productId: draft.productId,
+        warehouseId: parent.warehouseId,
+        unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.productId) || null,
+        rollNumber: draft.form.rollNumber || null,
+        dyeLot: draft.form.dyeLot || null,
+        location: draft.form.location || null,
+        startingStock: draft.form.startingStock,
+        cost: toStagedMoneyOrNull(draft.form.cost),
+        freight: toStagedMoneyOrNull(draft.form.freight),
+        note: draft.form.note || null,
+      },
+    }
+  })
+
+  // The transaction now holds only the lock + the writes. A generous timeout
+  // guards the write burst (a large import can carry ~1000 rows) + the final
+  // reload against the slow shared dev DB, now that the reads above no longer
+  // eat the interactive-transaction budget.
+  return withDatabaseTransaction(
+    async (tx) => {
+      const c = client ?? tx
+
+      await lockImportRow(c, input.importEntryId)
+
+      // Aggregate-root actor: a successful section save (even an empty diff)
+      // stamps the parent import's `updatedBy`/`updatedAt`. Runs after all
+      // validation so a rejected save leaves the parent untouched (the touch
+      // rolls back with the transaction).
+      await stampImportActor(c, input.importEntryId, actorEmail)
+
+      return applyImportStagedInventorySectionDiff(c, {
+        importEntryId: input.importEntryId,
+        filters: {
+          added: filtersAddedWithIds.map((draft) => ({
+            id: draft.id,
+            tempId: draft.tempId,
+            input: {
+              categoryFilterId: draft.form.categoryFilterId,
+              productId: draft.form.productId,
+              unitId: draft.form.unitId.trim() || unitIdByProductId.get(draft.form.productId) || null,
+              stockOrdered: draft.form.stockOrdered,
+            },
+          })),
+          modified: input.diff.filters.modified.map((update) => ({
+            id: update.id,
+            input: {
+              categoryFilterId: update.form.categoryFilterId,
+              productId: update.form.productId,
+              unitId: update.form.unitId.trim() || unitIdByProductId.get(update.form.productId) || null,
+              stockOrdered: update.form.stockOrdered,
+            },
+          })),
+          deleted: input.diff.filters.deleted.map((d) => ({ id: d.id })),
+        },
+        rows: {
+          added: stagedRowAddedInputs.map(({ id, tempId, input: rowInput }) => ({
+            id,
+            tempId,
+            input: rowInput,
+          })),
+          modified: input.diff.rows.modified.map((update) => ({
+            id: update.id,
+            input: {
+              // Product is fixed on a staged row → the unit is the user's own edit
+              // ("" disconnects; the importability gate blocks queueing a null unit).
+              unitId: update.form.unitId.trim() || null,
+              rollNumber: update.form.rollNumber || null,
+              dyeLot: update.form.dyeLot || null,
+              location: update.form.location || null,
+              startingStock: update.form.startingStock,
+              cost: toStagedMoneyOrNull(update.form.cost),
+              freight: toStagedMoneyOrNull(update.form.freight),
+              note: update.form.note || null,
+            },
+          })),
+          deleted: input.diff.rows.deleted.map((d) => ({ id: d.id })),
+        },
+      })
+    },
+    { timeout: 15_000, maxWait: 10_000 },
+  )
 }
