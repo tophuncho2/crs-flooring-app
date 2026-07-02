@@ -47,6 +47,11 @@ export type ProductRow = {
   // on it yet) — stored as a string here; the read normalizer converts the
   // Decimal column to a string and "" when null.
   coveragePerUnit: string
+  // The product's OWN coverage unit-of-measure FK + resolved unit (UoM epic 1a).
+  // Optional (nullable column) — "" / null until the user picks one. Separate
+  // from the main `unitId`; drives the coverage-per-unit suffix in the record view.
+  coverageUnitId: string
+  coverageUnit: ProductRowUnit | null
   productNamingAddon: string
   createdAt: string
   updatedAt: string
@@ -77,6 +82,9 @@ export type ProductCreateForm = {
   color: string
   // Mutable on create AND update — not an immutable snapshot. Empty string clears it.
   coveragePerUnit: string
+  // The product's own coverage unit FK (UoM epic 1a). Optional — "" clears it.
+  // Chosen via a second UoM picker, independent of the required main `unitId`.
+  coverageUnitId: string
   productNamingAddon: string
   // Non-semantic palette tag. Carried on the shared draft so the record-view
   // edit form can re-pick it; the create flow never renders a picker and the
@@ -119,6 +127,7 @@ export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {
   style: "",
   color: "",
   coveragePerUnit: "",
+  coverageUnitId: "",
   productNamingAddon: "",
   paletteColor: DEFAULT_PALETTE_COLOR,
 }
@@ -131,6 +140,7 @@ export function toProductUpdateForm(row: ProductRow): ProductUpdateForm {
     style: row.style,
     color: row.color,
     coveragePerUnit: row.coveragePerUnit,
+    coverageUnitId: row.coverageUnitId,
     productNamingAddon: row.productNamingAddon,
     paletteColor: row.paletteColor,
   }

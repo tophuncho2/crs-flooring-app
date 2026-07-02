@@ -36,6 +36,9 @@ const EMPTY_PRODUCT: ProductRecord = {
   // fall to the DB default SLATE.
   paletteColor: "SLATE",
   coveragePerUnit: "",
+  // No coverage unit until the user picks one (UoM epic 1a).
+  coverageUnitId: "",
+  coverageUnit: null,
   productNamingAddon: "",
   createdAt: "",
   updatedAt: "",

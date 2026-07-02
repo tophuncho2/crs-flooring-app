@@ -67,6 +67,9 @@ function parseSharedFields(body: Record<string, unknown>) {
     style: parseOptionalString(body.style),
     color: parseOptionalString(body.color),
     coveragePerUnit: parseCoveragePerUnit(body.coveragePerUnit),
+    // Product's own coverage unit FK (UoM epic 1a). Optional — blank clears it.
+    // Structural parse only; the DB FK's RESTRICT is the existence backstop.
+    coverageUnitId: parseOptionalString(body.coverageUnitId),
     productNamingAddon: parseOptionalString(body.productNamingAddon),
   }
 }
@@ -76,7 +79,7 @@ function parseSharedFields(body: Record<string, unknown>) {
  *
  * Produces the canonical `CreateProductInput` consumed by `createProductUseCase`.
  * Requires `categoryId` + `unitId` (the canonical unit FK). `coverageUnitId` is
- * dormant (UoM epic 2A) — never accepted on the wire.
+ * optional (UoM epic 1a) — parsed by `parseSharedFields`.
  *
  * Structural type-guards only. Business rules (category existence, entity
  * existence, name uniqueness, etc.) live in the domain/use-case layers.
@@ -94,7 +97,7 @@ export function validateCreateProductInput(body: Record<string, unknown>): Creat
  *
  * `categoryId` is now MUTABLE (UoM epic 2A) — accepted and required, like the
  * create flow (the primary edit form always carries the full draft). `unitId`
- * is required too. `coverageUnitId` is dormant — never accepted.
+ * is required too. `coverageUnitId` is optional (UoM epic 1a; parsed shared).
  */
 export function validateUpdateProductInput(
   body: Record<string, unknown>,

@@ -26,6 +26,9 @@ export type CreateProductInput = {
   // string off the wire (mirrors inventory `startingStock`); Prisma coerces it
   // to the Decimal column on write.
   coveragePerUnit: string | null
+  // The product's own coverage unit FK (UoM epic 1a). Optional — null clears it.
+  // Independent of the required main `unitId`; DB FK RESTRICT is the backstop.
+  coverageUnitId: string | null
   productNamingAddon: string | null
   // Actor-email snapshots — server-assigned from the authenticated user, not off
   // the wire. Both stamped on create; `updatedBy` flips on every update.
@@ -58,6 +61,7 @@ export async function createProduct(
       style: input.style,
       color: input.color,
       coveragePerUnit: input.coveragePerUnit,
+      coverageUnitId: input.coverageUnitId,
       productNamingAddon: input.productNamingAddon,
       createdBy: input.createdBy,
       updatedBy: input.updatedBy,
@@ -80,6 +84,7 @@ export async function updateProduct(
   if (input.style !== undefined) data.style = input.style
   if (input.color !== undefined) data.color = input.color
   if (input.coveragePerUnit !== undefined) data.coveragePerUnit = input.coveragePerUnit
+  if (input.coverageUnitId !== undefined) data.coverageUnitId = input.coverageUnitId
   if (input.productNamingAddon !== undefined) data.productNamingAddon = input.productNamingAddon
   if (input.paletteColor !== undefined) data.paletteColor = input.paletteColor
 

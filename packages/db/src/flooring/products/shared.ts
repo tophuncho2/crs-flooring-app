@@ -30,6 +30,16 @@ export const productRowSelect = {
   // `productOptionSelect` omits it (pickers don't render the chip).
   paletteColor: true,
   coveragePerUnit: true,
+  // The product's own coverage unit FK + resolved unit (UoM epic 1a). Drives the
+  // coverage-per-unit suffix in the record view. Nullable — null until picked.
+  coverageUnitId: true,
+  coverageUnit: {
+    select: {
+      id: true,
+      name: true,
+      abbreviation: true,
+    },
+  },
   productNamingAddon: true,
   createdAt: true,
   updatedAt: true,

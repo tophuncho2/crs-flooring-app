@@ -40,6 +40,8 @@ describe("normalizeProductRow", () => {
       categoryId: "cat-1",
       unitId: "u-sf",
       unit: { id: "u-sf", name: "Square Feet", abbreviation: "sq ft" },
+      coverageUnitId: "u-box",
+      coverageUnit: { id: "u-box", name: "Box", abbreviation: "box" },
       entityId: null,
       style: "Plank",
       color: "Ash",
@@ -54,6 +56,9 @@ describe("normalizeProductRow", () => {
 
     expect(withUnit.unitId).toBe("u-sf")
     expect(withUnit.unit).toEqual({ id: "u-sf", name: "Square Feet", abbreviation: "sq ft" })
+    // Coverage unit resolves off its own FK, independent of the main unit (1a).
+    expect(withUnit.coverageUnitId).toBe("u-box")
+    expect(withUnit.coverageUnit).toEqual({ id: "u-box", name: "Box", abbreviation: "box" })
 
     const withoutUnit = normalizeProductRow({
       id: "prod-4",
@@ -61,6 +66,8 @@ describe("normalizeProductRow", () => {
       categoryId: "cat-1",
       unitId: null,
       unit: null,
+      coverageUnitId: null,
+      coverageUnit: null,
       entityId: null,
       style: null,
       color: null,
@@ -75,6 +82,8 @@ describe("normalizeProductRow", () => {
 
     expect(withoutUnit.unitId).toBe("")
     expect(withoutUnit.unit).toBeNull()
+    expect(withoutUnit.coverageUnitId).toBe("")
+    expect(withoutUnit.coverageUnit).toBeNull()
   })
 
   it("surfaces an empty entity name when the entity link is null", () => {

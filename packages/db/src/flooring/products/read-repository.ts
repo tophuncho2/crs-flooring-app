@@ -49,6 +49,10 @@ export type ProductRecord = {
   // Non-semantic palette tag (metadata-only). Distinct from the physical `color`.
   paletteColor: PaletteColor
   coveragePerUnit: string
+  // The product's own coverage unit FK + resolved unit (UoM epic 1a). Nullable —
+  // "" / null until the user picks one. Independent of the main `unitId`.
+  coverageUnitId: string
+  coverageUnit: ProductRecordUnit | null
   productNamingAddon: string
   createdAt: string
   updatedAt: string
@@ -127,6 +131,15 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     color: product.color ?? "",
     paletteColor: product.paletteColor,
     coveragePerUnit: product.coveragePerUnit?.toString() ?? "",
+    // Product's own coverage unit (UoM epic 1a). "" / null until picked.
+    coverageUnitId: product.coverageUnitId ?? "",
+    coverageUnit: product.coverageUnit
+      ? {
+          id: product.coverageUnit.id,
+          name: product.coverageUnit.name,
+          abbreviation: product.coverageUnit.abbreviation,
+        }
+      : null,
     productNamingAddon: product.productNamingAddon ?? "",
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),

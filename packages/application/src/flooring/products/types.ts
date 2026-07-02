@@ -15,6 +15,9 @@ export type CreateProductInput = {
   // Mutable on create AND update. Canonical decimal string (mirrors inventory
   // `startingStock`); Prisma coerces it to the Decimal column. null clears it.
   coveragePerUnit: string | null
+  // The product's own coverage unit FK (UoM epic 1a). Optional — null clears it.
+  // Independent of the required main `unitId`.
+  coverageUnitId: string | null
   productNamingAddon: string | null
 }
 

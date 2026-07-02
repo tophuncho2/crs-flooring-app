@@ -11,7 +11,8 @@ function toCreateRequestBody(input: ProductCreateForm): Record<string, unknown> 
 
 // `ProductUpdateForm` carries the full draft (categoryId + unitId are both
 // mutable now, UoM epic 2A) — send it as-is. The PATCH validator requires
-// categoryId + unitId; `coverageUnitId` is dormant and never sent.
+// categoryId + unitId; `coverageUnitId` is optional (UoM epic 1a) and rides
+// along in the spread.
 function toUpdateRequestBody(input: ProductUpdateForm): Record<string, unknown> {
   return { ...input }
 }
