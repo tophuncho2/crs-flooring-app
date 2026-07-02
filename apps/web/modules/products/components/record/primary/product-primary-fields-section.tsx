@@ -30,7 +30,8 @@ const PRODUCT_NAMING_ADDON_MAX = 80
  * Products primary section, on the canonical record-view invisible grid.
  * In the detail view a `RecordColumnBreak` splits the section into two flanks —
  * left = all spec fields (PROD # + Palette paired / Category + Stock Unit paired /
- * Style / Color / Naming Add-on / Coverage·Unit / Entity), right = the read-only
+ * Coverage·Unit + Coverage Unit paired / Style / Color / Naming Add-on / Entity),
+ * right = the read-only
  * linked-row counts stacked vertically — then a `RecordSectionDivider` terminates
  * the section above a read-only metadata band (Created / Updated / Created by /
  * Updated by), mirroring warehouse + job-types. The create flow renders the same
@@ -126,9 +127,9 @@ export function ProductPrimaryFieldsSection({
 
   // All spec fields, shared by both flows. Detail puts these in the left flank;
   // create renders them as a single column. Top down: PROD # + Palette paired
-  // (detail-only) / Category + Stock Unit paired (equal width) / Style / Color /
-  // Naming Add-on / Coverage·Unit / Entity. Coverage·Unit and Entity each take
-  // col 1 with no explicit row, so they stack vertically below Naming Add-on.
+  // (detail-only) / Category + Stock Unit paired (equal width) / Coverage·Unit +
+  // Coverage Unit paired / Style / Color / Naming Add-on / Entity. Entity takes
+  // col 1 with no explicit row, so it stacks vertically below Naming Add-on.
   const specFields = (
     <>
       {/* Read-only canonical PROD-N number — detail view only (empty on create). */}
@@ -193,6 +194,44 @@ export function ProductPrimaryFieldsSection({
           )}
         </FormField>
       </CellAt>
+      {/* Coverage·Unit + its coverage-unit picker paired (4 + 4), sitting
+          directly under Category + Unit. The picker sets the product's OWN
+          coverage unit (UoM epic 1a); the Coverage / Unit cell's suffix follows
+          the picked unit's abbrev. */}
+      <CellAt col={1} colSpan={4}>
+        <FormField label="Coverage / Unit">
+          <PerUnitCell
+            editable={!disabled}
+            value={draft.coveragePerUnit}
+            onChange={(value) => onFieldChange("coveragePerUnit", value)}
+            unit={coverageUnitAbbrev}
+            currencyPrefix=""
+            ariaLabel="Coverage per unit"
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={5} colSpan={4}>
+        <FormField label="Coverage Unit">
+          {fieldsReadOnly ? (
+            <StaticFieldValue>{savedCoverageUnitName || "—"}</StaticFieldValue>
+          ) : (
+            <UnitOfMeasurePicker
+              value={draft.coverageUnitId || null}
+              onChange={(nextUnitId) => onFieldChange("coverageUnitId", nextUnitId ?? "")}
+              onOptionSelected={(opt) => {
+                setPickedCoverageUnitLabel(opt?.name ?? null)
+                setPickedCoverageUnitAbbrev(opt?.abbreviation ?? null)
+              }}
+              selectedLabel={
+                draft.coverageUnitId ? pickedCoverageUnitLabel ?? savedCoverageUnitName : null
+              }
+              disabled={disabled}
+              placeholder="Select a unit"
+              ariaLabel="Coverage unit"
+            />
+          )}
+        </FormField>
+      </CellAt>
       <CellAt col={1} colSpan={8}>
         <FormField label="Style">
           {fieldsReadOnly ? (
@@ -233,43 +272,6 @@ export function ProductPrimaryFieldsSection({
               value={draft.productNamingAddon}
               onChange={(value) => onFieldChange("productNamingAddon", value)}
               maxLength={PRODUCT_NAMING_ADDON_MAX}
-            />
-          )}
-        </FormField>
-      </CellAt>
-      {/* Coverage·Unit + its coverage-unit picker paired (4 + 4), then Entity
-          below. The picker sets the product's OWN coverage unit (UoM epic 1a);
-          the suffix on the cell to its left follows the picked unit's abbrev. */}
-      <CellAt col={1} colSpan={4}>
-        <FormField label="Coverage / Unit">
-          <PerUnitCell
-            editable={!disabled}
-            value={draft.coveragePerUnit}
-            onChange={(value) => onFieldChange("coveragePerUnit", value)}
-            unit={coverageUnitAbbrev}
-            currencyPrefix=""
-            ariaLabel="Coverage per unit"
-          />
-        </FormField>
-      </CellAt>
-      <CellAt col={5} colSpan={4}>
-        <FormField label="Coverage Unit">
-          {fieldsReadOnly ? (
-            <StaticFieldValue>{savedCoverageUnitName || "—"}</StaticFieldValue>
-          ) : (
-            <UnitOfMeasurePicker
-              value={draft.coverageUnitId || null}
-              onChange={(nextUnitId) => onFieldChange("coverageUnitId", nextUnitId ?? "")}
-              onOptionSelected={(opt) => {
-                setPickedCoverageUnitLabel(opt?.name ?? null)
-                setPickedCoverageUnitAbbrev(opt?.abbreviation ?? null)
-              }}
-              selectedLabel={
-                draft.coverageUnitId ? pickedCoverageUnitLabel ?? savedCoverageUnitName : null
-              }
-              disabled={disabled}
-              placeholder="Select a unit"
-              ariaLabel="Coverage unit"
             />
           )}
         </FormField>
