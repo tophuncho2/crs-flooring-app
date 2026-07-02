@@ -274,7 +274,7 @@ export function ImportStagedInventoryGrid({
         const rows: StagedGridRow[] = group.rows.map((row) => ({ ...row, id: row.clientId }))
         return (
           <div
-            key={group.productId}
+            key={groupKey(group.productId, group.unitId)}
             className="space-y-2 border-b border-[var(--panel-border)] pb-5 last:border-b-0 last:pb-0"
           >
             <div className="flex items-center justify-between gap-3 px-1">

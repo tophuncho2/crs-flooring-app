@@ -223,6 +223,23 @@ describe("WorkOrderAdjustmentsGrid — splits one product across units (UoM epic
     expect(screen.getAllByText("Deductions").length).toBe(2)
   })
 
+  it("gives the two same-product groups distinct React keys (no duplicate-key warning)", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    renderGrid({
+      adjustments: [
+        adjustment({ id: "adj-sqft", unitId: "u-sqft", stockUnitAbbrev: "sqft", quantity: "5" }),
+        adjustment({ id: "adj-box", unitId: "u-box", stockUnitAbbrev: "box", quantity: "3" }),
+      ],
+    })
+    // The group key is (productId, unitId), not productId alone — so two groups of
+    // the same product don't collide. Guards the regression that keyed on productId.
+    const sawDuplicateKey = errorSpy.mock.calls.some((args) =>
+      String(args[0]).includes("same key"),
+    )
+    expect(sawDuplicateKey).toBe(false)
+    errorSpy.mockRestore()
+  })
+
   it("correlates Requested to the adjustments at the SAME unit, not across units", () => {
     renderGrid({
       adjustments: [

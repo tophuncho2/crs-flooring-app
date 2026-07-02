@@ -164,7 +164,7 @@ export function WorkOrderAdjustmentsGrid({
         const increaseTotal = sumAdjustmentQuantities(increases)
         const requestedTotal = requestedByGroup.get(groupKey(group.productId, group.unitId))
         return (
-          <div key={group.productId} className="space-y-2 border-b border-[var(--panel-border)] pb-5 last:border-b-0 last:pb-0">
+          <div key={groupKey(group.productId, group.unitId)} className="space-y-2 border-b border-[var(--panel-border)] pb-5 last:border-b-0 last:pb-0">
             <div className="flex items-center justify-between gap-3 px-1">
               {/* Create affordance (+) sits left of the product name — the
                   obvious "start an adjustment for this product" action, and the
