@@ -18,9 +18,18 @@ import { CellAddButton } from "@/engines/common"
 
 type ProductGroup = {
   productId: string
+  // Group's unit (UoM epic). A product at two units groups SEPARATELY so summed
+  // Requested/Increases/Deductions never mix units. `unitLabel` distinguishes the
+  // two headers; a missing unit coalesces to "".
+  unitId: string
+  unitLabel: string
   productName: string
   rows: EnrichedInventoryAdjustmentRow[]
 }
+
+// Composite grouping key — keeps the map + the requested-material correlation in
+// lockstep. A missing unit coalesces to "" (one unitless bucket).
+const groupKey = (productId: string, unitId: string) => `${productId}::${unitId ?? ""}`
 
 /**
  * Group by product over the union of adjustments AND requested-material items, so
@@ -39,19 +48,30 @@ function groupByProduct(
 ): ProductGroup[] {
   const groups: ProductGroup[] = []
   const byId = new Map<string, ProductGroup>()
-  const ensure = (productId: string, productName: string) => {
-    let group = byId.get(productId)
+  const ensure = (
+    productId: string,
+    unitId: string,
+    unitLabel: string,
+    productName: string,
+  ) => {
+    const key = groupKey(productId, unitId)
+    let group = byId.get(key)
     if (!group) {
-      group = { productId, productName, rows: [] }
-      byId.set(productId, group)
+      group = { productId, unitId, unitLabel, productName, rows: [] }
+      byId.set(key, group)
       groups.push(group)
     }
     return group
   }
-  for (const adj of adjustments) ensure(adj.productId, adj.productName).rows.push(adj)
-  for (const item of requestedItems) ensure(item.productId, item.productName)
+  for (const adj of adjustments)
+    ensure(adj.productId, adj.unitId ?? "", adj.stockUnitName ?? "", adj.productName).rows.push(adj)
+  for (const item of requestedItems)
+    ensure(item.productId, item.unitId, item.sendUnitName, item.productName)
   for (const group of groups) group.rows.sort(compareAdjustmentsByRecency)
-  groups.sort((a, b) => a.productName.localeCompare(b.productName))
+  // Product-name ascending, then unit so a product's unit-groups stay adjacent.
+  groups.sort(
+    (a, b) => a.productName.localeCompare(b.productName) || a.unitLabel.localeCompare(b.unitLabel),
+  )
   return groups
 }
 
@@ -101,20 +121,21 @@ export function WorkOrderAdjustmentsGrid({
     [adjustments, requestedItems],
   )
 
-  // Per-product requested-material total, keyed by productId. Reuses the same
-  // sum helper as the adjustment subtotals (and the print views) by mapping each
-  // item's send unit into the `stockUnitAbbrev` slot the helper reads.
-  const requestedByProduct = useMemo(() => {
-    const byProduct = new Map<string, WorkOrderMaterialItemRow[]>()
+  // Per-(product, unit) requested-material total, keyed to match the groups so
+  // Requested lines up with the adjustments at the SAME unit beside it. Reuses the
+  // same sum helper by mapping each item's send unit into the `stockUnitAbbrev` slot.
+  const requestedByGroup = useMemo(() => {
+    const byGroup = new Map<string, WorkOrderMaterialItemRow[]>()
     for (const item of requestedItems) {
-      const list = byProduct.get(item.productId)
+      const key = groupKey(item.productId, item.unitId)
+      const list = byGroup.get(key)
       if (list) list.push(item)
-      else byProduct.set(item.productId, [item])
+      else byGroup.set(key, [item])
     }
     const totals = new Map<string, { quantity: string; stockUnitAbbrev: string }>()
-    for (const [productId, items] of byProduct) {
+    for (const [key, items] of byGroup) {
       totals.set(
-        productId,
+        key,
         sumAdjustmentQuantities(
           items.map((item) => ({ quantity: item.quantity, stockUnitAbbrev: item.sendUnitAbbrev })),
         ),
@@ -141,7 +162,7 @@ export function WorkOrderAdjustmentsGrid({
         const increases = group.rows.filter((row) => row.adjustmentType === "INCREASE")
         const deductionTotal = sumAdjustmentQuantities(deductions)
         const increaseTotal = sumAdjustmentQuantities(increases)
-        const requestedTotal = requestedByProduct.get(group.productId)
+        const requestedTotal = requestedByGroup.get(groupKey(group.productId, group.unitId))
         return (
           <div key={group.productId} className="space-y-2 border-b border-[var(--panel-border)] pb-5 last:border-b-0 last:pb-0">
             <div className="flex items-center justify-between gap-3 px-1">
@@ -163,6 +184,12 @@ export function WorkOrderAdjustmentsGrid({
                 />
                 <span className="text-base font-semibold text-[var(--foreground)]">
                   {group.productName}
+                  {group.unitLabel ? (
+                    <span className="font-normal text-[var(--foreground)]/55">
+                      {" · "}
+                      {group.unitLabel}
+                    </span>
+                  ) : null}
                 </span>
               </span>
               <span className="flex items-center gap-4 text-base uppercase tracking-wide text-[var(--foreground)]/55">

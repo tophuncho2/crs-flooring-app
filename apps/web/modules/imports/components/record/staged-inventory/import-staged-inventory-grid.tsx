@@ -20,6 +20,11 @@ import { StagedRowDuplicateButton, StagedRowRemoveButton } from "./row-controls"
 
 type StagedGridRow = ImportStagedRowDraft & { id: string }
 
+// Grouping is keyed on (productId, unitId) — the same product at two units groups
+// SEPARATELY so summed Requested/Remaining never mix units (UoM epic). A missing
+// unit coalesces to "" (one unitless bucket).
+const groupKey = (productId: string, unitId: string) => `${productId}::${unitId ?? ""}`
+
 type StagedGroup = {
   productId: string
   productName: string
@@ -97,7 +102,8 @@ function buildGroups(
     stockUnitName: string,
     stockUnitAbbrev: string,
   ) => {
-    let group = byId.get(productId)
+    const key = groupKey(productId, unitId)
+    let group = byId.get(key)
     if (!group) {
       group = {
         productId,
@@ -108,7 +114,7 @@ function buildGroups(
         stockOrdered: "",
         rows: [],
       }
-      byId.set(productId, group)
+      byId.set(key, group)
       groups.push(group)
     }
     return group
@@ -169,13 +175,15 @@ export function ImportStagedInventoryGrid({
   const effectiveStatus = (draft: ImportStagedRowDraft): FlooringStagedRowStatus =>
     resolveEffectiveStatus(serverStatusById, draft)
 
-  // Live sum of staged startingStock per product, for the "Remaining" header.
-  const startingStockSumByProductId = useMemo(() => {
+  // Live sum of staged startingStock per (product, unit) group, for the
+  // "Remaining" header — keyed to match `buildGroups` so units never mix.
+  const startingStockSumByGroupKey = useMemo(() => {
     const map = new Map<string, number>()
     for (const row of stagedRows) {
       const parsed = Number(row.startingStock)
       if (!Number.isFinite(parsed)) continue
-      map.set(row.productId, (map.get(row.productId) ?? 0) + parsed)
+      const key = groupKey(row.productId, row.unitId)
+      map.set(key, (map.get(key) ?? 0) + parsed)
     }
     return map
   }, [stagedRows])
@@ -258,7 +266,7 @@ export function ImportStagedInventoryGrid({
   return (
     <div className="space-y-5">
       {groups.map((group) => {
-        const sum = startingStockSumByProductId.get(group.productId) ?? 0
+        const sum = startingStockSumByGroupKey.get(groupKey(group.productId, group.unitId)) ?? 0
         const remaining = computeFilterRemainingStock({
           stockOrdered: group.stockOrdered,
           childStartingStockSum: sum.toFixed(2),
@@ -289,6 +297,12 @@ export function ImportStagedInventoryGrid({
                 />
                 <span className="text-base font-semibold text-[var(--foreground)]">
                   {group.productName}
+                  {group.stockUnitName || group.stockUnitAbbrev ? (
+                    <span className="font-normal text-[var(--foreground)]/55">
+                      {" · "}
+                      {group.stockUnitName || group.stockUnitAbbrev}
+                    </span>
+                  ) : null}
                 </span>
               </span>
               <span className="flex items-center gap-4 text-base uppercase tracking-wide text-[var(--foreground)]/55">

@@ -458,8 +458,11 @@ export async function getWorkOrderForFileGeneration(
   // split a block. Within a product, quantity-ascending with id as a tiebreak.
   const adjustments = await client.flooringInventoryAdjustment.findMany({
     where: { workOrderId, adjustmentType: "DEDUCTION" as const },
+    // `unitId` second so same-product rows at DIFFERENT units stay contiguous —
+    // a product at two units groups separately (UoM epic) and never interleaves.
     orderBy: [
       { productId: "asc" as const },
+      { unitId: "asc" as const },
       { quantity: "asc" as const },
       { id: "asc" as const },
     ],
@@ -475,7 +478,9 @@ export async function getWorkOrderForFileGeneration(
       rollNumber: true,
       location: true,
       // Adjustment's own unit FK (UoM epic 2B) resolves the printed abbrev;
-      // snapshot columns fully de-referenced (2D drops them).
+      // snapshot columns fully de-referenced (2D drops them). `unitId` also keys
+      // the grouping so mixed units never share a block/subtotal.
+      unitId: true,
       unit: { select: { abbreviation: true } },
       productId: true,
       product: { select: { name: true, style: true, color: true } },
@@ -488,6 +493,7 @@ export async function getWorkOrderForFileGeneration(
   // grid, then sort the groups by that label — mirroring the grid's groupByProduct.
   const adjustmentGroups: WorkOrderFileProductAdjustmentGroup[] = []
   let currentProductId: string | null = null
+  let currentUnitId: string | null = null
   for (const adj of adjustments) {
     const projection = {
       id: adj.id,
@@ -506,8 +512,9 @@ export async function getWorkOrderForFileGeneration(
       // the frozen snapshot string is the transition fallback.
       stockUnitAbbrev: adj.unit?.abbreviation ?? "",
     }
-    if (adj.productId !== currentProductId) {
+    if (adj.productId !== currentProductId || (adj.unitId ?? "") !== currentUnitId) {
       currentProductId = adj.productId
+      currentUnitId = adj.unitId ?? ""
       const productName = buildFlooringProductDisplayName({
         name: adj.product.name,
         style: adj.product.style,
@@ -526,8 +533,11 @@ export async function getWorkOrderForFileGeneration(
   // with the composed display name, groups sorted by that label.
   const materialItems = await client.flooringWorkOrderItem.findMany({
     where: { workOrderId },
+    // `unitId` second so a product at two units stays contiguous and groups
+    // separately (UoM epic), mirroring the adjustments scan above.
     orderBy: [
       { productId: "asc" as const },
+      { unitId: "asc" as const },
       { quantity: "asc" as const },
       { id: "asc" as const },
     ],
@@ -535,7 +545,8 @@ export async function getWorkOrderForFileGeneration(
       id: true,
       quantity: true,
       // Item's own unit FK (UoM epic 2C) resolves the printed abbrev; snapshot
-      // columns fully de-referenced (2D drops them).
+      // columns fully de-referenced (2D drops them). `unitId` also keys grouping.
+      unitId: true,
       unit: { select: { abbreviation: true } },
       notes: true,
       productId: true,
@@ -545,6 +556,7 @@ export async function getWorkOrderForFileGeneration(
 
   const materialItemGroups: WorkOrderFileProductMaterialItemGroup[] = []
   let currentMaterialProductId: string | null = null
+  let currentMaterialUnitId: string | null = null
   for (const item of materialItems) {
     const projection = {
       id: item.id,
@@ -552,8 +564,9 @@ export async function getWorkOrderForFileGeneration(
       unitAbbrev: item.unit?.abbreviation ?? "",
       notes: item.notes ?? "",
     }
-    if (item.productId !== currentMaterialProductId) {
+    if (item.productId !== currentMaterialProductId || (item.unitId ?? "") !== currentMaterialUnitId) {
       currentMaterialProductId = item.productId
+      currentMaterialUnitId = item.unitId ?? ""
       const productName = buildFlooringProductDisplayName({
         name: item.product.name,
         style: item.product.style,

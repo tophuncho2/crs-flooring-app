@@ -189,6 +189,57 @@ describe("WorkOrderAdjustmentsGrid — requested-only groups + create affordance
   })
 })
 
+describe("WorkOrderAdjustmentsGrid — splits one product across units (UoM epic)", () => {
+  afterEach(cleanup)
+
+  it("groups the same product SEPARATELY per unit, each with its own subtotal", () => {
+    const { container } = renderGrid({
+      adjustments: [
+        adjustment({
+          id: "adj-sqft",
+          adjustmentNumber: "ADJ-SQFT",
+          unitId: "u-sqft",
+          stockUnitName: "square foot",
+          stockUnitAbbrev: "sqft",
+          quantity: "5",
+        }),
+        adjustment({
+          id: "adj-box",
+          adjustmentNumber: "ADJ-BOX",
+          unitId: "u-box",
+          stockUnitName: "box",
+          stockUnitAbbrev: "box",
+          quantity: "3",
+        }),
+      ],
+    })
+    const text = container.textContent ?? ""
+    // Two groups for the one product — headers disambiguated by unit.
+    expect(text).toContain("Berber Carpet · square foot")
+    expect(text).toContain("Berber Carpet · box")
+    // Per-unit Deduction subtotals — never summed together (would be "8").
+    expect(screen.getByText("5 sqft")).toBeTruthy()
+    expect(screen.getByText("3 box")).toBeTruthy()
+    expect(screen.getAllByText("Deductions").length).toBe(2)
+  })
+
+  it("correlates Requested to the adjustments at the SAME unit, not across units", () => {
+    renderGrid({
+      adjustments: [
+        adjustment({ id: "adj-sqft", unitId: "u-sqft", stockUnitAbbrev: "sqft", quantity: "5" }),
+        adjustment({ id: "adj-box", unitId: "u-box", stockUnitAbbrev: "box", quantity: "3" }),
+      ],
+      requestedItems: [
+        materialItem({ id: "mir-sqft", unitId: "u-sqft", sendUnitAbbrev: "sqft", quantity: "8" }),
+        materialItem({ id: "mir-box", unitId: "u-box", sendUnitAbbrev: "box", quantity: "2" }),
+      ],
+    })
+    // Each unit-group shows its OWN requested total, in its own unit.
+    expect(screen.getByText("8 sqft")).toBeTruthy()
+    expect(screen.getByText("2 box")).toBeTruthy()
+  })
+})
+
 describe("WorkOrderAdjustmentsGrid — within-group sort (newest first)", () => {
   afterEach(cleanup)
 
