@@ -70,10 +70,10 @@ function loadedRow(overrides: Record<string, unknown> = {}) {
     product: {
       id: "product-1",
       name: "Carpet — Style A — Beige",
-      stockUnitName: "Square Yard",
-      stockUnitAbbrev: "sy",
-      sendUnitName: "Roll",
-      sendUnitAbbrev: "rl",
+      unitName: "Square Yard",
+      unitAbbrev: "sy",
+      unitName: "Roll",
+      unitAbbrev: "rl",
       category: {
         id: "cat-1",
         slug: "carpet",
@@ -189,10 +189,10 @@ describe("materializeImportedStagedRowsUseCase", () => {
       // Unit FK is carried forward from the staged row's OWN unitId (UoM epic
       // 2B) — no longer re-derived from the product's retiring snapshot strings.
       expect(created.unitId).toBe("unit-staged-1")
-      expect(created.stockUnitName).toBeUndefined()
-      expect(created.stockUnitAbbrev).toBeUndefined()
-      expect(created.sendUnitName).toBeUndefined()
-      expect(created.sendUnitAbbrev).toBeUndefined()
+      expect(created.unitName).toBeUndefined()
+      expect(created.unitAbbrev).toBeUndefined()
+      expect(created.unitName).toBeUndefined()
+      expect(created.unitAbbrev).toBeUndefined()
       // User values copied verbatim from staged row.
       expect(created.rollPrefix).toBe("ROLL#")
       expect(created.rollNumber).toBe("A-001")

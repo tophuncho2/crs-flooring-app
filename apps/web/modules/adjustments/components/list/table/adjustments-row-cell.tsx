@@ -39,11 +39,11 @@ export function renderAdjustmentsRowCell(
     case "quantity":
       return (
         <CellChip tone={row.adjustmentType === "INCREASE" ? "success" : "error"}>
-          {formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.stockUnitAbbrev ?? "")}
+          {formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.unitAbbrev ?? "")}
         </CellChip>
       )
     case "adjustment": {
-      const transition = formatAdjustmentTransition(row.before, row.after, row.stockUnitAbbrev ?? "")
+      const transition = formatAdjustmentTransition(row.before, row.after, row.unitAbbrev ?? "")
       return transition != null ? <span className="tabular-nums">{transition}</span> : "-"
     }
     case "isWaste":

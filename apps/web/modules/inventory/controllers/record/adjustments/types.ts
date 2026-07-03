@@ -61,7 +61,7 @@ export type AdjustmentEditLocal = {
   pickedInventoryRollNumber: string
   pickedInventoryDyeLot: string
   pickedInventoryNote: string
-  pickedInventoryStockUnitAbbrev: string
+  pickedInventoryUnitAbbrev: string
   pickedWorkOrderLabel: string
 }
 
@@ -94,7 +94,7 @@ export type AdjustmentCreateSeed = {
   warehouseLabel?: string
   locationLabel?: string
   workOrderLabel?: string
-  stockUnitAbbrev?: string | null
+  unitAbbrev?: string | null
   // Adjustment field values — seeded by the duplicate flow off the source row;
   // omitted (undefined) for a blank create, where they fall back to EMPTY_FORM.
   quantity?: string

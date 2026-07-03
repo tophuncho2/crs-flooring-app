@@ -18,7 +18,7 @@ import { withLoaderTiming } from "@/server/telemetry/loader-timing"
 // (WarehousePicker / ProductPicker / CategoryPicker / EntityTypePicker)
 // which call /api/{warehouses,products,categories,entities}/options on
 // demand. Read-only labels come from joined snapshots on ImportDetail
-// (warehouseName, entityName), filter rows (productName + stockUnit +
+// (warehouseName, entityName), filter rows (productName + unit +
 // category), and staged inventory rows.
 export type ImportDetailPageData = {
   entry: ImportDetailRecord

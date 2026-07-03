@@ -34,19 +34,19 @@ export function renderInventoryRowCell(
     case "stockBalance":
       return (
         <span className="font-semibold tabular-nums">
-          {formatInventoryQuantity(row.stockBalance, row.stockUnitAbbrev)}
+          {formatInventoryQuantity(row.stockBalance, row.unitAbbrev)}
         </span>
       )
     case "netDeducted":
       return (
         <span className="tabular-nums">
-          {formatInventoryQuantity(row.netDeducted, row.stockUnitAbbrev)}
+          {formatInventoryQuantity(row.netDeducted, row.unitAbbrev)}
         </span>
       )
     case "startingStock":
       return (
         <span className="tabular-nums">
-          {formatInventoryQuantity(row.startingStock, row.stockUnitAbbrev)}
+          {formatInventoryQuantity(row.startingStock, row.unitAbbrev)}
         </span>
       )
     case "purchaseOrderNumber":

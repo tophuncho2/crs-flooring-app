@@ -124,7 +124,7 @@ export function TemplateMaterialItemsSection({
               return (
                 <UnitOfMeasurePicker
                   value={item.unitId || null}
-                  selectedLabel={item.sendUnitName || null}
+                  selectedLabel={item.unitName || null}
                   onChange={(id) => onChangeField(item.id, "unitId", id ?? "")}
                   onOptionSelected={(option) => onSetUnit(item.id, option)}
                   disabled={!editable}

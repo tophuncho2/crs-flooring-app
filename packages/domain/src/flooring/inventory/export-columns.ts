@@ -24,7 +24,7 @@ export const INVENTORY_EXPORT_COLUMNS: ReadonlyArray<ExportColumn<InventoryRow>>
   { key: "stockBalance", label: "Stock", value: (row) => row.stockBalance },
   { key: "netDeducted", label: "Deducted", value: (row) => row.netDeducted },
   { key: "startingStock", label: "Starting", value: (row) => row.startingStock },
-  { key: "stockUnit", label: "Unit", value: (row) => row.stockUnitAbbrev },
+  { key: "unit", label: "Unit", value: (row) => row.unitAbbrev },
   { key: "cost", label: "Cost", value: (row) => row.cost },
   { key: "freight", label: "Freight", value: (row) => row.freight },
   { key: "purchaseOrderNumber", label: "PO #", value: (row) => row.purchaseOrderNumber },

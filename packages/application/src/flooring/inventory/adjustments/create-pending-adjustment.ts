@@ -168,7 +168,7 @@ export async function createPendingAdjustmentUseCase(
         error instanceof InventoryAdjustmentDomainError &&
         error.code === "INVENTORY_ADJUSTMENT_NET_DEDUCTED_EXCEEDS_STARTING_STOCK"
       ) {
-        const unit = inventory.stockUnitAbbrev ? ` ${inventory.stockUnitAbbrev}` : ""
+        const unit = inventory.unitAbbrev ? ` ${inventory.unitAbbrev}` : ""
         throw new InventoryAdjustmentExecutionError({
           code: "INVENTORY_ADJUSTMENT_EXCEEDS_INVENTORY",
           message: `Adjustment exceeds available inventory: net deducted would be ${result.netDeducted}${unit} but only ${inventory.startingStock}${unit} is available.`,

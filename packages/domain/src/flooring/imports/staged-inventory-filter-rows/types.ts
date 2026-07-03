@@ -12,8 +12,8 @@ export type StagedInventoryFilterRow = {
   // product-change (mirrors the material-item unit). "" when unset. Display
   // derives from the join.
   unitId: string
-  stockUnitName: string
-  stockUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
   startingStockSum: string
   remainingStock: string
   createdAt: string

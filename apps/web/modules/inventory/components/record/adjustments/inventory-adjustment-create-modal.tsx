@@ -57,7 +57,7 @@ export function InventoryAdjustmentCreateModal({
       inventoryDyeLot: inventory.dyeLot,
       inventoryNote: inventory.note,
       locationLabel: inventory.location,
-      stockUnitAbbrev: inventory.stockUnitAbbrev,
+      unitAbbrev: inventory.unitAbbrev,
       workOrderId: source?.workOrderId ?? null,
       workOrderLabel: source?.workOrderNumber ? `#${source.workOrderNumber}` : undefined,
       // Duplicate carries the source row's adjustment values forward; a blank

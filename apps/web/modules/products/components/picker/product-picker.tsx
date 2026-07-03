@@ -14,7 +14,7 @@ export type ProductPickerProps = {
   /**
    * Optional notification fired alongside `onChange` carrying the full
    * picked option (or null on clear). Lets callers reflect the picked
-   * product's joined fields (categoryId, sendUnit*) in adjacent UI
+   * product's joined fields (categoryId, unit*) in adjacent UI
    * before save.
    *
    * Only fires when the option is present in the picker's current
@@ -45,7 +45,7 @@ export type ProductPickerProps = {
 }
 
 function toDropdownOption(option: ProductOption): AsyncRichDropdownOption {
-  const subtitles = option.sendUnitAbbrev ? [option.sendUnitAbbrev] : []
+  const subtitles = option.unitAbbrev ? [option.unitAbbrev] : []
   return { id: option.id, title: option.name, subtitles }
 }
 

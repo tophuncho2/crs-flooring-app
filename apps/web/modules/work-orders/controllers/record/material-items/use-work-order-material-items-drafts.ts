@@ -90,10 +90,10 @@ export function useWorkOrderMaterialItemsDrafts({ section }: { section: SectionR
             row,
             option && {
               unitId: option.unitId,
-              unitName: option.sendUnitName,
-              unitAbbrev: option.sendUnitAbbrev,
+              unitName: option.unitName,
+              unitAbbrev: option.unitAbbrev,
             },
-            { nameKey: "sendUnitName", abbrevKey: "sendUnitAbbrev" },
+            { nameKey: "unitName", abbrevKey: "unitAbbrev" },
           )
           return { ...seeded, productName: option?.name ?? "" }
         }),
@@ -116,7 +116,7 @@ export function useWorkOrderMaterialItemsDrafts({ section }: { section: SectionR
                   unitName: option.name,
                   unitAbbrev: option.abbreviation,
                 },
-                { nameKey: "sendUnitName", abbrevKey: "sendUnitAbbrev" },
+                { nameKey: "unitName", abbrevKey: "unitAbbrev" },
               )
             : row,
         ),

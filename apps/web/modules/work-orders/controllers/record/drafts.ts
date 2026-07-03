@@ -22,8 +22,7 @@ export type ProductOption = {
   id: string
   label: string
   categoryId: string
-  sendUnitAbbrev: string
-  stockUnitAbbrev: string
+  unitAbbrev: string
 }
 
 export function validateWorkOrderPrimaryForm(input: WorkOrderForm): string {

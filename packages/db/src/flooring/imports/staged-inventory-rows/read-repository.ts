@@ -32,8 +32,8 @@ export function normalizeStagedInventoryRow(
     unitId: row.unitId ?? "",
     // Unit display derives solely from the row's own unit FK join (UoM epic 2B);
     // snapshot columns fully de-referenced (2D drops them).
-    stockUnitName: row.unit?.name ?? "",
-    stockUnitAbbrev: row.unit?.abbreviation ?? "",
+    unitName: row.unit?.name ?? "",
+    unitAbbrev: row.unit?.abbreviation ?? "",
     rollPrefix: row.rollPrefix,
     rollNumber: row.rollNumber ?? "",
     dyeLot: row.dyeLot ?? "",

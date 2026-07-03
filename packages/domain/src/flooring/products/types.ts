@@ -98,10 +98,10 @@ export type ProductUpdateForm = ProductCreateForm
 // `ProductOptionRecord` shape — kept in domain so picker requests + search
 // use cases consume the canonical contract.
 //
-// Carries BOTH unit snapshots (send + stock). Send-unit drives material-item
-// quantity-cell suffixes (work orders + templates); stock-unit drives the
-// staged-inventory-rows starting-stock cell suffix (imports). Picker
-// consumers ignore the fields they don't use.
+// Carries the product's single unit label (name + abbrev), derived from its
+// `unit` FK. Drives material-item quantity-cell suffixes (work orders +
+// templates) and the staged-inventory-rows starting-stock cell suffix
+// (imports). Picker consumers ignore the fields they don't use.
 export type ProductOption = {
   id: string
   name: string
@@ -111,10 +111,8 @@ export type ProductOption = {
   unitId: string
   /** The product's category name, for pickers that surface the derived category. */
   categoryName: string
-  sendUnitName: string
-  sendUnitAbbrev: string
-  stockUnitName: string
-  stockUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
 }
 
 export const EMPTY_PRODUCT_CREATE_FORM: ProductCreateForm = {

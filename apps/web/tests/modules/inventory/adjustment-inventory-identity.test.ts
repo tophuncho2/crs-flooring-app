@@ -16,7 +16,7 @@ describe("adjustment edit — four-column inventory identity", () => {
       inventoryRollNumber: "R-7",
       inventoryDyeLot: "D9",
       inventoryNote: "ripped corner",
-      stockUnitAbbrev: "sqft",
+      unitAbbrev: "sqft",
     }
 
     const local = buildCreateLocal(seed)
@@ -25,7 +25,7 @@ describe("adjustment edit — four-column inventory identity", () => {
     expect(local.pickedInventoryRollNumber).toBe("R-7")
     expect(local.pickedInventoryDyeLot).toBe("D9")
     expect(local.pickedInventoryNote).toBe("ripped corner")
-    expect(local.pickedInventoryStockUnitAbbrev).toBe("sqft")
+    expect(local.pickedInventoryUnitAbbrev).toBe("sqft")
   })
 
   it("buildCreateLocal defaults missing seed columns to empty strings", () => {
@@ -42,7 +42,7 @@ describe("adjustment edit — four-column inventory identity", () => {
       rollNumber: "R-3",
       dyeLot: "D1",
       inventoryNote: "edge wear",
-      stockUnitAbbrev: "sqyd",
+      unitAbbrev: "sqyd",
       location: "A-12",
       warehouseName: "Main",
     } as unknown as AdjustmentEditRow
@@ -61,7 +61,7 @@ describe("adjustment edit — four-column inventory identity", () => {
       rollNumber: null,
       dyeLot: null,
       inventoryNote: null,
-      stockUnitAbbrev: null,
+      unitAbbrev: null,
       location: null,
       warehouseName: null,
     } as unknown as AdjustmentEditRow

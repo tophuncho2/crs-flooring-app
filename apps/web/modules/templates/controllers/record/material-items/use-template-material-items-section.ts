@@ -28,11 +28,11 @@ export type TemplateMaterialItemLocal = {
   // from the live product table on save.
   productName: string
   // Editable unit FK (UoM epic 2C) — seeded from the product on select, then
-  // freely editable; sent in the diff. `sendUnitName` feeds the picker's trigger
-  // label (selectedLabel), `sendUnitAbbrev` the quantity-cell suffix.
+  // freely editable; sent in the diff. `unitName` feeds the picker's trigger
+  // label (selectedLabel), `unitAbbrev` the quantity-cell suffix.
   unitId: string
-  sendUnitName: string
-  sendUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
   quantity: string
   notes: string
   // Client-only ergonomic for narrowing the row's product picker. NOT
@@ -53,8 +53,8 @@ function toLocalItem(row: TemplateMaterialItemRow): TemplateMaterialItemLocal {
     productId: row.productId,
     productName: row.productName,
     unitId: row.unitId,
-    sendUnitName: row.sendUnitName,
-    sendUnitAbbrev: row.sendUnitAbbrev,
+    unitName: row.unitName,
+    unitAbbrev: row.unitAbbrev,
     quantity: row.quantity,
     notes: row.notes,
     categoryFilterId: null,
@@ -162,8 +162,8 @@ export function useTemplateMaterialItemsSection({
           productId: "",
           productName: "",
           unitId: "",
-          sendUnitName: "",
-          sendUnitAbbrev: "",
+          unitName: "",
+          unitAbbrev: "",
           quantity: "",
           notes: "",
           categoryFilterId: null,
@@ -216,10 +216,10 @@ export function useTemplateMaterialItemsSection({
           row,
           option && {
             unitId: option.unitId,
-            unitName: option.sendUnitName,
-            unitAbbrev: option.sendUnitAbbrev,
+            unitName: option.unitName,
+            unitAbbrev: option.unitAbbrev,
           },
-          { nameKey: "sendUnitName", abbrevKey: "sendUnitAbbrev" },
+          { nameKey: "unitName", abbrevKey: "unitAbbrev" },
         )
         return { ...seeded, productName: option?.name ?? "" }
       }),
@@ -239,7 +239,7 @@ export function useTemplateMaterialItemsSection({
                 unitName: option.name,
                 unitAbbrev: option.abbreviation,
               },
-              { nameKey: "sendUnitName", abbrevKey: "sendUnitAbbrev" },
+              { nameKey: "unitName", abbrevKey: "unitAbbrev" },
             )
           : row,
       ),

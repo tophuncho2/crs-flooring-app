@@ -84,10 +84,8 @@ export type ProductOptionRecord = {
   // Canonical unit FK (UoM epic 2A) — seeds downstream row pickers.
   unitId: string
   categoryName: string
-  sendUnitName: string
-  sendUnitAbbrev: string
-  stockUnitName: string
-  stockUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
 }
 
 export type ProductFormOptions = {
@@ -205,12 +203,10 @@ export function normalizeProductOption(product: ProductOptionPayload): ProductOp
     unitId: product.unitId ?? "",
     categoryName: product.category?.name ?? "",
     // Unit label + abbrev derive solely from the product's own unit FK (UoM epic
-    // 2B); snapshot columns fully de-referenced (2D drops them). Row pickers seed
-    // a row's unit from these.
-    sendUnitName: product.unit?.name ?? "",
-    sendUnitAbbrev: product.unit?.abbreviation ?? "",
-    stockUnitName: product.unit?.name ?? "",
-    stockUnitAbbrev: product.unit?.abbreviation ?? "",
+    // 2B); snapshot columns fully de-referenced (Phase-C dropped them). Row
+    // pickers seed a row's unit from these.
+    unitName: product.unit?.name ?? "",
+    unitAbbrev: product.unit?.abbreviation ?? "",
   }
 }
 

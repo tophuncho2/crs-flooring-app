@@ -127,8 +127,8 @@ function fakeProduct(overrides: Record<string, unknown> = {}) {
   return {
     id: "product-1",
     unitId: "unit-1",
-    stockUnitName: "Square Yard",
-    stockUnitAbbrev: "sy",
+    unitName: "Square Yard",
+    unitAbbrev: "sy",
     ...overrides,
   }
 }

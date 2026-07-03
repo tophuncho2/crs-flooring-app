@@ -79,7 +79,7 @@ function materialItem(overrides: Partial<WorkOrderMaterialItemLocal> = {}): Work
     id: "mi-1",
     productId: "prod-1",
     productName: "Berber Carpet",
-    sendUnitAbbrev: "sqft",
+    unitAbbrev: "sqft",
     quantity: "10",
     notes: "",
     categoryFilterId: null,
@@ -105,8 +105,8 @@ function adjustment(overrides: Partial<EnrichedInventoryAdjustmentRow> = {}): En
     before: "100",
     quantity: "5",
     after: "95",
-    stockUnitName: "square foot",
-    stockUnitAbbrev: "sqft",
+    unitName: "square foot",
+    unitAbbrev: "sqft",
     adjustmentType: "DEDUCTION",
     status: "PENDING",
     isWaste: false,
@@ -147,8 +147,8 @@ function materialItemRow(overrides: Partial<WorkOrderMaterialItemRow> = {}): Wor
     productId: "prod-1",
     productName: "Berber Carpet",
     quantity: "8",
-    sendUnitName: "square foot",
-    sendUnitAbbrev: "sqft",
+    unitName: "square foot",
+    unitAbbrev: "sqft",
     notes: "",
     sourceTemplateItemId: null,
     createdAt: "2026-01-01T00:00:00.000Z",
@@ -205,7 +205,7 @@ describe("WorkOrderMaterialItemsSection", () => {
   it("surfaces the per-product Requested total in the Adjustments view", () => {
     renderSection({
       adjustments: [adjustment()],
-      materialItems: [materialItemRow({ quantity: "8", sendUnitAbbrev: "sqft" })],
+      materialItems: [materialItemRow({ quantity: "8", unitAbbrev: "sqft" })],
     })
     expect(screen.getByText("Requested")).toBeTruthy()
     expect(screen.getByText("8 sqft")).toBeTruthy()

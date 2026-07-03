@@ -7,9 +7,9 @@ export type WorkOrderMaterialItemRow = {
   // freely editable; sent in the diff. "" when no unit linked yet.
   unitId: string
   // Unit display derives solely from the item's own unit FK join; the frozen
-  // `sendUnit*` snapshot columns are no longer a fallback (dropped in UoM 2D).
-  sendUnitName: string
-  sendUnitAbbrev: string
+  // snapshot columns that once backed this were dropped in the UoM epic.
+  unitName: string
+  unitAbbrev: string
   notes: string
   sourceTemplateItemId: string | null
   createdAt: string

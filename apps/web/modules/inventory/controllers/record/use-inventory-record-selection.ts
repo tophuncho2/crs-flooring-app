@@ -50,7 +50,7 @@ export function toInventoryOption(row: InventoryRow): InventoryOption {
     warehouseId: row.warehouseId,
     location: row.location,
     stockBalance: row.stockBalance,
-    stockUnitAbbrev: row.stockUnitAbbrev,
+    unitAbbrev: row.unitAbbrev,
   }
 }
 

@@ -94,8 +94,8 @@ export type StagedRowProductSeed = {
   // Product's own unit FK + name/abbrev (UoM epic 2B) — seeds the new row's
   // editable unit, its picker label, and its display suffix.
   unitId: string
-  stockUnitName: string
-  stockUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
 }
 
 /**
@@ -106,12 +106,12 @@ export type StagedRowProductSeed = {
  *
  * `productId` is the row's own product (staged rows attach to the import, not
  * a filter row); it + the read-only snapshots (status, isImported, productName,
- * rollPrefix, stockUnitAbbrev) are carried so the grid renders without a join.
+ * rollPrefix, unitAbbrev) are carried so the grid renders without a join.
  * Only the 7 user-editable fields participate in the diff payload.
  */
 export type ImportStagedRowDraft = {
   clientId: string
-  // Editable unit FK (UoM epic 2B) — sent in the diff; `stockUnitAbbrev` is the
+  // Editable unit FK (UoM epic 2B) — sent in the diff; `unitAbbrev` is the
   // display suffix, refreshed when the user picks a new unit.
   unitId: string
   rollNumber: string
@@ -127,8 +127,8 @@ export type ImportStagedRowDraft = {
   isImported: boolean
   productName: string
   rollPrefix: string
-  stockUnitName: string
-  stockUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
 }
 
 export function toImportStagedRowDraft(row: StagedInventoryRow): ImportStagedRowDraft {
@@ -147,8 +147,8 @@ export function toImportStagedRowDraft(row: StagedInventoryRow): ImportStagedRow
     isImported: row.isImported,
     productName: row.productName,
     rollPrefix: row.rollPrefix,
-    stockUnitName: row.stockUnitName,
-    stockUnitAbbrev: row.stockUnitAbbrev,
+    unitName: row.unitName,
+    unitAbbrev: row.unitAbbrev,
   }
 }
 
@@ -170,8 +170,8 @@ export function createImportStagedRowDraft(
     isImported: false,
     productName: seed.productName,
     rollPrefix: "ROLL#",
-    stockUnitName: seed.stockUnitName,
-    stockUnitAbbrev: seed.stockUnitAbbrev,
+    unitName: seed.unitName,
+    unitAbbrev: seed.unitAbbrev,
   }
 }
 
@@ -193,8 +193,8 @@ export function duplicateImportStagedRowDraft(
     isImported: false,
     productName: source.productName,
     rollPrefix: source.rollPrefix,
-    stockUnitName: source.stockUnitName,
-    stockUnitAbbrev: source.stockUnitAbbrev,
+    unitName: source.unitName,
+    unitAbbrev: source.unitAbbrev,
   }
 }
 
@@ -234,7 +234,7 @@ export function validateImportStagedRowDrafts(
  * it's a `createLocalRecordRowId("import-filter-row")` value the engine
  * later maps to a server uuid via the diff response's `filterTempIdMap`.
  *
- * `productName` / `stockUnitName` / `stockUnitAbbrev` are display-only labels
+ * `productName` / `unitName` / `unitAbbrev` are display-only labels
  * refreshed when the user picks via ProductPicker; never enter the diff payload
  * and are never persisted (the server writes only the `unitId` FK; reads
  * re-derive the labels from the unit rel). `categoryFilterId` IS persisted —
@@ -249,10 +249,10 @@ export type ImportFilterRowDraft = {
   productId: string
   productName: string
   // Editable unit FK (UoM epic 2B) — sent in the diff; re-seeded on product
-  // change. `stockUnit*` are display-only, refreshed alongside.
+  // change. `unitName`/`unitAbbrev` are display-only, refreshed alongside.
   unitId: string
-  stockUnitName: string
-  stockUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
   stockOrdered: string
   /**
    * Server-snapshot read-only fields carried so the grid can render the
@@ -282,8 +282,8 @@ export function toImportFilterRowDraft(
     productId: row.productId,
     productName: row.productName,
     unitId: row.unitId,
-    stockUnitName: row.stockUnitName,
-    stockUnitAbbrev: row.stockUnitAbbrev,
+    unitName: row.unitName,
+    unitAbbrev: row.unitAbbrev,
     stockOrdered: row.stockOrdered,
     startingStockSum: row.startingStockSum,
     remainingStock: row.remainingStock,
@@ -307,8 +307,8 @@ export function createImportFilterRowDraft(clientId: string): ImportFilterRowDra
     productId: "",
     productName: "",
     unitId: "",
-    stockUnitName: "",
-    stockUnitAbbrev: "",
+    unitName: "",
+    unitAbbrev: "",
     stockOrdered: "",
     startingStockSum: "0.00",
     remainingStock: "",

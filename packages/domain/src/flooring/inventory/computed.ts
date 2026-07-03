@@ -35,9 +35,9 @@ export function computeInventoryBalance(input: {
 export function buildInventoryOversoldMessage(input: {
   requestedQuantity: string
   availableBalance: string
-  stockUnitAbbrev: string | null
+  unitAbbrev: string | null
 }): string {
   const unit =
-    input.stockUnitAbbrev && input.stockUnitAbbrev.length > 0 ? ` ${input.stockUnitAbbrev}` : ""
+    input.unitAbbrev && input.unitAbbrev.length > 0 ? ` ${input.unitAbbrev}` : ""
   return `Cannot deduct ${input.requestedQuantity}${unit}: only ${input.availableBalance}${unit} available.`
 }

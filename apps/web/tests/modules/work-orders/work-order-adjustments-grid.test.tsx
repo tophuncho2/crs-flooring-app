@@ -36,8 +36,8 @@ function adjustment(overrides: Partial<EnrichedInventoryAdjustmentRow> = {}): En
     after: "95",
     cost: "10.00",
     freight: "2.50",
-    stockUnitName: "square foot",
-    stockUnitAbbrev: "sqft",
+    unitName: "square foot",
+    unitAbbrev: "sqft",
     adjustmentType: "DEDUCTION",
     status: "PENDING",
     isWaste: false,
@@ -58,8 +58,8 @@ function materialItem(overrides: Partial<WorkOrderMaterialItemRow> = {}): WorkOr
     productId: "prod-1",
     productName: "Berber Carpet",
     quantity: "8",
-    sendUnitName: "square foot",
-    sendUnitAbbrev: "sqft",
+    unitName: "square foot",
+    unitAbbrev: "sqft",
     notes: "",
     sourceTemplateItemId: null,
     createdAt: "2026-01-01T00:00:00.000Z",
@@ -99,7 +99,7 @@ describe("WorkOrderAdjustmentsGrid — Requested subtotal", () => {
   afterEach(cleanup)
 
   it("totals requested material for the product with its send unit", () => {
-    renderGrid({ requestedItems: [materialItem({ quantity: "8", sendUnitAbbrev: "sqft" })] })
+    renderGrid({ requestedItems: [materialItem({ quantity: "8", unitAbbrev: "sqft" })] })
     expect(screen.getByText("Requested")).toBeTruthy()
     expect(screen.getByText("8 sqft")).toBeTruthy()
   })
@@ -199,16 +199,16 @@ describe("WorkOrderAdjustmentsGrid — splits one product across units (UoM epic
           id: "adj-sqft",
           adjustmentNumber: "ADJ-SQFT",
           unitId: "u-sqft",
-          stockUnitName: "square foot",
-          stockUnitAbbrev: "sqft",
+          unitName: "square foot",
+          unitAbbrev: "sqft",
           quantity: "5",
         }),
         adjustment({
           id: "adj-box",
           adjustmentNumber: "ADJ-BOX",
           unitId: "u-box",
-          stockUnitName: "box",
-          stockUnitAbbrev: "box",
+          unitName: "box",
+          unitAbbrev: "box",
           quantity: "3",
         }),
       ],
@@ -227,8 +227,8 @@ describe("WorkOrderAdjustmentsGrid — splits one product across units (UoM epic
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
     renderGrid({
       adjustments: [
-        adjustment({ id: "adj-sqft", unitId: "u-sqft", stockUnitAbbrev: "sqft", quantity: "5" }),
-        adjustment({ id: "adj-box", unitId: "u-box", stockUnitAbbrev: "box", quantity: "3" }),
+        adjustment({ id: "adj-sqft", unitId: "u-sqft", unitAbbrev: "sqft", quantity: "5" }),
+        adjustment({ id: "adj-box", unitId: "u-box", unitAbbrev: "box", quantity: "3" }),
       ],
     })
     // The group key is (productId, unitId), not productId alone — so two groups of
@@ -243,12 +243,12 @@ describe("WorkOrderAdjustmentsGrid — splits one product across units (UoM epic
   it("correlates Requested to the adjustments at the SAME unit, not across units", () => {
     renderGrid({
       adjustments: [
-        adjustment({ id: "adj-sqft", unitId: "u-sqft", stockUnitAbbrev: "sqft", quantity: "5" }),
-        adjustment({ id: "adj-box", unitId: "u-box", stockUnitAbbrev: "box", quantity: "3" }),
+        adjustment({ id: "adj-sqft", unitId: "u-sqft", unitAbbrev: "sqft", quantity: "5" }),
+        adjustment({ id: "adj-box", unitId: "u-box", unitAbbrev: "box", quantity: "3" }),
       ],
       requestedItems: [
-        materialItem({ id: "mir-sqft", unitId: "u-sqft", sendUnitAbbrev: "sqft", quantity: "8" }),
-        materialItem({ id: "mir-box", unitId: "u-box", sendUnitAbbrev: "box", quantity: "2" }),
+        materialItem({ id: "mir-sqft", unitId: "u-sqft", unitAbbrev: "sqft", quantity: "8" }),
+        materialItem({ id: "mir-box", unitId: "u-box", unitAbbrev: "box", quantity: "2" }),
       ],
     })
     // Each unit-group shows its OWN requested total, in its own unit.

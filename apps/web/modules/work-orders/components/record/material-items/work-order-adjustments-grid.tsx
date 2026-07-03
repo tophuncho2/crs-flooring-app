@@ -64,9 +64,9 @@ function groupByProduct(
     return group
   }
   for (const adj of adjustments)
-    ensure(adj.productId, adj.unitId ?? "", adj.stockUnitAbbrev ?? "", adj.productName).rows.push(adj)
+    ensure(adj.productId, adj.unitId ?? "", adj.unitAbbrev ?? "", adj.productName).rows.push(adj)
   for (const item of requestedItems)
-    ensure(item.productId, item.unitId, item.sendUnitAbbrev, item.productName)
+    ensure(item.productId, item.unitId, item.unitAbbrev, item.productName)
   for (const group of groups) group.rows.sort(compareAdjustmentsByRecency)
   // Product-name ascending, then unit so a product's unit-groups stay adjacent.
   groups.sort(
@@ -123,7 +123,7 @@ export function WorkOrderAdjustmentsGrid({
 
   // Per-(product, unit) requested-material total, keyed to match the groups so
   // Requested lines up with the adjustments at the SAME unit beside it. Reuses the
-  // same sum helper by mapping each item's send unit into the `stockUnitAbbrev` slot.
+  // same sum helper by mapping each item's unit into the `unitAbbrev` slot.
   const requestedByGroup = useMemo(() => {
     const byGroup = new Map<string, WorkOrderMaterialItemRow[]>()
     for (const item of requestedItems) {
@@ -132,12 +132,12 @@ export function WorkOrderAdjustmentsGrid({
       if (list) list.push(item)
       else byGroup.set(key, [item])
     }
-    const totals = new Map<string, { quantity: string; stockUnitAbbrev: string }>()
+    const totals = new Map<string, { quantity: string; unitAbbrev: string }>()
     for (const [key, items] of byGroup) {
       totals.set(
         key,
         sumAdjustmentQuantities(
-          items.map((item) => ({ quantity: item.quantity, stockUnitAbbrev: item.sendUnitAbbrev })),
+          items.map((item) => ({ quantity: item.quantity, unitAbbrev: item.unitAbbrev })),
         ),
       )
     }
@@ -201,8 +201,8 @@ export function WorkOrderAdjustmentsGrid({
                   <span className="font-bold">Requested</span>{" "}
                   <span className="tabular-nums text-sky-700/80">
                     {requestedTotal?.quantity || "—"}
-                    {requestedTotal?.quantity && requestedTotal.stockUnitAbbrev
-                      ? ` ${requestedTotal.stockUnitAbbrev}`
+                    {requestedTotal?.quantity && requestedTotal.unitAbbrev
+                      ? ` ${requestedTotal.unitAbbrev}`
                       : ""}
                   </span>
                 </span>
@@ -211,7 +211,7 @@ export function WorkOrderAdjustmentsGrid({
                     <span className="font-bold">Increases</span>{" "}
                     <span className="tabular-nums text-emerald-700/80">
                       +{increaseTotal.quantity}
-                      {increaseTotal.quantity && increaseTotal.stockUnitAbbrev ? ` ${increaseTotal.stockUnitAbbrev}` : ""}
+                      {increaseTotal.quantity && increaseTotal.unitAbbrev ? ` ${increaseTotal.unitAbbrev}` : ""}
                     </span>
                   </span>
                 ) : null}
@@ -219,7 +219,7 @@ export function WorkOrderAdjustmentsGrid({
                   <span className="font-bold">Deductions</span>{" "}
                   <span className="tabular-nums text-rose-800/80">
                     {deductionTotal.quantity || "—"}
-                    {deductionTotal.quantity && deductionTotal.stockUnitAbbrev ? ` ${deductionTotal.stockUnitAbbrev}` : ""}
+                    {deductionTotal.quantity && deductionTotal.unitAbbrev ? ` ${deductionTotal.unitAbbrev}` : ""}
                   </span>
                 </span>
               </span>

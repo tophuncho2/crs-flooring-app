@@ -30,8 +30,8 @@ type StagedGroup = {
   productName: string
   // Product's default unit (UoM epic 2B) — seeds a newly added staged row.
   unitId: string
-  stockUnitName: string
-  stockUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
   /**
    * The combined planned ordered quantity for this product — the SUM of
    * `stockOrdered` across every Planned Import (filter row) sharing the
@@ -108,8 +108,8 @@ function buildGroups(
     productId: string,
     productName: string,
     unitId: string,
-    stockUnitName: string,
-    stockUnitAbbrev: string,
+    unitName: string,
+    unitAbbrev: string,
   ) => {
     const key = groupKey(productId, unitId)
     let group = byId.get(key)
@@ -118,8 +118,8 @@ function buildGroups(
         productId,
         productName,
         unitId,
-        stockUnitName,
-        stockUnitAbbrev,
+        unitName,
+        unitAbbrev,
         stockOrdered: "",
         startingStockSum: 0,
         rows: [],
@@ -135,8 +135,8 @@ function buildGroups(
       filter.productId,
       filter.productName,
       filter.unitId,
-      filter.stockUnitName,
-      filter.stockUnitAbbrev,
+      filter.unitName,
+      filter.unitAbbrev,
     )
     // Combine duplicate planned imports for the same product: SUM their ordered
     // quantities (skip blanks so an all-blank group stays "" → renders "—").
@@ -150,8 +150,8 @@ function buildGroups(
       row.productId,
       row.productName,
       row.unitId,
-      row.stockUnitName,
-      row.stockUnitAbbrev,
+      row.unitName,
+      row.unitAbbrev,
     )
     group.rows.push(row)
     // Fold startingStock into the group's live sum here — same in-place pattern
@@ -200,7 +200,7 @@ export function ImportStagedInventoryGrid({
         return (
           <UnitOfMeasurePicker
             value={gridRow.unitId || null}
-            selectedLabel={gridRow.stockUnitName || null}
+            selectedLabel={gridRow.unitName || null}
             onChange={(id) => section.setStagedRowField(gridRow.clientId, "unitId", id ?? "")}
             onOptionSelected={(option) => section.setStagedRowUnit(gridRow.clientId, option)}
             disabled={!editable}
@@ -286,8 +286,8 @@ export function ImportStagedInventoryGrid({
                       productId: group.productId,
                       productName: group.productName,
                       unitId: group.unitId,
-                      stockUnitName: group.stockUnitName,
-                      stockUnitAbbrev: group.stockUnitAbbrev,
+                      unitName: group.unitName,
+                      unitAbbrev: group.unitAbbrev,
                     })
                   }
                   ariaLabel={`Add staged row for ${group.productName}`}
@@ -298,10 +298,10 @@ export function ImportStagedInventoryGrid({
                 />
                 <span className="text-base font-semibold text-[var(--foreground)]">
                   {group.productName}
-                  {group.stockUnitAbbrev || group.stockUnitName ? (
+                  {group.unitAbbrev || group.unitName ? (
                     <span className="font-normal text-[var(--foreground)]/55">
                       {" · "}
-                      {group.stockUnitAbbrev || group.stockUnitName}
+                      {group.unitAbbrev || group.unitName}
                     </span>
                   ) : null}
                 </span>
@@ -311,8 +311,8 @@ export function ImportStagedInventoryGrid({
                   <span className="font-bold">Requested</span>{" "}
                   <span className="tabular-nums text-sky-700/80">
                     {group.stockOrdered || "—"}
-                    {group.stockOrdered && group.stockUnitAbbrev
-                      ? ` ${group.stockUnitAbbrev}`
+                    {group.stockOrdered && group.unitAbbrev
+                      ? ` ${group.unitAbbrev}`
                       : ""}
                   </span>
                 </span>
@@ -320,7 +320,7 @@ export function ImportStagedInventoryGrid({
                   <span className="font-bold">Remaining</span>{" "}
                   <span className="tabular-nums text-[var(--foreground)]/80">
                     {remaining || "—"}
-                    {remaining && group.stockUnitAbbrev ? ` ${group.stockUnitAbbrev}` : ""}
+                    {remaining && group.unitAbbrev ? ` ${group.unitAbbrev}` : ""}
                   </span>
                 </span>
               </span>

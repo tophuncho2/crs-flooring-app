@@ -24,10 +24,10 @@ export type InventoryAdjustmentRow = {
   freight: string | null
   // Canonical unit FK (UoM epic 2B). Optional to keep synthesized adjustment-row
   // literals valid; the normalizer always populates it for real rows. Display
-  // flows through the derived `stockUnitAbbrev`/`stockUnitName` below.
+  // flows through the derived `unitAbbrev`/`unitName` below.
   unitId?: string
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
+  unitName: string | null
+  unitAbbrev: string | null
   adjustmentType: FlooringInventoryAdjustmentType
   isWaste: boolean
   internalNotes: string
@@ -108,8 +108,8 @@ export type InventoryAdjustmentParentContext = {
   // Parent inventory's unit FK (UoM epic 2B) — stamped onto the adjustment at
   // create so the ledger row carries its own unit link.
   unitId: string
-  stockUnitName: string | null
-  stockUnitAbbrev: string | null
+  unitName: string | null
+  unitAbbrev: string | null
   inventoryNumber: string | null
   rollPrefix: string | null
   rollNumber: string | null

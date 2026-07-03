@@ -424,21 +424,21 @@ function renderMaterialItemRow(
  * Per-product-group subtotal row for the Plan File table — the Qty
  * cell carries the summed quantity under a rule; Product and Notes are empty.
  * Mirrors {@link renderSubtotalRow}. Reuses {@link sumAdjustmentQuantities} by
- * mapping each item to its `{ quantity, stockUnitAbbrev }` shape (the unit suffix
+ * mapping each item to its `{ quantity, unitAbbrev }` shape (the unit suffix
  * is taken from the first item that carries one).
  */
 function renderMaterialItemSubtotalRow(
   materialItems: WorkOrderFileProductMaterialItemGroup["materialItems"],
   showNotes: boolean,
 ): string {
-  const { quantity, stockUnitAbbrev } = sumAdjustmentQuantities(
-    materialItems.map((item) => ({ quantity: item.quantity, stockUnitAbbrev: item.unitAbbrev })),
+  const { quantity, unitAbbrev } = sumAdjustmentQuantities(
+    materialItems.map((item) => ({ quantity: item.quantity, unitAbbrev: item.unitAbbrev })),
   )
   const notesCell = showNotes ? "\n  <td></td>" : ""
   return `
 <tr class="group-end">
   <td></td>${notesCell}
-  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>
+  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, unitAbbrev)}</td>
 </tr>
 `.trim()
 }
@@ -471,14 +471,14 @@ function renderAdjustmentRow(
   ].join("")
   const trailDetailCells = [
     columns.adjustment
-      ? `\n  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.stockUnitAbbrev)}</td>`
+      ? `\n  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.unitAbbrev)}</td>`
       : "",
     columns.location ? `\n  <td>${escapeOrEmpty(adj.location)}</td>` : "",
   ].join("")
   return `
 <tr>
   <td>${escapeOrEmpty(productName)}</td>${leadDetailCells}
-  <td class="cl-num">${renderUnitValue(adj.quantity, adj.stockUnitAbbrev)}</td>${trailDetailCells}
+  <td class="cl-num">${renderUnitValue(adj.quantity, adj.unitAbbrev)}</td>${trailDetailCells}
 </tr>
 `.trim()
 }
@@ -499,7 +499,7 @@ function renderSubtotalRow(
   adjustments: WorkOrderFileAdjustmentProjection[],
   columns: WorkOrderAdjustmentColumnVisibility,
 ): string {
-  const { quantity, stockUnitAbbrev } = sumAdjustmentQuantities(adjustments)
+  const { quantity, unitAbbrev } = sumAdjustmentQuantities(adjustments)
   const leadDetailCells = [
     columns.dyeLot ? "\n  <td></td>" : "",
     columns.rollNumber ? "\n  <td></td>" : "",
@@ -511,7 +511,7 @@ function renderSubtotalRow(
   return `
 <tr class="group-end">
   <td></td>${leadDetailCells}
-  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, stockUnitAbbrev)}</td>${trailDetailCells}
+  <td class="cl-num subtotal-cell">${renderUnitValue(quantity, unitAbbrev)}</td>${trailDetailCells}
 </tr>
 `.trim()
 }

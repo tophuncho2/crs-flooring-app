@@ -72,7 +72,7 @@ function existingRow(overrides: Record<string, unknown> = {}) {
 function found(adjustmentOverrides: Record<string, unknown> = {}) {
   return {
     adjustment: existingRow(adjustmentOverrides),
-    inventory: { startingStock: "100.00", stockUnitAbbrev: "sf" },
+    inventory: { startingStock: "100.00", unitAbbrev: "sf" },
   }
 }
 

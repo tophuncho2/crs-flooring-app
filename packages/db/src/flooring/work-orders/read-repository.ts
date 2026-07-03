@@ -510,7 +510,7 @@ export async function getWorkOrderForFileGeneration(
       location: adj.location ?? "",
       // Unit abbrev derives from the adjustment's own unit FK join (UoM epic 2B);
       // the frozen snapshot column is no longer a fallback (dropped in 2D).
-      stockUnitAbbrev: adj.unit?.abbreviation ?? "",
+      unitAbbrev: adj.unit?.abbreviation ?? "",
     }
     if (adj.productId !== currentProductId || (adj.unitId ?? "") !== currentUnitId) {
       currentProductId = adj.productId

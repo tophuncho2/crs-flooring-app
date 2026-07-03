@@ -35,7 +35,7 @@ export type WorkOrderFileAdjustmentProjection = {
   // Unit abbrev for the per-cell suffix in the print sub-table. Derives solely
   // from the adjustment's own unit FK join (UoM epic 2B); no snapshot fallback.
   // Empty string when the unit is unresolved.
-  stockUnitAbbrev: string
+  unitAbbrev: string
 }
 
 /**

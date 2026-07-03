@@ -11,8 +11,8 @@ export type StagedInventoryRow = {
   // by the worker. "" when unset (a draft can lack a unit; the importability
   // gate blocks queueing until it's set). Display derives from the join below.
   unitId: string
-  stockUnitName: string
-  stockUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
   rollPrefix: string
   rollNumber: string
   dyeLot: string

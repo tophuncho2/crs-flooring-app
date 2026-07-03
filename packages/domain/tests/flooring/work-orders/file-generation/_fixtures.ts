@@ -83,7 +83,7 @@ export function makeAdjustment(
     dyeLot: "",
     rollNumber: "",
     location: "A-1",
-    stockUnitAbbrev: "rolls",
+    unitAbbrev: "rolls",
     ...overrides,
   }
 }
@@ -93,7 +93,7 @@ export function makeAdjustment(
  * present. Named `makeMaterialItem` (and accepts the legacy `inventoryAdjustments`
  * key) since each print group used to be a material item's adjustments — now it
  * is the adjustment's own product group. Extra legacy keys (`id`, `quantity`,
- * `sendUnitAbbrev`) are accepted and ignored.
+ * `unitAbbrev`) are accepted and ignored.
  */
 export function makeMaterialItem(
   overrides: {
@@ -102,7 +102,7 @@ export function makeMaterialItem(
     inventoryAdjustments?: WorkOrderFileAdjustmentProjection[]
     id?: string
     quantity?: string
-    sendUnitAbbrev?: string
+    unitAbbrev?: string
     notes?: string
   } = {},
 ): WorkOrderFileProductAdjustmentGroup {

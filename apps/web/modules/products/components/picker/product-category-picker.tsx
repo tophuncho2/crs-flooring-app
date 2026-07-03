@@ -60,7 +60,7 @@ function toProductOption(option: ProductOption): PickerListOption {
   return {
     id: option.id,
     title: option.name,
-    subtitles: option.sendUnitAbbrev ? [option.sendUnitAbbrev] : [],
+    subtitles: option.unitAbbrev ? [option.unitAbbrev] : [],
   }
 }
 

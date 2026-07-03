@@ -5,8 +5,8 @@ export const FILTER_USER_EDITABLE_FIELDS = [
 ] as const
 
 export const FILTER_PARENT_OWNED_FIELDS = [
-  "stockUnitName",
-  "stockUnitAbbrev",
+  "unitName",
+  "unitAbbrev",
 ] as const
 
 export const FILTER_AUTO_FIELDS = [

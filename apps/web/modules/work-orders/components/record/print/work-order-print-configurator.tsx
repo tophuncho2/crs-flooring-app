@@ -223,7 +223,7 @@ export function WorkOrderPrintConfigurator({
                   productName: group.productName,
                   rows: group.adjustments.map((adj) => ({
                     id: adj.id,
-                    label: rowLabel(adj.quantity, adj.stockUnitAbbrev, adj.rollNumber || adj.dyeLot),
+                    label: rowLabel(adj.quantity, adj.unitAbbrev, adj.rollNumber || adj.dyeLot),
                   })),
                 }))}
                 selectedIds={selectedAdjustmentIds}

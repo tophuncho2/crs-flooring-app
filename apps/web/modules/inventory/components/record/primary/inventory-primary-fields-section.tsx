@@ -109,10 +109,10 @@ export function InventoryPrimaryFieldsSection({
             {/* Stock + Deducted lead the flank as prominent stat cells, above the
                 product headline */}
             <CellAt col={1} row={1} colSpan={4}>
-              <StockBalanceField value={record.stockBalance} unitAbbrev={record.stockUnitAbbrev} />
+              <StockBalanceField value={record.stockBalance} unitAbbrev={record.unitAbbrev} />
             </CellAt>
             <CellAt col={5} row={1} colSpan={4}>
-              <NetDeductedField value={record.netDeducted} unitAbbrev={record.stockUnitAbbrev} />
+              <NetDeductedField value={record.netDeducted} unitAbbrev={record.unitAbbrev} />
             </CellAt>
             {/* Identity headline */}
             <CellAt col={1} row={2} colSpan={8}>
@@ -120,7 +120,7 @@ export function InventoryPrimaryFieldsSection({
             </CellAt>
             {/* Starting | Import # */}
             <CellAt col={1} row={3} colSpan={4}>
-              <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.stockUnitAbbrev} />
+              <StartingStockReadonlyField value={record.startingStock} unitAbbrev={record.unitAbbrev} />
             </CellAt>
             <CellAt col={5} row={3} colSpan={4}>
               <ImportNumberField value={record.importNumber} />

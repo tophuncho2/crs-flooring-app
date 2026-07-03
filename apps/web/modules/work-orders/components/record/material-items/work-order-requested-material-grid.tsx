@@ -63,7 +63,7 @@ export function WorkOrderRequestedMaterialGrid({
         return (
           <UnitOfMeasurePicker
             value={item.unitId || null}
-            selectedLabel={item.sendUnitName || null}
+            selectedLabel={item.unitName || null}
             onChange={(id) => section.changeField(item.id, "unitId", id ?? "")}
             onOptionSelected={(option) => section.setUnit(item.id, option)}
             disabled={!editable}

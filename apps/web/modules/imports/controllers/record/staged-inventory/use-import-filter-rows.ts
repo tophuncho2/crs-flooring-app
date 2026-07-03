@@ -292,7 +292,7 @@ export function useImportFilterRows({
                   unitName: option.name,
                   unitAbbrev: option.abbreviation,
                 },
-                { nameKey: "stockUnitName", abbrevKey: "stockUnitAbbrev" },
+                { nameKey: "unitName", abbrevKey: "unitAbbrev" },
               )
             : row,
         ),
@@ -327,10 +327,10 @@ export function useImportFilterRows({
             row,
             option && {
               unitId: option.unitId,
-              unitName: option.stockUnitName,
-              unitAbbrev: option.stockUnitAbbrev,
+              unitName: option.unitName,
+              unitAbbrev: option.unitAbbrev,
             },
-            { nameKey: "stockUnitName", abbrevKey: "stockUnitAbbrev" },
+            { nameKey: "unitName", abbrevKey: "unitAbbrev" },
           )
           return { ...seeded, productName: option?.name ?? "" }
         }),
@@ -404,7 +404,7 @@ export function useImportFilterRows({
       section.setLocalValue((prev) => ({
         ...prev,
         // Refresh the display name too — the grid picker's trigger label derives
-        // solely from `stockUnitName` (via `selectedLabel`), so leaving it stale
+        // solely from `unitName` (via `selectedLabel`), so leaving it stale
         // reverts the label to the product's default unit.
         stagedRows: prev.stagedRows.map((s) =>
           s.clientId === clientId
@@ -415,7 +415,7 @@ export function useImportFilterRows({
                   unitName: option.name,
                   unitAbbrev: option.abbreviation,
                 },
-                { nameKey: "stockUnitName", abbrevKey: "stockUnitAbbrev" },
+                { nameKey: "unitName", abbrevKey: "unitAbbrev" },
               )
             : s,
         ),

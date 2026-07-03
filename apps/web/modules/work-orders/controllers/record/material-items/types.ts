@@ -7,11 +7,11 @@ export type WorkOrderMaterialItemLocal = {
   // from the live product table on save.
   productName: string
   // Editable unit FK (UoM epic 2C) — seeded from the product on select, then
-  // freely editable; sent in the diff. `sendUnitName` feeds the picker's trigger
-  // label (selectedLabel), `sendUnitAbbrev` the quantity-cell suffix.
+  // freely editable; sent in the diff. `unitName` feeds the picker's trigger
+  // label (selectedLabel), `unitAbbrev` the quantity-cell suffix.
   unitId: string
-  sendUnitName: string
-  sendUnitAbbrev: string
+  unitName: string
+  unitAbbrev: string
   quantity: string
   notes: string
   // Client-only — narrows the row's product picker to a chosen category.

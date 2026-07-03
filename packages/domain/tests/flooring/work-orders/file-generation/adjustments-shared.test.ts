@@ -12,11 +12,11 @@ const slip = (items: Items) => renderWorkOrderAdjustments(items, { includeInvent
 // A single material item whose adjustments carry the given (quantity, unit)
 // pairs and no coverage — used to observe sum formatting through the slip's
 // per-group subtotal cell in isolation.
-function slipQtyOnly(quantities: string[], stockUnitAbbrev = ""): string {
+function slipQtyOnly(quantities: string[], unitAbbrev = ""): string {
   return slip([
     makeMaterialItem({
       inventoryAdjustments: quantities.map((quantity, i) =>
-        makeAdjustment({ id: `a${i}`, quantity, stockUnitAbbrev }),
+        makeAdjustment({ id: `a${i}`, quantity, unitAbbrev }),
       ),
     }),
   ])
@@ -68,8 +68,8 @@ describe("both sections — summed totals are identical (shared sumItemTotals)",
   it("the slip's subtotal equals the picking ticket's subtotal", () => {
     const item = makeMaterialItem({
       inventoryAdjustments: [
-        makeAdjustment({ id: "a1", quantity: "10", stockUnitAbbrev: "rolls" }),
-        makeAdjustment({ id: "a2", quantity: "5", stockUnitAbbrev: "rolls" }),
+        makeAdjustment({ id: "a1", quantity: "10", unitAbbrev: "rolls" }),
+        makeAdjustment({ id: "a2", quantity: "5", unitAbbrev: "rolls" }),
       ],
     })
 
@@ -81,8 +81,8 @@ describe("both sections — summed totals are identical (shared sumItemTotals)",
   it("picks the unit abbrev from the first adjustment that carries one", () => {
     const item = makeMaterialItem({
       inventoryAdjustments: [
-        makeAdjustment({ id: "a1", quantity: "1", stockUnitAbbrev: "" }),
-        makeAdjustment({ id: "a2", quantity: "2", stockUnitAbbrev: "boxes" }),
+        makeAdjustment({ id: "a1", quantity: "1", unitAbbrev: "" }),
+        makeAdjustment({ id: "a2", quantity: "2", unitAbbrev: "boxes" }),
       ],
     })
     expect(slip([item])).toContain('<td class="cl-num subtotal-cell">3 boxes</td>')

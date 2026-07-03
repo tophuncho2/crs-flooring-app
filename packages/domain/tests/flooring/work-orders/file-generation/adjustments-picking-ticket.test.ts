@@ -58,7 +58,7 @@ describe("picking ticket — detail columns from the adjustment's own snapshot",
         location: "AISLE-4",
         before: "100",
         after: "90",
-        stockUnitAbbrev: "rolls",
+        unitAbbrev: "rolls",
       }),
     ],
   })
@@ -114,7 +114,7 @@ describe("picking ticket — Adjustment (before → after) transition", () => {
   it("renders before → after with the unit suffix when both sides are present", () => {
     const html = pickingTable([
       makeMaterialItem({
-        inventoryAdjustments: [makeAdjustment({ before: "100", after: "90", stockUnitAbbrev: "rolls" })],
+        inventoryAdjustments: [makeAdjustment({ before: "100", after: "90", unitAbbrev: "rolls" })],
       }),
     ])
     expect(html).toContain("100 rolls → 90 rolls")
@@ -123,7 +123,7 @@ describe("picking ticket — Adjustment (before → after) transition", () => {
   it("renders the placeholder when the before side is missing", () => {
     const html = pickingTable([
       makeMaterialItem({
-        inventoryAdjustments: [makeAdjustment({ before: "", after: "90", stockUnitAbbrev: "rolls" })],
+        inventoryAdjustments: [makeAdjustment({ before: "", after: "90", unitAbbrev: "rolls" })],
       }),
     ])
     expect(html).not.toContain("→")
@@ -134,8 +134,8 @@ describe("picking ticket — per-group subtotal row", () => {
   it("sums Quantity under a subtotal-cell rule", () => {
     const item = makeMaterialItem({
       inventoryAdjustments: [
-        makeAdjustment({ quantity: "10", stockUnitAbbrev: "rolls" }),
-        makeAdjustment({ quantity: "5", stockUnitAbbrev: "rolls" }),
+        makeAdjustment({ quantity: "10", unitAbbrev: "rolls" }),
+        makeAdjustment({ quantity: "5", unitAbbrev: "rolls" }),
       ],
     })
     const html = pickingTable([item])

@@ -53,7 +53,7 @@ export const EMPTY_LOCAL: AdjustmentEditLocal = {
   pickedInventoryRollNumber: "",
   pickedInventoryDyeLot: "",
   pickedInventoryNote: "",
-  pickedInventoryStockUnitAbbrev: "",
+  pickedInventoryUnitAbbrev: "",
   pickedWorkOrderLabel: "",
 }
 
@@ -84,7 +84,7 @@ export function buildEditLocal(adjustment: AdjustmentEditRow): AdjustmentEditLoc
     pickedInventoryRollNumber: adjustment.rollNumber ?? "",
     pickedInventoryDyeLot: adjustment.dyeLot ?? "",
     pickedInventoryNote: adjustment.inventoryNote ?? "",
-    pickedInventoryStockUnitAbbrev: adjustment.stockUnitAbbrev ?? "",
+    pickedInventoryUnitAbbrev: adjustment.unitAbbrev ?? "",
     pickedWorkOrderLabel: adjustment.workOrderNumber ? `#${adjustment.workOrderNumber}` : "",
   }
 }
@@ -118,7 +118,7 @@ export function buildCreateLocal(seed: AdjustmentCreateSeed): AdjustmentEditLoca
     pickedInventoryRollNumber: seed.inventoryRollNumber ?? "",
     pickedInventoryDyeLot: seed.inventoryDyeLot ?? "",
     pickedInventoryNote: seed.inventoryNote ?? "",
-    pickedInventoryStockUnitAbbrev: seed.stockUnitAbbrev ?? "",
+    pickedInventoryUnitAbbrev: seed.unitAbbrev ?? "",
     pickedWorkOrderLabel: seed.workOrderLabel ?? "",
   }
 }

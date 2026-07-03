@@ -65,7 +65,7 @@ export function ImportPlannedImportsGrid({
         return (
           <UnitOfMeasurePicker
             value={draft.unitId || null}
-            selectedLabel={draft.stockUnitName || server?.stockUnitName || null}
+            selectedLabel={draft.unitName || server?.unitName || null}
             onChange={(id) => section.setFilterField(draft.clientId, "unitId", id ?? "")}
             onOptionSelected={(option) => section.setFilterUnit(draft.clientId, option)}
             disabled={!editable}

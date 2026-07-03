@@ -57,10 +57,10 @@ function input(overrides: Record<string, unknown> = {}) {
 
 const PRODUCT = {
   id: "p-1",
-  stockUnitName: "Square Feet",
-  stockUnitAbbrev: "SF",
-  sendUnitName: "Linear Feet",
-  sendUnitAbbrev: "LF",
+  unitName: "Square Feet",
+  unitAbbrev: "SF",
+  unitName: "Linear Feet",
+  unitAbbrev: "LF",
   category: { slug: "carpet", name: "Carpet" },
 }
 const WAREHOUSE = { id: "wh-1", name: "Main" }

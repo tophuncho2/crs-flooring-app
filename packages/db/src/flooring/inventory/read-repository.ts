@@ -80,8 +80,8 @@ export function normalizeInventoryRow(payload: InventoryRowPayload): InventoryRe
     unitId: payload.unitId,
     // Unit display derives solely from the FK join (UoM epic 2B) — a UoM rename
     // flows through. Snapshot columns are fully de-referenced (2D drops them).
-    stockUnitName: payload.unit?.name ?? "",
-    stockUnitAbbrev: payload.unit?.abbreviation ?? "",
+    unitName: payload.unit?.name ?? "",
+    unitAbbrev: payload.unit?.abbreviation ?? "",
     rollPrefix: payload.rollPrefix,
     rollNumber: payload.rollNumber ?? "",
     dyeLot: payload.dyeLot ?? "",
@@ -803,8 +803,8 @@ export async function listInventoryOptions(
       color: row.color,
       categoryId: row.categoryId,
       unitId: row.unitId,
-      stockUnit: row.unit?.name ?? "",
-      stockUnitAbbrev: row.unit?.abbreviation ?? "",
+      unitName: row.unit?.name ?? "",
+      unitAbbrev: row.unit?.abbreviation ?? "",
     })),
     warehouses,
     categories,

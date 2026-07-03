@@ -25,13 +25,13 @@ export const ADJUSTMENTS_EXPORT_COLUMNS: ReadonlyArray<
     key: "quantity",
     label: "Quantity",
     value: (row) =>
-      formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.stockUnitAbbrev ?? ""),
+      formatSignedAdjustmentQuantity(row.quantity, row.adjustmentType, row.unitAbbrev ?? ""),
   },
   {
     key: "adjustment",
     label: "Adjustment",
     value: (row) =>
-      formatAdjustmentTransition(row.before, row.after, row.stockUnitAbbrev ?? "") ?? "",
+      formatAdjustmentTransition(row.before, row.after, row.unitAbbrev ?? "") ?? "",
   },
   { key: "productName", label: "Product", value: (row) => row.productName },
   { key: "rollNumber", label: "Roll #", value: (row) => row.rollNumber ?? "" },

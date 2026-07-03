@@ -71,7 +71,7 @@ function InventoryCreatePanel({
     setProductLabel(option?.name ?? null)
     // Seed the unit from the picked product (overridable via the unit picker).
     setField("unitId", option?.unitId ?? "")
-    setUnitLabel(option?.stockUnitName || null)
+    setUnitLabel(option?.unitName || null)
   }
 
   const handleUnitSelected = (option: UnitOfMeasureOption | null) => {

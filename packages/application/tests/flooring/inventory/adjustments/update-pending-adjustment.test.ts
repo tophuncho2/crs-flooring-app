@@ -89,7 +89,7 @@ function inventoryRow(overrides: Record<string, unknown> = {}) {
     location: "A1",
     startingStock: "100.00",
     currentNetDeducted: "5.00",
-    stockUnitAbbrev: "sf",
+    unitAbbrev: "sf",
     ...overrides,
   }
 }

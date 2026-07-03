@@ -37,8 +37,8 @@ function inventoryRowFromAdjustment(adj: EnrichedInventoryAdjustmentRow): Invent
     productId: adj.productId,
     productName: adj.productName,
     categoryId: "",
-    stockUnitName: adj.stockUnitName ?? "",
-    stockUnitAbbrev: adj.stockUnitAbbrev ?? "",
+    unitName: adj.unitName ?? "",
+    unitAbbrev: adj.unitAbbrev ?? "",
     rollPrefix: adj.rollPrefix ?? "",
     rollNumber: adj.rollNumber ?? "",
     dyeLot: adj.dyeLot ?? "",
@@ -177,7 +177,7 @@ export function WorkOrderAdjustmentCreateModal({
       inventoryDyeLot: picked.dyeLot,
       inventoryNote: picked.note,
       locationLabel: picked.location ?? undefined,
-      stockUnitAbbrev: picked.stockUnitAbbrev,
+      unitAbbrev: picked.unitAbbrev,
       // The adjustment links to this work order regardless of product (its
       // product is the chosen inventory's).
       workOrderId: workOrder.id,

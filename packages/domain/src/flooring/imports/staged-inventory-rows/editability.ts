@@ -90,8 +90,8 @@ export const STAGED_USER_EDITABLE_FIELDS = [
 export const STAGED_PARENT_OWNED_FIELDS = [
   "warehouseId",
   "productId",
-  "stockUnitName",
-  "stockUnitAbbrev",
+  "unitName",
+  "unitAbbrev",
   "rollPrefix",
 ] as const
 

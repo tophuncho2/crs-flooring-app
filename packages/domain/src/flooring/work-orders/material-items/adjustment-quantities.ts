@@ -1,6 +1,6 @@
 export type AdjustmentQuantityRow = {
   quantity: string
-  stockUnitAbbrev: string | null
+  unitAbbrev: string | null
 }
 
 /**
@@ -16,13 +16,13 @@ export type AdjustmentQuantityRow = {
  */
 export function sumAdjustmentQuantities(
   rows: ReadonlyArray<AdjustmentQuantityRow>,
-): { quantity: string; stockUnitAbbrev: string } {
+): { quantity: string; unitAbbrev: string } {
   const present = rows.map((r) => r.quantity).filter((v) => v !== "")
   const quantity =
     present.length === 0
       ? ""
       : present.reduce((sum, v) => sum + (Number(v) || 0), 0).toFixed(2).replace(/\.?0+$/, "")
-  const stockUnitAbbrev =
-    rows.find((r) => r.stockUnitAbbrev != null && r.stockUnitAbbrev !== "")?.stockUnitAbbrev ?? ""
-  return { quantity, stockUnitAbbrev }
+  const unitAbbrev =
+    rows.find((r) => r.unitAbbrev != null && r.unitAbbrev !== "")?.unitAbbrev ?? ""
+  return { quantity, unitAbbrev }
 }

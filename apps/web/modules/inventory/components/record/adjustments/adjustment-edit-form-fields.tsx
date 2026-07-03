@@ -73,7 +73,7 @@ export function AdjustmentEditFormFields({
   // Stock-unit abbrev, FK-derived at read time (off `unitId`): edit → the row's
   // resolved abbrev; create → the picked inventory's abbrev kept in `local`
   // (seeded for the locked hub case).
-  const stockUnit = adjustment?.stockUnitAbbrev ?? local.pickedInventoryStockUnitAbbrev
+  const unitAbbrev = adjustment?.unitAbbrev ?? local.pickedInventoryUnitAbbrev
 
   // Every field is freely editable now — there is no finalize/freeze. Cells are
   // only disabled while a save is in flight.
@@ -126,7 +126,7 @@ export function AdjustmentEditFormFields({
         editable={editable}
         value={form.quantity}
         onChange={(next) => controller.setField("quantity", next)}
-        unit={stockUnit}
+        unit={unitAbbrev}
         placeholder="0"
         ariaLabel="Adjustment quantity"
       />
@@ -195,7 +195,7 @@ export function AdjustmentEditFormFields({
     )
   }
 
-  const transition = formatAdjustmentTransition(adjustment.before, adjustment.after, stockUnit) ?? EMPTY_CELL
+  const transition = formatAdjustmentTransition(adjustment.before, adjustment.after, unitAbbrev) ?? EMPTY_CELL
 
   return (
     <div className="flex flex-col gap-4">
