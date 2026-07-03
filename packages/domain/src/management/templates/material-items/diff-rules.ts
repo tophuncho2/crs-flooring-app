@@ -1,3 +1,4 @@
+import type { SectionDiff } from "../../../shared/section-diff.js"
 import type { TemplateMaterialItemForm } from "./types.js"
 
 export type TemplateMaterialItemDraft = {
@@ -14,8 +15,4 @@ export type TemplateMaterialItemDelete = {
   id: string
 }
 
-export type TemplateMaterialItemsDiff = {
-  added: TemplateMaterialItemDraft[]
-  modified: TemplateMaterialItemUpdate[]
-  deleted: TemplateMaterialItemDelete[]
-}
+export type TemplateMaterialItemsDiff = SectionDiff<TemplateMaterialItemForm>

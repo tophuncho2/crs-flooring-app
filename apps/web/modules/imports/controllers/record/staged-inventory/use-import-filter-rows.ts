@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import {
+  buildRowDiff,
   createLocalRecordRowId,
   createRecordSectionError,
   isLocalOnlyRecordRow,
@@ -12,13 +13,7 @@ import type {
   ImportStagedInventorySectionDiff,
   ProductOption,
   StagedInventoryFilterRow,
-  StagedInventoryFilterRowDelete,
-  StagedInventoryFilterRowDraft,
-  StagedInventoryFilterRowUpdate,
   StagedInventoryRow,
-  StagedInventoryRowDelete,
-  StagedInventoryRowDraft,
-  StagedInventoryRowUpdate,
   UnitOfMeasureOption,
 } from "@builders/domain"
 import {
@@ -101,84 +96,42 @@ function buildSectionDiff(
   state: ImportSectionLocalState,
   serverValue: SectionServerValue,
 ): ImportStagedInventorySectionDiff {
-  const filterServerById = new Map(serverValue.filterRows.map((row) => [row.id, row]))
-  const stagedServerById = new Map(serverValue.stagedRows.map((row) => [row.id, row]))
+  // A non-local draft whose server row vanished (shouldn't happen mid-session —
+  // the engine rebases on revisionKey changes) is treated as added so the
+  // server reconciles: onMissingServerRow "add". Filter drafts prepend
+  // (newest-first) so reverseAdded stamps createdAt oldest→newest; staged rows
+  // append at the bottom, so no reverse there.
+  const filters = buildRowDiff({
+    locals: state.filters,
+    serverRows: serverValue.filterRows,
+    getLocalId: (draft) => draft.clientId,
+    isLocalOnly: isLocalOnlyRecordRow,
+    differs: filterFormIsDirty,
+    toAdded: (draft) => ({ tempId: draft.clientId, form: toFilterDiffForm(draft) }),
+    toModified: (draft, server) => ({ id: server.id, form: toFilterDiffForm(draft) }),
+    reverseAdded: true,
+    onMissingServerRow: "add",
+  })
 
-  const liveFilterIds = new Set(
-    state.filters.filter((d) => !isLocalOnlyRecordRow(d.clientId)).map((d) => d.clientId),
-  )
-  const liveStagedIds = new Set(
-    state.stagedRows.filter((d) => !isLocalOnlyRecordRow(d.clientId)).map((d) => d.clientId),
-  )
+  // Only DRAFT rows are editable — the worker owns QUEUED/IMPORTED rows — so the
+  // eligibility gate keeps non-DRAFT server rows out of both modified and deleted.
+  const rows = buildRowDiff({
+    locals: state.stagedRows,
+    serverRows: serverValue.stagedRows,
+    getLocalId: (draft) => draft.clientId,
+    isLocalOnly: isLocalOnlyRecordRow,
+    differs: rowFormIsDirty,
+    toAdded: (draft) => ({
+      tempId: draft.clientId,
+      productId: draft.productId,
+      form: toRowDiffForm(draft),
+    }),
+    toModified: (draft, server) => ({ id: server.id, form: toRowDiffForm(draft) }),
+    onMissingServerRow: "add",
+    isServerRowEligible: (server) => server.status === "DRAFT",
+  })
 
-  const filtersAdded: StagedInventoryFilterRowDraft[] = []
-  const filtersModified: StagedInventoryFilterRowUpdate[] = []
-  const filtersDeleted: StagedInventoryFilterRowDelete[] = []
-  const rowsAdded: StagedInventoryRowDraft[] = []
-  const rowsModified: StagedInventoryRowUpdate[] = []
-  const rowsDeleted: StagedInventoryRowDelete[] = []
-
-  // --- Planned imports (filter rows) ---
-  for (const draft of state.filters) {
-    if (isLocalOnlyRecordRow(draft.clientId)) {
-      filtersAdded.push({ tempId: draft.clientId, form: toFilterDiffForm(draft) })
-      continue
-    }
-    const existingFilter = filterServerById.get(draft.clientId)
-    if (!existingFilter) {
-      // Server snapshot lost the filter row (shouldn't happen mid-session —
-      // engine rebases on revisionKey changes). Treat as added so the server
-      // reconciles.
-      filtersAdded.push({ tempId: draft.clientId, form: toFilterDiffForm(draft) })
-      continue
-    }
-    if (filterFormIsDirty(draft, existingFilter)) {
-      filtersModified.push({ id: existingFilter.id, form: toFilterDiffForm(draft) })
-    }
-  }
-  for (const serverRow of serverValue.filterRows) {
-    if (!liveFilterIds.has(serverRow.id)) filtersDeleted.push({ id: serverRow.id })
-  }
-
-  // --- Staged inventory rows ---
-  for (const draft of state.stagedRows) {
-    if (isLocalOnlyRecordRow(draft.clientId)) {
-      rowsAdded.push({
-        tempId: draft.clientId,
-        productId: draft.productId,
-        form: toRowDiffForm(draft),
-      })
-      continue
-    }
-    const existingRow = stagedServerById.get(draft.clientId)
-    if (!existingRow) {
-      rowsAdded.push({
-        tempId: draft.clientId,
-        productId: draft.productId,
-        form: toRowDiffForm(draft),
-      })
-      continue
-    }
-    // Only DRAFT rows are editable — server enforces; skip diff contributions
-    // for non-DRAFT (QUEUED/IMPORTED) rows the worker owns.
-    if (existingRow.status !== "DRAFT") continue
-    if (rowFormIsDirty(draft, existingRow)) {
-      rowsModified.push({ id: existingRow.id, form: toRowDiffForm(draft) })
-    }
-  }
-  for (const serverRow of serverValue.stagedRows) {
-    if (serverRow.status !== "DRAFT") continue
-    if (!liveStagedIds.has(serverRow.id)) rowsDeleted.push({ id: serverRow.id })
-  }
-
-  // New filter drafts prepend (newest-first); reverse so the server stamps
-  // createdAt oldest→newest in submission order.
-  filtersAdded.reverse()
-
-  return {
-    filters: { added: filtersAdded, modified: filtersModified, deleted: filtersDeleted },
-    rows: { added: rowsAdded, modified: rowsModified, deleted: rowsDeleted },
-  }
+  return { filters, rows }
 }
 
 function byCreatedAtDesc(

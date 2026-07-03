@@ -1,3 +1,4 @@
+import type { SectionDiff } from "../../../shared/section-diff.js"
 import type {
   WorkOrderMaterialItemCreateForm,
   WorkOrderMaterialItemUpdateForm,
@@ -17,8 +18,7 @@ export type WorkOrderMaterialItemDelete = {
   id: string
 }
 
-export type WorkOrderMaterialItemsDiff = {
-  added: WorkOrderMaterialItemDraft[]
-  modified: WorkOrderMaterialItemUpdate[]
-  deleted: WorkOrderMaterialItemDelete[]
-}
+export type WorkOrderMaterialItemsDiff = SectionDiff<
+  WorkOrderMaterialItemCreateForm,
+  WorkOrderMaterialItemUpdateForm
+>

@@ -1,4 +1,4 @@
-import { isLocalOnlyRecordRow } from "@/engines/record-view"
+import { buildRowDiff, isLocalOnlyRecordRow } from "@/engines/record-view"
 import type {
   WorkOrderMaterialItemCreateForm,
   WorkOrderMaterialItemRow,
@@ -71,12 +71,6 @@ export function byCreatedAtDesc(
 
 // --- Diff ---
 
-function serverItemById(rows: WorkOrderMaterialItemRow[]) {
-  const map = new Map<string, WorkOrderMaterialItemRow>()
-  for (const row of rows) map.set(row.id, row)
-  return map
-}
-
 // Product is editable until the item has adjustments, so productId joins
 // (quantity, notes) in the modified-row diff identity. The server re-checks
 // the adjustment lock before persisting a product change.
@@ -115,33 +109,19 @@ export function buildMaterialItemsDiff(
   local: WorkOrderMaterialItemsLocalState,
   serverRows: WorkOrderMaterialItemRow[],
 ): WorkOrderMaterialItemsDiff {
-  const serverById = serverItemById(serverRows)
-  const localIds = new Set(local.items.map((item) => item.id))
-
-  const added = local.items
-    .filter((item) => isLocalOnlyRecordRow(item.id))
-    .map((item) => ({ tempId: item.id, form: toCreateForm(item) }))
-
-  // Local iterates newest-first (prepend on add/duplicate). Reverse so the
-  // server stamps createdAt oldest → newest in submission order — keeps
-  // the post-save DESC sort consistent with the user's local view.
-  added.reverse()
-
-  const modified: WorkOrderMaterialItemsDiff["modified"] = []
-  for (const item of local.items) {
-    if (isLocalOnlyRecordRow(item.id)) continue
-    const serverRow = serverById.get(item.id)
-    if (!serverRow) continue
-    if (itemsDiffer(item, serverRow)) {
-      modified.push({ id: item.id, form: toUpdateForm(item) })
-    }
-  }
-
-  const deleted = serverRows
-    .filter((row) => !localIds.has(row.id))
-    .map((row) => ({ id: row.id }))
-
-  return { added, modified, deleted }
+  // Local iterates newest-first (prepend on add/duplicate). reverseAdded so the
+  // server stamps createdAt oldest → newest in submission order — keeps the
+  // post-save DESC sort consistent with the user's local view.
+  return buildRowDiff({
+    locals: local.items,
+    serverRows,
+    getLocalId: (item) => item.id,
+    isLocalOnly: isLocalOnlyRecordRow,
+    differs: itemsDiffer,
+    toAdded: (item) => ({ tempId: item.id, form: toCreateForm(item) }),
+    toModified: (item) => ({ id: item.id, form: toUpdateForm(item) }),
+    reverseAdded: true,
+  })
 }
 
 // --- Validation ---

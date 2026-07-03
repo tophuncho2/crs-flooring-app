@@ -1,3 +1,4 @@
+import type { SectionDiff } from "../../../../shared/section-diff.js"
 import type { StagedInventoryFilterForm } from "../types.js"
 
 export type StagedInventoryFilterRowDraft = {
@@ -14,11 +15,7 @@ export type StagedInventoryFilterRowDelete = {
   id: string
 }
 
-export type StagedInventoryFiltersDiff = {
-  added: StagedInventoryFilterRowDraft[]
-  modified: StagedInventoryFilterRowUpdate[]
-  deleted: StagedInventoryFilterRowDelete[]
-}
+export type StagedInventoryFiltersDiff = SectionDiff<StagedInventoryFilterForm>
 
 
 export type DiffExistingStagedInventoryFilterRow = {

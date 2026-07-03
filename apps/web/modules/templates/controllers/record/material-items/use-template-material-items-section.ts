@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  buildRowDiff,
   createLocalRecordRowId,
   createRecordSectionError,
   isLocalOnlyRecordRow,
@@ -70,14 +71,6 @@ function createItemsRevisionKey(record: TemplateDetail) {
   )
 }
 
-function serverItemById(record: TemplateDetail) {
-  const map = new Map<string, TemplateMaterialItemRow>()
-  for (const row of record.items) {
-    map.set(row.id, row)
-  }
-  return map
-}
-
 function itemsDiffer(local: TemplateMaterialItemLocal, server: TemplateMaterialItemRow) {
   return (
     local.productId !== server.productId ||
@@ -100,28 +93,16 @@ function buildDiff(
   local: TemplateMaterialItemsLocalState,
   server: TemplateDetail,
 ): TemplateMaterialItemsDiff {
-  const serverById = serverItemById(server)
-  const localIds = new Set(local.items.map((item) => item.id))
-
-  const added = local.items
-    .filter((item) => isLocalOnlyRecordRow(item.id))
-    .map((item) => ({ tempId: item.id, form: toDiffForm(item) }))
-
-  const modified: TemplateMaterialItemsDiff["modified"] = []
-  for (const item of local.items) {
-    if (isLocalOnlyRecordRow(item.id)) continue
-    const serverRow = serverById.get(item.id)
-    if (!serverRow) continue
-    if (itemsDiffer(item, serverRow)) {
-      modified.push({ id: item.id, form: toDiffForm(item) })
-    }
-  }
-
-  const deleted = server.items
-    .filter((row) => !localIds.has(row.id))
-    .map((row) => ({ id: row.id }))
-
-  return { added, modified, deleted }
+  // Add appends at the bottom (no reverseAdded), matching the section policy.
+  return buildRowDiff({
+    locals: local.items,
+    serverRows: server.items,
+    getLocalId: (item) => item.id,
+    isLocalOnly: isLocalOnlyRecordRow,
+    differs: itemsDiffer,
+    toAdded: (item) => ({ tempId: item.id, form: toDiffForm(item) }),
+    toModified: (item) => ({ id: item.id, form: toDiffForm(item) }),
+  })
 }
 
 export function useTemplateMaterialItemsSection({
