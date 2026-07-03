@@ -1,5 +1,5 @@
 import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
-import type { TemplateMaterialItemRow } from "./material-items/types.js"
+import type { TemplatePlannedProductRow } from "./planned-products/types.js"
 
 export type TemplateListRow = {
   id: string
@@ -17,7 +17,7 @@ export type TemplateListRow = {
   jobTypeName: string | null
   warehouseId: string | null
   warehouseName: string
-  itemsCount: number
+  plannedProductsCount: number
   createdAt: string
   updatedAt: string
   // Actor-email snapshots: WHO created / last-updated the row. Plain nullable
@@ -45,7 +45,7 @@ export type TemplateDetail = TemplateListRow & {
   propertyState: string
   propertyPostalCode: string
   propertyInstructions: string
-  items: TemplateMaterialItemRow[]
+  plannedProducts: TemplatePlannedProductRow[]
   /**
    * Neighbors by global template-number order (`templateNumberInt`), ignoring
    * property/entity filters — powers the record-view shell stepper (◀ TP-# ▶). Null
@@ -60,7 +60,7 @@ export type TemplateOption = {
   unitType: string
   jobTypeName: string | null
   description: string | null
-  itemsCount: number
+  plannedProductsCount: number
 }
 
 export type TemplateForm = {

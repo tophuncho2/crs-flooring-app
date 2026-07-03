@@ -72,7 +72,7 @@ export async function deleteWorkOrderRecordById(
 
 /**
  * Wire-input shape for creating a work order from a template. Items use
- * Prisma `createMany` and each carries `sourceTemplateItemId` so the
+ * Prisma `createMany` and each carries `sourceTemplatePlannedProductId` so the
  * new work order's items remember their template origin.
  */
 export type CreateWorkOrderFromTemplateRecordInput = {
@@ -88,7 +88,7 @@ export type CreateWorkOrderFromTemplateRecordInput = {
     // copied; `unitId` is authoritative.
     unitId: string | null
     notes: string | null
-    sourceTemplateItemId: string
+    sourceTemplatePlannedProductId: string
   }>
 }
 
@@ -121,7 +121,7 @@ export async function createWorkOrderFromTemplateRecord(
         quantity: toItemDecimal(item.quantity),
         unitId: item.unitId && item.unitId.trim() ? item.unitId : null,
         notes: item.notes,
-        sourceTemplateItemId: item.sourceTemplateItemId,
+        sourceTemplatePlannedProductId: item.sourceTemplatePlannedProductId,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),

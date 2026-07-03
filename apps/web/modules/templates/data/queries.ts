@@ -11,7 +11,7 @@ export { getTemplateById }
 // (PropertyPicker / EntityPicker / JobTypePicker /
 // WarehousePicker / CategoryPicker / ProductPicker) which call
 // /api/{...}/options on demand; read-only labels come from joined fields
-// on TemplateDetail and TemplateMaterialItemRow. No SSR pre-fetch of
+// on TemplateDetail and TemplatePlannedProductRow. No SSR pre-fetch of
 // options is required.
 
 export async function getTemplateDetailPageData(id: string): Promise<PrismaDetailPageResult<{

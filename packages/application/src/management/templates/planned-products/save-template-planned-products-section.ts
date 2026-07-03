@@ -1,38 +1,38 @@
 import { randomUUID } from "node:crypto"
 import {
   Prisma,
-  applyTemplateMaterialItemsDiff,
+  applyTemplatePlannedProductsDiff,
   getProductById,
   withDatabaseTransaction,
 } from "@builders/db"
 import {
   assignDraftIds,
-  validateTemplateMaterialItemForm,
+  validateTemplatePlannedProductForm,
 } from "@builders/domain"
 import { guardProductsExist } from "../../../shared/guard-products-exist.js"
-import { TemplateMaterialItemExecutionError } from "./errors.js"
+import { TemplatePlannedProductExecutionError } from "./errors.js"
 import type {
-  SaveTemplateMaterialItemsSectionUseCaseInput,
-  SaveTemplateMaterialItemsSectionUseCaseResult,
+  SaveTemplatePlannedProductsSectionUseCaseInput,
+  SaveTemplatePlannedProductsSectionUseCaseResult,
 } from "./types.js"
 
-export async function saveTemplateMaterialItemsSectionUseCase(
-  input: SaveTemplateMaterialItemsSectionUseCaseInput,
+export async function saveTemplatePlannedProductsSectionUseCase(
+  input: SaveTemplatePlannedProductsSectionUseCaseInput,
   actorEmail: string,
   client?: Prisma.TransactionClient,
-): Promise<SaveTemplateMaterialItemsSectionUseCaseResult> {
+): Promise<SaveTemplatePlannedProductsSectionUseCaseResult> {
   if (!actorEmail || !actorEmail.trim()) {
-    throw new Error("saveTemplateMaterialItemsSectionUseCase requires a non-empty actorEmail")
+    throw new Error("saveTemplatePlannedProductsSectionUseCase requires a non-empty actorEmail")
   }
 
   return withDatabaseTransaction(async (tx) => {
     const c = client ?? tx
 
     for (const draft of input.diff.added) {
-      const validationError = validateTemplateMaterialItemForm(draft.form)
+      const validationError = validateTemplatePlannedProductForm(draft.form)
       if (validationError) {
-        throw new TemplateMaterialItemExecutionError({
-          code: "TEMPLATE_MATERIAL_ITEM_VALIDATION_FAILED",
+        throw new TemplatePlannedProductExecutionError({
+          code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
           message: validationError,
           status: 400,
           payload: { refKind: "tempId", ref: draft.tempId },
@@ -41,10 +41,10 @@ export async function saveTemplateMaterialItemsSectionUseCase(
     }
 
     for (const update of input.diff.modified) {
-      const validationError = validateTemplateMaterialItemForm(update.form)
+      const validationError = validateTemplatePlannedProductForm(update.form)
       if (validationError) {
-        throw new TemplateMaterialItemExecutionError({
-          code: "TEMPLATE_MATERIAL_ITEM_VALIDATION_FAILED",
+        throw new TemplatePlannedProductExecutionError({
+          code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
           message: validationError,
           status: 400,
           payload: { refKind: "id", ref: update.id },
@@ -66,8 +66,8 @@ export async function saveTemplateMaterialItemsSectionUseCase(
       distinctProductIds,
       (productId) => getProductById(productId, c),
       (productId) =>
-        new TemplateMaterialItemExecutionError({
-          code: "TEMPLATE_MATERIAL_ITEM_VALIDATION_FAILED",
+        new TemplatePlannedProductExecutionError({
+          code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
           message: "Selected product was not found",
           status: 400,
           field: "productId",
@@ -77,7 +77,7 @@ export async function saveTemplateMaterialItemsSectionUseCase(
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
 
-    return await applyTemplateMaterialItemsDiff(c, {
+    return await applyTemplatePlannedProductsDiff(c, {
       templateId: input.templateId,
       actorEmail,
       added: addedWithIds.map((draft) => ({

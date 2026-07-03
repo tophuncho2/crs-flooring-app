@@ -48,7 +48,7 @@ function template(overrides: Partial<TemplateOption> = {}): TemplateOption {
     unitType: "2BR / 2BA",
     jobTypeName: "Turn",
     description: "",
-    itemsCount: 3,
+    plannedProductsCount: 3,
     ...overrides,
   }
 }

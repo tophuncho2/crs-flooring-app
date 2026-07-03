@@ -1,18 +1,18 @@
 import type { SectionDiff } from "../../../shared/section-diff.js"
-import type { TemplateMaterialItemForm } from "./types.js"
+import type { TemplatePlannedProductForm } from "./types.js"
 
-export type TemplateMaterialItemDraft = {
+export type TemplatePlannedProductDraft = {
   tempId: string
-  form: TemplateMaterialItemForm
+  form: TemplatePlannedProductForm
 }
 
-export type TemplateMaterialItemUpdate = {
+export type TemplatePlannedProductUpdate = {
   id: string
-  form: TemplateMaterialItemForm
+  form: TemplatePlannedProductForm
 }
 
-export type TemplateMaterialItemDelete = {
+export type TemplatePlannedProductDelete = {
   id: string
 }
 
-export type TemplateMaterialItemsDiff = SectionDiff<TemplateMaterialItemForm>
+export type TemplatePlannedProductsDiff = SectionDiff<TemplatePlannedProductForm>

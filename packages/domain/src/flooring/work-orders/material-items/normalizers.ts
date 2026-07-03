@@ -8,7 +8,7 @@ type WorkOrderMaterialItemInput = {
   unitId: string | null
   unit?: { name: string; abbreviation: string } | null
   notes: string | null
-  sourceTemplateItemId: string | null
+  sourceTemplatePlannedProductId: string | null
   createdAt: Date | string
   createdBy: string | null
   updatedBy: string | null
@@ -28,7 +28,7 @@ export function normalizeWorkOrderMaterialItem(
     unitName: item.unit?.name ?? "",
     unitAbbrev: item.unit?.abbreviation ?? "",
     notes: item.notes ?? "",
-    sourceTemplateItemId: item.sourceTemplateItemId,
+    sourceTemplatePlannedProductId: item.sourceTemplatePlannedProductId,
     createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : item.createdAt,
     createdBy: item.createdBy ?? null,
     updatedBy: item.updatedBy ?? null,

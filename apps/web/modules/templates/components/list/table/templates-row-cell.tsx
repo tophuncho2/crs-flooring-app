@@ -25,8 +25,8 @@ export function renderTemplateRowCell(
       return row.warehouseName || "-"
     case "description":
       return row.description || "-"
-    case "items":
-      return <span className="tabular-nums">{row.itemsCount}</span>
+    case "plannedProducts":
+      return <span className="tabular-nums">{row.plannedProductsCount}</span>
     case "templateNumber":
       return <CellChip paletteColor={row.color}>{row.templateNumber}</CellChip>
     case "createdAt":

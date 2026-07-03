@@ -58,7 +58,7 @@ export type ApplyWorkOrderMaterialItemsDiffResult = {
 }
 
 /**
- * Section-save diff applier. Mirrors templates' `applyTemplateMaterialItemsDiff`.
+ * Section-save diff applier. Mirrors templates' `applyTemplatePlannedProductsDiff`.
  * Adjustments no longer link to a material item, so deleting a WOMI is a plain
  * row delete with no adjustment cleanup.
  */

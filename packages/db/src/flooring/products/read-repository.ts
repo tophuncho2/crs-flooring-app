@@ -96,7 +96,7 @@ export type ProductDeleteStateResult = {
   id: string
   _count: {
     inventories: number
-    templateItems: number
+    plannedProducts: number
     workOrderItems: number
   }
 }
@@ -268,7 +268,7 @@ export async function getProductStats(
     select: {
       _count: {
         select: {
-          templateItems: true,
+          plannedProducts: true,
           workOrderItems: true,
           inventories: true,
           inventoryAdjustments: true,
@@ -278,7 +278,7 @@ export async function getProductStats(
   })
   if (!row) return null
   return {
-    templateItemsCount: row._count.templateItems,
+    plannedProductsCount: row._count.plannedProducts,
     workOrderItemsCount: row._count.workOrderItems,
     inventoryCount: row._count.inventories,
     adjustmentsCount: row._count.inventoryAdjustments,
@@ -319,7 +319,7 @@ export async function getProductDeleteState(
       _count: {
         select: {
           inventories: true,
-          templateItems: true,
+          plannedProducts: true,
           workOrderItems: true,
         },
       },

@@ -1,19 +1,19 @@
 import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "../../../generated/prisma/client.js"
 import {
-  type TemplateMaterialItemForm,
-  type TemplateMaterialItemRow,
+  type TemplatePlannedProductForm,
+  type TemplatePlannedProductRow,
 } from "@builders/domain"
-import { listTemplateMaterialItems } from "./read-repository.js"
+import { listTemplatePlannedProducts } from "./read-repository.js"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
-// Wire-input shape for material-item writes (UoM epic 2C). The user-supplied
+// Wire-input shape for planned-product writes (UoM epic 2C). The user-supplied
 // form now carries the editable `unitId` FK directly — the application layer
 // resolves it (form value, else the product's own unit as a seed fallback)
 // before calling here. The frozen `sendUnit*` snapshot is no longer written;
 // the item's `unitId` FK is authoritative.
-export type WriteTemplateMaterialItemInput = TemplateMaterialItemForm
+export type WriteTemplatePlannedProductInput = TemplatePlannedProductForm
 
 // Quantity is optional: a blank string means "unset" and is stored as
 // NULL. A non-blank string is handed straight to Prisma, which coerces it
@@ -27,28 +27,28 @@ function toUnitId(value: string): string | null {
   return value.trim() ? value : null
 }
 
-export type ApplyTemplateMaterialItemsDiffInput = {
+export type ApplyTemplatePlannedProductsDiffInput = {
   templateId: string
   // Actor email stamped on every written item: createdBy+updatedBy on added
   // rows, updatedBy on modified rows. A separate guarded param, never user
   // input — mirrors the parent template's create/update stamping.
   actorEmail: string
-  added: Array<{ id: string; tempId: string; input: WriteTemplateMaterialItemInput }>
-  modified: Array<{ id: string; input: WriteTemplateMaterialItemInput }>
+  added: Array<{ id: string; tempId: string; input: WriteTemplatePlannedProductInput }>
+  modified: Array<{ id: string; input: WriteTemplatePlannedProductInput }>
   deleted: Array<{ id: string }>
 }
 
-export type ApplyTemplateMaterialItemsDiffResult = {
-  items: TemplateMaterialItemRow[]
+export type ApplyTemplatePlannedProductsDiffResult = {
+  plannedProducts: TemplatePlannedProductRow[]
   tempIdMap: Record<string, string>
 }
 
-export async function applyTemplateMaterialItemsDiff(
+export async function applyTemplatePlannedProductsDiff(
   tx: Prisma.TransactionClient,
-  input: ApplyTemplateMaterialItemsDiffInput,
-): Promise<ApplyTemplateMaterialItemsDiffResult> {
+  input: ApplyTemplatePlannedProductsDiffInput,
+): Promise<ApplyTemplatePlannedProductsDiffResult> {
   if (input.deleted.length > 0) {
-    await tx.flooringTemplateItem.deleteMany({
+    await tx.templatePlannedProduct.deleteMany({
       where: { id: { in: input.deleted.map((d) => d.id) } },
     })
   }
@@ -59,7 +59,7 @@ export async function applyTemplateMaterialItemsDiff(
   }
 
   if (input.added.length > 0) {
-    await tx.flooringTemplateItem.createMany({
+    await tx.templatePlannedProduct.createMany({
       data: input.added.map((draft) => ({
         id: draft.id,
         templateId: input.templateId,
@@ -74,7 +74,7 @@ export async function applyTemplateMaterialItemsDiff(
   }
 
   for (const update of input.modified) {
-    await tx.flooringTemplateItem.update({
+    await tx.templatePlannedProduct.update({
       where: { id: update.id },
       data: {
         productId: update.input.productId,
@@ -86,6 +86,6 @@ export async function applyTemplateMaterialItemsDiff(
     })
   }
 
-  const items = await listTemplateMaterialItems(input.templateId, tx)
-  return { items, tempIdMap }
+  const plannedProducts = await listTemplatePlannedProducts(input.templateId, tx)
+  return { plannedProducts, tempIdMap }
 }

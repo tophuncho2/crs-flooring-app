@@ -61,7 +61,7 @@ const templateListSelect = {
   jobType: { select: { id: true, name: true } },
   warehouseId: true,
   warehouse: { select: { name: true } },
-  _count: { select: { items: true } },
+  _count: { select: { plannedProducts: true } },
   createdAt: true,
   updatedAt: true,
   createdBy: true,
@@ -86,7 +86,7 @@ const templateDetailSelect = {
       instructions: true,
     },
   },
-  items: {
+  plannedProducts: {
     select: {
       id: true,
       productId: true,
@@ -112,13 +112,13 @@ const templateDetailSelect = {
  * Setting both narrows (AND). Note this diverges from the picker
  * (`searchTemplateOptions`), which keeps a single combined OR across the two
  * columns. Chip filters AND together via exact `IN (...)` matches — propertyId
- * on `FlooringTemplate` directly, entityId through the linked property
+ * on `Template` directly, entityId through the linked property
  * (templates no longer store their own entity).
  */
 function buildTemplatesWhere(
   filters: TemplatesListFilterMap | undefined,
-): Prisma.FlooringTemplateWhereInput | undefined {
-  const clauses: Prisma.FlooringTemplateWhereInput[] = []
+): Prisma.TemplateWhereInput | undefined {
+  const clauses: Prisma.TemplateWhereInput[] = []
 
   const unitType = filters?.unitType?.[0]?.trim() ?? ""
   if (unitType.length > 0) {
@@ -149,7 +149,7 @@ export async function listTemplates(
   args: TemplatesListArgs,
   client: TemplatesDbClient = db,
 ): Promise<TemplateListRow[]> {
-  const templates = await client.flooringTemplate.findMany({
+  const templates = await client.template.findMany({
     where: buildTemplatesWhere(args.filters),
     orderBy: buildTemplatesOrderBy(args.sort),
     select: templateListSelect,
@@ -159,22 +159,22 @@ export async function listTemplates(
   return templates.map(normalizeTemplateListRow)
 }
 
-// Picker/dropdown option projection. Carries jobType name + material-item
+// Picker/dropdown option projection. Carries jobType name + planned-product
 // count so every template dropdown can render the canonical card
-// (unitType / jobType / description / "N items"). Mirrors the list select's
+// (unitType / jobType / description / "N planned products"). Mirrors the list select's
 // jobType + _count shape.
 const templateOptionSelect = {
   id: true,
   unitType: true,
   description: true,
   jobType: { select: { name: true } },
-  _count: { select: { items: true } },
+  _count: { select: { plannedProducts: true } },
 } as const
 
 export async function listTemplateOptions(
   client: TemplatesDbClient = db,
 ): Promise<TemplateOption[]> {
-  const templates = await client.flooringTemplate.findMany({
+  const templates = await client.template.findMany({
     orderBy: [
       { property: { name: "asc" } },
       { unitType: "asc" },
@@ -209,7 +209,7 @@ export async function searchTemplateOptions(
   args: TemplateOptionsSearchArgs,
   client: TemplatesDbClient = db,
 ): Promise<TemplateOptionsSearchResult> {
-  const clauses: Prisma.FlooringTemplateWhereInput[] = []
+  const clauses: Prisma.TemplateWhereInput[] = []
   // Property scope wins; otherwise fall back to the entity scope via the
   // property relation. Neither set → unscoped (lists all templates, paginated).
   if (args.propertyId) {
@@ -225,11 +225,11 @@ export async function searchTemplateOptions(
       ],
     })
   }
-  const where: Prisma.FlooringTemplateWhereInput =
+  const where: Prisma.TemplateWhereInput =
     clauses.length === 1 ? clauses[0] : { AND: clauses }
 
   // Fetch take+1 to detect a next page without a separate count query.
-  const rows = await client.flooringTemplate.findMany({
+  const rows = await client.template.findMany({
     where,
     orderBy: [{ unitType: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     skip: args.skip ?? 0,
@@ -271,11 +271,11 @@ async function getTemplateNeighbors(
     templateNumberInt,
   )
   const [previous, next] = await Promise.all([
-    client.flooringTemplate.findFirst({
+    client.template.findFirst({
       ...previousQuery,
       select: { id: true },
     }),
-    client.flooringTemplate.findFirst({
+    client.template.findFirst({
       ...nextQuery,
       select: { id: true },
     }),
@@ -298,7 +298,7 @@ export async function getTemplateById(
   options: { withNeighbors?: boolean } = {},
   client: TemplatesDbClient = db,
 ): Promise<TemplateDetail> {
-  const template = await client.flooringTemplate.findUniqueOrThrow({
+  const template = await client.template.findUniqueOrThrow({
     where: { id },
     select: templateDetailSelect,
   })
@@ -315,7 +315,7 @@ export async function countTemplates(
   args: { filters?: TemplatesListFilterMap },
   client: TemplatesDbClient = db,
 ): Promise<number> {
-  return client.flooringTemplate.count({
+  return client.template.count({
     where: buildTemplatesWhere(args.filters),
   })
 }

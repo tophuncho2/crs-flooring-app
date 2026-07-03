@@ -36,7 +36,7 @@ function template(overrides: Record<string, unknown> = {}) {
     propertyPostalCode: "",
     description: null,
     installerInstructions: null,
-    items: [],
+    plannedProducts: [],
     ...overrides,
   }
 }

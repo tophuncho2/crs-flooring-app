@@ -83,14 +83,14 @@ export async function syncTemplateToWorkOrderUseCase(
             ? template.installerInstructions
             : null,
         },
-        items: template.items.map((item) => ({
+        items: template.plannedProducts.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
           // Carry the template item's editable unit FK forward to the WO item
           // (UoM epic 2C) — replaces the frozen sendUnit* copy.
           unitId: item.unitId,
           notes: notesOrNull(item.notes),
-          sourceTemplateItemId: item.id,
+          sourceTemplatePlannedProductId: item.id,
         })),
       },
       c,

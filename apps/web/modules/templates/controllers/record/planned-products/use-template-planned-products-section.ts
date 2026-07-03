@@ -11,15 +11,15 @@ import {
 import type {
   ProductOption,
   TemplateDetail,
-  TemplateMaterialItemForm,
-  TemplateMaterialItemRow,
-  TemplateMaterialItemsDiff,
+  TemplatePlannedProductForm,
+  TemplatePlannedProductRow,
+  TemplatePlannedProductsDiff,
   UnitOfMeasureOption,
 } from "@builders/domain"
-import { validateTemplateMaterialItemForm } from "@builders/domain"
-import { saveTemplateMaterialItemsSectionRequest } from "@/modules/templates/data/mutations"
+import { validateTemplatePlannedProductForm } from "@builders/domain"
+import { saveTemplatePlannedProductsSectionRequest } from "@/modules/templates/data/mutations"
 
-export type TemplateMaterialItemLocal = {
+export type TemplatePlannedProductLocal = {
   id: string
   productId: string
   // Display-only snapshots seeded from the saved row's joined fields and
@@ -43,11 +43,11 @@ export type TemplateMaterialItemLocal = {
   categoryFilterName: string | null
 }
 
-type TemplateMaterialItemsLocalState = {
-  items: TemplateMaterialItemLocal[]
+type TemplatePlannedProductsLocalState = {
+  items: TemplatePlannedProductLocal[]
 }
 
-function toLocalItem(row: TemplateMaterialItemRow): TemplateMaterialItemLocal {
+function toLocalItem(row: TemplatePlannedProductRow): TemplatePlannedProductLocal {
   return {
     id: row.id,
     productId: row.productId,
@@ -62,17 +62,17 @@ function toLocalItem(row: TemplateMaterialItemRow): TemplateMaterialItemLocal {
   }
 }
 
-function createLocalState(record: TemplateDetail): TemplateMaterialItemsLocalState {
-  return { items: record.items.map(toLocalItem) }
+function createLocalState(record: TemplateDetail): TemplatePlannedProductsLocalState {
+  return { items: record.plannedProducts.map(toLocalItem) }
 }
 
 function createItemsRevisionKey(record: TemplateDetail) {
   return JSON.stringify(
-    record.items.map((row) => `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}`),
+    record.plannedProducts.map((row) => `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}`),
   )
 }
 
-function itemsDiffer(local: TemplateMaterialItemLocal, server: TemplateMaterialItemRow) {
+function itemsDiffer(local: TemplatePlannedProductLocal, server: TemplatePlannedProductRow) {
   return (
     local.productId !== server.productId ||
     local.unitId !== server.unitId ||
@@ -81,7 +81,7 @@ function itemsDiffer(local: TemplateMaterialItemLocal, server: TemplateMaterialI
   )
 }
 
-function toDiffForm(local: TemplateMaterialItemLocal): TemplateMaterialItemForm {
+function toDiffForm(local: TemplatePlannedProductLocal): TemplatePlannedProductForm {
   return {
     productId: local.productId,
     unitId: local.unitId,
@@ -91,13 +91,13 @@ function toDiffForm(local: TemplateMaterialItemLocal): TemplateMaterialItemForm 
 }
 
 function buildDiff(
-  local: TemplateMaterialItemsLocalState,
+  local: TemplatePlannedProductsLocalState,
   server: TemplateDetail,
-): TemplateMaterialItemsDiff {
+): TemplatePlannedProductsDiff {
   // Add appends at the bottom (no reverseAdded), matching the section policy.
   return buildRowDiff({
     locals: local.items,
-    serverRows: server.items,
+    serverRows: server.plannedProducts,
     getLocalId: (item) => item.id,
     isLocalOnly: isLocalOnlyRecordRow,
     differs: itemsDiffer,
@@ -106,16 +106,16 @@ function buildDiff(
   })
 }
 
-export function useTemplateMaterialItemsSection({
+export function useTemplatePlannedProductsSection({
   template,
   publishTemplate,
 }: {
   template: TemplateDetail
   publishTemplate: (record: TemplateDetail) => void
 }) {
-  const section = useRecordScopedSectionController<TemplateDetail, TemplateMaterialItemsLocalState>({
+  const section = useRecordScopedSectionController<TemplateDetail, TemplatePlannedProductsLocalState>({
     recordId: template.id,
-    sectionKey: "material-items",
+    sectionKey: "planned-products",
     serverValue: template,
     serverRevisionKey: createItemsRevisionKey(template),
     createLocalValue: createLocalState,
@@ -126,7 +126,7 @@ export function useTemplateMaterialItemsSection({
     },
     onSave: async (localValue, currentRecord) => {
       for (const item of localValue.items) {
-        const validationError = validateTemplateMaterialItemForm(toDiffForm(item))
+        const validationError = validateTemplatePlannedProductForm(toDiffForm(item))
         if (validationError) {
           throw createRecordSectionError({
             kind: "validation",
@@ -137,7 +137,7 @@ export function useTemplateMaterialItemsSection({
       }
 
       const diff = buildDiff(localValue, currentRecord)
-      const { template: nextTemplate } = await saveTemplateMaterialItemsSectionRequest(
+      const { template: nextTemplate } = await saveTemplatePlannedProductsSectionRequest(
         template.id,
         diff,
         template.updatedAt,
@@ -148,7 +148,7 @@ export function useTemplateMaterialItemsSection({
       return {
         serverValue: nextTemplate,
         serverRevisionKey: createItemsRevisionKey(nextTemplate),
-        noticeMessage: "Material items saved",
+        noticeMessage: "Planned products saved",
       }
     },
   })
@@ -158,7 +158,7 @@ export function useTemplateMaterialItemsSection({
       items: [
         ...previous.items,
         {
-          id: createLocalRecordRowId("template-material-item"),
+          id: createLocalRecordRowId("template-planned-product"),
           productId: "",
           productName: "",
           unitId: "",
@@ -183,7 +183,7 @@ export function useTemplateMaterialItemsSection({
 
   function changeField(
     itemId: string,
-    field: keyof TemplateMaterialItemLocal,
+    field: keyof TemplatePlannedProductLocal,
     value: string,
   ) {
     section.setLocalValue((previous) => ({

@@ -15,7 +15,7 @@ import {
 
 /**
  * The single templates page ("template hub"). Loads the *editable* record
- * (primary + material-items sections) for the selected template. Opened from
+ * (primary + planned-products sections) for the selected template. Opened from
  * every template entry point (list / entity / work-order / create) with the
  * template pre-selected.
  */

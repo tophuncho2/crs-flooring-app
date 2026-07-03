@@ -47,12 +47,12 @@ const templateDetailSelect = {
   jobType: { select: { id: true, name: true } },
   warehouseId: true,
   warehouse: { select: { name: true } },
-  _count: { select: { items: true } },
+  _count: { select: { plannedProducts: true } },
   createdAt: true,
   updatedAt: true,
   createdBy: true,
   updatedBy: true,
-  items: {
+  plannedProducts: {
     select: {
       id: true,
       productId: true,
@@ -77,7 +77,7 @@ export async function createTemplateRecord(
   input: CreateTemplateRecordInput,
   client: TemplatesDbClient = db,
 ): Promise<TemplateDetail> {
-  const template = await client.flooringTemplate.create({
+  const template = await client.template.create({
     data: input,
     select: templateDetailSelect,
   })
@@ -89,7 +89,7 @@ export async function updateTemplateRecord(
   input: UpdateTemplateRecordInput,
   client: TemplatesDbClient = db,
 ): Promise<TemplateDetail> {
-  const template = await client.flooringTemplate.update({
+  const template = await client.template.update({
     where: { id },
     data: input,
     select: templateDetailSelect,
@@ -101,5 +101,5 @@ export async function deleteTemplateRecordById(
   id: string,
   client: TemplatesDbClient = db,
 ): Promise<void> {
-  await client.flooringTemplate.delete({ where: { id } })
+  await client.template.delete({ where: { id } })
 }

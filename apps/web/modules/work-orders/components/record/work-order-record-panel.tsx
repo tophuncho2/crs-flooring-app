@@ -40,7 +40,7 @@ export function WorkOrderRecordPanel({
   const adjustmentsForWorkOrder = initialAdjustmentsForWorkOrder
 
   // Lifted to the panel so its dirty state registers with the multi-section
-  // close-guard (matches the primary slot + the templates material-items precedent).
+  // close-guard (matches the primary slot + the templates planned-products precedent).
   const materialItemsSection = useWorkOrderMaterialItemsSection({
     workOrder: controller.record,
     materialItems,

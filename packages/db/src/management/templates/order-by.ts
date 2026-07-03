@@ -23,7 +23,7 @@ export function appendUniqueOrderBy<T>(values: T[], nextValue: T | null | undefi
 export function templateFieldOrderBy(
   field: string,
   direction: Prisma.SortOrder,
-): Prisma.FlooringTemplateOrderByWithRelationInput | undefined {
+): Prisma.TemplateOrderByWithRelationInput | undefined {
   switch (field) {
     case "property":
       return { property: { name: direction } }
@@ -50,9 +50,9 @@ export function templateFieldOrderBy(
  */
 export function buildTemplatesOrderBy(
   sort: TemplatesListSort | undefined,
-): Prisma.FlooringTemplateOrderByWithRelationInput[] {
+): Prisma.TemplateOrderByWithRelationInput[] {
   const entries = sort?.entries ?? []
-  const orderBy: Prisma.FlooringTemplateOrderByWithRelationInput[] = []
+  const orderBy: Prisma.TemplateOrderByWithRelationInput[] = []
 
   // Apply the user-selected columns in priority order. `appendUniqueOrderBy`
   // drops an identical duplicate clause (field-level dedup happens upstream in

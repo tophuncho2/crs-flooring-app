@@ -1,10 +1,10 @@
 import { db } from "../../../client.js"
 import type { Prisma, PrismaClient } from "../../../generated/prisma/client.js"
-import { normalizeTemplateMaterialItem, type TemplateMaterialItemRow } from "@builders/domain"
+import { normalizeTemplatePlannedProduct, type TemplatePlannedProductRow } from "@builders/domain"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
-const templateMaterialItemSelect = {
+const templatePlannedProductSelect = {
   id: true,
   productId: true,
   product: { select: { name: true, category: { select: { name: true } } } },
@@ -20,15 +20,15 @@ const templateMaterialItemSelect = {
   updatedBy: true,
 } as const
 
-export async function listTemplateMaterialItems(
+export async function listTemplatePlannedProducts(
   templateId: string,
   client: TemplatesDbClient = db,
-): Promise<TemplateMaterialItemRow[]> {
-  const items = await client.flooringTemplateItem.findMany({
+): Promise<TemplatePlannedProductRow[]> {
+  const items = await client.templatePlannedProduct.findMany({
     where: { templateId },
-    select: templateMaterialItemSelect,
+    select: templatePlannedProductSelect,
     orderBy: { createdAt: "asc" },
   })
 
-  return items.map(normalizeTemplateMaterialItem)
+  return items.map(normalizeTemplatePlannedProduct)
 }

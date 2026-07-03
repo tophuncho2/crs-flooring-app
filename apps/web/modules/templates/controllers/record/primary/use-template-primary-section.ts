@@ -36,7 +36,7 @@ export function useTemplatePrimarySection({
     createLocalValue: toTemplateForm,
     manageDirtySections: false,
     // Write-through every reconciled record into the detail query the reference
-    // header reads (`templateDetail`), so a primary save or a material-items save
+    // header reads (`templateDetail`), so a primary save or a planned-products save
     // (which publishes via `primary.publishRecord`) refreshes the header row
     // immediately — no manual page refresh.
     reconcile: (record) =>

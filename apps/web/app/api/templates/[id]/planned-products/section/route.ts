@@ -1,4 +1,4 @@
-import { saveTemplateMaterialItemsSectionUseCase } from "@builders/application"
+import { saveTemplatePlannedProductsSectionUseCase } from "@builders/application"
 import { getTemplateById } from "@builders/db"
 import { withMutationTelemetry } from "@/server/telemetry/mutation-telemetry"
 import { parseUuidParam } from "@/server/http/api-helpers"
@@ -11,7 +11,7 @@ import {
   finalizeMutationReceipt,
   parseMutationEnvelope,
 } from "@/server/http/route-policy"
-import { validateTemplateMaterialItemsDiffInput } from "../../../_validators"
+import { validateTemplatePlannedProductsDiffInput } from "../../../_validators"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -21,8 +21,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await applyRoutePolicy(request, {
     rateLimit: {
       ...CRUD_UPDATE_SECTION,
-      scope: "templates.material-items.section.replace",
-      route: "/api/templates/[id]/material-items/section",
+      scope: "templates.planned-products.section.replace",
+      route: "/api/templates/[id]/planned-products/section",
     },
   })
   if (access instanceof Response) return access
@@ -33,7 +33,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const body = (await request.json()) as Record<string, unknown>
     const { input: diff, mutation } = parseMutationEnvelope(
       body,
-      validateTemplateMaterialItemsDiffInput,
+      validateTemplatePlannedProductsDiffInput,
       { requireExpectedUpdatedAt: true },
     )
 
@@ -42,11 +42,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       actualUpdatedAt: currentSnapshot.updatedAt,
       expectedUpdatedAt: mutation.expectedUpdatedAt,
       snapshot: { template: currentSnapshot },
-      message: "Template changed before material items save completed. Refresh and try again.",
+      message: "Template changed before planned products save completed. Refresh and try again.",
     })
 
     const receipt = await enforceMutationReceipt({
-      scope: "templates.material-items.section.replace",
+      scope: "templates.planned-products.section.replace",
       request,
       access,
       mutation,
@@ -57,13 +57,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const result = await withMutationTelemetry(
       access,
       {
-        message: "Template material items section replaced",
-        action: "templates.material-items.section.replace",
-        route: "/api/templates/[id]/material-items/section",
-        entityType: "flooringTemplate",
+        message: "Template planned products section replaced",
+        action: "templates.planned-products.section.replace",
+        route: "/api/templates/[id]/planned-products/section",
+        entityType: "template",
         entityId: id,
       },
-      () => saveTemplateMaterialItemsSectionUseCase({ templateId: id, diff }, access.user.email),
+      () => saveTemplatePlannedProductsSectionUseCase({ templateId: id, diff }, access.user.email),
     )
 
     const detail = await getTemplateById(id)
@@ -72,7 +72,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       tempIdMap: result.tempIdMap,
     }
     await finalizeMutationReceipt({
-      scope: "templates.material-items.section.replace",
+      scope: "templates.planned-products.section.replace",
       access,
       mutation,
       responseStatus: 200,

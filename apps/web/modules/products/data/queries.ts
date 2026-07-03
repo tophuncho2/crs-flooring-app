@@ -48,7 +48,7 @@ export async function getProductDetailPageData(
         product,
         categoryOptions: options.categoryOptions,
         stats: stats ?? {
-          templateItemsCount: 0,
+          plannedProductsCount: 0,
           workOrderItemsCount: 0,
           inventoryCount: 0,
           adjustmentsCount: 0,

@@ -68,7 +68,7 @@ export function TemplateQuickCreateModal({
         unitType: t.unitType,
         jobTypeName: t.jobTypeName,
         description: t.description,
-        itemsCount: t.itemsCount,
+        plannedProductsCount: t.plannedProductsCount,
       })
     }
   }

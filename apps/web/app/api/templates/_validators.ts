@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { TemplateExecutionError, TemplateMaterialItemExecutionError } from "@builders/application"
+import { TemplateExecutionError, TemplatePlannedProductExecutionError } from "@builders/application"
 import type {
   CreateTemplateUseCaseInput,
   ListInput,
@@ -15,11 +15,11 @@ import {
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
-  TEMPLATE_MATERIAL_ITEM_NOTES_MAX,
+  TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type PaletteColor,
-  type TemplateMaterialItemForm,
-  type TemplateMaterialItemsDiff,
+  type TemplatePlannedProductForm,
+  type TemplatePlannedProductsDiff,
 } from "@builders/domain"
 
 function failTemplate(message: string, field?: string): never {
@@ -32,8 +32,8 @@ function failTemplate(message: string, field?: string): never {
 }
 
 function failDiff(message: string, field?: string): never {
-  throw new TemplateMaterialItemExecutionError({
-    code: "TEMPLATE_MATERIAL_ITEM_VALIDATION_FAILED",
+  throw new TemplatePlannedProductExecutionError({
+    code: "TEMPLATE_PLANNED_PRODUCT_VALIDATION_FAILED",
     message,
     status: 400,
     field,
@@ -54,7 +54,7 @@ function optionalString(value: unknown): string | null {
   return trimmed ? trimmed : null
 }
 
-// Quantity is optional on a material item — a missing/blank value is carried
+// Quantity is optional on a planned product — a missing/blank value is carried
 // as an empty string ("unset") and persisted as NULL downstream. A provided
 // value is validated (> 0) by the domain rule, not here.
 function optionalQuantity(value: unknown): string {
@@ -166,25 +166,25 @@ function requireObject(value: unknown, path: string): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 
-function validateMaterialItemForm(value: unknown, path: string): TemplateMaterialItemForm {
+function validatePlannedProductForm(value: unknown, path: string): TemplatePlannedProductForm {
   const obj = requireObject(value, path)
   return {
     productId: requireString(obj.productId, `${path}.productId`, failDiff),
     // Editable unit FK (UoM epic 2C); "" = no unit.
     unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
-    notes: optionalBoundedText(obj.notes, TEMPLATE_MATERIAL_ITEM_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
+    notes: optionalBoundedText(obj.notes, TEMPLATE_PLANNED_PRODUCT_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
   }
 }
 
-export function validateTemplateMaterialItemsDiffInput(
+export function validateTemplatePlannedProductsDiffInput(
   body: Record<string, unknown>,
-): TemplateMaterialItemsDiff {
+): TemplatePlannedProductsDiff {
   const added = requireArray(body.added, "added").map((entry, idx) => {
     const obj = requireObject(entry, `added[${idx}]`)
     return {
       tempId: requireString(obj.tempId, `added[${idx}].tempId`, failDiff),
-      form: validateMaterialItemForm(obj.form, `added[${idx}].form`),
+      form: validatePlannedProductForm(obj.form, `added[${idx}].form`),
     }
   })
 
@@ -192,7 +192,7 @@ export function validateTemplateMaterialItemsDiffInput(
     const obj = requireObject(entry, `modified[${idx}]`)
     return {
       id: requireString(obj.id, `modified[${idx}].id`, failDiff),
-      form: validateMaterialItemForm(obj.form, `modified[${idx}].form`),
+      form: validatePlannedProductForm(obj.form, `modified[${idx}].form`),
     }
   })
 

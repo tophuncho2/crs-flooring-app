@@ -44,7 +44,7 @@ import {
 // packages, deploy-safe). Swap to custom artwork later by editing this map.
 const NAV_ICONS: Record<string, LucideIcon> = {
   "flooring-work-orders": TrafficCone,
-  "flooring-templates": FileText,
+  "templates": FileText,
   "flooring-properties": MapPin,
   "flooring-entities": Contact,
   "flooring-payments": DollarSign,

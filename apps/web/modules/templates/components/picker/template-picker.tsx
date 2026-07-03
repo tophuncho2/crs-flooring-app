@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { formatTemplateItemsCount, type TemplateOption } from "@builders/domain"
+import { formatTemplatePlannedProductsCount, type TemplateOption } from "@builders/domain"
 import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
 import {
   TEMPLATE_OPTIONS_QUERY_KEY,
@@ -64,7 +64,7 @@ function toDropdownOption(option: TemplateOption): AsyncRichDropdownOption {
     // Blank unit type falls through to the engine's "No visible details" fallback.
     title: option.unitType,
     subtitles,
-    meta: formatTemplateItemsCount(option.itemsCount),
+    meta: formatTemplatePlannedProductsCount(option.plannedProductsCount),
   }
 }
 

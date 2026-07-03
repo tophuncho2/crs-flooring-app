@@ -1,14 +1,14 @@
 import type {
-  TemplateMaterialItemRow,
-  TemplateMaterialItemsDiff,
+  TemplatePlannedProductRow,
+  TemplatePlannedProductsDiff,
 } from "@builders/domain"
 
-export type SaveTemplateMaterialItemsSectionUseCaseInput = {
+export type SaveTemplatePlannedProductsSectionUseCaseInput = {
   templateId: string
-  diff: TemplateMaterialItemsDiff
+  diff: TemplatePlannedProductsDiff
 }
 
-export type SaveTemplateMaterialItemsSectionUseCaseResult = {
-  items: TemplateMaterialItemRow[]
+export type SaveTemplatePlannedProductsSectionUseCaseResult = {
+  plannedProducts: TemplatePlannedProductRow[]
   tempIdMap: Record<string, string>
 }

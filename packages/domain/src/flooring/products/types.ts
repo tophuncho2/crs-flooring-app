@@ -62,7 +62,7 @@ export type ProductRow = {
 
 /** Read-only totals for the product record-view "Statistics" section. */
 export type ProductStats = {
-  templateItemsCount: number
+  plannedProductsCount: number
   workOrderItemsCount: number
   inventoryCount: number
   adjustmentsCount: number

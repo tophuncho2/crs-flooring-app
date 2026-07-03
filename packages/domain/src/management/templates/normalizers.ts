@@ -1,6 +1,6 @@
 import type { PaletteColor } from "../../shared/palette.js"
-import { normalizeTemplateMaterialItem } from "./material-items/normalizers.js"
-import type { TemplateMaterialItemRow } from "./material-items/types.js"
+import { normalizeTemplatePlannedProduct } from "./planned-products/normalizers.js"
+import type { TemplatePlannedProductRow } from "./planned-products/types.js"
 import type {
   TemplateDetail,
   TemplateListRow,
@@ -30,7 +30,7 @@ type TemplateListInput = {
   jobType: { id: string; name: string } | null
   warehouseId: string | null
   warehouse: { name: string } | null
-  _count: { items: number }
+  _count: { plannedProducts: number }
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -49,7 +49,7 @@ type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
     postalCode: string | null
     instructions: string | null
   } | null
-  items: Array<Parameters<typeof normalizeTemplateMaterialItem>[0]>
+  plannedProducts: Array<Parameters<typeof normalizeTemplatePlannedProduct>[0]>
 }
 
 export function normalizeTemplateListRow(template: TemplateListInput): TemplateListRow {
@@ -67,7 +67,7 @@ export function normalizeTemplateListRow(template: TemplateListInput): TemplateL
     jobTypeName: template.jobType?.name ?? null,
     warehouseId: template.warehouseId,
     warehouseName: template.warehouse?.name ?? "",
-    itemsCount: template._count.items,
+    plannedProductsCount: template._count.plannedProducts,
     createdAt: template.createdAt instanceof Date ? template.createdAt.toISOString() : template.createdAt,
     updatedAt: template.updatedAt instanceof Date ? template.updatedAt.toISOString() : template.updatedAt,
     createdBy: template.createdBy ?? null,
@@ -80,7 +80,7 @@ export function normalizeTemplate(
   neighbors: TemplateNeighbors = NO_TEMPLATE_NEIGHBORS,
 ): TemplateDetail {
   const base = normalizeTemplateListRow(template)
-  const items: TemplateMaterialItemRow[] = template.items.map(normalizeTemplateMaterialItem)
+  const plannedProducts: TemplatePlannedProductRow[] = template.plannedProducts.map(normalizeTemplatePlannedProduct)
   return {
     ...base,
     internalNotes: template.internalNotes ?? "",
@@ -90,7 +90,7 @@ export function normalizeTemplate(
     propertyState: template.property?.state ?? "",
     propertyPostalCode: template.property?.postalCode ?? "",
     propertyInstructions: template.property?.instructions ?? "",
-    items,
+    plannedProducts,
     previousTemplate: neighbors.previousTemplate,
     nextTemplate: neighbors.nextTemplate,
   }
@@ -101,13 +101,13 @@ export function normalizeTemplateOption(template: {
   unitType: string
   description: string | null
   jobType: { name: string } | null
-  _count: { items: number }
+  _count: { plannedProducts: number }
 }): TemplateOption {
   return {
     id: template.id,
     unitType: template.unitType,
     jobTypeName: template.jobType?.name ?? null,
     description: template.description,
-    itemsCount: template._count.items,
+    plannedProductsCount: template._count.plannedProducts,
   }
 }

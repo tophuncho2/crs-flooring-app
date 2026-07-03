@@ -22,7 +22,7 @@ export type FlooringNavItem = {
 
 export const FLOORING_NAV_ITEMS: FlooringNavItem[] = [
   { slug: "flooring-work-orders", name: "Work Orders", href: "/dashboard/work-orders", group: "management" },
-  { slug: "flooring-templates", name: "Templates", href: "/dashboard/templates", group: "management" },
+  { slug: "templates", name: "Templates", href: "/dashboard/templates", group: "management" },
   { slug: "flooring-properties", name: "Properties", href: "/dashboard/properties", group: "management" },
   {
     slug: "flooring-entities",

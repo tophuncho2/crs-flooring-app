@@ -1,6 +1,6 @@
-import type { TemplateMaterialItemRow } from "./types.js"
+import type { TemplatePlannedProductRow } from "./types.js"
 
-type TemplateMaterialItemInput = {
+type TemplatePlannedProductInput = {
   id: string
   productId: string
   product: { name: string; category?: { name: string } | null }
@@ -14,7 +14,7 @@ type TemplateMaterialItemInput = {
   updatedBy: string | null
 }
 
-export function normalizeTemplateMaterialItem(item: TemplateMaterialItemInput): TemplateMaterialItemRow {
+export function normalizeTemplatePlannedProduct(item: TemplatePlannedProductInput): TemplatePlannedProductRow {
   return {
     id: item.id,
     productId: item.productId,

@@ -305,10 +305,10 @@ export function ProductPrimaryFieldsSection({
         right={
           <FieldSection>
             <CellAt col={1} colSpan={8}>
-              <FormField label="Template Items">
+              <FormField label="Planned Products">
                 <StatCell
-                  value={stats?.templateItemsCount ?? 0}
-                  ariaLabel="Linked template items total"
+                  value={stats?.plannedProductsCount ?? 0}
+                  ariaLabel="Linked planned products total"
                 />
               </FormField>
             </CellAt>

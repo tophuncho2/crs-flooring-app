@@ -58,14 +58,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         message: "Template primary section replaced",
         action: "templates.primary.section.replace",
         route: "/api/templates/[id]/primary/section",
-        entityType: "flooringTemplate",
+        entityType: "template",
         entityId: id,
       },
       () => updateTemplateUseCase(id, input, access.user.email),
     )
 
     // Re-read with neighbors so the response carries the stepper's prev/next
-    // (mirrors the material-items section route); the use-case return omits them.
+    // (mirrors the planned-products section route); the use-case return omits them.
     const detail = await getTemplateById(id)
     const responseBody = { template: detail }
     await finalizeMutationReceipt({

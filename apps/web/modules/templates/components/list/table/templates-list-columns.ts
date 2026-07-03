@@ -18,7 +18,7 @@ export const TEMPLATES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<TemplateListR
   { key: "jobType", label: "Job Type" },
   { key: "warehouse", label: "Warehouse" },
   { key: "description", label: "Description" },
-  { key: "items", label: "Items", align: "end" },
+  { key: "plannedProducts", label: "Planned Products", align: "end" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
   { key: "createdBy", label: "Created by" },

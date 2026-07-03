@@ -7,7 +7,7 @@
  */
 export type ProductDeleteCounts = {
   inventories: number
-  templateItems: number
+  plannedProducts: number
   workOrderItems: number
 }
 
@@ -16,7 +16,7 @@ export type ProductDeleteCounts = {
  * Deletion never cascades — all of these must be removed or reassigned first.
  */
 export function isProductDeleteBlocked(counts: ProductDeleteCounts): boolean {
-  return counts.inventories > 0 || counts.templateItems > 0 || counts.workOrderItems > 0
+  return counts.inventories > 0 || counts.plannedProducts > 0 || counts.workOrderItems > 0
 }
 
 export function buildProductDeleteBlockedMessage(counts: ProductDeleteCounts): string {
@@ -27,8 +27,8 @@ export function buildProductDeleteBlockedMessage(counts: ProductDeleteCounts): s
   if (counts.workOrderItems > 0) {
     blockers.push(`${counts.workOrderItems} work order item${counts.workOrderItems === 1 ? "" : "s"}`)
   }
-  if (counts.templateItems > 0) {
-    blockers.push(`${counts.templateItems} template item${counts.templateItems === 1 ? "" : "s"}`)
+  if (counts.plannedProducts > 0) {
+    blockers.push(`${counts.plannedProducts} planned product${counts.plannedProducts === 1 ? "" : "s"}`)
   }
 
   if (blockers.length === 0) {

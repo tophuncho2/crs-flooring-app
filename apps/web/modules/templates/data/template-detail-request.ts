@@ -6,7 +6,7 @@ import { requestJson } from "@/transport/http"
 export const TEMPLATE_DETAIL_QUERY_KEY = ["templates", "detail"] as const
 
 /**
- * Client read of a full template record (primary fields + material items), used
+ * Client read of a full template record (primary fields + planned products), used
  * by the template hub to load the editable record below the cascade pickers
  * when a template is selected. Hits the same `GET /api/templates/[id]` the
  * (now-removed) standalone detail page loaded on the server.

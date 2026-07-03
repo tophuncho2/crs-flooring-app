@@ -57,7 +57,7 @@ export async function POST(request: Request) {
         message: "Template created",
         action: "templates.create",
         route: "/api/templates",
-        entityType: "flooringTemplate",
+        entityType: "template",
       },
       () => createTemplateUseCase(input, access.user.email),
     )

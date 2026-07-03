@@ -5,7 +5,7 @@ import { withMutationMeta } from "@/transport/mutation"
 import type {
   TemplateDetail,
   TemplateForm,
-  TemplateMaterialItemsDiff,
+  TemplatePlannedProductsDiff,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
 } from "@builders/domain"
@@ -53,13 +53,13 @@ export async function syncTemplateToWorkOrderRequest(templateId: string) {
   )
 }
 
-export async function saveTemplateMaterialItemsSectionRequest(
+export async function saveTemplatePlannedProductsSectionRequest(
   templateId: string,
-  diff: TemplateMaterialItemsDiff,
+  diff: TemplatePlannedProductsDiff,
   revisionKey: string,
 ) {
   return requestJson<{ template: TemplateDetail; tempIdMap: Record<string, string> }>(
-    `/api/templates/${templateId}/material-items/section`,
+    `/api/templates/${templateId}/planned-products/section`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

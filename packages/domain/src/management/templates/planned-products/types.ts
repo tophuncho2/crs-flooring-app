@@ -1,4 +1,4 @@
-export type TemplateMaterialItemRow = {
+export type TemplatePlannedProductRow = {
   id: string
   productId: string
   productName: string
@@ -22,7 +22,7 @@ export type TemplateMaterialItemRow = {
   updatedBy: string | null
 }
 
-export type TemplateMaterialItemForm = {
+export type TemplatePlannedProductForm = {
   productId: string
   // Editable unit FK (UoM epic 2C). "" disconnects the unit.
   unitId: string
@@ -30,7 +30,7 @@ export type TemplateMaterialItemForm = {
   notes: string
 }
 
-export const EMPTY_TEMPLATE_MATERIAL_ITEM_FORM: TemplateMaterialItemForm = {
+export const EMPTY_TEMPLATE_PLANNED_PRODUCT_FORM: TemplatePlannedProductForm = {
   productId: "",
   unitId: "",
   quantity: "",

@@ -204,7 +204,7 @@ model Property {
   createdBy           String?
   updatedBy           String?
   workOrders          FlooringWorkOrder[]
-  templates           FlooringTemplate[]
+  templates           Template[]
 
   @@index([entityId])
   @@index([name])
@@ -239,7 +239,7 @@ model FlooringUnitOfMeasure {
   adjustments                FlooringInventoryAdjustment[] @relation("FlooringAdjustmentUnit")
   stagedRows                 FlooringImportStagedInventoryRow[] @relation("FlooringStagedRowUnit")
   stagedFilterRows           FlooringImportStagedInventoryFilterRow[] @relation("FlooringStagedFilterRowUnit")
-  templateItems              FlooringTemplateItem[] @relation("FlooringTemplateItemUnit")
+  plannedProducts            TemplatePlannedProduct[] @relation("TemplatePlannedProductUnit")
   workOrderItems             FlooringWorkOrderItem[] @relation("FlooringWorkOrderItemUnit")
 
   @@map("flooring_unit_of_measure")
@@ -272,7 +272,7 @@ model FlooringProduct {
   updatedAt                        DateTime                           @updatedAt
   createdBy                        String?
   updatedBy                        String?
-  templateItems                          FlooringTemplateItem[]
+  plannedProducts                        TemplatePlannedProduct[]
   workOrderItems                         FlooringWorkOrderItem[]
   inventories                            FlooringInventory[]
   inventoryAdjustments                   FlooringInventoryAdjustment[]
@@ -513,7 +513,7 @@ model FlooringJobType {
   updatedAt        DateTime            @updatedAt
   createdBy        String?
   updatedBy        String?
-  templates        FlooringTemplate[]
+  templates        Template[]
   workOrders       FlooringWorkOrder[]
 
   @@index([name])
@@ -553,9 +553,9 @@ model FlooringPayment {
   @@map("flooring_payment")
 }
 
-model FlooringTemplate {
+model Template {
   id                   String                     @id @default(uuid())
-  templateNumber       String                     @unique @default(dbgenerated("('TP-'::text || (nextval('flooring_template_number_seq'::regclass))::text)")) @map("template_number")
+  templateNumber       String                     @unique @default(dbgenerated("('TP-'::text || (nextval('template_number_seq'::regclass))::text)")) @map("template_number")
   templateNumberInt    Int?                       @default(dbgenerated("(SUBSTRING(template_number FROM 4))::integer"))
   propertyId           String?
   property             Property?                  @relation(fields: [propertyId], references: [id], onDelete: Restrict)
@@ -575,7 +575,7 @@ model FlooringTemplate {
   color                PaletteColor               @default(SLATE)
   createdBy            String?
   updatedBy            String?
-  items                FlooringTemplateItem[]
+  plannedProducts      TemplatePlannedProduct[]
   workOrders           FlooringWorkOrder[]
 
   @@index([templateNumberInt])
@@ -588,20 +588,20 @@ model FlooringTemplate {
   // GIN trigram indexes backing the list-view per-column search bars (ILIKE
   // substring). Mirrors the FlooringWorkOrder unitType/description search indexes.
   // The btree @@index([unitType]) above stays — it serves ORDER BY unitType.
-  @@index([unitType(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_template_unitType_trgm_idx")
-  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_template_description_trgm_idx")
-  @@map("flooring_template")
+  @@index([unitType(ops: raw("gin_trgm_ops"))], type: Gin, map: "template_unitType_trgm_idx")
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "template_description_trgm_idx")
+  @@map("template")
 }
 
-model FlooringTemplateItem {
+model TemplatePlannedProduct {
   id             String           @id @default(uuid())
   templateId     String
-  template       FlooringTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  template       Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
   productId      String
   product        FlooringProduct  @relation(fields: [productId], references: [id], onDelete: Restrict)
   quantity       Decimal?         @db.Decimal(10, 2)
   unitId         String?
-  unit           FlooringUnitOfMeasure? @relation("FlooringTemplateItemUnit", fields: [unitId], references: [id], onDelete: Restrict)
+  unit           FlooringUnitOfMeasure? @relation("TemplatePlannedProductUnit", fields: [unitId], references: [id], onDelete: Restrict)
   notes          String?          @db.VarChar(30)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -612,7 +612,7 @@ model FlooringTemplateItem {
   @@index([templateId, createdAt])
   @@index([productId])
   @@index([unitId])
-  @@map("flooring_template_item")
+  @@map("template_planned_product")
 }
 
 model FlooringWarehouse {
@@ -633,7 +633,7 @@ model FlooringWarehouse {
   inventories          FlooringInventory[]
   inventoryAdjustments FlooringInventoryAdjustment[]
   workOrders           FlooringWorkOrder[]
-  templates            FlooringTemplate[]
+  templates            Template[]
 
   @@index([warehouseNumber])
   @@index([warehouseNumberInt])
@@ -647,7 +647,7 @@ model FlooringWorkOrder {
   propertyId           String?
   property             Property?                  @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   templateId           String?
-  template             FlooringTemplate?          @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  template             Template?          @relation(fields: [templateId], references: [id], onDelete: SetNull)
   jobTypeId            String?
   jobType              FlooringJobType?           @relation(fields: [jobTypeId], references: [id], onDelete: SetNull)
   warehouseId          String?
@@ -718,7 +718,7 @@ model FlooringWorkOrderItem {
   workOrder            FlooringWorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   productId            String
   product              FlooringProduct             @relation(fields: [productId], references: [id], onDelete: Restrict)
-  sourceTemplateItemId String?
+  sourceTemplatePlannedProductId String?
   quantity             Decimal?                    @db.Decimal(10, 2)
   unitId               String?
   unit                 FlooringUnitOfMeasure?      @relation("FlooringWorkOrderItemUnit", fields: [unitId], references: [id], onDelete: Restrict)
@@ -731,7 +731,7 @@ model FlooringWorkOrderItem {
   @@index([workOrderId])
   @@index([workOrderId, createdAt])
   @@index([productId])
-  @@index([sourceTemplateItemId])
+  @@index([sourceTemplatePlannedProductId])
   @@index([unitId])
   @@map("flooring_work_order_item")
 }

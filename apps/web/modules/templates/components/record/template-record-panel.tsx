@@ -6,11 +6,11 @@ import {
   type RecordDetailClientScaffoldContext,
 } from "@/engines/record-view"
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/primary/use-template-primary-section"
-import { useTemplateMaterialItemsSection } from "@/modules/templates/controllers/record/material-items/use-template-material-items-section"
+import { useTemplatePlannedProductsSection } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
 import type { TemplateDetail, TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
-import { TemplateMaterialItemsSection } from "./material-items/template-material-items-section"
+import { TemplatePlannedProductsSection } from "./planned-products/template-planned-products-section"
 import { TemplateRecordFooter } from "./footer"
 
 export function TemplateRecordPanel({
@@ -21,13 +21,13 @@ export function TemplateRecordPanel({
   template: TemplateDetail
 }) {
   const primary = useTemplatePrimarySection({ page, template })
-  const materialItems = useTemplateMaterialItemsSection({
+  const plannedProducts = useTemplatePlannedProductsSection({
     template: primary.record,
     publishTemplate: primary.publishRecord,
   })
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
-  const isDirty = primary.primarySection.isDirty || materialItems.isDirty
-  const canSync = !isDirty && !primary.primarySection.isSaving && !materialItems.isSaving
+  const isDirty = primary.primarySection.isDirty || plannedProducts.isDirty
+  const canSync = !isDirty && !primary.primarySection.isSaving && !plannedProducts.isSaving
 
   return (
     <>
@@ -106,28 +106,28 @@ export function TemplateRecordPanel({
             ),
           },
           {
-            key: "material-items",
+            key: "planned-products",
             type: "item",
             order: 10,
-            dirtyLabel: "material items",
-            controller: materialItems,
+            dirtyLabel: "planned products",
+            controller: plannedProducts,
             render: () => (
-              <TemplateMaterialItemsSection
-                items={materialItems.items}
-                isDirty={materialItems.isDirty}
-                isSaving={materialItems.isSaving}
-                hasConflict={materialItems.hasConflict}
-                error={materialItems.error?.message ?? null}
-                noticeMessage={materialItems.noticeMessage}
-                noticeError={materialItems.noticeError}
-                onSave={() => void materialItems.save()}
-                onDiscard={() => materialItems.discard()}
-                onAddItem={materialItems.addItem}
-                onChangeField={materialItems.changeField}
-                onChangeCategoryFilter={materialItems.changeCategoryFilter}
-                onSetProductSnapshot={materialItems.setProductSnapshot}
-                onSetUnit={materialItems.setUnit}
-                onRemoveItem={materialItems.removeItem}
+              <TemplatePlannedProductsSection
+                items={plannedProducts.items}
+                isDirty={plannedProducts.isDirty}
+                isSaving={plannedProducts.isSaving}
+                hasConflict={plannedProducts.hasConflict}
+                error={plannedProducts.error?.message ?? null}
+                noticeMessage={plannedProducts.noticeMessage}
+                noticeError={plannedProducts.noticeError}
+                onSave={() => void plannedProducts.save()}
+                onDiscard={() => plannedProducts.discard()}
+                onAddItem={plannedProducts.addItem}
+                onChangeField={plannedProducts.changeField}
+                onChangeCategoryFilter={plannedProducts.changeCategoryFilter}
+                onSetProductSnapshot={plannedProducts.setProductSnapshot}
+                onSetUnit={plannedProducts.setUnit}
+                onRemoveItem={plannedProducts.removeItem}
               />
             ),
           },

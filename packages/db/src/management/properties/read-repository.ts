@@ -164,7 +164,7 @@ export async function countTemplatesByPropertyId(
   propertyId: string,
   client: PropertiesDbClient = db,
 ): Promise<number> {
-  return client.flooringTemplate.count({ where: { propertyId } })
+  return client.template.count({ where: { propertyId } })
 }
 
 export type PropertyListViewOptions = {

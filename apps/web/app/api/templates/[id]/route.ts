@@ -75,7 +75,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         message: "Template deleted",
         action: "templates.delete",
         route: "/api/templates/[id]",
-        entityType: "flooringTemplate",
+        entityType: "template",
         entityId: id,
       },
       () => deleteTemplateUseCase(id),
