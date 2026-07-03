@@ -22,7 +22,6 @@ function existingRow(
   return {
     id: "row-1",
     status: "DRAFT",
-    isImported: false,
     ...overrides,
   }
 }
@@ -77,28 +76,15 @@ describe("validateStagedInventoryRowsDiff", () => {
       ])
     })
 
-    it("emits STAGED_ROW_NOT_EDITABLE when row is IMPORTED", () => {
+    it("returns no issues when row is IMPORTED (editable again — the FK was severed)", () => {
       const diff: StagedInventoryRowsDiff = {
         ...emptyRowsDiff(),
         modified: [{ id: "row-1", form: form() }],
       }
       const issues = validateStagedInventoryRowsDiff(diff, {
-        existing: [existingRow({ status: "IMPORTED", isImported: true })],
+        existing: [existingRow({ status: "IMPORTED" })],
       })
-      expect(issues).toEqual([
-        { code: "STAGED_ROW_NOT_EDITABLE", rowId: "row-1", status: "IMPORTED" },
-      ])
-    })
-
-    it("emits STAGED_ROW_NOT_EDITABLE when status=DRAFT but legacy isImported latch is true", () => {
-      const diff: StagedInventoryRowsDiff = {
-        ...emptyRowsDiff(),
-        modified: [{ id: "row-1", form: form() }],
-      }
-      const issues = validateStagedInventoryRowsDiff(diff, {
-        existing: [existingRow({ status: "DRAFT", isImported: true })],
-      })
-      expect(issues[0]?.code).toBe("STAGED_ROW_NOT_EDITABLE")
+      expect(issues).toEqual([])
     })
   })
 
@@ -140,29 +126,29 @@ describe("validateStagedInventoryRowsDiff", () => {
       ])
     })
 
-    it("emits STAGED_ROW_DELETE_BLOCKED_NOT_DRAFT for IMPORTED rows", () => {
+    it("returns no issues when deleting an IMPORTED row (deletable again — pure history)", () => {
       const diff: StagedInventoryRowsDiff = {
         ...emptyRowsDiff(),
         deleted: [{ id: "row-1" }],
       }
       const issues = validateStagedInventoryRowsDiff(diff, {
-        existing: [existingRow({ status: "IMPORTED", isImported: true })],
+        existing: [existingRow({ status: "IMPORTED" })],
       })
-      expect(issues[0]?.code).toBe("STAGED_ROW_DELETE_BLOCKED_NOT_DRAFT")
+      expect(issues).toEqual([])
     })
   })
 
   describe("combined", () => {
-    it("collects issues across modified + deleted", () => {
+    it("collects issues across modified + deleted (only QUEUED rows block)", () => {
       const diff: StagedInventoryRowsDiff = {
         added: [{ tempId: "tmp-1", productId: "product-1", form: form() }],
-        modified: [{ id: "row-queued", form: form() }],
-        deleted: [{ id: "row-imported" }],
+        modified: [{ id: "row-queued-a", form: form() }],
+        deleted: [{ id: "row-queued-b" }],
       }
       const issues = validateStagedInventoryRowsDiff(diff, {
         existing: [
-          existingRow({ id: "row-queued", status: "QUEUED" }),
-          existingRow({ id: "row-imported", status: "IMPORTED", isImported: true }),
+          existingRow({ id: "row-queued-a", status: "QUEUED" }),
+          existingRow({ id: "row-queued-b", status: "QUEUED" }),
         ],
       })
       expect(issues.map((i) => i.code).sort()).toEqual([

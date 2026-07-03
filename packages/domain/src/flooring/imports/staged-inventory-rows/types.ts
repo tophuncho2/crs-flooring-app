@@ -16,6 +16,8 @@ export type StagedInventoryRow = {
   rollPrefix: string
   rollNumber: string
   dyeLot: string
+  // Warehouse is parent-owned — sourced from the import entry, not a stored
+  // staged-row column. Carried here for display + batch-eligibility.
   warehouseId: string
   warehouseName: string
   location: string
@@ -23,7 +25,6 @@ export type StagedInventoryRow = {
   cost: string
   freight: string
   status: FlooringStagedRowStatus
-  isImported: boolean
   note: string
   createdAt: string
   updatedAt: string

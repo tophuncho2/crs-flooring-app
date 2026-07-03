@@ -9,17 +9,15 @@ import type { StagedInventoryRow } from "../../../../src/flooring/imports/staged
 
 type BatchRow = Pick<
   StagedInventoryRow,
-  "id" | "status" | "isImported" | "productId" | "unitId" | "warehouseId" | "startingStock"
+  "id" | "status" | "productId" | "unitId" | "startingStock"
 >
 
 function readyRow(overrides: Partial<BatchRow> = {}): BatchRow {
   return {
     id: "row-1",
     status: "DRAFT",
-    isImported: false,
     productId: "product-1",
     unitId: "unit-1",
-    warehouseId: "wh-1",
     startingStock: "5",
     ...overrides,
   }
@@ -40,16 +38,8 @@ describe("validateStagedImportBatch", () => {
 
   it("returns NOT_DRAFT_STATUS for IMPORTED rows", () => {
     expect(
-      validateStagedImportBatch([
-        readyRow({ status: "IMPORTED", isImported: true }),
-      ]),
+      validateStagedImportBatch([readyRow({ status: "IMPORTED" })]),
     ).toEqual([{ rowId: "row-1", reason: "NOT_DRAFT_STATUS" }])
-  })
-
-  it("returns ALREADY_IMPORTED when status=DRAFT but legacy latch is flipped", () => {
-    expect(
-      validateStagedImportBatch([readyRow({ isImported: true })]),
-    ).toEqual([{ rowId: "row-1", reason: "ALREADY_IMPORTED" }])
   })
 
   it("returns MISSING_PRODUCT when productId is empty", () => {
@@ -58,12 +48,6 @@ describe("validateStagedImportBatch", () => {
     ])
     expect(validateStagedImportBatch([readyRow({ productId: "   " })])).toEqual([
       { rowId: "row-1", reason: "MISSING_PRODUCT" },
-    ])
-  })
-
-  it("returns MISSING_WAREHOUSE when warehouseId is empty", () => {
-    expect(validateStagedImportBatch([readyRow({ warehouseId: "" })])).toEqual([
-      { rowId: "row-1", reason: "MISSING_WAREHOUSE" },
     ])
   })
 
@@ -80,9 +64,7 @@ describe("validateStagedImportBatch", () => {
     it("QUEUED beats every other reason", () => {
       const row = readyRow({
         status: "QUEUED",
-        isImported: true,
         productId: "",
-        warehouseId: "",
         startingStock: "0",
       })
       expect(validateStagedImportBatch([row])).toEqual([
@@ -90,10 +72,9 @@ describe("validateStagedImportBatch", () => {
       ])
     })
 
-    it("IMPORTED status beats latch + missing fields", () => {
+    it("IMPORTED status beats missing fields", () => {
       const row = readyRow({
         status: "IMPORTED",
-        isImported: true,
         productId: "",
         startingStock: "0",
       })
@@ -102,33 +83,13 @@ describe("validateStagedImportBatch", () => {
       ])
     })
 
-    it("ALREADY_IMPORTED beats MISSING_PRODUCT / WAREHOUSE / STOCK", () => {
-      const row = readyRow({
-        isImported: true,
-        productId: "",
-        warehouseId: "",
-        startingStock: "0",
-      })
-      expect(validateStagedImportBatch([row])).toEqual([
-        { rowId: "row-1", reason: "ALREADY_IMPORTED" },
-      ])
-    })
-
-    it("MISSING_PRODUCT beats MISSING_WAREHOUSE + STOCK", () => {
+    it("MISSING_PRODUCT beats ZERO_STARTING_STOCK", () => {
       const row = readyRow({
         productId: "",
-        warehouseId: "",
         startingStock: "0",
       })
       expect(validateStagedImportBatch([row])).toEqual([
         { rowId: "row-1", reason: "MISSING_PRODUCT" },
-      ])
-    })
-
-    it("MISSING_WAREHOUSE beats ZERO_STARTING_STOCK", () => {
-      const row = readyRow({ warehouseId: "", startingStock: "0" })
-      expect(validateStagedImportBatch([row])).toEqual([
-        { rowId: "row-1", reason: "MISSING_WAREHOUSE" },
       ])
     })
   })
@@ -178,9 +139,9 @@ describe("buildStagedImportBatchIneligibleMessage", () => {
     )
   })
 
-  it("collapses reasons that share a label (both map to 'already imported')", () => {
+  it("collapses NOT_DRAFT_STATUS rows under the 'already imported' label", () => {
     const msg = buildStagedImportBatchIneligibleMessage([
-      { rowId: "row-1", reason: "ALREADY_IMPORTED" },
+      { rowId: "row-1", reason: "NOT_DRAFT_STATUS" },
       { rowId: "row-2", reason: "NOT_DRAFT_STATUS" },
     ])
     expect(msg).toBe("Cannot import: 2 rows already imported.")

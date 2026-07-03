@@ -1,7 +1,6 @@
 import {
   Prisma,
   deleteInventoryRecordById,
-  deleteStagedInventoryRecordById,
   getInventoryDeleteState,
   lockInventoryRow,
   withDatabaseTransaction,
@@ -40,9 +39,6 @@ export async function deleteInventoryUseCase(
     }
 
     await deleteInventoryRecordById(id, c)
-    if (state.sourceStagedRowId) {
-      await deleteStagedInventoryRecordById(state.sourceStagedRowId, c)
-    }
     return { ok: true }
   })
 }

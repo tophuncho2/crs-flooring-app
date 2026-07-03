@@ -201,7 +201,6 @@ export async function saveImportStagedInventorySectionUseCase(
       tempId: draft.tempId,
       input: {
         productId: draft.productId,
-        warehouseId: parent.warehouseId,
         unitId: draft.form.unitId.trim() || null,
         rollNumber: draft.form.rollNumber || null,
         dyeLot: draft.form.dyeLot || null,

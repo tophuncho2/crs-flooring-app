@@ -30,9 +30,9 @@ import type {
  *    and the per-row form validators.
  *  - Pre-assigned UUIDs to added entries on both slices via
  *    `assignDraftIds`.
- *  - Resolved every staged-row added entry's own productId to its
- *    stockUnit snapshot, and stamped the `warehouseId` from the parent
- *    import. Staged rows attach directly to the import — there is no
+ *  - Resolved every staged-row added entry's own productId to its unit
+ *    snapshot. Warehouse is parent-owned (the import entry's) — not stored
+ *    per row. Staged rows attach directly to the import — there is no
  *    longer a filter-row FK.
  *
  * Execution order:
@@ -158,8 +158,8 @@ export async function applyImportStagedInventorySectionDiff(
   }
 
   // Step 5 — create staged rows with pre-assigned ids; build tempId map.
-  // Snapshots (productId, stockUnit*, warehouseId) are already resolved
-  // by the application layer.
+  // productId is resolved by the application layer; warehouse is parent-owned
+  // (no per-row column).
   const rowTempIdMap: Record<string, string> = {}
   for (const draft of input.rows.added) {
     rowTempIdMap[draft.tempId] = draft.id
@@ -170,7 +170,6 @@ export async function applyImportStagedInventorySectionDiff(
         id: draft.id,
         importEntryId: input.importEntryId,
         productId: draft.input.productId,
-        warehouseId: draft.input.warehouseId,
         unitId: draft.input.unitId,
         rollNumber: draft.input.rollNumber,
         dyeLot: draft.input.dyeLot,

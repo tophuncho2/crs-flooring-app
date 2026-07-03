@@ -157,7 +157,6 @@ export async function deleteInventoryRecordById(
  */
 export type InsertInventoryRowInput = {
   importEntryId: string | null
-  sourceStagedRowId: string | null
   productId: string
   // Unit FK (UoM epic 2B) — replaces the four frozen unit snapshot strings.
   unitId: string
@@ -190,7 +189,6 @@ export async function insertInventoryRow(
   const created = await tx.flooringInventory.create({
     data: {
       importEntryId: input.importEntryId,
-      sourceStagedRowId: input.sourceStagedRowId,
       productId: input.productId,
       unitId: input.unitId,
       rollPrefix: input.rollPrefix,
@@ -229,8 +227,9 @@ export async function insertInventoryRow(
  *  - Caller pre-assigns a UUID `id` for every `inventoryRowsToCreate` entry
  *    (mirrors `applyStagedInventoryRowsDiff`'s pre-assigned-id pattern;
  *    necessary because Prisma's `createMany` does not return inserted IDs on
- *    Postgres). Pre-assignment also lets the caller correlate inserts with
- *    their source staged rows for the secondary `updateMany`.
+ *    Postgres). Each entry also carries `stagedRowId` — a correlation-only
+ *    handle (NOT a stored column; the inventory->staged FK was severed) used to
+ *    drive the secondary QUEUED->IMPORTED `updateMany`.
  *  - Caller computed every per-row field (unit
  *    snapshots, etc.) — this primitive
  *    does no field math. `createdAt` is DB-defaulted (`@default(now())`).
@@ -249,7 +248,7 @@ export async function insertInventoryRow(
 export type MaterializeStagedRowsToInventoryInput = {
   importEntryId: string
   inventoryRowsToCreate: Array<
-    MaterializeInventoryRowFields & { id: string; sourceStagedRowId: string }
+    MaterializeInventoryRowFields & { id: string; stagedRowId: string }
   >
 }
 
@@ -271,7 +270,6 @@ export async function materializeStagedRowsToInventory(
   const createData: Prisma.FlooringInventoryCreateManyInput[] = input.inventoryRowsToCreate.map(
     (row) => ({
       id: row.id,
-      sourceStagedRowId: row.sourceStagedRowId,
       importEntryId: row.importEntryId,
       productId: row.productId,
       unitId: row.unitId,
@@ -302,7 +300,7 @@ export async function materializeStagedRowsToInventory(
   // Step 3 — flip the source staged rows to IMPORTED. WHERE narrows to QUEUED
   // so any row that drifted state is left alone (caller error, surfaces as a
   // skipped row in the result).
-  const sourceStagedRowIds = input.inventoryRowsToCreate.map((row) => row.sourceStagedRowId)
+  const sourceStagedRowIds = input.inventoryRowsToCreate.map((row) => row.stagedRowId)
   await tx.flooringImportStagedInventoryRow.updateMany({
     where: {
       id: { in: sourceStagedRowIds },

@@ -296,7 +296,7 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
 
   it("rejects a modified staged row with an invalid form (refKind=id)", async () => {
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "row-1", status: "DRAFT", isImported: false },
+      { id: "row-1", status: "DRAFT" },
     ])
     try {
       await runSave({
@@ -342,7 +342,7 @@ describe("saveImportStagedInventorySectionUseCase — unit clear on modify", () 
 
   it("clears a MODIFIED staged row's unit (unchanged reference path)", async () => {
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "row-1", status: "DRAFT", isImported: false },
+      { id: "row-1", status: "DRAFT" },
     ])
     await runSave({
       importEntryId: IMPORT_ID,
@@ -446,7 +446,7 @@ describe("saveImportStagedInventorySectionUseCase — diff validators", () => {
 
   it("surfaces SECTION_ROW_DIFF_VALIDATION_FAILED when a modified staged row is not DRAFT", async () => {
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "row-1", status: "QUEUED", isImported: true },
+      { id: "row-1", status: "QUEUED" },
     ])
 
     try {
@@ -505,10 +505,11 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
     expect(addedRow.tempId).toBe("tmp-row")
     expect(addedRow.input).toMatchObject({
       productId: "product-new",
-      warehouseId: WAREHOUSE_ID,
       unitId: null,
       startingStock: "7",
     })
+    // Warehouse is parent-owned now — the staged row carries no warehouseId.
+    expect(addedRow.input).not.toHaveProperty("warehouseId")
     // The staged row no longer carries a filter-row link.
     expect(addedRow.input).not.toHaveProperty("filterRowId")
   })
@@ -615,7 +616,7 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
 
   it("normalizes empty form strings to null on modified staged rows", async () => {
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "row-1", status: "DRAFT", isImported: false },
+      { id: "row-1", status: "DRAFT" },
     ])
 
     await runSave({
@@ -681,7 +682,7 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
       { id: "filter-old", productId: "p", categoryFilterId: "c" },
     ])
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "row-old", status: "DRAFT", isImported: false },
+      { id: "row-old", status: "DRAFT" },
     ])
 
     await runSave({

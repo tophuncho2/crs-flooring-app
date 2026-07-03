@@ -4,18 +4,18 @@ import { Copy } from "lucide-react"
 import { CellActionButton } from "@/engines/common"
 
 export type StagedRowDuplicateButtonProps = {
-  isDraft: boolean
+  isEditable: boolean
   isSectionBusy: boolean
   onClick: () => void
 }
 
-/** Gutter duplicate for a staged-inventory row (DRAFT only) — common neutral preset. */
+/** Gutter duplicate for a staged-inventory row (any state except QUEUED) — common neutral preset. */
 export function StagedRowDuplicateButton({
-  isDraft,
+  isEditable,
   isSectionBusy,
   onClick,
 }: StagedRowDuplicateButtonProps) {
-  const enabled = isDraft && !isSectionBusy
+  const enabled = isEditable && !isSectionBusy
   return (
     <CellActionButton
       onClick={onClick}
@@ -23,7 +23,7 @@ export function StagedRowDuplicateButton({
       tone="neutral"
       icon={<Copy size={14} aria-hidden="true" />}
       ariaLabel="Duplicate staged row"
-      title={isDraft ? "Duplicate this row" : "Only draft rows can be duplicated"}
+      title={isEditable ? "Duplicate this row" : "Queued rows can't be duplicated"}
     />
   )
 }

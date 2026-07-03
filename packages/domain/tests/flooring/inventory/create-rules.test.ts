@@ -91,9 +91,8 @@ describe("buildCreatedInventoryInsert", () => {
   it("stamps the unit FK, applies edits, and drops all import provenance", () => {
     const fields = buildCreatedInventoryInsert(edits())
 
-    // No import / staged-row provenance for a manual create.
+    // No import provenance for a manual create.
     expect(fields.importEntryId).toBeNull()
-    expect(fields.sourceStagedRowId).toBeNull()
 
     // Unit FK from the form (seeded from the product, overridable).
     expect(fields.productId).toBe("p-1")

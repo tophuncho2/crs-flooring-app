@@ -57,10 +57,12 @@ export async function materializeImportedStagedRowsUseCase(
     }
 
     const inventoryRowsToCreate: Array<
-      MaterializeInventoryRowFields & { id: string; sourceStagedRowId: string }
+      MaterializeInventoryRowFields & { id: string; stagedRowId: string }
     > = loadedRows.map((row) => ({
       id: randomUUID(),
-      sourceStagedRowId: row.id,
+      // Correlation-only handle for the QUEUED->IMPORTED status flip (the
+      // inventory->staged FK was severed; nothing is written back).
+      stagedRowId: row.id,
       importEntryId: payload.importEntryId,
       productId: row.productId,
       // Non-null: the `rowsMissingUnit` guard above rejects the batch otherwise.
@@ -70,7 +72,9 @@ export async function materializeImportedStagedRowsUseCase(
       dyeLot: row.dyeLot,
       note: row.note,
       internalNotes: null,
-      warehouseId: row.warehouseId,
+      // Warehouse is parent-owned — sourced from the import entry, not the
+      // staged row (which no longer stores its own warehouseId).
+      warehouseId: row.importEntry.warehouseId,
       location: row.location,
       startingStock: row.startingStock.toString(),
       cost: row.cost,

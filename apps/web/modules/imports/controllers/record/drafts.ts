@@ -105,7 +105,7 @@ export type StagedRowProductSeed = {
  * engine later maps to a server uuid via the diff response's `rowTempIdMap`.
  *
  * `productId` is the row's own product (staged rows attach to the import, not
- * a filter row); it + the read-only snapshots (status, isImported, productName,
+ * a filter row); it + the read-only snapshots (status, productName,
  * rollPrefix, unitAbbrev) are carried so the grid renders without a join.
  * Only the 7 user-editable fields participate in the diff payload.
  */
@@ -124,7 +124,6 @@ export type ImportStagedRowDraft = {
   // Carried snapshots — productId is sent on create; the rest are display-only.
   productId: string
   status: FlooringStagedRowStatus
-  isImported: boolean
   productName: string
   rollPrefix: string
   unitName: string
@@ -144,7 +143,6 @@ export function toImportStagedRowDraft(row: StagedInventoryRow): ImportStagedRow
     note: row.note,
     productId: row.productId,
     status: row.status,
-    isImported: row.isImported,
     productName: row.productName,
     rollPrefix: row.rollPrefix,
     unitName: row.unitName,
@@ -167,7 +165,6 @@ export function createImportStagedRowDraft(
     note: "",
     productId: seed.productId,
     status: "DRAFT",
-    isImported: false,
     productName: seed.productName,
     rollPrefix: "ROLL#",
     unitName: seed.unitName,
@@ -190,7 +187,6 @@ export function duplicateImportStagedRowDraft(
     note: source.note,
     productId: source.productId,
     status: "DRAFT",
-    isImported: false,
     productName: source.productName,
     rollPrefix: source.rollPrefix,
     unitName: source.unitName,

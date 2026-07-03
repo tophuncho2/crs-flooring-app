@@ -29,7 +29,6 @@ describe("isWarehouseNameConflict", () => {
 const NO_DEPENDENTS = {
   inventoriesCount: 0,
   importsCount: 0,
-  stagedInventoryRowsCount: 0,
   inventoryAdjustmentsCount: 0,
   workOrdersCount: 0,
   templatesCount: 0,
@@ -39,7 +38,6 @@ describe("isWarehouseDeleteBlocked", () => {
   it.each([
     ["inventory", { ...NO_DEPENDENTS, inventoriesCount: 1 }],
     ["imports", { ...NO_DEPENDENTS, importsCount: 1 }],
-    ["staged inventory rows", { ...NO_DEPENDENTS, stagedInventoryRowsCount: 1 }],
     ["adjustments", { ...NO_DEPENDENTS, inventoryAdjustmentsCount: 1 }],
     ["work orders", { ...NO_DEPENDENTS, workOrdersCount: 1 }],
     ["templates", { ...NO_DEPENDENTS, templatesCount: 1 }],

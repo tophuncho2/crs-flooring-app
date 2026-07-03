@@ -64,7 +64,6 @@ function readyStagedRow(overrides: Record<string, unknown> = {}) {
     location: "",
     startingStock: "5",
     status: "DRAFT" as const,
-    isImported: false,
     note: "",
     createdAt: "2026-05-22T00:00:00.000Z",
     updatedAt: "2026-05-22T00:00:00.000Z",
@@ -241,23 +240,16 @@ describe("markStagedRowsForImportUseCase", () => {
 
     it("rejects a batch containing an IMPORTED row", async () => {
       listStagedInventoryByImportMock.mockResolvedValue([
-        readyStagedRow({ id: ROW_ID_A, status: "IMPORTED", isImported: true }),
+        readyStagedRow({ id: ROW_ID_A, status: "IMPORTED" }),
       ])
       await expect(
         markStagedRowsForImportUseCase(IMPORT_ID, [ROW_ID_A], REQUESTED_BY),
       ).rejects.toMatchObject({ code: "STAGED_BATCH_INELIGIBLE" })
     })
 
-    it("rejects a batch with a row missing productId, warehouseId, or startingStock", async () => {
+    it("rejects a batch with a row missing productId or startingStock", async () => {
       listStagedInventoryByImportMock.mockResolvedValue([
         readyStagedRow({ id: ROW_ID_A, productId: "" }),
-      ])
-      await expect(
-        markStagedRowsForImportUseCase(IMPORT_ID, [ROW_ID_A], REQUESTED_BY),
-      ).rejects.toMatchObject({ code: "STAGED_BATCH_INELIGIBLE" })
-
-      listStagedInventoryByImportMock.mockResolvedValue([
-        readyStagedRow({ id: ROW_ID_A, warehouseId: "" }),
       ])
       await expect(
         markStagedRowsForImportUseCase(IMPORT_ID, [ROW_ID_A], REQUESTED_BY),

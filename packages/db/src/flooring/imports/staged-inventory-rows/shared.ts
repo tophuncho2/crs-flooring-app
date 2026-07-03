@@ -9,6 +9,11 @@ export const stagedInventoryRowSelect = {
     select: {
       id: true,
       importNumber: true,
+      // Warehouse is parent-owned: the staged row no longer stores its own
+      // warehouseId, so display + materialize source it from the import entry
+      // (non-null, frozen-while-children-exist).
+      warehouseId: true,
+      warehouse: { select: { id: true, name: true } },
     },
   },
   productId: true,
@@ -37,13 +42,10 @@ export const stagedInventoryRowSelect = {
   rollPrefix: true,
   rollNumber: true,
   dyeLot: true,
-  warehouseId: true,
-  warehouse: { select: { id: true, name: true } },
   location: true,
   startingStock: true,
   cost: true,
   freight: true,
-  isImported: true,
   status: true,
   note: true,
   createdAt: true,

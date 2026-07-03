@@ -3,24 +3,24 @@
 import { RecordDeleteButton } from "@/engines/common"
 
 export type StagedRowRemoveButtonProps = {
-  isDraft: boolean
+  isEditable: boolean
   isSectionBusy: boolean
   onClick: () => void
 }
 
-/** Gutter delete for a staged-inventory row (DRAFT only) — common destructive preset. */
+/** Gutter delete for a staged-inventory row (any state except QUEUED) — common destructive preset. */
 export function StagedRowRemoveButton({
-  isDraft,
+  isEditable,
   isSectionBusy,
   onClick,
 }: StagedRowRemoveButtonProps) {
-  const enabled = isDraft && !isSectionBusy
+  const enabled = isEditable && !isSectionBusy
   return (
     <RecordDeleteButton
       onClick={onClick}
       disabled={!enabled}
       ariaLabel="Delete staged row"
-      title={isDraft ? "Delete this row" : "Only draft rows can be deleted"}
+      title={isEditable ? "Delete this row" : "Queued rows can't be deleted"}
     />
   )
 }

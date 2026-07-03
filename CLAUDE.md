@@ -13,7 +13,7 @@ Next.js app-router, Prisma (migrations), zod payloads, outbox/relay pattern. Dep
 - **Domain** — Predecates, message builders, types, zod schema payload, business logic
 - **Data** — persisting data, read repository, write repository, helpers and normalizers
 - **Application** — orchestration of use cases, imports domain rules, initiates outbox events, called on by an api route, opens transactions, decides which rows to lock, each use case has its own file, use cases do not import other use cases
-- **Outbox / relay / worker** (when applicable) - The only worker job is to take rows from imports staged inventory and create inventory rows. Max row count per run is 1000.
+- **Outbox / relay / worker** (when applicable) - The only worker job is to take rows from imports staged inventory and create inventory rows. One batch = one job (no per-run cap in the worker); the 1000-row limit is enforced upstream at mark-for-import (`MAX_MARK_FOR_IMPORT_ROWS`).
 - **API** — Imports the cananicol gaunlet of rate limiting, auth, idempotency, telemetry, and calls the db and use-cases
 - **Module directory** — controllers/ and components/ are imported from either modules/shared or web/ directories such as components/ controllers/ ect.
 - **`apps/web/app/dashboard` pages** — Pages import from the module directory

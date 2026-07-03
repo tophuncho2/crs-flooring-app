@@ -310,7 +310,6 @@ export async function getWarehouseDeleteState(
         select: {
           inventories: true,
           imports: true,
-          stagedInventoryRows: true,
           inventoryAdjustments: true,
           workOrders: true,
           templates: true,
@@ -322,7 +321,6 @@ export async function getWarehouseDeleteState(
   return {
     inventoriesCount: row._count.inventories,
     importsCount: row._count.imports,
-    stagedInventoryRowsCount: row._count.stagedInventoryRows,
     inventoryAdjustmentsCount: row._count.inventoryAdjustments,
     workOrdersCount: row._count.workOrders,
     templatesCount: row._count.templates,

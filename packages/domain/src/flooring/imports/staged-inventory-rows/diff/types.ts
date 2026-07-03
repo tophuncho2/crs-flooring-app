@@ -25,7 +25,6 @@ export type StagedInventoryRowsDiff = {
 export type DiffExistingStagedInventoryRow = {
   id: string
   status: FlooringStagedRowStatus
-  isImported: boolean
 }
 
 export type StagedInventoryRowDiffValidationIssue =

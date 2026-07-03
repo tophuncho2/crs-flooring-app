@@ -1,7 +1,6 @@
 export type WarehouseDependentCounts = {
   inventoriesCount: number
   importsCount: number
-  stagedInventoryRowsCount: number
   inventoryAdjustmentsCount: number
   workOrdersCount: number
   templatesCount: number
@@ -21,7 +20,6 @@ export type WarehouseStats = {
 const WAREHOUSE_DEPENDENT_LABELS: ReadonlyArray<[keyof WarehouseDependentCounts, string]> = [
   ["inventoriesCount", "inventory"],
   ["importsCount", "imports"],
-  ["stagedInventoryRowsCount", "staged inventory rows"],
   ["inventoryAdjustmentsCount", "adjustments"],
   ["workOrdersCount", "work orders"],
   ["templatesCount", "templates"],

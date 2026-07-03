@@ -13,7 +13,7 @@ export function validateStagedImportBatch(
   rows: ReadonlyArray<
     Pick<
       StagedInventoryRow,
-      "id" | "status" | "isImported" | "productId" | "unitId" | "warehouseId" | "startingStock"
+      "id" | "status" | "productId" | "unitId" | "startingStock"
     >
   >,
 ): StagedImportBatchValidationIssue[] {
@@ -33,10 +33,8 @@ export function validateStagedImportBatch(
 const STAGED_IMPORTABILITY_REASON_LABEL: Record<StagedImportabilityReason, string> = {
   MISSING_UNIT: "with no unit of measure",
   MISSING_PRODUCT: "with no product",
-  MISSING_WAREHOUSE: "with no warehouse",
   ZERO_STARTING_STOCK: "with no starting stock",
   ALREADY_QUEUED: "already queued for import",
-  ALREADY_IMPORTED: "already imported",
   NOT_DRAFT_STATUS: "already imported",
 }
 
@@ -47,7 +45,7 @@ export function buildStagedImportBatchIneligibleMessage(
     return "All staged rows are ready for import."
   }
   // Tally by resolved label (first-seen order) so reasons that share a label
-  // — e.g. the two "already imported" reasons — collapse into one clause.
+  // collapse into one clause.
   const countByLabel = new Map<string, number>()
   for (const issue of issues) {
     const label = STAGED_IMPORTABILITY_REASON_LABEL[issue.reason]

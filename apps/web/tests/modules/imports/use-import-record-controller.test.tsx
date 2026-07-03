@@ -85,7 +85,6 @@ function makeStaged(
     cost: "1.00",
     freight: "0.00",
     status,
-    isImported: status === "IMPORTED",
     note: "",
     createdAt: "2026-06-24T00:00:00.000Z",
     updatedAt: "2026-06-24T00:00:00.000Z",

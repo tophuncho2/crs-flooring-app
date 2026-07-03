@@ -11,16 +11,15 @@ import {
  * snapshots before invoking:
  *  - `productId` from the draft, with `unitId` seeded from that FlooringProduct
  *    on create (UoM epic 2B — replaces the frozen `stockUnit*` label snapshots).
- *  - `warehouseId` from the parent import.
  *  - `rollPrefix` defaults server-side to "ROLL#".
  *
+ * Warehouse is parent-owned (the import entry's) — no longer stored per row.
  * `unitId` is user-editable on the per-row update path (see
- * `UpdateStagedInventoryRecordInput`); product / warehouse are not.
+ * `UpdateStagedInventoryRecordInput`); product is not.
  */
 export type CreateStagedInventoryRecordInput = {
   importEntryId: string
   productId: string
-  warehouseId: string
   unitId: string | null
   rollNumber: string | null
   dyeLot: string | null
@@ -33,11 +32,8 @@ export type CreateStagedInventoryRecordInput = {
 
 /**
  * Update input for a staged inventory row. Only user-editable fields appear
- * here; productId / warehouseId are immutable after create. `unitId` is now
- * editable (UoM epic 2B) — "" / null disconnects the unit. `isImported` flips
- * exclusively via the mark-for-import path (see `markStagedRowsForImport`)
- * — accepted here only for the legacy materialize backfill path until
- * that retires.
+ * here; productId is immutable after create. `unitId` is now editable
+ * (UoM epic 2B) — "" / null disconnects the unit.
  */
 export type UpdateStagedInventoryRecordInput = {
   unitId?: string | null
@@ -48,7 +44,6 @@ export type UpdateStagedInventoryRecordInput = {
   cost?: Prisma.Decimal | string | number | null
   freight?: Prisma.Decimal | string | number | null
   note?: string | null
-  isImported?: boolean
 }
 
 export async function createStagedInventoryRecord(
@@ -59,7 +54,6 @@ export async function createStagedInventoryRecord(
     data: {
       importEntry: { connect: { id: input.importEntryId } },
       product: { connect: { id: input.productId } },
-      warehouse: { connect: { id: input.warehouseId } },
       ...(input.unitId ? { unit: { connect: { id: input.unitId } } } : {}),
       rollNumber: input.rollNumber,
       dyeLot: input.dyeLot,
@@ -95,7 +89,6 @@ function buildUpdateData(
   if (input.cost !== undefined) data.cost = input.cost
   if (input.freight !== undefined) data.freight = input.freight
   if (input.note !== undefined) data.note = input.note
-  if (input.isImported !== undefined) data.isImported = input.isImported
   return data
 }
 
@@ -129,8 +122,8 @@ export async function deleteStagedInventoryRecordById(
 // --- Mark-for-import primitive ---
 
 /**
- * Transactional primitive: flips a batch of staged rows from
- * (status="DRAFT", isImported=false) to (status="QUEUED", isImported=true).
+ * Transactional primitive: flips a batch of staged rows from status="DRAFT"
+ * to status="QUEUED".
  *
  * Caller contract (application layer):
  *  - Opens the transaction via `withDatabaseTransaction` and locks the parent
@@ -170,7 +163,6 @@ export async function markStagedRowsForImport(
       id: { in: input.stagedRowIds },
       importEntryId: input.importEntryId,
       status: "DRAFT",
-      isImported: false,
     },
     select: { id: true },
   })
@@ -183,9 +175,8 @@ export async function markStagedRowsForImport(
         id: { in: Array.from(eligibleIds) },
         importEntryId: input.importEntryId,
         status: "DRAFT",
-        isImported: false,
       },
-      data: { status: "QUEUED", isImported: true },
+      data: { status: "QUEUED" },
     })
   }
 

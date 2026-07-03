@@ -52,7 +52,6 @@ function loadedRow(overrides: Record<string, unknown> = {}) {
     // The staged row's OWN unit FK (UoM epic 2B) — the worker materializes this
     // forward verbatim.
     unitId: "unit-staged-1",
-    warehouseId: "wh-staged-snapshot",
     rollPrefix: "ROLL#",
     rollNumber: "A-001",
     dyeLot: "lot-1",
@@ -60,7 +59,7 @@ function loadedRow(overrides: Record<string, unknown> = {}) {
     startingStock: { toString: () => "12.50" },
     note: "test note",
     status: "QUEUED" as const,
-    isImported: true,
+    // Warehouse is parent-owned — sourced from the import entry, not the row.
     importEntry: {
       id: IMPORT_ID,
       importNumber: 42,
@@ -203,8 +202,11 @@ describe("materializeImportedStagedRowsUseCase", () => {
       expect(created.startingStock).toBe("12.50")
       // internalNotes always null (user-only column, never seeded by worker).
       expect(created.internalNotes).toBeNull()
-      // sourceStagedRowId points back to the staged row.
-      expect(created.sourceStagedRowId).toBe(ROW_ID_A)
+      // Warehouse sourced from the parent import entry (parent-owned).
+      expect(created.warehouseId).toBe("wh-import")
+      // stagedRowId is a correlation-only handle (NOT a stored column) pointing
+      // back to the staged row it flips to IMPORTED.
+      expect(created.stagedRowId).toBe(ROW_ID_A)
       // id is a UUID assigned by the use case.
       expect(typeof created.id).toBe("string")
       expect(created.id).not.toBe(ROW_ID_A)
@@ -232,19 +234,18 @@ describe("materializeImportedStagedRowsUseCase", () => {
       expect(created.updatedBy).toBe("user@example.com")
     })
 
-    it("PINS warehouseId.immutable: copies warehouseId from STAGED ROW, not from import entry", async () => {
-      // The staged row carries its own warehouseId snapshot (set at create
-      // time from the parent import). The worker must use THAT, not the
-      // import entry's current warehouseId, since the import's warehouse
-      // can be updated after staged rows are created.
+    it("PINS warehouse sourcing: copies warehouseId from the PARENT import entry, not the staged row", async () => {
+      // The staged row no longer stores its own warehouseId — warehouse is
+      // parent-owned. The worker stamps the import entry's warehouseId onto the
+      // new inventory row. (Immutability is enforced upstream by the import's
+      // freeze-while-children-exist lock, not a per-row snapshot.)
       listStagedInventoryForMaterializationMock.mockResolvedValue([
         loadedRow({
-          warehouseId: "wh-staged-original",
           importEntry: {
             id: IMPORT_ID,
             importNumber: 42,
             purchaseOrderNumber: "PO",
-            warehouseId: "wh-import-changed-later",
+            warehouseId: "wh-from-parent-import",
           },
         }),
       ])
@@ -258,7 +259,7 @@ describe("materializeImportedStagedRowsUseCase", () => {
       const created = (materializeStagedRowsToInventoryMock.mock.calls[0]?.[1] as {
         inventoryRowsToCreate: Array<Record<string, unknown>>
       }).inventoryRowsToCreate[0]!
-      expect(created.warehouseId).toBe("wh-staged-original")
+      expect(created.warehouseId).toBe("wh-from-parent-import")
     })
 
     it("assigns a unique id to each created inventory row in a batch", async () => {
@@ -281,8 +282,8 @@ describe("materializeImportedStagedRowsUseCase", () => {
       }).inventoryRowsToCreate
       expect(createdRows).toHaveLength(2)
       expect(createdRows[0]!.id).not.toBe(createdRows[1]!.id)
-      expect(createdRows[0]!.sourceStagedRowId).toBe(ROW_ID_A)
-      expect(createdRows[1]!.sourceStagedRowId).toBe(ROW_ID_B)
+      expect(createdRows[0]!.stagedRowId).toBe(ROW_ID_A)
+      expect(createdRows[1]!.stagedRowId).toBe(ROW_ID_B)
     })
   })
 

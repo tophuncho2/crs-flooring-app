@@ -30,7 +30,6 @@ beforeEach(() => {
 const NO_DEPENDENTS = {
   inventoriesCount: 0,
   importsCount: 0,
-  stagedInventoryRowsCount: 0,
   inventoryAdjustmentsCount: 0,
   workOrdersCount: 0,
   templatesCount: 0,

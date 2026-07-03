@@ -37,14 +37,15 @@ export function normalizeStagedInventoryRow(
     rollPrefix: row.rollPrefix,
     rollNumber: row.rollNumber ?? "",
     dyeLot: row.dyeLot ?? "",
-    warehouseId: row.warehouseId,
-    warehouseName: row.warehouse.name,
+    // Warehouse is parent-owned — sourced from the import entry, not a stored
+    // staged-row column.
+    warehouseId: row.importEntry.warehouseId,
+    warehouseName: row.importEntry.warehouse.name,
     location: row.location ?? "",
     startingStock: toDecimalString(row.startingStock),
     cost: toDecimalString(row.cost),
     freight: toDecimalString(row.freight),
     status: row.status,
-    isImported: row.isImported,
     note: row.note ?? "",
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

@@ -32,7 +32,6 @@ export type CreateInventoryEdits = {
 
 export type CreatedInventoryInsertFields = {
   importEntryId: null
-  sourceStagedRowId: null
   productId: string
   unitId: string
   rollPrefix: string
@@ -152,7 +151,6 @@ export function buildCreatedInventoryInsert(
 ): CreatedInventoryInsertFields {
   return {
     importEntryId: null,
-    sourceStagedRowId: null,
     productId: edits.productId,
     unitId: edits.unitId.trim(),
     rollPrefix: DEFAULT_ROLL_PREFIX,

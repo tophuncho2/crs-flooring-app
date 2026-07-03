@@ -169,8 +169,8 @@ function buildGroups(
 
 /**
  * "Staged Inventory" view: the staged rows grouped by product into stacked
- * blocks. Each block is an editable DataTable (DRAFT rows editable; QUEUED /
- * IMPORTED read-only) closed under a per-product header that shows the planned
+ * blocks. Each block is an editable DataTable (rows editable in any state except
+ * QUEUED — QUEUED is locked mid-import) closed under a per-product header that shows the planned
  * "Requested" + live "Remaining" and a "+" to add a row seeded with the group's
  * product. The mark-for-import checkbox column rides alongside the editable
  * cells + the duplicate/delete gutter.
@@ -192,7 +192,7 @@ export function ImportStagedInventoryGrid({
 
   function renderCell(column: { key: string }, gridRow: StagedGridRow) {
     const status = effectiveStatus(gridRow)
-    const editable = status === "DRAFT" && !isSectionBusy
+    const editable = status !== "QUEUED" && !isSectionBusy
     switch (column.key) {
       case "status":
         return <StatusBadge tone={statusTone(status)}>{statusLabel(status)}</StatusBadge>
@@ -341,16 +341,16 @@ export function ImportStagedInventoryGrid({
                 }}
                 getRowAriaLabel={(row) => `Select staged row ${row.rollNumber || row.clientId}`}
                 rowActions={(row) => {
-                  const isDraft = effectiveStatus(row) === "DRAFT"
+                  const isEditable = effectiveStatus(row) !== "QUEUED"
                   return (
                     <>
                       <StagedRowDuplicateButton
-                        isDraft={isDraft}
+                        isEditable={isEditable}
                         isSectionBusy={isSectionBusy}
                         onClick={() => section.duplicateStagedRowDraft(row.clientId)}
                       />
                       <StagedRowRemoveButton
-                        isDraft={isDraft}
+                        isEditable={isEditable}
                         isSectionBusy={isSectionBusy}
                         onClick={() => section.removeStagedRowDraft(row.clientId)}
                       />

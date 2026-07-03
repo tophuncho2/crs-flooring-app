@@ -314,12 +314,10 @@ export async function getInventoryDeleteState(
 ): Promise<{
   hasInventoryAdjustments: boolean
   inventoryAdjustmentsCount: number
-  sourceStagedRowId: string | null
 } | null> {
   const row = await client.flooringInventory.findUnique({
     where: { id },
     select: {
-      sourceStagedRowId: true,
       _count: { select: { inventoryAdjustments: true } },
     },
   })
@@ -328,7 +326,6 @@ export async function getInventoryDeleteState(
   return {
     hasInventoryAdjustments: inventoryAdjustmentsCount > 0,
     inventoryAdjustmentsCount,
-    sourceStagedRowId: row.sourceStagedRowId,
   }
 }
 
