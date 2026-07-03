@@ -653,7 +653,9 @@ export type InventoryPurchaseOrderSearchResult = {
  * has been dropped. Global (not warehouse-scoped) and archive-agnostic — every
  * distinct linked PO# is selectable regardless of the Status chip. PO# is
  * nullable on the entry too, so NULL/whitespace-only values are still excluded.
- * Optional ILIKE on the search term. Sorted ASC, deduped at the SQL layer.
+ * Optional ILIKE on the search term. Sorted by the newest linked import entry
+ * (`createdAt DESC`, `id` tiebreak); deduped per PO# via `DISTINCT ON`, keeping
+ * the most-recently-created entry as each value's representative.
  */
 export async function searchInventoryPurchaseOrderNumbers(
   args: InventoryPurchaseOrderSearchArgs,
@@ -677,12 +679,16 @@ export async function searchInventoryPurchaseOrderNumbers(
   const rows = await client.$queryRaw<{ purchaseOrderNumber: string }[]>(Prisma.sql`
     SELECT "purchaseOrderNumber"
     FROM (
-      SELECT DISTINCT ie."purchaseOrderNumber" AS "purchaseOrderNumber"
+      SELECT DISTINCT ON (ie."purchaseOrderNumber")
+             ie."purchaseOrderNumber" AS "purchaseOrderNumber",
+             ie."createdAt"           AS "createdAt",
+             ie."id"                  AS "id"
       FROM "flooring_inventory" fi
       JOIN "flooring_import_entry" ie ON fi."importEntryId" = ie."id"
       WHERE ${whereClause}
+      ORDER BY ie."purchaseOrderNumber", ie."createdAt" DESC, ie."id"
     ) AS sub
-    ORDER BY "purchaseOrderNumber" ASC
+    ORDER BY sub."createdAt" DESC, sub."id"
     LIMIT ${args.take + 1} OFFSET ${skip}
   `)
 
@@ -710,9 +716,9 @@ export type InventoryImportNumberSearchResult = {
  * an `Int`) — the inventory snapshot column has been dropped. Global (not
  * warehouse-scoped) and archive-agnostic — every distinct linked import number
  * is selectable regardless of the Status chip. Optional ILIKE matches the
- * number's text form. Ordered numerically on the native Int. Deduped at the SQL
- * layer. The picker contract stays `{ value: string }`, so the Int is
- * stringified out.
+ * number's text form. Ordered by the entry's `createdAt DESC` with `id` tiebreak;
+ * deduped via `DISTINCT ON`. The picker contract stays `{ value: string }`, so
+ * the Int is stringified out.
  */
 export async function searchInventoryImportNumbers(
   args: InventoryImportNumberSearchArgs,
@@ -738,12 +744,16 @@ export async function searchInventoryImportNumbers(
   const rows = await client.$queryRaw<{ importNumber: number }[]>(Prisma.sql`
     SELECT "importNumber"
     FROM (
-      SELECT DISTINCT ie."importNumber" AS "importNumber"
+      SELECT DISTINCT ON (ie."importNumber")
+             ie."importNumber" AS "importNumber",
+             ie."createdAt"    AS "createdAt",
+             ie."id"           AS "id"
       FROM "flooring_inventory" fi
       JOIN "flooring_import_entry" ie ON fi."importEntryId" = ie."id"
       ${whereClause}
+      ORDER BY ie."importNumber", ie."createdAt" DESC, ie."id"
     ) AS sub
-    ORDER BY "importNumber" ASC
+    ORDER BY sub."createdAt" DESC, sub."id"
     LIMIT ${args.take + 1} OFFSET ${skip}
   `)
 
