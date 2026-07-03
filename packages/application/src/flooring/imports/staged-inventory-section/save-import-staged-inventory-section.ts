@@ -236,7 +236,6 @@ export async function saveImportStagedInventorySectionUseCase(
             id: draft.id,
             tempId: draft.tempId,
             input: {
-              categoryFilterId: draft.form.categoryFilterId,
               productId: draft.form.productId,
               // Unit FK is the form's own value; never re-seeded from the product.
               unitId: draft.form.unitId.trim() || null,
@@ -246,7 +245,6 @@ export async function saveImportStagedInventorySectionUseCase(
           modified: input.diff.filters.modified.map((update) => ({
             id: update.id,
             input: {
-              categoryFilterId: update.form.categoryFilterId,
               productId: update.form.productId,
               // The unit is the user's own edit ("" disconnects). No product
               // fallback on modify — the client re-seeds on product change, and

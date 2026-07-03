@@ -39,7 +39,6 @@ type SectionServerValue = {
 
 function toFilterDiffForm(draft: ImportFilterRowDraft) {
   return {
-    categoryFilterId: draft.categoryFilterId,
     productId: draft.productId,
     unitId: draft.unitId,
     stockOrdered: draft.stockOrdered,
@@ -64,7 +63,6 @@ function filterFormIsDirty(
   server: StagedInventoryFilterRow,
 ): boolean {
   return (
-    draft.categoryFilterId !== server.categoryFilterId ||
     draft.productId !== server.productId ||
     draft.unitId !== server.unitId ||
     draft.stockOrdered !== server.stockOrdered

@@ -235,8 +235,10 @@ export function validateImportStagedRowDrafts(
  * `productName` / `unitName` / `unitAbbrev` are display-only labels
  * refreshed when the user picks via ProductPicker; never enter the diff payload
  * and are never persisted (the server writes only the `unitId` FK; reads
- * re-derive the labels from the unit rel). `categoryFilterId` IS persisted —
- * it's a real FK column on the filter row, not UI-only narrowing.
+ * re-derive the labels from the unit rel). `categoryFilterId` is UI-only:
+ * a transient client-side narrowing filter for the product picker, never
+ * sent in the diff and never persisted (the row's product implies its
+ * category; the chip label re-derives from the product on read).
  *
  * A filter row IS a "Planned Import". Staged rows are held separately (flat,
  * keyed by their own productId) and grouped against these at render time.
@@ -276,7 +278,9 @@ export function toImportFilterRowDraft(
 ): ImportFilterRowDraft {
   return {
     clientId: row.id,
-    categoryFilterId: row.categoryFilterId,
+    // Transient narrowing only — starts unset on load; the picker chip label
+    // comes from the server row's product-derived categoryFilterName.
+    categoryFilterId: null,
     productId: row.productId,
     productName: row.productName,
     unitId: row.unitId,
@@ -316,7 +320,6 @@ export function createImportFilterRowDraft(clientId: string): ImportFilterRowDra
 export function validateImportSection(state: ImportSectionLocalState): string {
   for (const [index, draft] of state.filters.entries()) {
     const filterIssues = validateStagedInventoryFilterForm({
-      categoryFilterId: draft.categoryFilterId,
       productId: draft.productId,
       unitId: draft.unitId,
       stockOrdered: draft.stockOrdered,

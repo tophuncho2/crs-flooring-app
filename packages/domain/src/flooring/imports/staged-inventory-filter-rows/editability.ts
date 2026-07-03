@@ -1,5 +1,4 @@
 export const FILTER_USER_EDITABLE_FIELDS = [
-  "categoryFilterId",
   "productId",
   "stockOrdered",
 ] as const

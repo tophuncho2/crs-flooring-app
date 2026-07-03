@@ -13,7 +13,6 @@ import {
  * `WriteWorkOrderMaterialItemCreateInput` — same orchestration shape.
  */
 export type WriteStagedInventoryFilterRecordInput = {
-  categoryFilterId: string | null
   productId: string
   unitId: string | null
   stockOrdered: Prisma.Decimal | string | number | null
@@ -39,9 +38,6 @@ export async function createStagedInventoryFilterRecord(
   const row = await client.flooringImportStagedInventoryFilterRow.create({
     data: {
       importEntry: { connect: { id: importEntryId } },
-      categoryFilter: input.categoryFilterId
-        ? { connect: { id: input.categoryFilterId } }
-        : undefined,
       product: { connect: { id: input.productId } },
       ...(input.unitId ? { unit: { connect: { id: input.unitId } } } : {}),
       stockOrdered: emptyToNullStockOrdered(input.stockOrdered),
@@ -61,9 +57,6 @@ function buildUpdateData(
   input: WriteStagedInventoryFilterRecordInput,
 ): Prisma.FlooringImportStagedInventoryFilterRowUpdateInput {
   return {
-    categoryFilter: input.categoryFilterId
-      ? { connect: { id: input.categoryFilterId } }
-      : { disconnect: true },
     product: { connect: { id: input.productId } },
     unit:
       input.unitId && input.unitId.trim() !== ""

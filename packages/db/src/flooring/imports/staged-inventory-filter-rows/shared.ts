@@ -6,8 +6,6 @@ export const stagedInventoryFilterRowSelect = {
   id: true,
   importEntryId: true,
   importEntry: { select: { id: true, importNumber: true } },
-  categoryFilterId: true,
-  categoryFilter: { select: { id: true, slug: true, name: true } },
   productId: true,
   product: {
     select: {
@@ -19,7 +17,7 @@ export const stagedInventoryFilterRowSelect = {
       // row's `unitId` on add / product-change.
       unitId: true,
       unit: { select: { name: true, abbreviation: true } },
-      category: { select: { id: true } },
+      category: { select: { id: true, name: true } },
     },
   },
   stockOrdered: true,

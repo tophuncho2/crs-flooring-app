@@ -72,25 +72,6 @@ function findUnknownProducts(
   return issues
 }
 
-function findLockedCategoryFilterChanges(
-  diff: StagedInventoryFiltersDiff,
-  existing: DiffExistingStagedInventoryFilterRow[],
-): StagedInventoryFilterDiffValidationIssue[] {
-  const issues: StagedInventoryFilterDiffValidationIssue[] = []
-  const existingById = new Map(existing.map((row) => [row.id, row]))
-  for (const update of diff.modified) {
-    const row = existingById.get(update.id)
-    if (!row) continue
-    if (update.form.categoryFilterId !== row.categoryFilterId) {
-      issues.push({
-        code: "FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE",
-        rowId: update.id,
-      })
-    }
-  }
-  return issues
-}
-
 export type StagedInventoryFilterDiffResolution = {
   existing: DiffExistingStagedInventoryFilterRow[]
   knownProductIds: string[]
@@ -102,8 +83,5 @@ export function validateStagedInventoryFiltersDiff(
 ): StagedInventoryFilterDiffValidationIssue[] {
   const knownProductIds = new Set(resolution.knownProductIds)
   const projected = projectPostDiffRows(diff, resolution.existing)
-  return [
-    ...findUnknownProducts(projected, knownProductIds),
-    ...findLockedCategoryFilterChanges(diff, resolution.existing),
-  ]
+  return findUnknownProducts(projected, knownProductIds)
 }

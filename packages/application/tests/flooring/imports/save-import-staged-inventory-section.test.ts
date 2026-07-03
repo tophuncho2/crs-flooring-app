@@ -56,7 +56,6 @@ function runSave(input: SaveImportStagedInventorySectionInput) {
 }
 
 type FilterForm = {
-  categoryFilterId: string | null
   productId: string
   unitId: string
   stockOrdered: string
@@ -74,7 +73,6 @@ type RowForm = {
 
 function filterForm(overrides: Partial<FilterForm> = {}): FilterForm {
   return {
-    categoryFilterId: "cat-1",
     productId: "product-1",
     unitId: "unit-1",
     stockOrdered: "10",
@@ -244,7 +242,7 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
 
   it("rejects a modified filter row with an invalid form (refKind=id)", async () => {
     listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1" },
+      { id: "filter-1", productId: "product-1" },
     ])
     try {
       await runSave({
@@ -322,7 +320,7 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
 describe("saveImportStagedInventorySectionUseCase — unit clear on modify", () => {
   it("clears a MODIFIED filter row's unit (no product re-seed)", async () => {
     listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1" },
+      { id: "filter-1", productId: "product-1" },
     ])
     await runSave({
       importEntryId: IMPORT_ID,
@@ -388,7 +386,7 @@ describe("saveImportStagedInventorySectionUseCase — product batch-fetch", () =
     // duplicate-product rule was removed), so the batch-fetch must still
     // collapse repeats: product-shared in both added + modified is fetched once.
     listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-existing", productId: "product-x", categoryFilterId: "cat-1" },
+      { id: "filter-existing", productId: "product-x" },
     ])
     getProductByIdMock.mockResolvedValue(fakeProduct({ id: "product-shared" }))
 
@@ -411,12 +409,16 @@ describe("saveImportStagedInventorySectionUseCase — product batch-fetch", () =
 })
 
 describe("saveImportStagedInventorySectionUseCase — diff validators", () => {
-  it("surfaces SECTION_FILTER_DIFF_VALIDATION_FAILED when domain filters validator returns issues", async () => {
-    // Force the category-filter-locked check by modifying a saved row's
-    // categoryFilterId (immutable after create).
+  it("surfaces SECTION_FILTER_VALIDATION_FAILED when a modified filter's product no longer exists", async () => {
+    // A modified filter referencing a product that does not resolve is caught by
+    // the product-existence guard (the sole reachable filter guard now that the
+    // category-filter FK — and its immutability rule — has been dropped).
     listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1", categoryFilterId: "cat-1" },
+      { id: "filter-1", productId: "product-1" },
     ])
+    getProductByIdMock.mockImplementation(async (id: string) =>
+      id === "ghost-product" ? null : fakeProduct({ id }),
+    )
 
     try {
       await runSave({
@@ -427,7 +429,7 @@ describe("saveImportStagedInventorySectionUseCase — diff validators", () => {
             modified: [
               {
                 id: "filter-1",
-                form: filterForm({ categoryFilterId: "cat-other" }),
+                form: filterForm({ productId: "ghost-product" }),
               },
             ],
             deleted: [],
@@ -438,7 +440,7 @@ describe("saveImportStagedInventorySectionUseCase — diff validators", () => {
       expect.fail("expected throw")
     } catch (error) {
       if (!(error instanceof ImportStagedInventorySectionExecutionError)) throw error
-      expect(error.code).toBe("SECTION_FILTER_DIFF_VALIDATION_FAILED")
+      expect(error.code).toBe("SECTION_FILTER_VALIDATION_FAILED")
       expect(error.status).toBe(400)
     }
     expect(applyImportStagedInventorySectionDiffMock).not.toHaveBeenCalled()
@@ -679,7 +681,7 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
 
   it("passes deletes through unchanged for both slices", async () => {
     listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-old", productId: "p", categoryFilterId: "c" },
+      { id: "filter-old", productId: "p" },
     ])
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
       { id: "row-old", status: "DRAFT" },

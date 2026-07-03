@@ -5,10 +5,10 @@ import type {
   StagedInventoryFiltersDiff,
 } from "../../../../../src/flooring/imports/staged-inventory-filter-rows/diff/types.js"
 
-function filterForm(overrides: Partial<{ productId: string; categoryFilterId: string | null; stockOrdered: string }> = {}) {
+function filterForm(overrides: Partial<{ productId: string; unitId: string; stockOrdered: string }> = {}) {
   return {
     productId: "product-1",
-    categoryFilterId: "cat-1",
+    unitId: "unit-1",
     stockOrdered: "10",
     ...overrides,
   }
@@ -20,7 +20,6 @@ function existingFilter(
   return {
     id: "filter-1",
     productId: "product-1",
-    categoryFilterId: "cat-1",
     ...overrides,
   }
 }
@@ -100,24 +99,6 @@ describe("validateStagedInventoryFiltersDiff", () => {
     })
   })
 
-  describe("FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE", () => {
-    it("blocks categoryFilterId change on a modified row (no carve-out)", () => {
-      const diff: StagedInventoryFiltersDiff = {
-        ...emptyDiff(),
-        modified: [
-          { id: "filter-1", form: filterForm({ categoryFilterId: "cat-different" }) },
-        ],
-      }
-      const issues = validateStagedInventoryFiltersDiff(diff, {
-        existing: [existingFilter()],
-        knownProductIds: ["product-1"],
-      })
-      expect(issues).toEqual([
-        { code: "FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE", rowId: "filter-1" },
-      ])
-    })
-  })
-
   describe("happy path + multiple issues", () => {
     it("returns empty array for a clean diff", () => {
       const issues = validateStagedInventoryFiltersDiff(emptyDiff(), {
@@ -131,7 +112,7 @@ describe("validateStagedInventoryFiltersDiff", () => {
       const diff: StagedInventoryFiltersDiff = {
         added: [{ tempId: "t1", form: filterForm({ productId: "ghost" }) }],
         modified: [
-          { id: "filter-1", form: filterForm({ productId: "product-2", categoryFilterId: "cat-other" }) },
+          { id: "filter-1", form: filterForm({ productId: "product-2" }) },
         ],
         deleted: [{ id: "filter-2" }],
       }
@@ -144,7 +125,6 @@ describe("validateStagedInventoryFiltersDiff", () => {
       })
       const codes = new Set(issues.map((i) => i.code))
       expect(codes.has("FILTER_UNKNOWN_PRODUCT")).toBe(true)
-      expect(codes.has("FILTER_CATEGORY_FILTER_LOCKED_AFTER_CREATE")).toBe(true)
     })
   })
 })

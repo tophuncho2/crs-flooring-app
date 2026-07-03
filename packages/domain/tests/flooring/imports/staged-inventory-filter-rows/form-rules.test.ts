@@ -10,8 +10,8 @@ function filterForm(
   overrides: Partial<StagedInventoryFilterForm> = {},
 ): StagedInventoryFilterForm {
   return {
-    categoryFilterId: "cat-1",
     productId: "product-1",
+    unitId: "unit-1",
     stockOrdered: "10",
     ...overrides,
   }

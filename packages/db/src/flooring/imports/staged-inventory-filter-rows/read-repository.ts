@@ -55,9 +55,9 @@ export function normalizeStagedInventoryFilterRow(
   return {
     id: row.id,
     importEntryId: row.importEntryId,
-    categoryFilterId: row.categoryFilterId,
-    categoryFilterName: row.categoryFilter?.name ?? null,
-    categoryFilterSlug: row.categoryFilter?.slug ?? null,
+    // Category chip label derives from the product's own category (product
+    // implies category) — the persisted categoryFilter FK was dropped.
+    categoryFilterName: row.product.category.name,
     productId: row.productId,
     productName: buildFlooringProductDisplayName({
       name: row.product.name,
@@ -110,13 +110,12 @@ export async function getFilterRowById(
 
 /**
  * Slim read used by the application save use case to evaluate diff
- * rules (duplicate-product, category-filter-locked-after-create,
- * unknown-product). Skips the heavy product / category / unit joins.
+ * rules (duplicate-product, unknown-product). Skips the heavy product /
+ * category / unit joins.
  */
 export type FilterRowDiffSummary = {
   id: string
   productId: string
-  categoryFilterId: string | null
 }
 
 export async function listFilterRowDiffSummariesByImport(
@@ -128,12 +127,10 @@ export async function listFilterRowDiffSummariesByImport(
     select: {
       id: true,
       productId: true,
-      categoryFilterId: true,
     },
   })
   return rows.map((row) => ({
     id: row.id,
     productId: row.productId,
-    categoryFilterId: row.categoryFilterId,
   }))
 }

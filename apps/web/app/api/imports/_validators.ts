@@ -207,7 +207,6 @@ function requireFilterArray(value: unknown, path: string): unknown[] {
 function shapeFilterForm(raw: unknown, path: string): StagedInventoryFilterForm {
   const form = requireFilterObject(raw, path)
   return {
-    categoryFilterId: nullableFilterString(form.categoryFilterId, `${path}.categoryFilterId`),
     productId: requireFilterString(form.productId, `${path}.productId`),
     unitId: nullableFilterString(form.unitId, `${path}.unitId`) ?? "",
     // Stock ordered is optional — accept missing/blank; "" carries "unset"

@@ -96,9 +96,7 @@ function makeFilter(id: string, overrides: Partial<StagedInventoryFilterRow> = {
   return {
     id,
     importEntryId: "imp-1",
-    categoryFilterId: null,
     categoryFilterName: null,
-    categoryFilterSlug: null,
     productId: "prod-1",
     productName: "Product",
     categoryId: "cat-1",

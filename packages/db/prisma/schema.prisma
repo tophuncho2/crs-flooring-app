@@ -220,7 +220,6 @@ model FlooringCategory {
   slug               String                 @unique
   name               String                 @unique
   products                  FlooringProduct[]
-  stagedInventoryFilterRows FlooringImportStagedInventoryFilterRow[]
   createdAt                 DateTime                                 @default(now())
   updatedAt                 DateTime                                 @updatedAt
 
@@ -395,8 +394,6 @@ model FlooringImportStagedInventoryFilterRow {
   id                  String                             @id @default(uuid())
   importEntryId       String
   importEntry         FlooringImportEntry                @relation(fields: [importEntryId], references: [id], onDelete: Restrict)
-  categoryFilterId    String?
-  categoryFilter      FlooringCategory?                  @relation(fields: [categoryFilterId], references: [id], onDelete: Restrict)
   productId           String
   product             FlooringProduct                    @relation(fields: [productId], references: [id], onDelete: Restrict)
   // Editable unit FK (UoM epic 2B) — seeded from the product, re-seeded on
@@ -410,7 +407,6 @@ model FlooringImportStagedInventoryFilterRow {
   @@index([importEntryId])
   @@index([productId])
   @@index([unitId])
-  @@index([categoryFilterId])
   @@map("flooring_import_staged_inventory_filter_row")
 }
 

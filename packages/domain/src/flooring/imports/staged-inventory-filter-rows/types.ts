@@ -1,9 +1,9 @@
 export type StagedInventoryFilterRow = {
   id: string
   importEntryId: string
-  categoryFilterId: string | null
+  // Derived from the row's product category at read time (product implies
+  // category). Feeds the picker's category chip label; not persisted.
   categoryFilterName: string | null
-  categoryFilterSlug: string | null
   productId: string
   productName: string
   categoryId: string
@@ -21,14 +21,12 @@ export type StagedInventoryFilterRow = {
 }
 
 export type StagedInventoryFilterForm = {
-  categoryFilterId: string | null
   productId: string
   unitId: string
   stockOrdered: string
 }
 
 export const EMPTY_STAGED_INVENTORY_FILTER_FORM: StagedInventoryFilterForm = {
-  categoryFilterId: null,
   productId: "",
   unitId: "",
   stockOrdered: "",
@@ -38,7 +36,6 @@ export function toStagedInventoryFilterForm(
   row: StagedInventoryFilterRow,
 ): StagedInventoryFilterForm {
   return {
-    categoryFilterId: row.categoryFilterId,
     productId: row.productId,
     unitId: row.unitId,
     stockOrdered: row.stockOrdered,

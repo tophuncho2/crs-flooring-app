@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { NumberCell, isLocalOnlyRecordRow } from "@/engines/record-view"
+import { NumberCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
 import { UnitOfMeasurePicker } from "@/modules/unit-of-measures/components/picker/unit-of-measure-picker"
@@ -41,7 +41,6 @@ export function ImportPlannedImportsGrid({
 
   function renderCell(column: { key: string }, draft: PlannedImportGridRow) {
     const server = serverFilterRowsById.get(draft.clientId)
-    const isNew = isLocalOnlyRecordRow(draft.clientId)
     switch (column.key) {
       case "product":
         return (
@@ -56,8 +55,11 @@ export function ImportPlannedImportsGrid({
             categoryLabel={server?.categoryFilterName ?? null}
             onCategoryChange={(next) => section.setFilterCategoryFilter(draft.clientId, next)}
             productEditable={editable}
-            // Category filter is immutable after the row is saved.
-            categoryEditable={editable && isNew}
+            // Category is transient product-narrowing only (not persisted), so
+            // it's editable whenever the row is; the chip derives from the
+            // picked product (mirrors templates / work-orders material items).
+            categoryEditable={editable}
+            showProductCategory
             ariaLabel="Planned import product"
           />
         )

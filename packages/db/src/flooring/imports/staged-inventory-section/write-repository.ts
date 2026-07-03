@@ -80,9 +80,6 @@ function buildFilterUpdateData(
   input: WriteStagedInventoryFilterRecordInput,
 ): Prisma.FlooringImportStagedInventoryFilterRowUpdateInput {
   return {
-    categoryFilter: input.categoryFilterId
-      ? { connect: { id: input.categoryFilterId } }
-      : { disconnect: true },
     product: { connect: { id: input.productId } },
     unit:
       input.unitId && input.unitId.trim() !== ""
@@ -141,7 +138,6 @@ export async function applyImportStagedInventorySectionDiff(
       data: input.filters.added.map((draft) => ({
         id: draft.id,
         importEntryId: input.importEntryId,
-        categoryFilterId: draft.input.categoryFilterId,
         productId: draft.input.productId,
         unitId: draft.input.unitId,
         stockOrdered: emptyToNullStockOrdered(draft.input.stockOrdered),
