@@ -718,7 +718,6 @@ model FlooringWorkOrderItem {
   workOrder            FlooringWorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   productId            String
   product              FlooringProduct             @relation(fields: [productId], references: [id], onDelete: Restrict)
-  sourceTemplatePlannedProductId String?
   quantity             Decimal?                    @db.Decimal(10, 2)
   unitId               String?
   unit                 FlooringUnitOfMeasure?      @relation("FlooringWorkOrderItemUnit", fields: [unitId], references: [id], onDelete: Restrict)
@@ -731,7 +730,6 @@ model FlooringWorkOrderItem {
   @@index([workOrderId])
   @@index([workOrderId, createdAt])
   @@index([productId])
-  @@index([sourceTemplatePlannedProductId])
   @@index([unitId])
   @@map("flooring_work_order_item")
 }

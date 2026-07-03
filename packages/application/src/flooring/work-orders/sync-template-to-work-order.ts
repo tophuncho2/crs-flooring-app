@@ -90,7 +90,6 @@ export async function syncTemplateToWorkOrderUseCase(
           // (UoM epic 2C) — replaces the frozen sendUnit* copy.
           unitId: item.unitId,
           notes: notesOrNull(item.notes),
-          sourceTemplatePlannedProductId: item.id,
         })),
       },
       c,

@@ -11,7 +11,6 @@ export type WorkOrderMaterialItemRow = {
   unitName: string
   unitAbbrev: string
   notes: string
-  sourceTemplatePlannedProductId: string | null
   createdAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
   // updatedBy on edit). Null on historical rows. Carried on the row but not

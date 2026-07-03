@@ -17,7 +17,6 @@ const workOrderMaterialItemSelect = {
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
   notes: true,
-  sourceTemplatePlannedProductId: true,
   createdAt: true,
   createdBy: true,
   updatedBy: true,
