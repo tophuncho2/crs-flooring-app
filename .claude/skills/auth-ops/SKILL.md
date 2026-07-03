@@ -42,7 +42,7 @@ Before acting, confirm the surface against the code — never from memory. The c
 - `packages/domain/src/management/{invites/invite-rules.ts,users/rank.ts}` — `canInviteRank` (strict `>`), `RANK_ORDER`, `canManageUsers`.
 - `packages/application/src/management/{invites,users}/` — `createInviteUseCase`, `listInvitesUseCase`, `revokeInviteUseCase`, `updateUserRankUseCase`, `setUserActiveUseCase`, `resolveSignupInviteRank`, `markSignupInviteAccepted`.
 - `apps/web/app/api/invites/*` + `apps/web/app/api/users/[id]/{rank,active}/route.ts` — the routes.
-- `packages/db/scripts/owner-recovery.js` (`db:upsert-owner`) + `system-user-seed.js` — passwordless DEVELOPER bootstrap.
+- `packages/db/scripts/owner-recovery.js` (`db:upsert-owner`) — passwordless DEVELOPER bootstrap (sole path).
 
 ## Step 2 — Invite or revoke a user
 
@@ -69,7 +69,7 @@ All three obey the strictly-below rule and require DEVELOPER/TIER_1.
 npm run db:upsert-owner -- otto@crsfloorcovering.com
 ```
 
-`packages/db/scripts/owner-recovery.js` upserts a `User` row at rank `DEVELOPER`, `isActive=true`, `emailVerified=true`. Passwordless — the owner then signs in with Google (account-linking attaches to this row; an existing row bypasses the invite gate). Runs against the worktree `.env`'s `DATABASE_URL` — **confirm the target env first.** `system-user-seed.js` (`npm run db:seed`) is the bootstrap equivalent.
+`packages/db/scripts/owner-recovery.js` upserts a `User` row at rank `DEVELOPER`, `isActive=true`, `emailVerified=true`. Passwordless — the owner then signs in with Google (account-linking attaches to this row; an existing row bypasses the invite gate). Runs against the worktree `.env`'s `DATABASE_URL` — **confirm the target env first.** This is the sole bootstrap path; once an owner exists, everyone else is invited through the UI.
 
 **Delete users (script-only — there is no delete-user UI):** the ad-hoc pattern used this session is a one-off Prisma-client script — `prisma.user.deleteMany({ where: { email: { in: [...] } } })` — run with `DOTENV_CONFIG_PATH=../../.env`. **Never delete the last DEVELOPER.** State the env + the exact emails and confirm before running; this is destructive and hard to reverse.
 

@@ -39,10 +39,9 @@ Worktree layout: each branch lives in its own folder (`main/`, `staging/`, …) 
 
 TS sources live under `packages/db/src/seed/`; JS runners live under `packages/db/scripts/`.
 
-- [ ] **`npm run db:seed`** — runs the full seed (system users + uoms + categories) — JS runner: `seed.js`
+- [ ] **`npm run db:seed`** — runs the full seed (uoms + categories) — JS runner: `seed.js`
 - [ ] **`db:seed:categories`** — TS: `categories.ts` — JS runner: `seed-categories.js`
 - [ ] **`db:seed:uoms`** — TS: `unit-of-measures.ts` — JS runner: `seed-unit-of-measures.js`
-- [ ] **System Users** — no standalone command; only runs as part of `npm run db:seed` — TS: — (data from `.env`) — JS runner: `system-user-seed.js`
 
 ## Manual owner upsert
 

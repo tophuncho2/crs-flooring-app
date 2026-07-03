@@ -178,8 +178,8 @@ and all three guard with `requireManageUsersAccess()` as the first await
   rank-change, and deactivate: `RANK_ORDER[target] > RANK_ORDER[inviter]`
   (`packages/domain/src/management/users/rank.ts:21-26`). So a TIER_1 can't act on another TIER_1, and
   **no app path can create or edit a DEVELOPER**. DEVELOPER is minted only by
-  `npm run db:upsert-owner -- <email>` (`packages/db/scripts/owner-recovery.js:21-51`) or the seed
-  (`packages/db/scripts/system-user-seed.js:52-84`); otto is the sole DEVELOPER and can't self-demote.
+  `npm run db:upsert-owner -- <email>` (`packages/db/scripts/owner-recovery.js:21-51`); otto is the sole
+  DEVELOPER and can't self-demote.
 
 ---
 
@@ -214,10 +214,10 @@ and all three guard with `requireManageUsersAccess()` as the first await
   (dev-4 = `3004` → `http://localhost:3004`). Register `http://localhost:<port>/api/auth/callback/google`
   in the Google client for each port you run. `.env` is per-worktree/gitignored — never committed.
 - [ ] **Break-glass / bootstrap, not a UI.** Restore the owner with
-  `npm run db:upsert-owner -- otto@crsfloorcovering.com` (`owner-recovery.js`); bootstrap seeded users
-  from `SEEDED_ADMIN_EMAIL` / `SEEDED_BUILDER_EMAIL` / `SEEDED_OWNER_<n>_EMAIL`
-  (`system-user-seed.js:3-22`). Both run against the worktree `.env`'s `DATABASE_URL` — **confirm the
-  target env first** (dev = `zephyr.proxy.rlwy.net`; staging/main have their own).
+  `npm run db:upsert-owner -- otto@crsfloorcovering.com` (`owner-recovery.js`) — this is the sole
+  bootstrap path; everyone else is invited through the UI once an owner exists. Runs against the worktree
+  `.env`'s `DATABASE_URL` — **confirm the target env first** (dev = `zephyr.proxy.rlwy.net`; staging/main
+  have their own).
 - [ ] **Pending rollout — don't forget the migration.** Better Auth cutover is dev-verified; staging/main
   still need migration `20260628150000_user_management_and_nextauth_teardown` applied **after** the code
   deploy. The user runs migrations; Claude only authors them.
