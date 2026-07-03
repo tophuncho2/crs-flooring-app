@@ -126,8 +126,6 @@ System-specific first. The user always runs migrations and always commits — Cl
 - [ ] `npm run db:seed` — run the seed set
 - [ ] `npm run db:seed:uoms` — units of measure
 - [ ] `npm run db:seed:categories` — categories
-- [ ] `npm run db:seed:work-order-statuses` — WO statuses
-- [ ] `npm run db:seed:properties` — properties from CSV
 - [ ] `npm run db:upsert-owner` — break-glass DEVELOPER owner recovery
 - [ ] `npm run upload:brand-logo` — upload brand logo asset
 
