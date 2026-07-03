@@ -8,45 +8,12 @@ import {
 
 type CategoryDbClient = PrismaClient | Prisma.TransactionClient
 
-// --- Unit include helpers ---
-
-const categoryUnitInclude = {
-  sendUnit: { select: { id: true, name: true, abbreviation: true } },
-  stockUnit: { select: { id: true, name: true, abbreviation: true } },
-} as const
-
-export const categoryInclude = categoryUnitInclude
-
-type UnitRef = { id: string; name: string; abbreviation: string } | null
-
-type CategoryUnitRefs = {
-  sendUnit: UnitRef
-  stockUnit: UnitRef
-}
-
-function normalizeCategoryUnitValues(category: CategoryUnitRefs) {
-  return {
-    sendUnitId: category.sendUnit?.id ?? "",
-    stockUnitId: category.stockUnit?.id ?? "",
-    sendUnit: category.sendUnit?.name ?? "",
-    stockUnit: category.stockUnit?.name ?? "",
-    sendUnitAbbrev: category.sendUnit?.abbreviation ?? "",
-    stockUnitAbbrev: category.stockUnit?.abbreviation ?? "",
-  }
-}
-
 // --- Types ---
 
 export type CategoryRecord = {
   id: string
   slug: string
   name: string
-  sendUnitId: string
-  stockUnitId: string
-  sendUnit: string
-  stockUnit: string
-  sendUnitAbbrev: string
-  stockUnitAbbrev: string
 }
 
 // --- Normalizers ---
@@ -55,14 +22,11 @@ export function normalizeCategoryRow(category: {
   id: string
   slug: string
   name: string
-  sendUnit: UnitRef
-  stockUnit: UnitRef
 }): CategoryRecord {
   return {
     id: category.id,
     slug: category.slug,
     name: category.name,
-    ...normalizeCategoryUnitValues(category),
   }
 }
 
@@ -70,7 +34,7 @@ export function normalizeCategoryRow(category: {
 
 export async function listCategories(client: CategoryDbClient = db): Promise<CategoryRecord[]> {
   const categories = await client.flooringCategory.findMany({
-    include: categoryInclude,
+    select: { id: true, slug: true, name: true },
     orderBy: { name: "asc" },
   })
 
@@ -83,7 +47,7 @@ export async function getCategoryById(
 ): Promise<CategoryRecord | null> {
   const category = await client.flooringCategory.findUnique({
     where: { id },
-    include: categoryInclude,
+    select: { id: true, slug: true, name: true },
   })
   return category ? normalizeCategoryRow(category) : null
 }
@@ -110,7 +74,7 @@ export async function listCategoriesForListView(
   const [total, rows] = await Promise.all([
     client.flooringCategory.count(),
     client.flooringCategory.findMany({
-      include: categoryInclude,
+      select: { id: true, name: true },
       orderBy: [{ name: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,

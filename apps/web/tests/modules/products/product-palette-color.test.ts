@@ -19,10 +19,6 @@ const baseRowPayload = {
   categoryId: "cat-1",
   style: "Plush",
   color: "Sand",
-  sendUnitName: "SY",
-  sendUnitAbbrev: "SY",
-  stockUnitName: "Roll",
-  stockUnitAbbrev: "RL",
   coveragePerUnit: null,
   productNamingAddon: null,
   createdAt: new Date("2026-03-18T00:00:00Z"),
@@ -33,8 +29,6 @@ const baseRowPayload = {
     id: "cat-1",
     slug: "carpet",
     name: "Carpet",
-    sendUnitId: "u1",
-    stockUnitId: "u2",
   },
 }
 

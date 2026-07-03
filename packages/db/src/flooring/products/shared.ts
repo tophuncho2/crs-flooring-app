@@ -50,8 +50,6 @@ export const productRowSelect = {
       id: true,
       slug: true,
       name: true,
-      sendUnitId: true,
-      stockUnitId: true,
     },
   },
   entity: {

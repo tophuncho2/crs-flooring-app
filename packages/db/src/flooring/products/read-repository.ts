@@ -22,8 +22,6 @@ export type ProductRecordCategory = {
   id: string
   slug: string
   name: string
-  sendUnitId: string
-  stockUnitId: string
 }
 
 // Resolved unit-of-measure (UoM epic 2A) — the product's real unit off the FK.
@@ -149,8 +147,6 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
       id: product.category.id,
       slug: product.category.slug,
       name: product.category.name,
-      sendUnitId: product.category.sendUnitId ?? "",
-      stockUnitId: product.category.stockUnitId ?? "",
     },
   }
 }

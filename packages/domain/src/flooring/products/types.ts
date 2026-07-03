@@ -10,8 +10,6 @@ export type ProductRowCategory = {
   id: string
   slug: string
   name: string
-  sendUnitId: string
-  stockUnitId: string
 }
 
 // Resolved unit-of-measure off the FK (UoM epic 2A). `null` only on legacy rows

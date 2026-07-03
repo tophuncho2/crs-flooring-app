@@ -19,8 +19,6 @@ describe("normalizeProductRow", () => {
         id: "cat-1",
         slug: "carpet",
         name: "Carpet",
-        sendUnit: { id: "u1", name: "SY" },
-        stockUnit: { id: "u2", name: "Roll" },
       },
       entity: {
         id: "ent-1",
@@ -50,7 +48,7 @@ describe("normalizeProductRow", () => {
       updatedAt: new Date("2026-07-01T00:00:00Z"),
       createdBy: null,
       updatedBy: null,
-      category: { id: "cat-1", slug: "vinyl", name: "Vinyl", sendUnitId: null, stockUnitId: null },
+      category: { id: "cat-1", slug: "vinyl", name: "Vinyl" },
       entity: null,
     } as never)
 
@@ -76,7 +74,7 @@ describe("normalizeProductRow", () => {
       updatedAt: new Date("2026-07-01T00:00:00Z"),
       createdBy: null,
       updatedBy: null,
-      category: { id: "cat-1", slug: "vinyl", name: "Vinyl", sendUnitId: null, stockUnitId: null },
+      category: { id: "cat-1", slug: "vinyl", name: "Vinyl" },
       entity: null,
     } as never)
 
@@ -103,8 +101,6 @@ describe("normalizeProductRow", () => {
         id: "cat-1",
         slug: "carpet",
         name: "Carpet",
-        sendUnit: null,
-        stockUnit: null,
       },
       entity: null,
     })

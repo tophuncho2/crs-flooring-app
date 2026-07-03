@@ -5,5 +5,4 @@ export const CATEGORIES_LIST_COLUMNS: ReadonlyArray<
   DataTableColumn<CategoryListRow>
 > = [
   { key: "name", label: "Category" },
-  { key: "stockUnit", label: "Stock Unit" },
 ]

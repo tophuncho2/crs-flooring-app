@@ -9,8 +9,6 @@ export function renderCategoryRowCell(
   switch (column.key) {
     case "name":
       return <span className="font-medium">{row.name}</span>
-    case "stockUnit":
-      return row.stockUnit || "-"
     default:
       return "-"
   }

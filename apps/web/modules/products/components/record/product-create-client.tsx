@@ -48,8 +48,6 @@ const EMPTY_PRODUCT: ProductRecord = {
     id: "",
     slug: "",
     name: "",
-    sendUnitId: "",
-    stockUnitId: "",
   },
 }
 
