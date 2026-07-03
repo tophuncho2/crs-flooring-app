@@ -5,7 +5,6 @@ const {
   getImportByIdMock,
   getProductByIdMock,
   getUnitOfMeasureByIdMock,
-  listFilterRowDiffSummariesByImportMock,
   listStagedInventoryRowDiffSummariesByImportMock,
   applyImportStagedInventorySectionDiffMock,
   lockImportRowMock,
@@ -15,7 +14,6 @@ const {
   getImportByIdMock: vi.fn(),
   getProductByIdMock: vi.fn(),
   getUnitOfMeasureByIdMock: vi.fn(),
-  listFilterRowDiffSummariesByImportMock: vi.fn(),
   listStagedInventoryRowDiffSummariesByImportMock: vi.fn(),
   applyImportStagedInventorySectionDiffMock: vi.fn(),
   lockImportRowMock: vi.fn(),
@@ -33,7 +31,6 @@ vi.mock("@builders/db", () => ({
   getImportById: getImportByIdMock,
   getProductById: getProductByIdMock,
   getUnitOfMeasureById: getUnitOfMeasureByIdMock,
-  listFilterRowDiffSummariesByImport: listFilterRowDiffSummariesByImportMock,
   listStagedInventoryRowDiffSummariesByImport: listStagedInventoryRowDiffSummariesByImportMock,
   applyImportStagedInventorySectionDiff: applyImportStagedInventorySectionDiffMock,
   lockImportRow: lockImportRowMock,
@@ -136,7 +133,6 @@ beforeEach(() => {
   getImportByIdMock.mockReset()
   getProductByIdMock.mockReset()
   getUnitOfMeasureByIdMock.mockReset()
-  listFilterRowDiffSummariesByImportMock.mockReset()
   listStagedInventoryRowDiffSummariesByImportMock.mockReset()
   applyImportStagedInventorySectionDiffMock.mockReset()
   lockImportRowMock.mockReset()
@@ -156,7 +152,6 @@ beforeEach(() => {
     name: "Square Feet",
     abbreviation: "SF",
   }))
-  listFilterRowDiffSummariesByImportMock.mockResolvedValue([])
   listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([])
   applyImportStagedInventorySectionDiffMock.mockResolvedValue({
     filterRows: [],
@@ -241,9 +236,6 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
   })
 
   it("rejects a modified filter row with an invalid form (refKind=id)", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1" },
-    ])
     try {
       await runSave({
         importEntryId: IMPORT_ID,
@@ -319,9 +311,6 @@ describe("saveImportStagedInventorySectionUseCase — form validation", () => {
 
 describe("saveImportStagedInventorySectionUseCase — unit clear on modify", () => {
   it("clears a MODIFIED filter row's unit (no product re-seed)", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1" },
-    ])
     await runSave({
       importEntryId: IMPORT_ID,
       diff: {
@@ -385,9 +374,6 @@ describe("saveImportStagedInventorySectionUseCase — product batch-fetch", () =
     // The same product can now appear on multiple planned imports (the
     // duplicate-product rule was removed), so the batch-fetch must still
     // collapse repeats: product-shared in both added + modified is fetched once.
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-existing", productId: "product-x" },
-    ])
     getProductByIdMock.mockResolvedValue(fakeProduct({ id: "product-shared" }))
 
     await runSave({
@@ -413,9 +399,6 @@ describe("saveImportStagedInventorySectionUseCase — diff validators", () => {
     // A modified filter referencing a product that does not resolve is caught by
     // the product-existence guard (the sole reachable filter guard now that the
     // category-filter FK — and its immutability rule — has been dropped).
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-1", productId: "product-1" },
-    ])
     getProductByIdMock.mockImplementation(async (id: string) =>
       id === "ghost-product" ? null : fakeProduct({ id }),
     )
@@ -680,9 +663,6 @@ describe("saveImportStagedInventorySectionUseCase — happy path snapshot resolu
   })
 
   it("passes deletes through unchanged for both slices", async () => {
-    listFilterRowDiffSummariesByImportMock.mockResolvedValue([
-      { id: "filter-old", productId: "p" },
-    ])
     listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([
       { id: "row-old", status: "DRAFT" },
     ])

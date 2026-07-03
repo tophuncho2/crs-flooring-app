@@ -7,9 +7,6 @@ import { type StagedInventoryDbClient } from "../staged-inventory-rows/shared.js
  * the staged-rows diff validator. Returns only the columns the domain
  * validator needs — keeps the round-trip narrow vs. the full
  * `listStagedInventoryByImport` payload.
- *
- * Mirrors `listFilterRowDiffSummariesByImport` on the filter-rows
- * slice.
  */
 export async function listStagedInventoryRowDiffSummariesByImport(
   importEntryId: string,

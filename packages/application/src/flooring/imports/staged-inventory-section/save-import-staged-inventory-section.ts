@@ -6,7 +6,6 @@ import {
   getImportById,
   getProductById,
   getUnitOfMeasureById,
-  listFilterRowDiffSummariesByImport,
   listStagedInventoryRowDiffSummariesByImport,
   lockImportRow,
   stampImportActor,
@@ -15,12 +14,10 @@ import {
 import {
   assignDraftIds,
   normalizeMoneyAmount,
-  describeStagedInventoryFilterDiffIssues,
   describeStagedInventoryFilterValidationIssues,
   describeStagedInventoryRowDiffIssues,
   describeStagedInventoryValidationIssues,
   validateStagedInventoryFilterForm,
-  validateStagedInventoryFiltersDiff,
   validateStagedInventoryForm,
   validateStagedInventoryRowsDiff,
 } from "@builders/domain"
@@ -160,23 +157,14 @@ export async function saveImportStagedInventorySectionUseCase(
       }),
   )
 
-  const [existingFilters, existingStagedRows] = await Promise.all([
-    listFilterRowDiffSummariesByImport(input.importEntryId, reader),
-    listStagedInventoryRowDiffSummariesByImport(input.importEntryId, reader),
-  ])
+  // Filter-row diff validation was retired with the category-lock rule: the
+  // sole remaining check (unknown-product) is already enforced upstream by
+  // guardProductsExist, so a separate filter diff pass would be dead weight.
+  const existingStagedRows = await listStagedInventoryRowDiffSummariesByImport(
+    input.importEntryId,
+    reader,
+  )
 
-  const filterIssues = validateStagedInventoryFiltersDiff(input.diff.filters, {
-    existing: existingFilters,
-    knownProductIds: distinctProductIds,
-  })
-  if (filterIssues.length > 0) {
-    throw new ImportStagedInventorySectionExecutionError({
-      code: "SECTION_FILTER_DIFF_VALIDATION_FAILED",
-      message: describeStagedInventoryFilterDiffIssues(filterIssues),
-      status: 400,
-      payload: { issues: filterIssues },
-    })
-  }
   const rowIssues = validateStagedInventoryRowsDiff(input.diff.rows, {
     existing: existingStagedRows,
   })

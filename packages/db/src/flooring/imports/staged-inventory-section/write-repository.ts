@@ -25,9 +25,8 @@ import type {
  * Caller contract (application layer):
  *  - Opens the transaction via `withDatabaseTransaction` and locks the
  *    parent import row FOR UPDATE before invoking.
- *  - Pre-validated both slices via the domain validators
- *    (`validateStagedInventoryFiltersDiff`, `validateStagedInventoryRowsDiff`)
- *    and the per-row form validators.
+ *  - Pre-validated the staged-row slice via `validateStagedInventoryRowsDiff`
+ *    and both slices via the per-row form validators + product-existence guard.
  *  - Pre-assigned UUIDs to added entries on both slices via
  *    `assignDraftIds`.
  *  - Resolved every staged-row added entry's own productId to its unit

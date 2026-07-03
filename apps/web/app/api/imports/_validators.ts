@@ -298,10 +298,9 @@ function shapeRowsSlice(raw: unknown): StagedInventoryRowsDiff {
  * (domain type) — the combined filter-rows + staged-rows section diff
  * that backs `PATCH /api/imports/[id]/staged-inventory/section`.
  *
- * Body-shape validation only — domain rules (duplicate product,
- * category-filter-locked-after-create, unknown product, non-DRAFT
- * edits, etc.) are evaluated by `validateStagedInventoryFiltersDiff` +
- * `validateStagedInventoryRowsDiff` inside
+ * Body-shape validation only — domain rules (per-row form validity,
+ * product existence, non-DRAFT edits, etc.) are evaluated by the form
+ * validators + `validateStagedInventoryRowsDiff` inside
  * `saveImportStagedInventorySectionUseCase`.
  */
 export function validateImportStagedInventorySectionDiffBody(

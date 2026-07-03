@@ -108,29 +108,3 @@ export async function getFilterRowById(
   return normalizeStagedInventoryFilterRow(row, sumByProduct.get(row.productId) ?? 0)
 }
 
-/**
- * Slim read used by the application save use case to evaluate diff
- * rules (duplicate-product, unknown-product). Skips the heavy product /
- * category / unit joins.
- */
-export type FilterRowDiffSummary = {
-  id: string
-  productId: string
-}
-
-export async function listFilterRowDiffSummariesByImport(
-  importEntryId: string,
-  client: StagedInventoryFilterDbClient = db,
-): Promise<FilterRowDiffSummary[]> {
-  const rows = await client.flooringImportStagedInventoryFilterRow.findMany({
-    where: { importEntryId },
-    select: {
-      id: true,
-      productId: true,
-    },
-  })
-  return rows.map((row) => ({
-    id: row.id,
-    productId: row.productId,
-  }))
-}
