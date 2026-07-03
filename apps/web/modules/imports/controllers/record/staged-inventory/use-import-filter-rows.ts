@@ -114,8 +114,10 @@ function buildSectionDiff(
     onMissingServerRow: "add",
   })
 
-  // Only DRAFT rows are editable — the worker owns QUEUED/IMPORTED rows — so the
-  // eligibility gate keeps non-DRAFT server rows out of both modified and deleted.
+  // Rows are editable/deletable in any state except QUEUED (the worker owns
+  // QUEUED rows mid-import). IMPORTED rows are editable history now that the
+  // inventory->staged FK is severed, so the eligibility gate only keeps QUEUED
+  // server rows out of both modified and deleted.
   const rows = buildRowDiff({
     locals: state.stagedRows,
     serverRows: serverValue.stagedRows,
@@ -129,7 +131,7 @@ function buildSectionDiff(
     }),
     toModified: (draft, server) => ({ id: server.id, form: toRowDiffForm(draft) }),
     onMissingServerRow: "add",
-    isServerRowEligible: (server) => server.status === "DRAFT",
+    isServerRowEligible: (server) => server.status !== "QUEUED",
   })
 
   return { filters, rows }
@@ -356,8 +358,9 @@ export function useImportFilterRows({
     (sourceClientId: string) => {
       section.setLocalValue((prev) => {
         const source = prev.stagedRows.find((s) => s.clientId === sourceClientId)
-        // Only DRAFT rows can seed a duplicate.
-        if (!source || source.status !== "DRAFT") return prev
+        // Any row except QUEUED can seed a duplicate (the copy is always a fresh
+        // DRAFT); QUEUED rows are locked mid-import.
+        if (!source || source.status === "QUEUED") return prev
         return {
           ...prev,
           stagedRows: [...prev.stagedRows, duplicateImportStagedRowDraft(source)],

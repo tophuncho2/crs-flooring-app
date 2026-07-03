@@ -198,7 +198,9 @@ export function validateImportStagedRowDrafts(
   drafts: ImportStagedRowDraft[],
 ): string {
   for (const [index, draft] of drafts.entries()) {
-    if (draft.status !== "DRAFT") continue
+    // QUEUED rows are locked mid-import and never edited; every other state
+    // (DRAFT + the now-editable IMPORTED) is validated before save.
+    if (draft.status === "QUEUED") continue
     // A staged row attaches to the import via its own productId (no parent
     // filter to inherit from), so a section-level blank add must pick one
     // before it can save.
