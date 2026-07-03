@@ -23,6 +23,7 @@ import {
   validateStagedInventoryForm,
   validateStagedInventoryRowsDiff,
 } from "@builders/domain"
+import { guardProductsExist } from "../../../shared/guard-products-exist.js"
 import { ImportStagedInventorySectionExecutionError } from "./errors.js"
 import type {
   SaveImportStagedInventorySectionInput,
@@ -117,26 +118,21 @@ export async function saveImportStagedInventorySectionUseCase(
       ...input.diff.rows.added.map((d) => d.productId),
     ]),
   )
-  const products = await Promise.all(
-    distinctProductIds.map(async (productId) => ({
-      productId,
-      product: await getProductById(productId, reader),
-    })),
-  )
   // Validate every product touched by the diff still exists. The unit FK is NOT
   // seeded here — it's a user-managed, per-row value the client fills on product
   // select; the server persists only what the form sends (UoM epic 2B).
-  for (const entry of products) {
-    if (!entry.product) {
-      throw new ImportStagedInventorySectionExecutionError({
+  await guardProductsExist(
+    distinctProductIds,
+    (productId) => getProductById(productId, reader),
+    (productId) =>
+      new ImportStagedInventorySectionExecutionError({
         code: "SECTION_FILTER_VALIDATION_FAILED",
         message: "Selected product was not found.",
         status: 400,
         field: "productId",
-        payload: { productId: entry.productId },
-      })
-    }
-  }
+        payload: { productId },
+      }),
+  )
 
   const [existingFilters, existingStagedRows] = await Promise.all([
     listFilterRowDiffSummariesByImport(input.importEntryId, reader),

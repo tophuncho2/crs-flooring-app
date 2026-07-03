@@ -9,6 +9,7 @@ import {
   assignDraftIds,
   validateTemplateMaterialItemForm,
 } from "@builders/domain"
+import { guardProductsExist } from "../../../shared/guard-products-exist.js"
 import { TemplateMaterialItemExecutionError } from "./errors.js"
 import type {
   SaveTemplateMaterialItemsSectionUseCaseInput,
@@ -61,23 +62,18 @@ export async function saveTemplateMaterialItemsSectionUseCase(
         ...input.diff.modified.map((m) => m.form.productId),
       ]),
     )
-    const products = await Promise.all(
-      distinctProductIds.map(async (productId) => ({
-        productId,
-        product: await getProductById(productId, c),
-      })),
-    )
-    for (const entry of products) {
-      if (!entry.product) {
-        throw new TemplateMaterialItemExecutionError({
+    await guardProductsExist(
+      distinctProductIds,
+      (productId) => getProductById(productId, c),
+      (productId) =>
+        new TemplateMaterialItemExecutionError({
           code: "TEMPLATE_MATERIAL_ITEM_VALIDATION_FAILED",
           message: "Selected product was not found",
           status: 400,
           field: "productId",
-          payload: { productId: entry.productId },
-        })
-      }
-    }
+          payload: { productId },
+        }),
+    )
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
 

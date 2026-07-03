@@ -11,6 +11,7 @@ import {
   validateWorkOrderMaterialItemCreateForm,
   validateWorkOrderMaterialItemUpdateForm,
 } from "@builders/domain"
+import { guardProductsExist } from "../../../shared/guard-products-exist.js"
 import { WorkOrderMaterialItemExecutionError } from "./errors.js"
 import type {
   SaveWorkOrderMaterialItemsSectionUseCaseInput,
@@ -85,27 +86,22 @@ export async function saveWorkOrderMaterialItemsSectionUseCase(
         ...productChangedUpdates.map((u) => u.form.productId),
       ]),
     )
-    const products = await Promise.all(
-      distinctProductIds.map(async (productId) => ({
-        productId,
-        product: await getProductById(productId, c),
-      })),
-    )
     // Validate every product touched by the diff (added + product-change) still
     // exists. The unit FK is NOT seeded here — it's a user-managed, per-row value
     // the client fills on product select; the server persists only the form's own
     // value (UoM epic 2C). The product fetch remains for the reconnect below.
-    for (const entry of products) {
-      if (!entry.product) {
-        throw new WorkOrderMaterialItemExecutionError({
+    await guardProductsExist(
+      distinctProductIds,
+      (productId) => getProductById(productId, c),
+      (productId) =>
+        new WorkOrderMaterialItemExecutionError({
           code: "WORK_ORDER_MATERIAL_ITEM_VALIDATION_FAILED",
           message: "Selected product was not found",
           status: 400,
           field: "productId",
-          payload: { productId: entry.productId },
-        })
-      }
-    }
+          payload: { productId },
+        }),
+    )
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
 
