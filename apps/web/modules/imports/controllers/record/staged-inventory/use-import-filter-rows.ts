@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import {
+  applyUnitSeed,
   buildRowDiff,
   createLocalRecordRowId,
   createRecordSectionError,
@@ -284,12 +285,15 @@ export function useImportFilterRows({
         ...prev,
         filters: prev.filters.map((row) =>
           row.clientId === clientId
-            ? {
-                ...row,
-                unitId: option?.id ?? "",
-                stockUnitName: option?.name ?? "",
-                stockUnitAbbrev: option?.abbreviation ?? "",
-              }
+            ? applyUnitSeed(
+                row,
+                option && {
+                  unitId: option.id,
+                  unitName: option.name,
+                  unitAbbrev: option.abbreviation,
+                },
+                { nameKey: "stockUnitName", abbrevKey: "stockUnitAbbrev" },
+              )
             : row,
         ),
       }))
@@ -317,18 +321,18 @@ export function useImportFilterRows({
         ...prev,
         filters: prev.filters.map((row) => {
           if (row.clientId !== clientId) return row
-          if (option === null) {
-            return { ...row, productName: "", unitId: "", stockUnitName: "", stockUnitAbbrev: "" }
-          }
           // Re-seed the unit FK from the picked product (UoM epic 2B) — mirrors
           // the material-item product-change re-snapshot.
-          return {
-            ...row,
-            productName: option.name,
-            unitId: option.unitId,
-            stockUnitName: option.stockUnitName ?? "",
-            stockUnitAbbrev: option.stockUnitAbbrev,
-          }
+          const seeded = applyUnitSeed(
+            row,
+            option && {
+              unitId: option.unitId,
+              unitName: option.stockUnitName,
+              unitAbbrev: option.stockUnitAbbrev,
+            },
+            { nameKey: "stockUnitName", abbrevKey: "stockUnitAbbrev" },
+          )
+          return { ...seeded, productName: option?.name ?? "" }
         }),
       }))
     },
@@ -399,17 +403,20 @@ export function useImportFilterRows({
     (clientId: string, option: UnitOfMeasureOption | null) => {
       section.setLocalValue((prev) => ({
         ...prev,
+        // Refresh the display name too — the grid picker's trigger label derives
+        // solely from `stockUnitName` (via `selectedLabel`), so leaving it stale
+        // reverts the label to the product's default unit.
         stagedRows: prev.stagedRows.map((s) =>
           s.clientId === clientId
-            ? {
-                ...s,
-                unitId: option?.id ?? "",
-                // Refresh the display name too — the grid picker's trigger label
-                // derives solely from `stockUnitName` (via `selectedLabel`), so
-                // leaving it stale reverts the label to the product's default unit.
-                stockUnitName: option?.name ?? "",
-                stockUnitAbbrev: option?.abbreviation ?? "",
-              }
+            ? applyUnitSeed(
+                s,
+                option && {
+                  unitId: option.id,
+                  unitName: option.name,
+                  unitAbbrev: option.abbreviation,
+                },
+                { nameKey: "stockUnitName", abbrevKey: "stockUnitAbbrev" },
+              )
             : s,
         ),
       }))

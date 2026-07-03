@@ -2,7 +2,7 @@
 
 import { useCallback } from "react"
 import type { Dispatch, SetStateAction } from "react"
-import { createLocalRecordRowId } from "@/engines/record-view"
+import { applyUnitSeed, createLocalRecordRowId } from "@/engines/record-view"
 import type { ProductOption, UnitOfMeasureOption } from "@builders/domain"
 import type { RecordSectionError } from "@/types/record/section-error"
 import { createBlankMaterialItemLocal } from "./drafts"
@@ -84,18 +84,18 @@ export function useWorkOrderMaterialItemsDrafts({ section }: { section: SectionR
       section.setLocalValue((previous) => ({
         items: previous.items.map((row) => {
           if (row.id !== itemId) return row
-          if (option === null) {
-            return { ...row, productName: "", unitId: "", sendUnitName: "", sendUnitAbbrev: "" }
-          }
           // Re-seed the unit FK from the picked product (UoM epic 2C) — mirrors
           // the imports row product-change re-seed. The unit stays editable.
-          return {
-            ...row,
-            productName: option.name,
-            unitId: option.unitId,
-            sendUnitName: option.sendUnitName,
-            sendUnitAbbrev: option.sendUnitAbbrev,
-          }
+          const seeded = applyUnitSeed(
+            row,
+            option && {
+              unitId: option.unitId,
+              unitName: option.sendUnitName,
+              unitAbbrev: option.sendUnitAbbrev,
+            },
+            { nameKey: "sendUnitName", abbrevKey: "sendUnitAbbrev" },
+          )
+          return { ...seeded, productName: option?.name ?? "" }
         }),
       }))
     },
@@ -109,12 +109,15 @@ export function useWorkOrderMaterialItemsDrafts({ section }: { section: SectionR
       section.setLocalValue((previous) => ({
         items: previous.items.map((row) =>
           row.id === itemId
-            ? {
-                ...row,
-                unitId: option?.id ?? "",
-                sendUnitName: option?.name ?? "",
-                sendUnitAbbrev: option?.abbreviation ?? "",
-              }
+            ? applyUnitSeed(
+                row,
+                option && {
+                  unitId: option.id,
+                  unitName: option.name,
+                  unitAbbrev: option.abbreviation,
+                },
+                { nameKey: "sendUnitName", abbrevKey: "sendUnitAbbrev" },
+              )
             : row,
         ),
       }))

@@ -18,3 +18,4 @@ export * from "./controllers/expandable-rows"
 // utils
 export * from "./utils/record-row-ids"
 export * from "./utils/build-row-diff"
+export * from "./utils/apply-unit-seed"
