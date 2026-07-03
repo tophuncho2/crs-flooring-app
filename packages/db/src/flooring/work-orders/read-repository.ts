@@ -509,7 +509,7 @@ export async function getWorkOrderForFileGeneration(
       rollNumber: adj.rollNumber ?? "",
       location: adj.location ?? "",
       // Unit abbrev derives from the adjustment's own unit FK join (UoM epic 2B);
-      // the frozen snapshot string is the transition fallback.
+      // the frozen snapshot column is no longer a fallback (dropped in 2D).
       stockUnitAbbrev: adj.unit?.abbreviation ?? "",
     }
     if (adj.productId !== currentProductId || (adj.unitId ?? "") !== currentUnitId) {

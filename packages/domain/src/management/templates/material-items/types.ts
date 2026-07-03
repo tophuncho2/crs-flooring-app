@@ -8,8 +8,8 @@ export type TemplateMaterialItemRow = {
   // Editable unit FK (UoM epic 2C) — seeded from the product on select, then
   // freely editable; sent in the diff. "" when the item has no unit linked yet.
   unitId: string
-  // Unit display derives from the item's own unit FK join; the frozen
-  // `sendUnit*` snapshot strings are the transition fallback (Phase C drops them).
+  // Unit display derives solely from the item's own unit FK join; the frozen
+  // `sendUnit*` snapshot columns are no longer a fallback (dropped in UoM 2D).
   sendUnitName: string
   sendUnitAbbrev: string
   notes: string

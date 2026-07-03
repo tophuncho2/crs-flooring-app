@@ -13,7 +13,8 @@ import { normalizeProductRow, type ProductRecord } from "./read-repository.js"
 //
 // `unitId` is the canonical unit FK (UoM epic 2A). The legacy snapshot strings
 // (sendUnit/stockUnit × Name/Abbrev) are no longer written on create — the FK is
-// authoritative; those columns stay for the existing-row fallback until Phase C.
+// authoritative and no read falls back to them; those columns are retained only
+// to keep the promote migration/backfill scripts safe; dropped post-promote (2D).
 
 export type CreateProductInput = {
   name: string

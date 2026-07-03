@@ -6,8 +6,8 @@ export type WorkOrderMaterialItemRow = {
   // Editable unit FK (UoM epic 2C) — seeded from the product on select, then
   // freely editable; sent in the diff. "" when no unit linked yet.
   unitId: string
-  // Unit display derives from the item's own unit FK join; the frozen
-  // `sendUnit*` snapshot strings are the transition fallback (Phase C drops them).
+  // Unit display derives solely from the item's own unit FK join; the frozen
+  // `sendUnit*` snapshot columns are no longer a fallback (dropped in UoM 2D).
   sendUnitName: string
   sendUnitAbbrev: string
   notes: string
@@ -23,7 +23,8 @@ export type WorkOrderMaterialItemRow = {
 // Create form carries `productId` — the user picks a product when they add a
 // new material item. The update form carries it too; the product is freely
 // editable (adjustments no longer link to a material item, so there is nothing
-// to drift). The DB `@@unique([workOrderId, productId])` still blocks dupes.
+// to drift). The same product may appear multiple times — the old
+// `@@unique([workOrderId, productId])` was intentionally dropped (do not re-add).
 export type WorkOrderMaterialItemCreateForm = {
   productId: string
   // Editable unit FK (UoM epic 2C). "" disconnects the unit.

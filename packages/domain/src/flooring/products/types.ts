@@ -30,8 +30,7 @@ export type ProductRow = {
   name: string
   categoryId: string
   // Canonical unit-of-measure FK + resolved unit (UoM epic 2A). The product's
-  // real unit — reads resolve it from the FK; the snapshot strings below are the
-  // retiring fallback.
+  // real unit — reads resolve it from the FK join (no snapshot fallback).
   unitId: string
   unit: ProductRowUnit | null
   // Entity link (Entity Payments epic). entityName is the joined display name

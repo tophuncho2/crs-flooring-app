@@ -316,7 +316,9 @@ model FlooringInventory {
   product                FlooringProduct      @relation(fields: [productId], references: [id], onDelete: Restrict)
   // Canonical unit FK (UoM epic 2B). Create-only, immutable after. Seeded from
   // the product on manual create (overridable) or from the staged row at
-  // materialize. The snapshot strings below are the retiring fallback (Phase C).
+  // materialize. The snapshot strings below are NOT a read fallback (display
+  // derives from the `unit` join) — retained only to keep the promote
+  // migration/backfill scripts safe; dropped post-promote (UoM 2D).
   unitId                 String
   unit                   FlooringUnitOfMeasure @relation("FlooringInventoryUnit", fields: [unitId], references: [id], onDelete: Restrict)
   stockUnitName          String?
@@ -484,7 +486,8 @@ model FlooringInventoryAdjustment {
   product           FlooringProduct                   @relation(fields: [productId], references: [id], onDelete: Restrict)
   // Canonical unit FK (UoM epic 2B). Stamped at create from the parent
   // inventory's unitId; immutable (ledger). Display derives from the join; the
-  // snapshot strings below are the retiring fallback (Phase C).
+  // snapshot strings below are NOT a read fallback — retained only to keep the
+  // promote migration/backfill scripts safe; dropped post-promote (UoM 2D).
   unitId            String
   unit              FlooringUnitOfMeasure             @relation("FlooringAdjustmentUnit", fields: [unitId], references: [id], onDelete: Restrict)
   warehouseId       String
