@@ -5,6 +5,7 @@ import {
   db,
   getImportById,
   getProductById,
+  getUnitOfMeasureById,
   listFilterRowDiffSummariesByImport,
   listStagedInventoryRowDiffSummariesByImport,
   lockImportRow,
@@ -24,6 +25,7 @@ import {
   validateStagedInventoryRowsDiff,
 } from "@builders/domain"
 import { guardProductsExist } from "../../../shared/guard-products-exist.js"
+import { guardUnitsExist } from "../../../shared/guard-units-exist.js"
 import { ImportStagedInventorySectionExecutionError } from "./errors.js"
 import type {
   SaveImportStagedInventorySectionInput,
@@ -131,6 +133,30 @@ export async function saveImportStagedInventorySectionUseCase(
         status: 400,
         field: "productId",
         payload: { productId },
+      }),
+  )
+
+  // The unit FK is nullable/editable on staged rows and filters, so guard only
+  // the non-empty ids the diff touches (mirrors the product guard's sources).
+  const distinctUnitIds = Array.from(
+    new Set(
+      [
+        ...input.diff.filters.added.map((d) => d.form.unitId),
+        ...input.diff.filters.modified.map((m) => m.form.unitId),
+        ...input.diff.rows.added.map((d) => d.form.unitId),
+      ].filter((unitId) => unitId.trim() !== ""),
+    ),
+  )
+  await guardUnitsExist(
+    distinctUnitIds,
+    (unitId) => getUnitOfMeasureById(unitId, reader),
+    (unitId) =>
+      new ImportStagedInventorySectionExecutionError({
+        code: "SECTION_UNIT_VALIDATION_FAILED",
+        message: "Selected unit was not found.",
+        status: 400,
+        field: "unitId",
+        payload: { unitId },
       }),
   )
 

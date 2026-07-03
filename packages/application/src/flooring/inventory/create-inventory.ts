@@ -1,6 +1,7 @@
 import {
   Prisma,
   getProductById,
+  getUnitOfMeasureById,
   getWarehouseById,
   insertInventoryRow,
   withDatabaseTransaction,
@@ -10,6 +11,7 @@ import {
   describeInventoryCreateIssues,
   validateCreateInventoryEdits,
 } from "@builders/domain"
+import { guardUnitsExist } from "../../shared/guard-units-exist.js"
 import { InventoryExecutionError } from "./errors.js"
 import type { CreateInventoryInput, InventoryResult } from "./types.js"
 
@@ -52,6 +54,20 @@ export async function createInventoryUseCase(
         status: 404,
       })
     }
+
+    // Unit FK is required on create — assert it still exists before insert.
+    await guardUnitsExist(
+      [input.unitId],
+      (unitId) => getUnitOfMeasureById(unitId, c),
+      (unitId) =>
+        new InventoryExecutionError({
+          code: "INVENTORY_UNIT_NOT_FOUND",
+          message: "Selected unit was not found.",
+          status: 404,
+          field: "unitId",
+          payload: { unitId },
+        }),
+    )
 
     // Unit is the FK from the create form (seeded from the product, overridable).
     // No longer derived from the product's retiring snapshot strings (UoM epic 2B).

@@ -4,6 +4,7 @@ const {
   withDatabaseTransactionMock,
   getImportByIdMock,
   getProductByIdMock,
+  getUnitOfMeasureByIdMock,
   listFilterRowDiffSummariesByImportMock,
   listStagedInventoryRowDiffSummariesByImportMock,
   applyImportStagedInventorySectionDiffMock,
@@ -13,6 +14,7 @@ const {
   withDatabaseTransactionMock: vi.fn(),
   getImportByIdMock: vi.fn(),
   getProductByIdMock: vi.fn(),
+  getUnitOfMeasureByIdMock: vi.fn(),
   listFilterRowDiffSummariesByImportMock: vi.fn(),
   listStagedInventoryRowDiffSummariesByImportMock: vi.fn(),
   applyImportStagedInventorySectionDiffMock: vi.fn(),
@@ -30,6 +32,7 @@ vi.mock("@builders/db", () => ({
   withDatabaseTransaction: withDatabaseTransactionMock,
   getImportById: getImportByIdMock,
   getProductById: getProductByIdMock,
+  getUnitOfMeasureById: getUnitOfMeasureByIdMock,
   listFilterRowDiffSummariesByImport: listFilterRowDiffSummariesByImportMock,
   listStagedInventoryRowDiffSummariesByImport: listStagedInventoryRowDiffSummariesByImportMock,
   applyImportStagedInventorySectionDiff: applyImportStagedInventorySectionDiffMock,
@@ -134,6 +137,7 @@ beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   getImportByIdMock.mockReset()
   getProductByIdMock.mockReset()
+  getUnitOfMeasureByIdMock.mockReset()
   listFilterRowDiffSummariesByImportMock.mockReset()
   listStagedInventoryRowDiffSummariesByImportMock.mockReset()
   applyImportStagedInventorySectionDiffMock.mockReset()
@@ -148,6 +152,12 @@ beforeEach(() => {
   // Default: any requested product resolves to a stub with that id, so the
   // batch-fetch + snapshot resolution succeeds for filter AND staged products.
   getProductByIdMock.mockImplementation(async (id: string) => fakeProduct({ id }))
+  // Default: any referenced unit resolves to a stub so the existence guard passes.
+  getUnitOfMeasureByIdMock.mockImplementation(async (id: string) => ({
+    id,
+    name: "Square Feet",
+    abbreviation: "SF",
+  }))
   listFilterRowDiffSummariesByImportMock.mockResolvedValue([])
   listStagedInventoryRowDiffSummariesByImportMock.mockResolvedValue([])
   applyImportStagedInventorySectionDiffMock.mockResolvedValue({

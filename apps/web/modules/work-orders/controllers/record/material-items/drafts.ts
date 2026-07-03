@@ -71,9 +71,8 @@ export function byCreatedAtDesc(
 
 // --- Diff ---
 
-// Product is editable until the item has adjustments, so productId joins
-// (quantity, notes) in the modified-row diff identity. The server re-checks
-// the adjustment lock before persisting a product change.
+// Product is freely editable — adjustments no longer link to a material item —
+// so productId joins unitId + (quantity, notes) in the modified-row diff identity.
 function itemsDiffer(local: WorkOrderMaterialItemLocal, server: WorkOrderMaterialItemRow) {
   return (
     local.productId !== server.productId ||

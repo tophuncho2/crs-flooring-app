@@ -9,10 +9,11 @@ import { listWorkOrderMaterialItems } from "./read-repository.js"
 type WorkOrdersDbClient = PrismaClient | Prisma.TransactionClient
 
 /**
- * Wire-input shape for material-item creates (UoM epic 2C). The create form now
- * carries the editable `unitId` FK directly (the application resolves it — form
- * value, else the product's own unit as a seed fallback). The frozen `sendUnit*`
- * snapshot is no longer written; the item's `unitId` FK is authoritative.
+ * Wire-input shape for material-item creates (UoM epic 2C). The create form
+ * carries the editable `unitId` FK directly — a user-managed, per-row value the
+ * client fills on product select; the server persists only the form's own value
+ * (no product-unit fallback). The frozen `sendUnit*` snapshot is no longer
+ * written; the item's `unitId` FK is authoritative.
  */
 export type WriteWorkOrderMaterialItemCreateInput = WorkOrderMaterialItemCreateForm
 

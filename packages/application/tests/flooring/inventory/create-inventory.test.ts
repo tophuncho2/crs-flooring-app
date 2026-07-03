@@ -4,6 +4,7 @@ const {
   withDatabaseTransactionMock,
   getProductByIdMock,
   getWarehouseByIdMock,
+  getUnitOfMeasureByIdMock,
   insertInventoryRowMock,
   buildCreatedInventoryInsertMock,
   validateCreateInventoryEditsMock,
@@ -12,6 +13,7 @@ const {
   withDatabaseTransactionMock: vi.fn(),
   getProductByIdMock: vi.fn(),
   getWarehouseByIdMock: vi.fn(),
+  getUnitOfMeasureByIdMock: vi.fn(),
   insertInventoryRowMock: vi.fn(),
   buildCreatedInventoryInsertMock: vi.fn(),
   validateCreateInventoryEditsMock: vi.fn(),
@@ -23,6 +25,7 @@ vi.mock("@builders/db", () => ({
   withDatabaseTransaction: withDatabaseTransactionMock,
   getProductById: getProductByIdMock,
   getWarehouseById: getWarehouseByIdMock,
+  getUnitOfMeasureById: getUnitOfMeasureByIdMock,
   insertInventoryRow: insertInventoryRowMock,
 }))
 
@@ -61,6 +64,7 @@ const PRODUCT = {
   category: { slug: "carpet", name: "Carpet" },
 }
 const WAREHOUSE = { id: "wh-1", name: "Main" }
+const UNIT = { id: "u-1", name: "Square Feet", abbreviation: "SF" }
 const BUILT_FIELDS = { productId: "p-1", netDeducted: "0", isArchived: false }
 const CREATED_RECORD = { id: "22222222-2222-4222-8222-222222222222", sentinel: true }
 
@@ -68,6 +72,7 @@ beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   getProductByIdMock.mockReset()
   getWarehouseByIdMock.mockReset()
+  getUnitOfMeasureByIdMock.mockReset()
   insertInventoryRowMock.mockReset()
   buildCreatedInventoryInsertMock.mockReset()
   validateCreateInventoryEditsMock.mockReset()
@@ -79,6 +84,7 @@ beforeEach(() => {
   validateCreateInventoryEditsMock.mockReturnValue([])
   getProductByIdMock.mockResolvedValue(PRODUCT)
   getWarehouseByIdMock.mockResolvedValue(WAREHOUSE)
+  getUnitOfMeasureByIdMock.mockResolvedValue(UNIT)
   buildCreatedInventoryInsertMock.mockReturnValue(BUILT_FIELDS)
   insertInventoryRowMock.mockResolvedValue(CREATED_RECORD)
   describeInventoryCreateIssuesMock.mockReturnValue("bad")

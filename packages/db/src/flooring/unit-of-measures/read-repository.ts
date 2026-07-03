@@ -47,6 +47,21 @@ export async function listUnitOfMeasuresForListView(
   }
 }
 
+// --- Single fetch (existence guard) ---
+
+// Point read by id — powers the application-layer existence guard on the unit FK
+// (mirrors getProductById / getWarehouseById). Returns the option shape or null.
+export async function getUnitOfMeasureById(
+  id: string,
+  client: UnitOfMeasureDbClient = db,
+): Promise<UnitOfMeasureOption | null> {
+  const row = await client.flooringUnitOfMeasure.findUnique({
+    where: { id },
+    select: { id: true, name: true, abbreviation: true },
+  })
+  return row ? { id: row.id, name: row.name, abbreviation: row.abbreviation } : null
+}
+
 // --- Picker options (infinite-scroll search) ---
 
 export type UnitOfMeasureOptionsSearchArgs = {

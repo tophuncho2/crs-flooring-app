@@ -234,11 +234,11 @@ export function validateImportStagedRowDrafts(
  * it's a `createLocalRecordRowId("import-filter-row")` value the engine
  * later maps to a server uuid via the diff response's `filterTempIdMap`.
  *
- * `productName` / `stockUnitName` / `stockUnitAbbrev` are display-only
- * snapshots refreshed when the user picks via ProductPicker; never enter
- * the diff payload (the server re-stamps them from FlooringProduct on
- * save). `categoryFilterId` IS persisted — it's a real FK column on the
- * filter row, not UI-only narrowing.
+ * `productName` / `stockUnitName` / `stockUnitAbbrev` are display-only labels
+ * refreshed when the user picks via ProductPicker; never enter the diff payload
+ * and are never persisted (the server writes only the `unitId` FK; reads
+ * re-derive the labels from the unit rel). `categoryFilterId` IS persisted —
+ * it's a real FK column on the filter row, not UI-only narrowing.
  *
  * A filter row IS a "Planned Import". Staged rows are held separately (flat,
  * keyed by their own productId) and grouped against these at render time.
