@@ -51,6 +51,27 @@ export async function listInvitesForListView(
   }
 }
 
+// Single invite row by id, in the pending-list shape. Powers the invite
+// detail/record view and its GET route — no neighbors (the record view has no
+// stepper).
+export async function getInviteRecordById(
+  id: string,
+  client: InvitesDbClient = db,
+): Promise<InviteListRow | null> {
+  const invite = await client.userInvite.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      email: true,
+      rank: true,
+      invitedBy: true,
+      expiresAt: true,
+      createdAt: true,
+    },
+  })
+  return invite ? normalizeInviteListRow(invite) : null
+}
+
 // The most recent still-open invite for an email (not accepted, not expired).
 // This is the signup gate's lookup — a brand-new Google user must match one.
 export async function findOpenInviteByEmail(

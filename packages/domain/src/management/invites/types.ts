@@ -25,6 +25,17 @@ export type InviteListRow = {
   createdAt: string
 }
 
+// The invite record shown in the detail/record view — the open-invite row shape.
+// Invites carry no `updatedAt`/editable fields, so the detail view is read-only
+// plus a Revoke (delete) action.
+export type Invite = InviteListRow
+
+// User-supplied form for the invite create flow (email + rank).
+export type InviteCreateForm = {
+  email: string
+  rank: UserRank
+}
+
 // Cross-layer config for the pending-invites list view (referenced by the use
 // case / route validator and the client data wrapper).
 export const LIST_INVITES_PAGE_SIZE = 50

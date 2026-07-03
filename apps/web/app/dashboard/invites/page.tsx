@@ -13,11 +13,10 @@ export default async function InvitesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const actor = await requireManageUsersAccess()
+  await requireManageUsersAccess()
   const resolvedSearchParams = searchParams ? await searchParams : undefined
 
   const initialInput = parseInvitesListInputFromSearchParams(resolvedSearchParams)
-  const loginUrl = `${(process.env.BETTER_AUTH_URL ?? "").replace(/\/$/, "")}/login`
 
   const queryClient = new QueryClient()
 
@@ -39,11 +38,7 @@ export default async function InvitesPage({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <InvitesClient
-        initialPage={initialInput.page}
-        actorRank={actor.rank}
-        loginUrl={loginUrl}
-      />
+      <InvitesClient initialPage={initialInput.page} />
     </HydrationBoundary>
   )
 }

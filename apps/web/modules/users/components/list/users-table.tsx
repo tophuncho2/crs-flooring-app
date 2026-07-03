@@ -3,26 +3,25 @@
 import { DataTable, type PaginateContract } from "@/engines/list-view"
 import type { UserListRow } from "@builders/domain"
 import { USERS_LIST_COLUMNS } from "./table/users-list-columns"
-import {
-  createUserRowCellRenderer,
-  type UserRowCellHandlers,
-} from "./table/users-row-cell"
+import { renderUserRowCell } from "./table/users-row-cell"
 
 export function UsersTable({
   rows,
+  onOpenUser,
   pagination,
-  handlers,
 }: {
   rows: UserListRow[]
+  onOpenUser: (row: UserListRow) => void
   pagination?: PaginateContract
-  handlers: UserRowCellHandlers
 }) {
   return (
     <DataTable<UserListRow>
       rows={rows}
       columns={USERS_LIST_COLUMNS}
       empty="No users found."
-      renderCell={createUserRowCellRenderer(handlers)}
+      onOpenRow={(row) => onOpenUser(row)}
+      getRowAriaLabel={(row) => `Open user ${row.email}`}
+      renderCell={renderUserRowCell}
       pagination={pagination}
     />
   )

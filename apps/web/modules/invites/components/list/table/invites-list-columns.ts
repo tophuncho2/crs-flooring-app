@@ -6,5 +6,4 @@ export const INVITES_LIST_COLUMNS: ReadonlyArray<DataTableColumn<InviteListRow>>
   { key: "rank", label: "Rank" },
   { key: "invitedBy", label: "Invited by" },
   { key: "expiresAt", label: "Expires" },
-  { key: "actions", label: "" },
 ]

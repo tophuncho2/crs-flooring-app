@@ -1,4 +1,15 @@
 import { canManageUsers, RANK_ORDER, type UserRank } from "../users/rank.js"
+import { createInvitePayloadSchema, type InviteCreateForm } from "./types.js"
+
+// Client-side gate for the invite create form — email required + well-formed,
+// reusing the same zod schema the API route validates against so the two agree.
+export function validateInviteCreateForm(input: InviteCreateForm): string {
+  const email = input.email.trim()
+  if (!email) return "Email is required"
+  const parsed = createInvitePayloadSchema.safeParse({ email, rank: input.rank })
+  if (!parsed.success) return "Enter a valid email address"
+  return ""
+}
 
 // Who may manage whom — the single rank-scope predicate behind invites,
 // rank-change, AND deactivation. The actor must be allowed to manage users at all

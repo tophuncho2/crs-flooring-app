@@ -1,38 +1,27 @@
 "use client"
 
-import { useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
   ListPageShell,
   ListHeaderPortal,
 } from "@/engines/list-view"
-import { LIST_USERS_PAGE_SIZE, type UserListRow, type UserRank } from "@builders/domain"
-import { getClientErrorMessage } from "@/transport"
+import { LIST_USERS_PAGE_SIZE, type UserListRow } from "@builders/domain"
 import {
   USERS_LIST_QUERY_KEY,
   listUsersRequest,
 } from "@/modules/users/data/list-users-request"
-import {
-  setUserActiveRequest,
-  updateUserRankRequest,
-} from "@/modules/users/data/mutations"
+import { useUsersListController } from "@/modules/users/controllers/list/use-users-list-controller"
 import { UsersTable } from "./users-table"
 
 export type UsersClientProps = {
   initialPage: number
-  actorId: string
-  actorRank: UserRank
 }
 
-// Interactive surface: rank select + activation toggle per row. Mutations
-// invalidate the list query so the table reflects the new state (and any revoked
-// sessions) on refetch.
-export default function UsersClient({ initialPage, actorId, actorRank }: UsersClientProps) {
-  const queryClient = useQueryClient()
-  const [busyId, setBusyId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+// Read-only list — rows open the user record view, where rank + activation are
+// edited. No mutations happen here.
+export default function UsersClient({ initialPage }: UsersClientProps) {
+  const { openUser } = useUsersListController()
 
   const {
     rows,
@@ -54,28 +43,6 @@ export default function UsersClient({ initialPage, actorId, actorRank }: UsersCl
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
-  async function runMutation(id: string, mutate: () => Promise<unknown>) {
-    setBusyId(id)
-    setError(null)
-    try {
-      await mutate()
-      await queryClient.invalidateQueries({ queryKey: [...USERS_LIST_QUERY_KEY] })
-    } catch (mutationError) {
-      setError(getClientErrorMessage(mutationError, "Could not update the user."))
-    } finally {
-      setBusyId(null)
-    }
-  }
-
-  function handleRankChange(row: UserListRow, rank: UserRank) {
-    if (rank === row.rank) return
-    void runMutation(row.id, () => updateUserRankRequest(row.id, rank, row.updatedAt))
-  }
-
-  function handleToggleActive(row: UserListRow) {
-    void runMutation(row.id, () => setUserActiveRequest(row.id, !row.isActive))
-  }
-
   return (
     <ListPageShell>
       <ListHeaderPortal
@@ -84,20 +51,9 @@ export default function UsersClient({ initialPage, actorId, actorRank }: UsersCl
         total={total}
         rowCountLabel="users"
       />
-      {error ? (
-        <p className="px-4 py-2 text-sm text-rose-700" role="alert">
-          {error}
-        </p>
-      ) : null}
       <UsersTable
         rows={rows}
-        handlers={{
-          actorRank,
-          actorId,
-          busyId,
-          onRankChange: handleRankChange,
-          onToggleActive: handleToggleActive,
-        }}
+        onOpenUser={(row) => openUser(row.id)}
         pagination={{
           page,
           pageSize,
