@@ -29,7 +29,6 @@ async function upsertOwnerUser({ prisma, email, logger = console }) {
     where: { email: normalizedEmail },
     update: {
       rank: "DEVELOPER",
-      isActive: true,
       emailVerified: true,
     },
     create: {
@@ -41,7 +40,6 @@ async function upsertOwnerUser({ prisma, email, logger = console }) {
       id: true,
       email: true,
       rank: true,
-      isActive: true,
     },
   })
 

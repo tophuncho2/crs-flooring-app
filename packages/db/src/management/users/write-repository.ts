@@ -18,19 +18,6 @@ export async function setUserRank(
   return normalizeUserListRow(user)
 }
 
-export async function setUserActive(
-  id: string,
-  isActive: boolean,
-  client: UsersDbClient = db,
-): Promise<UserListRow> {
-  const user = await client.user.update({
-    where: { id },
-    data: { isActive },
-    select: USER_ROW_SELECT,
-  })
-  return normalizeUserListRow(user)
-}
-
 // Revokes every Better Auth session for a user (immediate lockout — also busts
 // the cookie cache, since the session lookup then fails).
 export async function deleteUserSessions(
@@ -38,4 +25,15 @@ export async function deleteUserSessions(
   client: UsersDbClient = db,
 ): Promise<void> {
   await client.session.deleteMany({ where: { userId } })
+}
+
+// Permanently removes the user row. Schema relations (`onDelete: Cascade` on
+// Session, Account, AppMutationReceipt) drop the auth plumbing automatically;
+// `createdBy`/`updatedBy` audit stamps are plain email text, not FKs, so history
+// survives. Throws Prisma `P2025` when the row is already gone.
+export async function deleteUserRecordById(
+  id: string,
+  client: UsersDbClient = db,
+): Promise<void> {
+  await client.user.delete({ where: { id } })
 }

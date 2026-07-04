@@ -17,10 +17,12 @@ export async function updateUserRankRequest(
   })
 }
 
-export async function setUserActiveRequest(id: string, isActive: boolean) {
-  return requestJson<{ user: UserListRow }>(`/api/users/${id}/active`, {
-    method: "PATCH",
+// Permanent delete — `updatedAt` is the optimistic-concurrency token. The row's
+// sessions/accounts/receipts cascade at the DB level.
+export async function deleteUserRequest(id: string, updatedAt: string) {
+  return requestJson<{ ok: true }>(`/api/users/${id}`, {
+    method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(withMutationMeta({ isActive })),
+    body: JSON.stringify(withMutationMeta({}, updatedAt)),
   })
 }

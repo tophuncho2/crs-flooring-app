@@ -1,14 +1,13 @@
 import { z } from "zod"
 import type { UserRank } from "./rank.js"
 
-// Row shape for the users list AND the mutation responses (rank change,
-// activation). `updatedAt` is the optimistic-concurrency token the client echoes
-// back on the next inline edit.
+// Row shape for the users list AND the mutation responses (rank change).
+// `updatedAt` is the optimistic-concurrency token the client echoes back on the
+// next inline edit / delete.
 export type UserListRow = {
   id: string
   email: string
   rank: UserRank
-  isActive: boolean
   createdAt: string
   updatedAt: string
 }
@@ -17,8 +16,7 @@ export type UserListRow = {
 // (`updatedAt` doubles as the optimistic-concurrency token on rank save).
 export type User = UserListRow
 
-// Editable slice of the user record: rank only. Activation is a discrete action
-// (its own route), not a saved form field.
+// Editable slice of the user record: rank only.
 export type UserForm = {
   rank: UserRank
 }
@@ -34,10 +32,3 @@ export const updateUserRankPayloadSchema = z.object({
 })
 
 export type UpdateUserRankPayload = z.infer<typeof updateUserRankPayloadSchema>
-
-// Payload for activating/deactivating a user.
-export const setUserActivePayloadSchema = z.object({
-  isActive: z.boolean(),
-})
-
-export type SetUserActivePayload = z.infer<typeof setUserActivePayloadSchema>

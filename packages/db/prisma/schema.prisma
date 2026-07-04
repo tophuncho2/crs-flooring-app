@@ -21,10 +21,6 @@ model User {
   emailVerified          Boolean               @default(false)
   image                  String?
   rank                   UserRank              @default(TIER_3)
-  // Manager-controlled activation gate. Deactivating flips this false and revokes
-  // the user's sessions; `getSessionUser` rejects inactive users. `rank` stays the
-  // domain authority for authorization.
-  isActive               Boolean               @default(true)
   createdAt              DateTime              @default(now())
   updatedAt              DateTime              @default(now()) @updatedAt
   mutationReceipts       AppMutationReceipt[]

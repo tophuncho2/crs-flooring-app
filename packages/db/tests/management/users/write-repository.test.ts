@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import {
+  deleteUserRecordById,
   deleteUserSessions,
-  setUserActive,
   setUserRank,
 } from "../../../src/management/users/write-repository.js"
 
@@ -9,7 +9,6 @@ const USER_ROW = {
   id: "u-1",
   email: "joe@crsfloorcovering.com",
   rank: "TIER_2",
-  isActive: true,
   createdAt: new Date("2026-06-01T00:00:00.000Z"),
   updatedAt: new Date("2026-06-28T00:00:00.000Z"),
 }
@@ -27,14 +26,13 @@ describe("setUserRank", () => {
   })
 })
 
-describe("setUserActive", () => {
-  it("updates only isActive", async () => {
-    const client = { user: { update: vi.fn().mockResolvedValue({ ...USER_ROW, isActive: false }) } }
+describe("deleteUserRecordById", () => {
+  it("deletes the user row by id (cascade removes sessions/accounts/receipts)", async () => {
+    const client = { user: { delete: vi.fn().mockResolvedValue(USER_ROW) } }
 
-    const result = await setUserActive("u-1", false, client as never)
+    await deleteUserRecordById("u-1", client as never)
 
-    expect(client.user.update.mock.calls[0][0].data).toEqual({ isActive: false })
-    expect(result).toMatchObject({ id: "u-1", isActive: false })
+    expect(client.user.delete).toHaveBeenCalledWith({ where: { id: "u-1" } })
   })
 })
 

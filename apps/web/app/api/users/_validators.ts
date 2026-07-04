@@ -4,9 +4,7 @@ import type { ListInput, UsersListFilters } from "@builders/application"
 import {
   LIST_USERS_MAX_PAGE_SIZE,
   LIST_USERS_PAGE_SIZE,
-  setUserActivePayloadSchema,
   updateUserRankPayloadSchema,
-  type SetUserActivePayload,
   type UpdateUserRankPayload,
 } from "@builders/domain"
 
@@ -27,20 +25,6 @@ export function validateUpdateUserRankInput(
     const issue = parseResult.error.issues[0]
     failUserValidation(
       issue?.message ?? "Invalid rank",
-      issue?.path[0] ? String(issue.path[0]) : undefined,
-    )
-  }
-  return parseResult.data
-}
-
-export function validateSetUserActiveInput(
-  body: Record<string, unknown>,
-): SetUserActivePayload {
-  const parseResult = setUserActivePayloadSchema.safeParse(body)
-  if (!parseResult.success) {
-    const issue = parseResult.error.issues[0]
-    failUserValidation(
-      issue?.message ?? "Invalid activation state",
       issue?.path[0] ? String(issue.path[0]) : undefined,
     )
   }

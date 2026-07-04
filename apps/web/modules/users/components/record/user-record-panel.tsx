@@ -23,18 +23,15 @@ export function UserRecordPanel({
   actorRank: UserRank
   actorId: string
 }) {
-  const { controller, toggleActive, isTogglingActive, activeError } = useUserPrimarySection({
-    page,
-    entry,
-  })
+  const controller = useUserPrimarySection({ page, entry })
   const primary = controller.primarySection
   const record = controller.record
 
   const rankEditable = canEditRank(actorRank, record.rank)
   const isSelf = record.id === actorId
-  // Mirrors the retired list-row gate: only ranks strictly below the actor, and
-  // never deactivating your own still-active account.
-  const canToggleActive = canEditRank(actorRank, record.rank) && !(record.isActive && isSelf)
+  // Delete is rank-scoped (strictly below the actor, so a DEVELOPER is
+  // unreachable) and never allowed on your own account.
+  const canDelete = rankEditable && !isSelf
 
   const sections: RecordPanelSectionConfig[] = [
     {
@@ -63,10 +60,6 @@ export function UserRecordPanel({
             rankEditable={rankEditable}
             onRankChange={(rank) => primary.setLocalValue((previous) => ({ ...previous, rank }))}
             saving={primary.isSaving}
-            canToggleActive={canToggleActive}
-            onToggleActive={() => void toggleActive()}
-            isTogglingActive={isTogglingActive}
-            activeError={activeError}
           />
         </RecordPrimarySectionInstance>
       ),
@@ -76,8 +69,13 @@ export function UserRecordPanel({
   return (
     <>
       <RecordMultiSectionPanel page={page} sections={sections} />
-      {/* No delete — users are never removed through the UI (break-glass script only). */}
-      <RecordEntityFooter onClose={page.closePage} />
+      <RecordEntityFooter
+        onClose={page.closePage}
+        onDelete={canDelete ? controller.deleteRecord : undefined}
+        deleteLabel="Delete User"
+        confirmTitle="Delete user?"
+        confirmMessage="This permanently removes the user and revokes their sessions. They can be re-invited later. This cannot be undone."
+      />
     </>
   )
 }

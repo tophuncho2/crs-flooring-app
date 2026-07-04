@@ -8,13 +8,12 @@ export const USER_ROW_SELECT = {
   id: true,
   email: true,
   rank: true,
-  isActive: true,
   createdAt: true,
   updatedAt: true,
 } as const
 
 // Single user row (with `updatedAt` for optimistic concurrency). Used by the
-// rank-change / activation mutations.
+// rank-change / delete mutations.
 export async function getUserRecordById(
   id: string,
   client: UsersDbClient = db,

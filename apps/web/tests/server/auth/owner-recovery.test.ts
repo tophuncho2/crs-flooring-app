@@ -27,7 +27,6 @@ describe("upsertOwnerUser", () => {
       id: "owner-1",
       email: "owner@test.com",
       rank: "DEVELOPER",
-      isActive: true,
     })
     const logger = { log: vi.fn() }
 
@@ -41,14 +40,12 @@ describe("upsertOwnerUser", () => {
       id: "owner-1",
       email: "owner@test.com",
       rank: "DEVELOPER",
-      isActive: true,
     })
 
     expect(upsert).toHaveBeenCalledWith({
       where: { email: "owner@test.com" },
       update: {
         rank: "DEVELOPER",
-        isActive: true,
         emailVerified: true,
       },
       create: {
@@ -60,7 +57,6 @@ describe("upsertOwnerUser", () => {
         id: true,
         email: true,
         rank: true,
-        isActive: true,
       },
     })
   })

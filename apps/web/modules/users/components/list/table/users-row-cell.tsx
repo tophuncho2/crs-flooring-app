@@ -3,8 +3,8 @@ import type { DataTableColumn } from "@/engines/list-view"
 import { formatEasternDateTime, type UserListRow } from "@builders/domain"
 import { RANK_LABELS } from "@/modules/users/rank-presentation"
 
-// Read-only list — rows navigate to the user record view, where rank + activation
-// are edited. No inline controls.
+// Read-only list — rows navigate to the user record view, where rank is edited
+// and the user can be deleted. No inline controls.
 export function renderUserRowCell(
   column: DataTableColumn<UserListRow>,
   row: UserListRow,
@@ -14,12 +14,6 @@ export function renderUserRowCell(
       return <span className="font-medium">{row.email}</span>
     case "rank":
       return <span>{RANK_LABELS[row.rank] ?? row.rank}</span>
-    case "isActive":
-      return (
-        <span className={row.isActive ? "text-emerald-600" : "text-rose-600"}>
-          {row.isActive ? "Active" : "Inactive"}
-        </span>
-      )
     case "createdAt":
       return <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
     default:

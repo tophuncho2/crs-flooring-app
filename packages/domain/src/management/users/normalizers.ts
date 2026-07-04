@@ -7,7 +7,6 @@ type UserListRowInput = {
   id: string
   email: string
   rank: UserRank
-  isActive: boolean
   createdAt: Date | string
   updatedAt: Date | string
 }
@@ -17,7 +16,6 @@ export function normalizeUserListRow(user: UserListRowInput): UserListRow {
     id: user.id,
     email: user.email,
     rank: user.rank,
-    isActive: user.isActive,
     createdAt: toIso(user.createdAt),
     updatedAt: toIso(user.updatedAt),
   }
