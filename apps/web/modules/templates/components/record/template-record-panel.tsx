@@ -7,10 +7,11 @@ import {
 } from "@/engines/record-view"
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/primary/use-template-primary-section"
 import { useTemplatePlannedProductsSection } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
+import { useTemplateInvoiceProductsSection } from "@/modules/templates/controllers/record/invoice-products/use-template-invoice-products-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
 import type { TemplateDetail, TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
-import { TemplatePlannedProductsSection } from "./planned-products/template-planned-products-section"
+import { TemplateProductsSection } from "./template-products-section"
 import { TemplateRecordFooter } from "./footer"
 
 export function TemplateRecordPanel({
@@ -25,9 +26,18 @@ export function TemplateRecordPanel({
     template: primary.record,
     publishTemplate: primary.publishRecord,
   })
+  const invoiceProducts = useTemplateInvoiceProductsSection({
+    template: primary.record,
+    publishTemplate: primary.publishRecord,
+  })
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
-  const isDirty = primary.primarySection.isDirty || plannedProducts.isDirty
-  const canSync = !isDirty && !primary.primarySection.isSaving && !plannedProducts.isSaving
+  const isDirty =
+    primary.primarySection.isDirty || plannedProducts.isDirty || invoiceProducts.isDirty
+  const canSync =
+    !isDirty &&
+    !primary.primarySection.isSaving &&
+    !plannedProducts.isSaving &&
+    !invoiceProducts.isSaving
 
   return (
     <>
@@ -106,28 +116,24 @@ export function TemplateRecordPanel({
             ),
           },
           {
-            key: "planned-products",
+            key: "products",
             type: "item",
             order: 10,
-            dirtyLabel: "planned products",
-            controller: plannedProducts,
+            dirtyLabel: "products",
+            // The panel's dirty/saving/conflict signal is the OR of BOTH sides —
+            // the toggle host shows one at a time but either can be mid-edit.
+            controller: {
+              isDirty: plannedProducts.isDirty || invoiceProducts.isDirty,
+              isSaving: plannedProducts.isSaving || invoiceProducts.isSaving,
+              hasConflict: plannedProducts.hasConflict || invoiceProducts.hasConflict,
+            },
+            // `key={template.id}` resets the mode toggle to Planned when stepping
+            // to a neighbor template (mirrors the WO material-items host).
             render: () => (
-              <TemplatePlannedProductsSection
-                items={plannedProducts.items}
-                isDirty={plannedProducts.isDirty}
-                isSaving={plannedProducts.isSaving}
-                hasConflict={plannedProducts.hasConflict}
-                error={plannedProducts.error?.message ?? null}
-                noticeMessage={plannedProducts.noticeMessage}
-                noticeError={plannedProducts.noticeError}
-                onSave={() => void plannedProducts.save()}
-                onDiscard={() => plannedProducts.discard()}
-                onAddItem={plannedProducts.addItem}
-                onChangeField={plannedProducts.changeField}
-                onChangeCategoryFilter={plannedProducts.changeCategoryFilter}
-                onSetProductSnapshot={plannedProducts.setProductSnapshot}
-                onSetUnit={plannedProducts.setUnit}
-                onRemoveItem={plannedProducts.removeItem}
+              <TemplateProductsSection
+                key={template.id}
+                planned={plannedProducts}
+                invoice={invoiceProducts}
               />
             ),
           },

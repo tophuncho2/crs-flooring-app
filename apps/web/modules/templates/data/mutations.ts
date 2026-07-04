@@ -5,6 +5,7 @@ import { withMutationMeta } from "@/transport/mutation"
 import type {
   TemplateDetail,
   TemplateForm,
+  TemplateInvoiceProductsDiff,
   TemplatePlannedProductsDiff,
   WorkOrderDetail,
   WorkOrderMaterialItemRow,
@@ -60,6 +61,21 @@ export async function saveTemplatePlannedProductsSectionRequest(
 ) {
   return requestJson<{ template: TemplateDetail; tempIdMap: Record<string, string> }>(
     `/api/templates/${templateId}/planned-products/section`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withMutationMeta(diff as unknown as Record<string, unknown>, revisionKey)),
+    },
+  )
+}
+
+export async function saveTemplateInvoiceProductsSectionRequest(
+  templateId: string,
+  diff: TemplateInvoiceProductsDiff,
+  revisionKey: string,
+) {
+  return requestJson<{ template: TemplateDetail; tempIdMap: Record<string, string> }>(
+    `/api/templates/${templateId}/invoice-products/section`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
