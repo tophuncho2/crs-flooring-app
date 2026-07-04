@@ -1,5 +1,6 @@
 import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../shared/palette.js"
 import type { TemplatePlannedProductRow } from "./planned-products/types.js"
+import type { TemplateInvoiceProductRow } from "./invoice-products/types.js"
 
 export type TemplateListRow = {
   id: string
@@ -46,6 +47,10 @@ export type TemplateDetail = TemplateListRow & {
   propertyPostalCode: string
   propertyInstructions: string
   plannedProducts: TemplatePlannedProductRow[]
+  // Products placed onto the template's invoice — a structural mirror of
+  // plannedProducts (separate table). No count surfaced this pass; the record
+  // view reads the array directly.
+  invoiceProducts: TemplateInvoiceProductRow[]
   /**
    * Neighbors by global template-number order (`templateNumberInt`), ignoring
    * property/entity filters — powers the record-view shell stepper (◀ TP-# ▶). Null

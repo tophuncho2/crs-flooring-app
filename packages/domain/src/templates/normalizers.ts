@@ -1,6 +1,8 @@
 import type { PaletteColor } from "../shared/palette.js"
 import { normalizeTemplatePlannedProduct } from "./planned-products/normalizers.js"
 import type { TemplatePlannedProductRow } from "./planned-products/types.js"
+import { normalizeTemplateInvoiceProduct } from "./invoice-products/normalizers.js"
+import type { TemplateInvoiceProductRow } from "./invoice-products/types.js"
 import type {
   TemplateDetail,
   TemplateListRow,
@@ -50,6 +52,7 @@ type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
     instructions: string | null
   } | null
   plannedProducts: Array<Parameters<typeof normalizeTemplatePlannedProduct>[0]>
+  invoiceProducts: Array<Parameters<typeof normalizeTemplateInvoiceProduct>[0]>
 }
 
 export function normalizeTemplateListRow(template: TemplateListInput): TemplateListRow {
@@ -81,6 +84,7 @@ export function normalizeTemplate(
 ): TemplateDetail {
   const base = normalizeTemplateListRow(template)
   const plannedProducts: TemplatePlannedProductRow[] = template.plannedProducts.map(normalizeTemplatePlannedProduct)
+  const invoiceProducts: TemplateInvoiceProductRow[] = template.invoiceProducts.map(normalizeTemplateInvoiceProduct)
   return {
     ...base,
     internalNotes: template.internalNotes ?? "",
@@ -91,6 +95,7 @@ export function normalizeTemplate(
     propertyPostalCode: template.property?.postalCode ?? "",
     propertyInstructions: template.property?.instructions ?? "",
     plannedProducts,
+    invoiceProducts,
     previousTemplate: neighbors.previousTemplate,
     nextTemplate: neighbors.nextTemplate,
   }

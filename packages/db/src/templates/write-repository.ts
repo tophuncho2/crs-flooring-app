@@ -71,6 +71,24 @@ const templateDetailSelect = {
     },
     orderBy: { createdAt: "asc" as const },
   },
+  // Invoice products mirror the planned block — the create/update detail return
+  // now carries them too (empty on a freshly-created template).
+  invoiceProducts: {
+    select: {
+      id: true,
+      productId: true,
+      product: { select: { name: true } },
+      quantity: true,
+      unitId: true,
+      unit: { select: { name: true, abbreviation: true } },
+      notes: true,
+      createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
+    },
+    orderBy: { createdAt: "asc" as const },
+  },
 } as const
 
 export async function createTemplateRecord(

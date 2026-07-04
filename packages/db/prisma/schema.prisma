@@ -234,6 +234,7 @@ model FlooringUnitOfMeasure {
   stagedRows                 FlooringImportStagedInventoryRow[] @relation("FlooringStagedRowUnit")
   stagedFilterRows           FlooringImportStagedInventoryFilterRow[] @relation("FlooringStagedFilterRowUnit")
   plannedProducts            TemplatePlannedProduct[] @relation("TemplatePlannedProductUnit")
+  invoiceProducts            TemplateInvoiceProduct[] @relation("TemplateInvoiceProductUnit")
   workOrderItems             FlooringWorkOrderItem[] @relation("FlooringWorkOrderItemUnit")
 
   @@map("flooring_unit_of_measure")
@@ -267,6 +268,7 @@ model FlooringProduct {
   createdBy                        String?
   updatedBy                        String?
   plannedProducts                        TemplatePlannedProduct[]
+  invoiceProducts                        TemplateInvoiceProduct[]
   workOrderItems                         FlooringWorkOrderItem[]
   inventories                            FlooringInventory[]
   inventoryAdjustments                   FlooringInventoryAdjustment[]
@@ -570,6 +572,7 @@ model Template {
   createdBy            String?
   updatedBy            String?
   plannedProducts      TemplatePlannedProduct[]
+  invoiceProducts      TemplateInvoiceProduct[]
   workOrders           FlooringWorkOrder[]
 
   @@index([templateNumberInt])
@@ -607,6 +610,32 @@ model TemplatePlannedProduct {
   @@index([productId])
   @@index([unitId])
   @@map("template_planned_product")
+}
+
+// Products placed onto a template's INVOICE. A structural mirror of
+// TemplatePlannedProduct (a separate table so invoice rows can grow
+// invoice-specific columns — e.g. cost — in a later pass). Byte-identical to
+// planned products today; the separation is the point.
+model TemplateInvoiceProduct {
+  id             String                 @id @default(uuid())
+  templateId     String
+  template       Template               @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  productId      String
+  product        FlooringProduct        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity       Decimal?               @db.Decimal(10, 2)
+  unitId         String?
+  unit           FlooringUnitOfMeasure? @relation("TemplateInvoiceProductUnit", fields: [unitId], references: [id], onDelete: Restrict)
+  notes          String?                @db.VarChar(30)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  createdBy      String?
+  updatedBy      String?
+
+  @@index([templateId])
+  @@index([templateId, createdAt])
+  @@index([productId])
+  @@index([unitId])
+  @@map("template_invoice_product")
 }
 
 model FlooringWarehouse {
