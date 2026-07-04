@@ -101,7 +101,7 @@ The rule: **drop one `../`, and drop the area segment if the path contains one.*
 Sites (post-move paths): `tests/user-activity/read-repository.test.ts:2`; `tests/users/write-repository.test.ts:6`; `tests/properties/order-by.test.ts:5`; `tests/templates/order-by.test.ts:5`; `tests/invites/read-repository.test.ts:5`; `tests/invites/write-repository.test.ts:6`; `tests/work-orders/order-by.test.ts:5`; `tests/unit-of-measures/read-repository.test.ts:2`; `tests/inventory/order-by.test.ts:5`; `tests/inventory/adjustments/order-by.test.ts:5` (SUBMODULE: `../../../../src/flooring/inventory/adjustments/order-by.js` → `../../../src/inventory/adjustments/order-by.js`). Line 1 (the `vitest` import) is unaffected in every test file.
 
 ### (5) UNAFFECTED do-not-touch list (recap)
-- Prisma model accessors, not paths: `FlooringVacancyStatus` (`src/index.ts:1`, `work-orders/read-repository.ts`); seed scripts `tx.flooringCategory.*` (`scripts/seed-categories.js:76,82,88`) and `tx.flooringUnitOfMeasure.*` (`scripts/seed-unit-of-measures.js:63,69,75`).
+- Prisma model accessors, not paths: `FlooringVacancyStatus` (`src/index.ts:1`, `work-orders/read-repository.ts`); seed scripts `tx.flooringCategory.*` (`scripts/seed-categories.js:75,83`) and `tx.flooringUnitOfMeasure.*` (`scripts/seed-unit-of-measures.js:63,69,75`).
 - Same-area-sibling + intra-module imports listed in §3c UNAFFECTED.
 - `prisma/`, `src/generated/`, `shared/`, `queues/`, `seed/`, `client.ts`, `types.ts`, `errors.ts`, `env.ts`, `mutation-receipts.ts` — no reverse importers into a module dir; nothing to change.
 
