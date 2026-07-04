@@ -1,6 +1,6 @@
 "use client"
 
-import { NumberCell, TextCell } from "@/engines/record-view"
+import { MoneyCell, NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
@@ -15,6 +15,7 @@ import type { TemplateInvoiceProductLocal } from "@/modules/templates/controller
 const TEMPLATE_INVOICE_PRODUCTS_COLUMNS: DataTableColumn<TemplateInvoiceProductLocal>[] = [
   { key: "product", label: "Product", minWidth: 260, grow: 2 },
   { key: "quantity", label: "Quantity", width: 140, align: "end" },
+  { key: "cost", label: "Cost", width: 140, align: "end" },
   { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
   { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
 ]
@@ -90,6 +91,15 @@ export function TemplateInvoiceProductsGrid({
                 onChange={(next) => onChangeField(item.id, "quantity", next)}
                 placeholder="Quantity"
                 ariaLabel="Invoice product quantity"
+              />
+            )
+          case "cost":
+            return (
+              <MoneyCell
+                editable={editable}
+                value={item.cost}
+                onChange={(next) => onChangeField(item.id, "cost", next)}
+                ariaLabel="Invoice product cost"
               />
             )
           case "notes":

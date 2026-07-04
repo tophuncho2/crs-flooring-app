@@ -626,6 +626,9 @@ model TemplateInvoiceProduct {
   unitId         String?
   unit           FlooringUnitOfMeasure? @relation("TemplateInvoiceProductUnit", fields: [unitId], references: [id], onDelete: Restrict)
   notes          String?                @db.VarChar(30)
+  // Invoice-only money column (the deferred divergence from planned products).
+  // Money standard: Decimal(12,2), normalized at every write boundary. NULL = unset.
+  cost           Decimal?               @db.Decimal(12, 2)
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   createdBy      String?

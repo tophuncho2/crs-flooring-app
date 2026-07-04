@@ -13,6 +13,8 @@ import type {
 } from "@builders/application"
 import {
   isPaletteColor,
+  isValidMoneyAmount,
+  normalizeMoneyAmount,
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
   PALETTE_COLOR_INVALID_MESSAGE,
@@ -75,6 +77,15 @@ function optionalString(value: unknown): string | null {
 // value is validated (> 0) by the domain rule, not here.
 function optionalQuantity(value: unknown): string {
   return typeof value === "string" ? value : ""
+}
+
+// Optional money field (money standard): missing/blank → "" (unset), otherwise
+// validate + canonicalize to a fixed-scale-2 string. Invoice-only; throws the
+// invoice error class so the client keys off its distinct code.
+function optionalMoney(value: unknown, path: string): string {
+  if (typeof value !== "string" || value.trim() === "") return ""
+  if (!isValidMoneyAmount(value)) failInvoiceDiff(`${path} must be a valid amount`, path)
+  return normalizeMoneyAmount(value)
 }
 
 function requireBoundedString(
@@ -245,6 +256,7 @@ function validateInvoiceProductForm(value: unknown, path: string): TemplateInvoi
     quantity: optionalQuantity(obj.quantity),
     notes:
       optionalBoundedText(obj.notes, TEMPLATE_INVOICE_PRODUCT_NOTES_MAX, `${path}.notes`, failInvoiceDiff) ?? "",
+    cost: optionalMoney(obj.cost, `${path}.cost`),
   }
 }
 

@@ -13,6 +13,9 @@ export type TemplateInvoiceProductRow = {
   unitName: string
   unitAbbrev: string
   notes: string
+  // Invoice-only money column (the divergence from planned products). Canonical
+  // fixed-scale money string ("10.00"); "" when unset. Money standard.
+  cost: string
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
@@ -28,6 +31,8 @@ export type TemplateInvoiceProductForm = {
   unitId: string
   quantity: string
   notes: string
+  // Invoice-only money column; "" = unset. Normalized at the write boundaries.
+  cost: string
 }
 
 export const EMPTY_TEMPLATE_INVOICE_PRODUCT_FORM: TemplateInvoiceProductForm = {
@@ -35,4 +40,5 @@ export const EMPTY_TEMPLATE_INVOICE_PRODUCT_FORM: TemplateInvoiceProductForm = {
   unitId: "",
   quantity: "",
   notes: "",
+  cost: "",
 }

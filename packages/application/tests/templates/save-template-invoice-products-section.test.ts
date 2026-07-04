@@ -57,7 +57,7 @@ describe("saveTemplateInvoiceProductsSectionUseCase", () => {
         diff: {
           added: [],
           modified: [
-            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } },
+            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "", cost: "" } },
           ],
           deleted: [],
         },
@@ -75,7 +75,7 @@ describe("saveTemplateInvoiceProductsSectionUseCase", () => {
       {
         templateId: "tpl-1",
         diff: {
-          added: [{ tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } }],
+          added: [{ tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "", cost: "" } }],
           modified: [],
           deleted: [],
         },
@@ -94,7 +94,7 @@ describe("saveTemplateInvoiceProductsSectionUseCase", () => {
         {
           templateId: "tpl-1",
           diff: {
-            added: [{ tempId: "t1", form: { productId: "", unitId: "", quantity: "", notes: "" } }],
+            added: [{ tempId: "t1", form: { productId: "", unitId: "", quantity: "", notes: "", cost: "" } }],
             modified: [],
             deleted: [],
           },
