@@ -53,6 +53,7 @@ function WorkOrderCreatePanel({
         city: updateInput.city,
         state: updateInput.state,
         postalCode: updateInput.postalCode,
+        customerName: updateInput.customerName,
         description: updateInput.description,
         internalNotes: updateInput.internalNotes,
         installerInstructions: updateInput.installerInstructions,

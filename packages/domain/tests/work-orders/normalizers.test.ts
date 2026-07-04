@@ -21,6 +21,7 @@ describe("normalizeWorkOrderListRow entity", () => {
     vacancy: null,
     timeOfDay: null,
     scheduledFor: null,
+    customerName: null,
     description: null,
     streetAddress: null,
     city: null,
@@ -53,6 +54,11 @@ describe("normalizeWorkOrderListRow entity", () => {
       "PO-4821",
     )
   })
+
+  it("passes the customer name through, defaulting null to empty string", () => {
+    expect(normalizeWorkOrderListRow(base).customerName).toBe("")
+    expect(normalizeWorkOrderListRow({ ...base, customerName: "Jane Doe" }).customerName).toBe("Jane Doe")
+  })
 })
 
 describe("normalizeWorkOrder WO-owned address", () => {
@@ -72,6 +78,7 @@ describe("normalizeWorkOrder WO-owned address", () => {
     vacancy: null,
     timeOfDay: null,
     scheduledFor: null,
+    customerName: null,
     description: null,
     purchaseOrderNumber: null,
     createdAt: "2026-06-08T00:00:00.000Z",

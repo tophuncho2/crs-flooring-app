@@ -22,6 +22,7 @@ const BASE: WorkOrderFileGenerationInput = {
   city: "Austin",
   state: "TX",
   postalCode: "78701",
+  customerName: "",
   description: "",
   installerInstructions: "",
   property: {

@@ -18,6 +18,7 @@ export type WorkOrderListRow = {
   vacancy: "VACANT" | "OCCUPIED" | null
   timeOfDay: "AM" | "PM" | null
   scheduledFor: string
+  customerName: string
   description: string
   // WO-owned address (snapshotted from the property, then editable). `zip` vocab
   // matches the form + shared AddressEditCell; persisted as `postalCode`. On the
@@ -81,6 +82,7 @@ export type WorkOrderForm = {
   city: string
   state: string
   zip: string
+  customerName: string
   description: string
   internalNotes: string
   installerInstructions: string
@@ -102,6 +104,7 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   city: "",
   state: "",
   zip: "",
+  customerName: "",
   description: "",
   internalNotes: "",
   installerInstructions: "",

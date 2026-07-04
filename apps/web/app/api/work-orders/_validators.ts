@@ -18,6 +18,7 @@ import {
   WORK_ORDER_EXPORT_COLUMNS,
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
+  WO_CUSTOMER_NAME_MAX,
   WO_INTERNAL_NOTES_MAX,
   WO_PURCHASE_ORDER_NUMBER_MAX,
   WO_UNIT_NUMBER_MAX,
@@ -155,6 +156,7 @@ export function validateCreateWorkOrderInput(
     city: optionalString(body.city),
     state: optionalState(body.state, "state"),
     postalCode: optionalString(pickPostalCode(body)),
+    customerName: optionalBoundedText(body.customerName, WO_CUSTOMER_NAME_MAX, "customerName", failWorkOrder),
     description: optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder),
     internalNotes: optionalBoundedText(body.internalNotes, WO_INTERNAL_NOTES_MAX, "internalNotes", failWorkOrder),
     installerInstructions: optionalBoundedText(
@@ -197,6 +199,7 @@ export function validateUpdateWorkOrderInput(
   if ("city" in body) input.city = optionalString(body.city)
   if ("state" in body) input.state = optionalState(body.state, "state")
   if ("zip" in body || "postalCode" in body) input.postalCode = optionalString(pickPostalCode(body))
+  if ("customerName" in body) input.customerName = optionalBoundedText(body.customerName, WO_CUSTOMER_NAME_MAX, "customerName", failWorkOrder)
   if ("description" in body) input.description = optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder)
   if ("internalNotes" in body) {
     input.internalNotes = optionalBoundedText(body.internalNotes, WO_INTERNAL_NOTES_MAX, "internalNotes", failWorkOrder)

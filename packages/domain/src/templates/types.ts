@@ -9,6 +9,7 @@ export type TemplateListRow = {
   // business logic reads it. Defaults to SLATE; only the record-view edit form sets it.
   color: PaletteColor
   unitType: string
+  customerName: string
   description: string
   propertyId: string | null
   propertyName: string
@@ -73,6 +74,7 @@ export type TemplateForm = {
   jobTypeId: string
   warehouseId: string
   unitType: string
+  customerName: string
   description: string
   internalNotes: string
   installerInstructions: string
@@ -87,6 +89,7 @@ export const EMPTY_TEMPLATE_FORM: TemplateForm = {
   jobTypeId: "",
   warehouseId: "",
   unitType: "",
+  customerName: "",
   description: "",
   internalNotes: "",
   installerInstructions: "",

@@ -55,6 +55,7 @@ export function toUpdateWorkOrderInput(form: WorkOrderForm): UpdateWorkOrderUseC
     city: form.city,
     state: form.state,
     postalCode: form.zip,
+    customerName: form.customerName,
     description: form.description,
     internalNotes: form.internalNotes,
     installerInstructions: form.installerInstructions,

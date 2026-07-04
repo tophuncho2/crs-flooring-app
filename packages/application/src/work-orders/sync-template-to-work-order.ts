@@ -74,6 +74,9 @@ export async function syncTemplateToWorkOrderUseCase(
           city: template.propertyCity || null,
           state: template.propertyState || null,
           postalCode: template.propertyPostalCode || null,
+          // Customer name is user-typed copy that carries forward from the
+          // template to each synced work order.
+          customerName: template.customerName ? template.customerName : null,
           description: template.description ? template.description : null,
           // installerInstructions are installer-facing copy that survives
           // the template -> work order materialization. internalNotes are

@@ -22,6 +22,7 @@ export type CreateWorkOrderRecordInput = {
   city?: string | null
   state?: string | null
   postalCode?: string | null
+  customerName?: string | null
   description?: string | null
   internalNotes?: string | null
   installerInstructions?: string | null

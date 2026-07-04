@@ -18,6 +18,7 @@ import {
   LIST_TEMPLATES_MAX_PAGE_SIZE,
   LIST_TEMPLATES_PAGE_SIZE,
   PALETTE_COLOR_INVALID_MESSAGE,
+  TEMPLATE_CUSTOMER_NAME_MAX,
   TEMPLATE_DESCRIPTION_MAX,
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
@@ -127,6 +128,7 @@ export function validateCreateTemplateInput(
     jobTypeId: optionalString(body.jobTypeId),
     warehouseId: optionalString(body.warehouseId),
     unitType: requireBoundedString(body.unitType, TEMPLATE_UNIT_TYPE_MAX, "unitType", failTemplate),
+    customerName: optionalBoundedText(body.customerName, TEMPLATE_CUSTOMER_NAME_MAX, "customerName", failTemplate),
     description: optionalBoundedText(body.description, TEMPLATE_DESCRIPTION_MAX, "description", failTemplate),
     internalNotes: optionalBoundedText(
       body.internalNotes,
@@ -154,6 +156,9 @@ export function validateUpdateTemplateInput(
   if ("warehouseId" in body) input.warehouseId = optionalString(body.warehouseId)
   if ("unitType" in body) {
     input.unitType = requireBoundedString(body.unitType, TEMPLATE_UNIT_TYPE_MAX, "unitType", failTemplate)
+  }
+  if ("customerName" in body) {
+    input.customerName = optionalBoundedText(body.customerName, TEMPLATE_CUSTOMER_NAME_MAX, "customerName", failTemplate)
   }
   if ("description" in body) {
     input.description = optionalBoundedText(body.description, TEMPLATE_DESCRIPTION_MAX, "description", failTemplate)

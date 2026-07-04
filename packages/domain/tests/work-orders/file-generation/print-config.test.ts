@@ -60,6 +60,7 @@ describe("renderWorkOrderInfo — top-field gating", () => {
     description: true,
     entity: true,
     property: true,
+    customerName: true,
     propertyAddress: true,
     propertyInstructions: true,
     installerInstructions: true,
@@ -72,6 +73,16 @@ describe("renderWorkOrderInfo — top-field gating", () => {
     const html = renderWorkOrderInfo(makeFileGenInput(), { ...topFields, entity: false })
     expect(html).not.toContain("<th>Entity</th>")
     expect(html).toContain("<th>Property</th>")
+  })
+
+  it("renders the Customer Name row when checked and drops it when unchecked", () => {
+    const input = makeFileGenInput({ customerName: "Jane Doe" })
+    const shown = renderWorkOrderInfo(input, topFields)
+    expect(shown).toContain("<th>Customer Name</th>")
+    expect(shown).toContain("Jane Doe")
+
+    const hidden = renderWorkOrderInfo(input, { ...topFields, customerName: false })
+    expect(hidden).not.toContain("<th>Customer Name</th>")
   })
 
   it("empties the Date grid cell when date is unchecked (keeps Warehouse)", () => {

@@ -72,9 +72,9 @@ export type WorkOrderFileProductMaterialItemGroup = {
 }
 
 /**
- * The twelve top-section values a user can toggle on the print configurator,
- * in render order. This is the single source the configurator's checkbox panel
- * and {@link renderWorkOrderInfo} both key off — adding a key here surfaces a
+ * The top-section values a user can toggle on the print configurator, in render
+ * order. This is the single source the configurator's checkbox panel and
+ * {@link renderWorkOrderInfo} both key off — adding a key here surfaces a
  * checkbox AND gates its cell/row.
  */
 export const WORK_ORDER_TOP_FIELD_KEYS = [
@@ -84,6 +84,7 @@ export const WORK_ORDER_TOP_FIELD_KEYS = [
   "description",
   "entity",
   "property",
+  "customerName",
   "propertyAddress",
   "propertyInstructions",
   "installerInstructions",
@@ -102,6 +103,7 @@ export const WORK_ORDER_TOP_FIELD_LABELS: Record<WorkOrderTopFieldKey, string> =
   description: "Description",
   entity: "Entity",
   property: "Property",
+  customerName: "Customer Name",
   propertyAddress: "Address",
   propertyInstructions: "Property Instructions",
   installerInstructions: "Installer Instructions",
@@ -159,6 +161,7 @@ export type WorkOrderFileGenerationInput = {
   city: string
   state: string
   postalCode: string
+  customerName: string
   description: string
   installerInstructions: string
   property: {

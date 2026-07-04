@@ -24,6 +24,7 @@ function input(overrides: Record<string, unknown> = {}) {
     jobTypeId: null,
     warehouseId: null,
     unitType: "2BR",
+    customerName: null,
     description: null,
     internalNotes: null,
     installerInstructions: null,
@@ -64,11 +65,19 @@ describe("createTemplateUseCase", () => {
     const created = detail({ id: "tpl-9" })
     createTemplateRecordMock.mockResolvedValue(created)
 
-    const result = await createTemplateUseCase(input({ unitType: "3BR" }) as never, ACTOR)
+    const result = await createTemplateUseCase(
+      input({ unitType: "3BR", customerName: "Jane Doe" }) as never,
+      ACTOR,
+    )
 
     expect(result).toBe(created)
     expect(createTemplateRecordMock).toHaveBeenCalledWith(
-      expect.objectContaining({ unitType: "3BR", createdBy: ACTOR, updatedBy: ACTOR }),
+      expect.objectContaining({
+        unitType: "3BR",
+        customerName: "Jane Doe",
+        createdBy: ACTOR,
+        updatedBy: ACTOR,
+      }),
       expect.anything(),
     )
   })

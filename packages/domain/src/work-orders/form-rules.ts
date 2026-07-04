@@ -24,6 +24,7 @@ export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
     city: workOrder.city,
     state: workOrder.state,
     zip: workOrder.zip,
+    customerName: workOrder.customerName,
     description: workOrder.description,
     internalNotes: workOrder.internalNotes,
     installerInstructions: workOrder.installerInstructions,

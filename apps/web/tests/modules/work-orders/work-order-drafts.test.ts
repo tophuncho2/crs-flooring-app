@@ -13,6 +13,16 @@ describe("toUpdateWorkOrderInput", () => {
     expect(input.purchaseOrderNumber).toBe("")
   })
 
+  it("carries customerName into the update/create payload", () => {
+    const input = toUpdateWorkOrderInput({ ...EMPTY_WORK_ORDER_FORM, customerName: "Jane Doe" })
+    expect(input.customerName).toBe("Jane Doe")
+  })
+
+  it("passes an empty customerName through unchanged", () => {
+    const input = toUpdateWorkOrderInput(EMPTY_WORK_ORDER_FORM)
+    expect(input.customerName).toBe("")
+  })
+
   it("maps the WO-owned address, aliasing form `zip` to wire `postalCode`", () => {
     const input = toUpdateWorkOrderInput({
       ...EMPTY_WORK_ORDER_FORM,

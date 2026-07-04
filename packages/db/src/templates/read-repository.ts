@@ -52,6 +52,7 @@ const templateListSelect = {
   templateNumber: true,
   color: true,
   unitType: true,
+  customerName: true,
   description: true,
   propertyId: true,
   property: {

@@ -129,6 +129,7 @@ describe("work-order documents — above the adjustments table", () => {
           <tbody>
             <tr><th>Entity</th><td>Cardinal Management</td></tr>
             <tr><th>Property</th><td>Maple Court Apartments</td></tr>
+            <tr><th>Customer Name</th><td><span class="empty-cell">—</span></td></tr>
             <tr><th>Address</th><td>100 Maple St, Austin, TX, 78701</td></tr>
           </tbody>
         </table>

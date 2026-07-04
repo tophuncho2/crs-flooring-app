@@ -201,6 +201,9 @@ export function renderWorkOrderInfo(
     topFields.property
       ? `<tr><th>Property</th><td>${escapeOrEmpty(input.property.name)}</td></tr>`
       : "",
+    topFields.customerName
+      ? `<tr><th>Customer Name</th><td>${escapeOrEmpty(input.customerName)}</td></tr>`
+      : "",
     topFields.propertyAddress && propertyAddress
       ? `<tr><th>Address</th><td>${escapeHtml(propertyAddress)}</td></tr>`
       : "",

@@ -34,6 +34,7 @@ function template(overrides: Record<string, unknown> = {}) {
     propertyCity: "",
     propertyState: "",
     propertyPostalCode: "",
+    customerName: null,
     description: null,
     installerInstructions: null,
     plannedProducts: [],
@@ -86,6 +87,27 @@ describe("syncTemplateToWorkOrderUseCase", () => {
           state: "IL",
           postalCode: "62704",
         }),
+      }),
+      expect.anything(),
+    )
+  })
+
+  it("carries the template's customer name into the new work order", async () => {
+    getTemplateByIdMock.mockResolvedValue(template({ customerName: "Jane Doe" }))
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    expect(createWorkOrderFromTemplateRecordMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workOrder: expect.objectContaining({ customerName: "Jane Doe" }),
+      }),
+      expect.anything(),
+    )
+  })
+
+  it("leaves the customer name null when the template has none", async () => {
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    expect(createWorkOrderFromTemplateRecordMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workOrder: expect.objectContaining({ customerName: null }),
       }),
       expect.anything(),
     )

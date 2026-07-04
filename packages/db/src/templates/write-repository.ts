@@ -9,6 +9,7 @@ export type CreateTemplateRecordInput = {
   jobTypeId: string | null
   warehouseId: string | null
   unitType: string
+  customerName?: string | null
   description?: string | null
   internalNotes?: string | null
   installerInstructions?: string | null
@@ -28,6 +29,7 @@ const templateDetailSelect = {
   templateNumber: true,
   color: true,
   unitType: true,
+  customerName: true,
   description: true,
   internalNotes: true,
   installerInstructions: true,

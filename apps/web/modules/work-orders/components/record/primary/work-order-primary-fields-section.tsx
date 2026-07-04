@@ -31,6 +31,7 @@ import { TemplatePicker } from "@/modules/templates/components/picker/template-p
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import {
   formatEasternDateTime,
+  WO_CUSTOMER_NAME_MAX,
   WO_DESCRIPTION_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
   WO_INTERNAL_NOTES_MAX,
@@ -275,8 +276,24 @@ export function WorkOrderPrimaryFieldsSection({
                 )}
               </FormField>
             </CellAt>
+            {/* Customer Name — user-typed, sits directly below the Property cell. */}
+            <CellAt col={1} row={4} colSpan={8}>
+              <FormField
+                label="Customer Name"
+                currentLength={editable ? draft.customerName.length : undefined}
+                maxLength={editable ? WO_CUSTOMER_NAME_MAX : undefined}
+              >
+                <TextCell
+                  editable={editable}
+                  value={draft.customerName}
+                  onChange={(value) => onFieldChange("customerName", value)}
+                  maxLength={WO_CUSTOMER_NAME_MAX}
+                />
+              </FormField>
+            </CellAt>
             {/* Address — snapshotted from the selected property on pick, then
-                editable + detachable (auto-flows to the next full-width row). */}
+                editable + detachable (auto-flows to the next full-width row,
+                now row 5, beneath Customer Name). */}
             <AddressEditCell
               editable={editable}
               col={1}
@@ -290,7 +307,7 @@ export function WorkOrderPrimaryFieldsSection({
               }}
               onChange={(field, value) => onFieldChange(field, value)}
             />
-            <CellAt col={1} row={5} colSpan={8}>
+            <CellAt col={1} row={6} colSpan={8}>
               <FormField label="Property Instructions">
                 <StaticFieldValue>
                   <span className="whitespace-pre-line">{instructionsDisplay}</span>
@@ -298,7 +315,7 @@ export function WorkOrderPrimaryFieldsSection({
               </FormField>
             </CellAt>
             {/* Installer Instructions */}
-            <CellAt col={1} row={6} colSpan={8}>
+            <CellAt col={1} row={7} colSpan={8}>
               <FormField
                 label="Installer Instructions"
                 currentLength={editable ? draft.installerInstructions.length : undefined}

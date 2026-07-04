@@ -7,6 +7,7 @@ import {
   FormField,
   RecordOpenButton,
   StaticFieldValue,
+  TextCell,
 } from "@/engines/record-view"
 import type { PropertyJoinedFields } from "@/engines/record-view"
 import { CellAddButton } from "@/engines/common"
@@ -20,6 +21,7 @@ import {
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import {
   buildAddressBlock,
+  TEMPLATE_CUSTOMER_NAME_MAX,
   type PropertyOption,
   type TemplateForm,
 } from "@builders/domain"
@@ -176,14 +178,29 @@ export function TemplatePropertyUnitGroup({
           )}
         </FormField>
       </CellAt>
-      <CellAt col={1} row={4} colSpan={4}>
+      {/* Customer Name — user-typed, sits directly below the Property cell. */}
+      <CellAt col={1} row={4} colSpan={8}>
+        <FormField
+          label="Customer Name"
+          currentLength={editable ? draft.customerName.length : undefined}
+          maxLength={editable ? TEMPLATE_CUSTOMER_NAME_MAX : undefined}
+        >
+          <TextCell
+            editable={editable}
+            value={draft.customerName}
+            onChange={(value) => onFieldChange("customerName", value)}
+            maxLength={TEMPLATE_CUSTOMER_NAME_MAX}
+          />
+        </FormField>
+      </CellAt>
+      <CellAt col={1} row={5} colSpan={4}>
         <FormField label="Property Address">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{addressDisplay}</span>
           </StaticFieldValue>
         </FormField>
       </CellAt>
-      <CellAt col={5} row={4} colSpan={4}>
+      <CellAt col={5} row={5} colSpan={4}>
         <FormField label="Property Instructions">
           <StaticFieldValue>
             <span className="whitespace-pre-line">{instructionsDisplay}</span>

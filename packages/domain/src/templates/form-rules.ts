@@ -14,6 +14,7 @@ export function toTemplateForm(template: TemplateDetail): TemplateForm {
     jobTypeId: template.jobTypeId ?? "",
     warehouseId: template.warehouseId ?? "",
     unitType: template.unitType,
+    customerName: template.customerName,
     description: template.description,
     internalNotes: template.internalNotes,
     installerInstructions: template.installerInstructions,

@@ -32,6 +32,7 @@ type WorkOrderListInput = {
   vacancy: "VACANT" | "OCCUPIED" | null
   timeOfDay: "AM" | "PM" | null
   scheduledFor: Date | string | null
+  customerName: string | null
   description: string | null
   streetAddress: string | null
   city: string | null
@@ -79,6 +80,7 @@ export function normalizeWorkOrderListRow(workOrder: WorkOrderListInput): WorkOr
     vacancy: workOrder.vacancy,
     timeOfDay: workOrder.timeOfDay,
     scheduledFor: toIsoDate(workOrder.scheduledFor),
+    customerName: workOrder.customerName ?? "",
     description: workOrder.description ?? "",
     streetAddress: workOrder.streetAddress ?? "",
     city: workOrder.city ?? "",

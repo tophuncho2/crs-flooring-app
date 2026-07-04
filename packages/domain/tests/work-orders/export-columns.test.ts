@@ -21,6 +21,7 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     vacancy: null,
     timeOfDay: null,
     scheduledFor: "",
+    customerName: "Jane Doe",
     description: "",
     streetAddress: "12 Oak St",
     city: "Austin",
@@ -59,6 +60,19 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     const jobTypeIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "jobTypeName")
     expect(streetIndex).toBeGreaterThan(propertyIndex)
     expect(streetIndex).toBeLessThan(jobTypeIndex)
+  })
+
+  it("exports the customer name, positioned between Property and Street", () => {
+    const column = WORK_ORDER_EXPORT_COLUMNS.find((c) => c.key === "customerName")
+    expect(column).toBeDefined()
+    expect(column?.label).toBe("Customer Name")
+    expect(column?.value(row)).toBe("Jane Doe")
+
+    const propertyIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "propertyName")
+    const customerIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "customerName")
+    const streetIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "streetAddress")
+    expect(customerIndex).toBeGreaterThan(propertyIndex)
+    expect(customerIndex).toBeLessThan(streetIndex)
   })
 
   it("includes the actor columns", () => {

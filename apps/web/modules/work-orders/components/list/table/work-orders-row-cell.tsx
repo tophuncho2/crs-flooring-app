@@ -25,6 +25,8 @@ export function renderWorkOrderRowCell(
       return row.description || "-"
     case "propertyName":
       return row.propertyName || "-"
+    case "customerName":
+      return row.customerName || "-"
     case "streetAddress":
       return row.streetAddress || "-"
     case "city":

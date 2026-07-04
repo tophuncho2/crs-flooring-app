@@ -21,6 +21,7 @@ export const WORK_ORDER_EXPORT_COLUMNS: ReadonlyArray<ExportColumn<WorkOrderList
   { key: "warehouseName", label: "Warehouse", value: (row) => row.warehouseName },
   { key: "entityName", label: "Entity", value: (row) => row.entityName ?? "" },
   { key: "propertyName", label: "Property", value: (row) => row.propertyName },
+  { key: "customerName", label: "Customer Name", value: (row) => row.customerName },
   { key: "streetAddress", label: "Street", value: (row) => row.streetAddress },
   { key: "city", label: "City", value: (row) => row.city },
   { key: "state", label: "State", value: (row) => row.state },

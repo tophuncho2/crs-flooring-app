@@ -427,6 +427,7 @@ export async function getWorkOrderForFileGeneration(
       city: true,
       state: true,
       postalCode: true,
+      customerName: true,
       description: true,
       installerInstructions: true,
       property: {
@@ -590,6 +591,7 @@ export async function getWorkOrderForFileGeneration(
     city: workOrder.city ?? "",
     state: workOrder.state ?? "",
     postalCode: workOrder.postalCode ?? "",
+    customerName: workOrder.customerName ?? "",
     description: workOrder.description ?? "",
     installerInstructions: workOrder.installerInstructions ?? "",
     property: {
