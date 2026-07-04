@@ -8,7 +8,6 @@ import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.j
 
 export type ProductRowCategory = {
   id: string
-  slug: string
   name: string
 }
 

@@ -6,31 +6,31 @@ const { resolve } = require("node:path")
  * Keep in sync with packages/db/src/seed/unit-of-measures.ts (the TypeScript source of truth).
  */
 const SEEDED_UNIT_OF_MEASURES = [
-  { slug: "linear-feet", name: "Linear Feet", abbreviation: "lf" },
-  { slug: "square-feet", name: "Square Feet", abbreviation: "sqft" },
-  { slug: "square-yard", name: "Square Yard", abbreviation: "sqyd" },
-  { slug: "buckets", name: "Buckets", abbreviation: "bkt" },
-  { slug: "boxes", name: "Boxes", abbreviation: "bx" },
-  { slug: "units", name: "Units", abbreviation: "ea" },
-  { slug: "bags", name: "Bags", abbreviation: "bag" },
-  { slug: "pieces", name: "Pieces", abbreviation: "pc" },
-  { slug: "sheets", name: "Sheets", abbreviation: "sht" },
-  { slug: "rolls", name: "Rolls", abbreviation: "rl" },
-  { slug: "gallons", name: "Gallons", abbreviation: "gal" },
+  { name: "Linear Feet", abbreviation: "lf" },
+  { name: "Square Feet", abbreviation: "sqft" },
+  { name: "Square Yard", abbreviation: "sqyd" },
+  { name: "Buckets", abbreviation: "bkt" },
+  { name: "Boxes", abbreviation: "bx" },
+  { name: "Units", abbreviation: "ea" },
+  { name: "Bags", abbreviation: "bag" },
+  { name: "Pieces", abbreviation: "pc" },
+  { name: "Sheets", abbreviation: "sht" },
+  { name: "Rolls", abbreviation: "rl" },
+  { name: "Gallons", abbreviation: "gal" },
 ]
 
 function verifySyncWithTypeScriptSource() {
   const tsPath = resolve(__dirname, "../src/seed/unit-of-measures.ts")
   const tsSource = readFileSync(tsPath, "utf8")
 
-  const entryPattern = /\{\s*slug:\s*"([^"]+)",\s*name:\s*"([^"]+)",\s*abbreviation:\s*"([^"]+)"\s*\}/g
+  const entryPattern = /\{\s*name:\s*"([^"]+)",\s*abbreviation:\s*"([^"]+)"\s*\}/g
   const tsEntries = []
   let match
   while ((match = entryPattern.exec(tsSource)) !== null) {
-    tsEntries.push({ slug: match[1], name: match[2], abbreviation: match[3] })
+    tsEntries.push({ name: match[1], abbreviation: match[2] })
   }
 
-  const jsKey = (entry) => `${entry.slug}|${entry.name}|${entry.abbreviation}`
+  const jsKey = (entry) => `${entry.name}|${entry.abbreviation}`
   const jsKeys = SEEDED_UNIT_OF_MEASURES.map(jsKey)
   const tsKeys = tsEntries.map(jsKey)
 
@@ -61,19 +61,19 @@ async function seedUnitOfMeasures({ prisma, logger = console }) {
   await prisma.$transaction(async (tx) => {
     for (const unit of SEEDED_UNIT_OF_MEASURES) {
       const existing = await tx.flooringUnitOfMeasure.findUnique({
-        where: { slug: unit.slug },
+        where: { name: unit.name },
         select: { id: true },
       })
 
       if (existing) {
         await tx.flooringUnitOfMeasure.update({
-          where: { slug: unit.slug },
-          data: { name: unit.name, abbreviation: unit.abbreviation },
+          where: { name: unit.name },
+          data: { abbreviation: unit.abbreviation },
         })
         existed += 1
       } else {
         await tx.flooringUnitOfMeasure.create({
-          data: { slug: unit.slug, name: unit.name, abbreviation: unit.abbreviation },
+          data: { name: unit.name, abbreviation: unit.abbreviation },
         })
         created += 1
       }

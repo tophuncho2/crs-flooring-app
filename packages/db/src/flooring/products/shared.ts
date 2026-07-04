@@ -48,7 +48,6 @@ export const productRowSelect = {
   category: {
     select: {
       id: true,
-      slug: true,
       name: true,
     },
   },

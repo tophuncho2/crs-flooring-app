@@ -12,7 +12,6 @@ type CategoryDbClient = PrismaClient | Prisma.TransactionClient
 
 export type CategoryRecord = {
   id: string
-  slug: string
   name: string
 }
 
@@ -20,12 +19,10 @@ export type CategoryRecord = {
 
 export function normalizeCategoryRow(category: {
   id: string
-  slug: string
   name: string
 }): CategoryRecord {
   return {
     id: category.id,
-    slug: category.slug,
     name: category.name,
   }
 }
@@ -34,7 +31,7 @@ export function normalizeCategoryRow(category: {
 
 export async function listCategories(client: CategoryDbClient = db): Promise<CategoryRecord[]> {
   const categories = await client.flooringCategory.findMany({
-    select: { id: true, slug: true, name: true },
+    select: { id: true, name: true },
     orderBy: { name: "asc" },
   })
 
@@ -47,7 +44,7 @@ export async function getCategoryById(
 ): Promise<CategoryRecord | null> {
   const category = await client.flooringCategory.findUnique({
     where: { id },
-    select: { id: true, slug: true, name: true },
+    select: { id: true, name: true },
   })
   return category ? normalizeCategoryRow(category) : null
 }

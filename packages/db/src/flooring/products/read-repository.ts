@@ -20,7 +20,6 @@ import { numberNeighborQueries } from "../../shared/number-neighbors.js"
 
 export type ProductRecordCategory = {
   id: string
-  slug: string
   name: string
 }
 
@@ -143,7 +142,6 @@ export function normalizeProductRow(product: ProductRowPayload): ProductRecord {
     updatedBy: product.updatedBy ?? null,
     category: {
       id: product.category.id,
-      slug: product.category.slug,
       name: product.category.name,
     },
   }
@@ -415,7 +413,7 @@ export async function listProductsForListView(
     client.flooringProduct.count({ where }),
     client.flooringProduct.findMany({
       where,
-      orderBy: [{ category: { slug: "asc" } }, { name: "asc" }, { id: "asc" }],
+      orderBy: [{ category: { name: "asc" } }, { name: "asc" }, { id: "asc" }],
       skip: options.skip,
       take: options.take,
       select: productRowSelect,

@@ -75,7 +75,6 @@ function loadedRow(overrides: Record<string, unknown> = {}) {
       unitAbbrev: "rl",
       category: {
         id: "cat-1",
-        slug: "carpet",
         name: "Carpet",
       },
     },

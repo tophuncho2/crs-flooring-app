@@ -213,7 +213,6 @@ model Property {
 
 model FlooringCategory {
   id                 String                 @id @default(uuid())
-  slug               String                 @unique
   name               String                 @unique
   products                  FlooringProduct[]
   createdAt                 DateTime                                 @default(now())
@@ -224,7 +223,6 @@ model FlooringCategory {
 
 model FlooringUnitOfMeasure {
   id                         String             @id @default(uuid())
-  slug                       String             @unique
   name                       String             @unique
   abbreviation               String
   createdAt                  DateTime           @default(now())

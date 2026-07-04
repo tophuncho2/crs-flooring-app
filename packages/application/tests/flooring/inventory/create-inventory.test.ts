@@ -61,7 +61,7 @@ const PRODUCT = {
   unitAbbrev: "SF",
   unitName: "Linear Feet",
   unitAbbrev: "LF",
-  category: { slug: "carpet", name: "Carpet" },
+  category: { name: "Carpet" },
 }
 const WAREHOUSE = { id: "wh-1", name: "Main" }
 const UNIT = { id: "u-1", name: "Square Feet", abbreviation: "SF" }

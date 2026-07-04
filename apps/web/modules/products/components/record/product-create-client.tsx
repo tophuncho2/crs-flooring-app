@@ -46,7 +46,6 @@ const EMPTY_PRODUCT: ProductRecord = {
   updatedBy: null,
   category: {
     id: "",
-    slug: "",
     name: "",
   },
 }
