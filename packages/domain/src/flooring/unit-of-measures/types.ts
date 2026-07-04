@@ -15,3 +15,23 @@ export type UnitOfMeasureOption = {
   name: string
   abbreviation: string
 }
+
+// Read-only record-view detail. UoM is a seed-sourced reference table (no user
+// CRUD yet), so the detail carries no actor columns — name + abbreviation +
+// timestamps. Timestamps are ISO strings (normalized in the data layer).
+export type UnitOfMeasure = {
+  id: string
+  name: string
+  abbreviation: string
+  createdAt: string
+  updatedAt: string
+}
+
+// Usage counts shown on the UoM detail (read-only). The unit is referenced by
+// eight FK relations; the detail surfaces the two most meaningful plus a total
+// across all of them. The future delete-guard will count the same relations.
+export type UnitOfMeasureStats = {
+  productsCount: number
+  inventoriesCount: number
+  totalUsage: number
+}

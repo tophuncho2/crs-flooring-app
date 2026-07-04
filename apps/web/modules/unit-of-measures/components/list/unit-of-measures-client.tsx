@@ -10,6 +10,7 @@ import {
   LIST_UNIT_OF_MEASURES_PAGE_SIZE,
   type UnitOfMeasureListRow,
 } from "@builders/domain"
+import { useRecordEntryNavigation } from "@/hooks/navigation"
 import {
   UNIT_OF_MEASURES_LIST_QUERY_KEY,
   listUnitOfMeasuresRequest,
@@ -20,9 +21,11 @@ export type UnitOfMeasuresClientProps = {
   initialPage: number
 }
 
-// Read-only surface: bare DataTable + counted pagination. No toolbar, no search,
-// no row-open — units of measure are a small reference catalog.
+// Read-only surface: bare DataTable + counted pagination. No toolbar, no search;
+// rows open a read-only detail. Units of measure are a seed-sourced reference
+// catalog (no user CRUD yet).
 export default function UnitOfMeasuresClient({ initialPage }: UnitOfMeasuresClientProps) {
+  const { openRecord } = useRecordEntryNavigation("/dashboard/unit-of-measures")
   const {
     rows,
     total,
@@ -53,6 +56,7 @@ export default function UnitOfMeasuresClient({ initialPage }: UnitOfMeasuresClie
       />
       <UnitOfMeasuresTable
         rows={rows}
+        onOpenUnitOfMeasure={(row) => openRecord(row.id)}
         pagination={{
           page,
           pageSize,

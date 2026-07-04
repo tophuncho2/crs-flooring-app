@@ -10,6 +10,7 @@ import {
   LIST_CATEGORIES_PAGE_SIZE,
   type CategoryListRow,
 } from "@builders/domain"
+import { useRecordEntryNavigation } from "@/hooks/navigation"
 import {
   CATEGORIES_LIST_QUERY_KEY,
   listCategoriesRequest,
@@ -20,9 +21,11 @@ export type CategoriesClientProps = {
   initialPage: number
 }
 
-// Read-only surface: bare DataTable + counted pagination. No toolbar, no search,
-// no row-open — categories are a small reference catalog (editing comes later).
+// Read-only surface: bare DataTable + counted pagination. No toolbar, no search;
+// rows open a read-only detail. Categories are a seed-sourced reference catalog
+// (no user CRUD yet).
 export default function CategoriesClient({ initialPage }: CategoriesClientProps) {
+  const { openRecord } = useRecordEntryNavigation("/dashboard/categories")
   const {
     rows,
     total,
@@ -53,6 +56,7 @@ export default function CategoriesClient({ initialPage }: CategoriesClientProps)
       />
       <CategoriesTable
         rows={rows}
+        onOpenCategory={(row) => openRecord(row.id)}
         pagination={{
           page,
           pageSize,

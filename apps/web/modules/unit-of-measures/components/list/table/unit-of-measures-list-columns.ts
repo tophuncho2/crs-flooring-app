@@ -5,5 +5,6 @@ export const UNIT_OF_MEASURES_LIST_COLUMNS: ReadonlyArray<
   DataTableColumn<UnitOfMeasureListRow>
 > = [
   { key: "name", label: "Unit Of Measure" },
+  { key: "abbreviation", label: "Abbreviation" },
   { key: "createdAt", label: "Created" },
 ]

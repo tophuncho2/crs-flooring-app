@@ -1,9 +1,12 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
+  normalizeCategoryDetail,
   normalizeCategoryListRow,
+  type Category,
   type CategoryListRow,
   type CategoryOption,
+  type CategoryStats,
 } from "@builders/domain"
 
 type CategoryDbClient = PrismaClient | Prisma.TransactionClient
@@ -82,6 +85,34 @@ export async function listCategoriesForListView(
     total,
     rows: rows.map(normalizeCategoryListRow),
   }
+}
+
+// --- Record-view detail + stats (read-only) ---
+
+// Point read for the read-only category detail page. Selects name + timestamps
+// (no actor columns exist on this seed-sourced table). `null` when missing.
+export async function getCategoryDetailById(
+  id: string,
+  client: CategoryDbClient = db,
+): Promise<Category | null> {
+  const category = await client.flooringCategory.findUnique({
+    where: { id },
+    select: { id: true, name: true, createdAt: true, updatedAt: true },
+  })
+  return category ? normalizeCategoryDetail(category) : null
+}
+
+// Linked-row counts for the detail view. Products are the sole referrer.
+export async function getCategoryStats(
+  id: string,
+  client: CategoryDbClient = db,
+): Promise<CategoryStats | null> {
+  const row = await client.flooringCategory.findUnique({
+    where: { id },
+    select: { _count: { select: { products: true } } },
+  })
+  if (!row) return null
+  return { productsCount: row._count.products }
 }
 
 // --- Picker / options search ---

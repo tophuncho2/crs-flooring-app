@@ -12,6 +12,8 @@ export function renderUnitOfMeasureRowCell(
   switch (column.key) {
     case "name":
       return <span className="font-medium">{row.name}</span>
+    case "abbreviation":
+      return <span className="tabular-nums">{row.abbreviation}</span>
     case "createdAt":
       return (
         <span className="tabular-nums">{formatEasternDateTime(row.createdAt) || "—"}</span>
