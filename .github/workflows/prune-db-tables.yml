@@ -1,6 +1,6 @@
 name: Prune transient DB tables
 
-# Weekly housekeeping. Prunes two high-churn, low-value tables across all
+# Weekly housekeeping. Prunes three high-churn, low-value tables across all
 # three databases. Age-based — never a full wipe — and never touches outbox
 # events that are still in flight.
 #
@@ -8,6 +8,9 @@ name: Prune transient DB tables
 #   queue_outbox_event  -> delete only DISPATCHED events older than 21 days
 #                          (dispatchedAt). PENDING / PROCESSING / EXHAUSTED are
 #                          left alone: in-flight work and failed-event forensics.
+#   UserInvite          -> delete dead invites (accepted OR expired). Open
+#                          invites (acceptedAt IS NULL AND expiresAt > now) are
+#                          left alone; the audit trail lives on User/Session rows.
 #
 # Runs Sunday 06:00 UTC = 2am EDT (summer) / 1am EST (winter). The cron is fixed
 # UTC, so the local hour shifts by one across DST — this is expected.
@@ -66,6 +69,13 @@ jobs:
               AND "dispatchedAt" < now() - interval '21 days'
             RETURNING 1
           ) SELECT 'queue_outbox_event' AS "table", count(*) AS deleted FROM d;
+
+          WITH d AS (
+            DELETE FROM "UserInvite"
+            WHERE "acceptedAt" IS NOT NULL
+               OR "expiresAt" < now()
+            RETURNING 1
+          ) SELECT 'UserInvite' AS "table", count(*) AS deleted FROM d;
           COMMIT;
           SQL
           )"
