@@ -7,7 +7,7 @@ import { Prisma } from "../../generated/prisma/client.js"
  * duration of the caller's transaction.
  *
  * Consumers (sync per-row use cases — all under
- * `@builders/application/flooring/inventory/adjustments`):
+ * `@builders/application/inventory/adjustments`):
  *   - createPendingAdjustmentUseCase (WO-linked DEDUCTION or manual)
  *   - updatePendingAdjustmentUseCase (scope-aware)
  *   - deletePendingAdjustmentUseCase (scope-aware)

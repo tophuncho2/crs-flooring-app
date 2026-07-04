@@ -7,7 +7,7 @@ import { getInventoryById, type InventoryRecord } from "./read-repository.js"
 /**
  * Acquire a row-level lock on a single inventory row for the duration of the
  * caller's transaction. Mirrors `lockInventoryForAdjustment` in
- * `packages/db/src/flooring/inventory/adjustments/locks.ts` — same SQL
+ * `packages/db/src/inventory/adjustments/locks.ts` — same SQL
  * pattern, exposed under a non-adjustment-specific name so the inventory
  * update + delete use cases can share the lock primitive.
  *
