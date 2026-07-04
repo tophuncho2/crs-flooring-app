@@ -10,6 +10,7 @@ export const SEEDED_UNIT_OF_MEASURES = [
   { name: "Sheets", abbreviation: "sht" },
   { name: "Rolls", abbreviation: "rl" },
   { name: "Gallons", abbreviation: "gal" },
+  { name: "Tubes", abbreviation: "tbs" },
 ] as const
 
 export type SeededUnitOfMeasure = (typeof SEEDED_UNIT_OF_MEASURES)[number]
