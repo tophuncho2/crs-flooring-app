@@ -4,7 +4,7 @@ import {
   type InviteListRow,
 } from "@builders/domain"
 import { listInvitesForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 // Read-only pending-invites list — no filters (bare data table). Typed empty
 // filter map keeps the route/engine contract aligned with the users list.

@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   listInventoryForListView: listInventoryForListViewMock,
 }))
 
-import { listInventoryUseCase } from "../../../src/flooring/inventory/list-inventory.js"
+import { listInventoryUseCase } from "../../src/inventory/list-inventory.js"
 
 function sortArg() {
   return (listInventoryForListViewMock.mock.calls[0]![0] as { sort?: { entries: unknown[] } }).sort

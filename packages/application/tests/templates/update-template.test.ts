@@ -23,7 +23,7 @@ vi.mock("@builders/db", () => ({
   updateTemplateRecord: updateTemplateRecordMock,
 }))
 
-import { updateTemplateUseCase } from "../../../src/management/templates/update-template.js"
+import { updateTemplateUseCase } from "../../src/templates/update-template.js"
 
 const ID = "tpl-1"
 const ACTOR = "actor@example.com"

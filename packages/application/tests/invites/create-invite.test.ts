@@ -10,7 +10,7 @@ vi.mock("@builders/db", () => ({
   createInviteRecord: createInviteRecordMock,
 }))
 
-import { createInviteUseCase } from "../../../src/management/invites/create-invite.js"
+import { createInviteUseCase } from "../../src/invites/create-invite.js"
 
 const DEV = { email: "otto@crsfloorcovering.com", rank: "DEVELOPER" } as const
 

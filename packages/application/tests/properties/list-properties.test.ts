@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   listPropertiesForListView: listPropertiesForListViewMock,
 }))
 
-import { listPropertiesUseCase } from "../../../src/management/properties/list-properties.js"
+import { listPropertiesUseCase } from "../../src/properties/list-properties.js"
 
 function callArgs() {
   return listPropertiesForListViewMock.mock.calls[0]![0] as {

@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   exportInventoryForListView: exportInventoryForListViewMock,
 }))
 
-import { exportInventoryUseCase } from "../../../src/flooring/inventory/export-inventory.js"
+import { exportInventoryUseCase } from "../../src/inventory/export-inventory.js"
 
 function callArg() {
   return exportInventoryForListViewMock.mock.calls[0]![0] as {

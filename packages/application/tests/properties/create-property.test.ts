@@ -13,8 +13,8 @@ vi.mock("@builders/db", () => ({
   createPropertyRecord: createPropertyRecordMock,
 }))
 
-import { createPropertyUseCase } from "../../../src/management/properties/create-property.js"
-import { PropertyExecutionError } from "../../../src/management/properties/errors.js"
+import { createPropertyUseCase } from "../../src/properties/create-property.js"
+import { PropertyExecutionError } from "../../src/properties/errors.js"
 
 const ACTOR = "actor@example.com"
 

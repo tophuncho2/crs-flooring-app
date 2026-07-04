@@ -9,7 +9,7 @@ import {
   assignDraftIds,
   validateTemplatePlannedProductForm,
 } from "@builders/domain"
-import { guardProductsExist } from "../../../shared/guard-products-exist.js"
+import { guardProductsExist } from "../../shared/guard-products-exist.js"
 import { TemplatePlannedProductExecutionError } from "./errors.js"
 import type {
   SaveTemplatePlannedProductsSectionUseCaseInput,

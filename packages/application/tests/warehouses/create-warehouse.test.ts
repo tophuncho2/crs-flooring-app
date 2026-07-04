@@ -32,8 +32,8 @@ vi.mock("@builders/db", () => ({
   createWarehouse: createWarehouseMock,
 }))
 
-import { createWarehouseUseCase } from "../../../src/flooring/warehouses/create-warehouse.js"
-import { WarehouseExecutionError } from "../../../src/flooring/warehouses/errors.js"
+import { createWarehouseUseCase } from "../../src/warehouses/create-warehouse.js"
+import { WarehouseExecutionError } from "../../src/warehouses/errors.js"
 
 const ACTOR = "user@x.com"
 

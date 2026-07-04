@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   searchJobTypeOptions: searchJobTypeOptionsMock,
 }))
 
-import { searchJobTypeOptionsUseCase } from "../../../src/management/job-types/search-job-type-options.js"
+import { searchJobTypeOptionsUseCase } from "../../src/job-types/search-job-type-options.js"
 
 function callArgs() {
   return searchJobTypeOptionsMock.mock.calls[0]![0] as { search?: string; take: number }

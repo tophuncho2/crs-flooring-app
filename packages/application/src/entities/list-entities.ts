@@ -10,7 +10,7 @@ import {
   listEntitiesForListView,
   searchEntityOptions,
 } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 export type EntitiesListFilters = {
   /** Exact-int ENT-# bar — strip-non-digits handled in the data layer. */

@@ -4,7 +4,7 @@ import {
   type InventoryRow,
 } from "@builders/domain"
 import { listInventoryForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 import {
   resolveInventoryListFilters,
   resolveInventoryListSort,

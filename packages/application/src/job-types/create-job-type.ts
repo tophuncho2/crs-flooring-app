@@ -3,7 +3,7 @@ import {
   JOB_TYPE_NAME_CONFLICT_MESSAGE,
   JOB_TYPE_NAME_REQUIRED_MESSAGE,
 } from "@builders/domain"
-import { isP2002 } from "../../shared/prisma-errors.js"
+import { isP2002 } from "../shared/prisma-errors.js"
 import { JobTypeExecutionError } from "./errors.js"
 import type { CreateJobTypeUseCaseInput, JobTypeUseCaseResult } from "./types.js"
 

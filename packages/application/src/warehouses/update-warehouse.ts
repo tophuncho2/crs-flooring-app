@@ -5,7 +5,7 @@ import {
   warehouseNameExists,
   withDatabaseTransaction,
 } from "@builders/db"
-import { isP2002 } from "../../shared/prisma-errors.js"
+import { isP2002 } from "../shared/prisma-errors.js"
 import { WarehouseExecutionError } from "./errors.js"
 import type { UpdateWarehouseInput, WarehouseResult } from "./types.js"
 

@@ -13,7 +13,7 @@ vi.mock("@builders/db", () => ({
   createWorkOrderRecord: createWorkOrderRecordMock,
 }))
 
-import { createWorkOrderUseCase } from "../../../src/flooring/work-orders/create-work-order.js"
+import { createWorkOrderUseCase } from "../../src/work-orders/create-work-order.js"
 
 const ACTOR = "actor@example.com"
 

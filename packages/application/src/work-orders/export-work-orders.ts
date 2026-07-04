@@ -1,6 +1,6 @@
 import { normalizeIdFilter, resolveExportRowCap, type WorkOrderListRow } from "@builders/domain"
 import { exportWorkOrders } from "@builders/db"
-import type { ListSort } from "../../list-view/contracts.js"
+import type { ListSort } from "../list-view/contracts.js"
 import type { WorkOrdersListFilters } from "./list-work-orders.js"
 
 /** Cap on user-selected sort columns (mirrors the list use case + the engine). */

@@ -29,8 +29,8 @@ vi.mock("@builders/domain", () => ({
   buildInventoryDeleteBlockedMessage: buildInventoryDeleteBlockedMessageMock,
 }))
 
-import { deleteInventoryUseCase } from "../../../src/flooring/inventory/delete-inventory.js"
-import { InventoryExecutionError } from "../../../src/flooring/inventory/errors.js"
+import { deleteInventoryUseCase } from "../../src/inventory/delete-inventory.js"
+import { InventoryExecutionError } from "../../src/inventory/errors.js"
 
 const INVENTORY_ID = "11111111-1111-4111-8111-111111111111"
 

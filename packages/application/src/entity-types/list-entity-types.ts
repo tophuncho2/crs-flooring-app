@@ -10,7 +10,7 @@ import {
   listEntityTypesForListView,
   searchEntityTypeOptions,
 } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 export type EntityTypesListFilters = {
   // Exact ET-number search (matches `entityTypeNumberInt`); accepts "7" or "ET-7".

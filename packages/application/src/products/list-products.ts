@@ -4,7 +4,7 @@ import {
   type ProductListRow,
 } from "@builders/domain"
 import { listProductsForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 export type ProductsListFilters = {
   prodNumber?: string

@@ -25,8 +25,8 @@ vi.mock("@builders/db", () => ({
   createJobTypeRecord: createJobTypeRecordMock,
 }))
 
-import { createJobTypeUseCase } from "../../../src/management/job-types/create-job-type.js"
-import { JobTypeExecutionError } from "../../../src/management/job-types/errors.js"
+import { createJobTypeUseCase } from "../../src/job-types/create-job-type.js"
+import { JobTypeExecutionError } from "../../src/job-types/errors.js"
 
 const ACTOR = "user@x.com"
 

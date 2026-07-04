@@ -11,7 +11,7 @@ import {
   validateWorkOrderMaterialItemCreateForm,
   validateWorkOrderMaterialItemUpdateForm,
 } from "@builders/domain"
-import { guardProductsExist } from "../../../shared/guard-products-exist.js"
+import { guardProductsExist } from "../../shared/guard-products-exist.js"
 import { WorkOrderMaterialItemExecutionError } from "./errors.js"
 import type {
   SaveWorkOrderMaterialItemsSectionUseCaseInput,

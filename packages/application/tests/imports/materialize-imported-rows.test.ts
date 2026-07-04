@@ -22,8 +22,8 @@ vi.mock("@builders/db", () => ({
   lockImportRow: lockImportRowMock,
 }))
 
-import { materializeImportedStagedRowsUseCase } from "../../../src/flooring/imports/staged-inventory-rows/materialize-imported-rows.js"
-import { StagedInventoryExecutionError } from "../../../src/flooring/imports/staged-inventory-rows/errors.js"
+import { materializeImportedStagedRowsUseCase } from "../../src/imports/staged-inventory-rows/materialize-imported-rows.js"
+import { StagedInventoryExecutionError } from "../../src/imports/staged-inventory-rows/errors.js"
 import type { ImportMaterializeBatchPayload } from "@builders/domain"
 
 const IMPORT_ID = "11111111-1111-4111-8111-111111111111"

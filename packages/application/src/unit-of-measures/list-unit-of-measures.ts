@@ -4,7 +4,7 @@ import {
   type UnitOfMeasureListRow,
 } from "@builders/domain"
 import { listUnitOfMeasuresForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 export type UnitOfMeasuresListFilters = Record<string, never>
 

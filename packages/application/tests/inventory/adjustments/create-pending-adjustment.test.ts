@@ -62,8 +62,8 @@ vi.mock("@builders/domain", () => ({
   computeAdjustmentMoneyShare: computeAdjustmentMoneyShareMock,
 }))
 
-import { createPendingAdjustmentUseCase } from "../../../../src/flooring/inventory/adjustments/create-pending-adjustment.js"
-import { InventoryAdjustmentExecutionError } from "../../../../src/flooring/inventory/adjustments/errors.js"
+import { createPendingAdjustmentUseCase } from "../../../src/inventory/adjustments/create-pending-adjustment.js"
+import { InventoryAdjustmentExecutionError } from "../../../src/inventory/adjustments/errors.js"
 
 const WO_ID = "10000000-0000-4000-8000-000000000001"
 const INVENTORY_ID = "30000000-0000-4000-8000-000000000003"

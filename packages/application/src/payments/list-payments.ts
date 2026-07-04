@@ -5,7 +5,7 @@ import {
   type PaymentListRow,
 } from "@builders/domain"
 import { listPaymentsForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 export type PaymentsListFilters = PaymentListFilters
 

@@ -25,8 +25,8 @@ vi.mock("@builders/db", () => ({
   createEntityRecord: createEntityRecordMock,
 }))
 
-import { createEntityUseCase } from "../../../src/management/entities/create-entity.js"
-import { EntityExecutionError } from "../../../src/management/entities/errors.js"
+import { createEntityUseCase } from "../../src/entities/create-entity.js"
+import { EntityExecutionError } from "../../src/entities/errors.js"
 
 const ACTOR = "actor@example.com"
 

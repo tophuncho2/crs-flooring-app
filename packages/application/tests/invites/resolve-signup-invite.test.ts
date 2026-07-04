@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   findOpenInviteByEmail: findOpenInviteByEmailMock,
 }))
 
-import { resolveSignupInviteRank } from "../../../src/management/invites/resolve-signup-invite.js"
+import { resolveSignupInviteRank } from "../../src/invites/resolve-signup-invite.js"
 
 beforeEach(() => {
   findOpenInviteByEmailMock.mockReset()

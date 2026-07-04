@@ -25,7 +25,7 @@ vi.mock("@builders/db", () => ({
   deleteEntityRecordById: deleteEntityRecordByIdMock,
 }))
 
-import { deleteEntityUseCase } from "../../../src/management/entities/delete-entity.js"
+import { deleteEntityUseCase } from "../../src/entities/delete-entity.js"
 
 const ID = "entity-1"
 

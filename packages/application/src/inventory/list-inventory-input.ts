@@ -1,5 +1,5 @@
 import { normalizeIdFilter } from "@builders/domain"
-import type { ListInput, ListSort } from "../../list-view/contracts.js"
+import type { ListInput, ListSort } from "../list-view/contracts.js"
 
 export type InventoryListFilters = {
   warehouseId?: ReadonlyArray<string>

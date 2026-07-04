@@ -28,7 +28,7 @@ vi.mock("@builders/db", () => ({
   deleteUserRecordById: deleteUserRecordByIdMock,
 }))
 
-import { deleteUserUseCase } from "../../../src/management/users/delete-user.js"
+import { deleteUserUseCase } from "../../src/users/delete-user.js"
 
 const DEV = { id: "otto", email: "otto@crsfloorcovering.com", rank: "DEVELOPER" } as const
 const TARGET = {

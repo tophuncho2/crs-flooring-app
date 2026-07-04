@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   listJobTypesForListView: listJobTypesForListViewMock,
 }))
 
-import { listJobTypesUseCase } from "../../../src/management/job-types/list-job-types.js"
+import { listJobTypesUseCase } from "../../src/job-types/list-job-types.js"
 
 function callArgs() {
   return listJobTypesForListViewMock.mock.calls[0]![0] as {

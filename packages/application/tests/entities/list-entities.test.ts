@@ -13,7 +13,7 @@ vi.mock("@builders/db", () => ({
 import {
   listEntitiesUseCase,
   searchEntityOptionsUseCase,
-} from "../../../src/management/entities/list-entities.js"
+} from "../../src/entities/list-entities.js"
 
 function listArgs() {
   return listEntitiesForListViewMock.mock.calls[0]![0] as {

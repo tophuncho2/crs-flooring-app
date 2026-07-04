@@ -56,8 +56,8 @@ vi.mock("@builders/domain", () => ({
   validateAdjustmentPendingForm: validateAdjustmentPendingFormMock,
 }))
 
-import { updatePendingAdjustmentUseCase } from "../../../../src/flooring/inventory/adjustments/update-pending-adjustment.js"
-import { InventoryAdjustmentExecutionError } from "../../../../src/flooring/inventory/adjustments/errors.js"
+import { updatePendingAdjustmentUseCase } from "../../../src/inventory/adjustments/update-pending-adjustment.js"
+import { InventoryAdjustmentExecutionError } from "../../../src/inventory/adjustments/errors.js"
 
 const WO_ID = "10000000-0000-4000-8000-000000000001"
 const ADJUSTMENT_ID = "40000000-0000-4000-8000-000000000004"

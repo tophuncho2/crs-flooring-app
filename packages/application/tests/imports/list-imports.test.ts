@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   listImportsForListView: listImportsForListViewMock,
 }))
 
-import { listImportsUseCase } from "../../../src/flooring/imports/list-imports.js"
+import { listImportsUseCase } from "../../src/imports/list-imports.js"
 
 function callArgs() {
   return listImportsForListViewMock.mock.calls[0]![0] as {

@@ -25,7 +25,7 @@ vi.mock("@builders/db", () => ({
   updateEntityRecord: updateEntityRecordMock,
 }))
 
-import { updateEntityUseCase } from "../../../src/management/entities/update-entity.js"
+import { updateEntityUseCase } from "../../src/entities/update-entity.js"
 
 const ID = "entity-1"
 const ACTOR = "actor@example.com"

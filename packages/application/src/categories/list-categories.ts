@@ -4,7 +4,7 @@ import {
   type CategoryListRow,
 } from "@builders/domain"
 import { listCategoriesForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 export type CategoriesListFilters = Record<string, never>
 

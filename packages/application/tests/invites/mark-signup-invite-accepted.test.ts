@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   markInviteAcceptedByEmail: markInviteAcceptedByEmailMock,
 }))
 
-import { markSignupInviteAccepted } from "../../../src/management/invites/mark-signup-invite-accepted.js"
+import { markSignupInviteAccepted } from "../../src/invites/mark-signup-invite-accepted.js"
 
 beforeEach(() => {
   markInviteAcceptedByEmailMock.mockReset()

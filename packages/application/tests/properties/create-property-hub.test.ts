@@ -36,7 +36,7 @@ vi.mock("@builders/db", () => ({
   updatePropertyRecord: updatePropertyRecordMock,
 }))
 
-import { createPropertyHubUseCase } from "../../../src/management/properties/create-property-hub.js"
+import { createPropertyHubUseCase } from "../../src/properties/create-property-hub.js"
 
 const ACTOR = "actor@example.com"
 

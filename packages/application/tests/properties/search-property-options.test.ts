@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   searchPropertyOptions: searchPropertyOptionsMock,
 }))
 
-import { searchPropertyOptionsUseCase } from "../../../src/management/properties/search-property-options.js"
+import { searchPropertyOptionsUseCase } from "../../src/properties/search-property-options.js"
 
 function callArgs() {
   return searchPropertyOptionsMock.mock.calls[0]![0] as {

@@ -4,7 +4,7 @@ import {
   type WarehouseListRow,
 } from "@builders/domain"
 import { listWarehousesForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 export type WarehousesListFilters = {
   // Exact store-number search (matches `warehouseNumberInt`); accepts "7" or "STORE-7".

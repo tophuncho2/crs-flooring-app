@@ -4,7 +4,7 @@ import {
   type ImportRow,
 } from "@builders/domain"
 import { listImportsForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 export type ImportsListFilters = {
   impNumber?: string

@@ -10,7 +10,7 @@ vi.mock("@builders/db", () => ({
   deleteInviteById: deleteInviteByIdMock,
 }))
 
-import { revokeInviteUseCase } from "../../../src/management/invites/revoke-invite.js"
+import { revokeInviteUseCase } from "../../src/invites/revoke-invite.js"
 
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()

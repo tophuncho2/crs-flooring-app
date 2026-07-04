@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   searchWarehouseOptions: searchWarehouseOptionsMock,
 }))
 
-import { searchWarehouseOptionsUseCase } from "../../../src/flooring/warehouses/search-warehouse-options.js"
+import { searchWarehouseOptionsUseCase } from "../../src/warehouses/search-warehouse-options.js"
 
 function callArgs() {
   return searchWarehouseOptionsMock.mock.calls[0]![0] as {

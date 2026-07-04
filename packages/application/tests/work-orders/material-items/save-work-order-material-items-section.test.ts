@@ -22,7 +22,7 @@ vi.mock("@builders/db", () => ({
   listWorkOrderMaterialItems: listWorkOrderMaterialItemsMock,
 }))
 
-import { saveWorkOrderMaterialItemsSectionUseCase } from "../../../../src/flooring/work-orders/material-items/save-work-order-material-items-section.js"
+import { saveWorkOrderMaterialItemsSectionUseCase } from "../../../src/work-orders/material-items/save-work-order-material-items-section.js"
 
 const ACTOR = "actor@example.com"
 const EMPTY_DIFF = { added: [], modified: [], deleted: [] }

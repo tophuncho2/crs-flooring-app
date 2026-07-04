@@ -4,7 +4,7 @@ import {
   type UserLoginActivityListRow,
 } from "@builders/domain"
 import { listUserLoginActivityForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 // Read-only, append-only login log — no filters yet (bare data table). Typed
 // empty filter map keeps the route/engine contract aligned with job-types.

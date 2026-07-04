@@ -5,7 +5,7 @@ import {
   type EnrichedInventoryAdjustmentRow,
   type InventoryAdjustmentListFilters,
 } from "@builders/domain"
-import type { ListInput, ListOutput } from "../../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../../list-view/contracts.js"
 import { resolveInventoryListSort } from "../list-inventory-input.js"
 
 function normalizeIds(

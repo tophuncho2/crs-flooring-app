@@ -19,7 +19,7 @@ vi.mock("@builders/db", () => ({
   createWorkOrderFromTemplateRecord: createWorkOrderFromTemplateRecordMock,
 }))
 
-import { syncTemplateToWorkOrderUseCase } from "../../../src/flooring/work-orders/sync-template-to-work-order.js"
+import { syncTemplateToWorkOrderUseCase } from "../../src/work-orders/sync-template-to-work-order.js"
 
 const ACTOR = "actor@example.com"
 

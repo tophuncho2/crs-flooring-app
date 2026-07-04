@@ -32,8 +32,8 @@ vi.mock("@builders/db", () => ({
 }))
 
 import { sha256Hex } from "@builders/lib/hashing"
-import { markStagedRowsForImportUseCase } from "../../../src/flooring/imports/staged-inventory-rows/mark-staged-rows-for-import.js"
-import { StagedInventoryExecutionError } from "../../../src/flooring/imports/staged-inventory-rows/errors.js"
+import { markStagedRowsForImportUseCase } from "../../src/imports/staged-inventory-rows/mark-staged-rows-for-import.js"
+import { StagedInventoryExecutionError } from "../../src/imports/staged-inventory-rows/errors.js"
 
 const IMPORT_ID = "11111111-1111-4111-8111-111111111111"
 const ROW_ID_A = "22222222-2222-4222-8222-222222222222"

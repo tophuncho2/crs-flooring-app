@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   exportAdjustmentsForListView: exportAdjustmentsForListViewMock,
 }))
 
-import { exportAdjustmentsUseCase } from "../../../../src/flooring/inventory/adjustments/export-adjustments.js"
+import { exportAdjustmentsUseCase } from "../../../src/inventory/adjustments/export-adjustments.js"
 
 function callArg() {
   return exportAdjustmentsForListViewMock.mock.calls[0]![0] as {

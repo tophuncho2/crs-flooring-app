@@ -4,7 +4,7 @@ import {
   type JobTypeListRow,
 } from "@builders/domain"
 import { listJobTypesForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 export type JobTypesListFilters = {
   // Exact JT-number search (matches `jobTypeNumberInt`); accepts "7" or "JT-7".

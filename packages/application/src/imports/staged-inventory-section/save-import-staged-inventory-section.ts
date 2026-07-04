@@ -21,8 +21,8 @@ import {
   validateStagedInventoryForm,
   validateStagedInventoryRowsDiff,
 } from "@builders/domain"
-import { guardProductsExist } from "../../../shared/guard-products-exist.js"
-import { guardUnitsExist } from "../../../shared/guard-units-exist.js"
+import { guardProductsExist } from "../../shared/guard-products-exist.js"
+import { guardUnitsExist } from "../../shared/guard-units-exist.js"
 import { ImportStagedInventorySectionExecutionError } from "./errors.js"
 import type {
   SaveImportStagedInventorySectionInput,

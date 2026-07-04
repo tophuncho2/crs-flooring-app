@@ -13,7 +13,7 @@ vi.mock("@builders/db", () => ({
   deleteWarehouseById: deleteWarehouseByIdMock,
 }))
 
-import { deleteWarehouseUseCase } from "../../../src/flooring/warehouses/delete-warehouse.js"
+import { deleteWarehouseUseCase } from "../../src/warehouses/delete-warehouse.js"
 
 const ID = "wh-1"
 

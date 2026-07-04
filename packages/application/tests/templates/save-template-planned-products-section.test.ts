@@ -16,7 +16,7 @@ vi.mock("@builders/db", () => ({
   getProductById: getProductByIdMock,
 }))
 
-import { saveTemplatePlannedProductsSectionUseCase } from "../../../src/management/templates/planned-products/save-template-planned-products-section.js"
+import { saveTemplatePlannedProductsSectionUseCase } from "../../src/templates/planned-products/save-template-planned-products-section.js"
 
 const ACTOR = "actor@example.com"
 const EMPTY_DIFF = { added: [], modified: [], deleted: [] }

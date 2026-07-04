@@ -4,7 +4,7 @@ import {
   LIST_TEMPLATES_PAGE_SIZE,
   type TemplateListRow,
 } from "@builders/domain"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 /** Cap on user-selected sort columns (the engine + API enforce the same). */
 const MAX_SORT_LEVELS = 3

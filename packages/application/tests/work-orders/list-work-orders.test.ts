@@ -10,7 +10,7 @@ vi.mock("@builders/db", () => ({
   countWorkOrders: countWorkOrdersMock,
 }))
 
-import { listWorkOrdersUseCase } from "../../../src/flooring/work-orders/list-work-orders.js"
+import { listWorkOrdersUseCase } from "../../src/work-orders/list-work-orders.js"
 
 function sortArg() {
   return (listWorkOrdersMock.mock.calls[0]![0] as { sort?: { entries: unknown[] } }).sort

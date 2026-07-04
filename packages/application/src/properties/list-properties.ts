@@ -5,7 +5,7 @@ import {
   type PropertyListRow,
 } from "@builders/domain"
 import { listPropertiesForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 /** Cap on user-selected sort columns (the engine + API enforce the same). */
 const MAX_SORT_LEVELS = 3

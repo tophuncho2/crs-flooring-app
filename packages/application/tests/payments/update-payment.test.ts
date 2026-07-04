@@ -21,8 +21,8 @@ vi.mock("@builders/db", () => ({
   updatePaymentRecord: updatePaymentRecordMock,
 }))
 
-import { updatePaymentUseCase } from "../../../src/flooring/payments/update-payment.js"
-import { PaymentExecutionError } from "../../../src/flooring/payments/errors.js"
+import { updatePaymentUseCase } from "../../src/payments/update-payment.js"
+import { PaymentExecutionError } from "../../src/payments/errors.js"
 
 const ID = "pay-1"
 const ACTOR = "user@x.com"

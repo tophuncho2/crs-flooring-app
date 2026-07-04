@@ -18,8 +18,8 @@ vi.mock("@builders/db", () => ({
   createImportRecord: createImportRecordMock,
 }))
 
-import { createImportUseCase } from "../../../src/flooring/imports/create-import.js"
-import { ImportExecutionError } from "../../../src/flooring/imports/errors.js"
+import { createImportUseCase } from "../../src/imports/create-import.js"
+import { ImportExecutionError } from "../../src/imports/errors.js"
 
 const ACTOR = "actor@example.com"
 

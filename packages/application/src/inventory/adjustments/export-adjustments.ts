@@ -5,7 +5,7 @@ import {
   type InventoryAdjustmentListFilters,
 } from "@builders/domain"
 import { exportAdjustmentsForListView } from "@builders/db"
-import type { ListInput, ListSort } from "../../../list-view/contracts.js"
+import type { ListInput, ListSort } from "../../list-view/contracts.js"
 import { resolveInventoryListSort } from "../list-inventory-input.js"
 
 export type AdjustmentsExportInput = {

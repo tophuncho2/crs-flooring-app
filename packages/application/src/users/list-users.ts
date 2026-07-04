@@ -4,7 +4,7 @@ import {
   type UserListRow,
 } from "@builders/domain"
 import { listUsersForListView } from "@builders/db"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 // Read-only list — no filters yet (the surface is a bare data table). Kept as a
 // typed empty filter map so the route/engine contract matches the job-types

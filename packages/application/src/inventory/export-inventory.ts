@@ -1,6 +1,6 @@
 import { normalizeIdFilter, resolveExportRowCap, type InventoryRow } from "@builders/domain"
 import { exportInventoryForListView } from "@builders/db"
-import type { ListSort } from "../../list-view/contracts.js"
+import type { ListSort } from "../list-view/contracts.js"
 import {
   resolveInventoryListFilters,
   resolveInventoryListSort,

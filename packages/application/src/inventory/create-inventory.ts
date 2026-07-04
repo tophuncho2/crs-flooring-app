@@ -11,7 +11,7 @@ import {
   describeInventoryCreateIssues,
   validateCreateInventoryEdits,
 } from "@builders/domain"
-import { guardUnitsExist } from "../../shared/guard-units-exist.js"
+import { guardUnitsExist } from "../shared/guard-units-exist.js"
 import { InventoryExecutionError } from "./errors.js"
 import type { CreateInventoryInput, InventoryResult } from "./types.js"
 

@@ -28,7 +28,7 @@ vi.mock("@builders/db", () => ({
   deletePropertyRecordById: deletePropertyRecordByIdMock,
 }))
 
-import { deletePropertyUseCase } from "../../../src/management/properties/delete-property.js"
+import { deletePropertyUseCase } from "../../src/properties/delete-property.js"
 
 const ID = "prop-1"
 

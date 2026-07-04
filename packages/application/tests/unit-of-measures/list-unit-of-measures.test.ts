@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   listUnitOfMeasuresForListView: listUnitOfMeasuresForListViewMock,
 }))
 
-import { listUnitOfMeasuresUseCase } from "../../../src/flooring/unit-of-measures/list-unit-of-measures.js"
+import { listUnitOfMeasuresUseCase } from "../../src/unit-of-measures/list-unit-of-measures.js"
 
 function callArgs() {
   return listUnitOfMeasuresForListViewMock.mock.calls[0]![0] as {

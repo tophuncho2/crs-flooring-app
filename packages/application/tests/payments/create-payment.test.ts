@@ -21,8 +21,8 @@ vi.mock("@builders/db", () => ({
   createPaymentRecord: createPaymentRecordMock,
 }))
 
-import { createPaymentUseCase } from "../../../src/flooring/payments/create-payment.js"
-import { PaymentExecutionError } from "../../../src/flooring/payments/errors.js"
+import { createPaymentUseCase } from "../../src/payments/create-payment.js"
+import { PaymentExecutionError } from "../../src/payments/errors.js"
 
 const ACTOR = "user@x.com"
 

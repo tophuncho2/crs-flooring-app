@@ -28,8 +28,8 @@ vi.mock("@builders/db", () => ({
   updateImportRecord: updateImportRecordMock,
 }))
 
-import { updateImportUseCase } from "../../../src/flooring/imports/update-import.js"
-import { ImportExecutionError } from "../../../src/flooring/imports/errors.js"
+import { updateImportUseCase } from "../../src/imports/update-import.js"
+import { ImportExecutionError } from "../../src/imports/errors.js"
 
 const ACTOR = "editor@example.com"
 const IMPORT_ID = "import-1"

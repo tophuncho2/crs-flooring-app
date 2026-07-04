@@ -1,6 +1,6 @@
 import { countWorkOrders, listWorkOrders } from "@builders/db"
 import type { WorkOrderListRow } from "@builders/domain"
-import type { ListInput, ListOutput } from "../../list-view/contracts.js"
+import type { ListInput, ListOutput } from "../list-view/contracts.js"
 
 const DEFAULT_PAGE_SIZE = 50
 const MAX_PAGE_SIZE = 200

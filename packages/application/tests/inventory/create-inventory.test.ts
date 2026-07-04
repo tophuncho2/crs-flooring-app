@@ -35,8 +35,8 @@ vi.mock("@builders/domain", () => ({
   describeInventoryCreateIssues: describeInventoryCreateIssuesMock,
 }))
 
-import { createInventoryUseCase } from "../../../src/flooring/inventory/create-inventory.js"
-import { InventoryExecutionError } from "../../../src/flooring/inventory/errors.js"
+import { createInventoryUseCase } from "../../src/inventory/create-inventory.js"
+import { InventoryExecutionError } from "../../src/inventory/errors.js"
 
 const ACTOR = "actor@example.com"
 

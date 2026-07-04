@@ -37,9 +37,9 @@ vi.mock("@builders/db", () => ({
   stampImportActor: stampImportActorMock,
 }))
 
-import { saveImportStagedInventorySectionUseCase } from "../../../src/flooring/imports/staged-inventory-section/save-import-staged-inventory-section.js"
-import { ImportStagedInventorySectionExecutionError } from "../../../src/flooring/imports/staged-inventory-section/errors.js"
-import type { SaveImportStagedInventorySectionInput } from "../../../src/flooring/imports/staged-inventory-section/types.js"
+import { saveImportStagedInventorySectionUseCase } from "../../src/imports/staged-inventory-section/save-import-staged-inventory-section.js"
+import { ImportStagedInventorySectionExecutionError } from "../../src/imports/staged-inventory-section/errors.js"
+import type { SaveImportStagedInventorySectionInput } from "../../src/imports/staged-inventory-section/types.js"
 
 const IMPORT_ID = "import-1"
 const WAREHOUSE_ID = "wh-import"

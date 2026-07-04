@@ -13,8 +13,8 @@ vi.mock("@builders/db", () => ({
   createTemplateRecord: createTemplateRecordMock,
 }))
 
-import { createTemplateUseCase } from "../../../src/management/templates/create-template.js"
-import { TemplateExecutionError } from "../../../src/management/templates/errors.js"
+import { createTemplateUseCase } from "../../src/templates/create-template.js"
+import { TemplateExecutionError } from "../../src/templates/errors.js"
 
 const ACTOR = "actor@example.com"
 

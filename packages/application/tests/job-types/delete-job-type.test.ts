@@ -23,7 +23,7 @@ vi.mock("@builders/db", () => ({
   deleteJobTypeRecordById: deleteJobTypeRecordByIdMock,
 }))
 
-import { deleteJobTypeUseCase } from "../../../src/management/job-types/delete-job-type.js"
+import { deleteJobTypeUseCase } from "../../src/job-types/delete-job-type.js"
 
 const ID = "jt-1"
 

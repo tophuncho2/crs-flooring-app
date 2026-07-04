@@ -15,7 +15,7 @@ vi.mock("@builders/db", () => ({
   deleteUserSessions: deleteUserSessionsMock,
 }))
 
-import { updateUserRankUseCase } from "../../../src/management/users/update-user-rank.js"
+import { updateUserRankUseCase } from "../../src/users/update-user-rank.js"
 
 const DEV = { id: "otto", email: "otto@crsfloorcovering.com", rank: "DEVELOPER" } as const
 const TARGET = {

@@ -50,8 +50,8 @@ vi.mock("@builders/domain", () => ({
   assertNetDeductedWithinStartingStock: assertNetDeductedWithinStartingStockMock,
 }))
 
-import { deletePendingAdjustmentUseCase } from "../../../../src/flooring/inventory/adjustments/delete-pending-adjustment.js"
-import { InventoryAdjustmentExecutionError } from "../../../../src/flooring/inventory/adjustments/errors.js"
+import { deletePendingAdjustmentUseCase } from "../../../src/inventory/adjustments/delete-pending-adjustment.js"
+import { InventoryAdjustmentExecutionError } from "../../../src/inventory/adjustments/errors.js"
 
 const WO_ID = "10000000-0000-4000-8000-000000000001"
 const ADJUSTMENT_ID = "40000000-0000-4000-8000-000000000004"

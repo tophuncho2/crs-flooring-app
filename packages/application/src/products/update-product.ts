@@ -11,7 +11,7 @@ import {
   ProductExecutionError,
   buildStoredFlooringProductName,
 } from "@builders/domain"
-import { isP2002 } from "../../shared/prisma-errors.js"
+import { isP2002 } from "../shared/prisma-errors.js"
 import type { ProductResult, UpdateProductInput } from "./types.js"
 
 export async function updateProductUseCase(

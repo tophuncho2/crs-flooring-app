@@ -8,7 +8,7 @@ vi.mock("@builders/db", () => ({
   listCategoriesForListView: listCategoriesForListViewMock,
 }))
 
-import { listCategoriesUseCase } from "../../../src/flooring/categories/list-categories.js"
+import { listCategoriesUseCase } from "../../src/categories/list-categories.js"
 
 function callArgs() {
   return listCategoriesForListViewMock.mock.calls[0]![0] as {
