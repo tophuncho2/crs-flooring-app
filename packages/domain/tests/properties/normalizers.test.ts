@@ -3,7 +3,7 @@ import {
   normalizeProperty,
   normalizePropertyListRow,
   normalizePropertyOption,
-} from "../../../src/management/properties/normalizers.js"
+} from "../../src/properties/normalizers.js"
 
 describe("normalizeProperty", () => {
   const base = {

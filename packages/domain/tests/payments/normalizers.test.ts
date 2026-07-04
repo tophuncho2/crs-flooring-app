@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { normalizePayment } from "../../../src/flooring/payments/normalizers.js"
+import { normalizePayment } from "../../src/payments/normalizers.js"
 
 describe("normalizePayment", () => {
   it("converts Date timestamps to ISO strings and passes actor emails through", () => {

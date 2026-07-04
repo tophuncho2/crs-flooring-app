@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   normalizeTemplate,
   normalizeTemplateListRow,
-} from "../../../src/management/templates/normalizers.js"
+} from "../../src/templates/normalizers.js"
 
 describe("normalizeTemplateListRow entity", () => {
   const base = {

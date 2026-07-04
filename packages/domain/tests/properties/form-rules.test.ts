@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest"
 import {
   toPropertyPrimaryForm,
   validatePropertyPrimaryForm,
-} from "../../../src/management/properties/form-rules.js"
+} from "../../src/properties/form-rules.js"
 import type {
   PropertyDetailRecord,
   PropertyPrimaryForm,
-} from "../../../src/management/properties/types.js"
+} from "../../src/properties/types.js"
 
 function form(overrides: Partial<PropertyPrimaryForm> = {}): PropertyPrimaryForm {
   return {

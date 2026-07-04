@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { MAX_MARK_FOR_IMPORT_ROWS } from "../flooring/imports/staged-inventory-rows/import-batch-rules.js"
+import { MAX_MARK_FOR_IMPORT_ROWS } from "../imports/staged-inventory-rows/import-batch-rules.js"
 
 /**
  * Outbox + queue contract for "user queued N staged rows for materialization."

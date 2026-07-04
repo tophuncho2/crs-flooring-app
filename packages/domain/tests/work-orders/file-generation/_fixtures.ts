@@ -4,7 +4,7 @@ import type {
   WorkOrderFileMaterialItemProjection,
   WorkOrderFileProductAdjustmentGroup,
   WorkOrderFileProductMaterialItemGroup,
-} from "../../../../src/flooring/work-orders/file-generation/types.js"
+} from "../../../src/work-orders/file-generation/types.js"
 
 // Em-dash placeholder emitted by `escapeOrEmpty` / `renderUnitValue` for blank
 // values. Kept as a named constant so assertions don't depend on pasting the

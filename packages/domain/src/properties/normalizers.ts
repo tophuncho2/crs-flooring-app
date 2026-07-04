@@ -1,6 +1,6 @@
-import { buildAddressLine } from "../../shared/address/index.js"
-import { normalizePhoneNumber } from "../../shared/phone.js"
-import type { PaletteColor } from "../../shared/palette.js"
+import { buildAddressLine } from "../shared/address/index.js"
+import { normalizePhoneNumber } from "../shared/phone.js"
+import type { PaletteColor } from "../shared/palette.js"
 import type {
   PropertyDetailRecord,
   PropertyListRow,

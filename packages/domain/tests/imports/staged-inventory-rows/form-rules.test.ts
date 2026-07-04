@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { validateStagedInventoryForm } from "../../../../src/flooring/imports/staged-inventory-rows/form-rules.js"
+import { validateStagedInventoryForm } from "../../../src/imports/staged-inventory-rows/form-rules.js"
 import {
   STAGED_INVENTORY_ROW_DYE_LOT_MAX,
   STAGED_INVENTORY_ROW_LOCATION_MAX,
   STAGED_INVENTORY_ROW_NOTE_MAX,
   STAGED_INVENTORY_ROW_ROLL_NUMBER_MAX,
-} from "../../../../src/flooring/imports/staged-inventory-rows/column-limits.js"
-import type { StagedInventoryForm } from "../../../../src/flooring/imports/staged-inventory-rows/types.js"
+} from "../../../src/imports/staged-inventory-rows/column-limits.js"
+import type { StagedInventoryForm } from "../../../src/imports/staged-inventory-rows/types.js"
 
 function form(overrides: Partial<StagedInventoryForm> = {}): StagedInventoryForm {
   return {

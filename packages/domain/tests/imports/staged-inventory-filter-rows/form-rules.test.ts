@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { validateStagedInventoryFilterForm } from "../../../../src/flooring/imports/staged-inventory-filter-rows/form-rules.js"
+import { validateStagedInventoryFilterForm } from "../../../src/imports/staged-inventory-filter-rows/form-rules.js"
 import {
   computeFilterRemainingStock,
   EMPTY_STAGED_INVENTORY_FILTER_FORM,
   type StagedInventoryFilterForm,
-} from "../../../../src/flooring/imports/staged-inventory-filter-rows/types.js"
+} from "../../../src/imports/staged-inventory-filter-rows/types.js"
 
 function filterForm(
   overrides: Partial<StagedInventoryFilterForm> = {},

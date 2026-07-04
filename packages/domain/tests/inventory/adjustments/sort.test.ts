@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { compareAdjustmentsByRecency } from "../../../../src/flooring/inventory/adjustments/adjustment-sort.js"
+import { compareAdjustmentsByRecency } from "../../../src/inventory/adjustments/adjustment-sort.js"
 
 const row = (createdAt: string, id: string) => ({ createdAt, id })
 

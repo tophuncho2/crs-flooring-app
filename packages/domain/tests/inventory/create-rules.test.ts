@@ -4,7 +4,7 @@ import {
   buildCreatedInventoryInsert,
   validateCreateInventoryEdits,
   type CreateInventoryEdits,
-} from "../../../src/flooring/inventory/create-rules.js"
+} from "../../src/inventory/create-rules.js"
 
 function edits(overrides: Partial<CreateInventoryEdits> = {}): CreateInventoryEdits {
   return {

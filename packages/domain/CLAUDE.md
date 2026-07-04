@@ -19,8 +19,10 @@ normalizers, and message builders. No I/O, no framework, no side effects.
 
 ## Layout
 
-`src/<area>/<module>/` — areas: `flooring/`, `management/`, `shared/`, `queue/`.
-Domain never lives under `apps/web/modules/`.
+`src/<module>/` — each module dir sits directly under `src/` (the former
+`flooring/` and `management/` area wrappers were flattened away). The only
+non-module top-level dirs are the shared cross-cutting layers `shared/` and
+`queue/`. Domain never lives under `apps/web/modules/`.
 
 ## File vocabulary (names carry meaning)
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { normalizeAdjustmentMoneyAmount } from "../../../../src/flooring/inventory/adjustments/money.js"
+import { normalizeAdjustmentMoneyAmount } from "../../../src/inventory/adjustments/money.js"
 
 describe("normalizeAdjustmentMoneyAmount", () => {
   it("pads to exactly three decimals (no rounding, no float)", () => {

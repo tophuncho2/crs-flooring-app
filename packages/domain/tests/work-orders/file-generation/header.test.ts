@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { renderWorkOrderDocumentHeader } from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
+import { renderWorkOrderDocumentHeader } from "../../../src/work-orders/file-generation/work-order-document-sections.js"
 import { makeFileGenInput } from "./_fixtures.js"
 
 describe("renderWorkOrderDocumentHeader — tag", () => {

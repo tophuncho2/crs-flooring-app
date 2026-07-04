@@ -3,7 +3,7 @@ import {
   EMPTY_WAREHOUSE_FORM,
   toWarehouseForm,
   type WarehouseRow,
-} from "../../../src/flooring/warehouses/types.js"
+} from "../../src/warehouses/types.js"
 
 function row(overrides: Partial<WarehouseRow> = {}): WarehouseRow {
   return {

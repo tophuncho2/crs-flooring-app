@@ -3,7 +3,7 @@ import {
   canManageUsers,
   hasRankAtLeast,
   USER_MANAGEMENT_MIN_RANK,
-} from "../../../src/management/users/rank.js"
+} from "../../src/users/rank.js"
 
 describe("hasRankAtLeast", () => {
   it("treats DEVELOPER as outranking every tier", () => {

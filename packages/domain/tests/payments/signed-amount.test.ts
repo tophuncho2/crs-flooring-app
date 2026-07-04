@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   formatSignedPaymentAmount,
   signedPaymentAmount,
-} from "../../../src/flooring/payments/signed-amount.js"
+} from "../../src/payments/signed-amount.js"
 
 describe("formatSignedPaymentAmount", () => {
   it("prefixes + for REVENUE and − (U+2212) for EXPENSE", () => {

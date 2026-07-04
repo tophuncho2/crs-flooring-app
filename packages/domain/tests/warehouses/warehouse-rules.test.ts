@@ -4,7 +4,7 @@ import {
   isWarehouseDeleteBlocked,
   isWarehouseNameConflict,
   normalizeWarehouseName,
-} from "../../../src/flooring/warehouses/warehouse-rules.js"
+} from "../../src/warehouses/warehouse-rules.js"
 
 describe("normalizeWarehouseName", () => {
   it("trims surrounding whitespace", () => {

@@ -1,4 +1,4 @@
-import { formatMoney, normalizeMoneyAmount } from "../../shared/money.js"
+import { formatMoney, normalizeMoneyAmount } from "../shared/money.js"
 import type { FlooringPaymentDirection } from "./types.js"
 
 /**

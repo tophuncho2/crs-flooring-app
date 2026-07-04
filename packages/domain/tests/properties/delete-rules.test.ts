@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   getPropertyDeleteBlockedMessage,
   isPropertyDeleteBlocked,
-} from "../../../src/management/properties/delete-rules.js"
+} from "../../src/properties/delete-rules.js"
 
 describe("isPropertyDeleteBlocked", () => {
   it("is not blocked with zero templates", () => {

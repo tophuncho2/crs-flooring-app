@@ -4,7 +4,7 @@
 //
 // No `baseColor`, no `photoUrls` — both were removed in the Phase 1/2 cleanup.
 
-import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../shared/palette.js"
 
 export type ProductRowCategory = {
   id: string

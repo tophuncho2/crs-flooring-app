@@ -1,4 +1,4 @@
-import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../shared/palette.js"
 
 export type EntityType = {
   id: string

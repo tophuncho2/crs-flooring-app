@@ -1,4 +1,4 @@
-import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../shared/palette.js"
 import type { TemplatePlannedProductRow } from "./planned-products/types.js"
 
 export type TemplateListRow = {

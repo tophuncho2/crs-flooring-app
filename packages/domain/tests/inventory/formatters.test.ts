@@ -4,7 +4,7 @@ import {
   formatSignedAdjustmentMoney,
   parseInventoryDecimal,
   toInventoryFixedString,
-} from "../../../src/flooring/inventory/formatters.js"
+} from "../../src/inventory/formatters.js"
 
 describe("parseInventoryDecimal", () => {
   it("parses a valid decimal string to a number", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { renderWorkOrderInfo } from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
+import { renderWorkOrderInfo } from "../../../src/work-orders/file-generation/work-order-document-sections.js"
 import { EMPTY_CELL, makeFileGenInput } from "./_fixtures.js"
 
 describe("renderWorkOrderInfo — always-present rows", () => {

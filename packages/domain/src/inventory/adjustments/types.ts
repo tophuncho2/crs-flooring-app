@@ -1,4 +1,4 @@
-import type { PaletteColor } from "../../../shared/palette.js"
+import type { PaletteColor } from "../../shared/palette.js"
 
 export type FlooringInventoryAdjustmentType = "INCREASE" | "DEDUCTION"
 

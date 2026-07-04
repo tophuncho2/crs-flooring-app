@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest"
 import {
   assertAdjustmentWarehouseMatchesInventory,
   assertBeforeAfterInvariant,
-} from "../../../../src/flooring/inventory/adjustments/rules/adjustment-rules.js"
-import { assertAdjustmentExpectedUpdatedAtMatches } from "../../../../src/flooring/inventory/adjustments/rules/pending-mutation-rules.js"
+} from "../../../src/inventory/adjustments/rules/adjustment-rules.js"
+import { assertAdjustmentExpectedUpdatedAtMatches } from "../../../src/inventory/adjustments/rules/pending-mutation-rules.js"
 import {
   describeAdjustmentPendingFormIssues,
   validateAdjustmentPendingForm,
-} from "../../../../src/flooring/inventory/adjustments/rules/form-rules.js"
+} from "../../../src/inventory/adjustments/rules/form-rules.js"
 
 describe("assertBeforeAfterInvariant", () => {
   it("passes when before − signedDelta === after (within tolerance)", () => {

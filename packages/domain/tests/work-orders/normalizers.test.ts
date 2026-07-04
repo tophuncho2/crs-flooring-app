@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   normalizeWorkOrder,
   normalizeWorkOrderListRow,
-} from "../../../src/flooring/work-orders/normalizers.js"
+} from "../../src/work-orders/normalizers.js"
 
 describe("normalizeWorkOrderListRow entity", () => {
   const base = {

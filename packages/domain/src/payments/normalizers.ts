@@ -1,6 +1,6 @@
-import { normalizeMoneyAmount } from "../../shared/money.js"
-import type { PaletteColor } from "../../shared/palette.js"
-import type { EntityTypeRef } from "../../management/entities/types.js"
+import { normalizeMoneyAmount } from "../shared/money.js"
+import type { PaletteColor } from "../shared/palette.js"
+import type { EntityTypeRef } from "../entities/types.js"
 import type { FlooringPaymentDirection, Payment } from "./types.js"
 
 type PaymentInput = {

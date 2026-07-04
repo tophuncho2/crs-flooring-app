@@ -3,7 +3,7 @@ import {
   normalizeEntity,
   normalizeEntityListRow,
   normalizeEntityOption,
-} from "../../../src/management/entities/normalizers.js"
+} from "../../src/entities/normalizers.js"
 
 describe("normalizeEntity", () => {
   const base = {

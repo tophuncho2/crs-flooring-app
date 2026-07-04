@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { buildWorkOrderPrintHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-print-html.js"
-import { buildWorkOrderPrintConfig } from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
+import { buildWorkOrderPrintHtml } from "../../../src/work-orders/file-generation/build-work-order-print-html.js"
+import { buildWorkOrderPrintConfig } from "../../../src/work-orders/file-generation/print-presets.js"
 import { makeFileGenInput, makeMaterialItem } from "./_fixtures.js"
 
 // Everything above the adjustments table = the slice of the document before the

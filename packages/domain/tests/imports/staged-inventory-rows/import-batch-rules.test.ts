@@ -4,8 +4,8 @@ import {
   buildStagedImportBatchIneligibleMessage,
   validateMarkForImportSelection,
   buildMarkForImportSelectionMessage,
-} from "../../../../src/flooring/imports/staged-inventory-rows/import-batch-rules.js"
-import type { StagedInventoryRow } from "../../../../src/flooring/imports/staged-inventory-rows/types.js"
+} from "../../../src/imports/staged-inventory-rows/import-batch-rules.js"
+import type { StagedInventoryRow } from "../../../src/imports/staged-inventory-rows/types.js"
 
 type BatchRow = Pick<
   StagedInventoryRow,

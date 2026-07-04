@@ -1,5 +1,5 @@
-import type { EntityTypeRef } from "../../management/entities/types.js"
-import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
+import type { EntityTypeRef } from "../entities/types.js"
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../shared/palette.js"
 
 export type FlooringPaymentDirection = "REVENUE" | "EXPENSE"
 

@@ -1,5 +1,5 @@
-import type { ExportColumn } from "../../shared/csv.js"
-import { formatEasternDateTime } from "../../shared/date-format.js"
+import type { ExportColumn } from "../shared/csv.js"
+import { formatEasternDateTime } from "../shared/date-format.js"
 import { composeRollNumberDisplay } from "./formatters.js"
 import type { InventoryRow } from "./types.js"
 

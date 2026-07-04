@@ -1,4 +1,4 @@
-import { isValidMoneyAmount } from "../../../shared/money.js"
+import { isValidMoneyAmount } from "../../shared/money.js"
 import type { StagedInventoryForm } from "./types.js"
 import {
   STAGED_INVENTORY_ROW_DYE_LOT_MAX,

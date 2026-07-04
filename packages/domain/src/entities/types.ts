@@ -1,4 +1,4 @@
-import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../../shared/palette.js"
+import { DEFAULT_PALETTE_COLOR, type PaletteColor } from "../shared/palette.js"
 
 /** A linked entity-type, slimmed to what the chip/picker need to render. */
 export type EntityTypeRef = {

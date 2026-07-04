@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import type { EnrichedInventoryAdjustmentRow } from "../../../../src/flooring/inventory/adjustments/types.js"
-import { ADJUSTMENTS_EXPORT_COLUMNS } from "../../../../src/flooring/inventory/adjustments/export-columns.js"
+import type { EnrichedInventoryAdjustmentRow } from "../../../src/inventory/adjustments/types.js"
+import { ADJUSTMENTS_EXPORT_COLUMNS } from "../../../src/inventory/adjustments/export-columns.js"
 
 describe("ADJUSTMENTS_EXPORT_COLUMNS", () => {
   const row: EnrichedInventoryAdjustmentRow = {

@@ -1,4 +1,4 @@
-import { formatMoney } from "../../shared/money.js"
+import { formatMoney } from "../shared/money.js"
 import type { FlooringInventoryAdjustmentType } from "./adjustments/types.js"
 
 export function parseInventoryDecimal(value: string): number {

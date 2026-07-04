@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { buildWorkOrderPrintHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-print-html.js"
-import { buildWorkOrderPrintConfig } from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
+import { buildWorkOrderPrintHtml } from "../../../src/work-orders/file-generation/build-work-order-print-html.js"
+import { buildWorkOrderPrintConfig } from "../../../src/work-orders/file-generation/print-presets.js"
 import {
   renderWorkOrderDocumentHeader,
   renderWorkOrderMaterialItems,
-} from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
+} from "../../../src/work-orders/file-generation/work-order-document-sections.js"
 import { makeFileGenInput, makeMaterialItemGroup, makeMaterialItemRow } from "./_fixtures.js"
 
 function count(haystack: string, needle: string): number {

@@ -1,5 +1,5 @@
-import { buildAddressLine } from "../../../shared/address/index.js"
-import { formatPhoneNumber } from "../../../shared/phone.js"
+import { buildAddressLine } from "../../shared/address/index.js"
+import { formatPhoneNumber } from "../../shared/phone.js"
 import { sumAdjustmentQuantities } from "../material-items/adjustment-quantities.js"
 import {
   WORK_ORDER_TOP_FIELD_KEYS,

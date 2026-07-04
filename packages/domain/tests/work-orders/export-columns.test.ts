@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import type { WorkOrderListRow } from "../../../src/flooring/work-orders/types.js"
-import { WORK_ORDER_EXPORT_COLUMNS } from "../../../src/flooring/work-orders/export-columns.js"
+import type { WorkOrderListRow } from "../../src/work-orders/types.js"
+import { WORK_ORDER_EXPORT_COLUMNS } from "../../src/work-orders/export-columns.js"
 
 describe("WORK_ORDER_EXPORT_COLUMNS", () => {
   const row: WorkOrderListRow = {

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { validateImportPrimaryForm } from "../../../src/flooring/imports/form-rules.js"
+import { validateImportPrimaryForm } from "../../src/imports/form-rules.js"
 import {
   IMPORT_INTERNAL_NOTES_MAX,
   IMPORT_PURCHASE_ORDER_NUMBER_MAX,
-} from "../../../src/flooring/imports/column-limits.js"
-import type { ImportPrimaryForm } from "../../../src/flooring/imports/types.js"
+} from "../../src/imports/column-limits.js"
+import type { ImportPrimaryForm } from "../../src/imports/types.js"
 
 function form(overrides: Partial<ImportPrimaryForm> = {}): ImportPrimaryForm {
   return {

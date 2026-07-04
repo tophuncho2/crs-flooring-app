@@ -1,4 +1,4 @@
-import { isValidMoneyAmount } from "../../shared/money.js"
+import { isValidMoneyAmount } from "../shared/money.js"
 import type { PaymentForm } from "./types.js"
 
 export type PaymentFormIssue =

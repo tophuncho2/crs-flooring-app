@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest"
 import {
   toEntityForm,
   validateEntityForm,
-} from "../../../src/management/entities/form-rules.js"
+} from "../../src/entities/form-rules.js"
 import type {
   EntityDetail,
   EntityForm,
-} from "../../../src/management/entities/types.js"
+} from "../../src/entities/types.js"
 
 function form(overrides: Partial<EntityForm> = {}): EntityForm {
   return {

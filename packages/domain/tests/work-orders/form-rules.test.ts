@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { validateWorkOrderForm } from "../../../src/flooring/work-orders/form-rules.js"
-import { EMPTY_WORK_ORDER_FORM } from "../../../src/flooring/work-orders/types.js"
+import { validateWorkOrderForm } from "../../src/work-orders/form-rules.js"
+import { EMPTY_WORK_ORDER_FORM } from "../../src/work-orders/types.js"
 
 const baseForm = { ...EMPTY_WORK_ORDER_FORM, propertyId: "prop-1" }
 

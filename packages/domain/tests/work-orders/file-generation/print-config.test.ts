@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest"
-import { buildWorkOrderPrintHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-print-html.js"
+import { buildWorkOrderPrintHtml } from "../../../src/work-orders/file-generation/build-work-order-print-html.js"
 import {
   buildWorkOrderPrintConfig,
   WORK_ORDER_DOCUMENT_LABELS,
-} from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
+} from "../../../src/work-orders/file-generation/print-presets.js"
 import {
   renderWorkOrderAdjustments,
   renderWorkOrderInfo,
   renderWorkOrderMaterialItems,
-} from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
+} from "../../../src/work-orders/file-generation/work-order-document-sections.js"
 import {
   makeAdjustment,
   makeFileGenInput,

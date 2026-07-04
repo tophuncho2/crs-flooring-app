@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { canInviteRank, isInviteOpen } from "../../../src/management/invites/invite-rules.js"
+import { canInviteRank, isInviteOpen } from "../../src/invites/invite-rules.js"
 
 describe("canInviteRank", () => {
   it("lets DEVELOPER act on every lower rank, but NOT another DEVELOPER", () => {

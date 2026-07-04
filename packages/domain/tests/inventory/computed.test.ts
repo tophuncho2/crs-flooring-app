@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   computeAdjustmentMoneyShare,
   computeInventoryBalance,
-} from "../../../src/flooring/inventory/computed.js"
+} from "../../src/inventory/computed.js"
 
 describe("computeInventoryBalance", () => {
   it("subtracts netDeducted from startingStock", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { validateJobTypeForm } from "../../../src/management/job-types/form-rules.js"
-import { EMPTY_JOB_TYPE_FORM, toJobTypeForm } from "../../../src/management/job-types/types.js"
+import { validateJobTypeForm } from "../../src/job-types/form-rules.js"
+import { EMPTY_JOB_TYPE_FORM, toJobTypeForm } from "../../src/job-types/types.js"
 
 describe("validateJobTypeForm", () => {
   it("returns no error for a non-empty name", () => {

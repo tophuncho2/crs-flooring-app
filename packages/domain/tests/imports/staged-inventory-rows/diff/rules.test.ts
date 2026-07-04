@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { validateStagedInventoryRowsDiff } from "../../../../../src/flooring/imports/staged-inventory-rows/diff/rules.js"
+import { validateStagedInventoryRowsDiff } from "../../../../src/imports/staged-inventory-rows/diff/rules.js"
 import type {
   DiffExistingStagedInventoryRow,
   StagedInventoryRowsDiff,
-} from "../../../../../src/flooring/imports/staged-inventory-rows/diff/types.js"
+} from "../../../../src/imports/staged-inventory-rows/diff/types.js"
 
 function form(overrides: Partial<{ rollNumber: string; dyeLot: string; location: string; startingStock: string; note: string }> = {}) {
   return {

@@ -1,4 +1,4 @@
-import type { PaletteColor } from "../../shared/palette.js"
+import type { PaletteColor } from "../shared/palette.js"
 import { normalizeTemplatePlannedProduct } from "./planned-products/normalizers.js"
 import type { TemplatePlannedProductRow } from "./planned-products/types.js"
 import type {

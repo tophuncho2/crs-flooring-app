@@ -4,13 +4,13 @@ import {
   validateCreatePropertyHubForm,
   type CreatePropertyHubForm,
   type PropertyHubPropertyFields,
-} from "../../../src/management/properties/property-hub-form.js"
+} from "../../src/properties/property-hub-form.js"
 import {
   PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE,
   PROPERTY_HUB_NO_ACTIONS_MESSAGE,
   PROPERTY_NAME_REQUIRED_MESSAGE,
-} from "../../../src/management/properties/error-messages.js"
-import type { EntityForm } from "../../../src/management/entities/types.js"
+} from "../../src/properties/error-messages.js"
+import type { EntityForm } from "../../src/entities/types.js"
 
 function entityFields(overrides: Partial<EntityForm> = {}): EntityForm {
   return {

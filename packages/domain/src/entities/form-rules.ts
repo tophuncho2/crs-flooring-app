@@ -1,4 +1,4 @@
-import { isBlankName } from "../../shared/name-rules.js"
+import { isBlankName } from "../shared/name-rules.js"
 import type { EntityDetail, EntityForm } from "./types.js"
 
 export function toEntityForm(entity: EntityDetail): EntityForm {

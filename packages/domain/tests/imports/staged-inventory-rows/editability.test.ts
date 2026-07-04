@@ -9,7 +9,7 @@ import {
   isStagedUserEditableField,
   STAGED_USER_EDITABLE_FIELDS,
   STAGED_PARENT_OWNED_FIELDS,
-} from "../../../../src/flooring/imports/staged-inventory-rows/editability.js"
+} from "../../../src/imports/staged-inventory-rows/editability.js"
 
 describe("predicates", () => {
   describe("isStagedRowEditable", () => {

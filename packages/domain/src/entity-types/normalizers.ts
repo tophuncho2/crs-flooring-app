@@ -1,5 +1,5 @@
 import type { EntityType, EntityTypeOption } from "./types.js"
-import type { PaletteColor } from "../../shared/palette.js"
+import type { PaletteColor } from "../shared/palette.js"
 
 type EntityTypeInput = {
   id: string

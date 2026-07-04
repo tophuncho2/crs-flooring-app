@@ -4,8 +4,8 @@ import {
   computeNetDeducted,
   isNetDeductedWithinStartingStock,
   signedDelta,
-} from "../../../../src/flooring/inventory/adjustments/math/net-deducted-math.js"
-import { computeLedgerBeforeAfter } from "../../../../src/flooring/inventory/adjustments/math/ledger-math.js"
+} from "../../../src/inventory/adjustments/math/net-deducted-math.js"
+import { computeLedgerBeforeAfter } from "../../../src/inventory/adjustments/math/ledger-math.js"
 
 describe("signedDelta", () => {
   it("returns +quantity for a DEDUCTION row", () => {

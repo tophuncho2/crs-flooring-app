@@ -1,4 +1,4 @@
-import { isBlankName } from "../../shared/name-rules.js"
+import { isBlankName } from "../shared/name-rules.js"
 import type { PropertyDetailRecord, PropertyPrimaryForm } from "./types.js"
 
 export function toPropertyPrimaryForm(property: PropertyDetailRecord): PropertyPrimaryForm {

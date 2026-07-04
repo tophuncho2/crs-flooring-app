@@ -1,4 +1,4 @@
-import { isValidMoneyAmount, normalizeMoneyAmount } from "../../shared/money.js"
+import { isValidMoneyAmount, normalizeMoneyAmount } from "../shared/money.js"
 import {
   INVENTORY_DYE_LOT_MAX,
   INVENTORY_INTERNAL_NOTES_MAX,

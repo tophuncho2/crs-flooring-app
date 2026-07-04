@@ -1,6 +1,6 @@
 import type { EntityForm } from "../entities/types.js"
 import { validateEntityForm } from "../entities/form-rules.js"
-import { isBlankName } from "../../shared/name-rules.js"
+import { isBlankName } from "../shared/name-rules.js"
 import {
   PROPERTY_HUB_NO_ACTIONS_MESSAGE,
   PROPERTY_HUB_LINK_REQUIRES_PROPERTY_MESSAGE,

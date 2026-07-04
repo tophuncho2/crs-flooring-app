@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   normalizeJobType,
   normalizeJobTypeOption,
-} from "../../../src/management/job-types/normalizers.js"
+} from "../../src/job-types/normalizers.js"
 
 describe("normalizeJobType", () => {
   it("converts Date timestamps to ISO strings and passes actor emails through", () => {

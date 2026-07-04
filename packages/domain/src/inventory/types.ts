@@ -4,7 +4,7 @@ export {
 } from "./adjustments/types.js"
 
 import type { EnrichedInventoryAdjustmentRow } from "./adjustments/types.js"
-import type { PaletteColor } from "../../shared/palette.js"
+import type { PaletteColor } from "../shared/palette.js"
 
 export type InventoryRow = {
   id: string

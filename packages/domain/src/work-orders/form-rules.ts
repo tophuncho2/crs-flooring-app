@@ -1,4 +1,4 @@
-import { toDateInputValue } from "../../shared/date-format.js"
+import { toDateInputValue } from "../shared/date-format.js"
 import type { WorkOrderDetail, WorkOrderForm } from "./types.js"
 
 export function validateWorkOrderForm(input: WorkOrderForm) {

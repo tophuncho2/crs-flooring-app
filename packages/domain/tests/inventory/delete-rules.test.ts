@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildInventoryDeleteBlockedMessage,
   isInventoryDeleteBlocked,
-} from "../../../src/flooring/inventory/delete-rules.js"
+} from "../../src/inventory/delete-rules.js"
 
 describe("isInventoryDeleteBlocked", () => {
   it("is not blocked with zero inventory adjustments", () => {

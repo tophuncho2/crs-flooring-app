@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { buildWorkOrderPrintHtml } from "../../../../src/flooring/work-orders/file-generation/build-work-order-print-html.js"
-import { buildWorkOrderPrintConfig } from "../../../../src/flooring/work-orders/file-generation/print-presets.js"
-import { renderWorkOrderAdjustments } from "../../../../src/flooring/work-orders/file-generation/work-order-document-sections.js"
+import { buildWorkOrderPrintHtml } from "../../../src/work-orders/file-generation/build-work-order-print-html.js"
+import { buildWorkOrderPrintConfig } from "../../../src/work-orders/file-generation/print-presets.js"
+import { renderWorkOrderAdjustments } from "../../../src/work-orders/file-generation/work-order-document-sections.js"
 import { EMPTY_CELL, makeAdjustment, makeFileGenInput, makeMaterialItem } from "./_fixtures.js"
 
 type Items = ReturnType<typeof makeMaterialItem>[]

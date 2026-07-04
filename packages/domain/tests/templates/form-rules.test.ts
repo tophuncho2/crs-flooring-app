@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { validateTemplateForm } from "../../../src/management/templates/form-rules.js"
-import { EMPTY_TEMPLATE_FORM } from "../../../src/management/templates/types.js"
+import { validateTemplateForm } from "../../src/templates/form-rules.js"
+import { EMPTY_TEMPLATE_FORM } from "../../src/templates/types.js"
 
 const baseForm = { ...EMPTY_TEMPLATE_FORM, unitType: "2BR" }
 
