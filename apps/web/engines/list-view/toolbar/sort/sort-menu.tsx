@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Plus, X } from "lucide-react"
+import { ArrowDown, ChevronDown, ChevronUp, Plus, X } from "lucide-react"
 
 /** How a column's values order — drives the direction control's labels. */
 export type SortValueType = "text" | "number" | "date" | "time"
@@ -28,10 +28,11 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
-// Per-type direction labels. Each is a single representative token (the value at
-// the top of the list for that direction) rendered before the ↑/↓ arrow, so the
-// chosen order reads at a glance without the opaque "Asc/Desc". `text` is the
-// fallback for an untyped column.
+// Per-type direction labels. Each is a single representative token — the value
+// at the top of the list for that direction — rendered before a fixed downward
+// arrow (the list always flows top-to-bottom). The token alone signals the
+// direction, so the chosen order reads at a glance without the opaque
+// "Asc/Desc". `text` is the fallback for an untyped column.
 const DIRECTION_LABELS: Record<SortValueType, { asc: string; desc: string }> = {
   text: { asc: "A", desc: "Z" },
   number: { asc: "1", desc: "9" },
@@ -210,11 +211,7 @@ export function SortMenuBody({
                       className={DIRECTION_CLASS_NAME}
                     >
                       {activeLabel}
-                      {level.direction === "asc" ? (
-                        <ArrowUp size={13} strokeWidth={2.5} aria-hidden="true" />
-                      ) : (
-                        <ArrowDown size={13} strokeWidth={2.5} aria-hidden="true" />
-                      )}
+                      <ArrowDown size={13} strokeWidth={2.5} aria-hidden="true" />
                     </button>
                     <button
                       type="button"
