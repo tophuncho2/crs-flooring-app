@@ -15,10 +15,13 @@ const DIRECTION_OPTIONS: ChoiceChipOption[] = [
 ]
 
 const TEMPLATE_INVOICE_ITEMS_COLUMNS: DataTableColumn<TemplateInvoiceItemLocal>[] = [
-  { key: "amount", label: "Amount", width: 160, align: "end" },
-  // Direction sits to the RIGHT of amount and carries the tone chip/badge.
-  { key: "direction", label: "Direction", width: 160 },
-  { key: "notes", label: "Notes", width: 320 },
+  // Spans mirror the Invoice Products grid so the two sections line up: Notes
+  // takes the Product span (wide grow floor), Amount takes the combined
+  // Quantity+Cost+Unit span (140+140+150=430), and Direction takes the Notes
+  // tail (320) — carrying the tone chip/badge at the right edge.
+  { key: "notes", label: "Notes", minWidth: 360, grow: 1 },
+  { key: "amount", label: "Amount", width: 430, align: "end" },
+  { key: "direction", label: "Direction", width: 320 },
 ]
 
 // Pure editable-table body for the Invoice Items §3 section — a smaller mirror
