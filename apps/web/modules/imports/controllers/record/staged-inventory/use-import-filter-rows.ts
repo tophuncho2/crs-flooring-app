@@ -10,6 +10,7 @@ import {
   useRecordScopedSectionController,
 } from "@/engines/record-view"
 import type {
+  FlooringStagedRowStatus,
   ImportDetail,
   ImportStagedInventorySectionDiff,
   ProductOption,
@@ -18,6 +19,7 @@ import type {
   UnitOfMeasureOption,
 } from "@builders/domain"
 import {
+  buildServerStatusMap,
   createImportFilterRowDraft,
   createImportStagedRowDraft,
   createSectionRevisionKey,
@@ -94,6 +96,12 @@ function rowFormIsDirty(
 function buildSectionDiff(
   state: ImportSectionLocalState,
   serverValue: SectionServerValue,
+  // Live staged-row status per saved row id, from the poll-updated rows — NOT
+  // the baseline snapshot, which freezes at mark-for-import time (QUEUED) and
+  // never rebases on the worker's QUEUED→IMPORTED flip (status flips don't
+  // change the section revision key). Reading live status here is what lets a
+  // just-imported row's edit save without a browser refresh.
+  liveStagedStatusById: Map<string, FlooringStagedRowStatus>,
 ): ImportStagedInventorySectionDiff {
   // A non-local draft whose server row vanished (shouldn't happen mid-session —
   // the engine rebases on revisionKey changes) is treated as added so the
@@ -115,7 +123,8 @@ function buildSectionDiff(
   // Rows are editable/deletable in any state except QUEUED (the worker owns
   // QUEUED rows mid-import). IMPORTED rows are editable history now that the
   // inventory->staged FK is severed, so the eligibility gate only keeps QUEUED
-  // server rows out of both modified and deleted.
+  // rows out of both modified and deleted — read from the live status map, not
+  // the frozen baseline snapshot, so a QUEUED→IMPORTED flip is honored.
   const rows = buildRowDiff({
     locals: state.stagedRows,
     serverRows: serverValue.stagedRows,
@@ -129,7 +138,8 @@ function buildSectionDiff(
     }),
     toModified: (draft, server) => ({ id: server.id, form: toRowDiffForm(draft) }),
     onMissingServerRow: "add",
-    isServerRowEligible: (server) => server.status !== "QUEUED",
+    isServerRowEligible: (server) =>
+      (liveStagedStatusById.get(server.id) ?? server.status) !== "QUEUED",
   })
 
   return { filters, rows }
@@ -196,7 +206,12 @@ export function useImportFilterRows({
         })
       }
 
-      const diff = buildSectionDiff(localValue, currentServer)
+      // Live status from the poll-updated `stagedRows` prop (this onSave closure
+      // is recreated each render, so it captures the freshest array). Lets the
+      // eligibility gate see a row's real IMPORTED status even though the
+      // baseline `currentServer` still snapshots it as QUEUED.
+      const liveStagedStatusById = buildServerStatusMap(stagedRows)
+      const diff = buildSectionDiff(localValue, currentServer, liveStagedStatusById)
       const noChanges =
         diff.filters.added.length === 0 &&
         diff.filters.modified.length === 0 &&
