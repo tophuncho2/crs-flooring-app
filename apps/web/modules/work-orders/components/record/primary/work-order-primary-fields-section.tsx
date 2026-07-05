@@ -33,6 +33,7 @@ import {
   formatEasternDateTime,
   WO_CUSTOMER_NAME_MAX,
   WO_DESCRIPTION_MAX,
+  WO_INSTALLER_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
   WO_INTERNAL_NOTES_MAX,
   WO_PURCHASE_ORDER_NUMBER_MAX,
@@ -314,8 +315,23 @@ export function WorkOrderPrimaryFieldsSection({
                 </StaticFieldValue>
               </FormField>
             </CellAt>
-            {/* Installer Instructions */}
+            {/* Installer */}
             <CellAt col={1} row={7} colSpan={8}>
+              <FormField
+                label="Installer"
+                currentLength={editable ? draft.installer.length : undefined}
+                maxLength={editable ? WO_INSTALLER_MAX : undefined}
+              >
+                <TextCell
+                  editable={editable}
+                  value={draft.installer}
+                  onChange={(value) => onFieldChange("installer", value)}
+                  maxLength={WO_INSTALLER_MAX}
+                />
+              </FormField>
+            </CellAt>
+            {/* Installer Instructions */}
+            <CellAt col={1} row={8} colSpan={8}>
               <FormField
                 label="Installer Instructions"
                 currentLength={editable ? draft.installerInstructions.length : undefined}

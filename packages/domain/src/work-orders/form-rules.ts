@@ -26,6 +26,7 @@ export function toWorkOrderForm(workOrder: WorkOrderDetail): WorkOrderForm {
     zip: workOrder.zip,
     customerName: workOrder.customerName,
     description: workOrder.description,
+    installer: workOrder.installer,
     internalNotes: workOrder.internalNotes,
     installerInstructions: workOrder.installerInstructions,
     purchaseOrderNumber: workOrder.purchaseOrderNumber,

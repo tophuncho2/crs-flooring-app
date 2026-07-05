@@ -23,6 +23,16 @@ describe("toUpdateWorkOrderInput", () => {
     expect(input.customerName).toBe("")
   })
 
+  it("carries installer into the update/create payload", () => {
+    const input = toUpdateWorkOrderInput({ ...EMPTY_WORK_ORDER_FORM, installer: "Crew A" })
+    expect(input.installer).toBe("Crew A")
+  })
+
+  it("passes an empty installer through unchanged", () => {
+    const input = toUpdateWorkOrderInput(EMPTY_WORK_ORDER_FORM)
+    expect(input.installer).toBe("")
+  })
+
   it("maps the WO-owned address, aliasing form `zip` to wire `postalCode`", () => {
     const input = toUpdateWorkOrderInput({
       ...EMPTY_WORK_ORDER_FORM,

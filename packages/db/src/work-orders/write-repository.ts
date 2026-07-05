@@ -24,6 +24,7 @@ export type CreateWorkOrderRecordInput = {
   postalCode?: string | null
   customerName?: string | null
   description?: string | null
+  installer?: string | null
   internalNotes?: string | null
   installerInstructions?: string | null
   purchaseOrderNumber?: string | null

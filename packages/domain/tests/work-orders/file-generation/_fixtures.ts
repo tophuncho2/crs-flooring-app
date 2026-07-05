@@ -24,6 +24,7 @@ const BASE: WorkOrderFileGenerationInput = {
   postalCode: "78701",
   customerName: "",
   description: "",
+  installer: "",
   installerInstructions: "",
   property: {
     name: "Maple Court Apartments",

@@ -31,6 +31,7 @@ export const WORK_ORDER_EXPORT_COLUMNS: ReadonlyArray<ExportColumn<WorkOrderList
   { key: "unitNumber", label: "Unit #", value: (row) => row.unitNumber },
   { key: "unitType", label: "Unit Type", value: (row) => row.unitType },
   { key: "description", label: "Description", value: (row) => row.description },
+  { key: "installer", label: "Installer", value: (row) => row.installer },
   { key: "purchaseOrderNumber", label: "PO #", value: (row) => row.purchaseOrderNumber },
   { key: "createdAt", label: "Created", value: (row) => formatEasternDateTime(row.createdAt) },
   { key: "updatedAt", label: "Updated", value: (row) => formatEasternDateTime(row.updatedAt) },

@@ -20,6 +20,7 @@ export type WorkOrderListRow = {
   scheduledFor: string
   customerName: string
   description: string
+  installer: string
   // WO-owned address (snapshotted from the property, then editable). `zip` vocab
   // matches the form + shared AddressEditCell; persisted as `postalCode`. On the
   // list row so the table can display + search the address columns.
@@ -85,6 +86,7 @@ export type WorkOrderForm = {
   customerName: string
   description: string
   internalNotes: string
+  installer: string
   installerInstructions: string
   purchaseOrderNumber: string
   scheduledFor: string
@@ -107,6 +109,7 @@ export const EMPTY_WORK_ORDER_FORM: WorkOrderForm = {
   customerName: "",
   description: "",
   internalNotes: "",
+  installer: "",
   installerInstructions: "",
   purchaseOrderNumber: "",
   scheduledFor: "",

@@ -210,6 +210,9 @@ export function renderWorkOrderInfo(
     topFields.propertyInstructions && input.property.instructions
       ? `<tr><th>Property Instructions</th><td class="multiline">${escapeHtml(input.property.instructions)}</td></tr>`
       : "",
+    topFields.installer && input.installer
+      ? `<tr><th>Installer</th><td>${escapeHtml(input.installer)}</td></tr>`
+      : "",
     topFields.installerInstructions && input.installerInstructions
       ? `<tr><th>Installer Instructions</th><td class="multiline">${escapeHtml(input.installerInstructions)}</td></tr>`
       : "",

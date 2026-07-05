@@ -23,6 +23,7 @@ describe("normalizeWorkOrderListRow entity", () => {
     scheduledFor: null,
     customerName: null,
     description: null,
+    installer: null,
     streetAddress: null,
     city: null,
     state: null,
@@ -59,6 +60,11 @@ describe("normalizeWorkOrderListRow entity", () => {
     expect(normalizeWorkOrderListRow(base).customerName).toBe("")
     expect(normalizeWorkOrderListRow({ ...base, customerName: "Jane Doe" }).customerName).toBe("Jane Doe")
   })
+
+  it("passes the installer through, defaulting null to empty string", () => {
+    expect(normalizeWorkOrderListRow(base).installer).toBe("")
+    expect(normalizeWorkOrderListRow({ ...base, installer: "Crew A" }).installer).toBe("Crew A")
+  })
 })
 
 describe("normalizeWorkOrder WO-owned address", () => {
@@ -80,6 +86,7 @@ describe("normalizeWorkOrder WO-owned address", () => {
     scheduledFor: null,
     customerName: null,
     description: null,
+    installer: null,
     purchaseOrderNumber: null,
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",

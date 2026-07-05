@@ -23,6 +23,8 @@ export function renderWorkOrderRowCell(
       return row.warehouseName || "-"
     case "description":
       return row.description || "-"
+    case "installer":
+      return row.installer || "-"
     case "propertyName":
       return row.propertyName || "-"
     case "customerName":

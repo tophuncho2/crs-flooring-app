@@ -63,6 +63,7 @@ describe("renderWorkOrderInfo — top-field gating", () => {
     customerName: true,
     propertyAddress: true,
     propertyInstructions: true,
+    installer: true,
     installerInstructions: true,
     unitType: true,
     unitNumber: true,

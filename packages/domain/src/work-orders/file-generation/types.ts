@@ -87,6 +87,7 @@ export const WORK_ORDER_TOP_FIELD_KEYS = [
   "customerName",
   "propertyAddress",
   "propertyInstructions",
+  "installer",
   "installerInstructions",
   "unitType",
   "unitNumber",
@@ -106,6 +107,7 @@ export const WORK_ORDER_TOP_FIELD_LABELS: Record<WorkOrderTopFieldKey, string> =
   customerName: "Customer Name",
   propertyAddress: "Address",
   propertyInstructions: "Property Instructions",
+  installer: "Installer",
   installerInstructions: "Installer Instructions",
   unitType: "Unit Type",
   unitNumber: "Unit Number",
@@ -163,6 +165,7 @@ export type WorkOrderFileGenerationInput = {
   postalCode: string
   customerName: string
   description: string
+  installer: string
   installerInstructions: string
   property: {
     name: string

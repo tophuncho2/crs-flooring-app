@@ -701,6 +701,7 @@ model FlooringWorkOrder {
   description          String?                    @db.VarChar(120)
   internalNotes        String?                    @db.VarChar(250)
   installerInstructions String?                   @db.VarChar(500)
+  installer            String?                    @db.VarChar(100)
   purchaseOrderNumber  String?                    @db.VarChar(50)
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt

@@ -27,6 +27,7 @@ export const WORK_ORDERS_LIST_COLUMNS: ReadonlyArray<DataTableColumn<WorkOrderLi
   { key: "unitNumber", label: "Unit #" },
   { key: "unitType", label: "Unit Type" },
   { key: "description", label: "Description" },
+  { key: "installer", label: "Installer" },
   { key: "purchaseOrderNumber", label: "PO #" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },

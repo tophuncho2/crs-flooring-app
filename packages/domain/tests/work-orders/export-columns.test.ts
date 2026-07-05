@@ -23,6 +23,7 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     scheduledFor: "",
     customerName: "Jane Doe",
     description: "",
+    installer: "Crew A",
     streetAddress: "12 Oak St",
     city: "Austin",
     state: "TX",
@@ -73,6 +74,19 @@ describe("WORK_ORDER_EXPORT_COLUMNS", () => {
     const streetIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "streetAddress")
     expect(customerIndex).toBeGreaterThan(propertyIndex)
     expect(customerIndex).toBeLessThan(streetIndex)
+  })
+
+  it("exports the installer, positioned between Description and PO #", () => {
+    const column = WORK_ORDER_EXPORT_COLUMNS.find((c) => c.key === "installer")
+    expect(column).toBeDefined()
+    expect(column?.label).toBe("Installer")
+    expect(column?.value(row)).toBe("Crew A")
+
+    const descriptionIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "description")
+    const installerIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "installer")
+    const poIndex = WORK_ORDER_EXPORT_COLUMNS.findIndex((c) => c.key === "purchaseOrderNumber")
+    expect(installerIndex).toBeGreaterThan(descriptionIndex)
+    expect(installerIndex).toBeLessThan(poIndex)
   })
 
   it("includes the actor columns", () => {

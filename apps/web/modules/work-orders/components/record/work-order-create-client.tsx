@@ -55,6 +55,7 @@ function WorkOrderCreatePanel({
         postalCode: updateInput.postalCode,
         customerName: updateInput.customerName,
         description: updateInput.description,
+        installer: updateInput.installer,
         internalNotes: updateInput.internalNotes,
         installerInstructions: updateInput.installerInstructions,
         purchaseOrderNumber: updateInput.purchaseOrderNumber,

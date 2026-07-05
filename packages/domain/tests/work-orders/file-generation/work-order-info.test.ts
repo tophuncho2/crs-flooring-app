@@ -86,6 +86,11 @@ describe("renderWorkOrderInfo — conditional rows present when set", () => {
     expect(html).toContain("<th>Installer Instructions</th>")
     expect(html).toContain("Use back stairs")
   })
+
+  it("includes the Installer when present", () => {
+    const html = renderWorkOrderInfo(makeFileGenInput({ installer: "Crew A" }))
+    expect(html).toContain("<th>Installer</th><td>Crew A</td>")
+  })
 })
 
 describe("renderWorkOrderInfo — conditional rows absent when blank", () => {

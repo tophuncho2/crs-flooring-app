@@ -17,6 +17,7 @@ import {
   PALETTE_COLOR_INVALID_MESSAGE,
   WORK_ORDER_EXPORT_COLUMNS,
   WO_DESCRIPTION_MAX,
+  WO_INSTALLER_MAX,
   WO_INSTALLER_INSTRUCTIONS_MAX,
   WO_CUSTOMER_NAME_MAX,
   WO_INTERNAL_NOTES_MAX,
@@ -158,6 +159,7 @@ export function validateCreateWorkOrderInput(
     postalCode: optionalString(pickPostalCode(body)),
     customerName: optionalBoundedText(body.customerName, WO_CUSTOMER_NAME_MAX, "customerName", failWorkOrder),
     description: optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder),
+    installer: optionalBoundedText(body.installer, WO_INSTALLER_MAX, "installer", failWorkOrder),
     internalNotes: optionalBoundedText(body.internalNotes, WO_INTERNAL_NOTES_MAX, "internalNotes", failWorkOrder),
     installerInstructions: optionalBoundedText(
       body.installerInstructions,
@@ -201,6 +203,7 @@ export function validateUpdateWorkOrderInput(
   if ("zip" in body || "postalCode" in body) input.postalCode = optionalString(pickPostalCode(body))
   if ("customerName" in body) input.customerName = optionalBoundedText(body.customerName, WO_CUSTOMER_NAME_MAX, "customerName", failWorkOrder)
   if ("description" in body) input.description = optionalBoundedText(body.description, WO_DESCRIPTION_MAX, "description", failWorkOrder)
+  if ("installer" in body) input.installer = optionalBoundedText(body.installer, WO_INSTALLER_MAX, "installer", failWorkOrder)
   if ("internalNotes" in body) {
     input.internalNotes = optionalBoundedText(body.internalNotes, WO_INTERNAL_NOTES_MAX, "internalNotes", failWorkOrder)
   }
