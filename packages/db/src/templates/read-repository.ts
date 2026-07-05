@@ -143,6 +143,22 @@ const templateDetailSelect = {
     },
     orderBy: { createdAt: "asc" as const },
   },
+  // Invoice items — a structural mirror of plannedPayments (own table).
+  // Deliberately smaller: amount · direction · notes only (no date, no entity
+  // link). Detail-only; the record view reads the array directly.
+  invoiceItems: {
+    select: {
+      id: true,
+      amount: true,
+      direction: true,
+      notes: true,
+      createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
+    },
+    orderBy: { createdAt: "asc" as const },
+  },
 } as const
 
 /**

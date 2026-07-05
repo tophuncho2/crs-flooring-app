@@ -5,6 +5,8 @@ import { normalizeTemplateInvoiceProduct } from "./invoice-products/normalizers.
 import type { TemplateInvoiceProductRow } from "./invoice-products/types.js"
 import { normalizeTemplatePlannedPayment } from "./planned-payments/normalizers.js"
 import type { TemplatePlannedPaymentRow } from "./planned-payments/types.js"
+import { normalizeTemplateInvoiceItem } from "./invoice-items/normalizers.js"
+import type { TemplateInvoiceItemRow } from "./invoice-items/types.js"
 import type {
   TemplateDetail,
   TemplateListRow,
@@ -57,6 +59,7 @@ type TemplateDetailInput = Omit<TemplateListInput, "property"> & {
   plannedProducts: Array<Parameters<typeof normalizeTemplatePlannedProduct>[0]>
   invoiceProducts: Array<Parameters<typeof normalizeTemplateInvoiceProduct>[0]>
   plannedPayments: Array<Parameters<typeof normalizeTemplatePlannedPayment>[0]>
+  invoiceItems: Array<Parameters<typeof normalizeTemplateInvoiceItem>[0]>
 }
 
 export function normalizeTemplateListRow(template: TemplateListInput): TemplateListRow {
@@ -91,6 +94,7 @@ export function normalizeTemplate(
   const plannedProducts: TemplatePlannedProductRow[] = template.plannedProducts.map(normalizeTemplatePlannedProduct)
   const invoiceProducts: TemplateInvoiceProductRow[] = template.invoiceProducts.map(normalizeTemplateInvoiceProduct)
   const plannedPayments: TemplatePlannedPaymentRow[] = template.plannedPayments.map(normalizeTemplatePlannedPayment)
+  const invoiceItems: TemplateInvoiceItemRow[] = template.invoiceItems.map(normalizeTemplateInvoiceItem)
   return {
     ...base,
     internalNotes: template.internalNotes ?? "",
@@ -103,6 +107,7 @@ export function normalizeTemplate(
     plannedProducts,
     invoiceProducts,
     plannedPayments,
+    invoiceItems,
     previousTemplate: neighbors.previousTemplate,
     nextTemplate: neighbors.nextTemplate,
   }

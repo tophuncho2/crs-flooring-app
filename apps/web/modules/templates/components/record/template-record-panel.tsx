@@ -9,11 +9,12 @@ import { useTemplatePrimarySection } from "@/modules/templates/controllers/recor
 import { useTemplatePlannedProductsSection } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
 import { useTemplateInvoiceProductsSection } from "@/modules/templates/controllers/record/invoice-products/use-template-invoice-products-section"
 import { useTemplatePlannedPaymentsSection } from "@/modules/templates/controllers/record/planned-payments/use-template-planned-payments-section"
+import { useTemplateInvoiceItemsSection } from "@/modules/templates/controllers/record/invoice-items/use-template-invoice-items-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
 import type { TemplateDetail, TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
 import { TemplateProductsSection } from "./template-products-section"
-import { TemplatePlannedPaymentsSection } from "./planned-payments/template-planned-payments-section"
+import { TemplatePaymentsSection } from "./template-payments-section"
 import { TemplateRecordFooter } from "./footer"
 
 export function TemplateRecordPanel({
@@ -36,18 +37,24 @@ export function TemplateRecordPanel({
     template: primary.record,
     publishTemplate: primary.publishRecord,
   })
+  const invoiceItems = useTemplateInvoiceItemsSection({
+    template: primary.record,
+    publishTemplate: primary.publishRecord,
+  })
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
   const isDirty =
     primary.primarySection.isDirty ||
     plannedProducts.isDirty ||
     invoiceProducts.isDirty ||
-    plannedPayments.isDirty
+    plannedPayments.isDirty ||
+    invoiceItems.isDirty
   const canSync =
     !isDirty &&
     !primary.primarySection.isSaving &&
     !plannedProducts.isSaving &&
     !invoiceProducts.isSaving &&
-    !plannedPayments.isSaving
+    !plannedPayments.isSaving &&
+    !invoiceItems.isSaving
 
   return (
     <>
@@ -148,19 +155,24 @@ export function TemplateRecordPanel({
             ),
           },
           {
-            key: "planned-payments",
+            key: "payments",
             type: "item",
             order: 20,
-            dirtyLabel: "planned payments",
+            dirtyLabel: "payments",
+            // The panel's dirty/saving/conflict signal is the OR of BOTH sides —
+            // the toggle host shows one at a time but either can be mid-edit.
             controller: {
-              isDirty: plannedPayments.isDirty,
-              isSaving: plannedPayments.isSaving,
-              hasConflict: plannedPayments.hasConflict,
+              isDirty: plannedPayments.isDirty || invoiceItems.isDirty,
+              isSaving: plannedPayments.isSaving || invoiceItems.isSaving,
+              hasConflict: plannedPayments.hasConflict || invoiceItems.hasConflict,
             },
+            // `key={template.id}` resets the mode toggle to Planned when stepping
+            // to a neighbor template (mirrors the products host).
             render: () => (
-              <TemplatePlannedPaymentsSection
+              <TemplatePaymentsSection
                 key={template.id}
-                plannedPayments={plannedPayments}
+                planned={plannedPayments}
+                invoice={invoiceItems}
               />
             ),
           },
