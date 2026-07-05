@@ -36,6 +36,13 @@ export type EntityTypePickerProps = {
   ariaLabel?: string
   /** Optional initial seed shown before the user types anything (e.g. SSR-loaded top 20). */
   initialOptions?: EntityOption[]
+  /**
+   * Which edge of the panel pins to the trigger. `"right"` (default) suits a
+   * right-clustered / wide form trigger. Pass `"left"` for a left-column grid
+   * cell so the panel grows rightward off the cell instead of sprawling left
+   * across the viewport.
+   */
+  align?: "left" | "right"
 }
 
 /**
@@ -65,6 +72,7 @@ export function EntityTypePicker({
   disabled,
   ariaLabel = "Entity",
   initialOptions,
+  align = "right",
 }: EntityTypePickerProps) {
   const [open, setOpen] = useState(false)
   // Internal type-narrowing selection — drives the entity options' bucketKey;
@@ -155,7 +163,7 @@ export function EntityTypePicker({
       open={open}
       onClose={closePanel}
       maxHeight={600}
-      align="right"
+      align={align}
       bodyScroll={false}
       stickyHeader={stickyHeader}
     >

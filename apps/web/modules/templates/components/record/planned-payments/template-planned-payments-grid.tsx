@@ -73,6 +73,7 @@ export function TemplatePlannedPaymentsGrid({
                 onOptionSelected={(option) => onSelectEntity(item.id, option)}
                 placeholder="Select entity"
                 ariaLabel="Planned payment entity"
+                align="left"
               />
             )
           case "types":
