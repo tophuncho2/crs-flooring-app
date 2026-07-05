@@ -9,6 +9,7 @@ export type PropertyFilterChipProps = {
   /** Optional entity scope — when set, the picker narrows to that company. */
   entityId?: string | null
   onChange: (id: string | null) => void
+  onOptionSelected?: (option: PropertyOption | null) => void
   initialOptions?: PropertyOption[]
 }
 
@@ -23,6 +24,7 @@ export function PropertyFilterChip({
   selectedLabel,
   entityId = null,
   onChange,
+  onOptionSelected,
   initialOptions,
 }: PropertyFilterChipProps) {
   return (
@@ -30,6 +32,7 @@ export function PropertyFilterChip({
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}
+      onOptionSelected={onOptionSelected}
       entityId={entityId}
       initialOptions={initialOptions}
       placeholder="Property"

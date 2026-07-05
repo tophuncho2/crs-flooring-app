@@ -1,5 +1,6 @@
 "use client"
 
+import type { ProductOption } from "@builders/domain"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 
 export type ProductFilterChipProps = {
@@ -8,6 +9,7 @@ export type ProductFilterChipProps = {
   /** Optional category scope — when set, the picker narrows to that category. */
   categoryId: string | null
   onChange: (id: string | null) => void
+  onOptionSelected?: (option: ProductOption | null) => void
 }
 
 /**
@@ -20,12 +22,14 @@ export function ProductFilterChip({
   selectedLabel,
   categoryId,
   onChange,
+  onOptionSelected,
 }: ProductFilterChipProps) {
   return (
     <ProductPicker
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}
+      onOptionSelected={onOptionSelected}
       categoryId={categoryId}
       placeholder="Product"
       searchPlaceholder="Search products"

@@ -13,6 +13,7 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
+import { usePickedOptionLabel } from "@/engines/picker"
 import type { ImportsListFilters, ListInput } from "@builders/application"
 import {
   LIST_IMPORTS_PAGE_SIZE,
@@ -135,6 +136,12 @@ export default function ImportsClient({
     return seeded ? seeded.name : null
   }, [selectedWarehouseId, initialSelectedWarehouse, initialWarehouseOptions])
 
+  const warehouseFilter = usePickedOptionLabel<WarehouseOption>(
+    selectedWarehouseId,
+    selectedWarehouseLabel,
+    (option) => option.name,
+  )
+
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (impNumberValue.trim().length > 0) return true
@@ -191,8 +198,9 @@ export default function ImportsClient({
         >
           <WarehouseFilterChip
             value={selectedWarehouseId}
-            selectedLabel={selectedWarehouseLabel}
+            selectedLabel={warehouseFilter.selectedLabel}
             onChange={handleWarehouseChange}
+            onOptionSelected={warehouseFilter.onOptionSelected}
             initialOptions={initialWarehouseOptions}
           />
         </ToolbarMenuButton>

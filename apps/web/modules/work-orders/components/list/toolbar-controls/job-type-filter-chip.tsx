@@ -7,6 +7,7 @@ export type JobTypeFilterChipProps = {
   value: string | null
   selectedLabel: string | null
   onChange: (id: string | null) => void
+  onOptionSelected?: (option: JobTypeOption | null) => void
   initialOptions?: JobTypeOption[]
 }
 
@@ -17,6 +18,7 @@ export function JobTypeFilterChip({
   value,
   selectedLabel,
   onChange,
+  onOptionSelected,
   initialOptions,
 }: JobTypeFilterChipProps) {
   return (
@@ -24,6 +26,7 @@ export function JobTypeFilterChip({
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}
+      onOptionSelected={onOptionSelected}
       initialOptions={initialOptions}
       placeholder="Job type"
       searchPlaceholder="Search job types"

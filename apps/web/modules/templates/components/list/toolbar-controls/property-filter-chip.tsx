@@ -1,5 +1,6 @@
 "use client"
 
+import type { PropertyOption } from "@builders/domain"
 import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 
 export type PropertyFilterChipProps = {
@@ -8,6 +9,7 @@ export type PropertyFilterChipProps = {
   /** Optional entity scope — when set, narrows the picker. */
   entityId: string | null
   onChange: (id: string | null) => void
+  onOptionSelected?: (option: PropertyOption | null) => void
 }
 
 /**
@@ -21,6 +23,7 @@ export function PropertyFilterChip({
   selectedLabel,
   entityId,
   onChange,
+  onOptionSelected,
 }: PropertyFilterChipProps) {
   return (
     <div className="min-w-[14rem] max-w-[20rem]">
@@ -28,6 +31,7 @@ export function PropertyFilterChip({
         value={value}
         selectedLabel={selectedLabel}
         onChange={onChange}
+        onOptionSelected={onOptionSelected}
         entityId={entityId}
         placeholder="Filter by property"
         searchPlaceholder="Search properties"

@@ -13,6 +13,7 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
+import { usePickedOptionLabel } from "@/engines/picker"
 import type { ListInput, ProductsListFilters } from "@builders/application"
 import {
   LIST_PRODUCTS_PAGE_SIZE,
@@ -186,6 +187,12 @@ export default function ProductsClient({
     initialCategoryOptions,
   ])
 
+  const categoryFilter = usePickedOptionLabel<CategoryOption>(
+    selectedCategoryId,
+    selectedCategoryLabel,
+    (option) => option.name,
+  )
+
   const handleCategoryChange = useCallback(
     (id: string | null) => {
       onFilterChange("categoryId", id ? [id] : [])
@@ -256,8 +263,9 @@ export default function ProductsClient({
         >
           <CategoryFilterChip
             value={selectedCategoryId}
-            selectedLabel={selectedCategoryLabel}
+            selectedLabel={categoryFilter.selectedLabel}
             onChange={handleCategoryChange}
+            onOptionSelected={categoryFilter.onOptionSelected}
             initialOptions={initialCategoryOptions}
           />
         </ToolbarMenuButton>

@@ -16,6 +16,7 @@ import {
   useListSelection,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
+import { usePickedOptionLabel } from "@/engines/picker"
 import type { WorkOrdersListFilters } from "@builders/application"
 import { WORK_ORDER_EXPORT_COLUMNS } from "@builders/domain"
 import type {
@@ -208,6 +209,35 @@ export default function WorkOrdersClient({
     return initialJobTypeOptions.find((o) => o.id === selectedJobTypeId)?.name ?? null
   }, [selectedJobTypeId, initialSelectedJobType, initialJobTypeOptions])
 
+  // Trigger-label glue: the useMemos above seed the label from the SSR options;
+  // the hook overlays the actually-picked option so async-search picks (outside
+  // the seed) still render a label. See `usePickedOptionLabel`.
+  const entityFilter = usePickedOptionLabel<EntityOption>(
+    selectedEntityId,
+    entityLabel,
+    (option) => option.entity,
+  )
+  const propertyFilter = usePickedOptionLabel<PropertyOption>(
+    selectedPropertyId,
+    propertyLabel,
+    (option) => option.name,
+  )
+  const templateFilter = usePickedOptionLabel<TemplateOption>(
+    selectedTemplateId,
+    templateLabel,
+    (option) => option.unitType,
+  )
+  const warehouseFilter = usePickedOptionLabel<WarehouseOption>(
+    selectedWarehouseId,
+    warehouseLabel,
+    (option) => option.name,
+  )
+  const jobTypeFilter = usePickedOptionLabel<JobTypeOption>(
+    selectedJobTypeId,
+    jobTypeLabel,
+    (option) => option.name,
+  )
+
   // --- Cascade-clear handlers ---
   // Entity change → clear Property + Template (property-scoped chain).
   // Property change → clear Template (template is property-scoped).
@@ -394,35 +424,40 @@ export default function WorkOrdersClient({
         >
           <EntityFilterChip
             value={selectedEntityId}
-            selectedLabel={entityLabel}
+            selectedLabel={entityFilter.selectedLabel}
             onChange={handleEntityChange}
+            onOptionSelected={entityFilter.onOptionSelected}
             initialOptions={initialEntityOptions}
           />
           <PropertyFilterChip
             value={selectedPropertyId}
-            selectedLabel={propertyLabel}
+            selectedLabel={propertyFilter.selectedLabel}
             entityId={selectedEntityId}
             onChange={handlePropertyChange}
+            onOptionSelected={propertyFilter.onOptionSelected}
             initialOptions={initialPropertyOptions}
           />
           <TemplateFilterChip
             value={selectedTemplateId}
-            selectedLabel={templateLabel}
+            selectedLabel={templateFilter.selectedLabel}
             propertyId={selectedPropertyId}
             entityId={selectedEntityId}
             onChange={handleTemplateChange}
+            onOptionSelected={templateFilter.onOptionSelected}
             initialOptions={initialTemplateOptions}
           />
           <WarehouseFilterChip
             value={selectedWarehouseId}
-            selectedLabel={warehouseLabel}
+            selectedLabel={warehouseFilter.selectedLabel}
             onChange={handleWarehouseChange}
+            onOptionSelected={warehouseFilter.onOptionSelected}
             initialOptions={initialWarehouseOptions}
           />
           <JobTypeFilterChip
             value={selectedJobTypeId}
-            selectedLabel={jobTypeLabel}
+            selectedLabel={jobTypeFilter.selectedLabel}
             onChange={handleJobTypeChange}
+            onOptionSelected={jobTypeFilter.onOptionSelected}
             initialOptions={initialJobTypeOptions}
           />
           <VacancyFilterChip value={selectedVacancy} onChange={handleVacancyChange} />

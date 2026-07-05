@@ -7,6 +7,7 @@ export type EntityFilterChipProps = {
   value: string | null
   selectedLabel: string | null
   onChange: (id: string | null) => void
+  onOptionSelected?: (option: EntityOption | null) => void
   initialOptions?: EntityOption[]
 }
 
@@ -19,6 +20,7 @@ export function EntityFilterChip({
   value,
   selectedLabel,
   onChange,
+  onOptionSelected,
   initialOptions,
 }: EntityFilterChipProps) {
   return (
@@ -26,6 +28,7 @@ export function EntityFilterChip({
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}
+      onOptionSelected={onOptionSelected}
       initialOptions={initialOptions}
       placeholder="Entity"
       searchPlaceholder="Search entities"

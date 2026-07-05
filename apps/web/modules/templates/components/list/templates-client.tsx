@@ -13,6 +13,7 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
+import { usePickedOptionLabel } from "@/engines/picker"
 import type { TemplatesListFilters } from "@builders/application"
 import {
   LIST_TEMPLATES_PAGE_SIZE,
@@ -125,6 +126,17 @@ export default function TemplatesClient({
       : null
   }, [selectedPropertyId, initialSelectedProperty])
 
+  const entityFilter = usePickedOptionLabel<EntityOption>(
+    selectedEntityId,
+    entityLabel,
+    (option) => option.entity,
+  )
+  const propertyFilter = usePickedOptionLabel<PropertyOption>(
+    selectedPropertyId,
+    propertyLabel,
+    (option) => option.name,
+  )
+
   // Cascade-clear: changing entity clears Property (its picker scope is gone).
   const handleEntityChange = useCallback(
     (id: string | null) => {
@@ -202,15 +214,17 @@ export default function TemplatesClient({
         >
           <EntityFilterChip
             value={selectedEntityId}
-            selectedLabel={entityLabel}
+            selectedLabel={entityFilter.selectedLabel}
             onChange={handleEntityChange}
+            onOptionSelected={entityFilter.onOptionSelected}
             initialOptions={initialEntityOptions}
           />
           <PropertyFilterChip
             value={selectedPropertyId}
-            selectedLabel={propertyLabel}
+            selectedLabel={propertyFilter.selectedLabel}
             entityId={selectedEntityId}
             onChange={handlePropertyChange}
+            onOptionSelected={propertyFilter.onOptionSelected}
           />
         </ToolbarMenuButton>
 

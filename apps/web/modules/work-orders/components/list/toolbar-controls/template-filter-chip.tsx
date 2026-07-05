@@ -17,6 +17,7 @@ export type TemplateFilterChipProps = {
    */
   entityId: string | null
   onChange: (id: string | null) => void
+  onOptionSelected?: (option: TemplateOption | null) => void
   initialOptions?: TemplateOption[]
 }
 
@@ -32,6 +33,7 @@ export function TemplateFilterChip({
   propertyId,
   entityId,
   onChange,
+  onOptionSelected,
   initialOptions,
 }: TemplateFilterChipProps) {
   return (
@@ -39,6 +41,7 @@ export function TemplateFilterChip({
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}
+      onOptionSelected={onOptionSelected}
       propertyId={propertyId}
       entityId={entityId}
       requireProperty={false}

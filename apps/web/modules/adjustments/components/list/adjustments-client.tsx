@@ -13,6 +13,7 @@ import {
   type ProductOption,
   type WarehouseOption,
 } from "@builders/domain"
+import { usePickedOptionLabel } from "@/engines/picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
@@ -229,6 +230,22 @@ export default function AdjustmentsClient({
       : null
   }, [selectedProductId, initialSelectedProduct])
 
+  const warehouseFilter = usePickedOptionLabel<WarehouseOption>(
+    selectedWarehouseId,
+    warehouseLabel,
+    (option) => option.name,
+  )
+  const categoryFilter = usePickedOptionLabel<CategoryOption>(
+    selectedCategoryId,
+    categoryLabel,
+    (option) => option.name,
+  )
+  const productFilter = usePickedOptionLabel<ProductOption>(
+    selectedProductId,
+    productLabel,
+    (option) => option.name,
+  )
+
   const handleWarehouseChange = useCallback(
     (id: string | null) => {
       onFilterChange("warehouseId", id ? [id] : [])
@@ -334,8 +351,9 @@ export default function AdjustmentsClient({
         >
           <WarehousePicker
             value={selectedWarehouseId}
-            selectedLabel={warehouseLabel}
+            selectedLabel={warehouseFilter.selectedLabel}
             onChange={handleWarehouseChange}
+            onOptionSelected={warehouseFilter.onOptionSelected}
             initialOptions={initialWarehouseOptions}
             placeholder="Warehouse"
             searchPlaceholder="Search warehouses"
@@ -345,8 +363,9 @@ export default function AdjustmentsClient({
           />
           <CategoryPicker
             value={selectedCategoryId}
-            selectedLabel={categoryLabel}
+            selectedLabel={categoryFilter.selectedLabel}
             onChange={handleCategoryChange}
+            onOptionSelected={categoryFilter.onOptionSelected}
             initialOptions={initialCategoryOptions}
             placeholder="Category"
             searchPlaceholder="Search categories"
@@ -356,8 +375,9 @@ export default function AdjustmentsClient({
           />
           <ProductPicker
             value={selectedProductId}
-            selectedLabel={productLabel}
+            selectedLabel={productFilter.selectedLabel}
             onChange={handleProductChange}
+            onOptionSelected={productFilter.onOptionSelected}
             categoryId={selectedCategoryId}
             placeholder="Product"
             searchPlaceholder="Search products"

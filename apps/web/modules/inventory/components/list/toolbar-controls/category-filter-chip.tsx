@@ -7,6 +7,7 @@ export type CategoryFilterChipProps = {
   value: string | null
   selectedLabel: string | null
   onChange: (id: string | null) => void
+  onOptionSelected?: (option: CategoryOption | null) => void
   initialOptions?: CategoryOption[]
 }
 
@@ -19,6 +20,7 @@ export function CategoryFilterChip({
   value,
   selectedLabel,
   onChange,
+  onOptionSelected,
   initialOptions,
 }: CategoryFilterChipProps) {
   return (
@@ -26,6 +28,7 @@ export function CategoryFilterChip({
       value={value}
       selectedLabel={selectedLabel}
       onChange={onChange}
+      onOptionSelected={onOptionSelected}
       initialOptions={initialOptions}
       placeholder="Category"
       searchPlaceholder="Search categories"

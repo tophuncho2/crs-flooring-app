@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import { SortMenuBody, useFetchListController, useListSelection, ListExportButton, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal } from "@/engines/list-view"
+import { usePickedOptionLabel } from "@/engines/picker"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   INVENTORY_EXPORT_COLUMNS,
@@ -239,12 +240,11 @@ export default function InventoryClient({
   const noteValue = filters.note?.[0] ?? ""
 
   // --- Selected-label snapshots ---
-  // Each chip needs a label so its trigger renders the picked entity name on
-  // first paint without a refetch. The page loader resolves the initial label
-  // (when a filter is preset in the URL); after that the snapshot stays fresh
-  // because the picker's onChange fires on every selection — but pickers don't
-  // give us the picked option here, so we look up from the seed when possible
-  // and fall back to the initial selected snapshot when the id matches.
+  // Each chip needs a label so its trigger renders the picked name on first
+  // paint without a refetch. The page loader resolves the initial label (when a
+  // filter is preset in the URL); these useMemos seed the trigger from the SSR
+  // options, and `usePickedOptionLabel` below overlays the picked option so a
+  // value picked via async search (outside the seed) still renders a label.
 
   const warehouseLabel = useMemo(() => {
     if (!selectedWarehouseId) return null
@@ -268,6 +268,22 @@ export default function InventoryClient({
       ? initialSelectedProduct.name
       : null
   }, [selectedProductId, initialSelectedProduct])
+
+  const warehouseFilter = usePickedOptionLabel<WarehouseOption>(
+    selectedWarehouseId,
+    warehouseLabel,
+    (option) => option.name,
+  )
+  const categoryFilter = usePickedOptionLabel<CategoryOption>(
+    selectedCategoryId,
+    categoryLabel,
+    (option) => option.name,
+  )
+  const productFilter = usePickedOptionLabel<ProductOption>(
+    selectedProductId,
+    productLabel,
+    (option) => option.name,
+  )
 
   // --- Cascade-clear filter handlers ---
   // Category change → clear Product.
@@ -429,8 +445,9 @@ export default function InventoryClient({
         >
           <WarehouseFilterChip
             value={selectedWarehouseId}
-            selectedLabel={warehouseLabel}
+            selectedLabel={warehouseFilter.selectedLabel}
             onChange={handleWarehouseChange}
+            onOptionSelected={warehouseFilter.onOptionSelected}
             initialOptions={initialWarehouseOptions}
           />
           <LocationPicker
@@ -443,15 +460,17 @@ export default function InventoryClient({
           />
           <CategoryFilterChip
             value={selectedCategoryId}
-            selectedLabel={categoryLabel}
+            selectedLabel={categoryFilter.selectedLabel}
             onChange={handleCategoryChange}
+            onOptionSelected={categoryFilter.onOptionSelected}
             initialOptions={initialCategoryOptions}
           />
           <ProductFilterChip
             value={selectedProductId}
-            selectedLabel={productLabel}
+            selectedLabel={productFilter.selectedLabel}
             categoryId={selectedCategoryId}
             onChange={handleProductChange}
+            onOptionSelected={productFilter.onOptionSelected}
           />
           <PurchaseOrderPicker
             value={selectedPurchaseOrderNumber}

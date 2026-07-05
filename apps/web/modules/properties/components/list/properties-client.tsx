@@ -15,6 +15,7 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
+import { usePickedOptionLabel } from "@/engines/picker"
 import type { ListInput, PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
@@ -159,6 +160,12 @@ export default function PropertiesClient({
     initialEntityOptions,
   ])
 
+  const entityFilter = usePickedOptionLabel<EntityOption>(
+    selectedEntityId,
+    selectedEntityLabel,
+    (option) => option.entity,
+  )
+
   const handleEntityChange = useCallback(
     (id: string | null) => {
       onFilterChange("entityId", id ? [id] : [])
@@ -242,8 +249,9 @@ export default function PropertiesClient({
         >
           <EntityFilterChip
             value={selectedEntityId}
-            selectedLabel={selectedEntityLabel}
+            selectedLabel={entityFilter.selectedLabel}
             onChange={handleEntityChange}
+            onOptionSelected={entityFilter.onOptionSelected}
             initialOptions={initialEntityOptions}
           />
           <StateSearchControl

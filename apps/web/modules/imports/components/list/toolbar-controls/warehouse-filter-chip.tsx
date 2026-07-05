@@ -7,6 +7,7 @@ export type WarehouseFilterChipProps = {
   value: string | null
   selectedLabel: string | null
   onChange: (id: string | null) => void
+  onOptionSelected?: (option: WarehouseOption | null) => void
   initialOptions?: WarehouseOption[]
 }
 
@@ -19,6 +20,7 @@ export function WarehouseFilterChip({
   value,
   selectedLabel,
   onChange,
+  onOptionSelected,
   initialOptions,
 }: WarehouseFilterChipProps) {
   return (
@@ -27,6 +29,7 @@ export function WarehouseFilterChip({
         value={value}
         selectedLabel={selectedLabel}
         onChange={onChange}
+        onOptionSelected={onOptionSelected}
         initialOptions={initialOptions}
         placeholder="Warehouse"
         searchPlaceholder="Search warehouses"
