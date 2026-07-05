@@ -1,4 +1,5 @@
 import type { FlooringPaymentDirection } from "../../payments/types.js"
+import type { EntityTypeRef } from "../../entities/types.js"
 
 /**
  * A planned payment on a template. Field-shape mirrors a standalone payment:
@@ -14,6 +15,12 @@ export type TemplatePlannedPaymentRow = {
   paymentDate: string
   // Short free-text note; "" when unset (persisted as NULL).
   notes: string
+  // Optional entity link — the writable FK.
+  entityId: string | null
+  // Read-only hydration off the entity link (never round-trips on save): the
+  // linked entity's name + its type chips. Null/empty when unlinked.
+  entityName: string | null
+  entityTypes: EntityTypeRef[]
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
@@ -31,6 +38,9 @@ export type TemplatePlannedPaymentForm = {
   paymentDate: string
   // Short free-text note; "" = unset (persisted as NULL).
   notes: string
+  // Optional entity link (null = unlinked). The only writable link field —
+  // entityName/entityTypes are read-only hydration and never enter the form.
+  entityId: string | null
 }
 
 export const EMPTY_TEMPLATE_PLANNED_PAYMENT_FORM: TemplatePlannedPaymentForm = {
@@ -38,4 +48,5 @@ export const EMPTY_TEMPLATE_PLANNED_PAYMENT_FORM: TemplatePlannedPaymentForm = {
   direction: "REVENUE",
   paymentDate: "",
   notes: "",
+  entityId: null,
 }

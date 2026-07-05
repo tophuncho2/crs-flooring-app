@@ -1,6 +1,7 @@
 import { db } from "../client.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
 import { buildTemplatesOrderBy } from "./order-by.js"
+import { entityTypesSelect } from "../entities/read-repository.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import {
   normalizeTemplate,
@@ -133,6 +134,8 @@ const templateDetailSelect = {
       direction: true,
       paymentDate: true,
       notes: true,
+      entityId: true,
+      entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },
       createdAt: true,
       updatedAt: true,
       createdBy: true,

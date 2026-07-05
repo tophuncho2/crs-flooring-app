@@ -344,6 +344,16 @@ function optionalDateString(value: unknown): string {
   return typeof value === "string" ? value : ""
 }
 
+// Nullable entity link id: null/undefined/"" = unlinked, a non-empty string =
+// the linked entity. Folds missing → null (the grid always sends the field, but
+// stays defensive). Referential validity is enforced by the FK (P2003), not here.
+function optionalEntityId(value: unknown, field: string): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== "string") failPlannedPaymentsDiff(`${field} must be a string`, field)
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 function validatePlannedPaymentForm(value: unknown, path: string): TemplatePlannedPaymentForm {
   const obj = requirePaymentsObject(value, path)
   return {
@@ -357,6 +367,7 @@ function validatePlannedPaymentForm(value: unknown, path: string): TemplatePlann
         `${path}.notes`,
         failPlannedPaymentsDiff,
       ) ?? "",
+    entityId: optionalEntityId(obj.entityId, `${path}.entityId`),
   }
 }
 

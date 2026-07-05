@@ -1,5 +1,6 @@
 import { normalizeMoneyAmount } from "../../shared/money.js"
 import type { FlooringPaymentDirection } from "../../payments/types.js"
+import type { PaletteColor } from "../../shared/palette.js"
 import type { TemplatePlannedPaymentRow } from "./types.js"
 
 type TemplatePlannedPaymentInput = {
@@ -8,6 +9,13 @@ type TemplatePlannedPaymentInput = {
   direction: FlooringPaymentDirection
   paymentDate: Date | string | null
   notes: string | null
+  entityId: string | null
+  // Nested entity relation (from `entityTypesSelect` in the data layer); flattened
+  // here to entityName + entityTypes. Absent/null on unlinked rows.
+  entity?: {
+    entity: string
+    entityTypes: { entityType: { id: string; type: string; color: PaletteColor } }[]
+  } | null
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -32,6 +40,11 @@ export function normalizeTemplatePlannedPayment(
     direction: item.direction,
     paymentDate: toIso(item.paymentDate),
     notes: item.notes ?? "",
+    entityId: item.entityId ?? null,
+    // Flatten the nested entity join into the flat read-only display fields
+    // (mirrors normalizeTemplateInvoiceProduct's product/unit flatten).
+    entityName: item.entity?.entity ?? null,
+    entityTypes: (item.entity?.entityTypes ?? []).map((link) => link.entityType),
     createdAt: toIso(item.createdAt),
     updatedAt: toIso(item.updatedAt),
     createdBy: item.createdBy ?? null,

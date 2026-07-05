@@ -67,6 +67,9 @@ export async function applyTemplatePlannedPaymentsDiff(
         direction: draft.input.direction,
         paymentDate: optionalDate(draft.input.paymentDate),
         notes: draft.input.notes ? draft.input.notes : null,
+        // Optional entity link — scalar FK on the unchecked createMany input
+        // (null = unlinked). The form always carries entityId, so no tri-state.
+        entityId: draft.input.entityId,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),
@@ -74,16 +77,17 @@ export async function applyTemplatePlannedPaymentsDiff(
   }
 
   for (const update of input.modified) {
-    await tx.templatePlannedPayment.update({
-      where: { id: update.id },
-      data: {
-        amount: toMoney(update.input.amount),
-        direction: update.input.direction,
-        paymentDate: optionalDate(update.input.paymentDate),
-        notes: update.input.notes ? update.input.notes : null,
-        updatedBy: input.actorEmail,
-      },
-    })
+    // Unchecked update input so the scalar entityId FK is assignable directly
+    // (mirrors the payments write repo). The form always carries entityId.
+    const data: Prisma.TemplatePlannedPaymentUncheckedUpdateInput = {
+      amount: toMoney(update.input.amount),
+      direction: update.input.direction,
+      paymentDate: optionalDate(update.input.paymentDate),
+      notes: update.input.notes ? update.input.notes : null,
+      entityId: update.input.entityId,
+      updatedBy: input.actorEmail,
+    }
+    await tx.templatePlannedPayment.update({ where: { id: update.id }, data })
   }
 
   const plannedPayments = await listTemplatePlannedPayments(input.templateId, tx)

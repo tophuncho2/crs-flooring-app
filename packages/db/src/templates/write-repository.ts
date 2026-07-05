@@ -1,6 +1,7 @@
 import { db } from "../client.js"
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js"
 import { normalizeTemplate, type PaletteColor, type TemplateDetail } from "@builders/domain"
+import { entityTypesSelect } from "../entities/read-repository.js"
 
 type TemplatesDbClient = PrismaClient | Prisma.TransactionClient
 
@@ -101,6 +102,8 @@ const templateDetailSelect = {
       direction: true,
       paymentDate: true,
       notes: true,
+      entityId: true,
+      entity: { select: { id: true, entity: true, entityTypes: entityTypesSelect } },
       createdAt: true,
       updatedAt: true,
       createdBy: true,

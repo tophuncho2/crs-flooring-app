@@ -165,6 +165,7 @@ model Entity {
   payments        FlooringPayment[]
   products        FlooringProduct[]
   imports         FlooringImportEntry[]
+  templatePlannedPayments TemplatePlannedPayment[]
 
   // Sort-column btree backing the work-orders list sort by entity name (2-hop
   // `property.entity.entity`). Plain btree — the sort's `id` tiebreak lives on
@@ -646,8 +647,8 @@ model TemplateInvoiceProduct {
 // A planned payment on a template — the repeatable-job payment plan. Field-shape
 // mirrors FlooringPayment (unsigned amount + direction carrying the sign),
 // structure mirrors the template child tables (Cascade off the template, actor +
-// timestamp pair). The entity link arrives in a later pass; no row#/color yet
-// (deferred). Reuses FlooringPaymentDirection rather than forking an enum.
+// timestamp pair). Optionally links an Entity (SetNull, like FlooringPayment); no
+// row#/color yet (deferred). Reuses FlooringPaymentDirection rather than forking an enum.
 model TemplatePlannedPayment {
   id           String                   @id @default(uuid())
   templateId   String
@@ -656,6 +657,8 @@ model TemplatePlannedPayment {
   direction    FlooringPaymentDirection
   paymentDate  DateTime?
   notes        String?                  @db.VarChar(30)
+  entityId     String?
+  entity       Entity?                  @relation(fields: [entityId], references: [id], onDelete: SetNull)
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
   createdBy    String?
@@ -663,6 +666,7 @@ model TemplatePlannedPayment {
 
   @@index([templateId])
   @@index([templateId, createdAt])
+  @@index([entityId])
   @@map("template_planned_payment")
 }
 

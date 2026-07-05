@@ -8,6 +8,8 @@ import {
   useRecordScopedSectionController,
 } from "@/engines/record-view"
 import type {
+  EntityOption,
+  EntityTypeRef,
   FlooringPaymentDirection,
   TemplateDetail,
   TemplatePlannedPaymentForm,
@@ -28,6 +30,13 @@ export type TemplatePlannedPaymentLocal = {
   paymentDate: string
   // Short free-text note; "" = unset (persisted NULL).
   notes: string
+  // Optional entity link (null = unlinked) — the only writable/diffed link field.
+  entityId: string | null
+  // Read-only hydration co-located with entityId so the picker's selectedLabel
+  // and the Type(s) chips can never desync from the id (grid label-contract fix).
+  // Never sent on save; seeded from the row on load, snapshotted on pick.
+  entityName: string | null
+  entityTypes: EntityTypeRef[]
 }
 
 type TemplatePlannedPaymentsLocalState = {
@@ -41,6 +50,9 @@ function toLocalItem(row: TemplatePlannedPaymentRow): TemplatePlannedPaymentLoca
     direction: row.direction,
     paymentDate: row.paymentDate,
     notes: row.notes,
+    entityId: row.entityId,
+    entityName: row.entityName,
+    entityTypes: row.entityTypes,
   }
 }
 
@@ -51,7 +63,8 @@ function createLocalState(record: TemplateDetail): TemplatePlannedPaymentsLocalS
 function createItemsRevisionKey(record: TemplateDetail) {
   return JSON.stringify(
     record.plannedPayments.map(
-      (row) => `${row.id}:${row.amount}:${row.direction}:${row.paymentDate}:${row.notes}`,
+      (row) =>
+        `${row.id}:${row.amount}:${row.direction}:${row.paymentDate}:${row.notes}:${row.entityId}`,
     ),
   )
 }
@@ -61,7 +74,8 @@ function itemsDiffer(local: TemplatePlannedPaymentLocal, server: TemplatePlanned
     local.amount !== server.amount ||
     local.direction !== server.direction ||
     local.paymentDate !== server.paymentDate ||
-    local.notes !== server.notes
+    local.notes !== server.notes ||
+    local.entityId !== server.entityId
   )
 }
 
@@ -71,6 +85,9 @@ function toDiffForm(local: TemplatePlannedPaymentLocal): TemplatePlannedPaymentF
     direction: local.direction,
     paymentDate: local.paymentDate,
     notes: local.notes,
+    // Only the writable link — entityName/entityTypes are display hydration and
+    // must never enter the diff form.
+    entityId: local.entityId,
   }
 }
 
@@ -147,6 +164,9 @@ export function useTemplatePlannedPaymentsSection({
           direction: "REVENUE",
           paymentDate: "",
           notes: "",
+          entityId: null,
+          entityName: null,
+          entityTypes: [],
         },
       ],
     }))
@@ -173,11 +193,31 @@ export function useTemplatePlannedPaymentsSection({
     if (section.error) section.setError(null)
   }
 
+  // Snapshot the picked entity's id + name + type chips into the row atomically,
+  // so selectedLabel and the read-only Type(s) column populate instantly with no
+  // server round-trip and never desync from entityId. Null clears the link.
+  function selectEntity(itemId: string, option: EntityOption | null) {
+    section.setLocalValue((previous) => ({
+      items: previous.items.map((row) =>
+        row.id === itemId
+          ? {
+              ...row,
+              entityId: option?.id ?? null,
+              entityName: option?.entity ?? null,
+              entityTypes: option?.types ?? [],
+            }
+          : row,
+      ),
+    }))
+    if (section.error) section.setError(null)
+  }
+
   return {
     ...section,
     items: section.localValue.items,
     addItem,
     removeItem,
     changeField,
+    selectEntity,
   }
 }

@@ -2,8 +2,9 @@
 
 import { ChoiceChipCell, type ChoiceChipOption, DateCell, MoneyCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
-import { RecordDeleteButton } from "@/engines/common"
-import { TEMPLATE_PLANNED_PAYMENT_NOTES_MAX } from "@builders/domain"
+import { CellChip, RecordDeleteButton } from "@/engines/common"
+import { TEMPLATE_PLANNED_PAYMENT_NOTES_MAX, type EntityOption } from "@builders/domain"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import type { TemplatePlannedPaymentLocal } from "@/modules/templates/controllers/record/planned-payments/use-template-planned-payments-section"
 
 // Direction options for the toned dropdown chip: Revenue = green (success),
@@ -15,6 +16,9 @@ const DIRECTION_OPTIONS: ChoiceChipOption[] = [
 ]
 
 const TEMPLATE_PLANNED_PAYMENTS_COLUMNS: DataTableColumn<TemplatePlannedPaymentLocal>[] = [
+  // Entity link leads; Type(s) is a read-only lookup off the picked entity.
+  { key: "entity", label: "Entity", width: 220 },
+  { key: "types", label: "Type(s)", width: 200 },
   { key: "amount", label: "Amount", width: 160, align: "end" },
   // Direction sits to the RIGHT of amount and carries the tone chip/badge.
   { key: "direction", label: "Direction", width: 160 },
@@ -29,11 +33,13 @@ export function TemplatePlannedPaymentsGrid({
   items,
   editable,
   onChangeField,
+  onSelectEntity,
   onRemoveItem,
 }: {
   items: TemplatePlannedPaymentLocal[]
   editable: boolean
   onChangeField: (itemId: string, field: keyof TemplatePlannedPaymentLocal, value: string) => void
+  onSelectEntity: (itemId: string, option: EntityOption | null) => void
   onRemoveItem: (itemId: string) => void
 }) {
   return (
@@ -52,6 +58,35 @@ export function TemplatePlannedPaymentsGrid({
       )}
       renderCell={(column, item) => {
         switch (column.key) {
+          case "entity":
+            return (
+              <EntityTypePicker
+                value={item.entityId}
+                selectedLabel={item.entityName}
+                disabled={!editable}
+                onChange={(id) => {
+                  // Only the clear path needs handling here — a real pick fires
+                  // onOptionSelected with the full option. Snapshotting id+name+
+                  // types together keeps selectedLabel from ever desyncing.
+                  if (id === null) onSelectEntity(item.id, null)
+                }}
+                onOptionSelected={(option) => onSelectEntity(item.id, option)}
+                placeholder="Select entity"
+                ariaLabel="Planned payment entity"
+              />
+            )
+          case "types":
+            return item.entityTypes.length > 0 ? (
+              <span className="flex flex-wrap items-center gap-1">
+                {item.entityTypes.map((type) => (
+                  <CellChip key={type.id} paletteColor={type.color}>
+                    {type.type}
+                  </CellChip>
+                ))}
+              </span>
+            ) : (
+              "—"
+            )
           case "amount":
             return (
               <MoneyCell

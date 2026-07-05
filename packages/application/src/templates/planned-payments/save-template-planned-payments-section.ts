@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import {
   applyTemplatePlannedPaymentsDiff,
   withDatabaseTransaction,
-  type Prisma,
+  Prisma,
 } from "@builders/db"
 import {
   assignDraftIds,
@@ -52,19 +52,33 @@ export async function saveTemplatePlannedPaymentsSectionUseCase(
 
     const addedWithIds = assignDraftIds(input.diff.added, randomUUID)
 
-    return await applyTemplatePlannedPaymentsDiff(c, {
-      templateId: input.templateId,
-      actorEmail,
-      added: addedWithIds.map((draft) => ({
-        id: draft.id,
-        tempId: draft.tempId,
-        input: { ...draft.form },
-      })),
-      modified: input.diff.modified.map((update) => ({
-        id: update.id,
-        input: { ...update.form },
-      })),
-      deleted: input.diff.deleted.map((d) => ({ id: d.id })),
-    })
+    try {
+      return await applyTemplatePlannedPaymentsDiff(c, {
+        templateId: input.templateId,
+        actorEmail,
+        added: addedWithIds.map((draft) => ({
+          id: draft.id,
+          tempId: draft.tempId,
+          input: { ...draft.form },
+        })),
+        modified: input.diff.modified.map((update) => ({
+          id: update.id,
+          input: { ...update.form },
+        })),
+        deleted: input.diff.deleted.map((d) => ({ id: d.id })),
+      })
+    } catch (error) {
+      // A linked entity id that points at no row trips the FK (P2003). Optional
+      // link, no pre-guard — the FK is the backstop.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+        throw new TemplatePlannedPaymentExecutionError({
+          code: "TEMPLATE_PLANNED_PAYMENT_LINK_INVALID",
+          message: "Linked entity could not be found.",
+          status: 400,
+          field: "entityId",
+        })
+      }
+      throw error
+    }
   })
 }

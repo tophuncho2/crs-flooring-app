@@ -11,6 +11,11 @@ describe("normalizeTemplatePlannedPayment", () => {
     direction: "REVENUE" as const,
     paymentDate: "2026-07-04T00:00:00.000Z",
     notes: "deposit",
+    entityId: "ent-1",
+    entity: {
+      entity: "Acme Supply",
+      entityTypes: [{ entityType: { id: "t1", type: "Vendor", color: "SLATE" as const } }],
+    },
     createdAt: "2026-07-03T00:00:00.000Z",
     updatedAt: "2026-07-03T00:00:00.000Z",
     createdBy: "creator@example.com",
@@ -23,6 +28,20 @@ describe("normalizeTemplatePlannedPayment", () => {
     expect(row.direction).toBe("REVENUE")
     expect(row.paymentDate).toBe("2026-07-04T00:00:00.000Z")
     expect(row.notes).toBe("deposit")
+  })
+
+  it("flattens the linked entity into name + type chips", () => {
+    const row = normalizeTemplatePlannedPayment(base)
+    expect(row.entityId).toBe("ent-1")
+    expect(row.entityName).toBe("Acme Supply")
+    expect(row.entityTypes).toEqual([{ id: "t1", type: "Vendor", color: "SLATE" }])
+  })
+
+  it("coalesces an unlinked entity to null name + empty types", () => {
+    const row = normalizeTemplatePlannedPayment({ ...base, entityId: null, entity: null })
+    expect(row.entityId).toBeNull()
+    expect(row.entityName).toBeNull()
+    expect(row.entityTypes).toEqual([])
   })
 
   it("coalesces a missing date + actors + notes", () => {
