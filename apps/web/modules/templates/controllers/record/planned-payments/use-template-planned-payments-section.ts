@@ -161,7 +161,7 @@ export function useTemplatePlannedPaymentsSection({
         {
           id: createLocalRecordRowId("template-planned-payment"),
           amount: "",
-          direction: "REVENUE",
+          direction: "EXPENSE",
           paymentDate: "",
           notes: "",
           entityId: null,
