@@ -273,7 +273,10 @@ export function WorkOrderMaterialItemsSection({
             setModalRequest(null)
             // Surface the outflow just created — flip to the Adjustments view so
             // the new row is visible (a create launched from a Requested row would
-            // otherwise leave the user looking at the Requested grid).
+            // otherwise leave the user looking at the Requested grid). Discard any
+            // Requested draft first so no unsaved edit rides this programmatic hop
+            // onto the hidden side (the section-toggle discard-on-swap contract).
+            section.discard()
             setMode("adjustments")
             reconcileAdjustments()
           }}
