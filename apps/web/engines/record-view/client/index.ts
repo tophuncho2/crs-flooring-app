@@ -4,6 +4,7 @@ export * from "./scaffolds/record-detail-client-scaffold"
 
 // hooks
 export * from "./hooks/use-record-swap-guard"
+export * from "./hooks/use-record-section-toggle"
 export * from "./hooks/use-pending-workflow-polling"
 
 // controllers

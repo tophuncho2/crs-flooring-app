@@ -11,10 +11,10 @@ import {
   ConfirmDialog,
   RecordDeleteDialog,
   RecordItemSection,
-  RecordStepper,
   buildDeleteConfirmationMessage,
   useRecordDeleteConfirmation,
-  useRecordSwapGuard,
+  useRecordSectionToggle,
+  type RecordSectionToggleSide,
 } from "@/engines/record-view"
 import { getClientErrorMessage } from "@/transport"
 import {
@@ -41,17 +41,6 @@ type SectionMode = "adjustments" | "requested"
 type AdjustmentModalRequest = {
   product: { id: string; name: string } | null
   source: EnrichedInventoryAdjustmentRow | null
-}
-
-const MODE_LABEL: Record<SectionMode, string> = {
-  adjustments: "Adjustments",
-  requested: "Requested Material",
-}
-
-// Mode accent: amber = outflow (Adjustments), sky = inbound (Requested Material).
-const MODE_ACCENT: Record<SectionMode, string> = {
-  adjustments: "border-amber-500/60 bg-amber-500/10 text-amber-800",
-  requested: "border-sky-500/60 bg-sky-500/10 text-sky-800",
 }
 
 /**
@@ -84,14 +73,6 @@ export function WorkOrderMaterialItemsSection({
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
   const reconcileAdjustments = useAdjustmentReconcile()
 
-  // Default to Adjustments, but honor `?view=requested` so an external entry
-  // (template → work-order sync) can land directly on the Requested Material
-  // view. Read once at mount: the section is keyed on the record id upstream, so
-  // stepping to a neighbor remounts and re-reads, and a later same-record nav
-  // doesn't yank the view out from under an in-progress edit.
-  const [mode, setMode] = useState<SectionMode>(
-    searchParams.get("view") === "requested" ? "requested" : "adjustments",
-  )
   const [modalRequest, setModalRequest] = useState<AdjustmentModalRequest | null>(null)
   const [pendingDelete, setPendingDelete] = useState<EnrichedInventoryAdjustmentRow | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -119,22 +100,40 @@ export function WorkOrderMaterialItemsSection({
 
   const sectionBusy = section.isSaving
 
-  // Flipping away from a dirty Requested Material grid warns first — but the flip
-  // KEEPS the edits (they persist until save or leaving the work order), so the
-  // copy is switch-flavored, not discard-flavored. The Adjustments grid has no
-  // editable state, so flipping off it is always free.
-  const { guard, dialogProps } = useRecordSwapGuard({
-    isDirty: mode === "requested" && section.isDirty,
-    title: "Switch view?",
-    discardMessage:
-      "Requested Material has unsaved changes. Switch views? Your edits stay until you save or leave the work order.",
-    confirmLabel: "Switch & keep editing",
-    cancelLabel: "Stay here",
-  })
+  // Default to Adjustments, but honor `?view=requested` so an external entry
+  // (template → work-order sync) can land directly on the Requested Material
+  // view. Read once at mount: the section is keyed on the record id upstream, so
+  // stepping to a neighbor remounts and re-reads, and a later same-record nav
+  // doesn't yank the view out from under an in-progress edit.
+  //
+  // Toggling away from a dirty Requested grid confirms, then DISCARDS its draft
+  // (the shared section-toggle contract). The Adjustments grid has no editable
+  // state, so flipping off it is always free.
+  // Mode accent: amber = outflow (Adjustments), sky = inbound (Requested Material).
+  const sides: readonly [
+    RecordSectionToggleSide<SectionMode>,
+    RecordSectionToggleSide<SectionMode>,
+  ] = [
+    {
+      key: "adjustments",
+      label: "Adjustments",
+      accent: "border-amber-500/60 bg-amber-500/10 text-amber-800",
+      isDirty: false,
+      onDiscard: () => {},
+    },
+    {
+      key: "requested",
+      label: "Requested Material",
+      accent: "border-sky-500/60 bg-sky-500/10 text-sky-800",
+      isDirty: section.isDirty,
+      onDiscard: section.discard,
+    },
+  ]
 
-  const flipMode = useCallback(() => {
-    guard(() => setMode((prev) => (prev === "adjustments" ? "requested" : "adjustments")))
-  }, [guard])
+  const { mode, setMode, activeLabel, stepper, dialogProps } = useRecordSectionToggle<SectionMode>({
+    initialMode: searchParams.get("view") === "requested" ? "requested" : "adjustments",
+    sides,
+  })
 
   const handleOpenEdit = useCallback(
     (adjustment: EnrichedInventoryAdjustmentRow) => {
@@ -165,17 +164,6 @@ export function WorkOrderMaterialItemsSection({
       )
     },
     [router, returnTo],
-  )
-
-  const stepper = (
-    <RecordStepper
-      label={MODE_LABEL[mode]}
-      onPrevious={flipMode}
-      onNext={flipMode}
-      previousAriaLabel="Show the other view"
-      nextAriaLabel="Show the other view"
-      accent={MODE_ACCENT[mode]}
-    />
   )
 
   const subHeader =
@@ -221,7 +209,7 @@ export function WorkOrderMaterialItemsSection({
   return (
     <>
       <RecordItemSection
-        title={MODE_LABEL[mode]}
+        title={activeLabel}
         capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
         noticeMessage={section.noticeMessage}
         noticeError={section.noticeError}

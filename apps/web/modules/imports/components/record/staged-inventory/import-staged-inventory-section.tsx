@@ -1,12 +1,12 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   ConfirmDialog,
   RecordItemSection,
-  RecordStepper,
-  useRecordSwapGuard,
+  useRecordSectionToggle,
+  type RecordSectionToggleSide,
 } from "@/engines/record-view"
 import { WarningNotice } from "@/engines/common"
 import type {
@@ -22,17 +22,6 @@ import { StagedInventorySelectionCluster } from "./toolbar-controls"
 
 /** Which view the single section is showing. Staged Inventory (operational) is default. */
 type SectionMode = "planned" | "staged"
-
-const MODE_LABEL: Record<SectionMode, string> = {
-  planned: "Planned Imports",
-  staged: "Staged Inventory",
-}
-
-// Mode accent: emerald = planning (Planned Imports), sky = operational (Staged Inventory).
-const MODE_ACCENT: Record<SectionMode, string> = {
-  planned: "border-emerald-500/60 bg-emerald-500/10 text-emerald-800",
-  staged: "border-sky-500/60 bg-sky-500/10 text-sky-800",
-}
 
 export function ImportStagedInventorySection({
   section,
@@ -50,15 +39,6 @@ export function ImportStagedInventorySection({
    */
   pollExhausted: boolean
 }) {
-  // Default to Staged Inventory (the operational view); honor `?view=planned`
-  // so an external entry can land on the planning view. Read once at mount —
-  // the section is keyed on the record id upstream, so stepping to a neighbor
-  // remounts + re-reads without yanking the view from under an in-progress edit.
-  const searchParams = useSearchParams()
-  const [mode, setMode] = useState<SectionMode>(
-    searchParams.get("view") === "planned" ? "planned" : "staged",
-  )
-
   // Server snapshots: category labels (product picker) + live row status (the
   // worker flips QUEUED → IMPORTED without bumping the parent, so status is
   // sourced from the server snapshot, not the editable draft).
@@ -81,35 +61,39 @@ export function ImportStagedInventorySection({
   // Both views share ONE atomic draft slice ({ filters, stagedRows }) + one
   // isDirty, so a draft left in one view would otherwise bleed into the other
   // (e.g. a Planned Import draft persisting while you add Staged rows, then
-  // surfacing as a stray "pending save"). Flipping a dirty section therefore
-  // DISCARDS this section's drafts on confirm — an unsaved view can't ride the
-  // toggle. The copy is discard-flavored to match.
-  const { guard, dialogProps } = useRecordSwapGuard({
-    isDirty: section.isDirty,
-    title: "Discard unsaved changes?",
-    discardMessage:
-      "Switching views discards this section's unsaved changes. Switch anyway?",
-    confirmLabel: "Discard & switch",
-    cancelLabel: "Stay here",
+  // surfacing as a stray "pending save"). The shared section-toggle contract
+  // discards this section's drafts on confirm before flipping, so an unsaved
+  // view can't ride the toggle. Both sides point at the same section draft.
+  //
+  // Default to Staged Inventory (the operational view); honor `?view=planned`
+  // so an external entry can land on the planning view. Read once at mount —
+  // the section is keyed on the record id upstream, so stepping to a neighbor
+  // remounts + re-reads without yanking the view from under an in-progress edit.
+  const searchParams = useSearchParams()
+  const sides: readonly [
+    RecordSectionToggleSide<SectionMode>,
+    RecordSectionToggleSide<SectionMode>,
+  ] = [
+    {
+      key: "planned",
+      label: "Planned Imports",
+      accent: "border-emerald-500/60 bg-emerald-500/10 text-emerald-800",
+      isDirty: section.isDirty,
+      onDiscard: section.discard,
+    },
+    {
+      key: "staged",
+      label: "Staged Inventory",
+      accent: "border-sky-500/60 bg-sky-500/10 text-sky-800",
+      isDirty: section.isDirty,
+      onDiscard: section.discard,
+    },
+  ]
+
+  const { mode, activeLabel, stepper, dialogProps } = useRecordSectionToggle<SectionMode>({
+    initialMode: searchParams.get("view") === "planned" ? "planned" : "staged",
+    sides,
   })
-
-  const flipMode = useCallback(() => {
-    guard(() => {
-      section.discard()
-      setMode((prev) => (prev === "planned" ? "staged" : "planned"))
-    })
-  }, [guard, section])
-
-  const stepper = (
-    <RecordStepper
-      label={MODE_LABEL[mode]}
-      onPrevious={flipMode}
-      onNext={flipMode}
-      previousAriaLabel="Show the other view"
-      nextAriaLabel="Show the other view"
-      accent={MODE_ACCENT[mode]}
-    />
-  )
 
   const statusLeading = (
     <span className="inline-flex items-center rounded-xl border border-[rgba(58,58,58,0.72)] bg-[var(--panel-hover)] px-3 py-2 text-sm text-[var(--foreground)]/75">
@@ -207,7 +191,7 @@ export function ImportStagedInventorySection({
   return (
     <>
       <RecordItemSection
-        title={MODE_LABEL[mode]}
+        title={activeLabel}
         capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
         noticeMessage={section.noticeMessage}
         subHeader={subHeader}

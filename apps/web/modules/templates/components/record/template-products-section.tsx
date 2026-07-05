@@ -1,7 +1,11 @@
 "use client"
 
-import { useCallback, useState } from "react"
-import { ConfirmDialog, RecordItemSection, RecordStepper, useRecordSwapGuard } from "@/engines/record-view"
+import {
+  ConfirmDialog,
+  RecordItemSection,
+  useRecordSectionToggle,
+  type RecordSectionToggleSide,
+} from "@/engines/record-view"
 import type { useTemplatePlannedProductsSection } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
 import type { useTemplateInvoiceProductsSection } from "@/modules/templates/controllers/record/invoice-products/use-template-invoice-products-section"
 import { TemplatePlannedProductsGrid } from "./planned-products/template-planned-products-grid"
@@ -10,20 +14,9 @@ import { TemplateInvoiceProductsGrid } from "./invoice-products/template-invoice
 /** Which side the single §2 section is showing. Planned Products is default. */
 type SectionMode = "planned" | "invoice"
 
-const MODE_LABEL: Record<SectionMode, string> = {
-  planned: "Planned Products",
-  invoice: "Invoice Products",
-}
-
 const MODE_NOUN: Record<SectionMode, string> = {
   planned: "planned product",
   invoice: "invoice product",
-}
-
-// Mode accent: sky = the plan (Planned Products), emerald = the bill (Invoice Products).
-const MODE_ACCENT: Record<SectionMode, string> = {
-  planned: "border-sky-500/60 bg-sky-500/10 text-sky-800",
-  invoice: "border-emerald-500/60 bg-emerald-500/10 text-emerald-800",
 }
 
 type PlannedController = ReturnType<typeof useTemplatePlannedProductsSection>
@@ -35,9 +28,9 @@ type InvoiceController = ReturnType<typeof useTemplateInvoiceProductsSection>
  *   - Planned Products (default, sky) — the repeatable job plan.
  *   - Invoice Products (emerald) — the products placed onto the invoice.
  *
- * Unlike the WO/imports toggle hosts, BOTH sides are independently editable, each
- * with its OWN controller + draft. Flipping preserves both drafts (nothing is
- * discarded), so the swap guard is switch-flavored and keyed to the ACTIVE side.
+ * BOTH sides are independently editable, each with its OWN controller + draft.
+ * Toggling away from a dirty side confirms, then DISCARDS that side's draft (the
+ * shared section-toggle contract) — so the hidden side is always clean.
  */
 export function TemplateProductsSection({
   planned,
@@ -46,35 +39,31 @@ export function TemplateProductsSection({
   planned: PlannedController
   invoice: InvoiceController
 }) {
-  const [mode, setMode] = useState<SectionMode>("planned")
+  // Mode accent: sky = the plan (Planned Products), emerald = the bill (Invoice Products).
+  const sides: readonly [
+    RecordSectionToggleSide<SectionMode>,
+    RecordSectionToggleSide<SectionMode>,
+  ] = [
+    {
+      key: "planned",
+      label: "Planned Products",
+      accent: "border-sky-500/60 bg-sky-500/10 text-sky-800",
+      isDirty: planned.isDirty,
+      onDiscard: planned.discard,
+    },
+    {
+      key: "invoice",
+      label: "Invoice Products",
+      accent: "border-emerald-500/60 bg-emerald-500/10 text-emerald-800",
+      isDirty: invoice.isDirty,
+      onDiscard: invoice.discard,
+    },
+  ]
 
-  // Flipping away from a dirty grid warns first, but the flip KEEPS the edits
-  // (each controller holds its own draft, preserved across the toggle), so the
-  // copy is switch-flavored. Guard only when the ACTIVE side is dirty — the
-  // hidden side's dirtiness is preserved and doesn't gate the swap.
-  const { guard, dialogProps } = useRecordSwapGuard({
-    isDirty: (mode === "planned" && planned.isDirty) || (mode === "invoice" && invoice.isDirty),
-    title: "Switch view?",
-    discardMessage:
-      "This view has unsaved changes. Switch views? Your edits stay until you save or leave the template.",
-    confirmLabel: "Switch & keep editing",
-    cancelLabel: "Stay here",
+  const { mode, activeLabel, stepper, dialogProps } = useRecordSectionToggle<SectionMode>({
+    initialMode: "planned",
+    sides,
   })
-
-  const flipMode = useCallback(() => {
-    guard(() => setMode((prev) => (prev === "planned" ? "invoice" : "planned")))
-  }, [guard])
-
-  const stepper = (
-    <RecordStepper
-      label={MODE_LABEL[mode]}
-      onPrevious={flipMode}
-      onNext={flipMode}
-      previousAriaLabel="Show the other view"
-      nextAriaLabel="Show the other view"
-      accent={MODE_ACCENT[mode]}
-    />
-  )
 
   const active = mode === "planned" ? planned : invoice
   const editable = !active.isSaving
@@ -84,7 +73,7 @@ export function TemplateProductsSection({
   return (
     <>
       <RecordItemSection
-        title={MODE_LABEL[mode]}
+        title={activeLabel}
         capabilities={{ editable: true, supportsSaveDiscard: true, supportsAddRow: true }}
         noticeMessage={active.noticeMessage}
         noticeError={active.noticeError}
@@ -108,7 +97,7 @@ export function TemplateProductsSection({
           actions: [
             {
               key: "add",
-              label: `+ Add ${MODE_LABEL[mode].replace(/s$/, "")}`,
+              label: `+ Add ${activeLabel.replace(/s$/, "")}`,
               kind: "add-row",
               onClick: active.addItem,
               disabled: active.isSaving,
