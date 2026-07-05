@@ -1,11 +1,17 @@
 "use client"
 
-import { DateCell, MoneyCell } from "@/engines/record-view"
+import { ChoiceChipCell, type ChoiceChipOption, DateCell, MoneyCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
-import type { FlooringPaymentDirection } from "@builders/domain"
 import type { TemplatePlannedPaymentLocal } from "@/modules/templates/controllers/record/planned-payments/use-template-planned-payments-section"
-import { TemplatePlannedPaymentDirectionCell } from "./template-planned-payment-direction-cell"
+
+// Direction options for the toned dropdown chip: Revenue = green (success),
+// Expense = red (error). Module-owned (domain-specific labels/tones); the cell
+// chrome is the shared engine ChoiceChipCell.
+const DIRECTION_OPTIONS: ChoiceChipOption[] = [
+  { value: "REVENUE", label: "Revenue", tone: "success" },
+  { value: "EXPENSE", label: "Expense", tone: "error" },
+]
 
 const TEMPLATE_PLANNED_PAYMENTS_COLUMNS: DataTableColumn<TemplatePlannedPaymentLocal>[] = [
   { key: "amount", label: "Amount", width: 160, align: "end" },
@@ -55,12 +61,11 @@ export function TemplatePlannedPaymentsGrid({
             )
           case "direction":
             return (
-              <TemplatePlannedPaymentDirectionCell
-                value={item.direction}
+              <ChoiceChipCell
                 editable={editable}
-                onChange={(next: FlooringPaymentDirection) =>
-                  onChangeField(item.id, "direction", next)
-                }
+                value={item.direction}
+                options={DIRECTION_OPTIONS}
+                onChange={(next) => onChangeField(item.id, "direction", next)}
                 ariaLabel="Planned payment direction"
               />
             )
