@@ -47,6 +47,8 @@ export default async function WorkOrderPrintPage({
       input={result.data.workOrder}
       logoUrl={logoUrl}
       preset="pickingTicket"
+      previousWorkOrderId={result.data.neighbors.previousWorkOrder?.id ?? null}
+      nextWorkOrderId={result.data.neighbors.nextWorkOrder?.id ?? null}
     />
   )
 }

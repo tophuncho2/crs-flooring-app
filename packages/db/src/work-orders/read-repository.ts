@@ -282,7 +282,7 @@ export async function getWorkOrderById(
   return normalizeWorkOrderListRow(workOrder)
 }
 
-type WorkOrderNeighbors = {
+export type WorkOrderNeighbors = {
   previousWorkOrder: WorkOrderNeighbor | null
   nextWorkOrder: WorkOrderNeighbor | null
 }
@@ -325,6 +325,24 @@ async function getWorkOrderNeighbors(
     previousWorkOrder: previous ? { id: previous.id } : null,
     nextWorkOrder: next ? { id: next.id } : null,
   }
+}
+
+/**
+ * Resolve a work order's neighbors from its id alone — a lightweight
+ * `workOrderNumberInt` lookup that feeds {@link getWorkOrderNeighbors}. Powers
+ * the print view's stepper, which has only the id in hand (it never loads the
+ * full detail). Returns empty neighbors when the row is missing.
+ */
+export async function getWorkOrderNeighborsById(
+  workOrderId: string,
+  client: WorkOrdersDbClient = db,
+): Promise<WorkOrderNeighbors> {
+  const workOrder = await client.flooringWorkOrder.findUnique({
+    where: { id: workOrderId },
+    select: { workOrderNumberInt: true },
+  })
+  if (!workOrder) return NO_WORK_ORDER_NEIGHBORS
+  return getWorkOrderNeighbors(workOrder.workOrderNumberInt, client)
 }
 
 /**

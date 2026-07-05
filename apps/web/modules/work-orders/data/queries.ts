@@ -2,10 +2,12 @@ import {
   createPrismaPageLoadIssue,
   getWorkOrderDetailById,
   getWorkOrderForFileGeneration,
+  getWorkOrderNeighborsById,
   isPrismaNotFoundError,
   listAdjustmentsForWorkOrder,
   listWorkOrderMaterialItems,
   type PrismaDetailPageResult,
+  type WorkOrderNeighbors,
 } from "@builders/db"
 import type {
   EnrichedInventoryAdjustmentRow,
@@ -68,6 +70,11 @@ export async function getWorkOrderDetailPageData(
 
 export type WorkOrderFileGenerationPageData = {
   workOrder: WorkOrderFileGenerationInput
+  /**
+   * Adjacent work orders on the global work-order-number line, powering the
+   * print view's stepper. `null` at a sequence edge.
+   */
+  neighbors: WorkOrderNeighbors
 }
 
 /**
@@ -82,8 +89,11 @@ export async function getWorkOrderForFileGenerationPageData(
   id: string,
 ): Promise<PrismaDetailPageResult<WorkOrderFileGenerationPageData>> {
   try {
-    const workOrder = await getWorkOrderForFileGeneration(id)
-    return { ok: true, data: { workOrder } }
+    const [workOrder, neighbors] = await Promise.all([
+      getWorkOrderForFileGeneration(id),
+      getWorkOrderNeighborsById(id),
+    ])
+    return { ok: true, data: { workOrder, neighbors } }
   } catch (error) {
     if (isPrismaNotFoundError(error)) {
       return { ok: false, notFound: true }

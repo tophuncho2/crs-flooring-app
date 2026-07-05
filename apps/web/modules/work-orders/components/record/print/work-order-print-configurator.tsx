@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import {
   buildWorkOrderPrintConfig,
   buildWorkOrderPrintHtml,
@@ -11,6 +12,7 @@ import {
   type WorkOrderPrintConfig,
   type WorkOrderPrintPreset,
 } from "@builders/domain"
+import { RecordStepper } from "@/engines/record-view"
 
 /**
  * On-demand work-order print configurator. Seeds a {@link WorkOrderPrintConfig}
@@ -33,11 +35,27 @@ export function WorkOrderPrintConfigurator({
   input,
   logoUrl,
   preset,
+  previousWorkOrderId,
+  nextWorkOrderId,
 }: {
   input: WorkOrderFileGenerationInput
   logoUrl: string | null
   preset: WorkOrderPrintPreset
+  previousWorkOrderId: string | null
+  nextWorkOrderId: string | null
 }) {
+  const router = useRouter()
+
+  // Stepping is a full route change to the neighbor's print URL — the page
+  // re-renders server-side (re-auth included) and reseeds the config from the
+  // new work order's rows. Prefetch present neighbors so the swap is near-instant.
+  const stepTo = (id: string) => router.push(`/print/work-orders/${id}`)
+
+  useEffect(() => {
+    if (previousWorkOrderId) router.prefetch(`/print/work-orders/${previousWorkOrderId}`)
+    if (nextWorkOrderId) router.prefetch(`/print/work-orders/${nextWorkOrderId}`)
+  }, [previousWorkOrderId, nextWorkOrderId, router])
+
   const allAdjustmentIds = useMemo(
     () => input.adjustmentGroups.flatMap((group) => group.adjustments.map((adj) => adj.id)),
     [input.adjustmentGroups],
@@ -165,6 +183,17 @@ export function WorkOrderPrintConfigurator({
             Print
           </button>
         </div>
+
+        {/* Walk the global work-order-number line without leaving the print
+            view. Bare stepper (no portal / dirty guard) — nothing here is
+            editable. A null edge disables that arrow. */}
+        <RecordStepper
+          label={input.workOrderNumber}
+          onPrevious={previousWorkOrderId ? () => stepTo(previousWorkOrderId) : null}
+          onNext={nextWorkOrderId ? () => stepTo(nextWorkOrderId) : null}
+          previousAriaLabel="Previous work order"
+          nextAriaLabel="Next work order"
+        />
 
         <PanelSection title="Document">
           <div className="flex flex-col gap-1 rounded border border-neutral-200 p-0.5">
