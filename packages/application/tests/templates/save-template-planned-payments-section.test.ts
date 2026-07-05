@@ -50,7 +50,12 @@ describe("saveTemplatePlannedPaymentsSectionUseCase", () => {
       {
         templateId: "tpl-1",
         diff: {
-          added: [{ tempId: "t1", form: { amount: "10.00", direction: "REVENUE", paymentDate: "" } }],
+          added: [
+            {
+              tempId: "t1",
+              form: { amount: "10.00", direction: "REVENUE", paymentDate: "", notes: "deposit" },
+            },
+          ],
           modified: [],
           deleted: [],
         },
@@ -60,7 +65,7 @@ describe("saveTemplatePlannedPaymentsSectionUseCase", () => {
     const [, diff] = applyTemplatePlannedPaymentsDiffMock.mock.calls[0]
     expect(diff.added[0].tempId).toBe("t1")
     expect(diff.added[0].id).toBeTruthy()
-    expect(diff.added[0].input).toMatchObject({ amount: "10.00", direction: "REVENUE" })
+    expect(diff.added[0].input).toMatchObject({ amount: "10.00", direction: "REVENUE", notes: "deposit" })
   })
 
   it("rejects an ADDED row with a non-positive amount before writing", async () => {

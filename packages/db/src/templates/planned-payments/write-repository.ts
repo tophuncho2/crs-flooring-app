@@ -66,6 +66,7 @@ export async function applyTemplatePlannedPaymentsDiff(
         amount: toMoney(draft.input.amount),
         direction: draft.input.direction,
         paymentDate: optionalDate(draft.input.paymentDate),
+        notes: draft.input.notes ? draft.input.notes : null,
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),
@@ -79,6 +80,7 @@ export async function applyTemplatePlannedPaymentsDiff(
         amount: toMoney(update.input.amount),
         direction: update.input.direction,
         paymentDate: optionalDate(update.input.paymentDate),
+        notes: update.input.notes ? update.input.notes : null,
         updatedBy: input.actorEmail,
       },
     })

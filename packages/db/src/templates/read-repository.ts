@@ -132,6 +132,7 @@ const templateDetailSelect = {
       amount: true,
       direction: true,
       paymentDate: true,
+      notes: true,
       createdAt: true,
       updatedAt: true,
       createdBy: true,

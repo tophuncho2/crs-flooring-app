@@ -12,6 +12,8 @@ export type TemplatePlannedPaymentRow = {
   amount: string
   direction: FlooringPaymentDirection
   paymentDate: string
+  // Short free-text note; "" when unset (persisted as NULL).
+  notes: string
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
@@ -27,10 +29,13 @@ export type TemplatePlannedPaymentForm = {
   direction: FlooringPaymentDirection
   // "" = unset (persisted as NULL).
   paymentDate: string
+  // Short free-text note; "" = unset (persisted as NULL).
+  notes: string
 }
 
 export const EMPTY_TEMPLATE_PLANNED_PAYMENT_FORM: TemplatePlannedPaymentForm = {
   amount: "",
   direction: "REVENUE",
   paymentDate: "",
+  notes: "",
 }

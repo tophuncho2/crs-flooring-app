@@ -7,6 +7,7 @@ type TemplatePlannedPaymentInput = {
   amount: { toString(): string }
   direction: FlooringPaymentDirection
   paymentDate: Date | string | null
+  notes: string | null
   createdAt: Date | string
   updatedAt: Date | string
   createdBy: string | null
@@ -30,6 +31,7 @@ export function normalizeTemplatePlannedPayment(
     amount: normalizeMoneyAmount(item.amount.toString()),
     direction: item.direction,
     paymentDate: toIso(item.paymentDate),
+    notes: item.notes ?? "",
     createdAt: toIso(item.createdAt),
     updatedAt: toIso(item.updatedAt),
     createdBy: item.createdBy ?? null,

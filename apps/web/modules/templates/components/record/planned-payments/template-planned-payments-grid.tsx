@@ -1,8 +1,9 @@
 "use client"
 
-import { ChoiceChipCell, type ChoiceChipOption, DateCell, MoneyCell } from "@/engines/record-view"
+import { ChoiceChipCell, type ChoiceChipOption, DateCell, MoneyCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
+import { TEMPLATE_PLANNED_PAYMENT_NOTES_MAX } from "@builders/domain"
 import type { TemplatePlannedPaymentLocal } from "@/modules/templates/controllers/record/planned-payments/use-template-planned-payments-section"
 
 // Direction options for the toned dropdown chip: Revenue = green (success),
@@ -18,6 +19,7 @@ const TEMPLATE_PLANNED_PAYMENTS_COLUMNS: DataTableColumn<TemplatePlannedPaymentL
   // Direction sits to the RIGHT of amount and carries the tone chip/badge.
   { key: "direction", label: "Direction", width: 160 },
   { key: "paymentDate", label: "Date", width: 170 },
+  { key: "notes", label: "Notes", width: 320 },
 ]
 
 // Pure editable-table body for the Planned Payments §3 section. The RecordItemSection
@@ -76,6 +78,17 @@ export function TemplatePlannedPaymentsGrid({
                 value={item.paymentDate}
                 onChange={(next) => onChangeField(item.id, "paymentDate", next)}
                 ariaLabel="Planned payment date"
+              />
+            )
+          case "notes":
+            return (
+              <TextCell
+                editable={editable}
+                value={item.notes}
+                onChange={(next) => onChangeField(item.id, "notes", next)}
+                placeholder="Notes"
+                ariaLabel="Planned payment notes"
+                maxLength={TEMPLATE_PLANNED_PAYMENT_NOTES_MAX}
               />
             )
           default:

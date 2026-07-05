@@ -10,6 +10,7 @@ describe("normalizeTemplatePlannedPayment", () => {
     amount: { toString: () => "10.5" } as { toString(): string },
     direction: "REVENUE" as const,
     paymentDate: "2026-07-04T00:00:00.000Z",
+    notes: "deposit",
     createdAt: "2026-07-03T00:00:00.000Z",
     updatedAt: "2026-07-03T00:00:00.000Z",
     createdBy: "creator@example.com",
@@ -21,16 +22,19 @@ describe("normalizeTemplatePlannedPayment", () => {
     expect(row.amount).toBe("10.50")
     expect(row.direction).toBe("REVENUE")
     expect(row.paymentDate).toBe("2026-07-04T00:00:00.000Z")
+    expect(row.notes).toBe("deposit")
   })
 
-  it("coalesces a missing date + actors", () => {
+  it("coalesces a missing date + actors + notes", () => {
     const row = normalizeTemplatePlannedPayment({
       ...base,
       paymentDate: null,
+      notes: null,
       createdBy: null,
       updatedBy: null,
     })
     expect(row.paymentDate).toBe("")
+    expect(row.notes).toBe("")
     expect(row.createdBy).toBeNull()
     expect(row.updatedBy).toBeNull()
   })

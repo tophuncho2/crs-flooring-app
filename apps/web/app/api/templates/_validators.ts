@@ -24,6 +24,7 @@ import {
   TEMPLATE_INSTALLER_INSTRUCTIONS_MAX,
   TEMPLATE_INTERNAL_NOTES_MAX,
   TEMPLATE_INVOICE_PRODUCT_NOTES_MAX,
+  TEMPLATE_PLANNED_PAYMENT_NOTES_MAX,
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
   type FlooringPaymentDirection,
@@ -349,6 +350,13 @@ function validatePlannedPaymentForm(value: unknown, path: string): TemplatePlann
     amount: requireAmount(obj.amount, `${path}.amount`),
     direction: requireDirection(obj.direction, `${path}.direction`),
     paymentDate: optionalDateString(obj.paymentDate),
+    notes:
+      optionalBoundedText(
+        obj.notes,
+        TEMPLATE_PLANNED_PAYMENT_NOTES_MAX,
+        `${path}.notes`,
+        failPlannedPaymentsDiff,
+      ) ?? "",
   }
 }
 

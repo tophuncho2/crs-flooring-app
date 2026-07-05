@@ -26,6 +26,8 @@ export type TemplatePlannedPaymentLocal = {
   direction: FlooringPaymentDirection
   // "" = unset (persisted NULL). DateCell edits it as YYYY-MM-DD.
   paymentDate: string
+  // Short free-text note; "" = unset (persisted NULL).
+  notes: string
 }
 
 type TemplatePlannedPaymentsLocalState = {
@@ -38,6 +40,7 @@ function toLocalItem(row: TemplatePlannedPaymentRow): TemplatePlannedPaymentLoca
     amount: row.amount,
     direction: row.direction,
     paymentDate: row.paymentDate,
+    notes: row.notes,
   }
 }
 
@@ -48,7 +51,7 @@ function createLocalState(record: TemplateDetail): TemplatePlannedPaymentsLocalS
 function createItemsRevisionKey(record: TemplateDetail) {
   return JSON.stringify(
     record.plannedPayments.map(
-      (row) => `${row.id}:${row.amount}:${row.direction}:${row.paymentDate}`,
+      (row) => `${row.id}:${row.amount}:${row.direction}:${row.paymentDate}:${row.notes}`,
     ),
   )
 }
@@ -57,7 +60,8 @@ function itemsDiffer(local: TemplatePlannedPaymentLocal, server: TemplatePlanned
   return (
     local.amount !== server.amount ||
     local.direction !== server.direction ||
-    local.paymentDate !== server.paymentDate
+    local.paymentDate !== server.paymentDate ||
+    local.notes !== server.notes
   )
 }
 
@@ -66,6 +70,7 @@ function toDiffForm(local: TemplatePlannedPaymentLocal): TemplatePlannedPaymentF
     amount: local.amount,
     direction: local.direction,
     paymentDate: local.paymentDate,
+    notes: local.notes,
   }
 }
 
@@ -141,6 +146,7 @@ export function useTemplatePlannedPaymentsSection({
           amount: "",
           direction: "REVENUE",
           paymentDate: "",
+          notes: "",
         },
       ],
     }))
