@@ -147,6 +147,7 @@ export function ListExportButton({
       active={selectionEnabled}
       title="Export CSV"
       bodyClassName="w-[24rem]"
+      maxHeight={560}
     >
       {/* Selection-mode toggle — reveals the table's checkbox column. When off,
           the export covers the whole filtered set. */}
@@ -205,7 +206,7 @@ export function ListExportButton({
         </div>
       </div>
 
-      <div className="flex max-h-72 flex-col gap-1 overflow-y-auto pr-1">
+      <div className="flex max-h-56 flex-col gap-1 overflow-y-auto pr-1">
         {columns.map((column) => (
           <label
             key={column.key}

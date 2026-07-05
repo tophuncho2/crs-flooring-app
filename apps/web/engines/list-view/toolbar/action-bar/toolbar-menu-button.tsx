@@ -25,6 +25,12 @@ export type ToolbarMenuButtonProps = {
    * the width (defaults to `w-[15rem]`) when a body needs to be wider.
    */
   bodyClassName?: string
+  /**
+   * Height cap (px) for the popover before its body scrolls. Defaults to the
+   * `AnchoredPanel` default (400); raise it for a tall tool (e.g. the export
+   * menu's column picker) so its footer button stays in view without scrolling.
+   */
+  maxHeight?: number
   /** The menu body controls (search/filter/sort) — wrapped by the engine. */
   children: ReactNode
 }
@@ -43,6 +49,7 @@ export function ToolbarMenuButton({
   ariaLabel,
   title,
   bodyClassName,
+  maxHeight,
   children,
 }: ToolbarMenuButtonProps) {
   const [open, setOpen] = useState(false)
@@ -53,6 +60,7 @@ export function ToolbarMenuButton({
       open={open}
       onClose={close}
       align="right"
+      maxHeight={maxHeight}
       stickyHeader={
         <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70">
           {title ?? label}
