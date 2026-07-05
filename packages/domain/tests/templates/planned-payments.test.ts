@@ -1,0 +1,79 @@
+import { describe, expect, it } from "vitest"
+import { normalizeTemplatePlannedPayment } from "../../src/templates/planned-payments/normalizers.js"
+import { validateTemplatePlannedPaymentForm } from "../../src/templates/planned-payments/rules.js"
+
+describe("normalizeTemplatePlannedPayment", () => {
+  const base = {
+    id: "pay-1",
+    // Prisma Decimal.toString() drops trailing zeros ("10.5"); the normalizer must
+    // canonicalize to "10.50" (the round-trip dirty-diff trap guard).
+    amount: { toString: () => "10.5" } as { toString(): string },
+    direction: "REVENUE" as const,
+    paymentDate: "2026-07-04T00:00:00.000Z",
+    createdAt: "2026-07-03T00:00:00.000Z",
+    updatedAt: "2026-07-03T00:00:00.000Z",
+    createdBy: "creator@example.com",
+    updatedBy: "editor@example.com",
+  }
+
+  it("canonicalizes the amount and carries direction + date", () => {
+    const row = normalizeTemplatePlannedPayment(base)
+    expect(row.amount).toBe("10.50")
+    expect(row.direction).toBe("REVENUE")
+    expect(row.paymentDate).toBe("2026-07-04T00:00:00.000Z")
+  })
+
+  it("coalesces a missing date + actors", () => {
+    const row = normalizeTemplatePlannedPayment({
+      ...base,
+      paymentDate: null,
+      createdBy: null,
+      updatedBy: null,
+    })
+    expect(row.paymentDate).toBe("")
+    expect(row.createdBy).toBeNull()
+    expect(row.updatedBy).toBeNull()
+  })
+
+  it("converts a Date paymentDate to an ISO string", () => {
+    const row = normalizeTemplatePlannedPayment({
+      ...base,
+      paymentDate: new Date("2026-07-04T00:00:00.000Z"),
+    })
+    expect(row.paymentDate).toBe("2026-07-04T00:00:00.000Z")
+  })
+})
+
+describe("validateTemplatePlannedPaymentForm", () => {
+  const form = { amount: "10.00", direction: "REVENUE" as const, paymentDate: "" }
+
+  it("requires an amount", () => {
+    expect(validateTemplatePlannedPaymentForm({ ...form, amount: "" })).toMatch(/required/)
+  })
+
+  it("rejects an invalid amount", () => {
+    expect(validateTemplatePlannedPaymentForm({ ...form, amount: "1.234" })).toMatch(/valid amount/)
+    expect(validateTemplatePlannedPaymentForm({ ...form, amount: "abc" })).toMatch(/valid amount/)
+  })
+
+  it("rejects a zero amount as not positive", () => {
+    expect(validateTemplatePlannedPaymentForm({ ...form, amount: "0" })).toMatch(/greater than zero/)
+  })
+
+  it("rejects a negative amount as an invalid money value (fails validity first)", () => {
+    // Negatives aren't valid money, so the validity check trips before the >0
+    // check — matches validatePaymentForm's ordering.
+    expect(validateTemplatePlannedPaymentForm({ ...form, amount: "-5" })).toMatch(/valid amount/)
+  })
+
+  it("rejects an unknown direction", () => {
+    expect(
+      validateTemplatePlannedPaymentForm({ ...form, direction: "OTHER" as never }),
+    ).toMatch(/Direction/)
+  })
+
+  it("accepts a positive amount with either direction", () => {
+    expect(validateTemplatePlannedPaymentForm(form)).toBe("")
+    expect(validateTemplatePlannedPaymentForm({ ...form, direction: "EXPENSE" })).toBe("")
+  })
+})

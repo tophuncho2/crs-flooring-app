@@ -92,6 +92,21 @@ const templateDetailSelect = {
     },
     orderBy: { createdAt: "asc" as const },
   },
+  // Planned payments mirror the product blocks — the create/update detail return
+  // carries them too (empty on a freshly-created template).
+  plannedPayments: {
+    select: {
+      id: true,
+      amount: true,
+      direction: true,
+      paymentDate: true,
+      createdAt: true,
+      updatedAt: true,
+      createdBy: true,
+      updatedBy: true,
+    },
+    orderBy: { createdAt: "asc" as const },
+  },
 } as const
 
 export async function createTemplateRecord(

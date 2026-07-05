@@ -2,6 +2,7 @@ import { z } from "zod"
 import {
   TemplateExecutionError,
   TemplateInvoiceProductExecutionError,
+  TemplatePlannedPaymentExecutionError,
   TemplatePlannedProductExecutionError,
 } from "@builders/application"
 import type {
@@ -25,9 +26,12 @@ import {
   TEMPLATE_INVOICE_PRODUCT_NOTES_MAX,
   TEMPLATE_PLANNED_PRODUCT_NOTES_MAX,
   TEMPLATE_UNIT_TYPE_MAX,
+  type FlooringPaymentDirection,
   type PaletteColor,
   type TemplateInvoiceProductForm,
   type TemplateInvoiceProductsDiff,
+  type TemplatePlannedPaymentForm,
+  type TemplatePlannedPaymentsDiff,
   type TemplatePlannedProductForm,
   type TemplatePlannedProductsDiff,
 } from "@builders/domain"
@@ -287,6 +291,89 @@ export function validateTemplateInvoiceProductsDiffInput(
   const deleted = requireInvoiceArray(body.deleted, "deleted").map((entry, idx) => {
     const obj = requireInvoiceObject(entry, `deleted[${idx}]`)
     return { id: requireString(obj.id, `deleted[${idx}].id`, failInvoiceDiff) }
+  })
+
+  return { added, modified, deleted }
+}
+
+// --- Planned-payments section diff validator ---
+// The §3 payment plan. Mirrors the product diff validators but throws the
+// planned-payment error class so the client keys off its distinct code. Fields:
+// amount (required money), direction (REVENUE|EXPENSE), paymentDate (optional).
+
+function failPlannedPaymentsDiff(message: string, field?: string): never {
+  throw new TemplatePlannedPaymentExecutionError({
+    code: "TEMPLATE_PLANNED_PAYMENT_VALIDATION_FAILED",
+    message,
+    status: 400,
+    field,
+  })
+}
+
+function requirePaymentsArray(value: unknown, path: string): unknown[] {
+  if (!Array.isArray(value)) failPlannedPaymentsDiff(`${path} must be an array`, path)
+  return value
+}
+
+function requirePaymentsObject(value: unknown, path: string): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    failPlannedPaymentsDiff(`${path} must be an object`, path)
+  }
+  return value as Record<string, unknown>
+}
+
+// Required money field (money standard): present → valid → canonicalized. The
+// domain rule additionally enforces > 0 on the use-case side.
+function requireAmount(value: unknown, path: string): string {
+  if (typeof value !== "string" || value.trim() === "") {
+    failPlannedPaymentsDiff(`${path} is required`, path)
+  }
+  if (!isValidMoneyAmount(value)) failPlannedPaymentsDiff(`${path} must be a valid amount`, path)
+  return normalizeMoneyAmount(value)
+}
+
+function requireDirection(value: unknown, path: string): FlooringPaymentDirection {
+  if (value === "REVENUE" || value === "EXPENSE") return value
+  failPlannedPaymentsDiff(`${path} must be REVENUE or EXPENSE`, path)
+}
+
+// Optional date — carried as a passthrough string ("" = unset); the write
+// boundary coerces to a Date or NULL (mirrors optionalQuantity's leniency).
+function optionalDateString(value: unknown): string {
+  return typeof value === "string" ? value : ""
+}
+
+function validatePlannedPaymentForm(value: unknown, path: string): TemplatePlannedPaymentForm {
+  const obj = requirePaymentsObject(value, path)
+  return {
+    amount: requireAmount(obj.amount, `${path}.amount`),
+    direction: requireDirection(obj.direction, `${path}.direction`),
+    paymentDate: optionalDateString(obj.paymentDate),
+  }
+}
+
+export function validateTemplatePlannedPaymentsDiffInput(
+  body: Record<string, unknown>,
+): TemplatePlannedPaymentsDiff {
+  const added = requirePaymentsArray(body.added, "added").map((entry, idx) => {
+    const obj = requirePaymentsObject(entry, `added[${idx}]`)
+    return {
+      tempId: requireString(obj.tempId, `added[${idx}].tempId`, failPlannedPaymentsDiff),
+      form: validatePlannedPaymentForm(obj.form, `added[${idx}].form`),
+    }
+  })
+
+  const modified = requirePaymentsArray(body.modified, "modified").map((entry, idx) => {
+    const obj = requirePaymentsObject(entry, `modified[${idx}]`)
+    return {
+      id: requireString(obj.id, `modified[${idx}].id`, failPlannedPaymentsDiff),
+      form: validatePlannedPaymentForm(obj.form, `modified[${idx}].form`),
+    }
+  })
+
+  const deleted = requirePaymentsArray(body.deleted, "deleted").map((entry, idx) => {
+    const obj = requirePaymentsObject(entry, `deleted[${idx}]`)
+    return { id: requireString(obj.id, `deleted[${idx}].id`, failPlannedPaymentsDiff) }
   })
 
   return { added, modified, deleted }

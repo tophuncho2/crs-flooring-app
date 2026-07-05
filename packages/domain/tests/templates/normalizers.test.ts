@@ -78,6 +78,7 @@ describe("normalizeTemplate neighbors", () => {
     installerInstructions: null,
     plannedProducts: [],
     invoiceProducts: [],
+    plannedPayments: [],
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z",
     createdBy: "creator@example.com",

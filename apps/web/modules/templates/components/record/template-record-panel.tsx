@@ -8,10 +8,12 @@ import {
 import { useTemplatePrimarySection } from "@/modules/templates/controllers/record/primary/use-template-primary-section"
 import { useTemplatePlannedProductsSection } from "@/modules/templates/controllers/record/planned-products/use-template-planned-products-section"
 import { useTemplateInvoiceProductsSection } from "@/modules/templates/controllers/record/invoice-products/use-template-invoice-products-section"
+import { useTemplatePlannedPaymentsSection } from "@/modules/templates/controllers/record/planned-payments/use-template-planned-payments-section"
 import { useTemplateSyncToWorkOrder } from "@/modules/templates/controllers/record/use-template-sync-to-work-order"
 import type { TemplateDetail, TemplateForm } from "@builders/domain"
 import { TemplatePrimaryFieldsSection } from "./primary/template-primary-fields-section"
 import { TemplateProductsSection } from "./template-products-section"
+import { TemplatePlannedPaymentsSection } from "./planned-payments/template-planned-payments-section"
 import { TemplateRecordFooter } from "./footer"
 
 export function TemplateRecordPanel({
@@ -30,14 +32,22 @@ export function TemplateRecordPanel({
     template: primary.record,
     publishTemplate: primary.publishRecord,
   })
+  const plannedPayments = useTemplatePlannedPaymentsSection({
+    template: primary.record,
+    publishTemplate: primary.publishRecord,
+  })
   const syncToWorkOrder = useTemplateSyncToWorkOrder(template.id)
   const isDirty =
-    primary.primarySection.isDirty || plannedProducts.isDirty || invoiceProducts.isDirty
+    primary.primarySection.isDirty ||
+    plannedProducts.isDirty ||
+    invoiceProducts.isDirty ||
+    plannedPayments.isDirty
   const canSync =
     !isDirty &&
     !primary.primarySection.isSaving &&
     !plannedProducts.isSaving &&
-    !invoiceProducts.isSaving
+    !invoiceProducts.isSaving &&
+    !plannedPayments.isSaving
 
   return (
     <>
@@ -134,6 +144,23 @@ export function TemplateRecordPanel({
                 key={template.id}
                 planned={plannedProducts}
                 invoice={invoiceProducts}
+              />
+            ),
+          },
+          {
+            key: "planned-payments",
+            type: "item",
+            order: 20,
+            dirtyLabel: "planned payments",
+            controller: {
+              isDirty: plannedPayments.isDirty,
+              isSaving: plannedPayments.isSaving,
+              hasConflict: plannedPayments.hasConflict,
+            },
+            render: () => (
+              <TemplatePlannedPaymentsSection
+                key={template.id}
+                plannedPayments={plannedPayments}
               />
             ),
           },
