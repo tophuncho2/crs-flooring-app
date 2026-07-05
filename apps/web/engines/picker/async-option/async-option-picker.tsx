@@ -25,7 +25,7 @@ import {
  * controller reports `hasMore=false` and a no-op `loadMore`, so it is
  * behavior-identical to omitting them.
  */
-export type AsyncOptionPickerProps<TOption extends { id: string }> = {
+export type AsyncOptionPickerProps<TOption> = {
   value: string | null
   onChange: (id: string | null) => void
   /**
@@ -49,12 +49,18 @@ export type AsyncOptionPickerProps<TOption extends { id: string }> = {
     signal: AbortSignal | undefined,
     skip: number,
   ) => Promise<AsyncRichDropdownPagedPage<TOption>>
-  /** Maps a domain option to the dropdown's presentation shape. */
-  toOption: (option: TOption) => AsyncRichDropdownOption
+  /**
+   * Maps a domain option to the dropdown's presentation shape. May return
+   * `null` to drop an option (e.g. a blank value that must not be pickable);
+   * the base skips nulls and dedupes the result by `id`.
+   */
+  toOption: (option: TOption) => AsyncRichDropdownOption | null
   initialOptions?: TOption[]
   enabled?: boolean
   stackSubtitles?: boolean
   placeholder?: string
+  /** Placeholder shown while `disabled` (e.g. "Select warehouse first"). */
+  disabledPlaceholder?: string
   searchPlaceholder?: string
   emptyMessage?: string
   loadingMessage?: string
@@ -63,9 +69,16 @@ export type AsyncOptionPickerProps<TOption extends { id: string }> = {
   invalid?: boolean
   ariaLabel?: string
   className?: string
+  /**
+   * When true, forces a fresh fetch each time the popover opens (on top of the
+   * controller's mount-time `FRESH_ON_OPEN` freshness). Opt-in — only for
+   * pickers whose options are materialized live while the page stays mounted
+   * (inventory-derived import#/PO#/location).
+   */
+  refetchOnOpen?: boolean
 }
 
-export function AsyncOptionPicker<TOption extends { id: string }>({
+export function AsyncOptionPicker<TOption>({
   value,
   onChange,
   onOptionSelected,
@@ -78,6 +91,7 @@ export function AsyncOptionPicker<TOption extends { id: string }>({
   enabled,
   stackSubtitles,
   placeholder,
+  disabledPlaceholder,
   searchPlaceholder,
   emptyMessage,
   loadingMessage,
@@ -86,6 +100,7 @@ export function AsyncOptionPicker<TOption extends { id: string }>({
   invalid,
   ariaLabel,
   className,
+  refetchOnOpen,
 }: AsyncOptionPickerProps<TOption>) {
   const controller = useAsyncRichDropdownController<TOption>({
     bucketKey,
@@ -99,17 +114,29 @@ export function AsyncOptionPicker<TOption extends { id: string }>({
     (id: string | null) => {
       onChange(id)
       if (onOptionSelected) {
-        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
+        // Match on the mapped dropdown id (what the listbox actually selects
+        // on) rather than assuming a raw `id` field — some option types are
+        // keyed by another field (e.g. inventory value pickers).
+        const option = id
+          ? controller.options.find((o) => toOption(o)?.id === id) ?? null
+          : null
         onOptionSelected(option)
       }
     },
-    [onChange, onOptionSelected, controller.options],
+    [onChange, onOptionSelected, controller.options, toOption],
   )
 
-  const options = useMemo<AsyncRichDropdownOption[]>(
-    () => controller.options.map(toOption),
-    [controller.options, toOption],
-  )
+  const options = useMemo<AsyncRichDropdownOption[]>(() => {
+    const out: AsyncRichDropdownOption[] = []
+    const seen = new Set<string>()
+    for (const option of controller.options) {
+      const mapped = toOption(option)
+      if (!mapped || seen.has(mapped.id)) continue
+      seen.add(mapped.id)
+      out.push(mapped)
+    }
+    return out
+  }, [controller.options, toOption])
 
   const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
     if (!value) return null
@@ -127,7 +154,7 @@ export function AsyncOptionPicker<TOption extends { id: string }>({
       onQueryChange={controller.onQueryChange}
       isLoading={controller.isLoading}
       errorMessage={controller.errorMessage}
-      placeholder={placeholder}
+      placeholder={disabled && disabledPlaceholder ? disabledPlaceholder : placeholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
@@ -140,6 +167,13 @@ export function AsyncOptionPicker<TOption extends { id: string }>({
       isFetchingMore={controller.isFetchingMore}
       onLoadMore={controller.loadMore}
       stackSubtitles={stackSubtitles}
+      onOpenChange={
+        refetchOnOpen
+          ? (isOpen) => {
+              if (isOpen) controller.refetch()
+            }
+          : undefined
+      }
     />
   )
 }

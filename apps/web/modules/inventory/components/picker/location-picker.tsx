@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { InventoryLocationOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
+import { AsyncOptionPicker, type AsyncRichDropdownOption } from "@/engines/picker"
 import {
   INVENTORY_LOCATIONS_SEARCH_QUERY_KEY,
   searchInventoryLocationsRequest,
@@ -75,35 +75,21 @@ export function LocationPicker({
     [warehouseId],
   )
 
-  const controller = useAsyncRichDropdownController<InventoryLocationOption>({
-    bucketKey,
-    pagedSearchFn,
-    initialOptions,
-    enabled,
-  })
-
-  const options = useMemo<AsyncRichDropdownOption[]>(
-    () => controller.options.map(toDropdownOption),
-    [controller.options],
-  )
-
-  const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
-    if (!value) return null
-    const label = selectedLabel ?? value
-    return { id: value, title: label }
-  }, [selectedLabel, value])
+  // Value IS the location; fall back to it when no label is supplied.
+  const resolvedSelectedLabel = value !== null ? selectedLabel ?? value : selectedLabel
 
   return (
-    <AsyncRichDropdown
+    <AsyncOptionPicker<InventoryLocationOption>
       value={value}
       onChange={onChange}
-      options={options}
-      selectedOption={selectedOption}
-      query={controller.query}
-      onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
-      errorMessage={controller.errorMessage}
-      placeholder={enabled ? placeholder : disabledPlaceholder}
+      selectedLabel={resolvedSelectedLabel}
+      bucketKey={bucketKey}
+      pagedSearchFn={pagedSearchFn}
+      toOption={toDropdownOption}
+      initialOptions={initialOptions}
+      enabled={enabled}
+      placeholder={placeholder}
+      disabledPlaceholder={disabledPlaceholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
@@ -112,14 +98,9 @@ export function LocationPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
-      hasMore={controller.hasMore}
-      isFetchingMore={controller.isFetchingMore}
-      onLoadMore={controller.loadMore}
       // Locations are warehouse-derived — refetch on open so newly-typed
       // locations from concurrent inventory edits surface without a reload.
-      onOpenChange={(isOpen) => {
-        if (isOpen) controller.refetch()
-      }}
+      refetchOnOpen
     />
   )
 }

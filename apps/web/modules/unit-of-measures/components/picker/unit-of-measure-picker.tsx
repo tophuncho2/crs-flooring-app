@@ -1,8 +1,7 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
 import type { UnitOfMeasureOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
+import { AsyncOptionPicker, type AsyncRichDropdownOption } from "@/engines/picker"
 import {
   UNIT_OF_MEASURE_OPTIONS_QUERY_KEY,
   searchUnitOfMeasureOptionsRequest,
@@ -56,44 +55,16 @@ export function UnitOfMeasurePicker({
   className,
   initialOptions,
 }: UnitOfMeasurePickerProps) {
-  const controller = useAsyncRichDropdownController<UnitOfMeasureOption>({
-    bucketKey: UNIT_OF_MEASURE_OPTIONS_QUERY_KEY,
-    pagedSearchFn: searchUnitOfMeasureOptionsRequest,
-    initialOptions,
-  })
-
-  const handleChange = useCallback(
-    (id: string | null) => {
-      onChange(id)
-      if (onOptionSelected) {
-        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
-        onOptionSelected(option)
-      }
-    },
-    [onChange, onOptionSelected, controller.options],
-  )
-
-  const options = useMemo<AsyncRichDropdownOption[]>(
-    () => controller.options.map(toDropdownOption),
-    [controller.options],
-  )
-
-  const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
-    if (!value) return null
-    if (selectedLabel) return { id: value, title: selectedLabel }
-    return null
-  }, [selectedLabel, value])
-
   return (
-    <AsyncRichDropdown
+    <AsyncOptionPicker<UnitOfMeasureOption>
       value={value}
-      onChange={handleChange}
-      options={options}
-      selectedOption={selectedOption}
-      query={controller.query}
-      onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
-      errorMessage={controller.errorMessage}
+      onChange={onChange}
+      onOptionSelected={onOptionSelected}
+      selectedLabel={selectedLabel}
+      bucketKey={UNIT_OF_MEASURE_OPTIONS_QUERY_KEY}
+      pagedSearchFn={searchUnitOfMeasureOptionsRequest}
+      toOption={toDropdownOption}
+      initialOptions={initialOptions}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
@@ -103,9 +74,6 @@ export function UnitOfMeasurePicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
-      hasMore={controller.hasMore}
-      isFetchingMore={controller.isFetchingMore}
-      onLoadMore={controller.loadMore}
     />
   )
 }

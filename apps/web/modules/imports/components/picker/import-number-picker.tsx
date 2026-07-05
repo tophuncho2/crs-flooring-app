@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { ImportOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
+import { AsyncOptionPicker, type AsyncRichDropdownOption } from "@/engines/picker"
 import {
   IMPORTS_OPTIONS_QUERY_KEY,
   searchImportOptionsRequest,
@@ -88,35 +88,23 @@ export function ImportNumberPicker({
     [warehouseId],
   )
 
-  const controller = useAsyncRichDropdownController<ImportOption>({
-    bucketKey,
-    pagedSearchFn,
-    initialOptions,
-    enabled,
-  })
-
-  const options = useMemo<AsyncRichDropdownOption[]>(
-    () => controller.options.map(toDropdownOption),
-    [controller.options],
-  )
-
-  const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
-    if (!value) return null
-    if (selectedLabel) return { id: value, title: selectedLabel }
-    return { id: value, title: `#IMP-${value}` }
-  }, [selectedLabel, value])
+  // Value IS the import number; fall back to a formatted label when no
+  // pre-resolved label is supplied so the trigger stays labelled.
+  const resolvedSelectedLabel =
+    value !== null ? selectedLabel ?? `#IMP-${value}` : selectedLabel
 
   return (
-    <AsyncRichDropdown
+    <AsyncOptionPicker<ImportOption>
       value={value}
       onChange={onChange}
-      options={options}
-      selectedOption={selectedOption}
-      query={controller.query}
-      onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading}
-      errorMessage={controller.errorMessage}
-      placeholder={enabled ? placeholder : disabledPlaceholder}
+      selectedLabel={resolvedSelectedLabel}
+      bucketKey={bucketKey}
+      pagedSearchFn={pagedSearchFn}
+      toOption={toDropdownOption}
+      initialOptions={initialOptions}
+      enabled={enabled}
+      placeholder={placeholder}
+      disabledPlaceholder={disabledPlaceholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
@@ -125,9 +113,6 @@ export function ImportNumberPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
-      hasMore={controller.hasMore}
-      isFetchingMore={controller.isFetchingMore}
-      onLoadMore={controller.loadMore}
     />
   )
 }

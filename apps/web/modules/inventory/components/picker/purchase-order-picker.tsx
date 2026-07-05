@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { InventoryPurchaseOrderOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
+import { AsyncOptionPicker, type AsyncRichDropdownOption } from "@/engines/picker"
 import {
   INVENTORY_PURCHASE_ORDERS_SEARCH_QUERY_KEY,
   searchInventoryPurchaseOrderNumbersRequest,
@@ -64,34 +64,19 @@ export function PurchaseOrderPicker({
     [],
   )
 
-  const controller = useAsyncRichDropdownController<InventoryPurchaseOrderOption>({
-    bucketKey,
-    pagedSearchFn,
-    initialOptions,
-    enabled,
-  })
-
-  const options = useMemo<AsyncRichDropdownOption[]>(
-    () => controller.options.map(toDropdownOption),
-    [controller.options],
-  )
-
-  const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
-    if (!value) return null
-    const label = selectedLabel ?? value
-    return { id: value, title: label }
-  }, [selectedLabel, value])
+  // Value IS the PO number; fall back to it when no label is supplied.
+  const resolvedSelectedLabel = value !== null ? selectedLabel ?? value : selectedLabel
 
   return (
-    <AsyncRichDropdown
+    <AsyncOptionPicker<InventoryPurchaseOrderOption>
       value={value}
       onChange={onChange}
-      options={options}
-      selectedOption={selectedOption}
-      query={controller.query}
-      onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
-      errorMessage={controller.errorMessage}
+      selectedLabel={resolvedSelectedLabel}
+      bucketKey={bucketKey}
+      pagedSearchFn={pagedSearchFn}
+      toOption={toDropdownOption}
+      initialOptions={initialOptions}
+      enabled={enabled}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
@@ -101,14 +86,9 @@ export function PurchaseOrderPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
-      hasMore={controller.hasMore}
-      isFetchingMore={controller.isFetchingMore}
-      onLoadMore={controller.loadMore}
       // PO#s are inventory-derived — refetch on open so newly materialized
       // import PO#s surface without a reload.
-      onOpenChange={(isOpen) => {
-        if (isOpen) controller.refetch()
-      }}
+      refetchOnOpen
     />
   )
 }

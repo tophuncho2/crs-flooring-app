@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { WorkOrderOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
+import { AsyncOptionPicker, type AsyncRichDropdownOption } from "@/engines/picker"
 import {
   WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY,
   searchWorkOrderOptionsRequest,
@@ -88,49 +88,26 @@ export function WorkOrderPicker({
     [],
   )
 
-  const controller = useAsyncRichDropdownController<WorkOrderOption>({
-    bucketKey: WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY,
-    pagedSearchFn,
-    initialOptions,
-    enabled,
-  })
-
-  const handleChange = useCallback(
-    (id: string | null) => {
-      onChange(id)
-      if (onOptionSelected) {
-        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
-        onOptionSelected(option)
-      }
-    },
-    [onChange, onOptionSelected, controller.options],
-  )
-
-  const options = useMemo<AsyncRichDropdownOption[]>(
-    () => controller.options.map(toDropdownOption),
-    [controller.options],
-  )
-
-  const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
-    if (!value) return null
-    if (selectedLabel) {
-      const title = selectedLabel.startsWith("#") ? selectedLabel : `#${selectedLabel}`
-      return { id: value, title }
-    }
-    return null
-  }, [selectedLabel, value])
+  // Trigger renders the WO number `#`-prefixed. Pre-resolve so the base's
+  // generic selected-option logic paints the same label it did before.
+  const resolvedSelectedLabel = useMemo(() => {
+    if (!selectedLabel) return null
+    return selectedLabel.startsWith("#") ? selectedLabel : `#${selectedLabel}`
+  }, [selectedLabel])
 
   return (
-    <AsyncRichDropdown
+    <AsyncOptionPicker<WorkOrderOption>
       value={value}
-      onChange={handleChange}
-      options={options}
-      selectedOption={selectedOption}
-      query={controller.query}
-      onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
-      errorMessage={controller.errorMessage}
-      placeholder={enabled ? placeholder : disabledPlaceholder}
+      onChange={onChange}
+      onOptionSelected={onOptionSelected}
+      selectedLabel={resolvedSelectedLabel}
+      bucketKey={WORK_ORDER_OPTIONS_SEARCH_QUERY_KEY}
+      pagedSearchFn={pagedSearchFn}
+      toOption={toDropdownOption}
+      initialOptions={initialOptions}
+      enabled={enabled}
+      placeholder={placeholder}
+      disabledPlaceholder={disabledPlaceholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
@@ -139,9 +116,6 @@ export function WorkOrderPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
-      hasMore={controller.hasMore}
-      isFetchingMore={controller.isFetchingMore}
-      onLoadMore={controller.loadMore}
     />
   )
 }

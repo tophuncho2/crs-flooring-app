@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import type { ImportOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
+import { AsyncOptionPicker, type AsyncRichDropdownOption } from "@/engines/picker"
 import {
   IMPORTS_OPTIONS_QUERY_KEY,
   searchImportOptionsRequest,
@@ -42,7 +42,8 @@ function joinNonEmpty(...parts: Array<string | null | undefined>): string {
 
 function toDropdownOption(option: ImportOption): AsyncRichDropdownOption | null {
   // Imports may have a blank PO; skip those so the chip never lets you pick
-  // a value that would filter inventory by `purchaseOrderNumber = ''`.
+  // a value that would filter inventory by `purchaseOrderNumber = ''`. The
+  // base dedupes by id, so repeats of the same PO across imports collapse.
   if (!option.purchaseOrderNumber) return null
   const subtitle = joinNonEmpty(`#IMP-${option.importNumber}`)
   return {
@@ -85,43 +86,22 @@ export function PurchaseOrderNumberPicker({
     [warehouseId],
   )
 
-  const controller = useAsyncRichDropdownController<ImportOption>({
-    bucketKey,
-    pagedSearchFn,
-    initialOptions,
-    enabled,
-  })
-
-  const options = useMemo<AsyncRichDropdownOption[]>(() => {
-    const out: AsyncRichDropdownOption[] = []
-    const seen = new Set<string>()
-    for (const option of controller.options) {
-      const mapped = toDropdownOption(option)
-      if (!mapped) continue
-      if (seen.has(mapped.id)) continue
-      seen.add(mapped.id)
-      out.push(mapped)
-    }
-    return out
-  }, [controller.options])
-
-  const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
-    if (!value) return null
-    if (selectedLabel) return { id: value, title: selectedLabel }
-    return { id: value, title: `PO# ${value}` }
-  }, [selectedLabel, value])
+  // Value IS the PO number; fall back to a formatted label when none supplied.
+  const resolvedSelectedLabel =
+    value !== null ? selectedLabel ?? `PO# ${value}` : selectedLabel
 
   return (
-    <AsyncRichDropdown
+    <AsyncOptionPicker<ImportOption>
       value={value}
       onChange={onChange}
-      options={options}
-      selectedOption={selectedOption}
-      query={controller.query}
-      onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading}
-      errorMessage={controller.errorMessage}
-      placeholder={enabled ? placeholder : disabledPlaceholder}
+      selectedLabel={resolvedSelectedLabel}
+      bucketKey={bucketKey}
+      pagedSearchFn={pagedSearchFn}
+      toOption={toDropdownOption}
+      initialOptions={initialOptions}
+      enabled={enabled}
+      placeholder={placeholder}
+      disabledPlaceholder={disabledPlaceholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
@@ -130,9 +110,6 @@ export function PurchaseOrderNumberPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
-      hasMore={controller.hasMore}
-      isFetchingMore={controller.isFetchingMore}
-      onLoadMore={controller.loadMore}
     />
   )
 }
