@@ -1,8 +1,7 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
 import type { JobTypeOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
+import { AsyncOptionPicker, type AsyncRichDropdownOption } from "@/engines/picker"
 import {
   JOB_TYPE_OPTIONS_QUERY_KEY,
   searchJobTypeOptionsRequest,
@@ -55,45 +54,16 @@ export function JobTypePicker({
   className,
   initialOptions,
 }: JobTypePickerProps) {
-  const controller = useAsyncRichDropdownController<JobTypeOption>({
-    bucketKey: JOB_TYPE_OPTIONS_QUERY_KEY,
-    searchFn: searchJobTypeOptionsRequest,
-    initialOptions,
-  })
-
-  const options = useMemo<AsyncRichDropdownOption[]>(
-    () => controller.options.map(toDropdownOption),
-    [controller.options],
-  )
-
-  const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
-    if (!value) return null
-    if (selectedLabel) return { id: value, title: selectedLabel }
-    return null
-  }, [selectedLabel, value])
-
-  const handleChange = useCallback(
-    (next: string | null) => {
-      onChange(next)
-      if (!onOptionSelected) return
-      const option = next
-        ? controller.options.find((candidate) => candidate.id === next) ?? null
-        : null
-      onOptionSelected(option)
-    },
-    [onChange, onOptionSelected, controller.options],
-  )
-
   return (
-    <AsyncRichDropdown
+    <AsyncOptionPicker<JobTypeOption>
       value={value}
-      onChange={handleChange}
-      options={options}
-      selectedOption={selectedOption}
-      query={controller.query}
-      onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
-      errorMessage={controller.errorMessage}
+      onChange={onChange}
+      onOptionSelected={onOptionSelected}
+      selectedLabel={selectedLabel}
+      bucketKey={JOB_TYPE_OPTIONS_QUERY_KEY}
+      searchFn={searchJobTypeOptionsRequest}
+      toOption={toDropdownOption}
+      initialOptions={initialOptions}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}

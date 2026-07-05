@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { formatTemplatePlannedProductsCount, type TemplateOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
+import { AsyncOptionPicker, type AsyncRichDropdownOption } from "@/engines/picker"
 import {
   TEMPLATE_OPTIONS_QUERY_KEY,
   searchTemplateOptionsRequest,
@@ -97,45 +97,18 @@ export function TemplatePicker({
     [propertyId, entityId],
   )
 
-  const controller = useAsyncRichDropdownController<TemplateOption>({
-    bucketKey,
-    pagedSearchFn,
-    initialOptions,
-    enabled,
-  })
-
-  const handleChange = useCallback(
-    (id: string | null) => {
-      onChange(id)
-      if (onOptionSelected) {
-        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
-        onOptionSelected(option)
-      }
-    },
-    [onChange, onOptionSelected, controller.options],
-  )
-
-  const options = useMemo<AsyncRichDropdownOption[]>(
-    () => controller.options.map(toDropdownOption),
-    [controller.options],
-  )
-
-  const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
-    if (!value) return null
-    if (selectedLabel) return { id: value, title: selectedLabel }
-    return null
-  }, [selectedLabel, value])
-
   return (
-    <AsyncRichDropdown
+    <AsyncOptionPicker<TemplateOption>
       value={value}
-      onChange={handleChange}
-      options={options}
-      selectedOption={selectedOption}
-      query={controller.query}
-      onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading}
-      errorMessage={controller.errorMessage}
+      onChange={onChange}
+      onOptionSelected={onOptionSelected}
+      selectedLabel={selectedLabel}
+      bucketKey={bucketKey}
+      pagedSearchFn={pagedSearchFn}
+      toOption={toDropdownOption}
+      initialOptions={initialOptions}
+      enabled={enabled}
+      stackSubtitles
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
@@ -145,10 +118,6 @@ export function TemplatePicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
-      hasMore={controller.hasMore}
-      isFetchingMore={controller.isFetchingMore}
-      onLoadMore={controller.loadMore}
-      stackSubtitles
     />
   )
 }

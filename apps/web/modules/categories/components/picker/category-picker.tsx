@@ -1,8 +1,7 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
 import type { CategoryOption } from "@builders/domain"
-import { AsyncRichDropdown, type AsyncRichDropdownOption, useAsyncRichDropdownController } from "@/engines/picker"
+import { AsyncOptionPicker, type AsyncRichDropdownOption } from "@/engines/picker"
 import {
   CATEGORY_OPTIONS_QUERY_KEY,
   searchCategoryOptionsRequest,
@@ -55,44 +54,16 @@ export function CategoryPicker({
   className,
   initialOptions,
 }: CategoryPickerProps) {
-  const controller = useAsyncRichDropdownController<CategoryOption>({
-    bucketKey: CATEGORY_OPTIONS_QUERY_KEY,
-    pagedSearchFn: searchCategoryOptionsRequest,
-    initialOptions,
-  })
-
-  const handleChange = useCallback(
-    (id: string | null) => {
-      onChange(id)
-      if (onOptionSelected) {
-        const option = id ? controller.options.find((o) => o.id === id) ?? null : null
-        onOptionSelected(option)
-      }
-    },
-    [onChange, onOptionSelected, controller.options],
-  )
-
-  const options = useMemo<AsyncRichDropdownOption[]>(
-    () => controller.options.map(toDropdownOption),
-    [controller.options],
-  )
-
-  const selectedOption = useMemo<AsyncRichDropdownOption | null>(() => {
-    if (!value) return null
-    if (selectedLabel) return { id: value, title: selectedLabel }
-    return null
-  }, [selectedLabel, value])
-
   return (
-    <AsyncRichDropdown
+    <AsyncOptionPicker<CategoryOption>
       value={value}
-      onChange={handleChange}
-      options={options}
-      selectedOption={selectedOption}
-      query={controller.query}
-      onQueryChange={controller.onQueryChange}
-      isLoading={controller.isLoading || controller.isFetching}
-      errorMessage={controller.errorMessage}
+      onChange={onChange}
+      onOptionSelected={onOptionSelected}
+      selectedLabel={selectedLabel}
+      bucketKey={CATEGORY_OPTIONS_QUERY_KEY}
+      pagedSearchFn={searchCategoryOptionsRequest}
+      toOption={toDropdownOption}
+      initialOptions={initialOptions}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
@@ -102,9 +73,6 @@ export function CategoryPicker({
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
-      hasMore={controller.hasMore}
-      isFetchingMore={controller.isFetchingMore}
-      onLoadMore={controller.loadMore}
     />
   )
 }

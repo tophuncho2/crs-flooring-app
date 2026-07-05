@@ -1,6 +1,7 @@
 export * from "./contracts"
 export * from "./controls"
 export * from "./client"
+export * from "./async-option"
 export * from "./chrome"
 export * from "./combo"
 export * from "./filter"
