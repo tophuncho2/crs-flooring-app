@@ -13,9 +13,12 @@ import { PlannedImportRemoveButton } from "./row-controls"
 type PlannedImportGridRow = ImportFilterRowDraft & { id: string }
 
 const PLANNED_IMPORT_COLUMNS: DataTableColumn<PlannedImportGridRow>[] = [
-  { key: "product", label: "Product", minWidth: 260, grow: 2 },
+  // Product is the sole grow column, so it absorbs all leftover width and
+  // stretches right; Stock Ordered stays pinned at 170 (just pushed right) and
+  // Unit is pinned just barely wider than it.
+  { key: "product", label: "Product", minWidth: 260, grow: 1 },
   { key: "stockOrdered", label: "Stock Ordered", width: 170, align: "end" },
-  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
+  { key: "unit", label: "Unit", width: 185 },
 ]
 
 /**
