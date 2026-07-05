@@ -13,7 +13,9 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
-import { usePickedOptionLabel } from "@/engines/picker"
+import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
+import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
 import type { TemplatesListFilters } from "@builders/application"
 import {
   LIST_TEMPLATES_PAGE_SIZE,
@@ -32,8 +34,6 @@ import {
   TEMPLATES_MAX_SORT_LEVELS,
   TEMPLATES_SORT_OPTIONS,
 } from "./table/templates-list-columns"
-import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
-import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 
 const TEMPLATES_FILTERABLE_FIELDS = [
   "entityId",
@@ -212,20 +212,30 @@ export default function TemplatesClient({
           icon={SlidersHorizontal}
           active={hasActiveFilterTool}
         >
-          <EntityFilterChip
+          <FilterPickerChip<EntityOption>
             value={selectedEntityId}
-            selectedLabel={entityFilter.selectedLabel}
             onChange={handleEntityChange}
+            selectedLabel={entityFilter.selectedLabel}
             onOptionSelected={entityFilter.onOptionSelected}
-            initialOptions={initialEntityOptions}
-          />
-          <PropertyFilterChip
+            nounSingular="Entity"
+            nounPlural="entities"
+            subject="templates"
+          >
+            {(chrome) => (
+              <EntityTypePicker {...chrome} initialOptions={initialEntityOptions} />
+            )}
+          </FilterPickerChip>
+          <FilterPickerChip<PropertyOption>
             value={selectedPropertyId}
-            selectedLabel={propertyFilter.selectedLabel}
-            entityId={selectedEntityId}
             onChange={handlePropertyChange}
+            selectedLabel={propertyFilter.selectedLabel}
             onOptionSelected={propertyFilter.onOptionSelected}
-          />
+            nounSingular="Property"
+            nounPlural="properties"
+            subject="templates"
+          >
+            {(chrome) => <PropertyPicker {...chrome} entityId={selectedEntityId} />}
+          </FilterPickerChip>
         </ToolbarMenuButton>
 
         {/* Search — the per-field text bars (unit type + description). */}

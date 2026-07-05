@@ -15,7 +15,8 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
-import { usePickedOptionLabel } from "@/engines/picker"
+import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
 import type { ListInput, PropertiesListFilters } from "@builders/application"
 import {
   LIST_PROPERTIES_PAGE_SIZE,
@@ -37,7 +38,6 @@ import {
   PROPERTIES_MAX_SORT_LEVELS,
   PROPERTIES_SORT_OPTIONS,
 } from "./table/properties-list-columns"
-import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
 
 const PROPERTIES_FILTERABLE_FIELDS = ["propNumber", "entityId", "state"] as const
 
@@ -247,13 +247,19 @@ export default function PropertiesClient({
           icon={SlidersHorizontal}
           active={hasActiveFilterTool}
         >
-          <EntityFilterChip
+          <FilterPickerChip<EntityOption>
             value={selectedEntityId}
-            selectedLabel={entityFilter.selectedLabel}
             onChange={handleEntityChange}
+            selectedLabel={entityFilter.selectedLabel}
             onOptionSelected={entityFilter.onOptionSelected}
-            initialOptions={initialEntityOptions}
-          />
+            nounSingular="Entity"
+            nounPlural="entities"
+            subject="properties"
+          >
+            {(chrome) => (
+              <EntityTypePicker {...chrome} initialOptions={initialEntityOptions} />
+            )}
+          </FilterPickerChip>
           <StateSearchControl
             value={selectedState}
             onChange={handleStateChange}

@@ -13,7 +13,8 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
-import { usePickedOptionLabel } from "@/engines/picker"
+import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
+import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import type { ListInput, ProductsListFilters } from "@builders/application"
 import {
   LIST_PRODUCTS_PAGE_SIZE,
@@ -26,7 +27,6 @@ import {
 } from "@/modules/products/data/list-products-request"
 import { useProductsListController } from "@/modules/products/controllers/use-products-list-controller"
 import { ProductsTable } from "./products-table"
-import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
 
 const PRODUCTS_FILTERABLE_FIELDS = [
   "prodNumber",
@@ -261,13 +261,19 @@ export default function ProductsClient({
           icon={SlidersHorizontal}
           active={hasActiveFilterTool}
         >
-          <CategoryFilterChip
+          <FilterPickerChip<CategoryOption>
             value={selectedCategoryId}
-            selectedLabel={categoryFilter.selectedLabel}
             onChange={handleCategoryChange}
+            selectedLabel={categoryFilter.selectedLabel}
             onOptionSelected={categoryFilter.onOptionSelected}
-            initialOptions={initialCategoryOptions}
-          />
+            nounSingular="Category"
+            nounPlural="categories"
+            subject="products"
+          >
+            {(chrome) => (
+              <CategoryPicker {...chrome} initialOptions={initialCategoryOptions} />
+            )}
+          </FilterPickerChip>
         </ToolbarMenuButton>
 
         {/* Search — full-text + PROD # exact number + the color/style/naming

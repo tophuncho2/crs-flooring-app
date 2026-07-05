@@ -13,7 +13,8 @@ import {
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
-import { usePickedOptionLabel } from "@/engines/picker"
+import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
+import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import type { ImportsListFilters, ListInput } from "@builders/application"
 import {
   LIST_IMPORTS_PAGE_SIZE,
@@ -26,7 +27,6 @@ import {
 } from "@/modules/imports/data/list-imports-request"
 import { useImportsListController } from "@/modules/imports/controllers/list/use-imports-list-controller"
 import { ImportsTable } from "./imports-table"
-import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 
 const IMPORTS_FILTERABLE_FIELDS = ["impNumber", "warehouseId"] as const
 
@@ -196,13 +196,19 @@ export default function ImportsClient({
           icon={SlidersHorizontal}
           active={hasActiveFilterTool}
         >
-          <WarehouseFilterChip
+          <FilterPickerChip<WarehouseOption>
             value={selectedWarehouseId}
-            selectedLabel={warehouseFilter.selectedLabel}
             onChange={handleWarehouseChange}
+            selectedLabel={warehouseFilter.selectedLabel}
             onOptionSelected={warehouseFilter.onOptionSelected}
-            initialOptions={initialWarehouseOptions}
-          />
+            nounSingular="Warehouse"
+            nounPlural="warehouses"
+            subject="imports"
+          >
+            {(chrome) => (
+              <WarehousePicker {...chrome} initialOptions={initialWarehouseOptions} />
+            )}
+          </FilterPickerChip>
         </ToolbarMenuButton>
 
         {/* Search — full-text PO # + the IMP # exact-number bar, mirrors

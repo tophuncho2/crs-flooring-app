@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import { SortMenuBody, useFetchListController, useListSelection, ListExportButton, LIST_FRESHNESS_STANDARD, DebouncedSearchControl, ListActionBar, ListPageShell, ListPageFeedback, ToolbarMenuButton, ListCreateButtonPortal } from "@/engines/list-view"
-import { usePickedOptionLabel } from "@/engines/picker"
+import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
+import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
+import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
+import { ProductPicker } from "@/modules/products/components/picker/product-picker"
 import type { InventoryListFilters, ListInput } from "@builders/application"
 import {
   INVENTORY_EXPORT_COLUMNS,
@@ -33,9 +36,6 @@ import { LocationPicker } from "@/modules/inventory/components/picker/location-p
 import { PurchaseOrderPicker } from "@/modules/inventory/components/picker/purchase-order-picker"
 import { ImportNumberPicker } from "@/modules/inventory/components/picker/import-number-picker"
 import { ArchiveSegmentedControl } from "./toolbar-controls/archive-segmented-control"
-import { CategoryFilterChip } from "./toolbar-controls/category-filter-chip"
-import { ProductFilterChip } from "./toolbar-controls/product-filter-chip"
-import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 
 const INVENTORY_FILTERABLE_FIELDS = [
   "warehouseId",
@@ -443,13 +443,19 @@ export default function InventoryClient({
           icon={SlidersHorizontal}
           active={hasActiveFilterTool}
         >
-          <WarehouseFilterChip
+          <FilterPickerChip<WarehouseOption>
             value={selectedWarehouseId}
-            selectedLabel={warehouseFilter.selectedLabel}
             onChange={handleWarehouseChange}
+            selectedLabel={warehouseFilter.selectedLabel}
             onOptionSelected={warehouseFilter.onOptionSelected}
-            initialOptions={initialWarehouseOptions}
-          />
+            nounSingular="Warehouse"
+            nounPlural="warehouses"
+            subject="inventory"
+          >
+            {(chrome) => (
+              <WarehousePicker {...chrome} initialOptions={initialWarehouseOptions} />
+            )}
+          </FilterPickerChip>
           <LocationPicker
             value={locationValue || null}
             onChange={handleLocationChange}
@@ -458,20 +464,30 @@ export default function InventoryClient({
             disabledPlaceholder="Select warehouse first"
             ariaLabel="Filter inventory by location"
           />
-          <CategoryFilterChip
+          <FilterPickerChip<CategoryOption>
             value={selectedCategoryId}
-            selectedLabel={categoryFilter.selectedLabel}
             onChange={handleCategoryChange}
+            selectedLabel={categoryFilter.selectedLabel}
             onOptionSelected={categoryFilter.onOptionSelected}
-            initialOptions={initialCategoryOptions}
-          />
-          <ProductFilterChip
+            nounSingular="Category"
+            nounPlural="categories"
+            subject="inventory"
+          >
+            {(chrome) => (
+              <CategoryPicker {...chrome} initialOptions={initialCategoryOptions} />
+            )}
+          </FilterPickerChip>
+          <FilterPickerChip<ProductOption>
             value={selectedProductId}
-            selectedLabel={productFilter.selectedLabel}
-            categoryId={selectedCategoryId}
             onChange={handleProductChange}
+            selectedLabel={productFilter.selectedLabel}
             onOptionSelected={productFilter.onOptionSelected}
-          />
+            nounSingular="Product"
+            nounPlural="products"
+            subject="inventory"
+          >
+            {(chrome) => <ProductPicker {...chrome} categoryId={selectedCategoryId} />}
+          </FilterPickerChip>
           <PurchaseOrderPicker
             value={selectedPurchaseOrderNumber}
             onChange={handlePurchaseOrderChange}

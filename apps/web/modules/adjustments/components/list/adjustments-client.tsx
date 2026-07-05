@@ -13,7 +13,7 @@ import {
   type ProductOption,
   type WarehouseOption,
 } from "@builders/domain"
-import { usePickedOptionLabel } from "@/engines/picker"
+import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
 import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
 import { CategoryPicker } from "@/modules/categories/components/picker/category-picker"
 import { ProductPicker } from "@/modules/products/components/picker/product-picker"
@@ -349,42 +349,43 @@ export default function AdjustmentsClient({
           icon={SlidersHorizontal}
           active={hasActiveFilterTool}
         >
-          <WarehousePicker
+          <FilterPickerChip<WarehouseOption>
             value={selectedWarehouseId}
-            selectedLabel={warehouseFilter.selectedLabel}
             onChange={handleWarehouseChange}
+            selectedLabel={warehouseFilter.selectedLabel}
             onOptionSelected={warehouseFilter.onOptionSelected}
-            initialOptions={initialWarehouseOptions}
-            placeholder="Warehouse"
-            searchPlaceholder="Search warehouses"
-            emptyMessage="No warehouses match"
-            clearLabel="Clear filter"
-            ariaLabel="Filter adjustments by warehouse"
-          />
-          <CategoryPicker
+            nounSingular="Warehouse"
+            nounPlural="warehouses"
+            subject="adjustments"
+          >
+            {(chrome) => (
+              <WarehousePicker {...chrome} initialOptions={initialWarehouseOptions} />
+            )}
+          </FilterPickerChip>
+          <FilterPickerChip<CategoryOption>
             value={selectedCategoryId}
-            selectedLabel={categoryFilter.selectedLabel}
             onChange={handleCategoryChange}
+            selectedLabel={categoryFilter.selectedLabel}
             onOptionSelected={categoryFilter.onOptionSelected}
-            initialOptions={initialCategoryOptions}
-            placeholder="Category"
-            searchPlaceholder="Search categories"
-            emptyMessage="No categories match"
-            clearLabel="Clear filter"
-            ariaLabel="Filter adjustments by category"
-          />
-          <ProductPicker
+            nounSingular="Category"
+            nounPlural="categories"
+            subject="adjustments"
+          >
+            {(chrome) => (
+              <CategoryPicker {...chrome} initialOptions={initialCategoryOptions} />
+            )}
+          </FilterPickerChip>
+          <FilterPickerChip<ProductOption>
             value={selectedProductId}
-            selectedLabel={productFilter.selectedLabel}
             onChange={handleProductChange}
+            selectedLabel={productFilter.selectedLabel}
             onOptionSelected={productFilter.onOptionSelected}
-            categoryId={selectedCategoryId}
-            placeholder="Product"
-            searchPlaceholder="Search products"
-            emptyMessage="No products match"
-            clearLabel="Clear filter"
-            ariaLabel="Filter adjustments by product"
-          />
+            nounSingular="Product"
+            nounPlural="products"
+            subject="adjustments"
+          >
+            {(chrome) => <ProductPicker {...chrome} categoryId={selectedCategoryId} />}
+          </FilterPickerChip>
         </ToolbarMenuButton>
 
         {/* Search — the five identity bars. Adj # is the exact record-number

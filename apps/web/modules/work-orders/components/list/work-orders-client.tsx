@@ -16,7 +16,12 @@ import {
   useListSelection,
   LIST_FRESHNESS_STANDARD,
 } from "@/engines/list-view"
-import { usePickedOptionLabel } from "@/engines/picker"
+import { FilterPickerChip, usePickedOptionLabel } from "@/engines/picker"
+import { EntityTypePicker } from "@/modules/entities/components/picker/entity-type-picker"
+import { PropertyPicker } from "@/modules/properties/components/picker/property-picker"
+import { TemplatePicker } from "@/modules/templates/components/picker/template-picker"
+import { WarehousePicker } from "@/modules/warehouse/components/picker/warehouse-picker"
+import { JobTypePicker } from "@/modules/job-types/components/picker/job-type-picker"
 import type { WorkOrdersListFilters } from "@builders/application"
 import { WORK_ORDER_EXPORT_COLUMNS } from "@builders/domain"
 import type {
@@ -41,13 +46,8 @@ import {
   WORK_ORDERS_MAX_SORT_LEVELS,
   WORK_ORDERS_SORT_OPTIONS,
 } from "./table/work-orders-list-columns"
-import { JobTypeFilterChip } from "./toolbar-controls/job-type-filter-chip"
-import { EntityFilterChip } from "./toolbar-controls/entity-filter-chip"
-import { PropertyFilterChip } from "./toolbar-controls/property-filter-chip"
 import { ScheduledForFilterBody } from "./toolbar-controls/scheduled-for-filter-body"
-import { TemplateFilterChip } from "./toolbar-controls/template-filter-chip"
 import { VacancyFilterChip } from "./toolbar-controls/vacancy-filter-chip"
-import { WarehouseFilterChip } from "./toolbar-controls/warehouse-filter-chip"
 
 export default function WorkOrdersClient({
   initialSearchQuery,
@@ -422,44 +422,81 @@ export default function WorkOrdersClient({
           icon={SlidersHorizontal}
           active={hasActiveFilterTool}
         >
-          <EntityFilterChip
+          <FilterPickerChip<EntityOption>
             value={selectedEntityId}
-            selectedLabel={entityFilter.selectedLabel}
             onChange={handleEntityChange}
+            selectedLabel={entityFilter.selectedLabel}
             onOptionSelected={entityFilter.onOptionSelected}
-            initialOptions={initialEntityOptions}
-          />
-          <PropertyFilterChip
+            nounSingular="Entity"
+            nounPlural="entities"
+            subject="work orders"
+          >
+            {(chrome) => (
+              <EntityTypePicker {...chrome} initialOptions={initialEntityOptions} />
+            )}
+          </FilterPickerChip>
+          <FilterPickerChip<PropertyOption>
             value={selectedPropertyId}
-            selectedLabel={propertyFilter.selectedLabel}
-            entityId={selectedEntityId}
             onChange={handlePropertyChange}
+            selectedLabel={propertyFilter.selectedLabel}
             onOptionSelected={propertyFilter.onOptionSelected}
-            initialOptions={initialPropertyOptions}
-          />
-          <TemplateFilterChip
+            nounSingular="Property"
+            nounPlural="properties"
+            subject="work orders"
+          >
+            {(chrome) => (
+              <PropertyPicker
+                {...chrome}
+                entityId={selectedEntityId}
+                initialOptions={initialPropertyOptions}
+              />
+            )}
+          </FilterPickerChip>
+          <FilterPickerChip<TemplateOption>
             value={selectedTemplateId}
-            selectedLabel={templateFilter.selectedLabel}
-            propertyId={selectedPropertyId}
-            entityId={selectedEntityId}
             onChange={handleTemplateChange}
+            selectedLabel={templateFilter.selectedLabel}
             onOptionSelected={templateFilter.onOptionSelected}
-            initialOptions={initialTemplateOptions}
-          />
-          <WarehouseFilterChip
+            nounSingular="Template"
+            nounPlural="templates"
+            subject="work orders"
+          >
+            {(chrome) => (
+              <TemplatePicker
+                {...chrome}
+                propertyId={selectedPropertyId}
+                entityId={selectedEntityId}
+                requireProperty={false}
+                initialOptions={initialTemplateOptions}
+              />
+            )}
+          </FilterPickerChip>
+          <FilterPickerChip<WarehouseOption>
             value={selectedWarehouseId}
-            selectedLabel={warehouseFilter.selectedLabel}
             onChange={handleWarehouseChange}
+            selectedLabel={warehouseFilter.selectedLabel}
             onOptionSelected={warehouseFilter.onOptionSelected}
-            initialOptions={initialWarehouseOptions}
-          />
-          <JobTypeFilterChip
+            nounSingular="Warehouse"
+            nounPlural="warehouses"
+            subject="work orders"
+          >
+            {(chrome) => (
+              <WarehousePicker {...chrome} initialOptions={initialWarehouseOptions} />
+            )}
+          </FilterPickerChip>
+          <FilterPickerChip<JobTypeOption>
             value={selectedJobTypeId}
-            selectedLabel={jobTypeFilter.selectedLabel}
             onChange={handleJobTypeChange}
+            selectedLabel={jobTypeFilter.selectedLabel}
             onOptionSelected={jobTypeFilter.onOptionSelected}
-            initialOptions={initialJobTypeOptions}
-          />
+            nounSingular="Job type"
+            nounPlural="job types"
+            subject="work orders"
+          >
+            {(chrome) => (
+              <JobTypePicker {...chrome} initialOptions={initialJobTypeOptions} />
+            )}
+          </FilterPickerChip>
           <VacancyFilterChip value={selectedVacancy} onChange={handleVacancyChange} />
           <ScheduledForFilterBody
             start={selectedScheduledStart}
