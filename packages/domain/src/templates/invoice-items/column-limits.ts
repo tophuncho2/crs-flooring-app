@@ -4,4 +4,4 @@
  * by the API validators and UI cells so the cap lives in one TS source.
  */
 
-export const TEMPLATE_INVOICE_ITEM_NOTES_MAX = 30
+export const TEMPLATE_INVOICE_ITEM_NOTES_MAX = 80
