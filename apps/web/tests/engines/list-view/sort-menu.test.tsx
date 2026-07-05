@@ -86,8 +86,8 @@ describe("SortMenuBody", () => {
         onChange={vi.fn()}
       />,
     )
-    // number + desc → "High → Low".
-    expect(getByLabelText("Direction for Stock: High → Low. Toggle.")).toBeTruthy()
+    // number + desc → "9" (the top-of-list token).
+    expect(getByLabelText("Direction for Stock: 9. Toggle.")).toBeTruthy()
   })
 
   it("reorders priority via the move-down control", async () => {

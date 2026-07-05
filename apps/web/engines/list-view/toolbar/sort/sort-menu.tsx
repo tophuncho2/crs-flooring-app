@@ -28,14 +28,15 @@ function joinClasses(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ")
 }
 
-// Per-type direction labels. The control reads as plain English ("A → Z",
-// "Newest") instead of the opaque "Asc/Desc", so the chosen order is legible at
-// a glance. `text` is the fallback for an untyped column.
+// Per-type direction labels. Each is a single representative token (the value at
+// the top of the list for that direction) rendered before the ↑/↓ arrow, so the
+// chosen order reads at a glance without the opaque "Asc/Desc". `text` is the
+// fallback for an untyped column.
 const DIRECTION_LABELS: Record<SortValueType, { asc: string; desc: string }> = {
-  text: { asc: "A → Z", desc: "Z → A" },
-  number: { asc: "Low → High", desc: "High → Low" },
+  text: { asc: "A", desc: "Z" },
+  number: { asc: "1", desc: "9" },
   date: { asc: "Oldest", desc: "Newest" },
-  time: { asc: "AM first", desc: "PM first" },
+  time: { asc: "AM", desc: "PM" },
 }
 
 function directionLabels(type: SortValueType | undefined) {
@@ -208,12 +209,12 @@ export function SortMenuBody({
                       title={`Sorting ${activeLabel} — click to flip`}
                       className={DIRECTION_CLASS_NAME}
                     >
+                      {activeLabel}
                       {level.direction === "asc" ? (
                         <ArrowUp size={13} strokeWidth={2.5} aria-hidden="true" />
                       ) : (
                         <ArrowDown size={13} strokeWidth={2.5} aria-hidden="true" />
                       )}
-                      {activeLabel}
                     </button>
                     <button
                       type="button"
