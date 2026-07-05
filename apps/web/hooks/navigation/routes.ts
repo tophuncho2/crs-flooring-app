@@ -121,6 +121,33 @@ export function buildTemplateHubHref(options?: {
   return query ? `${TEMPLATE_HUB_BASE}?${query}` : TEMPLATE_HUB_BASE
 }
 
+const WORK_ORDERS_RECORD_BASE = "/dashboard/work-orders"
+
+/**
+ * The single entry point for "open a work order record". Unlike the picker-seeded
+ * record views, a work order has a real `[id]` page — the selected work order rides
+ * as a path param (`/dashboard/work-orders/{id}`). Pass `view` to open straight into
+ * a section (e.g. `"requested"` after a template sync) and `returnTo` so the record's
+ * Back button lands back where the caller came from (the page resolves it via
+ * {@link resolveRecordEntryReturnTo}, falling back to the work-orders list).
+ */
+export function buildWorkOrderRecordHref(
+  workOrderId: string,
+  options?: {
+    view?: string | null
+    returnTo?: string | null
+  },
+): string {
+  const searchParams = new URLSearchParams()
+  if (options?.view) searchParams.set("view", options.view)
+  if (options?.returnTo) searchParams.set("returnTo", options.returnTo)
+
+  const query = searchParams.toString()
+  return query
+    ? `${WORK_ORDERS_RECORD_BASE}/${workOrderId}?${query}`
+    : `${WORK_ORDERS_RECORD_BASE}/${workOrderId}`
+}
+
 const INVENTORY_RECORD_BASE = "/dashboard/inventory/record"
 
 /**

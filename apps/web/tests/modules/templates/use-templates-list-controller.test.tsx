@@ -28,7 +28,7 @@ describe("useTemplatesListController — sync to work order", () => {
     syncTemplateToWorkOrderRequestMock.mockReset()
   })
 
-  it("navigates to the new work order's Requested Material view", async () => {
+  it("navigates to the new work order's Requested Material view, carrying returnTo back to the list", async () => {
     syncTemplateToWorkOrderRequestMock.mockResolvedValue({ workOrder: { id: "wo-9" } })
     const { result } = renderHook(() => useTemplatesListController())
 
@@ -36,6 +36,10 @@ describe("useTemplatesListController — sync to work order", () => {
       await result.current.syncTemplate("tpl-1")
     })
 
-    expect(navigationMocks.push).toHaveBeenCalledWith("/dashboard/work-orders/wo-9?view=requested")
+    // `returnTo` is the current page (mocked `usePathname` → "/dashboard/test") so the
+    // WO record's Back button lands back where the sync launched from, not the WO list.
+    expect(navigationMocks.push).toHaveBeenCalledWith(
+      "/dashboard/work-orders/wo-9?view=requested&returnTo=%2Fdashboard%2Ftest",
+    )
   })
 })

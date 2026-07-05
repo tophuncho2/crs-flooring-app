@@ -11,10 +11,12 @@ import {
   buildTemplateHubHref,
 } from "@/hooks/navigation/routes"
 import { TemplateQuickCreateModal } from "@/modules/templates/components/record/template-quick-create-modal"
+import { TemplateSyncRowOptions } from "@/modules/templates/components/list/template-sync-row-options"
 import { TEMPLATES_LIST_COLUMNS } from "@/modules/templates/components/list/table/templates-list-columns"
 import { renderTemplateRowCell } from "@/modules/templates/components/list/table/templates-row-cell"
 import { useTemplatesSectionTable } from "@/modules/templates/controllers/record/use-templates-section-table"
 import { useTemplatesSectionScope } from "@/modules/templates/controllers/record/use-templates-section-scope"
+import { useTemplatesTableSync } from "@/modules/templates/controllers/record/use-templates-table-sync"
 
 /**
  * The Property record view's §2 templates section, on the canonical
@@ -53,6 +55,10 @@ export function PropertyTemplatesSection({
 
   const returnTo = buildCurrentRecordEntryPath(pathname, searchParams)
 
+  // Row ⋮ "Sync to Work Order" — same action as the templates list. `returnTo` (this
+  // property record URL) rides into the WO href so its Back button returns here.
+  const sync = useTemplatesTableSync(returnTo)
+
   // "+ Template" opens the quick-create modal with THIS property seeded + locked.
   // On create, the choice dialog offers "Go to {template}" or stay in this property.
   const openTemplateCreate = () => setTemplateModalOpen(true)
@@ -74,6 +80,7 @@ export function PropertyTemplatesSection({
   return (
     <RecordItemSection
       title="Templates"
+      noticeError={sync.errorMessage || undefined}
       subHeader={{
         canManage: false,
         showStatus: false,
@@ -95,6 +102,9 @@ export function PropertyTemplatesSection({
         columns={TEMPLATES_LIST_COLUMNS}
         renderCell={renderTemplateRowCell}
         onOpenRow={(row) => openTemplate(row)}
+        rowActions={(row) => (
+          <TemplateSyncRowOptions row={row} syncingId={sync.syncingId} onSync={sync.syncTemplate} />
+        )}
         getRowAriaLabel={(row) => `Open template ${row.templateNumber}`}
         empty={grid.isLoading ? "Searching…" : grid.error ?? "No templates for this property yet."}
         pagination={grid.pagination}
