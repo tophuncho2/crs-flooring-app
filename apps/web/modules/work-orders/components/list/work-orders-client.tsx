@@ -466,7 +466,6 @@ export default function WorkOrdersClient({
                 {...chrome}
                 propertyId={selectedPropertyId}
                 entityId={selectedEntityId}
-                requireProperty={false}
                 initialOptions={initialTemplateOptions}
               />
             )}

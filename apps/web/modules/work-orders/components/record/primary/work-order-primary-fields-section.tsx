@@ -466,7 +466,6 @@ export function WorkOrderPrimaryFieldsSection({
                     onOptionSelected={handleTemplateSelected}
                     propertyId={propertyValue}
                     entityId={entityValue}
-                    requireProperty={false}
                     selectedLabel={templateLabel}
                     placeholder="—"
                     ariaLabel="Template"

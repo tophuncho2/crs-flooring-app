@@ -18,10 +18,9 @@ export type TemplatePickerProps = {
    */
   onOptionSelected?: (option: TemplateOption | null) => void
   /**
-   * Property scope. When `requireProperty` is true (the default, used by the
-   * WO record form) a null value renders the picker disabled with a "Select a
-   * property first" placeholder. When `requireProperty` is false (the list
-   * filter chip) null just means "no property scope".
+   * Optional property scope. When set, narrows the template search to that
+   * property; null just means "no property scope". The picker is always
+   * selectable regardless.
    */
   propertyId: string | null
   /**
@@ -31,19 +30,11 @@ export type TemplatePickerProps = {
    */
   entityId?: string | null
   /**
-   * When true (default), the picker is property-gated: disabled until a
-   * property is selected — the WO record form's contract. Set false to make
-   * the picker always selectable and fetch standalone (the list filter chip),
-   * scoped by whatever propertyId/entityId is passed.
-   */
-  requireProperty?: boolean
-  /**
    * Pre-resolved label for the current `value`. Lets the trigger render the
    * selected template's label even when it isn't in the latest server result.
    */
   selectedLabel?: string | null
   placeholder?: string
-  disabledPlaceholder?: string
   searchPlaceholder?: string
   emptyMessage?: string
   loadingMessage?: string
@@ -74,10 +65,8 @@ export function TemplatePicker({
   onOptionSelected,
   propertyId,
   entityId = null,
-  requireProperty = true,
   selectedLabel = null,
   placeholder = "Select a template",
-  disabledPlaceholder = "Select a property first",
   searchPlaceholder = "Search templates",
   emptyMessage = "No matches",
   loadingMessage = "Searching…",
@@ -90,9 +79,8 @@ export function TemplatePicker({
 }: TemplatePickerProps) {
   const propertyKey = propertyId ?? null
   const entityKey = entityId ?? null
-  // Gated mode (record form): disabled until a property is picked. Standalone
-  // mode (list filter): always selectable, fetches with whatever scope it has.
-  const enabled = requireProperty ? propertyId !== null && !disabled : !disabled
+  // Always selectable; fetches with whatever property/entity scope it has.
+  const enabled = !disabled
 
   const bucketKey = useMemo(
     () => [...TEMPLATE_OPTIONS_QUERY_KEY, propertyKey, entityKey] as const,
@@ -148,12 +136,12 @@ export function TemplatePicker({
       onQueryChange={controller.onQueryChange}
       isLoading={controller.isLoading}
       errorMessage={controller.errorMessage}
-      placeholder={enabled ? placeholder : disabledPlaceholder}
+      placeholder={placeholder}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
       loadingMessage={loadingMessage}
       clearLabel={clearLabel}
-      disabled={disabled || (requireProperty && !propertyId)}
+      disabled={disabled}
       invalid={invalid}
       ariaLabel={ariaLabel}
       className={className}
