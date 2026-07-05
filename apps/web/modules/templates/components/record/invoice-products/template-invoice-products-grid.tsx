@@ -13,11 +13,16 @@ import {
 import type { TemplateInvoiceProductLocal } from "@/modules/templates/controllers/record/invoice-products/use-template-invoice-products-section"
 
 const TEMPLATE_INVOICE_PRODUCTS_COLUMNS: DataTableColumn<TemplateInvoiceProductLocal>[] = [
-  { key: "product", label: "Product", minWidth: 260, grow: 2 },
+  // At the panel's real width the table sits at its min-width floor, so grow
+  // weights never kick in — the FLOORS are what render. Product carries a wide
+  // 360 floor (and is the sole grow column for wide panels), pushing Quantity /
+  // Cost / Unit (all pinned) right as a fixed group; Notes is a pinned 320 tail.
+  // Mirrors the WO Requested Material grid (plus this grid's own Cost column).
+  { key: "product", label: "Product", minWidth: 360, grow: 1 },
   { key: "quantity", label: "Quantity", width: 140, align: "end" },
   { key: "cost", label: "Cost", width: 140, align: "end" },
-  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
-  { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
+  { key: "unit", label: "Unit", width: 150 },
+  { key: "notes", label: "Notes", width: 320 },
 ]
 
 // Pure editable-table body for the Invoice Products side. A structural clone of
