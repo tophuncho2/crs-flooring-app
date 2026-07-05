@@ -22,10 +22,15 @@ import {
  * dropped: adjustments are decoupled, so a material item carries no linked sum.
  */
 const REQUESTED_MATERIAL_COLUMNS: DataTableColumn<WorkOrderMaterialItemLocal>[] = [
-  { key: "product", label: "Product", minWidth: 260, grow: 2 },
+  // At the panel's real width the table sits at its min-width floor, so grow
+  // weights never kick in — the FLOORS are what render. Product carries a wide
+  // 360 floor (and is the sole grow column for wide panels), pushing Quantity
+  // (pinned 140) and Unit (pinned 150) right as a fixed pair; Notes is pinned to
+  // a 320 tail. Mirrors the imports Planned Imports grid intent.
+  { key: "product", label: "Product", minWidth: 360, grow: 1 },
   { key: "quantity", label: "Quantity", width: 140, align: "end" },
-  { key: "unit", label: "Unit", minWidth: 150, grow: 0.7 },
-  { key: "notes", label: "Notes", minWidth: 240, grow: 1.5 },
+  { key: "unit", label: "Unit", width: 150 },
+  { key: "notes", label: "Notes", width: 320 },
 ]
 
 // Two row controls (delete + create-adjustment) share the leading gutter, so it
