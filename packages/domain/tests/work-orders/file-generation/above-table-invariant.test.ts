@@ -105,9 +105,9 @@ describe("work-order documents — above the adjustments table", () => {
       <table class="wo-top-grid">
         <colgroup>
           <col style="width: 13%;" />
-          <col style="width: 37%;" />
+          <col style="width: 28%;" />
           <col style="width: 13%;" />
-          <col style="width: 37%;" />
+          <col style="width: 46%;" />
         </colgroup>
         <tbody>
           <tr>
