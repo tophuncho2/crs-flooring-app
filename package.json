@@ -28,6 +28,7 @@
     "typecheck": "npm run guard:prisma && npm run typecheck --workspace @builders/domain && npm run typecheck --workspace @builders/lib && npm run typecheck --workspace @builders/db && npm run typecheck --workspace @builders/pdf && npm run typecheck --workspace @builders/application && npm run typecheck --workspace @builders/web && npm run typecheck --workspace @builders/relay && npm run typecheck --workspace @builders/worker",
     "check": "bash bin/check.sh",
     "pulse": "bash bin/pulse.sh",
+    "scale": "bash bin/scale.sh",
     "dev-sync": "bash bin/dev-sync.sh",
     "guard:prisma": "npm run guard:prisma --workspace @builders/db",
     "db:generate": "npm run db:generate --workspace @builders/db --",
