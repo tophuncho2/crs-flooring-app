@@ -8,7 +8,7 @@
 # migrations, no writes — so it can never hurt the running system.
 #
 # Scope: §1 Core records · §2 Directory & reference · §3 Imports pipeline ·
-#        §4 Users & access. All four read the prod DB directly (read-only counts).
+#        §4 Users (per-rank). All four read the prod DB directly (read-only counts).
 #
 # Creds: prod-only, read live from the main worktree's .env (single source of
 # truth — no per-branch copies): DATABASE_URL. Override the env file with:
@@ -94,9 +94,7 @@ if command -v psql >/dev/null 2>&1 && [ -n "$DBURL" ]; then
     UNION ALL SELECT 'user_dev',      count(*) FROM \"User\" WHERE rank='DEVELOPER'
     UNION ALL SELECT 'user_t1',       count(*) FROM \"User\" WHERE rank='TIER_1'
     UNION ALL SELECT 'user_t2',       count(*) FROM \"User\" WHERE rank='TIER_2'
-    UNION ALL SELECT 'user_t3',       count(*) FROM \"User\" WHERE rank='TIER_3'
-    UNION ALL SELECT 'invite_pending',count(*) FROM \"UserInvite\" WHERE \"acceptedAt\" IS NULL AND \"expiresAt\" > now()
-    UNION ALL SELECT 'session_active',count(*) FROM \"Session\" WHERE \"expiresAt\" > now();
+    UNION ALL SELECT 'user_t3',       count(*) FROM \"User\" WHERE rank='TIER_3';
   " 2>/dev/null)"
   [ -n "$METRICS" ] && DB_OK=1
 fi
@@ -146,21 +144,19 @@ sub "  · QUEUED"       "$(m staged_queued)"
 sub "  · IMPORTED"     "$(m staged_imported)"
 row "Filter rows"      "$(m filter_row)"
 
-# ── §4 Users & access ─────────────────────────────────────────────────────────
-header "§4  Users & access"
+# ── §4 Users ──────────────────────────────────────────────────────────────────
+header "§4  Users"
 row "Users"            "$(m user_total)"
 sub "  · DEVELOPER"    "$(m user_dev)"
 sub "  · TIER_1"       "$(m user_t1)"
 sub "  · TIER_2"       "$(m user_t2)"
 sub "  · TIER_3"       "$(m user_t3)"
-row "Pending invites"  "$(m invite_pending)"
-row "Active sessions"  "$(m session_active)"
 
 # ── TL;DR ─────────────────────────────────────────────────────────────────────
 # Grand total of the primary record tables (the "how much real data" number).
 CORE=$(( $(m inventory) + $(m adjustment) + $(m work_order) + $(m wo_item) \
        + $(m template) + $(m payment) + $(m product) + $(m entity) + $(m property) ))
 header "TL;DR"
-printf "  \033[1;32m%s core records\033[0m across 9 tables · \033[1m%s users\033[0m · \033[1m%s active sessions\033[0m\n" \
-  "$(commafy "$CORE")" "$(commafy "$(m user_total)")" "$(commafy "$(m session_active)")"
+printf "  \033[1;32m%s core records\033[0m across 9 tables · \033[1m%s users\033[0m\n" \
+  "$(commafy "$CORE")" "$(commafy "$(m user_total)")"
 echo
