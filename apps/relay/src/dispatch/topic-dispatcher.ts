@@ -7,7 +7,7 @@ import {
   type QueueOutboxEventRecord,
 } from "@builders/db"
 import { logStructuredEvent } from "@builders/lib"
-import type { Queue } from "bullmq"
+import type { JobsOptions, Queue } from "bullmq"
 import type { RelayEnvironment } from "../env.js"
 import { addBullMqJobIdempotently } from "./bullmq-idempotent-dispatch.js"
 
@@ -40,6 +40,10 @@ export type TopicDispatcher<TPayload> = {
   queue: Queue<TPayload>
   parsePayload: (raw: unknown) => TPayload
   buildJobId: (payload: TPayload, event: QueueOutboxEventRecord) => string
+  // Per-topic BullMQ job policy (attempts/backoff/retention). Merged with the
+  // computed `jobId` at enqueue. A duplicate jobId dedups and ignores these on
+  // replay, so setting them here can't corrupt the idempotent-add path.
+  jobOptions?: Omit<JobsOptions, "jobId">
   close: () => Promise<void>
 }
 
@@ -123,7 +127,7 @@ export async function dispatchBatchForTopic<TPayload>(
         dispatcher.queue as unknown as Parameters<typeof addBullMqJobIdempotently<TPayload>>[0],
         dispatcher.jobName,
         payload,
-        { jobId },
+        { ...dispatcher.jobOptions, jobId },
       )
 
       await dependencies.markEventDispatched({

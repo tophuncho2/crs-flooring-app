@@ -3,11 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 const {
   withDatabaseTransactionMock,
   listStagedInventoryForMaterializationMock,
+  listStagedInventoryStatusesByIdsMock,
   materializeStagedRowsToInventoryMock,
   lockImportRowMock,
 } = vi.hoisted(() => ({
   withDatabaseTransactionMock: vi.fn(),
   listStagedInventoryForMaterializationMock: vi.fn(),
+  listStagedInventoryStatusesByIdsMock: vi.fn(),
   materializeStagedRowsToInventoryMock: vi.fn(),
   lockImportRowMock: vi.fn(),
 }))
@@ -18,6 +20,7 @@ vi.mock("@builders/db", () => ({
   },
   withDatabaseTransaction: withDatabaseTransactionMock,
   listStagedInventoryForMaterialization: listStagedInventoryForMaterializationMock,
+  listStagedInventoryStatusesByIds: listStagedInventoryStatusesByIdsMock,
   materializeStagedRowsToInventory: materializeStagedRowsToInventoryMock,
   lockImportRow: lockImportRowMock,
 }))
@@ -82,9 +85,14 @@ function loadedRow(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function queuedStatuses(_c: unknown, input: { ids: string[] }) {
+  return input.ids.map((id) => ({ id, status: "QUEUED" as const }))
+}
+
 beforeEach(() => {
   withDatabaseTransactionMock.mockReset()
   listStagedInventoryForMaterializationMock.mockReset()
+  listStagedInventoryStatusesByIdsMock.mockReset()
   materializeStagedRowsToInventoryMock.mockReset()
   lockImportRowMock.mockReset()
 
@@ -92,6 +100,10 @@ beforeEach(() => {
   // The FOR UPDATE lock now goes through the mocked lockImportRow helper, not
   // tx.$queryRaw directly.
   withDatabaseTransactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb({}))
+
+  // Default: every requested id classifies as QUEUED (the normal first-run
+  // case). Precondition/idempotency tests override this per case.
+  listStagedInventoryStatusesByIdsMock.mockImplementation(queuedStatuses)
 
   vi.useFakeTimers()
   vi.setSystemTime(new Date("2026-05-22T12:00:00.000Z"))
@@ -286,22 +298,70 @@ describe("materializeImportedStagedRowsUseCase", () => {
     })
   })
 
-  describe("precondition failures (idempotency backstop)", () => {
-    it("throws STAGED_MATERIALIZE_PRECONDITION_FAILED when loaded < requested rows", async () => {
-      // Duplicate worker run: rows already flipped IMPORTED → status filter
-      // excludes them → loadedRows is shorter than payload.stagedRowIds.
+  describe("subset-materialize (idempotent replay)", () => {
+    it("materializes only the still-QUEUED subset, skipping already-IMPORTED rows", async () => {
+      // Partial re-run: A is still QUEUED, B was flipped IMPORTED by a prior
+      // attempt. Only A should be materialized; B is a safe skip, not a failure.
+      listStagedInventoryStatusesByIdsMock.mockResolvedValue([
+        { id: ROW_ID_A, status: "QUEUED" },
+        { id: ROW_ID_B, status: "IMPORTED" },
+      ])
       listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow({ id: ROW_ID_A })])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
 
-      await expect(
-        materializeImportedStagedRowsUseCase(payload([ROW_ID_A, ROW_ID_B])),
-      ).rejects.toMatchObject({
-        code: "STAGED_MATERIALIZE_PRECONDITION_FAILED",
-        status: 409,
+      const result = await materializeImportedStagedRowsUseCase(payload([ROW_ID_A, ROW_ID_B]))
+
+      // The full-graph read is scoped to the QUEUED subset only.
+      expect(listStagedInventoryForMaterializationMock).toHaveBeenCalledWith(expect.anything(), {
+        importEntryId: IMPORT_ID,
+        ids: [ROW_ID_A],
+      })
+      expect(result).toEqual({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
       })
     })
 
-    it("attaches missingIds payload identifying the rows that didn't come back", async () => {
+    it("skips rows an operator reset back to DRAFT", async () => {
+      listStagedInventoryStatusesByIdsMock.mockResolvedValue([
+        { id: ROW_ID_A, status: "QUEUED" },
+        { id: ROW_ID_B, status: "DRAFT" },
+      ])
       listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow({ id: ROW_ID_A })])
+      materializeStagedRowsToInventoryMock.mockResolvedValue({
+        created: [{ id: "inv-1", inventoryNumber: "INV-00001" }],
+        materializedStagedRowIds: [ROW_ID_A],
+      })
+
+      await materializeImportedStagedRowsUseCase(payload([ROW_ID_A, ROW_ID_B]))
+
+      expect(listStagedInventoryForMaterializationMock).toHaveBeenCalledWith(expect.anything(), {
+        importEntryId: IMPORT_ID,
+        ids: [ROW_ID_A],
+      })
+    })
+
+    it("is a clean no-op success when every row is already IMPORTED (the duplicate-job case)", async () => {
+      // A fully-duplicate / reclaimed job: nothing is QUEUED anymore. This must
+      // succeed as a no-op, NOT dead-letter — that is the whole point of W2.
+      listStagedInventoryStatusesByIdsMock.mockResolvedValue([{ id: ROW_ID_A, status: "IMPORTED" }])
+
+      const result = await materializeImportedStagedRowsUseCase(payload([ROW_ID_A]))
+
+      expect(result).toEqual({ created: [], materializedStagedRowIds: [] })
+      expect(listStagedInventoryForMaterializationMock).not.toHaveBeenCalled()
+      expect(materializeStagedRowsToInventoryMock).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("terminal anomalies (still dead-letter)", () => {
+    it("throws STAGED_MATERIALIZE_PRECONDITION_FAILED when a requested id is absent from the import", async () => {
+      // B doesn't resolve to any row on this import — a genuine anomaly, not a
+      // benign skip. Fail terminal so it surfaces and creates zero rows.
+      listStagedInventoryStatusesByIdsMock.mockResolvedValue([{ id: ROW_ID_A, status: "QUEUED" }])
 
       try {
         await materializeImportedStagedRowsUseCase(payload([ROW_ID_A, ROW_ID_B]))
@@ -309,18 +369,17 @@ describe("materializeImportedStagedRowsUseCase", () => {
       } catch (error) {
         if (!(error instanceof StagedInventoryExecutionError)) throw error
         expect(error.code).toBe("STAGED_MATERIALIZE_PRECONDITION_FAILED")
-        expect(error.payload).toEqual({
-          expectedCount: 2,
-          actualCount: 1,
-          missingIds: [ROW_ID_B],
-        })
+        expect(error.status).toBe(409)
+        expect(error.payload).toMatchObject({ missingIds: [ROW_ID_B] })
       }
+      expect(materializeStagedRowsToInventoryMock).not.toHaveBeenCalled()
     })
 
-    it("throws when a loaded staged row is missing its unit FK (UoM epic 2B backstop)", async () => {
+    it("throws when a loaded QUEUED row is missing its unit FK (UoM epic 2B backstop)", async () => {
       // The importability gate blocks a null-unit row from queueing, so this is
       // a precondition regression — the worker refuses to materialize a null unit
       // into inventory's NOT-NULL column.
+      listStagedInventoryStatusesByIdsMock.mockResolvedValue([{ id: ROW_ID_A, status: "QUEUED" }])
       listStagedInventoryForMaterializationMock.mockResolvedValue([loadedRow({ unitId: null })])
 
       try {
@@ -333,32 +392,6 @@ describe("materializeImportedStagedRowsUseCase", () => {
         expect(error.payload).toMatchObject({ missingIds: [ROW_ID_A] })
       }
       expect(materializeStagedRowsToInventoryMock).not.toHaveBeenCalled()
-    })
-
-    it("does NOT call materializeStagedRowsToInventory when precondition fails", async () => {
-      listStagedInventoryForMaterializationMock.mockResolvedValue([])
-
-      await expect(
-        materializeImportedStagedRowsUseCase(payload([ROW_ID_A])),
-      ).rejects.toBeInstanceOf(StagedInventoryExecutionError)
-      expect(materializeStagedRowsToInventoryMock).not.toHaveBeenCalled()
-    })
-
-    it("idempotency: zero loaded rows on a single-id batch dead-letters cleanly (the duplicate-job case)", async () => {
-      listStagedInventoryForMaterializationMock.mockResolvedValue([])
-
-      try {
-        await materializeImportedStagedRowsUseCase(payload([ROW_ID_A]))
-        expect.fail("Expected throw")
-      } catch (error) {
-        if (!(error instanceof StagedInventoryExecutionError)) throw error
-        expect(error.code).toBe("STAGED_MATERIALIZE_PRECONDITION_FAILED")
-        expect(error.payload).toMatchObject({
-          expectedCount: 1,
-          actualCount: 0,
-          missingIds: [ROW_ID_A],
-        })
-      }
     })
   })
 

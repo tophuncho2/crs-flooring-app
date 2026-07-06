@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import {
   Prisma,
   listStagedInventoryForMaterialization,
+  listStagedInventoryStatusesByIds,
   lockImportRow,
   materializeStagedRowsToInventory,
   withDatabaseTransaction,
@@ -20,26 +21,46 @@ export async function materializeImportedStagedRowsUseCase(
 
     await lockImportRow(c, payload.importEntryId)
 
-    const loadedRows = await listStagedInventoryForMaterialization(c, {
+    // Classify every requested id by its CURRENT status (the parent FOR UPDATE
+    // lock above freezes these for the rest of the transaction). This is the
+    // idempotency backstop: a duplicate / reclaimed / stalled re-run finds its
+    // rows already IMPORTED (or reset to DRAFT) and skips them instead of
+    // dead-lettering a batch that already succeeded.
+    const statuses = await listStagedInventoryStatusesByIds(c, {
       importEntryId: payload.importEntryId,
       ids: payload.stagedRowIds,
     })
+    const statusById = new Map(statuses.map((row) => [row.id, row.status]))
 
-    if (loadedRows.length !== payload.stagedRowIds.length) {
-      const loadedIds = new Set(loadedRows.map((row) => row.id))
-      const missingIds = payload.stagedRowIds.filter((id) => !loadedIds.has(id))
+    // An id that doesn't resolve at all doesn't belong to this import — a real
+    // anomaly, never a benign skip. Fail terminal so it surfaces for
+    // investigation and creates zero rows.
+    const absentIds = payload.stagedRowIds.filter((id) => !statusById.has(id))
+    if (absentIds.length > 0) {
       throw new StagedInventoryExecutionError({
         code: "STAGED_MATERIALIZE_PRECONDITION_FAILED",
         message:
-          "Staged rows changed state before materialization could complete. Batch is no longer applicable.",
+          "Staged rows referenced by this batch no longer exist on the import. Batch is not applicable.",
         status: 409,
         payload: {
           expectedCount: payload.stagedRowIds.length,
-          actualCount: loadedRows.length,
-          missingIds,
+          missingIds: absentIds,
         },
       })
     }
+
+    // Materialize only the still-QUEUED subset; IMPORTED / DRAFT rows are
+    // already-handled and left untouched. If nothing is QUEUED, the whole batch
+    // is a clean idempotent no-op.
+    const queuedIds = payload.stagedRowIds.filter((id) => statusById.get(id) === "QUEUED")
+    if (queuedIds.length === 0) {
+      return { created: [], materializedStagedRowIds: [] }
+    }
+
+    const loadedRows = await listStagedInventoryForMaterialization(c, {
+      importEntryId: payload.importEntryId,
+      ids: queuedIds,
+    })
 
     // The staged rows carry their OWN unit FK (UoM epic 2B) — the worker
     // materializes it forward verbatim (no re-derivation from the product).

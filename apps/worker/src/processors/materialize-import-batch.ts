@@ -16,11 +16,14 @@ import { UnrecoverableError } from "bullmq"
  * - `StagedInventoryExecutionError` → `UnrecoverableError` (terminal —
  *   landing in BullMQ's failed set with no retry, surfaces in Bull Board).
  * - Anything else (Prisma transport blip, Redis hiccup) → propagate.
- *   BullMQ retries per its job options.
+ *   BullMQ retries per its job options (attempts/backoff set at enqueue).
  *
- * The use case is naturally idempotent: it precondition-checks that staged
- * rows are still in `QUEUED` status. A duplicate job hits zero rows and
- * dead-letters cleanly via `STAGED_MATERIALIZE_PRECONDITION_FAILED`.
+ * The use case is naturally idempotent via subset-materialize: it processes
+ * only the still-QUEUED rows and treats rows already IMPORTED (or reset to
+ * DRAFT) as already-handled skips. So a duplicate / retried / reclaimed job is
+ * a clean no-op SUCCESS, not a dead-letter. It still fails terminal only for
+ * genuine anomalies (a requested id absent from the import, or a QUEUED row
+ * missing its unit FK).
  */
 
 export type MaterializeImportBatchResult = Awaited<

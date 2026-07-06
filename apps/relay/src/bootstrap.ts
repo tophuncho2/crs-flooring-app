@@ -15,7 +15,7 @@ async function main() {
   getDatabaseEnvironment()
   const env = getRelayEnvironment()
   const connection = parseRedisConnectionUrl(env.queueRedisUrl)
-  const dispatchers = buildDispatchers(connection)
+  const dispatchers = buildDispatchers(connection, env)
 
   await Promise.all(dispatchers.map((d) => d.queue.waitUntilReady()))
 

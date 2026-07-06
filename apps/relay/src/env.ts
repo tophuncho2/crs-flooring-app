@@ -33,6 +33,15 @@ const relayEnvironmentSchema = z.object({
   RELAY_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(2_000),
   RELAY_CLAIM_TTL_MS: z.coerce.number().int().positive().default(30_000),
   RELAY_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  // BullMQ job policy for the materialize queue. The relay is where jobs are
+  // ENQUEUED, so worker-retry policy is configured here, not in the worker.
+  // Retries are safe because the worker is idempotent via subset-materialize.
+  MATERIALIZE_JOB_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  MATERIALIZE_JOB_BACKOFF_MS: z.coerce.number().int().positive().default(5_000),
+  // Retain recent completed/failed jobs (count-based) — failed kept generously
+  // so terminal dead-letters stay inspectable in Bull Board.
+  MATERIALIZE_JOB_REMOVE_ON_COMPLETE: z.coerce.number().int().nonnegative().default(1_000),
+  MATERIALIZE_JOB_REMOVE_ON_FAIL: z.coerce.number().int().nonnegative().default(5_000),
   BULL_BOARD_ENABLED: z.string().optional(),
   BULL_BOARD_HOST: z.string().min(1).optional(),
   BULL_BOARD_PORT: z.coerce.number().int().positive().optional(),
@@ -58,6 +67,12 @@ export type RelayEnvironment = {
   pollIntervalMs: number
   claimTtlMs: number
   maxAttempts: number
+  materializeJob: {
+    attempts: number
+    backoffMs: number
+    removeOnComplete: number
+    removeOnFail: number
+  }
   bullBoard: {
     enabled: boolean
     host: string
@@ -78,6 +93,10 @@ export function getRelayEnvironment(source: NodeJS.ProcessEnv = process.env): Re
     RELAY_POLL_INTERVAL_MS: source.RELAY_POLL_INTERVAL_MS,
     RELAY_CLAIM_TTL_MS: source.RELAY_CLAIM_TTL_MS,
     RELAY_MAX_ATTEMPTS: source.RELAY_MAX_ATTEMPTS,
+    MATERIALIZE_JOB_ATTEMPTS: source.MATERIALIZE_JOB_ATTEMPTS,
+    MATERIALIZE_JOB_BACKOFF_MS: source.MATERIALIZE_JOB_BACKOFF_MS,
+    MATERIALIZE_JOB_REMOVE_ON_COMPLETE: source.MATERIALIZE_JOB_REMOVE_ON_COMPLETE,
+    MATERIALIZE_JOB_REMOVE_ON_FAIL: source.MATERIALIZE_JOB_REMOVE_ON_FAIL,
     BULL_BOARD_ENABLED: source.BULL_BOARD_ENABLED,
     BULL_BOARD_HOST: source.BULL_BOARD_HOST,
     BULL_BOARD_PORT: source.BULL_BOARD_PORT,
@@ -104,6 +123,12 @@ export function getRelayEnvironment(source: NodeJS.ProcessEnv = process.env): Re
     pollIntervalMs: parsed.RELAY_POLL_INTERVAL_MS,
     claimTtlMs: parsed.RELAY_CLAIM_TTL_MS,
     maxAttempts: parsed.RELAY_MAX_ATTEMPTS,
+    materializeJob: {
+      attempts: parsed.MATERIALIZE_JOB_ATTEMPTS,
+      backoffMs: parsed.MATERIALIZE_JOB_BACKOFF_MS,
+      removeOnComplete: parsed.MATERIALIZE_JOB_REMOVE_ON_COMPLETE,
+      removeOnFail: parsed.MATERIALIZE_JOB_REMOVE_ON_FAIL,
+    },
     bullBoard: {
       enabled: bullBoardEnabled,
       host: parsed.BULL_BOARD_HOST ?? "0.0.0.0",

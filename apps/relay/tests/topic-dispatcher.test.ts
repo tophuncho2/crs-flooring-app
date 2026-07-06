@@ -107,6 +107,33 @@ describe("dispatchBatchForTopic", () => {
     expect(deps.exhaustEvent).not.toHaveBeenCalled()
   })
 
+  it("forwards the dispatcher's jobOptions (attempts/backoff/retention) to queue.add", async () => {
+    const event = buildEvent()
+    const jobOptions = {
+      attempts: 5,
+      backoff: { type: "exponential" as const, delay: 5000 },
+      removeOnComplete: 1000,
+      removeOnFail: 5000,
+    }
+    const dispatcher: TopicDispatcher<typeof samplePayload> = {
+      ...buildDispatcher(),
+      jobOptions,
+    }
+    const deps = buildDeps({
+      listClaimableEvents: vi.fn().mockResolvedValue([event]),
+      claimEvent: vi.fn().mockResolvedValue(event),
+    })
+
+    await dispatchBatchForTopic(env, dispatcher, deps)
+
+    expect(dispatcher.queue.add).toHaveBeenCalledWith(
+      JOB_NAME,
+      samplePayload,
+      // Retry/retention policy merged with the computed jobId.
+      expect.objectContaining({ ...jobOptions, jobId: event.idempotencyKey }),
+    )
+  })
+
   it("treats a duplicate BullMQ job as an idempotent dispatch", async () => {
     const event = buildEvent()
     const dispatcher = buildDispatcher({

@@ -103,3 +103,37 @@ export async function listStagedInventoryForMaterialization(
     select: stagedInventoryRowSelect,
   })
 }
+
+export type StagedInventoryStatusById = {
+  id: string
+  status: StagedInventoryRowPayload["status"]
+}
+
+/**
+ * Worker-only classification read for the materialize-import flow. Unlike
+ * `listStagedInventoryForMaterialization` this does NOT filter by status — it
+ * returns the CURRENT status of every requested id so the caller can tell the
+ * three drift outcomes apart:
+ *   - QUEUED    → still needs materializing (the subset to process)
+ *   - IMPORTED  → a prior attempt already did it (safe idempotent skip)
+ *   - DRAFT     → operator pulled it back (safe skip)
+ *   - absent    → the id doesn't belong to this import (a real anomaly)
+ * The QUEUED-filtered read above physically can't distinguish these — an
+ * IMPORTED, a DRAFT, and an absent row all simply don't come back.
+ *
+ * Transaction-only — the materialize use case runs inside the parent FOR UPDATE
+ * lock, so these statuses can't drift between this read and materialization.
+ */
+export async function listStagedInventoryStatusesByIds(
+  tx: Prisma.TransactionClient,
+  input: { importEntryId: string; ids: string[] },
+): Promise<StagedInventoryStatusById[]> {
+  if (input.ids.length === 0) return []
+  return tx.flooringImportStagedInventoryRow.findMany({
+    where: {
+      id: { in: input.ids },
+      importEntryId: input.importEntryId,
+    },
+    select: { id: true, status: true },
+  })
+}

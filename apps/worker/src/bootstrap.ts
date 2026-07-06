@@ -25,6 +25,7 @@ async function main() {
       connection,
       concurrency: env.materializeWorkerConcurrency,
       lockDuration: env.materializeWorkerLockDurationMs,
+      maxStalledCount: env.materializeWorkerMaxStalledCount,
       autorun: false,
     },
   )
@@ -123,6 +124,9 @@ async function main() {
       },
       lockDurationMs: {
         materialize: env.materializeWorkerLockDurationMs,
+      },
+      maxStalledCount: {
+        materialize: env.materializeWorkerMaxStalledCount,
       },
     },
   })
