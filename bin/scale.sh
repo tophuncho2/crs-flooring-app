@@ -7,7 +7,7 @@
 # command here is STRICTLY read-only (SELECT count only) — no deploys, no
 # migrations, no writes — so it can never hurt the running system.
 #
-# Scope: §1 Core records · §2 Directory & reference · §3 Imports pipeline ·
+# Scope: §1 Core records · §2 Management · §3 Imports pipeline ·
 #        §4 Users (per-rank). All four read the prod DB directly (read-only counts).
 #
 # Creds: prod-only, read live from the main worktree's .env (single source of
@@ -24,10 +24,13 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PROD_ENV="main"          # environment whose .env holds the prod DATABASE_URL
 
 # ── presentation ──────────────────────────────────────────────────────────────
+# Mirrors bin/pulse.sh: a colored glyph + fixed-width label + value at a
+# consistent gutter (left-aligned, close to the label — NOT floated far right).
 header()  { printf "\n\033[1;36m▸ %s\033[0m\n" "$*"; }
-# One metric row: label left, count right-aligned + comma-grouped.
-row()     { printf "  %-22s \033[1m%12s\033[0m\n" "$1" "$(commafy "${2:-0}")"; }
-sub()     { printf "  \033[2m%-22s %12s\033[0m\n" "$1" "$(commafy "${2:-0}")"; }
+# Main metric — blue dot (volume, not health) + bold label, then the count.
+row()     { printf "  \033[1;34m🔵 %-20s\033[0m %s\n" "$1" "$(commafy "${2:-0}")"; }
+# Sub-detail — dim bullet, aligned to the same value column as the rows above.
+sub()     { printf "  \033[2m•  %-20s %s\033[0m\n" "$1" "$(commafy "${2:-0}")"; }
 note()    { printf "  \033[2m•  %s\033[0m\n" "$*"; }
 
 # Group a bare integer with thousands separators (12431 → 12,431). Pure awk —
@@ -119,38 +122,38 @@ fi
 header "§1  Core records"
 row "Inventory"        "$(m inventory)"
 row "Adjustments"      "$(m adjustment)"
-row "Work orders"      "$(m work_order)"
-sub "  · WO items"     "$(m wo_item)"
-row "Templates"        "$(m template)"
 row "Payments"         "$(m payment)"
-row "Products"         "$(m product)"
 
-# ── §2 Directory & reference ──────────────────────────────────────────────────
-header "§2  Directory & reference"
+# ── §2 Management ─────────────────────────────────────────────────────────────
+header "§2  Management"
+row "Work orders"      "$(m work_order)"
+sub "WO items"         "$(m wo_item)"
+row "Templates"        "$(m template)"
+row "Products"         "$(m product)"
 row "Entities"         "$(m entity)"
 row "Properties"       "$(m property)"
 row "Warehouses"       "$(m warehouse)"
-sub "  · categories"   "$(m category)"
-sub "  · units"        "$(m unit)"
-sub "  · job types"    "$(m job_type)"
-sub "  · entity types" "$(m entity_type)"
+sub "categories"       "$(m category)"
+sub "units"            "$(m unit)"
+sub "job types"        "$(m job_type)"
+sub "entity types"     "$(m entity_type)"
 
 # ── §3 Imports pipeline ───────────────────────────────────────────────────────
 header "§3  Imports pipeline"
 row "Import entries"   "$(m import_entry)"
-row "Staged rows"      "$(m staged_total)"
-sub "  · DRAFT"        "$(m staged_draft)"
-sub "  · QUEUED"       "$(m staged_queued)"
-sub "  · IMPORTED"     "$(m staged_imported)"
 row "Filter rows"      "$(m filter_row)"
+row "Staged rows"      "$(m staged_total)"
+sub "DRAFT"            "$(m staged_draft)"
+sub "QUEUED"           "$(m staged_queued)"
+sub "IMPORTED"         "$(m staged_imported)"
 
 # ── §4 Users ──────────────────────────────────────────────────────────────────
 header "§4  Users"
 row "Users"            "$(m user_total)"
-sub "  · DEVELOPER"    "$(m user_dev)"
-sub "  · TIER_1"       "$(m user_t1)"
-sub "  · TIER_2"       "$(m user_t2)"
-sub "  · TIER_3"       "$(m user_t3)"
+sub "DEVELOPER"        "$(m user_dev)"
+sub "TIER_1"           "$(m user_t1)"
+sub "TIER_2"           "$(m user_t2)"
+sub "TIER_3"           "$(m user_t3)"
 
 # ── TL;DR ─────────────────────────────────────────────────────────────────────
 # Grand total of the primary record tables (the "how much real data" number).
