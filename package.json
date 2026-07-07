@@ -29,6 +29,7 @@
     "check": "bash bin/check.sh",
     "pulse": "bash bin/pulse.sh",
     "scale": "bash bin/scale.sh",
+    "fleet": "bash bin/fleet.sh",
     "dev-sync": "bash bin/dev-sync.sh",
     "guard:prisma": "npm run guard:prisma --workspace @builders/db",
     "db:generate": "npm run db:generate --workspace @builders/db --",
