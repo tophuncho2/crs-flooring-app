@@ -5,6 +5,7 @@ import {
   StagedInventoryExecutionError,
   type ImportsListFilters,
   type ListInput,
+  type ListSort,
 } from "@builders/application"
 import type { CreateImportInput, UpdateImportInput } from "@builders/application"
 import {
@@ -17,7 +18,6 @@ import {
   isPaletteColor,
   type PaletteColor,
 } from "@builders/domain"
-// no sort param — imports default to createdAt desc, hardcoded server-side
 import type {
   ImportStagedInventorySectionDiff,
   StagedInventoryFilterForm,
@@ -314,9 +314,42 @@ export function validateImportStagedInventorySectionDiffBody(
 
 // --- List query validator (Zod) ---
 
+/**
+ * Sort fields the imports list API accepts. Independent, defense-in-depth mirror
+ * of the client `IMPORTS_LIST_SORT_FIELDS` + the toolbar Sort menu (kept in sync
+ * by `sort-allowlist-sync.test.ts`). Absent `sorts` → the createdAt-desc default.
+ */
+export const IMPORTS_UI_SORT_FIELDS = [
+  "createdAt",
+  "updatedAt",
+] as const satisfies readonly string[]
+
+/** Cap on user-selected sort columns — mirrors the engine + request + use case. */
+const IMPORTS_MAX_SORT_LEVELS = 3
+
+/** The list's default order when no `sorts` param is supplied (newest first). */
+const IMPORTS_DEFAULT_SORT: ListSort = { field: "createdAt", direction: "desc" }
+
+/** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | null): ListSort[] {
+  if (!raw) return []
+  const allowed = new Set<string>(IMPORTS_UI_SORT_FIELDS)
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !allowed.has(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "asc" ? "asc" : "desc" })
+    if (result.length >= IMPORTS_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
 const listImportsQuerySchema = z.object({
   q: z.string().optional(),
   impNumber: z.string().optional(),
+  sorts: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
     .number()
@@ -358,8 +391,14 @@ export function validateListImportsQuery(searchParams: URLSearchParams): ListInp
     ),
   )
 
+  // Canonical ordered sort via `sorts`; absent → the createdAt-desc default.
+  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
+  const sorts: ListSort[] = parsedSorts.length > 0 ? parsedSorts : [IMPORTS_DEFAULT_SORT]
+
   return {
     search,
+    sort: sorts[0],
+    sorts,
     filters:
       impNumber || warehouseId.length > 0
         ? {

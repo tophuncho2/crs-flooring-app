@@ -9,6 +9,7 @@ import {
   type ImportRowPayload,
   type ImportsDbClient,
 } from "./shared.js"
+import { buildImportsOrderBy } from "./order-by.js"
 
 export type ImportRecord = ImportRow
 export type ImportDetailRecord = ImportDetail
@@ -16,6 +17,17 @@ export type ImportDetailRecord = ImportDetail
 export type ImportsListFilter = {
   searchQuery?: string
   warehouseId?: string
+}
+
+export type ImportsListSortEntry = {
+  field: string
+  direction: Prisma.SortOrder
+}
+
+export type ImportsListSort = {
+  /** Ordered sort columns, highest priority first. An empty list falls straight
+   * through to the importNumber+id tiebreak (the historical default). */
+  entries: ImportsListSortEntry[]
 }
 
 export function normalizeImportRow(row: ImportRowPayload): ImportRecord {
@@ -175,6 +187,8 @@ export type ImportListViewOptions = {
     impNumber?: string
     warehouseId?: ReadonlyArray<string>
   }
+  /** Ordered multi-column sort; falls through to the importNumber+id tiebreak. */
+  sort?: ImportsListSort
   skip: number
   take: number
 }
@@ -217,24 +231,12 @@ function buildListViewWhere(
   return { AND: clauses }
 }
 
-function buildListViewOrderBy(): Prisma.FlooringImportEntryOrderByWithRelationInput[] {
-  const orderBy: Prisma.FlooringImportEntryOrderByWithRelationInput[] = []
-
-  // `importNumber` is the autoincrement int — monotonic per insert, so DESC
-  // gives newest-first deterministically. `createdAt` would tie on rows
-  // created in the same transaction (e.g. batched seed/materialize paths),
-  // letting the random uuid `id` tiebreak scramble the visible order.
-  orderBy.push({ importNumber: "desc" })
-  orderBy.push({ id: "desc" })
-  return orderBy
-}
-
 export async function listImportsForListView(
   options: ImportListViewOptions,
   client: ImportsDbClient = db,
 ): Promise<ImportListViewResult> {
   const where = buildListViewWhere(options)
-  const orderBy = buildListViewOrderBy()
+  const orderBy = buildImportsOrderBy(options.sort)
 
   const [total, rows] = await Promise.all([
     client.flooringImportEntry.count({ where }),

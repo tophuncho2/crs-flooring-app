@@ -41,6 +41,13 @@ import {
 } from "@/modules/entities/components/list/table/entities-list-columns"
 import { ENTITIES_LIST_SORT_FIELDS } from "@/modules/entities/data/list-entities-request"
 import { ENTITIES_UI_SORT_FIELDS } from "@/app/api/entities/_validators"
+import {
+  IMPORTS_ALLOWED_SORT_FIELDS,
+  IMPORTS_MAX_SORT_LEVELS,
+  IMPORTS_SORT_OPTIONS,
+} from "@/modules/imports/components/list/table/imports-list-columns"
+import { IMPORTS_LIST_SORT_FIELDS } from "@/modules/imports/data/list-imports-request"
+import { IMPORTS_UI_SORT_FIELDS } from "@/app/api/imports/_validators"
 
 /**
  * Drift guard for the Sort tool. A field is sortable only if EVERY layer agrees:
@@ -199,5 +206,30 @@ describe("sort allowlist sync — entities", () => {
 
   it("caps at 3 sort levels", () => {
     expect(ENTITIES_MAX_SORT_LEVELS).toBe(3)
+  })
+})
+
+describe("sort allowlist sync — imports", () => {
+  const optionKeys = IMPORTS_SORT_OPTIONS.map((option) => option.key)
+  const canonical = set(optionKeys)
+
+  it("menu, client allowlist, request parser, and API validator expose identical field sets", () => {
+    expect(set(IMPORTS_ALLOWED_SORT_FIELDS)).toEqual(canonical)
+    expect(set(IMPORTS_LIST_SORT_FIELDS)).toEqual(canonical)
+    expect(set(IMPORTS_UI_SORT_FIELDS)).toEqual(canonical)
+  })
+
+  it("has no duplicate menu option keys", () => {
+    expect(optionKeys).toHaveLength(new Set(optionKeys).size)
+  })
+
+  it("every menu option declares a direction-label type", () => {
+    for (const option of IMPORTS_SORT_OPTIONS) {
+      expect(option.type, `option ${option.key} is missing a type`).toBeTruthy()
+    }
+  })
+
+  it("caps at 3 sort levels", () => {
+    expect(IMPORTS_MAX_SORT_LEVELS).toBe(3)
   })
 })

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
   SearchControl,
@@ -9,6 +9,7 @@ import {
   ListCreateButtonPortal,
   ListPageShell,
   ListPageFeedback,
+  SortMenuBody,
   ToolbarMenuButton,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
@@ -25,6 +26,11 @@ import {
   IMPORTS_LIST_QUERY_KEY,
   listImportsRequest,
 } from "@/modules/imports/data/list-imports-request"
+import {
+  IMPORTS_ALLOWED_SORT_FIELDS,
+  IMPORTS_MAX_SORT_LEVELS,
+  IMPORTS_SORT_OPTIONS,
+} from "./table/imports-list-columns"
 import { useImportsListController } from "@/modules/imports/controllers/list/use-imports-list-controller"
 import { ImportsTable } from "./imports-table"
 
@@ -84,6 +90,7 @@ export default function ImportsClient({
     total,
     searchQuery,
     filters,
+    sorts,
     page,
     pageSize,
     totalPages,
@@ -92,6 +99,7 @@ export default function ImportsClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
+    onSortsChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<ImportRow, EngineImportsFilters>({
@@ -99,11 +107,14 @@ export default function ImportsClient({
     queryKey: [...IMPORTS_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
+    initialSort: { field: "createdAt", direction: "desc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_IMPORTS_PAGE_SIZE,
     tableKey: "imports-main",
     filterableFields: IMPORTS_FILTERABLE_FIELDS,
+    allowedSortFields: IMPORTS_ALLOWED_SORT_FIELDS,
+    maxSortLevels: IMPORTS_MAX_SORT_LEVELS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
@@ -175,6 +186,8 @@ export default function ImportsClient({
     [searchQuery, impNumberValue],
   )
 
+  const hasActiveSortTool = sorts.length > 0
+
   return (
     <ListPageShell>
       <ListCreateButtonPortal label="Import" onClick={() => openCreate()} />
@@ -189,6 +202,22 @@ export default function ImportsClient({
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >
+        {/* Sort — the multi-column builder, leftmost. The only sort affordance. */}
+        <ToolbarMenuButton
+          label="Sort"
+          title="Sort by"
+          icon={ArrowUpDown}
+          active={hasActiveSortTool}
+          bodyClassName="w-auto"
+        >
+          <SortMenuBody
+            options={IMPORTS_SORT_OPTIONS}
+            value={sorts}
+            maxLevels={IMPORTS_MAX_SORT_LEVELS}
+            onChange={onSortsChange}
+          />
+        </ToolbarMenuButton>
+
         {/* Filter — the warehouse picker, composed directly (NOT the
             self-triggering FilterControl). */}
         <ToolbarMenuButton

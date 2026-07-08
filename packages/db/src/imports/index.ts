@@ -1,4 +1,5 @@
 export * from "./shared.js"
+export * from "./order-by.js"
 export * from "./read-repository.js"
 export * from "./write-repository.js"
 export * from "./staged-inventory-rows/index.js"
