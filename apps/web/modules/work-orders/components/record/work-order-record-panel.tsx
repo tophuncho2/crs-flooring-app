@@ -60,7 +60,7 @@ export function WorkOrderRecordPanel({
   const printActions: RecordSectionSubHeaderAction[] = [
     {
       key: "print",
-      label: "Print",
+      label: "Export",
       tone: "neutral",
       onClick: () => {
         if (typeof window !== "undefined") {

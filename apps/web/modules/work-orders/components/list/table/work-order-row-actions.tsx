@@ -23,7 +23,7 @@ export function renderWorkOrderRowActions(row: WorkOrderListRow): ReactNode {
   const items: RecordOptionsMenuItem[] = [
     {
       key: "print",
-      label: "Print",
+      label: "Export",
       icon: <Printer size={14} aria-hidden="true" />,
       onClick: () => openWorkOrderPrint(row.id),
     },

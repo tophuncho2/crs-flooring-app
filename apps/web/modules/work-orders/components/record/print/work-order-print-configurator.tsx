@@ -195,7 +195,7 @@ export function WorkOrderPrintConfigurator({
   return (
     <main className="mx-auto flex max-w-6xl gap-6 bg-white px-6 py-8 text-black print:block print:max-w-none print:gap-0 print:p-0">
       <aside className="w-72 shrink-0 space-y-5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm print:hidden">
-        <h2 className="text-base font-semibold">Print options</h2>
+        <h2 className="text-base font-semibold">Export options</h2>
 
         {/* Walk the global work-order-number line without leaving the print
             view. Bare stepper (no portal / dirty guard) — nothing here is
