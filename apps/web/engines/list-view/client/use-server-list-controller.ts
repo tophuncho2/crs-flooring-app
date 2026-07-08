@@ -681,11 +681,20 @@ export function useFetchListController<TRow, TFilters>(
 
   // --- Sticky preferences (localStorage, per `tableKey`) -------------------
   // Hydrate ONCE on mount, and only when the URL carries no tool params — a
-  // shared/bookmarked link or a back-button restore always wins. Replaying the
-  // snapshot's URL-owned params (q / sort / sorts) in a single `replaceState`
-  // mirrors the Clear-All write technique so nuqs re-adopts them without a race;
-  // filters + column widths (React state, not nuqs) are then set directly. Runs
-  // in an effect because the first client render must byte-match the SSR-derived
+  // shared/bookmarked link or a back-button restore always wins.
+  //
+  // Replay each slice through the SAME writer the UI uses, NOT one manual
+  // `replaceState`. A raw `replaceState` only reliably CLEARS a nuqs param to
+  // its default (which is why Clear-All can use one): setting a NON-default
+  // value that way fights the nuqs/`useSearchParams` reconciliation and gets
+  // reverted on the next render — leaving the URL showing `?sorts=…` while the
+  // Sort menu reads back the default. So sort/search go through their nuqs
+  // setters (durable), filters through `setFilters` + one URL mirror, widths
+  // through `setColumnWidths`. Ordering matters: the manual filter URL write
+  // runs BEFORE the nuqs setters so their flush merges onto a URL that already
+  // carries the filters (a manual write AFTER a nuqs setter re-adopts the stale
+  // URL and clobbers the queued change — see `onClearAllFilters`). Runs in an
+  // effect because the first client render must byte-match the SSR-derived
   // query key — reading localStorage during render would break hydration.
   const hydratedRef = useRef(false)
   useEffect(() => {
@@ -706,37 +715,19 @@ export function useFetchListController<TRow, TFilters>(
     const snapshot = readListPreferences(prefsKey)
     if (!snapshot) return
 
-    const params = new URLSearchParams(window.location.search)
-    if (snapshot.q) params.set("q", snapshot.q)
-    if (snapshot.sorts && snapshot.sorts.length > 0) {
-      if (multiSort) {
-        params.set("sorts", encodeSorts(snapshot.sorts))
-      } else {
-        const primary = snapshot.sorts[0]
-        if (primary) {
-          if (primary.field && primary.field !== initialFieldKey) {
-            params.set("sortField", primary.field)
-          }
-          params.set("sort", primary.direction)
-        }
-      }
-    }
-    if (filterableFields && snapshot.filters) {
-      for (const key of filterableFields) {
-        params.delete(key)
-        for (const value of snapshot.filters[key] ?? []) params.append(key, value)
-      }
-    }
-    params.delete("page")
-    const qs = params.toString()
-    const href = qs ? `${window.location.pathname}?${qs}` : window.location.pathname
-    window.history.replaceState(window.history.state, "", href)
-
+    // 1) Filters — React state + a single URL mirror, first (see ordering note).
     if (filterableFields && snapshot.filters) {
       const nextFilters: ListFilterValueMap = {}
       for (const key of filterableFields) nextFilters[key] = [...(snapshot.filters[key] ?? [])]
       setFilters(nextFilters)
+      writeFiltersUrl(nextFilters)
     }
+
+    // 2) nuqs-owned params via their own setters (durable in nuqs + the URL).
+    if (snapshot.q) setSearchUrlValue(snapshot.q)
+    if (snapshot.sorts && snapshot.sorts.length > 0) onSortsChange(snapshot.sorts)
+
+    // 3) Column widths — React state, controlled DataTable seam.
     if (snapshot.columnWidths) setColumnWidths(snapshot.columnWidths)
     // Mount-only replay of persisted state after SSR hydration — deliberately
     // not re-run on state changes (that is the write-through effect's job).

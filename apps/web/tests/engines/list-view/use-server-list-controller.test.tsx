@@ -41,6 +41,8 @@ function renderController(userId: string | null = null) {
         tableKey: TABLE_KEY,
         filterableFields: ["warehouseId"],
         initialSort: { field: "createdAt", direction: "desc" },
+        allowedSortFields: ["createdAt", "name"],
+        maxSortLevels: 3,
       }),
     { wrapper: makeWrapper(userId) },
   )
@@ -48,6 +50,10 @@ function renderController(userId: string | null = null) {
 
 afterEach(() => {
   window.localStorage.clear()
+  // Controllers mirror filters to the URL via history.replaceState; jsdom keeps
+  // window.location across tests, so reset it or a later test's hydration guard
+  // sees a stale `?param` and skips (URL-with-params wins).
+  window.history.replaceState(null, "", "/")
 })
 
 describe("useFetchListController — sticky preferences", () => {
@@ -63,6 +69,21 @@ describe("useFetchListController — sticky preferences", () => {
       expect(result.current.columnWidths).toEqual({ productName: 200 })
     })
     expect(result.current.filters.warehouseId).toEqual(["w1"])
+  })
+
+  it("durably restores a non-default sort into the menu state, not just the URL", async () => {
+    // Regression: the Sort menu + Clear button read `sorts`/`hasNonDefaultSort`.
+    // Hydrating the sort via a raw replaceState left the URL correct but nuqs
+    // reverted, so the menu showed the default. Replaying via the nuqs setter
+    // must land the sort in the derived state the UI actually reads.
+    writeListPreferences(TABLE_KEY, { sorts: [{ field: "name", direction: "asc" }] })
+
+    const { result } = renderController()
+
+    await waitFor(() => {
+      expect(result.current.hasNonDefaultSort).toBe(true)
+    })
+    expect(result.current.sorts).toEqual([{ field: "name", direction: "asc" }])
   })
 
   it("write-through persists column widths, and Clear All wipes the key + resets widths", async () => {
