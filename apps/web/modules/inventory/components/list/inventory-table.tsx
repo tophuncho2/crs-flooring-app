@@ -44,6 +44,8 @@ export function InventoryTable({
           ? {
               selectedIds: selection.selectedIds,
               onToggleRow: selection.toggle,
+              onToggleAll: (pageEligibleIds) => selection.toggleAll(pageEligibleIds),
+              onClear: selection.clear,
             }
           : undefined
       }

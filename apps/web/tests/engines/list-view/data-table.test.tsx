@@ -168,6 +168,78 @@ describe("DataTable — gutter header", () => {
   })
 })
 
+describe("DataTable — always-visible selection", () => {
+  afterEach(() => cleanup())
+
+  function selectionProps(selectedIds: string[], overrides: Record<string, unknown> = {}) {
+    return {
+      selectedIds: new Set(selectedIds),
+      onToggleRow: vi.fn(),
+      onToggleAll: vi.fn(),
+      onClear: vi.fn(),
+      ...overrides,
+    }
+  }
+
+  it("renders a header select-all checkbox when onToggleAll is provided", () => {
+    const { getByLabelText } = render(
+      <DataTable rows={ROWS} columns={COLUMNS} selection={selectionProps([])} />,
+    )
+    expect(getByLabelText("Select all on this page")).toBeTruthy()
+  })
+
+  it("checks the header select-all when every eligible row is selected", () => {
+    const { getByLabelText } = render(
+      <DataTable rows={ROWS} columns={COLUMNS} selection={selectionProps(["a", "b"])} />,
+    )
+    const header = getByLabelText("Clear all on this page") as HTMLInputElement
+    expect(header.checked).toBe(true)
+    expect(header.indeterminate).toBe(false)
+  })
+
+  it("shows the header select-all as indeterminate when only some rows are selected", () => {
+    const { getByLabelText } = render(
+      <DataTable rows={ROWS} columns={COLUMNS} selection={selectionProps(["a"])} />,
+    )
+    const header = getByLabelText("Select all on this page") as HTMLInputElement
+    expect(header.checked).toBe(false)
+    expect(header.indeterminate).toBe(true)
+  })
+
+  it("fires onToggleAll with the page's eligible ids", async () => {
+    const user = userEvent.setup()
+    const onToggleAll = vi.fn()
+    const { getByLabelText } = render(
+      <DataTable rows={ROWS} columns={COLUMNS} selection={selectionProps([], { onToggleAll })} />,
+    )
+    await user.click(getByLabelText("Select all on this page"))
+    expect(onToggleAll).toHaveBeenCalledWith(["a", "b"])
+  })
+
+  it("renders the footer 'N selected · Clear' cluster only when rows are selected (fill tables)", async () => {
+    const user = userEvent.setup()
+    const onClear = vi.fn()
+    const { getByText, getByRole, rerender, queryByText } = render(
+      <DataTable fill rows={ROWS} columns={COLUMNS} selection={selectionProps([], { onClear })} />,
+    )
+    expect(queryByText(/selected/)).toBeNull()
+    rerender(
+      <DataTable fill rows={ROWS} columns={COLUMNS} selection={selectionProps(["a", "b"], { onClear })} />,
+    )
+    expect(getByText("2 selected")).toBeTruthy()
+    await user.click(getByRole("button", { name: "Clear" }))
+    expect(onClear).toHaveBeenCalledTimes(1)
+  })
+
+  it("does NOT render the footer selection cluster on non-fill (editable) tables", () => {
+    // The editable record grids run their own selection cluster.
+    const { queryByText } = render(
+      <DataTable rows={ROWS} columns={COLUMNS} selection={selectionProps(["a", "b"])} />,
+    )
+    expect(queryByText("2 selected")).toBeNull()
+  })
+})
+
 describe("DataTable — editable variant", () => {
   afterEach(() => cleanup())
 

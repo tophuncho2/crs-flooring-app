@@ -6,6 +6,8 @@ export type DataTableSelectCheckboxProps = {
   editable: boolean
   onChange: () => void
   ariaLabel: string
+  /** Mixed state (some-but-not-all selected) — used by the header select-all. */
+  indeterminate?: boolean
 }
 
 /**
@@ -18,6 +20,7 @@ export function DataTableSelectCheckbox({
   editable,
   onChange,
   ariaLabel,
+  indeterminate = false,
 }: DataTableSelectCheckboxProps) {
   if (editable) {
     return (
@@ -25,6 +28,11 @@ export function DataTableSelectCheckbox({
         <input
           type="checkbox"
           checked={checked}
+          // `indeterminate` is a DOM-only property (no HTML attribute), so it is
+          // set imperatively via a ref each render.
+          ref={(el) => {
+            if (el) el.indeterminate = indeterminate
+          }}
           onChange={onChange}
           aria-label={ariaLabel}
           className="h-4 w-4 cursor-pointer rounded border-[var(--panel-border)] text-sky-600 focus:ring-1 focus:ring-sky-500/40"

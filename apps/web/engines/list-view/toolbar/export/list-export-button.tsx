@@ -4,7 +4,6 @@ import { useMemo, useState } from "react"
 import { Download } from "lucide-react"
 import { EXPORT_ROW_CAP_OPTIONS, type ExportRowCap } from "@builders/domain"
 import { ToolbarMenuButton } from "../action-bar/toolbar-menu-button"
-import { DataTableSelectAllButton } from "../../table/select"
 
 const CHECKBOX_CLASS =
   "h-4 w-4 cursor-pointer rounded border-[var(--panel-border)] text-sky-600 focus:ring-1 focus:ring-sky-500/40"
@@ -26,16 +25,13 @@ export type ListExportButtonProps = {
   columns: ReadonlyArray<ListExportColumn>
   /** Download filename, e.g. `inventory-export.csv`. */
   filename: string
-  /** Whether row-selection mode is on (checkboxes visible on the table). */
-  selectionEnabled: boolean
-  /** Turn row-selection mode on/off. */
-  onToggleSelectionEnabled: () => void
-  /** Ticked row ids — only meaningful while selection mode is on. */
+  /**
+   * Ticked row ids from the table's always-on selection column. When non-empty
+   * the export is scoped to these ids; empty exports the whole filtered set.
+   * Row selection now lives on the table itself (checkboxes + header select-all)
+   * — this menu only reflects the current tick count, it no longer gates it.
+   */
   selectedIds: ReadonlyArray<string>
-  /** Eligible rows on the current page (drives the Select-all control). */
-  eligibleCount: number
-  /** Select-all / clear for the current page. */
-  onToggleAll: () => void
 }
 
 function capLabel(cap: ExportRowCap): string {
@@ -44,11 +40,11 @@ function capLabel(cap: ExportRowCap): string {
 
 /**
  * The right-cluster "Export" tool: a {@link ToolbarMenuButton} whose popover
- * hosts a "Select specific rows" toggle (reveals the table's checkbox column +
- * the relocated Select-all control), the column-picker checkboxes, a row-cap
- * dropdown, and a Download button. Always POSTs to the consumer's export
- * endpoint with the current list query plus — when selection mode is on and
- * rows are ticked — the ticked ids, then streams the CSV back via `fetch → blob`
+ * hosts the column-picker checkboxes, a row-cap dropdown, and a Download button.
+ * Row selection is no longer gated here — checkboxes live on the table itself
+ * (always visible) — so this menu just reflects the current tick count. Always
+ * POSTs to the consumer's export endpoint with the current list query plus, when
+ * rows are ticked, the ticked ids, then streams the CSV back via `fetch → blob`
  * so the button can show a loading state and surface errors / truncation inline.
  */
 export function ListExportButton({
@@ -56,18 +52,14 @@ export function ListExportButton({
   query,
   columns,
   filename,
-  selectionEnabled,
-  onToggleSelectionEnabled,
   selectedIds,
-  eligibleCount,
-  onToggleAll,
 }: ListExportButtonProps) {
   const allKeys = useMemo(() => columns.map((column) => column.key), [columns])
   const [checkedKeys, setCheckedKeys] = useState<Set<string>>(() => new Set(allKeys))
   const [cap, setCap] = useState<ExportRowCap>("all")
   const [status, setStatus] = useState<ExportStatus>({ kind: "idle" })
 
-  const useIds = selectionEnabled && selectedIds.length > 0
+  const useIds = selectedIds.length > 0
   const checkedCount = checkedKeys.size
   const isLoading = status.kind === "loading"
   const canDownload = checkedCount > 0 && !isLoading
@@ -144,45 +136,20 @@ export function ListExportButton({
     <ToolbarMenuButton
       label="Export"
       icon={Download}
-      active={selectionEnabled}
+      active={useIds}
       title="Export CSV"
       bodyClassName="w-[24rem]"
       maxHeight={560}
     >
-      {/* Selection-mode toggle — reveals the table's checkbox column. When off,
-          the export covers the whole filtered set. */}
-      <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--foreground)]/80">
-        <input
-          type="checkbox"
-          className={CHECKBOX_CLASS}
-          checked={selectionEnabled}
-          onChange={onToggleSelectionEnabled}
-        />
-        Select specific rows
-      </label>
-
-      {selectionEnabled ? (
-        <div className="flex flex-col gap-1.5">
-          <DataTableSelectAllButton
-            isSelectionActive={selectedIds.length > 0}
-            selectedCount={selectedIds.length}
-            eligibleCount={eligibleCount}
-            canSelect
-            onToggle={onToggleAll}
-          />
-          <p className="text-xs text-[var(--foreground)]/60">
-            {selectedIds.length > 0
-              ? `Exporting ${selectedIds.length.toLocaleString()} selected ${
-                  selectedIds.length === 1 ? "row" : "rows"
-                }`
-              : "No rows ticked — exporting all matching"}
-          </p>
-        </div>
-      ) : (
-        <p className="text-xs text-[var(--foreground)]/60">
-          Exporting all rows matching the current filters
-        </p>
-      )}
+      {/* Scope note — reflects the table's tick count. Selection happens on the
+          table (always-visible checkboxes), not in this menu. */}
+      <p className="text-xs text-[var(--foreground)]/60">
+        {useIds
+          ? `Exporting ${selectedIds.length.toLocaleString()} selected ${
+              selectedIds.length === 1 ? "row" : "rows"
+            }`
+          : "Exporting all rows matching the current filters"}
+      </p>
 
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70">

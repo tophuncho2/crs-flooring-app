@@ -128,6 +128,16 @@ export type DataTableSelection<TRow extends DataTableRow> = {
   isRowSelectable?: (row: TRow) => boolean
   /** Selection column width (px or CSS length). Default 44. */
   selectionWidth?: number | string
+  /**
+   * Select-all / clear-all for the current page's eligible ids. When provided,
+   * the header renders an always-visible select-all checkbox (checked when every
+   * eligible row is ticked, indeterminate when only some are). The table computes
+   * the page's eligible ids from `rows` + `isRowSelectable` and hands them in.
+   */
+  onToggleAll?: (pageEligibleIds: string[]) => void
+  /** Drop the whole selection — drives the pinned-footer "N selected · Clear"
+   *  cluster. When omitted, the footer cluster hides its Clear affordance. */
+  onClear?: () => void
 }
 
 export type DataTableProps<TRow extends DataTableRow> = {
@@ -293,6 +303,18 @@ export function DataTable<TRow extends DataTableRow>({
       : DEFAULT_OPEN_WIDTH
   const totalColumns = columns.length + (selection ? 1 : 0) + (hasOpenColumn ? 1 : 0)
 
+  // Select-all state, computed from the current page's eligible rows. Drives the
+  // header select-all checkbox (checked = all eligible ticked, indeterminate =
+  // some). `selectedTotal` is the whole selection (all pages) for the footer.
+  const pageEligibleIds = selection ? rows.filter(isRowSelectable).map((row) => row.id) : []
+  const selectedEligibleCount = selection
+    ? pageEligibleIds.reduce((count, id) => (selection.selectedIds.has(id) ? count + 1 : count), 0)
+    : 0
+  const allEligibleSelected =
+    pageEligibleIds.length > 0 && selectedEligibleCount === pageEligibleIds.length
+  const someEligibleSelected = selectedEligibleCount > 0 && !allEligibleSelected
+  const selectedTotal = selection?.selectedIds.size ?? 0
+
   const editableLayout = isEditable
     ? buildEditableLayout(columns, [
         ...(selection ? [selectionWidth] : []),
@@ -322,6 +344,38 @@ export function DataTable<TRow extends DataTableRow>({
             </span>
           </span>
         ))}
+      </div>
+    ) : null
+
+  // Pinned-footer selection cluster — the always-visible "N selected · Clear" that
+  // lets the user act on a batch without opening the export menu. Shows only when
+  // the selection is non-empty. Scoped to fill (list-page) tables: the editable
+  // record grids (e.g. imports staged inventory) run their own selection cluster,
+  // so the DataTable must not add a second one there.
+  const selectionNode =
+    isFill && selection && selectedTotal > 0 ? (
+      <span className="inline-flex items-center gap-2">
+        <span className="font-medium tabular-nums text-[var(--foreground)]">
+          {selectedTotal.toLocaleString()} selected
+        </span>
+        {selection.onClear ? (
+          <button
+            type="button"
+            onClick={selection.onClear}
+            className="rounded-md border border-[var(--panel-border)] px-2 py-0.5 text-xs text-[var(--foreground)]/70 transition hover:border-sky-500/45 hover:text-[var(--foreground)]"
+          >
+            Clear
+          </button>
+        ) : null}
+      </span>
+    ) : null
+
+  // Combined footer-left content: selection cluster then rollups.
+  const footerLeadingNode =
+    selectionNode || rollupsNode ? (
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+        {selectionNode}
+        {rollupsNode}
       </div>
     ) : null
 
@@ -372,7 +426,19 @@ export function DataTable<TRow extends DataTableRow>({
                   style={{ width: selection.selectionWidth ?? DEFAULT_SELECTION_WIDTH }}
                   className={joinClassNames("px-3 py-2", dividerClass, stickyHeaderCellClass)}
                 >
-                  <span className="sr-only">Select</span>
+                  {selection.onToggleAll ? (
+                    <DataTableSelectCheckbox
+                      checked={allEligibleSelected}
+                      indeterminate={someEligibleSelected}
+                      editable={canToggleSelection && pageEligibleIds.length > 0}
+                      onChange={() => selection.onToggleAll?.(pageEligibleIds)}
+                      ariaLabel={
+                        allEligibleSelected ? "Clear all on this page" : "Select all on this page"
+                      }
+                    />
+                  ) : (
+                    <span className="sr-only">Select</span>
+                  )}
                 </th>
               ) : null}
               {hasOpenColumn ? (
@@ -501,14 +567,15 @@ export function DataTable<TRow extends DataTableRow>({
       </div>
       {pagination ? (
         // PaginateControls owns its own px-3 py-2 padding — no extra here. The
-        // rollups ride on its left `leading` slot so totals + pager share one bar.
+        // selection cluster + rollups ride its left `leading` slot so totals +
+        // pager share one bar.
         <div className="border-t border-[var(--panel-border)]">
-          <PaginateControls {...pagination} leading={rollupsNode} />
+          <PaginateControls {...pagination} leading={footerLeadingNode} />
         </div>
-      ) : rollups && rollups.length > 0 ? (
-        // Rollups with no pager — a totals-only pinned footer.
+      ) : footerLeadingNode ? (
+        // Selection/rollups with no pager — a totals-only pinned footer.
         <div className="border-t border-[var(--panel-border)] px-3 py-2 text-sm text-[var(--foreground)]/75">
-          {rollupsNode}
+          {footerLeadingNode}
         </div>
       ) : cursorPagination ? (
         // CursorPaginateControls owns its own px-3 py-2 padding — no extra here.
