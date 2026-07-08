@@ -12,6 +12,11 @@ export type ListControllerOutput<TRow> = {
   /** Ordered sort columns, highest priority first. `[]` when unsorted. With
    * `maxSortLevels` unset/1 this is always `sort` as an array of zero or one. */
   sorts: ListSort[]
+  /** True when the live sort deviates from the list's default (`initialSort`).
+   * Clients OR this into their `hasActiveFilters` so the toolbar "Clear all"
+   * shows for a sort-only change; `onClearAllFilters` resets sort back to
+   * default. Always false while the list sits on its seeded default order. */
+  hasNonDefaultSort: boolean
   filters: ListFilterValueMap
   page: number
   pageSize: number

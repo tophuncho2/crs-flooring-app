@@ -60,6 +60,16 @@ function normalizeSorts(
   return result
 }
 
+/** Structural equality for two ordered sort lists (field + direction, in order).
+ * Used to tell whether the live sort deviates from the seeded default. */
+function sortsEqual(a: readonly ListSort[], b: readonly ListSort[]): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i].field !== b[i].field || a[i].direction !== b[i].direction) return false
+  }
+  return true
+}
+
 function readFiltersFromSearchParams(
   searchParams: URLSearchParams | null,
   filterableFields: readonly string[] | undefined,
@@ -261,13 +271,19 @@ export function useSsrListController<TRow, TFilters>(
     [isAscendingSort, searchQuery, writeUrl],
   )
 
+  // Single toolbar "Clear all" — resets sort to its default direction AND
+  // clears every filter in one pass.
   const onClearAllFilters = useCallback(() => {
-    if (!filterableFields || filterableFields.length === 0) return
+    setIsAscendingSort(initialIsAscendingSort)
     const next: ListFilterValueMap = {}
-    for (const key of filterableFields) next[key] = []
+    if (filterableFields) for (const key of filterableFields) next[key] = []
     setFilters(next)
-    writeUrl({ searchQuery, isAscendingSort, filters: next })
-  }, [filterableFields, isAscendingSort, searchQuery, writeUrl])
+    writeUrl({ searchQuery, isAscendingSort: initialIsAscendingSort, filters: next })
+  }, [filterableFields, initialIsAscendingSort, searchQuery, writeUrl])
+
+  // SSR single-sort: the field is fixed, so only a direction flip counts as a
+  // deviation from the seeded default.
+  const hasNonDefaultSort = isAscendingSort !== initialIsAscendingSort
 
   // SSR controller is single-sort only; expose the multi-sort surface as a
   // pass-through for contract parity (degrades to replacing the single sort).
@@ -328,6 +344,7 @@ export function useSsrListController<TRow, TFilters>(
     sorts: sortFieldKey
       ? [{ field: sortFieldKey, direction: isAscendingSort ? "asc" : "desc" }]
       : [],
+    hasNonDefaultSort,
     filters,
     page,
     pageSize,
@@ -457,6 +474,17 @@ export function useFetchListController<TRow, TFilters>(
     sortDirection,
   ])
 
+  // True once the live sort deviates from the seeded default. `sorts` always
+  // carries at least the default (see the fallback above), so a plain
+  // `sorts.length > 0` can't distinguish default from user-applied — compare
+  // against the default list instead. Drives the toolbar "Clear all" visibility.
+  const hasNonDefaultSort = useMemo(() => {
+    const defaults: ListSort[] = initialFieldKey
+      ? [{ field: initialFieldKey, direction: initialDirection }]
+      : []
+    return !sortsEqual(sorts, defaults)
+  }, [sorts, initialFieldKey, initialDirection])
+
   const listInput: ListInput<TFilters> = useMemo(
     () => ({
       search: searchUrlValue?.trim() ? searchUrlValue.trim() : undefined,
@@ -583,16 +611,34 @@ export function useFetchListController<TRow, TFilters>(
     [pageValue, setPageValue, writeFiltersUrl],
   )
 
+  // Single toolbar "Clear all" — resets sort back to its default (drops the
+  // explicit `?sorts=`/`?sortField=`/`?sort=` params) AND clears every filter.
   const onClearAllFilters = useCallback(() => {
-    if (!filterableFields || filterableFields.length === 0) return
-    setFilters(() => {
-      const next: ListFilterValueMap = {}
-      for (const key of filterableFields) next[key] = []
-      writeFiltersUrl(next)
-      return next
-    })
+    if (multiSort) {
+      setSortsParam(null)
+    } else {
+      setSortFieldValue(null)
+      setSortDirection(null)
+    }
+    if (filterableFields && filterableFields.length > 0) {
+      setFilters(() => {
+        const next: ListFilterValueMap = {}
+        for (const key of filterableFields) next[key] = []
+        writeFiltersUrl(next)
+        return next
+      })
+    }
     if (pageValue !== 1) setPageValue(1)
-  }, [filterableFields, pageValue, setPageValue, writeFiltersUrl])
+  }, [
+    multiSort,
+    setSortsParam,
+    setSortFieldValue,
+    setSortDirection,
+    filterableFields,
+    pageValue,
+    setPageValue,
+    writeFiltersUrl,
+  ])
 
   const goToPage = useCallback(
     (next: number) => {
@@ -617,6 +663,7 @@ export function useFetchListController<TRow, TFilters>(
     searchQuery: searchInputValue,
     sort: sorts[0] ?? null,
     sorts,
+    hasNonDefaultSort,
     filters,
     page: pageValue,
     pageSize,

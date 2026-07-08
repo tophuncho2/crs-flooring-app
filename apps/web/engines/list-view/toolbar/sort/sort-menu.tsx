@@ -136,17 +136,13 @@ export function SortMenuBody({
         </button>
       ) : (
         <>
-          <div className="mb-2 flex items-center justify-between">
+          {/* Header shows the level count only. Clearing sort is owned by the
+              toolbar's single "Clear all" affordance (filters + search + sort),
+              not a menu-local button. */}
+          <div className="mb-2 flex items-center">
             <span className="text-[11px] font-medium text-[var(--foreground)]/45">
               {value.length} of {maxLevels} columns
             </span>
-            <button
-              type="button"
-              onClick={() => onChange([])}
-              className="text-xs font-semibold text-sky-600 hover:text-sky-700"
-            >
-              Clear
-            </button>
           </div>
 
           <div className="space-y-1.5">

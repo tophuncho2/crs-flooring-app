@@ -145,19 +145,18 @@ describe("SortMenuBody", () => {
     expect(onChange).toHaveBeenCalledWith([{ field: "scheduledFor", direction: "desc" }])
   })
 
-  it("clears all levels", async () => {
-    const user = userEvent.setup()
-    const onChange = vi.fn()
-    const { getByText } = render(
+  it("renders no menu-local Clear (clearing is owned by the toolbar Clear all)", () => {
+    const { queryByText, getByText } = render(
       <SortMenuBody
         options={OPTIONS}
         value={[{ field: "scheduledFor", direction: "desc" }]}
         maxLevels={3}
-        onChange={onChange}
+        onChange={vi.fn()}
       />,
     )
-    await user.click(getByText("Clear"))
-    expect(onChange).toHaveBeenCalledWith([])
+    // The level-count header still shows; the standalone "Clear" button is gone.
+    expect(getByText("1 of 3 columns")).toBeTruthy()
+    expect(queryByText("Clear")).toBeNull()
   })
 
   it("hides Add another column once the max is reached", () => {

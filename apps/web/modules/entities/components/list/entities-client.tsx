@@ -90,6 +90,7 @@ export default function EntitiesClient({
     searchQuery,
     filters,
     sorts,
+    hasNonDefaultSort,
     page,
     pageSize,
     totalPages,
@@ -144,7 +145,7 @@ export default function EntitiesClient({
     [onFilterChange],
   )
 
-  const hasActiveSortTool = sorts.length > 0
+  const hasActiveSortTool = hasNonDefaultSort
 
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
   // ListActionBar clear-all signal. Filter = entity types; Search = free-text +
@@ -162,7 +163,7 @@ export default function EntitiesClient({
     [searchQuery, entityNumberValue, selectedState],
   )
 
-  const hasActiveFilters = hasActiveFilterTool || hasActiveSearchTool
+  const hasActiveFilters = hasActiveFilterTool || hasActiveSearchTool || hasActiveSortTool
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()

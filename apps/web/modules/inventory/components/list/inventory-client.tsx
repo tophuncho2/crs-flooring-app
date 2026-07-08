@@ -156,6 +156,7 @@ export default function InventoryClient({
     filters,
     sort,
     sorts,
+    hasNonDefaultSort,
     page,
     pageSize,
     totalPages,
@@ -359,7 +360,7 @@ export default function InventoryClient({
     [onFilterChange],
   )
 
-  const hasActiveSortTool = sorts.length > 0
+  const hasActiveSortTool = hasNonDefaultSort
 
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
   // ListActionBar clear-all signal. Filter = the warehouse/location/category/
@@ -396,8 +397,8 @@ export default function InventoryClient({
   )
 
   const hasActiveFilters = useMemo(
-    () => hasActiveFilterTool || hasActiveSearchTool,
-    [hasActiveFilterTool, hasActiveSearchTool],
+    () => hasActiveFilterTool || hasActiveSearchTool || hasActiveSortTool,
+    [hasActiveFilterTool, hasActiveSearchTool, hasActiveSortTool],
   )
 
   const handleClearAll = useCallback(() => {

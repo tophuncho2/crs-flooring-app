@@ -91,6 +91,7 @@ export default function ImportsClient({
     searchQuery,
     filters,
     sorts,
+    hasNonDefaultSort,
     page,
     pageSize,
     totalPages,
@@ -153,12 +154,17 @@ export default function ImportsClient({
     (option) => option.name,
   )
 
+  // A non-default sort (default is createdAt desc) folds into the single
+  // "Clear all" signal; the Sort menu no longer carries its own Clear.
+  const hasActiveSortTool = hasNonDefaultSort
+
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (impNumberValue.trim().length > 0) return true
     if (selectedWarehouseId) return true
+    if (hasActiveSortTool) return true
     return false
-  }, [searchQuery, impNumberValue, selectedWarehouseId])
+  }, [searchQuery, impNumberValue, selectedWarehouseId, hasActiveSortTool])
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
@@ -185,8 +191,6 @@ export default function ImportsClient({
       searchQuery.trim().length > 0 || impNumberValue.trim().length > 0,
     [searchQuery, impNumberValue],
   )
-
-  const hasActiveSortTool = sorts.length > 0
 
   return (
     <ListPageShell>

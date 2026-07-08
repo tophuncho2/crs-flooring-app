@@ -63,6 +63,7 @@ export default function TemplatesClient({
     total,
     filters,
     sorts,
+    hasNonDefaultSort,
     page,
     pageSize,
     totalPages,
@@ -153,7 +154,7 @@ export default function TemplatesClient({
     [onFilterChange],
   )
 
-  const hasActiveSortTool = sorts.length > 0
+  const hasActiveSortTool = hasNonDefaultSort
 
   const hasActiveFilterTool = useMemo(
     () => Boolean(selectedEntityId) || Boolean(selectedPropertyId),
@@ -166,8 +167,8 @@ export default function TemplatesClient({
   )
 
   const hasActiveFilters = useMemo(
-    () => hasActiveFilterTool || hasActiveSearchTool,
-    [hasActiveFilterTool, hasActiveSearchTool],
+    () => hasActiveFilterTool || hasActiveSearchTool || hasActiveSortTool,
+    [hasActiveFilterTool, hasActiveSearchTool, hasActiveSortTool],
   )
 
   const handleClearAll = useCallback(() => {

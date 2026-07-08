@@ -111,6 +111,7 @@ export default function ProductsClient({
     searchQuery,
     filters,
     sorts,
+    hasNonDefaultSort,
     onSortsChange,
     page,
     pageSize,
@@ -214,6 +215,10 @@ export default function ProductsClient({
     [onFilterChange],
   )
 
+  // A non-default sort (default is category A→Z) folds into the single
+  // "Clear all" signal; the Sort menu no longer carries its own Clear.
+  const hasActiveSortTool = hasNonDefaultSort
+
   const hasActiveFilters = useMemo(() => {
     if (searchQuery.trim().length > 0) return true
     if (prodNumberValue.trim().length > 0) return true
@@ -221,6 +226,7 @@ export default function ProductsClient({
     if (styleValue.trim().length > 0) return true
     if (namingAddonValue.trim().length > 0) return true
     if (selectedCategoryId) return true
+    if (hasActiveSortTool) return true
     return false
   }, [
     searchQuery,
@@ -229,6 +235,7 @@ export default function ProductsClient({
     styleValue,
     namingAddonValue,
     selectedCategoryId,
+    hasActiveSortTool,
   ])
 
   const handleClearAll = useCallback(() => {
@@ -253,10 +260,6 @@ export default function ProductsClient({
       namingAddonValue.trim().length > 0,
     [searchQuery, prodNumberValue, colorValue, styleValue, namingAddonValue],
   )
-
-  // Sort lights its own dot independently; it is NOT folded into the
-  // ListActionBar clear-all signal (mirrors inventory).
-  const hasActiveSortTool = sorts.length > 0
 
   return (
     <ListPageShell>

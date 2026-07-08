@@ -105,6 +105,7 @@ export default function PropertiesClient({
     searchQuery,
     filters,
     sorts,
+    hasNonDefaultSort,
     page,
     pageSize,
     totalPages,
@@ -183,7 +184,7 @@ export default function PropertiesClient({
     [onFilterChange],
   )
 
-  const hasActiveSortTool = sorts.length > 0
+  const hasActiveSortTool = hasNonDefaultSort
 
   const hasActiveFilterTool = useMemo(
     () => Boolean(selectedEntityId) || Boolean(selectedState),
@@ -196,8 +197,8 @@ export default function PropertiesClient({
   )
 
   const hasActiveFilters = useMemo(
-    () => hasActiveFilterTool || hasActiveSearchTool,
-    [hasActiveFilterTool, hasActiveSearchTool],
+    () => hasActiveFilterTool || hasActiveSearchTool || hasActiveSortTool,
+    [hasActiveFilterTool, hasActiveSearchTool, hasActiveSortTool],
   )
 
   const handleClearAll = useCallback(() => {

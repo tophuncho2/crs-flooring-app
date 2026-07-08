@@ -86,6 +86,7 @@ export default function WorkOrdersClient({
     filters,
     sort,
     sorts,
+    hasNonDefaultSort,
     page,
     pageSize,
     totalPages,
@@ -324,9 +325,9 @@ export default function WorkOrdersClient({
   // Each tool lights its own dot. Sort = the multi-column builder; Filter = the
   // Entity→Property→Template chain + Warehouse/JobType/Vacancy + the scheduled-for
   // date range; Search = the unit type / unit # / description / WO # bars.
-  // `hasActiveFilters` is the ListActionBar clear-all signal (filters + search;
-  // sort is cleared from inside the Sort menu, mirroring the prior behaviour).
-  const hasActiveSortTool = sorts.length > 0
+  // A non-default sort folds into the single ListActionBar "Clear all" signal
+  // (filters + search + sort); the Sort menu no longer carries its own Clear.
+  const hasActiveSortTool = hasNonDefaultSort
 
   const hasActiveFilterTool = useMemo(
     () =>
@@ -375,8 +376,8 @@ export default function WorkOrdersClient({
   )
 
   const hasActiveFilters = useMemo(
-    () => hasActiveFilterTool || hasActiveSearchTool,
-    [hasActiveFilterTool, hasActiveSearchTool],
+    () => hasActiveFilterTool || hasActiveSearchTool || hasActiveSortTool,
+    [hasActiveFilterTool, hasActiveSearchTool, hasActiveSortTool],
   )
 
   const handleClearAll = useCallback(() => {

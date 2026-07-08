@@ -140,6 +140,7 @@ export default function AdjustmentsClient({
     goToPreviousPage,
     goToNextPage,
     sorts,
+    hasNonDefaultSort,
     onSortsChange,
     onFilterChange,
     onClearAllFilters,
@@ -301,14 +302,14 @@ export default function AdjustmentsClient({
     [adjNumberValue, invNumberValue, rollNumberValue, dyeLotValue, noteValue],
   )
 
-  const hasActiveFilters = useMemo(
-    () => hasActiveFilterTool || hasActiveSearchTool,
-    [hasActiveFilterTool, hasActiveSearchTool],
-  )
+  // A non-default sort (default is createdAt desc) folds into the single
+  // "Clear all" signal; the Sort menu no longer carries its own Clear.
+  const hasActiveSortTool = hasNonDefaultSort
 
-  // The Sort tool lights its own dot independently of the filter/search dots
-  // (createdAt-desc is the default, so any user-applied sort counts as active).
-  const hasActiveSortTool = sorts.length > 0
+  const hasActiveFilters = useMemo(
+    () => hasActiveFilterTool || hasActiveSearchTool || hasActiveSortTool,
+    [hasActiveFilterTool, hasActiveSearchTool, hasActiveSortTool],
+  )
 
   const handleClearAll = useCallback(() => {
     onClearAllFilters()
