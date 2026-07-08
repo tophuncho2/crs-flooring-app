@@ -311,7 +311,7 @@ export function renderWorkOrderAdjustments(
     })
     .join("\n")
   const headCells = [
-    `<th>Product</th>`,
+    `<th>Adjustment Products</th>`,
     columns.dyeLot ? `<th>Dyelot</th>` : "",
     columns.rollNumber ? `<th>Roll#</th>` : "",
     `<th class="cl-num">Quantity</th>`,
@@ -385,7 +385,7 @@ export function renderWorkOrderMaterialItems(
     : `<col style="width: 70%;" />
     <col style="width: 30%;" />`
   const headCells = [
-    `<th>Product</th>`,
+    `<th>Requested Products</th>`,
     showNotes ? `<th>Notes</th>` : "",
     `<th class="cl-num">Qty / Unit</th>`,
   ]

@@ -24,7 +24,7 @@ describe("plan-file — table columns", () => {
   const html = renderWorkOrderMaterialItems([makeMaterialItemGroup()])
 
   it("renders the three Plan File columns", () => {
-    expect(html).toContain("<th>Product</th>")
+    expect(html).toContain("<th>Requested Products</th>")
     expect(html).toContain('<th class="cl-num">Qty / Unit</th>')
     expect(html).toContain("<th>Notes</th>")
   })

@@ -20,7 +20,7 @@ describe("slip — header is Product / Quantity only", () => {
   const html = slipTable([makeMaterialItem()])
 
   it("renders the two slip columns", () => {
-    expect(html).toContain("<th>Product</th>")
+    expect(html).toContain("<th>Adjustment Products</th>")
     expect(html).toContain('<th class="cl-num">Quantity</th>')
   })
 

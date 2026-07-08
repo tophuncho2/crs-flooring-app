@@ -17,7 +17,7 @@ describe("picking ticket — header", () => {
   const html = pickingTable([makeMaterialItem()])
 
   it("renders all six columns in order", () => {
-    expect(html).toContain("<th>Product</th>")
+    expect(html).toContain("<th>Adjustment Products</th>")
     expect(html).toContain("<th>Dyelot</th>")
     expect(html).toContain("<th>Roll#</th>")
     expect(html).toContain('<th class="cl-num">Quantity</th>')
