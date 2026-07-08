@@ -1,13 +1,14 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
   ListActionBar,
   ListCreateButtonPortal,
   ListPageShell,
   ListPageFeedback,
+  SortMenuBody,
   ToolbarMenuButton,
   SearchControl,
   StateSearchControl,
@@ -26,6 +27,11 @@ import {
 } from "@/modules/entities/data/list-entities-request"
 import { useEntitiesListController } from "@/modules/entities/controllers/list/use-entities-list-controller"
 import { EntitiesTable } from "./entities-table"
+import {
+  ENTITIES_ALLOWED_SORT_FIELDS,
+  ENTITIES_MAX_SORT_LEVELS,
+  ENTITIES_SORT_OPTIONS,
+} from "./table/entities-list-columns"
 
 const ENTITIES_FILTERABLE_FIELDS = ["entityNumber", "state", "entityTypeIds"] as const
 
@@ -83,6 +89,7 @@ export default function EntitiesClient({
     total,
     searchQuery,
     filters,
+    sorts,
     page,
     pageSize,
     totalPages,
@@ -91,6 +98,7 @@ export default function EntitiesClient({
     goToPreviousPage,
     goToNextPage,
     onSearchQueryChange,
+    onSortsChange,
     onFilterChange,
     onClearAllFilters,
   } = useFetchListController<EntityListRow, EngineEntitiesFilters>({
@@ -98,11 +106,14 @@ export default function EntitiesClient({
     queryKey: [...ENTITIES_LIST_QUERY_KEY],
     listFn: adaptedListFn,
     initialSearchQuery,
+    initialSort: { field: "entity", direction: "asc" },
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
     pageSize: LIST_ENTITIES_PAGE_SIZE,
     tableKey: "entities-main",
     filterableFields: ENTITIES_FILTERABLE_FIELDS,
+    allowedSortFields: ENTITIES_ALLOWED_SORT_FIELDS,
+    maxSortLevels: ENTITIES_MAX_SORT_LEVELS,
     freshness: LIST_FRESHNESS_STANDARD,
   })
 
@@ -132,6 +143,8 @@ export default function EntitiesClient({
     (nextIds: string[]) => onFilterChange("entityTypeIds", nextIds),
     [onFilterChange],
   )
+
+  const hasActiveSortTool = sorts.length > 0
 
   // Each tool lights its own dot independently; `hasActiveFilters` stays the
   // ListActionBar clear-all signal. Filter = entity types; Search = free-text +
@@ -170,6 +183,22 @@ export default function EntitiesClient({
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >
+        {/* Sort — the multi-column builder, leftmost. The only sort affordance. */}
+        <ToolbarMenuButton
+          label="Sort"
+          title="Sort by"
+          icon={ArrowUpDown}
+          active={hasActiveSortTool}
+          bodyClassName="w-auto"
+        >
+          <SortMenuBody
+            options={ENTITIES_SORT_OPTIONS}
+            value={sorts}
+            maxLevels={ENTITIES_MAX_SORT_LEVELS}
+            onChange={onSortsChange}
+          />
+        </ToolbarMenuButton>
+
         {/* Filter — the entity-type glow rail (same rail as the combo picker):
             every type listed, selected ones glow, click to toggle. */}
         <ToolbarMenuButton

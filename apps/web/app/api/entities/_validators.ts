@@ -3,6 +3,7 @@ import { EntityExecutionError } from "@builders/application"
 import type {
   CreateEntityUseCaseInput,
   ListInput,
+  ListSort,
   EntitiesListFilters,
   UpdateEntityUseCaseInput,
 } from "@builders/application"
@@ -129,6 +130,36 @@ const listEntitiesQuerySchema = z.object({
     .default(LIST_ENTITIES_PAGE_SIZE),
 })
 
+// UI-exposed sortable fields. Row# (ENT #) is intentionally excluded — createdAt
+// is the canonical chronological key; Type(s) is a to-many relation and not
+// orderable by name. Kept independent of the data-layer + client allowlists
+// (defense-in-depth); the allowlist-sync test holds the three in step.
+export const ENTITIES_UI_SORT_FIELDS = [
+  "entity",
+  "state",
+  "createdAt",
+  "updatedAt",
+] as const
+const ENTITIES_MAX_SORT_LEVELS = 3
+/** The list's default order when no `sorts` param is supplied (entity A→Z). */
+const ENTITIES_DEFAULT_SORT: ListSort = { field: "entity", direction: "asc" }
+
+/** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | null): ListSort[] {
+  if (!raw) return []
+  const allowed = new Set<string>(ENTITIES_UI_SORT_FIELDS)
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !allowed.has(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "desc" ? "desc" : "asc" })
+    if (result.length >= ENTITIES_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
 export function validateListEntitiesQuery(
   searchParams: URLSearchParams,
 ): ListInput<EntitiesListFilters> {
@@ -181,8 +212,14 @@ export function validateListEntitiesQuery(
         }
       : undefined
 
+  // Canonical ordered sort via `sorts`; absent → the list's entity-asc default.
+  const parsedSorts = parseSortsParam(searchParams.get("sorts"))
+  const sorts: ListSort[] = parsedSorts.length > 0 ? parsedSorts : [ENTITIES_DEFAULT_SORT]
+
   return {
     search,
+    sort: sorts[0],
+    sorts,
     filters,
     page: parsed.page,
     pageSize: parsed.pageSize,

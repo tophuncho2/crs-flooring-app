@@ -178,6 +178,13 @@ model Entity {
   // backs the exact-int `#` search bar and the record-view stepper's neighbor walk.
   @@index([entityNumber])
   @@index([entityNumberInt])
+  // List-view sort backing (menu-only multi-column sort). Composite `(col, id)`
+  // so the `id` tiebreak resolves in the same scan; the entity-name sort already
+  // rides `@@index([entity])`. createdAt/updatedAt are tie-prone under bulk
+  // import; `state` is nulls-last (btree serves the ASC-nulls-last case cleanly).
+  @@index([createdAt, id])
+  @@index([updatedAt, id])
+  @@index([state, id])
   @@map("entity")
 }
 

@@ -12,8 +12,21 @@ import {
   type EntityOption,
 } from "@builders/domain"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { buildEntitiesOrderBy } from "./order-by.js"
 
 type EntitiesDbClient = PrismaClient | Prisma.TransactionClient
+
+export type EntitiesListSortEntry = {
+  /** Sort column — maps through `entityFieldOrderBy`. */
+  field: string
+  direction: "asc" | "desc"
+}
+
+export type EntitiesListSort = {
+  /** Ordered sort columns, highest priority first. An empty list falls straight
+   * through to the `createdAt`+`id` tiebreaker. */
+  entries: EntitiesListSortEntry[]
+}
 
 // Linked entity-types, slimmed to what the chip/picker render. Ordered by type
 // name so chips render in a stable, alphabetical order. Exported so the write
@@ -173,6 +186,7 @@ export type EntityListViewOptions = {
     state?: ReadonlyArray<string>
     entityTypeIds?: ReadonlyArray<string>
   }
+  sort?: EntitiesListSort
   skip: number
   take: number
 }
@@ -228,7 +242,7 @@ export async function listEntitiesForListView(
     client.entity.count({ where }),
     client.entity.findMany({
       where,
-      orderBy: [{ entity: "asc" }, { id: "asc" }],
+      orderBy: buildEntitiesOrderBy(options.sort),
       skip: options.skip,
       take: options.take,
       select: entityListSelect,
