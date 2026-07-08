@@ -61,6 +61,19 @@ function buildTopFieldRows(
 type AdjustmentExportRow = WorkOrderFileAdjustmentProjection & { productName: string }
 type MaterialExportRow = WorkOrderFileMaterialItemProjection & { productName: string }
 
+// The top-field block reads vertically down columns A (Field) + B (Value). The
+// bottom tables indent past it — three empty leading columns so Product lands in
+// column D (C stays a visual gap). Purely a spreadsheet-layout nicety.
+const BOTTOM_TABLE_INDENT = 3
+
+function leadingSpacerColumns<TRow>(count: number): ExportColumn<TRow>[] {
+  const spacers: ExportColumn<TRow>[] = []
+  for (let index = 0; index < count; index += 1) {
+    spacers.push({ key: `spacer-${index}`, label: "", value: () => "" })
+  }
+  return spacers
+}
+
 /** Flatten the adjustment groups to the selected rows (absent selection ⇒ all). */
 function selectAdjustmentRows(
   input: WorkOrderFileGenerationInput,
@@ -96,6 +109,7 @@ function buildAdjustmentColumns(
   config: WorkOrderPrintConfig,
 ): ReadonlyArray<ExportColumn<AdjustmentExportRow>> {
   const columns: ExportColumn<AdjustmentExportRow>[] = [
+    ...leadingSpacerColumns<AdjustmentExportRow>(BOTTOM_TABLE_INDENT),
     { key: "product", label: "Product", value: (row) => row.productName },
   ]
   if (config.adjustmentColumns.dyeLot) {
@@ -131,6 +145,7 @@ function buildMaterialColumns(
   config: WorkOrderPrintConfig,
 ): ReadonlyArray<ExportColumn<MaterialExportRow>> {
   const columns: ExportColumn<MaterialExportRow>[] = [
+    ...leadingSpacerColumns<MaterialExportRow>(BOTTOM_TABLE_INDENT),
     { key: "product", label: "Product", value: (row) => row.productName },
   ]
   if (config.materialColumns.notes) {

@@ -69,13 +69,14 @@ describe("buildWorkOrderCsv — adjustments (deductions) bottom table", () => {
 
   it("renders all detail columns + composed values on the pickingTicket preset", () => {
     const { bottom } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("pickingTicket")))
-    expect(bottom.split("\r\n")[0]).toBe("Product,Dyelot,Roll#,Quantity,Adjustment,Location")
-    expect(bottom).toContain("Shaw Carpet — Beige,DL-9,R-7,10 rolls,100 rolls → 90 rolls,DOCK-9")
+    // Three empty leading columns indent the table so Product sits in column D.
+    expect(bottom.split("\r\n")[0]).toBe(",,,Product,Dyelot,Roll#,Quantity,Adjustment,Location")
+    expect(bottom).toContain(",,,Shaw Carpet — Beige,DL-9,R-7,10 rolls,100 rolls → 90 rolls,DOCK-9")
   })
 
   it("drops all detail columns on the slip preset (Product + Quantity only)", () => {
     const { bottom } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("slip")))
-    expect(bottom.split("\r\n")[0]).toBe("Product,Quantity")
+    expect(bottom.split("\r\n")[0]).toBe(",,,Product,Quantity")
     expect(bottom).not.toContain("Dyelot")
   })
 
@@ -91,7 +92,7 @@ describe("buildWorkOrderCsv — adjustments (deductions) bottom table", () => {
     const config = buildWorkOrderPrintConfig("slip")
     config.selectedAdjustmentIds = []
     const { bottom } = blocks(buildWorkOrderCsv(input, config))
-    expect(bottom).toBe("Product,Quantity")
+    expect(bottom).toBe(",,,Product,Quantity")
   })
 })
 
@@ -110,15 +111,15 @@ describe("buildWorkOrderCsv — requested-material bottom table (material mode)"
 
   it("mirrors config.mode = material with Notes on", () => {
     const { bottom } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("planFile")))
-    expect(bottom.split("\r\n")[0]).toBe("Product,Notes,Qty / Unit")
-    expect(bottom).toContain("Shaw Carpet — Beige,first,10 SF")
+    expect(bottom.split("\r\n")[0]).toBe(",,,Product,Notes,Qty / Unit")
+    expect(bottom).toContain(",,,Shaw Carpet — Beige,first,10 SF")
   })
 
   it("drops the Notes column when off", () => {
     const config = buildWorkOrderPrintConfig("planFile")
     config.materialColumns.notes = false
     const { bottom } = blocks(buildWorkOrderCsv(input, config))
-    expect(bottom.split("\r\n")[0]).toBe("Product,Qty / Unit")
+    expect(bottom.split("\r\n")[0]).toBe(",,,Product,Qty / Unit")
     expect(bottom).not.toContain("first")
   })
 
