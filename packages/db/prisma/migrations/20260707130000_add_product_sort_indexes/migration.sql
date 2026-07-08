@@ -3,10 +3,11 @@
 --
 -- The Sort menu exposes createdAt, updatedAt, style, color (+ category, which
 -- rides FlooringCategory.name's unique btree — no product-side index needed).
--- All are composite (col, id) — the house canonical: one uniform-direction btree
--- serves ASC/DESC via backward scan and carries the id tiebreak (timestamps are
--- tie-prone on bulk imports). style/color are nullable free-text; the existing
--- GIN-trgm indexes serve ILIKE search only — they do NOT serve ORDER BY.
+--   • createdAt / updatedAt: composite (col, id) so the id tiebreak resolves in
+--     the same index scan (timestamps are tie-prone on bulk imports).
+--   • style / color: plain btree. The existing GIN-trgm indexes serve ILIKE
+--     search only — they do NOT serve ORDER BY, so an unindexed sort was a
+--     full-table sort until now.
 -- =====================================================================
 
 -- CreateIndex
@@ -16,7 +17,7 @@ CREATE INDEX "flooring_product_createdAt_id_idx" ON "flooring_product"("createdA
 CREATE INDEX "flooring_product_updatedAt_id_idx" ON "flooring_product"("updatedAt", "id");
 
 -- CreateIndex
-CREATE INDEX "flooring_product_style_id_idx" ON "flooring_product"("style", "id");
+CREATE INDEX "flooring_product_style_idx" ON "flooring_product"("style");
 
 -- CreateIndex
-CREATE INDEX "flooring_product_color_id_idx" ON "flooring_product"("color", "id");
+CREATE INDEX "flooring_product_color_idx" ON "flooring_product"("color");
