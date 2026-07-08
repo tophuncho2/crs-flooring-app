@@ -43,11 +43,10 @@ describe("presets seed the right document", () => {
     expect(config.documentLabel).toBe("Plan File")
   })
 
-  it("document-type selector labels mirror the three preset documentLabels", () => {
+  it("document-type selector labels mirror the pickingTicket + slip preset documentLabels", () => {
     expect(WORK_ORDER_DOCUMENT_LABELS).toEqual([
       buildWorkOrderPrintConfig("pickingTicket").documentLabel,
       buildWorkOrderPrintConfig("slip").documentLabel,
-      buildWorkOrderPrintConfig("planFile").documentLabel,
     ])
   })
 })
