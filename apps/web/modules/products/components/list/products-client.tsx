@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react"
 import {
   DebouncedSearchControl,
   SearchControl,
@@ -9,6 +9,7 @@ import {
   ListCreateButtonPortal,
   ListPageShell,
   ListPageFeedback,
+  SortMenuBody,
   ToolbarMenuButton,
   useFetchListController,
   LIST_FRESHNESS_STANDARD,
@@ -26,6 +27,11 @@ import {
   listProductsRequest,
 } from "@/modules/products/data/list-products-request"
 import { useProductsListController } from "@/modules/products/controllers/use-products-list-controller"
+import {
+  PRODUCTS_ALLOWED_SORT_FIELDS,
+  PRODUCTS_MAX_SORT_LEVELS,
+  PRODUCTS_SORT_OPTIONS,
+} from "./table/products-list-columns"
 import { ProductsTable } from "./products-table"
 
 const PRODUCTS_FILTERABLE_FIELDS = [
@@ -104,6 +110,8 @@ export default function ProductsClient({
     total,
     searchQuery,
     filters,
+    sorts,
+    onSortsChange,
     page,
     pageSize,
     totalPages,
@@ -121,6 +129,11 @@ export default function ProductsClient({
     initialSearchQuery,
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
+    // Default first column mirrors the read-repository's category → name → id
+    // baseline so the list looks identical until a user picks a sort.
+    initialSort: { field: "category", direction: "asc" },
+    allowedSortFields: PRODUCTS_ALLOWED_SORT_FIELDS,
+    maxSortLevels: PRODUCTS_MAX_SORT_LEVELS,
     pageSize: LIST_PRODUCTS_PAGE_SIZE,
     tableKey: "products-main",
     filterableFields: PRODUCTS_FILTERABLE_FIELDS,
@@ -240,6 +253,10 @@ export default function ProductsClient({
     [searchQuery, prodNumberValue, colorValue, styleValue, namingAddonValue],
   )
 
+  // Sort lights its own dot independently; it is NOT folded into the
+  // ListActionBar clear-all signal (mirrors inventory).
+  const hasActiveSortTool = sorts.length > 0
+
   return (
     <ListPageShell>
       <ListCreateButtonPortal label="Product" onClick={() => openCreate()} />
@@ -254,6 +271,23 @@ export default function ProductsClient({
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAll}
       >
+        {/* Sort — the shared multi-column Sort menu. Menu-only: the table
+            headers stay static labels. */}
+        <ToolbarMenuButton
+          label="Sort"
+          title="Sort by"
+          icon={ArrowUpDown}
+          active={hasActiveSortTool}
+          bodyClassName="w-auto"
+        >
+          <SortMenuBody
+            options={PRODUCTS_SORT_OPTIONS}
+            value={sorts}
+            maxLevels={PRODUCTS_MAX_SORT_LEVELS}
+            onChange={onSortsChange}
+          />
+        </ToolbarMenuButton>
+
         {/* Filter — products HAS one. The Category attribute picker, composed
             directly (NOT the self-triggering FilterControl). */}
         <ToolbarMenuButton

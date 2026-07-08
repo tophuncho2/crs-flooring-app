@@ -292,6 +292,14 @@ model FlooringProduct {
   @@index([style(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_product_style_trgm_idx")
   @@index([color(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_product_color_trgm_idx")
   @@index([productNamingAddon(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_product_productNamingAddon_trgm_idx")
+  // Btree indexes backing the list-view Sort tool (menu-only). Composite
+  // `(col, id)` on the timestamps so the id tiebreak is served in one scan;
+  // plain btree on style/color (the GIN-trgm indexes above serve ILIKE search,
+  // NOT ORDER BY). `category` sort rides FlooringCategory.name @unique.
+  @@index([createdAt, id])
+  @@index([updatedAt, id])
+  @@index([style])
+  @@index([color])
   @@map("flooring_product")
 }
 

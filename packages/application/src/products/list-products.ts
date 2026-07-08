@@ -14,6 +14,9 @@ export type ProductsListFilters = {
   categoryId?: ReadonlyArray<string>
 }
 
+/** Cap on user-selected sort columns — mirrors the engine + request + API. */
+const LIST_PRODUCTS_MAX_SORT_LEVELS = 3
+
 function normalizeCategoryIds(
   raw: ReadonlyArray<string> | undefined,
 ): ReadonlyArray<string> | undefined {
@@ -49,9 +52,18 @@ export async function listProductsUseCase(
         }
       : undefined
 
+  // Ordered multi-column sort. Cap mirrors the engine + request + API layers;
+  // an empty list lets the read-repository fall back to its default order.
+  const sortList = input.sorts ?? (input.sort ? [input.sort] : [])
+  const entries = sortList
+    .slice(0, LIST_PRODUCTS_MAX_SORT_LEVELS)
+    .map((entry) => ({ field: entry.field, direction: entry.direction }))
+  const sort = entries.length > 0 ? { entries } : undefined
+
   const { rows, total } = await listProductsForListView({
     search,
     filters,
+    ...(sort ? { sort } : {}),
     skip: (page - 1) * pageSize,
     take: pageSize,
   })

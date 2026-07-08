@@ -15,6 +15,7 @@ import {
   type ProductsDbClient,
 } from "./shared.js"
 import { numberNeighborQueries } from "../shared/number-neighbors.js"
+import { buildProductListViewOrderBy } from "./order-by.js"
 
 // --- Record types ---
 
@@ -350,8 +351,24 @@ export type ProductListViewOptions = {
     namingAddon?: string
     categoryId?: ReadonlyArray<string>
   }
+  sort?: ProductListViewSort
   skip: number
   take: number
+}
+
+export type ProductListViewSortEntry = {
+  /**
+   * Sort column. `category` resolves to the related category name; `style` and
+   * `color` are nullable free-text (ordered with nulls last). `createdAt` /
+   * `updatedAt` sort on the local timestamps.
+   */
+  field: string
+  direction: "asc" | "desc"
+}
+
+export type ProductListViewSort = {
+  /** Ordered sort columns, highest priority first. */
+  entries: ProductListViewSortEntry[]
 }
 
 export type ProductListViewResult = {
@@ -413,7 +430,7 @@ export async function listProductsForListView(
     client.flooringProduct.count({ where }),
     client.flooringProduct.findMany({
       where,
-      orderBy: [{ category: { name: "asc" } }, { name: "asc" }, { id: "asc" }],
+      orderBy: buildProductListViewOrderBy(options.sort),
       skip: options.skip,
       take: options.take,
       select: productRowSelect,

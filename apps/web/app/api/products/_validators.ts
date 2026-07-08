@@ -3,6 +3,7 @@ import { ProductExecutionError } from "@builders/application"
 import type {
   CreateProductInput,
   ListInput,
+  ListSort,
   ProductsListFilters,
 } from "@builders/application"
 import {
@@ -131,6 +132,34 @@ const listProductsQuerySchema = z.object({
     .default(LIST_PRODUCTS_PAGE_SIZE),
 })
 
+// UI-exposed sortable fields (backend keys). Kept independent of the client
+// allowlist for defense-in-depth; the sort-allowlist-sync test asserts it
+// matches `PRODUCTS_SORT_OPTIONS` + `PRODUCTS_LIST_SORT_FIELDS`.
+export const PRODUCTS_UI_SORT_FIELDS = [
+  "category",
+  "style",
+  "color",
+  "createdAt",
+  "updatedAt",
+] as const
+const PRODUCTS_MAX_SORT_LEVELS = 3
+
+/** Parse the ordered `sorts=field:dir,field:dir` param (validated, deduped, capped). */
+function parseSortsParam(raw: string | null): ListSort[] {
+  if (!raw) return []
+  const allowed = new Set<string>(PRODUCTS_UI_SORT_FIELDS)
+  const result: ListSort[] = []
+  const seen = new Set<string>()
+  for (const token of raw.split(",")) {
+    const [field, direction] = token.split(":")
+    if (!field || seen.has(field) || !allowed.has(field)) continue
+    seen.add(field)
+    result.push({ field, direction: direction === "asc" ? "asc" : "desc" })
+    if (result.length >= PRODUCTS_MAX_SORT_LEVELS) break
+  }
+  return result
+}
+
 export function validateListProductsQuery(
   searchParams: URLSearchParams,
 ): ListInput<ProductsListFilters> {
@@ -169,6 +198,8 @@ export function validateListProductsQuery(
     ),
   )
 
+  const sorts = parseSortsParam(searchParams.get("sorts"))
+
   return {
     search,
     filters:
@@ -181,6 +212,7 @@ export function validateListProductsQuery(
             ...(categoryId.length > 0 ? { categoryId } : {}),
           }
         : undefined,
+    ...(sorts.length > 0 ? { sorts } : {}),
     page: parsed.page,
     pageSize: parsed.pageSize,
   }
