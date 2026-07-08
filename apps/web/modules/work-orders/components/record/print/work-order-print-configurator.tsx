@@ -191,25 +191,7 @@ export function WorkOrderPrintConfigurator({
   return (
     <main className="mx-auto flex max-w-6xl gap-6 bg-white px-6 py-8 text-black print:block print:max-w-none print:gap-0 print:p-0">
       <aside className="w-72 shrink-0 space-y-5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm print:hidden">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold">Print options</h2>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleExportCsv}
-              className="rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-            >
-              Export CSV
-            </button>
-            <button
-              type="button"
-              onClick={() => void handlePrint()}
-              className="rounded bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
-            >
-              Print
-            </button>
-          </div>
-        </div>
+        <h2 className="text-base font-semibold">Print options</h2>
 
         {/* Walk the global work-order-number line without leaving the print
             view. Bare stepper (no portal / dirty guard) — nothing here is
@@ -221,6 +203,26 @@ export function WorkOrderPrintConfigurator({
           previousAriaLabel="Previous work order"
           nextAriaLabel="Next work order"
         />
+
+        {/* Output actions, stacked under the stepper. Both play the SAME
+            checkbox selections below — one drives the browser print, the other
+            the CSV download. */}
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="w-full rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => void handlePrint()}
+            className="w-full rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+          >
+            Print
+          </button>
+        </div>
 
         <PanelSection title="Document">
           <div className="flex flex-col gap-1 rounded border border-neutral-200 p-0.5">
