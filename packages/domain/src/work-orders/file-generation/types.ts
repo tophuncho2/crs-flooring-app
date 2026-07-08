@@ -135,14 +135,24 @@ export type WorkOrderMaterialColumnVisibility = {
 }
 
 /**
+ * Which bottom sections render. Independent toggles (NOT mutually exclusive) —
+ * both may be on, so a document/export can carry the adjustments table AND the
+ * requested-material table at once.
+ */
+export type WorkOrderSectionVisibility = {
+  adjustments: boolean
+  material: boolean
+}
+
+/**
  * The full checkbox-driven configuration for ONE work-order print document.
  * Seeded from a preset (Picking Ticket / Slip / Plan File) and then mutated by
- * the configurator's checkboxes. `mode` is the mutually-exclusive bottom section
- * (adjustments XOR requested material). `selected*Ids` undefined ⇒ all rows.
+ * the configurator's checkboxes. `sections` independently toggles the two bottom
+ * tables (either, both, or neither). `selected*Ids` undefined ⇒ all rows.
  */
 export type WorkOrderPrintConfig = {
   documentLabel: string
-  mode: "adjustments" | "material"
+  sections: WorkOrderSectionVisibility
   topFields: WorkOrderTopFieldVisibility
   adjustmentColumns: WorkOrderAdjustmentColumnVisibility
   materialColumns: WorkOrderMaterialColumnVisibility

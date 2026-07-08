@@ -146,11 +146,16 @@ export function WorkOrderPrintConfigurator({
       topFields: { ...current.topFields, [key]: !current.topFields[key] },
     }))
 
-  const setMode = (mode: WorkOrderPrintConfig["mode"]) =>
-    setConfig((current) => ({ ...current, mode }))
+  // Each bottom section (adjustments / requested material) toggles independently
+  // — both may be on. Whatever is on renders on every output (print + CSV).
+  const toggleSection = (key: keyof WorkOrderPrintConfig["sections"]) =>
+    setConfig((current) => ({
+      ...current,
+      sections: { ...current.sections, [key]: !current.sections[key] },
+    }))
 
   // Document-type switch is label-only — it sets the centered top tag and leaves
-  // the user's mode/columns/row selections untouched.
+  // the user's section/columns/row selections untouched.
   const setDocumentLabel = (documentLabel: string) =>
     setConfig((current) => ({ ...current, documentLabel }))
 
@@ -185,8 +190,6 @@ export function WorkOrderPrintConfigurator({
     ids: ReadonlyArray<string>,
     selectAll: boolean,
   ) => setConfig((current) => ({ ...current, [field]: selectAll ? [...ids] : [] }))
-
-  const isAdjustments = config.mode === "adjustments"
 
   return (
     <main className="mx-auto flex max-w-6xl gap-6 bg-white px-6 py-8 text-black print:block print:max-w-none print:gap-0 print:p-0">
@@ -250,19 +253,18 @@ export function WorkOrderPrintConfigurator({
           ))}
         </PanelSection>
 
-        <PanelSection title="Bottom section">
-          <div className="mb-2 flex gap-1 rounded border border-neutral-200 p-0.5">
-            <ModeButton active={isAdjustments} onClick={() => setMode("adjustments")}>
-              Adjustments
-            </ModeButton>
-            <ModeButton active={!isAdjustments} onClick={() => setMode("material")}>
-              Requested Material
-            </ModeButton>
-          </div>
-
-          {isAdjustments ? (
+        {/* Two independent bottom sections. Each has its own show toggle,
+            columns, and row picker; both can be on at once and each renders on
+            every output (print + CSV). */}
+        <PanelSection title="Adjustments">
+          <CheckRow
+            checked={config.sections.adjustments}
+            onChange={() => toggleSection("adjustments")}
+            label="Include section"
+          />
+          {config.sections.adjustments ? (
             <>
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
+              <p className="mt-2 mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
                 Columns
               </p>
               {ADJUSTMENT_COLUMN_FIELDS.map((column) => (
@@ -290,9 +292,18 @@ export function WorkOrderPrintConfigurator({
                 emptyLabel="No adjustments on this work order."
               />
             </>
-          ) : (
+          ) : null}
+        </PanelSection>
+
+        <PanelSection title="Requested Material">
+          <CheckRow
+            checked={config.sections.material}
+            onChange={() => toggleSection("material")}
+            label="Include section"
+          />
+          {config.sections.material ? (
             <>
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
+              <p className="mt-2 mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
                 Columns
               </p>
               <CheckRow
@@ -317,7 +328,7 @@ export function WorkOrderPrintConfigurator({
                 emptyLabel="No requested material on this work order."
               />
             </>
-          )}
+          ) : null}
         </PanelSection>
       </aside>
 

@@ -42,7 +42,7 @@ export function buildWorkOrderPrintConfig(preset: WorkOrderPrintPreset): WorkOrd
     case "pickingTicket":
       return {
         documentLabel: "Picking Ticket",
-        mode: "adjustments",
+        sections: { adjustments: true, material: false },
         topFields: allTopFieldsVisible(),
         adjustmentColumns: { dyeLot: true, rollNumber: true, adjustment: true, location: true },
         materialColumns: { notes: true },
@@ -50,7 +50,7 @@ export function buildWorkOrderPrintConfig(preset: WorkOrderPrintPreset): WorkOrd
     case "slip":
       return {
         documentLabel: "Work Order",
-        mode: "adjustments",
+        sections: { adjustments: true, material: false },
         topFields: allTopFieldsVisible(),
         adjustmentColumns: { dyeLot: false, rollNumber: false, adjustment: false, location: false },
         materialColumns: { notes: true },
@@ -58,7 +58,7 @@ export function buildWorkOrderPrintConfig(preset: WorkOrderPrintPreset): WorkOrd
     case "planFile":
       return {
         documentLabel: "Plan File",
-        mode: "material",
+        sections: { adjustments: false, material: true },
         topFields: allTopFieldsVisible(),
         adjustmentColumns: { dyeLot: true, rollNumber: true, adjustment: true, location: true },
         materialColumns: { notes: true },

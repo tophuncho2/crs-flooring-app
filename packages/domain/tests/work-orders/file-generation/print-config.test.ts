@@ -18,9 +18,9 @@ import {
 } from "./_fixtures.js"
 
 describe("presets seed the right document", () => {
-  it("pickingTicket → adjustments mode with all detail columns", () => {
+  it("pickingTicket → adjustments section on with all detail columns", () => {
     const config = buildWorkOrderPrintConfig("pickingTicket")
-    expect(config.mode).toBe("adjustments")
+    expect(config.sections).toEqual({ adjustments: true, material: false })
     expect(config.documentLabel).toBe("Picking Ticket")
     expect(config.adjustmentColumns).toEqual({
       dyeLot: true,
@@ -30,16 +30,16 @@ describe("presets seed the right document", () => {
     })
   })
 
-  it("slip → adjustments mode with no detail columns", () => {
+  it("slip → adjustments section on with no detail columns", () => {
     const config = buildWorkOrderPrintConfig("slip")
-    expect(config.mode).toBe("adjustments")
+    expect(config.sections).toEqual({ adjustments: true, material: false })
     expect(config.documentLabel).toBe("Work Order")
     expect(Object.values(config.adjustmentColumns).every((on) => !on)).toBe(true)
   })
 
-  it("planFile → material mode", () => {
+  it("planFile → material section on", () => {
     const config = buildWorkOrderPrintConfig("planFile")
-    expect(config.mode).toBe("material")
+    expect(config.sections).toEqual({ adjustments: false, material: true })
     expect(config.documentLabel).toBe("Plan File")
   })
 
@@ -167,23 +167,43 @@ describe("renderWorkOrderMaterialItems — notes gating + row filtering", () => 
   })
 })
 
-describe("buildWorkOrderPrintHtml — mode branch", () => {
+describe("buildWorkOrderPrintHtml — independent section gating", () => {
   const input = makeFileGenInput({
     adjustmentGroups: [makeMaterialItem()],
     materialItemGroups: [makeMaterialItemGroup()],
   })
 
-  it("adjustments mode renders the adjustments table, not material", () => {
+  it("adjustments-only renders the adjustments table, not material", () => {
     const html = buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("pickingTicket"))
     expect(html).toContain("Picking Ticket")
     expect(html).toContain("<th>Dyelot</th>")
     expect(html).not.toContain("Qty / Unit")
   })
 
-  it("material mode renders the requested-material table, not adjustments", () => {
+  it("material-only renders the requested-material table, not adjustments", () => {
     const html = buildWorkOrderPrintHtml(input, buildWorkOrderPrintConfig("planFile"))
     expect(html).toContain("Plan File")
     expect(html).toContain("Qty / Unit")
     expect(html).not.toContain("<th>Dyelot</th>")
+  })
+
+  it("renders BOTH tables when both sections are on", () => {
+    const config = {
+      ...buildWorkOrderPrintConfig("pickingTicket"),
+      sections: { adjustments: true, material: true },
+    }
+    const html = buildWorkOrderPrintHtml(input, config)
+    expect(html).toContain("<th>Dyelot</th>")
+    expect(html).toContain("Qty / Unit")
+  })
+
+  it("renders neither table when both sections are off", () => {
+    const config = {
+      ...buildWorkOrderPrintConfig("pickingTicket"),
+      sections: { adjustments: false, material: false },
+    }
+    const html = buildWorkOrderPrintHtml(input, config)
+    expect(html).not.toContain("<th>Dyelot</th>")
+    expect(html).not.toContain("Qty / Unit")
   })
 })

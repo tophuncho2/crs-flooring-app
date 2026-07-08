@@ -13,9 +13,10 @@ import {
  * {@link WorkOrderPrintConfig} (seeded from a preset, then mutated by the
  * configurator's checkboxes), it composes the same `<style>` + `.wo-print-root`
  * fragment the three legacy builders produced — the top info stack gated by
- * `config.topFields`, and ONE mutually-exclusive bottom section: adjustments
- * (with per-column detail) or requested material. `config.documentLabel` is the
- * centered top tag, the one part that differs between the presets.
+ * `config.topFields`, and the bottom sections independently gated by
+ * `config.sections` (adjustments and/or requested material — either, both, or
+ * neither). `config.documentLabel` is the centered top tag, the one part that
+ * differs between the presets.
  *
  * Pure (no I/O), so it runs identically server-side (the legacy preset wrappers)
  * and client-side (the live configurator's preview + print). Returns no
@@ -26,17 +27,24 @@ export function buildWorkOrderPrintHtml(
   config: WorkOrderPrintConfig,
   options: { logoUrl?: string | null } = {},
 ): string {
-  const bottom =
-    config.mode === "material"
+  // Independent bottom sections — render each one that's toggled on, in order.
+  // The renderers return "" for an empty/omitted section, so filter(Boolean)
+  // drops anything off or without rows.
+  const bottom = [
+    config.sections.adjustments
+      ? renderWorkOrderAdjustments(input.adjustmentGroups, {
+          columns: config.adjustmentColumns,
+          selectedIds: config.selectedAdjustmentIds,
+        })
+      : "",
+    config.sections.material
       ? renderWorkOrderMaterialItems(input.materialItemGroups, {
           columns: config.materialColumns,
           selectedIds: config.selectedMaterialIds,
         })
-      : renderWorkOrderAdjustments(input.adjustmentGroups, {
-          columns: config.adjustmentColumns,
-          selectedIds: config.selectedAdjustmentIds,
-        })
-  const body = [renderWorkOrderInfo(input, config.topFields), bottom].filter(Boolean).join("\n")
+      : "",
+  ]
+  const body = [renderWorkOrderInfo(input, config.topFields), ...bottom].filter(Boolean).join("\n")
 
   return `<style>${WO_PRINT_STYLE_BLOCK}</style>
 <div class="wo-print-root">

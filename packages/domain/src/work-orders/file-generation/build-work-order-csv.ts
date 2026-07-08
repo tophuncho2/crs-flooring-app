@@ -13,12 +13,12 @@ import { formatTransition, formatUnitValue, resolveWorkOrderTopFieldValue } from
  * The checkbox-driven work-order CSV export — the spreadsheet sibling of
  * {@link import("./build-work-order-print-html.js").buildWorkOrderPrintHtml}.
  * Given the SAME {@link WorkOrderFileGenerationInput} + {@link WorkOrderPrintConfig}
- * the configurator drives the print preview with, it emits two stacked CSV
- * blocks:
+ * the configurator drives the print preview with, it emits stacked CSV blocks:
  *
- *   1. the top section — one `Field,Value` row per CHECKED top field, and
- *   2. the bottom table — mutually-exclusive per `config.mode`: the DEDUCTION
- *      adjustments (with the toggled detail columns) or the requested material.
+ *   1. the top section — one `Field,Value` row per CHECKED top field, then
+ *   2. each bottom section `config.sections` enables (either, both, or neither) —
+ *      the DEDUCTION adjustments and/or the requested material, each a labeled,
+ *      column-D-indented table with its toggled columns + selected rows.
  *
  * Row selection (`selected*Ids`) and column visibility mirror the print output
  * exactly, so the file matches what is on screen. Per-group subtotal rows are
@@ -30,14 +30,20 @@ export function buildWorkOrderCsv(
   input: WorkOrderFileGenerationInput,
   config: WorkOrderPrintConfig,
 ): string {
-  // BOM on the first block only, so Excel decodes the whole file as UTF-8.
-  const topBlock = toCsv(buildTopFieldRows(input, config), TOP_FIELD_COLUMNS, { bom: true })
-  const bottomBlock =
-    config.mode === "material"
-      ? toCsv(selectMaterialRows(input, config), buildMaterialColumns(config))
-      : toCsv(selectAdjustmentRows(input, config), buildAdjustmentColumns(config))
-  // Blank line (CRLF + CRLF) between the two stacked tables.
-  return `${topBlock}\r\n\r\n${bottomBlock}`
+  // Top field block first, BOM on it so Excel decodes the whole file as UTF-8.
+  const parts = [toCsv(buildTopFieldRows(input, config), TOP_FIELD_COLUMNS, { bom: true })]
+  // Each enabled bottom section becomes its own labeled, column-D-indented table.
+  // The column-A label disambiguates the two Product-columned tables.
+  if (config.sections.adjustments) {
+    parts.push(`Adjustments\r\n${toCsv(selectAdjustmentRows(input, config), buildAdjustmentColumns(config))}`)
+  }
+  if (config.sections.material) {
+    parts.push(
+      `Requested Material\r\n${toCsv(selectMaterialRows(input, config), buildMaterialColumns(config))}`,
+    )
+  }
+  // Blank line (CRLF + CRLF) between stacked blocks.
+  return parts.join("\r\n\r\n")
 }
 
 type TopFieldRow = { field: string; value: string }

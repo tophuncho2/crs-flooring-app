@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { buildWorkOrderCsv } from "../../../src/work-orders/file-generation/build-work-order-csv.js"
 import { buildWorkOrderPrintConfig } from "../../../src/work-orders/file-generation/print-presets.js"
+import type { WorkOrderPrintConfig } from "../../../src/work-orders/file-generation/types.js"
 import {
   makeAdjustment,
   makeFileGenInput,
@@ -11,10 +12,27 @@ import {
 
 const BOM = "﻿"
 
-/** Split the file into its two stacked blocks (they're separated by a blank line). */
-function blocks(csv: string): { top: string; bottom: string } {
-  const [top, bottom] = csv.split("\r\n\r\n")
-  return { top, bottom }
+const ADJ_LABEL = "Adjustments\r\n"
+const MAT_LABEL = "Requested Material\r\n"
+
+/**
+ * Split the file into its stacked blocks. Block 0 is always the top field
+ * table; each following block is label-prefixed, so we key them by section and
+ * strip the label so the remainder is just that section's table.
+ */
+function blocks(csv: string): { top: string; adjustments?: string; material?: string } {
+  const [top, ...rest] = csv.split("\r\n\r\n")
+  const result: { top: string; adjustments?: string; material?: string } = { top }
+  for (const block of rest) {
+    if (block.startsWith(ADJ_LABEL)) result.adjustments = block.slice(ADJ_LABEL.length)
+    else if (block.startsWith(MAT_LABEL)) result.material = block.slice(MAT_LABEL.length)
+  }
+  return result
+}
+
+/** pickingTicket, but with both bottom sections turned on. */
+function bothSectionsConfig(): WorkOrderPrintConfig {
+  return { ...buildWorkOrderPrintConfig("pickingTicket"), sections: { adjustments: true, material: true } }
 }
 
 describe("buildWorkOrderCsv — top section", () => {
@@ -25,8 +43,7 @@ describe("buildWorkOrderCsv — top section", () => {
 
   it("emits one row per CHECKED top field, using the shared value resolvers", () => {
     const config = buildWorkOrderPrintConfig("pickingTicket") // all top fields visible
-    const csv = buildWorkOrderCsv(makeFileGenInput(), config)
-    const { top } = blocks(csv)
+    const { top } = blocks(buildWorkOrderCsv(makeFileGenInput(), config))
     // Composed values mirror the print cells.
     expect(top).toContain("Date,2026-06-08 - AM")
     expect(top).toContain("Job Type,Turn")
@@ -54,7 +71,7 @@ describe("buildWorkOrderCsv — top section", () => {
   })
 })
 
-describe("buildWorkOrderCsv — adjustments (deductions) bottom table", () => {
+describe("buildWorkOrderCsv — adjustments (deductions) section", () => {
   const input = makeFileGenInput({
     adjustmentGroups: [
       makeMaterialItem({
@@ -68,35 +85,41 @@ describe("buildWorkOrderCsv — adjustments (deductions) bottom table", () => {
   })
 
   it("renders all detail columns + composed values on the pickingTicket preset", () => {
-    const { bottom } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("pickingTicket")))
+    const { adjustments } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("pickingTicket")))
     // Three empty leading columns indent the table so Product sits in column D.
-    expect(bottom.split("\r\n")[0]).toBe(",,,Product,Dyelot,Roll#,Quantity,Adjustment,Location")
-    expect(bottom).toContain(",,,Shaw Carpet — Beige,DL-9,R-7,10 rolls,100 rolls → 90 rolls,DOCK-9")
+    expect(adjustments?.split("\r\n")[0]).toBe(",,,Product,Dyelot,Roll#,Quantity,Adjustment,Location")
+    expect(adjustments).toContain(",,,Shaw Carpet — Beige,DL-9,R-7,10 rolls,100 rolls → 90 rolls,DOCK-9")
   })
 
   it("drops all detail columns on the slip preset (Product + Quantity only)", () => {
-    const { bottom } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("slip")))
-    expect(bottom.split("\r\n")[0]).toBe(",,,Product,Quantity")
-    expect(bottom).not.toContain("Dyelot")
+    const { adjustments } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("slip")))
+    expect(adjustments?.split("\r\n")[0]).toBe(",,,Product,Quantity")
+    expect(adjustments).not.toContain("Dyelot")
   })
 
   it("honors per-row selection", () => {
     const config = buildWorkOrderPrintConfig("slip")
     config.selectedAdjustmentIds = ["a1"]
-    const { bottom } = blocks(buildWorkOrderCsv(input, config))
-    expect(bottom).toContain("10 rolls")
-    expect(bottom).not.toContain("5 rolls")
+    const { adjustments } = blocks(buildWorkOrderCsv(input, config))
+    expect(adjustments).toContain("10 rolls")
+    expect(adjustments).not.toContain("5 rolls")
   })
 
-  it("empty selection → header-only bottom block (no data rows)", () => {
+  it("empty selection → header-only section (no data rows)", () => {
     const config = buildWorkOrderPrintConfig("slip")
     config.selectedAdjustmentIds = []
-    const { bottom } = blocks(buildWorkOrderCsv(input, config))
-    expect(bottom).toBe(",,,Product,Quantity")
+    const { adjustments } = blocks(buildWorkOrderCsv(input, config))
+    expect(adjustments).toBe(",,,Product,Quantity")
+  })
+
+  it("is absent when the adjustments section is off", () => {
+    // planFile → adjustments off.
+    const { adjustments } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("planFile")))
+    expect(adjustments).toBeUndefined()
   })
 })
 
-describe("buildWorkOrderCsv — requested-material bottom table (material mode)", () => {
+describe("buildWorkOrderCsv — requested-material section", () => {
   const input = makeFileGenInput({
     materialItemGroups: [
       makeMaterialItemGroup({
@@ -109,25 +132,56 @@ describe("buildWorkOrderCsv — requested-material bottom table (material mode)"
     ],
   })
 
-  it("mirrors config.mode = material with Notes on", () => {
-    const { bottom } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("planFile")))
-    expect(bottom.split("\r\n")[0]).toBe(",,,Product,Notes,Qty / Unit")
-    expect(bottom).toContain(",,,Shaw Carpet — Beige,first,10 SF")
+  it("renders the material section with Notes on (planFile preset)", () => {
+    const { material } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("planFile")))
+    expect(material?.split("\r\n")[0]).toBe(",,,Product,Notes,Qty / Unit")
+    expect(material).toContain(",,,Shaw Carpet — Beige,first,10 SF")
   })
 
   it("drops the Notes column when off", () => {
     const config = buildWorkOrderPrintConfig("planFile")
     config.materialColumns.notes = false
-    const { bottom } = blocks(buildWorkOrderCsv(input, config))
-    expect(bottom.split("\r\n")[0]).toBe(",,,Product,Qty / Unit")
-    expect(bottom).not.toContain("first")
+    const { material } = blocks(buildWorkOrderCsv(input, config))
+    expect(material?.split("\r\n")[0]).toBe(",,,Product,Qty / Unit")
+    expect(material).not.toContain("first")
   })
 
   it("honors per-row selection", () => {
     const config = buildWorkOrderPrintConfig("planFile")
     config.selectedMaterialIds = ["m2"]
-    const { bottom } = blocks(buildWorkOrderCsv(input, config))
-    expect(bottom).toContain("second")
-    expect(bottom).not.toContain("first")
+    const { material } = blocks(buildWorkOrderCsv(input, config))
+    expect(material).toContain("second")
+    expect(material).not.toContain("first")
+  })
+
+  it("is absent when the material section is off", () => {
+    // pickingTicket → material off.
+    const { material } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("pickingTicket")))
+    expect(material).toBeUndefined()
+  })
+})
+
+describe("buildWorkOrderCsv — both sections on", () => {
+  const input = makeFileGenInput({
+    adjustmentGroups: [
+      makeMaterialItem({
+        productName: "Shaw Carpet — Beige",
+        adjustments: [makeAdjustment({ id: "a1", quantity: "10" })],
+      }),
+    ],
+    materialItemGroups: [
+      makeMaterialItemGroup({
+        productName: "Mohawk Vinyl — Grey",
+        materialItems: [makeMaterialItemRow({ id: "m1", quantity: "8", unitAbbrev: "SF", notes: "install" })],
+      }),
+    ],
+  })
+
+  it("emits the top block plus BOTH labeled section tables", () => {
+    const csv = buildWorkOrderCsv(input, bothSectionsConfig())
+    const { top, adjustments, material } = blocks(csv)
+    expect(top.startsWith(`${BOM}Field,Value`)).toBe(true)
+    expect(adjustments).toContain(",,,Shaw Carpet — Beige")
+    expect(material).toContain(",,,Mohawk Vinyl — Grey,install,8 SF")
   })
 })
