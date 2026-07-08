@@ -52,7 +52,16 @@ describe("buildProductListViewOrderBy", () => {
     expect(buildProductListViewOrderBy(undefined)).toEqual(DEFAULT_ORDER_BY)
   })
 
-  it("always ends with `id` as the final tiebreak when the user selects columns", () => {
+  it("expands a lone category:asc into the historical default (SSR/client parity)", () => {
+    // The client + SSR both send the default as `[category:asc]`; the builder
+    // must reproduce the empty-entries `category.name → name → id` order so the
+    // list never reorders between server paint and client fetch.
+    expect(
+      buildProductListViewOrderBy({ entries: [{ field: "category", direction: "asc" }] }),
+    ).toEqual(DEFAULT_ORDER_BY)
+  })
+
+  it("always ends with `id`, preceded by the `name` secondary key", () => {
     const shapes: Array<{ field: string; direction: "asc" | "desc" }[]> = [
       [{ field: "category", direction: "asc" }],
       [{ field: "createdAt", direction: "desc" }],
@@ -66,14 +75,15 @@ describe("buildProductListViewOrderBy", () => {
     for (const entries of shapes) {
       const orderBy = buildProductListViewOrderBy({ entries }) as Array<Record<string, unknown>>
       expect(lastKey(orderBy), JSON.stringify(entries)).toEqual(["id"])
+      expect(Object.keys(orderBy[orderBy.length - 2]), JSON.stringify(entries)).toEqual(["name"])
     }
   })
 
-  it("gives the id tiebreak the highest-priority column's direction", () => {
+  it("appends name + id tiebreaks in the highest-priority column's direction", () => {
     const orderBy = buildProductListViewOrderBy({
       entries: [{ field: "createdAt", direction: "desc" }],
     }) as Array<Record<string, unknown>>
-    expect(orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }])
+    expect(orderBy).toEqual([{ createdAt: "desc" }, { name: "desc" }, { id: "desc" }])
   })
 
   it("composes an ordered multi-column chain (highest priority first)", () => {
@@ -86,15 +96,16 @@ describe("buildProductListViewOrderBy", () => {
     expect(orderBy).toEqual([
       { style: { sort: "asc", nulls: "last" } },
       { color: { sort: "desc", nulls: "last" } },
-      { id: "asc" }, // tiebreak mirrors the lead column (asc)
+      { name: "asc" }, // canonical secondary, mirrors the lead column (asc)
+      { id: "asc" }, // final tiebreak
     ])
   })
 
-  it("skips unknown fields but still produces a deterministic id order", () => {
+  it("skips unknown fields but still produces a deterministic name→id order", () => {
     const orderBy = buildProductListViewOrderBy({
       entries: [{ field: "totallyNotAColumn", direction: "asc" }],
     }) as Array<Record<string, unknown>>
-    expect(orderBy).toEqual([{ id: "asc" }])
+    expect(orderBy).toEqual([{ name: "asc" }, { id: "asc" }])
   })
 
   it("collapses an identical duplicate clause (field-level dedup is the parser's job)", () => {

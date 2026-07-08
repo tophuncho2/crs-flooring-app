@@ -129,8 +129,9 @@ export default function ProductsClient({
     initialSearchQuery,
     initialPage,
     initialFilters: toEngineFilters(initialFilters),
-    // Default first column mirrors the read-repository's category → name → id
-    // baseline so the list looks identical until a user picks a sort.
+    // Default = category A→Z, matching the SSR parser's PRODUCTS_DEFAULT_SORT so
+    // SSR/client keys align. The db builder expands this lone entry into the
+    // historical category.name → name → id order (name = canonical secondary).
     initialSort: { field: "category", direction: "asc" },
     allowedSortFields: PRODUCTS_ALLOWED_SORT_FIELDS,
     maxSortLevels: PRODUCTS_MAX_SORT_LEVELS,

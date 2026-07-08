@@ -51,9 +51,14 @@ const PRODUCT_DEFAULT_ORDER_BY: Prisma.FlooringProductOrderByWithRelationInput[]
  * Builds the products list-view `orderBy`. With no user-selected columns it
  * returns the default `category.name → name → id` chain (unchanged behavior).
  * The user-selectable fields are `category` (→ category.name), `style`/`color`
- * (nullable free-text → nulls last), `createdAt` and `updatedAt`. Multiple
- * columns compose an ordered chain (highest priority first); `id` is always the
- * stable final tiebreak, its direction mirroring the highest-priority column.
+ * (nullable free-text → nulls last), `createdAt` and `updatedAt`.
+ *
+ * `name` (the product name) is products' canonical SECONDARY key — the analog
+ * of inventory's `createdAt` tiebreak. It is appended after the user's columns
+ * (unless they already sort by it) so a lone `category` selection reproduces the
+ * historical `category.name → name → id` default EXACTLY, and every other sort
+ * stays alphabetically stable within ties. `id` is always the unique final
+ * tiebreak; both trailing clauses mirror the highest-priority column's direction.
  */
 export function buildProductListViewOrderBy(
   sort: ProductListViewSort | undefined,
@@ -68,9 +73,13 @@ export function buildProductListViewOrderBy(
     appendUniqueOrderBy(orderBy, productFieldOrderBy(entry.field, entry.direction))
   }
 
-  // `id` is always appended last as the unique final tiebreak; its direction
-  // mirrors the highest-priority entry so the trailing order matches the lead.
   const tiebreakDirection: Prisma.SortOrder = entries[0]?.direction ?? "asc"
+  // Products' canonical secondary key. Skip it when the user already sorts by
+  // name — it is not a selectable Sort field today, so this stays defensive.
+  if (!entries.some((entry) => entry.field === "name")) {
+    appendUniqueOrderBy(orderBy, { name: tiebreakDirection })
+  }
+  // `id` is always appended last as the unique final tiebreak.
   appendUniqueOrderBy(orderBy, { id: tiebreakDirection })
 
   return orderBy

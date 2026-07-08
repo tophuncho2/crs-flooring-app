@@ -54,8 +54,13 @@ describe("parseProductsListInputFromSearchParams — ?sorts= parsing", () => {
     expect(input.sorts?.map((entry) => entry.field)).toEqual(["category", "style", "color"])
   })
 
-  it("leaves sorts undefined when no sorts param is present", () => {
-    expect(parseProductsListInputFromSearchParams({}).sorts).toBeUndefined()
+  it("defaults to category:asc when no sorts param is present", () => {
+    // Always populated (mirrors properties/inventory) so the SSR prefetch key
+    // matches the client's first-render key. The db builder expands this into
+    // the historical category → name → id order.
+    const input = parseProductsListInputFromSearchParams({})
+    expect(input.sorts).toEqual([{ field: "category", direction: "asc" }])
+    expect(input.sort).toEqual({ field: "category", direction: "asc" })
   })
 
   it("round-trips through the URL builder", () => {
