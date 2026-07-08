@@ -613,32 +613,41 @@ export function useFetchListController<TRow, TFilters>(
 
   // Single toolbar "Clear all" — resets sort back to its default (drops the
   // explicit `?sorts=`/`?sortField=`/`?sort=` params) AND clears every filter.
+  //
+  // This must be ONE history write. nuqs (which owns the sort/page params) patches
+  // `history.replaceState`, so any un-marked manual write re-syncs nuqs from that
+  // URL and resets its pending queue. Firing a nuqs `setSortsParam(null)` AND a
+  // separate manual filter write in the same tick races: the manual write reads
+  // the pre-flush URL (still carrying `?sorts=`) and re-adopts the old sort,
+  // clobbering the queued clear — the URL flickers back to the same sort. So we
+  // strip sort + page + every filter in a single `replaceState`; nuqs adopts the
+  // cleared sort/page for free. Filters live in React state (not nuqs), so also
+  // reset them locally.
   const onClearAllFilters = useCallback(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
     if (multiSort) {
-      setSortsParam(null)
+      params.delete("sorts")
     } else {
-      setSortFieldValue(null)
-      setSortDirection(null)
+      params.delete("sortField")
+      params.delete("sort")
     }
+    params.delete("page")
+    if (filterableFields) {
+      for (const key of filterableFields) params.delete(key)
+    }
+    const qs = params.toString()
+    const href = qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+    window.history.replaceState(window.history.state, "", href)
+
     if (filterableFields && filterableFields.length > 0) {
       setFilters(() => {
         const next: ListFilterValueMap = {}
         for (const key of filterableFields) next[key] = []
-        writeFiltersUrl(next)
         return next
       })
     }
-    if (pageValue !== 1) setPageValue(1)
-  }, [
-    multiSort,
-    setSortsParam,
-    setSortFieldValue,
-    setSortDirection,
-    filterableFields,
-    pageValue,
-    setPageValue,
-    writeFiltersUrl,
-  ])
+  }, [multiSort, filterableFields, setFilters])
 
   const goToPage = useCallback(
     (next: number) => {
