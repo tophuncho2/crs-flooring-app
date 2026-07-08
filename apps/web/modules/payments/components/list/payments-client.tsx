@@ -112,7 +112,7 @@ export default function PaymentsClient({ initialPage }: PaymentsClientProps) {
   // exact on its own column) live in a single Search menu. No gutter "Menu":
   // the table stays bare until CSV export lands.
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Payment" onClick={openCreate} />
 
       <ListActionBar

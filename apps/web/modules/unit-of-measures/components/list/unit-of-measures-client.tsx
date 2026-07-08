@@ -47,7 +47,7 @@ export default function UnitOfMeasuresClient({ initialPage }: UnitOfMeasuresClie
   })
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListHeaderPortal
         label="Unit Of Measures"
         rowCount={rows.length}

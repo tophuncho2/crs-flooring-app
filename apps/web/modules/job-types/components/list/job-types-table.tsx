@@ -16,6 +16,7 @@ export function JobTypesTable({
 }) {
   return (
     <DataTable<JobTypeListRow>
+      fill
       rows={rows}
       columns={JOB_TYPES_LIST_COLUMNS}
       empty="No job types match this search."

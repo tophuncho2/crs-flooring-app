@@ -176,7 +176,7 @@ export default function TemplatesClient({
   }, [onClearAllFilters])
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Template" onClick={() => openCreate()} />
 
       <ListPageFeedback message={message} pageError={pageError} />

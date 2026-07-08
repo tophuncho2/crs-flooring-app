@@ -18,6 +18,7 @@ export function ProductsTable({
 }: ProductsTableProps) {
   return (
     <DataTable<ProductListRow>
+      fill
       rows={rows}
       columns={PRODUCTS_LIST_COLUMNS}
       empty="No flooring products found."

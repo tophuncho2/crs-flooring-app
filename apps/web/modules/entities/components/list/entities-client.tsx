@@ -171,7 +171,7 @@ export default function EntitiesClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Entity" onClick={() => openCreate()} />
 
       <ListPageFeedback message={message} pageError={pageError} />

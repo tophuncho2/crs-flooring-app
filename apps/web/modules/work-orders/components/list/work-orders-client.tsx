@@ -385,7 +385,7 @@ export default function WorkOrdersClient({
   }, [onClearAllFilters])
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Work Order" onClick={() => openCreate()} />
 
       <ListPageFeedback message={message} pageError={pageError} />

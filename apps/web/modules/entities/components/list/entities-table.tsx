@@ -16,6 +16,7 @@ export function EntitiesTable({
 }) {
   return (
     <DataTable<EntityListRow>
+      fill
       rows={rows}
       columns={ENTITIES_LIST_COLUMNS}
       empty="No entities match these filters."

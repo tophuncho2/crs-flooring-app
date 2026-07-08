@@ -115,7 +115,7 @@ export default function EntityTypesClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Entity Type" onClick={() => openCreate()} />
 
       <ListPageFeedback message={message} pageError={pageError} />

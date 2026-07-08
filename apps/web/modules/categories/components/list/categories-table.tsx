@@ -16,6 +16,7 @@ export function CategoriesTable({
 }) {
   return (
     <DataTable<CategoryListRow>
+      fill
       rows={rows}
       columns={CATEGORIES_LIST_COLUMNS}
       empty="No categories found."

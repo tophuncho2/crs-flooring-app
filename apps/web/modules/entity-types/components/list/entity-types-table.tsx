@@ -16,6 +16,7 @@ export function EntityTypesTable({
 }) {
   return (
     <DataTable<EntityTypeListRow>
+      fill
       rows={rows}
       columns={ENTITY_TYPES_LIST_COLUMNS}
       empty="No entity types match this search."

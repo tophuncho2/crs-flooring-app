@@ -16,6 +16,7 @@ export function PropertiesTable({
 }) {
   return (
     <DataTable<PropertyListRow>
+      fill
       rows={rows}
       columns={PROPERTIES_LIST_COLUMNS}
       empty="No properties match these filters."

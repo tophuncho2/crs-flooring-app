@@ -45,7 +45,7 @@ export default function InvitesClient({ initialPage }: InvitesClientProps) {
   })
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Invite" onClick={() => openCreate()} />
       <ListHeaderPortal
         label="Invites"

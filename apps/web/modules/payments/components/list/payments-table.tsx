@@ -16,6 +16,7 @@ export function PaymentsTable({
 }) {
   return (
     <DataTable<PaymentListRow>
+      fill
       rows={rows}
       columns={PAYMENTS_LIST_COLUMNS}
       empty="No payments yet."

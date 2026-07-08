@@ -193,7 +193,7 @@ export default function ImportsClient({
   )
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Import" onClick={() => openCreate()} />
 
       <ListPageFeedback message={message} pageError={pageError} />

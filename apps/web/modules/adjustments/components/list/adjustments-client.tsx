@@ -316,7 +316,7 @@ export default function AdjustmentsClient({
   }, [onClearAllFilters])
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListActionBar
         label="Adjustments"
         rowCount={rows.length}

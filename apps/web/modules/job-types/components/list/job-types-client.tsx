@@ -115,7 +115,7 @@ export default function JobTypesClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Job Type" onClick={() => openCreate()} />
 
       <ListPageFeedback message={message} pageError={pageError} />

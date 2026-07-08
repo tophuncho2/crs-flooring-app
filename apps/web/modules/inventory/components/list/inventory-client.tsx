@@ -406,7 +406,7 @@ export default function InventoryClient({
   }, [onClearAllFilters])
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Inventory" onClick={() => openCreate()} />
 
       <ListPageFeedback message={message} pageError={pageError} />

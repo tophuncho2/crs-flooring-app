@@ -113,7 +113,7 @@ export default function WarehouseClient({
   }, [onSearchQueryChange, onClearAllFilters])
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Warehouse" onClick={() => openCreate()} />
 
       <ListActionBar

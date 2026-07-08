@@ -262,7 +262,7 @@ export default function ProductsClient({
   )
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal label="Product" onClick={() => openCreate()} />
 
       <ListPageFeedback message={message} pageError={pageError} />

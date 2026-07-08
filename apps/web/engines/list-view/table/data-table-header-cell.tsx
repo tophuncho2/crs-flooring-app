@@ -25,8 +25,11 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
  */
 export function DataTableHeaderCell<TRow extends DataTableRow>({
   column,
+  className,
 }: {
   column: DataTableColumn<TRow>
+  /** Extra classes from the table (sticky-header pin + column divider). */
+  className?: string
 }) {
   const align = column.align ?? "start"
 
@@ -36,6 +39,7 @@ export function DataTableHeaderCell<TRow extends DataTableRow>({
       className={joinClassNames(
         "whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
         ALIGN_CLASS_NAME[align],
+        className,
       )}
     >
       <span

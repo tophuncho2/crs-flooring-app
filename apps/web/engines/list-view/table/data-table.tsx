@@ -197,6 +197,17 @@ export type DataTableProps<TRow extends DataTableRow> = {
    * sizes its gutter from `onOpenRow`/`rowActions` automatically.
    */
   rowActionsWidth?: number
+  /**
+   * List-page **fill mode**. When true the card becomes a bounded, full-height
+   * flex column: the table body scrolls INSIDE its own `overflow-auto` region
+   * (so the `<thead>` sticks to the top of that region, pinning under the app
+   * shell's action bar) and the footer (pagination / rollups) is a flex sibling
+   * that stays pinned at the bottom. Off (default) keeps the legacy document-
+   * flow card with horizontal-only scroll — the shape record-view sections and
+   * the `editable` variant rely on. List pages opt in via {@link ListPageShell}
+   * `fill`. Ignored by the `editable` variant.
+   */
+  fill?: boolean
   className?: string
 }
 
@@ -227,9 +238,13 @@ export function DataTable<TRow extends DataTableRow>({
   getRowAriaLabel,
   variant = "list",
   rowActionsWidth,
+  fill = false,
   className,
 }: DataTableProps<TRow>) {
   const isEditable = variant === "editable"
+  // Fill mode is a list-page-only layout; the editable variant (record-view
+  // sections) always uses the document-flow card.
+  const isFill = fill && !isEditable
   const canToggleSelection = selection ? selection.canToggleSelection ?? true : false
   const isRowSelectable = (row: TRow) =>
     selection?.isRowSelectable ? selection.isRowSelectable(row) : true
@@ -269,17 +284,36 @@ export function DataTable<TRow extends DataTableRow>({
       ])
     : null
 
+  // Sticky-header pin (fill mode only). The `<th>` cells — not the `<tr>` — carry
+  // the sticky + opaque background so scrolling rows don't bleed through, and the
+  // bottom border rides along with the pinned cell.
+  const stickyHeaderCellClass = isFill
+    ? "sticky top-0 z-10 bg-[var(--panel-background)] border-b border-[var(--panel-border)]"
+    : undefined
+  // Column divider between adjacent columns. Applied to every cell except the
+  // trailing one so the card's own right border isn't doubled.
+  const dividerClass = "border-r border-[var(--panel-border)]/60"
+
   return (
     <div
       className={joinClassNames(
-        "overflow-hidden rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-[0_12px_28px_rgba(0,0,0,0.1)]",
+        "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-[0_12px_28px_rgba(0,0,0,0.1)]",
+        // Fill: bounded full-height flex column whose middle scroll region grows.
+        // Non-fill: legacy clipped document-flow card.
+        isFill ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "overflow-hidden",
         className,
       )}
     >
       {headerSlot ? (
         <div className="border-b border-[var(--panel-border)] px-3 py-2">{headerSlot}</div>
       ) : null}
-      <div className="overflow-x-auto overscroll-x-contain">
+      <div
+        className={
+          isFill
+            ? "min-h-0 flex-1 overflow-auto overscroll-contain"
+            : "overflow-x-auto overscroll-x-contain"
+        }
+      >
         <table
           className={joinClassNames(
             "w-full border-collapse",
@@ -302,18 +336,29 @@ export function DataTable<TRow extends DataTableRow>({
                 <th
                   scope="col"
                   style={{ width: selection.selectionWidth ?? DEFAULT_SELECTION_WIDTH }}
-                  className="px-3 py-2"
+                  className={joinClassNames("px-3 py-2", dividerClass, stickyHeaderCellClass)}
                 >
                   <span className="sr-only">Select</span>
                 </th>
               ) : null}
               {hasOpenColumn ? (
-                <th scope="col" style={{ width: openColumnWidth }} className="px-3 py-2">
+                <th
+                  scope="col"
+                  style={{ width: openColumnWidth }}
+                  className={joinClassNames("px-3 py-2", dividerClass, stickyHeaderCellClass)}
+                >
                   <span className="sr-only">{hasRowActions ? "Actions" : "Open"}</span>
                 </th>
               ) : null}
-              {columns.map((column) => (
-                <DataTableHeaderCell<TRow> key={column.key} column={column} />
+              {columns.map((column, index) => (
+                <DataTableHeaderCell<TRow>
+                  key={column.key}
+                  column={column}
+                  className={joinClassNames(
+                    index < columns.length - 1 ? dividerClass : undefined,
+                    stickyHeaderCellClass,
+                  )}
+                />
               ))}
             </tr>
           </thead>
@@ -358,7 +403,7 @@ export function DataTable<TRow extends DataTableRow>({
                 >
                   {selection ? (
                     <td
-                      className="px-3 py-2 text-center"
+                      className={joinClassNames("px-3 py-2 text-center", dividerClass)}
                       // Stop the checkbox's click from bubbling to the row's
                       // toggle — without this the row handler toggles a second
                       // time and cancels the checkbox's own toggle.
@@ -375,7 +420,7 @@ export function DataTable<TRow extends DataTableRow>({
                   ) : null}
                   {hasOpenColumn ? (
                     <td
-                      className="px-3 py-2"
+                      className={joinClassNames("px-3 py-2", dividerClass)}
                       // Keep gutter-button clicks off any row-level handler.
                       onClick={(event) => event.stopPropagation()}
                       onMouseDown={(event) => event.stopPropagation()}
@@ -393,7 +438,7 @@ export function DataTable<TRow extends DataTableRow>({
                       </div>
                     </td>
                   ) : null}
-                  {columns.map((column) => (
+                  {columns.map((column, index) => (
                     <td
                       key={column.key}
                       className={joinClassNames(
@@ -403,6 +448,7 @@ export function DataTable<TRow extends DataTableRow>({
                         // `nowrap` and align to the input baseline.
                         isEditable ? "align-middle" : "whitespace-nowrap",
                         ALIGN_CLASS_NAME[column.align ?? "start"],
+                        index < columns.length - 1 ? dividerClass : undefined,
                       )}
                     >
                       {renderCell

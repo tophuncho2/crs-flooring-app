@@ -207,7 +207,7 @@ export default function PropertiesClient({
   }, [onClearAllFilters, onSearchQueryChange])
 
   return (
-    <ListPageShell>
+    <ListPageShell fill>
       <ListCreateButtonPortal
         label="Property"
         onClick={() =>

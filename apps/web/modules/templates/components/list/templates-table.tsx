@@ -23,6 +23,7 @@ export function TemplatesTable({
 }) {
   return (
     <DataTable<TemplateListRow>
+      fill
       rows={rows}
       columns={TEMPLATES_LIST_COLUMNS}
       empty="No templates match these filters."
