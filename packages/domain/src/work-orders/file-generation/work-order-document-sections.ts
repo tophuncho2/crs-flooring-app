@@ -1,6 +1,7 @@
 import { buildAddressLine } from "../../shared/address/index.js"
 import { formatPhoneNumber } from "../../shared/phone.js"
 import { sumAdjustmentQuantities } from "../material-items/adjustment-quantities.js"
+import { formatTimeOfDay, formatUnitValue, formatVacancy } from "./csv-values.js"
 import {
   WORK_ORDER_TOP_FIELD_KEYS,
   type WorkOrderAdjustmentColumnVisibility,
@@ -449,16 +450,6 @@ function renderMaterialItemSubtotalRow(
 `.trim()
 }
 
-function formatVacancy(vacancy: "VACANT" | "OCCUPIED" | null): string {
-  if (vacancy === "VACANT") return "Vacant"
-  if (vacancy === "OCCUPIED") return "Occupied"
-  return ""
-}
-
-function formatTimeOfDay(timeOfDay: "AM" | "PM" | null): string {
-  return timeOfDay ?? "-"
-}
-
 function renderAdjustmentRow(
   {
     adj,
@@ -523,9 +514,11 @@ function renderSubtotalRow(
 }
 
 function renderUnitValue(value: string, unitAbbrev: string): string {
-  if (value === "") return `<span class="empty-cell">—</span>`
-  if (unitAbbrev === "") return escapeHtml(value)
-  return `${escapeHtml(value)} ${escapeHtml(unitAbbrev)}`
+  // Value logic lives in `formatUnitValue` (shared with the CSV builder); this
+  // wrapper only adds the print surface's HTML escaping + `—` empty-placeholder.
+  const plain = formatUnitValue(value, unitAbbrev)
+  if (plain === "") return `<span class="empty-cell">—</span>`
+  return escapeHtml(plain)
 }
 
 /** Before → After balance transition (arrow U+2192). Shows a single em-dash until both sides exist. */

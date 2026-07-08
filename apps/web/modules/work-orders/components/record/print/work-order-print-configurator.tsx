@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import {
+  buildWorkOrderCsv,
   buildWorkOrderPrintConfig,
   buildWorkOrderPrintHtml,
   WORK_ORDER_DOCUMENT_LABELS,
@@ -122,6 +123,23 @@ export function WorkOrderPrintConfigurator({
     window.print()
   }, [])
 
+  // Export the CURRENT preview as CSV — same `input` + `config` the print builder
+  // reads, so the file matches what's on screen (checked top fields, the active
+  // bottom section's columns, and the selected rows). Pure client-side blob
+  // download; no route, no fetch.
+  const handleExportCsv = useCallback(() => {
+    const csv = buildWorkOrderCsv(input, config)
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `work-order-${input.workOrderNumber}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }, [input, config])
+
   const toggleTopField = (key: (typeof WORK_ORDER_TOP_FIELD_KEYS)[number]) =>
     setConfig((current) => ({
       ...current,
@@ -175,13 +193,22 @@ export function WorkOrderPrintConfigurator({
       <aside className="w-72 shrink-0 space-y-5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm print:hidden">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">Print options</h2>
-          <button
-            type="button"
-            onClick={() => void handlePrint()}
-            className="rounded bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
-          >
-            Print
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+            >
+              Export CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => void handlePrint()}
+              className="rounded bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
+            >
+              Print
+            </button>
+          </div>
         </div>
 
         {/* Walk the global work-order-number line without leaving the print
