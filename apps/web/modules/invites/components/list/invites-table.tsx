@@ -17,6 +17,7 @@ export function InvitesTable({
   return (
     <DataTable<InviteListRow>
       fill
+      resizable
       rows={rows}
       columns={INVITES_LIST_COLUMNS}
       empty="No pending invites."

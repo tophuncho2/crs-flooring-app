@@ -17,6 +17,7 @@ export function EntitiesTable({
   return (
     <DataTable<EntityListRow>
       fill
+      resizable
       rows={rows}
       columns={ENTITIES_LIST_COLUMNS}
       empty="No entities match these filters."

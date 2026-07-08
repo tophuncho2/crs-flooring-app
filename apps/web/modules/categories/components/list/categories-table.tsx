@@ -17,6 +17,7 @@ export function CategoriesTable({
   return (
     <DataTable<CategoryListRow>
       fill
+      resizable
       rows={rows}
       columns={CATEGORIES_LIST_COLUMNS}
       empty="No categories found."

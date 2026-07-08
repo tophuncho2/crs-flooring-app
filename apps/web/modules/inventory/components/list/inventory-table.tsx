@@ -35,6 +35,7 @@ export function InventoryTable({
   return (
     <DataTable<InventoryRow>
       fill
+      resizable
       rows={rows}
       columns={INVENTORY_LIST_COLUMNS}
       empty="No inventory rows match these filters."

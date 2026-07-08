@@ -23,6 +23,7 @@ export function WorkOrdersTable({
   return (
     <DataTable<WorkOrderListRow>
       fill
+      resizable
       rows={rows}
       columns={WORK_ORDERS_LIST_COLUMNS}
       empty="No work orders match these filters."

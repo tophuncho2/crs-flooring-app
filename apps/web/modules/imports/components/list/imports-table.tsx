@@ -21,6 +21,7 @@ export function ImportsTable({
   return (
     <DataTable<ImportRow>
       fill
+      resizable
       rows={rows}
       columns={IMPORTS_LIST_COLUMNS}
       empty="No imports logged yet."

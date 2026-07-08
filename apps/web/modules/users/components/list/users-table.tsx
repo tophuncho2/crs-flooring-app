@@ -17,6 +17,7 @@ export function UsersTable({
   return (
     <DataTable<UserListRow>
       fill
+      resizable
       rows={rows}
       columns={USERS_LIST_COLUMNS}
       empty="No users found."

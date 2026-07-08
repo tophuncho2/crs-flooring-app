@@ -17,6 +17,7 @@ export function WarehouseTable({
   return (
     <DataTable<WarehouseListRow>
       fill
+      resizable
       rows={rows}
       columns={WAREHOUSE_LIST_COLUMNS}
       empty="No warehouses match these filters."

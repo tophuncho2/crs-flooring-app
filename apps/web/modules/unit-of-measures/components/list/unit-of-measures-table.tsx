@@ -17,6 +17,7 @@ export function UnitOfMeasuresTable({
   return (
     <DataTable<UnitOfMeasureListRow>
       fill
+      resizable
       rows={rows}
       columns={UNIT_OF_MEASURES_LIST_COLUMNS}
       empty="No units of measure found."

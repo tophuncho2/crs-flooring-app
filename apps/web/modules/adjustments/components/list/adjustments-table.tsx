@@ -32,6 +32,7 @@ export function AdjustmentsTable({
   return (
     <DataTable<EnrichedInventoryAdjustmentRow>
       fill
+      resizable
       rows={rows}
       columns={ADJUSTMENTS_LIST_COLUMNS}
       empty="No adjustments match these filters."

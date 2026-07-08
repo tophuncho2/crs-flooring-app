@@ -15,6 +15,7 @@ export function UserActivityTable({
   return (
     <DataTable<UserLoginActivityListRow>
       fill
+      resizable
       rows={rows}
       columns={USER_ACTIVITY_LIST_COLUMNS}
       empty="No login activity yet."

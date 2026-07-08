@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, it, expect, vi } from "vitest"
-import { cleanup, render } from "@testing-library/react"
+import { cleanup, fireEvent, render } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 
@@ -237,6 +237,75 @@ describe("DataTable — always-visible selection", () => {
       <DataTable rows={ROWS} columns={COLUMNS} selection={selectionProps(["a", "b"])} />,
     )
     expect(queryByText("2 selected")).toBeNull()
+  })
+})
+
+describe("DataTable — resizable columns (fill)", () => {
+  afterEach(() => cleanup())
+
+  it("renders a resize handle per column + a trailing spacer, in fixed layout", () => {
+    // Controlled widths → the table is seeded immediately (no measurement needed).
+    const { container, getByLabelText } = render(
+      <DataTable
+        fill
+        resizable
+        rows={ROWS}
+        columns={COLUMNS}
+        columnWidths={{ name: 200, status: 120 }}
+        onColumnWidthsChange={vi.fn()}
+      />,
+    )
+    const table = container.querySelector("table")
+    expect(table?.className).toContain("table-fixed")
+    // One <col> per data column PLUS the slack-absorbing spacer col.
+    expect(container.querySelectorAll("colgroup > col")).toHaveLength(COLUMNS.length + 1)
+    expect(getByLabelText("Resize Name column")).toBeTruthy()
+    expect(getByLabelText("Resize Status column")).toBeTruthy()
+  })
+
+  it("commits a new width off the drag start when a handle is dragged", () => {
+    const onColumnWidthsChange = vi.fn()
+    const { getByLabelText } = render(
+      <DataTable
+        fill
+        resizable
+        rows={ROWS}
+        columns={COLUMNS}
+        columnWidths={{ name: 200, status: 120 }}
+        onColumnWidthsChange={onColumnWidthsChange}
+      />,
+    )
+    const handle = getByLabelText("Resize Name column")
+    fireEvent.pointerDown(handle, { clientX: 300, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 360, pointerId: 1 })
+    // 200 (start) + (360 − 300) = 260 for the dragged column; the other is kept.
+    expect(onColumnWidthsChange).toHaveBeenLastCalledWith({ name: 260, status: 120 })
+  })
+
+  it("clamps a drag below the minimum column width", () => {
+    const onColumnWidthsChange = vi.fn()
+    const { getByLabelText } = render(
+      <DataTable
+        fill
+        resizable
+        rows={ROWS}
+        columns={COLUMNS}
+        columnWidths={{ name: 100, status: 120 }}
+        onColumnWidthsChange={onColumnWidthsChange}
+      />,
+    )
+    const handle = getByLabelText("Resize Name column")
+    fireEvent.pointerDown(handle, { clientX: 300, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 100, pointerId: 1 }) // would be 100 − 200 = −100
+    const last = onColumnWidthsChange.mock.calls.at(-1)?.[0]
+    expect(last.name).toBe(64) // MIN_COLUMN_WIDTH
+  })
+
+  it("does not render resize handles when resizable is off", () => {
+    const { queryByLabelText } = render(
+      <DataTable fill rows={ROWS} columns={COLUMNS} columnWidths={{ name: 200, status: 120 }} />,
+    )
+    expect(queryByLabelText("Resize Name column")).toBeNull()
   })
 })
 

@@ -19,6 +19,7 @@ export function ProductsTable({
   return (
     <DataTable<ProductListRow>
       fill
+      resizable
       rows={rows}
       columns={PRODUCTS_LIST_COLUMNS}
       empty="No flooring products found."

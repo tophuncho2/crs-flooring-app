@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode, Ref } from "react"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
 
@@ -26,18 +27,37 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
 export function DataTableHeaderCell<TRow extends DataTableRow>({
   column,
   className,
+  cellRef,
+  resizeHandle,
+  clip = false,
 }: {
   column: DataTableColumn<TRow>
   /** Extra classes from the table (sticky-header pin + column divider). */
   className?: string
+  /** Ref to the underlying `<th>` — the table measures it to seed resize widths. */
+  cellRef?: Ref<HTMLTableCellElement>
+  /** Column-resize grab handle, rendered at the cell's right edge (resizable
+   *  tables). Requires the cell to be `position: relative`. */
+  resizeHandle?: ReactNode
+  /**
+   * Clip an over-long label to the (now fixed-width) track. Only true once the
+   * resizable table has frozen to fixed layout — in auto layout the header must
+   * stay content-fit so the seeded widths are the real natural widths.
+   */
+  clip?: boolean
 }) {
   const align = column.align ?? "start"
 
   return (
     <th
+      ref={cellRef}
       scope="col"
       className={joinClassNames(
         "whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]/70",
+        // `relative` hosts the absolute edge handle; `overflow-hidden` only once
+        // the track is fixed so it can't eat the natural content-fit measurement.
+        resizeHandle ? "relative" : undefined,
+        clip ? "overflow-hidden" : undefined,
         ALIGN_CLASS_NAME[align],
         className,
       )}
@@ -49,8 +69,9 @@ export function DataTableHeaderCell<TRow extends DataTableRow>({
           align === "center" ? "justify-center" : undefined,
         )}
       >
-        <span>{column.label}</span>
+        <span className={clip ? "truncate" : undefined}>{column.label}</span>
       </span>
+      {resizeHandle}
     </th>
   )
 }

@@ -24,6 +24,7 @@ export function TemplatesTable({
   return (
     <DataTable<TemplateListRow>
       fill
+      resizable
       rows={rows}
       columns={TEMPLATES_LIST_COLUMNS}
       empty="No templates match these filters."

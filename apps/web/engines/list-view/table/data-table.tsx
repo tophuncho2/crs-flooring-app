@@ -1,6 +1,7 @@
 "use client"
 
 import type { CSSProperties, ReactNode } from "react"
+import { useCallback, useRef, useState } from "react"
 import { RecordOpenButton } from "@/engines/common"
 import type {
   CursorPaginateContract,
@@ -11,7 +12,12 @@ import { PaginateControls } from "../toolbar/paginate/paginate-controls"
 import type { DataTableCellAlign, DataTableColumn } from "./contracts/data-table-column"
 import type { DataTableRow } from "./contracts/data-table-row"
 import { DataTableHeaderCell } from "./data-table-header-cell"
+import { ColumnResizeHandle, MIN_COLUMN_WIDTH } from "./resize"
 import { DataTableSelectCheckbox } from "./select"
+
+// Clamp for the auto-measured seed width so a runaway content column can't seed
+// an absurd initial track. Below the min the seed floors to a legible column.
+const MAX_SEED_COLUMN_WIDTH = 480
 
 const ALIGN_CLASS_NAME: Record<DataTableCellAlign, string> = {
   start: "text-left",
@@ -233,6 +239,23 @@ export type DataTableProps<TRow extends DataTableRow> = {
    * `fill`. Ignored by the `editable` variant.
    */
   fill?: boolean
+  /**
+   * Adjustable column widths (fill tables only). The table seeds each column's
+   * width by measuring its natural (content-fit) width on first paint, then
+   * switches to `table-layout: fixed` and renders a drag handle on every header
+   * cell's right edge. A trailing spacer column absorbs any slack so widths stay
+   * pixel-exact (no proportional scaling) and the rows still span the full card.
+   * Uncontrolled by default (session-only internal state); pass
+   * {@link columnWidths} + {@link onColumnWidthsChange} to lift the state (e.g.
+   * for persistence).
+   */
+  resizable?: boolean
+  /** Controlled column widths (px), keyed by column key. When supplied the table
+   *  is controlled — it calls {@link onColumnWidthsChange} instead of owning the
+   *  state. Missing keys are still auto-seeded by measurement. */
+  columnWidths?: Record<string, number>
+  /** Controlled-mode setter — receives the full next width map. */
+  onColumnWidthsChange?: (next: Record<string, number>) => void
   className?: string
 }
 
@@ -265,12 +288,58 @@ export function DataTable<TRow extends DataTableRow>({
   variant = "list",
   rowActionsWidth,
   fill = false,
+  resizable = false,
+  columnWidths,
+  onColumnWidthsChange,
   className,
 }: DataTableProps<TRow>) {
   const isEditable = variant === "editable"
   // Fill mode is a list-page-only layout; the editable variant (record-view
   // sections) always uses the document-flow card.
   const isFill = fill && !isEditable
+  // Column resize is a fill-only feature (the editable variant sizes from its
+  // own `width`/`grow` hints).
+  const isResizable = isFill && resizable
+
+  // --- Adjustable column widths -------------------------------------------
+  // Controlled (consumer-owned, for persistence) or uncontrolled (session-only).
+  // Seeding is lazy: a resizable table stays in auto (content-fit) layout until
+  // the user first drags a handle. On that first drag every column is frozen to
+  // its measured width (so the others don't reflow), then the dragged one moves.
+  // This keeps auto-sizing for tables the user never touches, and — because the
+  // seed happens in a pointer handler, not an effect — avoids a set-state-in-
+  // effect cascade.
+  const [internalWidths, setInternalWidths] = useState<Record<string, number>>({})
+  const widths = columnWidths ?? internalWidths
+  const applyWidths = useCallback(
+    (next: Record<string, number>) => {
+      if (onColumnWidthsChange) onColumnWidthsChange(next)
+      else setInternalWidths(next)
+    },
+    [onColumnWidthsChange],
+  )
+  // Header-cell refs — read live to measure a column's current (content-fit)
+  // width when it first freezes.
+  const headerCellRefs = useRef(new Map<string, HTMLTableCellElement | null>())
+  const measureColumn = useCallback((key: string) => {
+    const element = headerCellRefs.current.get(key)
+    if (!element) return MIN_COLUMN_WIDTH
+    return Math.min(MAX_SEED_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, Math.round(element.offsetWidth)))
+  }, [])
+  const setColumnWidth = useCallback(
+    (key: string, nextWidth: number) => {
+      // Freeze all columns to their current width on the first resize, then set
+      // the dragged one — later resizes just update the map.
+      const base: Record<string, number> = {}
+      for (const column of columns) base[column.key] = widths[column.key] ?? measureColumn(column.key)
+      base[key] = Math.max(MIN_COLUMN_WIDTH, Math.round(nextWidth))
+      applyWidths(base)
+    },
+    [applyWidths, columns, measureColumn, widths],
+  )
+  // Every data column has a width → the fixed, resizable layout is live.
+  const widthsSeeded =
+    isResizable && columns.length > 0 && columns.every((column) => widths[column.key] != null)
   const canToggleSelection = selection ? selection.canToggleSelection ?? true : false
   const isRowSelectable = (row: TRow) =>
     selection?.isRowSelectable ? selection.isRowSelectable(row) : true
@@ -301,7 +370,22 @@ export function DataTable<TRow extends DataTableRow>({
     : hasRowActions
       ? OPEN_WIDTH_WITH_ACTIONS
       : DEFAULT_OPEN_WIDTH
-  const totalColumns = columns.length + (selection ? 1 : 0) + (hasOpenColumn ? 1 : 0)
+  // A trailing spacer column absorbs slack in the resizable fixed layout so the
+  // data columns keep their exact px widths (no proportional stretch) while the
+  // table still fills the card. It is the only no-width col, so `table-fixed`
+  // hands it whatever width remains.
+  const hasSpacerColumn = widthsSeeded
+  const totalColumns =
+    columns.length + (selection ? 1 : 0) + (hasOpenColumn ? 1 : 0) + (hasSpacerColumn ? 1 : 0)
+
+  // Fixed-layout table min-width for the resizable path: leading gutters + the
+  // sum of every column's current width. When the container is narrower the
+  // table scrolls; when wider the spacer takes the difference.
+  const resizableTableMinWidth = widthsSeeded
+    ? (selection ? selectionWidth : 0) +
+      (hasOpenColumn ? openColumnWidth : 0) +
+      columns.reduce((sum, column) => sum + (widths[column.key] ?? MIN_COLUMN_WIDTH), 0)
+    : 0
 
   // Select-all state, computed from the current page's eligible rows. Drives the
   // header select-all checkbox (checked = all eligible ticked, indeterminate =
@@ -405,9 +489,15 @@ export function DataTable<TRow extends DataTableRow>({
         <table
           className={joinClassNames(
             "w-full border-collapse",
-            isEditable ? "table-fixed" : undefined,
+            isEditable || widthsSeeded ? "table-fixed" : undefined,
           )}
-          style={editableLayout ? { minWidth: editableLayout.tableMinWidth } : undefined}
+          style={
+            editableLayout
+              ? { minWidth: editableLayout.tableMinWidth }
+              : widthsSeeded
+                ? { minWidth: resizableTableMinWidth }
+                : undefined
+          }
         >
           {editableLayout ? (
             <colgroup>
@@ -416,6 +506,16 @@ export function DataTable<TRow extends DataTableRow>({
               {editableLayout.cols.map((col) => (
                 <col key={col.key} style={col.style} />
               ))}
+            </colgroup>
+          ) : widthsSeeded ? (
+            <colgroup>
+              {selection ? <col style={{ width: selectionWidth }} /> : null}
+              {hasOpenColumn ? <col style={{ width: openColumnWidth }} /> : null}
+              {columns.map((column) => (
+                <col key={column.key} style={{ width: widths[column.key] }} />
+              ))}
+              {/* Slack-absorbing spacer — the only no-width col. */}
+              <col />
             </colgroup>
           ) : null}
           <thead>
@@ -454,12 +554,34 @@ export function DataTable<TRow extends DataTableRow>({
                 <DataTableHeaderCell<TRow>
                   key={column.key}
                   column={column}
+                  clip={widthsSeeded}
+                  cellRef={
+                    isResizable
+                      ? (element) => {
+                          headerCellRefs.current.set(column.key, element)
+                        }
+                      : undefined
+                  }
                   className={joinClassNames(
-                    index < columns.length - 1 ? dividerClass : undefined,
+                    // With the trailing spacer, even the last data column carries
+                    // a divider (the spacer, not the card edge, follows it).
+                    index < columns.length - 1 || hasSpacerColumn ? dividerClass : undefined,
                     stickyHeaderCellClass,
                   )}
+                  resizeHandle={
+                    isResizable ? (
+                      <ColumnResizeHandle
+                        getStartWidth={() => widths[column.key] ?? measureColumn(column.key)}
+                        onResize={(next) => setColumnWidth(column.key, next)}
+                        ariaLabel={`Resize ${column.label} column`}
+                      />
+                    ) : undefined
+                  }
                 />
               ))}
+              {hasSpacerColumn ? (
+                <th aria-hidden className={stickyHeaderCellClass} />
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -547,8 +669,11 @@ export function DataTable<TRow extends DataTableRow>({
                         // cells host full-width inline editors, so they drop
                         // `nowrap` and align to the input baseline.
                         isEditable ? "align-middle" : "whitespace-nowrap",
+                        // Resizable columns are fixed-width, so clip overflow to
+                        // keep long content inside its track instead of bleeding.
+                        widthsSeeded ? "overflow-hidden" : undefined,
                         ALIGN_CLASS_NAME[column.align ?? "start"],
-                        index < columns.length - 1 ? dividerClass : undefined,
+                        index < columns.length - 1 || hasSpacerColumn ? dividerClass : undefined,
                       )}
                     >
                       {renderCell
@@ -558,6 +683,7 @@ export function DataTable<TRow extends DataTableRow>({
                           : renderDefaultCell(column, row)}
                     </td>
                   ))}
+                  {hasSpacerColumn ? <td aria-hidden /> : null}
                 </tr>
                 )
               })
