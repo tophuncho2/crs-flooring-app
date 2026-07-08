@@ -41,10 +41,44 @@ export function readListPreferences(tableKey: string): ListPreferencesSnapshot |
 
 export function writeListPreferences(tableKey: string, snapshot: ListPreferencesSnapshot): void {
   if (typeof window === "undefined") return
-  window.localStorage.setItem(storageKey(tableKey), JSON.stringify(snapshot))
+  try {
+    window.localStorage.setItem(storageKey(tableKey), JSON.stringify(snapshot))
+  } catch {
+    // Best-effort persistence: a full quota (shared/kiosk browser) or disabled
+    // storage must not throw out of the write-through effect. Drop the write
+    // silently; the read layer self-heals and re-derives from URL/defaults.
+  }
 }
 
 export function clearListPreferences(tableKey: string): void {
   if (typeof window === "undefined") return
   window.localStorage.removeItem(storageKey(tableKey))
+}
+
+/**
+ * Drop every OTHER user's saved list preferences from this browser profile,
+ * keeping only the given user's namespace. Fired once at dashboard mount so a
+ * departed user's `listprefs:v1:<theirId>:*` blobs can't accumulate toward the
+ * ~5MB origin quota on a shared/kiosk browser.
+ *
+ * Prunes by userId (never by tableKey) and excludes the current namespace, so
+ * it can't race the controller's mount-time hydration read for this user's
+ * lists. Legacy bare keys (no userId segment) and non-prefs keys are left
+ * untouched — an unparseable key could be a valid pref.
+ */
+export function prunePreferencesForUser(userId: string): void {
+  if (typeof window === "undefined") return
+  const prefix = "listprefs:v1:"
+  // Collect first, delete second: removing mid-iteration shifts indices and
+  // would skip entries.
+  const stale: string[] = []
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i)
+    if (!key || !key.startsWith(prefix)) continue
+    const rest = key.slice(prefix.length)
+    const colon = rest.indexOf(":")
+    if (colon === -1) continue // legacy bare `listprefs:v1:<tableKey>` — leave it
+    if (rest.slice(0, colon) !== userId) stale.push(key)
+  }
+  for (const key of stale) window.localStorage.removeItem(key)
 }

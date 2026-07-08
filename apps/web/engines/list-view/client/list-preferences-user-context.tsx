@@ -1,6 +1,8 @@
 "use client"
 
-import { createContext, useContext, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useRef, type ReactNode } from "react"
+
+import { prunePreferencesForUser } from "./list-preferences-storage"
 
 /**
  * The current user's id, seeded once (server-side) by the dashboard layout so it
@@ -19,6 +21,17 @@ export function ListPreferencesUserProvider({
   userId: string | null
   children: ReactNode
 }) {
+  // Login-time cleanup: once per dashboard mount, drop every other user's saved
+  // list-prefs namespace so departed users' blobs can't fill this shared
+  // browser's quota. Runs in an effect (never during render) and is ref-gated so
+  // React StrictMode's double-invoke doesn't trigger a second full scan.
+  const prunedForRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!userId || prunedForRef.current === userId) return
+    prunedForRef.current = userId
+    prunePreferencesForUser(userId)
+  }, [userId])
+
   return (
     <ListPreferencesUserContext.Provider value={userId}>
       {children}
