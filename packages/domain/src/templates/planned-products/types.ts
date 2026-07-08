@@ -13,6 +13,9 @@ export type TemplatePlannedProductRow = {
   unitName: string
   unitAbbrev: string
   notes: string
+  // Per-row money column. Canonical fixed-scale money string ("10.00"); "" when
+  // unset. Money standard. Deliberately NOT carried into the work-order sync.
+  cost: string
   createdAt: string
   updatedAt: string
   // Actor-email snapshots stamped on item write (createdBy + updatedBy on add,
@@ -28,6 +31,8 @@ export type TemplatePlannedProductForm = {
   unitId: string
   quantity: string
   notes: string
+  // Per-row money column; "" = unset. Normalized at the write boundaries.
+  cost: string
 }
 
 export const EMPTY_TEMPLATE_PLANNED_PRODUCT_FORM: TemplatePlannedProductForm = {
@@ -35,4 +40,5 @@ export const EMPTY_TEMPLATE_PLANNED_PRODUCT_FORM: TemplatePlannedProductForm = {
   unitId: "",
   quantity: "",
   notes: "",
+  cost: "",
 }

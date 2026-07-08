@@ -113,6 +113,29 @@ describe("syncTemplateToWorkOrderUseCase", () => {
     )
   })
 
+  it("does NOT carry a planned product's cost into the synced work order items", async () => {
+    getTemplateByIdMock.mockResolvedValue(
+      template({
+        plannedProducts: [
+          {
+            productId: "prod-1",
+            quantity: "5",
+            unitId: "unit-1",
+            notes: "rush",
+            // Cost lives on the planned product but must never reach the WO item.
+            cost: "10.50",
+          },
+        ],
+      }),
+    )
+    await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
+    const [record] = createWorkOrderFromTemplateRecordMock.mock.calls[0]
+    expect(record.items).toEqual([
+      { productId: "prod-1", quantity: "5", unitId: "unit-1", notes: "rush" },
+    ])
+    expect(record.items[0]).not.toHaveProperty("cost")
+  })
+
   it("leaves the address columns null when the template has no property address", async () => {
     await syncTemplateToWorkOrderUseCase({ templateId: "tpl-1" }, ACTOR)
     expect(createWorkOrderFromTemplateRecordMock).toHaveBeenCalledWith(

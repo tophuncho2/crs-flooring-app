@@ -57,7 +57,7 @@ describe("saveTemplatePlannedProductsSectionUseCase", () => {
         diff: {
           added: [],
           modified: [
-            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } },
+            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "", cost: "" } },
           ],
           deleted: [],
         },
@@ -69,13 +69,37 @@ describe("saveTemplatePlannedProductsSectionUseCase", () => {
     expect(diff.modified[0].input.unitId).toBe("")
   })
 
+  it("forwards the row's cost through to the diff writer (added + modified)", async () => {
+    getProductByIdMock.mockResolvedValue({ id: "prod-1", unitId: "prod-unit-1" })
+    await saveTemplatePlannedProductsSectionUseCase(
+      {
+        templateId: "tpl-1",
+        diff: {
+          added: [
+            { tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "", cost: "10.50" } },
+          ],
+          modified: [
+            { id: "item-1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "", cost: "0" } },
+          ],
+          deleted: [],
+        },
+      } as never,
+      ACTOR,
+    )
+    const [, diff] = applyTemplatePlannedProductsDiffMock.mock.calls[0]
+    // Cost rides through the use case untouched — normalization to a canonical
+    // "X.XX" happens at the data write boundary, not here.
+    expect(diff.added[0].input.cost).toBe("10.50")
+    expect(diff.modified[0].input.cost).toBe("0")
+  })
+
   it("does NOT seed a blank unit from the product on an ADDED row", async () => {
     getProductByIdMock.mockResolvedValue({ id: "prod-1", unitId: "prod-unit-1" })
     await saveTemplatePlannedProductsSectionUseCase(
       {
         templateId: "tpl-1",
         diff: {
-          added: [{ tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "" } }],
+          added: [{ tempId: "t1", form: { productId: "prod-1", unitId: "", quantity: "5", notes: "", cost: "" } }],
           modified: [],
           deleted: [],
         },

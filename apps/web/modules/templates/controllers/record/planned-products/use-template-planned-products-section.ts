@@ -35,6 +35,8 @@ export type TemplatePlannedProductLocal = {
   unitAbbrev: string
   quantity: string
   notes: string
+  // Per-row money column (canonical "X.XX" string; "" = unset). Sent in the diff.
+  cost: string
   // Client-only ergonomic for narrowing the row's product picker. NOT
   // persisted to the server — excluded from the diff sent on save.
   categoryFilterId: string | null
@@ -57,6 +59,7 @@ function toLocalItem(row: TemplatePlannedProductRow): TemplatePlannedProductLoca
     unitAbbrev: row.unitAbbrev,
     quantity: row.quantity,
     notes: row.notes,
+    cost: row.cost,
     categoryFilterId: null,
     categoryFilterName: row.categoryName || null,
   }
@@ -68,7 +71,7 @@ function createLocalState(record: TemplateDetail): TemplatePlannedProductsLocalS
 
 function createItemsRevisionKey(record: TemplateDetail) {
   return JSON.stringify(
-    record.plannedProducts.map((row) => `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}`),
+    record.plannedProducts.map((row) => `${row.id}:${row.productId}:${row.unitId}:${row.quantity}:${row.notes}:${row.cost}`),
   )
 }
 
@@ -77,7 +80,8 @@ function itemsDiffer(local: TemplatePlannedProductLocal, server: TemplatePlanned
     local.productId !== server.productId ||
     local.unitId !== server.unitId ||
     local.quantity !== server.quantity ||
-    local.notes !== server.notes
+    local.notes !== server.notes ||
+    local.cost !== server.cost
   )
 }
 
@@ -87,6 +91,7 @@ function toDiffForm(local: TemplatePlannedProductLocal): TemplatePlannedProductF
     unitId: local.unitId,
     quantity: local.quantity,
     notes: local.notes,
+    cost: local.cost,
   }
 }
 
@@ -166,6 +171,7 @@ export function useTemplatePlannedProductsSection({
           unitAbbrev: "",
           quantity: "",
           notes: "",
+          cost: "",
           categoryFilterId: null,
           categoryFilterName: null,
         },

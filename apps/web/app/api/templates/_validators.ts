@@ -90,11 +90,15 @@ function optionalQuantity(value: unknown): string {
 }
 
 // Optional money field (money standard): missing/blank → "" (unset), otherwise
-// validate + canonicalize to a fixed-scale-2 string. Invoice-only; throws the
-// invoice error class so the client keys off its distinct code.
-function optionalMoney(value: unknown, path: string): string {
+// validate + canonicalize to a fixed-scale-2 string. Takes a `fail` callback so
+// each caller throws its own section's error class (the client keys off the code).
+function optionalMoney(
+  value: unknown,
+  path: string,
+  fail: (m: string, f?: string) => never,
+): string {
   if (typeof value !== "string" || value.trim() === "") return ""
-  if (!isValidMoneyAmount(value)) failInvoiceDiff(`${path} must be a valid amount`, path)
+  if (!isValidMoneyAmount(value)) fail(`${path} must be a valid amount`, path)
   return normalizeMoneyAmount(value)
 }
 
@@ -215,6 +219,7 @@ function validatePlannedProductForm(value: unknown, path: string): TemplatePlann
     unitId: optionalString(obj.unitId) ?? "",
     quantity: optionalQuantity(obj.quantity),
     notes: optionalBoundedText(obj.notes, TEMPLATE_PLANNED_PRODUCT_NOTES_MAX, `${path}.notes`, failDiff) ?? "",
+    cost: optionalMoney(obj.cost, `${path}.cost`, failDiff),
   }
 }
 
@@ -270,7 +275,7 @@ function validateInvoiceProductForm(value: unknown, path: string): TemplateInvoi
     quantity: optionalQuantity(obj.quantity),
     notes:
       optionalBoundedText(obj.notes, TEMPLATE_INVOICE_PRODUCT_NOTES_MAX, `${path}.notes`, failInvoiceDiff) ?? "",
-    cost: optionalMoney(obj.cost, `${path}.cost`),
+    cost: optionalMoney(obj.cost, `${path}.cost`, failInvoiceDiff),
   }
 }
 

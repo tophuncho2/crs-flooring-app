@@ -1,6 +1,7 @@
 import { db } from "../../client.js"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js"
 import {
+  normalizeMoneyAmount,
   type TemplatePlannedProductForm,
   type TemplatePlannedProductRow,
 } from "@builders/domain"
@@ -20,6 +21,12 @@ export type WriteTemplatePlannedProductInput = TemplatePlannedProductForm
 // to Decimal.
 function toDecimal(value: string): Prisma.Decimal | string | null {
   return value.trim() ? value : null
+}
+
+// Money write boundary (money standard): blank → NULL, otherwise the canonical
+// fixed-scale-2 string handed straight to Prisma (which coerces to Decimal).
+function toMoney(value: string): string | null {
+  return value.trim() ? normalizeMoneyAmount(value) : null
 }
 
 // "" / whitespace disconnects the unit (stored NULL); otherwise the FK id.
@@ -67,6 +74,7 @@ export async function applyTemplatePlannedProductsDiff(
         quantity: toDecimal(draft.input.quantity),
         unitId: toUnitId(draft.input.unitId),
         notes: draft.input.notes ? draft.input.notes : null,
+        cost: toMoney(draft.input.cost),
         createdBy: input.actorEmail,
         updatedBy: input.actorEmail,
       })),
@@ -81,6 +89,7 @@ export async function applyTemplatePlannedProductsDiff(
         quantity: toDecimal(update.input.quantity),
         unitId: toUnitId(update.input.unitId),
         notes: update.input.notes ? update.input.notes : null,
+        cost: toMoney(update.input.cost),
         updatedBy: input.actorEmail,
       },
     })

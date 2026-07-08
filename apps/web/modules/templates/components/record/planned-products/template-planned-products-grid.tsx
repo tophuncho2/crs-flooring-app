@@ -1,6 +1,6 @@
 "use client"
 
-import { NumberCell, TextCell } from "@/engines/record-view"
+import { MoneyCell, NumberCell, TextCell } from "@/engines/record-view"
 import { DataTable, type DataTableColumn } from "@/engines/list-view"
 import { RecordDeleteButton } from "@/engines/common"
 import { ProductCategoryPicker } from "@/modules/products/components/picker/product-category-picker"
@@ -15,10 +15,11 @@ import type { TemplatePlannedProductLocal } from "@/modules/templates/controller
 const TEMPLATE_PLANNED_PRODUCTS_COLUMNS: DataTableColumn<TemplatePlannedProductLocal>[] = [
   // At the panel's real width the table sits at its min-width floor, so grow
   // weights never kick in — the FLOORS are what render. Product carries a wide
-  // 360 floor (and is the sole grow column for wide panels), pushing Quantity
-  // (pinned 140) and Unit (pinned 150) right as a fixed pair; Notes is a pinned
-  // 320 tail. Mirrors the WO Requested Material grid.
+  // 360 floor (and is the sole grow column for wide panels), pushing Cost /
+  // Quantity (pinned 140) and Unit (pinned 150) right as a fixed group; Notes is
+  // a pinned 320 tail. Mirrors the WO Requested Material grid.
   { key: "product", label: "Product", minWidth: 360, grow: 1 },
+  { key: "cost", label: "Cost", width: 140, align: "end" },
   { key: "quantity", label: "Quantity", width: 140, align: "end" },
   { key: "unit", label: "Unit", width: 150 },
   { key: "notes", label: "Notes", width: 320 },
@@ -95,6 +96,15 @@ export function TemplatePlannedProductsGrid({
                 onChange={(next) => onChangeField(item.id, "quantity", next)}
                 placeholder="Quantity"
                 ariaLabel="Planned product quantity"
+              />
+            )
+          case "cost":
+            return (
+              <MoneyCell
+                editable={editable}
+                value={item.cost}
+                onChange={(next) => onChangeField(item.id, "cost", next)}
+                ariaLabel="Planned product cost"
               />
             )
           case "notes":

@@ -86,6 +86,9 @@ export async function syncTemplateToWorkOrderUseCase(
             ? template.installerInstructions
             : null,
         },
+        // Deliberately enumerated (never spread): a WO item carries only
+        // productId / quantity / unitId / notes. The planned product's `cost`
+        // is intentionally NOT carried into the work order — do not add it here.
         items: template.plannedProducts.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,

@@ -14,6 +14,7 @@ const templatePlannedProductSelect = {
   unitId: true,
   unit: { select: { name: true, abbreviation: true } },
   notes: true,
+  cost: true,
   createdAt: true,
   updatedAt: true,
   createdBy: true,
