@@ -139,6 +139,9 @@ function buildAdjustmentColumns(
   if (config.adjustmentColumns.location) {
     columns.push({ key: "location", label: "Location", value: (row) => row.location })
   }
+  if (config.adjustmentColumns.area) {
+    columns.push({ key: "area", label: "Area", value: (row) => row.area })
+  }
   return columns
 }
 

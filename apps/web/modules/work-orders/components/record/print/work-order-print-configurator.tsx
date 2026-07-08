@@ -30,6 +30,7 @@ const ADJUSTMENT_COLUMN_FIELDS = [
   { key: "rollNumber", label: "Roll#" },
   { key: "adjustment", label: "Adjustment" },
   { key: "location", label: "Location" },
+  { key: "area", label: "Area" },
 ] as const
 
 export function WorkOrderPrintConfigurator({

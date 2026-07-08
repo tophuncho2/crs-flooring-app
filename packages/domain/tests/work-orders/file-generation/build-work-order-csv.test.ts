@@ -77,7 +77,7 @@ describe("buildWorkOrderCsv — adjustments (deductions) section", () => {
       makeMaterialItem({
         productName: "Shaw Carpet — Beige",
         adjustments: [
-          makeAdjustment({ id: "a1", quantity: "10", before: "100", after: "90", dyeLot: "DL-9", rollNumber: "R-7", location: "DOCK-9" }),
+          makeAdjustment({ id: "a1", quantity: "10", before: "100", after: "90", dyeLot: "DL-9", rollNumber: "R-7", location: "DOCK-9", area: "ZONE-2" }),
           makeAdjustment({ id: "a2", quantity: "5" }),
         ],
       }),
@@ -87,8 +87,8 @@ describe("buildWorkOrderCsv — adjustments (deductions) section", () => {
   it("renders all detail columns + composed values on the pickingTicket preset", () => {
     const { adjustments } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("pickingTicket")))
     // Three empty leading columns indent the table so Product sits in column D.
-    expect(adjustments?.split("\r\n")[0]).toBe(",,,Adjustment Products,Dyelot,Roll#,Quantity,Adjustment,Location")
-    expect(adjustments).toContain(",,,Shaw Carpet — Beige,DL-9,R-7,10 rolls,100 rolls → 90 rolls,DOCK-9")
+    expect(adjustments?.split("\r\n")[0]).toBe(",,,Adjustment Products,Dyelot,Roll#,Quantity,Adjustment,Location,Area")
+    expect(adjustments).toContain(",,,Shaw Carpet — Beige,DL-9,R-7,10 rolls,100 rolls → 90 rolls,DOCK-9,ZONE-2")
   })
 
   it("drops all detail columns on the slip preset (Product + Quantity only)", () => {

@@ -16,13 +16,14 @@ function count(haystack: string, needle: string): number {
 describe("picking ticket — header", () => {
   const html = pickingTable([makeMaterialItem()])
 
-  it("renders all six columns in order", () => {
+  it("renders all seven columns in order", () => {
     expect(html).toContain("<th>Adjustment Products</th>")
     expect(html).toContain("<th>Dyelot</th>")
     expect(html).toContain("<th>Roll#</th>")
     expect(html).toContain('<th class="cl-num">Quantity</th>')
     expect(html).toContain('<th class="cl-num">Adjustment</th>')
     expect(html).toContain("<th>Location</th>")
+    expect(html).toContain("<th>Area</th>")
   })
 
   it("omits the Coverage column header", () => {

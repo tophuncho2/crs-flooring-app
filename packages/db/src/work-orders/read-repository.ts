@@ -497,6 +497,7 @@ export async function getWorkOrderForFileGeneration(
       dyeLot: true,
       rollNumber: true,
       location: true,
+      area: true,
       // Adjustment's own unit FK (UoM epic 2B) resolves the printed abbrev;
       // snapshot columns fully de-referenced (2D drops them). `unitId` also keys
       // the grouping so mixed units never share a block/subtotal.
@@ -528,6 +529,7 @@ export async function getWorkOrderForFileGeneration(
       dyeLot: adj.dyeLot ?? "",
       rollNumber: adj.rollNumber ?? "",
       location: adj.location ?? "",
+      area: adj.area ?? "",
       // Unit abbrev derives from the adjustment's own unit FK join (UoM epic 2B);
       // the frozen snapshot column is no longer a fallback (dropped in 2D).
       unitAbbrev: adj.unit?.abbreviation ?? "",

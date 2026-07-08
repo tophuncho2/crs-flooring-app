@@ -45,6 +45,7 @@ const ALL_ADJUSTMENT_COLUMNS: WorkOrderAdjustmentColumnVisibility = {
   rollNumber: true,
   adjustment: true,
   location: true,
+  area: true,
 }
 
 export const WO_PRINT_STYLE_BLOCK = `
@@ -317,6 +318,7 @@ export function renderWorkOrderAdjustments(
     `<th class="cl-num">Quantity</th>`,
     columns.adjustment ? `<th class="cl-num">Adjustment</th>` : "",
     columns.location ? `<th>Location</th>` : "",
+    columns.area ? `<th>Area</th>` : "",
   ]
     .filter(Boolean)
     .join("\n      ")
@@ -471,6 +473,7 @@ function renderAdjustmentRow(
       ? `\n  <td class="cl-num">${renderTransition(adj.before, adj.after, adj.unitAbbrev)}</td>`
       : "",
     columns.location ? `\n  <td>${escapeOrEmpty(adj.location)}</td>` : "",
+    columns.area ? `\n  <td>${escapeOrEmpty(adj.area)}</td>` : "",
   ].join("")
   return `
 <tr>
@@ -504,6 +507,7 @@ function renderSubtotalRow(
   const trailDetailCells = [
     columns.adjustment ? "\n  <td></td>" : "",
     columns.location ? "\n  <td></td>" : "",
+    columns.area ? "\n  <td></td>" : "",
   ].join("")
   return `
 <tr class="group-end">

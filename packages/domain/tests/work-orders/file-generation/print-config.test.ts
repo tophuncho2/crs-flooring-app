@@ -27,6 +27,7 @@ describe("presets seed the right document", () => {
       rollNumber: true,
       adjustment: true,
       location: true,
+      area: true,
     })
   })
 

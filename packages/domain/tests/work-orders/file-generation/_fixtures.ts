@@ -85,6 +85,7 @@ export function makeAdjustment(
     dyeLot: "",
     rollNumber: "",
     location: "A-1",
+    area: "",
     unitAbbrev: "rolls",
     ...overrides,
   }
