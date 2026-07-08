@@ -116,7 +116,7 @@ function buildAdjustmentColumns(
 ): ReadonlyArray<ExportColumn<AdjustmentExportRow>> {
   const columns: ExportColumn<AdjustmentExportRow>[] = [
     ...leadingSpacerColumns<AdjustmentExportRow>(BOTTOM_TABLE_INDENT),
-    { key: "product", label: "Product", value: (row) => row.productName },
+    { key: "product", label: "Adjustment Products", value: (row) => row.productName },
   ]
   if (config.adjustmentColumns.dyeLot) {
     columns.push({ key: "dyeLot", label: "Dyelot", value: (row) => row.dyeLot })
@@ -152,7 +152,7 @@ function buildMaterialColumns(
 ): ReadonlyArray<ExportColumn<MaterialExportRow>> {
   const columns: ExportColumn<MaterialExportRow>[] = [
     ...leadingSpacerColumns<MaterialExportRow>(BOTTOM_TABLE_INDENT),
-    { key: "product", label: "Product", value: (row) => row.productName },
+    { key: "product", label: "Requested Products", value: (row) => row.productName },
   ]
   if (config.materialColumns.notes) {
     columns.push({ key: "notes", label: "Notes", value: (row) => row.notes })

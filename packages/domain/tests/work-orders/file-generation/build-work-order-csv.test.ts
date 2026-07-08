@@ -87,13 +87,13 @@ describe("buildWorkOrderCsv — adjustments (deductions) section", () => {
   it("renders all detail columns + composed values on the pickingTicket preset", () => {
     const { adjustments } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("pickingTicket")))
     // Three empty leading columns indent the table so Product sits in column D.
-    expect(adjustments?.split("\r\n")[0]).toBe(",,,Product,Dyelot,Roll#,Quantity,Adjustment,Location")
+    expect(adjustments?.split("\r\n")[0]).toBe(",,,Adjustment Products,Dyelot,Roll#,Quantity,Adjustment,Location")
     expect(adjustments).toContain(",,,Shaw Carpet — Beige,DL-9,R-7,10 rolls,100 rolls → 90 rolls,DOCK-9")
   })
 
   it("drops all detail columns on the slip preset (Product + Quantity only)", () => {
     const { adjustments } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("slip")))
-    expect(adjustments?.split("\r\n")[0]).toBe(",,,Product,Quantity")
+    expect(adjustments?.split("\r\n")[0]).toBe(",,,Adjustment Products,Quantity")
     expect(adjustments).not.toContain("Dyelot")
   })
 
@@ -109,7 +109,7 @@ describe("buildWorkOrderCsv — adjustments (deductions) section", () => {
     const config = buildWorkOrderPrintConfig("slip")
     config.selectedAdjustmentIds = []
     const { adjustments } = blocks(buildWorkOrderCsv(input, config))
-    expect(adjustments).toBe(",,,Product,Quantity")
+    expect(adjustments).toBe(",,,Adjustment Products,Quantity")
   })
 
   it("is absent when the adjustments section is off", () => {
@@ -134,7 +134,7 @@ describe("buildWorkOrderCsv — requested-material section", () => {
 
   it("renders the material section with Notes on (planFile preset)", () => {
     const { material } = blocks(buildWorkOrderCsv(input, buildWorkOrderPrintConfig("planFile")))
-    expect(material?.split("\r\n")[0]).toBe(",,,Product,Notes,Qty / Unit")
+    expect(material?.split("\r\n")[0]).toBe(",,,Requested Products,Notes,Qty / Unit")
     expect(material).toContain(",,,Shaw Carpet — Beige,first,10 SF")
   })
 
@@ -142,7 +142,7 @@ describe("buildWorkOrderCsv — requested-material section", () => {
     const config = buildWorkOrderPrintConfig("planFile")
     config.materialColumns.notes = false
     const { material } = blocks(buildWorkOrderCsv(input, config))
-    expect(material?.split("\r\n")[0]).toBe(",,,Product,Qty / Unit")
+    expect(material?.split("\r\n")[0]).toBe(",,,Requested Products,Qty / Unit")
     expect(material).not.toContain("first")
   })
 
