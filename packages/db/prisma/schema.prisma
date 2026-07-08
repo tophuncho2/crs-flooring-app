@@ -441,8 +441,8 @@ model FlooringImportEntry {
   stagedInventoryFilterRows FlooringImportStagedInventoryFilterRow[]
   inventories               FlooringInventory[]
 
-  @@index([createdAt])
-  @@index([updatedAt])
+  @@index([createdAt, importNumber])
+  @@index([updatedAt, importNumber])
   @@index([warehouseId])
   @@index([entityId])
   @@index([purchaseOrderNumber(ops: raw("gin_trgm_ops"))], type: Gin, map: "flooring_import_entry_purchaseOrderNumber_trgm_idx")
