@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest"
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { NuqsTestingAdapter } from "nuqs/adapters/testing"
-import { useFetchListController } from "@/engines/list-view"
+import { ListPreferencesUserProvider, useFetchListController } from "@/engines/list-view"
 import {
   readListPreferences,
   writeListPreferences,
@@ -16,18 +16,22 @@ type Filters = { warehouseId?: ReadonlyArray<string> }
 
 const TABLE_KEY = "test-main"
 
-function wrapper({ children }: { children: ReactNode }) {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: 0 } },
-  })
-  return (
-    <NuqsTestingAdapter>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </NuqsTestingAdapter>
-  )
+function makeWrapper(userId: string | null = null) {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    })
+    return (
+      <NuqsTestingAdapter>
+        <QueryClientProvider client={queryClient}>
+          <ListPreferencesUserProvider userId={userId}>{children}</ListPreferencesUserProvider>
+        </QueryClientProvider>
+      </NuqsTestingAdapter>
+    )
+  }
 }
 
-function renderController() {
+function renderController(userId: string | null = null) {
   return renderHook(
     () =>
       useFetchListController<Row, Filters>({
@@ -38,7 +42,7 @@ function renderController() {
         filterableFields: ["warehouseId"],
         initialSort: { field: "createdAt", direction: "desc" },
       }),
-    { wrapper },
+    { wrapper: makeWrapper(userId) },
   )
 }
 
@@ -78,6 +82,23 @@ describe("useFetchListController — sticky preferences", () => {
     })
     await waitFor(() => {
       expect(result.current.columnWidths).toEqual({})
+    })
+    expect(readListPreferences(TABLE_KEY)).toBeNull()
+  })
+
+  it("namespaces the storage key by user id when a user is present", async () => {
+    const { result } = renderController("user-42")
+
+    act(() => {
+      result.current.onColumnWidthsChange({ productName: 300 })
+    })
+
+    // Stored under the per-user key, not the bare tableKey — so a shared browser
+    // profile can't leak this user's list state to the next.
+    await waitFor(() => {
+      expect(readListPreferences(`user-42:${TABLE_KEY}`)?.columnWidths).toEqual({
+        productName: 300,
+      })
     })
     expect(readListPreferences(TABLE_KEY)).toBeNull()
   })

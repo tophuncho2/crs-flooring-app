@@ -19,6 +19,7 @@ import {
   writeListPreferences,
   type ListPreferencesSnapshot,
 } from "./list-preferences-storage"
+import { useListPreferencesUserId } from "./list-preferences-user-context"
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -402,8 +403,13 @@ export function useFetchListController<TRow, TFilters>(
   const listFn = input.listFn
   const initialData = input.initialData
   // Persistence key for this list's remembered tool-state (search/sort/filters/
-  // column widths). Absent → persistence is off for this list.
+  // column widths). Absent → persistence is off for this list. Namespaced by the
+  // current user (seeded synchronously by the dashboard layout) so a shared
+  // browser profile can't leak one user's saved list state to the next.
   const tableKey = input.tableKey
+  const preferencesUserId = useListPreferencesUserId()
+  const prefsKey =
+    tableKey && preferencesUserId ? `${preferencesUserId}:${tableKey}` : tableKey
   const initialFiltersMap = useMemo(
     () => normalizeInitialFilters(input.initialFilters, filterableFields),
     [filterableFields, input.initialFilters],
@@ -670,8 +676,8 @@ export function useFetchListController<TRow, TFilters>(
     // sees an all-default state and removes the stored snapshot — but wipe the
     // key here too so the reset is immediate even if the effect is coalesced.
     setColumnWidths({})
-    if (tableKey) clearListPreferences(tableKey)
-  }, [multiSort, filterableFields, setFilters, tableKey])
+    if (prefsKey) clearListPreferences(prefsKey)
+  }, [multiSort, filterableFields, setFilters, prefsKey])
 
   // --- Sticky preferences (localStorage, per `tableKey`) -------------------
   // Hydrate ONCE on mount, and only when the URL carries no tool params — a
@@ -685,7 +691,7 @@ export function useFetchListController<TRow, TFilters>(
   useEffect(() => {
     if (hydratedRef.current) return
     hydratedRef.current = true
-    if (!tableKey || typeof window === "undefined") return
+    if (!prefsKey || typeof window === "undefined") return
 
     const live = new URLSearchParams(window.location.search)
     const urlHasToolParam =
@@ -697,7 +703,7 @@ export function useFetchListController<TRow, TFilters>(
       (filterableFields?.some((key) => live.has(key)) ?? false)
     if (urlHasToolParam) return
 
-    const snapshot = readListPreferences(tableKey)
+    const snapshot = readListPreferences(prefsKey)
     if (!snapshot) return
 
     const params = new URLSearchParams(window.location.search)
@@ -743,7 +749,7 @@ export function useFetchListController<TRow, TFilters>(
   // the hydration effect's `setState` has committed.
   const writeThroughReadyRef = useRef(false)
   useEffect(() => {
-    if (!tableKey) return
+    if (!prefsKey) return
     if (!writeThroughReadyRef.current) {
       writeThroughReadyRef.current = true
       return
@@ -766,10 +772,10 @@ export function useFetchListController<TRow, TFilters>(
     }
     if (Object.keys(columnWidths).length > 0) snapshot.columnWidths = columnWidths
 
-    if (Object.keys(snapshot).length === 0) clearListPreferences(tableKey)
-    else writeListPreferences(tableKey, snapshot)
+    if (Object.keys(snapshot).length === 0) clearListPreferences(prefsKey)
+    else writeListPreferences(prefsKey, snapshot)
   }, [
-    tableKey,
+    prefsKey,
     searchUrlValue,
     hasNonDefaultSort,
     sorts,

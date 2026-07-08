@@ -10,6 +10,7 @@ import {
 import { getPrismaConnectivityIssue } from "@builders/db"
 import { requireSessionUser } from "@/server/auth/session"
 import { getDashboardLayoutUser } from "@/server/account/dashboard-layout"
+import { ListPreferencesUserProvider } from "@/engines/list-view"
 
 export const dynamic = "force-dynamic"
 
@@ -50,7 +51,9 @@ export default async function DashboardLayout({
         <HeaderControls />
       </div>
 
-      <div className={NAV_RAIL_CONTENT_OFFSET_CLASS}>{children}</div>
+      <div className={NAV_RAIL_CONTENT_OFFSET_CLASS}>
+        <ListPreferencesUserProvider userId={sessionUser.id}>{children}</ListPreferencesUserProvider>
+      </div>
     </div>
   )
 }

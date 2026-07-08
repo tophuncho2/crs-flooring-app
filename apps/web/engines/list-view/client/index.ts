@@ -9,6 +9,10 @@ export type {
 export type { ListControllerOutput } from "./contracts/list-controller-output"
 export { useFetchListController, useSsrListController } from "./use-server-list-controller"
 export {
+  ListPreferencesUserProvider,
+  useListPreferencesUserId,
+} from "./list-preferences-user-context"
+export {
   useRecordSectionPagination,
   RECORD_VIEW_PAGE_SIZE,
   type RecordSectionPagination,
