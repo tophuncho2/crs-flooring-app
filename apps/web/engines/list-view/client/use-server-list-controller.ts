@@ -510,6 +510,7 @@ export function useFetchListController<TRow, TFilters>(
 
   const rows = queryResult.data?.rows ?? []
   const total = queryResult.data?.total ?? 0
+  const totals = queryResult.data?.totals
   const pageSize = listInput.pageSize
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const hasPreviousPage = pageValue > 1
@@ -668,6 +669,7 @@ export function useFetchListController<TRow, TFilters>(
   return {
     rows,
     total,
+    totals,
 
     searchQuery: searchInputValue,
     sort: sorts[0] ?? null,

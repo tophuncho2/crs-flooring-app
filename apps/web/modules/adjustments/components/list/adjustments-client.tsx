@@ -131,6 +131,7 @@ export default function AdjustmentsClient({
   const {
     rows,
     total,
+    totals,
     filters,
     page,
     pageSize,
@@ -468,6 +469,8 @@ export default function AdjustmentsClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        // Net quantity total over the full filtered set (server aggregate).
+        rollups={totals ? [{ label: "Net Quantity", value: totals.quantityNet }] : undefined}
       />
     </ListPageShell>
   )

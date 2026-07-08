@@ -27,4 +27,13 @@ export type ListInput<TFilters = Record<string, never>> = {
 export type ListOutput<TRow> = {
   rows: TRow[]
   total: number
+  /**
+   * Optional column rollups computed over the FULL filtered set (not just the
+   * current page), keyed by a rollup key the module's read + its column config
+   * agree on. Values are display-ready money/quantity strings. Absent for lists
+   * that declare no footer rollups; present (e.g. inventory stock-balance total,
+   * adjustments quantity total) so the pinned footer can show a live total that
+   * tracks the active filters.
+   */
+  totals?: Record<string, string>
 }

@@ -5,6 +5,9 @@ export type ListFilterValueMap = Record<string, string[]>
 export type ListControllerOutput<TRow> = {
   rows: TRow[]
   total: number
+  /** Column rollups over the full filtered set (keyed by rollup key), surfaced
+   *  by the read's `totals`. Undefined for lists without footer totals. */
+  totals?: Record<string, string>
 
   searchQuery: string
   /** Highest-priority sort (`sorts[0]`), or null. Back-compat single-sort read. */

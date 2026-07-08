@@ -1,6 +1,11 @@
 "use client"
 
-import { DataTable, type ListSelection, type PaginateContract } from "@/engines/list-view"
+import {
+  DataTable,
+  type DataTableRollup,
+  type ListSelection,
+  type PaginateContract,
+} from "@/engines/list-view"
 import type { EnrichedInventoryAdjustmentRow } from "@builders/domain"
 import { ADJUSTMENTS_LIST_COLUMNS } from "./table/adjustments-list-columns"
 import { renderAdjustmentsRowCell } from "./table/adjustments-row-cell"
@@ -12,6 +17,7 @@ export function AdjustmentsTable({
   onSplitOff,
   selection,
   pagination,
+  rollups,
 }: {
   rows: EnrichedInventoryAdjustmentRow[]
   onOpenAdjustment: (row: EnrichedInventoryAdjustmentRow) => void
@@ -20,6 +26,8 @@ export function AdjustmentsTable({
   /** Row-selection state — drives the checkbox column + Select-All (CSV export scope). */
   selection?: ListSelection
   pagination?: PaginateContract
+  /** Pinned-footer totals (net quantity over the filtered set). */
+  rollups?: ReadonlyArray<DataTableRollup>
 }) {
   return (
     <DataTable<EnrichedInventoryAdjustmentRow>
@@ -27,6 +35,7 @@ export function AdjustmentsTable({
       rows={rows}
       columns={ADJUSTMENTS_LIST_COLUMNS}
       empty="No adjustments match these filters."
+      rollups={rollups}
       selection={
         selection
           ? {

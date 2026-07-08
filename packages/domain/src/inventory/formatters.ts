@@ -29,6 +29,18 @@ export function formatSignedAdjustmentQuantity(
 }
 
 /**
+ * Net signed quantity total for the adjustments pinned-footer rollup — the sum
+ * of INCREASE magnitudes minus DEDUCTION magnitudes over the filtered set. Sign
+ * matches the per-row chip (`+` / `−` U+2212); no unit label since rows may mix
+ * units (the total is a magnitude sum, like the inventory stock total). `0` when
+ * increases and deductions balance.
+ */
+export function formatNetAdjustmentQuantity(net: number): string {
+  if (net === 0) return "0"
+  return `${net < 0 ? "−" : "+"}${toInventoryFixedString(Math.abs(net))}`
+}
+
+/**
  * A money figure (cost/freight) with its adjustment direction sign prefixed,
  * e.g. `+$12.34` / `−$12.34`. Returns `"—"` when the amount is absent so the
  * list cell renders a plain placeholder instead of a signed/tinted chip.

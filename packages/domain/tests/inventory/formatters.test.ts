@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   composeRollNumberDisplay,
+  formatNetAdjustmentQuantity,
   formatSignedAdjustmentMoney,
   parseInventoryDecimal,
   toInventoryFixedString,
@@ -44,6 +45,17 @@ describe("formatSignedAdjustmentMoney", () => {
   it("returns the placeholder '—' when the amount is absent", () => {
     expect(formatSignedAdjustmentMoney(null, "INCREASE")).toBe("—")
     expect(formatSignedAdjustmentMoney("", "DEDUCTION")).toBe("—")
+  })
+})
+
+describe("formatNetAdjustmentQuantity", () => {
+  it("prefixes + for a positive net and − (U+2212) for a negative net", () => {
+    expect(formatNetAdjustmentQuantity(125)).toBe("+125.00")
+    expect(formatNetAdjustmentQuantity(-75.5)).toBe("−75.50")
+  })
+
+  it("returns a bare '0' when increases and deductions balance", () => {
+    expect(formatNetAdjustmentQuantity(0)).toBe("0")
   })
 })
 

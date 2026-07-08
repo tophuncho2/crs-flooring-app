@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import type { PaginateContract } from "./contracts/paginate-contract"
 
 const BUTTON_CLASS_NAME =
@@ -7,6 +8,9 @@ const BUTTON_CLASS_NAME =
 
 export type PaginateControlsProps = PaginateContract & {
   className?: string
+  /** Optional content rendered on the LEFT, before the page counter (e.g. the
+   *  pinned footer's column rollups). Keeps the prev/next cluster on the right. */
+  leading?: ReactNode
 }
 
 /**
@@ -26,19 +30,23 @@ export function PaginateControls({
   previousPageHref,
   nextPageHref,
   className,
+  leading,
 }: PaginateControlsProps) {
   return (
     <div
       className={[
-        "flex items-center justify-between gap-3 px-3 py-2 text-sm text-[var(--foreground)]/75",
+        "flex items-center justify-between gap-4 px-3 py-2 text-sm text-[var(--foreground)]/75",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="tabular-nums">
-        Page {page} of {Math.max(totalPages, 1)} · {totalItems} items
-        {pageSize ? ` · ${pageSize}/page` : ""}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        {leading}
+        <div className="tabular-nums">
+          Page {page} of {Math.max(totalPages, 1)} · {totalItems} items
+          {pageSize ? ` · ${pageSize}/page` : ""}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         {previousPageHref ? (

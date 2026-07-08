@@ -105,6 +105,16 @@ function buildEditableLayout<TRow>(
  * live wherever the consumer surfaces them (e.g. the export menu), NOT in the
  * table chrome.
  */
+/**
+ * One column rollup shown in the pinned footer (e.g. "Total Stock" → "12,345").
+ * The consumer maps the read's `totals` into these; the footer renders them on
+ * the left of the pager. Off when absent.
+ */
+export type DataTableRollup = {
+  label: string
+  value: string
+}
+
 export type DataTableSelection<TRow extends DataTableRow> = {
   /** Currently-selected row ids. */
   selectedIds: Set<string>
@@ -175,6 +185,11 @@ export type DataTableProps<TRow extends DataTableRow> = {
    * click propagation so these controls never trip a row handler.
    */
   rowActions?: (row: TRow) => ReactNode
+  /**
+   * Pinned-footer column rollups (e.g. inventory stock-balance total). Rendered
+   * on the left of the pager, over the FULL filtered set. Off when absent.
+   */
+  rollups?: ReadonlyArray<DataTableRollup>
   /** Optional multi-select feature — see {@link DataTableSelection}. */
   selection?: DataTableSelection<TRow>
   /** Aria-label provider for interactive rows. */
@@ -230,6 +245,7 @@ export function DataTable<TRow extends DataTableRow>({
   pagination,
   cursorPagination,
   footerSlot,
+  rollups,
   renderCell,
   onRowClick,
   onOpenRow,
@@ -294,13 +310,31 @@ export function DataTable<TRow extends DataTableRow>({
   // trailing one so the card's own right border isn't doubled.
   const dividerClass = "border-r border-[var(--panel-border)]/60"
 
+  // Pinned-footer rollups — rendered on the left of the pager (or standalone).
+  const rollupsNode =
+    rollups && rollups.length > 0 ? (
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        {rollups.map((rollup) => (
+          <span key={rollup.label} className="inline-flex items-center gap-1.5">
+            <span className="text-[var(--foreground)]/55">{rollup.label}</span>
+            <span className="font-semibold tabular-nums text-[var(--foreground)]">
+              {rollup.value}
+            </span>
+          </span>
+        ))}
+      </div>
+    ) : null
+
   return (
     <div
       className={joinClassNames(
-        "rounded-xl border border-[var(--panel-border)] bg-[var(--panel-background)] shadow-[0_12px_28px_rgba(0,0,0,0.1)]",
-        // Fill: bounded full-height flex column whose middle scroll region grows.
-        // Non-fill: legacy clipped document-flow card.
-        isFill ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "overflow-hidden",
+        "border border-[var(--panel-border)] bg-[var(--panel-background)]",
+        // Fill: bounded full-height flex column running edge-to-edge — squared
+        // corners + no shadow so it sits flush against its border. Non-fill:
+        // legacy rounded, shadowed, clipped document-flow card.
+        isFill
+          ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+          : "overflow-hidden rounded-xl shadow-[0_12px_28px_rgba(0,0,0,0.1)]",
         className,
       )}
     >
@@ -466,9 +500,15 @@ export function DataTable<TRow extends DataTableRow>({
         </table>
       </div>
       {pagination ? (
-        // PaginateControls owns its own px-3 py-2 padding — no extra here.
+        // PaginateControls owns its own px-3 py-2 padding — no extra here. The
+        // rollups ride on its left `leading` slot so totals + pager share one bar.
         <div className="border-t border-[var(--panel-border)]">
-          <PaginateControls {...pagination} />
+          <PaginateControls {...pagination} leading={rollupsNode} />
+        </div>
+      ) : rollups && rollups.length > 0 ? (
+        // Rollups with no pager — a totals-only pinned footer.
+        <div className="border-t border-[var(--panel-border)] px-3 py-2 text-sm text-[var(--foreground)]/75">
+          {rollupsNode}
         </div>
       ) : cursorPagination ? (
         // CursorPaginateControls owns its own px-3 py-2 padding — no extra here.

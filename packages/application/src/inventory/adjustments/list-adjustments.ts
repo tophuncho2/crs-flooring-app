@@ -43,7 +43,7 @@ export async function listAdjustmentsUseCase(
   // newest-first ledger default.
   const sort = resolveInventoryListSort(input)
 
-  const { rows, total } = await listAdjustmentsForListView({
+  const { rows, total, totals } = await listAdjustmentsForListView({
     filters: {
       ...(warehouseId ? { warehouseId } : {}),
       ...(categoryId ? { categoryId } : {}),
@@ -59,5 +59,5 @@ export async function listAdjustmentsUseCase(
     ...(sort ? { sort } : {}),
   })
 
-  return { rows, total }
+  return { rows, total, totals }
 }

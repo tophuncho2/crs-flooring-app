@@ -1,7 +1,12 @@
 "use client"
 
 import { Copy, Plus } from "lucide-react"
-import { DataTable, type ListSelection, type PaginateContract } from "@/engines/list-view"
+import {
+  DataTable,
+  type DataTableRollup,
+  type ListSelection,
+  type PaginateContract,
+} from "@/engines/list-view"
 import { RecordOptionsMenu } from "@/engines/common"
 import type { InventoryRow } from "@builders/domain"
 import { INVENTORY_LIST_COLUMNS } from "./table/inventory-list-columns"
@@ -14,6 +19,7 @@ export function InventoryTable({
   onAddAdjustment,
   selection,
   pagination,
+  rollups,
 }: {
   rows: InventoryRow[]
   onOpenInventory: (id: string) => void
@@ -23,6 +29,8 @@ export function InventoryTable({
   /** Row-selection state — drives the checkbox column + Select-All (CSV export scope). */
   selection?: ListSelection
   pagination?: PaginateContract
+  /** Pinned-footer totals (stock-balance total over the filtered set). */
+  rollups?: ReadonlyArray<DataTableRollup>
 }) {
   return (
     <DataTable<InventoryRow>
@@ -30,6 +38,7 @@ export function InventoryTable({
       rows={rows}
       columns={INVENTORY_LIST_COLUMNS}
       empty="No inventory rows match these filters."
+      rollups={rollups}
       selection={
         selection
           ? {

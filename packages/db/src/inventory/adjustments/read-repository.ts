@@ -1,6 +1,7 @@
 import type { Prisma } from "../../generated/prisma/client.js"
 import {
   buildFlooringProductDisplayName,
+  formatNetAdjustmentQuantity,
   type EnrichedInventoryAdjustmentRow,
   type FlooringInventoryAdjustmentType,
   type InventoryAdjustmentListFilters,
@@ -447,11 +448,15 @@ export async function listAdjustmentsForListView(
     sort?: AdjustmentsListViewSort
   },
   client: InventoryAdjustmentDbClient = db,
-): Promise<{ rows: EnrichedInventoryAdjustmentRow[]; total: number }> {
+): Promise<{
+  rows: EnrichedInventoryAdjustmentRow[]
+  total: number
+  totals: { quantityNet: string }
+}> {
   const where = buildAdjustmentsListViewWhere(args.filters)
   const skip = (args.page - 1) * args.pageSize
 
-  const [rows, total] = await Promise.all([
+  const [rows, total, grouped] = await Promise.all([
     client.flooringInventoryAdjustment.findMany({
       where,
       select: enrichedInventoryAdjustmentRowSelect,
@@ -460,9 +465,27 @@ export async function listAdjustmentsForListView(
       take: args.pageSize,
     }),
     client.flooringInventoryAdjustment.count({ where }),
+    // Net quantity total over the filtered set: sum `quantity` per direction so
+    // INCREASE adds and DEDUCTION subtracts (the column stores magnitudes; the
+    // sign lives in `adjustmentType`).
+    client.flooringInventoryAdjustment.groupBy({
+      by: ["adjustmentType"],
+      where,
+      _sum: { quantity: true },
+    }),
   ])
 
-  return { rows: rows.map(normalizeEnrichedInventoryAdjustmentRow), total }
+  let net = 0
+  for (const group of grouped) {
+    const sum = group._sum.quantity ? group._sum.quantity.toNumber() : 0
+    net += group.adjustmentType === "INCREASE" ? sum : -sum
+  }
+
+  return {
+    rows: rows.map(normalizeEnrichedInventoryAdjustmentRow),
+    total,
+    totals: { quantityNet: formatNetAdjustmentQuantity(net) },
+  }
 }
 
 export type AdjustmentsExportOptions = {

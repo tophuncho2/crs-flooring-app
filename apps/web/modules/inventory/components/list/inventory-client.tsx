@@ -153,6 +153,7 @@ export default function InventoryClient({
   const {
     rows,
     total,
+    totals,
     filters,
     sort,
     sorts,
@@ -579,6 +580,8 @@ export default function InventoryClient({
           onPreviousPage: goToPreviousPage,
           onNextPage: goToNextPage,
         }}
+        // Stock-balance total over the full filtered set (server aggregate).
+        rollups={totals ? [{ label: "Total Stock", value: totals.stockBalance }] : undefined}
       />
     </ListPageShell>
   )

@@ -31,8 +31,12 @@ export type ListPageShellProps = {
  */
 export function ListPageShell({ children, className, fill = false }: ListPageShellProps) {
   if (fill) {
+    // No side/bottom gutter: the table card runs edge-to-edge (flush against the
+    // nav-rail on the left and the viewport on the right/bottom). Only the top
+    // pad remains, matched to the fixed header strip so the sticky column headers
+    // pin right beneath the action bar.
     return (
-      <div className="flex h-screen flex-col overflow-hidden bg-[var(--background)] px-3 pb-3 pt-24 text-[var(--foreground)] sm:pt-28">
+      <div className="flex h-screen flex-col overflow-hidden bg-[var(--background)] px-0 pb-0 pt-24 text-[var(--foreground)] sm:pt-28">
         <div className={joinClassNames("flex min-h-0 flex-1 flex-col gap-2", className)}>
           {children}
         </div>

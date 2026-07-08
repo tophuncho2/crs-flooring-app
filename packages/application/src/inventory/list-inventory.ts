@@ -23,12 +23,12 @@ export async function listInventoryUseCase(
   const filters = resolveInventoryListFilters(input.filters)
   const sort = resolveInventoryListSort(input)
 
-  const { rows, total } = await listInventoryForListView({
+  const { rows, total, totals } = await listInventoryForListView({
     ...(filters ? { filters } : {}),
     ...(sort ? { sort } : {}),
     skip: (page - 1) * pageSize,
     take: pageSize,
   })
 
-  return { rows, total }
+  return { rows, total, totals }
 }

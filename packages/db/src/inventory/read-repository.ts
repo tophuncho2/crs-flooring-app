@@ -41,6 +41,12 @@ function toDecimalString(value: { toString(): string } | null | undefined): stri
   return value.toString()
 }
 
+/** Coerce a Prisma `_sum` Decimal (null when no rows matched) to a number for
+ *  the money/quantity formatters. */
+function decimalToNumber(value: { toNumber(): number } | null | undefined): number {
+  return value === null || value === undefined ? 0 : value.toNumber()
+}
+
 /**
  * Normalize an inventory row into the domain read shape. Stamps the
  * computed `stockBalance` by calling the pure
@@ -402,6 +408,18 @@ export type InventoryListViewSort = {
 export type InventoryListViewResult = {
   rows: InventoryRecord[]
   total: number
+  /**
+   * Column rollups over the full filtered set (every row matching `where`, not
+   * just the page): `stockBalance` sums the stored generated `stockQuantity`
+   * column (`GREATEST(startingStock - netDeducted, 0)`), so it exactly matches
+   * the per-row displayed balance; `netDeducted`/`startingStock` sum their raw
+   * columns. Display-ready fixed strings for the pinned footer.
+   */
+  totals: {
+    stockBalance: string
+    netDeducted: string
+    startingStock: string
+  }
 }
 
 function buildListViewWhere(
@@ -532,7 +550,7 @@ export async function listInventoryForListView(
   const where = buildListViewWhere(options)
   const orderBy = buildInventoryListViewOrderBy(options.sort)
 
-  const [total, rows] = await Promise.all([
+  const [total, rows, aggregate] = await Promise.all([
     client.flooringInventory.count({ where }),
     client.flooringInventory.findMany({
       where,
@@ -541,9 +559,24 @@ export async function listInventoryForListView(
       take: options.take,
       select: inventoryRowSelect,
     }),
+    // Rollup totals over the full filtered scope. `stockQuantity` is the stored,
+    // indexed generated column, so the balance total is a cheap SUM that matches
+    // the per-row displayed balance exactly.
+    client.flooringInventory.aggregate({
+      where,
+      _sum: { stockQuantity: true, netDeducted: true, startingStock: true },
+    }),
   ])
 
-  return { total, rows: rows.map(normalizeInventoryRow) }
+  return {
+    total,
+    rows: rows.map(normalizeInventoryRow),
+    totals: {
+      stockBalance: toInventoryFixedString(decimalToNumber(aggregate._sum.stockQuantity)),
+      netDeducted: toInventoryFixedString(decimalToNumber(aggregate._sum.netDeducted)),
+      startingStock: toInventoryFixedString(decimalToNumber(aggregate._sum.startingStock)),
+    },
+  }
 }
 
 export type InventoryExportOptions = {
@@ -551,6 +584,13 @@ export type InventoryExportOptions = {
   sort?: InventoryListViewSort
   /** Hard row ceiling for this export (the resolved cap). No pagination. */
   take: number
+}
+
+/** Export read result — like the list result but without footer rollups (the
+ *  CSV file has no footer). */
+export type InventoryExportResult = {
+  rows: InventoryRecord[]
+  total: number
 }
 
 /**
@@ -563,7 +603,7 @@ export type InventoryExportOptions = {
 export async function exportInventoryForListView(
   options: InventoryExportOptions,
   client: InventoryDbClient = db,
-): Promise<InventoryListViewResult> {
+): Promise<InventoryExportResult> {
   const where = buildListViewWhere(options)
   const orderBy = buildInventoryListViewOrderBy(options.sort)
 
